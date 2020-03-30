@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,7 +55,14 @@ public final class MongoDbColumn implements DbColumn {
     private <S, T> T map(S value, Class<T> targetType) {
         Class<S> sourceType = (Class<S>) javaType();
 
-        return mapperManager.map(value, sourceType, targetType);
+        try {
+            return mapperManager.map(value, sourceType, targetType);
+        } catch (MapperException e) {
+            if (targetType.equals(String.class)) {
+                return (T) String.valueOf(value);
+            }
+            throw e;
+        }
     }
 
     @SuppressWarnings("unchecked")

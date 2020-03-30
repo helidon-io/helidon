@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,20 @@
 package io.helidon.service.employee;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.CompletionStage;
 
 import io.helidon.config.Config;
 
-/** Interface for Data Access Objects. */
+/**
+ * Interface for Data Access Objects.
+ * <p>
+ * As Helidon SE is a reactive framework, we cannot block it.
+ * Method on this interface return a {@link java.util.concurrent.CompletionStage} with the data, so it
+ * can be correctly handled by the server.
+ * <p>
+ * Methods in implementation must not block thread
+ */
 public interface EmployeeRepository {
 
     /**
@@ -34,22 +44,20 @@ public interface EmployeeRepository {
      */
     static EmployeeRepository create(String driverType, Config config) {
         switch (driverType) {
-        case "Array":
-            return new EmployeeRepositoryImpl();
-        case "Oracle":
+        case "Database":
             return new EmployeeRepositoryImplDB(config);
+        case "Array":
         default:
             // Array is default
             return new EmployeeRepositoryImpl();
         }
-
     }
 
     /**
      * Returns the list of the employees.
      * @return The collection of all the employee objects
      */
-    List<Employee> getAll();
+    CompletionStage<List<Employee>> getAll();
 
     /**
      * Returns the list of the employees that match with the specified lastName.
@@ -57,7 +65,7 @@ public interface EmployeeRepository {
      * @return The collection of the employee objects that match with the specified
      *         lastName
      */
-    List<Employee> getByLastName(String lastName);
+    CompletionStage<List<Employee>> getByLastName(String lastName);
 
     /**
      * Returns the list of the employees that match with the specified title.
@@ -65,7 +73,7 @@ public interface EmployeeRepository {
      * @return The collection of the employee objects that match with the specified
      *         title
      */
-    List<Employee> getByTitle(String title);
+    CompletionStage<List<Employee>> getByTitle(String title);
 
     /**
      * Returns the list of the employees that match with the specified department.
@@ -73,40 +81,34 @@ public interface EmployeeRepository {
      * @return The collection of the employee objects that match with the specified
      *         department
      */
-    List<Employee> getByDepartment(String department);
+    CompletionStage<List<Employee>> getByDepartment(String department);
 
     /**
      * Add a new employee.
      * @param employee returns the employee object including the ID generated.
      * @return the employee object including the ID generated
      */
-    Employee save(Employee employee); // Add new employee
+    CompletionStage<Employee> save(Employee employee); // Add new employee
 
     /**
      * Update an existing employee.
      * @param updatedEmployee The employee object with the values to update
      * @param id The employee ID
-     * @return The employee updated.
+     * @return number of updated records
      */
-    Employee update(Employee updatedEmployee, String id);
+    CompletionStage<Long> update(Employee updatedEmployee, String id);
 
     /**
      * Delete an employee by ID.
      * @param id The employee ID
+     * @return number of deleted records
      */
-    void deleteById(String id);
+    CompletionStage<Long> deleteById(String id);
 
     /**
      * Get an employee by ID.
      * @param id The employee ID
      * @return The employee object if the employee is found
      */
-    Employee getById(String id);
-
-    /**
-     * Search an employee by ID.
-     * @param id The employee ID
-     * @return true if the employee is found or false if no match is found.
-     */
-    boolean isIdFound(String id);
+    CompletionStage<Optional<Employee>> getById(String id);
 }
