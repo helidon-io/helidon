@@ -273,6 +273,21 @@ public class Schema
     }
 
     /**
+     * Return a {@link SchemaInputType} that matches the type name.
+     *
+     * @param inputTypeName type name to match
+     * @return a {@link SchemaInputType} that matches the type name or null if none found
+     */
+    public SchemaInputType getInputTypeByName(String inputTypeName) {
+        for (SchemaInputType schemaInputType : listInputTypes) {
+            if (schemaInputType.getName().equals(inputTypeName)) {
+                return schemaInputType;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Return a {@link SchemaType} that matches the given class.
      *
      * @param clazz the class to find

@@ -16,7 +16,6 @@
 
 package io.helidon.microprofile.graphql.server;
 
-import java.beans.PropertyDescriptor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
@@ -33,13 +32,13 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import javax.json.bind.annotation.JsonbProperty;
 import javax.json.bind.annotation.JsonbTransient;
 
 import graphql.Scalars;
 import graphql.scalars.ExtendedScalars;
+import org.eclipse.microprofile.graphql.Description;
 import org.eclipse.microprofile.graphql.Enum;
 import org.eclipse.microprofile.graphql.Id;
 import org.eclipse.microprofile.graphql.Ignore;
@@ -583,6 +582,18 @@ public final class SchemaGeneratorHelper {
         } catch (NoSuchFieldException e) {
             return false;
         }
+    }
+
+    /**
+     * Safely return the value of the {@link Description} annotation.
+     *
+     * @param description {@link Description} annotation
+     * @return the description or null
+     */
+    protected static String getDescription(Description description) {
+        return description == null || "".equals(description.value())
+                ? null
+                : description.value();
     }
 
     /**

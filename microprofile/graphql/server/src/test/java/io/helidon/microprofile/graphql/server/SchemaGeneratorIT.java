@@ -38,6 +38,7 @@ import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithNameAnnotat
 import io.helidon.microprofile.graphql.server.test.mutations.SimpleMutations;
 import io.helidon.microprofile.graphql.server.test.mutations.VoidMutations;
 import io.helidon.microprofile.graphql.server.test.queries.ArrayAndListQueries;
+import io.helidon.microprofile.graphql.server.test.queries.DescriptionQueries;
 import io.helidon.microprofile.graphql.server.test.queries.NumberFormatQueriesAndMutations;
 import io.helidon.microprofile.graphql.server.test.queries.QueriesWithIgnorable;
 import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesNoArgs;
@@ -48,6 +49,7 @@ import io.helidon.microprofile.graphql.server.test.types.AbstractVehicle;
 import io.helidon.microprofile.graphql.server.test.types.Car;
 import io.helidon.microprofile.graphql.server.test.types.ContactRelationship;
 import io.helidon.microprofile.graphql.server.test.types.DateTimePojo;
+import io.helidon.microprofile.graphql.server.test.types.DescriptionType;
 import io.helidon.microprofile.graphql.server.test.types.Level0;
 import io.helidon.microprofile.graphql.server.test.types.Motorbike;
 import io.helidon.microprofile.graphql.server.test.types.MultiLevelListsAndArrays;
@@ -270,10 +272,10 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
                         + "longValue: 12345"
                         + " } ";
         result = executionContext.execute("mutation { createSimpleContactWithNumberFormats (" + contactInput + ") { id name } }");
-//        mapResults = getAndAssertResult(result);
-//        assertThat(mapResults.size(), is(1));
-//        mapResults2 = (Map<String, Object>) mapResults.get("createSimpleContactWithNumberFormats");
-//        assertThat(mapResults2, is(notNullValue()));
+        //        mapResults = getAndAssertResult(result);
+        //        assertThat(mapResults.size(), is(1));
+        //        mapResults2 = (Map<String, Object>) mapResults.get("createSimpleContactWithNumberFormats");
+        //        assertThat(mapResults2, is(notNullValue()));
 
     }
 
@@ -423,10 +425,38 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
         assertThat(type, is(notNullValue()));
         assertThat(type.getFieldDefinitions().stream().filter(fd -> fd.getName().equals("ignoreGetMethod")).count(), is(0L));
 
-        type = schema.getInputTypes().stream().filter(t -> t.getName().equals("ObjectWithIgnorableFieldsAndMethodsInput"))
-                .findFirst().get();
+        SchemaInputType inputType = schema.getInputTypeByName("ObjectWithIgnorableFieldsAndMethodsInput");
+        assertThat(inputType, is(notNullValue()));
+        assertThat(inputType.getFieldDefinitions().stream().filter(fd -> fd.getName().equals("ignoreBecauseOfMethod")).count(),
+                   is(0L));
+        assertThat(inputType.getFieldDefinitions().stream().filter(fd -> fd.getName().equals("valueSetter")).count(), is(1L));
+    }
+
+    @Test
+    public void testDescriptions() throws IOException {
+        setupIndex(indexFileName, DescriptionType.class, DescriptionQueries.class);
+        ExecutionContext<DummyContext> executionContext = new ExecutionContext<>(dummyContext);
+
+        Schema schema = executionContext.getSchema();
+        assertThat(schema, is(notNullValue()));
+        SchemaType type = schema.getTypeByName("DescriptionType");
         assertThat(type, is(notNullValue()));
-        assertThat(type.getFieldDefinitions().stream().filter(fd -> fd.getName().equals("ignoreBecauseOfMethod")).count(), is(0L));
+        type.getFieldDefinitions().forEach(fd -> {
+            if (fd.getName().equals("id")) {
+                assertThat(fd.getDescription(), is("this is the description"));
+            }
+            if (fd.getName().equals("value")) {
+                assertThat(fd.getDescription(), is("description of value"));
+            }
+        });
+
+        SchemaInputType inputType = schema.getInputTypeByName("DescriptionTypeInput");
+        assertThat(inputType, is(notNullValue()));
+        inputType.getFieldDefinitions().forEach(fd -> {
+            if (fd.getName().equals("value")) {
+                assertThat(fd.getDescription(), is("description on set for input"));
+            }
+        });
     }
 
     @Test

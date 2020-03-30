@@ -40,15 +40,12 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.json.bind.annotation.JsonbTransient;
-
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetcherFactories;
 import org.eclipse.microprofile.graphql.DefaultValue;
 import org.eclipse.microprofile.graphql.Description;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Id;
-import org.eclipse.microprofile.graphql.Ignore;
 import org.eclipse.microprofile.graphql.Input;
 import org.eclipse.microprofile.graphql.Interface;
 import org.eclipse.microprofile.graphql.Mutation;
@@ -65,6 +62,7 @@ import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ID;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.STRING;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.checkScalars;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getArrayLevels;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getDescription;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getFieldName;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getGraphQLType;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getMethodName;
@@ -201,10 +199,7 @@ public class SchemaGenerator {
                     String typeName = getTypeName(clazz, true);
                     SchemaType type = new SchemaType(typeName.isBlank() ? clazz.getSimpleName() : typeName, clazz.getName());
                     type.setIsInterface(clazz.isInterface());
-                    Description descriptionAnnotation = clazz.getAnnotation(Description.class);
-                    if (descriptionAnnotation != null) {
-                        type.setDescription(descriptionAnnotation.value());
-                    }
+                    type.setDescription(getDescription(clazz.getAnnotation(Description.class)));
 
                     // add the discovered type
                     addTypeToSchema(schema, type);
@@ -359,10 +354,7 @@ public class SchemaGenerator {
         // an annotated input type was also used as a return type
         String simpleName = getSimpleName(realReturnType, !isInputType);
         SchemaType type = new SchemaType(simpleName, realReturnType);
-        Description descriptionAnnotation = Class.forName(realReturnType).getAnnotation(Description.class);
-        if (descriptionAnnotation != null && !"".equals(descriptionAnnotation.value())) {
-            type.setDescription(descriptionAnnotation.value());
-        }
+        type.setDescription(getDescription(Class.forName(realReturnType).getAnnotation(Description.class)));
 
         for (Map.Entry<String, DiscoveredMethod> entry : retrieveGetterBeanMethods(Class.forName(realReturnType), isInputType)
                 .entrySet()) {
@@ -483,6 +475,7 @@ public class SchemaGenerator {
                             .newMethodDataFetcher(clazz, method, null, fd.getArguments().toArray(new SchemaArgument[0]));
                 }
                 fd.setDataFetcher(dataFetcher);
+                fd.setDescription(discoveredMethod.getDescription());
 
                 schemaType.addFieldDefinition(fd);
 
@@ -609,19 +602,20 @@ public class SchemaGenerator {
     /**
      * Return a new {@link SchemaFieldDefinition} with the given field and class.
      *
-     * @param method       the {@link DiscoveredMethod}
-     * @param optionalName optional name for the field definition
+     * @param discoveredMethod the {@link DiscoveredMethod}
+     * @param optionalName     optional name for the field definition
      * @return a {@link SchemaFieldDefinition}
      */
     @SuppressWarnings("rawTypes")
-    private SchemaFieldDefinition newFieldDefinition(DiscoveredMethod method, String optionalName) {
-        String valueClassName = method.getReturnType();
+    private SchemaFieldDefinition newFieldDefinition(DiscoveredMethod discoveredMethod, String optionalName) {
+        String valueClassName = discoveredMethod.getReturnType();
         String graphQLType = getGraphQLType(valueClassName);
         DataFetcher dataFetcher = null;
-        boolean isArrayReturnType = method.isArrayReturnType || method.isCollectionType() || method.isMap();
+        boolean isArrayReturnType = discoveredMethod.isArrayReturnType || discoveredMethod.isCollectionType() || discoveredMethod
+                .isMap();
 
         if (isArrayReturnType) {
-            if (method.isMap) {
+            if (discoveredMethod.isMap) {
                 // add DataFetcher that will just retrieve the values() from the map
                 // dataFetcher = DataFetcherUtils.newMapValuesDataFetcher(fieldName);
                 // TODO
@@ -629,12 +623,13 @@ public class SchemaGenerator {
         }
 
         // check for format on the property
-        String[] format = method.getFormat();
-        if (method.getPropertyName() != null && format != null && format.length == 2) {
+        String[] format = discoveredMethod.getFormat();
+        if (discoveredMethod.getPropertyName() != null && format != null && format.length == 2) {
             if (!isGraphQLType(valueClassName)) {
 
                 dataFetcher = DataFetcherUtils
-                        .newNumberFormatPropertyDataFetcher(method.getPropertyName(), graphQLType, format[0], format[1]);
+                        .newNumberFormatPropertyDataFetcher(discoveredMethod.getPropertyName(), graphQLType, format[0],
+                                                            format[1]);
                 // we must change the type of this to a String but keep the above type for the above data fetcher
                 graphQLType = SchemaGeneratorHelper.STRING;
             }
@@ -642,13 +637,14 @@ public class SchemaGenerator {
 
         SchemaFieldDefinition fd = new SchemaFieldDefinition(optionalName != null
                                                                      ? optionalName
-                                                                     : method.name,
+                                                                     : discoveredMethod.name,
                                                              graphQLType,
                                                              isArrayReturnType,
                                                              false,
-                                                             method.getArrayLevels());
+                                                             discoveredMethod.getArrayLevels());
         fd.setDataFetcher(dataFetcher);
-        fd.setFormat(method.getFormat());
+        fd.setFormat(discoveredMethod.getFormat());
+        fd.setDescription(discoveredMethod.description);
         return fd;
     }
 
@@ -700,7 +696,7 @@ public class SchemaGenerator {
             }
             if (isQuery || isMutation || hasSourceAnnotation) {
                 LOGGER.info("Processing Query or Mutation " + m.getName());
-                DiscoveredMethod discoveredMethod = generateDiscoveredMethod(m, clazz, null);
+                DiscoveredMethod discoveredMethod = generateDiscoveredMethod(m, clazz, null, false);
                 discoveredMethod.setMethodType(isQuery || hasSourceAnnotation ? QUERY_TYPE : MUTATION_TYPE);
                 mapDiscoveredMethods.put(discoveredMethod.getName(), discoveredMethod);
             }
@@ -734,10 +730,10 @@ public class SchemaGenerator {
                 PropertyDescriptor propertyDescriptor = optionalPdReadMethod.get();
                 boolean ignoreWriteMethod = isInputType && shouldIgnoreMethod(propertyDescriptor.getWriteMethod(), true);
 
-                // only include if the field should not be ignored or 
+                // only include if the field should not be ignored 
                 if (!shouldIgnoreField(clazz, propertyDescriptor.getName()) && !ignoreWriteMethod) {
                     // this is a getter method, include it here
-                    DiscoveredMethod discoveredMethod = generateDiscoveredMethod(m, clazz, propertyDescriptor);
+                    DiscoveredMethod discoveredMethod = generateDiscoveredMethod(m, clazz, propertyDescriptor, isInputType);
                     mapDiscoveredMethods.put(discoveredMethod.getName(), discoveredMethod);
                 }
             }
@@ -762,17 +758,22 @@ public class SchemaGenerator {
     /**
      * Generate a {@link DiscoveredMethod} from the given arguments.
      *
-     * @param method {@link Method} being introspected
-     * @param clazz  {@link Class} being introspected
-     * @param pd     {@link PropertyDescriptor} for the property being introspected (may be null if retrieving all methods as in
-     *               the case for a {@link Query} annotation)
+     * @param method      {@link Method} being introspected
+     * @param clazz       {@link Class} being introspected
+     * @param pd          {@link PropertyDescriptor} for the property being introspected (may be null if retrieving all methods as
+     *                    in the case for a {@link Query} annotation)
+     * @param isInputType indicates if the method is part of an input type
      * @return a {@link DiscoveredMethod}
      */
-    private static DiscoveredMethod generateDiscoveredMethod(Method method, Class<?> clazz, PropertyDescriptor pd) {
+    private static DiscoveredMethod generateDiscoveredMethod(Method method,
+                                                             Class<?> clazz,
+                                                             PropertyDescriptor pd,
+                                                             boolean isInputType) {
 
         String name = method.getName();
         String varName;
         String[] numberFormat = new String[0];
+        String description = null;
 
         if (name.startsWith(IS) || name.startsWith(GET) || name.startsWith(SET)) {
             // this is a getter method
@@ -796,7 +797,8 @@ public class SchemaGenerator {
         }
 
         // check for either Name or JsonbProperty annotations on method or field
-        String annotatedName = getMethodName(method);
+        // ensure if this is an input type that the write method is checked
+        String annotatedName = getMethodName(isInputType ? pd.getWriteMethod() : method);
         if (annotatedName != null) {
             varName = annotatedName;
         } else if (pd != null) {
@@ -824,6 +826,15 @@ public class SchemaGenerator {
             try {
                 field = clazz.getDeclaredField(pd.getName());
                 fieldHasIdAnnotation = field != null && field.getAnnotation(Id.class) != null;
+                description = getDescription(field.getAnnotation(Description.class));
+
+                if (isInputType) {
+                    Method writeMethod = pd.getWriteMethod();
+                    if (writeMethod != null && description == null) {
+                        // retrieve the setter method and check the description
+                        description = getDescription(writeMethod.getAnnotation(Description.class));
+                    }
+                }
             } catch (NoSuchFieldException e) {
                 // ignore
             }
@@ -839,6 +850,7 @@ public class SchemaGenerator {
             if (field != null) {
                 numberFormat = getFormatAnnotation(field);
             }
+
         }
 
         // check for method return type number format
@@ -856,6 +868,11 @@ public class SchemaGenerator {
         discoveredMethod.setMethod(method);
         discoveredMethod.setFormat(numberFormat);
         discoveredMethod.setPropertyName(pd != null ? pd.getName() : null);
+
+        if (description == null && !isInputType) {
+            description = getDescription(method.getAnnotation(Description.class));
+        }
+        discoveredMethod.setDescription(description);
 
         Parameter[] parameters = method.getParameters();
         if (parameters != null && parameters.length > 0) {
@@ -882,6 +899,7 @@ public class SchemaGenerator {
 
                 SchemaArgument argument = new SchemaArgument(parameterName, returnType.getReturnClass(), false, null, paramType);
                 argument.setFormat(getFormatAnnotation(parameter));
+                argument.setDescription(getDescription(parameter.getAnnotation(Description.class)));
 
                 Source sourceAnnotation = parameter.getAnnotation(Source.class);
                 if (sourceAnnotation != null) {
@@ -1040,6 +1058,11 @@ public class SchemaGenerator {
          * Defines the format for a number or date.
          */
         private String[] format = new String[0];
+
+        /**
+         * A description for a method.
+         */
+        private String description;
 
         /**
          * Default constructor.
@@ -1290,6 +1313,24 @@ public class SchemaGenerator {
             this.propertyName = propertyName;
         }
 
+        /**
+         * Return the description for a method.
+         *
+         * @return the description for a method
+         */
+        public String getDescription() {
+            return description;
+        }
+
+        /**
+         * Set the description for a method.
+         *
+         * @param description the description for a method
+         */
+        public void setDescription(String description) {
+            this.description = description;
+        }
+
         @Override
         public String toString() {
             return "DiscoveredMethod{"
@@ -1303,6 +1344,7 @@ public class SchemaGenerator {
                     + ", arrayLevels=" + arrayLevels
                     + ", source=" + source
                     + ", isQueryAnnotated=" + isQueryAnnotated
+                    + ", description=" + description
                     + ", method=" + method + '}';
         }
 
@@ -1324,13 +1366,14 @@ public class SchemaGenerator {
                     && Objects.equals(source, that.source)
                     && Objects.equals(isQueryAnnotated, that.isQueryAnnotated)
                     && Objects.equals(method, that.method)
+                    && Objects.equals(description, that.description)
                     && Objects.equals(collectionType, that.collectionType);
         }
 
         @Override
         public int hashCode() {
             return Objects.hash(name, returnType, methodType, method, arrayLevels, isQueryAnnotated,
-                                collectionType, isArrayReturnType, isMap, source);
+                                collectionType, isArrayReturnType, isMap, source, description);
         }
     }
 

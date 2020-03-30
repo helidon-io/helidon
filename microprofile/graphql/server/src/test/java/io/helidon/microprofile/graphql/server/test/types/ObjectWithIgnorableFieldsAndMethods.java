@@ -38,6 +38,8 @@ public class ObjectWithIgnorableFieldsAndMethods {
 
     private int ignoreBecauseOfMethod;
 
+    private String value;
+
     public ObjectWithIgnorableFieldsAndMethods(String id, String pleaseIgnore, int ignoreThisAsWell, boolean dontIgnore, int ignoreBecauseOfMethod) {
         this.id = id;
         this.pleaseIgnore = pleaseIgnore;
@@ -91,5 +93,14 @@ public class ObjectWithIgnorableFieldsAndMethods {
     @JsonbTransient
     public void setIgnoreBecauseOfMethod(int ignoreBecauseOfMethod) {
         this.ignoreBecauseOfMethod = ignoreBecauseOfMethod;
+    }
+
+    public String getValue() {
+        return value;
+    }
+
+    @Name("valueSetter")
+    public void setValue(String value) {
+        this.value = value;
     }
 }
