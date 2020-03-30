@@ -64,8 +64,11 @@ public class KafkaConnectorFactory implements IncomingConnectorFactory, Outgoing
      */
     @Inject
     public KafkaConnectorFactory(Config config) {
-        scheduler = ScheduledThreadPoolSupplier.builder().threadNamePrefix("kafka-")
-        .config(config).build().get();
+        scheduler = ScheduledThreadPoolSupplier.builder()
+                .threadNamePrefix("kafka-")
+                .config(config)
+                .build()
+                .get();
     }
 
     /**
@@ -114,7 +117,10 @@ public class KafkaConnectorFactory implements IncomingConnectorFactory, Outgoing
     @Override
     public SubscriberBuilder<? extends Message<?>, Void> getSubscriberBuilder(org.eclipse.microprofile.config.Config config) {
         Config helidonConfig = (Config) config;
-        long backpressure = helidonConfig.get(BACKPRESSURE_SIZE_KEY).asLong().asOptional().orElse(BACKPRESSURE_SIZE_DEFAULT);
+        long backpressure = helidonConfig.get(BACKPRESSURE_SIZE_KEY)
+                .asLong()
+                .orElse(BACKPRESSURE_SIZE_DEFAULT);
+
         BasicKafkaProducer<Object, Object> basicKafkaProducer = BasicKafkaProducer.create(helidonConfig);
         resourcesToClose.add(basicKafkaProducer);
         return ReactiveStreams.fromSubscriber(new BasicSubscriber<>(basicKafkaProducer, backpressure));

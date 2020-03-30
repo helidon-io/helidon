@@ -96,8 +96,8 @@ class BasicKafkaConsumer<K, V> implements Closeable {
         if (topics.isEmpty()) {
             throw new IllegalArgumentException("The topic is a required configuration value");
         } else {
-            long pollTimeout = config.get(POLL_TIMEOUT).asLong().asOptional().orElse(50L);
-            long periodExecutions = config.get(PERIOD_EXECUTIONS).asLong().asOptional().orElse(100L);
+            long pollTimeout = config.get(POLL_TIMEOUT).asLong().orElse(50L);
+            long periodExecutions = config.get(PERIOD_EXECUTIONS).asLong().orElse(100L);
             return new BasicKafkaConsumer<K, V>(new KafkaConsumer<>(kafkaConfig), scheduler, topics,
                     pollTimeout, periodExecutions);
         }

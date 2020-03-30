@@ -18,6 +18,7 @@ package io.helidon.microprofile.connectors.kafka;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -45,10 +46,9 @@ class HelidonToKafkaConfigParser {
      * @return the map
      */
     static Map<String, Object> toMap(Config config) {
-        Map<String, Object> kafkaConfig = config.asMap().as(map -> map.entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, e -> (Object) e.getValue())))
-                .orElse(Collections.emptyMap());
-        return kafkaConfig;
+        return new HashMap<>(config.detach()
+                .asMap()
+                .orElseGet(Map::of));
     }
 
     /**

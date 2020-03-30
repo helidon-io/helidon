@@ -145,8 +145,6 @@ class EmittingPublisher<T> implements Publisher<T> {
                 try {
                     publisher.subscriber.onNext(item);
                     return true;
-                } catch (NullPointerException npe) {
-                    throw npe;
                 } catch (Throwable t) {
                     publisher.fail(t);
                     return false;
