@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,9 +38,11 @@ module io.helidon.microprofile.tracing {
     requires io.helidon.jersey.common;
     requires transitive io.helidon.tracing;
     requires transitive io.helidon.tracing.jersey;
+    requires io.helidon.tracing.tracerresolver;
 
     requires transitive microprofile.opentracing.api;
     requires microprofile.rest.client.api;
+
 
     exports io.helidon.microprofile.tracing;
 
