@@ -37,7 +37,7 @@ import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithEnumName;
 import io.helidon.microprofile.graphql.server.test.types.DateTimePojo;
 import io.helidon.microprofile.graphql.server.test.types.MultiLevelListsAndArrays;
-import io.helidon.microprofile.graphql.server.test.types.ObjectWithIgnorableFields;
+import io.helidon.microprofile.graphql.server.test.types.ObjectWithIgnorableFieldsAndMethods;
 import io.helidon.microprofile.graphql.server.test.types.Person;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContactWithSelf;
 import io.helidon.microprofile.graphql.server.test.types.TypeWithIDs;
@@ -135,10 +135,5 @@ public class SimpleQueriesNoArgs {
     public DateTimePojo dateTimePojo() {
         return new DateTimePojo(LocalDate.now(), LocalTime.now(), OffsetTime.now(),
                                 LocalDateTime.now(), OffsetDateTime.now(), ZonedDateTime.now());
-    }
-
-    @Query("testIgnorableFields")
-    public ObjectWithIgnorableFields getIgnorable() {
-        return new ObjectWithIgnorableFields("id", "string", 1, true);
     }
 }

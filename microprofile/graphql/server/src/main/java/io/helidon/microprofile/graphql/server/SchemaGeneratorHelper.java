@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.graphql.server;
 
+import java.beans.PropertyDescriptor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
@@ -32,13 +33,16 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import javax.json.bind.annotation.JsonbProperty;
+import javax.json.bind.annotation.JsonbTransient;
 
 import graphql.Scalars;
 import graphql.scalars.ExtendedScalars;
 import org.eclipse.microprofile.graphql.Enum;
 import org.eclipse.microprofile.graphql.Id;
+import org.eclipse.microprofile.graphql.Ignore;
 import org.eclipse.microprofile.graphql.Input;
 import org.eclipse.microprofile.graphql.Interface;
 import org.eclipse.microprofile.graphql.Mutation;
@@ -47,6 +51,8 @@ import org.eclipse.microprofile.graphql.Query;
 import org.eclipse.microprofile.graphql.Type;
 
 import static io.helidon.microprofile.graphql.server.ElementGenerator.OPEN_SQUARE;
+import static io.helidon.microprofile.graphql.server.SchemaGenerator.GET;
+import static io.helidon.microprofile.graphql.server.SchemaGenerator.SET;
 
 /**
  * Helper class for {@link SchemaGenerator}.
@@ -526,6 +532,56 @@ public final class SchemaGeneratorHelper {
             return new RootTypeResult(((Class<?>) actualTypeArgument).getName(), level);
         } else {
             return new RootTypeResult(((Class<?>) genericReturnType).getName(), level);
+        }
+    }
+
+    /**
+     * Indicates if the method should be ignored.
+     *
+     * @param method      {@link Method} to check
+     * @param isInputType indicates if this is an input type
+     * @return true if the method should be ignored
+     */
+    protected static boolean shouldIgnoreMethod(Method method, boolean isInputType) {
+        Ignore ignore = method.getAnnotation(Ignore.class);
+        JsonbTransient jsonbTransient = method.getAnnotation(JsonbTransient.class);
+
+        // default case
+        if (ignore == null && jsonbTransient == null) {
+            return false;
+        }
+
+        // at least one of the annotations is present on the method
+        String methodName = method.getName();
+        String prefix = methodName.startsWith(SET)
+                ? SET : methodName.startsWith(GET)
+                ? GET
+                : null;
+
+        // if @Ignore or @JsonbTransient is on getter method then exclude from output type
+        // if @Ignore or @JsonbTransient is on setter methods then excludes from input type
+        if (GET.equals(prefix) && !isInputType) {
+            return true;
+        } else {
+            return SET.equals(prefix) && isInputType;
+        }
+    }
+
+    /**
+     * Return true if the provided field should be ignored.
+     *
+     * @param clazz     {@link Class} to check field on
+     * @param fieldName field name to check
+     * @return true if the {@link Field} should be ignored
+     */
+    protected static boolean shouldIgnoreField(Class<?> clazz, String fieldName) {
+        Field field = null;
+        try {
+            field = clazz.getDeclaredField(fieldName);
+            return field != null
+                    && (field.getAnnotation(Ignore.class) != null || field.getAnnotation(JsonbTransient.class) != null);
+        } catch (NoSuchFieldException e) {
+            return false;
         }
     }
 

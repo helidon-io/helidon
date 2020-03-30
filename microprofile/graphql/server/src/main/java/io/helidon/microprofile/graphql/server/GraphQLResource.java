@@ -44,7 +44,7 @@ public class GraphQLResource {
     /**
      * Indicates the path to return the GraphQL schema.
      */
-    protected static final String SCHEMA_URL = "graphql.schema";
+    protected static final String SCHEMA_URL = "schema.graphql";
 
     /**
      * Logger.

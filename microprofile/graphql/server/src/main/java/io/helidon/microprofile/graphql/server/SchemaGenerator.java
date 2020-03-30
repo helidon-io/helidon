@@ -78,6 +78,8 @@ import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.isArr
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.isEnumClass;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.isGraphQLType;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.isValidIDType;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.shouldIgnoreField;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.shouldIgnoreMethod;
 
 /**
  * Various utilities for generating {@link Schema}s from classes.
@@ -92,12 +94,12 @@ public class SchemaGenerator {
     /**
      * Constant "get".
      */
-    private static final String GET = "get";
+    protected static final String GET = "get";
 
     /**
      * Constant "set".
      */
-    private static final String SET = "set";
+    protected static final String SET = "set";
 
     /**
      * Logger.
@@ -362,7 +364,8 @@ public class SchemaGenerator {
             type.setDescription(descriptionAnnotation.value());
         }
 
-        for (Map.Entry<String, DiscoveredMethod> entry : retrieveGetterBeanMethods(Class.forName(realReturnType)).entrySet()) {
+        for (Map.Entry<String, DiscoveredMethod> entry : retrieveGetterBeanMethods(Class.forName(realReturnType), isInputType)
+                .entrySet()) {
             DiscoveredMethod discoveredMethod = entry.getValue();
             String valueTypeName = discoveredMethod.getReturnType();
             SchemaFieldDefinition fd = newFieldDefinition(discoveredMethod, null);
@@ -465,11 +468,14 @@ public class SchemaGenerator {
                     // a format exists on the method return type so format it after returning the value
                     final String graphQLType = getGraphQLType(fd.getReturnType());
                     dataFetcher = DataFetcherFactories.wrapDataFetcher(DataFetcherUtils
-                            .newMethodDataFetcher(clazz, method, null, fd.getArguments().toArray(new SchemaArgument[0])),
-                                (d, v) -> {
-                                 NumberFormat numberFormat = getCorrectFormat(graphQLType, format[1], format[0]);
-                                 return v != null ? numberFormat.format(v) : null;
-                                });
+                                                                               .newMethodDataFetcher(clazz, method, null,
+                                                                                                     fd.getArguments().toArray(
+                                                                                                             new SchemaArgument[0])),
+                                                                       (d, v) -> {
+                                                                           NumberFormat numberFormat = getCorrectFormat(
+                                                                                   graphQLType, format[1], format[0]);
+                                                                           return v != null ? numberFormat.format(v) : null;
+                                                                       });
                     fd.setReturnType(STRING);
                 } else {
                     // no formatting, just call the method
@@ -558,7 +564,7 @@ public class SchemaGenerator {
             throws IntrospectionException, ClassNotFoundException {
 
         String valueClassName = type.getValueClassName();
-        retrieveGetterBeanMethods(Class.forName(valueClassName)).forEach((k, v) -> {
+        retrieveGetterBeanMethods(Class.forName(valueClassName), false).forEach((k, v) -> {
             SchemaFieldDefinition fd = newFieldDefinition(v, null);
             type.addFieldDefinition(fd);
 
@@ -705,37 +711,35 @@ public class SchemaGenerator {
     /**
      * Retrieve only the getter methods for the {@link Class}.
      *
-     * @param clazz the {@link Class} to introspect
+     * @param clazz       the {@link Class} to introspect
+     * @param isInputType indicates if this type is an input type
      * @return a {@link Map} of the methods and return types
      * @throws IntrospectionException if there were errors introspecting classes
      */
-    protected static Map<String, DiscoveredMethod> retrieveGetterBeanMethods(Class<?> clazz) throws IntrospectionException {
+    protected static Map<String, DiscoveredMethod> retrieveGetterBeanMethods(Class<?> clazz,
+                                                                             boolean isInputType)
+            throws IntrospectionException {
         Map<String, DiscoveredMethod> mapDiscoveredMethods = new HashMap<>();
 
         for (Method m : getAllMethods(clazz)) {
-            if (m.getName().equals("getClass")) {
+            if (m.getName().equals("getClass") || shouldIgnoreMethod(m, isInputType)) {
                 continue;
             }
-            Optional<PropertyDescriptor> optionalPd = Arrays.stream(Introspector.getBeanInfo(clazz).getPropertyDescriptors())
-                    .filter(p -> p.getReadMethod() != null && p.getReadMethod().getName().equals(m.getName())).findFirst();
-            if (optionalPd.isPresent()) {
-                PropertyDescriptor propertyDescriptor = optionalPd.get();
-                try {
-                    // check to see if field is annotated with @Ignore or @JsonbTransient
-                    Field field = clazz.getDeclaredField(propertyDescriptor.getName());
-                    if (field != null
-                            && (
-                            field.getAnnotation(Ignore.class) != null
-                                    || field.getAnnotation(JsonbTransient.class) != null)) {
-                        continue;
-                    }
-                } catch (NoSuchFieldException e) {
-                    // ignore check if no field exists
-                }
 
-                // this is a getter method, include it here
-                DiscoveredMethod discoveredMethod = generateDiscoveredMethod(m, clazz, propertyDescriptor);
-                mapDiscoveredMethods.put(discoveredMethod.getName(), discoveredMethod);
+            Optional<PropertyDescriptor> optionalPdReadMethod = Arrays
+                    .stream(Introspector.getBeanInfo(clazz).getPropertyDescriptors())
+                    .filter(p -> p.getReadMethod() != null && p.getReadMethod().getName().equals(m.getName())).findFirst();
+
+            if (optionalPdReadMethod.isPresent()) {
+                PropertyDescriptor propertyDescriptor = optionalPdReadMethod.get();
+                boolean ignoreWriteMethod = isInputType && shouldIgnoreMethod(propertyDescriptor.getWriteMethod(), true);
+
+                // only include if the field should not be ignored or 
+                if (!shouldIgnoreField(clazz, propertyDescriptor.getName()) && !ignoreWriteMethod) {
+                    // this is a getter method, include it here
+                    DiscoveredMethod discoveredMethod = generateDiscoveredMethod(m, clazz, propertyDescriptor);
+                    mapDiscoveredMethods.put(discoveredMethod.getName(), discoveredMethod);
+                }
             }
         }
         return mapDiscoveredMethods;
