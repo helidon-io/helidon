@@ -53,6 +53,7 @@ import org.eclipse.microprofile.graphql.Type;
 
 import static io.helidon.microprofile.graphql.server.ElementGenerator.OPEN_SQUARE;
 import static io.helidon.microprofile.graphql.server.SchemaGenerator.GET;
+import static io.helidon.microprofile.graphql.server.SchemaGenerator.IS;
 import static io.helidon.microprofile.graphql.server.SchemaGenerator.SET;
 
 /**
@@ -419,8 +420,9 @@ public final class SchemaGeneratorHelper {
 
     /**
      * Return the default description based upon the format and description.
-     * @param format        format
-     * @param description   description
+     *
+     * @param format      format
+     * @param description description
      * @return the default description
      */
     protected static String getDefaultDescription(String[] format, String description) {
@@ -433,6 +435,39 @@ public final class SchemaGeneratorHelper {
         return description == null
                 ? fmt : fmt == null
                 ? description : description + " (" + fmt.trim() + ")";
+    }
+
+    /**
+     * Return the type method name taking into account the is/set/get prefix.
+     *
+     * @param method {@link Method} to check
+     * @return the method name
+     */
+    protected static String stripMethodName(Method method) {
+        String name = method.getName();
+        String varName;
+        if (name.startsWith(IS) || name.startsWith(GET) || name.startsWith(SET)) {
+            String prefix;
+            if (name.startsWith(IS)) {
+                prefix = IS;
+            } else if (name.startsWith(GET)) {
+                prefix = GET;
+            } else if (name.startsWith(SET)) {
+                prefix = SET;
+            } else {
+                prefix = "";
+            }
+
+            // remove the prefix and make first letter lowercase
+            varName = name.replaceAll(prefix, "");
+            varName = varName.substring(0, 1).toLowerCase() + varName.substring(1);
+        } else {
+            // may be any method, e.g. from GraphQLApi annotated class
+            varName = name;
+        }
+
+        return varName;
+
     }
 
     /**

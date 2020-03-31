@@ -63,7 +63,7 @@ public class SimpleQueriesWithSource {
 
     // the following should add a "currentJob" field on the SimpleContact type and a top level query as well
     @Query
-    public String currentJob(@Source @Name("contact") SimpleContact contact) {
+    public String getCurrentJob(@Source @Name("contact") SimpleContact contact) {
         return "Manager " + contact.getId();
     }
 

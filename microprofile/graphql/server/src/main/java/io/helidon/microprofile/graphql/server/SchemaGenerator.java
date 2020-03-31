@@ -79,6 +79,7 @@ import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.isGra
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.isValidIDType;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.shouldIgnoreField;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.shouldIgnoreMethod;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.stripMethodName;
 
 /**
  * Various utilities for generating {@link Schema}s from classes.
@@ -88,7 +89,7 @@ public class SchemaGenerator {
     /**
      * Constant "is".
      */
-    private static final String IS = "is";
+    protected static final String IS = "is";
 
     /**
      * Constant "get".
@@ -463,11 +464,11 @@ public class SchemaGenerator {
                     dataFetcher = DataFetcherFactories.wrapDataFetcher(
                             DataFetcherUtils.newMethodDataFetcher(clazz, method, null,
                                                                   fd.getArguments().toArray(new SchemaArgument[0])),
-                                           (d, v) -> {
-                                               NumberFormat numberFormat = getCorrectFormat(
-                                                       graphQLType, format[1], format[0]);
-                                               return v != null ? numberFormat.format(v) : null;
-                                           });
+                            (d, v) -> {
+                                NumberFormat numberFormat = getCorrectFormat(
+                                        graphQLType, format[1], format[0]);
+                                return v != null ? numberFormat.format(v) : null;
+                            });
                     fd.setReturnType(STRING);
                 } else {
                     // no formatting, just call the method
@@ -733,7 +734,8 @@ public class SchemaGenerator {
                 // only include if the field should not be ignored
                 if (!shouldIgnoreField(clazz, propertyDescriptor.getName()) && !ignoreWriteMethod) {
                     // this is a getter method, include it here
-                    DiscoveredMethod discoveredMethod = generateDiscoveredMethod(m, clazz, propertyDescriptor, isInputType, false);
+                    DiscoveredMethod discoveredMethod = generateDiscoveredMethod(m, clazz, propertyDescriptor, isInputType,
+                                                                                 false);
                     mapDiscoveredMethods.put(discoveredMethod.getName(), discoveredMethod);
                 }
             }
@@ -772,30 +774,21 @@ public class SchemaGenerator {
                                                              boolean isInputType,
                                                              boolean isQueryOrMutation) {
 
-        String name = method.getName();
-        String varName;
         String[] numberFormat = new String[0];
         String description = null;
+        String varName;
 
-        if (!isQueryOrMutation && (name.startsWith(IS) || name.startsWith(GET) || name.startsWith(SET))) {
-            // this is a getter method
-            String prefix = null;
-            if (name.startsWith(IS)) {
-                prefix = IS;
-            } else if (name.startsWith(GET)) {
-                prefix = GET;
-            } else if (name.startsWith(SET)) {
-                prefix = SET;
-            } else {
-                prefix = "";
+        // retrieve the method name
+        if (isQueryOrMutation) {
+            // if this method is for a query or mutation and there is no getter or setter
+            if (pd != null) {
+                varName = stripMethodName(method);
             }
-
-            // remove the prefix and make first letter lowercase
-            varName = name.replaceAll(prefix, "");
-            varName = varName.substring(0, 1).toLowerCase() + varName.substring(1);
+            else {
+                varName = method.getName();
+            }
         } else {
-            // may be any method, e.g. from GraphQLApi annotated class
-            varName = name;
+            varName = stripMethodName(method);
         }
 
         // check for either Name or JsonbProperty annotations on method or field
@@ -907,6 +900,8 @@ public class SchemaGenerator {
 
                 Source sourceAnnotation = parameter.getAnnotation(Source.class);
                 if (sourceAnnotation != null) {
+                    // set the method name to the correct property name as it will be currently be incorrect
+                    discoveredMethod.setName(annotatedName != null ? annotatedName : stripMethodName(method));
                     discoveredMethod.setSource(returnType.getReturnClass());
                     discoveredMethod.setQueryAnnotated(method.getAnnotation(Query.class) != null);
                     argument.setSourceArgument(true);

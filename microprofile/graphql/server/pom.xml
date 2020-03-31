@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!--
+<?xml version="1.0" encoding="UTF-8"?><!--
   ~ Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
@@ -129,6 +128,12 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <configuration>
+                    <properties>
+                        <property>
+                            <name>listener</name>
+                            <value>org.sonar.java.jacoco.JUnitListener</value>
+                        </property>
+                    </properties>
                     <reuseForks>false</reuseForks>
                     <includes>
                         <include>**/*IT.java</include>
