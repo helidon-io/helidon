@@ -67,6 +67,11 @@
             <artifactId>hibernate-core</artifactId>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <!-- As we exclude javax from hibernate, we need to add jakarta -->
+            <groupId>jakarta.persistence</groupId>
+            <artifactId>jakarta.persistence-api</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
