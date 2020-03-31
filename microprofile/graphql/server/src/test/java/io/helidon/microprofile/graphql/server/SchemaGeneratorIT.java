@@ -32,6 +32,7 @@ import javax.enterprise.inject.se.SeContainerInitializer;
 
 import graphql.ExecutionResult;
 
+import graphql.language.FieldDefinition;
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithNameAnnotation;
 import io.helidon.microprofile.graphql.server.test.mutations.SimpleMutations;
@@ -43,6 +44,7 @@ import io.helidon.microprofile.graphql.server.test.queries.InvalidQueries;
 import io.helidon.microprofile.graphql.server.test.queries.NumberFormatQueriesAndMutations;
 import io.helidon.microprofile.graphql.server.test.queries.OddNamedQueriesAndMutations;
 import io.helidon.microprofile.graphql.server.test.queries.QueriesWithIgnorable;
+import io.helidon.microprofile.graphql.server.test.queries.QueriesWithNulls;
 import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesNoArgs;
 import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesWithArgs;
 import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesWithSource;
@@ -56,6 +58,7 @@ import io.helidon.microprofile.graphql.server.test.types.DescriptionType;
 import io.helidon.microprofile.graphql.server.test.types.Level0;
 import io.helidon.microprofile.graphql.server.test.types.Motorbike;
 import io.helidon.microprofile.graphql.server.test.types.MultiLevelListsAndArrays;
+import io.helidon.microprofile.graphql.server.test.types.NullPOJO;
 import io.helidon.microprofile.graphql.server.test.types.ObjectWithIgnorableFieldsAndMethods;
 import io.helidon.microprofile.graphql.server.test.types.Person;
 import io.helidon.microprofile.graphql.server.test.types.PersonWithName;
@@ -316,6 +319,19 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
         result = executionContext.execute("query { dateAndTimePOJOQuery { localDateTime } }");
         mapResults = getAndAssertResult(result);
         assertThat(mapResults.size(), is(1));
+    }
+
+    @Test
+    public void testNulls() throws IOException {
+        setupIndex(indexFileName, NullPOJO.class, QueriesWithNulls.class);
+        ExecutionContext<DummyContext> executionContext = new ExecutionContext<>(dummyContext);
+        Schema schema = executionContext.getSchema();
+        assertThat(schema, is(notNullValue()));
+
+        // test primitives should be not null be default
+        assertMandatory(schema, "NullPOJO", "id", true);
+        assertMandatory(schema, "NullPOJO", "longValue", false);
+        assertMandatory(schema, "NullPOJO", "stringValue", true);
     }
 
     @Test
@@ -775,4 +791,23 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
         assertThat(schema.getTypeByName("Mutation"), is(notNullValue()));
         generateGraphQLSchema(schema);
     }
+
+    private void assertMandatory(Schema schema, String typeName, String fdName, boolean mandatory) {
+        SchemaType type = schema.getTypeByName(typeName);
+        assertThat(type, is(notNullValue()));
+        SchemaFieldDefinition fd = getFieldDefinition(type, fdName);
+        assertThat(fd, is(notNullValue()));
+        assertThat("Return type for " + fdName + " should be " + mandatory +
+                           " but is " + fd.isReturnTypeMandatory(), fd.isReturnTypeMandatory(), is(mandatory));
+    }
+
+    private SchemaFieldDefinition getFieldDefinition(SchemaType type, String name) {
+        for (SchemaFieldDefinition fd : type.getFieldDefinitions()) {
+            if (fd.getName().equals(name)) {
+                return fd;
+            }
+        }
+        return null;
+    }
+
 }

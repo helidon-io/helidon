@@ -48,6 +48,7 @@ import org.eclipse.microprofile.graphql.Input;
 import org.eclipse.microprofile.graphql.Interface;
 import org.eclipse.microprofile.graphql.Mutation;
 import org.eclipse.microprofile.graphql.Name;
+import org.eclipse.microprofile.graphql.NonNull;
 import org.eclipse.microprofile.graphql.Query;
 import org.eclipse.microprofile.graphql.Type;
 
@@ -152,6 +153,20 @@ public final class SchemaGeneratorHelper {
     }};
 
     /**
+     * List of all Java primitives.
+     */
+    static final List<String> JAVA_PRIMITIVE_TYPES = new ArrayList<>() {{
+        add("byte");
+        add("short");
+        add("int");
+        add("long");
+        add("float");
+        add("double");
+        add("boolean");
+        add("char");
+    }};
+
+    /**
      * Defines a {@link BigDecimal} type.
      */
     static final String BIG_DECIMAL = "BigDecimal";
@@ -227,6 +242,28 @@ public final class SchemaGeneratorHelper {
     protected static String getSimpleName(String className)
             throws ClassNotFoundException {
         return getSimpleName(className, false);
+    }
+
+    /**
+     * Return true of the {@link Class} is a primitive or array of primitives.
+     *
+     * @param clazz {@link Class} to check
+     * @return true of the {@link Class} is a primitive or array of primitives.
+     */
+    protected static boolean isPrimitive(Class<?> clazz) {
+        return isPrimitive(clazz.getName());
+
+    }
+
+    /**
+     * Return true of the class name is a primitive or array of primitives.
+     *
+     * @param clazz class name to check
+     * @return true of the class name is a primitive or array of primitives.
+     */
+    protected static boolean isPrimitive(String clazz) {
+        return JAVA_PRIMITIVE_TYPES.contains(clazz) ||
+                PRIMITIVE_ARRAY_MAP.values().stream().filter(v -> v.contains(clazz)).count() > 0L;
     }
 
     /**
@@ -588,6 +625,7 @@ public final class SchemaGeneratorHelper {
      */
     protected static RootTypeResult getRootTypeName(java.lang.reflect.Type genericReturnType, int index) {
         int level = 1;
+        boolean isReturnTypeMandatory;
         if (genericReturnType instanceof ParameterizedType) {
             ParameterizedType paramReturnType = (ParameterizedType) genericReturnType;
             // loop until we get the actual return type in the case we have List<List<Type>>
@@ -597,9 +635,15 @@ public final class SchemaGeneratorHelper {
                 ParameterizedType parameterizedType2 = (ParameterizedType) actualTypeArgument;
                 actualTypeArgument = parameterizedType2.getActualTypeArguments()[index];
             }
-            return new RootTypeResult(((Class<?>) actualTypeArgument).getName(), level);
+            Class<?> clazz = actualTypeArgument.getClass();
+            isReturnTypeMandatory = clazz.getAnnotation(NonNull.class) != null
+                    || isPrimitive(clazz.getName());
+            return new RootTypeResult(((Class<?>) actualTypeArgument).getName(), level, isReturnTypeMandatory);
         } else {
-            return new RootTypeResult(((Class<?>) genericReturnType).getName(), level);
+            Class<?> clazz = genericReturnType.getClass();
+            isReturnTypeMandatory = clazz.getAnnotation(NonNull.class) != null
+                    || isPrimitive(clazz.getName());
+            return new RootTypeResult(((Class<?>) genericReturnType).getName(), level, isReturnTypeMandatory);
         }
     }
 
@@ -681,14 +725,20 @@ public final class SchemaGeneratorHelper {
         private final int levels;
 
         /**
+         * Indicates if the return type is mandatory.
+         */
+        private boolean isReturnTypeMandatory;
+
+        /**
          * Construct a root type result.
          *
          * @param rootTypeName root type of the {@link Collection} or {@link Map}
          * @param levels       number of levels in total
          */
-        public RootTypeResult(String rootTypeName, int levels) {
+        public RootTypeResult(String rootTypeName, int levels, boolean isReturnTypeMandatory) {
             this.rootTypeName = rootTypeName;
             this.levels = levels;
+            this.isReturnTypeMandatory = isReturnTypeMandatory;
         }
 
         /**
@@ -707,6 +757,24 @@ public final class SchemaGeneratorHelper {
          */
         public int getLevels() {
             return levels;
+        }
+
+        /**
+         * Indicates if the return type is mandatory.
+         *
+         * @return if the return type is mandatory
+         */
+        public boolean isReturnTypeMandatory() {
+            return isReturnTypeMandatory;
+        }
+
+        /**
+         * Set if the return type is mandatory.
+         *
+         * @param returnTypeMandatory if the return type is mandatory
+         */
+        public void setReturnTypeMandatory(boolean returnTypeMandatory) {
+            isReturnTypeMandatory = returnTypeMandatory;
         }
     }
 }
