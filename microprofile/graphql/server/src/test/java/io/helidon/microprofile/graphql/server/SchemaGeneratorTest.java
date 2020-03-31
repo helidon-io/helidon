@@ -63,9 +63,11 @@ import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.DEFAU
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.FLOAT;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.INT;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.getFormatAnnotation;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getDefaultDescription;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getRootTypeName;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
@@ -261,6 +263,14 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
         assertDiscoveredMethod(mapMethods.get("getMultiLevelList"), "getMultiLevelList", MultiLevelListsAndArrays.class.getName(),
                                null,
                                false, false, false);
+    }
+
+    @Test
+    public void testDefaultDescription() {
+        assertThat(getDefaultDescription(null, null), is(nullValue()));
+        assertThat(getDefaultDescription(new String[] {"format","locale"} , null), is("format locale"));
+        assertThat(getDefaultDescription(null, "desc"), is("desc"));
+        assertThat(getDefaultDescription(new String[] {"format","locale"}, "desc"), is("desc (format locale)"));
     }
 
     @Test

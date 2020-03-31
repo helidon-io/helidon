@@ -30,6 +30,7 @@ import java.util.UUID;
 import javax.enterprise.context.ApplicationScoped;
 
 import io.helidon.microprofile.graphql.server.test.types.Address;
+import io.helidon.microprofile.graphql.server.test.types.DefaultValuePOJO;
 import io.helidon.microprofile.graphql.server.test.types.MultiLevelListsAndArrays;
 import io.helidon.microprofile.graphql.server.test.types.Person;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
@@ -174,5 +175,9 @@ public class TestDB {
     public Address generateWorkAddress() {
         return new Address("8 Yawkey Way", null, getRandomName(),
                            getRandomState(), getRandomZip(), "US");
+    }
+
+    public DefaultValuePOJO generatePOJO(String id, int value) {
+        return new DefaultValuePOJO(id, value);
     }
 }

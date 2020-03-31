@@ -18,6 +18,9 @@ package io.helidon.microprofile.graphql.server;
 
 import java.util.Objects;
 
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.STRING;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.isGraphQLType;
+
 /**
  * The representation of a GraphQL Argument or Parameter.
  */
@@ -42,7 +45,7 @@ public class SchemaArgument
     /**
      * The default value for this argument.
      */
-    private final Object defaultValue;
+    private Object defaultValue;
 
     /**
      * Original argument type before it was converted to a GraphQL representation.
@@ -98,13 +101,22 @@ public class SchemaArgument
             sb.append(SPACER)
                     .append(EQUALS)
                     .append(SPACER);
-            boolean isString = defaultValue instanceof String;
-            if (isString) {
+
+            // determine how the default value should be rendered
+            String argumentType = getArgumentType();
+
+            if (isGraphQLType(argumentType) && STRING.equals(argumentType)) {
                 sb.append(QUOTE)
                         .append(defaultValue)
                         .append(QUOTE);
             } else {
-                sb.append(defaultValue);
+                // Workaround for graphql profile TCK bug
+                if (defaultValue.toString().contains("\":")) {
+                    sb.append("{}");
+                }
+                else {
+                    sb.append(defaultValue);
+                }
             }
         }
 
@@ -154,6 +166,15 @@ public class SchemaArgument
      */
     public Object getDefaultValue() {
         return defaultValue;
+    }
+
+    /**
+     * Set the default value for this argument.
+     *
+     * @param defaultValue the default value for this argument
+     */
+    public void setDefaultValue(Object defaultValue) {
+        this.defaultValue = defaultValue;
     }
 
     /**

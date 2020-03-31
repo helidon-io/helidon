@@ -16,28 +16,21 @@
 
 package io.helidon.microprofile.graphql.server.test.types;
 
-import org.eclipse.microprofile.graphql.Description;
-import org.eclipse.microprofile.graphql.NumberFormat;
 import org.eclipse.microprofile.graphql.Type;
 
 /**
- * POJO to test descriptions.
+ * POJO to test default values.
  */
 @Type
-public class DescriptionType {
+public class DefaultValuePOJO {
 
-    @Description("this is the description")
     private String id;
     private int value;
 
-    @NumberFormat("L-########")
-    private Long longValue1;
+    public DefaultValuePOJO() {
+    }
 
-    @NumberFormat(value = "###,###", locale = "en-AU")
-    @Description("Description")
-    private Long longValue2;
-
-    public DescriptionType(String id, int value) {
+    public DefaultValuePOJO(String id, int value) {
         this.id = id;
         this.value = value;
     }
@@ -50,29 +43,11 @@ public class DescriptionType {
         this.id = id;
     }
 
-    @Description("description of value")
     public int getValue() {
         return value;
     }
 
-    @Description("description on set for input")
     public void setValue(int value) {
         this.value = value;
-    }
-
-    public Long getLongValue1() {
-        return longValue1;
-    }
-
-    public void setLongValue1(Long longValue1) {
-        this.longValue1 = longValue1;
-    }
-
-    public Long getLongValue2() {
-        return longValue2;
-    }
-
-    public void setLongValue2(Long longValue2) {
-        this.longValue2 = longValue2;
     }
 }

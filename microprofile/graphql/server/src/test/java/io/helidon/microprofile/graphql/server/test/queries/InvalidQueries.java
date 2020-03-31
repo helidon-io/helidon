@@ -16,39 +16,24 @@
 
 package io.helidon.microprofile.graphql.server.test.queries;
 
-
 import javax.enterprise.context.ApplicationScoped;
 
-import io.helidon.microprofile.graphql.server.test.types.SimpleContactWithNumberFormats;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Mutation;
-import org.eclipse.microprofile.graphql.Name;
-import org.eclipse.microprofile.graphql.NumberFormat;
 import org.eclipse.microprofile.graphql.Query;
 
 /**
- * Class that holds queries and mutations that have various formatting types.
+ * Class that holds queries that also have Mutation annotation.
  */
 @GraphQLApi
 @ApplicationScoped
-public class NumberFormatQueriesAndMutations {
+public class InvalidQueries {
 
-    public NumberFormatQueriesAndMutations() {
+    public InvalidQueries() {
     }
 
-    @Query("simpleFormattingQuery")
-    public SimpleContactWithNumberFormats retrieveFormattedObject() {
-        return new SimpleContactWithNumberFormats(1, "Tim", 50, 1200.0f, 10, Long.MAX_VALUE);
-    }
-
-    @Mutation("generateDoubleValue")
-    @NumberFormat("Double-###########")
-    public Double generateDouble() {
-        return 123456789d;
-    }
-
-    @Mutation("createSimpleContactWithNumberFormats")
-    public SimpleContactWithNumberFormats createContact(@Name("contact") SimpleContactWithNumberFormats contact) {
-        return contact;
+    @Query
+    @Mutation
+    public void badQuery() {
     }
 }

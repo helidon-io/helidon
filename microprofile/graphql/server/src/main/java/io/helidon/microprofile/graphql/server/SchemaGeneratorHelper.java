@@ -18,6 +18,7 @@ package io.helidon.microprofile.graphql.server;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.lang.reflect.ParameterizedType;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -38,6 +39,7 @@ import javax.json.bind.annotation.JsonbTransient;
 
 import graphql.Scalars;
 import graphql.scalars.ExtendedScalars;
+import org.eclipse.microprofile.graphql.DefaultValue;
 import org.eclipse.microprofile.graphql.Description;
 import org.eclipse.microprofile.graphql.Enum;
 import org.eclipse.microprofile.graphql.Id;
@@ -399,6 +401,38 @@ public final class SchemaGeneratorHelper {
             return nameAnnotation.value();
         }
         return null;
+    }
+
+    /**
+     * Return the {@link DefaultValue} annotation value if it exists or null.
+     *
+     * @param parameter {@link Parameter} to check
+     * @return the {@link DefaultValue} annotation value if it exists or null
+     */
+    protected static String getDefaultValueAnnotationValue(Parameter parameter) {
+        DefaultValue defaultValueAnnotation = parameter.getAnnotation(DefaultValue.class);
+        if (defaultValueAnnotation != null && !"".equals(defaultValueAnnotation.value())) {
+            return defaultValueAnnotation.value();
+        }
+        return null;
+    }
+
+    /**
+     * Return the default description based upon the format and description.
+     * @param format        format
+     * @param description   description
+     * @return the default description
+     */
+    protected static String getDefaultDescription(String[] format, String description) {
+        String fmt = format == null || format.length == 0
+                ? null : format[0] + " " + format[1];
+        if (description == null && fmt == null) {
+            return null;
+        }
+
+        return description == null
+                ? fmt : fmt == null
+                ? description : description + " (" + fmt.trim() + ")";
     }
 
     /**

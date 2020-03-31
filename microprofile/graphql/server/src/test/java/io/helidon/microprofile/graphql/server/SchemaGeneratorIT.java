@@ -38,8 +38,11 @@ import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithNameAnnotat
 import io.helidon.microprofile.graphql.server.test.mutations.SimpleMutations;
 import io.helidon.microprofile.graphql.server.test.mutations.VoidMutations;
 import io.helidon.microprofile.graphql.server.test.queries.ArrayAndListQueries;
+import io.helidon.microprofile.graphql.server.test.queries.DefaultValueQueries;
 import io.helidon.microprofile.graphql.server.test.queries.DescriptionQueries;
+import io.helidon.microprofile.graphql.server.test.queries.InvalidQueries;
 import io.helidon.microprofile.graphql.server.test.queries.NumberFormatQueriesAndMutations;
+import io.helidon.microprofile.graphql.server.test.queries.OddNamedQueriesAndMutations;
 import io.helidon.microprofile.graphql.server.test.queries.QueriesWithIgnorable;
 import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesNoArgs;
 import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesWithArgs;
@@ -49,6 +52,7 @@ import io.helidon.microprofile.graphql.server.test.types.AbstractVehicle;
 import io.helidon.microprofile.graphql.server.test.types.Car;
 import io.helidon.microprofile.graphql.server.test.types.ContactRelationship;
 import io.helidon.microprofile.graphql.server.test.types.DateTimePojo;
+import io.helidon.microprofile.graphql.server.test.types.DefaultValuePOJO;
 import io.helidon.microprofile.graphql.server.test.types.DescriptionType;
 import io.helidon.microprofile.graphql.server.test.types.Level0;
 import io.helidon.microprofile.graphql.server.test.types.Motorbike;
@@ -232,6 +236,12 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
     }
 
     @Test
+    public void testInvalidQueries() throws IOException {
+        setupIndex(indexFileName, InvalidQueries.class);
+        assertThrows(RuntimeException.class, () -> new ExecutionContext<>(dummyContext));
+    }
+
+    @Test
     public void testSimpleContactWithSelf() throws IOException {
         setupIndex(indexFileName, SimpleContactWithSelf.class);
         ExecutionContext<DummyContext> executionContext = new ExecutionContext<>(dummyContext);
@@ -334,13 +344,12 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
         assertThat(mapResults2, is(notNullValue()));
         assertThat(mapResults2.get("id"), is(notNullValue()));
         assertThat(mapResults2.get("name"), is("tim"));
-        ;
         assertThat(mapResults2.get("age"), is(notNullValue()));
 
-        result = executionContext.execute("mutation { echoStringValue(value: \"echo\") }");
+        result = executionContext.execute("mutation { setEchoStringValue(value: \"echo\") }");
         mapResults = getAndAssertResult(result);
         assertThat(mapResults.size(), is(1));
-        assertThat(mapResults.get("echoStringValue"), is("echo"));
+        assertThat(mapResults.get("setEchoStringValue"), is("echo"));
     }
 
     @Test
@@ -448,6 +457,14 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
             if (fd.getName().equals("value")) {
                 assertThat(fd.getDescription(), is("description of value"));
             }
+            if (fd.getName().equals("longValue1")) {
+                // no description so include the format
+                assertThat(fd.getDescription(), is("L-######## ##default"));
+            }
+            if (fd.getName().equals("longValue2")) {
+                // both description and formatting
+                assertThat(fd.getDescription(), is("Description (###,### en-AU)"));
+            }
         });
 
         SchemaInputType inputType = schema.getInputTypeByName("DescriptionTypeInput");
@@ -457,6 +474,61 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
                 assertThat(fd.getDescription(), is("description on set for input"));
             }
         });
+    }
+
+    @Test
+    public void testDefaultValues() throws IOException {
+        setupIndex(indexFileName, DefaultValuePOJO.class, DefaultValueQueries.class);
+        ExecutionContext<DummyContext> executionContext = new ExecutionContext<>(dummyContext);
+
+        // test with both fields as default
+        ExecutionResult result = executionContext.execute("mutation { generateDefaultValuePOJO { id value } }");
+        Map<String, Object> mapResults = getAndAssertResult(result);
+        assertThat(mapResults.size(), is(1));
+        Map<String, Object> results = (Map<String, Object>) mapResults.get("generateDefaultValuePOJO");
+        assertThat(results, is(notNullValue()));
+        assertThat(results.get("id"), is("ID-1"));
+        assertThat(results.get("value"), is(1000));
+
+        // test with a field overridden
+        result = executionContext.execute("mutation { generateDefaultValuePOJO(id: \"ID-123\") { id value } }");
+        mapResults = getAndAssertResult(result);
+        assertThat(mapResults.size(), is(1));
+        results = (Map<String, Object>) mapResults.get("generateDefaultValuePOJO");
+        assertThat(results, is(notNullValue()));
+        assertThat(results.get("id"), is("ID-123"));
+        assertThat(results.get("value"), is(1000));
+
+        result = executionContext.execute("query { echoDefaultValuePOJO { id value } }");
+        mapResults = getAndAssertResult(result);
+        assertThat(mapResults.size(), is(1));
+        results = (Map<String, Object>) mapResults.get("echoDefaultValuePOJO");
+        assertThat(results, is(notNullValue()));
+        assertThat(results.get("id"), is("ID-1"));
+        assertThat(results.get("value"), is(1000));
+
+        result = executionContext.execute("query { echoDefaultValuePOJO(input: {id: \"X123\" value: 1}) { id value } }");
+        mapResults = getAndAssertResult(result);
+        assertThat(mapResults.size(), is(1));
+        results = (Map<String, Object>) mapResults.get("echoDefaultValuePOJO");
+        assertThat(results, is(notNullValue()));
+        assertThat(results.get("id"), is("X123"));
+        assertThat(results.get("value"), is(1));
+    }
+
+    @Test
+    public void setOddNamedQueriesAndMutations() throws IOException {
+        setupIndex(indexFileName, DefaultValuePOJO.class, OddNamedQueriesAndMutations.class);
+        ExecutionContext<DummyContext> executionContext = new ExecutionContext<>(dummyContext);
+
+        Schema schema = executionContext.getSchema();
+        assertThat(schema, is(notNullValue()));
+        SchemaType query = schema.getTypeByName("Query");
+        SchemaType mutation = schema.getTypeByName("Mutation");
+        assertThat(query, is(notNullValue()));
+        assertThat(query.getFieldDefinitions().stream().filter(fd -> fd.getName().equals("settlement")).count(), is(1L));
+        assertThat(mutation.getFieldDefinitions().stream().filter(fd -> fd.getName().equals("getaway")).count(), is(1L));
+
     }
 
     @Test

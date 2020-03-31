@@ -42,7 +42,6 @@ import java.util.stream.Stream;
 
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetcherFactories;
-import org.eclipse.microprofile.graphql.DefaultValue;
 import org.eclipse.microprofile.graphql.Description;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Id;
@@ -62,6 +61,8 @@ import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ID;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.STRING;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.checkScalars;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getArrayLevels;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getDefaultDescription;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getDefaultValueAnnotationValue;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getDescription;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getFieldName;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getGraphQLType;
@@ -459,15 +460,14 @@ public class SchemaGenerator {
                 if (format.length == 2) {
                     // a format exists on the method return type so format it after returning the value
                     final String graphQLType = getGraphQLType(fd.getReturnType());
-                    dataFetcher = DataFetcherFactories.wrapDataFetcher(DataFetcherUtils
-                                                                               .newMethodDataFetcher(clazz, method, null,
-                                                                                                     fd.getArguments().toArray(
-                                                                                                             new SchemaArgument[0])),
-                                                                       (d, v) -> {
-                                                                           NumberFormat numberFormat = getCorrectFormat(
-                                                                                   graphQLType, format[1], format[0]);
-                                                                           return v != null ? numberFormat.format(v) : null;
-                                                                       });
+                    dataFetcher = DataFetcherFactories.wrapDataFetcher(
+                            DataFetcherUtils.newMethodDataFetcher(clazz, method, null,
+                                                                  fd.getArguments().toArray(new SchemaArgument[0])),
+                                           (d, v) -> {
+                                               NumberFormat numberFormat = getCorrectFormat(
+                                                       graphQLType, format[1], format[0]);
+                                               return v != null ? numberFormat.format(v) : null;
+                                           });
                     fd.setReturnType(STRING);
                 } else {
                     // no formatting, just call the method
@@ -696,7 +696,7 @@ public class SchemaGenerator {
             }
             if (isQuery || isMutation || hasSourceAnnotation) {
                 LOGGER.info("Processing Query or Mutation " + m.getName());
-                DiscoveredMethod discoveredMethod = generateDiscoveredMethod(m, clazz, null, false);
+                DiscoveredMethod discoveredMethod = generateDiscoveredMethod(m, clazz, null, false, true);
                 discoveredMethod.setMethodType(isQuery || hasSourceAnnotation ? QUERY_TYPE : MUTATION_TYPE);
                 mapDiscoveredMethods.put(discoveredMethod.getName(), discoveredMethod);
             }
@@ -730,10 +730,10 @@ public class SchemaGenerator {
                 PropertyDescriptor propertyDescriptor = optionalPdReadMethod.get();
                 boolean ignoreWriteMethod = isInputType && shouldIgnoreMethod(propertyDescriptor.getWriteMethod(), true);
 
-                // only include if the field should not be ignored 
+                // only include if the field should not be ignored
                 if (!shouldIgnoreField(clazz, propertyDescriptor.getName()) && !ignoreWriteMethod) {
                     // this is a getter method, include it here
-                    DiscoveredMethod discoveredMethod = generateDiscoveredMethod(m, clazz, propertyDescriptor, isInputType);
+                    DiscoveredMethod discoveredMethod = generateDiscoveredMethod(m, clazz, propertyDescriptor, isInputType, false);
                     mapDiscoveredMethods.put(discoveredMethod.getName(), discoveredMethod);
                 }
             }
@@ -758,24 +758,26 @@ public class SchemaGenerator {
     /**
      * Generate a {@link DiscoveredMethod} from the given arguments.
      *
-     * @param method      {@link Method} being introspected
-     * @param clazz       {@link Class} being introspected
-     * @param pd          {@link PropertyDescriptor} for the property being introspected (may be null if retrieving all methods as
-     *                    in the case for a {@link Query} annotation)
-     * @param isInputType indicates if the method is part of an input type
+     * @param method            {@link Method} being introspected
+     * @param clazz             {@link Class} being introspected
+     * @param pd                {@link PropertyDescriptor} for the property being introspected (may be null if retrieving all
+     *                          methods as in the case for a {@link Query} annotation)
+     * @param isInputType       indicates if the method is part of an input type
+     * @param isQueryOrMutation indicates if this is for a query or mutation
      * @return a {@link DiscoveredMethod}
      */
     private static DiscoveredMethod generateDiscoveredMethod(Method method,
                                                              Class<?> clazz,
                                                              PropertyDescriptor pd,
-                                                             boolean isInputType) {
+                                                             boolean isInputType,
+                                                             boolean isQueryOrMutation) {
 
         String name = method.getName();
         String varName;
         String[] numberFormat = new String[0];
         String description = null;
 
-        if (name.startsWith(IS) || name.startsWith(GET) || name.startsWith(SET)) {
+        if (!isQueryOrMutation && (name.startsWith(IS) || name.startsWith(GET) || name.startsWith(SET))) {
             // this is a getter method
             String prefix = null;
             if (name.startsWith(IS)) {
@@ -850,7 +852,6 @@ public class SchemaGenerator {
             if (field != null) {
                 numberFormat = getFormatAnnotation(field);
             }
-
         }
 
         // check for method return type number format
@@ -872,7 +873,7 @@ public class SchemaGenerator {
         if (description == null && !isInputType) {
             description = getDescription(method.getAnnotation(Description.class));
         }
-        discoveredMethod.setDescription(description);
+        discoveredMethod.setDescription(getDefaultDescription(numberFormat, description));
 
         Parameter[] parameters = method.getParameters();
         if (parameters != null && parameters.length > 0) {
@@ -886,7 +887,7 @@ public class SchemaGenerator {
                         && !paramNameAnnotation.value().isBlank()
                         ? paramNameAnnotation.value()
                         : parameter.getName();
-                DefaultValue defaultValueAnnotations = parameter.getAnnotation(DefaultValue.class);
+
                 Class<?> paramType = parameter.getType();
 
                 ReturnType returnType = getReturnType(paramType, genericParameterTypes[i++]);
@@ -897,9 +898,12 @@ public class SchemaGenerator {
                     returnType.setReturnClass(ID);
                 }
 
-                SchemaArgument argument = new SchemaArgument(parameterName, returnType.getReturnClass(), false, null, paramType);
-                argument.setFormat(getFormatAnnotation(parameter));
-                argument.setDescription(getDescription(parameter.getAnnotation(Description.class)));
+                SchemaArgument argument = new SchemaArgument(parameterName, returnType.getReturnClass(), false,
+                                                             getDefaultValueAnnotationValue(parameter), paramType);
+                String[] argumentFormat = getFormatAnnotation(parameter);
+                String argumentDescription = getDescription(parameter.getAnnotation(Description.class));
+                argument.setFormat(argumentFormat);
+                argument.setDescription(getDefaultDescription(argumentFormat, argumentDescription));
 
                 Source sourceAnnotation = parameter.getAnnotation(Source.class);
                 if (sourceAnnotation != null) {
