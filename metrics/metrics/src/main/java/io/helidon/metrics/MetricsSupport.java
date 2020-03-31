@@ -473,7 +473,7 @@ public final class MetricsSupport implements Service {
                 .ifPresentOrElse(entry -> {
                     if (req.headers().isAccepted(MediaType.APPLICATION_JSON)) {
                         JsonObjectBuilder builder = JSON.createObjectBuilder();
-                        entry.getKey().jsonMeta(builder, entry.getValue());
+                        HelidonMetric.class.cast(entry.getKey()).jsonMeta(builder, entry.getValue());
                         res.send(builder.build());
                     } else {
                         res.status(Http.Status.NOT_ACCEPTABLE_406);
