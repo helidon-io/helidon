@@ -256,14 +256,14 @@ public interface Single<T> extends Subscribable<T> {
     }
 
     /**
-     * Map this {@link Single} instance to a new {@link Single} of another type using the given {@link Mapper}.
+     * Map this {@link Single} instance to a new {@link Single} of another type using the given {@link Function}.
      *
      * @param <U>    mapped item type
      * @param mapper mapper
      * @return Single
      * @throws NullPointerException if mapper is {@code null}
      */
-    default <U> Single<U> map(Mapper<? super T, ? extends U> mapper) {
+    default <U> Single<U> map(Function<? super T, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         return new SingleMapperPublisher<>(this, mapper);
     }

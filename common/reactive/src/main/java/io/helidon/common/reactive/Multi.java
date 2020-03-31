@@ -36,8 +36,6 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import io.helidon.common.mapper.Mapper;
-
 /**
  * Represents a {@link Flow.Publisher} emitting zero or more items, optionally followed by
  * an error or completion.
@@ -518,14 +516,14 @@ public interface Multi<T> extends Subscribable<T> {
     }
 
     /**
-     * Map this {@link Multi} instance to a new {@link Multi} of another type using the given {@link Mapper}.
+     * Map this {@link Multi} instance to a new {@link Multi} of another type using the given {@link Function}.
      *
      * @param <U>    mapped item type
      * @param mapper mapper
      * @return Multi
      * @throws NullPointerException if mapper is {@code null}
      */
-    default <U> Multi<U> map(Mapper<? super T, ? extends U> mapper) {
+    default <U> Multi<U> map(Function<? super T, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         return new MultiMapperPublisher<>(this, mapper);
     }

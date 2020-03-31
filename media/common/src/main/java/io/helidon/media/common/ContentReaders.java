@@ -63,7 +63,7 @@ public final class ContentReaders {
      * @return Single
      */
     public static Single<String> readString(Publisher<DataChunk> chunks, Charset charset) {
-        return readBytes(chunks).map(new BytesToString(charset));
+        return readBytes(chunks).map(new BytesToString(charset)::map);
     }
 
     /**
@@ -75,7 +75,7 @@ public final class ContentReaders {
      */
     public static Single<String> readURLEncodedString(Publisher<DataChunk> chunks,
             Charset charset) {
-        return readString(chunks, charset).map(new StringToDecodedString(charset));
+        return readString(chunks, charset).map(new StringToDecodedString(charset)::map);
     }
 
     /**
