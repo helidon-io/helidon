@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,17 +29,23 @@ import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.Timer;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.number.OrderingComparison.greaterThan;
+import static org.hamcrest.number.OrderingComparison.lessThan;
 
 /**
  * Class MetricsTest.
  */
 public class MetricsTest extends MetricsBaseTest {
+
+    private static final int PERF_TEST_COUNT = Integer.getInteger("helidon.test.metrics.perf-test-count", 10000);
+    private static final long PERF_TEST_FAILURE_THRESHOLD_NS = Integer.getInteger(
+            "helidon.test.metrics.perf-test-failure-threshold-ns", 150 * 1000 * 1000); // roughly double informal expc
 
     @Test
     public void testCounted1() {
@@ -55,6 +61,22 @@ public class MetricsTest extends MetricsBaseTest {
         IntStream.range(0, 10).forEach(i -> bean.method2());
         Counter counter = getMetric(bean, "method1");
         assertThat(counter.getCount(), is(10L));
+    }
+
+    @Test
+    @DisabledIfEnvironmentVariable(named = "WERCKER", matches = "true") // do not run in pipeline in case of slowness issues
+    public void testCounted2Perf() {
+        /*
+         * Informal experience shows that, without the performance fix in InterceptorBase, this test measures more than
+         *  to perform 10000 intercepted calls to the bean. With the fix, the time is around .06-.08 seconds.
+         */
+        CountedBean bean = newBean(CountedBean.class);
+        long start = System.nanoTime();
+        IntStream.range(0, PERF_TEST_COUNT).forEach(i -> bean.method2());
+        long end = System.nanoTime();
+        Counter counter = getMetric(bean, "method2");
+        assertThat(counter.getCount(), is((long) PERF_TEST_COUNT));
+        assertThat(end - start, is(lessThan(PERF_TEST_FAILURE_THRESHOLD_NS)));
     }
 
     @Test
