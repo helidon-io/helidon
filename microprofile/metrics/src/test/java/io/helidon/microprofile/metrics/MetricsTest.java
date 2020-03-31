@@ -29,7 +29,7 @@ import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.Timer;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
+import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -43,9 +43,10 @@ import static org.hamcrest.number.OrderingComparison.lessThan;
  */
 public class MetricsTest extends MetricsBaseTest {
 
-    private static final int PERF_TEST_COUNT = Integer.getInteger("helidon.test.metrics.perf-test-count", 10000);
+    private static final String PERF_TEST_PROP_PREFIX = "helidon.microprofile.metrics.perfTest.";
+    private static final int PERF_TEST_COUNT = Integer.getInteger(PERF_TEST_PROP_PREFIX + "count", 10000);
     private static final long PERF_TEST_FAILURE_THRESHOLD_NS = Integer.getInteger(
-            "helidon.test.metrics.perf-test-failure-threshold-ns", 150 * 1000 * 1000); // roughly double informal expc
+            PERF_TEST_PROP_PREFIX + ".failureThresholdNS", 150 * 1000 * 1000); // roughly double informal expc
 
     @Test
     public void testCounted1() {
@@ -64,10 +65,10 @@ public class MetricsTest extends MetricsBaseTest {
     }
 
     @Test
-    @DisabledIfEnvironmentVariable(named = "WERCKER", matches = "true") // do not run in pipeline in case of slowness issues
+    @DisabledIfSystemProperty(named = PERF_TEST_PROP_PREFIX + "enabled", matches = "false")
     public void testCounted2Perf() {
         /*
-         * Informal experience shows that, without the performance fix in InterceptorBase, this test measures more than
+         * Informal experience shows that, without the performance fix in InterceptorBase, this test measures more than 1 s
          *  to perform 10000 intercepted calls to the bean. With the fix, the time is around .06-.08 seconds.
          */
         CountedBean bean = newBean(CountedBean.class);
