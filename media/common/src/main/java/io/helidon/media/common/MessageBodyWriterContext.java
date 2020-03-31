@@ -260,7 +260,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
                 return applyFilters(Multi.<DataChunk>empty());
             }
             if (byte[].class.equals(type.rawType())) {
-                return applyFilters(((Single<byte[]>) content).mapMany(BYTES_MAPPER));
+                return applyFilters(((Single<byte[]>) content).flatMap(BYTES_MAPPER::map));
             }
             MessageBodyWriter<T> writer;
             if (fallback != null) {
@@ -582,7 +582,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
 
         @Override
         public Publisher<DataChunk> write(Single<T> single, GenericType<? extends T> type, MessageBodyWriterContext context) {
-            return single.mapMany(function::apply);
+            return single.flatMap(function);
         }
     }
 
