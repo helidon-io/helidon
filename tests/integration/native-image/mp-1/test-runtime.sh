@@ -15,6 +15,8 @@
 # limitations under the License.
 #
 
+# This file is called from /etc/scripts/build.sh
+
 trap 'echo "ERROR: Error occurred at ${BASH_SOURCE}:${LINENO} command: ${BASH_COMMAND}"' ERR
 set -eo pipefail
 
@@ -31,11 +33,15 @@ readonly MY_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; pwd -P)
 # cd the my dir, so we can start the application with correct current directory
 cd "${MY_DIR}"
 
+# build the binary
+mvn clean package -DskipTests
+
 # Attempt to run this example as a java -jar
 # This is a self-testing application
 
 java -jar target/helidon-tests-native-image-mp-1.jar
 
 # Attempt to run this example as a java with module path
+
 java --module-path target/helidon-tests-native-image-mp-1.jar:target/libs \
      -m helidon.tests.nimage.mp/io.helidon.tests.integration.nativeimage.mp1.Mp1Main
