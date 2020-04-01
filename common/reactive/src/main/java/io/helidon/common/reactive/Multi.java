@@ -799,4 +799,40 @@ public interface Multi<T> extends Subscribable<T> {
         Objects.requireNonNull(whenFunction, "whenFunction is null");
         return new MultiRetry<>(this, whenFunction);
     }
+
+    /**
+     * Apply the given {@code composer} function to the current {@code Multi} instance and
+     * return a{@code Multi} wrapping the returned {@link Flow.Publisher} of this function.
+     * <p>
+     *     Note that the {@code composer} function is executed upon calling this method
+     *     immediately and not when the resulting sequence gets subscribed to.
+     * </p>
+     * @param composer the function that receives the current {@code Multi} instance and
+     *                 should return a {@code Flow.Publisher} to be wrapped into a
+     *                 {@code Multie} to be returned by the method
+     * @param <U> the output element type
+     * @return Multi
+     * @throws NullPointerException if {@code composer} is {@code null}
+     */
+    @SuppressWarnings("unchecked")
+    default <U> Multi<U> compose(Function<? super Multi<T>, ? extends Flow.Publisher<? extends U>> composer) {
+        return from((Flow.Publisher<U>) to(composer));
+    }
+
+    /**
+     * Apply the given {@code converter} function to the current {@code Multi} instance
+     * and return the value returned by this function.
+     * <p>
+     *     Note that the {@code converter} function is executed upon calling this method
+     *     immediately and not when the resulting sequence gets subscribed to.
+     * </p>
+     * @param converter the function that receives the current {@code Multi} instance and
+     *                  should return a value to be returned by the method
+     * @param <U> the output type
+     * @return the value returned by the function
+     * @throws NullPointerException if {@code converter} is {@code null}
+     */
+    default <U> U to(Function<? super Multi<T>, ? extends U> converter) {
+        return converter.apply(this);
+    }
 }

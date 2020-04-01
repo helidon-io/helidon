@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 package io.helidon.service.employee;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -39,7 +38,10 @@ public class EmployeeService implements Service {
     private static final Logger LOGGER = Logger.getLogger(EmployeeService.class.getName());
 
     EmployeeService(Config config) {
-        employees = EmployeeRepository.create(config.get("app.drivertype").asString().orElse("Array"), config);
+        employees = EmployeeRepository.create(config.get("app.drivertype")
+                                                      .asString()
+                                                      .orElse("Array"),
+                                              config);
     }
 
     /**
@@ -48,9 +50,13 @@ public class EmployeeService implements Service {
      */
     @Override
     public void update(Routing.Rules rules) {
-        rules.get("/", this::getAll).get("/lastname/{name}", this::getByLastName)
-                .get("/department/{name}", this::getByDepartment).get("/title/{name}", this::getByTitle)
-                .post("/", this::save).get("/{id}", this::getEmployeeById).put("/{id}", this::update)
+        rules.get("/", this::getAll)
+                .get("/lastname/{name}", this::getByLastName)
+                .get("/department/{name}", this::getByDepartment)
+                .get("/title/{name}", this::getByTitle)
+                .post("/", this::save)
+                .get("/{id}", this::getEmployeeById)
+                .put("/{id}", this::update)
                 .delete("/{id}", this::delete);
     }
 
@@ -61,8 +67,11 @@ public class EmployeeService implements Service {
      */
     private void getAll(final ServerRequest request, final ServerResponse response) {
         LOGGER.fine("getAll");
-        List<Employee> allEmployees = this.employees.getAll();
-        response.send(allEmployees);
+
+        this.employees
+                .getAll()
+                .thenAccept(response::send)
+                .exceptionally(response::send);
     }
 
     /**
@@ -72,9 +81,13 @@ public class EmployeeService implements Service {
      */
     private void getByLastName(final ServerRequest request, final ServerResponse response) {
         LOGGER.fine("getByLastName");
+
+        String name = request.path().param("name");
         // Invalid query strings handled in isValidQueryStr. Keeping DRY
-        if (isValidQueryStr(response, request.path().param("name"))) {
-            response.status(200).send(this.employees.getByLastName(request.path().param("name")));
+        if (isValidQueryStr(response, name)) {
+            this.employees.getByLastName(name)
+                    .thenAccept(response::send)
+                    .exceptionally(response::send);
         }
     }
 
@@ -85,8 +98,12 @@ public class EmployeeService implements Service {
      */
     private void getByTitle(final ServerRequest request, final ServerResponse response) {
         LOGGER.fine("getByTitle");
-        if (isValidQueryStr(response, request.path().param("name"))) {
-            response.status(200).send(this.employees.getByTitle(request.path().param("name")));
+
+        String title = request.path().param("name");
+        if (isValidQueryStr(response, title)) {
+            this.employees.getByTitle(title)
+                    .thenAccept(response::send)
+                    .exceptionally(response::send);
         }
     }
 
@@ -97,8 +114,12 @@ public class EmployeeService implements Service {
      */
     private void getByDepartment(final ServerRequest request, final ServerResponse response) {
         LOGGER.fine("getByDepartment");
-        if (isValidQueryStr(response, request.path().param("name"))) {
-            response.status(200).send(this.employees.getByDepartment(request.path().param("name")));
+
+        String department = request.path().param("name");
+        if (isValidQueryStr(response, department)) {
+            this.employees.getByDepartment(department)
+                    .thenAccept(response::send)
+                    .exceptionally(response::send);
         }
     }
 
@@ -109,10 +130,21 @@ public class EmployeeService implements Service {
      */
     private void getEmployeeById(ServerRequest request, ServerResponse response) {
         LOGGER.fine("getEmployeeById");
+
+        String id = request.path().param("id");
         // If invalid, response handled in isValidId. Keeping DRY
-        if (isValidId(response, request.path().param("id"))) {
-            Employee employee = this.employees.getById(request.path().param("id"));
-            response.status(200).send(employee);
+        if (isValidQueryStr(response, id)) {
+            this.employees.getById(id)
+                    .thenAccept(it -> {
+                        if (it.isPresent()) {
+                            // found
+                            response.send(it.get());
+                        } else {
+                            // not found
+                            response.status(404).send();
+                        }
+                    })
+                    .exceptionally(response::send);
         }
     }
 
@@ -123,10 +155,20 @@ public class EmployeeService implements Service {
      */
     private void save(ServerRequest request, ServerResponse response) {
         LOGGER.fine("save");
-        request.content().as(Employee.class)
-                .thenApply(e -> Employee.of(null, e.getFirstName(), e.getLastName(), e.getEmail(), e.getPhone(),
-                        e.getBirthDate(), e.getTitle(), e.getDepartment()))
-                .thenApply(this.employees::save).thenCompose(p -> response.status(201).send());
+
+        request.content()
+                .as(Employee.class)
+                .thenApply(e -> Employee.of(null,
+                                            e.getFirstName(),
+                                            e.getLastName(),
+                                            e.getEmail(),
+                                            e.getPhone(),
+                                            e.getBirthDate(),
+                                            e.getTitle(),
+                                            e.getDepartment()))
+                .thenCompose(this.employees::save)
+                .thenAccept(it -> response.status(201).send())
+                .exceptionally(response::send);
     }
 
     /**
@@ -136,12 +178,24 @@ public class EmployeeService implements Service {
      */
     private void update(ServerRequest request, ServerResponse response) {
         LOGGER.fine("update");
-        if (isValidId(response, request.path().param("id"))) {
-            request.content().as(Employee.class).thenApply(e -> {
-                return this.employees.update(Employee.of(e.getId(), e.getFirstName(), e.getLastName(), e.getEmail(),
-                        e.getPhone(), e.getBirthDate(), e.getTitle(), e.getDepartment()), request.path().param("id"));
-            }).thenCompose(p -> response.status(204).send());
+
+        String id = request.path().param("id");
+
+        if (isValidQueryStr(response, id)) {
+            request.content()
+                    .as(Employee.class)
+                    .thenCompose(e -> this.employees.update(e, id))
+                    .thenAccept(count -> {
+                        if (count == 0) {
+                            response.status(404).send();
+                        } else {
+                            response.status(204).send();
+                        }
+                    })
+                    .exceptionally(response::send);
+
         }
+
     }
 
     /**
@@ -151,9 +205,19 @@ public class EmployeeService implements Service {
      */
     private void delete(final ServerRequest request, final ServerResponse response) {
         LOGGER.fine("delete");
-        if (isValidId(response, request.path().param("id"))) {
-            this.employees.deleteById(request.path().param("id"));
-            response.status(204).send();
+
+        String id = request.path().param("id");
+
+        if (isValidQueryStr(response, id)) {
+            this.employees.deleteById(id)
+                    .thenAccept(count -> {
+                        if (count == 0) {
+                            response.status(404).send();
+                        } else {
+                            response.status(204).send();
+                        }
+                    })
+                    .exceptionally(response::send);
         }
     }
 
@@ -173,26 +237,4 @@ public class EmployeeService implements Service {
             return true;
         }
     }
-
-    /**
-     * Validates if the ID of the employee exists.
-     * @param response the server response
-     * @param idStr
-     * @return
-     */
-    private boolean isValidId(ServerResponse response, String idStr) {
-        Map<String, String> errorMessage = new HashMap<>();
-        if (idStr == null || idStr.isEmpty()) {
-            errorMessage.put("errorMessage", "Invalid query string");
-            response.status(400).send(errorMessage);
-            return false;
-        } else if (this.employees.isIdFound(idStr)) {
-            return true;
-        } else {
-            errorMessage.put("errorMessage", "ID " + idStr + " not found");
-            response.status(404).send(errorMessage);
-            return false;
-        }
-    }
-
 }
