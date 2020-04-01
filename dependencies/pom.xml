@@ -324,8 +324,14 @@
                 <version>${version.lib.grpc}</version>
                 <exclusions>
                     <exclusion>
+                        <!-- Used for compilation of "their" sources -->
                         <groupId>com.google.code.findbugs</groupId>
                         <artifactId>jsr305</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <!-- Used for compilation of "their" sources -->
+                        <groupId>com.google.errorprone</groupId>
+                        <artifactId>error_prone_annotations</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -333,12 +339,28 @@
                 <groupId>io.grpc</groupId>
                 <artifactId>grpc-api</artifactId>
                 <version>${version.lib.grpc}</version>
-            </dependency>
-            <dependency>
-                <!-- required for dependency convergence - used from io.grpc and from guava -->
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>animal-sniffer-annotations</artifactId>
-                <version>${version.lib.animal-sniffer}</version>
+                <exclusions>
+                    <exclusion>
+                        <!-- Used for compilation of "their" sources -->
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>animal-sniffer-annotations</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <!-- Used for compilation of "their" sources -->
+                        <groupId>com.google.errorprone</groupId>
+                        <artifactId>error_prone_annotations</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <!-- Used for compilation of "their" sources -->
+                        <groupId>com.google.code.findbugs</groupId>
+                        <artifactId>jsr305</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <!-- Used for compilation of "their" sources -->
+                        <groupId>com.google.j2objc</groupId>
+                        <artifactId>j2objc-annotations</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>io.grpc</groupId>
