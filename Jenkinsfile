@@ -27,8 +27,8 @@ pipeline {
               try {
                 sh './etc/scripts/build.sh'
               } finally {
-                archiveArtifacts artifacts: "**/target/surefire-reports/*.txt"
-                junit testResults: '**/target/surefire-reports/*.xml'
+                archiveArtifacts artifacts: "**/target/surefire-reports/*.txt, **/target/failsafe-reports/*.txt"
+                junit testResults: '**/target/surefire-reports/*.xml,**/target/failsafe-reports/*.xml'
               }
             }
           }
