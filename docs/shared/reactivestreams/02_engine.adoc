@@ -66,18 +66,16 @@ Single.just("1")
 |dropWhile|Drop the longest prefix of elements from this stream that satisfy the given predicate. As long as predicate returns true, items from upstream are NOT sent to downstream but being dropped, predicate is never called again after it returns false for the first time.
 |limit|Limit stream to allow only specified number of items to pass.
 |skip|Skip first n items, all the others are emitted.
-|flatMap|Transform item with supplied function and flatten resulting `Flow.Publisher` to downstream.
-|flatMap|Transform item with supplied function and flatten resulting `Flow.Publisher` to downstream while limiting the maximum number of concurrent inner `Flow.Publisher`s and their in-flight item count, optionally aggregating and delaying all errors until all sources terminate.
-|flatMapIterable|Transform item with supplied function and flatten resulting `Iterable` to downstream.
+|flatMap|Transform each upstream item with the supplied function into a `Flow.Publisher`, subscribe to them and then flatten their items into a single sequence of items emitted to the downstream.
+|flatMap|Transform each upstream item with the supplied function and flatten the resulting `Flow.Publisher` to downstream while limiting the maximum number of concurrent inner `Flow.Publisher`s and their in-flight item count, optionally aggregating and delaying all errors until all sources terminate.
+|flatMapIterable|Transform each upstream item with the supplied function and flatten the resulting `Iterable` to the downstream.
 |observeOn|Re-emit the upstream's signals to the downstream on the given executor's thread using a default buffer size of 32 and errors skipping ahead of items.
 |observeOn|Re-emit the upstream's signals to the downstream on the given executor's thread.
-|flatMapIterable|Transform item with supplied function and flatten resulting `Iterable` to downstream.
 |forEach|Terminal stage, invokes provided consumer for every item in the stream.
 |collectList|Collect the items of this `Multi` instance into a `Single` of `List`.
 |collect|Collect the items of this `Multi` instance into a `Single`.
-|collect|Collect the items of this `Multi` into a collection provided via a `Supplier`
-*and mutated by a {@code BiConsumer} callback.
-|collectStream|Collects up upstream items with the help of a the callbacks of a `java.util.stream.Collector`.
+|collect|Collect the items of this `Multi` into a collection provided via a `Supplier` and mutated by a {@code BiConsumer} callback.
+|collectStream|Collects up upstream items with the help of the callbacks of a `java.util.stream.Collector`.
 |reduce|Combine subsequent items via a callback function and emit the final value result as a Single.
 |reduce|Combine every upstream item with an accumulator value to produce a new accumulator value and emit the final accumulator value as a Single.
 |first|Get the first item of this `Multi` instance as a `Single`.
@@ -95,7 +93,7 @@ Single.just("1")
 |concat|Concat streams to one.
 |onTerminate|Executes given `java.lang.Runnable` when any of signals onComplete, onCancel or onError is received.
 |onComplete|Executes given `java.lang.Runnable` when onComplete signal is received.
-|onError|Executes given `java.lang.Runnable` when onError signal is received.
+|onError|Executes the given java.util.function.Consumer when an onError signal is received.
 |onCancel|Executes given `java.lang.Runnable` when a cancel signal is received.
 |takeUntil|Relay upstream items until the other source signals an item or completes.
 |range|Emits a range of ever increasing integers.
@@ -104,7 +102,7 @@ Single.just("1")
 |interval|Signal 0L, 1L and so on periodically to the downstream.
 |interval|Signal 0L after an initial delay, then 1L, 2L and so on periodically to the downstream.
 |timeout|Signals a `TimeoutException` if the upstream doesn't signal the next item, error or completion within the specified time.
-|timeout|Switches to a fallback single if the upstream doesn't signal the next item, error or completion within the specified time.
+|timeout|Switches to a fallback source if the upstream doesn't signal the next item, error or completion within the specified time.
 |onErrorResume|`java.util.function.Function` providing one item to be submitted as onNext in case of onError signal is received.
 |onErrorResumeWith|Resume stream from supplied publisher if onError signal is intercepted.
 |retry|Retry a failing upstream at most the given number of times before giving up.
