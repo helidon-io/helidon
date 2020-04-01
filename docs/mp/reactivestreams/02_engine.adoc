@@ -17,7 +17,9 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Helidon Reactive Engine
+:parentTitle: Se & Mp
 :description: Dependecy-less reactive operators
 :keywords: helidon, reactive, streams, multi, single
 
-include::../../se/reactivestreams/02_engine.adoc[lines=23..]
+==  Helidon Reactive Engine
+include::../../shared/reactivestreams/02_engine.adoc[lines=21..]

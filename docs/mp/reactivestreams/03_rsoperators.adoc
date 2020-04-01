@@ -19,8 +19,10 @@
 = Reactive Streams Operators
 :toc:
 :toc-placement: preamble
+:parentTitle: Se & Mp
 :spec-name: MicroProfile Reactive Streams Operators
 :description: {spec-name} support in Helidon MP
 :keywords: helidon, mp, microprofile, reactivestreams
 
-include::../../se/reactivestreams/03_rsoperators.adoc[lines=26..]
+== Reactive Streams Operators
+include::../../shared/reactivestreams/03_rsoperators.adoc[lines=21..]

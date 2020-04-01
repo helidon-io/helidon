@@ -16,12 +16,34 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Reactive Streams
+= Overview
 :toc:
 :toc-placement: preamble
+:parentTitle: Se & Mp
 :flawor: MP
 :helidon: Helidon {flawor}
 :description: Reactive Streams support in {helidon}
 :keywords: helidon, mp, microprofile, reactivestreams
 
-include::../../se/reactivestreams/01_introduction.adoc[lines=27..]
+== Reactive Streams
+
+[PILLARS]
+====
+[CARD]
+.Helidon Reactive Engine
+[icon=fa-cogs,link=mp/reactivestreams/02_engine.adoc]
+--
+A set of reactive operators.
+--
+
+[CARD]
+.MicroProfile Reactive Streams Operators
+[icon=fa-book,link=mp/reactivestreams/03_rsoperators.adoc]
+--
+Microprofile implementation.
+--
+====
+
+There are two handy apis for working with reactive streams available in {helidon},
+one for working with `java.util.concurrent.Flow`
+and second for `org.reactivestreams` based reactive components.
