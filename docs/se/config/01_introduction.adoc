@@ -95,10 +95,10 @@ For this first example we can see the basic features of `Config`:
 An easy way to start with the link:{javadoc-base-url-api}/Config.html[Config] API
 is to follow these four steps:
 
-1. <<maven-coords,add config-related dependencies to your `pom.xml`>>
-2. <<update-module-info, revise your `module-info.java` to refer to config (if you are using Java 9+)>>
-3. <<create-simple-config-props, create a simple config properties file>>
-4. <<Config-Basics-DefaultConfig, retrieve and use the default `Config` from your app>>
+1. <<maven-coords,Add config-related dependencies to your `pom.xml`>>
+2. <<update-module-info, Revise your `module-info.java` to refer to config (if you are using Java 9+)>>
+3. <<create-simple-config-props, Create a simple config properties file>>
+4. <<Config-Basics-DefaultConfig, Retrieve and use the default `Config` from your app>>
 
 ==== Add Maven Dependency on Config [[maven-coords]]
 [source,xml]
@@ -233,8 +233,7 @@ for the first time.
 There is a built-in filter called `ValueResolvingFilter` (enabled by default, can be disabled through API)
  that resolves references to other keys in values in configuration.
 
-Example:
-Let's consider the following example properties file
+Let's consider the following example properties file:
 [source,properties]
 ----
 host=localhost
@@ -287,7 +286,7 @@ Java types your application needs.
 
 == Next Steps
 Although the default configuration is very simple to use, your
-application can take as much control as it needs over
+application can take as much control as it needs of the following:
 
 * loading configuration data,
 * accessing the data once loaded, and
@@ -299,7 +298,7 @@ You do this by:
 +
 Using a builder, the application can control everything about how the config
 system creates the resulting `Config` instance: config sources, parsers, polling strategy,
-filters, overrides, mappers, whether or not environment variables and Java
+filters, overrides, mappers, and whether or not environment variables and Java
 system properties serve as config sources. The JavaDoc explains how to use the 
 link:{javadoc-base-url-api}/Config.Builder.html[`Config.Builder`].
 +

@@ -418,7 +418,7 @@ given property.
 |`withDefaultSupplier` |`Supplier` of the default bean property value if nont is set in the config
 |===
 
-To exclude a bean property from the config system bean processing annotate it with
+To exclude a bean property from the config system bean processing, annotate it with
 link:{javadoc-base-url-api}/Config.Transient.html[`Config.Transient`].
 
 Here is an example using the `app` portion of the example configuration from the

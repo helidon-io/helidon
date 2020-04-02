@@ -100,5 +100,5 @@ The config system includes two predefined retry policies:
 
 See the link:{javadoc-base-url-api}/RetryPolicies.html[`RetryPolicies`] JavaDoc for complete details on these built-in retry policies.
 
-You can devise your own policy. Implement the link:{javadoc-base-url-api}/spi/RetryPolicy.html[`RetryPolicy`] interface. Then pass an instance of your policy implementation to the config source builder's `retryPolicy` method.
+You can devise your own policy with the link:{javadoc-base-url-api}/spi/RetryPolicy.html[`RetryPolicy`] interface and then pass an instance of your policy implementation to the config source builder's `retryPolicy` method.
 
