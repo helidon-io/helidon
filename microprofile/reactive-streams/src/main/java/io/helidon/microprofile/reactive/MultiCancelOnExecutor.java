@@ -17,10 +17,10 @@
 
 package io.helidon.microprofile.reactive;
 
-import io.helidon.common.reactive.Multi;
-
 import java.util.concurrent.Executor;
 import java.util.concurrent.Flow;
+
+import io.helidon.common.reactive.Multi;
 
 /**
  * Routes the downstream cancel() call through the given executor.
