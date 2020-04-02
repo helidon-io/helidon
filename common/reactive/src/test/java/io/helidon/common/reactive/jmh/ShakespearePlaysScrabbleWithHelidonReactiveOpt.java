@@ -76,10 +76,10 @@ public class ShakespearePlaysScrabbleWithHelidonReactiveOpt extends ShakespeareP
     public List<Entry<Integer, List<String>>> measureThroughput() throws Exception {
 
         //  to compute the score of a given word
-        Mapper<Integer, Integer> scoreOfALetter = letter -> letterScores[letter - 'a'];
+        Function<Integer, Integer> scoreOfALetter = letter -> letterScores[letter - 'a'];
 
         // score of the same letters in a word
-        Mapper<Entry<Integer, MutableLong>, Integer> letterScore =
+        Function<Entry<Integer, MutableLong>, Integer> letterScore =
                 entry ->
                         letterScores[entry.getKey() - 'a'] *
                         Integer.min(
@@ -110,7 +110,7 @@ public class ShakespearePlaysScrabbleWithHelidonReactiveOpt extends ShakespeareP
                             ) ;
 
         // number of blanks for a given letter
-        Mapper<Entry<Integer, MutableLong>, Long> blank =
+        Function<Entry<Integer, MutableLong>, Long> blank =
                 entry ->
                         Long.max(
                             0L,

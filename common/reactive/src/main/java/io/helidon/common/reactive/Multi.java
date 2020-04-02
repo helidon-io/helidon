@@ -36,14 +36,30 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import io.helidon.common.mapper.Mapper;
-
 /**
- * Multiple items publisher facility.
+ * Represents a {@link Flow.Publisher} emitting zero or more items, optionally followed by
+ * an error or completion.
  *
  * @param <T> item type
+ * @see Single
  */
 public interface Multi<T> extends Subscribable<T> {
+
+    // --------------------------------------------------------------------------------------------------------
+    // Factory (source-like) methods
+    // --------------------------------------------------------------------------------------------------------
+
+    /**
+     * Concat streams to one.
+     *
+     * @param firstMulti  first stream
+     * @param secondMulti second stream
+     * @param <T>         item type
+     * @return Multi
+     */
+    static <T> Multi<T> concat(Flow.Publisher<T> firstMulti, Flow.Publisher<T> secondMulti) {
+        return ConcatPublisher.create(firstMulti, secondMulti);
+    }
 
     /**
      * Call the given supplier function for each individual downstream Subscriber
@@ -59,301 +75,26 @@ public interface Multi<T> extends Subscribable<T> {
     }
 
     /**
-     * Map this {@link Multi} instance to a new {@link Multi} of another type using the given {@link Mapper}.
+     * Get a {@link Multi} instance that completes immediately.
      *
-     * @param <U>    mapped item type
-     * @param mapper mapper
-     * @return Multi
-     * @throws NullPointerException if mapper is {@code null}
-     */
-    default <U> Multi<U> map(Mapper<T, U> mapper) {
-        Objects.requireNonNull(mapper, "mapper is null");
-        return new MultiMapperPublisher<>(this, mapper);
-    }
-
-    /**
-     * Signals the default item if the upstream is empty.
-     * @param defaultItem the item to signal if the upstream is empty
-     * @return Multi
-     * @throws NullPointerException if {@code defaultItem} is {@code null}
-     */
-    default Multi<T> defaultIfEmpty(T defaultItem) {
-        Objects.requireNonNull(defaultItem, "defaultItem is null");
-        return new MultiDefaultIfEmpty<>(this, defaultItem);
-    }
-
-    /**
-     * Switch to the other publisher if the upstream is empty.
-     * @param other the publisher to switch to if the upstream is empty.
-     * @return Multi
-     * @throws NullPointerException if {@code other} is {@code null}
-     */
-    default Multi<T> switchIfEmpty(Flow.Publisher<T> other) {
-        Objects.requireNonNull(other, "other is null");
-        return new MultiSwitchIfEmpty<>(this, other);
-    }
-
-    /**
-     * Invoke provided consumer for every item in stream.
-     *
-     * @param consumer consumer to be invoked
+     * @param <T> item type
      * @return Multi
      */
-    default Multi<T> peek(Consumer<T> consumer) {
-        return new MultiTappedPublisher<>(this, null, consumer,
-                null, null, null, null);
+    static <T> Multi<T> empty() {
+        return MultiEmpty.instance();
     }
 
     /**
-     * Filter out all duplicates.
+     * Create a {@link Multi} instance that reports the given exception to its subscriber(s). The exception is reported by
+     * invoking {@link Subscriber#onError(java.lang.Throwable)} when {@link Publisher#subscribe(Subscriber)} is called.
      *
+     * @param <T>   item type
+     * @param error exception to hold
      * @return Multi
+     * @throws NullPointerException if error is {@code null}
      */
-    default Multi<T> distinct() {
-        return new MultiDistinctPublisher<>(this, v -> v);
-    }
-
-    /**
-     * Filter stream items with provided predicate.
-     *
-     * @param predicate predicate to filter stream with
-     * @return Multi
-     */
-    default Multi<T> filter(Predicate<T> predicate) {
-        return new MultiFilterPublisher<>(this, predicate);
-    }
-
-    /**
-     * Take the longest prefix of elements from this stream that satisfy the given predicate.
-     * As long as predicate returns true, items from upstream are sent to downstream,
-     * when predicate returns false stream is completed.
-     *
-     * @param predicate predicate to filter stream with
-     * @return Multi
-     */
-    default Multi<T> takeWhile(Predicate<T> predicate) {
-        return new MultiTakeWhilePublisher<>(this, predicate);
-    }
-
-    /**
-     * Drop the longest prefix of elements from this stream that satisfy the given predicate.
-     * As long as predicate returns true, items from upstream are NOT sent to downstream but being dropped,
-     * predicate is never called again after it returns false for the first time.
-     *
-     * @param predicate predicate to filter stream with
-     * @return Multi
-     */
-    default Multi<T> dropWhile(Predicate<? super T> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        return new MultiDropWhilePublisher<>(this, predicate);
-    }
-
-    /**
-     * Limit stream to allow only specified number of items to pass.
-     *
-     * @param limit with expected number of items to be produced
-     * @return Multi
-     */
-    default Multi<T> limit(long limit) {
-        return new MultiLimitPublisher<>(this, limit);
-    }
-
-    /**
-     * Skip first n items, all the others are emitted.
-     *
-     * @param skip number of items to be skipped
-     * @return Multi
-     */
-    default Multi<T> skip(long skip) {
-        return new MultiSkipPublisher<>(this, skip);
-    }
-
-    /**
-     * Transform item with supplied function and flatten resulting {@link Flow.Publisher} to downstream.
-     *
-     * @param publisherMapper {@link Function} receiving item as parameter and returning {@link Flow.Publisher}
-     * @param <U>             output item type
-     * @return Multi
-     */
-    default <U> Multi<U> flatMap(Function<T, Flow.Publisher<U>> publisherMapper) {
-        return new MultiFlatMapPublisher<>(this, publisherMapper, 32, 32, false);
-    }
-    /**
-     * Transform item with supplied function and flatten resulting {@link Flow.Publisher} to downstream
-     * while limiting the maximum number of concurrent inner {@link Flow.Publisher}s and their in-flight
-     * item count, optionally aggregating and delaying all errors until all sources terminate.
-     *
-     * @param mapper {@link Function} receiving item as parameter and returning {@link Flow.Publisher}
-     * @param <U>             output item type
-     * @param maxConcurrency the maximum number of inner sources to run
-     * @param delayErrors if true, any error from the main and inner sources are aggregated and delayed until
-     *                    all of them terminate
-     * @param prefetch the number of items to request upfront from the inner sources, then request 75% more after 75%
-     *                 has been delivered
-     * @return Multi
-     */
-    default <U> Multi<U> flatMap(Function<T, Flow.Publisher<U>> mapper, long maxConcurrency, boolean delayErrors, long prefetch) {
-        return new MultiFlatMapPublisher<>(this, mapper, maxConcurrency, prefetch, delayErrors);
-    }
-
-    /**
-     * Transform item with supplied function and flatten resulting {@link Iterable} to downstream.
-     *
-     * @param iterableMapper {@link Function} receiving item as parameter and returning {@link Iterable}
-     * @param <U>            output item type
-     * @return Multi
-     */
-    default <U> Multi<U> flatMapIterable(Function<? super T, ? extends Iterable<? extends U>> iterableMapper) {
-        return flatMapIterable(iterableMapper, 32);
-    }
-
-    /**
-     * Re-emit the upstream's signals to the downstream on the given executor's thread
-     * using a default buffer size of 32 and errors skipping ahead of items.
-     * @param executor the executor to signal the downstream from.
-     * @return Multi
-     * @throws NullPointerException if {@code executor} is {@code null}
-     * @see #observeOn(Executor, int, boolean)
-     */
-    default Multi<T> observeOn(Executor executor) {
-        return observeOn(executor, 32, false);
-    }
-
-    /**
-     * Re-emit the upstream's signals to the downstream on the given executor's thread.
-     * @param executor the executor to signal the downstream from.
-     * @param bufferSize the number of items to prefetch and buffer at a time
-     * @param delayError if {@code true}, errors are emitted after items,
-     *                   if {@code false}, errors may cut ahead of items during emission
-     * @return Multi
-     * @throws NullPointerException if {@code executor} is {@code null}
-     */
-    default Multi<T> observeOn(Executor executor, int bufferSize, boolean delayError) {
-        Objects.requireNonNull(executor, "executor is null");
-        if (bufferSize <= 0) {
-            throw new IllegalArgumentException("bufferSize > 0 required");
-        }
-        return new MultiObserveOn<>(this, executor, bufferSize, delayError);
-    }
-
-    /**
-     * Transform item with supplied function and flatten resulting {@link Iterable} to downstream.
-     *
-     * @param iterableMapper {@link Function} receiving item as parameter and returning {@link Iterable}
-     * @param prefetch the number of upstream items to request upfront, then 75% of this value after
-     *                 75% received and mapped
-     * @param <U>            output item type
-     * @return Multi
-     */
-    default <U> Multi<U> flatMapIterable(Function<? super T, ? extends Iterable<? extends U>> iterableMapper,
-                                         int prefetch) {
-        Objects.requireNonNull(iterableMapper, "iterableMapper is null");
-        return new MultiFlatMapIterable<>(this, iterableMapper, prefetch);
-    }
-
-    /**
-     * Terminal stage, invokes provided consumer for every item in the stream.
-     *
-     * @param consumer consumer to be invoked for each item
-     */
-    default void forEach(Consumer<T> consumer) {
-        FunctionalSubscriber<T> subscriber = new FunctionalSubscriber<>(consumer, null, null, null);
-        this.subscribe(subscriber);
-    }
-
-    /**
-     * Collect the items of this {@link Multi} instance into a {@link Single} of {@link List}.
-     *
-     * @return Single
-     */
-    default Single<List<T>> collectList() {
-        return collect(ArrayList::new, List::add);
-    }
-
-    /**
-     * Collect the items of this {@link Multi} instance into a {@link Single}.
-     *
-     * @param <U>       collector container type
-     * @param collector collector to use
-     * @return Single
-     * @throws NullPointerException if collector is {@code null}
-     */
-    default <U> Single<U> collect(Collector<T, U> collector) {
-        return collect(() -> collector, Collector::collect).map(Collector::value);
-    }
-
-    /**
-     * Collect the items of this {@link Multi} into a collection provided via a {@link Supplier}
-     * and mutated by a {@code BiConsumer} callback.
-     * @param collectionSupplier the {@link Supplier} that is called for each incoming {@link Subscriber}
-     *                           to create a fresh collection to collect items into
-     * @param accumulator the {@link BiConsumer} that receives the collection and the current item to put in
-     * @param <U> the type of the collection and result
-     * @return Single
-     * @throws NullPointerException if {@code collectionSupplier} or {@code combiner} is {@code null}
-     */
-    default <U> Single<U> collect(Supplier<U> collectionSupplier, BiConsumer<U, T> accumulator) {
-        Objects.requireNonNull(collectionSupplier, "collectionSupplier is null");
-        Objects.requireNonNull(accumulator, "combiner is null");
-        return new MultiCollectPublisher<>(this, collectionSupplier, accumulator);
-    }
-
-    /**
-     * Collects up upstream items with the help of a the callbacks of
-     * a {@link java.util.stream.Collector}.
-     * @param collector the collector whose {@code supplier()}, {@code accumulator()} and {@code finisher()} callbacks
-     *                  are used for collecting upstream items into a final form.
-     * @param <A> the accumulator type
-     * @param <R> the result type
-     * @return Single
-     * @throws NullPointerException if {@code collector} is {@code null}
-     */
-    default <A, R> Single<R> collectStream(java.util.stream.Collector<T, A, R> collector) {
-        Objects.requireNonNull(collector, "collector is null");
-        return new MultiCollectorPublisher<>(this, collector);
-    }
-
-    /**
-     * Combine subsequent items via a callback function and emit
-     * the final value result as a Single.
-     * <p>
-     *     If the upstream is empty, the resulting Single is also empty.
-     *     If the upstream contains only one item, the reducer function
-     *     is not invoked and the resulting Single will have only that
-     *     single item.
-     * </p>
-     * @param reducer the function called with the first value or the previous result,
-     *                the current upstream value and should return a new value
-     * @return Single
-     */
-    default Single<T> reduce(BiFunction<T, T, T> reducer) {
-        Objects.requireNonNull(reducer, "reducer is null");
-        return new MultiReduce<>(this, reducer);
-    }
-
-    /**
-     * Combine every upstream item with an accumulator value to produce a new accumulator
-     * value and emit the final accumulator value as a Single.
-     * @param supplier the function to return the initial accumulator value for each incoming
-     *                 Subscriber
-     * @param reducer the function that receives the current accumulator value, the current
-     *                upstream value and should return a new accumulator value
-     * @param <R> the accumulator and result type
-     * @return Single
-     */
-    default <R> Single<R> reduce(Supplier<? extends R> supplier, BiFunction<R, T, R> reducer) {
-        Objects.requireNonNull(supplier, "supplier is null");
-        Objects.requireNonNull(reducer, "reducer is null");
-        return new MultiReduceFull<>(this, supplier, reducer);
-    }
-
-    /**
-     * Get the first item of this {@link Multi} instance as a {@link Single}.
-     *
-     * @return Single
-     */
-    default Single<T> first() {
-        return new MultiFirstPublisher<>(this);
+    static <T> Multi<T> error(Throwable error) {
+        return MultiError.create(error);
     }
 
     /**
@@ -385,22 +126,6 @@ public interface Multi<T> extends Subscribable<T> {
     }
 
     /**
-     * Create a {@link Multi} instance wrapped around the given publisher.
-     *
-     * @param <T>    item type
-     * @param source source publisher
-     * @return Multi
-     * @throws NullPointerException if source is {@code null}
-     */
-    @SuppressWarnings("unchecked")
-    static <T> Multi<T> from(Publisher<T> source) {
-        if (source instanceof Multi) {
-            return (Multi<T>) source;
-        }
-        return new MultiFromPublisher<>(source);
-    }
-
-    /**
      * Create a {@link Multi} instance that publishes the given iterable.
      *
      * @param <T>      item type
@@ -410,6 +135,21 @@ public interface Multi<T> extends Subscribable<T> {
      */
     static <T> Multi<T> from(Iterable<T> iterable) {
         return new MultiFromIterable<>(iterable);
+    }
+
+    /**
+     * Create a {@link Multi} instance wrapped around the given publisher.
+     *
+     * @param <T>    item type
+     * @param source source publisher
+     * @return Multi
+     * @throws NullPointerException if source is {@code null}
+     */
+    static <T> Multi<T> from(Publisher<T> source) {
+        if (source instanceof Multi) {
+            return (Multi<T>) source;
+        }
+        return new MultiFromPublisher<>(source);
     }
 
     /**
@@ -436,6 +176,43 @@ public interface Multi<T> extends Subscribable<T> {
     static <T> Multi<T> from(Stream<T> stream) {
         Objects.requireNonNull(stream, "stream is null");
         return new MultiFromStream<>(stream);
+    }
+
+    /**
+     * Signal 0L, 1L and so on periodically to the downstream.
+     * <p>
+     *     Note that if the downstream applies backpressure,
+     *     subsequent values may be delivered instantly upon
+     *     further requests from the downstream.
+     * </p>
+     * @param period the initial and in-between time
+     * @param unit the time unit
+     * @param executor the scheduled executor to use for the periodic emission
+     * @return Multi
+     * @throws NullPointerException if {@code unit} or {@code executor} is {@code null}
+     */
+    static Multi<Long> interval(long period, TimeUnit unit, ScheduledExecutorService executor) {
+        return interval(period, period, unit, executor);
+    }
+
+    /**
+     * Signal 0L after an initial delay, then 1L, 2L and so on periodically to the downstream.
+     * <p>
+     *     Note that if the downstream applies backpressure,
+     *     subsequent values may be delivered instantly upon
+     *     further requests from the downstream.
+     * </p>
+     * @param initialDelay the time before signaling 0L
+     * @param period the in-between wait time for values 1L, 2L and so on
+     * @param unit the time unit
+     * @param executor the scheduled executor to use for the periodic emission
+     * @return Multi
+     * @throws NullPointerException if {@code unit} or {@code executor} is {@code null}
+     */
+    static Multi<Long> interval(long initialDelay, long period, TimeUnit unit, ScheduledExecutorService executor) {
+        Objects.requireNonNull(unit, "unit is null");
+        Objects.requireNonNull(executor, "executor is null");
+        return new MultiInterval(initialDelay, period, unit, executor);
     }
 
     /**
@@ -470,41 +247,6 @@ public interface Multi<T> extends Subscribable<T> {
     }
 
     /**
-     * Create a {@link Multi} that emits a pre-existing item and then completes.
-     * @param item the item to emit.
-     * @param <T> the type of the item
-     * @return Multi
-     * @throws NullPointerException if {@code item} is {@code null}
-     */
-    static <T> Multi<T> singleton(T item) {
-        Objects.requireNonNull(item, "item is null");
-        return new MultiJustPublisher<>(item);
-    }
-
-    /**
-     * Create a {@link Multi} instance that reports the given exception to its subscriber(s). The exception is reported by
-     * invoking {@link Subscriber#onError(java.lang.Throwable)} when {@link Publisher#subscribe(Subscriber)} is called.
-     *
-     * @param <T>   item type
-     * @param error exception to hold
-     * @return Multi
-     * @throws NullPointerException if error is {@code null}
-     */
-    static <T> Multi<T> error(Throwable error) {
-        return MultiError.create(error);
-    }
-
-    /**
-     * Get a {@link Multi} instance that completes immediately.
-     *
-     * @param <T> item type
-     * @return Multi
-     */
-    static <T> Multi<T> empty() {
-        return MultiEmpty.instance();
-    }
-
-    /**
      * Get a {@link Multi} instance that never completes.
      *
      * @param <T> item type
@@ -512,94 +254,6 @@ public interface Multi<T> extends Subscribable<T> {
      */
     static <T> Multi<T> never() {
         return MultiNever.instance();
-    }
-
-    /**
-     * Concat streams to one.
-     *
-     * @param firstMulti  first stream
-     * @param secondMulti second stream
-     * @param <T>         item type
-     * @return Multi
-     */
-    static <T> Multi<T> concat(Flow.Publisher<T> firstMulti, Flow.Publisher<T> secondMulti) {
-        return ConcatPublisher.create(firstMulti, secondMulti);
-    }
-
-    /**
-     * Executes given {@link java.lang.Runnable} when any of signals onComplete, onCancel or onError is received.
-     *
-     * @param onTerminate {@link java.lang.Runnable} to be executed.
-     * @return Multi
-     */
-    default Multi<T> onTerminate(Runnable onTerminate) {
-        return new MultiTappedPublisher<>(this,
-                null,
-                null,
-                e -> onTerminate.run(),
-                onTerminate,
-                null,
-                onTerminate);
-    }
-
-    /**
-     * Executes given {@link java.lang.Runnable} when onComplete signal is received.
-     *
-     * @param onComplete {@link java.lang.Runnable} to be executed.
-     * @return Multi
-     */
-    default Multi<T> onComplete(Runnable onComplete) {
-        return new MultiTappedPublisher<>(this,
-                null,
-                null,
-                null,
-                onComplete,
-                null,
-                null);
-    }
-
-    /**
-     * Executes given {@link java.lang.Runnable} when onError signal is received.
-     *
-     * @param onErrorConsumer {@link java.util.function.Consumer} to be executed.
-     * @return Multi
-     */
-    default Multi<T> onError(Consumer<Throwable> onErrorConsumer) {
-        return new MultiTappedPublisher<>(this,
-                null,
-                null,
-                onErrorConsumer,
-                null,
-                null,
-                null);
-    }
-
-    /**
-     * Executes given {@link java.lang.Runnable} when a cancel signal is received.
-     *
-     * @param onCancel {@link java.lang.Runnable} to be executed.
-     * @return Multi
-     */
-    default Multi<T> onCancel(Runnable onCancel) {
-        return new MultiTappedPublisher<>(this,
-                null,
-                null,
-                null,
-                null,
-                null,
-                onCancel);
-    }
-
-    /**
-     * Relay upstream items until the other source signals an item or completes.
-     * @param other the other sequence to signal the end of the main sequence
-     * @param <U> the element type of the other sequence
-     * @return Multi
-     * @throws NullPointerException if {@code other} is {@code null}
-     */
-    default <U> Multi<T> takeUntil(Flow.Publisher<U> other) {
-        Objects.requireNonNull(other, "other is null");
-        return new MultiTakeUntilPublisher<>(this, other);
     }
 
     /**
@@ -643,6 +297,18 @@ public interface Multi<T> extends Subscribable<T> {
     }
 
     /**
+     * Create a {@link Multi} that emits a pre-existing item and then completes.
+     * @param item the item to emit.
+     * @param <T> the type of the item
+     * @return Multi
+     * @throws NullPointerException if {@code item} is {@code null}
+     */
+    static <T> Multi<T> singleton(T item) {
+        Objects.requireNonNull(item, "item is null");
+        return new MultiJustPublisher<>(item);
+    }
+
+    /**
      * Signal 0L and complete the sequence after the given time elapsed.
      * @param time the time to wait before signaling 0L and completion
      * @param unit the unit of time
@@ -656,76 +322,287 @@ public interface Multi<T> extends Subscribable<T> {
         return new MultiTimer(time, unit, executor);
     }
 
+    // --------------------------------------------------------------------------------------------------------
+    // Instance Operators
+    // --------------------------------------------------------------------------------------------------------
+
     /**
-     * Signal 0L, 1L and so on periodically to the downstream.
+     * Collect the items of this {@link Multi} instance into a {@link Single}.
+     *
+     * @param <U>       collector container type
+     * @param collector collector to use
+     * @return Single
+     * @throws NullPointerException if collector is {@code null}
+     */
+    default <U> Single<U> collect(Collector<T, U> collector) {
+        return collect(() -> collector, Collector::collect).map(Collector::value);
+    }
+
+    /**
+     * Collect the items of this {@link Multi} into a collection provided via a {@link Supplier}
+     * and mutated by a {@code BiConsumer} callback.
+     * @param collectionSupplier the {@link Supplier} that is called for each incoming {@link Subscriber}
+     *                           to create a fresh collection to collect items into
+     * @param accumulator the {@link BiConsumer} that receives the collection and the current item to put in
+     * @param <U> the type of the collection and result
+     * @return Single
+     * @throws NullPointerException if {@code collectionSupplier} or {@code combiner} is {@code null}
+     */
+    default <U> Single<U> collect(Supplier<? extends U> collectionSupplier, BiConsumer<U, T> accumulator) {
+        Objects.requireNonNull(collectionSupplier, "collectionSupplier is null");
+        Objects.requireNonNull(accumulator, "combiner is null");
+        return new MultiCollectPublisher<>(this, collectionSupplier, accumulator);
+    }
+
+    /**
+     * Collect the items of this {@link Multi} instance into a {@link Single} of {@link List}.
+     *
+     * @return Single
+     */
+    default Single<List<T>> collectList() {
+        return collect(ArrayList::new, List::add);
+    }
+
+    /**
+     * Collects up upstream items with the help of a the callbacks of
+     * a {@link java.util.stream.Collector}.
+     * @param collector the collector whose {@code supplier()}, {@code accumulator()} and {@code finisher()} callbacks
+     *                  are used for collecting upstream items into a final form.
+     * @param <A> the accumulator type
+     * @param <R> the result type
+     * @return Single
+     * @throws NullPointerException if {@code collector} is {@code null}
+     */
+    default <A, R> Single<R> collectStream(java.util.stream.Collector<T, A, R> collector) {
+        Objects.requireNonNull(collector, "collector is null");
+        return new MultiCollectorPublisher<>(this, collector);
+    }
+
+    /**
+     * Apply the given {@code composer} function to the current {@code Multi} instance and
+     * return a{@code Multi} wrapping the returned {@link Flow.Publisher} of this function.
      * <p>
-     *     Note that if the downstream applies backpressure,
-     *     subsequent values may be delivered instantly upon
-     *     further requests from the downstream.
+     *     Note that the {@code composer} function is executed upon calling this method
+     *     immediately and not when the resulting sequence gets subscribed to.
      * </p>
-     * @param period the initial and in-between time
-     * @param unit the time unit
-     * @param executor the scheduled executor to use for the periodic emission
+     * @param composer the function that receives the current {@code Multi} instance and
+     *                 should return a {@code Flow.Publisher} to be wrapped into a
+     *                 {@code Multie} to be returned by the method
+     * @param <U> the output element type
      * @return Multi
-     * @throws NullPointerException if {@code unit} or {@code executor} is {@code null}
+     * @throws NullPointerException if {@code composer} is {@code null}
      */
-    static Multi<Long> interval(long period, TimeUnit unit, ScheduledExecutorService executor) {
-        return interval(period, period, unit, executor);
+    @SuppressWarnings("unchecked")
+    default <U> Multi<U> compose(Function<? super Multi<T>, ? extends Flow.Publisher<? extends U>> composer) {
+        return from((Flow.Publisher<U>) to(composer));
     }
 
     /**
-     * Signal 0L after an initial delay, then 1L, 2L and so on periodically to the downstream.
-     * <p>
-     *     Note that if the downstream applies backpressure,
-     *     subsequent values may be delivered instantly upon
-     *     further requests from the downstream.
-     * </p>
-     * @param initialDelay the time before signaling 0L
-     * @param period the in-between wait time for values 1L, 2L and so on
-     * @param unit the time unit
-     * @param executor the scheduled executor to use for the periodic emission
+     * Signals the default item if the upstream is empty.
+     * @param defaultItem the item to signal if the upstream is empty
      * @return Multi
-     * @throws NullPointerException if {@code unit} or {@code executor} is {@code null}
+     * @throws NullPointerException if {@code defaultItem} is {@code null}
      */
-    static Multi<Long> interval(long initialDelay, long period, TimeUnit unit, ScheduledExecutorService executor) {
-        Objects.requireNonNull(unit, "unit is null");
-        Objects.requireNonNull(executor, "executor is null");
-        return new MultiInterval(initialDelay, period, unit, executor);
+    default Multi<T> defaultIfEmpty(T defaultItem) {
+        Objects.requireNonNull(defaultItem, "defaultItem is null");
+        return new MultiDefaultIfEmpty<>(this, defaultItem);
     }
 
-
     /**
-     * Signals a {@link TimeoutException} if the upstream doesn't signal the next item, error
-     * or completion within the specified time.
-     * @param timeout the time to wait for the upstream to signal
-     * @param unit the time unit
-     * @param executor the executor to use for waiting for the upstream signal
+     * Filter out all duplicates.
+     *
      * @return Multi
-     * @throws NullPointerException if {@code unit} or {@code executor} is {@code null}
      */
-    default Multi<T> timeout(long timeout, TimeUnit unit, ScheduledExecutorService executor) {
-        Objects.requireNonNull(unit, "unit is null");
-        Objects.requireNonNull(executor, "executor is null");
-        return new MultiTimeout<>(this, timeout, unit, executor, null);
+    default Multi<T> distinct() {
+        return new MultiDistinctPublisher<>(this, v -> v);
     }
 
+    /**
+     * Drop the longest prefix of elements from this stream that satisfy the given predicate.
+     * As long as predicate returns true, items from upstream are NOT sent to downstream but being dropped,
+     * predicate is never called again after it returns false for the first time.
+     *
+     * @param predicate predicate to filter stream with
+     * @return Multi
+     */
+    default Multi<T> dropWhile(Predicate<? super T> predicate) {
+        Objects.requireNonNull(predicate, "predicate is null");
+        return new MultiDropWhilePublisher<>(this, predicate);
+    }
 
     /**
-     * Switches to a fallback single if the upstream doesn't signal the next item, error
-     * or completion within the specified time.
-     * @param timeout the time to wait for the upstream to signal
-     * @param unit the time unit
-     * @param executor the executor to use for waiting for the upstream signal
-     * @param fallback the Single to switch to if the upstream doesn't signal in time
+     * Filter stream items with provided predicate.
+     *
+     * @param predicate predicate to filter stream with
      * @return Multi
-     * @throws NullPointerException if {@code unit}, {@code executor}
-     *                              or {@code fallback} is {@code null}
      */
-    default Multi<T> timeout(long timeout, TimeUnit unit, ScheduledExecutorService executor, Flow.Publisher<T> fallback) {
-        Objects.requireNonNull(unit, "unit is null");
+    default Multi<T> filter(Predicate<? super T> predicate) {
+        return new MultiFilterPublisher<>(this, predicate);
+    }
+
+    /**
+     * Get the first item of this {@link Multi} instance as a {@link Single}.
+     *
+     * @return Single
+     */
+    default Single<T> first() {
+        return new MultiFirstPublisher<>(this);
+    }
+
+    /**
+     * Transform item with supplied function and flatten resulting {@link Flow.Publisher} to downstream.
+     *
+     * @param publisherMapper {@link Function} receiving item as parameter and returning {@link Flow.Publisher}
+     * @param <U>             output item type
+     * @return Multi
+     */
+    default <U> Multi<U> flatMap(Function<? super T, ? extends Flow.Publisher<? extends U>> publisherMapper) {
+        return new MultiFlatMapPublisher<>(this, publisherMapper, 32, 32, false);
+    }
+
+    /**
+     * Transform item with supplied function and flatten resulting {@link Flow.Publisher} to downstream
+     * while limiting the maximum number of concurrent inner {@link Flow.Publisher}s and their in-flight
+     * item count, optionally aggregating and delaying all errors until all sources terminate.
+     *
+     * @param mapper {@link Function} receiving item as parameter and returning {@link Flow.Publisher}
+     * @param <U>             output item type
+     * @param maxConcurrency the maximum number of inner sources to run
+     * @param delayErrors if true, any error from the main and inner sources are aggregated and delayed until
+     *                    all of them terminate
+     * @param prefetch the number of items to request upfront from the inner sources, then request 75% more after 75%
+     *                 has been delivered
+     * @return Multi
+     */
+    default <U> Multi<U> flatMap(Function<? super T, ? extends Flow.Publisher<? extends U>> mapper,
+                                 long maxConcurrency, boolean delayErrors, long prefetch) {
+        return new MultiFlatMapPublisher<>(this, mapper, maxConcurrency, prefetch, delayErrors);
+    }
+
+    /**
+     * Transform item with supplied function and flatten resulting {@link Iterable} to downstream.
+     *
+     * @param iterableMapper {@link Function} receiving item as parameter and returning {@link Iterable}
+     * @param <U>            output item type
+     * @return Multi
+     */
+    default <U> Multi<U> flatMapIterable(Function<? super T, ? extends Iterable<? extends U>> iterableMapper) {
+        return flatMapIterable(iterableMapper, 32);
+    }
+
+    /**
+     * Transform item with supplied function and flatten resulting {@link Iterable} to downstream.
+     *
+     * @param iterableMapper {@link Function} receiving item as parameter and returning {@link Iterable}
+     * @param prefetch the number of upstream items to request upfront, then 75% of this value after
+     *                 75% received and mapped
+     * @param <U>            output item type
+     * @return Multi
+     */
+    default <U> Multi<U> flatMapIterable(Function<? super T, ? extends Iterable<? extends U>> iterableMapper,
+                                         int prefetch) {
+        Objects.requireNonNull(iterableMapper, "iterableMapper is null");
+        return new MultiFlatMapIterable<>(this, iterableMapper, prefetch);
+    }
+
+    /**
+     * Limit stream to allow only specified number of items to pass.
+     *
+     * @param limit with expected number of items to be produced
+     * @return Multi
+     */
+    default Multi<T> limit(long limit) {
+        return new MultiLimitPublisher<>(this, limit);
+    }
+
+    /**
+     * Map this {@link Multi} instance to a new {@link Multi} of another type using the given {@link Function}.
+     *
+     * @param <U>    mapped item type
+     * @param mapper mapper
+     * @return Multi
+     * @throws NullPointerException if mapper is {@code null}
+     */
+    default <U> Multi<U> map(Function<? super T, ? extends U> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        return new MultiMapperPublisher<>(this, mapper);
+    }
+
+    /**
+     * Re-emit the upstream's signals to the downstream on the given executor's thread
+     * using a default buffer size of 32 and errors skipping ahead of items.
+     * @param executor the executor to signal the downstream from.
+     * @return Multi
+     * @throws NullPointerException if {@code executor} is {@code null}
+     * @see #observeOn(Executor, int, boolean)
+     */
+    default Multi<T> observeOn(Executor executor) {
+        return observeOn(executor, 32, false);
+    }
+
+    /**
+     * Re-emit the upstream's signals to the downstream on the given executor's thread.
+     * @param executor the executor to signal the downstream from.
+     * @param bufferSize the number of items to prefetch and buffer at a time
+     * @param delayError if {@code true}, errors are emitted after items,
+     *                   if {@code false}, errors may cut ahead of items during emission
+     * @return Multi
+     * @throws NullPointerException if {@code executor} is {@code null}
+     */
+    default Multi<T> observeOn(Executor executor, int bufferSize, boolean delayError) {
         Objects.requireNonNull(executor, "executor is null");
-        Objects.requireNonNull(fallback, "fallback is null");
-        return new MultiTimeout<>(this, timeout, unit, executor, fallback);
+        if (bufferSize <= 0) {
+            throw new IllegalArgumentException("bufferSize > 0 required");
+        }
+        return new MultiObserveOn<>(this, executor, bufferSize, delayError);
+    }
+
+    /**
+     * Executes given {@link java.lang.Runnable} when a cancel signal is received.
+     *
+     * @param onCancel {@link java.lang.Runnable} to be executed.
+     * @return Multi
+     */
+    default Multi<T> onCancel(Runnable onCancel) {
+        return new MultiTappedPublisher<>(this,
+                null,
+                null,
+                null,
+                null,
+                null,
+                onCancel);
+    }
+
+    /**
+     * Executes given {@link java.lang.Runnable} when onComplete signal is received.
+     *
+     * @param onComplete {@link java.lang.Runnable} to be executed.
+     * @return Multi
+     */
+    default Multi<T> onComplete(Runnable onComplete) {
+        return new MultiTappedPublisher<>(this,
+                null,
+                null,
+                null,
+                onComplete,
+                null,
+                null);
+    }
+
+    /**
+     * Executes given {@link java.lang.Runnable} when onError signal is received.
+     *
+     * @param onErrorConsumer {@link java.util.function.Consumer} to be executed.
+     * @return Multi
+     */
+    default Multi<T> onError(Consumer<? super Throwable> onErrorConsumer) {
+        return new MultiTappedPublisher<>(this,
+                null,
+                null,
+                onErrorConsumer,
+                null,
+                null,
+                null);
     }
 
     /**
@@ -746,6 +623,67 @@ public interface Multi<T> extends Subscribable<T> {
      */
     default Multi<T> onErrorResumeWith(Function<? super Throwable, ? extends Flow.Publisher<? extends T>> onError) {
         return new MultiOnErrorResumeWith<>(this, onError);
+    }
+
+    /**
+     * Executes given {@link java.lang.Runnable} when any of signals onComplete, onCancel or onError is received.
+     *
+     * @param onTerminate {@link java.lang.Runnable} to be executed.
+     * @return Multi
+     */
+    default Multi<T> onTerminate(Runnable onTerminate) {
+        return new MultiTappedPublisher<>(this,
+                null,
+                null,
+                e -> onTerminate.run(),
+                onTerminate,
+                null,
+                onTerminate);
+    }
+
+    /**
+     * Invoke provided consumer for every item in stream.
+     *
+     * @param consumer consumer to be invoked
+     * @return Multi
+     */
+    default Multi<T> peek(Consumer<? super T> consumer) {
+        return new MultiTappedPublisher<>(this, null, consumer,
+                null, null, null, null);
+    }
+
+    /**
+     * Combine subsequent items via a callback function and emit
+     * the final value result as a Single.
+     * <p>
+     *     If the upstream is empty, the resulting Single is also empty.
+     *     If the upstream contains only one item, the reducer function
+     *     is not invoked and the resulting Single will have only that
+     *     single item.
+     * </p>
+     * @param reducer the function called with the first value or the previous result,
+     *                the current upstream value and should return a new value
+     * @return Single
+     */
+    default Single<T> reduce(BiFunction<T, T, T> reducer) {
+        Objects.requireNonNull(reducer, "reducer is null");
+        return new MultiReduce<>(this, reducer);
+    }
+
+    /**
+     * Combine every upstream item with an accumulator value to produce a new accumulator
+     * value and emit the final accumulator value as a Single.
+     * @param supplier the function to return the initial accumulator value for each incoming
+     *                 Subscriber
+     * @param reducer the function that receives the current accumulator value, the current
+     *                upstream value and should return a new accumulator value
+     * @param <R> the accumulator and result type
+     * @return Single
+     */
+    default <R> Single<R> reduce(Supplier<? extends R> supplier, BiFunction<R, T, R> reducer) {
+        Objects.requireNonNull(supplier, "supplier is null");
+        Objects.requireNonNull(reducer, "reducer is null");
+        return new MultiReduceFull<>(this, supplier, reducer);
     }
 
     /**
@@ -800,4 +738,114 @@ public interface Multi<T> extends Subscribable<T> {
         Objects.requireNonNull(whenFunction, "whenFunction is null");
         return new MultiRetry<>(this, whenFunction);
     }
+
+    /**
+     * Skip first n items, all the others are emitted.
+     *
+     * @param skip number of items to be skipped
+     * @return Multi
+     */
+    default Multi<T> skip(long skip) {
+        return new MultiSkipPublisher<>(this, skip);
+    }
+
+    /**
+     * Switch to the other publisher if the upstream is empty.
+     * @param other the publisher to switch to if the upstream is empty.
+     * @return Multi
+     * @throws NullPointerException if {@code other} is {@code null}
+     */
+    default Multi<T> switchIfEmpty(Flow.Publisher<T> other) {
+        Objects.requireNonNull(other, "other is null");
+        return new MultiSwitchIfEmpty<>(this, other);
+    }
+
+    /**
+     * Relay upstream items until the other source signals an item or completes.
+     * @param other the other sequence to signal the end of the main sequence
+     * @param <U> the element type of the other sequence
+     * @return Multi
+     * @throws NullPointerException if {@code other} is {@code null}
+     */
+    default <U> Multi<T> takeUntil(Flow.Publisher<U> other) {
+        Objects.requireNonNull(other, "other is null");
+        return new MultiTakeUntilPublisher<>(this, other);
+    }
+
+    /**
+     * Take the longest prefix of elements from this stream that satisfy the given predicate.
+     * As long as predicate returns true, items from upstream are sent to downstream,
+     * when predicate returns false stream is completed.
+     *
+     * @param predicate predicate to filter stream with
+     * @return Multi
+     */
+    default Multi<T> takeWhile(Predicate<? super T> predicate) {
+        return new MultiTakeWhilePublisher<>(this, predicate);
+    }
+
+    /**
+     * Signals a {@link TimeoutException} if the upstream doesn't signal the next item, error
+     * or completion within the specified time.
+     * @param timeout the time to wait for the upstream to signal
+     * @param unit the time unit
+     * @param executor the executor to use for waiting for the upstream signal
+     * @return Multi
+     * @throws NullPointerException if {@code unit} or {@code executor} is {@code null}
+     */
+    default Multi<T> timeout(long timeout, TimeUnit unit, ScheduledExecutorService executor) {
+        Objects.requireNonNull(unit, "unit is null");
+        Objects.requireNonNull(executor, "executor is null");
+        return new MultiTimeout<>(this, timeout, unit, executor, null);
+    }
+
+    /**
+     * Switches to a fallback single if the upstream doesn't signal the next item, error
+     * or completion within the specified time.
+     * @param timeout the time to wait for the upstream to signal
+     * @param unit the time unit
+     * @param executor the executor to use for waiting for the upstream signal
+     * @param fallback the Single to switch to if the upstream doesn't signal in time
+     * @return Multi
+     * @throws NullPointerException if {@code unit}, {@code executor}
+     *                              or {@code fallback} is {@code null}
+     */
+    default Multi<T> timeout(long timeout, TimeUnit unit, ScheduledExecutorService executor, Flow.Publisher<T> fallback) {
+        Objects.requireNonNull(unit, "unit is null");
+        Objects.requireNonNull(executor, "executor is null");
+        Objects.requireNonNull(fallback, "fallback is null");
+        return new MultiTimeout<>(this, timeout, unit, executor, fallback);
+    }
+
+    /**
+     * Apply the given {@code converter} function to the current {@code Multi} instance
+     * and return the value returned by this function.
+     * <p>
+     *     Note that the {@code converter} function is executed upon calling this method
+     *     immediately and not when the resulting sequence gets subscribed to.
+     * </p>
+     * @param converter the function that receives the current {@code Multi} instance and
+     *                  should return a value to be returned by the method
+     * @param <U> the output type
+     * @return the value returned by the function
+     * @throws NullPointerException if {@code converter} is {@code null}
+     */
+    default <U> U to(Function<? super Multi<T>, ? extends U> converter) {
+        return converter.apply(this);
+    }
+
+    // --------------------------------------------------------------------------------------------------------
+    // Terminal operators
+    // --------------------------------------------------------------------------------------------------------
+
+    /**
+     * Terminal stage, invokes provided consumer for every item in the stream.
+     *
+     * @param consumer consumer to be invoked for each item
+     */
+    default void forEach(Consumer<? super T> consumer) {
+        FunctionalSubscriber<T> subscriber = new FunctionalSubscriber<>(consumer, null, null, null);
+        this.subscribe(subscriber);
+    }
+
 }

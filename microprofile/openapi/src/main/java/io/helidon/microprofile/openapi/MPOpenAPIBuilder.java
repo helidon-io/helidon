@@ -17,6 +17,7 @@
 package io.helidon.microprofile.openapi;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -92,8 +93,12 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder {
          * which case we'll try to instantiate them ourselves (unless they are synthetic apps or lack no-args constructors).
          *
          * Each set in the list holds the classes related to one app.
+         *
+         * Sort the stream by the Application class name to help keep the list of endpoints in the OpenAPI document in a stable
+         * order.
          */
         List<Set<Class<?>>> appClassesToScan = appInstancesToRun().stream()
+                .sorted(Comparator.comparing(app -> app.getClass().getName()))
                 .map(this::classesToScanForApp)
                 .collect(Collectors.toList());
 

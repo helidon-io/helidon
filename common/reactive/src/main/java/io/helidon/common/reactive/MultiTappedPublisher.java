@@ -32,12 +32,11 @@ final class MultiTappedPublisher<T> implements Multi<T> {
 
     private final Multi<T> source;
 
-    // FIXME contravariance in the API signatures
-    private final Consumer<Flow.Subscription> onSubscribeCallback;
+    private final Consumer<? super Flow.Subscription> onSubscribeCallback;
 
-    private final Consumer<T> onNextCallback;
+    private final Consumer<? super T> onNextCallback;
 
-    private final Consumer<Throwable> onErrorCallback;
+    private final Consumer<? super Throwable> onErrorCallback;
 
     private final Runnable onCompleteCallback;
 
@@ -46,9 +45,9 @@ final class MultiTappedPublisher<T> implements Multi<T> {
     private final Runnable onCancelCallback;
 
     MultiTappedPublisher(Multi<T> source,
-                         Consumer<Flow.Subscription> onSubscribeCallback,
-                         Consumer<T> onNextCallback,
-                         Consumer<Throwable> onErrorCallback,
+                         Consumer<? super Flow.Subscription> onSubscribeCallback,
+                         Consumer<? super T> onNextCallback,
+                         Consumer<? super Throwable> onErrorCallback,
                          Runnable onCompleteCallback,
                          LongConsumer onRequestCallback,
                          Runnable onCancelCallback) {
@@ -84,7 +83,7 @@ final class MultiTappedPublisher<T> implements Multi<T> {
     }
 
     @Override
-    public Multi<T> onError(Consumer<Throwable> onErrorConsumer) {
+    public Multi<T> onError(Consumer<? super Throwable> onErrorConsumer) {
         return new MultiTappedPublisher<>(
                 source,
                 onSubscribeCallback,
@@ -110,7 +109,7 @@ final class MultiTappedPublisher<T> implements Multi<T> {
     }
 
     @Override
-    public Multi<T> peek(Consumer<T> consumer) {
+    public Multi<T> peek(Consumer<? super T> consumer) {
         return new MultiTappedPublisher<>(
                 source,
                 onSubscribeCallback,
@@ -176,7 +175,7 @@ final class MultiTappedPublisher<T> implements Multi<T> {
             Objects.requireNonNull(subscription, "subscription is null");
             if (upstream != null) {
                 subscription.cancel();
-                // FIXME Microprofile RS doesn't like if this throws
+                // Microprofile RS doesn't like if this throws
                 // throw new IllegalStateException("Subscription already set!");
                 return;
             }
@@ -185,8 +184,7 @@ final class MultiTappedPublisher<T> implements Multi<T> {
                 try {
                     onSubscribeCallback.accept(subscription);
                 } catch (Throwable ex) {
-                    // FIXME replace with SubscriptionHelper.CANCELED
-                    upstream = EmptySubscription.INSTANCE;
+                    upstream = SubscriptionHelper.CANCELED;
                     subscription.cancel();
                     downstream.onSubscribe(this);
                     onError(ex);
@@ -289,7 +287,7 @@ final class MultiTappedPublisher<T> implements Multi<T> {
      * Holds a list of {@link Consumer}s to flatten out a call chain of them.
      * @param <T> the element type to accept
      */
-    static final class ConsumerChain<T> extends ArrayList<Consumer<T>> implements Consumer<T> {
+    static final class ConsumerChain<T> extends ArrayList<Consumer<? super T>> implements Consumer<T> {
 
         @Override
         public void accept(T t) {
@@ -298,14 +296,15 @@ final class MultiTappedPublisher<T> implements Multi<T> {
             }
         }
 
-        public ConsumerChain<T> combineWith(Consumer<T> another) {
+        public ConsumerChain<T> combineWith(Consumer<? super T> another) {
             ConsumerChain<T> newChain = new ConsumerChain<>();
             newChain.addAll(this);
             newChain.add(another);
             return newChain;
         }
 
-        public static <T> Consumer<T> combine(Consumer<T> current, Consumer<T> another) {
+        @SuppressWarnings("unchecked")
+        public static <T> Consumer<? super T> combine(Consumer<? super T> current, Consumer<? super T> another) {
             if (current == null) {
                 return another;
             }

@@ -215,8 +215,30 @@ public final class Mp1Main {
         // OpenAPI
         validateOpenAPI(collector, target);
 
+        // Static content
+        validateStaticContent(collector, target);
+
         collector.collect()
                 .checkValid();
+    }
+
+    private static void validateStaticContent(Errors.Collector collector, WebTarget target) {
+        String path = "/static/resource.txt";
+        String expected = "classpath-resource-text";
+
+        Response response = target.path(path)
+                .request()
+                .get();
+
+        if (response.getStatus() == OK_200.code()) {
+            String entity = response.readEntity(String.class);
+            if (!expected.equals(entity)) {
+                collector.fatal("Endpoint " + path + "should return \"" + expected + "\", but returned \"" + entity + "\"");
+            }
+        } else {
+            collector.fatal("Endpoint " + path + " should contain static content from /web/resource.txt. Status received: "
+                                    + response.getStatus());
+        }
     }
 
     private static void validateBasicAuthProtectedResource(Errors.Collector collector, WebTarget target) {

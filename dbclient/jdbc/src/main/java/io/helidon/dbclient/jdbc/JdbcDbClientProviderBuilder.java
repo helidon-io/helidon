@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,6 +53,15 @@ public final class JdbcDbClientProviderBuilder implements DbClientProviderBuilde
     private ConnectionPool connectionPool;
 
     JdbcDbClientProviderBuilder() {
+    }
+
+    /**
+     * Create a new fluent API builder for JDBC specific db client builder.
+     *
+     * @return a new instance of the builder
+     */
+    public static JdbcDbClientProviderBuilder create() {
+        return new JdbcDbClientProviderBuilder();
     }
 
     @Override

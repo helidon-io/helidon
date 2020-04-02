@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,7 +63,7 @@ public final class ContentReaders {
      * @return Single
      */
     public static Single<String> readString(Publisher<DataChunk> chunks, Charset charset) {
-        return readBytes(chunks).map(new BytesToString(charset));
+        return readBytes(chunks).map(new BytesToString(charset)::map);
     }
 
     /**
@@ -75,7 +75,7 @@ public final class ContentReaders {
      */
     public static Single<String> readURLEncodedString(Publisher<DataChunk> chunks,
             Charset charset) {
-        return readString(chunks, charset).map(new StringToDecodedString(charset));
+        return readString(chunks, charset).map(new StringToDecodedString(charset)::map);
     }
 
     /**

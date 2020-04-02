@@ -60,8 +60,7 @@ final class MultiReduce<T> implements Single<T> {
         public void onSubscribe(Flow.Subscription subscription) {
             SubscriptionHelper.validate(upstream, subscription);
             upstream = subscription;
-            // FIXME subscribeSelf()
-            downstream().onSubscribe(this);
+            subscribeSelf();
             subscription.request(Long.MAX_VALUE);
         }
 
@@ -89,8 +88,7 @@ final class MultiReduce<T> implements Single<T> {
             if (upstream != SubscriptionHelper.CANCELED) {
                 upstream = SubscriptionHelper.CANCELED;
                 current = null;
-                // FIXME error()
-                downstream().onError(throwable);
+                error(throwable);
             }
         }
 
@@ -101,8 +99,7 @@ final class MultiReduce<T> implements Single<T> {
                 T current = this.current;
                 this.current = null;
                 if (current == null) {
-                    // FIXME complete()
-                    downstream().onComplete();
+                    complete();
                 } else {
                     complete(current);
                 }

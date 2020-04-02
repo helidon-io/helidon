@@ -40,7 +40,6 @@ RUN cd graalvm && \
     bin/polyglot lib/polyglot \
     bin/lli \
     lib/libjvmcicompiler.so \
-    lib/liblcms.so \
     lib/graalvm/graal-truffle-compiler-libgraal.jar \
     lib/graalvm/graaljs-launcher.jar \
     lib/graalvm/sulong-launcher.jar

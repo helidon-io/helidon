@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,32 +15,31 @@
  */
 package io.helidon.service.employee;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.CompletionStage;
 
 import io.helidon.config.Config;
-
-import oracle.jdbc.pool.OracleDataSource;
+import io.helidon.dbclient.DbClient;
+import io.helidon.dbclient.DbRow;
+import io.helidon.dbclient.DbRows;
+import io.helidon.dbclient.jdbc.JdbcDbClientProviderBuilder;
 
 /**
  * Implementation of the {@link EmployeeRepository}. This implementation uses an
  * Oracle database to persist the Employee objects.
  *
  */
-public final class EmployeeRepositoryImplDB implements EmployeeRepository {
+final class EmployeeRepositoryImplDB implements EmployeeRepository {
 
-    private Connection conn;
+    private final DbClient dbClient;
 
     /**
      * Creates the database connection using the parameters specified in the
      * <code>application.yaml</code> file located in the <code>resources</code> directory.
      * @param config Represents the application configuration.
      */
-    public EmployeeRepositoryImplDB(Config config) {
+    EmployeeRepositoryImplDB(Config config) {
         String url = "jdbc:oracle:thin:@";
         String driver = "oracle.jdbc.driver.OracleDriver";
 
@@ -49,165 +48,121 @@ public final class EmployeeRepositoryImplDB implements EmployeeRepository {
         String dbHostURL = config.get("app.hosturl").asString().orElse("localhost:1521/xe");
 
         try {
-            Class.forName(driver).getDeclaredConstructor().newInstance();
+            Class.forName(driver);
         } catch (Exception sqle) {
             sqle.printStackTrace();
         }
 
-        try {
-            OracleDataSource ods = new OracleDataSource();
-            ods.setURL(url + dbHostURL);
-            ods.setUser(dbUserName);
-            ods.setPassword(dbUserPassword);
-            conn = ods.getConnection();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        // now we create the reactive DB Client - explicitly cast to JDBC, so we can
+        // configure JDBC specific configuration
+        dbClient = JdbcDbClientProviderBuilder.create()
+                .url(url + dbHostURL)
+                .username(dbUserName)
+                .password(dbUserPassword)
+                .build();
     }
 
     @Override
-    public List<Employee> getAll() {
+    public CompletionStage<List<Employee>> getAll() {
         String queryStr = "SELECT * FROM EMPLOYEE";
-        List<Employee> resultList = this.query(queryStr, null);
-        return resultList;
+
+        return toEmployeeList(dbClient.execute(exec -> exec.query(queryStr)));
     }
 
     @Override
-    public List<Employee> getByLastName(String name) {
+    public CompletionStage<List<Employee>> getByLastName(String name) {
         String queryStr = "SELECT * FROM EMPLOYEE WHERE LASTNAME LIKE ?";
-        List<Employee> resultList = this.query(queryStr, name);
-        return resultList;
+
+        return toEmployeeList(dbClient.execute(exec -> exec.query(queryStr, name)));
     }
 
     @Override
-    public List<Employee> getByTitle(String title) {
+    public CompletionStage<List<Employee>> getByTitle(String title) {
         String queryStr = "SELECT * FROM EMPLOYEE WHERE TITLE LIKE ?";
-        List<Employee> resultList = this.query(queryStr, title);
-        return resultList;
+
+        return toEmployeeList(dbClient.execute(exec -> exec.query(queryStr, title)));
     }
 
     @Override
-    public List<Employee> getByDepartment(String department) {
+    public CompletionStage<List<Employee>> getByDepartment(String department) {
         String queryStr = "SELECT * FROM EMPLOYEE WHERE DEPARTMENT LIKE ?";
-        List<Employee> resultList = this.query(queryStr, department);
-        return resultList;
+
+        return toEmployeeList(dbClient.execute(exec -> exec.query(queryStr, department)));
     }
 
     @Override
-    public Employee save(Employee employee) {
+    public CompletionStage<Employee> save(Employee employee) {
         String insertTableSQL = "INSERT INTO EMPLOYEE "
                 + "(ID, FIRSTNAME, LASTNAME, EMAIL, PHONE, BIRTHDATE, TITLE, DEPARTMENT) "
                 + "VALUES(EMPLOYEE_SEQ.NEXTVAL,?,?,?,?,?,?,?)";
 
-        try (PreparedStatement preparedStatement = this.conn.prepareStatement(insertTableSQL)) {
-
-            preparedStatement.setString(1, employee.getFirstName());
-            preparedStatement.setString(2, employee.getLastName());
-            preparedStatement.setString(3, employee.getEmail());
-            preparedStatement.setString(4, employee.getPhone());
-            preparedStatement.setString(5, employee.getBirthDate());
-            preparedStatement.setString(6, employee.getTitle());
-            preparedStatement.setString(7, employee.getDepartment());
-            preparedStatement.executeUpdate();
-            preparedStatement.close();
-        } catch (SQLException e) {
-            System.out.println("SQL Add Error: " + e.getMessage());
-
-        } catch (Exception e) {
-            System.out.println("Add Error: " + e.getMessage());
-        }
-        return employee;
+        return dbClient.execute(exec -> exec.createInsert(insertTableSQL)
+                .addParam(employee.getFirstName())
+                .addParam(employee.getLastName())
+                .addParam(employee.getEmail())
+                .addParam(employee.getPhone())
+                .addParam(employee.getBirthDate())
+                .addParam(employee.getTitle())
+                .addParam(employee.getDepartment())
+                .execute())
+                // let's always return the employee once the insert finishes
+                .thenApply(count -> employee);
     }
 
     @Override
-    public void deleteById(String id) {
+    public CompletionStage<Long> deleteById(String id) {
         String deleteRowSQL = "DELETE FROM EMPLOYEE WHERE ID=?";
-        try (PreparedStatement preparedStatement = this.conn.prepareStatement(deleteRowSQL)) {
-            preparedStatement.setInt(1, Integer.parseInt(id));
-            preparedStatement.executeUpdate();
-            preparedStatement.close();
-        } catch (SQLException e) {
-            System.out.println("SQL Delete Error: " + e.getMessage());
-        } catch (Exception e) {
-            System.out.println("Delete Error: " + e.getMessage());
-        }
 
+        return dbClient.execute(exec -> exec.delete(deleteRowSQL, id));
     }
 
     @Override
-    public Employee getById(String id) {
+    public CompletionStage<Optional<Employee>> getById(String id) {
         String queryStr = "SELECT * FROM EMPLOYEE WHERE ID =?";
-        List<Employee> resultList = this.query(queryStr, Integer.parseInt(id));
 
-        if (resultList.size() > 0) {
-            return resultList.get(0);
-        } else {
-            return null;
-        }
-    }
-
-    /**
-     * Execute the <code>select</code> query specified in the parameters.
-     * @param sqlQueryStr Contains the <code>select</code> query
-     * @param value Contains the value of the variable of the <code>select</code>.
-     * @return
-     */
-    private List<Employee> query(String sqlQueryStr, Object value) {
-
-        List<Employee> resultList = new ArrayList<>();
-        try (PreparedStatement stmt = conn.prepareStatement(sqlQueryStr)) {
-            if (value != null) {
-                if (value instanceof String) {
-                    stmt.setString(1, value + "%");
-                } else {
-                    stmt.setInt(1, (Integer) value);
-                }
-            }
-            ResultSet rs = stmt.executeQuery();
-            while (rs.next()) {
-                resultList.add(Employee.of(rs.getString("ID"), rs.getString("FIRSTNAME"), rs.getString("LASTNAME"),
-                        rs.getString("EMAIL"), rs.getString("PHONE"), rs.getString("BIRTHDATE"), rs.getString("TITLE"),
-                        rs.getString("DEPARTMENT")));
-            }
-            rs.close();
-            stmt.close();
-        } catch (SQLException e) {
-            System.out.println("SQL Query Error: " + e.getMessage());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return resultList;
+        return dbClient.execute(exec -> exec.get(queryStr, id))
+                .thenApply(optionalRow -> optionalRow.map(dbRow -> dbRow.as(Employee.class)));
     }
 
     @Override
-    public Employee update(Employee updatedEmployee, String id) {
+    public CompletionStage<Long> update(Employee updatedEmployee, String id) {
         String updateTableSQL = "UPDATE EMPLOYEE SET FIRSTNAME=?, LASTNAME=?, EMAIL=?, PHONE=?, BIRTHDATE=?, TITLE=?, "
                 + "DEPARTMENT=?  WHERE ID=?";
-        try (PreparedStatement preparedStatement = this.conn.prepareStatement(updateTableSQL);) {
-            preparedStatement.setString(1, updatedEmployee.getFirstName());
-            preparedStatement.setString(2, updatedEmployee.getLastName());
-            preparedStatement.setString(3, updatedEmployee.getEmail());
-            preparedStatement.setString(4, updatedEmployee.getPhone());
-            preparedStatement.setString(5, updatedEmployee.getBirthDate());
-            preparedStatement.setString(6, updatedEmployee.getTitle());
-            preparedStatement.setString(7, updatedEmployee.getDepartment());
-            preparedStatement.setInt(8, Integer.parseInt(id));
-            preparedStatement.executeUpdate();
-            preparedStatement.close();
-        } catch (SQLException e) {
-            System.out.println("SQL Update Error: " + e.getMessage());
 
-        } catch (Exception e) {
-            System.out.println("Update Error: " + e.getMessage());
-
-        }
-        return null;
+        return dbClient.execute(exec -> exec.createUpdate(updateTableSQL)
+                .addParam(updatedEmployee.getFirstName())
+                .addParam(updatedEmployee.getLastName())
+                .addParam(updatedEmployee.getEmail())
+                .addParam(updatedEmployee.getPhone())
+                .addParam(updatedEmployee.getBirthDate())
+                .addParam(updatedEmployee.getTitle())
+                .addParam(updatedEmployee.getDepartment())
+                .addParam(Integer.parseInt(id))
+                .execute());
     }
 
-    @Override
-    public boolean isIdFound(String id) {
-        String queryStr = "SELECT * FROM EMPLOYEE WHERE ID =?";
-        List<Employee> resultList = this.query(queryStr, Integer.parseInt(id));
-        return (resultList.size() > 0);
+    private static CompletionStage<List<Employee>> toEmployeeList(CompletionStage<DbRows<DbRow>> resultSet) {
+        return resultSet
+                .thenApply(rows -> rows.map(EmployeeDbMapper::read))
+                .thenCompose(DbRows::collect);
+    }
+
+    private static final class EmployeeDbMapper {
+        private EmployeeDbMapper() {
+        }
+
+        static Employee read(DbRow row) {
+            // map named columns to an object
+            return Employee.of(
+                    row.column("ID").as(String.class),
+                    row.column("FIRSTNAME").as(String.class),
+                    row.column("LASTNAME").as(String.class),
+                    row.column("EMAIL").as(String.class),
+                    row.column("PHONE").as(String.class),
+                    row.column("BIRTHDATE").as(String.class),
+                    row.column("TITLE").as(String.class),
+                    row.column("DEPARTMENT").as(String.class)
+            );
+        }
     }
 }

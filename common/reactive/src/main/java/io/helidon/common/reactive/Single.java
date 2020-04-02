@@ -36,11 +36,17 @@ import java.util.function.Supplier;
 import io.helidon.common.mapper.Mapper;
 
 /**
- * Single item publisher utility.
+ * Represents a {@link Flow.Publisher} that may: signal one item then completes, complete without
+ * an item or signal an error.
  *
  * @param <T> item type
+ * @see Multi
  */
 public interface Single<T> extends Subscribable<T> {
+
+    // --------------------------------------------------------------------------------------------------------
+    // Factory (source-like) methods
+    // --------------------------------------------------------------------------------------------------------
 
     /**
      * Call the given supplier function for each individual downstream Subscriber
@@ -56,166 +62,54 @@ public interface Single<T> extends Subscribable<T> {
     }
 
     /**
-     * Map this {@link Single} instance to a new {@link Single} of another type using the given {@link Mapper}.
+     * Get a {@link Single} instance that completes immediately.
      *
-     * @param <U>    mapped item type
-     * @param mapper mapper
+     * @param <T> item type
      * @return Single
-     * @throws NullPointerException if mapper is {@code null}
      */
-    default <U> Single<U> map(Mapper<T, U> mapper) {
-        Objects.requireNonNull(mapper, "mapper is null");
-        return new SingleMapperPublisher<>(this, mapper);
+    static <T> Single<T> empty() {
+        return SingleEmpty.instance();
     }
 
     /**
-     * Signals the default item if the upstream is empty.
-     * @param defaultItem the item to signal if the upstream is empty
+     * Create a {@link Single} instance that reports the given given exception to its subscriber(s). The exception is reported by
+     * invoking {@link Subscriber#onError(java.lang.Throwable)} when {@link Publisher#subscribe(Subscriber)} is called.
+     *
+     * @param <T>   item type
+     * @param error exception to hold
      * @return Single
-     * @throws NullPointerException if {@code defaultItem} is {@code null}
+     * @throws NullPointerException if error is {@code null}
      */
-    default Single<T> defaultIfEmpty(T defaultItem) {
-        Objects.requireNonNull(defaultItem, "defaultItem is null");
-        return new SingleDefaultIfEmpty<>(this, defaultItem);
+    static <T> Single<T> error(Throwable error) {
+        return new SingleError<>(error);
     }
 
     /**
-     * Switch to the other Single if the upstream is empty.
-     * @param other the Single to switch to if the upstream is empty.
+     * Wrap a CompletionStage into a Multi and signal its outcome non-blockingly.
+     * <p>
+     *     A null result from the CompletionStage will yield a
+     *     {@link NullPointerException} signal.
+     * </p>
+     * @param completionStage the CompletionStage to
+     * @param <T> the element type of the stage and result
      * @return Single
-     * @throws NullPointerException if {@code other} is {@code null}
+     * @see #from(CompletionStage, boolean)
      */
-    default Single<T> switchIfEmpty(Single<T> other) {
-        Objects.requireNonNull(other, "other is null");
-        return new SingleSwitchIfEmpty<>(this, other);
+    static <T> Single<T> from(CompletionStage<T> completionStage) {
+        return from(completionStage, false);
     }
 
     /**
-     * Map this {@link Single} instance to a publisher using the given {@link Mapper}.
-     *
-     * @param <U>    mapped items type
-     * @param mapper mapper
-     * @return Publisher
-     * @throws NullPointerException if mapper is {@code null}
-     * @deprecated Use {@link Single#flatMap}
-     */
-    @Deprecated
-    default <U> Multi<U> mapMany(Mapper<T, Publisher<U>> mapper) {
-        return flatMap(mapper::map);
-    }
-
-    /**
-     * Map this {@link Single} instance to a publisher using the given {@link Mapper}.
-     *
-     * @param <U>    mapped items type
-     * @param mapper mapper
-     * @return Publisher
-     * @throws NullPointerException if mapper is {@code null}
-     */
-    default <U> Multi<U> flatMap(Function<? super T, ? extends Publisher<? extends U>> mapper) {
-        Objects.requireNonNull(mapper, "mapper is null");
-        return new SingleFlatMapMulti<>(this, mapper);
-    }
-
-    /**
-     * Map this {@link Single} instance to a {@link Single} using the given {@link Mapper}.
-     *
-     * @param <U>    mapped items type
-     * @param mapper mapper
+     * Wrap a CompletionStage into a Multi and signal its outcome non-blockingly.
+     * @param completionStage the CompletionStage to
+     * @param nullMeansEmpty if true, a null result is interpreted to be an empty sequence
+     *                       if false, the resulting sequence fails with {@link NullPointerException}
+     * @param <T> the element type of the stage and result
      * @return Single
-     * @throws NullPointerException if mapper is {@code null}
      */
-    default <U> Single<U> flatMapSingle(Function<T, Single<U>> mapper) {
-        return new SingleFlatMapSingle<>(this, mapper);
-    }
-
-    /**
-     * Maps the single upstream value into an {@link Iterable} and relays its
-     * items to the downstream.
-     * @param mapper the function that receives the single upstream value and
-     *               should return an Iterable instance
-     * @param <U> the result type
-     * @return Multi
-     * @throws NullPointerException if {@code mapper} is {@code null}
-     */
-    default <U> Multi<U> flatMapIterable(Function<? super T, ? extends Iterable<? extends U>> mapper) {
-        Objects.requireNonNull(mapper, "mapper is null");
-        return new SingleFlatMapIterable<>(this, mapper);
-    }
-
-    /**
-     * Re-emit the upstream's signals to the downstream on the given executor's thread.
-     * @param executor the executor to signal the downstream from.
-     * @return Single
-     * @throws NullPointerException if {@code executor} is {@code null}
-     */
-    default Single<T> observeOn(Executor executor) {
-        Objects.requireNonNull(executor, "executor is null");
-        return new SingleObserveOn<>(this, executor);
-    }
-
-    /**
-     * Exposes this {@link Single} instance as a {@link CompletionStage}.
-     * Note that if this {@link Single} completes without a value, the resulting {@link CompletionStage} will be completed
-     * exceptionally with an {@link IllegalStateException}
-     *
-     * @return CompletionStage
-     */
-    default CompletionStage<T> toStage() {
-        try {
-            SingleToFuture<T> subscriber = new SingleToFuture<>();
-            this.subscribe(subscriber);
-            return subscriber;
-        } catch (Throwable ex) {
-            CompletableFuture<T> future = new CompletableFuture<>();
-            future.completeExceptionally(ex);
-            return future;
-        }
-    }
-
-    /**
-     * Exposes this {@link Single} instance as a {@link CompletionStage} with {@code Optional<T>} return type
-     * of the asynchronous operation.
-     * Note that if this {@link Single} completes without a value, the resulting {@link CompletionStage} will be completed
-     * exceptionally with an {@link IllegalStateException}
-     *
-     * @return CompletionStage
-     */
-    default CompletionStage<Optional<T>> toOptionalStage() {
-        try {
-            SingleToOptionalFuture<T> subscriber = new SingleToOptionalFuture<>();
-            this.subscribe(subscriber);
-            return subscriber;
-        } catch (Throwable ex) {
-            CompletableFuture<Optional<T>> future = new CompletableFuture<>();
-            future.completeExceptionally(ex);
-            return future;
-        }
-    }
-
-    /**
-     * Short-hand for {@code  toFuture().toCompletableFuture().get()}.
-     *
-     * @return T
-     * @throws InterruptedException if the current thread was interrupted while waiting
-     * @throws ExecutionException   if the future completed exceptionally
-     */
-    default T get() throws InterruptedException, ExecutionException {
-        return toStage().toCompletableFuture().get();
-    }
-
-    /**
-     * Short-hand for {@code toFuture().toCompletableFuture().get()}.
-     *
-     * @param timeout the maximum time to wait
-     * @param unit    the time unit of the timeout argument
-     * @return T
-     * @throws InterruptedException if the current thread was interrupted while waiting
-     * @throws ExecutionException   if the future completed exceptionally
-     * @throws TimeoutException     if the wait timed out
-     */
-    default T get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        return toStage().toCompletableFuture().get(timeout, unit);
+    static <T> Single<T> from(CompletionStage<T> completionStage, boolean nullMeansEmpty) {
+        Objects.requireNonNull(completionStage, "completionStage is null");
+        return new SingleFromCompletionStage<>(completionStage, nullMeansEmpty);
     }
 
     /**
@@ -249,38 +143,14 @@ public interface Single<T> extends Subscribable<T> {
     }
 
     /**
-     * Create a {@link Single} instance that reports the given given exception to its subscriber(s). The exception is reported by
-     * invoking {@link Subscriber#onError(java.lang.Throwable)} when {@link Publisher#subscribe(Subscriber)} is called.
-     *
-     * @param <T>   item type
-     * @param error exception to hold
-     * @return Single
-     * @throws NullPointerException if error is {@code null}
-     */
-    static <T> Single<T> error(Throwable error) {
-        return new SingleError<>(error);
-    }
-
-    /**
-     * Get a {@link Single} instance that completes immediately.
-     *
-     * @param <T> item type
-     * @return Single
-     */
-    static <T> Single<T> empty() {
-        return SingleEmpty.<T>instance();
-    }
-
-    /**
      * Get a {@link Single} instance that never completes.
      *
      * @param <T> item type
      * @return Single
      */
     static <T> Single<T> never() {
-        return SingleNever.<T>instance();
+        return SingleNever.instance();
     }
-
 
     /**
      * Signal 0L and complete the sequence after the given time elapsed.
@@ -297,92 +167,132 @@ public interface Single<T> extends Subscribable<T> {
     }
 
     /**
-     * Wrap a CompletionStage into a Multi and signal its outcome non-blockingly.
+     * Apply the given {@code converter} function to the current {@code Single} instance
+     * and return the value returned by this function.
      * <p>
-     *     A null result from the CompletionStage will yield a
-     *     {@link NullPointerException} signal.
+     *     Note that the {@code converter} function is executed upon calling this method
+     *     immediately and not when the resulting sequence gets subscribed to.
      * </p>
-     * @param completionStage the CompletionStage to
-     * @param <T> the element type of the stage and result
-     * @return Single
-     * @see #from(CompletionStage, boolean)
+     * @param converter the function that receives the current {@code Single} instance and
+     *                  should return a value to be returned by the method
+     * @param <U> the output type
+     * @return the value returned by the function
+     * @throws NullPointerException if {@code converter} is {@code null}
      */
-    static <T> Single<T> from(CompletionStage<T> completionStage) {
-        return from(completionStage, false);
+    default <U> U to(Function<? super Single<T>, ? extends U> converter) {
+        return converter.apply(this);
+    }
+
+    // --------------------------------------------------------------------------------------------------------
+    // Instance Operators
+    // --------------------------------------------------------------------------------------------------------
+
+    /**
+     * Apply the given {@code composer} function to the current {@code Single} instance and
+     * return the {@code Single} returned by this function.
+     * <p>
+     *     Note that the {@code composer} function is executed upon calling this method
+     *     immediately and not when the resulting sequence gets subscribed to.
+     * </p>
+     * @param composer the function that receives the current {@code Single} instance and
+     *                 should return a {@code Single} to be returned by the method
+     * @param <U> the output element type
+     * @return Single
+     * @throws NullPointerException if {@code composer} is {@code null}
+     */
+    @SuppressWarnings("unchecked")
+    default <U> Single<U> compose(Function<? super Single<T>, ? extends Single<? extends U>> composer) {
+        return (Single<U>) to(composer);
     }
 
     /**
-     * Wrap a CompletionStage into a Multi and signal its outcome non-blockingly.
-     * @param completionStage the CompletionStage to
-     * @param nullMeansEmpty if true, a null result is interpreted to be an empty sequence
-     *                       if false, the resulting sequence fails with {@link NullPointerException}
-     * @param <T> the element type of the stage and result
+     * Signals the default item if the upstream is empty.
+     * @param defaultItem the item to signal if the upstream is empty
      * @return Single
+     * @throws NullPointerException if {@code defaultItem} is {@code null}
      */
-    static <T> Single<T> from(CompletionStage<T> completionStage, boolean nullMeansEmpty) {
-        Objects.requireNonNull(completionStage, "completionStage is null");
-        return new SingleFromCompletionStage<>(completionStage, nullMeansEmpty);
+    default Single<T> defaultIfEmpty(T defaultItem) {
+        Objects.requireNonNull(defaultItem, "defaultItem is null");
+        return new SingleDefaultIfEmpty<>(this, defaultItem);
     }
 
     /**
-     * Signals a {@link TimeoutException} if the upstream doesn't signal an item, error
-     * or completion within the specified time.
-     * @param timeout the time to wait for the upstream to signal
-     * @param unit the time unit
-     * @param executor the executor to use for waiting for the upstream signal
-     * @return Single
-     * @throws NullPointerException if {@code unit} or {@code executor} is {@code null}
-     */
-    default Single<T> timeout(long timeout, TimeUnit unit, ScheduledExecutorService executor) {
-        Objects.requireNonNull(unit, "unit is null");
-        Objects.requireNonNull(executor, "executor is null");
-        return new SingleTimeout<>(this, timeout, unit, executor, null);
-    }
-
-    /**
-     * Switches to a fallback single if the upstream doesn't signal an item, error
-     * or completion within the specified time.
-     * @param timeout the time to wait for the upstream to signal
-     * @param unit the time unit
-     * @param executor the executor to use for waiting for the upstream signal
-     * @param fallback the Single to switch to if the upstream doesn't signal in time
-     * @return Single
-     * @throws NullPointerException if {@code unit}, {@code executor}
-     *                              or {@code fallback} is {@code null}
-     */
-    default Single<T> timeout(long timeout, TimeUnit unit, ScheduledExecutorService executor, Single<T> fallback) {
-        Objects.requireNonNull(unit, "unit is null");
-        Objects.requireNonNull(executor, "executor is null");
-        Objects.requireNonNull(fallback, "fallback is null");
-        return new SingleTimeout<>(this, timeout, unit, executor, fallback);
-    }
-
-    /**
-     * Relay upstream items until the other source signals an item or completes.
-     * @param other the other sequence to signal the end of the main sequence
-     * @param <U> the element type of the other sequence
-     * @return Single
-     * @throws NullPointerException if {@code other} is {@code null}
-     */
-    default <U> Single<T> takeUntil(Flow.Publisher<U> other) {
-        Objects.requireNonNull(other, "other is null");
-        return new SingleTakeUntilPublisher<>(this, other);
-    }
-
-    /**
-     * Executes given {@link java.lang.Runnable} when any of signals onComplete, onCancel or onError is received.
+     * Map this {@link Single} instance to a publisher using the given {@link Mapper}.
      *
-     * @param onTerminate {@link java.lang.Runnable} to be executed.
+     * @param <U>    mapped items type
+     * @param mapper mapper
+     * @return Publisher
+     * @throws NullPointerException if mapper is {@code null}
+     */
+    default <U> Multi<U> flatMap(Function<? super T, ? extends Publisher<? extends U>> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        return new SingleFlatMapMulti<>(this, mapper);
+    }
+
+    /**
+     * Maps the single upstream value into an {@link Iterable} and relays its
+     * items to the downstream.
+     * @param mapper the function that receives the single upstream value and
+     *               should return an Iterable instance
+     * @param <U> the result type
+     * @return Multi
+     * @throws NullPointerException if {@code mapper} is {@code null}
+     */
+    default <U> Multi<U> flatMapIterable(Function<? super T, ? extends Iterable<? extends U>> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        return new SingleFlatMapIterable<>(this, mapper);
+    }
+
+    /**
+     * Map this {@link Single} instance to a {@link Single} using the given {@link Mapper}.
+     *
+     * @param <U>    mapped items type
+     * @param mapper mapper
+     * @return Single
+     * @throws NullPointerException if mapper is {@code null}
+     */
+    default <U> Single<U> flatMapSingle(Function<? super T, ? extends Single<? extends U>> mapper) {
+        return new SingleFlatMapSingle<>(this, mapper);
+    }
+
+    /**
+     * Map this {@link Single} instance to a new {@link Single} of another type using the given {@link Function}.
+     *
+     * @param <U>    mapped item type
+     * @param mapper mapper
+     * @return Single
+     * @throws NullPointerException if mapper is {@code null}
+     */
+    default <U> Single<U> map(Function<? super T, ? extends U> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        return new SingleMapperPublisher<>(this, mapper);
+    }
+
+    /**
+     * Re-emit the upstream's signals to the downstream on the given executor's thread.
+     * @param executor the executor to signal the downstream from.
+     * @return Single
+     * @throws NullPointerException if {@code executor} is {@code null}
+     */
+    default Single<T> observeOn(Executor executor) {
+        Objects.requireNonNull(executor, "executor is null");
+        return new SingleObserveOn<>(this, executor);
+    }
+
+    /**
+     * Executes given {@link java.lang.Runnable} when a cancel signal is received.
+     *
+     * @param onCancel {@link java.lang.Runnable} to be executed.
      * @return Single
      */
-    default Single<T> onTerminate(Runnable onTerminate) {
+    default Single<T> onCancel(Runnable onCancel) {
         return new SingleTappedPublisher<>(this,
                 null,
                 null,
-                e -> onTerminate.run(),
-                onTerminate,
                 null,
-                onTerminate);
+                null,
+                null,
+                onCancel);
     }
 
     /**
@@ -407,7 +317,7 @@ public interface Single<T> extends Subscribable<T> {
      * @param onErrorConsumer {@link java.util.function.Consumer} to be executed.
      * @return Single
      */
-    default Single<T> onError(Consumer<Throwable> onErrorConsumer) {
+    default Single<T> onError(Consumer<? super Throwable> onErrorConsumer) {
         return new SingleTappedPublisher<>(this,
                 null,
                 null,
@@ -415,33 +325,6 @@ public interface Single<T> extends Subscribable<T> {
                 null,
                 null,
                 null);
-    }
-
-    /**
-     * Executes given {@link java.lang.Runnable} when a cancel signal is received.
-     *
-     * @param onCancel {@link java.lang.Runnable} to be executed.
-     * @return Single
-     */
-    default Single<T> onCancel(Runnable onCancel) {
-        return new SingleTappedPublisher<>(this,
-                null,
-                null,
-                null,
-                null,
-                null,
-                onCancel);
-    }
-
-    /**
-     * Invoke provided consumer for the item in stream.
-     *
-     * @param consumer consumer to be invoked
-     * @return Single
-     */
-    default Single<T> peek(Consumer<T> consumer) {
-        return new SingleTappedPublisher<>(this, null, consumer,
-                null, null, null, null);
     }
 
     /**
@@ -454,7 +337,6 @@ public interface Single<T> extends Subscribable<T> {
         return new SingleOnErrorResume<>(this, onError);
     }
 
-
     /**
      * Resume stream from supplied publisher if onError signal is intercepted.
      *
@@ -463,6 +345,33 @@ public interface Single<T> extends Subscribable<T> {
      */
     default Single<T> onErrorResumeWith(Function<? super Throwable, ? extends Single<? extends T>> onError) {
         return new SingleOnErrorResumeWith<>(this, onError);
+    }
+
+    /**
+     * Executes given {@link java.lang.Runnable} when any of signals onComplete, onCancel or onError is received.
+     *
+     * @param onTerminate {@link java.lang.Runnable} to be executed.
+     * @return Single
+     */
+    default Single<T> onTerminate(Runnable onTerminate) {
+        return new SingleTappedPublisher<>(this,
+                null,
+                null,
+                e -> onTerminate.run(),
+                onTerminate,
+                null,
+                onTerminate);
+    }
+
+    /**
+     * Invoke provided consumer for the item in stream.
+     *
+     * @param consumer consumer to be invoked
+     * @return Single
+     */
+    default Single<T> peek(Consumer<? super T> consumer) {
+        return new SingleTappedPublisher<>(this, null, consumer,
+                null, null, null, null);
     }
 
     /**
@@ -516,5 +425,129 @@ public interface Single<T> extends Subscribable<T> {
             BiFunction<? super Throwable, ? super Long, ? extends Flow.Publisher<U>> whenFunction) {
         Objects.requireNonNull(whenFunction, "whenFunction is null");
         return new SingleRetry<>(this, whenFunction);
+    }
+
+    /**
+     * Switch to the other Single if the upstream is empty.
+     * @param other the Single to switch to if the upstream is empty.
+     * @return Single
+     * @throws NullPointerException if {@code other} is {@code null}
+     */
+    default Single<T> switchIfEmpty(Single<T> other) {
+        Objects.requireNonNull(other, "other is null");
+        return new SingleSwitchIfEmpty<>(this, other);
+    }
+
+    /**
+     * Relay upstream items until the other source signals an item or completes.
+     * @param other the other sequence to signal the end of the main sequence
+     * @param <U> the element type of the other sequence
+     * @return Single
+     * @throws NullPointerException if {@code other} is {@code null}
+     */
+    default <U> Single<T> takeUntil(Flow.Publisher<U> other) {
+        Objects.requireNonNull(other, "other is null");
+        return new SingleTakeUntilPublisher<>(this, other);
+    }
+
+    /**
+     * Signals a {@link TimeoutException} if the upstream doesn't signal an item, error
+     * or completion within the specified time.
+     * @param timeout the time to wait for the upstream to signal
+     * @param unit the time unit
+     * @param executor the executor to use for waiting for the upstream signal
+     * @return Single
+     * @throws NullPointerException if {@code unit} or {@code executor} is {@code null}
+     */
+    default Single<T> timeout(long timeout, TimeUnit unit, ScheduledExecutorService executor) {
+        Objects.requireNonNull(unit, "unit is null");
+        Objects.requireNonNull(executor, "executor is null");
+        return new SingleTimeout<>(this, timeout, unit, executor, null);
+    }
+
+    /**
+     * Switches to a fallback single if the upstream doesn't signal an item, error
+     * or completion within the specified time.
+     * @param timeout the time to wait for the upstream to signal
+     * @param unit the time unit
+     * @param executor the executor to use for waiting for the upstream signal
+     * @param fallback the Single to switch to if the upstream doesn't signal in time
+     * @return Single
+     * @throws NullPointerException if {@code unit}, {@code executor}
+     *                              or {@code fallback} is {@code null}
+     */
+    default Single<T> timeout(long timeout, TimeUnit unit, ScheduledExecutorService executor, Single<T> fallback) {
+        Objects.requireNonNull(unit, "unit is null");
+        Objects.requireNonNull(executor, "executor is null");
+        Objects.requireNonNull(fallback, "fallback is null");
+        return new SingleTimeout<>(this, timeout, unit, executor, fallback);
+    }
+
+    // --------------------------------------------------------------------------------------------------------
+    // Terminal operators
+    // --------------------------------------------------------------------------------------------------------
+
+    /**
+     * Short-hand for {@code  toFuture().toCompletableFuture().get()}.
+     *
+     * @return T
+     * @throws InterruptedException if the current thread was interrupted while waiting
+     * @throws ExecutionException   if the future completed exceptionally
+     */
+    default T get() throws InterruptedException, ExecutionException {
+        return toStage().toCompletableFuture().get();
+    }
+
+    /**
+     * Short-hand for {@code toFuture().toCompletableFuture().get()}.
+     *
+     * @param timeout the maximum time to wait
+     * @param unit    the time unit of the timeout argument
+     * @return T
+     * @throws InterruptedException if the current thread was interrupted while waiting
+     * @throws ExecutionException   if the future completed exceptionally
+     * @throws TimeoutException     if the wait timed out
+     */
+    default T get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+        return toStage().toCompletableFuture().get(timeout, unit);
+    }
+
+    /**
+     * Exposes this {@link Single} instance as a {@link CompletionStage} with {@code Optional<T>} return type
+     * of the asynchronous operation.
+     * Note that if this {@link Single} completes without a value, the resulting {@link CompletionStage} will be completed
+     * exceptionally with an {@link IllegalStateException}
+     *
+     * @return CompletionStage
+     */
+    default CompletionStage<Optional<T>> toOptionalStage() {
+        try {
+            SingleToOptionalFuture<T> subscriber = new SingleToOptionalFuture<>();
+            this.subscribe(subscriber);
+            return subscriber;
+        } catch (Throwable ex) {
+            CompletableFuture<Optional<T>> future = new CompletableFuture<>();
+            future.completeExceptionally(ex);
+            return future;
+        }
+    }
+
+    /**
+     * Exposes this {@link Single} instance as a {@link CompletionStage}.
+     * Note that if this {@link Single} completes without a value, the resulting {@link CompletionStage} will be completed
+     * exceptionally with an {@link IllegalStateException}
+     *
+     * @return CompletionStage
+     */
+    default CompletionStage<T> toStage() {
+        try {
+            SingleToFuture<T> subscriber = new SingleToFuture<>();
+            this.subscribe(subscriber);
+            return subscriber;
+        } catch (Throwable ex) {
+            CompletableFuture<T> future = new CompletableFuture<>();
+            future.completeExceptionally(ex);
+            return future;
+        }
     }
 }
