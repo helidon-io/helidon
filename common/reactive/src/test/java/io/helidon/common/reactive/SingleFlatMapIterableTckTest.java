@@ -27,7 +27,7 @@ import java.util.stream.IntStream;
 public class SingleFlatMapIterableTckTest extends FlowPublisherVerification<Integer> {
 
     public SingleFlatMapIterableTckTest() {
-        super(new TestEnvironment(50));
+        super(new TestEnvironment(200));
     }
 
     @Override

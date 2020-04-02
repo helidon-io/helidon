@@ -26,7 +26,7 @@ import java.util.stream.IntStream;
 public class MultiTakeWhilePublisherTckTest extends FlowPublisherVerification<Integer> {
 
     public MultiTakeWhilePublisherTckTest() {
-        super(new TestEnvironment(50));
+        super(new TestEnvironment(200));
     }
 
     @Override

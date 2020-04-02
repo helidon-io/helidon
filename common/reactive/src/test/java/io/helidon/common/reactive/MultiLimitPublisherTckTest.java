@@ -25,7 +25,7 @@ import java.util.stream.IntStream;
 public class MultiLimitPublisherTckTest extends FlowPublisherVerification<Integer> {
 
     public MultiLimitPublisherTckTest() {
-        super(new TestEnvironment(50));
+        super(new TestEnvironment(200));
     }
 
     @Override

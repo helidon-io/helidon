@@ -34,7 +34,7 @@ public class SingleTimeoutFallbackTckTest extends FlowPublisherVerification<Long
     private static ScheduledExecutorService executor;
 
     public SingleTimeoutFallbackTckTest() {
-        super(new TestEnvironment(50));
+        super(new TestEnvironment(200));
     }
 
     @Override

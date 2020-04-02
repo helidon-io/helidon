@@ -28,7 +28,7 @@ import java.util.stream.IntStream;
 public class ConcatPublisher2TckTest extends FlowPublisherVerification<Integer> {
 
     public ConcatPublisher2TckTest() {
-        super(new TestEnvironment(50));
+        super(new TestEnvironment(200));
     }
 
     @Override

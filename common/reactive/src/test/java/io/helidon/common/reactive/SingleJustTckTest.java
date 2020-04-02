@@ -26,7 +26,7 @@ import java.util.concurrent.Flow;
 public class SingleJustTckTest extends FlowPublisherVerification<Long> {
 
     public SingleJustTckTest() {
-        super(new TestEnvironment(50));
+        super(new TestEnvironment(200));
     }
 
     @Override

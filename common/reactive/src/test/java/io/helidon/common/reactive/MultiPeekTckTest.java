@@ -26,7 +26,7 @@ import java.util.stream.IntStream;
 public class MultiPeekTckTest extends FlowPublisherVerification<Integer> {
 
     public MultiPeekTckTest() {
-        super(new TestEnvironment(50));
+        super(new TestEnvironment(200));
     }
 
     @Override

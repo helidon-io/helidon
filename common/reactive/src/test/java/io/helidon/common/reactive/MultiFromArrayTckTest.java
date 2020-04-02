@@ -28,7 +28,7 @@ import java.util.stream.IntStream;
 public class MultiFromArrayTckTest extends FlowPublisherVerification<Integer> {
 
     public MultiFromArrayTckTest() {
-        super(new TestEnvironment(50));
+        super(new TestEnvironment(200));
     }
 
     @Override

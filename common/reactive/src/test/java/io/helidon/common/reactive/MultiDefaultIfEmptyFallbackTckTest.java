@@ -26,7 +26,7 @@ import java.util.concurrent.Flow;
 public class MultiDefaultIfEmptyFallbackTckTest extends FlowPublisherVerification<Long> {
 
     public MultiDefaultIfEmptyFallbackTckTest() {
-        super(new TestEnvironment(50));
+        super(new TestEnvironment(200));
     }
 
     @Override
