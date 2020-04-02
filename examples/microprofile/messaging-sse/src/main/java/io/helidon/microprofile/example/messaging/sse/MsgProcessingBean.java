@@ -17,31 +17,32 @@
 
 package io.helidon.microprofile.example.messaging.sse;
 
+import java.util.concurrent.SubmissionPublisher;
+
 import javax.enterprise.context.ApplicationScoped;
 import javax.ws.rs.sse.OutboundSseEvent;
 import javax.ws.rs.sse.Sse;
 import javax.ws.rs.sse.SseBroadcaster;
 import javax.ws.rs.sse.SseEventSink;
 
-import io.helidon.microprofile.reactive.EmittingPublisher;
-
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
 import org.eclipse.microprofile.reactive.streams.operators.ProcessorBuilder;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.glassfish.jersey.media.sse.OutboundEvent;
+import org.reactivestreams.FlowAdapters;
 import org.reactivestreams.Publisher;
 
 @ApplicationScoped
 public class MsgProcessingBean {
-    private final EmittingPublisher<String> emitter = EmittingPublisher.create();
+    private final SubmissionPublisher<String> emitter = new SubmissionPublisher<>();
     private SseBroadcaster sseBroadcaster;
 
     @Outgoing("multiplyVariants")
     public Publisher<String> preparePublisher() {
         // Create new publisher for emitting to by this::process
         return ReactiveStreams
-                .fromPublisher(emitter)
+                .fromPublisher(FlowAdapters.toPublisher(emitter))
                 .buildRs();
     }
 
@@ -82,6 +83,6 @@ public class MsgProcessingBean {
     }
 
     public void process(final String msg) {
-        emitter.emit(msg);
+        emitter.submit(msg);
     }
 }
