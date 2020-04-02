@@ -18,6 +18,9 @@ pipeline {
   agent {
     label "linux"
   }
+  environment {
+    NPM_CONFIG_REGISTRY = credentials('npm-registry')
+  }
   stages {
     stage('default') {
       parallel {
