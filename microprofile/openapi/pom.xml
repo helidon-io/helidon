@@ -72,7 +72,7 @@
                         </goals>
                         <phase>process-test-classes</phase>
                         <configuration>
-                            <classesDir>${project.build.directory}/test-classes}</classesDir>
+                            <classesDir>${project.build.directory}/test-classes</classesDir>
                             <indexName>other.idx</indexName>
                             <fileSets>
                                 <fileSet>

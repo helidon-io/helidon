@@ -69,7 +69,8 @@ public class OpenApiCdiExtension implements Extension {
         HelidonFeatures.register("OpenAPI");
     }
 
-    private final List<URL> indexURLs;
+    private final String[] indexPaths;
+    private final int indexURLCount;
 
     private final Set<Class<?>> annotatedTypes = new HashSet<>();
 
@@ -86,7 +87,9 @@ public class OpenApiCdiExtension implements Extension {
     }
 
     OpenApiCdiExtension(String... indexPaths) throws IOException {
-        indexURLs = findIndexFiles(indexPaths);
+        this.indexPaths = indexPaths;
+        List<URL> indexURLs = findIndexFiles(indexPaths);
+        indexURLCount = indexURLs.size();
         if (indexURLs.isEmpty()) {
             LOGGER.log(Level.INFO, () -> String.format(
                     "OpenAPI support could not locate the Jandex index file %s "
@@ -128,7 +131,7 @@ public class OpenApiCdiExtension implements Extension {
      * @param event {@code ProcessAnnotatedType} event
      */
     private <X> void processAnnotatedType(@Observes ProcessAnnotatedType<X> event) {
-        if (indexURLs.isEmpty()) {
+        if (indexURLCount == 0) {
             Class<?> c = event.getAnnotatedType()
                     .getJavaClass();
             annotatedTypes.add(c);
@@ -144,7 +147,7 @@ public class OpenApiCdiExtension implements Extension {
      * reading class bytecode from the classpath
      */
     public IndexView indexView() throws IOException {
-        return !indexURLs.isEmpty() ? existingIndexFileReader() : indexFromHarvestedClasses();
+        return indexURLCount > 0 ? existingIndexFileReader() : indexFromHarvestedClasses();
     }
 
     /**
@@ -155,13 +158,16 @@ public class OpenApiCdiExtension implements Extension {
      */
     private IndexView existingIndexFileReader() throws IOException {
         List<IndexView> indices = new ArrayList<>();
-        for (URL indexURL : indexURLs) {
+        /*
+         * Do not reuse the previously-computed indexURLs; those values will be incorrect with native images.
+         */
+        for (URL indexURL : findIndexFiles(indexPaths)) {
             try (InputStream indexIS = indexURL.openStream()) {
                 LOGGER.log(Level.CONFIG, "Adding Jandex index at {0}", indexURL.toString());
                 indices.add(new IndexReader(indexIS).read());
             } catch (IOException ex) {
                 throw new IOException("Attempted to read from previously-located index file "
-                        + indexURL + " but the file cannot be found", ex);
+                        + indexURL + " but the index cannot be found", ex);
             }
         }
         return indices.size() == 1 ? indices.get(0) : CompositeIndex.create(indices);

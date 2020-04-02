@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,8 +42,8 @@ final class InterceptorConcurrentGauge
                 ConcurrentGauge::name,
                 ConcurrentGauge::tags,
                 ConcurrentGauge::absolute,
-                MetricRegistry::getConcurrentGauges,
-                CONCURRENT_GAUGE.toString());
+                CONCURRENT_GAUGE.toString(),
+                org.eclipse.microprofile.metrics.ConcurrentGauge.class);
     }
 
     @Override

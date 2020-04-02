@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,7 +52,8 @@ class HashResponseHeaders extends HashParameters implements ResponseHeaders {
 
     private static final String COMPLETED_EXCEPTION_MESSAGE = "Response headers are already completed (sent to the client)!";
 
-    private volatile Http.ResponseStatus httpStatus = Http.Status.OK_200;
+    // status is by default null, so we can check if it was explicitly set
+    private volatile Http.ResponseStatus httpStatus;
     private final CompletionSupport completable;
     private final CompletableFuture<ResponseHeaders> completionStage = new CompletableFuture<>();
 
@@ -214,6 +215,12 @@ class HashResponseHeaders extends HashParameters implements ResponseHeaders {
         HashResponseHeaders that = (HashResponseHeaders) o;
 
         if (super.equals(that)) {
+            if (httpStatus == null) {
+                return that.httpStatus == null;
+            }
+            if (that.httpStatus == null) {
+                return false;
+            }
             return this.httpStatus.equals(that.httpStatus);
         }
 
@@ -449,8 +456,10 @@ class HashResponseHeaders extends HashParameters implements ResponseHeaders {
                 rwLock.writeLock().lock();
                 try {
                     state = State.COMPLETED;
-                    Map<String, List<String>> rawHeaders = filterSpecificHeaders(headers.toMap(), headers.httpStatus);
-                    bareResponse.writeStatusAndHeaders(headers.httpStatus, rawHeaders);
+                    Http.ResponseStatus status = (null == headers.httpStatus) ? Http.Status.OK_200 : headers.httpStatus;
+                    status = (null == status) ?  Http.Status.OK_200 : status;
+                    Map<String, List<String>> rawHeaders = filterSpecificHeaders(headers.toMap(), status);
+                    bareResponse.writeStatusAndHeaders(status, rawHeaders);
                 } finally {
                     rwLock.writeLock().unlock();
                 }
