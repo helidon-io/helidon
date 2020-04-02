@@ -56,7 +56,6 @@ import static io.helidon.microprofile.graphql.server.ElementGenerator.OPEN_SQUAR
 import static io.helidon.microprofile.graphql.server.SchemaGenerator.GET;
 import static io.helidon.microprofile.graphql.server.SchemaGenerator.IS;
 import static io.helidon.microprofile.graphql.server.SchemaGenerator.SET;
-import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getDefaultValueAnnotationValue;
 
 /**
  * Helper class for {@link SchemaGenerator}.
@@ -299,6 +298,16 @@ public final class SchemaGeneratorHelper {
     }
 
     /**
+     * Returns true if the give name is a scalar with that name.
+     *
+     * @param scalarName the scalae name to check
+     * @return true if the give name is a scalar with that name
+     */
+    protected static boolean isScalar(String scalarName) {
+        return SUPPORTED_SCALARS.values().stream().anyMatch((s -> s.getName().equals(scalarName)));
+    }
+
+    /**
      * Return the GraphQL type for the given Java type.
      *
      * @param className fully qualified class name
@@ -456,13 +465,27 @@ public final class SchemaGeneratorHelper {
     }
 
     /**
-     * Return the {@link DefaultValue} annotation value if it exists for a {@link Field}  or null.
+     * Return the {@link DefaultValue} annotation value if it exists for a {@link Field} or null.
      *
      * @param field {@link Field} to check
      * @return the {@link DefaultValue} annotation value if it exists or null
      */
     protected static String getDefaultValueAnnotationValue(Field field) {
         DefaultValue defaultValueAnnotation = field.getAnnotation(DefaultValue.class);
+        if (defaultValueAnnotation != null && !"".equals(defaultValueAnnotation.value())) {
+            return defaultValueAnnotation.value();
+        }
+        return null;
+    }
+
+    /**
+     * Return the {@link DefaultValue} annotation value if it exists for a {@link Method} or null.
+     *
+     * @param method {@link Method} to check
+     * @return the {@link DefaultValue} annotation value if it exists or null
+     */
+    protected static String getDefaultValueAnnotationValue(Method method) {
+        DefaultValue defaultValueAnnotation = method.getAnnotation(DefaultValue.class);
         if (defaultValueAnnotation != null && !"".equals(defaultValueAnnotation.value())) {
             return defaultValueAnnotation.value();
         }

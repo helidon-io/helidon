@@ -79,6 +79,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.opentest4j.AssertionFailedError;
 
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ID;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -92,7 +93,7 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
 
     private String indexFileName = null;
     private File indexFile = null;
-    private DummyContext dummyContext = new DummyContext("Dummy");
+    private DefaultContext defaultContext = ExecutionContext.getDefaultContext();
 
     private static SeContainer container;
 
@@ -220,39 +221,39 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
     @Test
     public void testObjectWithIgnorableFields() throws IOException {
         setupIndex(indexFileName, ObjectWithIgnorableFieldsAndMethods.class);
-        ExecutionContext<DummyContext> executionContext = new ExecutionContext<>(dummyContext);
+        ExecutionContext<DefaultContext> executionContext = new ExecutionContext<DefaultContext>(defaultContext);
         ExecutionResult result = executionContext.execute("query { hero }");
     }
 
     @Test
     public void testVoidMutations() throws IOException {
         setupIndex(indexFileName, VoidMutations.class);
-        assertThrows(RuntimeException.class, () -> new ExecutionContext<>(dummyContext));
+        assertThrows(RuntimeException.class, () -> new ExecutionContext<>(defaultContext));
     }
 
     @Test
     public void testVoidQueries() throws IOException {
         setupIndex(indexFileName, VoidQueries.class);
-        assertThrows(RuntimeException.class, () -> new ExecutionContext<>(dummyContext));
+        assertThrows(RuntimeException.class, () -> new ExecutionContext<>(defaultContext));
     }
 
     @Test
     public void testInvalidQueries() throws IOException {
         setupIndex(indexFileName, InvalidQueries.class);
-        assertThrows(RuntimeException.class, () -> new ExecutionContext<>(dummyContext));
+        assertThrows(RuntimeException.class, () -> new ExecutionContext<>(defaultContext));
     }
 
     @Test
     public void testSimpleContactWithSelf() throws IOException {
         setupIndex(indexFileName, SimpleContactWithSelf.class);
-        ExecutionContext<DummyContext> executionContext = new ExecutionContext<>(dummyContext);
+        ExecutionContext<DefaultContext> executionContext = new ExecutionContext<DefaultContext>(defaultContext);
         ExecutionResult result = executionContext.execute("query { hero }");
     }
 
     @Test
     public void testNumberFormats() throws IOException {
         setupIndex(indexFileName, SimpleContactWithNumberFormats.class, NumberFormatQueriesAndMutations.class);
-        ExecutionContext<DummyContext> executionContext = new ExecutionContext<>(dummyContext);
+        ExecutionContext<DefaultContext> executionContext = new ExecutionContext<DefaultContext>(defaultContext);
         ExecutionResult result = executionContext
                 .execute("query { simpleFormattingQuery { id name age bankBalance value longValue } }");
         Map<String, Object> mapResults = getAndAssertResult(result);
@@ -293,7 +294,7 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
     @Test
     public void testDateAndTime() throws IOException {
         setupIndex(indexFileName, DateTimePojo.class, SimpleQueriesNoArgs.class);
-        ExecutionContext<DummyContext> executionContext = new ExecutionContext<>(dummyContext);
+        ExecutionContext<DefaultContext> executionContext = new ExecutionContext<DefaultContext>(defaultContext);
 
         ExecutionResult result = executionContext.execute("query { dateAndTimePOJOQuery { offsetDateTime } }");
         Map<String, Object> mapResults = getAndAssertResult(result);
@@ -323,7 +324,7 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
     @Test
     public void testNulls() throws IOException {
         setupIndex(indexFileName, NullPOJO.class, QueriesWithNulls.class);
-        ExecutionContext<DummyContext> executionContext = new ExecutionContext<>(dummyContext);
+        ExecutionContext<DefaultContext> executionContext = new ExecutionContext<DefaultContext>(defaultContext);
         Schema schema = executionContext.getSchema();
         assertThat(schema, is(notNullValue()));
 
@@ -332,6 +333,7 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
         assertReturnTypeMandatory(type, "id", true);
         assertReturnTypeMandatory(type, "longValue", false);
         assertReturnTypeMandatory(type, "stringValue", true);
+        assertReturnTypeMandatory(type, "testNullWithGet", true);
         // TODO: Figure out how to do this
         // assertReturnTypeMandatory(type, "listNoNullStrings", true);
 
@@ -343,13 +345,17 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
         assertReturnTypeArgumentMandatory(query, "paramShouldBeNonMandatory", "value", false);
         assertReturnTypeArgumentMandatory(query, "paramShouldBeNonMandatory2", "value", false);
         assertReturnTypeArgumentMandatory(query, "paramShouldBeNonMandatory3", "value", false);
+
+        SchemaType input = schema.getInputTypeByName("NullPOJOInput");
+        assertReturnTypeMandatory(input, "nonNullForInput", true);
+        assertReturnTypeMandatory(input, "testNullWithGet", false);
     }
 
     @Test
     @SuppressWarnings("unchecked")
     public void testSimpleMutations() throws IOException {
         setupIndex(indexFileName, SimpleMutations.class);
-        ExecutionContext<DummyContext> executionContext = new ExecutionContext<>(dummyContext);
+        ExecutionContext<DefaultContext> executionContext = new ExecutionContext<DefaultContext>(defaultContext);
 
         ExecutionResult result = executionContext.execute("mutation { createNewContact { id name age } }");
         Map<String, Object> mapResults = getAndAssertResult(result);
@@ -382,7 +388,7 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
     @SuppressWarnings("unchecked")
     public void testSimpleQueryGenerationNoArgs() throws IOException {
         setupIndex(indexFileName, SimpleQueriesNoArgs.class);
-        ExecutionContext<DummyContext> executionContext = new ExecutionContext<>(dummyContext);
+        ExecutionContext<DefaultContext> executionContext = new ExecutionContext<DefaultContext>(defaultContext);
         ExecutionResult result = executionContext.execute("query { hero }");
 
         Map<String, Object> mapResults = getAndAssertResult(result);
@@ -435,12 +441,19 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
         mapResults = getAndAssertResult(result);
         assertThat(mapResults.size(), is(1));
         assertThat(mapResults.get("getMultiLevelList"), is(notNullValue()));
+
+        Schema schema = executionContext.getSchema();
+        SchemaType query = schema.getTypeByName("Query");
+        assertThat(query, is(notNullValue()));
+        SchemaFieldDefinition fd = getFieldDefinition(query, "idQuery");
+        assertThat(fd, is(notNullValue()));
+        assertThat(fd.getReturnType(), is(ID));
     }
 
     @Test
     public void testIgnorable() throws IOException {
         setupIndex(indexFileName, QueriesWithIgnorable.class);
-        ExecutionContext<DummyContext> executionContext = new ExecutionContext<>(dummyContext);
+        ExecutionContext<DefaultContext> executionContext = new ExecutionContext<DefaultContext>(defaultContext);
         ExecutionResult result = executionContext.execute("query { testIgnorableFields { id dontIgnore } }");
         Map<String, Object> mapResults = getAndAssertResult(result);
         assertThat(mapResults.size(), is(1));
@@ -470,7 +483,7 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
     @Test
     public void testDescriptions() throws IOException {
         setupIndex(indexFileName, DescriptionType.class, DescriptionQueries.class);
-        ExecutionContext<DummyContext> executionContext = new ExecutionContext<>(dummyContext);
+        ExecutionContext<DefaultContext> executionContext = new ExecutionContext<DefaultContext>(defaultContext);
 
         Schema schema = executionContext.getSchema();
         assertThat(schema, is(notNullValue()));
@@ -505,7 +518,7 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
     @Test
     public void testDefaultValues() throws IOException {
         setupIndex(indexFileName, DefaultValuePOJO.class, DefaultValueQueries.class);
-        ExecutionContext<DummyContext> executionContext = new ExecutionContext<>(dummyContext);
+        ExecutionContext<DefaultContext> executionContext = new ExecutionContext<DefaultContext>(defaultContext);
 
         // test with both fields as default
         ExecutionResult result = executionContext.execute("mutation { generateDefaultValuePOJO { id value } }");
@@ -541,10 +554,6 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
         assertThat(results.get("id"), is("X123"));
         assertThat(results.get("value"), is(1));
 
-        Schema schema = executionContext.getSchema();
-        SchemaType type = schema.getInputTypeByName("DefaultValuePOJOInput");
-        assertReturnTypeDefaultValue(type, "id", "ID-123");
-
         result = executionContext.execute("query { echoDefaultValuePOJO(input: {value: 1}) { id value } }");
         mapResults = getAndAssertResult(result);
         assertThat(mapResults.size(), is(1));
@@ -552,12 +561,22 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
         assertThat(results, is(notNullValue()));
         assertThat(results.get("id"), is("ID-123"));
         assertThat(results.get("value"), is(1));
+
+        Schema schema = executionContext.getSchema();
+        SchemaType type = schema.getInputTypeByName("DefaultValuePOJOInput");
+        assertReturnTypeDefaultValue(type, "id", "ID-123");
+        assertReturnTypeDefaultValue(type, "booleanValue", "false");
+        assertReturnTypeMandatory(type, "booleanValue", false);
+
+        SchemaFieldDefinition fd = getFieldDefinition(type, "value");
+        assertThat(fd, is(notNullValue()));
+        assertThat(fd.getDefaultValue(), is("111222"));
     }
 
     @Test
     public void setOddNamedQueriesAndMutations() throws IOException {
         setupIndex(indexFileName, DefaultValuePOJO.class, OddNamedQueriesAndMutations.class);
-        ExecutionContext<DummyContext> executionContext = new ExecutionContext<>(dummyContext);
+        ExecutionContext<DefaultContext> executionContext = new ExecutionContext<DefaultContext>(defaultContext);
 
         Schema schema = executionContext.getSchema();
         assertThat(schema, is(notNullValue()));
@@ -573,7 +592,7 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
     @SuppressWarnings("unchecked")
     public void testSimpleQueriesWithSource() throws IOException {
         setupIndex(indexFileName, SimpleQueriesWithSource.class, SimpleContact.class);
-        ExecutionContext<DummyContext> executionContext = new ExecutionContext<>(dummyContext);
+        ExecutionContext<DefaultContext> executionContext = new ExecutionContext<DefaultContext>(defaultContext);
 
         // since there is a @Source annotation in SimpleQueriesWithSource, then this should add a field
         // idAndName to the SimpleContact type
@@ -622,7 +641,7 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
     public void testInputType() throws IOException {
         setupIndex(indexFileName, SimpleContactInputType.class, SimpleContactInputTypeWithName.class,
                    SimpleContactInputTypeWithNameValue.class, SimpleContactInputTypeWithAddress.class);
-        ExecutionContext<DummyContext> executionContext = new ExecutionContext<>(dummyContext);
+        ExecutionContext<DefaultContext> executionContext = new ExecutionContext<DefaultContext>(defaultContext);
         Schema schema = executionContext.getSchema();
         assertThat(schema.getInputTypes().size(), is(5));
         assertThat(schema.containsInputTypeWithName("MyInputType"), is(true));
@@ -636,7 +655,7 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
     @SuppressWarnings("unchecked")
     public void testMultiLevelListsAndArraysQueries() throws IOException {
         setupIndex(indexFileName, ArrayAndListQueries.class, MultiLevelListsAndArrays.class);
-        ExecutionContext<DummyContext> executionContext = new ExecutionContext<>(dummyContext);
+        ExecutionContext<DefaultContext> executionContext = new ExecutionContext<DefaultContext>(defaultContext);
 
         ExecutionResult result = executionContext.execute("query { getMultiLevelList { intMultiLevelArray } }");
         Map<String, Object> mapResults = getAndAssertResult(result);
@@ -677,7 +696,7 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
     @SuppressWarnings("unchecked")
     public void testSimpleQueryGenerationWithArgs() throws IOException {
         setupIndex(indexFileName, SimpleQueriesWithArgs.class, Car.class, AbstractVehicle.class);
-        ExecutionContext<DummyContext> executionContext = new ExecutionContext<>(dummyContext);
+        ExecutionContext<DefaultContext> executionContext = new ExecutionContext<DefaultContext>(defaultContext);
 
         ExecutionResult result = executionContext.execute("query { hero(heroType: \"human\") }");
         Map<String, Object> mapResults = getAndAssertResult(result);
@@ -838,7 +857,7 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
         SchemaArgument argument = getArgument(fd, argumentName);
         assertThat(argument, is(notNullValue()));
         assertThat("Return type for argument " + argumentName + " should be mandatory="
-        + mandatory + " but is " + argument.isMandatory(), argument.isMandatory(), is(mandatory));
+                           + mandatory + " but is " + argument.isMandatory(), argument.isMandatory(), is(mandatory));
 
     }
 

@@ -30,7 +30,7 @@ public class NullPOJO {
     // should be mandatory
     private int id;
 
-    // should be optional
+    // should be optional for type
     private Long longValue;
 
     // should be mandatory
@@ -38,6 +38,11 @@ public class NullPOJO {
     private String stringValue;
 
     private List<@NonNull String> listNoNullStrings;
+
+    // should be nullable for type and non nullable for input type
+    private String nonNullForInput;
+
+    private String testNullWithGet;
 
     public NullPOJO() {
     }
@@ -82,5 +87,25 @@ public class NullPOJO {
 
     public void setListNoNullStrings(List<String> listNoNullStrings) {
         this.listNoNullStrings = listNoNullStrings;
+    }
+
+    public String getNonNullForInput() {
+        return nonNullForInput;
+    }
+
+    // should be non null for input type
+    @NonNull
+    public void setNonNullForInput(String nonNullForInput) {
+        this.nonNullForInput = nonNullForInput;
+    }
+
+    // should be mandatory for type and optional for input type
+    @NonNull
+    public String getTestNullWithGet() {
+        return testNullWithGet;
+    }
+
+    public void setTestNullWithGet(String testNullWithGet) {
+        this.testNullWithGet = testNullWithGet;
     }
 }

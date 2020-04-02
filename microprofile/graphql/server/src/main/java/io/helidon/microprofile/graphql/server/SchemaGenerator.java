@@ -173,7 +173,6 @@ public class SchemaGenerator {
 
         // process any specific classes with the Input, Type or Interface annotations
         for (Class<?> clazz : clazzes) {
-            LOGGER.log(Level.FINER, "Processing class " + clazz.getName());
             // only include interfaces and concrete classes/enums
             if (clazz.isInterface() || (!clazz.isInterface() && !Modifier.isAbstract(clazz.getModifiers()))) {
                 // Discover Enum via annotation
@@ -223,7 +222,6 @@ public class SchemaGenerator {
                         inputType.setName(inputType.getName() + "Input");
                     }
                     if (!schema.containsInputTypeWithName(inputType.getName())) {
-                        LOGGER.info("Adding annotated input type " + inputType.getName());
                         schema.addInputType(inputType);
                         checkInputType(schema, inputType);
                     }
@@ -487,7 +485,8 @@ public class SchemaGenerator {
 
                 String returnType = discoveredMethod.getReturnType();
                 // check to see if this is a known type
-                if (returnType.equals(fd.getReturnType()) && !setUnresolvedTypes.contains(returnType)) {
+                if (returnType.equals(fd.getReturnType()) && !setUnresolvedTypes.contains(returnType)
+                    && !ID.equals(returnType)) {
                     // value class was unchanged meaning we need to resolve
                     setUnresolvedTypes.add(returnType);
                 }
@@ -811,7 +810,7 @@ public class SchemaGenerator {
         Class<?> returnClazz = method.getReturnType();
         String returnClazzName = returnClazz.getName();
         if ("void".equals(returnClazzName)) {
-            String message = "void is not a valid return type for a Query or Mutation for method "
+            String message = "void is not a valid return type for a Query or Mutation method "
                     + method.getName() + " on class " + clazz.getName();
             LOGGER.warning(message);
             throw new RuntimeException(message);
@@ -829,17 +828,39 @@ public class SchemaGenerator {
 
                 // default values only make sense for input types
                 defaultValue = isInputType ? getDefaultValueAnnotationValue(field) : null;
-
-                // if the return type is annotated as NotNull or it is a primitive then it is mandatory
-                isReturnTypeMandatory = field.getAnnotation(NonNull.class) != null || isPrimitive(returnClazzName);
+                NonNull nonNullAnnotation = field.getAnnotation(NonNull.class);
 
                 if (isInputType) {
                     Method writeMethod = pd.getWriteMethod();
-                    if (writeMethod != null && description == null) {
+                    if (writeMethod != null) {
+
                         // retrieve the setter method and check the description
-                        description = getDescription(writeMethod.getAnnotation(Description.class));
+                        String methodDescription = getDescription(writeMethod.getAnnotation(Description.class));
+                        if (methodDescription != null) {
+                            description = methodDescription;
+                        }
+                        String writeMethodDefaultValue = getDefaultValueAnnotationValue(writeMethod);
+                        if (writeMethodDefaultValue != null) {
+                            defaultValue = writeMethodDefaultValue;
+                        }
+
+                        // for an input type the method annotation will override
+                        NonNull methodAnnotation = writeMethod.getAnnotation(NonNull.class);
+                        if (methodAnnotation != null) {
+                            nonNullAnnotation = methodAnnotation;
+                        }
+                    }
+                } else {
+                    NonNull methodAnnotation = method.getAnnotation(NonNull.class);
+                    if (methodAnnotation != null) {
+                        nonNullAnnotation = methodAnnotation;
                     }
                 }
+
+                // if the return type is annotated as NotNull or it is a primitive then it is mandatory
+                isReturnTypeMandatory = (isPrimitive(returnClazzName) && defaultValue == null)
+                        || nonNullAnnotation != null && defaultValue == null;
+
             } catch (NoSuchFieldException e) {
                 // ignore
             }
@@ -856,7 +877,16 @@ public class SchemaGenerator {
                 numberFormat = getFormatAnnotation(field);
             }
         } else {
-            isReturnTypeMandatory = method.getAnnotation(NonNull.class) != null || isPrimitive(returnClazzName);
+            // pd is null which means this is for query or mutation
+            defaultValue = getDefaultValueAnnotationValue(method);
+            isReturnTypeMandatory = isPrimitive(returnClazzName) && defaultValue == null
+                    || method.getAnnotation(NonNull.class) != null && defaultValue == null;
+            if (method.getAnnotation(Id.class) != null) {
+                if (!isValidIDType(returnClazz)) {
+                    throw new RuntimeException("A class of type " + returnClazz + " is not allowed to be an @Id");
+                }
+                returnClazzName = ID;
+            }
         }
 
         // check for method return type number format
@@ -908,8 +938,8 @@ public class SchemaGenerator {
                 String argumentDefaultValue = getDefaultValueAnnotationValue(parameter);
 
                 boolean isMandatory =
-                        (isPrimitive(paramType) && defaultValue == null)
-                                || (parameter.getAnnotation(NonNull.class) != null && defaultValue == null);
+                        (isPrimitive(paramType) && argumentDefaultValue == null)
+                                || (parameter.getAnnotation(NonNull.class) != null && argumentDefaultValue == null);
                 SchemaArgument argument =
                         new SchemaArgument(parameterName, returnType.getReturnClass(),
                                            isMandatory, argumentDefaultValue, paramType);

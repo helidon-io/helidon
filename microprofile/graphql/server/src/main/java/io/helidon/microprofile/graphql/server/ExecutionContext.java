@@ -106,11 +106,11 @@ public class ExecutionContext<C> {
             GraphQL.Builder builder = GraphQL.newGraphQL(this.graphQLSchema)
                     .subscriptionExecutionStrategy(new SubscriptionExecutionStrategy());
 
-//            Instrumentation instrumentation = null; // getInstrumentation();
-//
-//            if (instrumentation != null) {
-//                builder.instrumentation(instrumentation);
-//            }
+            //            Instrumentation instrumentation = null; // getInstrumentation();
+            //
+            //            if (instrumentation != null) {
+            //                builder.instrumentation(instrumentation);
+            //            }
 
             graphQL = builder.build();
 
@@ -120,6 +120,15 @@ public class ExecutionContext<C> {
             LOGGER.warning(message);
             throw new RuntimeException(message, e);
         }
+    }
+
+    /**
+     * Return a new {@link DefaultContext}.
+     *
+     * @return a new {@link DefaultContext
+     */
+    public static DefaultContext getDefaultContext() {
+        return new DefaultContext();
     }
 
     /**

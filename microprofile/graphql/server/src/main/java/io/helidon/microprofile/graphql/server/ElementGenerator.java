@@ -17,7 +17,9 @@
 package io.helidon.microprofile.graphql.server;
 
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.STRING;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getScalar;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.isGraphQLType;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.isScalar;
 
 /**
  * An interface representing a class which can generate a GraphQL representation of it's state.
@@ -120,7 +122,7 @@ public interface ElementGenerator {
 
         // determine how the default value should be rendered
 
-        if (isGraphQLType(argumentType) && STRING.equals(argumentType)) {
+        if (isScalar(argumentType) || isGraphQLType(argumentType) && STRING.equals(argumentType)) {
             sb.append(QUOTE)
                     .append(defaultValue)
                     .append(QUOTE);

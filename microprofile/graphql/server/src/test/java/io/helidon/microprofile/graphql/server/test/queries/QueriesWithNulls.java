@@ -18,6 +18,7 @@ package io.helidon.microprofile.graphql.server.test.queries;
 
 import javax.enterprise.context.ApplicationScoped;
 
+import io.helidon.microprofile.graphql.server.test.types.NullPOJO;
 import org.eclipse.microprofile.graphql.DefaultValue;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Mutation;
@@ -69,6 +70,10 @@ public class QueriesWithNulls {
         return "value";
     }
 
-
+    // just to generate NuklPOJOInput
+    @Query
+    public boolean validate(@Name("pojo") NullPOJO nullPOJO) {
+        return false;
+    }
     
 }

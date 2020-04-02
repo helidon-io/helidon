@@ -42,6 +42,7 @@ import io.helidon.microprofile.graphql.server.test.types.Person;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContactWithSelf;
 import io.helidon.microprofile.graphql.server.test.types.TypeWithIDs;
 import org.eclipse.microprofile.graphql.GraphQLApi;
+import org.eclipse.microprofile.graphql.Id;
 import org.eclipse.microprofile.graphql.Name;
 import org.eclipse.microprofile.graphql.Query;
 
@@ -58,6 +59,13 @@ public class SimpleQueriesNoArgs {
     public SimpleQueriesNoArgs() {
     }
 
+    @Query
+    @Name("idQuery")
+    @Id
+    public String returnId() {
+        return "an-id";
+    }
+    
     @Query
     public String hero() {
         return "R2-D2";

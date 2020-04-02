@@ -16,7 +16,10 @@
 
 package io.helidon.microprofile.graphql.server.test.types;
 
+import java.time.LocalDate;
+
 import org.eclipse.microprofile.graphql.DefaultValue;
+import org.eclipse.microprofile.graphql.Description;
 import org.eclipse.microprofile.graphql.Type;
 
 /**
@@ -27,7 +30,14 @@ public class DefaultValuePOJO {
 
     @DefaultValue("ID-123")
     private String id;
+    
     private int value;
+
+    @DefaultValue("1978-07-03")
+    private LocalDate dateObject;
+
+    @DefaultValue("false")
+    boolean booleanValue;
 
     public DefaultValuePOJO() {
     }
@@ -49,7 +59,24 @@ public class DefaultValuePOJO {
         return value;
     }
 
+    @DefaultValue("111222")
     public void setValue(int value) {
         this.value = value;
+    }
+
+    public LocalDate getDateObject() {
+        return dateObject;
+    }
+
+    public void setDateObject(LocalDate dateObject) {
+        this.dateObject = dateObject;
+    }
+
+    public boolean isBooleanValue() {
+        return booleanValue;
+    }
+
+    public void setBooleanValue(boolean booleanValue) {
+        this.booleanValue = booleanValue;
     }
 }
