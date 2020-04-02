@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -468,7 +468,7 @@ public final class MetricsSupport implements Service {
                 .ifPresentOrElse(entry -> {
                     if (req.headers().isAccepted(MediaType.APPLICATION_JSON)) {
                         JsonObjectBuilder builder = JSON.createObjectBuilder();
-                        entry.getKey().jsonMeta(builder, entry.getValue());
+                        HelidonMetric.class.cast(entry.getKey()).jsonMeta(builder, entry.getValue());
                         res.send(builder.build());
                     } else {
                         res.status(Http.Status.NOT_ACCEPTABLE_406);
