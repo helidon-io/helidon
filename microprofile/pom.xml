@@ -52,7 +52,10 @@
         <module>websocket</module>
         <module>reactive-streams</module>
         <module>messaging</module>
+<<<<<<< HEAD
         <module>cors</module>
+=======
+>>>>>>> TCK in KafkaConnector
         <module>connectors</module>
     </modules>
 </project>

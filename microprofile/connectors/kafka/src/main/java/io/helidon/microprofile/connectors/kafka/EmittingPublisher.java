@@ -67,6 +67,7 @@ class EmittingPublisher<T> implements Publisher<T> {
                 LOGGER.fine("Subscription cancelled");
                 state.compareAndSet(State.NOT_REQUESTED_YET, State.CANCELLED);
                 state.compareAndSet(State.READY_TO_EMIT, State.CANCELLED);
+                EmittingPublisher.this.subscriber = null;
             }
 
         });
@@ -158,13 +159,15 @@ class EmittingPublisher<T> implements Publisher<T> {
         CANCELLED {
             @Override
             <T> boolean emit(EmittingPublisher<T> publisher, T item) {
-                throw new IllegalStateException("Emitter is cancelled!");
+                // No-op
+                return false;
             }
         },
         COMPLETED {
             @Override
             <T> boolean emit(EmittingPublisher<T> publisher, T item) {
-                throw new IllegalStateException("Emitter is completed!");
+                // No-op
+                return false;
             }
         };
 

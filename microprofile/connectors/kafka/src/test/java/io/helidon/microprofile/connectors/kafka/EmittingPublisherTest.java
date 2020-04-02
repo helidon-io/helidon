@@ -19,7 +19,6 @@ package io.helidon.microprofile.connectors.kafka;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
@@ -132,7 +131,7 @@ public class EmittingPublisherTest {
         });
 
         assertTrue(emitter.isCancelled());
-        assertThrows(IllegalStateException.class, () -> emitter.emit("should throw"));
+        assertFalse(emitter.emit("should false"));
         assertEquals(List.of(), forbiddenSigs);
     }
 
@@ -165,7 +164,7 @@ public class EmittingPublisherTest {
         emitter.complete();
         assertTrue(onCompleteCalled.get());
         assertTrue(emitter.isCompleted());
-        assertThrows(IllegalStateException.class, () -> emitter.emit("should throw"));
+        assertFalse(emitter.emit("should false"));
         assertEquals(List.of(), forbiddenSigs);
     }
 }

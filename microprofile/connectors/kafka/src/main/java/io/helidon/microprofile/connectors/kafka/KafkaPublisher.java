@@ -17,7 +17,6 @@
 package io.helidon.microprofile.connectors.kafka;
 
 import java.io.Closeable;
-import java.io.IOException;
 import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -129,8 +128,8 @@ class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>>, Closeable {
                 while ((entry = pendingCommits.poll()) != null) {
                     offsets.put(entry.getKey(), entry.getValue());
                 }
-                kafkaConsumer.commitSync(offsets);
                 if (!offsets.isEmpty()) {
+                    kafkaConsumer.commitSync(offsets);
                     LOGGER.fine(String.format("%s events were ACK: ", offsets.size()));
                 }
             } catch (Exception e) {
@@ -145,7 +144,7 @@ class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>>, Closeable {
      * Closes the connections to Kafka and stops to process new events.
      */
     @Override
-    public void close() throws IOException {
+    public void close() {
         // Stops pooling
         kafkaConsumer.wakeup();
         // Wait that current task finishes in case it is still running
@@ -164,7 +163,7 @@ class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>>, Closeable {
     }
 
     //Move to messaging incoming connector
-    private void runInNewContext(Runnable runnable) {
+    protected void runInNewContext(Runnable runnable) {
         Context.Builder contextBuilder = Context.builder()
                 .id(String.format("kafka-message-%s:", UUID.randomUUID().toString()));
         Contexts.context().ifPresent(contextBuilder::parent);
@@ -212,6 +211,14 @@ class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>>, Closeable {
         Consumer<K, V> kafkaConsumer = new KafkaConsumer<>(kafkaConfig);
         long pollTimeout = config.get(POLL_TIMEOUT).asLong().orElse(50L);
         long periodExecutions = config.get(PERIOD_EXECUTIONS).asLong().orElse(100L);
+        KafkaPublisher<K, V> publisher = new KafkaPublisher<>(scheduler, kafkaConsumer, topics, pollTimeout, periodExecutions);
+        publisher.execute();
+        return publisher;
+    }
+
+    // For testing purposes
+    static <K, V> KafkaPublisher<K, V> build(ScheduledExecutorService scheduler, Consumer<K, V> kafkaConsumer,
+            List<String> topics, long pollTimeout, long periodExecutions){
         KafkaPublisher<K, V> publisher = new KafkaPublisher<>(scheduler, kafkaConsumer, topics, pollTimeout, periodExecutions);
         publisher.execute();
         return publisher;

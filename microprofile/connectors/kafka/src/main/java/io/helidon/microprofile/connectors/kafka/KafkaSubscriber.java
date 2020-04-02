@@ -18,6 +18,7 @@ package io.helidon.microprofile.connectors.kafka;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -25,6 +26,7 @@ import java.util.logging.Logger;
 import io.helidon.config.Config;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.Producer;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
@@ -50,12 +52,17 @@ class KafkaSubscriber<T> implements Subscriber<Message<T>> {
 
     @Override
     public void onSubscribe(Subscription subscription) {
-        this.subscription = subscription;
-        subscription.request(backpressure);
+        if (this.subscription == null) {
+            this.subscription = subscription;
+            this.subscription.request(backpressure);
+        } else {
+            subscription.cancel();
+        }
     }
 
     @Override
     public void onNext(Message<T> message) {
+        Objects.requireNonNull(message);
         producer.produceAsync(message.getPayload());
         message.ack();
         if (backpressureCounter.incrementAndGet() == backpressure) {
@@ -66,6 +73,7 @@ class KafkaSubscriber<T> implements Subscriber<Message<T>> {
 
     @Override
     public void onError(Throwable t) {
+        Objects.requireNonNull(t);
         LOGGER.log(Level.SEVERE, "The Kafka subscription has failed", t);
         producer.close();
     }
@@ -93,6 +101,11 @@ class KafkaSubscriber<T> implements Subscriber<Message<T>> {
         }
         long backpressure = config.get(BACKPRESSURE_SIZE_KEY).asLong().orElse(BACKPRESSURE_SIZE_DEFAULT);
         return new KafkaSubscriber<T>(new BasicKafkaProducer<>(topics, new KafkaProducer<>(kafkaConfig)), backpressure);
+    }
+
+    // For tests
+    static <T> KafkaSubscriber<T> build(List<String> topics, long backpressure, Producer<?, T> producer) {
+        return new KafkaSubscriber<T>(new BasicKafkaProducer<>(topics, producer), backpressure);
     }
 
 }

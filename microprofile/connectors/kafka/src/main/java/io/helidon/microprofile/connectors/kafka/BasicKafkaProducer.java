@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.concurrent.Future;
 import java.util.logging.Logger;
 
-import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
@@ -43,7 +42,7 @@ class BasicKafkaProducer<K, V> implements Closeable {
     private final List<String> topics;
     private final Producer<K, V> producer;
 
-    BasicKafkaProducer(List<String> topics, KafkaProducer<K, V> producer) {
+    BasicKafkaProducer(List<String> topics, Producer<K, V> producer) {
         this.topics = topics;
         this.producer = producer;
     }

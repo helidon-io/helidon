@@ -40,6 +40,7 @@
         <module>tck-opentracing</module>
         <module>tck-rest-client</module>
         <module>tck-reactive-operators</module>
+        <module>tck-connectors-kafka</module>
     </modules>
 
     <properties>
