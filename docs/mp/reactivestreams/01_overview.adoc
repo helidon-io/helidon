@@ -20,8 +20,7 @@
 :toc:
 :toc-placement: preamble
 :parentTitle: Se & Mp
-:flawor: MP
-:helidon: Helidon {flawor}
+:helidon: Helidon
 :description: Reactive Streams support in {helidon}
 :keywords: helidon, mp, microprofile, reactivestreams
 

@@ -74,7 +74,7 @@ Single.just("1")
 |forEach|Terminal stage, invokes provided consumer for every item in the stream.
 |collectList|Collect the items of this `Multi` instance into a `Single` of `List`.
 |collect|Collect the items of this `Multi` instance into a `Single`.
-|collect|Collect the items of this `Multi` into a collection provided via a `Supplier` and mutated by a {@code BiConsumer} callback.
+|collect|Collect the items of this `Multi` into a collection provided via a `Supplier` and mutated by a `BiConsumer` callback.
 |collectStream|Collects up upstream items with the help of the callbacks of a `java.util.stream.Collector`.
 |reduce|Combine subsequent items via a callback function and emit the final value result as a Single.
 |reduce|Combine every upstream item with an accumulator value to produce a new accumulator value and emit the final accumulator value as a Single.
