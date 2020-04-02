@@ -19,6 +19,7 @@ package io.helidon.microprofile.graphql.server;
 import java.beans.IntrospectionException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.lang.reflect.ParameterizedType;
 
 import java.math.BigDecimal;
@@ -29,6 +30,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+
+import javax.validation.constraints.NotNull;
 
 import io.helidon.microprofile.graphql.server.test.enums.EnumTestNoEnumName;
 import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithEnumName;
@@ -55,6 +58,7 @@ import io.helidon.microprofile.graphql.server.test.types.TypeWithNameAndJsonbPro
 
 import io.helidon.microprofile.graphql.server.test.types.Vehicle;
 import io.helidon.microprofile.graphql.server.test.types.VehicleIncident;
+import org.eclipse.microprofile.graphql.NonNull;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.BIG_DECIMAL;

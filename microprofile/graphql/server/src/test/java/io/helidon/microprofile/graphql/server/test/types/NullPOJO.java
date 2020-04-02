@@ -16,6 +16,8 @@
 
 package io.helidon.microprofile.graphql.server.test.types;
 
+import java.util.List;
+
 import org.eclipse.microprofile.graphql.NonNull;
 import org.eclipse.microprofile.graphql.Type;
 
@@ -35,13 +37,19 @@ public class NullPOJO {
     @NonNull
     private String stringValue;
 
+    private List<@NonNull String> listNoNullStrings;
+
     public NullPOJO() {
     }
 
-    public NullPOJO(int id, Long longValue, String stringValue) {
+    public NullPOJO(int id,
+                    Long longValue,
+                    @NonNull String stringValue,
+                    List<@NonNull String> listNoNullStrings) {
         this.id = id;
         this.longValue = longValue;
         this.stringValue = stringValue;
+        this.listNoNullStrings = listNoNullStrings;
     }
 
     public int getId() {
@@ -66,5 +74,13 @@ public class NullPOJO {
 
     public void setStringValue(String stringValue) {
         this.stringValue = stringValue;
+    }
+
+    public List<String> getListNoNullStrings() {
+        return listNoNullStrings;
+    }
+
+    public void setListNoNullStrings(List<String> listNoNullStrings) {
+        this.listNoNullStrings = listNoNullStrings;
     }
 }

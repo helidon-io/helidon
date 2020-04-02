@@ -69,6 +69,11 @@ public class SchemaFieldDefinition
     private String[] format;
 
     /**
+     * The default value for this field definition. Only valid for field definitions of an input type.
+     */
+    private Object defaultValue;
+
+    /**
      * Construct a {@link SchemaFieldDefinition}.
      *
      * @param name                  field definition name
@@ -118,6 +123,10 @@ public class SchemaFieldDefinition
 
         if (isReturnTypeMandatory()) {
             sb.append(MANDATORY);
+        }
+
+        if (defaultValue != null) {
+            sb.append(generateDefaultValue(defaultValue, getReturnType()));
         }
 
         return sb.toString();
@@ -240,6 +249,24 @@ public class SchemaFieldDefinition
      */
     public void setFormat(String[] format) {
         this.format = format;
+    }
+
+    /**
+     * Return the default value for this field definition.
+     *
+     * @return the default value for this field definition
+     */
+    public Object getDefaultValue() {
+        return defaultValue;
+    }
+
+    /**
+     * Set the default value for this field definition.
+     *
+     * @param defaultValue the default value for this field definition
+     */
+    public void setDefaultValue(Object defaultValue) {
+        this.defaultValue = defaultValue;
     }
 
     @Override

@@ -68,6 +68,9 @@ class SchemaArgumentTest {
 
         schemaArgument.setDefaultValue("hello");
         assertThat(schemaArgument.getDefaultValue(), is("hello"));
+
+        schemaArgument.setDefaultValue("1");
+        assertThat(schemaArgument.getDefaultValue(), is("1"));
     }
 
     @Test

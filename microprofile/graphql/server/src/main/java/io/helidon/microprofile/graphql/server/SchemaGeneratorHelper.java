@@ -56,6 +56,7 @@ import static io.helidon.microprofile.graphql.server.ElementGenerator.OPEN_SQUAR
 import static io.helidon.microprofile.graphql.server.SchemaGenerator.GET;
 import static io.helidon.microprofile.graphql.server.SchemaGenerator.IS;
 import static io.helidon.microprofile.graphql.server.SchemaGenerator.SET;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getDefaultValueAnnotationValue;
 
 /**
  * Helper class for {@link SchemaGenerator}.
@@ -252,7 +253,6 @@ public final class SchemaGeneratorHelper {
      */
     protected static boolean isPrimitive(Class<?> clazz) {
         return isPrimitive(clazz.getName());
-
     }
 
     /**
@@ -442,13 +442,27 @@ public final class SchemaGeneratorHelper {
     }
 
     /**
-     * Return the {@link DefaultValue} annotation value if it exists or null.
+     * Return the {@link DefaultValue} annotation value if it exists for a {@link Parameter} or null.
      *
      * @param parameter {@link Parameter} to check
      * @return the {@link DefaultValue} annotation value if it exists or null
      */
     protected static String getDefaultValueAnnotationValue(Parameter parameter) {
         DefaultValue defaultValueAnnotation = parameter.getAnnotation(DefaultValue.class);
+        if (defaultValueAnnotation != null && !"".equals(defaultValueAnnotation.value())) {
+            return defaultValueAnnotation.value();
+        }
+        return null;
+    }
+
+    /**
+     * Return the {@link DefaultValue} annotation value if it exists for a {@link Field}  or null.
+     *
+     * @param field {@link Field} to check
+     * @return the {@link DefaultValue} annotation value if it exists or null
+     */
+    protected static String getDefaultValueAnnotationValue(Field field) {
+        DefaultValue defaultValueAnnotation = field.getAnnotation(DefaultValue.class);
         if (defaultValueAnnotation != null && !"".equals(defaultValueAnnotation.value())) {
             return defaultValueAnnotation.value();
         }
@@ -504,7 +518,6 @@ public final class SchemaGeneratorHelper {
         }
 
         return varName;
-
     }
 
     /**

@@ -18,8 +18,11 @@ package io.helidon.microprofile.graphql.server.test.queries;
 
 import javax.enterprise.context.ApplicationScoped;
 
+import org.eclipse.microprofile.graphql.DefaultValue;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Mutation;
+import org.eclipse.microprofile.graphql.Name;
+import org.eclipse.microprofile.graphql.NonNull;
 import org.eclipse.microprofile.graphql.Query;
 
 /**
@@ -31,5 +34,41 @@ public class QueriesWithNulls {
 
     public QueriesWithNulls() {
     }
+
+    @Query("method1NotNull")
+    @NonNull
+    public String getAString() {
+        return "A String";
+    }
+
+    @Query("method2NotNull")
+    public int getInt() {
+        return 1;
+    }
+
+    @Query("method3NotNull")
+    public Long getLong() {
+        return 1L;
+    }
+
+    // should be optional
+    @Query("paramShouldBeNonMandatory")
+    public String query1(@Name("value") String value) {
+        return "value";
+    }
+
+    // should be optional as even though it's primitive, there is DefaultValue
+    @Query("paramShouldBeNonMandatory2")
+    public String query2(@Name("value") @DefaultValue("1") int value) {
+        return "value";
+    }
+
+    // even though we have NonNull, there is a default value so should be optional
+    @Query("paramShouldBeNonMandatory3")
+    public String query3(@Name("value") @DefaultValue("value") @NonNull String value) {
+        return "value";
+    }
+
+
     
 }

@@ -98,26 +98,7 @@ public class SchemaArgument
         }
 
         if (defaultValue != null) {
-            sb.append(SPACER)
-                    .append(EQUALS)
-                    .append(SPACER);
-
-            // determine how the default value should be rendered
-            String argumentType = getArgumentType();
-
-            if (isGraphQLType(argumentType) && STRING.equals(argumentType)) {
-                sb.append(QUOTE)
-                        .append(defaultValue)
-                        .append(QUOTE);
-            } else {
-                // Workaround for graphql profile TCK bug
-                if (defaultValue.toString().contains("\":")) {
-                    sb.append("{}");
-                }
-                else {
-                    sb.append(defaultValue);
-                }
-            }
+            sb.append(generateDefaultValue(defaultValue, getArgumentType()));
         }
 
         return sb.toString();

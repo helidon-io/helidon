@@ -32,7 +32,6 @@ import javax.enterprise.inject.se.SeContainerInitializer;
 
 import graphql.ExecutionResult;
 
-import graphql.language.FieldDefinition;
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithNameAnnotation;
 import io.helidon.microprofile.graphql.server.test.mutations.SimpleMutations;
@@ -329,9 +328,21 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
         assertThat(schema, is(notNullValue()));
 
         // test primitives should be not null be default
-        assertMandatory(schema, "NullPOJO", "id", true);
-        assertMandatory(schema, "NullPOJO", "longValue", false);
-        assertMandatory(schema, "NullPOJO", "stringValue", true);
+        SchemaType type = schema.getTypeByName("NullPOJO");
+        assertReturnTypeMandatory(type, "id", true);
+        assertReturnTypeMandatory(type, "longValue", false);
+        assertReturnTypeMandatory(type, "stringValue", true);
+        // TODO: Figure out how to do this
+        // assertReturnTypeMandatory(type, "listNoNullStrings", true);
+
+        SchemaType query = schema.getTypeByName("Query");
+        assertReturnTypeMandatory(query, "method1NotNull", true);
+        assertReturnTypeMandatory(query, "method2NotNull", true);
+        assertReturnTypeMandatory(query, "method3NotNull", false);
+
+        assertReturnTypeArgumentMandatory(query, "paramShouldBeNonMandatory", "value", false);
+        assertReturnTypeArgumentMandatory(query, "paramShouldBeNonMandatory2", "value", false);
+        assertReturnTypeArgumentMandatory(query, "paramShouldBeNonMandatory3", "value", false);
     }
 
     @Test
@@ -528,6 +539,18 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
         results = (Map<String, Object>) mapResults.get("echoDefaultValuePOJO");
         assertThat(results, is(notNullValue()));
         assertThat(results.get("id"), is("X123"));
+        assertThat(results.get("value"), is(1));
+
+        Schema schema = executionContext.getSchema();
+        SchemaType type = schema.getInputTypeByName("DefaultValuePOJOInput");
+        assertReturnTypeDefaultValue(type, "id", "ID-123");
+
+        result = executionContext.execute("query { echoDefaultValuePOJO(input: {value: 1}) { id value } }");
+        mapResults = getAndAssertResult(result);
+        assertThat(mapResults.size(), is(1));
+        results = (Map<String, Object>) mapResults.get("echoDefaultValuePOJO");
+        assertThat(results, is(notNullValue()));
+        assertThat(results.get("id"), is("ID-123"));
         assertThat(results.get("value"), is(1));
     }
 
@@ -792,19 +815,47 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
         generateGraphQLSchema(schema);
     }
 
-    private void assertMandatory(Schema schema, String typeName, String fdName, boolean mandatory) {
-        SchemaType type = schema.getTypeByName(typeName);
+    private void assertReturnTypeDefaultValue(SchemaType type, String fdName, String defaultValue) {
         assertThat(type, is(notNullValue()));
         SchemaFieldDefinition fd = getFieldDefinition(type, fdName);
         assertThat(fd, is(notNullValue()));
-        assertThat("Return type for " + fdName + " should be " + mandatory +
+        assertThat("Default value for " + fdName + " should be " + defaultValue +
+                           " but is " + fd.getDefaultValue(), fd.getDefaultValue(), is(defaultValue));
+    }
+
+    private void assertReturnTypeMandatory(SchemaType type, String fdName, boolean mandatory) {
+        assertThat(type, is(notNullValue()));
+        SchemaFieldDefinition fd = getFieldDefinition(type, fdName);
+        assertThat(fd, is(notNullValue()));
+        assertThat("Return type for " + fdName + " should be mandatory=" + mandatory +
                            " but is " + fd.isReturnTypeMandatory(), fd.isReturnTypeMandatory(), is(mandatory));
+    }
+
+    private void assertReturnTypeArgumentMandatory(SchemaType type, String fdName, String argumentName, boolean mandatory) {
+        assertThat(type, is(notNullValue()));
+        SchemaFieldDefinition fd = getFieldDefinition(type, fdName);
+        assertThat(fd, is(notNullValue()));
+        SchemaArgument argument = getArgument(fd, argumentName);
+        assertThat(argument, is(notNullValue()));
+        assertThat("Return type for argument " + argumentName + " should be mandatory="
+        + mandatory + " but is " + argument.isMandatory(), argument.isMandatory(), is(mandatory));
+
     }
 
     private SchemaFieldDefinition getFieldDefinition(SchemaType type, String name) {
         for (SchemaFieldDefinition fd : type.getFieldDefinitions()) {
             if (fd.getName().equals(name)) {
                 return fd;
+            }
+        }
+        return null;
+    }
+
+    private SchemaArgument getArgument(SchemaFieldDefinition fd, String name) {
+        assertThat(fd, is(notNullValue()));
+        for (SchemaArgument argument : fd.getArguments()) {
+            if (argument.getArgumentName().equals(name)) {
+                return argument;
             }
         }
         return null;

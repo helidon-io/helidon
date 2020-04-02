@@ -647,7 +647,8 @@ public class SchemaGenerator {
                                                              discoveredMethod.getArrayLevels());
         fd.setDataFetcher(dataFetcher);
         fd.setFormat(discoveredMethod.getFormat());
-        fd.setDescription(discoveredMethod.description);
+        fd.setDescription(discoveredMethod.getDescription());
+        fd.setDefaultValue(discoveredMethod.getDefaultValue());
         return fd;
     }
 
@@ -780,6 +781,7 @@ public class SchemaGenerator {
         String description = null;
         String varName;
         boolean isReturnTypeMandatory = false;
+        String defaultValue = null;
 
         // retrieve the method name
         if (isQueryOrMutation) {
@@ -825,6 +827,9 @@ public class SchemaGenerator {
                 fieldHasIdAnnotation = field != null && field.getAnnotation(Id.class) != null;
                 description = getDescription(field.getAnnotation(Description.class));
 
+                // default values only make sense for input types
+                defaultValue = isInputType ? getDefaultValueAnnotationValue(field) : null;
+
                 // if the return type is annotated as NotNull or it is a primitive then it is mandatory
                 isReturnTypeMandatory = field.getAnnotation(NonNull.class) != null || isPrimitive(returnClazzName);
 
@@ -850,6 +855,8 @@ public class SchemaGenerator {
             if (field != null) {
                 numberFormat = getFormatAnnotation(field);
             }
+        } else {
+            isReturnTypeMandatory = method.getAnnotation(NonNull.class) != null || isPrimitive(returnClazzName);
         }
 
         // check for method return type number format
@@ -866,6 +873,7 @@ public class SchemaGenerator {
         discoveredMethod.setName(varName);
         discoveredMethod.setMethod(method);
         discoveredMethod.setFormat(numberFormat);
+        discoveredMethod.setDefaultValue(defaultValue);
         discoveredMethod.setPropertyName(pd != null ? pd.getName() : null);
 
         if (description == null && !isInputType) {
@@ -897,11 +905,14 @@ public class SchemaGenerator {
                     returnType.setReturnClass(ID);
                 }
 
+                String argumentDefaultValue = getDefaultValueAnnotationValue(parameter);
+
+                boolean isMandatory =
+                        (isPrimitive(paramType) && defaultValue == null)
+                                || (parameter.getAnnotation(NonNull.class) != null && defaultValue == null);
                 SchemaArgument argument =
-                        new SchemaArgument(parameterName,
-                                           returnType.getReturnClass(),
-                                           parameter.getAnnotation(NonNull.class) != null || isPrimitive(paramType),
-                                           getDefaultValueAnnotationValue(parameter), paramType);
+                        new SchemaArgument(parameterName, returnType.getReturnClass(),
+                                           isMandatory, argumentDefaultValue, paramType);
                 String[] argumentFormat = getFormatAnnotation(parameter);
                 String argumentDescription = getDescription(parameter.getAnnotation(Description.class));
                 argument.setFormat(argumentFormat);
@@ -1080,6 +1091,11 @@ public class SchemaGenerator {
          * Indicates id the return type is mandatory.
          */
         private boolean isReturnTypeMandatory;
+
+        /**
+         * The default value for this discovered method.
+         */
+        private Object defaultValue;
 
         /**
          * Default constructor.
@@ -1366,6 +1382,24 @@ public class SchemaGenerator {
             isReturnTypeMandatory = returnTypeMandatory;
         }
 
+        /**
+         * Return the default value for this method.
+         *
+         * @return the default value for this method
+         */
+        public Object getDefaultValue() {
+            return defaultValue;
+        }
+
+        /**
+         * Set the default value for this method.
+         *
+         * @param defaultValue the default value for this method
+         */
+        public void setDefaultValue(Object defaultValue) {
+            this.defaultValue = defaultValue;
+        }
+
         @Override
         public String toString() {
             return "DiscoveredMethod{"
@@ -1380,6 +1414,7 @@ public class SchemaGenerator {
                     + ", source=" + source
                     + ", isQueryAnnotated=" + isQueryAnnotated
                     + ", description=" + description
+                    + ", defaultValue=" + defaultValue
                     + ", method=" + method + '}';
         }
 
@@ -1403,6 +1438,7 @@ public class SchemaGenerator {
                     && Objects.equals(method, that.method)
                     && Objects.equals(description, that.description)
                     && Objects.equals(isReturnTypeMandatory, that.isReturnTypeMandatory)
+                    && Objects.equals(defaultValue, that.defaultValue)
                     && Objects.equals(collectionType, that.collectionType);
         }
 
@@ -1410,7 +1446,7 @@ public class SchemaGenerator {
         public int hashCode() {
             return Objects.hash(name, returnType, methodType, method, arrayLevels, isQueryAnnotated,
                                 collectionType, isArrayReturnType, isMap, source, description,
-                                isReturnTypeMandatory);
+                                isReturnTypeMandatory, defaultValue);
         }
     }
 

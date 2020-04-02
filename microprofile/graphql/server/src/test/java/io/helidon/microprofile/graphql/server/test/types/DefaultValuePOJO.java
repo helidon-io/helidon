@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.graphql.server.test.types;
 
+import org.eclipse.microprofile.graphql.DefaultValue;
 import org.eclipse.microprofile.graphql.Type;
 
 /**
@@ -24,6 +25,7 @@ import org.eclipse.microprofile.graphql.Type;
 @Type
 public class DefaultValuePOJO {
 
+    @DefaultValue("ID-123")
     private String id;
     private int value;
 

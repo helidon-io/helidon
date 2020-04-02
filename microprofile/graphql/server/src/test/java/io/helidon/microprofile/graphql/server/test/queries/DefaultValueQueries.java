@@ -59,4 +59,10 @@ public class DefaultValueQueries {
         return input;
     }
 
+    @Query
+    @Name("echoDefaultValuePOJO2")
+    public DefaultValuePOJO echo2(@Name("input") DefaultValuePOJO input) {
+        return input;
+    }
+
 }
