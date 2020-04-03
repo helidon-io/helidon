@@ -33,14 +33,16 @@ import org.mockito.Mockito;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.tck.PublisherVerification;
 import org.reactivestreams.tck.TestEnvironment;
+import org.testng.annotations.Test;
 
-class KafkaPublisherTckTest extends PublisherVerification<KafkaMessage<String, Long>> {
+@Test
+public class KafkaPublisherTckTest extends PublisherVerification<KafkaMessage<String, Long>> {
 
     private static final String TEST_TOPIC_1 = "graph-done-1";
     private static final long POLL_TIMEOUT = 10L;
 
     KafkaPublisherTckTest() {
-        super(new TestEnvironment(1000));
+        super(new TestEnvironment(50));
     }
 
     @Override

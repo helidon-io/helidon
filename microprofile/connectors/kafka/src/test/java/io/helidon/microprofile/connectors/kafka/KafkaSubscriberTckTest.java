@@ -26,11 +26,13 @@ import org.mockito.Mockito;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.tck.SubscriberBlackboxVerification;
 import org.reactivestreams.tck.TestEnvironment;
+import org.testng.annotations.Test;
 
-class KafkaSubscriberTckTest extends SubscriberBlackboxVerification<Message<String>> {
+@Test
+public class KafkaSubscriberTckTest extends SubscriberBlackboxVerification<Message<String>> {
 
     protected KafkaSubscriberTckTest() {
-        super(new TestEnvironment(1000));
+        super(new TestEnvironment(50));
     }
 
     @Override
