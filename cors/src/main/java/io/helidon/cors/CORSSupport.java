@@ -37,6 +37,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
+import static io.helidon.cors.CrossOriginHelper.CORS_CONFIG_KEY;
 import static io.helidon.cors.CrossOriginHelper.requestType;
 
 /**
@@ -47,11 +48,32 @@ import static io.helidon.cors.CrossOriginHelper.requestType;
  */
 public class CORSSupport implements Service {
 
+    /**
+     * Creates a {@code CORSSupport} instance based on the default configuration and any
+     * {@value CrossOriginHelper#CORS_CONFIG_KEY} config node in it.
+     */
+    public static CORSSupport create() {
+        Config corsConfig = Config.create().get(CORS_CONFIG_KEY);
+        return create(corsConfig);
+    }
+
+    /**
+     * Creates a {@code CORSSupport} instance based on only configuration.
+     *
+     * @param config the config node containing CORS-related info; typically obtained by retrieving config using the
+     *               "{@value CrossOriginHelper#CORS_CONFIG_KEY}" key from the application's or component's config
+     * @return configured {@code CORSSupport} instance
+     */
     public static CORSSupport create(Config config) {
         return builder().config(config).build();
     }
 
-    static CORSSupport.Builder builder() {
+    /**
+     * Returns a builder for constructing a {@code CORSSupport} instance.
+     *
+     * @return the new builder
+     */
+    public static CORSSupport.Builder builder() {
         return new Builder();
     }
 
@@ -101,8 +123,8 @@ public class CORSSupport implements Service {
                         firstHeaderGetter(request),
                         responseSetter(response));
                 /*
-                 * An actual response means there is an error. Otherwise, since we know this is a CORS request, do the CORS
-                 * post-processing after other
+                 * Any response carries a CORS error which we send immediately. Otherwise, since we know this is a CORS
+                 * request, do the CORS post-processing and then pass the baton to the next handler.
                  */
                 corsResponse.ifPresentOrElse(ServerResponse::send, () -> finishCORSResponse(request, response));
                 break;
