@@ -16,6 +16,8 @@
 
 package io.helidon.tests.apps.bookstore.mp;
 
+import io.helidon.tests.apps.bookstore.common.Book;
+
 import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.spi.CDI;
 import javax.ws.rs.client.Client;

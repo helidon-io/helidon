@@ -24,7 +24,7 @@ import javax.json.JsonArrayBuilder;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 
-import io.helidon.tests.apps.bookstore.mp.Book;
+import io.helidon.tests.apps.bookstore.common.Book;
 
 class BookMapper {
 

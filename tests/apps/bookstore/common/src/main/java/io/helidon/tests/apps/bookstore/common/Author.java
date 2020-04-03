@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,26 @@
 
 package io.helidon.tests.apps.bookstore.common;
 
-import java.util.Collection;
-
-import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 /**
- * Class BookGeneratorTest.
+ * Class Author.
  */
-public class BookGeneratorTest {
+public class Author {
+    private String first;
+    private String last;
 
-    @Test
-    public void testGenerator() {
-        Collection<Book> bookStore = new BookGenerator().apply(10);
-        assertEquals(10, bookStore.size());
-        bookStore.forEach(book -> System.out.println(book));
+    public String getFirst() {
+        return first;
+    }
+
+    public void setFirst(String first) {
+        this.first = first;
+    }
+
+    public String getLast() {
+        return last;
+    }
+
+    public void setLast(String last) {
+        this.last = last;
     }
 }

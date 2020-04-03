@@ -16,6 +16,9 @@
 
 package io.helidon.tests.apps.bookstore.mp;
 
+import io.helidon.tests.apps.bookstore.common.Book;
+import io.helidon.tests.apps.bookstore.common.BookStore;
+
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;

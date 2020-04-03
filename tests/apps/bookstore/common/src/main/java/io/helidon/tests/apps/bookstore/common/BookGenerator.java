@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.tests.apps.bookstore.mp;
+package io.helidon.tests.apps.bookstore.common;
 
 import java.util.Collection;
 import java.util.concurrent.ThreadLocalRandom;

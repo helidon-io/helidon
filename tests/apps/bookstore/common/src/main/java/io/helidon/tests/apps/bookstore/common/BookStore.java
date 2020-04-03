@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.tests.apps.bookstore.mp;
+package io.helidon.tests.apps.bookstore.common;
 
 import javax.enterprise.context.ApplicationScoped;
 import java.util.Collection;
