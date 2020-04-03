@@ -29,7 +29,7 @@ import java.util.Optional;
 class CustomMatchers {
 
     static <T> IsPresent<T> isPresent(Matcher matcher) {
-        return new IsPresent(matcher);
+        return new IsPresent<T>(matcher);
     }
 
     static <T> IsPresent<T> isPresent() {

@@ -54,7 +54,7 @@ import javax.ws.rs.core.Response;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
-public class SimpleTest {
+public class CORSTests {
 
     private static WebServer server;
     private static WebClient client;
