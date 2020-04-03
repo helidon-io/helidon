@@ -37,9 +37,12 @@ import io.helidon.microprofile.graphql.server.test.enums.EnumTestNoEnumName;
 import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithEnumName;
 import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithNameAndNameAnnotation;
 import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithNameAnnotation;
+import io.helidon.microprofile.graphql.server.test.queries.OddNamedQueriesAndMutations;
 import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesNoArgs;
+import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesWithSource;
 import io.helidon.microprofile.graphql.server.test.types.Address;
 import io.helidon.microprofile.graphql.server.test.types.Car;
+import io.helidon.microprofile.graphql.server.test.types.DefaultValuePOJO;
 import io.helidon.microprofile.graphql.server.test.types.InnerClass;
 import io.helidon.microprofile.graphql.server.test.types.InterfaceWithTypeValue;
 import io.helidon.microprofile.graphql.server.test.types.Level0;
@@ -50,6 +53,7 @@ import io.helidon.microprofile.graphql.server.test.types.ObjectWithIgnorableFiel
 import io.helidon.microprofile.graphql.server.test.types.Person;
 import io.helidon.microprofile.graphql.server.test.types.PersonWithName;
 import io.helidon.microprofile.graphql.server.test.types.PersonWithNameValue;
+import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContactWithNumberFormats;
 import io.helidon.microprofile.graphql.server.test.types.TypeWithIDs;
 import io.helidon.microprofile.graphql.server.test.types.TypeWithIdOnField;
@@ -69,6 +73,7 @@ import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.INT;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.getFormatAnnotation;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getDefaultDescription;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getRootTypeName;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.stripMethodName;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -252,7 +257,7 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
         Map<String, SchemaGenerator.DiscoveredMethod> mapMethods = SchemaGenerator
                 .retrieveAllAnnotatedBeanMethods(SimpleQueriesNoArgs.class);
         assertThat(mapMethods, is(notNullValue()));
-        assertThat(mapMethods.size(), is(12));
+        assertThat(mapMethods.size(), is(14));
         assertDiscoveredMethod(mapMethods.get("hero"), "hero", STRING, null, false, false, false);
         assertDiscoveredMethod(mapMethods.get("episodeCount"), "episodeCount", "int", null, false, false, false);
         assertDiscoveredMethod(mapMethods.get("numberOfStars"), "numberOfStars", Long.class.getName(), null, false, false, false);
@@ -267,9 +272,24 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
         assertDiscoveredMethod(mapMethods.get("getMultiLevelList"), "getMultiLevelList", MultiLevelListsAndArrays.class.getName(),
                                null,
                                false, false, false);
-        assertDiscoveredMethod(mapMethods.get("idQuery"), "idQuery", ID,
-                               null,
+        assertDiscoveredMethod(mapMethods.get("idQuery"), "idQuery", ID, null,
                                false, false, false);
+        assertDiscoveredMethod(mapMethods.get("booleanObject"), "booleanObject", Boolean.class.getName(), null,
+                               false, false, false);
+        assertDiscoveredMethod(mapMethods.get("booleanPrimitive"), "booleanPrimitive", boolean.class.getName(), null,
+                               false, false, false);
+    }
+
+    @Test
+    public void testStripMethodName() throws NoSuchMethodException {
+        Method method = SimpleQueriesWithSource.class.getMethod("getCurrentJob", SimpleContact.class);
+        assertThat(stripMethodName(method, false), is("currentJob"));
+        method = DefaultValuePOJO.class.getMethod("getId");
+        assertThat(stripMethodName(method, true), is("id"));
+        method = OddNamedQueriesAndMutations.class.getMethod("settlement");
+        assertThat(stripMethodName(method, false), is("settlement"));
+        method = OddNamedQueriesAndMutations.class.getMethod("getaway");
+        assertThat(stripMethodName(method, false), is("getaway"));
     }
 
     @Test

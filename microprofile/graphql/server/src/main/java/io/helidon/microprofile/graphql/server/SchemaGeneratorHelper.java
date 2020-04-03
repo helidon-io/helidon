@@ -18,6 +18,7 @@ package io.helidon.microprofile.graphql.server;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.ParameterizedType;
 import java.math.BigDecimal;
@@ -514,11 +515,37 @@ public final class SchemaGeneratorHelper {
     /**
      * Return the type method name taking into account the is/set/get prefix.
      *
-     * @param method {@link Method} to check
+     * @param method       {@link Method} to check
+     * @param isStrictTest indicates if a strict test for setters and getters should be carried out.
      * @return the method name
      */
-    protected static String stripMethodName(Method method) {
+    protected static String stripMethodName(Method method, boolean isStrictTest) {
         String name = method.getName();
+        boolean isPublic = Modifier.isPublic(method.getModifiers());
+        boolean isSetterName = name.matches("^set[A-Z].*");
+        boolean isGetterName = name.matches("^get[A-Z].*") || name.matches("^is[A-Z].*");
+        Parameter[] parameters = method.getParameters();
+
+        if (isStrictTest) {
+            boolean isSetter = isPublic
+                    && method.getReturnType().equals(void.class)
+                    && parameters.length == 1
+                    && isSetterName;
+            boolean isGetter = isPublic
+                    && !method.getReturnType().equals(void.class)
+                    && parameters.length == 0
+                    && isGetterName;
+
+            if (!isGetter && !isSetter) {
+                return name;
+            }
+        } else {
+            // non-strict test so just check names
+            if (!isPublic || !isGetterName && !isSetterName) {
+                return name;
+            }
+        }
+
         String varName;
         if (name.startsWith(IS) || name.startsWith(GET) || name.startsWith(SET)) {
             String prefix;

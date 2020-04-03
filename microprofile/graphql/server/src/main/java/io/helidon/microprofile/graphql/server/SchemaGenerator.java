@@ -784,14 +784,15 @@ public class SchemaGenerator {
 
         // retrieve the method name
         if (isQueryOrMutation) {
-            // if this method is for a query or mutation and there is no getter or setter
-            if (pd != null) {
-                varName = stripMethodName(method);
-            } else {
-                varName = method.getName();
-            }
+             varName = stripMethodName(method, false);
+//            // if this method is for a query or mutation and there is no getter or setter
+//            if (pd != null) {
+//                varName = stripMethodName(method, false);
+//            } else {
+//                varName = method.getName();
+//            }
         } else {
-            varName = stripMethodName(method);
+            varName = stripMethodName(method, true);
         }
 
         // check for either Name or JsonbProperty annotations on method or field
@@ -951,7 +952,7 @@ public class SchemaGenerator {
                 Source sourceAnnotation = parameter.getAnnotation(Source.class);
                 if (sourceAnnotation != null) {
                     // set the method name to the correct property name as it will be currently be incorrect
-                    discoveredMethod.setName(annotatedName != null ? annotatedName : stripMethodName(method));
+                    discoveredMethod.setName(annotatedName != null ? annotatedName : stripMethodName(method, false));
                     discoveredMethod.setSource(returnType.getReturnClass());
                     discoveredMethod.setQueryAnnotated(method.getAnnotation(Query.class) != null);
                     argument.setSourceArgument(true);

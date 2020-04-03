@@ -324,7 +324,7 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
     @Test
     public void testNulls() throws IOException {
         setupIndex(indexFileName, NullPOJO.class, QueriesWithNulls.class);
-        ExecutionContext<DefaultContext> executionContext = new ExecutionContext<DefaultContext>(defaultContext);
+        ExecutionContext<DefaultContext> executionContext = new ExecutionContext<>(defaultContext);
         Schema schema = executionContext.getSchema();
         assertThat(schema, is(notNullValue()));
 
@@ -378,17 +378,17 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
         assertThat(mapResults2.get("name"), is("tim"));
         assertThat(mapResults2.get("age"), is(notNullValue()));
 
-        result = executionContext.execute("mutation { setEchoStringValue(value: \"echo\") }");
+        result = executionContext.execute("mutation { echoStringValue(value: \"echo\") }");
         mapResults = getAndAssertResult(result);
         assertThat(mapResults.size(), is(1));
-        assertThat(mapResults.get("setEchoStringValue"), is("echo"));
+        assertThat(mapResults.get("echoStringValue"), is("echo"));
     }
 
     @Test
     @SuppressWarnings("unchecked")
     public void testSimpleQueryGenerationNoArgs() throws IOException {
         setupIndex(indexFileName, SimpleQueriesNoArgs.class);
-        ExecutionContext<DefaultContext> executionContext = new ExecutionContext<DefaultContext>(defaultContext);
+        ExecutionContext<DefaultContext> executionContext = new ExecutionContext<>(defaultContext);
         ExecutionResult result = executionContext.execute("query { hero }");
 
         Map<String, Object> mapResults = getAndAssertResult(result);
@@ -448,6 +448,9 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
         SchemaFieldDefinition fd = getFieldDefinition(query, "idQuery");
         assertThat(fd, is(notNullValue()));
         assertThat(fd.getReturnType(), is(ID));
+
+        assertThat(getFieldDefinition(query, "booleanObject"), is(notNullValue()));
+        assertThat(getFieldDefinition(query, "booleanPrimitive"), is(notNullValue()));
     }
 
     @Test
@@ -585,7 +588,6 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
         assertThat(query, is(notNullValue()));
         assertThat(query.getFieldDefinitions().stream().filter(fd -> fd.getName().equals("settlement")).count(), is(1L));
         assertThat(mutation.getFieldDefinitions().stream().filter(fd -> fd.getName().equals("getaway")).count(), is(1L));
-
     }
 
     @Test

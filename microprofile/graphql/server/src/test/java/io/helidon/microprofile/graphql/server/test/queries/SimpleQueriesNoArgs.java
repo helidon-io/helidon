@@ -60,12 +60,22 @@ public class SimpleQueriesNoArgs {
     }
 
     @Query
+    public Boolean isBooleanObject() {
+        return Boolean.valueOf(true);
+    }
+
+    @Query
+    public boolean isBooleanPrimitive() {
+        return false;
+    }
+
+    @Query
     @Name("idQuery")
     @Id
     public String returnId() {
         return "an-id";
     }
-    
+
     @Query
     public String hero() {
         return "R2-D2";
@@ -116,7 +126,7 @@ public class SimpleQueriesNoArgs {
         contact.setSpouse(spouse);
         return contact;
     }
-    
+
     @Query
     @Name("getMultiLevelList")
     public MultiLevelListsAndArrays returnLists() {
@@ -126,12 +136,13 @@ public class SimpleQueriesNoArgs {
         intMultiLevelArray[0] = new int[] { 1, 2, 3 };
         intMultiLevelArray[1] = new int[] { 4, 5, 6 };
         Person[][] personMultiLevelArray = new Person[3][];
-        personMultiLevelArray[0] = new Person[] { testDB.generatePerson(1), testDB.generatePerson(2)};
-        personMultiLevelArray[1] = new Person[] { testDB.generatePerson(3), testDB.generatePerson(4)};
+        personMultiLevelArray[0] = new Person[] { testDB.generatePerson(1), testDB.generatePerson(2) };
+        personMultiLevelArray[1] = new Person[] { testDB.generatePerson(3), testDB.generatePerson(4) };
         List<String[]> listOfStringArrays = new ArrayList<>();
-        listOfStringArrays.add(new String[] {"one", "two", "three"});
-        listOfStringArrays.add(new String[] {"four", "five"});
-        String[][][] multiStringArray =  { { { "one", "two" }, { "three", "four" } }, { { "five", "six" }, { "seven", "eight" } } };
+        listOfStringArrays.add(new String[] { "one", "two", "three" });
+        listOfStringArrays.add(new String[] { "four", "five" });
+        String[][][] multiStringArray = { { { "one", "two" }, { "three", "four" } },
+                { { "five", "six" }, { "seven", "eight" } } };
         Collection<Collection<Collection<String>>> colColColString = new ArrayList<>();
         colColColString.add(Collections.singletonList(Collections.singleton("a")));
 
