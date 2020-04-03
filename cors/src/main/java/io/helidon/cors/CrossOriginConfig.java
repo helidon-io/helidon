@@ -161,13 +161,13 @@ public class CrossOriginConfig implements CrossOrigin {
                 }
                 Builder builder = new Builder();
                 item.get("path-prefix").as(String.class).ifPresent(builder::pathPrefix);
-                item.get("allow-origins").as(String.class).ifPresent(
+                item.get("allow-origins").asList(String.class).ifPresent(
                         s -> builder.value(parseHeader(s).toArray(new String[]{})));
-                item.get("allow-methods").as(String.class).ifPresent(
+                item.get("allow-methods").asList(String.class).ifPresent(
                         s -> builder.allowMethods(parseHeader(s).toArray(new String[]{})));
-                item.get("allow-headers").as(String.class).ifPresent(
+                item.get("allow-headers").asList(String.class).ifPresent(
                         s -> builder.allowHeaders(parseHeader(s).toArray(new String[]{})));
-                item.get("expose-headers").as(String.class).ifPresent(
+                item.get("expose-headers").asList(String.class).ifPresent(
                         s -> builder.exposeHeaders(parseHeader(s).toArray(new String[]{})));
                 item.get("allow-credentials").as(Boolean.class).ifPresent(builder::allowCredentials);
                 item.get("max-age").as(Long.class).ifPresent(builder::maxAge);

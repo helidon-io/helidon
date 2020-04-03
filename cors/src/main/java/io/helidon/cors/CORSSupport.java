@@ -174,7 +174,7 @@ public class CORSSupport implements Service {
     private void finishCORSResponse(ServerRequest request, ServerResponse response) {
         CrossOriginHelper.prepareCorsResponse(request.path().toString(),
                 crossOriginConfigs,
-                firstHeaderGetter(response),
+                firstHeaderGetter(request),
                 headerAdder(response));
 
         request.next();
