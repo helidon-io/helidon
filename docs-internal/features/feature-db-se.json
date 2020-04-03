@@ -1,0 +1,99 @@
+{
+    "features": [
+        {
+            "name": "Config",
+            "description": "Helidon Configuration",
+            "gav": "io.helidon.config:helidon-config:2.0.0",
+            "plugins": [
+                {
+                    "name": "Sources",
+                    "list": [
+                        {
+                            "name": "git",
+                            "gav": "io.helidon.config.git:helidon-config-git:2.0.0"
+                        }
+                    ]
+                },
+                {
+                    "name": "Parsers",
+                    "list": [
+                        {
+                            "name": "YAML",
+                            "gav": "..."
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Tracing",
+            "gav": "io.helidon.tracing:helidon-tracing:2.0.0",
+            "plugins": [
+                {
+                    "list": [
+                        {
+                            "name": "Jaeger",
+                            "gav": "..."
+                        },
+                        {
+                            "name": "Zipkin",
+                            "gav": "..."
+                        },
+                        {
+                            "name": "TracerResolver",
+                            "gav": "..."
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Security",
+            "description": "Helidon Security module",
+            "gav": "io.helidon.security:helidon-security:2.0.0",
+            "plugins": {
+                "name": "Providers",
+                "list": [
+                    {
+                        "name": "ABAC",
+                        "description": "Attribute Based Access Control Security Provider",
+                        "gav": "io.helidon.security.providers:helidon-security-providers-abac:2.0.0-SNAPSHOT",
+                        "plugins": {
+                            "name": "Validators",
+                            "list": [
+                                {
+                                    "name": "Time",
+                                    "gav": "..."
+                                },
+                                {
+                                    "name": "EL",
+                                    "gav": ""
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "name": "Basic-Auth",
+                        "description": "HTTP Basic Authentication Provider",
+                        "gav": "io.helidon.security.providers:helidon-security-provider-http-auth:2.0.0-SNAPSHOT"
+                    },
+                    {
+                        "name": "Digest-Auth",
+                        "description": "HTTP Digest Authentication Provider",
+                        "gav": "io.helidon.security.providers:helidon-security-provider-http-auth:2.0.0-SNAPSHOT"
+                    }
+                ]
+            }
+        }
+    ],
+    "integrations": [
+        {
+            "name": "Security/Integration/WebServer",
+            "gav": "io.helidon.security.integrations:helidon-security-integrations-webserver:2.0.0-SNAPSHOT",
+            "when": [
+                "Security",
+                "WebServer"
+            ]
+        }
+    ]
+}

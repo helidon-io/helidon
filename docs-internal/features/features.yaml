@@ -1,0 +1,87 @@
+# This is the configuration of features for Helidon
+# This file is part of repository in a new module
+# Output of the module is going to be
+# a feature-db.json (installed to maven central) containing
+# the full feature configuration, including coordinates
+
+features:
+  # The "name" is significant
+  #  - must be the same in @Feature annotation on module-info of feature module
+  #  - must be used by CLI
+  - name: "Security"
+    plugins:
+      # Type of plugin (used in CLI to list impls)
+      # This is a named list (feature is "Security/Providers/ABAC")
+      - name: "Providers"
+        service: "io.helidon.security.spi.SecurityProviderService"
+        # explicit list if sub-features are needed
+        list:
+          - name: "ABAC"
+            plugins:
+              - name: "Validators"
+                # each feature implementing this service is valid here
+                service: "io.helidon.security.providers.abac.spi.AbacValidatorService"
+  - name: "Tracing"
+    implementations:
+      service: "io.helidon.tracing.spi.TracerProvider"
+  - name: "DbClient"
+    drivers:
+      - name: "DbClient Type"
+        service: "io.helidon.dbclient.spi.DbClientProvider"
+        # explicitly list JDBC, as it requires sub-drivers (mongo is loaded through service loader)
+        list:
+          - name: "JDBC"
+            drivers:
+              type: "external"
+              service: "java.sql.Driver"
+              # maybe better for external:
+              category: "JDBC Driver"
+  - name: "JPA"
+    implementations:
+      list:
+        - name: "Hibernate"
+        - name: "EclipseLink"
+    drivers:
+      - name: "Database Driver"
+        type: "external"
+        service: "java.sql.Driver"
+        # maybe better for external:
+        category: "JDBC Driver"
+  - name: "Config"
+    plugins:
+      - name: "Sources"
+        service: "io.helidon.config.spi.ConfigSourceProvider"
+      - name: "Parsers"
+        service: "io.helidon.config.spi.ConfigParser"
+
+
+integrations:
+  # name is the feature path (may have more than one integration for same feature)
+  - group:
+    name: "Security"
+    integrations:
+      - name: "Security/Integration/WebServer"
+        when: ["Security","WebServer"]
+      - name: "Security/Integration/WebClient"
+        when: ["Security","WebClient"]
+      - name: "Security/Integration/JerseyServer"
+        when: ["Security","Jersey"]
+      - name: "Security/Integration/JerseyClient"
+        when: ["Security","JerseyClient"]
+      - name: "Security/Integration/JerseyClient"
+        when: ["Security","Rest-Client"]
+  - group:
+    name: "Tracing"
+    integrations:
+      - name: "Tracing/Integration/WebServer"
+        when: ["Tracing","WebServer"]
+      - name: "Tracing/Integration/WebClient"
+        when: ["Tracing","WebClient"]
+      - name: "Tracing/Integration/JerseyServer"
+        when: ["Tracing","Jersey"]
+      - name: "Tracing/Integration/JerseyClient"
+        when: ["Tracing","JerseyClient"]
+      - name: "Tracing/Integration/JerseyClient"
+        when: ["Tracing","Rest-Client"]
+      - name: "Tracing/Integration/DbClient"
+        when: ["Tracing", "DbClient"]
