@@ -18,7 +18,6 @@ package io.helidon.cors;
 
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
-import org.hamcrest.Matchers;
 import org.hamcrest.TypeSafeMatcher;
 
 import java.util.Optional;
@@ -28,16 +27,16 @@ import java.util.Optional;
  */
 class CustomMatchers {
 
-    static <T> IsPresent<T> isPresent(Matcher matcher) {
-        return new IsPresent<T>(matcher);
+    static <T> Present<T> present(Matcher matcher) {
+        return new Present<T>(matcher);
     }
 
-    static <T> IsPresent<T> isPresent() {
-        return isPresent(null);
+    static <T> Present<T> present() {
+        return present(null);
     }
 
-    static IsNotPresent isNotPresent() {
-        return new IsNotPresent();
+    static NotPresent notPresent() {
+        return new NotPresent();
     }
 
     /**
@@ -46,15 +45,15 @@ class CustomMatchers {
      *
      * @param <T> type of the value in the Optional
      */
-    static class IsPresent<T> extends TypeSafeMatcher<Optional<T>> {
+    static class Present<T> extends TypeSafeMatcher<Optional<T>> {
 
         private final Matcher<T> matcher;
 
-        IsPresent(Matcher<T> m) {
+        Present(Matcher<T> m) {
             matcher = m;
         }
 
-        IsPresent() {
+        Present() {
             matcher = null;
         }
 
@@ -72,7 +71,7 @@ class CustomMatchers {
         }
     }
 
-    static class IsNotPresent extends TypeSafeMatcher<Optional<? extends Object>> {
+    static class NotPresent extends TypeSafeMatcher<Optional<? extends Object>> {
 
         @Override
         protected boolean matchesSafely(Optional<? extends Object> o) {

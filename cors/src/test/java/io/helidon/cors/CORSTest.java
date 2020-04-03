@@ -16,6 +16,9 @@
  */
 package io.helidon.cors;
 
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
+
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
@@ -36,8 +39,8 @@ import static io.helidon.cors.CrossOrigin.ACCESS_CONTROL_MAX_AGE;
 import static io.helidon.cors.CrossOrigin.ACCESS_CONTROL_REQUEST_HEADERS;
 import static io.helidon.cors.CrossOrigin.ACCESS_CONTROL_REQUEST_METHOD;
 import static io.helidon.cors.CrossOrigin.ORIGIN;
-import static io.helidon.cors.CustomMatchers.isNotPresent;
-import static io.helidon.cors.CustomMatchers.isPresent;
+import static io.helidon.cors.CustomMatchers.notPresent;
+import static io.helidon.cors.CustomMatchers.present;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -46,9 +49,6 @@ import static org.hamcrest.Matchers.is;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
 
 public class CORSTest {
 
@@ -105,10 +105,10 @@ public class CORSTest {
                 .get();
 
         assertThat(res.status(), is(Http.Status.OK_200));
-        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_ORIGIN), isPresent(is("http://foo.bar")));
-        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_METHODS), isPresent(is("PUT")));
-        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_HEADERS), isNotPresent());
-        assertThat(res.headers().first(ACCESS_CONTROL_MAX_AGE), isPresent(is("3600")));
+        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_ORIGIN), present(is("http://foo.bar")));
+        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_METHODS), present(is("PUT")));
+        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_HEADERS), notPresent());
+        assertThat(res.headers().first(ACCESS_CONTROL_MAX_AGE), present(is("3600")));
     }
 
     @Test
@@ -128,10 +128,10 @@ public class CORSTest {
                 .get();
 
         assertThat(res.status(), is(Http.Status.OK_200));
-        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_ORIGIN), isPresent(is("http://foo.bar")));
-        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_METHODS), isPresent(is("PUT")));
-        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_HEADERS), isPresent(is("X-foo")));
-        assertThat(res.headers().first(ACCESS_CONTROL_MAX_AGE), isPresent(is("3600")));
+        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_ORIGIN), present(is("http://foo.bar")));
+        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_METHODS), present(is("PUT")));
+        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_HEADERS), present(is("X-foo")));
+        assertThat(res.headers().first(ACCESS_CONTROL_MAX_AGE), present(is("3600")));
     }
 
     @Test
@@ -151,11 +151,11 @@ public class CORSTest {
                 .get();
 
         assertThat(res.status(), is(Http.Status.OK_200));
-        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_ORIGIN), isPresent(is("http://foo.bar")));
-        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_METHODS), isPresent(is("PUT")));
-        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_HEADERS), isPresent(containsString("X-foo")));
-        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_HEADERS), isPresent(containsString("X-bar")));
-        assertThat(res.headers().first(ACCESS_CONTROL_MAX_AGE), isPresent(is("3600")));
+        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_ORIGIN), present(is("http://foo.bar")));
+        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_METHODS), present(is("PUT")));
+        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_HEADERS), present(containsString("X-foo")));
+        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_HEADERS), present(containsString("X-bar")));
+        assertThat(res.headers().first(ACCESS_CONTROL_MAX_AGE), present(is("3600")));
     }
 
     @Test
@@ -193,11 +193,11 @@ public class CORSTest {
 
 
         assertThat(res.status(), is(Http.Status.OK_200));
-        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_ORIGIN), isPresent(is("http://foo.bar")));
-        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_CREDENTIALS), isPresent(is("true")));
-        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_METHODS), isPresent(is("PUT")));
-        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_HEADERS), isNotPresent());
-        assertThat(res.headers().first(ACCESS_CONTROL_MAX_AGE), isNotPresent());
+        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_ORIGIN), present(is("http://foo.bar")));
+        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_CREDENTIALS), present(is("true")));
+        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_METHODS), present(is("PUT")));
+        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_HEADERS), notPresent());
+        assertThat(res.headers().first(ACCESS_CONTROL_MAX_AGE), notPresent());
     }
 
     @Test
@@ -254,15 +254,40 @@ public class CORSTest {
                 .get();
 
         assertThat(res.status(), is(Http.Status.OK_200));
-        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_ORIGIN), isPresent(is("http://foo.bar")));
-        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_CREDENTIALS), isPresent(is("true")));
-        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_METHODS), isPresent(is("PUT")));
-        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_HEADERS), isPresent(containsString("X-foo")));
-        assertThat(res.headers().first(ACCESS_CONTROL_MAX_AGE), isNotPresent());
+        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_ORIGIN), present(is("http://foo.bar")));
+        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_CREDENTIALS), present(is("true")));
+        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_METHODS), present(is("PUT")));
+        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_HEADERS), present(containsString("X-foo")));
+        assertThat(res.headers().first(ACCESS_CONTROL_MAX_AGE), notPresent());
     }
 
     @Test
     void test2PreFlightAllowedHeaders2() throws ExecutionException, InterruptedException {
+        WebClientRequestBuilder reqBuilder = client
+                .method(Http.Method.OPTIONS.name())
+                .path(Service2.PATH);
+
+        Headers headers = reqBuilder.headers();
+        headers.add(ORIGIN, "http://foo.bar");
+        headers.add(ACCESS_CONTROL_REQUEST_METHOD, "PUT");
+        headers.add(ACCESS_CONTROL_REQUEST_HEADERS, "X-foo, X-bar");
+
+        WebClientResponse res = reqBuilder
+                .request()
+                .toCompletableFuture()
+                .get();
+
+        assertThat(res.status(), is(Http.Status.OK_200));
+        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_ORIGIN), present(is("http://foo.bar")));
+        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_CREDENTIALS), present(is("true")));
+        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_METHODS), present(is("PUT")));
+        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_HEADERS), present(containsString("X-foo")));
+        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_HEADERS), present(containsString("X-bar")));
+        assertThat(res.headers().first(ACCESS_CONTROL_MAX_AGE), notPresent());
+    }
+
+    @Test
+    void test2PreFlightAllowedHeaders3() throws ExecutionException, InterruptedException {
         WebClientRequestBuilder reqBuilder = client
                 .method(Http.Method.OPTIONS.name())
                 .path(Service2.PATH);
@@ -279,12 +304,12 @@ public class CORSTest {
                 .get();
 
         assertThat(res.status(), is(Http.Status.OK_200));
-        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_ORIGIN), isPresent(is("http://foo.bar")));
-        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_CREDENTIALS), isPresent(is("true")));
-        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_METHODS), isPresent(is("PUT")));
-        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_HEADERS), isPresent(containsString("X-foo")));
-        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_HEADERS), isPresent(containsString("X-bar")));
-        assertThat(res.headers().first(ACCESS_CONTROL_MAX_AGE), isNotPresent());
+        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_ORIGIN), present(is("http://foo.bar")));
+        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_CREDENTIALS), present(is("true")));
+        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_METHODS), present(is("PUT")));
+        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_HEADERS), present(containsString("X-foo")));
+        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_HEADERS), present(containsString("X-bar")));
+        assertThat(res.headers().first(ACCESS_CONTROL_MAX_AGE), notPresent());
     }
 
     @Test
@@ -304,7 +329,7 @@ public class CORSTest {
                 .get();
 
         assertThat(res.status(), is(Http.Status.OK_200));
-        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_ORIGIN), isPresent(is("*")));
+        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_ORIGIN), present(is("*")));
     }
 
     @Test
@@ -323,8 +348,8 @@ public class CORSTest {
                 .get();
 
         assertThat(res.status(), is(Http.Status.OK_200));
-        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_ORIGIN), isPresent(is("http://foo.bar")));
-        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_CREDENTIALS), isPresent(is("true")));
+        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_ORIGIN), present(is("http://foo.bar")));
+        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_CREDENTIALS), present(is("true")));
     }
 
     @Test
@@ -343,10 +368,10 @@ public class CORSTest {
                 .get();
 
         assertThat(res.status(), is(Http.Status.OK_200));
-        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_ORIGIN), isPresent(is("http://foo.bar")));
-        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_METHODS), isPresent(is("PUT")));
-        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_HEADERS), isNotPresent());
-        assertThat(res.headers().first(ACCESS_CONTROL_MAX_AGE), isPresent(is("3600")));
+        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_ORIGIN), present(is("http://foo.bar")));
+        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_METHODS), present(is("PUT")));
+        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_HEADERS), notPresent());
+        assertThat(res.headers().first(ACCESS_CONTROL_MAX_AGE), present(is("3600")));
     }
 
     @Test
@@ -366,6 +391,6 @@ public class CORSTest {
                 .get();
 
         assertThat(res.status(), is(Http.Status.OK_200));
-        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_ORIGIN), isPresent(is("http://foo.bar")));
+        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_ORIGIN), present(is("http://foo.bar")));
     }
 }
