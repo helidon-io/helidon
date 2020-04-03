@@ -18,8 +18,6 @@ package io.helidon.microprofile.graphql.server;
 
 import java.util.Objects;
 
-import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.STRING;
-import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.isGraphQLType;
 
 /**
  * The representation of a GraphQL Argument or Parameter.

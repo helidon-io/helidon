@@ -35,7 +35,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -486,7 +485,7 @@ public class SchemaGenerator {
                 String returnType = discoveredMethod.getReturnType();
                 // check to see if this is a known type
                 if (returnType.equals(fd.getReturnType()) && !setUnresolvedTypes.contains(returnType)
-                    && !ID.equals(returnType)) {
+                        && !ID.equals(returnType)) {
                     // value class was unchanged meaning we need to resolve
                     setUnresolvedTypes.add(returnType);
                 }
@@ -778,22 +777,13 @@ public class SchemaGenerator {
 
         String[] numberFormat = new String[0];
         String description = null;
-        String varName;
         boolean isReturnTypeMandatory = false;
         String defaultValue = null;
 
         // retrieve the method name
-        if (isQueryOrMutation) {
-             varName = stripMethodName(method, false);
-//            // if this method is for a query or mutation and there is no getter or setter
-//            if (pd != null) {
-//                varName = stripMethodName(method, false);
-//            } else {
-//                varName = method.getName();
-//            }
-        } else {
-            varName = stripMethodName(method, true);
-        }
+        String varName = isQueryOrMutation
+                ? stripMethodName(method, false)
+                : stripMethodName(method, true);
 
         // check for either Name or JsonbProperty annotations on method or field
         // ensure if this is an input type that the write method is checked
@@ -834,7 +824,6 @@ public class SchemaGenerator {
                 if (isInputType) {
                     Method writeMethod = pd.getWriteMethod();
                     if (writeMethod != null) {
-
                         // retrieve the setter method and check the description
                         String methodDescription = getDescription(writeMethod.getAnnotation(Description.class));
                         if (methodDescription != null) {
@@ -867,9 +856,7 @@ public class SchemaGenerator {
             }
 
             if (fieldHasIdAnnotation || method.getAnnotation(Id.class) != null) {
-                if (!isValidIDType(returnClazz)) {
-                    throw new RuntimeException("A class of type " + returnClazz + " is not allowed to be an @Id");
-                }
+                validateIDClass(returnClazz);
                 returnClazzName = ID;
             }
 
@@ -883,9 +870,7 @@ public class SchemaGenerator {
             isReturnTypeMandatory = isPrimitive(returnClazzName) && defaultValue == null
                     || method.getAnnotation(NonNull.class) != null && defaultValue == null;
             if (method.getAnnotation(Id.class) != null) {
-                if (!isValidIDType(returnClazz)) {
-                    throw new RuntimeException("A class of type " + returnClazz + " is not allowed to be an @Id");
-                }
+                validateIDClass(returnClazz);
                 returnClazzName = ID;
             }
         }
@@ -979,6 +964,17 @@ public class SchemaGenerator {
         discoveredMethod.setReturnTypeMandatory(isReturnTypeMandatory);
 
         return discoveredMethod;
+    }
+
+    /**
+     * Validate that a {@link Class} annotated with ID is a valid type.
+     *
+     * @param returnClazz {@link Class}  to check
+     */
+    private static void validateIDClass(Class<?> returnClazz) {
+        if (!isValidIDType(returnClazz)) {
+            throw new RuntimeException("A class of type " + returnClazz + " is not allowed to be an @Id");
+        }
     }
 
     /**

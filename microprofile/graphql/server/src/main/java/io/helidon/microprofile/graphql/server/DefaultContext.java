@@ -24,6 +24,9 @@ package io.helidon.microprofile.graphql.server;
 
 public class DefaultContext {
 
+    /**
+     * No-args constructor.
+     */
     public DefaultContext() {
     }
 }

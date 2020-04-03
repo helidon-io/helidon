@@ -262,8 +262,8 @@ public final class SchemaGeneratorHelper {
      * @return true of the class name is a primitive or array of primitives.
      */
     protected static boolean isPrimitive(String clazz) {
-        return JAVA_PRIMITIVE_TYPES.contains(clazz) ||
-                PRIMITIVE_ARRAY_MAP.values().stream().filter(v -> v.contains(clazz)).count() > 0L;
+        return JAVA_PRIMITIVE_TYPES.contains(clazz)
+                || PRIMITIVE_ARRAY_MAP.values().stream().filter(v -> v.contains(clazz)).count() > 0L;
     }
 
     /**
@@ -795,8 +795,9 @@ public final class SchemaGeneratorHelper {
         /**
          * Construct a root type result.
          *
-         * @param rootTypeName root type of the {@link Collection} or {@link Map}
-         * @param levels       number of levels in total
+         * @param rootTypeName          root type of the {@link Collection} or {@link Map}
+         * @param isReturnTypeMandatory indicates if the return type is mandatory
+         * @param levels                number of levels in total
          */
         public RootTypeResult(String rootTypeName, int levels, boolean isReturnTypeMandatory) {
             this.rootTypeName = rootTypeName;
