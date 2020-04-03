@@ -16,8 +16,6 @@
  */
 package io.helidon.cors;
 
-import io.helidon.common.http.Http;
-
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -26,9 +24,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
-import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
-import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static io.helidon.common.http.Http.Header.HOST;
 import static io.helidon.cors.CrossOrigin.ACCESS_CONTROL_ALLOW_CREDENTIALS;
@@ -44,11 +41,8 @@ import static io.helidon.cors.CrossOrigin.ORIGIN;
 /**
  * Centralizes common logic to both SE and MP CORS support.
  * <p>
- *     To serve both masters, several methods here accept functions that are intended to operate on items such as headers,
- *     responses, etc. The SE and MP implementations of these items have no common superclasses or interfaces, so the methods
- *     here have to call back to the SE and MP implementations of CORS support to look for or set headers, set response status or
- *     error messages, etc. The JavaDoc explains these functions according to their intended uses, although being functions they
- *     could operate on anything.
+ *     To serve both masters, several methods here accept an adapter for requests and a factory for responses. Both of these
+ *     are minimal and very specific to the needs of CORS support.
  * </p>
  */
 public class CrossOriginHelper {
@@ -81,24 +75,100 @@ public class CrossOriginHelper {
     }
 
     /**
+     * Minimal abstraction of an HTTP request.
+     */
+    public interface RequestAdapter {
+
+        /**
+         * Retrieves the first value for the specified header as a String.
+         *
+         * @param key header name to retrieve
+         * @return the first header value for the key
+         */
+        Optional<String> firstHeader(String key);
+
+        /**
+         * Reports whether the specified header exists.
+         *
+         * @param key header name to check for
+         * @return whether the header exists among the request's headers
+         */
+        boolean headerContainsKey(String key);
+
+        /**
+         * Retrieves all header values for a given key as Strings.
+         *
+         * @param key header name to retrieve
+         * @return header values for the header; empty list if none
+         */
+        List<String> allHeaders(String key);
+
+        /**
+         * Reports the method name for the request.
+         *
+         * @return the method name
+         */
+        String method();
+    }
+
+    /**
+     * Minimal abstraction of an HTTP response factory.
+     *
+     * @param <T> the type of the response created by the factory
+     */
+    public interface ResponseFactory<T> {
+
+        /**
+         * Arranges to add the specified header and value to the eventual response.
+         *
+         * @param key header name to add
+         * @param value header value to add
+         * @return the factory
+         */
+        ResponseFactory<T> addHeader(String key, String value);
+
+        /**
+         * Arranges to add the specified header and value to the eventual response.
+         *
+         * @param key header name to add
+         * @param value header value to add
+         * @return the factory
+         */
+        ResponseFactory<T> addHeader(String key, Object value);
+
+
+        /**
+         * Returns an instance of the response type with the forbidden status and the specified error mesage.
+         *
+         * @param message error message to use in setting the response status
+         * @return the factory
+         */
+        T forbidden(String message);
+
+        /**
+         * Returns an instance of the response type with headers set and status set to OK.
+         *
+         * @return new response instance
+         */
+        T build();
+    }
+
+    /**
      * Analyzes the method and headers to determine the type of request, from the CORS perspective.
      *
-     * @param firstHeaderGetter accepts a header name and returns the first value or null if no values exist
-     * @param headerContainsKeyChecker sees if a header name exists
-     * @param method String containing the HTTP method name
-     * @return RequestType
+     * @param request request adatper
+     * @return RequestType the CORS request type of the request
      */
-    public static RequestType requestType(Function<String, String> firstHeaderGetter, Function<String, Boolean> headerContainsKeyChecker,
-            String method) {
-        String origin = firstHeaderGetter.apply(ORIGIN);
-        String host = firstHeaderGetter.apply(HOST);
-        if (origin == null ||origin.contains("://" + host)) {
+    public static RequestType requestType(RequestAdapter request) {
+        Optional<String> origin = request.firstHeader(ORIGIN);
+        Optional<String> host = request.firstHeader(HOST);
+        if (origin.isEmpty() || origin.get().contains("://" + host)) {
             return RequestType.NORMAL;
         }
 
         // Is this a pre-flight request?
-        if (method.equalsIgnoreCase("OPTIONS")
-                && headerContainsKeyChecker.apply(ACCESS_CONTROL_REQUEST_METHOD)) {
+        if (request.method().equalsIgnoreCase("OPTIONS")
+                && request.headerContainsKey(ACCESS_CONTROL_REQUEST_METHOD)) {
             return RequestType.PREFLIGHT;
         }
 
@@ -114,7 +184,8 @@ public class CrossOriginHelper {
      * @param crossOriginConfigs CORS configuration
      * @return Optional<CrossOrigin> for the matching config, or an empty Optional if none matched
      */
-    static Optional<CrossOrigin> lookupCrossOrigin(String path, List<CrossOriginConfig> crossOriginConfigs) {
+    static Optional<CrossOrigin> lookupCrossOrigin(String path, List<CrossOriginConfig> crossOriginConfigs,
+            Supplier<Optional<CrossOrigin>> secondaryLookup) {
         for (CrossOriginConfig config : crossOriginConfigs) {
             String pathPrefix = normalize(config.pathPrefix());
             String uriPath = normalize(path);
@@ -123,7 +194,7 @@ public class CrossOriginHelper {
             }
         }
 
-        return Optional.empty();
+        return secondaryLookup.get();
     }
 
     /**
@@ -131,25 +202,28 @@ public class CrossOriginHelper {
      *
      * @param path possibly-unnormalized path from the request
      * @param crossOriginConfigs config information for CORS
-     * @param firstHeaderGetter accepts a header name and returns the first value; null otherwise
-     * @param responseSetter accepts an error message and a status code and sets those values in an HTTP response and returns
-     *                       that response
+     * @param secondaryCrossOriginLookup locates {@code CrossOrigin} from other than config (e.g., annotations for MP)
+     * @param request abstraction of a request
+     * @param responseFactory factory for creating a response and managing its attributes (e.g., headers)
      * @param <T> the type for the HTTP response as returned from the responseSetter
      * @return Optional of an error response (returned by the responseSetter) if the request was an invalid CORS request;
      *         Optional.empty() if it was a valid CORS request
      */
-    public static <T extends Object> Optional<T> processCorsRequest(String path, List<CrossOriginConfig> crossOriginConfigs,
-            Function<String, String> firstHeaderGetter, BiFunction<String, Integer, T> responseSetter) {
-        String origin = firstHeaderGetter.apply(ORIGIN);
-        Optional<CrossOrigin> crossOrigin = lookupCrossOrigin(path, crossOriginConfigs);
-        if (!crossOrigin.isPresent()) {
-            return Optional.of(forbidden(ORIGIN_DENIED, responseSetter));
+    public static <T> Optional<T> processRequest(String path,
+            List<CrossOriginConfig> crossOriginConfigs,
+            Supplier<Optional<CrossOrigin>> secondaryCrossOriginLookup,
+            RequestAdapter request,
+            ResponseFactory<T> responseFactory) {
+        Optional<String> origin = request.firstHeader(ORIGIN);
+        Optional<CrossOrigin> crossOrigin = lookupCrossOrigin(path, crossOriginConfigs, secondaryCrossOriginLookup);
+        if (crossOrigin.isEmpty()) {
+            return Optional.of(responseFactory.forbidden(ORIGIN_DENIED));
         }
 
         // If enabled but not whitelisted, deny request
         List<String> allowedOrigins = Arrays.asList(crossOrigin.get().value());
         if (!allowedOrigins.contains("*") && !contains(origin, allowedOrigins, String::equals)) {
-            return Optional.of(forbidden(ORIGIN_NOT_IN_ALLOWED_LIST, responseSetter));
+            return Optional.of(responseFactory.forbidden(ORIGIN_NOT_IN_ALLOWED_LIST));
         }
 
         // Successful processing of request
@@ -161,26 +235,37 @@ public class CrossOriginHelper {
      *
      * @param path the possibly non-normalized path from the request
      * @param crossOriginConfigs config information for CORS
-     * @param firstHeaderGetter function which accepts a header name and returns the first value; null otherwise
-     * @param headerAdder bi-consumer that accepts a header name and value and (presumably) adds it as a header to an HTTP response
+     * @param secondaryCrossOriginLookup locates {@code CrossOrigin} from other than config (e.g., annotations for MP)
+     * @param request request
+     * @param responseFactory response factory
      */
-    public static void prepareCorsResponse(String path, List<CrossOriginConfig> crossOriginConfigs,
-            Function<String, String> firstHeaderGetter, BiConsumer<String, Object> headerAdder) {
-        Optional<CrossOrigin> crossOrigin = lookupCrossOrigin(path, crossOriginConfigs);
+    public static <T> T prepareResponse(String path, List<CrossOriginConfig> crossOriginConfigs,
+            Supplier<Optional<CrossOrigin>> secondaryCrossOriginLookup,
+            RequestAdapter request,
+            ResponseFactory<T> responseFactory) {
+        CrossOrigin crossOrigin = lookupCrossOrigin(path, crossOriginConfigs, secondaryCrossOriginLookup)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Could not locate expected CORS information while preparing response to request " + request));
 
         // Add Access-Control-Allow-Origin and Access-Control-Allow-Credentials
-        String origin = firstHeaderGetter.apply(ORIGIN);
-        if (crossOrigin.get().allowCredentials()) {
-            headerAdder.accept(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
-            headerAdder.accept(ACCESS_CONTROL_ALLOW_ORIGIN, origin);
+        Optional<String> originOpt = request.firstHeader(ORIGIN);
+        if (originOpt.isEmpty()) {
+            return responseFactory.forbidden(noRequiredHeader(ORIGIN));
+        }
+        String origin = originOpt.get();
+        if (crossOrigin.allowCredentials()) {
+            responseFactory.addHeader(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true")
+                           .addHeader(ACCESS_CONTROL_ALLOW_ORIGIN, origin);
         } else {
-            List<String> allowedOrigins = Arrays.asList(crossOrigin.get().value());
-            headerAdder.accept(ACCESS_CONTROL_ALLOW_ORIGIN, allowedOrigins.contains("*") ? "*" : origin);
+            List<String> allowedOrigins = Arrays.asList(crossOrigin.value());
+            responseFactory.addHeader(ACCESS_CONTROL_ALLOW_ORIGIN, allowedOrigins.contains("*") ? "*" : origin);
         }
 
         // Add Access-Control-Expose-Headers if non-empty
-        formatHeader(crossOrigin.get().exposeHeaders()).ifPresent(
-                h -> headerAdder.accept(ACCESS_CONTROL_EXPOSE_HEADERS, h));
+        formatHeader(crossOrigin.exposeHeaders()).ifPresent(
+                h -> responseFactory.addHeader(ACCESS_CONTROL_EXPOSE_HEADERS, h));
+
+        return responseFactory.build();
     }
 
     /**
@@ -188,63 +273,66 @@ public class CrossOriginHelper {
      *
      * @param path possibly non-normalized path from the request
      * @param crossOriginConfigs config information for CORS
-     * @param firstHeaderGetter accepts a header name and returns the first value, if any; null otherwise
-     * @param allHeaderGetter accepts a key and returns a list of values, if any, associated with that key; empty list otherwise
-     * @param responseSetter accepts an error message and a status code and sets those values in an HTTP response and returns
-     *                       that response
-     * @param responseStatusSetter accepts an Integer status code and returns a response with that status set
-     * @param headerAdder accepts a header name and value and adds it as a header to an HTTP response
+     * @param secondaryCrossOriginLookup locates {@code CrossOrigin} from other than config (e.g., annotations for MP)
+     * @param request the request
+     * @param responseFactory factory for preparing and creating the response
      * @param <T> the type for the returned HTTP response (as returned from the response setter functions)
      * @return the T returned by the responseStatusSetter with CORS-related headers set via headerAdder (for a successful
      */
     public static <T> T processPreFlight(String path,
-            List<CrossOriginConfig> crossOriginConfigs, Function<String, String> firstHeaderGetter,
-            Function<String, List<String>> allHeaderGetter,
-            BiFunction<String, Integer, T> responseSetter, Function<Integer, T> responseStatusSetter,
-            BiConsumer<String, Object> headerAdder) {
+            List<CrossOriginConfig> crossOriginConfigs,
+            Supplier<Optional<CrossOrigin>> secondaryCrossOriginLookup,
+            RequestAdapter request,
+            ResponseFactory<T> responseFactory) {
 
-        String origin = firstHeaderGetter.apply(ORIGIN);
-        Optional<CrossOrigin> crossOrigin = lookupCrossOrigin(path, crossOriginConfigs);
+        Optional<String> originOpt = request.firstHeader(ORIGIN);
+        Optional<CrossOrigin> crossOriginOpt = lookupCrossOrigin(path, crossOriginConfigs, secondaryCrossOriginLookup);
 
         // If CORS not enabled, deny request
-        if (!crossOrigin.isPresent()) {
-            return forbidden(ORIGIN_DENIED, responseSetter);
+        if (crossOriginOpt.isEmpty()) {
+            return responseFactory.forbidden(ORIGIN_DENIED);
+        }
+        if (originOpt.isEmpty()) {
+            return responseFactory.forbidden(noRequiredHeader(ORIGIN));
         }
 
+        CrossOrigin crossOrigin = crossOriginOpt.get();
+
         // If enabled but not whitelisted, deny request
-        List<String> allowedOrigins = Arrays.asList(crossOrigin.get().value());
-        if (!allowedOrigins.contains("*") && !contains(origin, allowedOrigins, String::equals)) {
-            return forbidden(ORIGIN_NOT_IN_ALLOWED_LIST, responseSetter);
+        List<String> allowedOrigins = Arrays.asList(crossOrigin.value());
+        if (!allowedOrigins.contains("*") && !contains(originOpt, allowedOrigins, String::equals)) {
+            return responseFactory.forbidden(ORIGIN_NOT_IN_ALLOWED_LIST);
         }
 
         // Check if method is allowed
-        String method = firstHeaderGetter.apply(ACCESS_CONTROL_REQUEST_METHOD);
-        List<String> allowedMethods = Arrays.asList(crossOrigin.get().allowMethods());
+        Optional<String> method = request.firstHeader(ACCESS_CONTROL_REQUEST_METHOD);
+        List<String> allowedMethods = Arrays.asList(crossOrigin.allowMethods());
         if (!allowedMethods.contains("*") && !contains(method, allowedMethods, String::equals)) {
-            return forbidden(METHOD_NOT_IN_ALLOWED_LIST, responseSetter);
+            return responseFactory.forbidden(METHOD_NOT_IN_ALLOWED_LIST);
         }
 
         // Check if headers are allowed
-        Set<String> requestHeaders = parseHeader(allHeaderGetter.apply(ACCESS_CONTROL_REQUEST_HEADERS));
-        List<String> allowedHeaders = Arrays.asList(crossOrigin.get().allowHeaders());
+        Set<String> requestHeaders = parseHeader(request.allHeaders(ACCESS_CONTROL_REQUEST_HEADERS));
+        List<String> allowedHeaders = Arrays.asList(crossOrigin.allowHeaders());
         if (!allowedHeaders.contains("*") && !contains(requestHeaders, allowedHeaders)) {
-            return forbidden(HEADERS_NOT_IN_ALLOWED_LIST, responseSetter);
+            return responseFactory.forbidden(HEADERS_NOT_IN_ALLOWED_LIST);
         }
 
         // Build successful response
-        T response = responseStatusSetter.apply(Http.Status.OK_200.code());
-        headerAdder.accept(ACCESS_CONTROL_ALLOW_ORIGIN, origin);
-        if (crossOrigin.get().allowCredentials()) {
-            headerAdder.accept(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
+
+        responseFactory.addHeader(ACCESS_CONTROL_ALLOW_ORIGIN, originOpt.get());
+        if (crossOrigin.allowCredentials()) {
+            responseFactory.addHeader(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
         }
-        headerAdder.accept(ACCESS_CONTROL_ALLOW_METHODS, method);
+        responseFactory.addHeader(ACCESS_CONTROL_ALLOW_METHODS,
+                method.orElseThrow(noRequiredHeaderExcFactory(ACCESS_CONTROL_REQUEST_METHOD)));
         formatHeader(requestHeaders.toArray()).ifPresent(
-                h -> headerAdder.accept(ACCESS_CONTROL_ALLOW_HEADERS, h));
-        long maxAge = crossOrigin.get().maxAge();
+                h -> responseFactory.addHeader(ACCESS_CONTROL_ALLOW_HEADERS, h));
+        long maxAge = crossOrigin.maxAge();
         if (maxAge > 0) {
-            headerAdder.accept(ACCESS_CONTROL_MAX_AGE, maxAge);
+            responseFactory.addHeader(ACCESS_CONTROL_MAX_AGE, maxAge);
         }
-        return response;
+        return responseFactory.build();
     }
 
     /**
@@ -318,13 +406,15 @@ public class CrossOriginHelper {
     }
 
     /**
-     * Returns response with forbidden status and entity created from message.
+     * Checks containment in a {@code Collection<String>}.
      *
-     * @param message Message in entity.
-     * @return A {@code Response} instance.
+     * @param item The string.
+     * @param collection The collection.
+     * @param eq Equality function.
+     * @return Outcome of test.
      */
-    static <T extends Object> T forbidden(String message, BiFunction<String, Integer, T> responseSetter) {
-        return responseSetter.apply(message, Http.Status.FORBIDDEN_403.code());
+    static boolean contains(Optional<String> item, Collection<String> collection, BiFunction<String, String, Boolean> eq) {
+        return item.isPresent() ? contains(item.get(), collection, eq) : false;
     }
 
     /**
@@ -358,5 +448,13 @@ public class CrossOriginHelper {
             }
         }
         return true;
+    }
+
+    private static Supplier<IllegalArgumentException> noRequiredHeaderExcFactory(String header) {
+        return () -> new IllegalArgumentException(noRequiredHeader(header));
+    }
+
+    private static String noRequiredHeader(String header) {
+        return "CORS request does not have required header " + header;
     }
 }

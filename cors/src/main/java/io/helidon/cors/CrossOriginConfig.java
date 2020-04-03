@@ -148,7 +148,7 @@ public class CrossOriginConfig implements CrossOrigin {
         }
     }
 
-    static class CrossOriginConfigMapper implements Function<Config, List<CrossOriginConfig>> {
+    public static class CrossOriginConfigMapper implements Function<Config, List<CrossOriginConfig>> {
 
         @Override
         public List<CrossOriginConfig> apply(Config config) {

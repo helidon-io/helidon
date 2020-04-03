@@ -101,27 +101,25 @@ public class CORSSupport implements Service {
     }
 
     private void handleCORS(ServerRequest request, ServerResponse response) {
-        RequestType requestType = requestType(firstHeaderGetter(request),
-                containsKeyFn(request),
-                request.method().name());
+        RequestAdapter requestAdapter = new RequestAdapter(request);
+        RequestType requestType = requestType(requestAdapter);
 
         switch (requestType) {
             case PREFLIGHT:
                 ServerResponse preflightResponse = CrossOriginHelper.processPreFlight(request.path().toString(),
                         crossOriginConfigs,
-                        firstHeaderGetter(request),
-                        allGetter(request),
-                        responseSetter(response),
-                        responseStatusSetter(response),
-                        headerAdder(response));
+                        () -> Optional.empty(),
+                        requestAdapter,
+                        new ResponseFactory(response));
                 preflightResponse.send();
                 break;
 
             case CORS:
-                Optional<ServerResponse> corsResponse = CrossOriginHelper.processCorsRequest(request.path().toString(),
+                Optional<ServerResponse> corsResponse = CrossOriginHelper.processRequest(request.path().toString(),
                         crossOriginConfigs,
-                        firstHeaderGetter(request),
-                        responseSetter(response));
+                        () -> Optional.empty(),
+                        requestAdapter,
+                        new ResponseFactory(response));
                 /*
                  * Any response carries a CORS error which we send immediately. Otherwise, since we know this is a CORS
                  * request, do the CORS post-processing and then pass the baton to the next handler.
@@ -139,43 +137,12 @@ public class CORSSupport implements Service {
         }
     }
 
-    private Function<String, String> firstHeaderGetter(ServerRequest request) {
-        return firstHeaderGetter(request::headers);
-    }
-
-    private Function<String, String> firstHeaderGetter(ServerResponse response) {
-        return firstHeaderGetter(response::headers);
-    }
-
-    private Function<String, String> firstHeaderGetter(Supplier<Headers> headers) {
-        return (headerName) -> headers.get().first(headerName).orElse(null);
-    }
-
-    private Function<String, Boolean> containsKeyFn(ServerRequest request) {
-        return (key) -> request.headers().first(key).isPresent();
-    }
-
-    private Function<String, List<String>> allGetter(ServerRequest request) {
-        return (key) -> request.headers().all(key);
-    }
-
-    private BiFunction<String, Integer, ServerResponse> responseSetter(ServerResponse response) {
-        return (errorMsg, statusCode) -> response.status(Http.ResponseStatus.create(statusCode, errorMsg));
-    }
-
-    private Function<Integer, ServerResponse> responseStatusSetter(ServerResponse response) {
-        return (statusCode) -> response.status(statusCode);
-    }
-
-    private BiConsumer<String, Object> headerAdder(ServerResponse response) {
-        return (key, value) -> response.headers().add(key, value.toString());
-    }
-
     private void finishCORSResponse(ServerRequest request, ServerResponse response) {
-        CrossOriginHelper.prepareCorsResponse(request.path().toString(),
+        CrossOriginHelper.prepareResponse(request.path().toString(),
                 crossOriginConfigs,
-                firstHeaderGetter(request),
-                headerAdder(response));
+                () -> Optional.empty(),
+                new RequestAdapter(request),
+                new ResponseFactory(response));
 
         request.next();
     }
@@ -209,6 +176,66 @@ public class CORSSupport implements Service {
         List<CrossOriginConfig> configs() {
             return corsConfig.map(c -> c.as(new CrossOriginConfigMapper()).get())
                          .orElse(Collections.emptyList());
+        }
+    }
+
+    private static class RequestAdapter implements CrossOriginHelper.RequestAdapter {
+
+        private final ServerRequest request;
+
+        RequestAdapter(ServerRequest request) {
+            this.request = request;
+        }
+        @Override
+        public Optional<String> firstHeader(String key) {
+            return request.headers().first(key);
+        }
+
+        @Override
+        public boolean headerContainsKey(String key) {
+            return firstHeader(key).isPresent();
+        }
+
+        @Override
+        public List<String> allHeaders(String key) {
+            return request.headers().all(key);
+        }
+
+        @Override
+        public String method() {
+            return request.method().name();
+        }
+    }
+
+    private static class ResponseFactory implements CrossOriginHelper.ResponseFactory<ServerResponse> {
+
+        private final ServerResponse serverResponse;
+
+        ResponseFactory(ServerResponse serverResponse) {
+            this.serverResponse = serverResponse;
+        }
+
+        @Override
+        public CrossOriginHelper.ResponseFactory addHeader(String key, String value) {
+            serverResponse.headers().add(key, value);
+            return this;
+        }
+
+        @Override
+        public CrossOriginHelper.ResponseFactory addHeader(String key, Object value) {
+            serverResponse.headers().add(key, value.toString());
+            return this;
+        }
+
+        @Override
+        public ServerResponse forbidden(String message) {
+            serverResponse.status(Http.ResponseStatus.create(Http.Status.FORBIDDEN_403.code(), message));
+            return serverResponse;
+        }
+
+        @Override
+        public ServerResponse build() {
+            return serverResponse;
         }
     }
 }
