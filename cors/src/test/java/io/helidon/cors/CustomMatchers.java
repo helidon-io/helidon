@@ -27,7 +27,7 @@ import java.util.Optional;
  */
 class CustomMatchers {
 
-    static <T> Present<T> present(Matcher matcher) {
+    static <T> Present<T> present(Matcher<T> matcher) {
         return new Present<T>(matcher);
     }
 

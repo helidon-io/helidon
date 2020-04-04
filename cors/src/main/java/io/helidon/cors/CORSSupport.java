@@ -18,11 +18,11 @@ package io.helidon.cors;
 
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
-import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.cors.CrossOriginConfig.CrossOriginConfigMapper;
 import io.helidon.cors.CrossOriginHelper.RequestType;
+import io.helidon.cors.CrossOriginHelper.ResponseAdapter;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
@@ -31,10 +31,6 @@ import io.helidon.webserver.Service;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 import static io.helidon.cors.CrossOriginHelper.CORS_CONFIG_KEY;
@@ -106,20 +102,20 @@ public class CORSSupport implements Service {
 
         switch (requestType) {
             case PREFLIGHT:
-                ServerResponse preflightResponse = CrossOriginHelper.processPreFlight(request.path().toString(),
+                ServerResponse preflightResponse = CrossOriginHelper.processPreFlight(
                         crossOriginConfigs,
                         () -> Optional.empty(),
                         requestAdapter,
-                        new ResponseFactory(response));
+                        new SEResponseAdapter(response));
                 preflightResponse.send();
                 break;
 
             case CORS:
-                Optional<ServerResponse> corsResponse = CrossOriginHelper.processRequest(request.path().toString(),
+                Optional<ServerResponse> corsResponse = CrossOriginHelper.processRequest(
                         crossOriginConfigs,
                         () -> Optional.empty(),
                         requestAdapter,
-                        new ResponseFactory(response));
+                        new SEResponseAdapter(response));
                 /*
                  * Any response carries a CORS error which we send immediately. Otherwise, since we know this is a CORS
                  * request, do the CORS post-processing and then pass the baton to the next handler.
@@ -138,15 +134,18 @@ public class CORSSupport implements Service {
     }
 
     private void finishCORSResponse(ServerRequest request, ServerResponse response) {
-        CrossOriginHelper.prepareResponse(request.path().toString(),
+        CrossOriginHelper.prepareResponse(
                 crossOriginConfigs,
                 () -> Optional.empty(),
                 new RequestAdapter(request),
-                new ResponseFactory(response));
+                new SEResponseAdapter(response));
 
         request.next();
     }
 
+    /**
+     * Builder for {@code CORSSupport} instances.
+     */
     public static class Builder implements io.helidon.common.Builder<CORSSupport> {
 
         private Optional<Config> corsConfig = Optional.empty();
@@ -186,6 +185,12 @@ public class CORSSupport implements Service {
         RequestAdapter(ServerRequest request) {
             this.request = request;
         }
+
+        @Override
+        public String path() {
+            return request.path().toString();
+        }
+
         @Override
         public Optional<String> firstHeader(String key) {
             return request.headers().first(key);
@@ -207,22 +212,22 @@ public class CORSSupport implements Service {
         }
     }
 
-    private static class ResponseFactory implements CrossOriginHelper.ResponseFactory<ServerResponse> {
+    private static class SEResponseAdapter implements ResponseAdapter<ServerResponse> {
 
         private final ServerResponse serverResponse;
 
-        ResponseFactory(ServerResponse serverResponse) {
+        SEResponseAdapter(ServerResponse serverResponse) {
             this.serverResponse = serverResponse;
         }
 
         @Override
-        public CrossOriginHelper.ResponseFactory addHeader(String key, String value) {
+        public ResponseAdapter<ServerResponse> addHeader(String key, String value) {
             serverResponse.headers().add(key, value);
             return this;
         }
 
         @Override
-        public CrossOriginHelper.ResponseFactory addHeader(String key, Object value) {
+        public ResponseAdapter<ServerResponse> addHeader(String key, Object value) {
             serverResponse.headers().add(key, value.toString());
             return this;
         }

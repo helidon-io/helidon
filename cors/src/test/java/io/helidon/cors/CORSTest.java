@@ -58,8 +58,7 @@ public class CORSTest {
     @BeforeAll
     public static void startup() throws InterruptedException, ExecutionException, TimeoutException {
         Routing.Builder routingBuilder = TestUtil.prepRouting()
-                .register(CORSSupport.builder())
-                .register("/greet", () -> new GreetService());
+                .register("/greet", new GreetService());
         CORSTestServices.SERVICES.forEach(s -> routingBuilder.register(s.path(), s));
 
         server = TestUtil.startServer(0, routingBuilder);
@@ -83,7 +82,6 @@ public class CORSTest {
                 .toCompletableFuture()
                 .get();
 
-        String msg = response.content().as(String.class).toCompletableFuture().get();
         Http.ResponseStatus result = response.status();
 
         assertThat(result.code(), is(Http.Status.OK_200.code()));
