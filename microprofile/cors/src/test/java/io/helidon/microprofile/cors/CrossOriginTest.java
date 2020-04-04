@@ -32,20 +32,21 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.Set;
 
+import io.helidon.cors.CrossOrigin;
 import io.helidon.microprofile.server.Server;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.microprofile.cors.CrossOrigin.ACCESS_CONTROL_ALLOW_CREDENTIALS;
-import static io.helidon.microprofile.cors.CrossOrigin.ACCESS_CONTROL_ALLOW_HEADERS;
-import static io.helidon.microprofile.cors.CrossOrigin.ACCESS_CONTROL_ALLOW_METHODS;
-import static io.helidon.microprofile.cors.CrossOrigin.ACCESS_CONTROL_ALLOW_ORIGIN;
-import static io.helidon.microprofile.cors.CrossOrigin.ACCESS_CONTROL_MAX_AGE;
-import static io.helidon.microprofile.cors.CrossOrigin.ACCESS_CONTROL_REQUEST_HEADERS;
-import static io.helidon.microprofile.cors.CrossOrigin.ACCESS_CONTROL_REQUEST_METHOD;
-import static io.helidon.microprofile.cors.CrossOrigin.ORIGIN;
+import static io.helidon.cors.CrossOrigin.ACCESS_CONTROL_ALLOW_CREDENTIALS;
+import static io.helidon.cors.CrossOrigin.ACCESS_CONTROL_ALLOW_HEADERS;
+import static io.helidon.cors.CrossOrigin.ACCESS_CONTROL_ALLOW_METHODS;
+import static io.helidon.cors.CrossOrigin.ACCESS_CONTROL_ALLOW_ORIGIN;
+import static io.helidon.cors.CrossOrigin.ACCESS_CONTROL_MAX_AGE;
+import static io.helidon.cors.CrossOrigin.ACCESS_CONTROL_REQUEST_HEADERS;
+import static io.helidon.cors.CrossOrigin.ACCESS_CONTROL_REQUEST_METHOD;
+import static io.helidon.cors.CrossOrigin.ORIGIN;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
