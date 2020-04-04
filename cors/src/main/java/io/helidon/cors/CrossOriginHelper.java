@@ -156,7 +156,7 @@ public class CrossOriginHelper {
          *
          * @return new response instance
          */
-        T build();
+        T get();
     }
 
     /**
@@ -266,7 +266,7 @@ public class CrossOriginHelper {
         formatHeader(crossOrigin.exposeHeaders()).ifPresent(
                 h -> responseAdapter.addHeader(ACCESS_CONTROL_EXPOSE_HEADERS, h));
 
-        return responseAdapter.build();
+        return responseAdapter.get();
     }
 
     /**
@@ -332,7 +332,7 @@ public class CrossOriginHelper {
         if (maxAge > 0) {
             responseAdapter.addHeader(ACCESS_CONTROL_MAX_AGE, maxAge);
         }
-        return responseAdapter.build();
+        return responseAdapter.get();
     }
 
     /**

@@ -239,7 +239,7 @@ public class CORSSupport implements Service {
         }
 
         @Override
-        public ServerResponse build() {
+        public ServerResponse get() {
             return serverResponse;
         }
     }
