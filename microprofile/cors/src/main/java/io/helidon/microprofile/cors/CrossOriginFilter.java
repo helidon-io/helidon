@@ -46,13 +46,7 @@ import io.helidon.cors.CrossOriginHelper.ResponseAdapter;
 import org.eclipse.microprofile.config.ConfigProvider;
 
 import static io.helidon.cors.CrossOriginConfig.CrossOriginConfigMapper;
-import static io.helidon.cors.CrossOriginHelper.RequestType.CORS;
-import static io.helidon.cors.CrossOriginHelper.RequestType.NORMAL;
-import static io.helidon.cors.CrossOriginHelper.RequestType.PREFLIGHT;
 import static io.helidon.cors.CrossOriginHelper.prepareResponse;
-import static io.helidon.cors.CrossOriginHelper.processPreFlight;
-import static io.helidon.cors.CrossOriginHelper.processRequest;
-import static io.helidon.cors.CrossOriginHelper.requestType;
 
 /**
  * Class CrossOriginFilter.
@@ -72,40 +66,19 @@ class CrossOriginFilter implements ContainerRequestFilter, ContainerResponseFilt
 
     @Override
     public void filter(ContainerRequestContext requestContext) {
-        RequestAdapter<ContainerRequestContext> requestAdapter = new MPRequestAdapter(requestContext);
-        CrossOriginHelper.RequestType type = requestType(requestAdapter);
-        if (type != NORMAL) {
-            if (type == PREFLIGHT) {
-                Response response = processPreFlight(
-                        crossOriginConfigs,
-                        crossOriginFromAnnotationFinder(resourceInfo),
-                        requestAdapter,
-                        new MPResponseAdapter());
-
-                requestContext.abortWith(response);
-            } else if (type == CORS) {
-                Optional<Response> response = processRequest(
-                        crossOriginConfigs,
-                        crossOriginFromAnnotationFinder(resourceInfo),
-                        requestAdapter,
-                        new MPResponseAdapter());
-                response.ifPresent(requestContext::abortWith);
-            } else {
-                throw new IllegalStateException("Invalid value for enum RequestType");
-            }
-        }
+        Optional<Response> response = CrossOriginHelper.processRequest(crossOriginConfigs,
+                crossOriginFromAnnotationFinder(resourceInfo),
+                new MPRequestAdapter(requestContext),
+                new MPResponseAdapter());
+        response.ifPresent(requestContext::abortWith);
     }
 
     @Override
     public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) {
-        RequestAdapter<ContainerRequestContext> requestAdapter = new MPRequestAdapter(requestContext);
-        CrossOriginHelper.RequestType type = requestType(requestAdapter);
-        if (type == CORS) {
-            prepareResponse(crossOriginConfigs,
-                    crossOriginFromAnnotationFinder(resourceInfo),
-                    requestAdapter,
-                    new MPResponseAdapter(responseContext));
-        }
+        prepareResponse(crossOriginConfigs,
+                crossOriginFromAnnotationFinder(resourceInfo),
+                new MPRequestAdapter(requestContext),
+                new MPResponseAdapter(responseContext));
     }
 
     static class MPRequestAdapter implements RequestAdapter<ContainerRequestContext> {
