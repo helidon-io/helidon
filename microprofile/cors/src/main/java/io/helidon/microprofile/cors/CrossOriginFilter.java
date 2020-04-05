@@ -108,7 +108,7 @@ class CrossOriginFilter implements ContainerRequestFilter, ContainerResponseFilt
         }
     }
 
-    static class MPRequestAdapter implements RequestAdapter {
+    static class MPRequestAdapter implements RequestAdapter<ContainerRequestContext> {
 
         private final ContainerRequestContext requestContext;
 
@@ -139,6 +139,11 @@ class CrossOriginFilter implements ContainerRequestFilter, ContainerResponseFilt
         @Override
         public String method() {
             return requestContext.getMethod();
+        }
+
+        @Override
+        public ContainerRequestContext request() {
+            return requestContext;
         }
     }
 
@@ -172,7 +177,7 @@ class CrossOriginFilter implements ContainerRequestFilter, ContainerResponseFilt
         }
 
         @Override
-        public Response get() {
+        public Response response() {
             Response.ResponseBuilder builder = Response.ok();
             builder.replaceAll(headers);
             return builder.build();
