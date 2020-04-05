@@ -160,13 +160,13 @@ class CrossOriginFilter implements ContainerRequestFilter, ContainerResponseFilt
         }
 
         @Override
-        public ResponseAdapter<Response> addHeader(String key, String value) {
+        public ResponseAdapter<Response> header(String key, String value) {
             headers.add(key, value);
             return this;
         }
 
         @Override
-        public ResponseAdapter<Response> addHeader(String key, Object value) {
+        public ResponseAdapter<Response> header(String key, Object value) {
             headers.add(key, value);
             return this;
         }
