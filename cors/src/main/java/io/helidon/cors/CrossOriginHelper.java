@@ -146,7 +146,7 @@ public class CrossOriginHelper {
          *
          * @param key header name to add
          * @param value header value to add
-         * @return the factory
+         * @return the adapter
          */
         ResponseAdapter<T> header(String key, String value);
 
@@ -155,13 +155,12 @@ public class CrossOriginHelper {
          *
          * @param key header name to add
          * @param value header value to add
-         * @return the factory
+         * @return the adapter
          */
         ResponseAdapter<T> header(String key, Object value);
 
-
         /**
-         * Returns an instance of the response type with the forbidden status and the specified error mesage.
+         * Prepares the response type with the forbidden status and the specified error mesage.
          *
          * @param message error message to use in setting the response status
          * @return the factory
@@ -169,11 +168,11 @@ public class CrossOriginHelper {
         T forbidden(String message);
 
         /**
-         * Returns an instance of the response type with headers set and status set to OK.
+         * Prepares the response type with headers set and status set to OK.
          *
          * @return response instance
          */
-        T response();
+        T ok();
     }
 
 
@@ -273,7 +272,7 @@ public class CrossOriginHelper {
         formatHeader(crossOrigin.exposeHeaders()).ifPresent(
                 h -> responseAdapter.header(ACCESS_CONTROL_EXPOSE_HEADERS, h));
 
-        return responseAdapter.response();
+        return responseAdapter.ok();
     }
 
     /**
@@ -343,7 +342,7 @@ public class CrossOriginHelper {
         if (maxAge > 0) {
             responseAdapter.header(ACCESS_CONTROL_MAX_AGE, maxAge);
         }
-        return responseAdapter.response();
+        return responseAdapter.ok();
     }
 
     /**

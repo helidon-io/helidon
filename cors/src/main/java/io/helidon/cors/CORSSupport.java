@@ -26,6 +26,7 @@ import io.helidon.common.HelidonFlavor;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.cors.CrossOriginConfig.CrossOriginConfigMapper;
+import io.helidon.cors.CrossOriginHelper.RequestAdapter;
 import io.helidon.cors.CrossOriginHelper.RequestType;
 import io.helidon.cors.CrossOriginHelper.ResponseAdapter;
 import io.helidon.webserver.Routing;
@@ -100,14 +101,14 @@ public class CORSSupport implements Service {
     }
 
     private void handleCORS(ServerRequest request, ServerResponse response) {
-        RequestAdapter requestAdapter = new RequestAdapter(request);
+        RequestAdapter<ServerRequest> requestAdapter = new SERequestAdapter(request);
         RequestType requestType = requestType(requestAdapter);
 
         switch (requestType) {
             case PREFLIGHT:
                 ServerResponse preflightResponse = CrossOriginHelper.processPreFlight(
                         crossOriginConfigs,
-                        () -> Optional.empty(),
+                        Optional::empty,
                         requestAdapter,
                         new SEResponseAdapter(response));
                 preflightResponse.send();
@@ -116,7 +117,7 @@ public class CORSSupport implements Service {
             case CORS:
                 Optional<ServerResponse> corsResponse = CrossOriginHelper.processRequest(
                         crossOriginConfigs,
-                        () -> Optional.empty(),
+                        Optional::empty,
                         requestAdapter,
                         new SEResponseAdapter(response));
                 /*
@@ -136,10 +137,10 @@ public class CORSSupport implements Service {
         }
     }
 
-    private void finishCORSResponse(RequestAdapter requestAdapter, ServerResponse response) {
+    private void finishCORSResponse(RequestAdapter<ServerRequest> requestAdapter, ServerResponse response) {
         CrossOriginHelper.prepareResponse(
                 crossOriginConfigs,
-                () -> Optional.empty(),
+                Optional::empty,
                 requestAdapter,
                 new SEResponseAdapter(response));
 
@@ -181,11 +182,11 @@ public class CORSSupport implements Service {
         }
     }
 
-    private static class RequestAdapter implements CrossOriginHelper.RequestAdapter<ServerRequest> {
+    private static class SERequestAdapter implements RequestAdapter<ServerRequest> {
 
         private final ServerRequest request;
 
-        RequestAdapter(ServerRequest request) {
+        SERequestAdapter(ServerRequest request) {
             this.request = request;
         }
 
@@ -247,7 +248,8 @@ public class CORSSupport implements Service {
         }
 
         @Override
-        public ServerResponse response() {
+        public ServerResponse ok() {
+            serverResponse.status(Http.Status.OK_200.code());
             return serverResponse;
         }
     }
