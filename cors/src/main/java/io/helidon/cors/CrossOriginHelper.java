@@ -160,7 +160,8 @@ public class CrossOriginHelper {
         ResponseAdapter<T> header(String key, Object value);
 
         /**
-         * Prepares the response type with the forbidden status and the specified error mesage.
+         * Prepares the response type with the forbidden status and the specified error message, without any headers assigned
+         * using the {@code header} methods.
          *
          * @param message error message to use in setting the response status
          * @return the factory
@@ -176,7 +177,7 @@ public class CrossOriginHelper {
     }
 
     /**
-     * Processes a request according to the CORS rules (if they apply), returning an {@code Optional} of the response type if
+     * Processes a request according to the CORS rules, returning an {@code Optional} of the response type if
      * the caller should send the response immediately (such as for a preflight response or an error response to a
      * non-preflight CORS request).
      * <p>
@@ -186,13 +187,13 @@ public class CrossOriginHelper {
      *     <li>recognized the request as a non-CORS request entirely.</li>
      * </ul>
      * In either case of an empty optional return value, the caller should proceed with its own request processing and sends its
-     * response at will.
+     * response at will as long as that processing includes the header settings assigned using the response adapter.
      * </p>
      *
      * @param crossOriginConfigs config information for CORS
      * @param secondaryCrossOriginLookup locates {@code CrossOrigin} from other than config (e.g., annotations for MP)
      * @param requestAdapter abstraction of a request
-     * @param responseAdapter factory for creating a response and managing its attributes (e.g., headers)
+     * @param responseAdapter abstraction of a response
      * @param <T> type for the {@code Request} managed by the requestAdapter
      * @param <U> the type for the HTTP response as returned from the responseSetter
      * @return Optional of an error response if the request was an invalid CORS request; Optional.empty() if it was a
@@ -211,10 +212,12 @@ public class CrossOriginHelper {
                 return Optional.of(result);
 
             case CORS:
-                Optional<U> corsResponse = processCORSRequest(crossOriginConfigs, secondaryCrossOriginLookup,
-                        requestAdapter,
+                Optional<U> corsResponse = processCORSRequest(crossOriginConfigs, secondaryCrossOriginLookup, requestAdapter,
                         responseAdapter);
                 if (corsResponse.isEmpty()) {
+                    /*
+                     * There has been no rejection of the CORS settings, so prep the response headers.
+                     */
                     prepareCORSResponse(crossOriginConfigs, secondaryCrossOriginLookup, requestAdapter, responseAdapter);
                 }
                 return corsResponse;
@@ -233,7 +236,7 @@ public class CrossOriginHelper {
      * @param crossOriginConfigs config information for CORS
      * @param secondaryCrossOriginLookup locates {@code CrossOrigin} from other than config (e.g., annotations for MP)
      * @param requestAdapter abstraction of a request
-     * @param responseAdapter factory for creating a response and managing its attributes (e.g., headers)
+     * @param responseAdapter abstraction of a response
      * @param <T> type for the {@code Request} managed by the requestAdapter
      * @param <U> the type for the HTTP response as returned from the responseSetter
      */
@@ -289,9 +292,9 @@ public class CrossOriginHelper {
      * @param crossOriginConfigs config information for CORS
      * @param secondaryCrossOriginLookup locates {@code CrossOrigin} from other than config (e.g., annotations for MP)
      * @param requestAdapter abstraction of a request
-     * @param responseAdapter factory for creating a response and managing its attributes (e.g., headers)
-     * @param <T> type for the {@code Request} managed by the requestAdapter
-     * @param <U> the type for the HTTP response as returned from the responseSetter
+     * @param responseAdapter abstraction of a response
+     * @param <T> type for the request wrapped by the requestAdapter
+     * @param <U> type for the response wrapper by the responseAdapter
      * @return Optional of an error response if the request was an invalid CORS request; Optional.empty() if it was a
      *         valid CORS request
      */
@@ -324,8 +327,8 @@ public class CrossOriginHelper {
      * @param secondaryCrossOriginLookup locates {@code CrossOrigin} from other than config (e.g., annotations for MP)
      * @param requestAdapter request adapter
      * @param responseAdapter response adapter
-     * @param <T> type for the {@code Request} managed by the requestAdapter
-     * @param <U> type for the {@code Response} returned by the responseAdapter
+     * @param <T> type for the request wrapped by the requestAdapter
+     * @param <U> type for the response wrapper by the responseAdapter
      * @return U the response provided by the responseAdapter
      */
     static <T, U> U prepareCORSResponse(List<CrossOriginConfig> crossOriginConfigs,
@@ -365,8 +368,8 @@ public class CrossOriginHelper {
      * @param secondaryCrossOriginLookup locates {@code CrossOrigin} from other than config (e.g., annotations for MP)
      * @param requestAdapter the request adapter
      * @param responseAdapter the response adapter
-     * @param <T> type for the {@code Request} managed by the requestAdapter
-     * @param <U> the type for the returned HTTP response (as returned from the response adapter)
+     * @param <T> type for the request wrapped by the requestAdapter
+     * @param <U> type for the response wrapper by the responseAdapter
      * @return the response returned by the response adapter with CORS-related headers set (for a successful CORS preflight)
      */
     static <T, U> U processCORSPreFlightRequest(
