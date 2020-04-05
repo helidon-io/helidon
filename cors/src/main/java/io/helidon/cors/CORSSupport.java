@@ -16,6 +16,11 @@
  */
 package io.helidon.cors;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.logging.Logger;
+
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
 import io.helidon.common.http.Http;
@@ -27,11 +32,6 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.logging.Logger;
 
 import static io.helidon.cors.CrossOriginHelper.CORS_CONFIG_KEY;
 import static io.helidon.cors.CrossOriginHelper.requestType;
@@ -47,6 +47,9 @@ public class CORSSupport implements Service {
     /**
      * Creates a {@code CORSSupport} instance based on the default configuration and any
      * {@value CrossOriginHelper#CORS_CONFIG_KEY} config node in it.
+     *
+     * @return new {@code CORSSupport} instance set up with the "{@value CrossOriginHelper#CORS_CONFIG_KEY}" config from the
+     * default configuration
      */
     public static CORSSupport create() {
         Config corsConfig = Config.create().get(CORS_CONFIG_KEY);
@@ -120,7 +123,7 @@ public class CORSSupport implements Service {
                  * Any response carries a CORS error which we send immediately. Otherwise, since we know this is a CORS
                  * request, do the CORS post-processing and then pass the baton to the next handler.
                  */
-                corsResponse.ifPresentOrElse(ServerResponse::send, () -> finishCORSResponse(request, response));
+                corsResponse.ifPresentOrElse(ServerResponse::send, () -> finishCORSResponse(requestAdapter, response));
                 break;
 
             case NORMAL:
@@ -133,14 +136,14 @@ public class CORSSupport implements Service {
         }
     }
 
-    private void finishCORSResponse(ServerRequest request, ServerResponse response) {
+    private void finishCORSResponse(RequestAdapter requestAdapter, ServerResponse response) {
         CrossOriginHelper.prepareResponse(
                 crossOriginConfigs,
                 () -> Optional.empty(),
-                new RequestAdapter(request),
+                requestAdapter,
                 new SEResponseAdapter(response));
 
-        request.next();
+        requestAdapter.request().next();
     }
 
     /**
@@ -178,7 +181,7 @@ public class CORSSupport implements Service {
         }
     }
 
-    private static class RequestAdapter implements CrossOriginHelper.RequestAdapter {
+    private static class RequestAdapter implements CrossOriginHelper.RequestAdapter<ServerRequest> {
 
         private final ServerRequest request;
 
@@ -210,6 +213,11 @@ public class CORSSupport implements Service {
         public String method() {
             return request.method().name();
         }
+
+        @Override
+        public ServerRequest request() {
+            return request;
+        }
     }
 
     private static class SEResponseAdapter implements ResponseAdapter<ServerResponse> {
@@ -239,7 +247,7 @@ public class CORSSupport implements Service {
         }
 
         @Override
-        public ServerResponse get() {
+        public ServerResponse response() {
             return serverResponse;
         }
     }

@@ -16,12 +16,13 @@
 
 package io.helidon.cors;
 
-import io.helidon.config.Config;
-
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
+
+import io.helidon.config.Config;
 
 import static io.helidon.cors.CrossOriginHelper.parseHeader;
 
@@ -59,22 +60,22 @@ public class CrossOriginConfig implements CrossOrigin {
 
     @Override
     public String[] value() {
-        return value;
+        return copyOf(value);
     }
 
     @Override
     public String[] allowHeaders() {
-        return allowHeaders;
+        return copyOf(allowHeaders);
     }
 
     @Override
     public String[] exposeHeaders() {
-        return exposeHeaders;
+        return copyOf(exposeHeaders);
     }
 
     @Override
     public String[] allowMethods() {
-        return allowMethods;
+        return copyOf(allowMethods);
     }
 
     @Override
@@ -90,6 +91,10 @@ public class CrossOriginConfig implements CrossOrigin {
     @Override
     public Class<? extends Annotation> annotationType() {
         return CrossOrigin.class;
+    }
+
+    private String[] copyOf(String[] strings) {
+        return strings != null ? Arrays.copyOf(strings, strings.length) : new String[0];
     }
 
     /**
@@ -122,7 +127,7 @@ public class CrossOriginConfig implements CrossOrigin {
             return this;
         }
 
-        public Builder exposeHeaders(String[] allowHeaders) {
+        public Builder exposeHeaders(String[] exposeHeaders) {
             this.exposeHeaders = exposeHeaders;
             return this;
         }
