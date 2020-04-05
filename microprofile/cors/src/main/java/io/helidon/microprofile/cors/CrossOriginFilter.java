@@ -72,7 +72,7 @@ class CrossOriginFilter implements ContainerRequestFilter, ContainerResponseFilt
 
     @Override
     public void filter(ContainerRequestContext requestContext) {
-        RequestAdapter requestAdapter = new MPRequestAdapter(requestContext);
+        RequestAdapter<ContainerRequestContext> requestAdapter = new MPRequestAdapter(requestContext);
         CrossOriginHelper.RequestType type = requestType(requestAdapter);
         if (type != NORMAL) {
             if (type == PREFLIGHT) {
@@ -98,7 +98,7 @@ class CrossOriginFilter implements ContainerRequestFilter, ContainerResponseFilt
 
     @Override
     public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) {
-        RequestAdapter requestAdapter = new MPRequestAdapter(requestContext);
+        RequestAdapter<ContainerRequestContext> requestAdapter = new MPRequestAdapter(requestContext);
         CrossOriginHelper.RequestType type = requestType(requestAdapter);
         if (type == CORS) {
             prepareResponse(crossOriginConfigs,
@@ -177,7 +177,7 @@ class CrossOriginFilter implements ContainerRequestFilter, ContainerResponseFilt
         }
 
         @Override
-        public Response response() {
+        public Response ok() {
             Response.ResponseBuilder builder = Response.ok();
             builder.replaceAll(headers);
             return builder.build();
