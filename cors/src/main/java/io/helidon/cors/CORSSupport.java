@@ -27,7 +27,6 @@ import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.cors.CrossOriginConfig.CrossOriginConfigMapper;
 import io.helidon.cors.CrossOriginHelper.RequestAdapter;
-import io.helidon.cors.CrossOriginHelper.RequestType;
 import io.helidon.cors.CrossOriginHelper.ResponseAdapter;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
@@ -35,7 +34,8 @@ import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 
 import static io.helidon.cors.CrossOriginHelper.CORS_CONFIG_KEY;
-import static io.helidon.cors.CrossOriginHelper.requestType;
+import static io.helidon.cors.CrossOriginHelper.prepareResponse;
+import static io.helidon.cors.CrossOriginHelper.processRequest;
 
 /**
  * Provides support for CORS in an application or a built-in Helidon service.
@@ -102,43 +102,18 @@ public class CORSSupport implements Service {
 
     private void handleCORS(ServerRequest request, ServerResponse response) {
         RequestAdapter<ServerRequest> requestAdapter = new SERequestAdapter(request);
-        RequestType requestType = requestType(requestAdapter);
+        ResponseAdapter<ServerResponse> responseAdapter = new SEResponseAdapter(response);
 
-        switch (requestType) {
-            case PREFLIGHT:
-                ServerResponse preflightResponse = CrossOriginHelper.processPreFlight(
-                        crossOriginConfigs,
-                        Optional::empty,
-                        requestAdapter,
-                        new SEResponseAdapter(response));
-                preflightResponse.send();
-                break;
+        Optional<ServerResponse> responseOpt = processRequest(crossOriginConfigs,
+                Optional::empty,
+                requestAdapter,
+                responseAdapter);
 
-            case CORS:
-                Optional<ServerResponse> corsResponse = CrossOriginHelper.processRequest(
-                        crossOriginConfigs,
-                        Optional::empty,
-                        requestAdapter,
-                        new SEResponseAdapter(response));
-                /*
-                 * Any response carries a CORS error which we send immediately. Otherwise, since we know this is a CORS
-                 * request, do the CORS post-processing and then pass the baton to the next handler.
-                 */
-                corsResponse.ifPresentOrElse(ServerResponse::send, () -> finishCORSResponse(requestAdapter, response));
-                break;
-
-            case NORMAL:
-                request.next();
-                break;
-
-            default:
-                throw new IllegalStateException(String.format("Unrecognized request type during CORS checking: %s", requestType));
-
-        }
+        responseOpt.ifPresentOrElse(ServerResponse::send, () -> prepareCORSResponseAndContinue(requestAdapter, response));
     }
 
-    private void finishCORSResponse(RequestAdapter<ServerRequest> requestAdapter, ServerResponse response) {
-        CrossOriginHelper.prepareResponse(
+    private void prepareCORSResponseAndContinue(RequestAdapter<ServerRequest> requestAdapter, ServerResponse response) {
+        prepareResponse(
                 crossOriginConfigs,
                 Optional::empty,
                 requestAdapter,

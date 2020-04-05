@@ -41,7 +41,7 @@ import static io.helidon.cors.CrossOrigin.ACCESS_CONTROL_REQUEST_METHOD;
 import static io.helidon.cors.CrossOrigin.ORIGIN;
 
 /**
- * Centralizes common logic to both SE and MP CORS support.
+ * Centralizes common logic to both SE and MP CORS support for processing requests and preparing responses.
  * <p>
  * To serve both masters, several methods here accept adapters for requests and responses. Both of these are minimal and very
  * specific to the needs of CORS support.
@@ -175,6 +175,87 @@ public class CrossOriginHelper {
         T ok();
     }
 
+    /**
+     * Processes a request according to the CORS rules (if they apply), returning an {@code Optional} of the response type if
+     * the caller should send the response immediately (such as for a preflight response or an error response to a
+     * non-preflight CORS request).
+     * <p>
+     *     If the optional is empty, this processor has either:
+     * <ul>
+     *     <li>recognized the request as a valid non-preflight CORS request and has set headers in the response adapter, or</li>
+     *     <li>recognized the request as a non-CORS request entirely.</li>
+     * </ul>
+     * In either case of an empty optional return value, the caller should proceed with its own request processing and sends its
+     * response at will.
+     * </p>
+     *
+     * @param crossOriginConfigs config information for CORS
+     * @param secondaryCrossOriginLookup locates {@code CrossOrigin} from other than config (e.g., annotations for MP)
+     * @param requestAdapter abstraction of a request
+     * @param responseAdapter factory for creating a response and managing its attributes (e.g., headers)
+     * @param <T> type for the {@code Request} managed by the requestAdapter
+     * @param <U> the type for the HTTP response as returned from the responseSetter
+     * @return Optional of an error response if the request was an invalid CORS request; Optional.empty() if it was a
+     *         valid CORS request
+     */
+    public static <T, U> Optional<U> processRequest(List<CrossOriginConfig> crossOriginConfigs,
+            Supplier<Optional<CrossOrigin>> secondaryCrossOriginLookup,
+            RequestAdapter<T> requestAdapter,
+            ResponseAdapter<U> responseAdapter) {
+        RequestType requestType = requestType(requestAdapter);
+
+        switch (requestType) {
+            case PREFLIGHT:
+                U result = processCORSPreFlightRequest(crossOriginConfigs, secondaryCrossOriginLookup, requestAdapter,
+                        responseAdapter);
+                return Optional.of(result);
+
+            case CORS:
+                Optional<U> corsResponse = processCORSRequest(crossOriginConfigs, secondaryCrossOriginLookup,
+                        requestAdapter,
+                        responseAdapter);
+                if (corsResponse.isEmpty()) {
+                    prepareCORSResponse(crossOriginConfigs, secondaryCrossOriginLookup, requestAdapter, responseAdapter);
+                }
+                return corsResponse;
+
+            case NORMAL:
+                return Optional.empty();
+
+            default:
+                throw new IllegalArgumentException("Unexpected value for enum RequestType");
+        }
+    }
+
+    /**
+     * Prepares a response with CORS headers, if the supplied request is in fact a CORS request.
+     *
+     * @param crossOriginConfigs config information for CORS
+     * @param secondaryCrossOriginLookup locates {@code CrossOrigin} from other than config (e.g., annotations for MP)
+     * @param requestAdapter abstraction of a request
+     * @param responseAdapter factory for creating a response and managing its attributes (e.g., headers)
+     * @param <T> type for the {@code Request} managed by the requestAdapter
+     * @param <U> the type for the HTTP response as returned from the responseSetter
+     */
+    public static <T, U> void prepareResponse(List<CrossOriginConfig> crossOriginConfigs,
+            Supplier<Optional<CrossOrigin>> secondaryCrossOriginLookup,
+            RequestAdapter<T> requestAdapter,
+            ResponseAdapter<U> responseAdapter) {
+
+        RequestType requestType = requestType(requestAdapter);
+
+        switch (requestType) {
+            case CORS:
+                prepareCORSResponse(
+                        crossOriginConfigs,
+                        secondaryCrossOriginLookup,
+                        requestAdapter,
+                        responseAdapter);
+                break;
+
+            default:
+        }
+    }
 
     /**
      * Analyzes the request to determine the type of request, from the CORS perspective.
@@ -183,7 +264,7 @@ public class CrossOriginHelper {
      * @param <T> type of request wrapped by the adapter
      * @return RequestType the CORS request type of the request
      */
-    public static <T> RequestType requestType(RequestAdapter<T> requestAdapter) {
+    static <T> RequestType requestType(RequestAdapter<T> requestAdapter) {
         // If no origin header or same as host, then just normal
         Optional<String> originOpt = requestAdapter.firstHeader(ORIGIN);
         Optional<String> hostOpt = requestAdapter.firstHeader(HOST);
@@ -202,7 +283,8 @@ public class CrossOriginHelper {
     }
 
     /**
-     * Validates information about an incoming request as a CORS request.
+     * Validates information about an incoming request as a CORS request and, if anything is wrong with CORS information,
+     * returns an {@code Optional} error response reporting the problem.
      *
      * @param crossOriginConfigs config information for CORS
      * @param secondaryCrossOriginLookup locates {@code CrossOrigin} from other than config (e.g., annotations for MP)
@@ -213,7 +295,7 @@ public class CrossOriginHelper {
      * @return Optional of an error response if the request was an invalid CORS request; Optional.empty() if it was a
      *         valid CORS request
      */
-    public static <T, U> Optional<U> processRequest(
+    static <T, U> Optional<U> processCORSRequest(
             List<CrossOriginConfig> crossOriginConfigs,
             Supplier<Optional<CrossOrigin>> secondaryCrossOriginLookup,
             RequestAdapter<T> requestAdapter,
@@ -246,7 +328,7 @@ public class CrossOriginHelper {
      * @param <U> type for the {@code Response} returned by the responseAdapter
      * @return U the response provided by the responseAdapter
      */
-    public static <T, U> U prepareResponse(List<CrossOriginConfig> crossOriginConfigs,
+    static <T, U> U prepareCORSResponse(List<CrossOriginConfig> crossOriginConfigs,
             Supplier<Optional<CrossOrigin>> secondaryCrossOriginLookup,
             RequestAdapter<T> requestAdapter,
             ResponseAdapter<U> responseAdapter) {
@@ -276,7 +358,8 @@ public class CrossOriginHelper {
     }
 
     /**
-     * Processes a pre-flight request.
+     * Processes a pre-flight request, returning either a preflight response or an error response if the CORS information was
+     * invalid.
      *
      * @param crossOriginConfigs config information for CORS
      * @param secondaryCrossOriginLookup locates {@code CrossOrigin} from other than config (e.g., annotations for MP)
@@ -286,7 +369,7 @@ public class CrossOriginHelper {
      * @param <U> the type for the returned HTTP response (as returned from the response adapter)
      * @return the response returned by the response adapter with CORS-related headers set (for a successful CORS preflight)
      */
-    public static <T, U> U processPreFlight(
+    static <T, U> U processCORSPreFlightRequest(
             List<CrossOriginConfig> crossOriginConfigs,
             Supplier<Optional<CrossOrigin>> secondaryCrossOriginLookup,
             RequestAdapter<T> requestAdapter,
