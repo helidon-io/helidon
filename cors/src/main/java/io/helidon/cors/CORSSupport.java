@@ -229,13 +229,13 @@ public class CORSSupport implements Service {
         }
 
         @Override
-        public ResponseAdapter<ServerResponse> addHeader(String key, String value) {
+        public ResponseAdapter<ServerResponse> header(String key, String value) {
             serverResponse.headers().add(key, value);
             return this;
         }
 
         @Override
-        public ResponseAdapter<ServerResponse> addHeader(String key, Object value) {
+        public ResponseAdapter<ServerResponse> header(String key, Object value) {
             serverResponse.headers().add(key, value.toString());
             return this;
         }
