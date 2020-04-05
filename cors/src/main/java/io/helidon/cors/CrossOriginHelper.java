@@ -135,9 +135,9 @@ public class CrossOriginHelper {
     }
 
     /**
-     * Minimal abstraction of an HTTP response factory.
+     * Minimal abstraction of an HTTP response.
      *
-     * @param <T> the type of the response created by the factory
+     * @param <T> the type of the response wrapped by the adapter
      */
     public interface ResponseAdapter<T> {
 
@@ -175,6 +175,7 @@ public class CrossOriginHelper {
          */
         T response();
     }
+
 
     /**
      * Analyzes the request to determine the type of request, from the CORS perspective.
