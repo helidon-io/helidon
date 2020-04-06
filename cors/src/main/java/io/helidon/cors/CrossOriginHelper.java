@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
@@ -207,7 +208,7 @@ public class CrossOriginHelper {
      * @return Optional of an error response if the request was an invalid CORS request; Optional.empty() if it was a
      *         valid CORS request
      */
-    public static <T, U> Optional<U> processRequest(List<CrossOriginConfig> crossOriginConfigs,
+    public static <T, U> Optional<U> processRequest(Map<String, CrossOriginConfig> crossOriginConfigs,
             Supplier<Optional<CrossOriginConfig>> secondaryCrossOriginLookup,
             RequestAdapter<T> requestAdapter,
             ResponseAdapter<U> responseAdapter) {
@@ -248,7 +249,7 @@ public class CrossOriginHelper {
      * @param <T> type for the {@code Request} managed by the requestAdapter
      * @param <U> the type for the HTTP response as returned from the responseSetter
      */
-    public static <T, U> void prepareResponse(List<CrossOriginConfig> crossOriginConfigs,
+    public static <T, U> void prepareResponse(Map<String, CrossOriginConfig> crossOriginConfigs,
             Supplier<Optional<CrossOriginConfig>> secondaryCrossOriginLookup,
             RequestAdapter<T> requestAdapter,
             ResponseAdapter<U> responseAdapter) {
@@ -303,7 +304,7 @@ public class CrossOriginHelper {
      *         valid CORS request
      */
     static <T, U> Optional<U> processCORSRequest(
-            List<CrossOriginConfig> crossOriginConfigs,
+            Map<String, CrossOriginConfig> crossOriginConfigs,
             Supplier<Optional<CrossOriginConfig>> secondaryCrossOriginLookup,
             RequestAdapter<T> requestAdapter,
             ResponseAdapter<U> responseAdapter) {
@@ -334,7 +335,7 @@ public class CrossOriginHelper {
      * @param <T> type for the request wrapped by the requestAdapter
      * @param <U> type for the response wrapper by the responseAdapter
      */
-    static <T, U> void prepareCORSResponse(List<CrossOriginConfig> crossOriginConfigs,
+    static <T, U> void prepareCORSResponse(Map<String, CrossOriginConfig> crossOriginConfigs,
             Supplier<Optional<CrossOriginConfig>> secondaryCrossOriginLookup,
             RequestAdapter<T> requestAdapter,
             ResponseAdapter<U> responseAdapter) {
@@ -379,7 +380,7 @@ public class CrossOriginHelper {
      * @return the response returned by the response adapter with CORS-related headers set (for a successful CORS preflight)
      */
     static <T, U> U processCORSPreFlightRequest(
-            List<CrossOriginConfig> crossOriginConfigs,
+            Map<String, CrossOriginConfig> crossOriginConfigs,
             Supplier<Optional<CrossOriginConfig>> secondaryCrossOriginLookup,
             RequestAdapter<T> requestAdapter,
             ResponseAdapter<U> responseAdapter) {
@@ -449,14 +450,11 @@ public class CrossOriginHelper {
      * @param secondaryLookup Supplier for CrossOrigin used if none found in config
      * @return Optional<CrossOrigin> for the matching config, or an empty Optional if none matched
      */
-    static Optional<CrossOriginConfig> lookupCrossOrigin(String path, List<CrossOriginConfig> crossOriginConfigs,
+    static Optional<CrossOriginConfig> lookupCrossOrigin(String path, Map<String, CrossOriginConfig> crossOriginConfigs,
             Supplier<Optional<CrossOriginConfig>> secondaryLookup) {
-        for (CrossOriginConfig config : crossOriginConfigs) {
-            String pathPrefix = normalize(config.pathPrefix());
-            String uriPath = normalize(path);
-            if (uriPath.startsWith(pathPrefix)) {
-                return Optional.of(config);
-            }
+        String normalizedPath = normalize(path);
+        if (crossOriginConfigs.containsKey(normalizedPath)) {
+            return Optional.of(crossOriginConfigs.get(normalizedPath));
         }
 
         return secondaryLookup.get();

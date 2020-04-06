@@ -16,13 +16,14 @@
 
 package io.helidon.cors;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Function;
 
 import io.helidon.config.Config;
 
+import static io.helidon.cors.CrossOriginHelper.normalize;
 import static io.helidon.cors.CrossOriginHelper.parseHeader;
 
 /**
@@ -257,11 +258,11 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
     /**
      * Functional interface for converting a Helidon config instance to a {@code CrossOriginConfig} instance.
      */
-    public static class CrossOriginConfigMapper implements Function<Config, List<CrossOriginConfig>> {
+    public static class CrossOriginConfigMapper implements Function<Config, Map<String, CrossOriginConfig>> {
 
         @Override
-        public List<CrossOriginConfig> apply(Config config) {
-            List<CrossOriginConfig> result = new ArrayList<>();
+        public Map<String, CrossOriginConfig> apply(Config config) {
+            Map<String, CrossOriginConfig> result = new HashMap<>();
             int i = 0;
             do {
                 Config item = config.get(Integer.toString(i++));
@@ -269,6 +270,7 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
                     break;
                 }
                 Builder builder = new Builder();
+                String path = item.get("path-prefix").as(String.class).orElse(null);
                 item.get("path-prefix").as(String.class).ifPresent(builder::pathPrefix);
                 item.get("allow-origins").asList(String.class).ifPresent(
                         s -> builder.value(parseHeader(s).toArray(new String[]{})));
@@ -280,7 +282,7 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
                         s -> builder.exposeHeaders(parseHeader(s).toArray(new String[]{})));
                 item.get("allow-credentials").as(Boolean.class).ifPresent(builder::allowCredentials);
                 item.get("max-age").as(Long.class).ifPresent(builder::maxAge);
-                result.add(builder.build());
+                result.put(normalize(path), builder.build());
             } while (true);
             return result;
         }

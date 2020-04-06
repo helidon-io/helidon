@@ -85,7 +85,7 @@ public class CORSSupport implements Service {
         HelidonFeatures.register(HelidonFlavor.SE, "CORS");
     }
 
-    private final List<CrossOriginConfig> crossOriginConfigs;
+    private final Map<String, CrossOriginConfig> crossOriginConfigs;
 
     private CORSSupport(Builder builder) {
         crossOriginConfigs = builder.configs();
@@ -154,9 +154,9 @@ public class CORSSupport implements Service {
          *
          * @return list of CrossOriginConfig instances, each describing a path and its associated constraints or permissions
          */
-        List<CrossOriginConfig> configs() {
+        Map<String, CrossOriginConfig> configs() {
             return corsConfig.map(c -> c.as(new CrossOriginConfigMapper()).get())
-                         .orElse(Collections.emptyList());
+                         .orElse(Collections.emptyMap());
         }
 
         /**
