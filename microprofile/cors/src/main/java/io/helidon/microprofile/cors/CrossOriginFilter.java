@@ -37,6 +37,8 @@ import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
+import io.helidon.common.HelidonFeatures;
+import io.helidon.common.HelidonFlavor;
 import io.helidon.config.Config;
 import io.helidon.cors.CrossOriginConfig;
 import io.helidon.cors.CrossOriginHelper;
@@ -54,6 +56,10 @@ import static io.helidon.cors.CrossOriginHelper.prepareResponse;
  */
 @Priority(Priorities.HEADER_DECORATOR)
 class CrossOriginFilter implements ContainerRequestFilter, ContainerResponseFilter {
+
+    static {
+        HelidonFeatures.register(HelidonFlavor.MP, "CORS");
+    }
 
     @Context
     private ResourceInfo resourceInfo;
