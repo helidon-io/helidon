@@ -55,7 +55,6 @@
         <dependency>
             <groupId>io.helidon.cors</groupId>
             <artifactId>helidon-cors</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
