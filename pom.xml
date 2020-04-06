@@ -56,13 +56,7 @@
         <version.lib.asciidoctor.diagram>1.5.4.1</version.lib.asciidoctor.diagram>
         <version.lib.asm>6.0</version.lib.asm>
         <version.lib.checkstyle>8.29</version.lib.checkstyle>
-        <version.lib.classfilewriter>1.2.4.Final</version.lib.classfilewriter>
-        <version.lib.commons-logging>1.2</version.lib.commons-logging>
         <version.lib.groovy-all>2.4.14</version.lib.groovy-all>
-        <version.lib.jboss-annotations-api_1.3_spec>1.0.0.Final</version.lib.jboss-annotations-api_1.3_spec>
-        <version.lib.jboss-el-api_3.0_spec>1.0.0.Final</version.lib.jboss-el-api_3.0_spec>
-        <version.lib.jboss-interceptors-api_1.2_spec>1.0.0.Final</version.lib.jboss-interceptors-api_1.2_spec>
-        <version.lib.jboss.logging>3.2.1.Final</version.lib.jboss.logging>
         <version.lib.jgit>4.9.9.201903122025-r</version.lib.jgit>
         <version.lib.jsch>0.1.55</version.lib.jsch>
         <version.lib.netty.tcnative>2.0.26.Final</version.lib.netty.tcnative>
@@ -143,7 +137,7 @@
         <javadoc.link.javax-jaxb>https://static.javadoc.io/javax.xml.bind/jaxb-api/${version.lib.jaxb-api}</javadoc.link.javax-jaxb>
         <javadoc.link.javax-persistence>https://static.javadoc.io/javax.persistence/javax.persistence-api/${version.lib.persistence-api}</javadoc.link.javax-persistence>
         <javadoc.link.javax-transaction>https://static.javadoc.io/javax.transaction/javax.transaction-api/${version.lib.transaction-api}</javadoc.link.javax-transaction>
-        <javadoc.link.microprofile-config>https://static.javadoc.io/org.eclipse.microprofile.config/microprofile-config-api/${version.lib.microprofile-config-api}</javadoc.link.microprofile-config>
+        <javadoc.link.microprofile-config>https://static.javadoc.io/org.eclipse.microprofile.config/microprofile-config-api/${version.lib.microprofile-config}</javadoc.link.microprofile-config>
         <javadoc.link.microprofile-health>https://static.javadoc.io/org.eclipse.microprofile.health/microprofile-health-api/${version.lib.microprofile-health}</javadoc.link.microprofile-health>
         <javadoc.link.microprofile-metrics>https://static.javadoc.io/org.eclipse.microprofile.metrics/microprofile-metrics-api/${version.lib.microprofile-metrics-api}</javadoc.link.microprofile-metrics>
         <javadoc.link.weld>https://docs.jboss.org/weld/javadoc/3.0/weld-spi/</javadoc.link.weld>
@@ -794,59 +788,9 @@
                 </exclusions>
             </dependency>
             <dependency>
-                <groupId>org.jboss.weld.environment</groupId>
-                <artifactId>weld-environment-common</artifactId>
-                <version>${version.lib.weld}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.weld.probe</groupId>
-                <artifactId>weld-probe-core</artifactId>
-                <version>${version.lib.weld}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.classfilewriter</groupId>
-                <artifactId>jboss-classfilewriter</artifactId>
-                <version>${version.lib.classfilewriter}</version>
-            </dependency>
-            <dependency>
-                <!-- required for dependency convergence, transitive dependency of both
-                commons-configuration (through hystrix-core)
-                org.apache.httpcomponents:httpclient (through health-tck)
-                -->
-                <groupId>commons-logging</groupId>
-                <artifactId>commons-logging</artifactId>
-                <version>${version.lib.commons-logging}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.spec.javax.annotation</groupId>
-                <artifactId>jboss-annotations-api_1.3_spec</artifactId>
-                <version>${version.lib.jboss-annotations-api_1.3_spec}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.spec.javax.el</groupId>
-                <artifactId>jboss-el-api_3.0_spec</artifactId>
-                <version>${version.lib.jboss-el-api_3.0_spec}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.spec.javax.interceptor</groupId>
-                <artifactId>jboss-interceptors-api_1.2_spec</artifactId>
-                <version>${version.lib.jboss-interceptors-api_1.2_spec}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.logging</groupId>
-                <artifactId>jboss-logging</artifactId>
-                <version>${version.lib.jboss.logging}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.jboss.weld</groupId>
                 <artifactId>weld-junit5</artifactId>
                 <version>${version.lib.weld-junit}</version>
-            </dependency>
-            <dependency>
-                <!-- if needed (as excluded from weld) -->
-                <groupId>org.codehaus.groovy</groupId>
-                <artifactId>groovy-all</artifactId>
-                <version>${version.lib.groovy-all}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.microprofile.health</groupId>

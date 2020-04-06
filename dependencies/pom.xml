@@ -42,6 +42,7 @@
         <version.lib.apache-httpclient>4.5.10</version.lib.apache-httpclient>
         <version.lib.brave-opentracing>0.35.0</version.lib.brave-opentracing>
         <version.lib.cdi-api>2.0.2</version.lib.cdi-api>
+        <version.lib.commons-logging>1.2</version.lib.commons-logging>
         <version.lib.dropwizard.metrics>4.1.2</version.lib.dropwizard.metrics>
         <version.lib.eclipselink>2.7.4</version.lib.eclipselink>
         <version.lib.el-api>3.0.3</version.lib.el-api>
@@ -67,8 +68,10 @@
         <version.lib.jaxb-core>2.3.0.1</version.lib.jaxb-core>
         <version.lib.jaxb-impl>2.3.2</version.lib.jaxb-impl>
         <version.lib.jaxrs-api>2.1.6</version.lib.jaxrs-api>
-        <version.lib.jboss-transaction-spi>7.6.0.Final</version.lib.jboss-transaction-spi>
-        <version.lib.jboss-transaction-api>1.0.0.Final</version.lib.jboss-transaction-api>
+        <version.lib.jboss.classfilewriter>1.2.4.Final</version.lib.jboss.classfilewriter>
+        <version.lib.jboss.logging>3.2.1.Final</version.lib.jboss.logging>
+        <version.lib.jboss.transaction-spi>7.6.0.Final</version.lib.jboss.transaction-spi>
+        <version.lib.jboss.transaction-api>1.0.0.Final</version.lib.jboss.transaction-api>
         <version.lib.jedis>3.1.0</version.lib.jedis>
         <version.lib.jersey>2.30.1</version.lib.jersey>
         <version.lib.jsonb-api>1.0.2</version.lib.jsonb-api>
@@ -784,7 +787,7 @@
             <dependency>
                 <groupId>org.jboss</groupId>
                 <artifactId>jboss-transaction-spi</artifactId>
-                <version>${version.lib.jboss-transaction-spi}</version>
+                <version>${version.lib.jboss.transaction-spi}</version>
                 <exclusions>
                   <exclusion>
                       <groupId>org.jboss.spec.javax.resource</groupId>
@@ -795,7 +798,42 @@
             <dependency>
                 <groupId>org.jboss.spec.javax.transaction</groupId>
                 <artifactId>jboss-transaction-api_1.2_spec</artifactId>
-                <version>${version.lib.jboss-transaction-api}</version>
+                <version>${version.lib.jboss.transaction-api}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.weld.environment</groupId>
+                <artifactId>weld-environment-common</artifactId>
+                <version>${version.lib.weld}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.weld.probe</groupId>
+                <artifactId>weld-probe-core</artifactId>
+                <version>${version.lib.weld}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.classfilewriter</groupId>
+                <artifactId>jboss-classfilewriter</artifactId>
+                <version>${version.lib.jboss.classfilewriter}</version>
+            </dependency>
+            <dependency>
+                <!-- if needed (as excluded from weld) -->
+                <groupId>org.codehaus.groovy</groupId>
+                <artifactId>groovy-all</artifactId>
+                <version>${version.lib.groovy-all}</version>
+            </dependency>
+            <dependency>
+                <!-- required for dependency convergence, transitive dependency of both
+                commons-configuration (through hystrix-core)
+                org.apache.httpcomponents:httpclient (through health-tck)
+                -->
+                <groupId>commons-logging</groupId>
+                <artifactId>commons-logging</artifactId>
+                <version>${version.lib.commons-logging}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.logging</groupId>
+                <artifactId>jboss-logging</artifactId>
+                <version>${version.lib.jboss.logging}</version>
             </dependency>
             <dependency>
                 <groupId>org.graalvm.sdk</groupId>

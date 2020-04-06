@@ -44,7 +44,6 @@ import io.netty.handler.ssl.SslContextBuilder;
 import org.junit.AfterClass;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import services.EchoService;
 
@@ -54,7 +53,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Tests for gRPC server with SSL connections
  */
-@Disabled("Certificate expired on 27th March 2020")
 public class SslIT {
 
     // ----- data members ---------------------------------------------------
