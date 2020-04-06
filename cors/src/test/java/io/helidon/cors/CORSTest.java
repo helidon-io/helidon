@@ -27,6 +27,7 @@ import io.helidon.webclient.WebClientRequestBuilder;
 import io.helidon.webclient.WebClientResponse;
 import io.helidon.webserver.WebServer;
 
+import static io.helidon.common.http.Http.Header.ORIGIN;
 import static io.helidon.cors.CORSTestServices.SERVICE_1;
 import static io.helidon.cors.CORSTestServices.SERVICE_2;
 import static io.helidon.cors.CORSTestServices.SERVICE_3;
@@ -37,7 +38,6 @@ import static io.helidon.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static io.helidon.cors.CrossOriginConfig.ACCESS_CONTROL_MAX_AGE;
 import static io.helidon.cors.CrossOriginConfig.ACCESS_CONTROL_REQUEST_HEADERS;
 import static io.helidon.cors.CrossOriginConfig.ACCESS_CONTROL_REQUEST_METHOD;
-import static io.helidon.cors.CrossOriginConfig.ORIGIN;
 import static io.helidon.cors.CustomMatchers.notPresent;
 import static io.helidon.cors.CustomMatchers.present;
 

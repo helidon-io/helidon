@@ -30,6 +30,7 @@ import java.util.function.Supplier;
 import io.helidon.common.http.Http;
 
 import static io.helidon.common.http.Http.Header.HOST;
+import static io.helidon.common.http.Http.Header.ORIGIN;
 import static io.helidon.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_CREDENTIALS;
 import static io.helidon.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_HEADERS;
 import static io.helidon.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_METHODS;
@@ -38,7 +39,6 @@ import static io.helidon.cors.CrossOriginConfig.ACCESS_CONTROL_EXPOSE_HEADERS;
 import static io.helidon.cors.CrossOriginConfig.ACCESS_CONTROL_MAX_AGE;
 import static io.helidon.cors.CrossOriginConfig.ACCESS_CONTROL_REQUEST_HEADERS;
 import static io.helidon.cors.CrossOriginConfig.ACCESS_CONTROL_REQUEST_METHOD;
-import static io.helidon.cors.CrossOriginConfig.ORIGIN;
 
 /**
  * Centralizes common logic to both SE and MP CORS support for processing requests and preparing responses.
@@ -350,10 +350,12 @@ public class CrossOriginHelper {
 
         if (crossOrigin.allowCredentials()) {
             responseAdapter.header(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true")
-                           .header(ACCESS_CONTROL_ALLOW_ORIGIN, origin);
+                           .header(ACCESS_CONTROL_ALLOW_ORIGIN, origin)
+                           .header(Http.Header.VARY, ORIGIN);
         } else {
             List<String> allowedOrigins = Arrays.asList(crossOrigin.value());
-            responseAdapter.header(ACCESS_CONTROL_ALLOW_ORIGIN, allowedOrigins.contains("*") ? "*" : origin);
+            responseAdapter.header(ACCESS_CONTROL_ALLOW_ORIGIN, allowedOrigins.contains("*") ? "*" : origin)
+                            .header(Http.Header.VARY, ORIGIN);
         }
 
         // Add Access-Control-Expose-Headers if non-empty

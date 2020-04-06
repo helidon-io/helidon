@@ -66,10 +66,6 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
      * Header Access-Control-Request-Method.
      */
     public static final String ACCESS_CONTROL_REQUEST_METHOD = "Access-Control-Request-Method";
-    /**
-     * Header Origin.
-     */
-    public static final String ORIGIN = "Origin";
 
     private final String pathPrefix;
     private final String[] value;
