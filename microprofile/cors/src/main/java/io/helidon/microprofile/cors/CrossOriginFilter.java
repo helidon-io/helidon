@@ -68,7 +68,7 @@ class CrossOriginFilter implements ContainerRequestFilter, ContainerResponseFilt
     @Override
     public void filter(ContainerRequestContext requestContext) {
         Optional<Response> response = CrossOriginHelper.processRequest(crossOriginConfigs,
-                crossOriginFromAnnotationFinder(requestContext.getUriInfo().getPath(), resourceInfo),
+                crossOriginFromAnnotationFinder(resourceInfo),
                 new MPRequestAdapter(requestContext),
                 new MPResponseAdapter());
         response.ifPresent(requestContext::abortWith);
@@ -77,7 +77,7 @@ class CrossOriginFilter implements ContainerRequestFilter, ContainerResponseFilt
     @Override
     public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) {
         prepareResponse(crossOriginConfigs,
-                crossOriginFromAnnotationFinder(requestContext.getUriInfo().getPath(), resourceInfo),
+                crossOriginFromAnnotationFinder(resourceInfo),
                 new MPRequestAdapter(requestContext),
                 new MPResponseAdapter(responseContext));
     }
@@ -159,7 +159,7 @@ class CrossOriginFilter implements ContainerRequestFilter, ContainerResponseFilt
 
     }
 
-    static Supplier<Optional<CrossOriginConfig>> crossOriginFromAnnotationFinder(String path, ResourceInfo resourceInfo) {
+    static Supplier<Optional<CrossOriginConfig>> crossOriginFromAnnotationFinder(ResourceInfo resourceInfo) {
 
         return () -> {
             // If not found, inspect resource matched
@@ -189,13 +189,12 @@ class CrossOriginFilter implements ContainerRequestFilter, ContainerResponseFilt
                 corsAnnot = optionsMethod.map(m -> m.getAnnotation(CrossOrigin.class))
                         .orElse(null);
             }
-            return Optional.ofNullable(corsAnnot == null ? null : annotationToConfig(path, corsAnnot));
+            return Optional.ofNullable(corsAnnot == null ? null : annotationToConfig(corsAnnot));
         };
     }
 
-    private static CrossOriginConfig annotationToConfig(String path, CrossOrigin crossOrigin) {
+    private static CrossOriginConfig annotationToConfig(CrossOrigin crossOrigin) {
         return CrossOriginConfig.Builder.create()
-            .pathPrefix(path)
             .value(crossOrigin.value())
             .allowHeaders(crossOrigin.allowHeaders())
             .exposeHeaders(crossOrigin.exposeHeaders())
