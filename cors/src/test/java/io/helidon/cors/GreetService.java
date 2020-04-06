@@ -23,16 +23,31 @@ import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 
 import java.util.Date;
+import java.util.stream.Stream;
 
 public class GreetService implements Service {
+
+    private String greeting;
+
+    GreetService() {
+        this("Hello");
+    }
+
+    GreetService(String initialGreeting) {
+        greeting = initialGreeting;
+    }
 
     @Override
     public void update(Routing.Rules rules) {
         rules.get("/", this::getDefaultMessageHandler);
+        // Add the cors paths so requests to them have a place to land.
+        for (int i = 1; i <=3; i++) {
+            rules.any("/cors" + i, this::getDefaultMessageHandler);
+        }
     }
 
     private void getDefaultMessageHandler(ServerRequest request, ServerResponse response) {
-        String msg = String.format("%s %s!", "Hello", new Date().toString());
+        String msg = String.format("%s %s!", greeting, new Date().toString());
         response.status(Http.Status.OK_200.code());
         response.send(msg);
     }

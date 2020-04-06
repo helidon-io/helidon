@@ -22,15 +22,14 @@ import java.util.concurrent.TimeoutException;
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
-import io.helidon.cors.CORSTestServices.Service1;
-import io.helidon.cors.CORSTestServices.Service2;
-import io.helidon.cors.CORSTestServices.Service3;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientRequestBuilder;
 import io.helidon.webclient.WebClientResponse;
-import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 
+import static io.helidon.cors.CORSTestServices.SERVICE_1;
+import static io.helidon.cors.CORSTestServices.SERVICE_2;
+import static io.helidon.cors.CORSTestServices.SERVICE_3;
 import static io.helidon.cors.CrossOrigin.ACCESS_CONTROL_ALLOW_CREDENTIALS;
 import static io.helidon.cors.CrossOrigin.ACCESS_CONTROL_ALLOW_HEADERS;
 import static io.helidon.cors.CrossOrigin.ACCESS_CONTROL_ALLOW_METHODS;
@@ -52,19 +51,14 @@ import org.junit.jupiter.api.Test;
 
 public class CORSTest {
 
+    private static final String CONTEXT_ROOT = "/greet";
     private static WebServer server;
     private static WebClient client;
 
     @BeforeAll
     public static void startup() throws InterruptedException, ExecutionException, TimeoutException {
-        Routing.Builder routingBuilder = TestUtil.prepRouting()
-                .register("/greet", new GreetService());
-        CORSTestServices.SERVICES.forEach(s -> routingBuilder.register(s.path(), s));
-
-        server = TestUtil.startServer(0, routingBuilder);
-        client = WebClient.builder()
-                .baseUri("http://localhost:" + server.port())
-                .build();
+        server = TestUtil.startupServerWithApps();
+        client = TestUtil.startupClient(server);
     }
 
     @AfterAll
@@ -76,7 +70,7 @@ public class CORSTest {
     public void testSimple() throws Exception {
 
         WebClientResponse response = client.get()
-                .path("/greet")
+                .path(CONTEXT_ROOT)
                 .accept(MediaType.TEXT_PLAIN)
                 .request()
                 .toCompletableFuture()
@@ -89,21 +83,11 @@ public class CORSTest {
 
     @Test
     void test1PreFlightAllowedOrigin() throws ExecutionException, InterruptedException {
-        WebClientRequestBuilder reqBuilder = client
-                .method(Http.Method.OPTIONS.name())
-                .path(Service1.PATH);
-
-        Headers headers = reqBuilder.headers();
-        headers.add(ORIGIN, "http://foo.bar");
-        headers.add(ACCESS_CONTROL_REQUEST_METHOD, "PUT");
-
-        WebClientResponse res = reqBuilder
-                .request()
-                .toCompletableFuture()
-                .get();
+        String origin = "http://foo.bar";
+        WebClientResponse res = TestUtil.runTest1PreFlightAllowedOrigin(client, CONTEXT_ROOT, origin);
 
         assertThat(res.status(), is(Http.Status.OK_200));
-        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_ORIGIN), present(is("http://foo.bar")));
+        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_ORIGIN), present(is(origin)));
         assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_METHODS), present(is("PUT")));
         assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_HEADERS), notPresent());
         assertThat(res.headers().first(ACCESS_CONTROL_MAX_AGE), present(is("3600")));
@@ -113,7 +97,7 @@ public class CORSTest {
     void test1PreFlightAllowedHeaders1() throws ExecutionException, InterruptedException {
         WebClientRequestBuilder reqBuilder = client
                 .method(Http.Method.OPTIONS.name())
-                .path(Service1.PATH);
+                .path(TestUtil.path(SERVICE_1));
 
         Headers headers = reqBuilder.headers();
         headers.add(ORIGIN, "http://foo.bar");
@@ -136,7 +120,7 @@ public class CORSTest {
     void test1PreFlightAllowedHeaders2() throws ExecutionException, InterruptedException {
         WebClientRequestBuilder reqBuilder = client
                 .method(Http.Method.OPTIONS.name())
-                .path(Service1.PATH);
+                .path(TestUtil.path(SERVICE_1));
 
         Headers headers = reqBuilder.headers();
         headers.add(ORIGIN, "http://foo.bar");
@@ -160,7 +144,7 @@ public class CORSTest {
     void test2PreFlightForbiddenOrigin() throws ExecutionException, InterruptedException {
         WebClientRequestBuilder reqBuilder = client
                 .method(Http.Method.OPTIONS.name())
-                .path(Service2.PATH);
+                .path(TestUtil.path(SERVICE_2));
 
         Headers headers = reqBuilder.headers();
         headers.add(ORIGIN, "http://not.allowed");
@@ -178,7 +162,7 @@ public class CORSTest {
     void test2PreFlightAllowedOrigin() throws ExecutionException, InterruptedException {
         WebClientRequestBuilder reqBuilder = client
                 .method(Http.Method.OPTIONS.name())
-                .path(Service2.PATH);
+                .path(TestUtil.path(SERVICE_2));
 
         Headers headers = reqBuilder.headers();
         headers.add(ORIGIN, "http://foo.bar");
@@ -202,7 +186,7 @@ public class CORSTest {
     void test2PreFlightForbiddenMethod() throws ExecutionException, InterruptedException {
         WebClientRequestBuilder reqBuilder = client
                 .method(Http.Method.OPTIONS.name())
-                .path(Service2.PATH);
+                .path(TestUtil.path(SERVICE_2));
 
         Headers headers = reqBuilder.headers();
         headers.add(ORIGIN, "http://foo.bar");
@@ -220,7 +204,7 @@ public class CORSTest {
     void test2PreFlightForbiddenHeader() throws ExecutionException, InterruptedException {
         WebClientRequestBuilder reqBuilder = client
                 .method(Http.Method.OPTIONS.name())
-                .path(Service2.PATH);
+                .path(TestUtil.path(SERVICE_2));
 
         Headers headers = reqBuilder.headers();
         headers.add(ORIGIN, "http://foo.bar");
@@ -237,33 +221,14 @@ public class CORSTest {
 
     @Test
     void test2PreFlightAllowedHeaders1() throws ExecutionException, InterruptedException {
-        WebClientRequestBuilder reqBuilder = client
-                .method(Http.Method.OPTIONS.name())
-                .path(Service2.PATH);
-
-        Headers headers = reqBuilder.headers();
-        headers.add(ORIGIN, "http://foo.bar");
-        headers.add(ACCESS_CONTROL_REQUEST_METHOD, "PUT");
-        headers.add(ACCESS_CONTROL_REQUEST_HEADERS, "X-foo");
-
-        WebClientResponse res = reqBuilder
-                .request()
-                .toCompletableFuture()
-                .get();
-
-        assertThat(res.status(), is(Http.Status.OK_200));
-        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_ORIGIN), present(is("http://foo.bar")));
-        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_CREDENTIALS), present(is("true")));
-        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_METHODS), present(is("PUT")));
-        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_HEADERS), present(containsString("X-foo")));
-        assertThat(res.headers().first(ACCESS_CONTROL_MAX_AGE), notPresent());
+        TestUtil.test2PreFlightAllowedHeaders1(client, CONTEXT_ROOT,"http://foo.bar", "X-foo");
     }
 
     @Test
     void test2PreFlightAllowedHeaders2() throws ExecutionException, InterruptedException {
         WebClientRequestBuilder reqBuilder = client
                 .method(Http.Method.OPTIONS.name())
-                .path(Service2.PATH);
+                .path(TestUtil.path(SERVICE_2));
 
         Headers headers = reqBuilder.headers();
         headers.add(ORIGIN, "http://foo.bar");
@@ -288,7 +253,7 @@ public class CORSTest {
     void test2PreFlightAllowedHeaders3() throws ExecutionException, InterruptedException {
         WebClientRequestBuilder reqBuilder = client
                 .method(Http.Method.OPTIONS.name())
-                .path(Service2.PATH);
+                .path(TestUtil.path(SERVICE_2));
 
         Headers headers = reqBuilder.headers();
         headers.add(ORIGIN, "http://foo.bar");
@@ -314,7 +279,7 @@ public class CORSTest {
     void test1ActualAllowedOrigin() throws ExecutionException, InterruptedException {
         WebClientRequestBuilder reqBuilder = client
                 .put()
-                .path(Service1.PATH)
+                .path(TestUtil.path(SERVICE_1))
                 .contentType(MediaType.TEXT_PLAIN);
 
         Headers headers = reqBuilder.headers();
@@ -334,7 +299,7 @@ public class CORSTest {
     void test2ActualAllowedOrigin() throws ExecutionException, InterruptedException {
         WebClientRequestBuilder reqBuilder = client
                 .put()
-                .path(Service2.PATH)
+                .path(TestUtil.path(SERVICE_2))
                 .contentType(MediaType.TEXT_PLAIN);
 
         Headers headers = reqBuilder.headers();
@@ -354,7 +319,7 @@ public class CORSTest {
     void test3PreFlightAllowedOrigin() throws ExecutionException, InterruptedException {
         WebClientRequestBuilder reqBuilder = client
                 .method(Http.Method.OPTIONS.name())
-                .path(Service3.PATH);
+                .path(TestUtil.path(SERVICE_3));
 
         Headers headers = reqBuilder.headers();
         headers.add(ORIGIN, "http://foo.bar");
@@ -376,7 +341,7 @@ public class CORSTest {
     void test3ActualAllowedOrigin() throws ExecutionException, InterruptedException {
         WebClientRequestBuilder reqBuilder = client
                 .put()
-                .path(Service3.PATH)
+                .path(TestUtil.path(SERVICE_3))
                 .contentType(MediaType.TEXT_PLAIN);
 
         Headers headers = reqBuilder.headers();

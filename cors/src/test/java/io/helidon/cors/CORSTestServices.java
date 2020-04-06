@@ -27,9 +27,24 @@ import io.helidon.webserver.Service;
 
 class CORSTestServices {
 
-    static final List<AbstractCORSTestService> SERVICES = List.of(new Service1(), new Service2(), new Service3());
+    static final CORSTestService SERVICE_1 = new CORSTestService("/cors1");
+    static final CORSTestService SERVICE_2 = new CORSTestService("/cors2");
+    static final CORSTestService SERVICE_3 = new CORSTestService("/cors3");
+    static final CORSTestService SERVICE_4 = new CORSTestService("/cors4");
 
-    static abstract class AbstractCORSTestService implements Service {
+    static final List<CORSTestService> SERVICES = List.of(SERVICE_1, SERVICE_2, SERVICE_3, SERVICE_4);
+
+    static class CORSTestService implements Service {
+
+        private final String path;
+
+        CORSTestService(String path) {
+            this.path = path;
+        }
+
+        String path() {
+            return path;
+        }
 
         void ok(ServerRequest request, ServerResponse response) {
             response.status(Http.Status.OK_200.code());
@@ -42,36 +57,6 @@ class CORSTestServices {
                     .delete(this::ok)
                     .put(this::ok)
             ;
-        }
-
-        abstract String path();
-    }
-
-    static class Service1 extends AbstractCORSTestService {
-
-        static final String PATH = "/cors1";
-
-        @Override
-        String path() {
-            return PATH;
-        }
-    }
-
-    static class Service2 extends AbstractCORSTestService {
-        static final String PATH = "/cors2";
-
-        @Override
-        String path() {
-            return PATH;
-        }
-    }
-
-    static class Service3 extends AbstractCORSTestService {
-        static final String PATH = "/cors3";
-
-        @Override
-        String path() {
-            return PATH;
         }
     }
 }
