@@ -53,8 +53,9 @@ import org.eclipse.microprofile.graphql.Query;
 import org.eclipse.microprofile.graphql.Source;
 import org.eclipse.microprofile.graphql.Type;
 
-import static io.helidon.microprofile.graphql.server.FormattingHelper.getCorrectFormat;
-import static io.helidon.microprofile.graphql.server.FormattingHelper.getFormatAnnotation;
+import static io.helidon.microprofile.graphql.server.FormattingHelper.NUMBER;
+import static io.helidon.microprofile.graphql.server.FormattingHelper.getCorrectNumberFormat;
+import static io.helidon.microprofile.graphql.server.FormattingHelper.getFormattingAnnotation;
 import static io.helidon.microprofile.graphql.server.SchemaGenerator.DiscoveredMethod.MUTATION_TYPE;
 import static io.helidon.microprofile.graphql.server.SchemaGenerator.DiscoveredMethod.QUERY_TYPE;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ID;
@@ -456,16 +457,17 @@ public class SchemaGenerator {
 
             if (fd != null) {
                 DataFetcher dataFetcher = null;
-                String[] format = discoveredMethod.format;
-                if (format.length == 2) {
+                String[] format = discoveredMethod.getFormat();
+                if (format.length == 3) {
                     // a format exists on the method return type so format it after returning the value
                     final String graphQLType = getGraphQLType(fd.getReturnType());
+                    // TODO: Determine if this is a number OR date format
                     dataFetcher = DataFetcherFactories.wrapDataFetcher(
                             DataFetcherUtils.newMethodDataFetcher(clazz, method, null,
                                                                   fd.getArguments().toArray(new SchemaArgument[0])),
                             (d, v) -> {
-                                NumberFormat numberFormat = getCorrectFormat(
-                                        graphQLType, format[1], format[0]);
+                                NumberFormat numberFormat = getCorrectNumberFormat(
+                                        graphQLType, format[2], format[1]);
                                 return v != null ? numberFormat.format(v) : null;
                             });
                     fd.setReturnType(STRING);
@@ -624,15 +626,18 @@ public class SchemaGenerator {
         }
 
         // check for format on the property
+        // note: currently the format will be an array of [3] as defined by FormattingHelper.getFormattingAnnotation
         String[] format = discoveredMethod.getFormat();
-        if (discoveredMethod.getPropertyName() != null && format != null && format.length == 2) {
+        if (discoveredMethod.getPropertyName() != null && format != null && format.length == 3 && format[0] != null) {
             if (!isGraphQLType(valueClassName)) {
 
-                dataFetcher = DataFetcherUtils
-                        .newNumberFormatPropertyDataFetcher(discoveredMethod.getPropertyName(), graphQLType, format[0],
-                                                            format[1]);
-                // we must change the type of this to a String but keep the above type for the above data fetcher
-                graphQLType = SchemaGeneratorHelper.STRING;
+                if (NUMBER.equals(format[0])) {
+                    dataFetcher = DataFetcherUtils
+                            .newNumberFormatPropertyDataFetcher(discoveredMethod.getPropertyName(), graphQLType, format[1],
+                                                                format[2]);
+                    // we must change the type of this to a String but keep the above type for the above data fetcher
+                    graphQLType = SchemaGeneratorHelper.STRING;
+                }
             }
         }
 
@@ -644,7 +649,11 @@ public class SchemaGenerator {
                                                              discoveredMethod.isReturnTypeMandatory(),
                                                              discoveredMethod.getArrayLevels());
         fd.setDataFetcher(dataFetcher);
-        fd.setFormat(discoveredMethod.getFormat());
+
+        if (format != null && format.length == 3) {
+            fd.setFormat(new String[] { format[1], format[2] });
+        }
+
         fd.setDescription(discoveredMethod.getDescription());
         fd.setDefaultValue(discoveredMethod.getDefaultValue());
         return fd;
@@ -775,7 +784,7 @@ public class SchemaGenerator {
                                                              boolean isInputType,
                                                              boolean isQueryOrMutation) {
 
-        String[] numberFormat = new String[0];
+        String[] format = new String[0];
         String description = null;
         boolean isReturnTypeMandatory = false;
         String defaultValue = null;
@@ -860,9 +869,9 @@ public class SchemaGenerator {
                 returnClazzName = ID;
             }
 
-            // check for number format on the property
+            // check for format on the property
             if (field != null) {
-                numberFormat = getFormatAnnotation(field);
+                format = getFormattingAnnotation(field);
             }
         } else {
             // pd is null which means this is for query or mutation
@@ -876,26 +885,25 @@ public class SchemaGenerator {
         }
 
         // check for method return type number format
-        String[] methodNumberFormat = getFormatAnnotation(method);
-        if (methodNumberFormat.length == 2) {
-            numberFormat = methodNumberFormat;
-        }
-
-        if (numberFormat.length == 2 && ID.equals(returnClazzName)) {
-            throw new RuntimeException("Unable to format an ID type");
+        String[] methodNumberFormat = getFormattingAnnotation(method);
+        if (methodNumberFormat[0] != null) {
+            format = methodNumberFormat;
         }
 
         DiscoveredMethod discoveredMethod = new DiscoveredMethod();
         discoveredMethod.setName(varName);
         discoveredMethod.setMethod(method);
-        discoveredMethod.setFormat(numberFormat);
+        discoveredMethod.setFormat(format);
         discoveredMethod.setDefaultValue(defaultValue);
         discoveredMethod.setPropertyName(pd != null ? pd.getName() : null);
 
         if (description == null && !isInputType) {
             description = getDescription(method.getAnnotation(Description.class));
         }
-        discoveredMethod.setDescription(getDefaultDescription(numberFormat, description));
+
+        if (format != null && format.length == 3 && format[0] != null) {
+            description = getDefaultDescription(new String[] { format[1], format[2] }, description);
+        }
 
         Parameter[] parameters = method.getParameters();
         if (parameters != null && parameters.length > 0) {
@@ -929,10 +937,16 @@ public class SchemaGenerator {
                 SchemaArgument argument =
                         new SchemaArgument(parameterName, returnType.getReturnClass(),
                                            isMandatory, argumentDefaultValue, paramType);
-                String[] argumentFormat = getFormatAnnotation(parameter);
                 String argumentDescription = getDescription(parameter.getAnnotation(Description.class));
-                argument.setFormat(argumentFormat);
-                argument.setDescription(getDefaultDescription(argumentFormat, argumentDescription));
+                String[] argumentFormat = FormattingHelper.getFormattingAnnotation(parameter);
+                if (argumentFormat[0] != null) {
+                    String[] formatValue = new String[] { argumentFormat[1], argumentFormat[2] };
+                    argument.setFormat(argumentFormat);
+                    argument.setDescription(getDefaultDescription(formatValue, argumentDescription));
+                }
+                else {
+                    argument.setDescription(argumentDescription);
+                }
 
                 Source sourceAnnotation = parameter.getAnnotation(Source.class);
                 if (sourceAnnotation != null) {
@@ -962,6 +976,7 @@ public class SchemaGenerator {
 
         discoveredMethod.setArrayLevels(realReturnType.getArrayLevels());
         discoveredMethod.setReturnTypeMandatory(isReturnTypeMandatory);
+        discoveredMethod.setDescription(description);
 
         return discoveredMethod;
     }

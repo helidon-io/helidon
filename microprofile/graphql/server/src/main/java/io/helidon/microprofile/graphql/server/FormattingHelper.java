@@ -16,14 +16,15 @@
 
 package io.helidon.microprofile.graphql.server;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
+import java.lang.reflect.AnnotatedElement;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Locale;
 
+import javax.json.bind.annotation.JsonbDateFormat;
 import javax.json.bind.annotation.JsonbNumberFormat;
+
+import org.eclipse.microprofile.graphql.DateFormat;
 
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.BIG_DECIMAL;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.BIG_DECIMAL_OBJECT;
@@ -35,6 +36,7 @@ import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.INT;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.INTEGER_LIST;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.LONG_OBJECT;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.LONG_PRIMITIVE;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.SUPPORTED_SCALARS;
 
 /**
  * Helper class for number formatting.
@@ -42,9 +44,45 @@ import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.LONG_
 public class FormattingHelper {
 
     /**
+     * Defines no default format.
+     */
+    private static final String[] NO_DEFAULT_FORMAT = new String[0];
+
+    /**
+     * Indicates date formatting applied.
+     */
+    protected static final String DATE = "Date";
+
+    /**
+     * Indicates number formatting applied.
+     */
+    protected static final String NUMBER = "Number";
+
+    /**
+     * Indicates no formatting applied.
+     */
+    private static final String[] NO_FORMATTING = new String[] { null, null, null };
+
+    /**
      * No-args constructor.
      */
     private FormattingHelper() {
+    }
+
+    /**
+     * Return the default date/time format for the given class.
+     *
+     * @param scalarName scalar to check
+     * @param clazzName  class name to validate against
+     * @return he default date/time format for the given class
+     */
+    protected static String[] getDefaultDateTimeFormat(String scalarName, String clazzName) {
+        for (SchemaScalar scalar : SUPPORTED_SCALARS.values()) {
+            if (scalarName.equals(scalar.getName()) && scalar.getActualClass().equals(clazzName)) {
+                return new String[] { scalar.getDefaultFormat(), DEFAULT_LOCALE };
+            }
+        }
+        return NO_DEFAULT_FORMAT;
     }
 
     /**
@@ -55,7 +93,7 @@ public class FormattingHelper {
      * @param format the format to use, may be null
      * @return The correct {@link NumberFormat} for the given type and locale
      */
-    protected static NumberFormat getCorrectFormat(String type, String locale, String format) {
+    protected static NumberFormat getCorrectNumberFormat(String type, String locale, String format) {
         Locale actualLocale = DEFAULT_LOCALE.equals(locale)
                 ? Locale.getDefault()
                 : Locale.forLanguageTag(locale);
@@ -82,65 +120,100 @@ public class FormattingHelper {
     }
 
     /**
-     * Returna {@link NumberFormat} for the given type and locale.
+     * Return a {@link NumberFormat} for the given type and locale.
      *
      * @param type   the GraphQL type or scalar
      * @param locale the locale, either "" or the correct locale
      * @return The correct {@link NumberFormat} for the given type and locale
      */
-    protected static NumberFormat getCorrectFormat(String type, String locale) {
-        return getCorrectFormat(type, locale, null);
+    protected static NumberFormat getCorrectNumberFormat(String type, String locale) {
+        return getCorrectNumberFormat(type, locale, null);
     }
 
     /**
-     * Return the format and locale for a field if they exist in a {@link String} array.
+     * Return formatting annotation details for the {@link AnnotatedElement}. The array returned contains three elements: [0] =
+     * either DATE,NUMBER or null if no formatting applied: [1][2] = if formatting applied then the format and locale.
      *
-     * @param field the {@link Field} to check
-     * @return the format ([0]) and locale ([1])  for a field in a {@link String} array or an empty array if not
+     * @param annotatedElement the {@link AnnotatedElement} to check
+     * @return formatting annotation details or array with three nulls if no formatting
      */
-    protected static String[] getFormatAnnotation(Field field) {
-        return getFormatAnnotationInternal(field.getAnnotation(JsonbNumberFormat.class), field
-                .getAnnotation(org.eclipse.microprofile.graphql.NumberFormat.class));
+    protected static String[] getFormattingAnnotation(AnnotatedElement annotatedElement) {
+        String[] dateFormat = getDateFormatAnnotation(annotatedElement);
+        String[] numberFormat = getNumberFormatAnnotation(annotatedElement);
+
+        if (dateFormat.length == 0 && numberFormat.length == 0) {
+            return NO_FORMATTING;
+        }
+        if (dateFormat.length == 2 && numberFormat.length == 2) {
+            throw new RuntimeException("A date format and number format cannot be applied to the same element: "
+                                               + annotatedElement);
+        }
+
+        return dateFormat.length == 2
+                ? new String[] { DATE, dateFormat[0], dateFormat[1] }
+                : new String[] { NUMBER, numberFormat[0], numberFormat[1] };
     }
 
     /**
-     * Return the format and locale for a parameter if they exist in a {@link String} array.
+     * Return the number format and locale for an {@link AnnotatedElement} if they exist in a {@link String} array.
      *
-     * @param parameter the {@link Field} to check
+     * @param annotatedElement the {@link AnnotatedElement} to check
      * @return the format ([0]) and locale ([1]) for a parameter in a {@link String} array or an empty array if not
      */
-    protected static String[] getFormatAnnotation(Parameter parameter) {
-        return getFormatAnnotationInternal(parameter.getAnnotation(JsonbNumberFormat.class), parameter
-                .getAnnotation(org.eclipse.microprofile.graphql.NumberFormat.class));
+    protected static String[] getNumberFormatAnnotation(AnnotatedElement annotatedElement) {
+        return getNumberFormatAnnotationInternal(
+                annotatedElement.getAnnotation(JsonbNumberFormat.class),
+                annotatedElement.getAnnotation(org.eclipse.microprofile.graphql.NumberFormat.class));
     }
 
     /**
-     * Return the format and locale for a method if they exist in a {@link String} array.
-     *
-     * @param method the {@link Method} to check
-     * @return the format ([0]) and locale ([1]) for a method in a {@link String} array or an empty array if not
-     */
-    protected static String[] getFormatAnnotation(Method method) {
-        return getFormatAnnotationInternal(method.getAnnotation(JsonbNumberFormat.class),
-                                           method.getAnnotation(org.eclipse.microprofile.graphql.NumberFormat.class));
-    }
-
-    /**
-     * Return the format and locate for the given annotations.
+     * Return the number format and locale for the given annotations.
      *
      * @param jsonbNumberFormat {@link JsonbNumberFormat} annotation, may be null
      * @param numberFormat      {@Link org.eclipse.microprofile.graphql.NumberFormat} annotation, may be none
      * @return the format ([0]) and locale ([1]) for a method in a {@link String} array or an empty array if not
      */
-    private static String[] getFormatAnnotationInternal(JsonbNumberFormat jsonbNumberFormat,
-                                                        org.eclipse.microprofile.graphql.NumberFormat numberFormat) {
+    private static String[] getNumberFormatAnnotationInternal(JsonbNumberFormat jsonbNumberFormat,
+                                                              org.eclipse.microprofile.graphql.NumberFormat numberFormat) {
         // check @NumberFormat first as this takes precedence
         if (numberFormat != null) {
-            return new String[] {numberFormat.value(), numberFormat.locale() };
+            return new String[] { numberFormat.value(), numberFormat.locale() };
         }
         if (jsonbNumberFormat != null) {
-            return new String[] {jsonbNumberFormat.value(), jsonbNumberFormat.locale() };
+            return new String[] { jsonbNumberFormat.value(), jsonbNumberFormat.locale() };
         }
         return new String[0];
     }
+
+    /**
+     * Return the date format and locale for a field if they exist in a {@link String} array.
+     *
+     * @param annotatedElement the {@link AnnotatedElement} to check
+     * @return the format ([0]) and locale ([1])  for a field in a {@link String} array or an empty array if not
+     */
+    protected static String[] getDateFormatAnnotation(AnnotatedElement annotatedElement) {
+        return getDateFormatAnnotationInternal(
+                annotatedElement.getAnnotation(JsonbDateFormat.class),
+                annotatedElement.getAnnotation(org.eclipse.microprofile.graphql.DateFormat.class));
+    }
+
+    /**
+     * Return the date format and locale for the given annotations.
+     *
+     * @param jsonbDateFormat {@link JsonbDateFormat} annotation, may be null
+     * @param dateFormat      {@Link DateFormat} annotation, may be none
+     * @return the format ([0]) and locale ([1]) for a method in a {@link String} array or an empty array if not
+     */
+    private static String[] getDateFormatAnnotationInternal(JsonbDateFormat jsonbDateFormat,
+                                                            DateFormat dateFormat) {
+        // check @DateFormat first as this takes precedence
+        if (dateFormat != null) {
+            return new String[] { dateFormat.value(), dateFormat.locale() };
+        }
+        if (jsonbDateFormat != null) {
+            return new String[] { jsonbDateFormat.value(), jsonbDateFormat.locale() };
+        }
+        return new String[0];
+    }
+
 }

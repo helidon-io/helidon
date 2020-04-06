@@ -16,6 +16,8 @@
 
 package io.helidon.microprofile.graphql.server.test.types;
 
+import java.time.LocalDate;
+
 import org.eclipse.microprofile.graphql.Description;
 import org.eclipse.microprofile.graphql.NumberFormat;
 import org.eclipse.microprofile.graphql.Type;
@@ -36,6 +38,8 @@ public class DescriptionType {
     @NumberFormat(value = "###,###", locale = "en-AU")
     @Description("Description")
     private Long longValue2;
+
+    private LocalDate localDate;
 
     public DescriptionType(String id, int value) {
         this.id = id;

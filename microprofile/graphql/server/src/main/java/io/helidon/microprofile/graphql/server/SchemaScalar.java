@@ -42,16 +42,22 @@ public class SchemaScalar
     private GraphQLScalarType graphQLScalarType;
 
     /**
+     * The default format if none is specified;
+     */
+    private String defaultFormat;
+
+    /**
      * Construct a {@link SchemaScalar}.
      *
      * @param name              name
      * @param actualClass       actual class name
      * @param graphQLScalarType {@link GraphQLScalarType} to convert this {@link SchemaScalar}.
      */
-    public SchemaScalar(String name, String actualClass, GraphQLScalarType graphQLScalarType) {
+    public SchemaScalar(String name, String actualClass, GraphQLScalarType graphQLScalarType, String defaultFormat) {
         this.name = name;
         this.actualClass = actualClass;
         this.graphQLScalarType = graphQLScalarType;
+        this.defaultFormat = defaultFormat;
     }
 
     /**
@@ -81,6 +87,23 @@ public class SchemaScalar
         return graphQLScalarType;
     }
 
+    /**
+     * The default format if none is specified.
+     *
+     * @return default format if none is specified
+     */
+    public String getDefaultFormat() {
+        return defaultFormat;
+    }
+
+    /**
+     * Set the default format if none is specified.
+     * @param defaultFormat  default format if none is specified
+     */
+    public void setDefaultFormat(String defaultFormat) {
+        this.defaultFormat = defaultFormat;
+    }
+
     @Override
     public String getSchemaAsString() {
         return new StringBuilder("scalar ")
@@ -99,12 +122,13 @@ public class SchemaScalar
         SchemaScalar schemaScalar = (SchemaScalar) o;
         return Objects.equals(name, schemaScalar.name)
                 && Objects.equals(actualClass, schemaScalar.actualClass)
+                && Objects.equals(defaultFormat, schemaScalar.defaultFormat)
                 && Objects.equals(graphQLScalarType, schemaScalar.graphQLScalarType);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, actualClass, graphQLScalarType);
+        return Objects.hash(name, actualClass, graphQLScalarType, defaultFormat);
     }
 
     @Override
@@ -112,6 +136,7 @@ public class SchemaScalar
         return "Scalar{"
                 + "name='" + name + '\''
                 + ", actualClass='" + actualClass + '\''
+                + ", defaultFormat='" + defaultFormat + '\''
                 + ", graphQLScalarType=" + graphQLScalarType + '}';
     }
 

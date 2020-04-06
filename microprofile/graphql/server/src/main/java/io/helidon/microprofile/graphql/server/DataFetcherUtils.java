@@ -27,7 +27,7 @@ import javax.enterprise.inject.spi.CDI;
 import graphql.schema.DataFetcher;
 import graphql.schema.PropertyDataFetcherHelper;
 
-import static io.helidon.microprofile.graphql.server.FormattingHelper.getCorrectFormat;
+import static io.helidon.microprofile.graphql.server.FormattingHelper.getCorrectNumberFormat;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ID;
 
 /**
@@ -107,7 +107,7 @@ public class DataFetcherUtils {
      */
     public static <S> DataFetcher<String> newNumberFormatPropertyDataFetcher(String propertyName, String type,
                                                                              String valueFormat, String locale) {
-        NumberFormat numberFormat = getCorrectFormat(type, locale, valueFormat);
+        NumberFormat numberFormat = getCorrectNumberFormat(type, locale, valueFormat);
         if (numberFormat == null) {
             throw new RuntimeException("Unable to find number format for type="
                                                + type + ", locale=" + locale + ", valueFormat=" + valueFormat);

@@ -71,8 +71,8 @@ class SchemaTest extends AbstractGraphQLTest {
         Schema schema = new Schema();
         assertThat(schema.getScalars().size(), is(0));
 
-        SchemaScalar schemaScalar1 = new SchemaScalar("Test", Date.class.getName(), ExtendedScalars.Date);
-        SchemaScalar schemaScalar2 = new SchemaScalar("Test2", Date.class.getName(), ExtendedScalars.Date);
+        SchemaScalar schemaScalar1 = new SchemaScalar("Test", Date.class.getName(), ExtendedScalars.Date, null);
+        SchemaScalar schemaScalar2 = new SchemaScalar("Test2", Date.class.getName(), ExtendedScalars.Date, "XYZ");
         schema.addScalar(schemaScalar1);
         schema.addScalar(schemaScalar2);
 

@@ -32,7 +32,6 @@ import javax.enterprise.inject.se.SeContainerInitializer;
 
 import graphql.ExecutionResult;
 
-import graphql.schema.GraphQLObjectType;
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithNameAnnotation;
 import io.helidon.microprofile.graphql.server.test.mutations.SimpleMutations;
@@ -323,6 +322,21 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
         result = executionContext.execute("query { dateAndTimePOJOQuery { localDateTime } }");
         mapResults = getAndAssertResult(result);
         assertThat(mapResults.size(), is(1));
+
+        Schema schema = executionContext.getSchema();
+        SchemaType type = schema.getTypeByName("DateTimePojo");
+
+        SchemaFieldDefinition fd = getFieldDefinition(type, "localDate");
+        assertThat(fd.getDescription(), is("MM/dd/yyyy"));
+
+        fd = getFieldDefinition(type, "localTime");
+        assertThat(fd, is(notNullValue()));
+        assertThat(fd.getDescription(), is("hh:mm:ss"));
+//
+//        // test default values for date and time
+//        assertDefaultFormat(type, "offSetTime", "HH:mm:ssZ");
+//
+
     }
 
     @Test
@@ -505,7 +519,7 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
             }
             if (fd.getName().equals("longValue1")) {
                 // no description so include the format
-                assertThat(fd.getDescription(), is("L-######## ##default"));
+                assertThat(fd.getDescription(), is("L-########"));
             }
             if (fd.getName().equals("longValue2")) {
                 // both description and formatting
@@ -518,6 +532,17 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
         inputType.getFieldDefinitions().forEach(fd -> {
             if (fd.getName().equals("value")) {
                 assertThat(fd.getDescription(), is("description on set for input"));
+            }
+        });
+
+        SchemaType query = schema.getTypeByName("Query");
+        assertThat(query, is(notNullValue()));
+        SchemaFieldDefinition fd = getFieldDefinition(query, "descriptionOnParam");
+        assertThat(fd, (is(notNullValue())));
+
+        fd.getArguments().forEach(a -> {
+            if (a.getArgumentName().equals("param1")) {
+                assertThat(a.getDescription(), is("Description for param1"));
             }
         });
     }
@@ -864,7 +889,16 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
         assertThat(argument, is(notNullValue()));
         assertThat("Return type for argument " + argumentName + " should be mandatory="
                            + mandatory + " but is " + argument.isMandatory(), argument.isMandatory(), is(mandatory));
+    }
 
+    private void assertDefaultFormat(SchemaType type, String fdName, String defaultFormat) {
+        assertThat(type, is(notNullValue()));
+        SchemaFieldDefinition fd = getFieldDefinition(type, fdName);
+        assertThat(fd, is(notNullValue()));
+        String[] format = fd.getFormat();
+        assertThat(format, is(notNullValue()));
+        assertThat(format.length == 2, is(notNullValue()));
+        assertThat(format[0], is(defaultFormat));
     }
 
     private SchemaFieldDefinition getFieldDefinition(SchemaType type, String name) {

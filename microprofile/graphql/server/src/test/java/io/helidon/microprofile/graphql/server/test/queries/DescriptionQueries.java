@@ -19,6 +19,7 @@ package io.helidon.microprofile.graphql.server.test.queries;
 import javax.enterprise.context.ApplicationScoped;
 
 import io.helidon.microprofile.graphql.server.test.types.DescriptionType;
+import org.eclipse.microprofile.graphql.Description;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Name;
 import org.eclipse.microprofile.graphql.Query;
@@ -40,6 +41,12 @@ public class DescriptionQueries {
 
     @Query
     public boolean validateType(@Name("type") DescriptionType type) {
+        return true;
+    }
+
+    @Query
+    @Name("descriptionOnParam")
+    public boolean descriptionOnParam(@Name("param1") @Description("Description for param1") String param1) {
         return true;
     }
 }

@@ -17,9 +17,9 @@
 package io.helidon.microprofile.graphql.server;
 
 import java.beans.IntrospectionException;
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
 import java.lang.reflect.ParameterizedType;
 
 import java.math.BigDecimal;
@@ -30,8 +30,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-
-import javax.validation.constraints.NotNull;
 
 import io.helidon.microprofile.graphql.server.test.enums.EnumTestNoEnumName;
 import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithEnumName;
@@ -62,7 +60,6 @@ import io.helidon.microprofile.graphql.server.test.types.TypeWithNameAndJsonbPro
 
 import io.helidon.microprofile.graphql.server.test.types.Vehicle;
 import io.helidon.microprofile.graphql.server.test.types.VehicleIncident;
-import org.eclipse.microprofile.graphql.NonNull;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.BIG_DECIMAL;
@@ -70,7 +67,7 @@ import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.BIG_I
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.DEFAULT_LOCALE;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.FLOAT;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.INT;
-import static io.helidon.microprofile.graphql.server.FormattingHelper.getFormatAnnotation;
+import static io.helidon.microprofile.graphql.server.FormattingHelper.getNumberFormatAnnotation;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getDefaultDescription;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getRootTypeName;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.stripMethodName;
@@ -380,19 +377,19 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
 
     @Test
     public void testGetCorrectFormat() {
-        NumberFormat numberFormat = FormattingHelper.getCorrectFormat(INT, "");
+        NumberFormat numberFormat = FormattingHelper.getCorrectNumberFormat(INT, "");
         assertThat(numberFormat, is(notNullValue()));
         assertThat(numberFormat.getMaximumFractionDigits(), is(0));
 
-        numberFormat = FormattingHelper.getCorrectFormat(BIG_INTEGER, "");
+        numberFormat = FormattingHelper.getCorrectNumberFormat(BIG_INTEGER, "");
         assertThat(numberFormat, is(notNullValue()));
         assertThat(numberFormat.getMaximumFractionDigits(), is(0));
 
-        numberFormat = FormattingHelper.getCorrectFormat(FLOAT, "");
+        numberFormat = FormattingHelper.getCorrectNumberFormat(FLOAT, "");
         assertThat(numberFormat, is(notNullValue()));
         assertThat(numberFormat.getMaximumFractionDigits() > 0, is(true));
 
-        numberFormat = FormattingHelper.getCorrectFormat(BIG_DECIMAL, "");
+        numberFormat = FormattingHelper.getCorrectNumberFormat(BIG_DECIMAL, "");
         assertThat(numberFormat, is(notNullValue()));
         assertThat(numberFormat.getMaximumFractionDigits() > 0, is(true));
     }
@@ -433,7 +430,7 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
 
     /**
      * Assert that a {@link org.eclipse.microprofile.graphql.NumberFormat} or {@link javax.json.bind.annotation.JsonbNumberFormat}
-     * annotation is correclty applied.
+     * annotation is correctly applied.
      *
      * @param clazz          {@link Class} to apply to
      * @param type           type to check, "field", "method" or "methodParam"
@@ -441,7 +438,7 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
      * @param expectedLength expected length of format array
      * @param expectedFormat expected value for format
      * @param expectedLocale expected value for locale
-     * @param methodArgs     arguments ot the method
+     * @param methodArgs     arguments of the method
      * @throws NoSuchFieldException
      */
     private void assertAnnotation(Class<?> clazz,
@@ -459,18 +456,18 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
         if ("field".equals(type)) {
             Field field = clazz.getDeclaredField(name);
             assertThat(field, is(notNullValue()));
-            annotation = getFormatAnnotation(field);
+            annotation = getNumberFormatAnnotation(field);
         } else if ("methodParam".equals(type)) {
             Method method = clazz.getMethod(name, methodArgs);
             assertThat(method, is(notNullValue()));
             if (expectedLength == 2) {
-                annotation = getFormatAnnotation(method.getParameters()[0]);
+                annotation = getNumberFormatAnnotation(method.getParameters()[0]);
             }
         } else if ("method".equals(type)) {
             Method method = clazz.getMethod(name, methodArgs);
             assertThat(method, is(notNullValue()));
             if (expectedLength == 2) {
-                annotation = getFormatAnnotation(method);
+                annotation = getNumberFormatAnnotation(method);
             }
         } else {
             throw new IllegalArgumentException("Unknown type of " + type);
@@ -493,7 +490,7 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
      * @param expectedResult expected result
      */
     private void assertFormat(String type, String locale, String format, Object value, String expectedResult) {
-        NumberFormat numberFormat = FormattingHelper.getCorrectFormat(type, locale, format);
+        NumberFormat numberFormat = FormattingHelper.getCorrectNumberFormat(type, locale, format);
         assertThat(numberFormat, is(notNullValue()));
         String formatted = numberFormat.format(value);
         assertThat(formatted, is(notNullValue()));

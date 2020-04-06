@@ -22,6 +22,7 @@ import graphql.scalars.ExtendedScalars;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 
@@ -32,15 +33,18 @@ class SchemaScalarTest {
 
     @Test
     public void testConstructors() {
-        SchemaScalar schemaScalar = new SchemaScalar("myName", Integer.class.getName(), ExtendedScalars.DateTime);
+        SchemaScalar schemaScalar = new SchemaScalar("myName", Integer.class.getName(), ExtendedScalars.DateTime, null);
         assertThat(schemaScalar.getName(), is("myName"));
         assertThat(schemaScalar.getActualClass(), is(Integer.class.getName()));
         assertThat(schemaScalar.getGraphQLScalarType().equals(ExtendedScalars.DateTime), is(true));
+        assertThat(schemaScalar.getDefaultFormat(), is(nullValue()));
+        schemaScalar.setDefaultFormat("ABC");
+        assertThat(schemaScalar.getDefaultFormat(), is("ABC"));
     }
 
     @Test
     public void testGetScalarAsString() {
-        assertThat(new SchemaScalar("Test", Date.class.getName(), ExtendedScalars.DateTime).getSchemaAsString(), is("scalar Test"));
-        assertThat(new SchemaScalar("Date", Date.class.getName(), ExtendedScalars.DateTime).getSchemaAsString(), is("scalar Date"));
+        assertThat(new SchemaScalar("Test", Date.class.getName(), ExtendedScalars.DateTime, null).getSchemaAsString(), is("scalar Test"));
+        assertThat(new SchemaScalar("Date", Date.class.getName(), ExtendedScalars.DateTime, null).getSchemaAsString(), is("scalar Date"));
     }
 }

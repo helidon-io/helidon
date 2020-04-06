@@ -152,7 +152,7 @@ public class SimpleQueriesNoArgs {
 
     @Query("dateAndTimePOJOQuery")
     public DateTimePojo dateTimePojo() {
-        return new DateTimePojo(LocalDate.now(), LocalTime.now(), OffsetTime.now(),
+        return new DateTimePojo(LocalDate.now(), LocalDate.now(), LocalTime.now(), OffsetTime.now(),
                                 LocalDateTime.now(), OffsetDateTime.now(), ZonedDateTime.now());
     }
 }

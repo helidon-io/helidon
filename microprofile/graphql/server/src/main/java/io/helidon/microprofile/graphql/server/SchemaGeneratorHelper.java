@@ -54,6 +54,7 @@ import org.eclipse.microprofile.graphql.Query;
 import org.eclipse.microprofile.graphql.Type;
 
 import static io.helidon.microprofile.graphql.server.ElementGenerator.OPEN_SQUARE;
+import static io.helidon.microprofile.graphql.server.FormattingHelper.getDefaultDateTimeFormat;
 import static io.helidon.microprofile.graphql.server.SchemaGenerator.GET;
 import static io.helidon.microprofile.graphql.server.SchemaGenerator.IS;
 import static io.helidon.microprofile.graphql.server.SchemaGenerator.SET;
@@ -68,30 +69,34 @@ public final class SchemaGeneratorHelper {
      */
     static final Map<String, SchemaScalar> SUPPORTED_SCALARS = new HashMap<>() {{
         // Object Scalar
-        put(Object.class.getName(), new SchemaScalar("Object", Object.class.getName(), ExtendedScalars.Object));
+        put(Object.class.getName(), new SchemaScalar("Object", Object.class.getName(), ExtendedScalars.Object, null));
 
         // Time scalars
-        put(OffsetTime.class.getName(), new SchemaScalar("Time", OffsetTime.class.getName(), CustomTimeScalar.INSTANCE));
-        put(LocalTime.class.getName(), new SchemaScalar("Time", LocalTime.class.getName(), CustomTimeScalar.INSTANCE));
+        put(OffsetTime.class.getName(),
+            new SchemaScalar("Time", OffsetTime.class.getName(), CustomTimeScalar.INSTANCE, "HH:mm:ssZ"));
+        put(LocalTime.class.getName(),
+            new SchemaScalar("Time", LocalTime.class.getName(), CustomTimeScalar.INSTANCE, "HH:mm:ss"));
 
         // DateTime scalars
         put(OffsetDateTime.class.getName(),
-            new SchemaScalar("DateTime", OffsetDateTime.class.getName(), CustomDateTimeScalar.INSTANCE));
+            new SchemaScalar("DateTime", OffsetDateTime.class.getName(), CustomDateTimeScalar.INSTANCE,
+                             "yyyy-MM-dd'T'HH:mm:ssZ"));
         put(ZonedDateTime.class.getName(),
-            new SchemaScalar("DateTime", ZonedDateTime.class.getName(), CustomDateTimeScalar.INSTANCE));
+            new SchemaScalar("DateTime", ZonedDateTime.class.getName(), CustomDateTimeScalar.INSTANCE,
+                             "yyyy-MM-dd'T'HH:mm:ssZ'['VV']'"));
         put(LocalDateTime.class.getName(),
-            new SchemaScalar("DateTime", LocalDateTime.class.getName(), CustomDateTimeScalar.INSTANCE));
+            new SchemaScalar("DateTime", LocalDateTime.class.getName(), CustomDateTimeScalar.INSTANCE, "yyyy-MM-dd'T'HH:mm:ss"));
 
         // Date scalar
-        put(LocalDate.class.getName(), new SchemaScalar("Date", LocalDate.class.getName(), ExtendedScalars.Date));
+        put(LocalDate.class.getName(), new SchemaScalar("Date", LocalDate.class.getName(), ExtendedScalars.Date, "yyyy-MM-dd"));
 
         // BigDecimal scalars
-        put(BigDecimal.class.getName(), new SchemaScalar(BIG_DECIMAL, Long.class.getName(), Scalars.GraphQLBigDecimal));
+        put(BigDecimal.class.getName(), new SchemaScalar(BIG_DECIMAL, Long.class.getName(), Scalars.GraphQLBigDecimal, null));
 
         // BigInter scalars
-        put(BigInteger.class.getName(), new SchemaScalar(BIG_INTEGER, Long.class.getName(), Scalars.GraphQLBigInteger));
-        put(long.class.getName(), new SchemaScalar(BIG_INTEGER, Long.class.getName(), Scalars.GraphQLBigInteger));
-        put(Long.class.getName(), new SchemaScalar(BIG_INTEGER, Long.class.getName(), Scalars.GraphQLBigInteger));
+        put(BigInteger.class.getName(), new SchemaScalar(BIG_INTEGER, Long.class.getName(), Scalars.GraphQLBigInteger, null));
+        put(long.class.getName(), new SchemaScalar(BIG_INTEGER, Long.class.getName(), Scalars.GraphQLBigInteger, null));
+        put(Long.class.getName(), new SchemaScalar(BIG_INTEGER, Long.class.getName(), Scalars.GraphQLBigInteger, null));
     }};
 
     /**
@@ -501,14 +506,14 @@ public final class SchemaGeneratorHelper {
      * @return the default description
      */
     protected static String getDefaultDescription(String[] format, String description) {
-        String fmt = format == null || format.length == 0
-                ? null : format[0] + " " + format[1];
+        String fmt = format == null || format.length != 2
+                ? null : format[0] + (DEFAULT_LOCALE.equals(format[1]) ? "" : " " + format[1]);
         if (description == null && fmt == null) {
             return null;
         }
 
         return description == null
-                ? fmt : fmt == null
+                ? fmt.trim() : fmt == null
                 ? description : description + " (" + fmt.trim() + ")";
     }
 
@@ -632,6 +637,24 @@ public final class SchemaGeneratorHelper {
                 }
             }
         });
+    }
+
+    /**
+     * Returns current format or if none exists, then the default if it exists for the scalar.
+     *
+     * @param scalarName     scalar name to check
+     * @param clazzName      class name to check
+     * @param existingFormat the existing format
+     * @return current format or if none exists, then the default if it exists for the scalar
+     */
+    protected static String[] ensureFormat(String scalarName, String clazzName, String[] existingFormat) {
+        if (existingFormat == null || (existingFormat[0] == null && existingFormat[1] == null && isScalar(scalarName))) {
+            String[] defaultFormat = getDefaultDateTimeFormat(scalarName, clazzName);
+            if (defaultFormat != null) {
+                return defaultFormat;
+            }
+        }
+        return existingFormat;
     }
 
     /**
