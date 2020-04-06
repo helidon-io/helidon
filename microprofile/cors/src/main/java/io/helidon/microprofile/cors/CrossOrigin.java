@@ -20,6 +20,7 @@ import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
+import static io.helidon.cors.CrossOriginConfig.DEFAULT_AGE;
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
@@ -30,56 +31,6 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Retention(RUNTIME)
 @Documented
 public @interface CrossOrigin {
-
-    /**
-     * Header Origin.
-     */
-    String ORIGIN = "Origin";
-
-    /**
-     * Header Access-Control-Request-Method.
-     */
-    String ACCESS_CONTROL_REQUEST_METHOD = "Access-Control-Request-Method";
-
-    /**
-     * Header Access-Control-Request-Headers.
-     */
-    String ACCESS_CONTROL_REQUEST_HEADERS = "Access-Control-Request-Headers";
-
-    /**
-     * Header Access-Control-Allow-Origin.
-     */
-    String ACCESS_CONTROL_ALLOW_ORIGIN = "Access-Control-Allow-Origin";
-
-    /**
-     * Header Access-Control-Expose-Headers.
-     */
-    String ACCESS_CONTROL_EXPOSE_HEADERS = "Access-Control-Expose-Headers";
-
-    /**
-     * Header Access-Control-Max-Age.
-     */
-    String ACCESS_CONTROL_MAX_AGE = "Access-Control-Max-Age";
-
-    /**
-     * Header Access-Control-Allow-Credentials.
-     */
-    String ACCESS_CONTROL_ALLOW_CREDENTIALS = "Access-Control-Allow-Credentials";
-
-    /**
-     * Header Access-Control-Allow-Methods.
-     */
-    String ACCESS_CONTROL_ALLOW_METHODS = "Access-Control-Allow-Methods";
-
-    /**
-     * Header Access-Control-Allow-Headers.
-     */
-    String ACCESS_CONTROL_ALLOW_HEADERS = "Access-Control-Allow-Headers";
-
-    /**
-     * Default cache expiration in seconds.
-     */
-    long DEFAULT_AGE = 3600;
 
     /**
      * A list of origins that are allowed such as {@code "http://foo.com"} or

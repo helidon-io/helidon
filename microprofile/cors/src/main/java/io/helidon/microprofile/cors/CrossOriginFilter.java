@@ -19,6 +19,7 @@ package io.helidon.microprofile.cors;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -57,7 +58,7 @@ class CrossOriginFilter implements ContainerRequestFilter, ContainerResponseFilt
     @Context
     private ResourceInfo resourceInfo;
 
-    private List<CrossOriginConfig> crossOriginConfigs;
+    private Map<String, CrossOriginConfig> crossOriginConfigs;
 
     CrossOriginFilter() {
         Config config = (Config) ConfigProvider.getConfig();
@@ -188,7 +189,7 @@ class CrossOriginFilter implements ContainerRequestFilter, ContainerResponseFilt
                 corsAnnot = optionsMethod.map(m -> m.getAnnotation(CrossOrigin.class))
                         .orElse(null);
             }
-            return Optional.ofNullable(annotationToConfig(path, corsAnnot));
+            return Optional.ofNullable(corsAnnot == null ? null : annotationToConfig(path, corsAnnot));
         };
     }
 
