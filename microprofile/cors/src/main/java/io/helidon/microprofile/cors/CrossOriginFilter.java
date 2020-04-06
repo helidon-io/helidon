@@ -46,6 +46,7 @@ import io.helidon.cors.CrossOriginHelper.ResponseAdapter;
 import org.eclipse.microprofile.config.ConfigProvider;
 
 import static io.helidon.cors.CrossOriginConfig.CrossOriginConfigMapper;
+import static io.helidon.cors.CrossOriginHelper.CORS_CONFIG_KEY;
 import static io.helidon.cors.CrossOriginHelper.prepareResponse;
 
 /**
@@ -61,7 +62,7 @@ class CrossOriginFilter implements ContainerRequestFilter, ContainerResponseFilt
 
     CrossOriginFilter() {
         Config config = (Config) ConfigProvider.getConfig();
-        crossOriginConfigs = config.get("cors").as(new CrossOriginConfigMapper()).get();
+        crossOriginConfigs = config.get(CORS_CONFIG_KEY).as(new CrossOriginConfigMapper()).get();
     }
 
     @Override
