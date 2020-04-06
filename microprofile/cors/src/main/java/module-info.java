@@ -21,7 +21,7 @@ module io.helidon.microprofile.cors {
 
     requires transitive java.ws.rs;
     requires io.helidon.config;
-    requires transitive io.helidon.cors; // for CrossOrigin
+    requires io.helidon.cors;
     requires jersey.common;
     requires microprofile.config.api;
 

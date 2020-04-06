@@ -37,7 +37,6 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
 import io.helidon.config.Config;
-import io.helidon.cors.CrossOrigin;
 import io.helidon.cors.CrossOriginConfig;
 import io.helidon.cors.CrossOriginHelper;
 import io.helidon.cors.CrossOriginHelper.RequestAdapter;
@@ -68,7 +67,7 @@ class CrossOriginFilter implements ContainerRequestFilter, ContainerResponseFilt
     @Override
     public void filter(ContainerRequestContext requestContext) {
         Optional<Response> response = CrossOriginHelper.processRequest(crossOriginConfigs,
-                crossOriginFromAnnotationFinder(resourceInfo),
+                crossOriginFromAnnotationFinder(requestContext.getUriInfo().getPath(), resourceInfo),
                 new MPRequestAdapter(requestContext),
                 new MPResponseAdapter());
         response.ifPresent(requestContext::abortWith);
@@ -77,7 +76,7 @@ class CrossOriginFilter implements ContainerRequestFilter, ContainerResponseFilt
     @Override
     public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) {
         prepareResponse(crossOriginConfigs,
-                crossOriginFromAnnotationFinder(resourceInfo),
+                crossOriginFromAnnotationFinder(requestContext.getUriInfo().getPath(), resourceInfo),
                 new MPRequestAdapter(requestContext),
                 new MPResponseAdapter(responseContext));
     }
@@ -159,7 +158,7 @@ class CrossOriginFilter implements ContainerRequestFilter, ContainerResponseFilt
 
     }
 
-    static Supplier<Optional<CrossOrigin>> crossOriginFromAnnotationFinder(ResourceInfo resourceInfo) {
+    static Supplier<Optional<CrossOriginConfig>> crossOriginFromAnnotationFinder(String path, ResourceInfo resourceInfo) {
 
         return () -> {
             // If not found, inspect resource matched
@@ -168,10 +167,10 @@ class CrossOriginFilter implements ContainerRequestFilter, ContainerResponseFilt
 
             CrossOrigin corsAnnot;
             OPTIONS optsAnnot = resourceMethod.getAnnotation(OPTIONS.class);
+            Path pathAnnot = resourceMethod.getAnnotation(Path.class);
             if (optsAnnot != null) {
                 corsAnnot = resourceMethod.getAnnotation(CrossOrigin.class);
             } else {
-                Path pathAnnot = resourceMethod.getAnnotation(Path.class);
                 Optional<Method> optionsMethod = Arrays.stream(resourceClass.getDeclaredMethods())
                         .filter(m -> {
                             OPTIONS optsAnnot2 = m.getAnnotation(OPTIONS.class);
@@ -189,7 +188,19 @@ class CrossOriginFilter implements ContainerRequestFilter, ContainerResponseFilt
                 corsAnnot = optionsMethod.map(m -> m.getAnnotation(CrossOrigin.class))
                         .orElse(null);
             }
-            return Optional.ofNullable(corsAnnot);
+            return Optional.ofNullable(annotationToConfig(path, corsAnnot));
         };
+    }
+
+    private static CrossOriginConfig annotationToConfig(String path, CrossOrigin crossOrigin) {
+        return CrossOriginConfig.Builder.create()
+            .pathPrefix(path)
+            .value(crossOrigin.value())
+            .allowHeaders(crossOrigin.allowHeaders())
+            .exposeHeaders(crossOrigin.exposeHeaders())
+            .allowMethods(crossOrigin.allowMethods())
+            .allowCredentials(crossOrigin.allowCredentials())
+            .maxAge(crossOrigin.maxAge())
+            .build();
     }
 }
