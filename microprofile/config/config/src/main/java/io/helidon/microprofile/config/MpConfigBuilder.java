@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ import java.util.stream.Collectors;
 
 import javax.annotation.Priority;
 
+import io.helidon.common.Prioritized;
 import io.helidon.common.reactive.Flow;
 import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigMappers;
@@ -238,6 +239,8 @@ public class MpConfigBuilder implements ConfigBuilder {
 
         if (null == helidonConfig) {
             // only helidon config sources
+            // need to order the helidon config sources
+            helidonConfigSources.sort(Comparator.comparingInt(it -> findPriority(it)));
             helidonConfigBuilder.sources(toSupplierList(helidonConfigSources));
             helidonConfigBuilder.addMapper(() -> configMappers);
 
@@ -250,6 +253,18 @@ public class MpConfigBuilder implements ConfigBuilder {
         }
 
         return new MpConfig(helidonConfig, mpConfigSources, converterMap);
+    }
+
+    private int findPriority(io.helidon.config.spi.ConfigSource it) {
+        if (it instanceof Prioritized) {
+            return ((Prioritized) it).priority();
+        }
+        Priority prio = it.getClass().getAnnotation(Priority.class);
+        if (null == prio) {
+            // default for MP
+            return 100;
+        }
+        return prio.value();
     }
 
     private void orderLists() {
@@ -342,7 +357,7 @@ public class MpConfigBuilder implements ConfigBuilder {
         }
     }
 
-    private static final class OrdinalConfigSource implements io.helidon.config.spi.ConfigSource {
+    private static final class OrdinalConfigSource implements io.helidon.config.spi.ConfigSource, Prioritized {
         private final io.helidon.config.spi.ConfigSource configSource;
         private final int ordinal;
 
@@ -376,8 +391,9 @@ public class MpConfigBuilder implements ConfigBuilder {
             return configSource.changes();
         }
 
-        int getOrdinal() {
-            return ordinal;
+        @Override
+        public int priority() {
+            return 100 - ordinal;
         }
     }
 }

@@ -39,6 +39,7 @@
         <module>mp-ws-services</module>
         <module>mp-autodiscovery</module>
         <module>security</module>
+        <module>mp-gh-1468</module>
     </modules>
 
     <profiles>
