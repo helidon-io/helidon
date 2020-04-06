@@ -169,7 +169,7 @@ public class CrossOriginHelper {
         T forbidden(String message);
 
         /**
-         * Prepares the response type with headers set and status set to OK.
+         * Prepares the response with only the headers set on this adapter and the status set to OK.
          *
          * @return response instance
          */
@@ -325,9 +325,8 @@ public class CrossOriginHelper {
      * @param responseAdapter response adapter
      * @param <T> type for the request wrapped by the requestAdapter
      * @param <U> type for the response wrapper by the responseAdapter
-     * @return U the response provided by the responseAdapter
      */
-    static <T, U> U prepareCORSResponse(List<CrossOriginConfig> crossOriginConfigs,
+    static <T, U> void prepareCORSResponse(List<CrossOriginConfig> crossOriginConfigs,
             Supplier<Optional<CrossOrigin>> secondaryCrossOriginLookup,
             RequestAdapter<T> requestAdapter,
             ResponseAdapter<U> responseAdapter) {
@@ -352,8 +351,6 @@ public class CrossOriginHelper {
         // Add Access-Control-Expose-Headers if non-empty
         formatHeader(crossOrigin.exposeHeaders()).ifPresent(
                 h -> responseAdapter.header(ACCESS_CONTROL_EXPOSE_HEADERS, h));
-
-        return responseAdapter.ok();
     }
 
     /**
