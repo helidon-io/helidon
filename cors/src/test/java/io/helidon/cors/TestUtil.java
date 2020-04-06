@@ -20,6 +20,7 @@ import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.config.spi.ConfigSource;
 import io.helidon.cors.CORSTestServices.CORSTestService;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientRequestBuilder;
@@ -31,6 +32,7 @@ import io.helidon.webserver.WebServer;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Supplier;
 
 import static io.helidon.cors.CORSTestServices.SERVICE_1;
 import static io.helidon.cors.CORSTestServices.SERVICE_2;
@@ -53,7 +55,13 @@ public class TestUtil {
     static final String GREETING_PATH = "/greet";
     static final String OTHER_GREETING_PATH = "/othergreet";
 
-    static WebServer startServer(int port, Routing.Builder routingBuilder) throws InterruptedException, ExecutionException, TimeoutException {
+    static WebServer startupServerWithApps() throws InterruptedException, ExecutionException, TimeoutException {
+        Routing.Builder routingBuilder = TestUtil.prepRouting();
+        return startServer(0, routingBuilder);
+    }
+
+    private static WebServer startServer(int port, Routing.Builder routingBuilder) throws InterruptedException,
+            ExecutionException, TimeoutException {
         Config config = Config.create();
         ServerConfiguration serverConfig = ServerConfiguration.builder(config)
                 .port(port)
@@ -63,33 +71,37 @@ public class TestUtil {
 
     static Routing.Builder prepRouting() {
         /*
-         * Use the default config for the service at "/greet" and load a specific config for "/othergreet".
+         * Use the default config for the service at "/greet."
          */
-        Config config = Config.create();
+        Config config = minimalConfig();
         CORSSupport.Builder corsSupportBuilder = CORSSupport.builder().config(config.get(CrossOriginHelper.CORS_CONFIG_KEY));
 
-        Config twoCORSConfig = Config.builder()
-                .disableEnvironmentVariablesSource()
-                .disableSystemPropertiesSource()
-                .sources(ConfigSources.classpath("twoCORS.yaml"))
-                .build();
+        /*
+         * Load a specific config for "/othergreet."
+         */
+        Config twoCORSConfig = minimalConfig(ConfigSources.classpath("twoCORS.yaml"));
         CORSSupport.Builder twoCORSSupportBuilder =
                 CORSSupport.builder().config(twoCORSConfig.get(CrossOriginHelper.CORS_CONFIG_KEY));
 
         Routing.Builder builder = Routing.builder()
                 .register(GREETING_PATH, corsSupportBuilder.build(), new GreetService())
                 .register(OTHER_GREETING_PATH, twoCORSSupportBuilder.build(), new GreetService("Other Hello"));
-//        CORSTestServices.SERVICES.forEach(s -> {
-//            builder.register(path(s), s);
-//            builder.register(path(OTHER_GREETING_PATH, s), s);
-//        });
 
         return builder;
     }
 
-    static WebServer startupServerWithApps() throws InterruptedException, ExecutionException, TimeoutException {
-        Routing.Builder routingBuilder = TestUtil.prepRouting();
-        return startServer(0, routingBuilder);
+    private static Config minimalConfig(Supplier<? extends ConfigSource> configSource) {
+        Config.Builder builder = Config.builder()
+                .disableEnvironmentVariablesSource()
+                .disableSystemPropertiesSource();
+        if (configSource != null) {
+            builder.sources(configSource);
+        }
+        return builder.build();
+    }
+
+    private static Config minimalConfig() {
+        return minimalConfig(null);
     }
 
     static WebClient startupClient(WebServer server) {

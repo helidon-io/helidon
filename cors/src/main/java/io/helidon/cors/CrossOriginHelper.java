@@ -247,16 +247,12 @@ public class CrossOriginHelper {
 
         RequestType requestType = requestType(requestAdapter);
 
-        switch (requestType) {
-            case CORS:
-                prepareCORSResponse(
-                        crossOriginConfigs,
-                        secondaryCrossOriginLookup,
-                        requestAdapter,
-                        responseAdapter);
-                break;
-
-            default:
+        if (requestType == RequestType.CORS) {
+            prepareCORSResponse(
+                    crossOriginConfigs,
+                    secondaryCrossOriginLookup,
+                    requestAdapter,
+                    responseAdapter);
         }
     }
 
@@ -321,7 +317,7 @@ public class CrossOriginHelper {
     }
 
     /**
-     * Prepares a CORS response.
+     * Prepares a CORS response by updating the response's headers.
      *
      * @param crossOriginConfigs config information for CORS
      * @param secondaryCrossOriginLookup locates {@code CrossOrigin} from other than config (e.g., annotations for MP)
@@ -363,6 +359,9 @@ public class CrossOriginHelper {
     /**
      * Processes a pre-flight request, returning either a preflight response or an error response if the CORS information was
      * invalid.
+     * <p>
+     * Having determined that we have a pre-flight request, we will always return either a forbidden or a successful response.
+     * </p>
      *
      * @param crossOriginConfigs config information for CORS
      * @param secondaryCrossOriginLookup locates {@code CrossOrigin} from other than config (e.g., annotations for MP)
@@ -398,15 +397,18 @@ public class CrossOriginHelper {
             return responseAdapter.forbidden(ORIGIN_NOT_IN_ALLOWED_LIST);
         }
 
-        // Check if method is allowed
         Optional<String> methodOpt = requestAdapter.firstHeader(ACCESS_CONTROL_REQUEST_METHOD);
-        List<String> allowedMethods = Arrays.asList(crossOrigin.allowMethods());
-        if (!allowedMethods.contains("*")
-                && methodOpt.isPresent()
-                && !contains(methodOpt.get(), allowedMethods, String::equals)) {
+        if (methodOpt.isEmpty()) {
             return responseAdapter.forbidden(METHOD_NOT_IN_ALLOWED_LIST);
         }
+
+        // Check if method is allowed
         String method = methodOpt.get();
+        List<String> allowedMethods = Arrays.asList(crossOrigin.allowMethods());
+        if (!allowedMethods.contains("*")
+                && !contains(method, allowedMethods, String::equals)) {
+            return responseAdapter.forbidden(METHOD_NOT_IN_ALLOWED_LIST);
+        }
 
         // Check if headers are allowed
         Set<String> requestHeaders = parseHeader(requestAdapter.allHeaders(ACCESS_CONTROL_REQUEST_HEADERS));
