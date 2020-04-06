@@ -137,6 +137,12 @@ public class CrossOriginHelper {
     /**
      * Minimal abstraction of an HTTP response.
      *
+     * <p>
+     * Note to implementers: In some use cases, the CORS support code will invoke the {@code header} methods but not {@code ok}
+     * or {@code forbidden}. See to it that header values set on the adapter via the {@code header} methods are propagated to the
+     * actual response.
+     * </p>
+     *
      * @param <T> the type of the response wrapped by the adapter
      */
     public interface ResponseAdapter<T> {
@@ -160,7 +166,7 @@ public class CrossOriginHelper {
         ResponseAdapter<T> header(String key, Object value);
 
         /**
-         * Prepares the response type with the forbidden status and the specified error message, without any headers assigned
+         * Returns a response with the forbidden status and the specified error message, without any headers assigned
          * using the {@code header} methods.
          *
          * @param message error message to use in setting the response status
@@ -169,7 +175,7 @@ public class CrossOriginHelper {
         T forbidden(String message);
 
         /**
-         * Prepares the response with only the headers set on this adapter and the status set to OK.
+         * Returns a response with only the headers that were set on this adapter and the status set to OK.
          *
          * @return response instance
          */
@@ -182,10 +188,12 @@ public class CrossOriginHelper {
      * non-preflight CORS request).
      * <p>
      *     If the optional is empty, this processor has either:
+     * </p>
      * <ul>
      *     <li>recognized the request as a valid non-preflight CORS request and has set headers in the response adapter, or</li>
      *     <li>recognized the request as a non-CORS request entirely.</li>
      * </ul>
+     * <p>
      * In either case of an empty optional return value, the caller should proceed with its own request processing and sends its
      * response at will as long as that processing includes the header settings assigned using the response adapter.
      * </p>
