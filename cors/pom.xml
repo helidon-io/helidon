@@ -38,10 +38,6 @@
     <properties>
     </properties>
 
-    <build>
-        <plugins>
-        </plugins>
-    </build>
     <dependencies>
         <dependency>
             <groupId>io.helidon.webserver</groupId>
