@@ -68,7 +68,6 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
      */
     public static final String ACCESS_CONTROL_REQUEST_METHOD = "Access-Control-Request-Method";
 
-    private final String pathPrefix;
     private final String[] value;
     private final String[] allowHeaders;
     private final String[] exposeHeaders;
@@ -77,21 +76,12 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
     private final long maxAge;
 
     private CrossOriginConfig(Builder builder) {
-        this.pathPrefix = builder.pathPrefix;
         this.value = builder.value;
         this.allowHeaders = builder.allowHeaders;
         this.exposeHeaders = builder.exposeHeaders;
         this.allowMethods = builder.allowMethods;
         this.allowCredentials = builder.allowCredentials;
         this.maxAge = builder.maxAge;
-    }
-
-    /**
-     *
-     * @return Path prefix
-     */
-    public String pathPrefix() {
-        return pathPrefix;
     }
 
     /**
@@ -153,7 +143,6 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
 
         private static final String[] ALLOW_ALL = {"*"};
 
-        private String pathPrefix;
         private String[] value = ALLOW_ALL;
         private String[] allowHeaders = ALLOW_ALL;
         private String[] exposeHeaders;
@@ -170,17 +159,6 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
          */
         public static Builder create() {
             return new Builder();
-        }
-
-        /**
-         * Sets the path prefix.
-         *
-         * @param pathPrefix the path prefix
-         * @return updated builder
-         */
-        public Builder pathPrefix(String pathPrefix) {
-            this.pathPrefix = pathPrefix;
-            return this;
         }
 
         /**
@@ -271,7 +249,7 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
                 }
                 Builder builder = new Builder();
                 String path = item.get("path-prefix").as(String.class).orElse(null);
-                item.get("path-prefix").as(String.class).ifPresent(builder::pathPrefix);
+//                item.get("path-prefix").as(String.class).ifPresent(builder::pathPrefix);
                 item.get("allow-origins").asList(String.class).ifPresent(
                         s -> builder.value(parseHeader(s).toArray(new String[]{})));
                 item.get("allow-methods").asList(String.class).ifPresent(

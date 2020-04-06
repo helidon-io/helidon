@@ -37,6 +37,7 @@ import java.util.function.Supplier;
 import static io.helidon.common.http.Http.Header.ORIGIN;
 import static io.helidon.cors.CORSTestServices.SERVICE_1;
 import static io.helidon.cors.CORSTestServices.SERVICE_2;
+import static io.helidon.cors.CORSTestServices.SERVICE_3;
 import static io.helidon.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_CREDENTIALS;
 import static io.helidon.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_HEADERS;
 import static io.helidon.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_METHODS;
@@ -82,6 +83,12 @@ public class TestUtil {
         Config twoCORSConfig = minimalConfig(ConfigSources.classpath("twoCORS.yaml"));
         CORSSupport.Builder twoCORSSupportBuilder =
                 CORSSupport.builder().config(twoCORSConfig.get(CrossOriginHelper.CORS_CONFIG_KEY));
+
+        CrossOriginConfig cors3COC= CrossOriginConfig.Builder.create()
+                .value(new String[] {"http://foo.bar", "http://bar.foo"})
+                .allowMethods(new String[] {"DELETE", "PUT"})
+                .build();
+        twoCORSSupportBuilder.addCrossOrigin(SERVICE_3.path(), cors3COC);
 
         Routing.Builder builder = Routing.builder()
                 .register(GREETING_PATH, corsSupportBuilder.build(), new GreetService())
@@ -192,5 +199,26 @@ public class TestUtil {
 
     static String path(String prefix, CORSTestService testService) {
         return prefix + testService.path();
+    }
+
+    static void test3PreFlightAllowedOrigin(WebClient client) throws ExecutionException, InterruptedException {
+        WebClientRequestBuilder reqBuilder = client
+                .method(Http.Method.OPTIONS.name())
+                .path(path(SERVICE_3));
+
+        Headers headers = reqBuilder.headers();
+        headers.add(ORIGIN, "http://foo.bar");
+        headers.add(ACCESS_CONTROL_REQUEST_METHOD, "PUT");
+
+        WebClientResponse res = reqBuilder
+                .submit("")
+                .toCompletableFuture()
+                .get();
+
+        assertThat(res.status(), is(Http.Status.OK_200));
+        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_ORIGIN), present(is("http://foo.bar")));
+        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_METHODS), present(is("PUT")));
+        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_HEADERS), notPresent());
+        assertThat(res.headers().first(ACCESS_CONTROL_MAX_AGE), present(is("3600")));
     }
 }

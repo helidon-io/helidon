@@ -20,3 +20,5 @@ cors:
     allow-headers: ["X-otherBar", "X-otherFoo"]
     allow-credentials: true
     max-age: -1
+
+# /cors3 info is added programmatically

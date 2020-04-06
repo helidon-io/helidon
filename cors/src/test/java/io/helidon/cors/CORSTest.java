@@ -317,24 +317,7 @@ public class CORSTest {
 
     @Test
     void test3PreFlightAllowedOrigin() throws ExecutionException, InterruptedException {
-        WebClientRequestBuilder reqBuilder = client
-                .method(Http.Method.OPTIONS.name())
-                .path(TestUtil.path(SERVICE_3));
-
-        Headers headers = reqBuilder.headers();
-        headers.add(ORIGIN, "http://foo.bar");
-        headers.add(ACCESS_CONTROL_REQUEST_METHOD, "PUT");
-
-        WebClientResponse res = reqBuilder
-                .submit("")
-                .toCompletableFuture()
-                .get();
-
-        assertThat(res.status(), is(Http.Status.OK_200));
-        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_ORIGIN), present(is("http://foo.bar")));
-        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_METHODS), present(is("PUT")));
-        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_HEADERS), notPresent());
-        assertThat(res.headers().first(ACCESS_CONTROL_MAX_AGE), present(is("3600")));
+        TestUtil.test3PreFlightAllowedOrigin(client);
     }
 
     @Test

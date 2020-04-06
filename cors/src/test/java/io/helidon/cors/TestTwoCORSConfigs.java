@@ -51,7 +51,9 @@ public class TestTwoCORSConfigs {
     }
 
     @Test
-
+    void test3PreFlightAllowedOrigin() throws ExecutionException, InterruptedException {
+        TestUtil.test3PreFlightAllowedOrigin(client);
+    }
 
     @AfterAll
     public static void shutdown() {
