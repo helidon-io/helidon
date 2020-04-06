@@ -16,7 +16,6 @@
 
 package io.helidon.cors;
 
-import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -29,7 +28,48 @@ import static io.helidon.cors.CrossOriginHelper.parseHeader;
 /**
  * Class CrossOriginConfig.
  */
-public class CrossOriginConfig implements CrossOrigin {
+public class CrossOriginConfig /* implements CrossOrigin */ {
+
+    /**
+     * Default cache expiration in seconds.
+     */
+    public static final long DEFAULT_AGE = 3600;
+    /**
+     * Header Access-Control-Allow-Headers.
+     */
+    public static final String ACCESS_CONTROL_ALLOW_HEADERS = "Access-Control-Allow-Headers";
+    /**
+     * Header Access-Control-Allow-Methods.
+     */
+    public static final String ACCESS_CONTROL_ALLOW_METHODS = "Access-Control-Allow-Methods";
+    /**
+     * Header Access-Control-Allow-Credentials.
+     */
+    public static final String ACCESS_CONTROL_ALLOW_CREDENTIALS = "Access-Control-Allow-Credentials";
+    /**
+     * Header Access-Control-Max-Age.
+     */
+    public static final String ACCESS_CONTROL_MAX_AGE = "Access-Control-Max-Age";
+    /**
+     * Header Access-Control-Expose-Headers.
+     */
+    public static final String ACCESS_CONTROL_EXPOSE_HEADERS = "Access-Control-Expose-Headers";
+    /**
+     * Header Access-Control-Allow-Origin.
+     */
+    public static final String ACCESS_CONTROL_ALLOW_ORIGIN = "Access-Control-Allow-Origin";
+    /**
+     * Header Access-Control-Request-Headers.
+     */
+    public static final String ACCESS_CONTROL_REQUEST_HEADERS = "Access-Control-Request-Headers";
+    /**
+     * Header Access-Control-Request-Method.
+     */
+    public static final String ACCESS_CONTROL_REQUEST_METHOD = "Access-Control-Request-Method";
+    /**
+     * Header Origin.
+     */
+    public static final String ORIGIN = "Origin";
 
     private final String pathPrefix;
     private final String[] value;
@@ -50,57 +90,69 @@ public class CrossOriginConfig implements CrossOrigin {
     }
 
     /**
-     * Returns path prefix.
      *
-     * @return Path prefix.
+     * @return Path prefix
      */
     public String pathPrefix() {
         return pathPrefix;
     }
 
-    @Override
+    /**
+     *
+     * @return origins
+     */
     public String[] value() {
         return copyOf(value);
     }
 
-    @Override
+    /**
+     *
+     * @return allowHeaders
+     */
     public String[] allowHeaders() {
         return copyOf(allowHeaders);
     }
 
-    @Override
+    /**
+     *
+     * @return exposeHeaders
+     */
     public String[] exposeHeaders() {
         return copyOf(exposeHeaders);
     }
 
-    @Override
+    /**
+     *
+     * @return allowMethods
+     */
     public String[] allowMethods() {
         return copyOf(allowMethods);
     }
 
-    @Override
+    /**
+     *
+     * @return allowCredentials
+     */
     public boolean allowCredentials() {
         return allowCredentials;
     }
 
-    @Override
+    /**
+     *
+     * @return maxAge
+     */
     public long maxAge() {
         return maxAge;
     }
 
-    @Override
-    public Class<? extends Annotation> annotationType() {
-        return CrossOrigin.class;
-    }
-
-    private String[] copyOf(String[] strings) {
+    private static String[] copyOf(String[] strings) {
         return strings != null ? Arrays.copyOf(strings, strings.length) : new String[0];
     }
 
     /**
      * Builder for {@link CrossOriginConfig}.
      */
-    static class Builder implements io.helidon.common.Builder<CrossOriginConfig> {
+    public static class Builder implements io.helidon.common.Builder<CrossOriginConfig> {
 
         private static final String[] ALLOW_ALL = {"*"};
 
@@ -112,36 +164,89 @@ public class CrossOriginConfig implements CrossOrigin {
         private boolean allowCredentials;
         private long maxAge = DEFAULT_AGE;
 
+        private Builder() {
+        }
+
+        /**
+         *
+         * @return a new {@code CrossOriginConfig.Builder}
+         */
+        public static Builder create() {
+            return new Builder();
+        }
+
+        /**
+         * Sets the path prefix.
+         *
+         * @param pathPrefix the path prefix
+         * @return updated builder
+         */
         public Builder pathPrefix(String pathPrefix) {
             this.pathPrefix = pathPrefix;
             return this;
         }
 
+        /**
+         * Sets the values (origins).
+         *
+         * @param value the origin value
+         * @return updated builder
+         */
         public Builder value(String[] value) {
-            this.value = value;
+            this.value = copyOf(value);
             return this;
         }
 
+        /**
+         * Sets the allow headers.
+         *
+         * @param allowHeaders the allow headers value(s)
+         * @return updated builder
+         */
         public Builder allowHeaders(String[] allowHeaders) {
-            this.allowHeaders = allowHeaders;
+            this.allowHeaders = copyOf(allowHeaders);
             return this;
         }
 
+        /**
+         * Sets the expose headers.
+         *
+         * @param exposeHeaders the expose headers value(s)
+         * @return updated builder
+         */
         public Builder exposeHeaders(String[] exposeHeaders) {
-            this.exposeHeaders = exposeHeaders;
+            this.exposeHeaders = copyOf(exposeHeaders);
             return this;
         }
 
+        /**
+         * Sets the allow methods.
+         *
+         * @param allowMethods the allow method value(s)
+         * @return updated builder
+         */
         public Builder allowMethods(String[] allowMethods) {
-            this.allowMethods = allowMethods;
+            this.allowMethods = copyOf(allowMethods);
             return this;
         }
 
+        /**
+         * Sets the allow credentials flag.
+         *
+         * @param allowCredentials the allow credentials flag
+         * @return updated builder
+         */
         public Builder allowCredentials(boolean allowCredentials) {
             this.allowCredentials = allowCredentials;
             return this;
         }
 
+        /**
+         * Sets the maximum age.
+         *
+         * @param maxAge the maximum age
+         * @return updated builder
+         */
         public Builder maxAge(long maxAge) {
             this.maxAge = maxAge;
             return this;
@@ -153,6 +258,9 @@ public class CrossOriginConfig implements CrossOrigin {
         }
     }
 
+    /**
+     * Functional interface for converting a Helidon config instance to a {@code CrossOriginConfig} instance.
+     */
     public static class CrossOriginConfigMapper implements Function<Config, List<CrossOriginConfig>> {
 
         @Override

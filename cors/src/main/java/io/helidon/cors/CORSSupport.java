@@ -17,7 +17,9 @@
 package io.helidon.cors;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -128,6 +130,7 @@ public class CORSSupport implements Service {
     public static class Builder implements io.helidon.common.Builder<CORSSupport> {
 
         private Optional<Config> corsConfig = Optional.empty();
+        private final Map<String, CrossOriginConfig> crossOrigins = new HashMap<>();
 
         @Override
         public CORSSupport build() {
@@ -154,6 +157,22 @@ public class CORSSupport implements Service {
         List<CrossOriginConfig> configs() {
             return corsConfig.map(c -> c.as(new CrossOriginConfigMapper()).get())
                          .orElse(Collections.emptyList());
+        }
+
+        /**
+         * Adds cross origin information associated with a given path.
+         *
+         * @param path the path to which the cross origin information applies
+         * @param crossOrigin the cross origin information
+         * @return updated builder
+         */
+        public Builder addCrossOrigin(String path, CrossOriginConfig crossOrigin) {
+            crossOrigins.put(path, crossOrigin);
+            return this;
+        }
+
+        Map<String, CrossOriginConfig> crossOrigins() {
+            return Collections.unmodifiableMap(crossOrigins);
         }
     }
 

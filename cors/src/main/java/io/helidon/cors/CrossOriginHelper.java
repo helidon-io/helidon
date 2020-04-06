@@ -30,15 +30,15 @@ import java.util.function.Supplier;
 import io.helidon.common.http.Http;
 
 import static io.helidon.common.http.Http.Header.HOST;
-import static io.helidon.cors.CrossOrigin.ACCESS_CONTROL_ALLOW_CREDENTIALS;
-import static io.helidon.cors.CrossOrigin.ACCESS_CONTROL_ALLOW_HEADERS;
-import static io.helidon.cors.CrossOrigin.ACCESS_CONTROL_ALLOW_METHODS;
-import static io.helidon.cors.CrossOrigin.ACCESS_CONTROL_ALLOW_ORIGIN;
-import static io.helidon.cors.CrossOrigin.ACCESS_CONTROL_EXPOSE_HEADERS;
-import static io.helidon.cors.CrossOrigin.ACCESS_CONTROL_MAX_AGE;
-import static io.helidon.cors.CrossOrigin.ACCESS_CONTROL_REQUEST_HEADERS;
-import static io.helidon.cors.CrossOrigin.ACCESS_CONTROL_REQUEST_METHOD;
-import static io.helidon.cors.CrossOrigin.ORIGIN;
+import static io.helidon.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_CREDENTIALS;
+import static io.helidon.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_HEADERS;
+import static io.helidon.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_METHODS;
+import static io.helidon.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN;
+import static io.helidon.cors.CrossOriginConfig.ACCESS_CONTROL_EXPOSE_HEADERS;
+import static io.helidon.cors.CrossOriginConfig.ACCESS_CONTROL_MAX_AGE;
+import static io.helidon.cors.CrossOriginConfig.ACCESS_CONTROL_REQUEST_HEADERS;
+import static io.helidon.cors.CrossOriginConfig.ACCESS_CONTROL_REQUEST_METHOD;
+import static io.helidon.cors.CrossOriginConfig.ORIGIN;
 
 /**
  * Centralizes common logic to both SE and MP CORS support for processing requests and preparing responses.
@@ -208,7 +208,7 @@ public class CrossOriginHelper {
      *         valid CORS request
      */
     public static <T, U> Optional<U> processRequest(List<CrossOriginConfig> crossOriginConfigs,
-            Supplier<Optional<CrossOrigin>> secondaryCrossOriginLookup,
+            Supplier<Optional<CrossOriginConfig>> secondaryCrossOriginLookup,
             RequestAdapter<T> requestAdapter,
             ResponseAdapter<U> responseAdapter) {
         RequestType requestType = requestType(requestAdapter);
@@ -249,7 +249,7 @@ public class CrossOriginHelper {
      * @param <U> the type for the HTTP response as returned from the responseSetter
      */
     public static <T, U> void prepareResponse(List<CrossOriginConfig> crossOriginConfigs,
-            Supplier<Optional<CrossOrigin>> secondaryCrossOriginLookup,
+            Supplier<Optional<CrossOriginConfig>> secondaryCrossOriginLookup,
             RequestAdapter<T> requestAdapter,
             ResponseAdapter<U> responseAdapter) {
 
@@ -304,11 +304,11 @@ public class CrossOriginHelper {
      */
     static <T, U> Optional<U> processCORSRequest(
             List<CrossOriginConfig> crossOriginConfigs,
-            Supplier<Optional<CrossOrigin>> secondaryCrossOriginLookup,
+            Supplier<Optional<CrossOriginConfig>> secondaryCrossOriginLookup,
             RequestAdapter<T> requestAdapter,
             ResponseAdapter<U> responseAdapter) {
         Optional<String> originOpt = requestAdapter.firstHeader(ORIGIN);
-        Optional<CrossOrigin> crossOriginOpt = lookupCrossOrigin(requestAdapter.path(), crossOriginConfigs,
+        Optional<CrossOriginConfig> crossOriginOpt = lookupCrossOrigin(requestAdapter.path(), crossOriginConfigs,
                 secondaryCrossOriginLookup);
         if (crossOriginOpt.isEmpty()) {
             return Optional.of(responseAdapter.forbidden(ORIGIN_DENIED));
@@ -335,10 +335,10 @@ public class CrossOriginHelper {
      * @param <U> type for the response wrapper by the responseAdapter
      */
     static <T, U> void prepareCORSResponse(List<CrossOriginConfig> crossOriginConfigs,
-            Supplier<Optional<CrossOrigin>> secondaryCrossOriginLookup,
+            Supplier<Optional<CrossOriginConfig>> secondaryCrossOriginLookup,
             RequestAdapter<T> requestAdapter,
             ResponseAdapter<U> responseAdapter) {
-        CrossOrigin crossOrigin = lookupCrossOrigin(requestAdapter.path(), crossOriginConfigs, secondaryCrossOriginLookup)
+        CrossOriginConfig crossOrigin = lookupCrossOrigin(requestAdapter.path(), crossOriginConfigs, secondaryCrossOriginLookup)
                 .orElseThrow(() -> new IllegalArgumentException(
                         "Could not locate expected CORS information while preparing response to request " + requestAdapter));
 
@@ -378,12 +378,12 @@ public class CrossOriginHelper {
      */
     static <T, U> U processCORSPreFlightRequest(
             List<CrossOriginConfig> crossOriginConfigs,
-            Supplier<Optional<CrossOrigin>> secondaryCrossOriginLookup,
+            Supplier<Optional<CrossOriginConfig>> secondaryCrossOriginLookup,
             RequestAdapter<T> requestAdapter,
             ResponseAdapter<U> responseAdapter) {
 
         Optional<String> originOpt = requestAdapter.firstHeader(ORIGIN);
-        Optional<CrossOrigin> crossOriginOpt = lookupCrossOrigin(requestAdapter.path(), crossOriginConfigs,
+        Optional<CrossOriginConfig> crossOriginOpt = lookupCrossOrigin(requestAdapter.path(), crossOriginConfigs,
                 secondaryCrossOriginLookup);
 
         // If CORS not enabled, deny request
@@ -394,7 +394,7 @@ public class CrossOriginHelper {
             return responseAdapter.forbidden(noRequiredHeader(ORIGIN));
         }
 
-        CrossOrigin crossOrigin = crossOriginOpt.get();
+        CrossOriginConfig crossOrigin = crossOriginOpt.get();
 
         // If enabled but not whitelisted, deny request
         List<String> allowedOrigins = Arrays.asList(crossOrigin.value());
@@ -447,8 +447,8 @@ public class CrossOriginHelper {
      * @param secondaryLookup Supplier for CrossOrigin used if none found in config
      * @return Optional<CrossOrigin> for the matching config, or an empty Optional if none matched
      */
-    static Optional<CrossOrigin> lookupCrossOrigin(String path, List<CrossOriginConfig> crossOriginConfigs,
-            Supplier<Optional<CrossOrigin>> secondaryLookup) {
+    static Optional<CrossOriginConfig> lookupCrossOrigin(String path, List<CrossOriginConfig> crossOriginConfigs,
+            Supplier<Optional<CrossOriginConfig>> secondaryLookup) {
         for (CrossOriginConfig config : crossOriginConfigs) {
             String pathPrefix = normalize(config.pathPrefix());
             String uriPath = normalize(path);
