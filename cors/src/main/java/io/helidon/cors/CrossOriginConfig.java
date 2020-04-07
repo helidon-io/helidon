@@ -249,7 +249,6 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
                 }
                 Builder builder = new Builder();
                 String path = item.get("path-prefix").as(String.class).orElse(null);
-//                item.get("path-prefix").as(String.class).ifPresent(builder::pathPrefix);
                 item.get("allow-origins").asList(String.class).ifPresent(
                         s -> builder.value(parseHeader(s).toArray(new String[]{})));
                 item.get("allow-methods").asList(String.class).ifPresent(

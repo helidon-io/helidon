@@ -16,40 +16,21 @@
  */
 package io.helidon.cors;
 
-import io.helidon.common.http.Headers;
-import io.helidon.common.http.Http;
-import io.helidon.config.Config;
-import io.helidon.config.ConfigSources;
-import io.helidon.config.spi.ConfigSource;
-import io.helidon.cors.CORSTestServices.CORSTestService;
-import io.helidon.webclient.WebClient;
-import io.helidon.webclient.WebClientRequestBuilder;
-import io.helidon.webclient.WebClientResponse;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
-import io.helidon.webserver.WebServer;
-
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 
-import static io.helidon.common.http.Http.Header.ORIGIN;
-import static io.helidon.cors.CORSTestServices.SERVICE_1;
-import static io.helidon.cors.CORSTestServices.SERVICE_2;
+import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
+import io.helidon.config.spi.ConfigSource;
+import io.helidon.cors.CORSTestServices.CORSTestService;
+import io.helidon.webclient.WebClient;
+import io.helidon.webserver.Routing;
+import io.helidon.webserver.ServerConfiguration;
+import io.helidon.webserver.WebServer;
+
 import static io.helidon.cors.CORSTestServices.SERVICE_3;
-import static io.helidon.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_CREDENTIALS;
-import static io.helidon.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_HEADERS;
-import static io.helidon.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_METHODS;
-import static io.helidon.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN;
-import static io.helidon.cors.CrossOriginConfig.ACCESS_CONTROL_MAX_AGE;
-import static io.helidon.cors.CrossOriginConfig.ACCESS_CONTROL_REQUEST_HEADERS;
-import static io.helidon.cors.CrossOriginConfig.ACCESS_CONTROL_REQUEST_METHOD;
-import static io.helidon.cors.CustomMatchers.notPresent;
-import static io.helidon.cors.CustomMatchers.present;
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
 
 public class TestUtil {
 
@@ -71,11 +52,17 @@ public class TestUtil {
     }
 
     static Routing.Builder prepRouting() {
+        CrossOriginConfig cors3COC= CrossOriginConfig.Builder.create()
+                .value(new String[] {"http://foo.bar", "http://bar.foo"})
+                .allowMethods(new String[] {"DELETE", "PUT"})
+                .build();
+
         /*
          * Use the default config for the service at "/greet."
          */
         Config config = minimalConfig();
         CORSSupport.Builder corsSupportBuilder = CORSSupport.builder().config(config.get(CrossOriginHelper.CORS_CONFIG_KEY));
+        corsSupportBuilder.addCrossOrigin(SERVICE_3.path(), cors3COC);
 
         /*
          * Load a specific config for "/othergreet."
@@ -84,15 +71,11 @@ public class TestUtil {
         CORSSupport.Builder twoCORSSupportBuilder =
                 CORSSupport.builder().config(twoCORSConfig.get(CrossOriginHelper.CORS_CONFIG_KEY));
 
-        CrossOriginConfig cors3COC= CrossOriginConfig.Builder.create()
-                .value(new String[] {"http://foo.bar", "http://bar.foo"})
-                .allowMethods(new String[] {"DELETE", "PUT"})
-                .build();
-        twoCORSSupportBuilder.addCrossOrigin(SERVICE_3.path(), cors3COC);
-
+        CORSSupport greetingCORSSupport = corsSupportBuilder.build();
+        CORSSupport otherGreetingCORSSupport = twoCORSSupportBuilder.build();
         Routing.Builder builder = Routing.builder()
-                .register(GREETING_PATH, corsSupportBuilder.build(), new GreetService())
-                .register(OTHER_GREETING_PATH, twoCORSSupportBuilder.build(), new GreetService("Other Hello"));
+                .register(GREETING_PATH, greetingCORSSupport, new GreetService())
+                .register(OTHER_GREETING_PATH, otherGreetingCORSSupport, new GreetService("Other Hello"));
 
         return builder;
     }
@@ -115,52 +98,6 @@ public class TestUtil {
         return WebClient.builder()
                 .baseUri("http://localhost:" + server.port())
                 .build();
-    }
-
-    static WebClientResponse runTest1PreFlightAllowedOrigin(WebClient client, String prefix, String origin) throws ExecutionException,
-            InterruptedException {
-        WebClientRequestBuilder reqBuilder = client
-                .method(Http.Method.OPTIONS.name())
-                .path(path(prefix, SERVICE_1));
-
-        Headers headers = reqBuilder.headers();
-        headers.add(ORIGIN, origin);
-        headers.add(ACCESS_CONTROL_REQUEST_METHOD, "PUT");
-
-        WebClientResponse res = reqBuilder
-                .request()
-                .toCompletableFuture()
-                .get();
-
-        return res;
-    }
-
-    static void test2PreFlightAllowedHeaders1(WebClient client, String prefix, String origin, String headerToCheck) throws ExecutionException, InterruptedException {
-        WebClientRequestBuilder reqBuilder = client
-                .method(Http.Method.OPTIONS.name())
-                .path(path(prefix, SERVICE_2));
-
-        Headers headers = reqBuilder.headers();
-        headers.add(ORIGIN, origin);
-        headers.add(ACCESS_CONTROL_REQUEST_METHOD, "PUT");
-        headers.add(ACCESS_CONTROL_REQUEST_HEADERS, headerToCheck);
-
-        WebClientResponse res = reqBuilder
-                .request()
-                .toCompletableFuture()
-                .get();
-
-        assertThat(res.status(), is(Http.Status.OK_200));
-        assertThat(res.headers()
-                .first(ACCESS_CONTROL_ALLOW_ORIGIN), present(is(origin)));
-        assertThat(res.headers()
-                .first(ACCESS_CONTROL_ALLOW_CREDENTIALS), present(is("true")));
-        assertThat(res.headers()
-                .first(ACCESS_CONTROL_ALLOW_METHODS), present(is("PUT")));
-        assertThat(res.headers()
-                .first(ACCESS_CONTROL_ALLOW_HEADERS), present(containsString(headerToCheck)));
-        assertThat(res.headers()
-                .first(ACCESS_CONTROL_MAX_AGE), notPresent());
     }
 
     /**
@@ -199,26 +136,5 @@ public class TestUtil {
 
     static String path(String prefix, CORSTestService testService) {
         return prefix + testService.path();
-    }
-
-    static void test3PreFlightAllowedOrigin(WebClient client) throws ExecutionException, InterruptedException {
-        WebClientRequestBuilder reqBuilder = client
-                .method(Http.Method.OPTIONS.name())
-                .path(path(SERVICE_3));
-
-        Headers headers = reqBuilder.headers();
-        headers.add(ORIGIN, "http://foo.bar");
-        headers.add(ACCESS_CONTROL_REQUEST_METHOD, "PUT");
-
-        WebClientResponse res = reqBuilder
-                .submit("")
-                .toCompletableFuture()
-                .get();
-
-        assertThat(res.status(), is(Http.Status.OK_200));
-        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_ORIGIN), present(is("http://foo.bar")));
-        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_METHODS), present(is("PUT")));
-        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_HEADERS), notPresent());
-        assertThat(res.headers().first(ACCESS_CONTROL_MAX_AGE), present(is("3600")));
     }
 }

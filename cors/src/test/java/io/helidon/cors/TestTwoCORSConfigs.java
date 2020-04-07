@@ -31,7 +31,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-public class TestTwoCORSConfigs {
+public class TestTwoCORSConfigs extends AbstractCORSTest {
 
     private static WebServer server;
     private static WebClient client;
@@ -44,15 +44,9 @@ public class TestTwoCORSConfigs {
 
     @Test
     void test1PreFlightAllowedOriginOtherGreeting() throws ExecutionException, InterruptedException {
-        WebClientResponse res = TestUtil.runTest1PreFlightAllowedOrigin(client, TestUtil.OTHER_GREETING_PATH,
-                "http://otherfoo.bar");
+        WebClientResponse res = runTest1PreFlightAllowedOrigin();
 
         assertThat(res.status(), is(Http.Status.FORBIDDEN_403));
-    }
-
-    @Test
-    void test3PreFlightAllowedOrigin() throws ExecutionException, InterruptedException {
-        TestUtil.test3PreFlightAllowedOrigin(client);
     }
 
     @AfterAll
@@ -61,4 +55,23 @@ public class TestTwoCORSConfigs {
     }
 
 
+    @Override
+    String contextRoot() {
+        return TestUtil.OTHER_GREETING_PATH;
+    }
+
+    @Override
+    WebClient client() {
+        return client;
+    }
+
+    @Override
+    String fooOrigin() {
+        return "http://otherfoo.bar";
+    }
+
+    @Override
+    String fooHeader() {
+        return "X-otherfoo";
+    }
 }

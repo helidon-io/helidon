@@ -36,6 +36,7 @@ import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 
 import static io.helidon.cors.CrossOriginHelper.CORS_CONFIG_KEY;
+import static io.helidon.cors.CrossOriginHelper.normalize;
 import static io.helidon.cors.CrossOriginHelper.prepareResponse;
 import static io.helidon.cors.CrossOriginHelper.processRequest;
 
@@ -88,7 +89,7 @@ public class CORSSupport implements Service {
     private final Map<String, CrossOriginConfig> crossOriginConfigs;
 
     private CORSSupport(Builder builder) {
-        crossOriginConfigs = builder.configs();
+        crossOriginConfigs = builder.crossOriginConfigs();
     }
 
     @Override
@@ -154,9 +155,11 @@ public class CORSSupport implements Service {
          *
          * @return list of CrossOriginConfig instances, each describing a path and its associated constraints or permissions
          */
-        Map<String, CrossOriginConfig> configs() {
-            return corsConfig.map(c -> c.as(new CrossOriginConfigMapper()).get())
+        Map<String, CrossOriginConfig> crossOriginConfigs() {
+            Map<String, CrossOriginConfig> result = corsConfig.map(c -> c.as(new CrossOriginConfigMapper()).get())
                          .orElse(Collections.emptyMap());
+            result.putAll(crossOrigins);
+            return result;
         }
 
         /**
@@ -167,7 +170,7 @@ public class CORSSupport implements Service {
          * @return updated builder
          */
         public Builder addCrossOrigin(String path, CrossOriginConfig crossOrigin) {
-            crossOrigins.put(path, crossOrigin);
+            crossOrigins.put(normalize(path), crossOrigin);
             return this;
         }
 
