@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019,2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,8 @@ import io.grpc.Metadata;
 import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
+import org.hamcrest.CoreMatchers;
+import org.hamcrest.MatcherAssert;
 import org.jboss.weld.junit5.WeldInitiator;
 import org.jboss.weld.junit5.WeldJunit5Extension;
 import org.jboss.weld.junit5.WeldSetup;
@@ -52,7 +54,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 @ExtendWith(WeldJunit5Extension.class)
 @SuppressWarnings("unchecked")
-public class InterceptorsIT {
+public class InterceptorsTest {
 
     @WeldSetup
     public WeldInitiator weld = WeldInitiator.of(ServerInterceptorOne.class,
@@ -76,8 +78,8 @@ public class InterceptorsIT {
                 .stream()
                 .anyMatch(interceptor -> ServerInterceptorOne.class.isAssignableFrom(interceptor.getClass()));
 
-        assertThat(hasInterceptor, is(true));
-        assertThat(sizeOf(descriptor.method("foo").interceptors()), is(0));
+        MatcherAssert.assertThat(hasInterceptor, CoreMatchers.is(true));
+        MatcherAssert.assertThat(sizeOf(descriptor.method("foo").interceptors()), CoreMatchers.is(0));
     }
 
     @Test
@@ -86,8 +88,8 @@ public class InterceptorsIT {
         GrpcServiceBuilder builder = GrpcServiceBuilder.create(InterceptedServiceTwo.class, beanManager);
         ServiceDescriptor descriptor = builder.build();
 
-        assertThat(sizeOf(descriptor.interceptors()), is(0));
-        assertThat(sizeOf(descriptor.method("bar").interceptors()), is(0));
+        MatcherAssert.assertThat(sizeOf(descriptor.interceptors()), CoreMatchers.is(0));
+        MatcherAssert.assertThat(sizeOf(descriptor.method("bar").interceptors()), CoreMatchers.is(0));
 
         MethodDescriptor<?, ?> methodDescriptor = descriptor.method("foo");
         boolean hasInterceptor = methodDescriptor
@@ -95,7 +97,7 @@ public class InterceptorsIT {
                 .stream()
                 .anyMatch(interceptor -> ServerInterceptorTwo.class.isAssignableFrom(interceptor.getClass()));
 
-        assertThat(hasInterceptor, is(true));
+        MatcherAssert.assertThat(hasInterceptor, CoreMatchers.is(true));
     }
 
     @Test
@@ -108,7 +110,7 @@ public class InterceptorsIT {
                 .stream()
                 .anyMatch(interceptor -> ServerInterceptorOne.class.isAssignableFrom(interceptor.getClass()));
 
-        assertThat(hasServiceInterceptor, is(true));
+        MatcherAssert.assertThat(hasServiceInterceptor, CoreMatchers.is(true));
 
         MethodDescriptor<?, ?> methodDescriptor = descriptor.method("foo");
         boolean hasMethodInterceptor = methodDescriptor
@@ -116,9 +118,9 @@ public class InterceptorsIT {
                 .stream()
                 .anyMatch(interceptor -> ServerInterceptorTwo.class.isAssignableFrom(interceptor.getClass()));
 
-        assertThat(hasMethodInterceptor, is(true));
+        MatcherAssert.assertThat(hasMethodInterceptor, CoreMatchers.is(true));
 
-        assertThat(sizeOf(descriptor.method("bar").interceptors()), is(0));
+        MatcherAssert.assertThat(sizeOf(descriptor.method("bar").interceptors()), CoreMatchers.is(0));
     }
 
     @Test
@@ -131,8 +133,8 @@ public class InterceptorsIT {
                 .stream()
                 .anyMatch(interceptor -> ServerInterceptorFour.class.isAssignableFrom(interceptor.getClass()));
 
-        assertThat(hasInterceptor, is(true));
-        assertThat(sizeOf(descriptor.method("foo").interceptors()), is(0));
+        MatcherAssert.assertThat(hasInterceptor, CoreMatchers.is(true));
+        MatcherAssert.assertThat(sizeOf(descriptor.method("foo").interceptors()), CoreMatchers.is(0));
     }
 
     @Test
@@ -150,9 +152,9 @@ public class InterceptorsIT {
                 .stream()
                 .anyMatch(interceptor -> ServerInterceptorTwo.class.isAssignableFrom(interceptor.getClass()));
 
-        assertThat(hasInterceptorOne, is(true));
-        assertThat(hasInterceptorTwo, is(true));
-        assertThat(sizeOf(descriptor.method("foo").interceptors()), is(0));
+        MatcherAssert.assertThat(hasInterceptorOne, CoreMatchers.is(true));
+        MatcherAssert.assertThat(hasInterceptorTwo, CoreMatchers.is(true));
+        MatcherAssert.assertThat(sizeOf(descriptor.method("foo").interceptors()), CoreMatchers.is(0));
     }
 
     @Test
@@ -161,7 +163,7 @@ public class InterceptorsIT {
         GrpcServiceBuilder builder = GrpcServiceBuilder.create(InterceptedServiceSix.class, beanManager);
         ServiceDescriptor descriptor = builder.build();
 
-        assertThat(sizeOf(descriptor.interceptors()), is(0));
+        MatcherAssert.assertThat(sizeOf(descriptor.interceptors()), CoreMatchers.is(0));
 
         PriorityBag<ServerInterceptor> interceptors = descriptor.method("foo").interceptors();
         boolean hasInterceptorOne = interceptors
@@ -172,8 +174,8 @@ public class InterceptorsIT {
                 .stream()
                 .anyMatch(interceptor -> ServerInterceptorTwo.class.isAssignableFrom(interceptor.getClass()));
 
-        assertThat(hasInterceptorOne, is(true));
-        assertThat(hasInterceptorTwo, is(true));
+        MatcherAssert.assertThat(hasInterceptorOne, CoreMatchers.is(true));
+        MatcherAssert.assertThat(hasInterceptorTwo, CoreMatchers.is(true));
     }
 
     @Test
@@ -187,8 +189,8 @@ public class InterceptorsIT {
                 .stream()
                 .anyMatch(interceptor -> ServerInterceptorFive.class.isAssignableFrom(interceptor.getClass()));
 
-        assertThat(hasInterceptor, is(true));
-        assertThat(sizeOf(descriptor.method("foo").interceptors()), is(0));
+        MatcherAssert.assertThat(hasInterceptor, CoreMatchers.is(true));
+        MatcherAssert.assertThat(sizeOf(descriptor.method("foo").interceptors()), CoreMatchers.is(0));
     }
 
     @Test
@@ -197,14 +199,14 @@ public class InterceptorsIT {
         GrpcServiceBuilder builder = GrpcServiceBuilder.create(InterceptedServiceEight.class, beanManager);
         ServiceDescriptor descriptor = builder.build();
 
-        assertThat(sizeOf(descriptor.interceptors()), is(0));
+        MatcherAssert.assertThat(sizeOf(descriptor.interceptors()), CoreMatchers.is(0));
 
         PriorityBag<ServerInterceptor> interceptors = descriptor.method("foo").interceptors();
         boolean hasInterceptor = interceptors
                 .stream()
                 .anyMatch(interceptor -> ServerInterceptorFive.class.isAssignableFrom(interceptor.getClass()));
 
-        assertThat(hasInterceptor, is(true));
+        MatcherAssert.assertThat(hasInterceptor, CoreMatchers.is(true));
     }
 
 

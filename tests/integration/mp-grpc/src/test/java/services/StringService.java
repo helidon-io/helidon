@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.stream.Stream;
 
 import javax.enterprise.context.ApplicationScoped;
 
+import io.helidon.grpc.core.ResponseHelper;
 import io.helidon.grpc.examples.common.Strings.StringMessage;
 import io.helidon.grpc.server.CollectingObserver;
 import io.helidon.microprofile.grpc.core.Bidirectional;
@@ -47,20 +48,20 @@ public class StringService {
     @Counted
     @Unary(name = "Upper")
     public void upper(StringMessage request, StreamObserver<StringMessage> observer) {
-        complete(observer, response(request.getText().toUpperCase()));
+        ResponseHelper.complete(observer, response(request.getText().toUpperCase()));
     }
 
     @Metered
     @Unary(name = "Lower")
     public void lower(StringMessage request, StreamObserver<StringMessage> observer) {
-        complete(observer, response(request.getText().toLowerCase()));
+        ResponseHelper.complete(observer, response(request.getText().toLowerCase()));
     }
 
     @Timed
     @ServerStreaming(name = "Split")
     public void split(StringMessage request, StreamObserver<StringMessage> observer) {
         String[] parts = request.getText().split(" ");
-        stream(observer, Stream.of(parts).map(this::response));
+        ResponseHelper.stream(observer, Stream.of(parts).map(this::response));
     }
 
     @ClientStreaming(name = "Join")

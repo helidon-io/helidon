@@ -62,8 +62,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * microprofile metrics annotations so they should automatically generate the correct metrics.
  */
 @Disabled
-public class MetricsIT {
-    private static final Logger LOGGER = Logger.getLogger(MetricsIT.class.getName());
+public class MetricsTest {
+    private static final Logger LOGGER = Logger.getLogger(MetricsTest.class.getName());
 
     private static Server server;
 
@@ -73,13 +73,13 @@ public class MetricsIT {
 
     private static Channel channel;
 
-    private static StringServiceGrpc.StringServiceBlockingStub sringStub;
+    private static StringServiceGrpc.StringServiceBlockingStub stringStub;
 
     private static Instance<Object> instance;
 
     @BeforeAll
     public static void startServer() throws Exception {
-        LogManager.getLogManager().readConfiguration(MetricsIT.class.getResourceAsStream("/logging.properties"));
+        LogManager.getLogManager().readConfiguration(MetricsTest.class.getResourceAsStream("/logging.properties"));
 
         server = Server.create().start();
         beanManager = CDI.current().getBeanManager();
@@ -97,7 +97,7 @@ public class MetricsIT {
                                        .usePlaintext()
                                        .build();
 
-        sringStub = StringServiceGrpc.newBlockingStub(channel);
+        stringStub = StringServiceGrpc.newBlockingStub(channel);
     }
 
     @AfterAll
@@ -116,7 +116,7 @@ public class MetricsIT {
         int count = json.getInt(StringService.class.getName() + ".upper");
 
         assertThat(count, is(0));
-        sringStub.upper(StringMessage.newBuilder().setText("foo").build());
+        stringStub.upper(StringMessage.newBuilder().setText("foo").build());
 
         json = getMetrics();
         count = json.getInt(StringService.class.getName() + ".upper");
@@ -140,7 +140,7 @@ public class MetricsIT {
         assertThat(meanRate, is(notNullValue()));
         assertThat(meanRate.doubleValue(), is(0.0));
 
-        sringStub.lower(StringMessage.newBuilder().setText("FOO").build());
+        stringStub.lower(StringMessage.newBuilder().setText("FOO").build());
 
         json = getMetrics();
         meter = json.getJsonObject(StringService.class.getName() + ".lower");
@@ -171,7 +171,7 @@ public class MetricsIT {
         assertThat(count, is(0));
         assertThat(min, is(0));
 
-        Iterator<StringMessage> iterator = sringStub.split(StringMessage.newBuilder().setText("A B C").build());
+        Iterator<StringMessage> iterator = stringStub.split(StringMessage.newBuilder().setText("A B C").build());
         while (iterator.hasNext()) {
             iterator.next();
         }

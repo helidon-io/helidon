@@ -40,6 +40,8 @@ import io.helidon.microprofile.server.Server;
 import io.grpc.Channel;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.stub.StreamObserver;
+import org.hamcrest.CoreMatchers;
+import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -51,7 +53,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Test to verify that {@link GrpcServerCdiExtension} starts the gRPC server.
  */
-public class GrpcServerCdiExtensionIT {
+public class GrpcServerCdiExtensionTest {
 
     private static Server server;
 
@@ -76,51 +78,51 @@ public class GrpcServerCdiExtensionIT {
                 .select(GrpcServerCdiExtension.ServerProducer.class);
 
         // verify that the GrpcServerCdiExtension.ServerProducer producer bean is registered
-        assertThat(instance.isResolvable(), is(true));
+        MatcherAssert.assertThat(instance.isResolvable(), CoreMatchers.is(true));
 
         // obtain the started server from the producer
         GrpcServer grpcServer = instance.get().server();
-        assertThat(grpcServer, is(notNullValue()));
-        assertThat(grpcServer.isRunning(), is(true));
+        MatcherAssert.assertThat(grpcServer, CoreMatchers.is(CoreMatchers.notNullValue()));
+        MatcherAssert.assertThat(grpcServer.isRunning(), CoreMatchers.is(true));
 
         // verify that the services are deployed
         Map<String, ServiceDescriptor> services = grpcServer.services();
         // UnaryService should have been discovered by CDI
-        assertThat(services.get("UnaryService"), is(notNullValue()));
+        MatcherAssert.assertThat(services.get("UnaryService"), CoreMatchers.is(CoreMatchers.notNullValue()));
         // ServerStreamingService loaded by ExtensionOne discovered by CDI
-        assertThat(services.get("ServerStreamingService"), is(notNullValue()));
+        MatcherAssert.assertThat(services.get("ServerStreamingService"), CoreMatchers.is(CoreMatchers.notNullValue()));
         // TestService loaded by ExtensionTwo loaded by the ServiceLoader
-        assertThat(services.get("TestService"), is(notNullValue()));
+        MatcherAssert.assertThat(services.get("TestService"), CoreMatchers.is(CoreMatchers.notNullValue()));
     }
 
     @Test
     public void shouldInjectGrpcServer() {
         Instance<TestBean> instance = beanManager.createInstance().select(TestBean.class);
-        assertThat(instance.isResolvable(), is(true));
+        MatcherAssert.assertThat(instance.isResolvable(), CoreMatchers.is(true));
 
         TestBean bean = instance.get();
         // strangely if we try to access the server field directly it will be null!
-        assertThat(bean.server(), is(notNullValue()));
+        MatcherAssert.assertThat(bean.server(), CoreMatchers.is(CoreMatchers.notNullValue()));
     }
 
     @Test
     public void shouldInjectInProcessChannel() {
         Instance<TestBean> instance = beanManager.createInstance().select(TestBean.class);
-        assertThat(instance.isResolvable(), is(true));
+        MatcherAssert.assertThat(instance.isResolvable(), CoreMatchers.is(true));
 
         TestBean bean = instance.get();
         // strangely if we try to access the channel field directly it will be null!
-        assertThat(bean.channel(), is(notNullValue()));
+        MatcherAssert.assertThat(bean.channel(), CoreMatchers.is(CoreMatchers.notNullValue()));
     }
 
     @Test
     public void shouldInjectInProcessChannelBuilder() {
         Instance<TestBean> instance = beanManager.createInstance().select(TestBean.class);
-        assertThat(instance.isResolvable(), is(true));
+        MatcherAssert.assertThat(instance.isResolvable(), CoreMatchers.is(true));
 
         TestBean bean = instance.get();
         // strangely if we try to access the builder field directly it will be null!
-        assertThat(bean.builder(), is(notNullValue()));
+        MatcherAssert.assertThat(bean.builder(), CoreMatchers.is(CoreMatchers.notNullValue()));
     }
 
 

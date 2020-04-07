@@ -35,6 +35,7 @@ import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Metered;
 import org.eclipse.microprofile.metrics.annotation.Timed;
+import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -45,7 +46,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsEmptyIterable.emptyIterable;
 
 
-public class MetricsConfigurerIT {
+public class MetricsConfigurerTest {
 
     private static MetricRegistry registry;
 
@@ -70,7 +71,7 @@ public class MetricsConfigurerIT {
         assertThat(serviceInterceptors, is(emptyIterable()));
         assertThat(methodInterceptors.size(), is(1));
         assertThat(methodInterceptors.get(0), is(instanceOf(GrpcMetrics.class)));
-        assertThat(((GrpcMetrics) methodInterceptors.get(0)).metricType(), is(MetricType.COUNTER));
+        MatcherAssert.assertThat(((GrpcMetrics) methodInterceptors.get(0)).metricType(), is(MetricType.COUNTER));
         assertThat(registry.getCounters().get(new MetricID(ServiceOne.class.getName() + ".counted")), is(notNullValue()));
     }
 
@@ -90,7 +91,7 @@ public class MetricsConfigurerIT {
         assertThat(serviceInterceptors, is(emptyIterable()));
         assertThat(methodInterceptors.size(), is(1));
         assertThat(methodInterceptors.get(0), is(instanceOf(GrpcMetrics.class)));
-        assertThat(((GrpcMetrics) methodInterceptors.get(0)).metricType(), is(MetricType.METERED));
+        MatcherAssert.assertThat(((GrpcMetrics) methodInterceptors.get(0)).metricType(), is(MetricType.METERED));
         assertThat(registry.getMeters().get(new MetricID(ServiceOne.class.getName() + ".metered")), is(notNullValue()));
     }
 
@@ -110,7 +111,7 @@ public class MetricsConfigurerIT {
         assertThat(serviceInterceptors, is(emptyIterable()));
         assertThat(methodInterceptors.size(), is(1));
         assertThat(methodInterceptors.get(0), is(instanceOf(GrpcMetrics.class)));
-        assertThat(((GrpcMetrics) methodInterceptors.get(0)).metricType(), is(MetricType.TIMER));
+        MatcherAssert.assertThat(((GrpcMetrics) methodInterceptors.get(0)).metricType(), is(MetricType.TIMER));
         assertThat(registry.getTimers().get(new MetricID(ServiceOne.class.getName() + ".timed")), is(notNullValue()));
     }
 
@@ -130,7 +131,7 @@ public class MetricsConfigurerIT {
         assertThat(serviceInterceptors, is(emptyIterable()));
         assertThat(methodInterceptors.size(), is(1));
         assertThat(methodInterceptors.get(0), is(instanceOf(GrpcMetrics.class)));
-        assertThat(((GrpcMetrics) methodInterceptors.get(0)).metricType(), is(MetricType.COUNTER));
+        MatcherAssert.assertThat(((GrpcMetrics) methodInterceptors.get(0)).metricType(), is(MetricType.COUNTER));
         assertThat(registry.getCounters().get(new MetricID(ServiceThree.class.getName() + ".foo")), is(notNullValue()));
     }
 
