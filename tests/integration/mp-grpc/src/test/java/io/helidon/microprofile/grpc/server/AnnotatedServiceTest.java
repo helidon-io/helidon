@@ -50,13 +50,16 @@ import io.helidon.microprofile.grpc.server.test.UnaryServiceGrpc;
 import io.grpc.Channel;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.stub.StreamObserver;
-import org.hamcrest.CoreMatchers;
-import org.hamcrest.MatcherAssert;
+
 import org.hamcrest.collection.IsIterableContainingInOrder;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Functional tests to verify the various server side call handlers.
@@ -104,7 +107,7 @@ public class AnnotatedServiceTest {
         UnaryServiceGrpc.UnaryServiceBlockingStub  stub = UnaryServiceGrpc.newBlockingStub(channel);
         Services.TestResponse response = stub.requestResponse(Services.TestRequest.newBuilder().setMessage("Foo").build());
 
-        MatcherAssert.assertThat(response.getMessage(), CoreMatchers.is("Foo"));
+        assertThat(response.getMessage(), is("Foo"));
     }
 
     @Test
@@ -112,7 +115,7 @@ public class AnnotatedServiceTest {
         UnaryServiceGrpc.UnaryServiceBlockingStub  stub = UnaryServiceGrpc.newBlockingStub(channel);
         Services.TestResponse response = stub.responseOnly(Services.Empty.getDefaultInstance());
 
-        MatcherAssert.assertThat(response.getMessage(), CoreMatchers.is("Foo"));
+        assertThat(response.getMessage(), is("Foo"));
     }
 
     @Test
@@ -120,7 +123,7 @@ public class AnnotatedServiceTest {
         UnaryServiceGrpc.UnaryServiceBlockingStub  stub = UnaryServiceGrpc.newBlockingStub(channel);
         Services.Empty response = stub.requestNoResponse(TestRequest.newBuilder().setMessage("Foo").build());
 
-        MatcherAssert.assertThat(response, CoreMatchers.is(CoreMatchers.notNullValue()));
+        assertThat(response, is(notNullValue()));
     }
 
     @Test
@@ -128,7 +131,7 @@ public class AnnotatedServiceTest {
         UnaryServiceGrpc.UnaryServiceBlockingStub  stub = UnaryServiceGrpc.newBlockingStub(channel);
         Services.Empty response = stub.noRequestNoResponse(Services.Empty.getDefaultInstance());
 
-        MatcherAssert.assertThat(response, CoreMatchers.is(CoreMatchers.notNullValue()));
+        assertThat(response, is(notNullValue()));
     }
 
     @Test
@@ -136,7 +139,7 @@ public class AnnotatedServiceTest {
         UnaryServiceGrpc.UnaryServiceBlockingStub  stub = UnaryServiceGrpc.newBlockingStub(channel);
         Services.TestResponse response = stub.futureResponse(TestRequest.newBuilder().setMessage("Foo").build());
 
-        MatcherAssert.assertThat(response.getMessage(), CoreMatchers.is("Foo"));
+        assertThat(response.getMessage(), is("Foo"));
     }
 
     @Test
@@ -144,7 +147,7 @@ public class AnnotatedServiceTest {
         UnaryServiceGrpc.UnaryServiceBlockingStub  stub = UnaryServiceGrpc.newBlockingStub(channel);
         Services.TestResponse response = stub.futureResponseNoRequest(Services.Empty.getDefaultInstance());
 
-        MatcherAssert.assertThat(response.getMessage(), CoreMatchers.is("Foo"));
+        assertThat(response.getMessage(), is("Foo"));
     }
 
     @Test
@@ -152,7 +155,7 @@ public class AnnotatedServiceTest {
         UnaryServiceGrpc.UnaryServiceBlockingStub  stub = UnaryServiceGrpc.newBlockingStub(channel);
         Services.TestResponse response = stub.unary(TestRequest.newBuilder().setMessage("Foo").build());
 
-        MatcherAssert.assertThat(response.getMessage(), CoreMatchers.is("Foo"));
+        assertThat(response.getMessage(), is("Foo"));
     }
 
     @Test
@@ -160,7 +163,7 @@ public class AnnotatedServiceTest {
         UnaryServiceGrpc.UnaryServiceBlockingStub  stub = UnaryServiceGrpc.newBlockingStub(channel);
         Services.TestResponse response = stub.unaryNoRequest(Services.Empty.getDefaultInstance());
 
-        MatcherAssert.assertThat(response.getMessage(), CoreMatchers.is("Foo"));
+        assertThat(response.getMessage(), is("Foo"));
     }
 
 
@@ -169,7 +172,7 @@ public class AnnotatedServiceTest {
         UnaryServiceGrpc.UnaryServiceBlockingStub  stub = UnaryServiceGrpc.newBlockingStub(channel);
         Services.TestResponse response = stub.unaryFuture(TestRequest.newBuilder().setMessage("Foo").build());
 
-        MatcherAssert.assertThat(response.getMessage(), CoreMatchers.is("Foo"));
+        assertThat(response.getMessage(), is("Foo"));
     }
 
     @Test
@@ -177,7 +180,7 @@ public class AnnotatedServiceTest {
         UnaryServiceGrpc.UnaryServiceBlockingStub  stub = UnaryServiceGrpc.newBlockingStub(channel);
         Services.TestResponse response = stub.unaryFutureNoRequest(Services.Empty.getDefaultInstance());
 
-        MatcherAssert.assertThat(response.getMessage(), CoreMatchers.is("Foo"));
+        assertThat(response.getMessage(), is("Foo"));
     }
 
     // ----- server streaming  -----------------------------------------------
@@ -187,7 +190,7 @@ public class AnnotatedServiceTest {
         ServerStreamingServiceGrpc.ServerStreamingServiceBlockingStub stub = ServerStreamingServiceGrpc.newBlockingStub(channel);
         Iterator<TestResponse> iterator = stub.streaming(TestRequest.newBuilder().setMessage("A B C D").build());
 
-        MatcherAssert.assertThat(toList(iterator), IsIterableContainingInOrder.contains("A", "B", "C", "D"));
+        assertThat(toList(iterator), IsIterableContainingInOrder.contains("A", "B", "C", "D"));
     }
 
     @Test
@@ -195,7 +198,7 @@ public class AnnotatedServiceTest {
         ServerStreamingServiceGrpc.ServerStreamingServiceBlockingStub stub = ServerStreamingServiceGrpc.newBlockingStub(channel);
         Iterator<TestResponse> iterator = stub.streamingNoRequest(Services.Empty.getDefaultInstance());
 
-        MatcherAssert.assertThat(toList(iterator), IsIterableContainingInOrder.contains("A", "B", "C", "D"));
+        assertThat(toList(iterator), IsIterableContainingInOrder.contains("A", "B", "C", "D"));
     }
 
 
@@ -204,7 +207,7 @@ public class AnnotatedServiceTest {
         ServerStreamingServiceGrpc.ServerStreamingServiceBlockingStub stub = ServerStreamingServiceGrpc.newBlockingStub(channel);
         Iterator<TestResponse> iterator = stub.stream(TestRequest.newBuilder().setMessage("A B C D").build());
 
-        MatcherAssert.assertThat(toList(iterator), IsIterableContainingInOrder.contains("A", "B", "C", "D"));
+        assertThat(toList(iterator), IsIterableContainingInOrder.contains("A", "B", "C", "D"));
     }
 
     @Test
@@ -212,7 +215,7 @@ public class AnnotatedServiceTest {
         ServerStreamingServiceGrpc.ServerStreamingServiceBlockingStub stub = ServerStreamingServiceGrpc.newBlockingStub(channel);
         Iterator<TestResponse> iterator = stub.streamNoRequest(Services.Empty.getDefaultInstance());
 
-        MatcherAssert.assertThat(toList(iterator), IsIterableContainingInOrder.contains("A", "B", "C", "D"));
+        assertThat(toList(iterator), IsIterableContainingInOrder.contains("A", "B", "C", "D"));
     }
 
     // ----- client streaming  ----------------------------------------------
@@ -256,7 +259,7 @@ public class AnnotatedServiceTest {
                 .assertNoErrors()
                 .assertValueCount(4);
 
-        MatcherAssert.assertThat(observer.values().stream().map(TestResponse::getMessage).collect(Collectors.toList()),
+        assertThat(observer.values().stream().map(TestResponse::getMessage).collect(Collectors.toList()),
                                  IsIterableContainingInOrder.contains("A", "B", "C", "D"));
     }
 
