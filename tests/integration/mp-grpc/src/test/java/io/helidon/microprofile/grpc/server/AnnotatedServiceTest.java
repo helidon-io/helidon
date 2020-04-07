@@ -51,7 +51,6 @@ import io.grpc.Channel;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.stub.StreamObserver;
 
-import org.hamcrest.collection.IsIterableContainingInOrder;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -60,6 +59,7 @@ import org.mockito.Mockito;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
 
 /**
  * Functional tests to verify the various server side call handlers.
@@ -190,7 +190,7 @@ public class AnnotatedServiceTest {
         ServerStreamingServiceGrpc.ServerStreamingServiceBlockingStub stub = ServerStreamingServiceGrpc.newBlockingStub(channel);
         Iterator<TestResponse> iterator = stub.streaming(TestRequest.newBuilder().setMessage("A B C D").build());
 
-        assertThat(toList(iterator), IsIterableContainingInOrder.contains("A", "B", "C", "D"));
+        assertThat(toList(iterator), contains("A", "B", "C", "D"));
     }
 
     @Test
@@ -198,7 +198,7 @@ public class AnnotatedServiceTest {
         ServerStreamingServiceGrpc.ServerStreamingServiceBlockingStub stub = ServerStreamingServiceGrpc.newBlockingStub(channel);
         Iterator<TestResponse> iterator = stub.streamingNoRequest(Services.Empty.getDefaultInstance());
 
-        assertThat(toList(iterator), IsIterableContainingInOrder.contains("A", "B", "C", "D"));
+        assertThat(toList(iterator), contains("A", "B", "C", "D"));
     }
 
 
@@ -207,7 +207,7 @@ public class AnnotatedServiceTest {
         ServerStreamingServiceGrpc.ServerStreamingServiceBlockingStub stub = ServerStreamingServiceGrpc.newBlockingStub(channel);
         Iterator<TestResponse> iterator = stub.stream(TestRequest.newBuilder().setMessage("A B C D").build());
 
-        assertThat(toList(iterator), IsIterableContainingInOrder.contains("A", "B", "C", "D"));
+        assertThat(toList(iterator), contains("A", "B", "C", "D"));
     }
 
     @Test
@@ -215,7 +215,7 @@ public class AnnotatedServiceTest {
         ServerStreamingServiceGrpc.ServerStreamingServiceBlockingStub stub = ServerStreamingServiceGrpc.newBlockingStub(channel);
         Iterator<TestResponse> iterator = stub.streamNoRequest(Services.Empty.getDefaultInstance());
 
-        assertThat(toList(iterator), IsIterableContainingInOrder.contains("A", "B", "C", "D"));
+        assertThat(toList(iterator), contains("A", "B", "C", "D"));
     }
 
     // ----- client streaming  ----------------------------------------------
@@ -260,7 +260,7 @@ public class AnnotatedServiceTest {
                 .assertValueCount(4);
 
         assertThat(observer.values().stream().map(TestResponse::getMessage).collect(Collectors.toList()),
-                                 IsIterableContainingInOrder.contains("A", "B", "C", "D"));
+                                 contains("A", "B", "C", "D"));
     }
 
     // ----- helper methods -------------------------------------------------
