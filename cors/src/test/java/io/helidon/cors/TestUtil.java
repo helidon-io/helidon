@@ -53,15 +53,15 @@ public class TestUtil {
 
     static Routing.Builder prepRouting() {
         CrossOriginConfig cors3COC= CrossOriginConfig.Builder.create()
-                .value(new String[] {"http://foo.bar", "http://bar.foo"})
-                .allowMethods(new String[] {"DELETE", "PUT"})
+                .allowOrigins("http://foo.bar", "http://bar.foo")
+                .allowMethods("DELETE", "PUT")
                 .build();
 
         /*
          * Use the default config for the service at "/greet."
          */
         Config config = minimalConfig();
-        CORSSupport.Builder corsSupportBuilder = CORSSupport.builder().config(config.get(CrossOriginHelper.CORS_CONFIG_KEY));
+        CORSSupport.Builder corsSupportBuilder = CORSSupport.builder().config(config.get(CrossOriginConfig.CORS_CONFIG_KEY));
         corsSupportBuilder.addCrossOrigin(SERVICE_3.path(), cors3COC);
 
         /*
@@ -69,7 +69,7 @@ public class TestUtil {
          */
         Config twoCORSConfig = minimalConfig(ConfigSources.classpath("twoCORS.yaml"));
         CORSSupport.Builder twoCORSSupportBuilder =
-                CORSSupport.builder().config(twoCORSConfig.get(CrossOriginHelper.CORS_CONFIG_KEY));
+                CORSSupport.builder().config(twoCORSConfig.get(CrossOriginConfig.CORS_CONFIG_KEY));
 
         CORSSupport greetingCORSSupport = corsSupportBuilder.build();
         CORSSupport otherGreetingCORSSupport = twoCORSSupportBuilder.build();

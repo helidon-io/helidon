@@ -23,8 +23,8 @@ import java.util.function.Function;
 
 import io.helidon.config.Config;
 
-import static io.helidon.cors.CrossOriginHelper.normalize;
-import static io.helidon.cors.CrossOriginHelper.parseHeader;
+import static io.helidon.cors.CrossOriginHelperInternal.normalize;
+import static io.helidon.cors.CrossOriginHelperInternal.parseHeader;
 
 /**
  * Class CrossOriginConfig.
@@ -67,8 +67,12 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
      * Header Access-Control-Request-Method.
      */
     public static final String ACCESS_CONTROL_REQUEST_METHOD = "Access-Control-Request-Method";
+    /**
+     * Key used for retrieving CORS-related configuration.
+     */
+    public static final String CORS_CONFIG_KEY = "cors";
 
-    private final String[] value;
+    private final String[] allowOrigins;
     private final String[] allowHeaders;
     private final String[] exposeHeaders;
     private final String[] allowMethods;
@@ -76,7 +80,7 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
     private final long maxAge;
 
     private CrossOriginConfig(Builder builder) {
-        this.value = builder.value;
+        this.allowOrigins = builder.origins;
         this.allowHeaders = builder.allowHeaders;
         this.exposeHeaders = builder.exposeHeaders;
         this.allowMethods = builder.allowMethods;
@@ -88,8 +92,8 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
      *
      * @return origins
      */
-    public String[] value() {
-        return copyOf(value);
+    public String[] allowOrigins() {
+        return copyOf(allowOrigins);
     }
 
     /**
@@ -143,7 +147,7 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
 
         private static final String[] ALLOW_ALL = {"*"};
 
-        private String[] value = ALLOW_ALL;
+        private String[] origins = ALLOW_ALL;
         private String[] allowHeaders = ALLOW_ALL;
         private String[] exposeHeaders;
         private String[] allowMethods = ALLOW_ALL;
@@ -162,13 +166,13 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
         }
 
         /**
-         * Sets the values (origins).
+         * Sets the allowOrigins.
          *
-         * @param value the origin value
+         * @param origins the origin value(s)
          * @return updated builder
          */
-        public Builder value(String[] value) {
-            this.value = copyOf(value);
+        public Builder allowOrigins(String... origins) {
+            this.origins = copyOf(origins);
             return this;
         }
 
@@ -178,7 +182,7 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
          * @param allowHeaders the allow headers value(s)
          * @return updated builder
          */
-        public Builder allowHeaders(String[] allowHeaders) {
+        public Builder allowHeaders(String... allowHeaders) {
             this.allowHeaders = copyOf(allowHeaders);
             return this;
         }
@@ -189,7 +193,7 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
          * @param exposeHeaders the expose headers value(s)
          * @return updated builder
          */
-        public Builder exposeHeaders(String[] exposeHeaders) {
+        public Builder exposeHeaders(String... exposeHeaders) {
             this.exposeHeaders = copyOf(exposeHeaders);
             return this;
         }
@@ -200,7 +204,7 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
          * @param allowMethods the allow method value(s)
          * @return updated builder
          */
-        public Builder allowMethods(String[] allowMethods) {
+        public Builder allowMethods(String... allowMethods) {
             this.allowMethods = copyOf(allowMethods);
             return this;
         }
@@ -250,7 +254,7 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
                 Builder builder = new Builder();
                 String path = item.get("path-prefix").as(String.class).orElse(null);
                 item.get("allow-origins").asList(String.class).ifPresent(
-                        s -> builder.value(parseHeader(s).toArray(new String[]{})));
+                        s -> builder.allowOrigins(parseHeader(s).toArray(new String[]{})));
                 item.get("allow-methods").asList(String.class).ifPresent(
                         s -> builder.allowMethods(parseHeader(s).toArray(new String[]{})));
                 item.get("allow-headers").asList(String.class).ifPresent(

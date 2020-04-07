@@ -21,4 +21,4 @@ cors:
     allow-credentials: true
     max-age: -1
 
-# /cors3 info is excluded from some tests, looking for failures
+# Purposefully exclude /cors1. /cors3 information is added programmatically.

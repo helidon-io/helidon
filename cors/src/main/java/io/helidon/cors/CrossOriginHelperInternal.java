@@ -42,21 +42,19 @@ import static io.helidon.cors.CrossOriginConfig.ACCESS_CONTROL_REQUEST_HEADERS;
 import static io.helidon.cors.CrossOriginConfig.ACCESS_CONTROL_REQUEST_METHOD;
 
 /**
+ * <em>Not for use by developers.</em>
+ * <p>This class is reserved for internal Helidon use. Do not use it from your applications. It might change or vanish at any time
+ * .</p>
  * Centralizes common logic to both SE and MP CORS support for processing requests and preparing responses.
  * <p>
  * To serve both masters, several methods here accept adapters for requests and responses. Both of these are minimal and very
  * specific to the needs of CORS support.
  * </p>
  */
-public class CrossOriginHelper {
+public class CrossOriginHelperInternal {
 
-    private CrossOriginHelper() {
+    private CrossOriginHelperInternal() {
     }
-
-    /**
-     * Key used for retrieving CORS-related configuration.
-     */
-    public static final String CORS_CONFIG_KEY = "cors";
 
     static final String ORIGIN_DENIED = "CORS origin is denied";
     static final String ORIGIN_NOT_IN_ALLOWED_LIST = "CORS origin is not in allowed list";
@@ -316,7 +314,7 @@ public class CrossOriginHelper {
         }
 
         // If enabled but not whitelisted, deny request
-        List<String> allowedOrigins = Arrays.asList(crossOriginOpt.get().value());
+        List<String> allowedOrigins = Arrays.asList(crossOriginOpt.get().allowOrigins());
         if (!allowedOrigins.contains("*") && !contains(originOpt, allowedOrigins, String::equals)) {
             return Optional.of(responseAdapter.forbidden(ORIGIN_NOT_IN_ALLOWED_LIST));
         }
@@ -354,7 +352,7 @@ public class CrossOriginHelper {
                            .header(ACCESS_CONTROL_ALLOW_ORIGIN, origin)
                            .header(Http.Header.VARY, ORIGIN);
         } else {
-            List<String> allowedOrigins = Arrays.asList(crossOrigin.value());
+            List<String> allowedOrigins = Arrays.asList(crossOrigin.allowOrigins());
             responseAdapter.header(ACCESS_CONTROL_ALLOW_ORIGIN, allowedOrigins.contains("*") ? "*" : origin)
                             .header(Http.Header.VARY, ORIGIN);
         }
@@ -400,7 +398,7 @@ public class CrossOriginHelper {
         CrossOriginConfig crossOrigin = crossOriginOpt.get();
 
         // If enabled but not whitelisted, deny request
-        List<String> allowedOrigins = Arrays.asList(crossOrigin.value());
+        List<String> allowedOrigins = Arrays.asList(crossOrigin.allowOrigins());
         if (!allowedOrigins.contains("*") && !contains(originOpt, allowedOrigins, String::equals)) {
             return responseAdapter.forbidden(ORIGIN_NOT_IN_ALLOWED_LIST);
         }

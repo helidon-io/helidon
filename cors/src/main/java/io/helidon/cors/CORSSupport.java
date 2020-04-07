@@ -28,31 +28,33 @@ import io.helidon.common.HelidonFlavor;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.cors.CrossOriginConfig.CrossOriginConfigMapper;
-import io.helidon.cors.CrossOriginHelper.RequestAdapter;
-import io.helidon.cors.CrossOriginHelper.ResponseAdapter;
+import io.helidon.cors.CrossOriginHelperInternal.RequestAdapter;
+import io.helidon.cors.CrossOriginHelperInternal.ResponseAdapter;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 
-import static io.helidon.cors.CrossOriginHelper.CORS_CONFIG_KEY;
-import static io.helidon.cors.CrossOriginHelper.normalize;
-import static io.helidon.cors.CrossOriginHelper.prepareResponse;
-import static io.helidon.cors.CrossOriginHelper.processRequest;
+import static io.helidon.cors.CrossOriginConfig.CORS_CONFIG_KEY;
+import static io.helidon.cors.CrossOriginHelperInternal.normalize;
+import static io.helidon.cors.CrossOriginHelperInternal.prepareResponse;
+import static io.helidon.cors.CrossOriginHelperInternal.processRequest;
 
 /**
  * Provides support for CORS in an application or a built-in Helidon service.
  * <p>
- * The application uses the {@link Builder} to set CORS-related values, including the @{code cors} config node from the
+ * The application uses the {@link Builder} to set CORS-related values, including the {@value CrossOriginConfig#CORS_CONFIG_KEY}
+ * config node from
+ * the
  * application config, if any.
  */
 public class CORSSupport implements Service {
 
     /**
      * Creates a {@code CORSSupport} instance based on the default configuration and any
-     * {@value CrossOriginHelper#CORS_CONFIG_KEY} config node in it.
+     * {@value CrossOriginConfig#CORS_CONFIG_KEY} config node in it.
      *
-     * @return new {@code CORSSupport} instance set up with the "{@value CrossOriginHelper#CORS_CONFIG_KEY}" config from the
+     * @return new {@code CORSSupport} instance set up with the "{@value CrossOriginConfig#CORS_CONFIG_KEY}" config from the
      * default configuration
      */
     public static CORSSupport create() {
@@ -64,7 +66,7 @@ public class CORSSupport implements Service {
      * Creates a {@code CORSSupport} instance based on only configuration.
      *
      * @param config the config node containing CORS-related info; typically obtained by retrieving config using the
-     *               "{@value CrossOriginHelper#CORS_CONFIG_KEY}" key from the application's or component's config
+     *               "{@value CrossOriginConfig#CORS_CONFIG_KEY}" key from the application's or component's config
      * @return configured {@code CORSSupport} instance
      */
     public static CORSSupport create(Config config) {
@@ -140,7 +142,7 @@ public class CORSSupport implements Service {
 
         /**
          * Saves CORS config information derived from the {@code Config}. Typically, the app or component will retrieve the
-         * provided {@code Config} instance from its own config using the key {@value CrossOriginHelper#CORS_CONFIG_KEY}.
+         * provided {@code Config} instance from its own config using the key {@value CrossOriginConfig#CORS_CONFIG_KEY}.
          *
          * @param config the CORS config
          * @return the updated builder
