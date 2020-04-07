@@ -21,7 +21,6 @@ import java.util.stream.Stream;
 
 import javax.enterprise.context.ApplicationScoped;
 
-import io.helidon.grpc.core.ResponseHelper;
 import io.helidon.grpc.examples.common.Strings.StringMessage;
 import io.helidon.grpc.server.CollectingObserver;
 import io.helidon.microprofile.grpc.core.Bidirectional;
@@ -48,20 +47,20 @@ public class StringService {
     @Counted
     @Unary(name = "Upper")
     public void upper(StringMessage request, StreamObserver<StringMessage> observer) {
-        ResponseHelper.complete(observer, response(request.getText().toUpperCase()));
+        complete(observer, response(request.getText().toUpperCase()));
     }
 
     @Metered
     @Unary(name = "Lower")
     public void lower(StringMessage request, StreamObserver<StringMessage> observer) {
-        ResponseHelper.complete(observer, response(request.getText().toLowerCase()));
+        complete(observer, response(request.getText().toLowerCase()));
     }
 
     @Timed
     @ServerStreaming(name = "Split")
     public void split(StringMessage request, StreamObserver<StringMessage> observer) {
         String[] parts = request.getText().split(" ");
-        ResponseHelper.stream(observer, Stream.of(parts).map(this::response));
+        stream(observer, Stream.of(parts).map(this::response));
     }
 
     @ClientStreaming(name = "Join")

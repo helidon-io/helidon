@@ -54,12 +54,13 @@ import io.grpc.stub.StreamObserver;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.mock;
 
 /**
  * Functional tests to verify the various server side call handlers.
@@ -287,9 +288,9 @@ public class AnnotatedServiceTest {
     }
 
     private static ServiceDescriptor descriptor(Class<?> cls) {
-        BeanManager beanManager = Mockito.mock(BeanManager.class);
-        Instance instance = Mockito.mock(Instance.class);
-        Mockito.when(beanManager.createInstance()).thenReturn(instance);
+        BeanManager beanManager = mock(BeanManager.class);
+        Instance instance = mock(Instance.class);
+        when(beanManager.createInstance()).thenReturn(instance);
 
         GrpcServiceBuilder builder = GrpcServiceBuilder.create(cls, beanManager);
 

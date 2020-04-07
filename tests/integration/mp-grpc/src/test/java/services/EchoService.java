@@ -18,7 +18,6 @@ package services;
 
 import javax.enterprise.context.ApplicationScoped;
 
-import io.helidon.grpc.core.ResponseHelper;
 import io.helidon.grpc.server.test.Echo.EchoRequest;
 import io.helidon.grpc.server.test.Echo.EchoResponse;
 import io.helidon.microprofile.grpc.core.RpcService;
@@ -47,6 +46,6 @@ public class EchoService {
     public void echo(EchoRequest request, StreamObserver<EchoResponse> observer) {
         String message = request.getMessage();
         EchoResponse response = EchoResponse.newBuilder().setMessage(message).build();
-        ResponseHelper.complete(observer, response);
+        complete(observer, response);
     }
 }
