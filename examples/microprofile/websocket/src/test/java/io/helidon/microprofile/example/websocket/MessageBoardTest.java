@@ -70,7 +70,7 @@ public class MessageBoardTest {
     @Test
     public void testBoard() throws IOException, DeploymentException, InterruptedException {
         // Post messages using REST resource
-        URI restUri = URI.create("http://localhost:" + server.port() + "/rest/board");
+        URI restUri = URI.create("http://localhost:" + server.port() + "/rest");
         for (String message : messages) {
             Response res = restClient.target(restUri).request().post(Entity.text(message));
             assertThat(res.getStatus(), is(204));
@@ -78,7 +78,7 @@ public class MessageBoardTest {
         }
 
         // Now connect to message board using WS and them back
-        URI websocketUri = URI.create("ws://localhost:" + server.port() + "/websocket/board");
+        URI websocketUri = URI.create("ws://localhost:" + server.port() + "/websocket");
         CountDownLatch messageLatch = new CountDownLatch(messages.length);
         ClientEndpointConfig config = ClientEndpointConfig.Builder.create().build();
 
