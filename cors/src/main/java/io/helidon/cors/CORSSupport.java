@@ -16,7 +16,6 @@
  */
 package io.helidon.cors;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +29,7 @@ import io.helidon.config.Config;
 import io.helidon.cors.CrossOriginConfig.CrossOriginConfigMapper;
 import io.helidon.cors.CrossOriginHelperInternal.RequestAdapter;
 import io.helidon.cors.CrossOriginHelperInternal.ResponseAdapter;
+import io.helidon.webserver.Handler;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
@@ -43,30 +43,26 @@ import static io.helidon.cors.CrossOriginHelperInternal.processRequest;
 /**
  * Provides support for CORS in an application or a built-in Helidon service.
  * <p>
- * The application uses the {@link Builder} to set CORS-related values, including the {@value CrossOriginConfig#CORS_CONFIG_KEY}
- * config node from
- * the
- * application config, if any.
+ * The application uses the {@link Builder} to set CORS-related values.
+ * </p>
  */
-public class CORSSupport implements Service {
+public class CORSSupport implements Service, Handler {
 
     /**
-     * Creates a {@code CORSSupport} instance based on the default configuration and any
-     * {@value CrossOriginConfig#CORS_CONFIG_KEY} config node in it.
+     * Creates a {@code CORSSupport} instance based on only the {@value CrossOriginConfig#CORS_CONFIG_KEY} config node in the
+     * default configuration.
      *
-     * @return new {@code CORSSupport} instance set up with the "{@value CrossOriginConfig#CORS_CONFIG_KEY}" config from the
-     * default configuration
+     * @return new {@code CORSSupport} instance set up default configuration
      */
     public static CORSSupport create() {
-        Config corsConfig = Config.create().get(CORS_CONFIG_KEY);
-        return create(corsConfig);
+        return builder().build();
     }
 
     /**
-     * Creates a {@code CORSSupport} instance based on only configuration.
+     * Creates a {@code CORSSupport} instance based on only the specified configuration.
      *
      * @param config the config node containing CORS-related info; typically obtained by retrieving config using the
-     *               "{@value CrossOriginConfig#CORS_CONFIG_KEY}" key from the application's or component's config
+     *               "{@value CrossOriginConfig#CORS_CONFIG_KEY}" key from some containing configuration source
      * @return configured {@code CORSSupport} instance
      */
     public static CORSSupport create(Config config) {
@@ -96,16 +92,13 @@ public class CORSSupport implements Service {
 
     @Override
     public void update(Routing.Rules rules) {
-        configureCORS(rules);
-    }
-
-    private void configureCORS(Routing.Rules rules) {
         if (!crossOriginConfigs.isEmpty()) {
-            rules.any(this::handleCORS);
+            rules.any(this::accept);
         }
     }
 
-    private void handleCORS(ServerRequest request, ServerResponse response) {
+    @Override
+    public void accept(ServerRequest request, ServerResponse response) {
         RequestAdapter<ServerRequest> requestAdapter = new SERequestAdapter(request);
         ResponseAdapter<ServerResponse> responseAdapter = new SEResponseAdapter(response);
 
@@ -153,13 +146,15 @@ public class CORSSupport implements Service {
         }
 
         /**
-         * Returns CORS-related information that was derived from the app's or component's config node.
+         * Returns CORS-related information supplied to the builder. If no config was supplied to the builder, the builder uses
+         * the {@value CrossOriginConfig#CORS_CONFIG_KEY} node, if any, from the application's config.
          *
          * @return list of CrossOriginConfig instances, each describing a path and its associated constraints or permissions
          */
         Map<String, CrossOriginConfig> crossOriginConfigs() {
-            Map<String, CrossOriginConfig> result = corsConfig.map(c -> c.as(new CrossOriginConfigMapper()).get())
-                         .orElse(Collections.emptyMap());
+            Map<String, CrossOriginConfig> result = corsConfig
+                    .orElse(Config.create().get(CORS_CONFIG_KEY))
+                    .as(new CrossOriginConfigMapper()).get();
             result.putAll(crossOrigins);
             return result;
         }
@@ -174,10 +169,6 @@ public class CORSSupport implements Service {
         public Builder addCrossOrigin(String path, CrossOriginConfig crossOrigin) {
             crossOrigins.put(normalize(path), crossOrigin);
             return this;
-        }
-
-        Map<String, CrossOriginConfig> crossOrigins() {
-            return Collections.unmodifiableMap(crossOrigins);
         }
     }
 

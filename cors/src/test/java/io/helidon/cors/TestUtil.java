@@ -58,10 +58,9 @@ public class TestUtil {
                 .build();
 
         /*
-         * Use the default config for the service at "/greet."
+         * Use the default config for the service at "/greet" and then programmatically add the config for /cors3.
          */
-        Config config = minimalConfig();
-        CORSSupport.Builder corsSupportBuilder = CORSSupport.builder().config(config.get(CrossOriginConfig.CORS_CONFIG_KEY));
+        CORSSupport.Builder corsSupportBuilder = CORSSupport.builder();
         corsSupportBuilder.addCrossOrigin(SERVICE_3.path(), cors3COC);
 
         /*
@@ -81,13 +80,11 @@ public class TestUtil {
     }
 
     private static Config minimalConfig(Supplier<? extends ConfigSource> configSource) {
-        Config.Builder builder = Config.builder()
+        Config.Builder configBuilder = Config.builder()
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource();
-        if (configSource != null) {
-            builder.sources(configSource);
-        }
-        return builder.build();
+        configBuilder.sources(configSource);
+        return configBuilder.build();
     }
 
     private static Config minimalConfig() {
