@@ -32,7 +32,8 @@ import static javax.ws.rs.client.Entity.text;
 import static org.hamcrest.CoreMatchers.is;
 
 /**
- *
+ * A test that mixes Websocket endpoints and REST resources in the same
+ * application.
  */
 public class WebSocketRestEndpointTest extends WebSocketBaseTest {
 
