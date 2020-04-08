@@ -159,10 +159,14 @@ class CrossOriginFilter implements ContainerRequestFilter, ContainerResponseFilt
         @Override
         public Response ok() {
             Response.ResponseBuilder builder = Response.ok();
+            /*
+             * The Helidon CORS support code invokes ok() only for creating a CORS preflight response. In these cases no user
+             * code will have a chance to set headers in the response. That means we can use replaceAll here because the only
+             * headers needed in the response are the ones set using this adapter.
+             */
             builder.replaceAll(headers);
             return builder.build();
         }
-
     }
 
     static Supplier<Optional<CrossOriginConfig>> crossOriginFromAnnotationFinder(ResourceInfo resourceInfo) {
