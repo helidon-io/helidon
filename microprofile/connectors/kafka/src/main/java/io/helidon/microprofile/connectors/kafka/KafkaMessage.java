@@ -16,15 +16,12 @@
 
 package io.helidon.microprofile.connectors.kafka;
 
-import java.util.AbstractMap;
-import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.OffsetAndMetadata;
-import org.apache.kafka.common.TopicPartition;
 import org.eclipse.microprofile.reactive.messaging.Message;
 
 /**
@@ -37,16 +34,23 @@ class KafkaMessage<K, V> implements Message<ConsumerRecord<K, V>> {
 
     private static final Logger LOGGER = Logger.getLogger(KafkaMessage.class.getName());
     private final ConsumerRecord<K, V> consumerRecord;
-    private final Callback<Entry<TopicPartition, OffsetAndMetadata>> callback;
+    private final CompletableFuture<Void> kafkaCommit;
+    private final long millisWaitingTimeout;
+    // ACK is written and read from the same thread. It is not necessary to make it atomic.
+    private boolean ack = false;
 
     /**
      * Kafka specific MP messaging message.
      *
      * @param consumerRecord {@link org.apache.kafka.clients.consumer.ConsumerRecord}
+     * @param kafkaCommit it will complete when Kafka commit is done.
+     * @param millisWaitingTimeout this is the time in milliseconds that the ack will be waiting
+     *        the commit in Kafka. Applies only if autoCommit is false.
      */
-    KafkaMessage(ConsumerRecord<K, V> consumerRecord, Callback<Entry<TopicPartition, OffsetAndMetadata>> callback) {
+    KafkaMessage(ConsumerRecord<K, V> consumerRecord, CompletableFuture<Void> kafkaCommit, long millisWaitingTimeout) {
         this.consumerRecord = consumerRecord;
-        this.callback = callback;
+        this.kafkaCommit = kafkaCommit;
+        this.millisWaitingTimeout = millisWaitingTimeout;
     }
 
     @Override
@@ -56,10 +60,8 @@ class KafkaMessage<K, V> implements Message<ConsumerRecord<K, V>> {
 
     @Override
     public CompletionStage<Void> ack() {
-        return CompletableFuture.runAsync(() -> callback.nofity(
-                new AbstractMap.SimpleEntry<TopicPartition, OffsetAndMetadata>(
-                new TopicPartition(consumerRecord.topic(), consumerRecord.partition()),
-                new OffsetAndMetadata(consumerRecord.offset()))));
+        ack = true;
+        return kafkaCommit.orTimeout(millisWaitingTimeout, TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -71,4 +73,18 @@ class KafkaMessage<K, V> implements Message<ConsumerRecord<K, V>> {
             throw new IllegalArgumentException("Can't unwrap to " + unwrapType.getName());
         }
     }
+
+    boolean isAck() {
+        return ack;
+    }
+
+    @Override
+    public String toString() {
+        return "KafkaMessage [consumerRecord=" + consumerRecord + ", ack=" + ack + "]";
+    }
+
+    CompletableFuture<Void> kafkaCommit(){
+        return kafkaCommit;
+    }
+
 }

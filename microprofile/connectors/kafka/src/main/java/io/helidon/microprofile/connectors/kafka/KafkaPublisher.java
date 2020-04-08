@@ -18,21 +18,24 @@ package io.helidon.microprofile.connectors.kafka;
 
 import java.io.Closeable;
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.UUID;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.common.context.Context;
@@ -62,11 +65,13 @@ class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>>, Closeable {
     private static final Logger LOGGER = Logger.getLogger(KafkaPublisher.class.getName());
     private static final String POLL_TIMEOUT = "poll.timeout";
     private static final String PERIOD_EXECUTIONS = "period.executions";
+    private static final String ENABLE_AUTOCOMMIT = "enable.auto.commit";
+    private static final String ACK_TIMEOUT = "ack.timeout.millis";
+    private static final String LIMIT_NO_ACK = "limit.no.ack";
     private final Lock taskLock = new ReentrantLock();
-    private final PartitionsAssignedLatch partitionsAssignedLatch = new PartitionsAssignedLatch();
     private final Queue<ConsumerRecord<K, V>> backPressureBuffer = new LinkedList<>();
-    private final BlockingQueue<Entry<TopicPartition, OffsetAndMetadata>> pendingCommits =
-            new LinkedBlockingQueue<>();
+    private final Map<TopicPartition, List<KafkaMessage<K, V>>> pendingCommits = new HashMap<>();
+    private final PartitionsAssignedLatch partitionsAssignedLatch = new PartitionsAssignedLatch();
     private final ScheduledExecutorService scheduler;
     private final Consumer<K, V> kafkaConsumer;
     private final AtomicLong requests = new AtomicLong();
@@ -75,14 +80,21 @@ class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>>, Closeable {
     private final List<String> topics;
     private final long periodExecutions;
     private final long pollTimeout;
+    private final boolean autoCommit;
+    private final long ackTimeout;
+    private final int limitNoAck;
 
     private KafkaPublisher(ScheduledExecutorService scheduler, Consumer<K, V> kafkaConsumer,
-            List<String> topics, long pollTimeout, long periodExecutions) {
+            List<String> topics, long pollTimeout, long periodExecutions,
+            boolean autoCommit, long ackTimeout, int limitNoAck) {
         this.scheduler = scheduler;
         this.kafkaConsumer = kafkaConsumer;
         this.topics = topics;
         this.periodExecutions = periodExecutions;
         this.pollTimeout = pollTimeout;
+        this.autoCommit = autoCommit;
+        this.ackTimeout = ackTimeout;
+        this.limitNoAck = limitNoAck;
     }
 
     /**
@@ -98,46 +110,110 @@ class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>>, Closeable {
                 // Need to lock to avoid onClose() is executed meanwhile task is running
                 taskLock.lock();
                 if (!scheduler.isShutdown() && !emiter.isTerminated()) {
-                    if (backPressureBuffer.isEmpty()) {
-                        try {
-                            kafkaConsumer.poll(Duration.ofMillis(pollTimeout)).forEach(backPressureBuffer::add);
-                        } catch (WakeupException e) {
-                            LOGGER.fine("It was requested to stop polling from channel");
+                    int currentNoAck = currentNoAck();
+                    if (currentNoAck < limitNoAck) {
+                        if (backPressureBuffer.isEmpty()) {
+                            try {
+                                kafkaConsumer.poll(Duration.ofMillis(pollTimeout)).forEach(backPressureBuffer::add);
+                            } catch (WakeupException e) {
+                                LOGGER.fine(() -> "It was requested to stop polling from channel");
+                            }
+                        } else {
+                            long totalToEmit = requests.get();
+                            // Avoid index out bound exceptions
+                            long eventsToEmit = Math.min(totalToEmit, backPressureBuffer.size());
+                            for (long i = 0; i < eventsToEmit; i++) {
+                                ConsumerRecord<K, V> cr = backPressureBuffer.poll();
+                                CompletableFuture<Void> kafkaCommit = new CompletableFuture<>();
+                                KafkaMessage<K, V> kafkaMessage = new KafkaMessage<>(cr, kafkaCommit, ackTimeout);
+                                if (!autoCommit) {
+                                    TopicPartition key = new TopicPartition(kafkaMessage.getPayload().topic(),
+                                            kafkaMessage.getPayload().partition());
+                                    pendingCommits.computeIfAbsent(key, k -> new LinkedList<>()).add(kafkaMessage);
+                                } else {
+                                    kafkaCommit.complete(null);
+                                }
+                                // Note that next execution will reach the user code inside @Incoming method.
+                                // By spec, onNext MUST NOT block the Publisher, otherwise it will make problems.
+                                runInNewContext(() ->  emiter.emit(kafkaMessage));
+                                requests.decrementAndGet();
+                            }
                         }
                     } else {
-                        long totalToEmit = requests.get();
-                        // Avoid index out bound exceptions
-                        long eventsToEmit = Math.min(totalToEmit, backPressureBuffer.size());
-                        for (long i = 0; i < eventsToEmit; i++) {
-                            ConsumerRecord<K, V> cr = backPressureBuffer.poll();
-                            // Unfortunately KafkaConsumer is not thread safe, so the commit must happen in this thread.
-                            // KafkaMessage will notify ACK to this thread via Callback
-                            KafkaMessage<K, V> kafkaMessage = new KafkaMessage<>(cr, entry -> pendingCommits.add(entry));
-                            runInNewContext(() -> emiter.emit(kafkaMessage));
-                            requests.decrementAndGet();
-                        }
-                        if (eventsToEmit != 0) {
-                            LOGGER.fine(String.format("Emitted %s of %s. Buffer size: %s", eventsToEmit,
-                                    totalToEmit, backPressureBuffer.size()));
-                        }
+                        throw new IllegalStateException(
+                                String.format("Current pending %s acks has overflown the limit of %s ",
+                                        currentNoAck, limitNoAck));
                     }
                 }
                 // Commit ACKs
-                Map<TopicPartition, OffsetAndMetadata> offsets = new LinkedHashMap<>();
-                Entry<TopicPartition, OffsetAndMetadata> entry;
-                while ((entry = pendingCommits.poll()) != null) {
-                    offsets.put(entry.getKey(), entry.getValue());
-                }
-                if (!offsets.isEmpty()) {
-                    kafkaConsumer.commitSync(offsets);
-                    LOGGER.fine(String.format("%s events were ACK: ", offsets.size()));
-                }
+                processACK();
             } catch (Exception e) {
+                LOGGER.log(Level.SEVERE, "KafkaPublisher failed", e);
                 emiter.fail(e);
             } finally {
                 taskLock.unlock();
             }
         }, 0, periodExecutions, TimeUnit.MILLISECONDS);
+    }
+
+    private int currentNoAck() {
+        return pendingCommits.values().stream().map(list -> list.size()).reduce((a, b) -> a + b).orElse(0);
+    }
+
+    /**
+     * Process the ACKs only if enable.auto.commit is false.
+     * This will search events that are ACK and it will commit them to Kafka.
+     * Those events that are committed will make the {@link KafkaMessage#ack()}
+     * to complete.
+     */
+    private void processACK() {
+        if (!autoCommit) {
+            Map<TopicPartition, OffsetAndMetadata> offsets = new LinkedHashMap<>();
+            List<KafkaMessage<K, V>> messagesToCommit = new LinkedList<>();
+            // Commit highest offset + 1 of each partition that was ACK, and remove from pending
+            for (Entry<TopicPartition, List<KafkaMessage<K, V>>> entry : pendingCommits.entrySet()) {
+                // No need to sort it, offsets are consumed in order
+                List<KafkaMessage<K, V>> byPartition = entry.getValue();
+                Iterator<KafkaMessage<K, V>> iterator = byPartition.iterator();
+                KafkaMessage<K, V> highest = null;
+                while (iterator.hasNext()) {
+                    KafkaMessage<K, V> element = iterator.next();
+                    if (element.isAck()) {
+                        messagesToCommit.add(element);
+                        highest = element;
+                        iterator.remove();
+                    } else {
+                        break;
+                    }
+                }
+                if (highest != null) {
+                    OffsetAndMetadata offset = new OffsetAndMetadata(highest.getPayload().offset() + 1);
+                    LOGGER.fine(() -> String.format("Will commit %s %s", entry.getKey(), offset));
+                    offsets.put(entry.getKey(), offset);
+                }
+            }
+            if (!messagesToCommit.isEmpty()) {
+                Optional<RuntimeException> exception = commitInKafka(offsets);
+                messagesToCommit.stream().forEach(message -> {
+                    exception.ifPresentOrElse(
+                            ex -> message.kafkaCommit().completeExceptionally(ex),
+                            () -> message.kafkaCommit().complete(null));
+                });
+            }
+        }
+    }
+
+    private Optional<RuntimeException> commitInKafka(Map<TopicPartition, OffsetAndMetadata> offsets) {
+        LOGGER.fine(() -> String.format("%s events to commit: ", offsets.size()));
+        LOGGER.fine(() -> String.format("%s", offsets));
+        try {
+            kafkaConsumer.commitSync(offsets);
+            LOGGER.fine(() -> "The commit was successful");
+            return Optional.empty();
+        } catch (RuntimeException e) {
+            LOGGER.log(Level.SEVERE, "Unable to commit in Kafka " + offsets, e);
+            return Optional.of(e);
+        }
     }
 
     /**
@@ -150,16 +226,20 @@ class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>>, Closeable {
         // Wait that current task finishes in case it is still running
         try {
             taskLock.lock();
+            LOGGER.fine(() -> "Pending ACKs: " + pendingCommits.size());
+            // Terminate waiting ACKs
+            pendingCommits.values().stream().flatMap(List::stream)
+            .forEach(message ->
+            message.kafkaCommit().completeExceptionally(new TimeoutException("Aborted because KafkaPublisher is shutting down")));
             kafkaConsumer.close();
-            if (!pendingCommits.isEmpty()) {
-                LOGGER.warning(pendingCommits.size() + " events were not commited to Kafka");
-            }
             emiter.complete();
         } catch (RuntimeException e) {
+            LOGGER.log(Level.SEVERE, "Error closing KafkaPublisher", e);
             emiter.fail(e);
         } finally {
             taskLock.unlock();
         }
+        LOGGER.fine(() -> "Closed");
     }
 
     //Move to messaging incoming connector
@@ -211,15 +291,21 @@ class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>>, Closeable {
         Consumer<K, V> kafkaConsumer = new KafkaConsumer<>(kafkaConfig);
         long pollTimeout = config.get(POLL_TIMEOUT).asLong().orElse(50L);
         long periodExecutions = config.get(PERIOD_EXECUTIONS).asLong().orElse(100L);
-        KafkaPublisher<K, V> publisher = new KafkaPublisher<>(scheduler, kafkaConsumer, topics, pollTimeout, periodExecutions);
+        // Default Kafka value is true.
+        boolean autoCommit = config.get(ENABLE_AUTOCOMMIT).asBoolean().orElse(true);
+        long ackTimeout = config.get(ACK_TIMEOUT).asLong().orElse(Long.MAX_VALUE);
+        int limitNoAck = config.get(LIMIT_NO_ACK).asInt().orElse(Integer.MAX_VALUE);
+        KafkaPublisher<K, V> publisher = new KafkaPublisher<>(scheduler, kafkaConsumer, topics,
+                pollTimeout, periodExecutions, autoCommit, ackTimeout, limitNoAck);
         publisher.execute();
         return publisher;
     }
 
     // For testing purposes
     static <K, V> KafkaPublisher<K, V> build(ScheduledExecutorService scheduler, Consumer<K, V> kafkaConsumer,
-            List<String> topics, long pollTimeout, long periodExecutions){
-        KafkaPublisher<K, V> publisher = new KafkaPublisher<>(scheduler, kafkaConsumer, topics, pollTimeout, periodExecutions);
+            List<String> topics, long pollTimeout, long periodExecutions, boolean autoCommit){
+        KafkaPublisher<K, V> publisher = new KafkaPublisher<>(scheduler, kafkaConsumer, topics,
+                pollTimeout, periodExecutions, autoCommit, Long.MAX_VALUE, Integer.MAX_VALUE);
         publisher.execute();
         return publisher;
     }

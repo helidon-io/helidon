@@ -27,6 +27,7 @@ import com.salesforce.kafka.test.junit5.SharedKafkaTestResource;
 
 import java.io.Closeable;
 import java.lang.annotation.Annotation;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -35,6 +36,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -83,12 +85,16 @@ class KafkaCdiExtensionTest {
     };
 
     @RegisterExtension
-    public static final SharedKafkaTestResource kafkaResource = new SharedKafkaTestResource();
+    public static final SharedKafkaTestResource kafkaResource = new SharedKafkaTestResource().withBrokers(4);
     public static final String TEST_TOPIC_1 = "graph-done-1";
     public static final String TEST_TOPIC_2 = "graph-done-2";
     public static final String TEST_TOPIC_3 = "graph-done-3";
     public static final String TEST_TOPIC_4 = "graph-done-4";
     public static final String TEST_TOPIC_5 = "graph-done-5";
+    public static final String TEST_TOPIC_6 = "graph-done-6";
+    public static final String TEST_TOPIC_7 = "graph-done-7";
+    public static final String TEST_TOPIC_8 = "graph-done-8";
+    private final String KAFKA_SERVER = kafkaResource.getKafkaConnectString();
 
     protected Map<String, String> cdiConfig() {
         Map<String, String> p = new HashMap<>();
@@ -96,70 +102,107 @@ class KafkaCdiExtensionTest {
                 "mp.messaging.incoming.test-channel-1.poll.timeout", "10",
                 "mp.messaging.incoming.test-channel-1.period.executions", "10",
                 "mp.messaging.incoming.test-channel-1.connector", KafkaConnector.CONNECTOR_NAME,
-                "mp.messaging.incoming.test-channel-1.bootstrap.servers", kafkaResource.getKafkaConnectString(),
+                "mp.messaging.incoming.test-channel-1.bootstrap.servers", KAFKA_SERVER,
                 "mp.messaging.incoming.test-channel-1.topic", TEST_TOPIC_1,
-                "mp.messaging.incoming.test-channel-1.group.id", "group1",
+                "mp.messaging.incoming.test-channel-1.group.id", UUID.randomUUID().toString(),
                 "mp.messaging.incoming.test-channel-1.key.deserializer", LongDeserializer.class.getName(),
                 "mp.messaging.incoming.test-channel-1.value.deserializer", StringDeserializer.class.getName()));
         p.putAll(Map.of(
+                "mp.messaging.incoming.test-channel-2.enable.auto.commit", "false",
                 "mp.messaging.incoming.test-channel-2.connector", KafkaConnector.CONNECTOR_NAME,
-                "mp.messaging.incoming.test-channel-2.bootstrap.servers", kafkaResource.getKafkaConnectString(),
+                "mp.messaging.incoming.test-channel-2.bootstrap.servers", KAFKA_SERVER,
                 "mp.messaging.incoming.test-channel-2.topic", TEST_TOPIC_2,
-                "mp.messaging.incoming.test-channel-2.group.id", "group2",
+                "mp.messaging.incoming.test-channel-2.group.id", UUID.randomUUID().toString(),
                 "mp.messaging.incoming.test-channel-2.key.deserializer", LongDeserializer.class.getName(),
                 "mp.messaging.incoming.test-channel-2.value.deserializer", StringDeserializer.class.getName())
         );
         p.putAll(Map.of(
                 "mp.messaging.outgoing.test-channel-3.connector", KafkaConnector.CONNECTOR_NAME,
-                "mp.messaging.outgoing.test-channel-3.bootstrap.servers", kafkaResource.getKafkaConnectString(),
-                "mp.messaging.outgoing.test-channel-3.topic", TEST_TOPIC_1,
+                "mp.messaging.outgoing.test-channel-3.bootstrap.servers", KAFKA_SERVER,
+                "mp.messaging.outgoing.test-channel-3.topic", TEST_TOPIC_7,
                 "mp.messaging.outgoing.test-channel-3.backpressure.size", "5",
                 "mp.messaging.outgoing.test-channel-3.key.serializer", LongSerializer.class.getName(),
                 "mp.messaging.outgoing.test-channel-3.value.serializer", StringSerializer.class.getName())
         );
         p.putAll(Map.of(
+                "mp.messaging.incoming.test-channel-error.enable.auto.commit", "false",
                 "mp.messaging.incoming.test-channel-error.connector", KafkaConnector.CONNECTOR_NAME,
-                "mp.messaging.incoming.test-channel-error.bootstrap.servers", kafkaResource.getKafkaConnectString(),
+                "mp.messaging.incoming.test-channel-error.bootstrap.servers", KAFKA_SERVER,
                 "mp.messaging.incoming.test-channel-error.topic", TEST_TOPIC_3,
-                "mp.messaging.incoming.test-channel-error.group.id", "group3",
+                "mp.messaging.incoming.test-channel-error.group.id", UUID.randomUUID().toString(),
                 "mp.messaging.incoming.test-channel-error.key.deserializer", LongDeserializer.class.getName(),
                 "mp.messaging.incoming.test-channel-error.value.deserializer", StringDeserializer.class.getName())
         );
         p.putAll(Map.of(
+                "mp.messaging.incoming.test-channel-4.enable.auto.commit", "false",
                 "mp.messaging.incoming.test-channel-4.poll.timeout", "10",
                 "mp.messaging.incoming.test-channel-4.period.executions", "10",
                 "mp.messaging.incoming.test-channel-4.connector", KafkaConnector.CONNECTOR_NAME,
-                "mp.messaging.incoming.test-channel-4.bootstrap.servers", kafkaResource.getKafkaConnectString(),
+                "mp.messaging.incoming.test-channel-4.bootstrap.servers", KAFKA_SERVER,
                 "mp.messaging.incoming.test-channel-4.topic", TEST_TOPIC_4,
-                "mp.messaging.incoming.test-channel-4.group.id", "group4",
+                "mp.messaging.incoming.test-channel-4.group.id", UUID.randomUUID().toString(),
                 "mp.messaging.incoming.test-channel-4.key.deserializer", LongDeserializer.class.getName(),
                 "mp.messaging.incoming.test-channel-4.value.deserializer", StringDeserializer.class.getName()));
         p.putAll(Map.of(
+                "mp.messaging.incoming.test-channel-5.enable.auto.commit", "false",
                 "mp.messaging.incoming.test-channel-5.connector", KafkaConnector.CONNECTOR_NAME,
-                "mp.messaging.incoming.test-channel-5.bootstrap.servers", kafkaResource.getKafkaConnectString(),
+                "mp.messaging.incoming.test-channel-5.bootstrap.servers", KAFKA_SERVER,
                 "mp.messaging.incoming.test-channel-5.topic", TEST_TOPIC_5,
-                "mp.messaging.incoming.test-channel-5.group.id", "group4",
+                "mp.messaging.incoming.test-channel-5.group.id", UUID.randomUUID().toString(),
                 "mp.messaging.incoming.test-channel-5.key.deserializer", LongDeserializer.class.getName(),
                 "mp.messaging.incoming.test-channel-5.value.deserializer", StringDeserializer.class.getName()));
+        p.putAll(Map.of(
+                "mp.messaging.incoming.test-channel-6.enable.auto.commit", "false",
+                "mp.messaging.incoming.test-channel-6.auto.offset.reset", "earliest",
+                "mp.messaging.incoming.test-channel-6.connector", KafkaConnector.CONNECTOR_NAME,
+                "mp.messaging.incoming.test-channel-6.bootstrap.servers", KAFKA_SERVER,
+                "mp.messaging.incoming.test-channel-6.topic", TEST_TOPIC_6,
+                "mp.messaging.incoming.test-channel-6.group.id", "sameGroup",
+                "mp.messaging.incoming.test-channel-6.key.deserializer", LongDeserializer.class.getName(),
+                "mp.messaging.incoming.test-channel-6.value.deserializer", StringDeserializer.class.getName()));
+        p.putAll(Map.of(
+                "mp.messaging.incoming.test-channel-7.enable.auto.commit", "false",
+                "mp.messaging.incoming.test-channel-7.connector", KafkaConnector.CONNECTOR_NAME,
+                "mp.messaging.incoming.test-channel-7.bootstrap.servers", KAFKA_SERVER,
+                "mp.messaging.incoming.test-channel-7.topic", TEST_TOPIC_7,
+                "mp.messaging.incoming.test-channel-7.group.id", UUID.randomUUID().toString(),
+                "mp.messaging.incoming.test-channel-7.key.deserializer", LongDeserializer.class.getName(),
+                "mp.messaging.incoming.test-channel-7.value.deserializer", StringDeserializer.class.getName()));
+        p.putAll(Map.of(
+                "mp.messaging.incoming.test-channel-8.enable.auto.commit", "false",
+                "mp.messaging.incoming.test-channel-8.auto.offset.reset", "earliest",
+                "mp.messaging.incoming.test-channel-8.connector", KafkaConnector.CONNECTOR_NAME,
+                "mp.messaging.incoming.test-channel-8.bootstrap.servers", KAFKA_SERVER,
+                "mp.messaging.incoming.test-channel-8.topic", TEST_TOPIC_8,
+                "mp.messaging.incoming.test-channel-8.group.id", "sameGroup",
+                "mp.messaging.incoming.test-channel-8.key.deserializer", LongDeserializer.class.getName(),
+                "mp.messaging.incoming.test-channel-8.value.deserializer", StringDeserializer.class.getName()));
         return p;
     }
 
     @BeforeAll
     static void prepareTopics() {
-        kafkaResource.getKafkaTestUtils().createTopic(TEST_TOPIC_1, 10, (short) 1);
-        kafkaResource.getKafkaTestUtils().createTopic(TEST_TOPIC_2, 10, (short) 1);
-        kafkaResource.getKafkaTestUtils().createTopic(TEST_TOPIC_3, 10, (short) 1);
-        kafkaResource.getKafkaTestUtils().createTopic(TEST_TOPIC_4, 10, (short) 1);
-        kafkaResource.getKafkaTestUtils().createTopic(TEST_TOPIC_5, 10, (short) 1);
+        kafkaResource.getKafkaTestUtils().createTopic(TEST_TOPIC_1, 4, (short) 1);
+        kafkaResource.getKafkaTestUtils().createTopic(TEST_TOPIC_2, 4, (short) 1);
+        kafkaResource.getKafkaTestUtils().createTopic(TEST_TOPIC_3, 4, (short) 1);
+        kafkaResource.getKafkaTestUtils().createTopic(TEST_TOPIC_4, 4, (short) 1);
+        kafkaResource.getKafkaTestUtils().createTopic(TEST_TOPIC_5, 4, (short) 1);
+        kafkaResource.getKafkaTestUtils().createTopic(TEST_TOPIC_6, 1, (short) 1);
+        kafkaResource.getKafkaTestUtils().createTopic(TEST_TOPIC_7, 4, (short) 1);
+        kafkaResource.getKafkaTestUtils().createTopic(TEST_TOPIC_8, 2, (short) 1);
     }
 
     @BeforeEach
     void setUp() {
         Set<Class<?>> classes = new HashSet<>();
         classes.add(KafkaConnector.class);
-        classes.add(KafkaSampleBean.class);
-        classes.add(KafkaNoFullAck1Bean.class);
-        classes.add(KafkaNoFullAck2Bean.class);
+        classes.add(AbstractSampleBean.Channel1.class);
+        classes.add(AbstractSampleBean.Channel4.class);
+        classes.add(AbstractSampleBean.Channel5.class);
+        classes.add(AbstractSampleBean.Channel6.class);
+        classes.add(AbstractSampleBean.Channel8.class);
+        classes.add(AbstractSampleBean.ChannelError.class);
+        classes.add(AbstractSampleBean.ChannelProcessor.class);
         classes.add(MessagingCdiExtension.class);
 
         Map<String, String> p = new HashMap<>(cdiConfig());
@@ -206,7 +249,7 @@ class KafkaCdiExtensionTest {
         LOGGER.fine("==========> test incomingKafkaOk()");
         List<String> testData = IntStream.range(0, 999).mapToObj(i -> "test" + i).collect(Collectors.toList());
         CountDownLatch testChannelLatch = new CountDownLatch(testData.size());
-        KafkaSampleBean kafkaConsumingBean = cdiContainer.select(KafkaSampleBean.class).get();
+        AbstractSampleBean kafkaConsumingBean = cdiContainer.select(AbstractSampleBean.Channel1.class).get();
         kafkaConsumingBean.setCountDownLatch(testChannelLatch);
         produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_1, testChannelLatch, testData);
     }
@@ -215,11 +258,11 @@ class KafkaCdiExtensionTest {
     void processor() {
         LOGGER.fine("==========> test processor()");
         // This test pushes in topic 2, it is processed and 
-        // pushed in topic 1, and finally check the results coming from topic 1.
+        // pushed in topic 7, and finally check the results coming from topic 7.
         List<String> testData = IntStream.range(0, 999).mapToObj(i -> Integer.toString(i)).collect(Collectors.toList());
         List<String> expected = testData.stream().map(i -> "Processed" + i).collect(Collectors.toList());
         CountDownLatch testChannelLatch = new CountDownLatch(testData.size());
-        KafkaSampleBean kafkaConsumingBean = cdiContainer.select(KafkaSampleBean.class).get();
+        AbstractSampleBean kafkaConsumingBean = cdiContainer.select(AbstractSampleBean.ChannelProcessor.class).get();
         kafkaConsumingBean.setCountDownLatch(testChannelLatch);
         produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_2, testChannelLatch, expected);
     }
@@ -227,9 +270,9 @@ class KafkaCdiExtensionTest {
     @Test
     void error() {
         LOGGER.fine("==========> test error()");
-        KafkaSampleBean kafkaConsumingBean = cdiContainer.select(KafkaSampleBean.class).get();
+        AbstractSampleBean kafkaConsumingBean = cdiContainer.select(AbstractSampleBean.ChannelError.class).get();
         // This is correctly processed
-        List<String> testData = Arrays.asList("1");
+        List<String> testData = Arrays.asList("10");
         CountDownLatch testChannelLatch = new CountDownLatch(testData.size());
         kafkaConsumingBean.setCountDownLatch(testChannelLatch);
         produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_3, testChannelLatch, testData);
@@ -237,57 +280,118 @@ class KafkaCdiExtensionTest {
         testData = Arrays.asList("error");
         testChannelLatch = new CountDownLatch(testData.size());
         kafkaConsumingBean.setCountDownLatch(testChannelLatch);
-        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_3, testChannelLatch, Arrays.asList("1"));
+        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_3, testChannelLatch, Arrays.asList("10"));
         // After an error, it cannot receive new data
-        testData = Arrays.asList("2");
+        testData = Arrays.asList("20");
         testChannelLatch = new CountDownLatch(0);
         kafkaConsumingBean.setCountDownLatch(testChannelLatch);
-        // The expected result is not very relevant because there is no waiting time
-        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_3, testChannelLatch, Arrays.asList("1"));
-        // But other channels are working, and previous message is not in the list
-        testData = Arrays.asList("3");
-        testChannelLatch = new CountDownLatch(testData.size());
-        kafkaConsumingBean.setCountDownLatch(testChannelLatch);
-        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_1, testChannelLatch, Arrays.asList("1", "3"));
+        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_3, testChannelLatch, Arrays.asList("10"));
     }
 
     @Test
-    void withBackPresure() {
-        LOGGER.fine("==========> test withBackPresure()");
+    void withBackPressure() {
+        LOGGER.fine("==========> test withBackPressure()");
         List<String> testData = IntStream.range(0, 999).mapToObj(i -> "1").collect(Collectors.toList());
         List<String> expected = Arrays.asList("1", "1", "1");
         CountDownLatch testChannelLatch = new CountDownLatch(expected.size());
-        /*
-         * We use different bean because this test doesn't ACK everything.
-         * Kafka will push again uncommit records and it will make a mess in the tests.
-         */
-        KafkaNoFullAck1Bean kafkaConsumingBean = cdiContainer.select(KafkaNoFullAck1Bean.class).get();
+        AbstractSampleBean kafkaConsumingBean = cdiContainer.select(AbstractSampleBean.Channel4.class).get();
         kafkaConsumingBean.setCountDownLatch(testChannelLatch);
         produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_4, testChannelLatch, expected);
     }
 
     @Test
-    void withBackPresureAndError() {
-        LOGGER.fine("==========> test withBackPresureAndError()");
-        List<String> testData = Arrays.asList("2", "2");
+    void withBackPressureAndError() {
+        LOGGER.fine("==========> test withBackPressureAndError()");
+        List<String> testData = Arrays.asList("2222", "2222");
         CountDownLatch testChannelLatch = new CountDownLatch(testData.size());
-        /*
-         * We use different bean because this test doesn't ACK everything.
-         * Kafka will push again uncommit records and it will make a mess in the tests.
-         */
-        KafkaNoFullAck2Bean kafkaConsumingBean = cdiContainer.select(KafkaNoFullAck2Bean.class).get();
+        AbstractSampleBean kafkaConsumingBean = cdiContainer.select(AbstractSampleBean.Channel5.class).get();
         kafkaConsumingBean.setCountDownLatch(testChannelLatch);
         produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_5, testChannelLatch, testData);
         testData = Arrays.asList("not a number");
         testChannelLatch = new CountDownLatch(testData.size());
         kafkaConsumingBean.setCountDownLatch(testChannelLatch);
-        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_5, testChannelLatch, Arrays.asList("2", "2", "error"));
+        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_5, testChannelLatch, Arrays.asList("2222", "2222", "error"));
+    }
+
+    @Test
+    public void someEventsNoAckWithOnePartition() {
+        LOGGER.fine("==========> test someEventsNoAckWithOnePartition()");
+        List<String> expected = new ArrayList<>();
+        // Push some messages that will ACK
+        List<String> testData = IntStream.range(0, 100).mapToObj(i -> Integer.toString(i)).collect(Collectors.toList());
+        expected.addAll(testData);
+        CountDownLatch testChannelLatch = new CountDownLatch(testData.size());
+        AbstractSampleBean.Channel6 kafkaConsumingBean = cdiContainer.select(AbstractSampleBean.Channel6.class).get();
+        kafkaConsumingBean.setCountDownLatch(testChannelLatch);
+        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_6, testChannelLatch, expected);
+        // Next message will not ACK
+        testData = Arrays.asList(AbstractSampleBean.Channel6.NO_ACK);
+        expected.addAll(testData);
+        testChannelLatch = new CountDownLatch(testData.size());
+        kafkaConsumingBean.setCountDownLatch(testChannelLatch);
+        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_6, testChannelLatch, expected);
+        // As this topic only have one partition, next messages will not ACK because previous message wasn't
+        testData = IntStream.range(100, 200).mapToObj(i -> Integer.toString(i)).collect(Collectors.toList());
+        testChannelLatch = new CountDownLatch(testData.size());
+        kafkaConsumingBean.setCountDownLatch(testChannelLatch);
+        expected.addAll(testData);
+        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_6, testChannelLatch, expected);
+        // Restart, so we receive uncommitted messages again
+        LOGGER.fine("Restarting");
+        tearDown();
+        setUp();
+        // Adding for expected last uncommitted messages
+        expected.clear();
+        expected.addAll(testData);
+        expected.add(AbstractSampleBean.Channel6.NO_ACK);
+        testData = Arrays.asList("new message");
+        expected.addAll(testData);
+        testChannelLatch = new CountDownLatch(expected.size());
+        kafkaConsumingBean = cdiContainer.select(AbstractSampleBean.Channel6.class).get();
+        kafkaConsumingBean.setCountDownLatch(testChannelLatch);
+        // We should find the new message and all the previous not ACK
+        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_6, testChannelLatch, expected);
+    }
+
+    @Test
+    public void someEventsNoAckWithDifferentPartitions() {
+        LOGGER.fine("==========> test someEventsNoAckWithDifferentPartitions()");
+        List<String> expected = new ArrayList<>();
+        // Send the message that will not ACK. This will make in one partition to not commit any new message
+        List<String> testData = Arrays.asList(AbstractSampleBean.Channel8.NO_ACK);
+        expected.addAll(testData);
+        CountDownLatch testChannelLatch = new CountDownLatch(testData.size());
+        AbstractSampleBean.Channel8 kafkaConsumingBean = cdiContainer.select(AbstractSampleBean.Channel8.class).get();
+        kafkaConsumingBean.setCountDownLatch(testChannelLatch);
+        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_8, testChannelLatch, expected);
+        // Now sends new messages. Some of them will be lucky and will not go to the partition with no ACK
+        testData = IntStream.range(1000, 2000).mapToObj(i -> Integer.toString(i)).collect(Collectors.toList());
+        expected.addAll(testData);
+        testChannelLatch = new CountDownLatch(testData.size());
+        kafkaConsumingBean.setCountDownLatch(testChannelLatch);
+        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_8, testChannelLatch, expected);
+        int uncommited = kafkaConsumingBean.uncommitted();
+        // At least one message was not committed
+        assertTrue(uncommited > 0);
+        LOGGER.fine("Uncommitted messages : " + uncommited);
+        // Restart, so we receive uncommitted messages
+        LOGGER.fine("Restarting");
+        tearDown();
+        setUp();
+        // This message will not increase the partitions map counter. But we use it to wait all uncommitted messages are read
+        testData = Arrays.asList("any");
+        int expectedUncommited = testData.size() + uncommited;
+        kafkaConsumingBean = cdiContainer.select(AbstractSampleBean.Channel8.class).get();
+        testChannelLatch = new CountDownLatch(expectedUncommited);
+        kafkaConsumingBean.setCountDownLatch(testChannelLatch);
+        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_8, testChannelLatch, Collections.emptyList());
+        assertEquals(expectedUncommited, kafkaConsumingBean.consumed().size());
     }
 
     private void produceAndCheck(AbstractSampleBean kafkaConsumingBean, List<String> testData, String topic,
             CountDownLatch testChannelLatch, List<String> expected) {
         Map<String, Object> config = new HashMap<>();
-        config.put("bootstrap.servers", kafkaResource.getKafkaConnectString());
+        config.put("bootstrap.servers", KAFKA_SERVER);
         config.put("key.serializer", LongSerializer.class.getName());
         config.put("value.serializer", StringSerializer.class.getName());
         try (BasicKafkaProducer<Long, String> producer =
@@ -302,10 +406,13 @@ class KafkaCdiExtensionTest {
             } catch (InterruptedException e) {
                 LOGGER.fine("Time out");
             }
-            assertTrue(consumed, "All expected messages were not consumed. Fix the test to avoid unnecessary waitings");
-            Collections.sort(kafkaConsumingBean.consumed());
-            Collections.sort(expected);
-            assertEquals(expected, kafkaConsumingBean.consumed());
+            if (!expected.isEmpty()) {
+                Collections.sort(kafkaConsumingBean.consumed());
+                Collections.sort(expected);
+                assertEquals(expected, kafkaConsumingBean.consumed());
+            }
+            assertTrue(consumed
+                    , "All expected messages were not consumed. Fix the test to avoid unnecessary waitings. " + kafkaConsumingBean.consumed());
         }
     }
 

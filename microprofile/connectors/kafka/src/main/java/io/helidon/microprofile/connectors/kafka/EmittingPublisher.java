@@ -42,7 +42,7 @@ class EmittingPublisher<T> implements Publisher<T> {
     private final AtomicBoolean terminated = new AtomicBoolean();
     private final Callback<Long> requestsCallback;
 
-    protected EmittingPublisher(Callback<Long> requestsCallback) {
+    EmittingPublisher(Callback<Long> requestsCallback) {
         this.requestsCallback = requestsCallback;
     }
 
@@ -143,7 +143,7 @@ class EmittingPublisher<T> implements Publisher<T> {
         READY_TO_EMIT {
             @Override
             <T> boolean emit(EmittingPublisher<T> publisher, T item) {
-                if (publisher.requested.getAndDecrement() < 1) {
+                if (publisher.requested.getAndUpdate(r -> r > 0 ? r - 1 : 0) < 1) {
                     return false;
                 }
                 try {

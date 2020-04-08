@@ -56,7 +56,7 @@ class BasicKafkaProducer<K, V> implements Closeable {
     List<Future<RecordMetadata>> produceAsync(V value) {
         List<Future<RecordMetadata>> recordMetadataFutures = new ArrayList<>(topics.size());
         for (String topic : topics) {
-            ProducerRecord<K, V> record = new ProducerRecord<K, V>(topic, value);
+            ProducerRecord<K, V> record = new ProducerRecord<>(topic, value);
             recordMetadataFutures.add(producer.send(record));
         }
         return recordMetadataFutures;

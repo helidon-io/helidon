@@ -28,6 +28,7 @@ import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.common.TopicPartition;
+import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 import org.reactivestreams.Publisher;
@@ -42,18 +43,23 @@ public class KafkaPublisherTckTest extends PublisherVerification<KafkaMessage<St
     private static final long POLL_TIMEOUT = 10L;
 
     KafkaPublisherTckTest() {
-        super(new TestEnvironment(50));
+        super(new TestEnvironment(1000));
     }
 
     @Override
     public Publisher<KafkaMessage<String, Long>> createPublisher(long elements) {
         Consumer<String, Long> kafkaConsumer = Mockito.mock(Consumer.class);
-        KafkaPublisher<String, Long> publisher =  KafkaPublisher.build(Executors.newScheduledThreadPool(2), kafkaConsumer,
-                Arrays.asList(TEST_TOPIC_1), 1L, POLL_TIMEOUT);
         // Emulates that it is buffering 50 elements from Kafka in every poll.
         // This is buffered and it doesn't mean that it will publish them. The elements to publish depends on request
         Mockito.when(kafkaConsumer.poll(ArgumentMatchers.any(Duration.class))).thenReturn(createData(50));
-        return publisher;
+        return ReactiveStreams.fromPublisher(
+                KafkaPublisher.build(Executors.newScheduledThreadPool(2), 
+                        kafkaConsumer, 
+                        Arrays.asList(TEST_TOPIC_1), 
+                        1L, 
+                        POLL_TIMEOUT, 
+                        true))
+                .limit(elements).buildRs();
     }
 
     private ConsumerRecords<String, Long> createData(long elementsToPoll){
@@ -69,12 +75,6 @@ public class KafkaPublisherTckTest extends PublisherVerification<KafkaMessage<St
         Consumer<String, Long> kafkaConsumer = Mockito.mock(Consumer.class);
         Mockito.doThrow(new RuntimeException("test error")).when(kafkaConsumer).poll(ArgumentMatchers.any(Duration.class));
         return KafkaPublisher.build(Executors.newScheduledThreadPool(2), kafkaConsumer,
-                Arrays.asList(TEST_TOPIC_1), 1L, POLL_TIMEOUT);
-    }
-
-    @Override
-    public long maxElementsFromPublisher() {
-        // This is working all the time
-        return Long.MAX_VALUE;
+                Arrays.asList(TEST_TOPIC_1), POLL_TIMEOUT, Long.MAX_VALUE, true);
     }
 }
