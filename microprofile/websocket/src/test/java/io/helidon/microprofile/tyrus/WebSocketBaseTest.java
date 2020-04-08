@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,11 @@
 
 package io.helidon.microprofile.tyrus;
 
-import javax.enterprise.context.Dependent;
+import java.io.IOException;
+import java.net.URI;
+import java.util.logging.Logger;
+
+import javax.enterprise.inject.se.SeContainer;
 import javax.websocket.CloseReason;
 import javax.websocket.Endpoint;
 import javax.websocket.EndpointConfig;
@@ -26,69 +30,31 @@ import javax.websocket.OnError;
 import javax.websocket.OnMessage;
 import javax.websocket.OnOpen;
 import javax.websocket.Session;
-import javax.websocket.server.ServerApplicationConfig;
 import javax.websocket.server.ServerEndpoint;
-import javax.websocket.server.ServerEndpointConfig;
 
-import java.io.IOException;
-import java.net.URI;
-import java.util.Collections;
-import java.util.Set;
-import java.util.logging.Logger;
-
-import io.helidon.microprofile.server.RoutingPath;
-import io.helidon.microprofile.server.Server;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 /**
- * Class WebSocketAppTest.
+ * Class WebSocketBaseTest.
  */
-public class WebSocketAppTest {
+public abstract class WebSocketBaseTest {
 
-    private static Server server;
-
-    @BeforeAll
-    static void initClass() {
-        Server.Builder builder = Server.builder();
-        server = builder.build();
-        server.start();
-    }
+    static final int DEFAULT_PORT = 7001;
+    static SeContainer container;
 
     @AfterAll
     static void destroyClass() {
-        server.stop();
+        container.close();
     }
+
+    public abstract String context();
 
     @Test
     public void testEchoAnnot() throws Exception {
-        URI echoUri = URI.create("ws://localhost:" + server.port() + "/web/echoAnnot");
+        URI echoUri = URI.create("ws://localhost:" + DEFAULT_PORT + context() + "/echoAnnot");
         EchoClient echoClient = new EchoClient(echoUri);
         echoClient.echo("hi", "how are you?");
-    }
-
-    @Test
-    public void testEchoProg() throws Exception {
-        URI echoUri = URI.create("ws://localhost:" + server.port() + "/web/echoProg");
-        EchoClient echoClient = new EchoClient(echoUri);
-        echoClient.echo("hi", "how are you?");
-    }
-
-    @Dependent
-    @RoutingPath("/web")
-    public static class EndpointApplication implements ServerApplicationConfig {
-        @Override
-        public Set<ServerEndpointConfig> getEndpointConfigs(Set<Class<? extends Endpoint>> endpoints) {
-            ServerEndpointConfig.Builder builder = ServerEndpointConfig.Builder.create(
-                    EchoEndpointProg.class, "/echoProg");
-            return Collections.singleton(builder.build());
-        }
-
-        @Override
-        public Set<Class<?>> getAnnotatedEndpointClasses(Set<Class<?>> endpoints) {
-            return Collections.singleton(EchoEndpointAnnot.class);
-        }
     }
 
     @ServerEndpoint("/echoAnnot")
