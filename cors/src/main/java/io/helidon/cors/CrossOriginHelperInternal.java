@@ -28,6 +28,8 @@ import java.util.StringTokenizer;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
+import io.helidon.common.HelidonFeatures;
+import io.helidon.common.HelidonFlavor;
 import io.helidon.common.http.Http;
 
 import static io.helidon.common.http.Http.Header.HOST;
@@ -79,6 +81,9 @@ public class CrossOriginHelperInternal {
          * A CORS preflight request.
          */
         PREFLIGHT
+    }
+    static {
+        HelidonFeatures.register(HelidonFlavor.SE, "CORS");
     }
 
     /**
@@ -210,27 +215,75 @@ public class CrossOriginHelperInternal {
             Supplier<Optional<CrossOriginConfig>> secondaryCrossOriginLookup,
             RequestAdapter<T> requestAdapter,
             ResponseAdapter<U> responseAdapter) {
+
+        Optional<CrossOriginConfig> crossOrigin = lookupCrossOrigin(requestAdapter.path(), crossOriginConfigs,
+                secondaryCrossOriginLookup);
+
         RequestType requestType = requestType(requestAdapter);
+
+        if (requestType == RequestType.NORMAL) {
+            return Optional.empty();
+        }
+
+        // If this is a CORS request of some sort and CORS is not enabled, deny the request.
+        if (crossOrigin.isEmpty()) {
+            return Optional.of(responseAdapter.forbidden(ORIGIN_DENIED));
+        }
+        return processRequest(requestType, crossOrigin.get(), requestAdapter, responseAdapter);
+    }
+    /**
+     * Processes a request according to the CORS rules, returning an {@code Optional} of the response type if
+     * the caller should send the response immediately (such as for a preflight response or an error response to a
+     * non-preflight CORS request).
+     * <p>
+     *     If the optional is empty, this processor has either:
+     * </p>
+     * <ul>
+     *     <li>recognized the request as a valid non-preflight CORS request and has set headers in the response adapter, or</li>
+     *     <li>recognized the request as a non-CORS request entirely.</li>
+     * </ul>
+     * <p>
+     * In either case of an empty optional return value, the caller should proceed with its own request processing and sends its
+     * response at will as long as that processing includes the header settings assigned using the response adapter.
+     * </p>
+     * @param crossOrigin cross origin config to use in handling this request
+     * @param requestAdapter abstraction of a request
+     * @param responseAdapter abstraction of a response
+     * @param <T> type for the {@code Request} managed by the requestAdapter
+     * @param <U> the type for the HTTP response as returned from the responseSetter
+     * @return Optional of an error response if the request was an invalid CORS request; Optional.empty() if it was a
+     *         valid CORS request
+     */
+    public static <T, U> Optional<U> processRequest(CrossOriginConfig crossOrigin, RequestAdapter<T> requestAdapter,
+            ResponseAdapter<U> responseAdapter) {
+        RequestType requestType = requestType(requestAdapter);
+
+        if (requestType == RequestType.NORMAL) {
+            return Optional.empty();
+        }
+        return processRequest(requestType, crossOrigin, requestAdapter, responseAdapter);
+    }
+
+    static <T, U> Optional<U> processRequest(RequestType requestType, CrossOriginConfig crossOrigin,
+            RequestAdapter<T> requestAdapter,
+            ResponseAdapter<U> responseAdapter) {
 
         switch (requestType) {
             case PREFLIGHT:
-                U result = processCORSPreFlightRequest(crossOriginConfigs, secondaryCrossOriginLookup, requestAdapter,
+                U result = processCORSPreFlightRequest(crossOrigin, requestAdapter,
                         responseAdapter);
                 return Optional.of(result);
 
             case CORS:
-                Optional<U> corsResponse = processCORSRequest(crossOriginConfigs, secondaryCrossOriginLookup, requestAdapter,
+                Optional<U> corsResponse = processCORSRequest(crossOrigin, requestAdapter,
                         responseAdapter);
                 if (corsResponse.isEmpty()) {
                     /*
                      * There has been no rejection of the CORS settings, so prep the response headers.
                      */
-                    prepareCORSResponse(crossOriginConfigs, secondaryCrossOriginLookup, requestAdapter, responseAdapter);
+                    prepareCORSResponse(crossOrigin, requestAdapter, responseAdapter);
                 }
                 return corsResponse;
-
-            case NORMAL:
-                return Optional.empty();
 
             default:
                 throw new IllegalArgumentException("Unexpected value for enum RequestType");
@@ -255,12 +308,20 @@ public class CrossOriginHelperInternal {
         RequestType requestType = requestType(requestAdapter);
 
         if (requestType == RequestType.CORS) {
+            CrossOriginConfig crossOrigin = lookupCrossOrigin(requestAdapter.path(), crossOriginConfigs, secondaryCrossOriginLookup)
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "Could not locate expected CORS information while preparing response to request " + requestAdapter));
             prepareCORSResponse(
-                    crossOriginConfigs,
-                    secondaryCrossOriginLookup,
+                    crossOrigin,
                     requestAdapter,
                     responseAdapter);
         }
+    }
+
+    public static <T, U> void prepareResponse(CrossOriginConfig crossOrigin,
+            RequestAdapter<T> requestAdapter,
+            ResponseAdapter<U> responseAdapter) {
+        prepareCORSResponse(crossOrigin, requestAdapter, responseAdapter);
     }
 
     /**
@@ -292,8 +353,6 @@ public class CrossOriginHelperInternal {
      * Validates information about an incoming request as a CORS request and, if anything is wrong with CORS information,
      * returns an {@code Optional} error response reporting the problem.
      *
-     * @param crossOriginConfigs config information for CORS
-     * @param secondaryCrossOriginLookup locates {@code CrossOrigin} from other than config (e.g., annotations for MP)
      * @param requestAdapter abstraction of a request
      * @param responseAdapter abstraction of a response
      * @param <T> type for the request wrapped by the requestAdapter
@@ -302,19 +361,13 @@ public class CrossOriginHelperInternal {
      *         valid CORS request
      */
     static <T, U> Optional<U> processCORSRequest(
-            Map<String, CrossOriginConfig> crossOriginConfigs,
-            Supplier<Optional<CrossOriginConfig>> secondaryCrossOriginLookup,
+            CrossOriginConfig crossOriginConfig,
             RequestAdapter<T> requestAdapter,
             ResponseAdapter<U> responseAdapter) {
-        Optional<String> originOpt = requestAdapter.firstHeader(ORIGIN);
-        Optional<CrossOriginConfig> crossOriginOpt = lookupCrossOrigin(requestAdapter.path(), crossOriginConfigs,
-                secondaryCrossOriginLookup);
-        if (crossOriginOpt.isEmpty()) {
-            return Optional.of(responseAdapter.forbidden(ORIGIN_DENIED));
-        }
 
         // If enabled but not whitelisted, deny request
-        List<String> allowedOrigins = Arrays.asList(crossOriginOpt.get().allowOrigins());
+        List<String> allowedOrigins = Arrays.asList(crossOriginConfig.allowOrigins());
+        Optional<String> originOpt = requestAdapter.firstHeader(ORIGIN);
         if (!allowedOrigins.contains("*") && !contains(originOpt, allowedOrigins, String::equals)) {
             return Optional.of(responseAdapter.forbidden(ORIGIN_NOT_IN_ALLOWED_LIST));
         }
@@ -326,21 +379,14 @@ public class CrossOriginHelperInternal {
     /**
      * Prepares a CORS response by updating the response's headers.
      *
-     * @param crossOriginConfigs config information for CORS
-     * @param secondaryCrossOriginLookup locates {@code CrossOrigin} from other than config (e.g., annotations for MP)
      * @param requestAdapter request adapter
      * @param responseAdapter response adapter
      * @param <T> type for the request wrapped by the requestAdapter
      * @param <U> type for the response wrapper by the responseAdapter
      */
-    static <T, U> void prepareCORSResponse(Map<String, CrossOriginConfig> crossOriginConfigs,
-            Supplier<Optional<CrossOriginConfig>> secondaryCrossOriginLookup,
+    static <T, U> void prepareCORSResponse(CrossOriginConfig crossOrigin,
             RequestAdapter<T> requestAdapter,
             ResponseAdapter<U> responseAdapter) {
-        CrossOriginConfig crossOrigin = lookupCrossOrigin(requestAdapter.path(), crossOriginConfigs, secondaryCrossOriginLookup)
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Could not locate expected CORS information while preparing response to request " + requestAdapter));
-
         // Add Access-Control-Allow-Origin and Access-Control-Allow-Credentials.
         //
         // Throw an exception if there is no ORIGIN because we should not even be here unless this is a CORS request, which would
@@ -369,33 +415,20 @@ public class CrossOriginHelperInternal {
      * Having determined that we have a pre-flight request, we will always return either a forbidden or a successful response.
      * </p>
      *
-     * @param crossOriginConfigs config information for CORS
-     * @param secondaryCrossOriginLookup locates {@code CrossOrigin} from other than config (e.g., annotations for MP)
      * @param requestAdapter the request adapter
      * @param responseAdapter the response adapter
      * @param <T> type for the request wrapped by the requestAdapter
      * @param <U> type for the response wrapper by the responseAdapter
      * @return the response returned by the response adapter with CORS-related headers set (for a successful CORS preflight)
      */
-    static <T, U> U processCORSPreFlightRequest(
-            Map<String, CrossOriginConfig> crossOriginConfigs,
-            Supplier<Optional<CrossOriginConfig>> secondaryCrossOriginLookup,
+    static <T, U> U processCORSPreFlightRequest(CrossOriginConfig crossOrigin,
             RequestAdapter<T> requestAdapter,
             ResponseAdapter<U> responseAdapter) {
 
         Optional<String> originOpt = requestAdapter.firstHeader(ORIGIN);
-        Optional<CrossOriginConfig> crossOriginOpt = lookupCrossOrigin(requestAdapter.path(), crossOriginConfigs,
-                secondaryCrossOriginLookup);
-
-        // If CORS not enabled, deny request
-        if (crossOriginOpt.isEmpty()) {
-            return responseAdapter.forbidden(ORIGIN_DENIED);
-        }
         if (originOpt.isEmpty()) {
             return responseAdapter.forbidden(noRequiredHeader(ORIGIN));
         }
-
-        CrossOriginConfig crossOrigin = crossOriginOpt.get();
 
         // If enabled but not whitelisted, deny request
         List<String> allowedOrigins = Arrays.asList(crossOrigin.allowOrigins());
@@ -525,7 +558,7 @@ public class CrossOriginHelperInternal {
         int length = path.length();
         int beginIndex = path.charAt(0) == '/' ? 1 : 0;
         int endIndex = path.charAt(length - 1) == '/' ? length - 1 : length;
-        return path.substring(beginIndex, endIndex);
+        return (endIndex<= beginIndex) ? "" : path.substring(beginIndex, endIndex);
     }
 
     /**

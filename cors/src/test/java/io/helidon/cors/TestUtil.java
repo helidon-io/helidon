@@ -31,6 +31,7 @@ import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 
 import static io.helidon.cors.CORSTestServices.SERVICE_3;
+import static io.helidon.cors.CrossOriginConfig.CORS_CONFIG_KEY;
 
 public class TestUtil {
 
@@ -60,21 +61,23 @@ public class TestUtil {
         /*
          * Use the default config for the service at "/greet" and then programmatically add the config for /cors3.
          */
-        CORSSupport.Builder corsSupportBuilder = CORSSupport.builder();
+        CrossOriginService.Builder corsSupportBuilder = CrossOriginService.builder();
         corsSupportBuilder.addCrossOrigin(SERVICE_3.path(), cors3COC);
 
         /*
          * Load a specific config for "/othergreet."
          */
         Config twoCORSConfig = minimalConfig(ConfigSources.classpath("twoCORS.yaml"));
-        CORSSupport.Builder twoCORSSupportBuilder =
-                CORSSupport.builder().config(twoCORSConfig.get(CrossOriginConfig.CORS_CONFIG_KEY));
+        CrossOriginService.Builder twoCORSSupportBuilder =
+                CrossOriginService.builder().config(twoCORSConfig.get(CORS_CONFIG_KEY));
 
-        CORSSupport greetingCORSSupport = corsSupportBuilder.build();
-        CORSSupport otherGreetingCORSSupport = twoCORSSupportBuilder.build();
         Routing.Builder builder = Routing.builder()
-                .register(GREETING_PATH, greetingCORSSupport, new GreetService())
-                .register(OTHER_GREETING_PATH, otherGreetingCORSSupport, new GreetService("Other Hello"));
+                .register(GREETING_PATH,
+                          CrossOriginService.create(), // use "cors" from default app config
+                          new GreetService())
+                .register(OTHER_GREETING_PATH,
+                          CrossOriginService.create(twoCORSConfig.get(CORS_CONFIG_KEY)), // custom config - get "cors" yourself
+                          new GreetService("Other Hello"));
 
         return builder;
     }

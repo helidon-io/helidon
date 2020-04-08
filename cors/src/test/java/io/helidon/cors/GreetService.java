@@ -46,7 +46,7 @@ public class GreetService implements Service {
         }
     }
 
-    private void getDefaultMessageHandler(ServerRequest request, ServerResponse response) {
+    void getDefaultMessageHandler(ServerRequest request, ServerResponse response) {
         String msg = String.format("%s %s!", greeting, new Date().toString());
         response.status(Http.Status.OK_200.code());
         response.send(msg);

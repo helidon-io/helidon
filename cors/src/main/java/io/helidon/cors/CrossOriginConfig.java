@@ -27,7 +27,7 @@ import static io.helidon.cors.CrossOriginHelperInternal.normalize;
 import static io.helidon.cors.CrossOriginHelperInternal.parseHeader;
 
 /**
- * Class CrossOriginConfig.
+ * Represents information about cross origin request sharing.
  */
 public class CrossOriginConfig /* implements CrossOrigin */ {
 
@@ -90,7 +90,15 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
 
     /**
      *
-     * @return origins
+     * @return a new builder for cross origin config
+     */
+    public static Builder builder() {
+        return Builder.create();
+    }
+
+    /**
+     *
+     * @return the allowed origins
      */
     public String[] allowOrigins() {
         return copyOf(allowOrigins);
@@ -98,7 +106,7 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
 
     /**
      *
-     * @return allowHeaders
+     * @return the allowed headers
      */
     public String[] allowHeaders() {
         return copyOf(allowHeaders);
@@ -106,7 +114,7 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
 
     /**
      *
-     * @return exposeHeaders
+     * @return headers OK to expose in responses
      */
     public String[] exposeHeaders() {
         return copyOf(exposeHeaders);
@@ -114,7 +122,7 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
 
     /**
      *
-     * @return allowMethods
+     * @return allowed methods
      */
     public String[] allowMethods() {
         return copyOf(allowMethods);
@@ -122,7 +130,7 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
 
     /**
      *
-     * @return allowCredentials
+     * @return allowed credentials
      */
     public boolean allowCredentials() {
         return allowCredentials;
@@ -130,7 +138,7 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
 
     /**
      *
-     * @return maxAge
+     * @return maximum age
      */
     public long maxAge() {
         return maxAge;
@@ -141,9 +149,64 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
     }
 
     /**
+     * Defines common behavior between {@code CrossOriginConfig} and {@link CrossOriginHandler.Builder}.
+     *
+     * @param <T> the type of the implementing class so the fluid methods can return the correct type
+     */
+    interface Setter<T extends Setter> {
+        /**
+         * Sets the allowOrigins.
+         *
+         * @param origins the origin value(s)
+         * @return updated builder
+         */
+        public T allowOrigins(String... origins);
+
+        /**
+         * Sets the allow headers.
+         *
+         * @param allowHeaders the allow headers value(s)
+         * @return updated builder
+         */
+        public T allowHeaders(String... allowHeaders);
+
+        /**
+         * Sets the expose headers.
+         *
+         * @param exposeHeaders the expose headers value(s)
+         * @return updated builder
+         */
+        public T exposeHeaders(String... exposeHeaders);
+
+        /**
+         * Sets the allow methods.
+         *
+         * @param allowMethods the allow method value(s)
+         * @return updated builder
+         */
+        public T allowMethods(String... allowMethods);
+
+        /**
+         * Sets the allow credentials flag.
+         *
+         * @param allowCredentials the allow credentials flag
+         * @return updated builder
+         */
+        public T allowCredentials(boolean allowCredentials);
+
+        /**
+         * Sets the maximum age.
+         *
+         * @param maxAge the maximum age
+         * @return updated builder
+         */
+        public T maxAge(long maxAge);
+    }
+
+    /**
      * Builder for {@link CrossOriginConfig}.
      */
-    public static class Builder implements io.helidon.common.Builder<CrossOriginConfig> {
+    public static class Builder implements Setter<Builder>, io.helidon.common.Builder<CrossOriginConfig> {
 
         private static final String[] ALLOW_ALL = {"*"};
 
@@ -171,6 +234,7 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
          * @param origins the origin value(s)
          * @return updated builder
          */
+        @Override
         public Builder allowOrigins(String... origins) {
             this.origins = copyOf(origins);
             return this;
@@ -182,6 +246,7 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
          * @param allowHeaders the allow headers value(s)
          * @return updated builder
          */
+        @Override
         public Builder allowHeaders(String... allowHeaders) {
             this.allowHeaders = copyOf(allowHeaders);
             return this;
@@ -193,6 +258,7 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
          * @param exposeHeaders the expose headers value(s)
          * @return updated builder
          */
+        @Override
         public Builder exposeHeaders(String... exposeHeaders) {
             this.exposeHeaders = copyOf(exposeHeaders);
             return this;
@@ -204,6 +270,7 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
          * @param allowMethods the allow method value(s)
          * @return updated builder
          */
+        @Override
         public Builder allowMethods(String... allowMethods) {
             this.allowMethods = copyOf(allowMethods);
             return this;
@@ -226,6 +293,7 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
          * @param maxAge the maximum age
          * @return updated builder
          */
+        @Override
         public Builder maxAge(long maxAge) {
             this.maxAge = maxAge;
             return this;
