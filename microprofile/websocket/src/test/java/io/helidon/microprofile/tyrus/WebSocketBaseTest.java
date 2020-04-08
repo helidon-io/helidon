@@ -21,6 +21,7 @@ import java.net.URI;
 import java.util.logging.Logger;
 
 import javax.enterprise.inject.se.SeContainer;
+import javax.enterprise.inject.spi.CDI;
 import javax.websocket.CloseReason;
 import javax.websocket.Endpoint;
 import javax.websocket.EndpointConfig;
@@ -32,6 +33,7 @@ import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 
+import io.helidon.microprofile.server.ServerCdiExtension;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 
@@ -40,7 +42,6 @@ import org.junit.jupiter.api.Test;
  */
 public abstract class WebSocketBaseTest {
 
-    static final int DEFAULT_PORT = 7001;
     static SeContainer container;
 
     @AfterAll
@@ -50,9 +51,14 @@ public abstract class WebSocketBaseTest {
 
     public abstract String context();
 
+    public int port() {
+        ServerCdiExtension cdiExtension = CDI.current().getBeanManager().getExtension(ServerCdiExtension.class);
+        return cdiExtension.port();
+    }
+
     @Test
     public void testEchoAnnot() throws Exception {
-        URI echoUri = URI.create("ws://localhost:" + DEFAULT_PORT + context() + "/echoAnnot");
+        URI echoUri = URI.create("ws://localhost:" + port() + context() + "/echoAnnot");
         EchoClient echoClient = new EchoClient(echoUri);
         echoClient.echo("hi", "how are you?");
     }

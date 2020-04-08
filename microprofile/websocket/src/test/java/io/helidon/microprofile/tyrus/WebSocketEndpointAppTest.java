@@ -22,12 +22,14 @@ import java.util.Set;
 
 import javax.enterprise.context.Dependent;
 import javax.enterprise.inject.se.SeContainerInitializer;
+import javax.enterprise.inject.spi.CDI;
 import javax.websocket.Endpoint;
 import javax.websocket.server.ServerApplicationConfig;
 import javax.websocket.server.ServerEndpointConfig;
 
 import io.helidon.microprofile.server.RoutingPath;
 
+import io.helidon.microprofile.server.ServerCdiExtension;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -52,7 +54,7 @@ public class WebSocketEndpointAppTest extends WebSocketBaseTest {
 
     @Test
     public void testEchoProg() throws Exception {
-        URI echoUri = URI.create("ws://localhost:" + DEFAULT_PORT + context() + "/echoProg");
+        URI echoUri = URI.create("ws://localhost:" + port() + context() + "/echoProg");
         EchoClient echoClient = new EchoClient(echoUri);
         echoClient.echo("hi", "how are you?");
     }

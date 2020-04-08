@@ -54,7 +54,7 @@ public class WebSocketRestEndpointTest extends WebSocketBaseTest {
 
     @Test
     public void testEchoRest() {
-        String echo = client.target("http://localhost:" + DEFAULT_PORT + "/echoRest")
+        String echo = client.target("http://localhost:" + port() + "/echoRest")
                 .request("text/plain")
                 .post(text("echo"), String.class);
         MatcherAssert.assertThat(echo, is("echo"));
