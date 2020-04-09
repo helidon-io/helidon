@@ -24,7 +24,6 @@
         <version>2.0.0-SNAPSHOT</version>
     </parent>
 
-    <groupId>io.helidon.webserver.cors</groupId>
     <artifactId>helidon-webserver-cors</artifactId>
     
     <name>Helidon Webserver CORS</name>

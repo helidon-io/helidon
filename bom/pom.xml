@@ -71,7 +71,7 @@
             <dependency>
                 <groupId>io.helidon.webserver</groupId>
                 <artifactId>helidon-webserver-cors</artifactId>
-                <version>${helidon.version}}</version>
+                <version>${helidon.version}</version>
             </dependency>
             <!-- Helidon Jersey -->
             <dependency>
