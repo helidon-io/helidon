@@ -26,6 +26,7 @@ import java.time.ZonedDateTime;
 import javax.json.bind.annotation.JsonbDateFormat;
 
 import org.eclipse.microprofile.graphql.DateFormat;
+import org.eclipse.microprofile.graphql.Description;
 import org.eclipse.microprofile.graphql.Type;
 
 /**
@@ -46,13 +47,17 @@ public class DateTimePojo {
     private LocalDateTime localDateTime;
     private OffsetDateTime offsetDateTime;
     private ZonedDateTime zonedDateTime;
+    @Description("description")
+    private LocalDate localDateNoFormat;
 
     public DateTimePojo(LocalDate localDate,
                         LocalDate localDate2,
                         LocalTime localTime,
                         OffsetTime offsetTime,
                         LocalDateTime localDateTime,
-                        OffsetDateTime offsetDateTime, ZonedDateTime zonedDateTime) {
+                        OffsetDateTime offsetDateTime,
+                        ZonedDateTime zonedDateTime,
+                        LocalDate localDateNoFormat) {
         this.localDate = localDate;
         this.localDate2 = localDate2;
         this.localTime = localTime;
@@ -60,6 +65,7 @@ public class DateTimePojo {
         this.localDateTime = localDateTime;
         this.offsetDateTime = offsetDateTime;
         this.zonedDateTime = zonedDateTime;
+        this.localDateNoFormat = localDateNoFormat;
     }
 
     public LocalDate getLocalDate() {
@@ -116,5 +122,13 @@ public class DateTimePojo {
 
     public void setLocalDate2(LocalDate localDate2) {
         this.localDate2 = localDate2;
+    }
+
+    public LocalDate getLocalDateNoFormat() {
+        return localDateNoFormat;
+    }
+
+    public void setLocalDateNoFormat(LocalDate localDateNoFormat) {
+        this.localDateNoFormat = localDateNoFormat;
     }
 }

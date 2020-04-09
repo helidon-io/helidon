@@ -86,6 +86,7 @@ import static graphql.schema.GraphQLObjectType.newObject;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ID;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -327,16 +328,27 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
         SchemaType type = schema.getTypeByName("DateTimePojo");
 
         SchemaFieldDefinition fd = getFieldDefinition(type, "localDate");
-        assertThat(fd.getDescription(), is("MM/dd/yyyy"));
+        assertThat(fd, is(notNullValue()));
+        assertThat(fd.getFormat()[0], is("MM/dd/yyyy"));
+        assertThat(fd.getDescription(), is(nullValue()));
 
         fd = getFieldDefinition(type, "localTime");
         assertThat(fd, is(notNullValue()));
-        assertThat(fd.getDescription(), is("hh:mm:ss"));
-//
-//        // test default values for date and time
-//        assertDefaultFormat(type, "offSetTime", "HH:mm:ssZ");
-//
+        assertThat(fd.getFormat()[0], is("hh:mm:ss"));
+        assertThat(fd.getDescription(), is(nullValue()));
 
+        // test default values for date and time
+        assertDefaultFormat(type, "offsetTime", "HH:mm:ssZ");
+        assertDefaultFormat(type, "localTime", "hh:mm:ss");
+        assertDefaultFormat(type, "localDateTime", "yyyy-MM-dd'T'HH:mm:ss");
+        assertDefaultFormat(type, "offsetDateTime", "yyyy-MM-dd'T'HH:mm:ssZ");
+        assertDefaultFormat(type, "zonedDateTime", "yyyy-MM-dd'T'HH:mm:ssZ'['VV']'");
+        assertDefaultFormat(type, "localDateNoFormat", "yyyy-MM-dd");
+
+        fd = getFieldDefinition(type, "localDateTime");
+        assertThat(fd, is(notNullValue()));
+        assertThat(fd.getDescription(), is(nullValue()));
+        assertThat(fd.getFormat()[0], is("yyyy-MM-dd'T'HH:mm:ss"));
     }
 
     @Test
@@ -519,11 +531,12 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
             }
             if (fd.getName().equals("longValue1")) {
                 // no description so include the format
-                assertThat(fd.getDescription(), is("L-########"));
+                assertThat(fd.getDescription(), is(nullValue()));
+                assertThat(fd.getFormat()[0], is("L-########"));
             }
             if (fd.getName().equals("longValue2")) {
                 // both description and formatting
-                assertThat(fd.getDescription(), is("Description (###,### en-AU)"));
+                assertThat(fd.getDescription(), is("Description"));
             }
         });
 

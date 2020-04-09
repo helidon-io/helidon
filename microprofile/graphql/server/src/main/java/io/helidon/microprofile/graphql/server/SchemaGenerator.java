@@ -61,8 +61,8 @@ import static io.helidon.microprofile.graphql.server.SchemaGenerator.DiscoveredM
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ID;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.STRING;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.checkScalars;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ensureFormat;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getArrayLevels;
-import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getDefaultDescription;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getDefaultValueAnnotationValue;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getDescription;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getFieldName;
@@ -78,6 +78,7 @@ import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.isArr
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.isEnumClass;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.isGraphQLType;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.isPrimitive;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.isScalar;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.isValidIDType;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.shouldIgnoreField;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.shouldIgnoreMethod;
@@ -163,7 +164,8 @@ public class SchemaGenerator {
      * @param clazzes array of classes to check
      * @return a {@link Schema}
      */
-    protected Schema generateSchemaFromClasses(Class<?>... clazzes) throws IntrospectionException, ClassNotFoundException {
+    protected Schema generateSchemaFromClasses(Class<?>... clazzes)
+            throws IntrospectionException, ClassNotFoundException {
         Schema schema = new Schema();
         setUnresolvedTypes.clear();
         setAdditionalMethods.clear();
@@ -194,8 +196,9 @@ public class SchemaGenerator {
                 if (typeAnnotation != null || interfaceAnnotation != null) {
                     // interface or type
                     if (interfaceAnnotation != null && !clazz.isInterface()) {
-                        throw new RuntimeException("Class " + clazz.getName() + " has been annotated with"
-                                                           + " @Interface but is not one");
+                        throw new RuntimeException(
+                                "Class " + clazz.getName() + " has been annotated with"
+                                        + " @Interface but is not one");
                     }
 
                     // assuming value for annotation overrides @Name
@@ -210,7 +213,6 @@ public class SchemaGenerator {
                     if (type.isInterface()) {
                         // is an interface so check for any implementors and add them to
                         jandexUtils.getKnownImplementors(clazz.getName()).forEach(c -> setUnresolvedTypes.add(c.getName()));
-
                     }
                 } else if (inputAnnotation != null) {
                     String clazzName = clazz.getName();
@@ -281,6 +283,9 @@ public class SchemaGenerator {
             }
         }
 
+        // process default values for dates
+        processDefaultDateTimeValues(schema);
+
         // process the @GraphQLApi annotated classes
         if (rootQueryType.getFieldDefinitions().size() == 0) {
             LOGGER.warning("Unable to find any classes with @GraphQLApi annotation."
@@ -288,6 +293,33 @@ public class SchemaGenerator {
         }
 
         return schema;
+    }
+
+    /**
+     * Process all {@link SchemaFieldDefinition}s and {@link SchemaArgument}s and update the default
+     * values for any scalars.
+     * @param schema {@link Schema} to update
+     */
+    @SuppressWarnings("unchecked")
+    private void processDefaultDateTimeValues(Schema schema) {
+        // concatenate both the SchemaType and SchemaInputType
+        Stream streamInputTypes = schema.getInputTypes().stream().map(it -> (SchemaType) it);
+        Stream<SchemaType> streamAll = Stream.concat(streamInputTypes, schema.getTypes().stream());
+        streamAll.forEach(t -> {
+            t.getFieldDefinitions().forEach(fd -> {
+                String returnType = fd.getReturnType();
+                if (isScalar(returnType)) {
+                    fd.setFormat(ensureFormat(returnType, fd.getOriginalType().getName(), fd.getFormat()));
+                }
+                
+                fd.getArguments().forEach(a -> {
+                    String returnTypeArgument = a.getArgumentType();
+                    if (isScalar(returnTypeArgument)) {
+                        a.setFormat(ensureFormat(returnTypeArgument, a.getOriginalType().getName(), a.getFormat()));
+                    }
+                });
+            });
+        });
     }
 
     /**
@@ -400,7 +432,7 @@ public class SchemaGenerator {
             SchemaFieldDefinition fd = null;
 
             // only include discovered methods in the original type where either the source is null
-            // or the source is not null and it had a query annotation
+            // or the source is not null and it has a query annotation
             String source = discoveredMethod.getSource();
             if (source == null || discoveredMethod.isQueryAnnotated()) {
                 fd = newFieldDefinition(discoveredMethod, getMethodName(method));
@@ -630,7 +662,6 @@ public class SchemaGenerator {
         String[] format = discoveredMethod.getFormat();
         if (discoveredMethod.getPropertyName() != null && format != null && format.length == 3 && format[0] != null) {
             if (!isGraphQLType(valueClassName)) {
-
                 if (NUMBER.equals(format[0])) {
                     dataFetcher = DataFetcherUtils
                             .newNumberFormatPropertyDataFetcher(discoveredMethod.getPropertyName(), graphQLType, format[1],
@@ -649,6 +680,7 @@ public class SchemaGenerator {
                                                              discoveredMethod.isReturnTypeMandatory(),
                                                              discoveredMethod.getArrayLevels());
         fd.setDataFetcher(dataFetcher);
+        fd.setOriginalType(discoveredMethod.getMethod().getReturnType());
 
         if (format != null && format.length == 3) {
             fd.setFormat(new String[] { format[1], format[2] });
@@ -790,9 +822,7 @@ public class SchemaGenerator {
         String defaultValue = null;
 
         // retrieve the method name
-        String varName = isQueryOrMutation
-                ? stripMethodName(method, false)
-                : stripMethodName(method, true);
+        String varName = stripMethodName(method, !isQueryOrMutation);
 
         // check for either Name or JsonbProperty annotations on method or field
         // ensure if this is an input type that the write method is checked
@@ -901,14 +931,9 @@ public class SchemaGenerator {
             description = getDescription(method.getAnnotation(Description.class));
         }
 
-        if (format != null && format.length == 3 && format[0] != null) {
-            description = getDefaultDescription(new String[] { format[1], format[2] }, description);
-        }
-
         Parameter[] parameters = method.getParameters();
+        // process the parameters for the method
         if (parameters != null && parameters.length > 0) {
-            // process the parameters for the method
-
             java.lang.reflect.Type[] genericParameterTypes = method.getGenericParameterTypes();
             int i = 0;
             for (Parameter parameter : parameters) {
@@ -939,13 +964,9 @@ public class SchemaGenerator {
                                            isMandatory, argumentDefaultValue, paramType);
                 String argumentDescription = getDescription(parameter.getAnnotation(Description.class));
                 String[] argumentFormat = FormattingHelper.getFormattingAnnotation(parameter);
+                argument.setDescription(argumentDescription);
                 if (argumentFormat[0] != null) {
-                    String[] formatValue = new String[] { argumentFormat[1], argumentFormat[2] };
-                    argument.setFormat(argumentFormat);
-                    argument.setDescription(getDefaultDescription(formatValue, argumentDescription));
-                }
-                else {
-                    argument.setDescription(argumentDescription);
+                    argument.setFormat(new String[] { argumentFormat[1], argumentFormat[2] });
                 }
 
                 Source sourceAnnotation = parameter.getAnnotation(Source.class);

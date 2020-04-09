@@ -71,7 +71,7 @@ public class SchemaType
      */
     @Override
     public String getSchemaAsString() {
-        StringBuilder sb = new StringBuilder(getSchemaElementDescription())
+        StringBuilder sb = new StringBuilder(getSchemaElementDescription(null))
                 .append(getGraphQLName())
                 .append(SPACER)
                 .append(getName());

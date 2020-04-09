@@ -85,7 +85,7 @@ public class SchemaArgument
      */
     @Override
     public String getSchemaAsString() {
-        StringBuilder sb = new StringBuilder(getSchemaElementDescription())
+        StringBuilder sb = new StringBuilder(getSchemaElementDescription(getFormat()))
                 .append(getArgumentName())
                 .append(COLON)
                 .append(SPACER)

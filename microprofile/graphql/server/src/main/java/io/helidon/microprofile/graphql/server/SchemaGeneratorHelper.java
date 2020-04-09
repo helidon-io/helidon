@@ -506,7 +506,7 @@ public final class SchemaGeneratorHelper {
      * @return the default description
      */
     protected static String getDefaultDescription(String[] format, String description) {
-        String fmt = format == null || format.length != 2
+        String fmt = format == null || format.length != 2 || format[0] == null && format[1] == null
                 ? null : format[0] + (DEFAULT_LOCALE.equals(format[1]) ? "" : " " + format[1]);
         if (description == null && fmt == null) {
             return null;

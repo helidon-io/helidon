@@ -20,6 +20,7 @@ import static io.helidon.microprofile.graphql.server.ElementGenerator.NEWLINE;
 import static io.helidon.microprofile.graphql.server.ElementGenerator.NOTHING;
 import static io.helidon.microprofile.graphql.server.ElementGenerator.QUOTE;
 import static io.helidon.microprofile.graphql.server.ElementGenerator.TRIPLE_QUOTE;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getDefaultDescription;
 
 /**
  * Describes an element that has a description.
@@ -43,11 +44,12 @@ public interface DescriptiveElement {
     /**
      * Return the description of the schema element. Only valid for Type, Field, Method, Parameter
      *
+     * @param format the format for the element
      * @return the description of the schema element.
      */
-    default String getSchemaElementDescription() {
+    default String getSchemaElementDescription(String[] format) {
+        String description = getDefaultDescription(format, getDescription());
 
-        String description = getDescription();
         if (description != null) {
             // if the description contains a quote or newline then use the triple quote option
             boolean useNormalQuotes = description.indexOf('\n') == -1 && description.indexOf('"') == -1;

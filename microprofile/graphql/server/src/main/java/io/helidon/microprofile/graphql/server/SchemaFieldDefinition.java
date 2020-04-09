@@ -17,6 +17,7 @@
 package io.helidon.microprofile.graphql.server;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -64,6 +65,11 @@ public class SchemaFieldDefinition
     private DataFetcher dataFetcher;
 
     /**
+     * Original argument type before it was converted to a GraphQL representation.
+     */
+    private Class<?> originalType;
+
+    /**
      * Defines the format for a number or date.
      */
     private String[] format;
@@ -98,7 +104,7 @@ public class SchemaFieldDefinition
 
     @Override
     public String getSchemaAsString() {
-        StringBuilder sb = new StringBuilder(getSchemaElementDescription())
+        StringBuilder sb = new StringBuilder(getSchemaElementDescription(getFormat()))
                 .append(getName());
 
         if (listSchemaArguments.size() > 0) {
@@ -269,6 +275,24 @@ public class SchemaFieldDefinition
         this.defaultValue = defaultValue;
     }
 
+    /**
+     * Sets the original return type.
+     *
+     * @param originalType the original return type
+     */
+    public void setOriginalType(Class<?> originalType) {
+        this.originalType = originalType;
+    }
+
+    /**
+     * Retrieve the original return type.
+     *
+     * @return the original return type
+     */
+    public Class<?> getOriginalType() {
+        return originalType;
+    }
+
     @Override
     public String toString() {
         return "FieldDefinition{"
@@ -278,7 +302,8 @@ public class SchemaFieldDefinition
                 + ", isReturnTypeMandatory=" + isReturnTypeMandatory
                 + ", listArguments=" + listSchemaArguments
                 + ", arrayLevels=" + arrayLevels
-                + ", format=" + format
+                + ", originalType=" + originalType
+                + ", format=" + Arrays.toString(format)
                 + ", description='" + getDescription() + '\'' + '}';
     }
 }

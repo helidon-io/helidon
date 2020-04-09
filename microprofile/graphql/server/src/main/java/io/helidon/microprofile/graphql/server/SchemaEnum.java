@@ -80,7 +80,7 @@ public class SchemaEnum
 
     @Override
     public String getSchemaAsString() {
-        StringBuilder sb = new StringBuilder(getSchemaElementDescription())
+        StringBuilder sb = new StringBuilder(getSchemaElementDescription(null))
            .append("enum")
            .append(SPACER)
            .append(getName())
