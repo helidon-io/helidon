@@ -42,13 +42,13 @@ import io.helidon.common.HelidonFlavor;
 import io.helidon.config.Config;
 import io.helidon.cors.CrossOriginConfig;
 import io.helidon.cors.CrossOriginHelperInternal;
-import io.helidon.cors.CrossOriginHelperInternal.RequestAdapter;
-import io.helidon.cors.CrossOriginHelperInternal.ResponseAdapter;
+import io.helidon.cors.RequestAdapter;
+import io.helidon.cors.ResponseAdapter;
 
 import org.eclipse.microprofile.config.ConfigProvider;
 
 import static io.helidon.cors.CrossOriginConfig.CrossOriginConfigMapper;
-import static io.helidon.cors.CrossOriginConfig.CORS_CONFIG_KEY;
+import static io.helidon.cors.CORSSupport.CORS_CONFIG_KEY;
 import static io.helidon.cors.CrossOriginHelperInternal.prepareResponse;
 
 /**
