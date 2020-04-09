@@ -16,9 +16,14 @@
  */
 package io.helidon.webserver.cors;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.StringTokenizer;
 
 import io.helidon.config.Config;
 import io.helidon.webserver.Handler;
@@ -26,12 +31,11 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
-import io.helidon.webserver.cors.CrossOriginHelperInternal.RequestAdapter;
-import io.helidon.webserver.cors.CrossOriginHelperInternal.ResponseAdapter;
+import io.helidon.webserver.cors.internal.CrossOriginHelper.RequestAdapter;
+import io.helidon.webserver.cors.internal.CrossOriginHelper.ResponseAdapter;
 
-import static io.helidon.webserver.cors.CrossOriginHelperInternal.normalize;
-import static io.helidon.webserver.cors.CrossOriginHelperInternal.prepareResponse;
-import static io.helidon.webserver.cors.CrossOriginHelperInternal.processRequest;
+import static io.helidon.webserver.cors.internal.CrossOriginHelper.prepareResponse;
+import static io.helidon.webserver.cors.internal.CrossOriginHelper.processRequest;
 
 /**
  * A Helidon service and handler implementation that implements CORS, for both the application and for built-in Helidon
@@ -115,6 +119,53 @@ public class CORSSupport implements Service, Handler {
      */
     public static Builder builder(Config config) {
         return builder().config(config);
+    }
+
+    /**
+     * Trim leading or trailing slashes of a path.
+     *
+     * @param path The path.
+     * @return Normalized path.
+     */
+    public static String normalize(String path) {
+        int length = path.length();
+        int beginIndex = path.charAt(0) == '/' ? 1 : 0;
+        int endIndex = path.charAt(length - 1) == '/' ? length - 1 : length;
+        return (endIndex <= beginIndex) ? "" : path.substring(beginIndex, endIndex);
+    }
+
+    /**
+     * Parse list header value as a set.
+     *
+     * @param header Header value as a list.
+     * @return Set of header values.
+     */
+    public static Set<String> parseHeader(String header) {
+        if (header == null) {
+            return Collections.emptySet();
+        }
+        Set<String> result = new HashSet<>();
+        StringTokenizer tokenizer = new StringTokenizer(header, ",");
+        while (tokenizer.hasMoreTokens()) {
+            String value = tokenizer.nextToken().trim();
+            if (value.length() > 0) {
+                result.add(value);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Parse a list of list of headers as a set.
+     *
+     * @param headers Header value as a list, each a potential list.
+     * @return Set of header values.
+     */
+    public static Set<String> parseHeader(List<String> headers) {
+        if (headers == null) {
+            return Collections.emptySet();
+        }
+        return parseHeader(headers.stream().reduce("", (a, b) -> a + "," + b));
     }
 
     @Override

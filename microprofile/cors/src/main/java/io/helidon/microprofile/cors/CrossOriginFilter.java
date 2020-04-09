@@ -41,15 +41,15 @@ import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
 import io.helidon.config.Config;
 import io.helidon.webserver.cors.CrossOriginConfig;
-import io.helidon.webserver.cors.CrossOriginHelperInternal;
-import io.helidon.webserver.cors.CrossOriginHelperInternal.RequestAdapter;
-import io.helidon.webserver.cors.CrossOriginHelperInternal.ResponseAdapter;
+import io.helidon.webserver.cors.internal.CrossOriginHelper;
+import io.helidon.webserver.cors.internal.CrossOriginHelper.RequestAdapter;
+import io.helidon.webserver.cors.internal.CrossOriginHelper.ResponseAdapter;
 
 import org.eclipse.microprofile.config.ConfigProvider;
 
-import static io.helidon.webserver.cors.CrossOriginConfig.CrossOriginConfigMapper;
 import static io.helidon.webserver.cors.CORSSupport.CORS_CONFIG_KEY;
-import static io.helidon.webserver.cors.CrossOriginHelperInternal.prepareResponse;
+import static io.helidon.webserver.cors.CrossOriginConfig.CrossOriginConfigMapper;
+import static io.helidon.webserver.cors.internal.CrossOriginHelper.prepareResponse;
 
 /**
  * Class CrossOriginFilter.
@@ -73,7 +73,7 @@ class CrossOriginFilter implements ContainerRequestFilter, ContainerResponseFilt
 
     @Override
     public void filter(ContainerRequestContext requestContext) {
-        Optional<Response> response = CrossOriginHelperInternal.processRequest(crossOriginConfigs,
+        Optional<Response> response = CrossOriginHelper.processRequest(crossOriginConfigs,
                 crossOriginFromAnnotationFinder(resourceInfo),
                 new MPRequestAdapter(requestContext),
                 new MPResponseAdapter());

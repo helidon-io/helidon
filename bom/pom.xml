@@ -166,6 +166,11 @@
                 <artifactId>helidon-microprofile-grpc-client</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.microprofile</groupId>
+                <artifactId>helidon-microprofile-cors</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
             <!-- media -->
             <dependency>
                 <groupId>io.helidon.media</groupId>

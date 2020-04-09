@@ -18,11 +18,12 @@ package io.helidon.webserver.cors;
 
 import io.helidon.common.http.Http;
 import io.helidon.webserver.ServerResponse;
+import io.helidon.webserver.cors.internal.CrossOriginHelper;
 
 /**
- * SE implementation of {@link CrossOriginHelperInternal.ResponseAdapter}.
+ * SE implementation of {@link CrossOriginHelper.ResponseAdapter}.
  */
-class SEResponseAdapter implements CrossOriginHelperInternal.ResponseAdapter<ServerResponse> {
+class SEResponseAdapter implements CrossOriginHelper.ResponseAdapter<ServerResponse> {
 
     private final ServerResponse serverResponse;
 
@@ -31,13 +32,13 @@ class SEResponseAdapter implements CrossOriginHelperInternal.ResponseAdapter<Ser
     }
 
     @Override
-    public CrossOriginHelperInternal.ResponseAdapter<ServerResponse> header(String key, String value) {
+    public CrossOriginHelper.ResponseAdapter<ServerResponse> header(String key, String value) {
         serverResponse.headers().add(key, value);
         return this;
     }
 
     @Override
-    public CrossOriginHelperInternal.ResponseAdapter<ServerResponse> header(String key, Object value) {
+    public CrossOriginHelper.ResponseAdapter<ServerResponse> header(String key, Object value) {
         serverResponse.headers().add(key, value.toString());
         return this;
     }

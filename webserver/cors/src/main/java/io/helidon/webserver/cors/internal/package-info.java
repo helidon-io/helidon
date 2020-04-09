@@ -14,4 +14,7 @@
  * limitations under the License.
  *
  */
+/**
+ * Elements reserved for internal use.
+ */
 package io.helidon.webserver.cors.internal;

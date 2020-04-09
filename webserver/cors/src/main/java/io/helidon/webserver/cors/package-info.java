@@ -173,7 +173,7 @@
  * </ul>
  * <h2>Warning about internal classes</h2>
  * <p>
- *     Note that {@code CrossOriginHelperInternal}, while {@code public}, is <em>not</em> intended for use by developers. It is
+ *     Note that {@code CrossOriginHelper}, while {@code public}, is <em>not</em> intended for use by developers. It is
  *     reserved for internal Helidon use and might change at any time.
  * </p>
  */

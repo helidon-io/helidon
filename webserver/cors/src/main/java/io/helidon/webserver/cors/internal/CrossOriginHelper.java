@@ -14,26 +14,26 @@
  * limitations under the License.
  *
  */
-package io.helidon.webserver.cors;
+package io.helidon.webserver.cors.internal;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.StringTokenizer;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
 import io.helidon.common.http.Http;
+import io.helidon.webserver.cors.CORSSupport;
+import io.helidon.webserver.cors.CrossOriginConfig;
 
 import static io.helidon.common.http.Http.Header.HOST;
 import static io.helidon.common.http.Http.Header.ORIGIN;
+import static io.helidon.webserver.cors.CORSSupport.normalize;
 import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_CREDENTIALS;
 import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_HEADERS;
 import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_METHODS;
@@ -55,9 +55,9 @@ import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_REQUEST
  * specific to the needs of CORS support.
  * </p>
  */
-public class CrossOriginHelperInternal {
+public class CrossOriginHelper {
 
-    private CrossOriginHelperInternal() {
+    private CrossOriginHelper() {
     }
 
     static final String ORIGIN_DENIED = "CORS origin is denied";
@@ -366,7 +366,7 @@ public class CrossOriginHelperInternal {
         }
 
         // Check if headers are allowed
-        Set<String> requestHeaders = parseHeader(requestAdapter.allHeaders(ACCESS_CONTROL_REQUEST_HEADERS));
+        Set<String> requestHeaders = CORSSupport.parseHeader(requestAdapter.allHeaders(ACCESS_CONTROL_REQUEST_HEADERS));
         List<String> allowedHeaders = Arrays.asList(crossOrigin.allowHeaders());
         if (!allowedHeaders.contains("*") && !contains(requestHeaders, allowedHeaders)) {
             return responseAdapter.forbidden(HEADERS_NOT_IN_ALLOWED_LIST);
@@ -428,53 +428,6 @@ public class CrossOriginHelperInternal {
             builder.append(", ");
         } while (true);
         return Optional.of(builder.toString());
-    }
-
-    /**
-     * Parse list header value as a set.
-     *
-     * @param header Header value as a list.
-     * @return Set of header values.
-     */
-    static Set<String> parseHeader(String header) {
-        if (header == null) {
-            return Collections.emptySet();
-        }
-        Set<String> result = new HashSet<>();
-        StringTokenizer tokenizer = new StringTokenizer(header, ",");
-        while (tokenizer.hasMoreTokens()) {
-            String value = tokenizer.nextToken().trim();
-            if (value.length() > 0) {
-                result.add(value);
-            }
-        }
-        return result;
-    }
-
-    /**
-     * Parse a list of list of headers as a set.
-     *
-     * @param headers Header value as a list, each a potential list.
-     * @return Set of header values.
-     */
-    static Set<String> parseHeader(List<String> headers) {
-        if (headers == null) {
-            return Collections.emptySet();
-        }
-        return parseHeader(headers.stream().reduce("", (a, b) -> a + "," + b));
-    }
-
-    /**
-     * Trim leading or trailing slashes of a path.
-     *
-     * @param path The path.
-     * @return Normalized path.
-     */
-    static String normalize(String path) {
-        int length = path.length();
-        int beginIndex = path.charAt(0) == '/' ? 1 : 0;
-        int endIndex = path.charAt(length - 1) == '/' ? length - 1 : length;
-        return (endIndex <= beginIndex) ? "" : path.substring(beginIndex, endIndex);
     }
 
     /**

@@ -20,11 +20,12 @@ import java.util.List;
 import java.util.Optional;
 
 import io.helidon.webserver.ServerRequest;
+import io.helidon.webserver.cors.internal.CrossOriginHelper;
 
 /**
- * Helidon SE implementation of {@link CrossOriginHelperInternal.RequestAdapter}.
+ * Helidon SE implementation of {@link CrossOriginHelper.RequestAdapter}.
  */
-class SERequestAdapter implements CrossOriginHelperInternal.RequestAdapter<ServerRequest> {
+class SERequestAdapter implements CrossOriginHelper.RequestAdapter<ServerRequest> {
 
     private final ServerRequest request;
 
