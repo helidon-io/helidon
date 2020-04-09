@@ -52,5 +52,6 @@
         <module>websocket</module>
         <module>reactive-streams</module>
         <module>messaging</module>
+        <module>cors</module>
     </modules>
 </project>
