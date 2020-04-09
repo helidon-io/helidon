@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package io.helidon.cors;
+package io.helidon.webserver.cors;
 
 import java.util.List;
 import java.util.Optional;
@@ -22,9 +22,9 @@ import java.util.Optional;
 import io.helidon.webserver.ServerRequest;
 
 /**
- * Helidon SE implementation of {@link RequestAdapter}.
+ * Helidon SE implementation of {@link CrossOriginHelperInternal.RequestAdapter}.
  */
-class SERequestAdapter implements RequestAdapter<ServerRequest> {
+class SERequestAdapter implements CrossOriginHelperInternal.RequestAdapter<ServerRequest> {
 
     private final ServerRequest request;
 

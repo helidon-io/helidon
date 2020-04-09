@@ -14,34 +14,23 @@
  * limitations under the License.
  *
  */
-package io.helidon.cors;
+package io.helidon.webserver.cors;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
-import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
 import io.helidon.webclient.WebClient;
-import io.helidon.webclient.WebClientRequestBuilder;
 import io.helidon.webclient.WebClientResponse;
 import io.helidon.webserver.WebServer;
 
-import static io.helidon.common.http.Http.Header.ORIGIN;
-import static io.helidon.cors.CORSTestServices.SERVICE_1;
-import static io.helidon.cors.CORSTestServices.SERVICE_2;
-import static io.helidon.cors.CORSTestServices.SERVICE_3;
-import static io.helidon.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_CREDENTIALS;
-import static io.helidon.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_HEADERS;
-import static io.helidon.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_METHODS;
-import static io.helidon.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN;
-import static io.helidon.cors.CrossOriginConfig.ACCESS_CONTROL_MAX_AGE;
-import static io.helidon.cors.CrossOriginConfig.ACCESS_CONTROL_REQUEST_HEADERS;
-import static io.helidon.cors.CrossOriginConfig.ACCESS_CONTROL_REQUEST_METHOD;
-import static io.helidon.cors.CustomMatchers.notPresent;
-import static io.helidon.cors.CustomMatchers.present;
+import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_HEADERS;
+import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_METHODS;
+import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN;
+import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_MAX_AGE;
+import static io.helidon.webserver.cors.CustomMatchers.notPresent;
+import static io.helidon.webserver.cors.CustomMatchers.present;
 
-import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 

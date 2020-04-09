@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.cors;
+package io.helidon.webserver.cors;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -23,8 +23,8 @@ import java.util.function.Function;
 
 import io.helidon.config.Config;
 
-import static io.helidon.cors.CrossOriginHelperInternal.normalize;
-import static io.helidon.cors.CrossOriginHelperInternal.parseHeader;
+import static io.helidon.webserver.cors.CrossOriginHelperInternal.normalize;
+import static io.helidon.webserver.cors.CrossOriginHelperInternal.parseHeader;
 
 /**
  * Represents information about cross origin request sharing.
@@ -89,7 +89,7 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
      * @return a new builder for cross origin config
      */
     public static Builder builder() {
-        return Builder.create();
+        return new Builder();
     }
 
     /**
@@ -214,14 +214,6 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
         private long maxAge = DEFAULT_AGE;
 
         private Builder() {
-        }
-
-        /**
-         *
-         * @return a new {@code CrossOriginConfig.Builder}
-         */
-        public static Builder create() {
-            return new Builder();
         }
 
         /**

@@ -68,6 +68,11 @@
                 <artifactId>helidon-webserver-tyrus</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.webserver</groupId>
+                <artifactId>helidon-webserver-cors</artifactId>
+                <version>${helidon.version}}</version>
+            </dependency>
             <!-- Helidon Jersey -->
             <dependency>
                 <groupId>io.helidon.jersey</groupId>
@@ -803,7 +808,7 @@
             </dependency>
             <!-- CORS support -->
             <dependency>
-                <groupId>io.helidon.cors</groupId>
+                <groupId>io.helidon.webserver.cors</groupId>
                 <artifactId>helidon-cors</artifactId>
                 <version>${helidon.version}</version>
             </dependency>

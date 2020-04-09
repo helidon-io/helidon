@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package io.helidon.cors;
+package io.helidon.webserver.cors;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -24,14 +24,14 @@ import java.util.function.Supplier;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.spi.ConfigSource;
-import io.helidon.cors.CORSTestServices.CORSTestService;
+import io.helidon.webserver.cors.CORSTestServices.CORSTestService;
 import io.helidon.webclient.WebClient;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 
-import static io.helidon.cors.CORSTestServices.SERVICE_3;
-import static io.helidon.cors.CORSSupport.CORS_CONFIG_KEY;
+import static io.helidon.webserver.cors.CORSTestServices.SERVICE_3;
+import static io.helidon.webserver.cors.CORSSupport.CORS_CONFIG_KEY;
 
 public class TestUtil {
 
@@ -53,7 +53,7 @@ public class TestUtil {
     }
 
     static Routing.Builder prepRouting() {
-        CrossOriginConfig cors3COC= CrossOriginConfig.Builder.create()
+        CrossOriginConfig cors3COC= CrossOriginConfig.builder()
                 .allowOrigins("http://foo.bar", "http://bar.foo")
                 .allowMethods("DELETE", "PUT")
                 .build();

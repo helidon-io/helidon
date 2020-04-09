@@ -175,7 +175,6 @@
         <module>webclient</module>
         <module>integrations</module>
         <module>dbclient</module>
-        <module>cors</module>
     </modules>
 
 
@@ -978,6 +977,7 @@ helidon-parent,helidon-dependencies,helidon-bom,helidon-se,helidon-mp,io.grpc,he
                                 <sourceFileExclude>**/test/**/*.java</sourceFileExclude>
                                 <sourceFileExclude>**/*_.java</sourceFileExclude>
                                 <sourceFileExclude>**/io/grpc/stub/**/*.java</sourceFileExclude>
+                                <sourceFileExclude>**/io/helidon/webserver/cors/CrossOriginHelperInternal.java</sourceFileExclude>
                             </sourceFileExcludes>
                         </configuration>
                         <reports>

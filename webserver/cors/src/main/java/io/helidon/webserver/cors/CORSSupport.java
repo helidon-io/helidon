@@ -14,23 +14,24 @@
  * limitations under the License.
  *
  */
-package io.helidon.cors;
+package io.helidon.webserver.cors;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
 import io.helidon.config.Config;
-import io.helidon.cors.CrossOriginConfig.CrossOriginConfigMapper;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
+import io.helidon.webserver.cors.CrossOriginHelperInternal.RequestAdapter;
+import io.helidon.webserver.cors.CrossOriginHelperInternal.ResponseAdapter;
 
-import static io.helidon.cors.CrossOriginHelperInternal.normalize;
-import static io.helidon.cors.CrossOriginHelperInternal.prepareResponse;
-import static io.helidon.cors.CrossOriginHelperInternal.processRequest;
+import static io.helidon.webserver.cors.CrossOriginHelperInternal.normalize;
+import static io.helidon.webserver.cors.CrossOriginHelperInternal.prepareResponse;
+import static io.helidon.webserver.cors.CrossOriginHelperInternal.processRequest;
 
 /**
  * A Helidon service and handler implementation that implements CORS, for both the application and for built-in Helidon
@@ -154,7 +155,8 @@ public class CORSSupport implements Service, Handler {
 
         private final Map<String, CrossOriginConfig> crossOriginConfigs = new HashMap<>();
 
-        private Config corsConfig = Config.empty();
+        private final Map<String, CrossOriginConfig> crossOriginConfigsAssembledFromConfigs = new HashMap<>();
+
         private Optional<CrossOriginConfig.Builder> crossOriginConfigBuilderOpt = Optional.empty();
 
         @Override
@@ -170,7 +172,7 @@ public class CORSSupport implements Service, Handler {
          * @return the updated builder
          */
         public Builder config(Config config) {
-            this.corsConfig = config;
+            crossOriginConfigsAssembledFromConfigs.putAll(config.as(new CrossOriginConfig.CrossOriginConfigMapper()).get());
             return this;
         }
 
@@ -181,7 +183,7 @@ public class CORSSupport implements Service, Handler {
          * @return the updated builder
          */
         public Builder config() {
-            corsConfig = Config.create().get(CORS_CONFIG_KEY);
+            config(Config.create().get(CORS_CONFIG_KEY));
             return this;
         }
 
@@ -247,9 +249,7 @@ public class CORSSupport implements Service, Handler {
         Map<String, CrossOriginConfig> crossOriginConfigs() {
             final Map<String, CrossOriginConfig> result = new HashMap<>(crossOriginConfigs);
             crossOriginConfigBuilderOpt.ifPresent(opt -> result.put("/", opt.get()));
-            result.putAll(corsConfig
-                    .as(new CrossOriginConfigMapper())
-                    .get());
+            result.putAll(crossOriginConfigsAssembledFromConfigs);
             return result;
         }
 

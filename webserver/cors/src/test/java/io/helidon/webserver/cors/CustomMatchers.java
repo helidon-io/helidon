@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package io.helidon.cors;
+package io.helidon.webserver.cors;
 
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;

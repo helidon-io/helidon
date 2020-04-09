@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package io.helidon.cors;
+package io.helidon.webserver.cors;
 
 import io.helidon.common.http.Http;
 import io.helidon.webserver.Routing;
@@ -23,7 +23,6 @@ import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 
 import java.util.Date;
-import java.util.stream.Stream;
 
 public class GreetService implements Service {
 

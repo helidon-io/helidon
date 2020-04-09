@@ -14,15 +14,15 @@
  * limitations under the License.
  *
  */
-package io.helidon.cors;
+package io.helidon.webserver.cors;
 
 import io.helidon.common.http.Http;
 import io.helidon.webserver.ServerResponse;
 
 /**
- * SE implementation of {@link ResponseAdapter}.
+ * SE implementation of {@link CrossOriginHelperInternal.ResponseAdapter}.
  */
-class SEResponseAdapter implements ResponseAdapter<ServerResponse> {
+class SEResponseAdapter implements CrossOriginHelperInternal.ResponseAdapter<ServerResponse> {
 
     private final ServerResponse serverResponse;
 
@@ -31,13 +31,13 @@ class SEResponseAdapter implements ResponseAdapter<ServerResponse> {
     }
 
     @Override
-    public ResponseAdapter<ServerResponse> header(String key, String value) {
+    public CrossOriginHelperInternal.ResponseAdapter<ServerResponse> header(String key, String value) {
         serverResponse.headers().add(key, value);
         return this;
     }
 
     @Override
-    public ResponseAdapter<ServerResponse> header(String key, Object value) {
+    public CrossOriginHelperInternal.ResponseAdapter<ServerResponse> header(String key, Object value) {
         serverResponse.headers().add(key, value.toString());
         return this;
     }

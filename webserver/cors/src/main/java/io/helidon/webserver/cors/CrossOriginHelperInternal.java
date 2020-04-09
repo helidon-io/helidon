@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package io.helidon.cors;
+package io.helidon.webserver.cors;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -34,21 +34,23 @@ import io.helidon.common.http.Http;
 
 import static io.helidon.common.http.Http.Header.HOST;
 import static io.helidon.common.http.Http.Header.ORIGIN;
-import static io.helidon.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_CREDENTIALS;
-import static io.helidon.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_HEADERS;
-import static io.helidon.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_METHODS;
-import static io.helidon.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN;
-import static io.helidon.cors.CrossOriginConfig.ACCESS_CONTROL_EXPOSE_HEADERS;
-import static io.helidon.cors.CrossOriginConfig.ACCESS_CONTROL_MAX_AGE;
-import static io.helidon.cors.CrossOriginConfig.ACCESS_CONTROL_REQUEST_HEADERS;
-import static io.helidon.cors.CrossOriginConfig.ACCESS_CONTROL_REQUEST_METHOD;
+import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_CREDENTIALS;
+import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_HEADERS;
+import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_METHODS;
+import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN;
+import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_EXPOSE_HEADERS;
+import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_MAX_AGE;
+import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_REQUEST_HEADERS;
+import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_REQUEST_METHOD;
 
 /**
  * <em>Not for use by developers.</em>
- * <p>This class is reserved for internal Helidon use. Do not use it from your applications. It might change or vanish at any time
- * .</p>
- * Centralizes common logic to both SE and MP CORS support for processing requests and preparing responses.
- * <p>
+ *
+ * Centralizes internal logic common to both SE and MP CORS support for processing requests and preparing responses.
+ *
+ * <p>This class is reserved for internal Helidon use. Do not use it from your applications. It might change or vanish at
+ *  any time.</p>
+ *  <p>
  * To serve both masters, several methods here accept adapters for requests and responses. Both of these are minimal and very
  * specific to the needs of CORS support.
  * </p>
@@ -64,6 +66,8 @@ public class CrossOriginHelperInternal {
     static final String HEADERS_NOT_IN_ALLOWED_LIST = "CORS headers not in allowed list";
 
     /**
+     * <em>Not for use by developers.</em>
+     *
      * CORS-related classification of HTTP requests.
      */
     public enum RequestType {
@@ -524,5 +528,109 @@ public class CrossOriginHelperInternal {
 
     private static String noRequiredHeader(String header) {
         return "CORS request does not have required header " + header;
+    }
+
+    /**
+     * <em>Not for use by developers.</em>
+     *
+     * Minimal abstraction of an HTTP request.
+     *
+     * @param <T> type of the request wrapped by the adapter
+     */
+    public interface RequestAdapter<T> {
+
+        /**
+         *
+         * @return possibly unnormalized path from the request
+         */
+        String path();
+
+        /**
+         * Retrieves the first value for the specified header as a String.
+         *
+         * @param key header name to retrieve
+         * @return the first header value for the key
+         */
+        Optional<String> firstHeader(String key);
+
+        /**
+         * Reports whether the specified header exists.
+         *
+         * @param key header name to check for
+         * @return whether the header exists among the request's headers
+         */
+        boolean headerContainsKey(String key);
+
+        /**
+         * Retrieves all header values for a given key as Strings.
+         *
+         * @param key header name to retrieve
+         * @return header values for the header; empty list if none
+         */
+        List<String> allHeaders(String key);
+
+        /**
+         * Reports the method name for the request.
+         *
+         * @return the method name
+         */
+        String method();
+
+        /**
+         * Returns the request this adapter wraps.
+         *
+         * @return the request
+         */
+        T request();
+    }
+
+    /**
+     * <em>Not for use by developers.</em>
+     *
+     * Minimal abstraction of an HTTP response.
+     *
+     * <p>
+     * Note to implementers: In some use cases, the CORS support code will invoke the {@code header} methods but not {@code ok}
+     * or {@code forbidden}. See to it that header values set on the adapter via the {@code header} methods are propagated to the
+     * actual response.
+     * </p>
+     *
+     * @param <T> the type of the response wrapped by the adapter
+     */
+    public interface ResponseAdapter<T> {
+
+        /**
+         * Arranges to add the specified header and value to the eventual response.
+         *
+         * @param key header name to add
+         * @param value header value to add
+         * @return the adapter
+         */
+        ResponseAdapter<T> header(String key, String value);
+
+        /**
+         * Arranges to add the specified header and value to the eventual response.
+         *
+         * @param key header name to add
+         * @param value header value to add
+         * @return the adapter
+         */
+        ResponseAdapter<T> header(String key, Object value);
+
+        /**
+         * Returns a response with the forbidden status and the specified error message, without any headers assigned
+         * using the {@code header} methods.
+         *
+         * @param message error message to use in setting the response status
+         * @return the factory
+         */
+        T forbidden(String message);
+
+        /**
+         * Returns a response with only the headers that were set on this adapter and the status set to OK.
+         *
+         * @return response instance
+         */
+        T ok();
     }
 }

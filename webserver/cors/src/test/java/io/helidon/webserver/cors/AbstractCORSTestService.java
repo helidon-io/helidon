@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package io.helidon.cors;
+package io.helidon.webserver.cors;
 
 import io.helidon.common.http.Http;
 import io.helidon.webserver.Routing;

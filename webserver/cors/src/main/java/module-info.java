@@ -18,12 +18,12 @@
 /**
  * The Helidon SE CORS module
  */
-module io.helidon.cors {
+module io.helidon.webserver.cors {
     requires java.logging;
 
     requires io.helidon.common;
     requires io.helidon.config;
     requires io.helidon.webserver;
 
-    exports io.helidon.cors;
+    exports io.helidon.webserver.cors;
 }
