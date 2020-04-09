@@ -14,23 +14,17 @@
  * limitations under the License.
  */
 
-/**
- * Module info for re-packaged gRPC Java module.
- */
-module io.grpc {
-    exports io.grpc;
-    exports io.grpc.inprocess;
-    exports io.grpc.internal;
-    exports io.grpc.util;
+syntax = "proto3";
+option java_package = "io.helidon.grpc.server.test";
 
-    requires java.logging;
-    requires java.naming;
+service EchoService {
+  rpc Echo (EchoRequest) returns (EchoResponse) {}
+}
 
-    requires static com.google.common;
+message EchoRequest {
+  string message = 1;
+}
 
-    uses io.grpc.ManagedChannelProvider;
-    uses io.grpc.NameResolverProvider;
-    uses io.grpc.ServerProvider;
-    uses io.grpc.internal.BinaryLogProvider;
-    uses io.grpc.LoadBalancerProvider;
+message EchoResponse {
+  string message = 1;
 }

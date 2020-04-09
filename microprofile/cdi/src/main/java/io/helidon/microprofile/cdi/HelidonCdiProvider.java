@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +14,22 @@
  * limitations under the License.
  */
 
+package io.helidon.microprofile.cdi;
 
-syntax = "proto3";
-option java_package = "io.helidon.grpc.examples.common";
+import java.util.concurrent.atomic.AtomicReference;
 
-service StringService {
-  rpc Upper (StringMessage) returns (StringMessage) {}
-  rpc Lower (StringMessage) returns (StringMessage) {}
-  rpc Split (StringMessage) returns (stream StringMessage) {}
-  rpc Join (stream StringMessage) returns (StringMessage) {}
-  rpc Echo (stream StringMessage) returns (stream StringMessage) {}
-}
+import javax.enterprise.inject.spi.CDI;
+import javax.enterprise.inject.spi.CDIProvider;
 
-message StringMessage {
-  string text = 1;
+class HelidonCdiProvider implements CDIProvider {
+    private static final AtomicReference<CDI<Object>> CURRENT_CDI = new AtomicReference<>();
+
+    @Override
+    public CDI<Object> getCDI() {
+        return CURRENT_CDI.get();
+    }
+
+    static void setCdi(CDI<Object> cdi) {
+        CURRENT_CDI.set(cdi);
+    }
 }
