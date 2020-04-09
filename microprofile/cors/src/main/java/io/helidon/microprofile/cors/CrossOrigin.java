@@ -20,7 +20,7 @@ import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
-import static io.helidon.cors.CrossOriginConfig.DEFAULT_AGE;
+import static io.helidon.webserver.cors.CrossOriginConfig.DEFAULT_AGE;
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
