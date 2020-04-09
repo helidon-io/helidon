@@ -37,6 +37,7 @@ import static io.helidon.cors.CrossOriginHelperInternal.processRequest;
  * services (such as OpenAPI and metrics).
  * <p>
  *     The caller can set up the {@code CORSSupport} in a combination of these ways:
+ * </p>
  *     <ul>
  *         <li>from the {@value CORSSupport#CORS_CONFIG_KEY} node in the application's default config,</li>
  *         <li>from a {@link Config} node supplied programmatically,</li>
@@ -45,6 +46,7 @@ import static io.helidon.cors.CrossOriginHelperInternal.processRequest;
  *         <li>by setting individual CORS-related attributes on the {@link Builder} (which affects the CORS behavior for the
  *         "/" path).</li>
  *     </ul>
+ * <p>
  *     See the {@link Builder#build} method for how the builder resolves conflicts among these sources.
  * </p>
  * <p>

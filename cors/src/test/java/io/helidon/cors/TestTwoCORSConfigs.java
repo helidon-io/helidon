@@ -26,6 +26,7 @@ import io.helidon.webserver.WebServer;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -34,11 +35,15 @@ import static org.hamcrest.Matchers.is;
 public class TestTwoCORSConfigs extends AbstractCORSTest {
 
     private static WebServer server;
-    private static WebClient client;
+    private WebClient client;
 
     @BeforeAll
     public static void startup() throws InterruptedException, ExecutionException, TimeoutException {
         server = TestUtil.startupServerWithApps();
+    }
+
+    @BeforeEach
+    public void startupClient() {
         client = TestUtil.startupClient(server);
     }
 

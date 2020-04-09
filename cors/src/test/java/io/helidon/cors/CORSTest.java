@@ -47,17 +47,22 @@ import static org.hamcrest.Matchers.is;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class CORSTest extends AbstractCORSTest {
 
     private static final String CONTEXT_ROOT = "/greet";
     private static WebServer server;
-    private static WebClient client;
+    private WebClient client;
 
     @BeforeAll
     public static void startup() throws InterruptedException, ExecutionException, TimeoutException {
         server = TestUtil.startupServerWithApps();
+    }
+
+    @BeforeEach
+    public void startupClient() {
         client = TestUtil.startupClient(server);
     }
 
@@ -74,7 +79,7 @@ public class CORSTest extends AbstractCORSTest {
 
     @Override
     WebClient client() {
-        return CORSTest.client;
+        return client;
     }
 
     @Override

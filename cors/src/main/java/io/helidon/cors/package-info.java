@@ -18,7 +18,8 @@
 /**
  * Helidon SE CORS Support.
  * <p>
- * Use {@link io.helidon.cors.CORSSupport} and its {@code Builder} to add CORS handling to resources in your application.
+ * Use {@link io.helidon.cors.CORSSupport} and its {@link io.helidon.cors.CORSSupport.Builder} to add CORS handling to resources
+ * in your application.
  * <p>
  * Because Helidon SE does not use annotation processing to identify endpoints, you need to provide the CORS information for
  * your application another way, in three steps:
