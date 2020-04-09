@@ -36,6 +36,24 @@ import static io.helidon.cors.CrossOriginHelperInternal.normalize;
 import static io.helidon.cors.CrossOriginHelperInternal.prepareResponse;
 import static io.helidon.cors.CrossOriginHelperInternal.processRequest;
 
+/**
+ * A Helidon service implementation that implements CORS for endpoints in the application or in built-in Helidon services such
+ * as OpenAPI and metrics.
+ * <p>
+ *     The caller can set up the {@code CrossOriginService} in a combination of these ways:
+ *     <ul>
+ *         <li>from the {@value CrossOriginConfig#CORS_CONFIG_KEY} node in the application's default config,</li>
+ *         <li>from a {@link Config} node supplied programmatically, and</li>
+ *         <li>from one or more {@link CrossOriginConfig} objects supplied programmatically, each associated with a path to which
+ *         it applies.</li>
+ *     </ul>
+ *     See the {@link Builder#build} method for how the builder resolves conflicts among these sources.
+ * </p>
+ * <p>
+ *     If none of these sources is used, the {@code CrossOriginService} applies defaults as described for
+ *     {@link CrossOriginConfig}.
+ * </p>
+ */
 public class CrossOriginService implements Service {
 
     private final Map<String, CrossOriginConfig> crossOriginConfigs;
@@ -44,20 +62,46 @@ public class CrossOriginService implements Service {
         crossOriginConfigs = builder.crossOriginConfigs();
     }
 
+    /**
+     * Creates a {@code CrossOriginService} which supports the default CORS set-up.
+     *
+     * @return the service
+     */
     public static CrossOriginService create() {
         return builder().build();
     }
 
-    public static CrossOriginService create(Config config) {
-        return builder(config).build();
+    /**
+     * Returns a {@code CrossOriginService} set up using the supplied {@link Config} node.
+     *
+     * @param config the config node containing CORS information
+     * @return the initialized service
+     */
+    public static CrossOriginService fromConfig(Config config) {
+        return builder().config(config).build();
     }
 
+    /**
+     * Creates a {@code CrossOriginService} set up using the {@value CrossOriginConfig#CORS_CONFIG_KEY} node in the
+     * application's default config.
+     *
+     * @return the initialized service
+     */
+    public static CrossOriginService fromConfig() {
+        return fromConfig(Config.create().get(CORS_CONFIG_KEY));
+    }
+
+    /**
+     * Creates a {@code Builder} for assembling a {@code CrossOriginService}.
+     *
+     * @return the builder
+     */
     public static Builder builder() {
-        return Builder.create();
+        return new Builder();
     }
 
     public static Builder builder(Config config) {
-        return Builder.create(config);
+        return builder().config(config);
     }
 
     @Override
@@ -95,20 +139,14 @@ public class CrossOriginService implements Service {
     }
 
     /**
-     * Builder for {@code CORSSupport} instances.
+     * Builder for {@code CrossOriginService} instances.
      */
     public static class Builder implements io.helidon.common.Builder<CrossOriginService> {
 
-        private Optional<Config> corsConfig = Optional.empty();
-        private final Map<String, CrossOriginConfig> crossOrigins = new HashMap<>();
+        private final Map<String, CrossOriginConfig> crossOriginConfigs = new HashMap<>();
 
-        public static Builder create() {
-            return create(Config.create().get(CORS_CONFIG_KEY));
-        }
-
-        public static Builder create(Config config) {
-            return new Builder().config(config);
-        }
+        private Config corsConfig = Config.empty();
+        private Optional<CrossOriginConfig.Builder> crossOriginConfigBuilder = Optional.empty(); // CrossOriginConfig.builder();
 
         @Override
         public CrossOriginService build() {
@@ -123,21 +161,36 @@ public class CrossOriginService implements Service {
          * @return the updated builder
          */
         public Builder config(Config config) {
-            this.corsConfig = Optional.of(config);
+            this.corsConfig = config;
             return this;
         }
 
         /**
-         * Returns CORS-related information supplied to the builder. If no config was supplied to the builder, the builder uses
-         * the {@value CrossOriginConfig#CORS_CONFIG_KEY} node, if any, from the application's config.
+         * Initializes the builder's CORS config from the {@value CrossOriginConfig#CORS_CONFIG_KEY} node from the default
+         * application config.
+         *
+         * @return the updated builder
+         */
+        public Builder config() {
+            corsConfig = Config.create().get(CORS_CONFIG_KEY);
+            return this;
+        }
+
+        /**
+         * Returns the aggregation of CORS-related information supplied to the builder, constructed in this order (in case of
+         * conflicts, last wins):
+         * <ol>
+         *     <li>from {@code Config} supplied using {@link #config(Config)}or inferred using {@link #config()}, then</li>
+         *     <li>from {@code CrossOriginConfig} instances added using {@link #addCrossOrigin(String, CrossOriginConfig)}.</li>
+         * </ol>
          *
          * @return list of CrossOriginConfig instances, each describing a path and its associated constraints or permissions
          */
         Map<String, CrossOriginConfig> crossOriginConfigs() {
             Map<String, CrossOriginConfig> result = corsConfig
-                    .orElse(Config.create().get(CORS_CONFIG_KEY))
-                    .as(new CrossOriginConfigMapper()).get();
-            result.putAll(crossOrigins);
+                    .as(new CrossOriginConfigMapper())
+                    .get();
+            result.putAll(crossOriginConfigs);
             return result;
         }
 
@@ -149,7 +202,7 @@ public class CrossOriginService implements Service {
          * @return updated builder
          */
         public Builder addCrossOrigin(String path, CrossOriginConfig crossOrigin) {
-            crossOrigins.put(normalize(path), crossOrigin);
+            crossOriginConfigs.put(normalize(path), crossOrigin);
             return this;
         }
     }

@@ -73,10 +73,10 @@ public class TestUtil {
 
         Routing.Builder builder = Routing.builder()
                 .register(GREETING_PATH,
-                          CrossOriginService.create(), // use "cors" from default app config
+                          CrossOriginService.fromConfig(), // use "cors" from default app config
                           new GreetService())
                 .register(OTHER_GREETING_PATH,
-                          CrossOriginService.create(twoCORSConfig.get(CORS_CONFIG_KEY)), // custom config - get "cors" yourself
+                          CrossOriginService.fromConfig(twoCORSConfig.get(CORS_CONFIG_KEY)), // custom config - get "cors" yourself
                           new GreetService("Other Hello"));
 
         return builder;

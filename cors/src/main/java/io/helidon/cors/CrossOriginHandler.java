@@ -37,13 +37,13 @@ import static io.helidon.cors.CrossOriginHelperInternal.processRequest;
 public class CrossOriginHandler implements io.helidon.webserver.Handler {
 
     /**
-     * Creates a handler according to the previously prepared {@code CrossOriginConfig}.
+     * Creates a handler according to the supplied {@code CrossOriginConfig}.
      *
      * @param crossOriginConfig the cross origin config to use for the handler
      * @return the configured handler
      */
     public static CrossOriginHandler create(CrossOriginConfig crossOriginConfig) {
-        return Builder.create(crossOriginConfig).build();
+        return builder().crossOriginConfig(crossOriginConfig).build();
     }
 
     /**
@@ -52,7 +52,7 @@ public class CrossOriginHandler implements io.helidon.webserver.Handler {
      * @return the configured handler
      */
     public static CrossOriginHandler create() {
-        return Builder.create(CrossOriginConfig.builder().build()).build();
+        return builder().build(); // Builder.create(CrossOriginConfig.builder().build()).build();
     }
 
     /**
@@ -87,8 +87,8 @@ public class CrossOriginHandler implements io.helidon.webserver.Handler {
      *
      * @return a builder initialized with default CORS configuration
      */
-    public static CrossOriginHandler.Builder builder() {
-        return Builder.create();
+    public static Builder builder() {
+        return new Builder();
     }
 
     private final CrossOriginConfig crossOriginConfig;
@@ -106,37 +106,27 @@ public class CrossOriginHandler implements io.helidon.webserver.Handler {
      */
     public static class Builder implements CrossOriginConfig.Setter<Builder>, io.helidon.common.Builder<CrossOriginHandler> {
 
+        private Optional<Config> config = Optional.empty();
+
         private final CrossOriginConfig.Builder crossOriginConfigBuilder = CrossOriginConfig.builder();
 
         private Builder() {
         }
 
-        private Builder(CrossOriginConfig crossOriginConfig) {
+        /**
+         * Sets the builder initialized with the specified {@code CrossOriginConfig} data.
+         *
+         * @param crossOriginConfig the cross origin config to use for initializing the builder
+         * @return the initialized builder
+         */
+        public Builder crossOriginConfig(CrossOriginConfig crossOriginConfig) {
             crossOriginConfigBuilder.allowCredentials(crossOriginConfig.allowCredentials());
             crossOriginConfigBuilder.allowHeaders(crossOriginConfig.allowHeaders());
             crossOriginConfigBuilder.allowMethods(crossOriginConfig.allowMethods());
             crossOriginConfigBuilder.allowOrigins(crossOriginConfig.allowOrigins());
             crossOriginConfigBuilder.exposeHeaders(crossOriginConfig.exposeHeaders());
             crossOriginConfigBuilder.maxAge(crossOriginConfig.maxAge());
-        }
-
-        /**
-         * Creates a builder initialized with default cross origin information.
-         *
-         * @return initialized builder
-         */
-        public static Builder create() {
-            return new Builder();
-        }
-
-        /**
-         * Creates a builder initialized with the specified {@code CrossOriginConfig} data.
-         *
-         * @param crossOriginConfig the cross origin config to use for initializing the builder
-         * @return the initialized builder
-         */
-        public static Builder create(CrossOriginConfig crossOriginConfig) {
-            return new Builder(crossOriginConfig);
+            return this;
         }
 
         @Override
