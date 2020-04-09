@@ -67,10 +67,6 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
      * Header Access-Control-Request-Method.
      */
     public static final String ACCESS_CONTROL_REQUEST_METHOD = "Access-Control-Request-Method";
-    /**
-     * Key used for retrieving CORS-related configuration.
-     */
-    public static final String CORS_CONFIG_KEY = "cors";
 
     private final String[] allowOrigins;
     private final String[] allowHeaders;
@@ -149,7 +145,7 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
     }
 
     /**
-     * Defines common behavior between {@code CrossOriginConfig} and {@link CrossOriginHandler.Builder}.
+     * Defines common behavior between {@code CrossOriginConfig} and {@link CORSSupport.Builder}.
      *
      * @param <T> the type of the implementing class so the fluid methods can return the correct type
      */
@@ -160,7 +156,7 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
          * @param origins the origin value(s)
          * @return updated builder
          */
-        public T allowOrigins(String... origins);
+        T allowOrigins(String... origins);
 
         /**
          * Sets the allow headers.
@@ -168,7 +164,7 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
          * @param allowHeaders the allow headers value(s)
          * @return updated builder
          */
-        public T allowHeaders(String... allowHeaders);
+        T allowHeaders(String... allowHeaders);
 
         /**
          * Sets the expose headers.
@@ -176,7 +172,7 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
          * @param exposeHeaders the expose headers value(s)
          * @return updated builder
          */
-        public T exposeHeaders(String... exposeHeaders);
+        T exposeHeaders(String... exposeHeaders);
 
         /**
          * Sets the allow methods.
@@ -184,7 +180,7 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
          * @param allowMethods the allow method value(s)
          * @return updated builder
          */
-        public T allowMethods(String... allowMethods);
+        T allowMethods(String... allowMethods);
 
         /**
          * Sets the allow credentials flag.
@@ -192,7 +188,7 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
          * @param allowCredentials the allow credentials flag
          * @return updated builder
          */
-        public T allowCredentials(boolean allowCredentials);
+        T allowCredentials(boolean allowCredentials);
 
         /**
          * Sets the maximum age.
@@ -200,7 +196,7 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
          * @param maxAge the maximum age
          * @return updated builder
          */
-        public T maxAge(long maxAge);
+        T maxAge(long maxAge);
     }
 
     /**

@@ -32,7 +32,7 @@
  * or more of these approaches:
  * <ul>
  *     <li>using configuration
- *     <p>Often you would add a {@value io.helidon.cors.CrossOriginConfig#CORS_CONFIG_KEY} section to your application's
+ *     <p>Often you would add a {@value io.helidon.cors.CORSSupport#CORS_CONFIG_KEY} section to your application's
  *     default configuration file, like this:
  *     <pre>
  *     cors:
