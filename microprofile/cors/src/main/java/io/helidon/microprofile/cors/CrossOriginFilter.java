@@ -71,21 +71,13 @@ class CrossOriginFilter implements ContainerRequestFilter, ContainerResponseFilt
 
     @Override
     public void filter(ContainerRequestContext requestContext) {
-        if (corsHelper.isActive()) {
-            Optional<Response> response = corsHelper.processRequest(
-                    new MPRequestAdapter(requestContext),
-                    new MPResponseAdapter());
-            response.ifPresent(requestContext::abortWith);
-        }
+        Optional<Response> response = corsHelper.processRequest(new MPRequestAdapter(requestContext), new MPResponseAdapter());
+        response.ifPresent(requestContext::abortWith);
     }
 
     @Override
     public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) {
-        if (corsHelper.isActive()) {
-            corsHelper.prepareResponse(
-                    new MPRequestAdapter(requestContext),
-                    new MPResponseAdapter(responseContext));
-        }
+        corsHelper.prepareResponse(new MPRequestAdapter(requestContext), new MPResponseAdapter(responseContext));
     }
 
     private ResourceInfo resourceInfo() {
