@@ -31,11 +31,9 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
+import io.helidon.webserver.cors.internal.CrossOriginHelper;
 import io.helidon.webserver.cors.internal.CrossOriginHelper.RequestAdapter;
 import io.helidon.webserver.cors.internal.CrossOriginHelper.ResponseAdapter;
-
-import static io.helidon.webserver.cors.internal.CrossOriginHelper.prepareResponse;
-import static io.helidon.webserver.cors.internal.CrossOriginHelper.processRequest;
 
 /**
  * A Helidon service and handler implementation that implements CORS, for both the application and for built-in Helidon
@@ -44,7 +42,7 @@ import static io.helidon.webserver.cors.internal.CrossOriginHelper.processReques
  *     The caller can set up the {@code CORSSupport} in a combination of these ways:
  * </p>
  *     <ul>
- *         <li>from the {@value CORSSupport#CORS_CONFIG_KEY} node in the application's default config,</li>
+ *         <li>from the {@value CrossOriginHelper#CORS_CONFIG_KEY} node in the application's default config,</li>
  *         <li>from a {@link Config} node supplied programmatically,</li>
  *         <li>from one or more {@link CrossOriginConfig} objects supplied programmatically, each associated with a path to which
  *         it applies, and</li>
@@ -61,28 +59,13 @@ import static io.helidon.webserver.cors.internal.CrossOriginHelper.processReques
  */
 public class CORSSupport implements Service, Handler {
 
-    /**
-     * Key used for retrieving CORS-related configuration from application- or service-level configuration.
-     */
-    public static final String CORS_CONFIG_KEY = "cors";
 
-    /**
-     * Key for the node within the CORS config indicating whether CORS support is enabled.
-     */
-    public static final String CORS_ENABLED_CONFIG_KEY = "enabled";
-
-    /**
-     * Key for the node within the CORS config that contains the list of path information.
-     */
-    public static final String CORS_PATHS_CONFIG_KEY = "paths";
-
-
-    private final Map<String, CrossOriginConfig> crossOriginConfigs;
-    private final boolean isEnabled;
+    private final CrossOriginHelper helper;
 
     private CORSSupport(Builder builder) {
-        crossOriginConfigs = builder.crossOriginConfigs();
-        isEnabled = builder.isEnabled;
+        CrossOriginHelper.Builder helperBuilder = CrossOriginHelper.builder();
+        builder.configOpt.ifPresent(helperBuilder::config);
+        helper = helperBuilder.build();
     }
 
     /**
@@ -100,18 +83,8 @@ public class CORSSupport implements Service, Handler {
      * @param config the config node containing CORS information
      * @return the initialized service
      */
-    public static CORSSupport fromConfig(Config config) {
+    public static CORSSupport create(Config config) {
         return builder().config(config).build();
-    }
-
-    /**
-     * Creates a {@code CORSSupport} set up using the {@value CORSSupport#CORS_CONFIG_KEY} node in the
-     * application's default config.
-     *
-     * @return the initialized service
-     */
-    public static CORSSupport fromConfig() {
-        return fromConfig(Config.create().get(CORS_CONFIG_KEY));
     }
 
     /**
@@ -125,7 +98,8 @@ public class CORSSupport implements Service, Handler {
 
     /**
      * Creates a {@code Builder} initialized with the CORS information from the specified configuration node. The config node
-     * should contain the actual CORS settings, <em>not</em> a {@value CORS_CONFIG_KEY} node which contains them.
+     * should contain the actual CORS settings, <em>not</em> a {@value CrossOriginHelper#CORS_CONFIG_KEY} node which contains
+     * them.
      *
      * @param config node containing CORS information
      * @return builder initialized with the CORS set-up from the config
@@ -183,35 +157,28 @@ public class CORSSupport implements Service, Handler {
 
     @Override
     public void update(Routing.Rules rules) {
-        if (isEnabled && !crossOriginConfigs.isEmpty()) {
+        if (helper.isActive()) {
             rules.any(this::accept);
         }
     }
 
     @Override
     public void accept(ServerRequest request, ServerResponse response) {
-        if (!isEnabled || crossOriginConfigs.isEmpty()) {
+        if (!helper.isActive()) {
             request.next();
             return;
         }
         RequestAdapter<ServerRequest> requestAdapter = new SERequestAdapter(request);
         ResponseAdapter<ServerResponse> responseAdapter = new SEResponseAdapter(response);
 
-        Optional<ServerResponse> responseOpt = processRequest(crossOriginConfigs,
-                Optional::empty,
-                requestAdapter,
-                responseAdapter);
+        Optional<ServerResponse> responseOpt = helper.processRequest(requestAdapter, responseAdapter);
 
         responseOpt.ifPresentOrElse(ServerResponse::send, () -> prepareCORSResponseAndContinue(requestAdapter, responseAdapter));
     }
 
     private void prepareCORSResponseAndContinue(RequestAdapter<ServerRequest> requestAdapter,
             ResponseAdapter<ServerResponse> responseAdapter) {
-        prepareResponse(
-                crossOriginConfigs,
-                Optional::empty,
-                requestAdapter,
-                responseAdapter);
+        helper.prepareResponse(requestAdapter, responseAdapter);
 
         requestAdapter.request().next();
     }
@@ -227,7 +194,7 @@ public class CORSSupport implements Service, Handler {
 
         private Optional<CrossOriginConfig.Builder> crossOriginConfigBuilderOpt = Optional.empty();
 
-        private boolean isEnabled = true;
+        private Optional<Config> configOpt = Optional.empty();
 
         @Override
         public CORSSupport build() {
@@ -235,33 +202,25 @@ public class CORSSupport implements Service, Handler {
         }
 
         /**
-         * Saves CORS config information derived from the {@code Config}. Typically, the app or component will retrieve the
-         * provided {@code Config} instance from its own config using the key {@value CORSSupport#CORS_CONFIG_KEY}.
+         * Saves CORS config information. Typically, the app or component will retrieve the provided {@code Config} instance
+         * from its own config using the key {@value CrossOriginHelper#CORS_CONFIG_KEY}.
          *
          * @param config the CORS config
          * @return the updated builder
          */
         public Builder config(Config config) {
-            Config pathsConfig = config.get(CORS_PATHS_CONFIG_KEY);
-            if (pathsConfig.exists()) {
-                crossOriginConfigsAssembledFromConfigs
-                        .putAll(pathsConfig.as(new CrossOriginConfig.CrossOriginConfigMapper()).get());
-            }
-            Config enabledConfig = config.get(CORS_ENABLED_CONFIG_KEY);
-            if (enabledConfig.exists()) {
-                isEnabled = enabledConfig.asBoolean().get();
-            }
+            configOpt = Optional.ofNullable(config.exists() ? config : null);
             return this;
         }
 
         /**
-         * Initializes the builder's CORS config from the {@value CORSSupport#CORS_CONFIG_KEY} node from the default
+         * Initializes the builder's CORS config from the {@value CrossOriginHelper#CORS_CONFIG_KEY} node from the default
          * application config.
          *
          * @return the updated builder
          */
         public Builder config() {
-            config(Config.create().get(CORS_CONFIG_KEY));
+            config(Config.create().get(CrossOriginHelper.CORS_CONFIG_KEY));
             return this;
         }
 

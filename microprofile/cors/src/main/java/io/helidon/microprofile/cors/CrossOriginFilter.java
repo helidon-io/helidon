@@ -19,7 +19,6 @@ package io.helidon.microprofile.cors;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -40,15 +39,12 @@ import javax.ws.rs.core.Response;
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
 import io.helidon.config.Config;
-import io.helidon.webserver.cors.CORSSupport;
 import io.helidon.webserver.cors.CrossOriginConfig;
 import io.helidon.webserver.cors.internal.CrossOriginHelper;
 import io.helidon.webserver.cors.internal.CrossOriginHelper.RequestAdapter;
 import io.helidon.webserver.cors.internal.CrossOriginHelper.ResponseAdapter;
 
 import org.eclipse.microprofile.config.ConfigProvider;
-
-import static io.helidon.webserver.cors.internal.CrossOriginHelper.prepareResponse;
 
 /**
  * Class CrossOriginFilter.
@@ -63,21 +59,20 @@ class CrossOriginFilter implements ContainerRequestFilter, ContainerResponseFilt
     @Context
     private ResourceInfo resourceInfo;
 
-    private final boolean corsEnabled;
-    private final Map<String, CrossOriginConfig> crossOriginConfigs;
+    private final CrossOriginHelper corsHelper;
 
     CrossOriginFilter() {
         Config config = (Config) ConfigProvider.getConfig();
-        Config corsConfig = config.get(CORSSupport.CORS_CONFIG_KEY);
-        corsEnabled = CrossOriginHelper.isCORSEnabled(corsConfig);
-        crossOriginConfigs = CrossOriginHelper.toCrossOriginConfigs(corsConfig);
+        corsHelper = CrossOriginHelper.builder()
+                .config(config.get(CrossOriginHelper.CORS_CONFIG_KEY))
+                .secondaryLookupSupplier(crossOriginFromAnnotationFinderSupplier())
+                .build();
     }
 
     @Override
     public void filter(ContainerRequestContext requestContext) {
-        if (corsEnabled) {
-            Optional<Response> response = CrossOriginHelper.processRequest(crossOriginConfigs,
-                    crossOriginFromAnnotationFinder(resourceInfo),
+        if (corsHelper.isActive()) {
+            Optional<Response> response = corsHelper.processRequest(
                     new MPRequestAdapter(requestContext),
                     new MPResponseAdapter());
             response.ifPresent(requestContext::abortWith);
@@ -86,12 +81,15 @@ class CrossOriginFilter implements ContainerRequestFilter, ContainerResponseFilt
 
     @Override
     public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) {
-        if (corsEnabled) {
-            prepareResponse(crossOriginConfigs,
-                    crossOriginFromAnnotationFinder(resourceInfo),
+        if (corsHelper.isActive()) {
+            corsHelper.prepareResponse(
                     new MPRequestAdapter(requestContext),
                     new MPResponseAdapter(responseContext));
         }
+    }
+
+    private ResourceInfo resourceInfo() {
+        return resourceInfo;
     }
 
     static class MPRequestAdapter implements RequestAdapter<ContainerRequestContext> {
@@ -130,6 +128,10 @@ class CrossOriginFilter implements ContainerRequestFilter, ContainerResponseFilt
         @Override
         public ContainerRequestContext request() {
             return requestContext;
+        }
+
+        @Override
+        public void next() {
         }
     }
 
@@ -175,7 +177,7 @@ class CrossOriginFilter implements ContainerRequestFilter, ContainerResponseFilt
         }
     }
 
-    static Supplier<Optional<CrossOriginConfig>> crossOriginFromAnnotationFinder(ResourceInfo resourceInfo) {
+    Supplier<Optional<CrossOriginConfig>> crossOriginFromAnnotationFinderSupplier() {
 
         return () -> {
             // If not found, inspect resource matched

@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
@@ -35,8 +36,6 @@ import io.helidon.webserver.cors.CrossOriginConfig;
 
 import static io.helidon.common.http.Http.Header.HOST;
 import static io.helidon.common.http.Http.Header.ORIGIN;
-import static io.helidon.webserver.cors.CORSSupport.CORS_ENABLED_CONFIG_KEY;
-import static io.helidon.webserver.cors.CORSSupport.CORS_PATHS_CONFIG_KEY;
 import static io.helidon.webserver.cors.CORSSupport.normalize;
 import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_CREDENTIALS;
 import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_HEADERS;
@@ -61,8 +60,18 @@ import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_REQUEST
  */
 public class CrossOriginHelper {
 
-    private CrossOriginHelper() {
-    }
+    /**
+     * Key for the node within the CORS config that contains the list of path information.
+     */
+    static final String CORS_PATHS_CONFIG_KEY = "paths";
+    /**
+     * Key for the node within the CORS config indicating whether CORS support is enabled.
+     */
+    static final String CORS_ENABLED_CONFIG_KEY = "enabled";
+    /**
+     * Key used for retrieving CORS-related configuration from application- or service-level configuration.
+     */
+    public static final String CORS_CONFIG_KEY = "cors"; // public for JavaDoc references
 
     static final String ORIGIN_DENIED = "CORS origin is denied";
     static final String ORIGIN_NOT_IN_ALLOWED_LIST = "CORS origin is not in allowed list";
@@ -95,6 +104,123 @@ public class CrossOriginHelper {
     }
 
     /**
+     * Creates a new instance using CORS config in the provided {@link Config}.
+     *
+     * @param config Config node containing CORS set-up
+     * @return new instance based on the config
+     */
+    public static CrossOriginHelper create(Config config) {
+        return builder().config(config).build();
+    }
+
+    /**
+     * Creates a new instance that is enabled but with no path mappings.
+     *
+     * @return the new instance
+     */
+    public static CrossOriginHelper create() {
+        return builder().build();
+    }
+
+    private final boolean isEnabled;
+    private final Map<String, CrossOriginConfig> crossOriginConfigs;
+    private final Supplier<Optional<CrossOriginConfig>> secondaryCrossOriginLookup;
+
+    private CrossOriginHelper() {
+        this(builder());
+    }
+
+    private CrossOriginHelper(Builder builder) {
+        isEnabled = builder.isEnabled();
+        crossOriginConfigs = builder.crossOriginConfigs();
+        secondaryCrossOriginLookup = builder.secondaryCrossOriginLookupOpt.orElse(Optional::empty);
+    }
+
+    /**
+     * Creates a builder for a new {@code CrossOriginHelper}.
+     *
+     * @return initialized builder
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    /**
+     * Builder class for {@code CrossOriginHelper}s.
+     */
+    public static class Builder implements io.helidon.common.Builder<CrossOriginHelper> {
+
+        private Optional<Config> corsConfigOpt = Optional.empty();
+        private Optional<Supplier<Optional<CrossOriginConfig>>> secondaryCrossOriginLookupOpt = Optional.empty();
+
+        /**
+         * Sets the CORS config node (allowed to be missing).
+         *
+         * @param corsConfig the CORS config node
+         * @return updated builder
+         */
+        public Builder config(Config corsConfig) {
+            corsConfigOpt = Optional.ofNullable(corsConfig.exists() ? corsConfig : null);
+            return this;
+        }
+
+        /**
+         * Sets the supplier for the secondary lookup of CORS information (typically <em>not</em> contained in
+         * configuration).
+         *
+         * @param secondaryLookup the supplier
+         * @return updated builder
+         */
+        public Builder secondaryLookupSupplier(Supplier<Optional<CrossOriginConfig>> secondaryLookup) {
+            secondaryCrossOriginLookupOpt = Optional.of(secondaryLookup);
+            return this;
+        }
+
+        /**
+         * Creates the {@code CrossOriginHelper}.
+         *
+         * @return initialized {@code CrossOriginHelper}
+         */
+        public CrossOriginHelper build() {
+            return new CrossOriginHelper(this);
+        }
+
+        boolean isEnabled() {
+            if (corsConfigOpt.isEmpty()) {
+                return true;
+            }
+            Config corsConfig = corsConfigOpt.get();
+            if (!corsConfig.exists()) {
+                return true;
+            }
+            Config corsEnabledNode = corsConfig.get(CORS_ENABLED_CONFIG_KEY);
+            return !corsEnabledNode.exists() || corsEnabledNode.asBoolean().get();
+        }
+
+        Map<String, CrossOriginConfig> crossOriginConfigs() {
+            AtomicReference<Map<String, CrossOriginConfig>> result = new AtomicReference<>();
+            corsConfigOpt.ifPresentOrElse(corsConfig -> {
+                        Config pathsNode = corsConfig.get(CORS_PATHS_CONFIG_KEY);
+                        if (pathsNode.exists()) {
+                            result.set(pathsNode.as(new CrossOriginConfig.CrossOriginConfigMapper())
+                                    .get());
+                        }
+                    }, () -> result.set(Collections.emptyMap()));
+            return result.get();
+        }
+    }
+
+    /**
+     * Reports whether this helper, due to its set-up, will affect any requests or responses. It accounts for such things as
+     * whether the helper is enabled and whether any paths were set-up.
+     *
+     * @return whether the helper will have any effect on requests or responses
+     */
+    public boolean isActive() {
+        return isEnabled && !crossOriginConfigs.isEmpty();
+    }
+
+    /**
      * Processes a request according to the CORS rules, returning an {@code Optional} of the response type if
      * the caller should send the response immediately (such as for a preflight response or an error response to a
      * non-preflight CORS request).
@@ -110,8 +236,6 @@ public class CrossOriginHelper {
      * response at will as long as that processing includes the header settings assigned using the response adapter.
      * </p>
      *
-     * @param crossOriginConfigs config information for CORS
-     * @param secondaryCrossOriginLookup locates {@code CrossOrigin} from other than config (e.g., annotations for MP)
      * @param requestAdapter abstraction of a request
      * @param responseAdapter abstraction of a response
      * @param <T> type for the {@code Request} managed by the requestAdapter
@@ -119,10 +243,12 @@ public class CrossOriginHelper {
      * @return Optional of an error response if the request was an invalid CORS request; Optional.empty() if it was a
      *         valid CORS request
      */
-    public static <T, U> Optional<U> processRequest(Map<String, CrossOriginConfig> crossOriginConfigs,
-            Supplier<Optional<CrossOriginConfig>> secondaryCrossOriginLookup,
-            RequestAdapter<T> requestAdapter,
-            ResponseAdapter<U> responseAdapter) {
+    public <T, U> Optional<U> processRequest(RequestAdapter<T> requestAdapter, ResponseAdapter<U> responseAdapter) {
+
+        if (!isEnabled) {
+            requestAdapter.next();
+            return Optional.empty();
+        }
 
         Optional<CrossOriginConfig> crossOrigin = lookupCrossOrigin(requestAdapter.path(), crossOriginConfigs,
                 secondaryCrossOriginLookup);
@@ -162,8 +288,14 @@ public class CrossOriginHelper {
      * @return Optional of an error response if the request was an invalid CORS request; Optional.empty() if it was a
      *         valid CORS request
      */
-    public static <T, U> Optional<U> processRequest(CrossOriginConfig crossOrigin, RequestAdapter<T> requestAdapter,
+    public <T, U> Optional<U> processRequest(CrossOriginConfig crossOrigin, RequestAdapter<T> requestAdapter,
             ResponseAdapter<U> responseAdapter) {
+
+        if (!isEnabled) {
+            requestAdapter.next();
+            return Optional.empty();
+        }
+
         RequestType requestType = requestType(requestAdapter);
 
         if (requestType == RequestType.NORMAL) {
@@ -201,17 +333,16 @@ public class CrossOriginHelper {
     /**
      * Prepares a response with CORS headers, if the supplied request is in fact a CORS request.
      *
-     * @param crossOriginConfigs config information for CORS
-     * @param secondaryCrossOriginLookup locates {@code CrossOrigin} from other than config (e.g., annotations for MP)
      * @param requestAdapter abstraction of a request
      * @param responseAdapter abstraction of a response
      * @param <T> type for the {@code Request} managed by the requestAdapter
      * @param <U> the type for the HTTP response as returned from the responseSetter
      */
-    public static <T, U> void prepareResponse(Map<String, CrossOriginConfig> crossOriginConfigs,
-            Supplier<Optional<CrossOriginConfig>> secondaryCrossOriginLookup,
-            RequestAdapter<T> requestAdapter,
-            ResponseAdapter<U> responseAdapter) {
+    public <T, U> void prepareResponse(RequestAdapter<T> requestAdapter, ResponseAdapter<U> responseAdapter) {
+
+        if (!isEnabled) {
+            return;
+        }
 
         RequestType requestType = requestType(requestAdapter);
 
@@ -219,65 +350,11 @@ public class CrossOriginHelper {
             CrossOriginConfig crossOrigin = lookupCrossOrigin(
                             requestAdapter.path(),
                             crossOriginConfigs,
-                            secondaryCrossOriginLookup)
+                    secondaryCrossOriginLookup)
                     .orElseThrow(() -> new IllegalArgumentException(
                             "Could not locate expected CORS information while preparing response to request " + requestAdapter));
             addCORSHeadersToResponse(crossOrigin, requestAdapter, responseAdapter);
         }
-    }
-
-    /**
-     * Prepares a response with CORS headers, if the supplied request is in fact a CORS request.
-     *
-     * @param crossOrigin the CORS settings to apply to this request
-     * @param requestAdapter abstraction of a request
-     * @param responseAdapter abstraction of a response
-     * @param <T> type for the {@code Request} managed by the requestAdapter
-     * @param <U> the type for the HTTP response as returned from the responseSetter
-     */
-    public static <T, U> void prepareResponse(CrossOriginConfig crossOrigin,
-            RequestAdapter<T> requestAdapter,
-            ResponseAdapter<U> responseAdapter) {
-        addCORSHeadersToResponse(crossOrigin, requestAdapter, responseAdapter);
-    }
-
-    /**
-     * Indicates whether CORS support is turned on based on config.
-     *
-     * CORS is disabled only if <em>all</em> of the following are true:
-     * <ul>
-     *     <li>the {@value CORSSupport#CORS_CONFIG_KEY} config node exists,</li>
-     *     <li>that node contains the subnode {@value CORSSupport#CORS_ENABLED_CONFIG_KEY}, and</li>
-     *     <li>that subnode's value is {@code false}.</li>
-     * </ul>
-     * Otherwise, CORS support is enabled.
-     *
-     * @param corsConfig the (possibly missing) CORS config node
-     * @return whether CORS support should be provided or not
-     */
-    public static boolean isCORSEnabled(Config corsConfig) {
-        if (!corsConfig.exists()) {
-            return true;
-        }
-        Config corsEnabledNode = corsConfig.get(CORS_ENABLED_CONFIG_KEY);
-        return !corsEnabledNode.exists() || corsEnabledNode.asBoolean().get();
-    }
-
-    /**
-     * Encapsulates how to build the map from each path to its {@link CrossOriginConfig} from the
-     * {@value CORSSupport#CORS_CONFIG_KEY} config node.
-     *
-     * @param corsNode the (possibly missing) CORS config node
-     * @return a map from paths to {@code CrossOriginConfig} instances; never null
-     */
-    public static Map<String, CrossOriginConfig> toCrossOriginConfigs(Config corsNode) {
-        if (corsNode.exists() && isCORSEnabled(corsNode)) {
-            Config pathsNode = corsNode.get(CORS_PATHS_CONFIG_KEY);
-            if (pathsNode.exists()) {
-                return pathsNode.as(new CrossOriginConfig.CrossOriginConfigMapper()).get();
-            }
-        }
-        return Collections.emptyMap();
     }
 
     /**
@@ -571,6 +648,11 @@ public class CrossOriginHelper {
          * @return the method name
          */
         String method();
+
+        /**
+         * Processes the next handler/filter/request processor in the chain.
+         */
+        void next();
 
         /**
          * Returns the request this adapter wraps.

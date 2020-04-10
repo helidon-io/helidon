@@ -59,6 +59,11 @@ class SERequestAdapter implements CrossOriginHelper.RequestAdapter<ServerRequest
     }
 
     @Override
+    public void next() {
+        request.next();
+    }
+
+    @Override
     public ServerRequest request() {
         return request;
     }

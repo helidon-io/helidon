@@ -31,7 +31,7 @@ import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 
 import static io.helidon.webserver.cors.CORSTestServices.SERVICE_3;
-import static io.helidon.webserver.cors.CORSSupport.CORS_CONFIG_KEY;
+import static io.helidon.webserver.cors.internal.CrossOriginHelper.CORS_CONFIG_KEY;
 
 public class TestUtil {
 
@@ -73,10 +73,10 @@ public class TestUtil {
 
         Routing.Builder builder = Routing.builder()
                 .register(GREETING_PATH,
-                          CORSSupport.fromConfig(), // use "cors" from default app config
+                          CORSSupport.builder().config().build(), // use "cors" from default app config
                           new GreetService())
                 .register(OTHER_GREETING_PATH,
-                          CORSSupport.fromConfig(twoCORSConfig.get(CORS_CONFIG_KEY)), // custom config - get "cors" yourself
+                          CORSSupport.create(twoCORSConfig.get(CORS_CONFIG_KEY)), // custom config - get "cors" yourself
                           new GreetService("Other Hello"));
 
         return builder;
