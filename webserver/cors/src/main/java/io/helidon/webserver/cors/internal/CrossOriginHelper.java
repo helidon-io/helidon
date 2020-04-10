@@ -18,6 +18,7 @@ package io.helidon.webserver.cors.internal;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -28,11 +29,14 @@ import java.util.function.Supplier;
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
 import io.helidon.common.http.Http;
+import io.helidon.config.Config;
 import io.helidon.webserver.cors.CORSSupport;
 import io.helidon.webserver.cors.CrossOriginConfig;
 
 import static io.helidon.common.http.Http.Header.HOST;
 import static io.helidon.common.http.Http.Header.ORIGIN;
+import static io.helidon.webserver.cors.CORSSupport.CORS_ENABLED_CONFIG_KEY;
+import static io.helidon.webserver.cors.CORSSupport.CORS_PATHS_CONFIG_KEY;
 import static io.helidon.webserver.cors.CORSSupport.normalize;
 import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_CREDENTIALS;
 import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_HEADERS;
@@ -235,6 +239,45 @@ public class CrossOriginHelper {
             RequestAdapter<T> requestAdapter,
             ResponseAdapter<U> responseAdapter) {
         addCORSHeadersToResponse(crossOrigin, requestAdapter, responseAdapter);
+    }
+
+    /**
+     * Indicates whether CORS support is turned on based on config.
+     *
+     * CORS is disabled only if <em>all</em> of the following are true:
+     * <ul>
+     *     <li>the {@value CORSSupport#CORS_CONFIG_KEY} config node exists,</li>
+     *     <li>that node contains the subnode {@value CORSSupport#CORS_ENABLED_CONFIG_KEY}, and</li>
+     *     <li>that subnode's value is {@code false}.</li>
+     * </ul>
+     * Otherwise, CORS support is enabled.
+     *
+     * @param corsConfig the (possibly missing) CORS config node
+     * @return whether CORS support should be provided or not
+     */
+    public static boolean isCORSEnabled(Config corsConfig) {
+        if (!corsConfig.exists()) {
+            return true;
+        }
+        Config corsEnabledNode = corsConfig.get(CORS_ENABLED_CONFIG_KEY);
+        return !corsEnabledNode.exists() || corsEnabledNode.asBoolean().get();
+    }
+
+    /**
+     * Encapsulates how to build the map from each path to its {@link CrossOriginConfig} from the
+     * {@value CORSSupport#CORS_CONFIG_KEY} config node.
+     *
+     * @param corsNode the (possibly missing) CORS config node
+     * @return a map from paths to {@code CrossOriginConfig} instances; never null
+     */
+    public static Map<String, CrossOriginConfig> toCrossOriginConfigs(Config corsNode) {
+        if (corsNode.exists() && isCORSEnabled(corsNode)) {
+            Config pathsNode = corsNode.get(CORS_PATHS_CONFIG_KEY);
+            if (pathsNode.exists()) {
+                return pathsNode.as(new CrossOriginConfig.CrossOriginConfigMapper()).get();
+            }
+        }
+        return Collections.emptyMap();
     }
 
     /**

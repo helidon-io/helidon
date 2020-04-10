@@ -14,11 +14,12 @@
 # limitations under the License.
 #
 cors:
-  - path-prefix: /cors2
-    allow-origins: ["http://otherfoo.bar", "http://otherbar.foo"]
-    allow-methods: ["DELETE", "PUT"]
-    allow-headers: ["X-otherBar", "X-otherFoo"]
-    allow-credentials: true
-    max-age: -1
+  paths:
+    - path-prefix: /cors2
+      allow-origins: ["http://otherfoo.bar", "http://otherbar.foo"]
+      allow-methods: ["DELETE", "PUT"]
+      allow-headers: ["X-otherBar", "X-otherFoo"]
+      allow-credentials: true
+      max-age: -1
 
 # Purposefully exclude /cors1. /cors3 information is added programmatically.

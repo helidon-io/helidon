@@ -21,13 +21,14 @@ client:
   max-redirects: 8
 
 cors:
-  - path-prefix: /cors1
-    allow-origins: ["*"]
-    allow-methods: ["*"]
-  - path-prefix: /cors2
-    allow-origins: ["http://foo.bar", "http://bar.foo"]
-    allow-methods: ["DELETE", "PUT"]
-    allow-headers: ["X-bar", "X-foo"]
-    allow-credentials: true
-    max-age: -1
+  paths:
+    - path-prefix: /cors1
+      allow-origins: ["*"]
+      allow-methods: ["*"]
+    - path-prefix: /cors2
+      allow-origins: ["http://foo.bar", "http://bar.foo"]
+      allow-methods: ["DELETE", "PUT"]
+      allow-headers: ["X-bar", "X-foo"]
+      allow-credentials: true
+      max-age: -1
 # info for /cors3 is added programmatically

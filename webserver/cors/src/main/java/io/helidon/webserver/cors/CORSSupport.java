@@ -66,10 +66,23 @@ public class CORSSupport implements Service, Handler {
      */
     public static final String CORS_CONFIG_KEY = "cors";
 
+    /**
+     * Key for the node within the CORS config indicating whether CORS support is enabled.
+     */
+    public static final String CORS_ENABLED_CONFIG_KEY = "enabled";
+
+    /**
+     * Key for the node within the CORS config that contains the list of path information.
+     */
+    public static final String CORS_PATHS_CONFIG_KEY = "paths";
+
+
     private final Map<String, CrossOriginConfig> crossOriginConfigs;
+    private final boolean isEnabled;
 
     private CORSSupport(Builder builder) {
         crossOriginConfigs = builder.crossOriginConfigs();
+        isEnabled = builder.isEnabled;
     }
 
     /**
@@ -170,13 +183,17 @@ public class CORSSupport implements Service, Handler {
 
     @Override
     public void update(Routing.Rules rules) {
-        if (!crossOriginConfigs.isEmpty()) {
+        if (isEnabled && !crossOriginConfigs.isEmpty()) {
             rules.any(this::accept);
         }
     }
 
     @Override
     public void accept(ServerRequest request, ServerResponse response) {
+        if (!isEnabled || crossOriginConfigs.isEmpty()) {
+            request.next();
+            return;
+        }
         RequestAdapter<ServerRequest> requestAdapter = new SERequestAdapter(request);
         ResponseAdapter<ServerResponse> responseAdapter = new SEResponseAdapter(response);
 
@@ -210,6 +227,8 @@ public class CORSSupport implements Service, Handler {
 
         private Optional<CrossOriginConfig.Builder> crossOriginConfigBuilderOpt = Optional.empty();
 
+        private boolean isEnabled = true;
+
         @Override
         public CORSSupport build() {
             return new CORSSupport(this);
@@ -223,7 +242,15 @@ public class CORSSupport implements Service, Handler {
          * @return the updated builder
          */
         public Builder config(Config config) {
-            crossOriginConfigsAssembledFromConfigs.putAll(config.as(new CrossOriginConfig.CrossOriginConfigMapper()).get());
+            Config pathsConfig = config.get(CORS_PATHS_CONFIG_KEY);
+            if (pathsConfig.exists()) {
+                crossOriginConfigsAssembledFromConfigs
+                        .putAll(pathsConfig.as(new CrossOriginConfig.CrossOriginConfigMapper()).get());
+            }
+            Config enabledConfig = config.get(CORS_ENABLED_CONFIG_KEY);
+            if (enabledConfig.exists()) {
+                isEnabled = enabledConfig.asBoolean().get();
+            }
             return this;
         }
 
