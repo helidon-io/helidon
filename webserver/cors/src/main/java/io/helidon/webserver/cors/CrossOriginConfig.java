@@ -23,8 +23,8 @@ import java.util.function.Function;
 
 import io.helidon.config.Config;
 
-import static io.helidon.webserver.cors.CORSSupport.normalize;
-import static io.helidon.webserver.cors.CORSSupport.parseHeader;
+import static io.helidon.webserver.cors.internal.CrossOriginHelper.normalize;
+import static io.helidon.webserver.cors.internal.CrossOriginHelper.parseHeader;
 
 /**
  * Represents information about cross origin request sharing.
@@ -145,11 +145,12 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
     }
 
     /**
-     * Defines common behavior between {@code CrossOriginConfig} and {@link CORSSupport.Builder}.
+     * Defines common behavior between {@code CrossOriginConfig} and {@link CORSSupport.Builder} for assiging CORS-related
+     * attributes.
      *
      * @param <T> the type of the implementing class so the fluid methods can return the correct type
      */
-    interface Setter<T extends Setter> {
+    interface Setter<T extends Setter<T>> {
         /**
          * Sets the allowOrigins.
          *

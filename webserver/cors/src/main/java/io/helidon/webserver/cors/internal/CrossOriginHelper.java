@@ -19,24 +19,26 @@ package io.helidon.webserver.cors.internal;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.StringTokenizer;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
+import java.util.logging.Logger;
 
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
-import io.helidon.webserver.cors.CORSSupport;
 import io.helidon.webserver.cors.CrossOriginConfig;
+import io.helidon.webserver.cors.internal.LogHelper.Headers;
 
 import static io.helidon.common.http.Http.Header.HOST;
 import static io.helidon.common.http.Http.Header.ORIGIN;
-import static io.helidon.webserver.cors.CORSSupport.normalize;
 import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_CREDENTIALS;
 import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_HEADERS;
 import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_METHODS;
@@ -45,6 +47,7 @@ import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_EXPOSE_
 import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_MAX_AGE;
 import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_REQUEST_HEADERS;
 import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_REQUEST_METHOD;
+import static io.helidon.webserver.cors.internal.LogHelper.DECISION_LEVEL;
 
 /**
  * <em>Not for use by developers.</em>
@@ -77,6 +80,57 @@ public class CrossOriginHelper {
     static final String ORIGIN_NOT_IN_ALLOWED_LIST = "CORS origin is not in allowed list";
     static final String METHOD_NOT_IN_ALLOWED_LIST = "CORS method is not in allowed list";
     static final String HEADERS_NOT_IN_ALLOWED_LIST = "CORS headers not in allowed list";
+
+    static final Logger LOGGER = Logger.getLogger(CrossOriginHelper.class.getName());
+
+    private static final Supplier<Optional<CrossOriginConfig>> EMPTY_SECONDARY_SUPPLIER = Optional::empty;
+
+    /**
+     * Trim leading or trailing slashes of a path.
+     *
+     * @param path The path.
+     * @return Normalized path.
+     */
+    public static String normalize(String path) {
+        int length = path.length();
+        int beginIndex = path.charAt(0) == '/' ? 1 : 0;
+        int endIndex = path.charAt(length - 1) == '/' ? length - 1 : length;
+        return (endIndex <= beginIndex) ? "" : path.substring(beginIndex, endIndex);
+    }
+
+    /**
+     * Parse list header value as a set.
+     *
+     * @param header Header value as a list.
+     * @return Set of header values.
+     */
+    public static Set<String> parseHeader(String header) {
+        if (header == null) {
+            return Collections.emptySet();
+        }
+        Set<String> result = new HashSet<>();
+        StringTokenizer tokenizer = new StringTokenizer(header, ",");
+        while (tokenizer.hasMoreTokens()) {
+            String value = tokenizer.nextToken().trim();
+            if (value.length() > 0) {
+                result.add(value);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Parse a list of list of headers as a set.
+     *
+     * @param headers Header value as a list, each a potential list.
+     * @return Set of header values.
+     */
+    public static Set<String> parseHeader(List<String> headers) {
+        if (headers == null) {
+            return Collections.emptySet();
+        }
+        return parseHeader(headers.stream().reduce("", (a, b) -> a + "," + b));
+    }
 
     /**
      * <em>Not for use by developers.</em>
@@ -133,7 +187,7 @@ public class CrossOriginHelper {
     private CrossOriginHelper(Builder builder) {
         isEnabled = builder.isEnabled();
         crossOriginConfigs = builder.crossOriginConfigs();
-        secondaryCrossOriginLookup = builder.secondaryCrossOriginLookupOpt.orElse(Optional::empty);
+        secondaryCrossOriginLookup = builder.secondaryCrossOriginLookup;
     }
 
     /**
@@ -151,7 +205,7 @@ public class CrossOriginHelper {
     public static class Builder implements io.helidon.common.Builder<CrossOriginHelper> {
 
         private Optional<Config> corsConfigOpt = Optional.empty();
-        private Optional<Supplier<Optional<CrossOriginConfig>>> secondaryCrossOriginLookupOpt = Optional.empty();
+        private Supplier<Optional<CrossOriginConfig>> secondaryCrossOriginLookup = EMPTY_SECONDARY_SUPPLIER;
 
         /**
          * Sets the CORS config node (allowed to be missing).
@@ -172,7 +226,7 @@ public class CrossOriginHelper {
          * @return updated builder
          */
         public Builder secondaryLookupSupplier(Supplier<Optional<CrossOriginConfig>> secondaryLookup) {
-            secondaryCrossOriginLookupOpt = Optional.of(secondaryLookup);
+            secondaryCrossOriginLookup = secondaryLookup;
             return this;
         }
 
@@ -182,7 +236,11 @@ public class CrossOriginHelper {
          * @return initialized {@code CrossOriginHelper}
          */
         public CrossOriginHelper build() {
-            return new CrossOriginHelper(this);
+            CrossOriginHelper result = new CrossOriginHelper(this);
+
+            LOGGER.config(() -> String.format("CrossOriginHelper configured as: %s", result.toString()));
+
+            return result;
         }
 
         boolean isEnabled() {
@@ -211,8 +269,7 @@ public class CrossOriginHelper {
     }
 
     /**
-     * Reports whether this helper, due to its set-up, will affect any requests or responses. It accounts for such things as
-     * whether the helper is enabled and whether any paths were set-up.
+     * Reports whether this helper, due to its set-up, will affect any requests or responses.
      *
      * @return whether the helper will have any effect on requests or responses
      */
@@ -246,6 +303,7 @@ public class CrossOriginHelper {
     public <T, U> Optional<U> processRequest(RequestAdapter<T> requestAdapter, ResponseAdapter<U> responseAdapter) {
 
         if (!isEnabled) {
+            LOGGER.log(DECISION_LEVEL, () -> String.format("CORS ignoring request %s; processing is disabled", requestAdapter));
             requestAdapter.next();
             return Optional.empty();
         }
@@ -256,52 +314,22 @@ public class CrossOriginHelper {
         RequestType requestType = requestType(requestAdapter);
 
         if (requestType == RequestType.NORMAL) {
+            LOGGER.log(DECISION_LEVEL, "passing normal request through unchanged");
             return Optional.empty();
         }
 
-        // If this is a CORS request of some sort and CORS is not enabled, deny the request.
+        // If this is a CORS request of some sort and there is no matching CORS configuration, deny the request.
         if (crossOrigin.isEmpty()) {
-            return Optional.of(responseAdapter.forbidden(ORIGIN_DENIED));
+            return Optional.of(forbid(requestAdapter, responseAdapter, ORIGIN_DENIED,
+                    () -> "no matching CORS configuration for path " + requestAdapter.path()));
         }
         return processRequest(requestType, crossOrigin.get(), requestAdapter, responseAdapter);
     }
-    /**
-     * Processes a request according to the CORS rules, returning an {@code Optional} of the response type if
-     * the caller should send the response immediately (such as for a preflight response or an error response to a
-     * non-preflight CORS request).
-     * <p>
-     *     If the optional is empty, this processor has either:
-     * </p>
-     * <ul>
-     *     <li>recognized the request as a valid non-preflight CORS request and has set headers in the response adapter, or</li>
-     *     <li>recognized the request as a non-CORS request entirely.</li>
-     * </ul>
-     * <p>
-     * In either case of an empty optional return value, the caller should proceed with its own request processing and sends its
-     * response at will as long as that processing includes the header settings assigned using the response adapter.
-     * </p>
-     * @param crossOrigin cross origin config to use in handling this request
-     * @param requestAdapter abstraction of a request
-     * @param responseAdapter abstraction of a response
-     * @param <T> type for the {@code Request} managed by the requestAdapter
-     * @param <U> the type for the HTTP response as returned from the responseSetter
-     * @return Optional of an error response if the request was an invalid CORS request; Optional.empty() if it was a
-     *         valid CORS request
-     */
-    public <T, U> Optional<U> processRequest(CrossOriginConfig crossOrigin, RequestAdapter<T> requestAdapter,
-            ResponseAdapter<U> responseAdapter) {
 
-        if (!isEnabled) {
-            requestAdapter.next();
-            return Optional.empty();
-        }
-
-        RequestType requestType = requestType(requestAdapter);
-
-        if (requestType == RequestType.NORMAL) {
-            return Optional.empty();
-        }
-        return processRequest(requestType, crossOrigin, requestAdapter, responseAdapter);
+    @Override
+    public String toString() {
+        return String.format("CrossOriginHelper{isEnabled=%s, crossOriginConfigs=%s, secondaryCrossOriginLookup=%s}",
+                isEnabled, crossOriginConfigs, secondaryCrossOriginLookup == EMPTY_SECONDARY_SUPPLIER ? "(not set)" : "(set)");
     }
 
     static <T, U> Optional<U> processRequest(RequestType requestType, CrossOriginConfig crossOrigin,
@@ -341,10 +369,12 @@ public class CrossOriginHelper {
     public <T, U> void prepareResponse(RequestAdapter<T> requestAdapter, ResponseAdapter<U> responseAdapter) {
 
         if (!isEnabled) {
+            LOGGER.log(DECISION_LEVEL,
+                    () -> String.format("CORS ignoring request %s; CORS processing is dieabled", requestAdapter));
             return;
         }
 
-        RequestType requestType = requestType(requestAdapter);
+        RequestType requestType = requestType(requestAdapter, true); // silent: already logged during req processing
 
         if (requestType == RequestType.CORS) {
             CrossOriginConfig crossOrigin = lookupCrossOrigin(
@@ -364,22 +394,44 @@ public class CrossOriginHelper {
      * @param <T> type of request wrapped by the adapter
      * @return RequestType the CORS request type of the request
      */
-    static <T> RequestType requestType(RequestAdapter<T> requestAdapter) {
-        // If no origin header or same as host, then just normal
-        Optional<String> originOpt = requestAdapter.firstHeader(ORIGIN);
-        Optional<String> hostOpt = requestAdapter.firstHeader(HOST);
-        if (originOpt.isEmpty() || (hostOpt.isPresent() && originOpt.get().contains("://" + hostOpt.get()))) {
+    static <T> RequestType requestType(RequestAdapter<T> requestAdapter, boolean silent) {
+        if (isRequestTypeNormal(requestAdapter, silent)) {
             return RequestType.NORMAL;
         }
 
-        // Is this a pre-flight request?
-        if (requestAdapter.method().equalsIgnoreCase(Http.Method.OPTIONS.name())
-                && requestAdapter.headerContainsKey(ACCESS_CONTROL_REQUEST_METHOD)) {
-            return RequestType.PREFLIGHT;
-        }
+        return inferCORSRequestType(requestAdapter, silent);
+    }
 
-        // A CORS request that is not a pre-flight one
-        return RequestType.CORS;
+    static <T> RequestType requestType(RequestAdapter<T> requestAdapter) {
+        return requestType(requestAdapter, false);
+    }
+
+    private static <T> boolean isRequestTypeNormal(RequestAdapter<T> requestAdapter, boolean silent) {
+        // If no origin header or same as host, then just normal
+        Optional<String> originOpt = requestAdapter.firstHeader(ORIGIN);
+        Optional<String> hostOpt = requestAdapter.firstHeader(HOST);
+
+        boolean result = originOpt.isEmpty() || (hostOpt.isPresent() && originOpt.get().contains("://" + hostOpt.get()));
+        if (!silent && LOGGER.isLoggable(DECISION_LEVEL)) {
+            LogHelper.isRequestTypeNormal(result, requestAdapter, originOpt, hostOpt);
+        }
+        return result;
+    }
+
+    private static <T> RequestType inferCORSRequestType(RequestAdapter<T> requestAdapter, boolean silent) {
+
+        String methodName = requestAdapter.method();
+        boolean isMethodOPTION = methodName.equalsIgnoreCase(Http.Method.OPTIONS.name());
+        boolean requestContainsAccessControlRequestMethodHeader = requestAdapter.headerContainsKey(ACCESS_CONTROL_REQUEST_METHOD);
+
+        RequestType result = isMethodOPTION && requestContainsAccessControlRequestMethodHeader
+                ? RequestType.PREFLIGHT
+                : RequestType.CORS;
+
+        if (!silent && !LOGGER.isLoggable(DECISION_LEVEL)) {
+            LogHelper.inferCORSRequestType(result, requestAdapter, methodName, requestContainsAccessControlRequestMethodHeader);
+        }
+        return result;
     }
 
     /**
@@ -403,7 +455,10 @@ public class CrossOriginHelper {
         List<String> allowedOrigins = Arrays.asList(crossOriginConfig.allowOrigins());
         Optional<String> originOpt = requestAdapter.firstHeader(ORIGIN);
         if (!allowedOrigins.contains("*") && !contains(originOpt, allowedOrigins, String::equals)) {
-            return Optional.of(responseAdapter.forbidden(ORIGIN_NOT_IN_ALLOWED_LIST));
+            return Optional.of(forbid(requestAdapter,
+                    responseAdapter,
+                    ORIGIN_NOT_IN_ALLOWED_LIST,
+                    () -> String.format("actual: %s, allowed: %s", originOpt.orElse("(MISSING)"), allowedOrigins)));
         }
 
         // Successful processing of request
@@ -429,18 +484,24 @@ public class CrossOriginHelper {
         String origin = requestAdapter.firstHeader(ORIGIN).orElseThrow(noRequiredHeaderExcFactory(ORIGIN));
 
         if (crossOrigin.allowCredentials()) {
-            responseAdapter.header(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true")
-                           .header(ACCESS_CONTROL_ALLOW_ORIGIN, origin)
-                           .header(Http.Header.VARY, ORIGIN);
+            new Headers()
+                    .add(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true")
+                    .add(ACCESS_CONTROL_ALLOW_ORIGIN, origin)
+                    .add(Http.Header.VARY, ORIGIN)
+                    .set(responseAdapter::header, "allow-credentials was set in CORS config");
         } else {
             List<String> allowedOrigins = Arrays.asList(crossOrigin.allowOrigins());
-            responseAdapter.header(ACCESS_CONTROL_ALLOW_ORIGIN, allowedOrigins.contains("*") ? "*" : origin)
-                            .header(Http.Header.VARY, ORIGIN);
+            new Headers()
+                    .add(ACCESS_CONTROL_ALLOW_ORIGIN, allowedOrigins.contains("*") ? "*" : origin)
+                    .add(Http.Header.VARY, ORIGIN)
+                    .set(responseAdapter::header, "allow-credentials was not set in CORS config");
         }
 
         // Add Access-Control-Expose-Headers if non-empty
+        Headers headers = new Headers();
         formatHeader(crossOrigin.exposeHeaders()).ifPresent(
-                h -> responseAdapter.header(ACCESS_CONTROL_EXPOSE_HEADERS, h));
+                h -> headers.add(ACCESS_CONTROL_EXPOSE_HEADERS, h));
+        headers.set(responseAdapter::header, "expose-headers was set in CORS config");
     }
 
     /**
@@ -463,18 +524,24 @@ public class CrossOriginHelper {
 
         Optional<String> originOpt = requestAdapter.firstHeader(ORIGIN);
         if (originOpt.isEmpty()) {
-            return responseAdapter.forbidden(noRequiredHeader(ORIGIN));
+            return forbid(requestAdapter, responseAdapter, noRequiredHeader(ORIGIN));
         }
 
         // If enabled but not whitelisted, deny request
         List<String> allowedOrigins = Arrays.asList(crossOrigin.allowOrigins());
         if (!allowedOrigins.contains("*") && !contains(originOpt, allowedOrigins, String::equals)) {
-            return responseAdapter.forbidden(ORIGIN_NOT_IN_ALLOWED_LIST);
+            return forbid(requestAdapter,
+                    responseAdapter,
+                    ORIGIN_NOT_IN_ALLOWED_LIST,
+                    () -> "actual origin: " + originOpt.get() + ", allowedOrigins: " + allowedOrigins);
         }
 
         Optional<String> methodOpt = requestAdapter.firstHeader(ACCESS_CONTROL_REQUEST_METHOD);
         if (methodOpt.isEmpty()) {
-            return responseAdapter.forbidden(METHOD_NOT_IN_ALLOWED_LIST);
+            return forbid(requestAdapter,
+                    responseAdapter,
+                    METHOD_NOT_IN_ALLOWED_LIST,
+                    () -> "header " + ACCESS_CONTROL_REQUEST_METHOD + " absent from request");
         }
 
         // Check if method is allowed
@@ -482,29 +549,39 @@ public class CrossOriginHelper {
         List<String> allowedMethods = Arrays.asList(crossOrigin.allowMethods());
         if (!allowedMethods.contains("*")
                 && !contains(method, allowedMethods, String::equals)) {
-            return responseAdapter.forbidden(METHOD_NOT_IN_ALLOWED_LIST);
+            return forbid(requestAdapter,
+                    responseAdapter,
+                    METHOD_NOT_IN_ALLOWED_LIST,
+                    () -> String.format("header %s had value %s but allowedMethods is %s", ACCESS_CONTROL_REQUEST_METHOD,
+                            methodOpt.get(), allowedMethods));
         }
 
         // Check if headers are allowed
-        Set<String> requestHeaders = CORSSupport.parseHeader(requestAdapter.allHeaders(ACCESS_CONTROL_REQUEST_HEADERS));
+        Set<String> requestHeaders = parseHeader(requestAdapter.allHeaders(ACCESS_CONTROL_REQUEST_HEADERS));
         List<String> allowedHeaders = Arrays.asList(crossOrigin.allowHeaders());
         if (!allowedHeaders.contains("*") && !contains(requestHeaders, allowedHeaders)) {
-            return responseAdapter.forbidden(HEADERS_NOT_IN_ALLOWED_LIST);
+            return forbid(requestAdapter,
+                    responseAdapter,
+                    HEADERS_NOT_IN_ALLOWED_LIST,
+                    () -> String.format("requested headers %s incompatible with allowed headers %s", requestHeaders,
+                            allowedHeaders));
         }
 
         // Build successful response
 
-        responseAdapter.header(ACCESS_CONTROL_ALLOW_ORIGIN, originOpt.get());
+        Headers headers = new Headers()
+                .add(ACCESS_CONTROL_ALLOW_ORIGIN, originOpt.get());
         if (crossOrigin.allowCredentials()) {
-            responseAdapter.header(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
+            headers.add(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true", "allowCredentials config was set");
         }
-        responseAdapter.header(ACCESS_CONTROL_ALLOW_METHODS, method);
+        headers.add(ACCESS_CONTROL_ALLOW_METHODS, method);
         formatHeader(requestHeaders.toArray()).ifPresent(
-                h -> responseAdapter.header(ACCESS_CONTROL_ALLOW_HEADERS, h));
+                h -> headers.add(ACCESS_CONTROL_ALLOW_HEADERS, h));
         long maxAge = crossOrigin.maxAge();
         if (maxAge > 0) {
-            responseAdapter.header(ACCESS_CONTROL_MAX_AGE, maxAge);
+            headers.add(ACCESS_CONTROL_MAX_AGE, maxAge, "maxAge > 0");
         }
+        headers.set(responseAdapter::header, "headers set on preflight request");
         return responseAdapter.ok();
     }
 
@@ -601,6 +678,18 @@ public class CrossOriginHelper {
 
     private static String noRequiredHeader(String header) {
         return "CORS request does not have required header " + header;
+    }
+
+    private static <T, U> U forbid(RequestAdapter<T> requestAdapter, ResponseAdapter<U> responseAdapter,
+            String reason) {
+        return forbid(requestAdapter, responseAdapter, reason, null);
+    }
+
+    private static <T, U> U forbid(RequestAdapter<T> requestAdapter, ResponseAdapter<U> responseAdapter, String publicReason,
+            Supplier<String> privateExplanation) {
+        LOGGER.log(DECISION_LEVEL, String.format("CORS denying request %s: %s", requestAdapter,
+                publicReason + (privateExplanation == null ? "" : "; " + privateExplanation.get())));
+        return responseAdapter.forbidden(publicReason);
     }
 
     /**

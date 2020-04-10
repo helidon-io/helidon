@@ -80,10 +80,6 @@ class CrossOriginFilter implements ContainerRequestFilter, ContainerResponseFilt
         corsHelper.prepareResponse(new MPRequestAdapter(requestContext), new MPResponseAdapter(responseContext));
     }
 
-    private ResourceInfo resourceInfo() {
-        return resourceInfo;
-    }
-
     static class MPRequestAdapter implements RequestAdapter<ContainerRequestContext> {
 
         private final ContainerRequestContext requestContext;
