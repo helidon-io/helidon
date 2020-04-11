@@ -20,7 +20,7 @@ client:
   follow-redirects: true
   max-redirects: 8
 
-cors:
+cors-setup:
   paths:
     - path-prefix: /cors1
       allow-origins: ["*"]

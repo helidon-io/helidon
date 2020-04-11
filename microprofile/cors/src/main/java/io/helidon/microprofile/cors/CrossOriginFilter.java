@@ -40,6 +40,7 @@ import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
 import io.helidon.config.Config;
 import io.helidon.webserver.cors.CrossOriginConfig;
+import io.helidon.webserver.cors.internal.CrossOriginConfigAggregator;
 import io.helidon.webserver.cors.internal.CrossOriginHelper;
 import io.helidon.webserver.cors.internal.CrossOriginHelper.RequestAdapter;
 import io.helidon.webserver.cors.internal.CrossOriginHelper.ResponseAdapter;
@@ -51,6 +52,11 @@ import org.eclipse.microprofile.config.ConfigProvider;
  */
 @Priority(Priorities.HEADER_DECORATOR)
 class CrossOriginFilter implements ContainerRequestFilter, ContainerResponseFilter {
+
+    /**
+     * Key used for retrieving CORS-related configuration from MP configuration.
+     */
+    public static final String CORS_CONFIG_KEY = "cors";
 
     static {
         HelidonFeatures.register(HelidonFlavor.MP, "CORS");
@@ -64,8 +70,9 @@ class CrossOriginFilter implements ContainerRequestFilter, ContainerResponseFilt
     CrossOriginFilter() {
         Config config = (Config) ConfigProvider.getConfig();
         corsHelper = CrossOriginHelper.builder()
-                .config(config.get(CrossOriginHelper.CORS_CONFIG_KEY))
-                .secondaryLookupSupplier(crossOriginFromAnnotationFinderSupplier())
+                .aggregator(CrossOriginConfigAggregator.create()
+                                .config(config.get(CORS_CONFIG_KEY)))
+                .secondaryLookupSupplier(crossOriginFromAnnotationSupplier())
                 .build();
     }
 
@@ -165,7 +172,7 @@ class CrossOriginFilter implements ContainerRequestFilter, ContainerResponseFilt
         }
     }
 
-    Supplier<Optional<CrossOriginConfig>> crossOriginFromAnnotationFinderSupplier() {
+    Supplier<Optional<CrossOriginConfig>> crossOriginFromAnnotationSupplier() {
 
         return () -> {
             // If not found, inspect resource matched

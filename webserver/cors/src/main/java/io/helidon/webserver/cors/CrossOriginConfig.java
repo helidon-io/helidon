@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 import io.helidon.config.Config;
+import io.helidon.webserver.cors.internal.Setter;
 
 import static io.helidon.webserver.cors.internal.CrossOriginHelper.normalize;
 import static io.helidon.webserver.cors.internal.CrossOriginHelper.parseHeader;
@@ -67,6 +68,10 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
      * Header Access-Control-Request-Method.
      */
     public static final String ACCESS_CONTROL_REQUEST_METHOD = "Access-Control-Request-Method";
+    /**
+     * Key for the node within the CORS config that contains the list of path information.
+     */
+    public static final String CORS_PATHS_CONFIG_KEY = "paths";
 
     private final String[] allowOrigins;
     private final String[] allowHeaders;
@@ -142,62 +147,6 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
 
     private static String[] copyOf(String[] strings) {
         return strings != null ? Arrays.copyOf(strings, strings.length) : new String[0];
-    }
-
-    /**
-     * Defines common behavior between {@code CrossOriginConfig} and {@link CORSSupport.Builder} for assiging CORS-related
-     * attributes.
-     *
-     * @param <T> the type of the implementing class so the fluid methods can return the correct type
-     */
-    interface Setter<T extends Setter<T>> {
-        /**
-         * Sets the allowOrigins.
-         *
-         * @param origins the origin value(s)
-         * @return updated builder
-         */
-        T allowOrigins(String... origins);
-
-        /**
-         * Sets the allow headers.
-         *
-         * @param allowHeaders the allow headers value(s)
-         * @return updated builder
-         */
-        T allowHeaders(String... allowHeaders);
-
-        /**
-         * Sets the expose headers.
-         *
-         * @param exposeHeaders the expose headers value(s)
-         * @return updated builder
-         */
-        T exposeHeaders(String... exposeHeaders);
-
-        /**
-         * Sets the allow methods.
-         *
-         * @param allowMethods the allow method value(s)
-         * @return updated builder
-         */
-        T allowMethods(String... allowMethods);
-
-        /**
-         * Sets the allow credentials flag.
-         *
-         * @param allowCredentials the allow credentials flag
-         * @return updated builder
-         */
-        T allowCredentials(boolean allowCredentials);
-
-        /**
-         * Sets the maximum age.
-         *
-         * @param maxAge the maximum age
-         * @return updated builder
-         */
-        T maxAge(long maxAge);
     }
 
     /**

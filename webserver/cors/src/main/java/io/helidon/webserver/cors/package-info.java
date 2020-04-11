@@ -16,7 +16,7 @@
  */
 
 /**
- * Helidon SE CORS Support.
+ * <h1>Helidon SE CORS Support</h1>
  * <p>
  * Use {@link io.helidon.webserver.cors.CORSSupport} and its {@link io.helidon.webserver.cors.CORSSupport.Builder} to add CORS
  * handling to resources in your application.
@@ -43,41 +43,14 @@
  *     The {@code enabled} setting allows configuration to completely disable CORS processing, regardless of other settings in
  *     config or programmatic set-up of CORS in the application.
  * </p>
- * <h3>Using the application default configuration</h3>
- * You can add a {@value io.helidon.webserver.cors.internal.CrossOriginHelper#CORS_CONFIG_KEY} section to your application's default config
- * file to define the CORS behavior for your application endpoints.
+ * <h3>Finding and applying CORS configuration</h3>
+ * Although Helidon prescribes the CORS config format, you can put it wherever you want in your application's configuration
+ * file. Your application code will retrieve the CORS config from its location within your configuration and then use that
+ * config node with the {@link io.helidon.webserver.cors.CORSSupport.Builder} in preparing CORS support for your app.
+ *
+ * If you set up this configuration
  * <pre>
- *     cors:
- *       paths:
- *         - path-prefix: /cors1
- *           allow-origins: ["*"]
- *           allow-methods: ["*"]
- *         - path-prefix: /cors2
- *           allow-origins: ["http://foo.bar", "http://bar.foo"]
- *           allow-methods: ["DELETE", "PUT"]
- *           allow-headers: ["X-bar", "X-foo"]
- *           allow-credentials: true
- *           max-age: -1
- * </pre>
- * This defines CORS behavior for two paths, {@code /cors1} and {@code /cors2}, within your application's context root.
- * <p>
- *     Assuming you have written your application class {@code MyApp} to extend {@link io.helidon.webserver.Service}, the
- *     following code applies the CORS configuration above to it:
- * </p>
- *     <pre>
- *         Routing.Builder builder = Routing.builder()
- *                 .register("/myapp", CORSSupport.builder()
- *                                      .config() // uses the {@value io.helidon.webserver.cors.internal.CrossOriginHelper#CORS_CONFIG_KEY}} default application config
- *                                      .build(),
- *                                new MyApp());
- *     </pre>
- *     Helidon will perform no CORS processing for any paths in your app other than {@code /cors1} and {@code /cors2}.
- * <h3>Using an explicit configuration object</h3>
- * You can create your own Helidon {@link io.helidon.config.Config} object that contains CORS information and use it instead of
- * the application default config.
- * The config node you create and give to {@code CORSSupport} <em>should not</em> nest the CORS information inside a
- * {@value io.helidon.webserver.cors.internal.CrossOriginHelper#CORS_CONFIG_KEY} section. Instead, it would look like this:
- * <pre>
+ *   my-cors:
  *     paths:
  *       - path-prefix: /cors1
  *         allow-origins: ["*"]
@@ -90,14 +63,13 @@
  *         max-age: -1
  * </pre>
  * <p>
- *     If the above config were stored in a resource in your app called {@code myAppCORS.yaml} then the following code would
- *     apply it to your app:
+ *     in a resource called {@code myApp.yaml} then the following code would apply it to your app:
  * </p>
  *     <pre>
- *         Config myAppConfig = Config.builder().sources(ConfigSources.classpath("myAppCORS.yaml")).build();
+ *         Config myAppConfig = Config.builder().sources(ConfigSources.classpath("myApp.yaml")).build();
  *         Routing.Builder builder = Routing.builder()
  *                 .register("/myapp", CORSSupport.builder()
- *                                      .config(myAppConfig)
+ *                                      .config(myAppConfig.get("my-cors"))
  *                                      .build(),
  *                                new MyApp());
  *     </pre>
@@ -120,19 +92,23 @@
  *         Routing.Builder builder = Routing.builder()
  *                 .register("/myapp", CORSSupport.builder()
  *                                 .addCrossOrigin("/cors3", corsForCORS3) // links the CORS info with a path within the app
- *                                 .build(), new MyApp());
+ *                                 .build(),
+ *                             new MyApp());
  * </pre>
+ * Notice that you pass <em>two</em> services to the {@code register} method: the {@code CORSSupport} instance and your app
+ * instance. Helidon will process requests to the path you specify with those services in that order.
+ * <p>
  * Invoke {@code addCrossOrigin} multiple times to link more paths with CORS configuration. You can reuse one {@code
  * CrossOriginConfig} object with more than one path if that meets your needs.
+ * </p>
  * <p>
- *     The following example shows how you can combine configuration and the API to prepare the {@code CORSSupport.Builder}
- *     which you could then pass to the {@code register} method. To help with readability as things get more complicated, this
- *     example saves the {@code CORSSupport.Builder} in a variable rather than constructing it in-line when invoking
- *     {@code register}:
+ *     The following example shows how you can combine configuration and the API. To help with readability as things get more
+ *     complicated, this example saves the {@code CORSSupport.Builder} in a variable rather than constructing it in-line when
+ *     invoking {@code register}:
  * </p>
  * <pre>
  *         CORSSupport.Builder corsBuilder = CORSSupport.builder()
- *                  .config(myAppConfig)
+ *                  .config(myAppConfig.get("my-cors"))
  *                  .addCrossOrigin("/cors3", corsFORCORS3);
  *
  *         Routing.Builder builder = Routing.builder()

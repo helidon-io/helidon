@@ -16,8 +16,6 @@
  */
 package io.helidon.webserver.cors;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 
 import io.helidon.config.Config;
@@ -26,11 +24,11 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
+import io.helidon.webserver.cors.internal.CrossOriginConfigAggregator;
 import io.helidon.webserver.cors.internal.CrossOriginHelper;
 import io.helidon.webserver.cors.internal.CrossOriginHelper.RequestAdapter;
 import io.helidon.webserver.cors.internal.CrossOriginHelper.ResponseAdapter;
-
-import static io.helidon.webserver.cors.internal.CrossOriginHelper.normalize;
+import io.helidon.webserver.cors.internal.Setter;
 
 /**
  * A Helidon service and handler implementation that implements CORS, for both the application and for built-in Helidon
@@ -39,7 +37,6 @@ import static io.helidon.webserver.cors.internal.CrossOriginHelper.normalize;
  *     The caller can set up the {@code CORSSupport} in a combination of these ways:
  * </p>
  *     <ul>
- *         <li>from the {@value CrossOriginHelper#CORS_CONFIG_KEY} node in the application's default config,</li>
  *         <li>from a {@link Config} node supplied programmatically,</li>
  *         <li>from one or more {@link CrossOriginConfig} objects supplied programmatically, each associated with a path to which
  *         it applies, and</li>
@@ -59,8 +56,7 @@ public class CORSSupport implements Service, Handler {
     private final CrossOriginHelper helper;
 
     private CORSSupport(Builder builder) {
-        CrossOriginHelper.Builder helperBuilder = CrossOriginHelper.builder();
-        builder.configOpt.ifPresent(helperBuilder::config);
+        CrossOriginHelper.Builder helperBuilder = CrossOriginHelper.builder().aggregator(builder.aggregator);
         helper = helperBuilder.build();
     }
 
@@ -93,9 +89,7 @@ public class CORSSupport implements Service, Handler {
     }
 
     /**
-     * Creates a {@code Builder} initialized with the CORS information from the specified configuration node. The config node
-     * should contain the actual CORS settings, <em>not</em> a {@value CrossOriginHelper#CORS_CONFIG_KEY} node which contains
-     * them.
+     * Creates a {@code Builder} initialized with the CORS information from the specified configuration node.
      *
      * @param config node containing CORS information
      * @return builder initialized with the CORS set-up from the config
@@ -135,15 +129,12 @@ public class CORSSupport implements Service, Handler {
     /**
      * Builder for {@code CORSSupport} instances.
      */
-    public static class Builder implements io.helidon.common.Builder<CORSSupport>, CrossOriginConfig.Setter<Builder> {
+    public static class Builder implements io.helidon.common.Builder<CORSSupport>, Setter<Builder> {
 
-        private final Map<String, CrossOriginConfig> crossOriginConfigs = new HashMap<>();
+        private final CrossOriginConfigAggregator aggregator = CrossOriginConfigAggregator.create();
 
-        private final Map<String, CrossOriginConfig> crossOriginConfigsAssembledFromConfigs = new HashMap<>();
-
-        private Optional<CrossOriginConfig.Builder> crossOriginConfigBuilderOpt = Optional.empty();
-
-        private Optional<Config> configOpt = Optional.empty();
+        Builder() {
+        }
 
         @Override
         public CORSSupport build() {
@@ -151,25 +142,25 @@ public class CORSSupport implements Service, Handler {
         }
 
         /**
-         * Saves CORS config information. Typically, the app or component will retrieve the provided {@code Config} instance
-         * from its own config using the key {@value CrossOriginHelper#CORS_CONFIG_KEY}.
+         * Merges CORS config information. Typically, the app or component will retrieve the provided {@code Config} instance
+         * from its own config.
          *
          * @param config the CORS config
          * @return the updated builder
          */
         public Builder config(Config config) {
-            configOpt = Optional.ofNullable(config.exists() ? config : null);
+            aggregator.config(config);
             return this;
         }
 
         /**
-         * Initializes the builder's CORS config from the {@value CrossOriginHelper#CORS_CONFIG_KEY} node from the default
-         * application config.
+         * Sets whether CORS support should be enabled or not.
          *
-         * @return the updated builder
+         * @param value whether to use CORS support
+         * @return updated builder
          */
-        public Builder config() {
-            config(Config.create().get(CrossOriginHelper.CORS_CONFIG_KEY));
+        public Builder enabled(boolean value) {
+            aggregator.enabled(value);
             return this;
         }
 
@@ -181,52 +172,44 @@ public class CORSSupport implements Service, Handler {
          * @return updated builder
          */
         public Builder addCrossOrigin(String path, CrossOriginConfig crossOrigin) {
-            crossOriginConfigs.put(normalize(path), crossOrigin);
+            aggregator.addCrossOrigin(path, crossOrigin);
             return this;
         }
 
         @Override
         public Builder allowOrigins(String... origins) {
-            crossOriginConfigBuilder().allowOrigins(origins);
+            aggregator.allowOrigins(origins);
             return this;
         }
 
         @Override
         public Builder allowHeaders(String... allowHeaders) {
-            crossOriginConfigBuilder().allowHeaders(allowHeaders);
+            aggregator.allowHeaders(allowHeaders);
             return this;
         }
 
         @Override
         public Builder exposeHeaders(String... exposeHeaders) {
-            crossOriginConfigBuilder().exposeHeaders(exposeHeaders);
+            aggregator.exposeHeaders(exposeHeaders);
             return this;
         }
 
         @Override
         public Builder allowMethods(String... allowMethods) {
-            crossOriginConfigBuilder().allowMethods(allowMethods);
+            aggregator.allowMethods(allowMethods);
             return this;
         }
 
         @Override
         public Builder allowCredentials(boolean allowCredentials) {
-            crossOriginConfigBuilder().allowCredentials(allowCredentials);
+            aggregator.allowCredentials(allowCredentials);
             return this;
         }
 
         @Override
         public Builder maxAge(long maxAge) {
-            crossOriginConfigBuilder().maxAge(maxAge);
+            aggregator.maxAge(maxAge);
             return this;
         }
-
-        private CrossOriginConfig.Builder crossOriginConfigBuilder() {
-            if (crossOriginConfigBuilderOpt.isEmpty()) {
-                crossOriginConfigBuilderOpt = Optional.of(CrossOriginConfig.builder());
-            }
-            return crossOriginConfigBuilderOpt.get();
-        }
     }
-
 }

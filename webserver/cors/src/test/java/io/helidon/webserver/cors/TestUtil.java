@@ -31,7 +31,6 @@ import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 
 import static io.helidon.webserver.cors.CORSTestServices.SERVICE_3;
-import static io.helidon.webserver.cors.internal.CrossOriginHelper.CORS_CONFIG_KEY;
 
 public class TestUtil {
 
@@ -46,7 +45,7 @@ public class TestUtil {
     private static WebServer startServer(int port, Routing.Builder routingBuilder) throws InterruptedException,
             ExecutionException, TimeoutException {
         Config config = Config.create();
-        ServerConfiguration serverConfig = ServerConfiguration.builder(config)
+        ServerConfiguration serverConfig = ServerConfiguration.builder(config.get("server"))
                 .port(port)
                 .build();
         return WebServer.create(serverConfig, routingBuilder).start().toCompletableFuture().get(10, TimeUnit.SECONDS);
@@ -68,15 +67,13 @@ public class TestUtil {
          * Load a specific config for "/othergreet."
          */
         Config twoCORSConfig = minimalConfig(ConfigSources.classpath("twoCORS.yaml"));
-        CORSSupport.Builder twoCORSSupportBuilder =
-                CORSSupport.builder().config(twoCORSConfig.get(CORS_CONFIG_KEY));
 
         Routing.Builder builder = Routing.builder()
                 .register(GREETING_PATH,
-                          CORSSupport.builder().config().build(), // use "cors" from default app config
+                          CORSSupport.builder().config(Config.create().get("cors-setup")).build(),
                           new GreetService())
                 .register(OTHER_GREETING_PATH,
-                          CORSSupport.create(twoCORSConfig.get(CORS_CONFIG_KEY)), // custom config - get "cors" yourself
+                          CORSSupport.create(twoCORSConfig.get("cors-2-setup")),
                           new GreetService("Other Hello"));
 
         return builder;

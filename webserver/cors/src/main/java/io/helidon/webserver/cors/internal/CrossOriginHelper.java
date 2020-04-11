@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
@@ -64,17 +63,9 @@ import static io.helidon.webserver.cors.internal.LogHelper.DECISION_LEVEL;
 public class CrossOriginHelper {
 
     /**
-     * Key for the node within the CORS config that contains the list of path information.
-     */
-    static final String CORS_PATHS_CONFIG_KEY = "paths";
-    /**
      * Key for the node within the CORS config indicating whether CORS support is enabled.
      */
     static final String CORS_ENABLED_CONFIG_KEY = "enabled";
-    /**
-     * Key used for retrieving CORS-related configuration from application- or service-level configuration.
-     */
-    public static final String CORS_CONFIG_KEY = "cors"; // public for JavaDoc references
 
     static final String ORIGIN_DENIED = "CORS origin is denied";
     static final String ORIGIN_NOT_IN_ALLOWED_LIST = "CORS origin is not in allowed list";
@@ -164,7 +155,10 @@ public class CrossOriginHelper {
      * @return new instance based on the config
      */
     public static CrossOriginHelper create(Config config) {
-        return builder().config(config).build();
+        CrossOriginConfigAggregator aggregator = CrossOriginConfigAggregator.create()
+                .config(config);
+
+        return builder().aggregator(aggregator).build();
     }
 
     /**
@@ -185,6 +179,7 @@ public class CrossOriginHelper {
     }
 
     private CrossOriginHelper(Builder builder) {
+        builder.validate();
         isEnabled = builder.isEnabled();
         crossOriginConfigs = builder.crossOriginConfigs();
         secondaryCrossOriginLookup = builder.secondaryCrossOriginLookup;
@@ -204,18 +199,14 @@ public class CrossOriginHelper {
      */
     public static class Builder implements io.helidon.common.Builder<CrossOriginHelper> {
 
-        private Optional<Config> corsConfigOpt = Optional.empty();
         private Supplier<Optional<CrossOriginConfig>> secondaryCrossOriginLookup = EMPTY_SECONDARY_SUPPLIER;
 
-        /**
-         * Sets the CORS config node (allowed to be missing).
-         *
-         * @param corsConfig the CORS config node
-         * @return updated builder
-         */
-        public Builder config(Config corsConfig) {
-            corsConfigOpt = Optional.ofNullable(corsConfig.exists() ? corsConfig : null);
-            return this;
+        private Optional<CrossOriginConfigAggregator> aggregatorOpt = Optional.empty();
+
+        void validate() {
+            if (aggregatorOpt.isEmpty()) {
+                throw new IllegalStateException("CrossOriginHelper.Builder aggregator must be set but has not been");
+            }
         }
 
         /**
@@ -227,6 +218,17 @@ public class CrossOriginHelper {
          */
         public Builder secondaryLookupSupplier(Supplier<Optional<CrossOriginConfig>> secondaryLookup) {
             secondaryCrossOriginLookup = secondaryLookup;
+            return this;
+        }
+
+        /**
+         * Sets the aggregator to use for this builder.
+         *
+         * @param aggregator the aggregator
+         * @return updated builder
+         */
+        public Builder aggregator(CrossOriginConfigAggregator aggregator) {
+            aggregatorOpt = Optional.of(aggregator);
             return this;
         }
 
@@ -244,27 +246,11 @@ public class CrossOriginHelper {
         }
 
         boolean isEnabled() {
-            if (corsConfigOpt.isEmpty()) {
-                return true;
-            }
-            Config corsConfig = corsConfigOpt.get();
-            if (!corsConfig.exists()) {
-                return true;
-            }
-            Config corsEnabledNode = corsConfig.get(CORS_ENABLED_CONFIG_KEY);
-            return !corsEnabledNode.exists() || corsEnabledNode.asBoolean().get();
+            return aggregatorOpt.isPresent() && aggregatorOpt.get().isEnabled();
         }
 
         Map<String, CrossOriginConfig> crossOriginConfigs() {
-            AtomicReference<Map<String, CrossOriginConfig>> result = new AtomicReference<>();
-            corsConfigOpt.ifPresentOrElse(corsConfig -> {
-                        Config pathsNode = corsConfig.get(CORS_PATHS_CONFIG_KEY);
-                        if (pathsNode.exists()) {
-                            result.set(pathsNode.as(new CrossOriginConfig.CrossOriginConfigMapper())
-                                    .get());
-                        }
-                    }, () -> result.set(Collections.emptyMap()));
-            return result.get();
+            return aggregatorOpt.isPresent() ? aggregatorOpt.get().crossOriginConfigs() : Collections.emptyMap();
         }
     }
 

@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-cors:
+cors-2-setup:
   paths:
     - path-prefix: /cors2
       allow-origins: ["http://otherfoo.bar", "http://otherbar.foo"]
