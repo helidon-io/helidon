@@ -68,10 +68,11 @@
  *     <pre>
  *         Config myAppConfig = Config.builder().sources(ConfigSources.classpath("myApp.yaml")).build();
  *         Routing.Builder builder = Routing.builder()
- *                 .register("/myapp", CORSSupport.builder()
+ *                 .register("/myapp",
+ *                           CORSSupport.builder()
  *                                      .config(myAppConfig.get("my-cors"))
  *                                      .build(),
- *                                new MyApp());
+ *                           new MyApp());
  *     </pre>
  * <h2>The Helidon CORS API</h2>
  * You can define your application's CORS behavior programmatically -- together with configuration if you want -- by:
@@ -90,10 +91,11 @@
  *             .build();
  *
  *         Routing.Builder builder = Routing.builder()
- *                 .register("/myapp", CORSSupport.builder()
+ *                 .register("/myapp",
+ *                           CORSSupport.builder()
  *                                 .addCrossOrigin("/cors3", corsForCORS3) // links the CORS info with a path within the app
  *                                 .build(),
- *                             new MyApp());
+ *                           new MyApp());
  * </pre>
  * Notice that you pass <em>two</em> services to the {@code register} method: the {@code CORSSupport} instance and your app
  * instance. Helidon will process requests to the path you specify with those services in that order.
@@ -112,7 +114,9 @@
  *                  .addCrossOrigin("/cors3", corsFORCORS3);
  *
  *         Routing.Builder builder = Routing.builder()
- *                 .register("/myapp", corsBuilder.build(), new MyApp());
+ *                 .register("/myapp",
+ *                           corsBuilder.build(),
+ *                           new MyApp());
  * </pre>
  *
  * <h3>Convenience API for the "/" path</h3>
@@ -142,7 +146,8 @@
  * replies with success:
  * <pre>{@code
  *         Routing.Builder builder = Routing.builder()
- *                 .put("/cors4", CORSSupport.builder()
+ *                 .put("/cors4",
+ *                      CORSSupport.builder()
  *                               .allowOrigins("http://foo.bar", "http://bar.foo")
  *                               .allowMethods("DELETE", "PUT"),
  *                      (req, resp) -> resp.status(Http.Status.OK_200));
@@ -150,13 +155,15 @@
  * You can do this multiple times and even combine it with service registrations:
  * <pre>{@code
  *         Routing.Builder builder = Routing.builder()
- *                 .put("/cors4", CORSSupport.builder()
- *                                   .allowOrigins("http://foo.bar", "http://bar.foo")
- *                                   .allowMethods("DELETE", "PUT"),
+ *                 .put("/cors4",
+ *                      CORSSupport.builder()
+ *                               .allowOrigins("http://foo.bar", "http://bar.foo")
+ *                               .allowMethods("DELETE", "PUT"),
  *                      (req, resp) -> resp.status(Http.Status.OK_200))
- *                 .get("/cors4", CORSSupport.builder()
- *                                   .allowOrigins("*")
- *                                   .minAge(-1),
+ *                 .get("/cors4",
+ *                      CORSSupport.builder()
+ *                               .allowOrigins("*")
+ *                               .minAge(-1),
  *                      (req, resp) -> resp.send("Hello, World!"))
  *                 .register(CORSSupport.fromConfig());
  * }</pre>
