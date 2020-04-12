@@ -160,6 +160,9 @@ public class CORSSupport<T, U> implements Service, Handler {
 
     /**
      * Builder for {@code CORSSupport} instances.
+     *
+     * @param <T> type of the request wrapped by the adapter
+     * @param <U> type of the response wrapped by the adapter
      */
     public static class Builder<T, U> implements io.helidon.common.Builder<CORSSupport<T, U>>,
             Setter<Builder<T, U>> {

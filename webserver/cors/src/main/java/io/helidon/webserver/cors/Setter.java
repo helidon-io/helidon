@@ -16,8 +16,6 @@
  */
 package io.helidon.webserver.cors;
 
-import io.helidon.webserver.cors.CORSSupport;
-
 /**
  * Defines common behavior between {@code CrossOriginConfig} and {@link CORSSupport.Builder} for assiging CORS-related
  * attributes.
