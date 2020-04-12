@@ -21,7 +21,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
@@ -171,7 +170,8 @@ public class CrossOriginHelper {
     }
 
     private final boolean isEnabled;
-    private final Map<String, CrossOriginConfig> crossOriginConfigs;
+    private final CrossOriginConfigAggregator aggregator;
+//    private final Map<String, CrossOriginConfig> crossOriginConfigs;
     private final Supplier<Optional<CrossOriginConfig>> secondaryCrossOriginLookup;
 
     private CrossOriginHelper() {
@@ -181,7 +181,7 @@ public class CrossOriginHelper {
     private CrossOriginHelper(Builder builder) {
         builder.validate();
         isEnabled = builder.isEnabled();
-        crossOriginConfigs = builder.crossOriginConfigs();
+        aggregator = builder.aggregator();
         secondaryCrossOriginLookup = builder.secondaryCrossOriginLookup;
     }
 
@@ -199,13 +199,15 @@ public class CrossOriginHelper {
      */
     public static class Builder implements io.helidon.common.Builder<CrossOriginHelper> {
 
+        private static final String NO_AGGREGATOR_MESSAGE = "CrossOriginHelper.Builder aggregator must be set but has not been";
+
         private Supplier<Optional<CrossOriginConfig>> secondaryCrossOriginLookup = EMPTY_SECONDARY_SUPPLIER;
 
         private Optional<CrossOriginConfigAggregator> aggregatorOpt = Optional.empty();
 
         void validate() {
             if (aggregatorOpt.isEmpty()) {
-                throw new IllegalStateException("CrossOriginHelper.Builder aggregator must be set but has not been");
+                throw new IllegalStateException(NO_AGGREGATOR_MESSAGE);
             }
         }
 
@@ -232,6 +234,10 @@ public class CrossOriginHelper {
             return this;
         }
 
+        CrossOriginConfigAggregator aggregator() {
+            return aggregatorOpt.orElseThrow(() -> new IllegalStateException(NO_AGGREGATOR_MESSAGE));
+        }
+
         /**
          * Creates the {@code CrossOriginHelper}.
          *
@@ -246,11 +252,7 @@ public class CrossOriginHelper {
         }
 
         boolean isEnabled() {
-            return aggregatorOpt.isPresent() && aggregatorOpt.get().isEnabled();
-        }
-
-        Map<String, CrossOriginConfig> crossOriginConfigs() {
-            return aggregatorOpt.isPresent() ? aggregatorOpt.get().crossOriginConfigs() : Collections.emptyMap();
+            return aggregatorOpt.map(CrossOriginConfigAggregator::isEnabled).orElse(false);
         }
     }
 
@@ -260,7 +262,7 @@ public class CrossOriginHelper {
      * @return whether the helper will have any effect on requests or responses
      */
     public boolean isActive() {
-        return isEnabled && !crossOriginConfigs.isEmpty();
+        return aggregator.isEnabled();
     }
 
     /**
@@ -288,14 +290,13 @@ public class CrossOriginHelper {
      */
     public <T, U> Optional<U> processRequest(RequestAdapter<T> requestAdapter, ResponseAdapter<U> responseAdapter) {
 
-        if (!isEnabled) {
+        if (!isActive()) {
             LOGGER.log(DECISION_LEVEL, () -> String.format("CORS ignoring request %s; processing is disabled", requestAdapter));
             requestAdapter.next();
             return Optional.empty();
         }
 
-        Optional<CrossOriginConfig> crossOrigin = lookupCrossOrigin(requestAdapter.path(), crossOriginConfigs,
-                secondaryCrossOriginLookup);
+        Optional<CrossOriginConfig> crossOrigin = aggregator.lookupCrossOrigin(requestAdapter.path(), secondaryCrossOriginLookup);
 
         RequestType requestType = requestType(requestAdapter);
 
@@ -314,8 +315,8 @@ public class CrossOriginHelper {
 
     @Override
     public String toString() {
-        return String.format("CrossOriginHelper{isEnabled=%s, crossOriginConfigs=%s, secondaryCrossOriginLookup=%s}",
-                isEnabled, crossOriginConfigs, secondaryCrossOriginLookup == EMPTY_SECONDARY_SUPPLIER ? "(not set)" : "(set)");
+        return String.format("CrossOriginHelper{isActive=%s, crossOriginConfigs=%s, secondaryCrossOriginLookup=%s}",
+                isActive(), aggregator, secondaryCrossOriginLookup == EMPTY_SECONDARY_SUPPLIER ? "(not set)" : "(set)");
     }
 
     static <T, U> Optional<U> processRequest(RequestType requestType, CrossOriginConfig crossOrigin,
@@ -354,7 +355,7 @@ public class CrossOriginHelper {
      */
     public <T, U> void prepareResponse(RequestAdapter<T> requestAdapter, ResponseAdapter<U> responseAdapter) {
 
-        if (!isEnabled) {
+        if (!isActive()) {
             LOGGER.log(DECISION_LEVEL,
                     () -> String.format("CORS ignoring request %s; CORS processing is dieabled", requestAdapter));
             return;
@@ -363,10 +364,9 @@ public class CrossOriginHelper {
         RequestType requestType = requestType(requestAdapter, true); // silent: already logged during req processing
 
         if (requestType == RequestType.CORS) {
-            CrossOriginConfig crossOrigin = lookupCrossOrigin(
+            CrossOriginConfig crossOrigin = aggregator.lookupCrossOrigin(
                             requestAdapter.path(),
-                            crossOriginConfigs,
-                    secondaryCrossOriginLookup)
+                            secondaryCrossOriginLookup)
                     .orElseThrow(() -> new IllegalArgumentException(
                             "Could not locate expected CORS information while preparing response to request " + requestAdapter));
             addCORSHeadersToResponse(crossOrigin, requestAdapter, responseAdapter);
@@ -569,25 +569,6 @@ public class CrossOriginHelper {
         }
         headers.set(responseAdapter::header, "headers set on preflight request");
         return responseAdapter.ok();
-    }
-
-    /**
-     * Looks for a matching CORS config entry for the specified path among the provided CORS configuration information, returning
-     * an {@code Optional} of the matching {@code CrossOrigin} instance for the path, if any.
-     *
-     * @param path the possibly unnormalized request path to check
-     * @param crossOriginConfigs CORS configuration
-     * @param secondaryLookup Supplier for CrossOrigin used if none found in config
-     * @return Optional<CrossOrigin> for the matching config, or an empty Optional if none matched
-     */
-    static Optional<CrossOriginConfig> lookupCrossOrigin(String path, Map<String, CrossOriginConfig> crossOriginConfigs,
-            Supplier<Optional<CrossOriginConfig>> secondaryLookup) {
-        String normalizedPath = normalize(path);
-        if (crossOriginConfigs.containsKey(normalizedPath)) {
-            return Optional.of(crossOriginConfigs.get(normalizedPath));
-        }
-
-        return secondaryLookup.get();
     }
 
     /**

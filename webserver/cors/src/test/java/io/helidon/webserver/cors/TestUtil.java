@@ -21,6 +21,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 
+import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.spi.ConfigSource;
@@ -74,7 +75,19 @@ public class TestUtil {
                           new GreetService())
                 .register(OTHER_GREETING_PATH,
                           CORSSupport.create(twoCORSConfig.get("cors-2-setup")),
-                          new GreetService("Other Hello"));
+                          new GreetService("Other Hello"))
+                .any(TestHandlerRegistration.CORS4_CONTEXT_ROOT,
+                        CORSSupport.builder()
+                                .allowOrigins("http://foo.bar", "http://bar.foo")
+                                .allowMethods("PUT")
+                                .build(),
+                        (req, resp) -> resp.status(Http.Status.OK_200).send())
+                .get(TestHandlerRegistration.CORS4_CONTEXT_ROOT,
+                        CORSSupport.builder()
+                                .allowOrigins("*")
+                                .allowMethods("GET")
+                                .build(),
+                        (req, resp) -> resp.status(Http.Status.OK_200).send());
 
         return builder;
     }

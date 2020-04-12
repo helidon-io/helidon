@@ -141,25 +141,36 @@
  * <h3>{@code CORSSupport} as a handler</h3>
  * The previous examples use a {@code CORSSupport} instance as a Helidon {@link io.helidon.webserver.Service} which you can
  * register with the routing rules. You can also use a {@code CORSSupport} object as a {@link io.helidon.webserver.Handler} in
- * setting up the routing rules for an HTTP method and path. The next example sets up CORS processing for the {@code PUT}
- * HTTP method on the {@code /cors4} path within the app. The application code simply accepts the request graciously and
- * replies with success:
+ * setting up the routing rules for an HTTP method and path. The next example sets up CORS processing for the {@code PUT} and
+ * {@code OPTIONS} HTTP methods on the {@code /cors4} path within the app. The application code for both simply accepts the
+ * request graciously and replies with success:
  * <pre>{@code
+ *         CORSSupport cors4Support = CORSSupport.builder()
+ *                 .allowOrigins("http://foo.bar", "http://bar.foo")
+ *                 .allowMethods("PUT")
+ *                 .build();
  *         Routing.Builder builder = Routing.builder()
  *                 .put("/cors4",
- *                      CORSSupport.builder()
- *                               .allowOrigins("http://foo.bar", "http://bar.foo")
- *                               .allowMethods("DELETE", "PUT"),
- *                      (req, resp) -> resp.status(Http.Status.OK_200));
+ *                      cors4Support,
+ *                      (req, resp) -> resp.status(Http.Status.OK_200).send())
+ *                 .options("/cors4",
+ *                      cors4Support,
+ *                      (req, resp) -> resp.status(Http.Status.OK_200).send());
  * }</pre>
+ * Remember that the CORS protocol uses the {@code OPTIONS} HTTP method for preflight requests. If you use the handler-based
+ * methods on {@code Routing.Builder} be sure to invoke the {@code options} method as well to set up routing for {@code OPTIONS}
+ * requests. You could invoke the {@code any} method as a short-cut.
+ * <p>
  * You can do this multiple times and even combine it with service registrations:
+ * </p>
  * <pre>{@code
  *         Routing.Builder builder = Routing.builder()
  *                 .put("/cors4",
- *                      CORSSupport.builder()
- *                               .allowOrigins("http://foo.bar", "http://bar.foo")
- *                               .allowMethods("DELETE", "PUT"),
- *                      (req, resp) -> resp.status(Http.Status.OK_200))
+ *                      cors4Support,
+ *                      (req, resp) -> resp.status(Http.Status.OK_200).send())
+ *                 .options("/cors4",
+ *                      cors4Support,
+ *                      (req, resp) -> resp.status(Http.Status.OK_200).send())
  *                 .get("/cors4",
  *                      CORSSupport.builder()
  *                               .allowOrigins("*")

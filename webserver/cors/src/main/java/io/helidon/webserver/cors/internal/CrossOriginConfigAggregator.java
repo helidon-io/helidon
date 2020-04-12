@@ -19,6 +19,7 @@ package io.helidon.webserver.cors.internal;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import io.helidon.config.Config;
 import io.helidon.webserver.cors.CrossOriginConfig;
@@ -30,6 +31,7 @@ import static io.helidon.webserver.cors.internal.CrossOriginHelper.normalize;
  */
 public class CrossOriginConfigAggregator implements Setter<CrossOriginConfigAggregator> {
 
+    private static final String CONVENIENCE_PATH = "*";
     // Records paths and configs added via addCrossOriginConfig
     private final Map<String, CrossOriginConfig> crossOriginConfigs = new HashMap<>();
 
@@ -63,21 +65,6 @@ public class CrossOriginConfigAggregator implements Setter<CrossOriginConfigAggr
      */
     public boolean isEnabled() {
         return isEnabledFromConfig.orElse(isEnabledFromAPI);
-    }
-
-    /**
-     * Aggregates the cross origin config from all sources into one.
-     *
-     * @return merged path-to-origin map
-     */
-    public Map<String, CrossOriginConfig> crossOriginConfigs() {
-        Map<String, CrossOriginConfig> result = new HashMap<>();
-
-        result.putAll(crossOriginConfigs);
-        crossOriginConfigBuilderOpt.ifPresent(builder -> result.put("/", builder.build()));
-        result.putAll(crossOriginConfigsAssembledFromConfigs);
-
-        return result;
     }
 
     /**
@@ -166,6 +153,52 @@ public class CrossOriginConfigAggregator implements Setter<CrossOriginConfigAggr
     public CrossOriginConfigAggregator maxAge(long maxAge) {
         crossOriginConfigBuilder().maxAge(maxAge);
         return this;
+    }
+
+    /**
+     * Looks for a matching CORS config entry for the specified path among the provided CORS configuration information, returning
+     * an {@code Optional} of the matching {@code CrossOrigin} instance for the path, if any.
+     *
+     * @param path the possibly unnormalized request path to check
+     * @param secondaryLookup Supplier for CrossOrigin used if none found in config
+     * @return Optional<CrossOrigin> for the matching config, or an empty Optional if none matched
+     */
+    Optional<CrossOriginConfig> lookupCrossOrigin(String path, Supplier<Optional<CrossOriginConfig>> secondaryLookup) {
+        String normalizedPath = normalize(path);
+
+        // Check settings from config first, including wildcard.
+        if (crossOriginConfigsAssembledFromConfigs.containsKey(normalizedPath)) {
+            return Optional.of(crossOriginConfigsAssembledFromConfigs.get(normalizedPath));
+        }
+        if (crossOriginConfigsAssembledFromConfigs.containsKey(CONVENIENCE_PATH)) {
+            return Optional.of(crossOriginConfigsAssembledFromConfigs.get(CONVENIENCE_PATH));
+        }
+
+        // Check explicit settings using the CrossOriginConfig methods.
+        if (crossOriginConfigBuilderOpt.isPresent()) {
+            return Optional.of(crossOriginConfigBuilderOpt.get().build());
+        }
+
+        // Check explicit settings using addCrossOriginConfig.
+        if (crossOriginConfigs.containsKey(normalizedPath)) {
+            return Optional.of(crossOriginConfigs.get(normalizedPath));
+        }
+        if (crossOriginConfigs.containsKey(CONVENIENCE_PATH)) {
+            return Optional.of(crossOriginConfigs.get(CONVENIENCE_PATH));
+        }
+
+        return secondaryLookup.get();
+    }
+
+    @Override
+    public String toString() {
+        return "CrossOriginConfigAggregator{"
+                + "crossOriginConfigsAssembledFromConfigs=" + crossOriginConfigsAssembledFromConfigs
+                + ", crossOriginConfigBuilder=" + crossOriginConfigBuilderOpt.map(CrossOriginConfig.Builder::toString).orElse(
+                        "-empty-")
+                + ", isEnabledFromConfig=" + isEnabledFromConfig
+                + ", isEnabledFromAPI=" + isEnabledFromAPI
+                + '}';
     }
 
     private CrossOriginConfig.Builder crossOriginConfigBuilder() {
