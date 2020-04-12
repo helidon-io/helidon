@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package io.helidon.webserver.cors;
+package io.helidon.webserver.cors.internal;
 
 /**
  * <em>Not for use by developers.</em>

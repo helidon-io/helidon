@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package io.helidon.webserver.cors;
+package io.helidon.webserver.cors.internal;
 
 import java.util.List;
 import java.util.Optional;

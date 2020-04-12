@@ -14,17 +14,8 @@
  * limitations under the License.
  *
  */
-
 /**
- * The Helidon SE CORS module
+ * <em>Not for developer use.</em> This package contains Helidon-internal classes that need to be public so the MP CORS module
+ * can use them but are not of use to developers.
  */
-module io.helidon.webserver.cors {
-    requires java.logging;
-
-    requires io.helidon.common;
-    requires io.helidon.config;
-    requires io.helidon.webserver;
-
-    exports io.helidon.webserver.cors;
-    exports io.helidon.webserver.cors.internal to io.helidon.microprofile.cors;
-}
+package io.helidon.webserver.cors.internal;

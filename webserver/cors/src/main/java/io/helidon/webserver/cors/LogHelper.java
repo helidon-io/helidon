@@ -26,6 +26,7 @@ import java.util.logging.Level;
 
 import io.helidon.common.http.Http;
 import io.helidon.webserver.cors.CrossOriginHelper.RequestType;
+import io.helidon.webserver.cors.internal.RequestAdapter;
 
 import static io.helidon.common.http.Http.Header.HOST;
 import static io.helidon.common.http.Http.Header.ORIGIN;

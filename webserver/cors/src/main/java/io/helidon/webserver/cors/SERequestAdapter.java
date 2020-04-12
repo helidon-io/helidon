@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Optional;
 
 import io.helidon.webserver.ServerRequest;
+import io.helidon.webserver.cors.internal.RequestAdapter;
 
 /**
  * Helidon SE implementation of {@link RequestAdapter}.

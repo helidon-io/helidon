@@ -41,9 +41,9 @@ import io.helidon.common.HelidonFlavor;
 import io.helidon.config.Config;
 import io.helidon.webserver.cors.CORSSupport;
 import io.helidon.webserver.cors.CrossOriginConfig;
+import io.helidon.webserver.cors.internal.RequestAdapter;
+import io.helidon.webserver.cors.internal.ResponseAdapter;
 
-import io.helidon.webserver.cors.RequestAdapter;
-import io.helidon.webserver.cors.ResponseAdapter;
 import org.eclipse.microprofile.config.ConfigProvider;
 
 /**
