@@ -63,7 +63,7 @@ public class CORSSupport<T, U> implements Service, Handler {
      * Creates a {@code CORSSupport} which supports the default CORS set-up.
      *
      * @param <T> type of request wrapped by the request adapter
-     * @param <U> type of response wrapper by the response adapter
+     * @param <U> type of response wrapped by the response adapter
      * @return the service
      */
     public static <T, U> CORSSupport<T, U> create() {
@@ -76,7 +76,7 @@ public class CORSSupport<T, U> implements Service, Handler {
      *
      * @param config the config node containing CORS information
      * @param <T> type of request wrapped by the request adapter
-     * @param <U> type of response wrapper by the response adapter
+     * @param <U> type of response wrapped by the response adapter
      * @return the initialized service
      */
     public static <T, U> CORSSupport<T, U> create(Config config) {
@@ -87,6 +87,8 @@ public class CORSSupport<T, U> implements Service, Handler {
     /**
      * Creates a {@code Builder} for assembling a {@code CORSSupport}.
      *
+     * @param <T> type of request wrapped by the request adapter
+     * @param <U> type of response wrapped by the response adapter
      * @return the builder
      */
     public static <T, U> Builder<T, U> builder() {
@@ -98,6 +100,8 @@ public class CORSSupport<T, U> implements Service, Handler {
      *
      * @param config node containing CORS information
      * @return builder initialized with the CORS set-up from the config
+     * @param <T> type of request wrapped by the request adapter
+     * @param <U> type of response wrapped by the response adapter
      */
     public static <T, U> Builder<T, U> builder(Config config) {
         Builder<T, U> b = builder();
