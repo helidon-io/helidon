@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package io.helidon.webserver.cors.internal;
+package io.helidon.webserver.cors;
 
 import io.helidon.webserver.cors.CORSSupport;
 
@@ -24,7 +24,7 @@ import io.helidon.webserver.cors.CORSSupport;
  *
  * @param <T> the type of the implementing class so the fluid methods can return the correct type
  */
-public interface Setter<T> {
+interface Setter<T> {
     /**
      * Sets the allowOrigins.
      *

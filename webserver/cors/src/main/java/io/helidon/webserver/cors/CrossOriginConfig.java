@@ -22,10 +22,9 @@ import java.util.Map;
 import java.util.function.Function;
 
 import io.helidon.config.Config;
-import io.helidon.webserver.cors.internal.Setter;
 
-import static io.helidon.webserver.cors.internal.CrossOriginHelper.normalize;
-import static io.helidon.webserver.cors.internal.CrossOriginHelper.parseHeader;
+import static io.helidon.webserver.cors.CrossOriginHelper.normalize;
+import static io.helidon.webserver.cors.CrossOriginHelper.parseHeader;
 
 /**
  * Represents information about cross origin request sharing.

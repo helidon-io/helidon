@@ -17,6 +17,7 @@
 package io.helidon.webserver.cors;
 
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import io.helidon.config.Config;
 import io.helidon.webserver.Handler;
@@ -24,11 +25,6 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
-import io.helidon.webserver.cors.internal.CrossOriginConfigAggregator;
-import io.helidon.webserver.cors.internal.CrossOriginHelper;
-import io.helidon.webserver.cors.internal.CrossOriginHelper.RequestAdapter;
-import io.helidon.webserver.cors.internal.CrossOriginHelper.ResponseAdapter;
-import io.helidon.webserver.cors.internal.Setter;
 
 /**
  * A Helidon service and handler implementation that implements CORS, for both the application and for built-in Helidon
@@ -50,33 +46,42 @@ import io.helidon.webserver.cors.internal.Setter;
  *     If none of these sources is used, the {@code CORSSupport} applies defaults as described for
  *     {@link CrossOriginConfig}.
  * </p>
+ *
+ * @param <T> type wrapped by RequestAdapter
+ * @param <U> type wrapped by ResponseAdapter
+ *
  */
-public class CORSSupport implements Service, Handler {
+public class CORSSupport<T, U> implements Service, Handler {
 
     private final CrossOriginHelper helper;
 
-    private CORSSupport(Builder builder) {
-        CrossOriginHelper.Builder helperBuilder = CrossOriginHelper.builder().aggregator(builder.aggregator);
-        helper = helperBuilder.build();
+    private CORSSupport(Builder<T, U> builder) {
+        helper = builder.helperBuilder.build();
     }
 
     /**
      * Creates a {@code CORSSupport} which supports the default CORS set-up.
      *
+     * @param <T> type of request wrapped by the request adapter
+     * @param <U> type of response wrapper by the response adapter
      * @return the service
      */
-    public static CORSSupport create() {
-        return builder().build();
+    public static <T, U> CORSSupport<T, U> create() {
+        Builder<T, U> b = builder();
+        return b.build();
     }
 
     /**
      * Returns a {@code CORSSupport} set up using the supplied {@link Config} node.
      *
      * @param config the config node containing CORS information
+     * @param <T> type of request wrapped by the request adapter
+     * @param <U> type of response wrapper by the response adapter
      * @return the initialized service
      */
-    public static CORSSupport create(Config config) {
-        return builder().config(config).build();
+    public static <T, U> CORSSupport<T, U> create(Config config) {
+        Builder<T, U> b = builder();
+        return b.config(config).build();
     }
 
     /**
@@ -84,8 +89,8 @@ public class CORSSupport implements Service, Handler {
      *
      * @return the builder
      */
-    public static Builder builder() {
-        return new Builder();
+    public static <T, U> Builder<T, U> builder() {
+        return new Builder<>();
     }
 
     /**
@@ -94,8 +99,9 @@ public class CORSSupport implements Service, Handler {
      * @param config node containing CORS information
      * @return builder initialized with the CORS set-up from the config
      */
-    public static Builder builder(Config config) {
-        return builder().config(config);
+    public static <T, U> Builder<T, U> builder(Config config) {
+        Builder<T, U> b = builder();
+        return b.config(config);
     }
 
     @Override
@@ -119,6 +125,28 @@ public class CORSSupport implements Service, Handler {
         responseOpt.ifPresentOrElse(ServerResponse::send, () -> prepareCORSResponseAndContinue(requestAdapter, responseAdapter));
     }
 
+    /**
+     * <em>Not for developer use.</em> Submits a request adapter and response adapter for CORS processing.
+     *
+     * @param requestAdapter wrapper around the request
+     * @param responseAdapter wrapper around the response
+     * @return Optional of the response type U; present if the response should be returned, empty if request processing should
+     * continue
+     */
+    public Optional<U> processRequest(RequestAdapter<T> requestAdapter, ResponseAdapter<U> responseAdapter) {
+        return helper.processRequest(requestAdapter, responseAdapter);
+    }
+
+    /**
+     * <em>Not for developer user.</em> Gets a response ready to participate in the CORS protocol.
+     *
+     * @param requestAdapter wrapper around the request
+     * @param responseAdapter wrapper around the reseponse
+     */
+    public void prepareResponse(RequestAdapter<T> requestAdapter, ResponseAdapter<U> responseAdapter) {
+        helper.prepareResponse(requestAdapter, responseAdapter);
+    }
+
     private void prepareCORSResponseAndContinue(RequestAdapter<ServerRequest> requestAdapter,
             ResponseAdapter<ServerResponse> responseAdapter) {
         helper.prepareResponse(requestAdapter, responseAdapter);
@@ -129,16 +157,18 @@ public class CORSSupport implements Service, Handler {
     /**
      * Builder for {@code CORSSupport} instances.
      */
-    public static class Builder implements io.helidon.common.Builder<CORSSupport>, Setter<Builder> {
+    public static class Builder<T, U> implements io.helidon.common.Builder<CORSSupport<T, U>>,
+            Setter<Builder<T, U>> {
 
-        private final CrossOriginConfigAggregator aggregator = CrossOriginConfigAggregator.create();
+        private final CrossOriginHelper.Builder helperBuilder = CrossOriginHelper.builder();
+        private final CrossOriginConfigAggregator aggregator = helperBuilder.aggregator();
 
-        Builder() {
+        private Builder() {
         }
 
         @Override
-        public CORSSupport build() {
-            return new CORSSupport(this);
+        public CORSSupport<T, U> build() {
+            return new CORSSupport<>(this);
         }
 
         /**
@@ -148,7 +178,7 @@ public class CORSSupport implements Service, Handler {
          * @param config the CORS config
          * @return the updated builder
          */
-        public Builder config(Config config) {
+        public Builder<T, U> config(Config config) {
             aggregator.config(config);
             return this;
         }
@@ -159,7 +189,7 @@ public class CORSSupport implements Service, Handler {
          * @param value whether to use CORS support
          * @return updated builder
          */
-        public Builder enabled(boolean value) {
+        public Builder<T, U>  enabled(boolean value) {
             aggregator.enabled(value);
             return this;
         }
@@ -171,44 +201,56 @@ public class CORSSupport implements Service, Handler {
          * @param crossOrigin the cross origin information
          * @return updated builder
          */
-        public Builder addCrossOrigin(String path, CrossOriginConfig crossOrigin) {
+        public Builder<T, U>  addCrossOrigin(String path, CrossOriginConfig crossOrigin) {
             aggregator.addCrossOrigin(path, crossOrigin);
             return this;
         }
 
         @Override
-        public Builder allowOrigins(String... origins) {
+        public Builder<T, U>  allowOrigins(String... origins) {
             aggregator.allowOrigins(origins);
             return this;
         }
 
         @Override
-        public Builder allowHeaders(String... allowHeaders) {
+        public Builder<T, U>  allowHeaders(String... allowHeaders) {
             aggregator.allowHeaders(allowHeaders);
             return this;
         }
 
         @Override
-        public Builder exposeHeaders(String... exposeHeaders) {
+        public Builder<T, U>  exposeHeaders(String... exposeHeaders) {
             aggregator.exposeHeaders(exposeHeaders);
             return this;
         }
 
         @Override
-        public Builder allowMethods(String... allowMethods) {
+        public Builder<T, U>  allowMethods(String... allowMethods) {
             aggregator.allowMethods(allowMethods);
             return this;
         }
 
         @Override
-        public Builder allowCredentials(boolean allowCredentials) {
+        public Builder<T, U>  allowCredentials(boolean allowCredentials) {
             aggregator.allowCredentials(allowCredentials);
             return this;
         }
 
         @Override
-        public Builder maxAge(long maxAge) {
+        public Builder<T, U>  maxAge(long maxAge) {
             aggregator.maxAge(maxAge);
+            return this;
+        }
+
+        /**
+         * <em>Not for developer use.</em> Sets a back-up way to provide a {@code CrossOriginConfig} instance if, during
+         * look-up for a given request, none is found from the aggregator.
+         *
+         * @param secondaryLookupSupplier supplier of a CrossOriginConfig
+         * @return updated builder
+         */
+        public Builder<T, U> secondaryLookupSupplier(Supplier<Optional<CrossOriginConfig>> secondaryLookupSupplier) {
+            helperBuilder.secondaryLookupSupplier(secondaryLookupSupplier);
             return this;
         }
     }

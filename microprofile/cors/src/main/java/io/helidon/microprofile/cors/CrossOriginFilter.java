@@ -39,12 +39,11 @@ import javax.ws.rs.core.Response;
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
 import io.helidon.config.Config;
+import io.helidon.webserver.cors.CORSSupport;
 import io.helidon.webserver.cors.CrossOriginConfig;
-import io.helidon.webserver.cors.internal.CrossOriginConfigAggregator;
-import io.helidon.webserver.cors.internal.CrossOriginHelper;
-import io.helidon.webserver.cors.internal.CrossOriginHelper.RequestAdapter;
-import io.helidon.webserver.cors.internal.CrossOriginHelper.ResponseAdapter;
 
+import io.helidon.webserver.cors.RequestAdapter;
+import io.helidon.webserver.cors.ResponseAdapter;
 import org.eclipse.microprofile.config.ConfigProvider;
 
 /**
@@ -65,26 +64,25 @@ class CrossOriginFilter implements ContainerRequestFilter, ContainerResponseFilt
     @Context
     private ResourceInfo resourceInfo;
 
-    private final CrossOriginHelper corsHelper;
+    private final CORSSupport<ContainerRequestContext, Response> cors;
 
     CrossOriginFilter() {
         Config config = (Config) ConfigProvider.getConfig();
-        corsHelper = CrossOriginHelper.builder()
-                .aggregator(CrossOriginConfigAggregator.create()
-                                .config(config.get(CORS_CONFIG_KEY)))
+        CORSSupport.Builder<ContainerRequestContext, Response> b = CORSSupport.builder();
+        cors = b.config(config.get(CORS_CONFIG_KEY))
                 .secondaryLookupSupplier(crossOriginFromAnnotationSupplier())
                 .build();
     }
 
     @Override
     public void filter(ContainerRequestContext requestContext) {
-        Optional<Response> response = corsHelper.processRequest(new MPRequestAdapter(requestContext), new MPResponseAdapter());
+        Optional<Response> response = cors.processRequest(new MPRequestAdapter(requestContext), new MPResponseAdapter());
         response.ifPresent(requestContext::abortWith);
     }
 
     @Override
     public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) {
-        corsHelper.prepareResponse(new MPRequestAdapter(requestContext), new MPResponseAdapter(responseContext));
+        cors.prepareResponse(new MPRequestAdapter(requestContext), new MPResponseAdapter(responseContext));
     }
 
     static class MPRequestAdapter implements RequestAdapter<ContainerRequestContext> {

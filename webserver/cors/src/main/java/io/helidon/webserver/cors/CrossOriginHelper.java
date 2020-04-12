@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package io.helidon.webserver.cors.internal;
+package io.helidon.webserver.cors;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -32,8 +32,7 @@ import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
-import io.helidon.webserver.cors.CrossOriginConfig;
-import io.helidon.webserver.cors.internal.LogHelper.Headers;
+import io.helidon.webserver.cors.LogHelper.Headers;
 
 import static io.helidon.common.http.Http.Header.HOST;
 import static io.helidon.common.http.Http.Header.ORIGIN;
@@ -45,7 +44,7 @@ import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_EXPOSE_
 import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_MAX_AGE;
 import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_REQUEST_HEADERS;
 import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_REQUEST_METHOD;
-import static io.helidon.webserver.cors.internal.LogHelper.DECISION_LEVEL;
+import static io.helidon.webserver.cors.LogHelper.DECISION_LEVEL;
 
 /**
  * <em>Not for use by developers.</em>
@@ -59,7 +58,7 @@ import static io.helidon.webserver.cors.internal.LogHelper.DECISION_LEVEL;
  * specific to the needs of CORS support.
  * </p>
  */
-public class CrossOriginHelper {
+class CrossOriginHelper {
 
     /**
      * Key for the node within the CORS config indicating whether CORS support is enabled.
@@ -154,10 +153,7 @@ public class CrossOriginHelper {
      * @return new instance based on the config
      */
     public static CrossOriginHelper create(Config config) {
-        CrossOriginConfigAggregator aggregator = CrossOriginConfigAggregator.create()
-                .config(config);
-
-        return builder().aggregator(aggregator).build();
+        return builder().config(config).build();
     }
 
     /**
@@ -169,9 +165,7 @@ public class CrossOriginHelper {
         return builder().build();
     }
 
-    private final boolean isEnabled;
     private final CrossOriginConfigAggregator aggregator;
-//    private final Map<String, CrossOriginConfig> crossOriginConfigs;
     private final Supplier<Optional<CrossOriginConfig>> secondaryCrossOriginLookup;
 
     private CrossOriginHelper() {
@@ -179,9 +173,7 @@ public class CrossOriginHelper {
     }
 
     private CrossOriginHelper(Builder builder) {
-        builder.validate();
-        isEnabled = builder.isEnabled();
-        aggregator = builder.aggregator();
+        aggregator = builder.aggregator;
         secondaryCrossOriginLookup = builder.secondaryCrossOriginLookup;
     }
 
@@ -199,17 +191,9 @@ public class CrossOriginHelper {
      */
     public static class Builder implements io.helidon.common.Builder<CrossOriginHelper> {
 
-        private static final String NO_AGGREGATOR_MESSAGE = "CrossOriginHelper.Builder aggregator must be set but has not been";
-
         private Supplier<Optional<CrossOriginConfig>> secondaryCrossOriginLookup = EMPTY_SECONDARY_SUPPLIER;
 
-        private Optional<CrossOriginConfigAggregator> aggregatorOpt = Optional.empty();
-
-        void validate() {
-            if (aggregatorOpt.isEmpty()) {
-                throw new IllegalStateException(NO_AGGREGATOR_MESSAGE);
-            }
-        }
+        private final CrossOriginConfigAggregator aggregator = CrossOriginConfigAggregator.create();
 
         /**
          * Sets the supplier for the secondary lookup of CORS information (typically <em>not</em> contained in
@@ -224,18 +208,14 @@ public class CrossOriginHelper {
         }
 
         /**
-         * Sets the aggregator to use for this builder.
+         * Adds cross-origin information via config.
          *
-         * @param aggregator the aggregator
+         * @param config config node containing CORS set-up information
          * @return updated builder
          */
-        public Builder aggregator(CrossOriginConfigAggregator aggregator) {
-            aggregatorOpt = Optional.of(aggregator);
+        public Builder config(Config config) {
+            aggregator.config(config);
             return this;
-        }
-
-        CrossOriginConfigAggregator aggregator() {
-            return aggregatorOpt.orElseThrow(() -> new IllegalStateException(NO_AGGREGATOR_MESSAGE));
         }
 
         /**
@@ -251,8 +231,8 @@ public class CrossOriginHelper {
             return result;
         }
 
-        boolean isEnabled() {
-            return aggregatorOpt.map(CrossOriginConfigAggregator::isEnabled).orElse(false);
+        CrossOriginConfigAggregator aggregator() {
+            return aggregator;
         }
     }
 
@@ -659,112 +639,4 @@ public class CrossOriginHelper {
         return responseAdapter.forbidden(publicReason);
     }
 
-    /**
-     * <em>Not for use by developers.</em>
-     *
-     * Minimal abstraction of an HTTP request.
-     *
-     * @param <T> type of the request wrapped by the adapter
-     */
-    public interface RequestAdapter<T> {
-
-        /**
-         *
-         * @return possibly unnormalized path from the request
-         */
-        String path();
-
-        /**
-         * Retrieves the first value for the specified header as a String.
-         *
-         * @param key header name to retrieve
-         * @return the first header value for the key
-         */
-        Optional<String> firstHeader(String key);
-
-        /**
-         * Reports whether the specified header exists.
-         *
-         * @param key header name to check for
-         * @return whether the header exists among the request's headers
-         */
-        boolean headerContainsKey(String key);
-
-        /**
-         * Retrieves all header values for a given key as Strings.
-         *
-         * @param key header name to retrieve
-         * @return header values for the header; empty list if none
-         */
-        List<String> allHeaders(String key);
-
-        /**
-         * Reports the method name for the request.
-         *
-         * @return the method name
-         */
-        String method();
-
-        /**
-         * Processes the next handler/filter/request processor in the chain.
-         */
-        void next();
-
-        /**
-         * Returns the request this adapter wraps.
-         *
-         * @return the request
-         */
-        T request();
-    }
-
-    /**
-     * <em>Not for use by developers.</em>
-     *
-     * Minimal abstraction of an HTTP response.
-     *
-     * <p>
-     * Note to implementers: In some use cases, the CORS support code will invoke the {@code header} methods but not {@code ok}
-     * or {@code forbidden}. See to it that header values set on the adapter via the {@code header} methods are propagated to the
-     * actual response.
-     * </p>
-     *
-     * @param <T> the type of the response wrapped by the adapter
-     */
-    public interface ResponseAdapter<T> {
-
-        /**
-         * Arranges to add the specified header and value to the eventual response.
-         *
-         * @param key header name to add
-         * @param value header value to add
-         * @return the adapter
-         */
-        ResponseAdapter<T> header(String key, String value);
-
-        /**
-         * Arranges to add the specified header and value to the eventual response.
-         *
-         * @param key header name to add
-         * @param value header value to add
-         * @return the adapter
-         */
-        ResponseAdapter<T> header(String key, Object value);
-
-        /**
-         * Returns a response with the forbidden status and the specified error message, without any headers assigned
-         * using the {@code header} methods.
-         *
-         * @param message error message to use in setting the response status
-         * @return the factory
-         */
-        T forbidden(String message);
-
-        /**
-         * Returns a response with only the headers that were set on this adapter and the status set to OK.
-         *
-         * @return response instance
-         */
-        T ok();
-    }
 }

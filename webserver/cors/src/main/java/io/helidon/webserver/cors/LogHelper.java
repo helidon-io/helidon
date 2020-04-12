@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package io.helidon.webserver.cors.internal;
+package io.helidon.webserver.cors;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -25,13 +25,12 @@ import java.util.function.BiConsumer;
 import java.util.logging.Level;
 
 import io.helidon.common.http.Http;
-import io.helidon.webserver.cors.internal.CrossOriginHelper.RequestAdapter;
-import io.helidon.webserver.cors.internal.CrossOriginHelper.RequestType;
+import io.helidon.webserver.cors.CrossOriginHelper.RequestType;
 
 import static io.helidon.common.http.Http.Header.HOST;
 import static io.helidon.common.http.Http.Header.ORIGIN;
 import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_REQUEST_METHOD;
-import static io.helidon.webserver.cors.internal.CrossOriginHelper.LOGGER;
+import static io.helidon.webserver.cors.CrossOriginHelper.LOGGER;
 
 class LogHelper {
 

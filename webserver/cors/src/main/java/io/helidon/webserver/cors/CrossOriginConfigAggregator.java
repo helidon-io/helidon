@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package io.helidon.webserver.cors.internal;
+package io.helidon.webserver.cors;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -23,16 +23,15 @@ import java.util.function.Supplier;
 
 import io.helidon.config.Config;
 import io.helidon.webserver.PathMatcher;
-import io.helidon.webserver.cors.CrossOriginConfig;
 
-import static io.helidon.webserver.cors.internal.CrossOriginHelper.normalize;
+import static io.helidon.webserver.cors.CrossOriginHelper.normalize;
 
 /**
- * <em>Not for developer use.</em> Collects CORS set-up information from various sources.
+ * <em>Not for developer use.</em> Collects CORS set-up information from various sources and looks up the relevant CORS
+ * information given a request's path.
  */
-public class CrossOriginConfigAggregator implements Setter<CrossOriginConfigAggregator> {
+class CrossOriginConfigAggregator implements Setter<CrossOriginConfigAggregator> {
 
-    private static final String CONVENIENCE_PATH = "*";
     // Records paths and configs added via addCrossOriginConfig
     private final Map<String, CrossOriginConfigMatchable> crossOriginConfigMatchables = new LinkedHashMap<>();
 
@@ -52,7 +51,7 @@ public class CrossOriginConfigAggregator implements Setter<CrossOriginConfigAggr
      *
      * @return new CrossOriginConfigAggregatpr
      */
-    public static CrossOriginConfigAggregator create() {
+    static CrossOriginConfigAggregator create() {
         return new CrossOriginConfigAggregator();
     }
 

@@ -26,5 +26,4 @@ module io.helidon.webserver.cors {
     requires io.helidon.webserver;
 
     exports io.helidon.webserver.cors;
-    exports io.helidon.webserver.cors.internal to io.helidon.microprofile.cors;
 }
