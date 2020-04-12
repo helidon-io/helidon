@@ -16,12 +16,13 @@
  */
 package io.helidon.webserver.cors.internal;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
 import io.helidon.config.Config;
+import io.helidon.webserver.PathMatcher;
 import io.helidon.webserver.cors.CrossOriginConfig;
 
 import static io.helidon.webserver.cors.internal.CrossOriginHelper.normalize;
@@ -33,10 +34,10 @@ public class CrossOriginConfigAggregator implements Setter<CrossOriginConfigAggr
 
     private static final String CONVENIENCE_PATH = "*";
     // Records paths and configs added via addCrossOriginConfig
-    private final Map<String, CrossOriginConfig> crossOriginConfigs = new HashMap<>();
+    private final Map<String, CrossOriginConfigMatchable> crossOriginConfigMatchables = new LinkedHashMap<>();
 
     // Records the merged paths and configs added via the config method
-    private final Map<String, CrossOriginConfig> crossOriginConfigsAssembledFromConfigs = new HashMap<>();
+    private final Map<String, CrossOriginConfigMatchable> crossOriginConfigsAssembledFromConfigs = new LinkedHashMap<>();
 
     // Accumulates config via the setter methods from CrossOriginConfig
     private Optional<CrossOriginConfig.Builder> crossOriginConfigBuilderOpt = Optional.empty();
@@ -89,22 +90,27 @@ public class CrossOriginConfigAggregator implements Setter<CrossOriginConfigAggr
             }
             Config pathsNode = config.get(CrossOriginConfig.CORS_PATHS_CONFIG_KEY);
             if (pathsNode.exists()) {
-                crossOriginConfigsAssembledFromConfigs.putAll(pathsNode.as(new CrossOriginConfig.CrossOriginConfigMapper())
-                        .get());
+                pathsNode.as(new CrossOriginConfig.CrossOriginConfigMapper())
+                        .get()
+                        .entrySet()
+                        .stream()
+                        .forEach(entry -> crossOriginConfigsAssembledFromConfigs.put(entry.getKey(),
+                                new CrossOriginConfigMatchable(entry.getKey(), entry.getValue())));
+
             }
         }
         return this;
     }
 
     /**
-     * Adds cross origin information associated with a given path.
+     * Adds cross origin information associated with a given pathExpr.
      *
-     * @param path the path to which the cross origin information applies
+     * @param pathExpr the pathExpr to which the cross origin information applies
      * @param crossOrigin the cross origin information
      * @return updated builder
      */
-    public CrossOriginConfigAggregator addCrossOrigin(String path, CrossOriginConfig crossOrigin) {
-        crossOriginConfigs.put(normalize(path), crossOrigin);
+    public CrossOriginConfigAggregator addCrossOrigin(String pathExpr, CrossOriginConfig crossOrigin) {
+        crossOriginConfigMatchables.put(normalize(pathExpr), new CrossOriginConfigMatchable(pathExpr, crossOrigin));
         return this;
     }
 
@@ -164,30 +170,36 @@ public class CrossOriginConfigAggregator implements Setter<CrossOriginConfigAggr
      * @return Optional<CrossOrigin> for the matching config, or an empty Optional if none matched
      */
     Optional<CrossOriginConfig> lookupCrossOrigin(String path, Supplier<Optional<CrossOriginConfig>> secondaryLookup) {
+
+        Optional<CrossOriginConfig> result = Optional.empty();
         String normalizedPath = normalize(path);
 
-        // Check settings from config first, including wildcard.
-        if (crossOriginConfigsAssembledFromConfigs.containsKey(normalizedPath)) {
-            return Optional.of(crossOriginConfigsAssembledFromConfigs.get(normalizedPath));
-        }
-        if (crossOriginConfigsAssembledFromConfigs.containsKey(CONVENIENCE_PATH)) {
-            return Optional.of(crossOriginConfigsAssembledFromConfigs.get(CONVENIENCE_PATH));
-        }
+        result = findFirst(crossOriginConfigsAssembledFromConfigs, normalizedPath)
+                .or(() -> crossOriginConfigBuilderOpt
+                            .map(CrossOriginConfig.Builder::build))
+                .or(() -> findFirst(crossOriginConfigMatchables, normalizedPath))
+                .or(secondaryLookup);
 
-        // Check explicit settings using the CrossOriginConfig methods.
-        if (crossOriginConfigBuilderOpt.isPresent()) {
-            return Optional.of(crossOriginConfigBuilderOpt.get().build());
-        }
+        return result;
 
-        // Check explicit settings using addCrossOriginConfig.
-        if (crossOriginConfigs.containsKey(normalizedPath)) {
-            return Optional.of(crossOriginConfigs.get(normalizedPath));
-        }
-        if (crossOriginConfigs.containsKey(CONVENIENCE_PATH)) {
-            return Optional.of(crossOriginConfigs.get(CONVENIENCE_PATH));
-        }
 
-        return secondaryLookup.get();
+    }
+
+    /**
+     * Given a map from path expressions to matchables, finds the first map entry with a path matcher that accepts the provided
+     * path.
+     *
+     * @param matchables map from pathExpressions to matchables
+     * @param normalizedPath normalized path (from the request) to be matched
+     * @return Optional of the CrossOriginConfig
+     */
+    private static Optional<CrossOriginConfig> findFirst(Map<String, CrossOriginConfigMatchable> matchables,
+            String normalizedPath) {
+        return matchables.values().stream()
+                .filter(matchable -> matchable.matches(normalizedPath))
+                .map(CrossOriginConfigMatchable::get)
+                .findFirst();
+
     }
 
     @Override
@@ -206,6 +218,28 @@ public class CrossOriginConfigAggregator implements Setter<CrossOriginConfigAggr
             crossOriginConfigBuilderOpt = Optional.of(CrossOriginConfig.builder());
         }
         return crossOriginConfigBuilderOpt.get();
+    }
+
+    /**
+     * A composite of a {@code CrossOriginConfig} with a {@link PathMatcher} that processes the path expression with which the
+     * {@code CrossOriginConfig} was added.
+     */
+    private static class CrossOriginConfigMatchable {
+        private final CrossOriginConfig crossOriginConfig;
+        private final PathMatcher matcher;
+
+        CrossOriginConfigMatchable(String pathExpr, CrossOriginConfig crossOriginConfig) {
+            this.crossOriginConfig = crossOriginConfig;
+            matcher = PathMatcher.create(pathExpr);
+        }
+
+        boolean matches(String path) {
+            return matcher.match(path).matches();
+        }
+
+        CrossOriginConfig get() {
+            return crossOriginConfig;
+        }
     }
 
 }
