@@ -119,10 +119,13 @@
  *                           new MyApp());
  * </pre>
  *
- * <h3>Convenience API for the "/" path</h3>
- * Sometimes you might want to prepare just one set of CORS information, for the "/" path. The Helidon CORS API provides a
+ * <h3>Convenience API for the "match-all" path</h3>
+ * Sometimes you might want to prepare just one set of CORS information to match any path. The Helidon CORS API provides a
  * short-cut for this. The {@code CORSSupport.Builder} class supports all the mutator methods from {@code CrossOriginConfig}
- * such as {@code allowOrigins}, and on {@code CORSSupport.Builder} these methods implicitly affect the "/" path.
+ * such as {@code allowOrigins}, and on {@code CORSSupport.Builder} these methods implicitly affect the
+ * {@value io.helidon.webserver.cors.CrossOriginConfigAggregator#PATHLESS_KEY} path. (See the
+ * {@link io.helidon.webserver.PathMatcher} documentation.)
+ * <p>
  * The following code
  * <pre>
  *         CORSSupport.Builder corsBuilder = CORSSupport.builder()
@@ -131,12 +134,12 @@
  * </pre>
  * has the same effect as this more verbose version:
  * <pre>
- *         CrossOriginConfig corsForCORS3= CrossOriginConfig.builder()
+ *         CrossOriginConfig configForAll = CrossOriginConfig.builder()
  *             .allowOrigins("http://foo.bar", "http://bar.foo")
  *             .allowMethods("DELETE", "PUT")
  *             .build();
  *         CORSSupport.Builder corsBuilder = CORSSupport.builder()
- *                 .addCrossOrigin("/", corsForCORS3);
+ *                 .addCrossOrigin("{+}", configForAll);
  * </pre>
  * <h3>{@code CORSSupport} as a handler</h3>
  * The previous examples use a {@code CORSSupport} instance as a Helidon {@link io.helidon.webserver.Service} which you can
@@ -179,23 +182,35 @@
  *                 .register(CORSSupport.fromConfig());
  * }</pre>
  * <h3>Resolving conflicting settings</h3>
- * With so many ways of preparing CORS information, conflicts can arise. The {@code CORSSupport.Builder} resolves conflicts CORS
- * set-up this way:
+ * With so many ways of preparing CORS information, conflicts can arise. The {@code CORSSupport.Builder} resolves conflicts in
+ * CORS set-up as if using a {@code Map<String, CrossOriginConfig>} to store all the information:
  * <ul>
- *     <li>Multiple invocations of {@code CORSSupport.Builder.config} effectively merge the configured values which designate
- *     <em>different</em> paths into a single, unified configuration.
- *     The configured values provided by the latest invocation of {@code CORSSupport.Builder.config} will override any
- *     previously-set configuration values for a given path.</li>
- *     <li>Multiple uses of the CORS API <em>other than</em> the {@code config} method) for different paths are merged among
- *     themselves. The last invocation of the non-config API for a given path wins.</li>
- *     <li>Use of the convenience {@code CrossOriginConfig}-style methods on {@code CORSSupport.Builder} act as non-config
- *     programmatic settings for the "/" path.</li>
- *     <li>Configured values override ones set programmatically for a given path.</li>
+ *     <li>Multiple invocations of the {@code CORSSupport.Builder} {@code config},
+ *     {@code addCrossOrigin}, and "match-any" methods (from {@link io.helidon.webserver.cors.Setter}) effectively merge
+ *     values which designate <em>different</em> paths into a single, unified group of settings.
+ *     The settings provided by the latest invocation of these methods override any previously-set values for a given path.</li>
+ *     <li>Use of the convenience {@code CrossOriginConfig}-style methods defined by {@code Setter} affect the map entry with
+ *     key {@value io.helidon.webserver.cors.CrossOriginConfigAggregator#PATHLESS_KEY}, <em>updating</em> any existing entry and
+ *     <em>creating</em> one if needed. As a result, invoking {@code config} and {@code addCrossOriginConfig} methods with that
+ *     path will overwrite any values set by earlier invocations of the convenience methods.</li>
  * </ul>
- * <h2>Warning about internal classes</h2>
  * <p>
- *     Note that {@code CrossOriginHelper}, while {@code public}, is <em>not</em> intended for use by developers. It is
- *     reserved for internal Helidon use and might change at any time.
+ * Each {@code CORSSupport} instance can be enabled or disabled, either through configuration or using the API.
+ * By default, when an application creates a new {@code CORSSupport.Builder} instance that builder's {@code build()} method will
+ * create an enabled {@code CORSSupport} object. Any subsequent explicit setting on the builder, either expressly set by an
+ * {@code enabled} entry in configuration passed to {@code CORSSupport.Builder.config} or set by invoking
+ * {@code CORSSupport.Builder.enabled} follows the familiar "latest-wins" approach.
+ * </p>
+ * <p>
+ *     If the application uses a single {@code CORSSupport} instance, then the enabled setting for that instance governs the
+ *     entire CORS implementation for the app's endpoints.
+ * </p>
+ * <h2>Warning about internal classes and methods</h2>
+ * <p>
+ *     Note that everything in the {@code io.helidon.webserver.cors.internal} package, and any method with {@code internal} in
+ *     its name, even if marked {@code public}, are intended for Helidon use. They are <em>not</em>
+ *     intended for use by application developers but should be considered reserved for internal Helidon use and subject to change
+ *     on short notice.
  * </p>
  */
 package io.helidon.webserver.cors;

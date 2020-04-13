@@ -166,6 +166,22 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
         }
 
         /**
+         * Creates a new builder based on the values in an existing {@code CrossOriginConfig} object.
+         *
+         * @param original the existing cross-origin config object
+         * @return new Builder initialized from the existing object's settings
+         */
+        public static Builder from(CrossOriginConfig original) {
+            return new Builder()
+                    .allowCredentials(original.allowCredentials)
+                    .allowHeaders(original.allowHeaders)
+                    .allowMethods(original.allowMethods)
+                    .allowOrigins(original.allowOrigins)
+                    .exposeHeaders(original.exposeHeaders)
+                    .maxAge(original.maxAge);
+        }
+
+        /**
          * Sets the allowOrigins.
          *
          * @param origins the origin value(s)

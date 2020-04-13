@@ -27,24 +27,41 @@ import io.helidon.webserver.PathMatcher;
 import static io.helidon.webserver.cors.CrossOriginHelper.normalize;
 
 /**
- * Collects CORS set-up information from various sources and looks up the relevant CORS
- * information given a request's path.
+ * Collects CORS set-up information from various sources and looks up the relevant CORS information given a request's path.
+ * <p>
+ *    The caller can build up the cross-config information over multiple invocations of the exposed methods. The behavior is that
+ *    of a {@link LinkedHashMap}:
+ *    <ul>
+ *        <li>when <em>storing</em> cross-config information, the <em>latest</em> invocation that specifies the same path
+ *        expression overwrites any preceding settings for the same path expression, and</li>
+ *        <li>when <em>matching</em> against a request's path, the code checks the path matchers <em>in the order
+ *        they were added</em> to the aggregator, whether by {@link #config} or {@link #addCrossOrigin} or the {@link Setter}
+ *        methods.
+ *    </ul>
+ * </p>
+ * <p>
+ *     The {@code Setter} methods affect the so-called "pathless" entry. Those methods have no explicit path, so we record
+ *     their settings in an entry with path expression {@value #PATHLESS_KEY} which matches everything.
+ * </p>
+ * <p>
+ *     If the developer uses the {@link #config} or {@link #addCrossOrigin} methods <em>along with</em> the {@code Setter}
+ *     methods, the results are predictable but might be confusing. The {@code config} and {@code addCrossOrigin} methods
+ *     <em>overwrite</em> any entry with the same path expression, whereas the {@code Setter} methods <em>update</em> an existing
+ *     entry with path {@value #PATHLESS_KEY}, creating one if needed. So, if the config or an {@code addCrossOrigin}
+ *     invocation sets values for that same path expression then results can be surprising.
+ *     path
+ * </p>
+ *
  */
 class CrossOriginConfigAggregator implements Setter<CrossOriginConfigAggregator> {
+
+    // Key value for the map corresponding to the cross-origin config managed by the {@link Setter} methods
+    static final String PATHLESS_KEY = "{+}";
 
     // Records paths and configs added via addCrossOriginConfig
     private final Map<String, CrossOriginConfigMatchable> crossOriginConfigMatchables = new LinkedHashMap<>();
 
-    // Records the merged paths and configs added via the config method
-    private final Map<String, CrossOriginConfigMatchable> crossOriginConfigsAssembledFromConfigs = new LinkedHashMap<>();
-
-    // Accumulates config via the setter methods from CrossOriginConfig
-    private Optional<CrossOriginConfig.Builder> crossOriginConfigBuilderOpt = Optional.empty();
-
-    // To be enabled, there must be a "cors" config node.
-    private Optional<Boolean> isEnabledFromConfig = Optional.empty();
-
-    private boolean isEnabledFromAPI = true;
+    private Optional<Boolean> isEnabledOpt = Optional.empty();
 
     /**
      * Factory method.
@@ -59,12 +76,13 @@ class CrossOriginConfigAggregator implements Setter<CrossOriginConfigAggregator>
     }
 
     /**
-     * Reports whether the sources of CORS information have left CORS enabled or not.
+     * Reports whether the sources of CORS information have left CORS enabled or not. If there has been an explicit setting,
+     * use the most recent. Otherwise
      *
      * @return if CORS processing should be done
      */
     public boolean isEnabled() {
-        return isEnabledFromConfig.orElse(isEnabledFromAPI);
+        return isEnabledOpt.orElse(true);
     }
 
     /**
@@ -81,21 +99,22 @@ class CrossOriginConfigAggregator implements Setter<CrossOriginConfigAggregator>
         if (config.exists()) {
             Config isEnabledNode = config.get("enabled");
             if (isEnabledNode.exists()) {
-                // Last config setting wins.
-                isEnabledFromConfig = Optional.of(isEnabledNode.asBoolean().get());
+                // Latest explicit setting wins.
+                enabled(isEnabledNode.asBoolean().get());
             } else {
-                // If config exists but enabled is missing, default enabled is true.
-                isEnabledFromConfig = Optional.of(Boolean.TRUE);
+                /*
+                 * If there is no pre-existing setting for isEnabled, because we are processing config and the default is
+                 * {@code enabled: true} for config, set the aggregation to enabled.
+                 */
+                if (isEnabledOpt.isEmpty()) {
+                    enabled(true);
+                }
             }
             Config pathsNode = config.get(CrossOriginConfig.CORS_PATHS_CONFIG_KEY);
             if (pathsNode.exists()) {
                 pathsNode.as(new CrossOriginConfig.CrossOriginConfigMapper())
                         .get()
-                        .entrySet()
-                        .stream()
-                        .forEach(entry -> crossOriginConfigsAssembledFromConfigs.put(entry.getKey(),
-                                new CrossOriginConfigMatchable(entry.getKey(), entry.getValue())));
-
+                        .forEach(this::addCrossOrigin);
             }
         }
         return this;
@@ -109,7 +128,7 @@ class CrossOriginConfigAggregator implements Setter<CrossOriginConfigAggregator>
      * @return updated builder
      */
     public CrossOriginConfigAggregator addCrossOrigin(String pathExpr, CrossOriginConfig crossOrigin) {
-        crossOriginConfigMatchables.put(normalize(pathExpr), new CrossOriginConfigMatchable(pathExpr, crossOrigin));
+        crossOriginConfigMatchables.put(normalize(pathExpr), new FixedCrossOriginConfigMatchable(pathExpr, crossOrigin));
         return this;
     }
 
@@ -120,43 +139,43 @@ class CrossOriginConfigAggregator implements Setter<CrossOriginConfigAggregator>
      * @return updated builder
      */
     public CrossOriginConfigAggregator enabled(boolean value) {
-        isEnabledFromAPI = value;
+        isEnabledOpt = Optional.of(value);
         return this;
     }
 
     @Override
     public CrossOriginConfigAggregator allowOrigins(String... origins) {
-        crossOriginConfigBuilder().allowOrigins(origins);
+        pathlessCrossOriginConfigBuilder().allowOrigins(origins);
         return this;
     }
 
     @Override
     public CrossOriginConfigAggregator allowHeaders(String... allowHeaders) {
-        crossOriginConfigBuilder().allowHeaders(allowHeaders);
+        pathlessCrossOriginConfigBuilder().allowHeaders(allowHeaders);
         return this;
     }
 
     @Override
     public CrossOriginConfigAggregator exposeHeaders(String... exposeHeaders) {
-        crossOriginConfigBuilder().exposeHeaders(exposeHeaders);
+        pathlessCrossOriginConfigBuilder().exposeHeaders(exposeHeaders);
         return this;
     }
 
     @Override
     public CrossOriginConfigAggregator allowMethods(String... allowMethods) {
-        crossOriginConfigBuilder().allowMethods(allowMethods);
+        pathlessCrossOriginConfigBuilder().allowMethods(allowMethods);
         return this;
     }
 
     @Override
     public CrossOriginConfigAggregator allowCredentials(boolean allowCredentials) {
-        crossOriginConfigBuilder().allowCredentials(allowCredentials);
+        pathlessCrossOriginConfigBuilder().allowCredentials(allowCredentials);
         return this;
     }
 
     @Override
     public CrossOriginConfigAggregator maxAge(long maxAge) {
-        crossOriginConfigBuilder().maxAge(maxAge);
+        pathlessCrossOriginConfigBuilder().maxAge(maxAge);
         return this;
     }
 
@@ -173,15 +192,10 @@ class CrossOriginConfigAggregator implements Setter<CrossOriginConfigAggregator>
         Optional<CrossOriginConfig> result = Optional.empty();
         String normalizedPath = normalize(path);
 
-        result = findFirst(crossOriginConfigsAssembledFromConfigs, normalizedPath)
-                .or(() -> crossOriginConfigBuilderOpt
-                            .map(CrossOriginConfig.Builder::build))
-                .or(() -> findFirst(crossOriginConfigMatchables, normalizedPath))
+        result = findFirst(crossOriginConfigMatchables, normalizedPath)
                 .or(secondaryLookup);
 
         return result;
-
-
     }
 
     /**
@@ -204,36 +218,64 @@ class CrossOriginConfigAggregator implements Setter<CrossOriginConfigAggregator>
     @Override
     public String toString() {
         return "CrossOriginConfigAggregator{"
-                + "crossOriginConfigsAssembledFromConfigs=" + crossOriginConfigsAssembledFromConfigs
-                + ", crossOriginConfigBuilder=" + crossOriginConfigBuilderOpt.map(CrossOriginConfig.Builder::toString).orElse(
-                        "-empty-")
-                + ", isEnabledFromConfig=" + isEnabledFromConfig
-                + ", isEnabledFromAPI=" + isEnabledFromAPI
+                + "crossOriginConfigMatchables=" + crossOriginConfigMatchables
+                + ", isEnabled=" + isEnabled()
                 + '}';
     }
 
-    private CrossOriginConfig.Builder crossOriginConfigBuilder() {
-        if (crossOriginConfigBuilderOpt.isEmpty()) {
-            crossOriginConfigBuilderOpt = Optional.of(CrossOriginConfig.builder());
+    /**
+     * Retrieves the {@code CrossOriginConfig.Builder} associated with the "pathless" config.
+     *
+     * @return the builder, possibly newly created
+     */
+    private CrossOriginConfig.Builder pathlessCrossOriginConfigBuilder() {
+
+        CrossOriginConfigMatchable matchable = crossOriginConfigMatchables.get(PATHLESS_KEY);
+        CrossOriginConfig.Builder newBuilder;
+
+        if (matchable != null) {
+            if (matchable instanceof BuildableCrossOriginConfigMatchable) {
+                return ((BuildableCrossOriginConfigMatchable) matchable).builder;
+            } else {
+                // Convert the existing entry that has a fixed cross-origin config to a pre-initialized builder.
+                newBuilder = CrossOriginConfig.Builder.from(matchable.get());
+            }
+        } else {
+            // No existing entry.
+            newBuilder = CrossOriginConfig.builder();
         }
-        return crossOriginConfigBuilderOpt.get();
+        crossOriginConfigMatchables.put(PATHLESS_KEY, new BuildableCrossOriginConfigMatchable(PATHLESS_KEY, newBuilder));
+
+        return newBuilder;
     }
 
     /**
-     * A composite of a {@code CrossOriginConfig} with a {@link PathMatcher} that processes the path expression with which the
+     * A composite of a {@link CrossOriginConfig} with a {@link PathMatcher} that processes the path expression with which the
      * {@code CrossOriginConfig} was added.
      */
-    private static class CrossOriginConfigMatchable {
-        private final CrossOriginConfig crossOriginConfig;
+    private abstract static class CrossOriginConfigMatchable {
         private final PathMatcher matcher;
 
-        CrossOriginConfigMatchable(String pathExpr, CrossOriginConfig crossOriginConfig) {
-            this.crossOriginConfig = crossOriginConfig;
-            matcher = PathMatcher.create(pathExpr);
+        CrossOriginConfigMatchable(String pathExpr) {
+            this.matcher = PathMatcher.create(pathExpr);
         }
 
         boolean matches(String path) {
             return matcher.match(path).matches();
+        }
+
+        abstract CrossOriginConfig get();
+    }
+
+    /**
+     * Based on a fixed {@code CrossOriginConfig} object.
+     */
+    private static class FixedCrossOriginConfigMatchable extends CrossOriginConfigMatchable {
+        private final CrossOriginConfig crossOriginConfig;
+
+        FixedCrossOriginConfigMatchable(String pathExpr, CrossOriginConfig crossOriginConfig) {
+            super(pathExpr);
+            this.crossOriginConfig = crossOriginConfig;
         }
 
         CrossOriginConfig get() {
@@ -241,4 +283,21 @@ class CrossOriginConfigAggregator implements Setter<CrossOriginConfigAggregator>
         }
     }
 
+    /**
+     * Based on a {@code CrossOriginConfig.Builder}, primarily for supporting the "pathless" entry that can be updated by
+     * separate invocations of the {@link Setter} methods.
+     */
+    private static class BuildableCrossOriginConfigMatchable extends CrossOriginConfigMatchable {
+
+        private final CrossOriginConfig.Builder builder;
+
+        BuildableCrossOriginConfigMatchable(String pathExpr, CrossOriginConfig.Builder builder) {
+            super(pathExpr);
+            this.builder = builder;
+        }
+
+        CrossOriginConfig get() {
+            return builder.build();
+        }
+    }
 }
