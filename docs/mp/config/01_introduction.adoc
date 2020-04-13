@@ -24,14 +24,9 @@
 :keywords: helidon, mp, microprofile, config
 
 
+
 == About {spec-name}
-Helidon MP provides a very flexible and comprehensive configuration system, offering you many application configuration choices. You can include configuration data from a variety of sources using different formats, like JSON and YAML. Furthermore, you can customize the precedence of sources and make them optional or mandatory.
-
-
-
-    
-
-
+Helidon MP Config is an implementation of https://github.com/eclipse/microprofile-config/[Eclipse MicroProfile Config] that now includes Helidon-specific meta-configuration and APIs. You can configure your applications using MicroProfile's config properties file and APIs and extend the configuration system with Helidon-specific meta-configuration and APIs. You can also write and register custom ConfigSources.
 
 
 
@@ -48,16 +43,11 @@ Step-by-step guide about using {spec-name} in your Helidon MP application.
 ====
 
 
-== Using {spec-name} in Helidon MP Applications
+=== Using MicroProfile Config Sources and META-INF
 
-You can configure your Helidon MP applications to support MicroProfile Config using config sources in the CLI or manually using APIs. 
+Default configuration values can be retrieved from system properties, environment variables, files, directories, URLs or configuration files of the form ${CLASSPATH}/META-INF/microprofile-config.properties. 
 
-=== MicroProfile Config Sources and META-INF
-
-
-You can use MP configuration sources and META-INF to create a configuration for your Helidon MP applications.  
-
-
+The example below shows how the MicroProfile configuration file `microprofile-config.properties` can be used to modify properties such as server port or host IP. 
 
 ----
 # Application properties. This is the default greeting
@@ -68,9 +58,12 @@ server.port=8080
 server.host=0.0.0.0
 ----
 
-=== MicroProfile APIs 
+=== Using MicroProfile Config APIs 
 
-You can create a configuration using MicroProfile APIs such as ConfigProviderResolver.getBuilder()). 
+The MicroProfile Config API can be used by applications as a single API that can retrieve configuration information from different sources.
+
+The example below shows how the MicroProfile API  `ConfigProviderResolver.getBuilder())` can be used to access String values of configured properties and register user-provided ConfigSources (with `ConfigBuilder`).
+
 
 ----
 // MP API to obtain provider resolver
@@ -92,10 +85,13 @@ resolver.registerConfig(config, Thread.currentThread().getContextClassLoader());
 
 
 
-=== Helidon Meta-Configuration
+=== Using Helidon Meta-Configuration
 
-Instead of directly specifying the configuration sources in your code, you can use meta-configuration in a file that declares the configuration sources and their attributes. This requires using the `Config.loadSourcesFrom` method rather than a `Config.Buider` object. The contents of the meta-configuration file needs to be in JSON, YAML, or HOCON format. The meta-config allows configuration of config sources and other configuration options, including retry policies and polling strategies.
+Instead of directly specifying the configuration sources in your code, you can use meta-configuration in a file that declares the configuration sources and their attributes. This requires using the `Config.loadSourcesFrom` method rather than a `Config.Buider` object. The contents of the meta-configuration file need to be in JSON, YAML, or HOCON format. The meta-config allows configuration of config sources and other configuration options, including retry policies and polling strategies.
 
+The example below shows 
+
+//get description from Tomas//
 
 ----
 sources:
@@ -113,9 +109,9 @@ sources:
 
 
 
-=== Helidon Config APIs
+=== Using Helidon Config APIs
 
-You can use Helidon's APIs such as `Config.builder())` to create a configuration and then register the configuration either through the Helidon MP server builder (`io.helidon.microprofile.server.Server.builder())`, or through MicroProfile APIs. Helidon Config now implements MicroProfile config so you can easily cast between the two types.
+You can use Helidon's APIs such as `Config.builder())` to create a configuration and then register the configuration either through the Helidon MP server builder (`io.helidon.microprofile.server.Server.builder())`, or through MicroProfile APIs. 
 
  
 ----
