@@ -260,7 +260,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
                 return applyFilters(Multi.<DataChunk>empty());
             }
             if (byte[].class.equals(type.rawType())) {
-                return applyFilters(((Single<byte[]>) content).flatMap(BYTES_MAPPER::map));
+                return applyFilters(((Single<byte[]>) content).flatMap(BYTES_MAPPER));
             }
             MessageBodyWriter<T> writer;
             if (fallback != null) {
