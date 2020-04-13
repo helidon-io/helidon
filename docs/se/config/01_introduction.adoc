@@ -27,6 +27,8 @@ configuration properties from various sources into a `Config` object which the
 application can use to retrieve config data.
 
 == Getting Started
+[NOTE] 
+If you used a previous version of Helidon SE Config, be sure to check out the What's New section for a list of important changes. 
 
 === Introducing the Config System
 A brief overview of the config system helps clarify its different parts
