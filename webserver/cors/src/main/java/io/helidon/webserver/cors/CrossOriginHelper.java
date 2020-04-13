@@ -49,8 +49,6 @@ import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_REQUEST
 import static io.helidon.webserver.cors.LogHelper.DECISION_LEVEL;
 
 /**
- * <em>Not for use by developers.</em>
- *
  * Centralizes internal logic common to both SE and MP CORS support for processing requests and preparing responses.
  *
  * <p>This class is reserved for internal Helidon use. Do not use it from your applications. It might change or vanish at

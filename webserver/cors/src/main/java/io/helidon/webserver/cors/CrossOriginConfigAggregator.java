@@ -27,7 +27,7 @@ import io.helidon.webserver.PathMatcher;
 import static io.helidon.webserver.cors.CrossOriginHelper.normalize;
 
 /**
- * <em>Not for developer use.</em> Collects CORS set-up information from various sources and looks up the relevant CORS
+ * Collects CORS set-up information from various sources and looks up the relevant CORS
  * information given a request's path.
  */
 class CrossOriginConfigAggregator implements Setter<CrossOriginConfigAggregator> {
