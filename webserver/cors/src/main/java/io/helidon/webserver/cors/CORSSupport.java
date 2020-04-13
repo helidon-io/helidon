@@ -39,7 +39,7 @@ import io.helidon.webserver.cors.internal.ResponseAdapter;
  *         <li>from one or more {@link CrossOriginConfig} objects supplied programmatically, each associated with a path to which
  *         it applies, and</li>
  *         <li>by setting individual CORS-related attributes on the {@link Builder} (which affects the CORS behavior for the
- *         "/" path).</li>
+ *         {@value CrossOriginConfigAggregator#PATHLESS_KEY} path).</li>
  *     </ul>
  * <p>
  *     See the {@link Builder#build} method for how the builder resolves conflicts among these sources.
