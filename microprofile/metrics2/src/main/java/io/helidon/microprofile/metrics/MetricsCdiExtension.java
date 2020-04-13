@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -97,20 +97,24 @@ public class MetricsCdiExtension implements Extension {
 
         if (annotation instanceof Counted) {
             Counted counted = (Counted) annotation;
-            String metricName = getMetricName(element, clazz, lookupResult.getType(), counted.name(), counted.absolute());
+            String metricName = getMetricName(element, clazz, lookupResult.getType(), counted.name().trim(),
+                    counted.absolute());
+            String displayName = counted.displayName().trim();
             Metadata meta = new HelidonMetadata(metricName,
-                                         counted.displayName(),
-                                         counted.description(),
+                                         displayName.isEmpty() ? metricName : displayName,
+                                         counted.description().trim(),
                                          MetricType.COUNTER,
-                                         counted.unit(),
+                                         counted.unit().trim(),
                                          counted.reusable());
             registry.counter(meta, tags(counted.tags()));
             LOGGER.log(Level.FINE, () -> "Registered counter " + metricName);
         } else if (annotation instanceof Metered) {
             Metered metered = (Metered) annotation;
-            String metricName = getMetricName(element, clazz, lookupResult.getType(), metered.name(), metered.absolute());
+            String metricName = getMetricName(element, clazz, lookupResult.getType(), metered.name().trim(),
+                    metered.absolute());
+            String displayName = metered.displayName().trim();
             Metadata meta = new HelidonMetadata(metricName,
-                                         metered.displayName(),
+                                         displayName.isEmpty() ? metricName : displayName,
                                          metered.description(),
                                          MetricType.METERED,
                                          metered.unit(),
@@ -119,9 +123,11 @@ public class MetricsCdiExtension implements Extension {
             LOGGER.log(Level.FINE, () -> "Registered meter " + metricName);
         } else if (annotation instanceof Timed) {
             Timed timed = (Timed) annotation;
-            String metricName = getMetricName(element, clazz, lookupResult.getType(), timed.name(), timed.absolute());
+            String metricName = getMetricName(element, clazz, lookupResult.getType(), timed.name().trim(),
+                    timed.absolute());
+            String displayName = timed.displayName().trim();
             Metadata meta = new HelidonMetadata(metricName,
-                                         timed.displayName(),
+                                         displayName.isEmpty() ? metricName : displayName,
                                          timed.description(),
                                          MetricType.TIMER,
                                          timed.unit(),
@@ -130,11 +136,12 @@ public class MetricsCdiExtension implements Extension {
             LOGGER.log(Level.FINE, () -> "Registered timer " + metricName);
         } else if (annotation instanceof ConcurrentGauge) {
             ConcurrentGauge concurrentGauge = (ConcurrentGauge) annotation;
-            String metricName = getMetricName(element, clazz, lookupResult.getType(), concurrentGauge.name(),
+            String metricName = getMetricName(element, clazz, lookupResult.getType(), concurrentGauge.name().trim(),
                     concurrentGauge.absolute());
+            String displayName = concurrentGauge.displayName().trim();
             Metadata meta = new HelidonMetadata(metricName,
-                    concurrentGauge.displayName(),
-                    concurrentGauge.description(),
+                    displayName.isEmpty() ? metricName : displayName,
+                    concurrentGauge.description().trim(),
                     MetricType.CONCURRENT_GAUGE,
                     concurrentGauge.unit(),
                     concurrentGauge.reusable());
