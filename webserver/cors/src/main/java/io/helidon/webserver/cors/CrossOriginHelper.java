@@ -32,9 +32,9 @@ import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
+import io.helidon.webserver.cors.CORSSupport.RequestAdapter;
+import io.helidon.webserver.cors.CORSSupport.ResponseAdapter;
 import io.helidon.webserver.cors.LogHelper.Headers;
-import io.helidon.webserver.cors.internal.RequestAdapter;
-import io.helidon.webserver.cors.internal.ResponseAdapter;
 
 import static io.helidon.common.http.Http.Header.HOST;
 import static io.helidon.common.http.Http.Header.ORIGIN;
@@ -638,5 +638,4 @@ class CrossOriginHelper {
                 publicReason + (privateExplanation == null ? "" : "; " + privateExplanation.get())));
         return responseAdapter.forbidden(publicReason);
     }
-
 }

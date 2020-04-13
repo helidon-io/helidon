@@ -18,9 +18,7 @@ package io.helidon.microprofile.cors;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
-import java.util.function.Supplier;
 
 import javax.annotation.Priority;
 import javax.ws.rs.OPTIONS;
@@ -32,18 +30,14 @@ import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.container.ResourceInfo;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MultivaluedHashMap;
-import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
 import io.helidon.config.Config;
-import io.helidon.webserver.cors.CORSSupport;
+import io.helidon.microprofile.cors.CORSSupportMP.RequestAdapterMP;
+import io.helidon.microprofile.cors.CORSSupportMP.ResponseAdapterMP;
 import io.helidon.webserver.cors.CrossOriginConfig;
-import io.helidon.webserver.cors.internal.InternalCORSSupportBuilder;
-import io.helidon.webserver.cors.internal.RequestAdapter;
-import io.helidon.webserver.cors.internal.ResponseAdapter;
 
 import org.eclipse.microprofile.config.ConfigProvider;
 
@@ -65,145 +59,57 @@ class CrossOriginFilter implements ContainerRequestFilter, ContainerResponseFilt
     @Context
     private ResourceInfo resourceInfo;
 
-    private final CORSSupport<ContainerRequestContext, Response> cors;
+    private final CORSSupportMP cors;
 
     CrossOriginFilter() {
         Config config = (Config) ConfigProvider.getConfig();
 
-        InternalCORSSupportBuilder<ContainerRequestContext, Response> b = CORSSupport.internalBuilder();
-        cors = b.config(config.get(CORS_CONFIG_KEY))
-                .secondaryLookupSupplier(crossOriginFromAnnotationSupplier())
+        cors = CORSSupportMP.builder().config(config.get(CORS_CONFIG_KEY))
+                .secondaryLookupSupplier(this::crossOriginFromAnnotationSupplier)
                 .build();
     }
 
     @Override
     public void filter(ContainerRequestContext requestContext) {
-        Optional<Response> response = cors.processRequest(new MPRequestAdapter(requestContext), new MPResponseAdapter());
+        Optional<Response> response = cors.processRequest(new RequestAdapterMP(requestContext), new ResponseAdapterMP());
         response.ifPresent(requestContext::abortWith);
     }
 
     @Override
     public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) {
-        cors.prepareResponse(new MPRequestAdapter(requestContext), new MPResponseAdapter(responseContext));
+        cors.prepareResponse(new RequestAdapterMP(requestContext), new ResponseAdapterMP(responseContext));
     }
 
-    static class MPRequestAdapter implements RequestAdapter<ContainerRequestContext> {
+    Optional<CrossOriginConfig> crossOriginFromAnnotationSupplier() {
 
-        private final ContainerRequestContext requestContext;
+        // If not found, inspect resource matched
+        Method resourceMethod = resourceInfo.getResourceMethod();
+        Class<?> resourceClass = resourceInfo.getResourceClass();
 
-        MPRequestAdapter(ContainerRequestContext requestContext) {
-            this.requestContext = requestContext;
-        }
-
-        @Override
-        public String path() {
-            return requestContext.getUriInfo().getPath();
-        }
-
-        @Override
-        public Optional<String> firstHeader(String s) {
-            return Optional.ofNullable(requestContext.getHeaders().getFirst(s));
-        }
-
-        @Override
-        public boolean headerContainsKey(String s) {
-            return requestContext.getHeaders().containsKey(s);
-        }
-
-        @Override
-        public List<String> allHeaders(String s) {
-            return requestContext.getHeaders().get(s);
-        }
-
-        @Override
-        public String method() {
-            return requestContext.getMethod();
-        }
-
-        @Override
-        public ContainerRequestContext request() {
-            return requestContext;
-        }
-
-        @Override
-        public void next() {
-        }
-    }
-
-    static class MPResponseAdapter implements ResponseAdapter<Response> {
-
-        private final MultivaluedMap<String, Object> headers;
-
-        MPResponseAdapter(ContainerResponseContext responseContext) {
-            headers = responseContext.getHeaders();
-        }
-
-        MPResponseAdapter() {
-            headers = new MultivaluedHashMap<>();
-        }
-
-        @Override
-        public ResponseAdapter<Response> header(String key, String value) {
-            headers.add(key, value);
-            return this;
-        }
-
-        @Override
-        public ResponseAdapter<Response> header(String key, Object value) {
-            headers.add(key, value);
-            return this;
-        }
-
-        @Override
-        public Response forbidden(String message) {
-            return Response.status(Response.Status.FORBIDDEN).entity(message).build();
-        }
-
-        @Override
-        public Response ok() {
-            Response.ResponseBuilder builder = Response.ok();
-            /*
-             * The Helidon CORS support code invokes ok() only for creating a CORS preflight response. In these cases no user
-             * code will have a chance to set headers in the response. That means we can use replaceAll here because the only
-             * headers needed in the response are the ones set using this adapter.
-             */
-            builder.replaceAll(headers);
-            return builder.build();
-        }
-    }
-
-    Supplier<Optional<CrossOriginConfig>> crossOriginFromAnnotationSupplier() {
-
-        return () -> {
-            // If not found, inspect resource matched
-            Method resourceMethod = resourceInfo.getResourceMethod();
-            Class<?> resourceClass = resourceInfo.getResourceClass();
-
-            CrossOrigin corsAnnot;
-            OPTIONS optsAnnot = resourceMethod.getAnnotation(OPTIONS.class);
-            Path pathAnnot = resourceMethod.getAnnotation(Path.class);
-            if (optsAnnot != null) {
-                corsAnnot = resourceMethod.getAnnotation(CrossOrigin.class);
-            } else {
-                Optional<Method> optionsMethod = Arrays.stream(resourceClass.getDeclaredMethods())
-                        .filter(m -> {
-                            OPTIONS optsAnnot2 = m.getAnnotation(OPTIONS.class);
-                            if (optsAnnot2 != null) {
-                                if (pathAnnot != null) {
-                                    Path pathAnnot2 = m.getAnnotation(Path.class);
-                                    return pathAnnot2 != null && pathAnnot.value()
-                                            .equals(pathAnnot2.value());
-                                }
-                                return true;
+        CrossOrigin corsAnnot;
+        OPTIONS optsAnnot = resourceMethod.getAnnotation(OPTIONS.class);
+        Path pathAnnot = resourceMethod.getAnnotation(Path.class);
+        if (optsAnnot != null) {
+            corsAnnot = resourceMethod.getAnnotation(CrossOrigin.class);
+        } else {
+            Optional<Method> optionsMethod = Arrays.stream(resourceClass.getDeclaredMethods())
+                    .filter(m -> {
+                        OPTIONS optsAnnot2 = m.getAnnotation(OPTIONS.class);
+                        if (optsAnnot2 != null) {
+                            if (pathAnnot != null) {
+                                Path pathAnnot2 = m.getAnnotation(Path.class);
+                                return pathAnnot2 != null && pathAnnot.value()
+                                        .equals(pathAnnot2.value());
                             }
-                            return false;
-                        })
-                        .findFirst();
-                corsAnnot = optionsMethod.map(m -> m.getAnnotation(CrossOrigin.class))
-                        .orElse(null);
-            }
-            return Optional.ofNullable(corsAnnot == null ? null : annotationToConfig(corsAnnot));
-        };
+                            return true;
+                        }
+                        return false;
+                    })
+                    .findFirst();
+            corsAnnot = optionsMethod.map(m -> m.getAnnotation(CrossOrigin.class))
+                    .orElse(null);
+        }
+        return Optional.ofNullable(corsAnnot == null ? null : annotationToConfig(corsAnnot));
     }
 
     private static CrossOriginConfig annotationToConfig(CrossOrigin crossOrigin) {

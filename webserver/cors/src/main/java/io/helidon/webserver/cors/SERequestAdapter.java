@@ -20,12 +20,11 @@ import java.util.List;
 import java.util.Optional;
 
 import io.helidon.webserver.ServerRequest;
-import io.helidon.webserver.cors.internal.RequestAdapter;
 
 /**
- * Helidon SE implementation of {@link RequestAdapter}.
+ * Helidon SE implementation of {@link CORSSupport.RequestAdapter}.
  */
-class SERequestAdapter implements RequestAdapter<ServerRequest> {
+class SERequestAdapter implements CORSSupport.RequestAdapter<ServerRequest> {
 
     private final ServerRequest request;
 

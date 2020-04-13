@@ -61,7 +61,7 @@ public class TestUtil {
         /*
          * Use the default config for the service at "/greet" and then programmatically add the config for /cors3.
          */
-        CORSSupport.Builder corsSupportBuilder = CORSSupport.builder();
+        CORSSupport.Builder corsSupportBuilder = CORSSupportSE.builder();
         corsSupportBuilder.addCrossOrigin(SERVICE_3.path(), cors3COC);
 
         /*
@@ -71,19 +71,19 @@ public class TestUtil {
 
         Routing.Builder builder = Routing.builder()
                 .register(GREETING_PATH,
-                          CORSSupport.builder().config(Config.create().get("cors-setup")).build(),
+                          CORSSupportSE.builder().config(Config.create().get("cors-setup")).build(),
                           new GreetService())
                 .register(OTHER_GREETING_PATH,
-                          CORSSupport.create(twoCORSConfig.get("cors-2-setup")),
+                          CORSSupportSE.builder().config(twoCORSConfig.get("cors-2-setup")).build(),
                           new GreetService("Other Hello"))
                 .any(TestHandlerRegistration.CORS4_CONTEXT_ROOT,
-                        CORSSupport.builder()
+                        CORSSupportSE.builder()
                                 .allowOrigins("http://foo.bar", "http://bar.foo")
                                 .allowMethods("PUT")
                                 .build(),
                         (req, resp) -> resp.status(Http.Status.OK_200).send())
                 .get(TestHandlerRegistration.CORS4_CONTEXT_ROOT,
-                        CORSSupport.builder()
+                        CORSSupportSE.builder()
                                 .allowOrigins("*")
                                 .allowMethods("GET")
                                 .build(),

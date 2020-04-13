@@ -16,7 +16,9 @@
  */
 package io.helidon.webserver.cors;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import io.helidon.config.Config;
 import io.helidon.webserver.Handler;
@@ -24,9 +26,6 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
-import io.helidon.webserver.cors.internal.InternalCORSSupportBuilder;
-import io.helidon.webserver.cors.internal.RequestAdapter;
-import io.helidon.webserver.cors.internal.ResponseAdapter;
 
 /**
  * A Helidon service and handler implementation that implements CORS, for both the application and for built-in Helidon
@@ -49,80 +48,13 @@ import io.helidon.webserver.cors.internal.ResponseAdapter;
  *     {@link CrossOriginConfig}.
  * </p>
  *
- * @param <T> type wrapped by RequestAdapter
- * @param <U> type wrapped by ResponseAdapter
- *
  */
-public class CORSSupport<T, U> implements Service, Handler {
+public abstract class CORSSupport implements Service, Handler {
 
     private final CrossOriginHelper helper;
 
-    private <B extends Builder<T, U, B>> CORSSupport(Builder<T, U, B> builder) {
+    protected <T extends CORSSupport, B extends Builder<T, B>> CORSSupport(Builder<T, B> builder) {
         helper = builder.helperBuilder.build();
-    }
-
-    /**
-     * Creates a {@code CORSSupport} which supports the default CORS set-up.
-     *
-     * @param <T> type of request wrapped by the request adapter
-     * @param <U> type of response wrapped by the response adapter
-     * @param <B> type of the builder
-     * @return the service
-     */
-    public static <T, U, B extends Builder<T, U, B>> CORSSupport<T, U> create() {
-        Builder<T, U, B> b = builder();
-        return b.build();
-    }
-
-    /**
-     * Returns a {@code CORSSupport} set up using the supplied {@link Config} node.
-     *
-     * @param config the config node containing CORS information
-     * @param <T> type of request wrapped by the request adapter
-     * @param <U> type of response wrapped by the response adapter
-     * @param <B> type of the builder
-     * @return the initialized service
-     */
-    public static <T, U, B extends Builder<T, U, B>> CORSSupport<T, U> create(Config config) {
-        Builder<T, U, B> b = builder();
-        return b.config(config).build();
-    }
-
-    /**
-     * Creates a {@code Builder} for assembling a {@code CORSSupport}.
-     *
-     * @param <T> type of request wrapped by the request adapter
-     * @param <U> type of response wrapped by the response adapter
-     * @param <B> type of the builder
-     * @return the builder
-     */
-    public static <T, U, B extends Builder<T, U, B>> Builder<T, U, B> builder() {
-        return new Builder<>();
-    }
-
-    /**
-     * Creates an internal builder - one that knows about the secondary cross-origin config supplier.
-     *
-     * @param <T> type of request wrapped by the request adapter
-     * @param <U> type of response wrapped by the response adapter
-     * @return the builder
-     */
-    public static <T, U> InternalCORSSupportBuilder<T, U> internalBuilder() {
-        return InternalCORSSupportBuilder.create();
-    }
-
-    /**
-     * Creates a {@code Builder} initialized with the CORS information from the specified configuration node.
-     *
-     * @param config node containing CORS information
-     * @return builder initialized with the CORS set-up from the config
-     * @param <T> type of request wrapped by the request adapter
-     * @param <U> type of response wrapped by the response adapter
-     * @param <B> type of the builder
-     */
-    public static <T, U, B extends Builder<T, U, B>> Builder<T, U, B> builder(Config config) {
-        Builder<T, U, B> b = builder();
-        return b.config(config);
     }
 
     @Override
@@ -151,10 +83,12 @@ public class CORSSupport<T, U> implements Service, Handler {
      *
      * @param requestAdapter wrapper around the request
      * @param responseAdapter wrapper around the response
+     * @param <T> type of the request wrapped by the adapter
+     * @param <U> type of the response wrapped by the adapter
      * @return Optional of the response type U; present if the response should be returned, empty if request processing should
      * continue
      */
-    public Optional<U> processRequest(RequestAdapter<T> requestAdapter, ResponseAdapter<U> responseAdapter) {
+    protected <T, U> Optional<U> processRequest(RequestAdapter<T> requestAdapter, ResponseAdapter<U> responseAdapter) {
         return helper.processRequest(requestAdapter, responseAdapter);
     }
 
@@ -163,8 +97,10 @@ public class CORSSupport<T, U> implements Service, Handler {
      *
      * @param requestAdapter wrapper around the request
      * @param responseAdapter wrapper around the reseponse
+     * @param <T> type of the request wrapped by the adapter
+     * @param <U> type of the response wrapped by the adapter
      */
-    public void prepareResponse(RequestAdapter<T> requestAdapter, ResponseAdapter<U> responseAdapter) {
+    protected <T, U> void prepareResponse(RequestAdapter<T> requestAdapter, ResponseAdapter<U> responseAdapter) {
         helper.prepareResponse(requestAdapter, responseAdapter);
     }
 
@@ -178,12 +114,11 @@ public class CORSSupport<T, U> implements Service, Handler {
     /**
      * Builder for {@code CORSSupport} instances.
      *
-     * @param <T> type of the request wrapped by the adapter
-     * @param <U> type of the response wrapped by the adapter
+     * @param <T> specific subtype of {@code CORSSupport} the builder creates
      * @param <B> type of the builder
      */
-    public static class Builder<T, U, B extends Builder<T, U, B>> implements io.helidon.common.Builder<CORSSupport<T, U>>,
-            Setter<Builder<T, U, B>> {
+    public abstract static class Builder<T extends CORSSupport, B extends Builder<T, B>> implements io.helidon.common.Builder<CORSSupport>,
+            Setter<Builder<T, B>> {
 
         private final CrossOriginHelper.Builder helperBuilder = CrossOriginHelper.builder();
         private final CrossOriginConfigAggregator aggregator = helperBuilder.aggregator();
@@ -191,15 +126,10 @@ public class CORSSupport<T, U> implements Service, Handler {
         protected Builder() {
         }
 
-        @SuppressWarnings("unchecked")
-        protected B me() {
-            return (B) this;
-        }
+        protected abstract B me();
 
         @Override
-        public CORSSupport<T, U> build() {
-            return new CORSSupport<>(this);
-        }
+        public abstract T build();
 
         /**
          * Merges CORS config information. Typically, the app or component will retrieve the provided {@code Config} instance
@@ -272,20 +202,125 @@ public class CORSSupport<T, U> implements Service, Handler {
             return me();
         }
 
-//        /**
-//         * <em>Not for developer use.</em> Sets a back-up way to provide a {@code CrossOriginConfig} instance if, during
-//         * look-up for a given request, none is found from the aggregator.
-//         *
-//         * @param secondaryLookupSupplier supplier of a CrossOriginConfig
-//         * @return updated builder
-//         */
-//        public Builder<T, U> secondaryLookupSupplier(Supplier<Optional<CrossOriginConfig>> secondaryLookupSupplier) {
-//            helperBuilder.secondaryLookupSupplier(secondaryLookupSupplier);
-//            return this;
-//        }
-
-        protected CrossOriginHelper.Builder helperBuilder() {
-            return helperBuilder;
+        /**
+         * <em>Not for developer use.</em> Sets a back-up way to provide a {@code CrossOriginConfig} instance if, during
+         * look-up for a given request, none is found from the aggregator.
+         *
+         * @param secondaryLookupSupplier supplier of a CrossOriginConfig
+         * @return updated builder
+         */
+        protected Builder<T, B> secondaryLookupSupplier(Supplier<Optional<CrossOriginConfig>> secondaryLookupSupplier) {
+            helperBuilder.secondaryLookupSupplier(secondaryLookupSupplier);
+            return this;
         }
+    }
+
+    /**
+     * <em>Not for use by developers.</em>
+     *
+     * Minimal abstraction of an HTTP request.
+     *
+     * @param <T> type of the request wrapped by the adapter
+     */
+    protected interface RequestAdapter<T> {
+
+        /**
+         *
+         * @return possibly unnormalized path from the request
+         */
+        String path();
+
+        /**
+         * Retrieves the first value for the specified header as a String.
+         *
+         * @param key header name to retrieve
+         * @return the first header value for the key
+         */
+        Optional<String> firstHeader(String key);
+
+        /**
+         * Reports whether the specified header exists.
+         *
+         * @param key header name to check for
+         * @return whether the header exists among the request's headers
+         */
+        boolean headerContainsKey(String key);
+
+        /**
+         * Retrieves all header values for a given key as Strings.
+         *
+         * @param key header name to retrieve
+         * @return header values for the header; empty list if none
+         */
+        List<String> allHeaders(String key);
+
+        /**
+         * Reports the method name for the request.
+         *
+         * @return the method name
+         */
+        String method();
+
+        /**
+         * Processes the next handler/filter/request processor in the chain.
+         */
+        void next();
+
+        /**
+         * Returns the request this adapter wraps.
+         *
+         * @return the request
+         */
+        T request();
+    }
+
+    /**
+     * <em>Not for use by developers.</em>
+     *
+     * Minimal abstraction of an HTTP response.
+     *
+     * <p>
+     * Note to implementers: In some use cases, the CORS support code will invoke the {@code header} methods but not {@code ok}
+     * or {@code forbidden}. See to it that header values set on the adapter via the {@code header} methods are propagated to the
+     * actual response.
+     * </p>
+     *
+     * @param <T> the type of the response wrapped by the adapter
+     */
+    protected interface ResponseAdapter<T> {
+
+        /**
+         * Arranges to add the specified header and value to the eventual response.
+         *
+         * @param key header name to add
+         * @param value header value to add
+         * @return the adapter
+         */
+        ResponseAdapter<T> header(String key, String value);
+
+        /**
+         * Arranges to add the specified header and value to the eventual response.
+         *
+         * @param key header name to add
+         * @param value header value to add
+         * @return the adapter
+         */
+        ResponseAdapter<T> header(String key, Object value);
+
+        /**
+         * Returns a response with the forbidden status and the specified error message, without any headers assigned
+         * using the {@code header} methods.
+         *
+         * @param message error message to use in setting the response status
+         * @return the factory
+         */
+        T forbidden(String message);
+
+        /**
+         * Returns a response with only the headers that were set on this adapter and the status set to OK.
+         *
+         * @return response instance
+         */
+        T ok();
     }
 }
