@@ -41,6 +41,7 @@ import io.helidon.common.HelidonFlavor;
 import io.helidon.config.Config;
 import io.helidon.webserver.cors.CORSSupport;
 import io.helidon.webserver.cors.CrossOriginConfig;
+import io.helidon.webserver.cors.internal.InternalCORSSupportBuilder;
 import io.helidon.webserver.cors.internal.RequestAdapter;
 import io.helidon.webserver.cors.internal.ResponseAdapter;
 
@@ -68,7 +69,8 @@ class CrossOriginFilter implements ContainerRequestFilter, ContainerResponseFilt
 
     CrossOriginFilter() {
         Config config = (Config) ConfigProvider.getConfig();
-        CORSSupport.Builder<ContainerRequestContext, Response> b = CORSSupport.builder();
+
+        InternalCORSSupportBuilder<ContainerRequestContext, Response> b = CORSSupport.internalBuilder();
         cors = b.config(config.get(CORS_CONFIG_KEY))
                 .secondaryLookupSupplier(crossOriginFromAnnotationSupplier())
                 .build();
