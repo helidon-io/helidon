@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,8 @@ module io.helidon.webclient.jaxrs {
     requires java.annotation;
 
     requires java.ws.rs;
-    requires jersey.client;
-    requires jersey.common;
+    requires io.helidon.jersey.client;
+    requires io.helidon.jersey.common;
 
     requires io.helidon.common;
     requires io.helidon.common.configurable;

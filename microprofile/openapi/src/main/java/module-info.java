@@ -32,5 +32,8 @@ module io.helidon.microprofile.openapi {
 
     exports io.helidon.microprofile.openapi;
 
+    // this is needed for CDI extensions that use non-public observer methods
+    opens io.helidon.microprofile.openapi to weld.core.impl;
+
     provides Extension with OpenApiCdiExtension;
 }

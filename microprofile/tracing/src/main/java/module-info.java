@@ -27,9 +27,9 @@ module io.helidon.microprofile.tracing {
     requires jersey.common;
     requires io.opentracing.api;
 
-    requires static cdi.api;
-    requires static javax.inject;
-    requires static javax.interceptor.api;
+    requires static jakarta.enterprise.cdi.api;
+    requires static jakarta.inject.api;
+    requires static jakarta.interceptor.api;
 
     requires io.helidon.microprofile.server;
     requires transitive io.helidon.microprofile.config;
@@ -45,6 +45,9 @@ module io.helidon.microprofile.tracing {
 
 
     exports io.helidon.microprofile.tracing;
+
+    // this is needed for CDI extensions that use non-public observer methods
+    opens io.helidon.microprofile.tracing to weld.core.impl,hk2.utils;
 
     provides Extension with io.helidon.microprofile.tracing.TracingCdiExtension;
     provides org.glassfish.jersey.internal.spi.AutoDiscoverable with io.helidon.microprofile.tracing.MpTracingAutoDiscoverable;

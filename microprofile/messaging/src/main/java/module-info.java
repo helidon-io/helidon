@@ -20,10 +20,10 @@
 module io.helidon.microprofile.messaging {
     requires java.logging;
 
-    requires static cdi.api;
-    requires static javax.inject;
-    requires static java.activation;
-    requires javax.interceptor.api;
+    requires static jakarta.enterprise.cdi.api;
+    requires static jakarta.inject.api;
+    requires static jakarta.activation;
+    requires jakarta.interceptor.api;
     requires io.helidon.config;
     requires io.helidon.microprofile.config;
     requires io.helidon.microprofile.server;

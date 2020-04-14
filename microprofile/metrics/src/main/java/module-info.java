@@ -20,11 +20,11 @@
 module io.helidon.microprofile.metrics {
     requires java.logging;
 
-    requires static cdi.api;
-    requires static javax.inject;
-    requires static javax.interceptor.api;
+    requires static jakarta.enterprise.cdi.api;
+    requires static jakarta.inject.api;
+    requires static jakarta.interceptor.api;
     requires static java.annotation;
-    requires static java.activation;
+    requires static jakarta.activation;
 
     requires io.helidon.microprofile.server;
     requires io.helidon.microprofile.config;
@@ -36,6 +36,9 @@ module io.helidon.microprofile.metrics {
 
 
     exports io.helidon.microprofile.metrics;
+
+    // this is needed for CDI extensions that use non-public observer methods
+    opens io.helidon.microprofile.metrics to weld.core.impl;
 
     provides javax.enterprise.inject.spi.Extension with io.helidon.microprofile.metrics.MetricsCdiExtension;
 }
