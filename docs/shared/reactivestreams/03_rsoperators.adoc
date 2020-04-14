@@ -42,13 +42,13 @@ ReactiveStreams.of("1", "2", "3", "4", "5")
 [[terms]]
 .Operators(Stages)
 |===
-|from | Create new PublisherBuilder supplied Publisher
+|fromIterable | Create new PublisherBuilder from supplied Iterable
 |of | Create new PublisherBuilder emitting supplied elements
 |ofNullable | Empty stream if supplied item is null
-|iterate | Create infinite stream
-|generate| Create infinite stream
-|empty| Create empty stream
-|failed| Create stream which is send onError as a first thing is
+|iterate | Create infinite stream with every next item created by supplied operator from previous item
+|generate| Create infinite stream with every item created by invocation of supplier
+|empty| Create new PublisherBuilder emitting as a first thing complete signal
+|failed| Create new PublisherBuilder emitting as a first thing error signal
 |concat| Concat two streams
 |coupled| Two parallel streams sharing cancel, onError and onComplete signals
 |limit| Limit the size of the stream, when limit is reached completes

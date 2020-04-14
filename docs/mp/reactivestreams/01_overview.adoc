@@ -45,4 +45,4 @@ Microprofile implementation.
 
 There are two handy apis for working with reactive streams available in {helidon},
 one for working with `java.util.concurrent.Flow`
-and second for `org.reactivestreams` based reactive components.
+and another for `org.reactivestreams` based reactive components.
