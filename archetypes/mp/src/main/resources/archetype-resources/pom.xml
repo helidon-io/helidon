@@ -32,11 +32,6 @@
             <scope>runtime</scope>
             <optional>true</optional>
         </dependency>
-        <dependency>
-            <groupId>javax.activation</groupId>
-            <artifactId>javax.activation-api</artifactId>
-            <scope>runtime</scope>
-        </dependency>
 #if( $unitTest.matches("y|yes|true") )
         <dependency>
             <groupId>org.junit.jupiter</groupId>

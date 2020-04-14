@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019,2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import io.grpc.Metadata;
 import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
+
 import org.jboss.weld.junit5.WeldInitiator;
 import org.jboss.weld.junit5.WeldJunit5Extension;
 import org.jboss.weld.junit5.WeldSetup;
@@ -52,7 +53,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 @ExtendWith(WeldJunit5Extension.class)
 @SuppressWarnings("unchecked")
-public class InterceptorsIT {
+public class InterceptorsTest {
 
     @WeldSetup
     public WeldInitiator weld = WeldInitiator.of(ServerInterceptorOne.class,

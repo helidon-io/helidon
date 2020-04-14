@@ -162,18 +162,35 @@ full(){
   cd ${SCRATCH}/helidon
 
   echo "===== Checking out tags/${VERSION} ====="
-  git checkout tags/${VERSION}
-
-
-  echo "===== Running tests ====="
-  cd ${SCRATCH}/helidon/tests
-  mvn clean install ${STAGED_PROFILE}
-
+  if [[ "${VERSION}" =~ .*SNAPSHOT ]]; then
+      echo "WARNING! SNAPSHOT version. Skipping tag checkout"
+  else
+      git checkout tags/${VERSION}
+  fi
 
   echo "===== Building examples ====="
   cd ${SCRATCH}/helidon/examples
   mvn clean install ${STAGED_PROFILE}
   cd ${SCRATCH}
+
+  echo "===== Running tests ====="
+  cd ${SCRATCH}/helidon/tests
+  mvn clean install ${STAGED_PROFILE}
+
+  # Primes dependencies for native-image builds
+  cd ${SCRATCH}/helidon/tests/integration/native-image
+  mvn clean install ${STAGED_PROFILE}
+
+  echo "===== Running native image tests ====="
+  if [ -z "${GRAALVM_HOME}" ]; then
+      echo "WARNING! GRAALVM_HOME is not set. Skipping native image tests"
+  else
+      readonly native_image_tests="se-1 mp-1 mp-2 mp-3"
+      for native_test in ${native_image_tests}; do
+          cd ${SCRATCH}/helidon/tests/integration/native-image/${native_test}
+          mvn clean package -Pnative-image ${STAGED_PROFILE}
+      done
+  fi
 
 }
 

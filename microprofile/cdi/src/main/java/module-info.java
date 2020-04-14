@@ -22,9 +22,10 @@ import io.helidon.microprofile.cdi.HelidonContainerInitializer;
  * CDI implementation enhancements for Helidon MP.
  */
 module io.helidon.microprofile.cdi {
-    uses javax.enterprise.inject.spi.Extension;
+    // needed for Unsafe used from Weld
+    requires jdk.unsupported;
     requires java.logging;
-    requires cdi.api;
+    requires jakarta.enterprise.cdi.api;
 
     requires io.helidon.common;
     requires io.helidon.config;
@@ -34,9 +35,11 @@ module io.helidon.microprofile.cdi {
     requires weld.environment.common;
     requires weld.se.core;
     requires io.helidon.common.context;
-    requires javax.inject;
+    requires jakarta.inject.api;
 
     exports io.helidon.microprofile.cdi;
+
+    uses javax.enterprise.inject.spi.Extension;
 
     provides SeContainerInitializer with HelidonContainerInitializer;
 }

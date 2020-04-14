@@ -19,15 +19,16 @@
  */
 module io.helidon.microprofile.config {
     requires java.logging;
-    requires cdi.api;
-    requires javax.inject;
+    requires jakarta.enterprise.cdi.api;
+    requires jakarta.inject.api;
     requires io.helidon.common;
     requires io.helidon.config;
-    requires io.helidon.config.objectmapping;
-    requires io.helidon.microprofile.cdi;
     requires microprofile.config.api;
 
     exports io.helidon.microprofile.config;
+
+    // this is needed for CDI extensions that use non-public observer methods
+    opens io.helidon.microprofile.config to weld.core.impl;
 
     provides javax.enterprise.inject.spi.Extension with io.helidon.microprofile.config.ConfigCdiExtension;
 }

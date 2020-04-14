@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,6 +65,7 @@ public class MapperTest {
      * @return current time with date set to 1. 1. 1970 (epoch)
      */
     private static OffsetDateTime currentTime() {
+        // this returns time in current timezone, but moved to 1970 January, so daylight savings will cause mayhem
         return OffsetDateTime.now()
                 .with(ChronoField.YEAR, 1970)
                 .with(ChronoField.MONTH_OF_YEAR, 1)

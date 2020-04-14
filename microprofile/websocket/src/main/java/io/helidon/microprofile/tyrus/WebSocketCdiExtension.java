@@ -54,7 +54,7 @@ import static javax.interceptor.Interceptor.Priority.PLATFORM_AFTER;
 public class WebSocketCdiExtension implements Extension {
     private static final Logger LOGGER = Logger.getLogger(WebSocketCdiExtension.class.getName());
 
-    private static final String DEFAULT_WEBSOCKET_PATH = "/websocket";
+    private static final String DEFAULT_WEBSOCKET_PATH = "/";
 
     static {
         HelidonFeatures.register(HelidonFlavor.MP, "WebSocket");

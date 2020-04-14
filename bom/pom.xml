@@ -415,6 +415,13 @@
                 <groupId>io.helidon.microprofile.weld</groupId>
                 <artifactId>weld-se-core</artifactId>
                 <version>${helidon.version}</version>
+                <exclusions>
+                    <!-- need to exclude javax APIs - we have moved to Jakarta -->
+                    <exclusion>
+                        <groupId>javax.enterprise</groupId>
+                        <artifactId>cdi-api</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>io.helidon.microprofile.cdi</groupId>

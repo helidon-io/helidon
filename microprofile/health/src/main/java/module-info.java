@@ -27,14 +27,17 @@ module io.helidon.microprofile.health {
     requires io.helidon.health.common;
     requires io.helidon.microprofile.server;
 
-    requires cdi.api;
-    requires javax.inject;
+    requires jakarta.enterprise.cdi.api;
+    requires jakarta.inject.api;
     requires java.ws.rs;
-    requires org.glassfish.java.json;
+    requires java.json;
     requires microprofile.config.api;
     requires microprofile.health.api;
 
     exports io.helidon.microprofile.health;
+
+    // this is needed for CDI extensions that use non-public observer methods
+    opens io.helidon.microprofile.health to weld.core.impl;
 
     uses io.helidon.microprofile.health.HealthCheckProvider;
 

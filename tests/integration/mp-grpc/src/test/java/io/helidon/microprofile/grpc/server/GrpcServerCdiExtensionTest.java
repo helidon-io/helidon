@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,18 +40,19 @@ import io.helidon.microprofile.server.Server;
 import io.grpc.Channel;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.stub.StreamObserver;
+import org.hamcrest.CoreMatchers;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Test to verify that {@link GrpcServerCdiExtension} starts the gRPC server.
  */
-public class GrpcServerCdiExtensionIT {
+public class GrpcServerCdiExtensionTest {
 
     private static Server server;
 
@@ -80,17 +81,17 @@ public class GrpcServerCdiExtensionIT {
 
         // obtain the started server from the producer
         GrpcServer grpcServer = instance.get().server();
-        assertThat(grpcServer, is(notNullValue()));
+        assertThat(grpcServer, is(CoreMatchers.notNullValue()));
         assertThat(grpcServer.isRunning(), is(true));
 
         // verify that the services are deployed
         Map<String, ServiceDescriptor> services = grpcServer.services();
         // UnaryService should have been discovered by CDI
-        assertThat(services.get("UnaryService"), is(notNullValue()));
+        assertThat(services.get("UnaryService"), is(CoreMatchers.notNullValue()));
         // ServerStreamingService loaded by ExtensionOne discovered by CDI
-        assertThat(services.get("ServerStreamingService"), is(notNullValue()));
+        assertThat(services.get("ServerStreamingService"), is(CoreMatchers.notNullValue()));
         // TestService loaded by ExtensionTwo loaded by the ServiceLoader
-        assertThat(services.get("TestService"), is(notNullValue()));
+        assertThat(services.get("TestService"), is(CoreMatchers.notNullValue()));
     }
 
     @Test
@@ -100,7 +101,7 @@ public class GrpcServerCdiExtensionIT {
 
         TestBean bean = instance.get();
         // strangely if we try to access the server field directly it will be null!
-        assertThat(bean.server(), is(notNullValue()));
+        assertThat(bean.server(), is(CoreMatchers.notNullValue()));
     }
 
     @Test
@@ -110,7 +111,7 @@ public class GrpcServerCdiExtensionIT {
 
         TestBean bean = instance.get();
         // strangely if we try to access the channel field directly it will be null!
-        assertThat(bean.channel(), is(notNullValue()));
+        assertThat(bean.channel(), is(CoreMatchers.notNullValue()));
     }
 
     @Test
@@ -120,7 +121,7 @@ public class GrpcServerCdiExtensionIT {
 
         TestBean bean = instance.get();
         // strangely if we try to access the builder field directly it will be null!
-        assertThat(bean.builder(), is(notNullValue()));
+        assertThat(bean.builder(), is(CoreMatchers.notNullValue()));
     }
 
 
