@@ -23,6 +23,7 @@ module io.helidon.microprofile.grpc.client {
     requires transitive io.helidon.microprofile.grpc.core;
 
     requires java.logging;
+    requires javax.inject;
 
     provides javax.enterprise.inject.spi.Extension
             with io.helidon.microprofile.grpc.client.GrpcClientCdiExtension;
