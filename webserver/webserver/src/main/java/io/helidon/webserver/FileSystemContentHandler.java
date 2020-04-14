@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,13 +77,16 @@ class FileSystemContentHandler extends StaticContentHandler {
     }
 
     static void sendFile(Http.RequestMethod method,
-                         Path path,
+                         Path pathParam,
                          ServerRequest request,
                          ServerResponse response,
                          ContentTypeSelector contentTypeSelector,
                          String welcomePage)
             throws IOException {
 
+        LOGGER.fine(() -> "Sending static content from file: " + pathParam);
+
+        Path path = pathParam;
         // we know the file exists, though it may be a directory
         //First doHandle a directory case
         if (Files.isDirectory(path)) {
