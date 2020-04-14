@@ -188,9 +188,7 @@ class MainTest {
         runMetricsAndHealthTest("se", "jsonp", true);
     }
 
-    // MP version of bookstore app does not yet support running with module path
     @Test
-    @Disabled
     void basicTestMetricsHealthMPModules() throws Exception {
         runMetricsAndHealthTest("mp", "", true);
     }

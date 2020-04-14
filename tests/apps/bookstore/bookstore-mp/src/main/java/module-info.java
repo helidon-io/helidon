@@ -15,13 +15,21 @@
  */
 
 /**
- * Helidon Bookstore test app common code
+ * Helidon MP Bookstore test application
  */
-module io.helidon.tests.apps.bookstore.common {
+module io.helidon.tests.apps.bookstore.mp {
+    requires java.logging;
+    requires java.json;
+    requires java.json.bind;
 
-    requires jakarta.enterprise.cdi.api;
+    requires io.helidon.microprofile.bundle.core;
+    requires io.helidon.microprofile.metrics;
+    requires io.helidon.microprofile.health;
 
-    opens io.helidon.tests.apps.bookstore.common to weld.core.impl;
+    requires io.helidon.tests.apps.bookstore.common;
 
-    exports io.helidon.tests.apps.bookstore.common;
+    //opens io.helidon.tests.apps.bookstore.mp to weld.core.impl,hk2.utils,io.helidon.webserver;
+    opens io.helidon.tests.apps.bookstore.mp to weld.core.impl;
+
+    exports io.helidon.tests.apps.bookstore.mp;
 }
