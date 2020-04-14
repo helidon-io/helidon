@@ -21,8 +21,8 @@
 //:description: Helidon Native Images
 //:keywords: helidon, guide, graalvm
 //:docker-multi-stage-url: https://docs.docker.com/develop/develop-images/multistage-build/
-// :helidon-uc-edition: MP-or-SE
-// :helidon-lc-edition: mp-or-se
+// :helidon-uc-flavor: MP-or-SE
+// :helidon-lc-flavor: mp-or-se
 // :docker-image-size: some-number
 // :startup-secs: some-number
 // :docker-multi-stage-url: https://docs.docker.com/develop/develop-images/multistage-build/
@@ -79,20 +79,20 @@ Generate the project using the Helidon SE Quickstart Maven archetype.
 ----
 mvn archetype:generate -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
-    -DarchetypeArtifactId=helidon-quickstart-{helidon-lc-edition} \
+    -DarchetypeArtifactId=helidon-quickstart-{helidon-lc-flavor} \
     -DarchetypeVersion={helidon-version} \
     -DgroupId=io.helidon.examples \
-    -DartifactId=helidon-quickstart-{helidon-lc-edition} \
-    -Dpackage=io.helidon.examples.quickstart.{helidon-lc-edition}
+    -DartifactId=helidon-quickstart-{helidon-lc-flavor} \
+    -Dpackage=io.helidon.examples.quickstart.{helidon-lc-flavor}
 
 ----
 
 The archetype generates a Maven project in your current directory
-(for example, `helidon-quickstart-{helidon-lc-edition}`). Change into this directory and build.
+(for example, `helidon-quickstart-{helidon-lc-flavor}`). Change into this directory and build.
 
 [source,bash,subs="attributes+"]
 ----
-cd helidon-quickstart-{helidon-lc-edition}
+cd helidon-quickstart-{helidon-lc-flavor}
 mvn package
 ----
 
@@ -100,7 +100,7 @@ At this point you can run the application using the JVM:
 
 [source,bash,subs="attributes+"]
 ----
-java -jar target/helidon-quickstart-{helidon-lc-edition}.jar
+java -jar target/helidon-quickstart-{helidon-lc-flavor}.jar
 ----
 
 In another shell test an endpoint:
@@ -115,7 +115,7 @@ The application should respond with `{"message":"Hello World!"}`
 Now stop the running application (by pressing Ctrl+C).
 
 For more information about the Quickstart application and other enpoints it supports see the
-<<{helidon-lc-edition}/guides/02_quickstart.adoc,Helidon {helidon-uc-edition} Quickstart Guide>>.
+<<{helidon-lc-flavor}/guides/02_quickstart.adoc,Helidon {helidon-uc-flavor} Quickstart Guide>>.
 
 == Building a Native Image
 
@@ -148,7 +148,7 @@ Once it completes start the application using the native executable (no JVM!):
 
 [source,bash,subs="attributes+"]
 ----
-./target/helidon-quickstart-{helidon-lc-edition}
+./target/helidon-quickstart-{helidon-lc-flavor}
 ----
 
 Yep, it starts fast. You can exercise the application's endpoints as before.
@@ -159,7 +159,7 @@ Build the "native" Docker Image
 
 [source,bash,subs="attributes+"]
 ----
-docker build -t helidon-quickstart-{helidon-lc-edition}-native -f Dockerfile.native .
+docker build -t helidon-quickstart-{helidon-lc-flavor}-native -f Dockerfile.native .
 ----
 
 [TIP]
@@ -174,7 +174,7 @@ Start the application:
 
 [source,bash,subs="attributes+"]
 ----
-docker run --rm -p 8080:8080 helidon-quickstart-{helidon-lc-edition}-native:latest
+docker run --rm -p 8080:8080 helidon-quickstart-{helidon-lc-flavor}-native:latest
 ----
 
 Again, it starts fast. You can exercise the application's endpoints as before.
@@ -185,13 +185,13 @@ First let's take a look at the Docker image size:
 
 [source,bash,subs="attributes+"]
 ----
-docker images helidon-quickstart-{helidon-lc-edition}-native:latest
+docker images helidon-quickstart-{helidon-lc-flavor}-native:latest
 ----
 
 [source,bash,subs="attributes+"]
 ----
 REPOSITORY                     TAG       IMAGE ID       CREATED        SIZE
-helidon-quickstart-{helidon-lc-edition}-native   latest    1227ac82d199   5 days ago     {docker-image-size}MB
+helidon-quickstart-{helidon-lc-flavor}-native   latest    1227ac82d199   5 days ago     {docker-image-size}MB
 ----
 
 That's much smaller than a Docker image with the application code plus
@@ -201,11 +201,11 @@ Startup times are quite impressive. These are just some informal numbers
 to show the magnitude of speed-up. Your mileage may vary:
 
 |===
-|Helidon {helidon-uc-edition} Quickstart Java VM|{startup-secs-jvm} seconds
-|Helidon {helidon-uc-edition} Quickstart Native|{startup-secs-native} seconds
+|Helidon {helidon-uc-flavor} Quickstart Java VM|{startup-secs-jvm} seconds
+|Helidon {helidon-uc-flavor} Quickstart Native|{startup-secs-native} seconds
 |===
 
-The startup time for Helidon {helidon-uc-edition} with the normal Java VM is quite good.
+The startup time for Helidon {helidon-uc-flavor} with the normal Java VM is quite good.
 But the native executable is an order of magnitude faster. Memory footprint is similarly improved.
 
 == When should I use Native Images?
@@ -218,4 +218,4 @@ and for long running applications where startup and footprint are less of a prio
 HotSpot VM might be more appropriate.
 
 For information about creating custom Java runtime images see
-<<{helidon-lc-edition}/guides/37_jlink_image.adoc,Custom Runtime Images with `jlink`>>
+<<{helidon-lc-flavor}/guides/37_jlink_image.adoc,Custom Runtime Images with `jlink`>>

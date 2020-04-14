@@ -20,8 +20,8 @@
 
 // :description: Helidon Custom Runtime Images
 // :keywords: helidon, guide, jlink, image
-// :helidon-uc-edition: MP-or-SE
-// :helidon-lc-edition: mp-or-se
+// :helidon-uc-flavor: MP-or-SE
+// :helidon-lc-flavor: mp-or-se
 // :docker-image-size: some-number
 // :docker-multi-stage-url: https://docs.docker.com/develop/develop-images/multistage-build/
 
@@ -32,11 +32,11 @@ using Helidon's support for the JDK's `jlink` tool.
 
 JDK 9 introduced the https://docs.oracle.com/en/java/javase/11/tools/jlink.html[`jlink`]
 command that supports assembling a set of modules and their dependencies into a custom
-runtime image. The `helidon-mave-plugin` has support for easily creating a custom runtime image for your
+runtime image. The `helidon-maven-plugin` has support for easily creating a custom runtime image for your
 Helidon application resulting in a smaller, better performing runtime.
 
 In this guide you will learn how to build a custom runtime image locally on your machine,
-as well as using Docker.
+as well as how to build it in a Docker image.
 
 == What You Need
 
@@ -49,30 +49,30 @@ as well as using Docker.
 
 [source,bash]
 ----
-$JAVA_HOME/bin/jlink --version
+$JAVA_HOME/bin/java --version
 ----
 
 == Generate The Project
 
-Generate the project using the Helidon {helidon-uc-edition} Quickstart Maven archetype.
+Generate the project using the Helidon {helidon-uc-flavor} Quickstart Maven archetype.
 
 [source,bash,subs="attributes+"]
 ----
 mvn archetype:generate -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
-    -DarchetypeArtifactId=helidon-quickstart-{helidon-lc-edition} \
+    -DarchetypeArtifactId=helidon-quickstart-{helidon-lc-flavor} \
     -DarchetypeVersion={helidon-version} \
     -DgroupId=io.helidon.examples \
-    -DartifactId=helidon-quickstart-{helidon-lc-edition} \
-    -Dpackage=io.helidon.examples.quickstart.{helidon-lc-edition}
+    -DartifactId=helidon-quickstart-{helidon-lc-flavor} \
+    -Dpackage=io.helidon.examples.quickstart.{helidon-lc-flavor}
 ----
 
 The archetype generates a Maven project in your current directory
-(for example, `helidon-quickstart-{helidon-lc-edition}`). Change into this directory and build.
+(for example, `helidon-quickstart-{helidon-lc-flavor}`). Change into this directory and build.
 
 [source,bash,subs="attributes+"]
 ----
-cd helidon-quickstart-{helidon-lc-edition}
+cd helidon-quickstart-{helidon-lc-flavor}
 mvn package
 ----
 
@@ -80,7 +80,7 @@ At this point you can run the application using the JVM:
 
 [source,bash,subs="attributes+"]
 ----
-java -jar target/helidon-quickstart-{helidon-lc-edition}.jar
+java -jar target/helidon-quickstart-{helidon-lc-flavor}.jar
 ----
 
 In another shell test an endpoint:
@@ -95,7 +95,7 @@ The application should respond with `{"message":"Hello World!"}`
 Now stop the running application (by pressing Ctrl+C).
 
 For more information about the Quickstart application and other enpoints it supports see the
-<<{helidon-lc-edition}/guides/02_quickstart.adoc,Helidon {helidon-uc-edition} quickstart Guide>>.
+<<{helidon-lc-flavor}/guides/02_quickstart.adoc,Helidon {helidon-uc-flavor} quickstart Guide>>.
 
 == Building a Custom Runtime Image
 
@@ -119,7 +119,7 @@ This uses the `helidon-maven-plugin` to perform the custom image generation.
 After the build completes it will report some statistics about the build including
 the reduction in image size.
 
-The `target/helidon-quickstart-{helidon-lc-edition}` directory is a self contained
+The `target/helidon-quickstart-{helidon-lc-flavor}` directory is a self contained
 custom image of your application. It contains your application, its runtime
 dependencies and the JDK modules it depends on. You can start your application
 using the provide
@@ -127,7 +127,7 @@ using the provide
 
 [source,bash,subs="attributes+"]
 ----
-./target/helidon-quickstart-{helidon-lc-edition}/bin/start
+./target/helidon-quickstart-{helidon-lc-flavor}/bin/start
 ----
 
 === Class Data Sharing (CDS) Archive
@@ -141,7 +141,7 @@ The CDS archive increases your image size to get these performance optimizations
 It can be of significant size (tens of MB). The size of the CDS archive is
 reported at the end of the build output.
 
-If you rather have a smaller image size (with a slightly increased startup time) you
+If you'd rather have a smaller image size (with a slightly increased startup time) you
 can skip the creation of the CDS archive by executing your build like this:
 
 [source,bash]
@@ -159,7 +159,7 @@ Dockerfile included with the quickstart.
 
 [source,bash,subs="attributes+"]
 ----
-docker build -t helidon-quickstart-{helidon-lc-edition}-jlink -f Dockerfile.jlink .
+docker build -t helidon-quickstart-{helidon-lc-flavor}-jlink -f Dockerfile.jlink .
 ----
 
 [TIP]
@@ -174,25 +174,25 @@ Start the application:
 
 [source,bash,subs="attributes+"]
 ----
-docker run --rm -p 8080:8080 helidon-quickstart-{helidon-lc-edition}-jlink:latest
+docker run --rm -p 8080:8080 helidon-quickstart-{helidon-lc-flavor}-jlink:latest
 ----
 
 You can exercise the application's endpoints as before.
 
-== How small is this?
+== What size is this?
 
 Let's take a look at the Docker image for a custom runtime that does
 not include the CDS archive:
 
 [source,bash,subs="attributes+"]
 ----
-docker images helidon-quickstart-{helidon-lc-edition}-jlink:latest
+docker images helidon-quickstart-{helidon-lc-flavor}-jlink:latest
 ----
 
 [source,bash,subs="attributes+"]
 ----
 REPOSITORY                    TAG       IMAGE ID       CREATED        SIZE
-helidon-quickstart-{helidon-lc-edition}-jlink   latest    1227ac82d199   5 days ago     {docker-image-size}MB
+helidon-quickstart-{helidon-lc-flavor}-jlink   latest    1227ac82d199   5 days ago     {docker-image-size}MB
 ----
 
 That's about 90MB smaller than a docker image based on `openjdk:11-jre-slim`
@@ -203,5 +203,5 @@ Custom runtime images are ideal for use when you want all of the runtime perform
 the JDK JVM in a reasonably compact form.
 
 For cases where absolute minimal startup time and image size are required, then
-a <<{helidon-lc-edition}/guides/36_graalnative.adoc,GraalVM Native Image>> might be a better choice.
+consider using <<{helidon-lc-flavor}/guides/36_graalnative.adoc,GraalVM Native Images>>.
 

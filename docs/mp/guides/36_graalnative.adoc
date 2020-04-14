@@ -19,8 +19,8 @@
 = GraalVM Native Images
 :description:  Helidon Native Image
 :keywords: helidon, guide, graalvm, native-image
-:helidon-uc-edition: MP
-:helidon-lc-edition: mp
+:helidon-uc-flavor: MP
+:helidon-lc-flavor: mp
 :docker-image-size: TBD
 :startup-secs-jvm: TBD
 :startup-secs-native: TBD

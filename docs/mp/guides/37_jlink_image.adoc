@@ -19,8 +19,8 @@
 = Custom Runtime Images with `jlink`
 :description: Helidon Custom Runtime Images
 :keywords: helidon, guide, jlink, image
-:helidon-uc-edition: MP
-:helidon-lc-edition: mp
+:helidon-uc-flavor: MP
+:helidon-lc-flavor: mp
 :docker-image-size: 133
 :docker-multi-stage-url: https://docs.docker.com/develop/develop-images/multistage-build/
 
