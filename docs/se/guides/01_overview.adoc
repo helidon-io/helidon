@@ -71,11 +71,19 @@ Learn how to trace a Helidon SE application.
 [PILLARS]
 ====
 [CARD]
-.Creating Docker Images
-[link=guides/30_dockerfile.adoc]
+.GraalVM Native Images
+[link=mp/guides/36_graalnative.adoc]
 --
-Learn how to package your application and the necessary runtime dependencies as
- a Docker image.
+Learn how to build a GraalVM native image for your Helidon application both
+on your desktop and as part of a Docker image.
+--
+
+[CARD]
+.Custom Runtime Images using `jlink`
+[link=mp/guides/37_jlink_image.adoc]
+--
+Learn how to build a custom runtime Java image for your Helidon application both
+on your desktop and as part of a Docker image.
 --
 
 [CARD]
@@ -93,10 +101,4 @@ Learn how to deploy your application to Oracle Cloud Infrastructure Container
  Engine for Kubernetes (OKE).
 --
 
-[CARD]
-.Building Native Images with GraalVM
-[link=guides/36_graalnative.adoc]
---
-Learn how to use GraalVM to build a native executable for your Helidon SE application.
---
 ====

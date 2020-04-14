@@ -127,7 +127,7 @@ public interface WebServer {
     }
 
     /**
-     * Creates new instance form provided configuration and routing.
+     * Creates new instance from provided configuration and routing.
      *
      * @param configurationBuilder a server configuration builder that will be built as a first step
      *                             of this method execution; may be {@code null}
@@ -143,7 +143,7 @@ public interface WebServer {
     }
 
     /**
-     * Creates new instance form provided configuration and routing.
+     * Creates new instance from provided configuration and routing.
      *
      * @param configuration  a server configuration instance
      * @param routingBuilder a routing builder that will be built as a second step of this method execution
@@ -158,7 +158,7 @@ public interface WebServer {
     }
 
     /**
-     * Creates new instance form provided routing and default configuration.
+     * Creates new instance from provided routing and default configuration.
      *
      * @param routing a routing instance
      * @return a new web server instance
@@ -170,7 +170,7 @@ public interface WebServer {
     }
 
     /**
-     * Creates new instance form provided configuration and routing.
+     * Creates new instance from provided configuration and routing.
      *
      * @param configuration a server configuration instance
      * @param routing       a routing instance
@@ -186,7 +186,7 @@ public interface WebServer {
     }
 
     /**
-     * Creates new instance form provided routing and default configuration.
+     * Creates new instance from provided routing and default configuration.
      *
      * @param routingBuilder a routing builder instance that will be built as a first step
      *                       of this method execution

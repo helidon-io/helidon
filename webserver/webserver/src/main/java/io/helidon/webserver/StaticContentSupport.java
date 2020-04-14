@@ -29,7 +29,7 @@ import io.helidon.common.http.MediaType;
  * Serves 'static content' (files) from filesystem or using a classloader to the {@link WebServer WebServer}
  * {@link Routing}. It is possible to {@link Routing.Builder#register(Service...) register} it on the routing.
  * <pre>{@code
- * // Server content of attached '/static/pictures' on '/pictures'
+ * // Serve content of attached '/static/pictures' on '/pics'
  * Routing.builder()
  *        .register("/pics", StaticContentSupport.create("/static/pictures"))
  *        .build()
