@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -37,7 +36,7 @@ import java.util.logging.Logger;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
-import io.helidon.common.reactive.Flow;
+import io.helidon.common.reactive.Multi;
 
 /**
  * Handles static content from the classpath.
@@ -146,6 +145,8 @@ class ClassPathContentHandler extends StaticContentHandler {
                             ServerRequest request,
                             ServerResponse response) throws URISyntaxException {
 
+        LOGGER.fine(() -> "Sending static content from classpath: " + url);
+
         ExtractedJarEntry extrEntry = extracted.computeIfAbsent(requestedResource, thePath -> extractJarEntry(url));
         if (extrEntry.tempFile == null) {
             return false;
@@ -174,6 +175,8 @@ class ClassPathContentHandler extends StaticContentHandler {
     private void sendUrlStream(Http.RequestMethod method, URL url, ServerRequest request, ServerResponse response)
             throws IOException {
 
+        LOGGER.finest(() -> "Sending static content using stream from classpath: " + url);
+
         URLConnection urlConnection = url.openConnection();
         long lastModified = urlConnection.getLastModified();
 
@@ -191,33 +194,8 @@ class ClassPathContentHandler extends StaticContentHandler {
 
         InputStream in = url.openStream();
         InputStreamPublisher byteBufPublisher = new InputStreamPublisher(in, 2048);
-        Flow.Publisher<DataChunk> dataChunkPublisher = new Flow.Publisher<DataChunk>() {
-            @Override
-            public void subscribe(Flow.Subscriber<? super DataChunk> s) {
-                byteBufPublisher.subscribe(new Flow.Subscriber<ByteBuffer>() {
-                    @Override
-                    public void onSubscribe(Flow.Subscription subscription) {
-                        s.onSubscribe(subscription);
-                    }
-
-                    @Override
-                    public void onNext(ByteBuffer item) {
-                        s.onNext(DataChunk.create(item));
-                    }
-
-                    @Override
-                    public void onError(Throwable throwable) {
-                        s.onError(throwable);
-                    }
-
-                    @Override
-                    public void onComplete() {
-                        s.onComplete();
-                    }
-                });
-            }
-        };
-        response.send(dataChunkPublisher);
+        response.send(Multi.from(byteBufPublisher)
+                .map(DataChunk::create));
     }
 
     static String fileName(URL url) {
