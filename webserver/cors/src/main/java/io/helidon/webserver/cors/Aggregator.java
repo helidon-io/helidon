@@ -123,6 +123,17 @@ class Aggregator implements Setter<Aggregator> {
     }
 
     /**
+     * Adds cross origin information associated with the default path expression.
+     *
+     * @param crossOrigin the cross origin information
+     * @return updated builder
+     */
+    public Aggregator addPathlessCrossOrigin(CrossOriginConfig crossOrigin) {
+        crossOriginConfigMatchables.put(PATHLESS_KEY, new FixedCrossOriginConfigMatchable(PATHLESS_KEY, crossOrigin));
+        return this;
+    }
+
+    /**
      * Sets whether the app wants to enable CORS.
      *
      * @param value whether CORS should be enabled

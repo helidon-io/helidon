@@ -39,7 +39,7 @@ public class TestUtil {
     static final String OTHER_GREETING_PATH = "/othergreet";
 
     static WebServer startupServerWithApps() throws InterruptedException, ExecutionException, TimeoutException {
-        Routing.Builder routingBuilder = TestUtil.prepRouting();
+        Routing.Builder routingBuilder = prepRouting();
         return startServer(0, routingBuilder);
     }
 
@@ -65,6 +65,9 @@ public class TestUtil {
         corsSupportBuilder.addCrossOrigin(SERVICE_3.path(), cors3COC);
 
         /*
+         * Use the loaded config to build a CrossOriginConfig for /cors4.
+         */
+        /*
          * Load a specific config for "/othergreet."
          */
         Config twoCORSConfig = minimalConfig(ConfigSources.classpath("twoCORS.yaml"));
@@ -77,12 +80,9 @@ public class TestUtil {
                           CORSSupportSE.builder().config(twoCORSConfig.get("cors-2-setup")).build(),
                           new GreetService("Other Hello"))
                 .any(TestHandlerRegistration.CORS4_CONTEXT_ROOT,
-                        CORSSupportSE.builder()
-                                .allowOrigins("http://foo.bar", "http://bar.foo")
-                                .allowMethods("PUT")
-                                .build(),
+                        CORSSupportSE.from(twoCORSConfig.get("somewhat-restrictive")), // handler settings from config subnode
                         (req, resp) -> resp.status(Http.Status.OK_200).send())
-                .get(TestHandlerRegistration.CORS4_CONTEXT_ROOT,
+                .get(TestHandlerRegistration.CORS4_CONTEXT_ROOT,                       // handler settings in-line
                         CORSSupportSE.builder()
                                 .allowOrigins("*")
                                 .allowMethods("GET")

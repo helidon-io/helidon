@@ -166,6 +166,17 @@ public abstract class CORSSupport implements Service, Handler {
             return me();
         }
 
+        /**
+         * Adds cross origin information associated with the default path.
+         *
+         * @param crossOrigin the cross origin information
+         * @return updated builder
+         */
+        public B addCrossOrigin(CrossOriginConfig crossOrigin) {
+            aggregator.addPathlessCrossOrigin(crossOrigin);
+            return me();
+        }
+
         @Override
         public B allowOrigins(String... origins) {
             aggregator.allowOrigins(origins);

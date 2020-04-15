@@ -16,6 +16,11 @@
  */
 package io.helidon.webserver.cors;
 
+import io.helidon.config.Config;
+import io.helidon.config.MissingValueException;
+
+import static io.helidon.webserver.cors.Aggregator.PATHLESS_KEY;
+
 /**
  * SE implementation of {@link CORSSupport}.
  */
@@ -39,6 +44,21 @@ public class CORSSupportSE extends CORSSupport {
      */
     public static CORSSupportSE create() {
         return builder().build();
+    }
+
+    /**
+     * Creates a new {@code CORSSupportSE} instance based on the provided configuration expected to match the basic
+     * {@code CrossOriginConfig} format.
+     *
+     * @param config node containing the cross-origin information
+     * @return initialized {@code CORSSupportSE} instance
+     */
+    public static CORSSupportSE from(Config config) {
+        if (!config.exists()) {
+            throw MissingValueException.create(config.key());
+        }
+        Builder builder = builder().addCrossOrigin(PATHLESS_KEY, CrossOriginConfig.from(config));
+        return builder.build();
     }
 
     public static class Builder extends CORSSupport.Builder<CORSSupportSE, Builder> {

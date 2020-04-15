@@ -25,20 +25,7 @@
  * your application another way. You can use Helidon configuration, the Helidon CORS API, or a combination.
  * <h2>Configuration</h2>
  * <h3>Format</h3>
- * CORS configuration has two top-level items:
- * <ul>
- *     <li>{@code enabled} - indicates whether CORS processing should be enabled or not; default {@code true}</li>
- *     <li>{@code paths} - contains a list of sub-items describing the CORS set-up for one path
- *     <ul>
- *         <li>{@code path-prefix} - the path this entry applies to</li>
- *         <li>{@code allow-origins} - array of origin URL strings</li>
- *         <li>{@code allow-methods} - array of method name strings (uppercase)</li>
- *         <li>{@code allow-headers} - array of header strings</li>
- *         <li>{@code expose-headers} - array of header strings</li>
- *         <li>{@code allow-credentials} - boolean</li>
- *         <li>{@code max-age} - long</li>
- *     </ul></li>
- * </ul>
+ * CORS configuration looks like this:
  * <p>
  *     The {@code enabled} setting allows configuration to completely disable CORS processing, regardless of other settings in
  *     config or programmatic set-up of CORS in the application.

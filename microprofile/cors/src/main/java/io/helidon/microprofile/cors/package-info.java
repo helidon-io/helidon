@@ -15,13 +15,31 @@
  */
 
 /**
- * <h1>CORS implementation for Helidon MicroProfile.</h1>
+ * <h1>Helidon MP CORS Support</h1>
  * Adding the Helidon MP CORS module to your application enables CORS support automatically, implementing the configuration in
  * the {@value io.helidon.microprofile.cors.CrossOriginFilter#CORS_CONFIG_KEY} section of your MicroProfile configuration.
- *
- * See <a
- * href="{@docRoot}/io/helidon/webserver/cors/io.helidon.webserver.cors/io/helidon/webserver/cors/package-summary.html">Helidon
- * CORS Support</a> for information about the CORS configuration format.
+ * <p>
+ * Many MP developers will use the {@link io.helidon.microprofile.cors.CrossOrigin} annotation on the endpoint implementations in
+ * their code to set up the CORS behavior, but any values in configuration will override the annotations or set up CORS for
+ * endpoints without the annotation.
+ * </p>
+ * <p>
+ * Here is an example of the configuration format:
+ * </p>
+ * <pre>
+ *   cors:
+ *     enabled: true # this is the default
+ *     paths:
+ *       - path-prefix: /cors1
+ *         allow-origins: ["*"]
+ *         allow-methods: ["*"]
+ *       - path-prefix: /cors2
+ *         allow-origins: ["http://foo.bar", "http://bar.foo"]
+ *         allow-methods: ["DELETE", "PUT"]
+ *         allow-headers: ["X-bar", "X-foo"]
+ *         allow-credentials: true
+ *         max-age: -1
+ * </pre>
  *
  */
 package io.helidon.microprofile.cors;

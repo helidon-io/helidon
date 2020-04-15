@@ -22,4 +22,8 @@ cors-2-setup:
       allow-credentials: true
       max-age: -1
 
+somewhat-restrictive:
+  allow-origins: ["http://foo.bar", "http://bar.foo"]
+  allow-methods: ["PUT"]
+
 # Purposefully exclude /cors1. /cors3 information is added programmatically.
