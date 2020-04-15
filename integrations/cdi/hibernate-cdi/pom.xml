@@ -51,13 +51,13 @@
 
         <!-- Provided-scoped dependencies. -->
         <dependency>
-            <groupId>javax.enterprise</groupId>
-            <artifactId>cdi-api</artifactId>
+            <groupId>jakarta.enterprise</groupId>
+            <artifactId>jakarta.enterprise.cdi-api</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>javax.transaction</groupId>
-            <artifactId>javax.transaction-api</artifactId>
+            <groupId>jakarta.transaction</groupId>
+            <artifactId>jakarta.transaction-api</artifactId>
             <scope>provided</scope>
         </dependency>
 
@@ -66,6 +66,11 @@
             <groupId>org.hibernate</groupId>
             <artifactId>hibernate-core</artifactId>
             <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <!-- As we exclude javax from hibernate, we need to add jakarta -->
+            <groupId>jakarta.persistence</groupId>
+            <artifactId>jakarta.persistence-api</artifactId>
         </dependency>
     </dependencies>
 

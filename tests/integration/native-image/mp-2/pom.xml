@@ -48,20 +48,8 @@
             <artifactId>helidon-config-yaml</artifactId>
         </dependency>
         <dependency>
-            <groupId>javax.ws.rs</groupId>
-            <artifactId>javax.ws.rs-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.microprofile.config</groupId>
             <artifactId>helidon-microprofile-config</artifactId>
-            <exclusions>
-                <exclusion>
-                    <!-- this library uses method handles and that is not (maybe yet) supported by native-image -->
-                    <groupId>io.helidon.config</groupId>
-                    <artifactId>helidon-config-object-mapping</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.jboss</groupId>
@@ -73,12 +61,10 @@
         <dependency>
             <groupId>jakarta.persistence</groupId>
             <artifactId>jakarta.persistence-api</artifactId>
-            <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>javax.transaction</groupId>
-            <artifactId>javax.transaction-api</artifactId>
-            <scope>provided</scope>
+            <groupId>jakarta.transaction</groupId>
+            <artifactId>jakarta.transaction-api</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.integrations.cdi</groupId>

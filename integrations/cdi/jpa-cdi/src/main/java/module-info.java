@@ -28,15 +28,14 @@ module io.helidon.integrations.cdi.jpa {
     requires java.xml.bind;
     requires java.transaction;
     requires java.annotation;
+    requires jakarta.activation;
     requires java.sql;
     requires java.persistence;
-    requires javax.interceptor.api;
-    requires javax.inject;
-    requires cdi.api;
+    requires jakarta.interceptor.api;
+    requires jakarta.inject.api;
+    requires jakarta.enterprise.cdi.api;
     requires io.helidon.integrations.cdi.referencecountedcontext;
     requires io.helidon.integrations.cdi.delegates;
-    requires io.helidon.microprofile.cdi;
-    requires io.helidon.common;
 
     exports io.helidon.integrations.cdi.jpa;
 }

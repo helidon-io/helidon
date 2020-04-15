@@ -46,8 +46,8 @@
                     <artifactId>org.osgi.annotation.versioning</artifactId>
                 </exclusion>
                 <exclusion>
-                    <groupId>javax.inject</groupId>
-                    <artifactId>javax.inject</artifactId>
+                    <groupId>jakarta.inject</groupId>
+                    <artifactId>jakarta.inject-api</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>

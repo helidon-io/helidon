@@ -26,8 +26,8 @@
 module io.helidon.integrations.datasource.ucp.cdi {
     requires java.sql;
     requires java.desktop; // For java.beans
-    requires javax.inject;
-    requires cdi.api;
+    requires jakarta.inject.api;
+    requires jakarta.enterprise.cdi.api;
     requires microprofile.config.api;
     requires ucp;
     requires io.helidon.service.configuration.microprofile.config;
