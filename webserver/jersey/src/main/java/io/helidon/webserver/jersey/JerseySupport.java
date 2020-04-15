@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -118,15 +118,28 @@ public class JerseySupport implements Service {
     /**
      * Creates a Jersey Support based on the provided JAX-RS application.
      *
-     * @param application the JAX-RS application to build the Jersey Support from
-     * @param service the executor service that is used for a request handling. If {@code null},
-     * a thread pool of size
-     * {@link Runtime#availableProcessors()} {@code * 8} is used.
+     * @param builder builder with application (the JAX-RS application to build the Jersey Support from),
+     *                executor service (the executor service that is used for a request handling. If {@code null},
+     *                a thread pool of size {@link Runtime#availableProcessors()} {@code * 8} is used),
+     *                and Config
      */
-    private JerseySupport(Application application, ExecutorService service) {
-        ExecutorService executorService = (service != null) ? service : getDefaultThreadPool();
+    private JerseySupport(Builder builder) {
+        // the main executor service
+        ExecutorService executorService = (builder.executorService != null)
+                ? builder.executorService
+                : getDefaultThreadPool(builder.config);
         this.service = Contexts.wrap(executorService);
-        this.appHandler = new ApplicationHandler(application, new ServerBinder(executorService));
+
+        // make sure we have a wrapped async executor as well
+        if (builder.asyncExecutorService == null) {
+            // create a new one from configuration
+            builder.resourceConfig.register(AsyncExecutorProvider.create(builder.config));
+        } else {
+            // use the one provided
+            builder.resourceConfig.register(AsyncExecutorProvider.create(builder.asyncExecutorService));
+        }
+
+        this.appHandler = new ApplicationHandler(builder.resourceConfig, new ServerBinder(executorService));
     }
 
     @Override
@@ -134,9 +147,9 @@ public class JerseySupport implements Service {
         routingRules.any(handler);
     }
 
-    private static ExecutorService getDefaultThreadPool() {
+    private static synchronized ExecutorService getDefaultThreadPool(Config config) {
         if (DEFAULT_THREAD_POOL.get() == null) {
-            Config executorConfig = Config.create().get("server.executor-service");
+            Config executorConfig = config.get("server.executor-service");
             DEFAULT_THREAD_POOL.set(ServerThreadPoolSupplier.builder()
                                             .name("server")
                                             .config(executorConfig)
@@ -417,6 +430,8 @@ public class JerseySupport implements Service {
 
         private ResourceConfig resourceConfig;
         private ExecutorService executorService;
+        private Config config = Config.empty();
+        private ExecutorService asyncExecutorService;
 
         private Builder() {
             this(null);
@@ -436,7 +451,7 @@ public class JerseySupport implements Service {
          */
         @Override
         public JerseySupport build() {
-            return new JerseySupport(resourceConfig, executorService);
+            return new JerseySupport(this);
         }
 
         @Override
@@ -519,6 +534,30 @@ public class JerseySupport implements Service {
          */
         public Builder executorService(ExecutorService executorService) {
             this.executorService = executorService;
+            return this;
+        }
+
+        /**
+         * Sets the executor service to use for a handling of asynchronous requests
+         * with {@link javax.ws.rs.container.AsyncResponse}.
+         *
+         * @param executorService the executor service to use for a handling of asynchronous requests
+         * @return an updated instance
+         */
+        public Builder asyncExecutorService(ExecutorService executorService) {
+            this.asyncExecutorService = executorService;
+            return this;
+        }
+
+        /**
+         * Update configuration from Config.
+         * Currently used to set up async executor service only.
+         *
+         * @param config configuration at the Jersey configuration node
+         * @return updated builder instance
+         */
+        public Builder config(Config config) {
+            this.config = config;
             return this;
         }
     }
