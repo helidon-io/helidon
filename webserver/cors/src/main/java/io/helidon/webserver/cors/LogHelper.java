@@ -26,12 +26,12 @@ import java.util.logging.Level;
 
 import io.helidon.common.http.Http;
 import io.helidon.webserver.cors.CORSSupport.RequestAdapter;
-import io.helidon.webserver.cors.CrossOriginHelper.RequestType;
+import io.helidon.webserver.cors.CORSSupportHelper.RequestType;
 
 import static io.helidon.common.http.Http.Header.HOST;
 import static io.helidon.common.http.Http.Header.ORIGIN;
+import static io.helidon.webserver.cors.CORSSupportHelper.LOGGER;
 import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_REQUEST_METHOD;
-import static io.helidon.webserver.cors.CrossOriginHelper.LOGGER;
 
 class LogHelper {
 

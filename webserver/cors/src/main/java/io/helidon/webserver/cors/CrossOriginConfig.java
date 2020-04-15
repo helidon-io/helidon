@@ -17,24 +17,44 @@
 package io.helidon.webserver.cors;
 
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.function.Function;
 
 import io.helidon.config.Config;
 
-import static io.helidon.webserver.cors.CrossOriginHelper.normalize;
-import static io.helidon.webserver.cors.CrossOriginHelper.parseHeader;
+import static io.helidon.webserver.cors.Aggregator.PATHLESS_KEY;
 
 /**
  * Represents information about cross origin request sharing.
+ *
+ * Applications can create instance in two ways:
+ * <ul>
+ *     <li>using a {@code Builder} explicitly
+ *     <p>
+ *     Obtain a suitable builder by:
+ *     </p>
+ *     <ul>
+ *         <li>explicitly getting a builder using {@link #builder()},</li>
+ *         <li>invoking the static {@link Builder#from} method and
+ *         passing an existing instance of {@code CrossOriginConfig}; the resulting {@code Builder} is
+ *         intialized using the configuration node provided, or</li>
+ *         <li>obtaining a {@link Config} instance and invoking {@code Config.as}, passing {@code Builder#from}</li>
+ *     </ul>
+ *     and then invoke methods on the builder, finally invoking the builder's {@code build} method to create the instance.
+ *     <li>invoking the static {@link #from} method, passing a config node containing the cross-origin information to be
+ *     converted.
+ *     </li>
+ * </ul>
+ *
+ * @see MappedCrossOriginConfig
+ *
  */
-public class CrossOriginConfig /* implements CrossOrigin */ {
+public class CrossOriginConfig {
 
     /**
-     * Default cache expiration in seconds.
+     * Key for the node within the CORS config that contains the list of path information.
      */
-    public static final long DEFAULT_AGE = 3600;
+    public static final String CORS_PATHS_CONFIG_KEY = "paths";
+
     /**
      * Header Access-Control-Allow-Headers.
      */
@@ -67,11 +87,14 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
      * Header Access-Control-Request-Method.
      */
     public static final String ACCESS_CONTROL_REQUEST_METHOD = "Access-Control-Request-Method";
-    /**
-     * Key for the node within the CORS config that contains the list of path information.
-     */
-    public static final String CORS_PATHS_CONFIG_KEY = "paths";
 
+    /**
+     * Default cache expiration in seconds.
+     */
+    public static final long DEFAULT_AGE = 3600;
+
+    private final String pathPrefix;
+    private final boolean enabled;
     private final String[] allowOrigins;
     private final String[] allowHeaders;
     private final String[] exposeHeaders;
@@ -80,6 +103,8 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
     private final long maxAge;
 
     private CrossOriginConfig(Builder builder) {
+        this.pathPrefix = builder.pathPrefix;
+        this.enabled = builder.enabled;
         this.allowOrigins = builder.origins;
         this.allowHeaders = builder.allowHeaders;
         this.exposeHeaders = builder.exposeHeaders;
@@ -89,15 +114,37 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
     }
 
     /**
-     *
-     * @return a new builder for cross origin config
+     * @return a new builder for basic cross origin config
      */
     public static Builder builder() {
         return new Builder();
     }
 
     /**
+     * Creates a new {@code CrossOriginConfig} instance using the provided config node.
      *
+     * @param config node containing cross-origin information
+     * @return new {@code Basic} instance based on the configuration
+     */
+    public static CrossOriginConfig from(Config config) {
+        return Builder.from(config).build();
+    }
+
+    /**
+     * @return the configured path prefix; defaults to a "match-everything" pattern
+     */
+    public String pathPrefix() {
+        return pathPrefix;
+    }
+
+    /**
+     * @return whether this cross-origin config is enabled
+     */
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    /**
      * @return the allowed origins
      */
     public String[] allowOrigins() {
@@ -105,7 +152,6 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
     }
 
     /**
-     *
      * @return the allowed headers
      */
     public String[] allowHeaders() {
@@ -113,7 +159,6 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
     }
 
     /**
-     *
      * @return headers OK to expose in responses
      */
     public String[] exposeHeaders() {
@@ -121,7 +166,6 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
     }
 
     /**
-     *
      * @return allowed methods
      */
     public String[] allowMethods() {
@@ -129,7 +173,6 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
     }
 
     /**
-     *
      * @return allowed credentials
      */
     public boolean allowCredentials() {
@@ -137,7 +180,6 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
     }
 
     /**
-     *
      * @return maximum age
      */
     public long maxAge() {
@@ -151,10 +193,13 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
     /**
      * Builder for {@link CrossOriginConfig}.
      */
-    public static class Builder implements Setter<Builder>, io.helidon.common.Builder<CrossOriginConfig> {
+    public static class Builder implements Setter<Builder>, io.helidon.common.Builder<CrossOriginConfig>,
+            Function<Config, Builder> {
 
-        private static final String[] ALLOW_ALL = {"*"};
+        static final String[] ALLOW_ALL = {"*"};
 
+        private String pathPrefix = PATHLESS_KEY; // not typically used except when inside a MappedCrossOriginConfig
+        private boolean enabled = true;
         private String[] origins = ALLOW_ALL;
         private String[] allowHeaders = ALLOW_ALL;
         private String[] exposeHeaders;
@@ -173,6 +218,8 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
          */
         public static Builder from(CrossOriginConfig original) {
             return new Builder()
+                    .pathPrefix(original.pathPrefix)
+                    .enabled(original.enabled)
                     .allowCredentials(original.allowCredentials)
                     .allowHeaders(original.allowHeaders)
                     .allowMethods(original.allowMethods)
@@ -182,70 +229,71 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
         }
 
         /**
-         * Sets the allowOrigins.
+         * Creates a new {@code Builder}instance from the specified configuration.
          *
-         * @param origins the origin value(s)
+         * @param config node containing cross-origin information
+         * @return new {@code Builder} initialized from the config
+         */
+        public static Builder from(Config config) {
+            return Loader.Basic.builder(config);
+        }
+
+        @Override
+        public Builder apply(Config config) {
+            return from(config);
+        }
+
+        /**
+         * Updates the path prefix for this cross-origin config.
+         *
+         * @param pathPrefix new path prefix
          * @return updated builder
          */
+        public Builder pathPrefix(String pathPrefix) {
+            this.pathPrefix = pathPrefix;
+            return this;
+        }
+
+        String pathPrefix() {
+            return pathPrefix;
+        }
+
+        @Override
+        public Builder enabled(boolean enabled) {
+            this.enabled = enabled;
+            return this;
+        }
+
         @Override
         public Builder allowOrigins(String... origins) {
             this.origins = copyOf(origins);
             return this;
         }
 
-        /**
-         * Sets the allow headers.
-         *
-         * @param allowHeaders the allow headers value(s)
-         * @return updated builder
-         */
         @Override
         public Builder allowHeaders(String... allowHeaders) {
             this.allowHeaders = copyOf(allowHeaders);
             return this;
         }
 
-        /**
-         * Sets the expose headers.
-         *
-         * @param exposeHeaders the expose headers value(s)
-         * @return updated builder
-         */
         @Override
         public Builder exposeHeaders(String... exposeHeaders) {
             this.exposeHeaders = copyOf(exposeHeaders);
             return this;
         }
 
-        /**
-         * Sets the allow methods.
-         *
-         * @param allowMethods the allow method value(s)
-         * @return updated builder
-         */
         @Override
         public Builder allowMethods(String... allowMethods) {
             this.allowMethods = copyOf(allowMethods);
             return this;
         }
 
-        /**
-         * Sets the allow credentials flag.
-         *
-         * @param allowCredentials the allow credentials flag
-         * @return updated builder
-         */
+        @Override
         public Builder allowCredentials(boolean allowCredentials) {
             this.allowCredentials = allowCredentials;
             return this;
         }
 
-        /**
-         * Sets the maximum age.
-         *
-         * @param maxAge the maximum age
-         * @return updated builder
-         */
         @Override
         public Builder maxAge(long maxAge) {
             this.maxAge = maxAge;
@@ -255,38 +303,6 @@ public class CrossOriginConfig /* implements CrossOrigin */ {
         @Override
         public CrossOriginConfig build() {
             return new CrossOriginConfig(this);
-        }
-    }
-
-    /**
-     * Functional interface for converting a Helidon config instance to a {@code CrossOriginConfig} instance.
-     */
-    public static class CrossOriginConfigMapper implements Function<Config, Map<String, CrossOriginConfig>> {
-
-        @Override
-        public Map<String, CrossOriginConfig> apply(Config config) {
-            Map<String, CrossOriginConfig> result = new HashMap<>();
-            int i = 0;
-            do {
-                Config item = config.get(Integer.toString(i++));
-                if (!item.exists()) {
-                    break;
-                }
-                Builder builder = new Builder();
-                String path = item.get("path-prefix").as(String.class).orElse(null);
-                item.get("allow-origins").asList(String.class).ifPresent(
-                        s -> builder.allowOrigins(parseHeader(s).toArray(new String[]{})));
-                item.get("allow-methods").asList(String.class).ifPresent(
-                        s -> builder.allowMethods(parseHeader(s).toArray(new String[]{})));
-                item.get("allow-headers").asList(String.class).ifPresent(
-                        s -> builder.allowHeaders(parseHeader(s).toArray(new String[]{})));
-                item.get("expose-headers").asList(String.class).ifPresent(
-                        s -> builder.exposeHeaders(parseHeader(s).toArray(new String[]{})));
-                item.get("allow-credentials").as(Boolean.class).ifPresent(builder::allowCredentials);
-                item.get("max-age").as(Long.class).ifPresent(builder::maxAge);
-                result.put(normalize(path), builder.build());
-            } while (true);
-            return result;
         }
     }
 }

@@ -64,7 +64,7 @@ class CORSSupportMP extends CORSSupport {
      * <em>Not for developer user.</em> Gets a response ready to participate in the CORS protocol.
      *
      * @param requestAdapter wrapper around the request
-     * @param responseAdapter wrapper around the reseponse
+     * @param responseAdapter wrapper around the response
      */
     @Override
     protected <T, U> void prepareResponse(RequestAdapter<T> requestAdapter, ResponseAdapter<U> responseAdapter) {

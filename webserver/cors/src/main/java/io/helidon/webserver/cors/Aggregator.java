@@ -22,9 +22,10 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import io.helidon.config.Config;
+import io.helidon.config.ConfigValue;
 import io.helidon.webserver.PathMatcher;
 
-import static io.helidon.webserver.cors.CrossOriginHelper.normalize;
+import static io.helidon.webserver.cors.CORSSupportHelper.normalize;
 
 /**
  * Collects CORS set-up information from various sources and looks up the relevant CORS information given a request's path.
@@ -35,7 +36,7 @@ import static io.helidon.webserver.cors.CrossOriginHelper.normalize;
  *        <li>when <em>storing</em> cross-config information, the <em>latest</em> invocation that specifies the same path
  *        expression overwrites any preceding settings for the same path expression, and</li>
  *        <li>when <em>matching</em> against a request's path, the code checks the path matchers <em>in the order
- *        they were added</em> to the aggregator, whether by {@link #config} or {@link #addCrossOrigin} or the {@link Setter}
+ *        they were added</em> to the aggregator, whether by {@link #mappedConfig} or {@link #addCrossOrigin} or the {@link Setter}
  *        methods.
  *    </ul>
  * </p>
@@ -44,7 +45,7 @@ import static io.helidon.webserver.cors.CrossOriginHelper.normalize;
  *     their settings in an entry with path expression {@value #PATHLESS_KEY} which matches everything.
  * </p>
  * <p>
- *     If the developer uses the {@link #config} or {@link #addCrossOrigin} methods <em>along with</em> the {@code Setter}
+ *     If the developer uses the {@link #mappedConfig} or {@link #addCrossOrigin} methods <em>along with</em> the {@code Setter}
  *     methods, the results are predictable but might be confusing. The {@code config} and {@code addCrossOrigin} methods
  *     <em>overwrite</em> any entry with the same path expression, whereas the {@code Setter} methods <em>update</em> an existing
  *     entry with path {@value #PATHLESS_KEY}, creating one if needed. So, if the config or an {@code addCrossOrigin}
@@ -53,7 +54,7 @@ import static io.helidon.webserver.cors.CrossOriginHelper.normalize;
  * </p>
  *
  */
-class CrossOriginConfigAggregator implements Setter<CrossOriginConfigAggregator> {
+class Aggregator implements Setter<Aggregator> {
 
     // Key value for the map corresponding to the cross-origin config managed by the {@link Setter} methods
     static final String PATHLESS_KEY = "{+}";
@@ -61,18 +62,18 @@ class CrossOriginConfigAggregator implements Setter<CrossOriginConfigAggregator>
     // Records paths and configs added via addCrossOriginConfig
     private final Map<String, CrossOriginConfigMatchable> crossOriginConfigMatchables = new LinkedHashMap<>();
 
-    private Optional<Boolean> isEnabledOpt = Optional.empty();
+    private boolean isEnabled = true;
 
     /**
      * Factory method.
      *
      * @return new CrossOriginConfigAggregatpr
      */
-    static CrossOriginConfigAggregator create() {
-        return new CrossOriginConfigAggregator();
+    static Aggregator create() {
+        return new Aggregator();
     }
 
-    private CrossOriginConfigAggregator() {
+    private Aggregator() {
     }
 
     /**
@@ -82,7 +83,7 @@ class CrossOriginConfigAggregator implements Setter<CrossOriginConfigAggregator>
      * @return if CORS processing should be done
      */
     public boolean isEnabled() {
-        return isEnabledOpt.orElse(true);
+        return isEnabled;
     }
 
     /**
@@ -91,30 +92,19 @@ class CrossOriginConfigAggregator implements Setter<CrossOriginConfigAggregator>
      * @param config {@code Config} node containing
      * @return updated builder
      */
-    public CrossOriginConfigAggregator config(Config config) {
-        /*
-         * Merge the newly-provided config with what we've assembled so far. We do not merge the config for a given path;
-         * we add paths that are not already present and override paths that are there.
-         */
+    public Aggregator mappedConfig(Config config) {
+
         if (config.exists()) {
-            Config isEnabledNode = config.get("enabled");
-            if (isEnabledNode.exists()) {
-                // Latest explicit setting wins.
-                enabled(isEnabledNode.asBoolean().get());
-            } else {
+            ConfigValue<MappedCrossOriginConfig.Builder> mappedConfigValue = config.as(MappedCrossOriginConfig.Builder::from);
+            if (mappedConfigValue.isPresent()) {
+                MappedCrossOriginConfig mapped = mappedConfigValue.get().build();
                 /*
-                 * If there is no pre-existing setting for isEnabled, because we are processing config and the default is
-                 * {@code enabled: true} for config, set the aggregation to enabled.
+                 * Merge the newly-provided config with what we've assembled so far. We do not merge the config for a given path;
+                 * we add paths that are not already present and override paths that are there.
                  */
-                if (isEnabledOpt.isEmpty()) {
-                    enabled(true);
-                }
-            }
-            Config pathsNode = config.get(CrossOriginConfig.CORS_PATHS_CONFIG_KEY);
-            if (pathsNode.exists()) {
-                pathsNode.as(new CrossOriginConfig.CrossOriginConfigMapper())
-                        .get()
-                        .forEach(this::addCrossOrigin);
+                mapped.forEach(this::addCrossOrigin);
+
+                isEnabled = mapped.isEnabled();
             }
         }
         return this;
@@ -127,7 +117,7 @@ class CrossOriginConfigAggregator implements Setter<CrossOriginConfigAggregator>
      * @param crossOrigin the cross origin information
      * @return updated builder
      */
-    public CrossOriginConfigAggregator addCrossOrigin(String pathExpr, CrossOriginConfig crossOrigin) {
+    public Aggregator addCrossOrigin(String pathExpr, CrossOriginConfig crossOrigin) {
         crossOriginConfigMatchables.put(normalize(pathExpr), new FixedCrossOriginConfigMatchable(pathExpr, crossOrigin));
         return this;
     }
@@ -138,43 +128,43 @@ class CrossOriginConfigAggregator implements Setter<CrossOriginConfigAggregator>
      * @param value whether CORS should be enabled
      * @return updated builder
      */
-    public CrossOriginConfigAggregator enabled(boolean value) {
-        isEnabledOpt = Optional.of(value);
+    public Aggregator enabled(boolean value) {
+        isEnabled = value;
         return this;
     }
 
     @Override
-    public CrossOriginConfigAggregator allowOrigins(String... origins) {
+    public Aggregator allowOrigins(String... origins) {
         pathlessCrossOriginConfigBuilder().allowOrigins(origins);
         return this;
     }
 
     @Override
-    public CrossOriginConfigAggregator allowHeaders(String... allowHeaders) {
+    public Aggregator allowHeaders(String... allowHeaders) {
         pathlessCrossOriginConfigBuilder().allowHeaders(allowHeaders);
         return this;
     }
 
     @Override
-    public CrossOriginConfigAggregator exposeHeaders(String... exposeHeaders) {
+    public Aggregator exposeHeaders(String... exposeHeaders) {
         pathlessCrossOriginConfigBuilder().exposeHeaders(exposeHeaders);
         return this;
     }
 
     @Override
-    public CrossOriginConfigAggregator allowMethods(String... allowMethods) {
+    public Aggregator allowMethods(String... allowMethods) {
         pathlessCrossOriginConfigBuilder().allowMethods(allowMethods);
         return this;
     }
 
     @Override
-    public CrossOriginConfigAggregator allowCredentials(boolean allowCredentials) {
+    public Aggregator allowCredentials(boolean allowCredentials) {
         pathlessCrossOriginConfigBuilder().allowCredentials(allowCredentials);
         return this;
     }
 
     @Override
-    public CrossOriginConfigAggregator maxAge(long maxAge) {
+    public Aggregator maxAge(long maxAge) {
         pathlessCrossOriginConfigBuilder().maxAge(maxAge);
         return this;
     }
@@ -183,16 +173,14 @@ class CrossOriginConfigAggregator implements Setter<CrossOriginConfigAggregator>
      * Looks for a matching CORS config entry for the specified path among the provided CORS configuration information, returning
      * an {@code Optional} of the matching {@code CrossOrigin} instance for the path, if any.
      *
-     * @param path the possibly unnormalized request path to check
+     * @param path the unnormalized request path to check
      * @param secondaryLookup Supplier for CrossOrigin used if none found in config
      * @return Optional<CrossOrigin> for the matching config, or an empty Optional if none matched
      */
-    Optional<CrossOriginConfig> lookupCrossOrigin(String path, Supplier<Optional<CrossOriginConfig>> secondaryLookup) {
+    Optional<CrossOriginConfig> lookupCrossOrigin(String path,
+            Supplier<Optional<CrossOriginConfig>> secondaryLookup) {
 
-        Optional<CrossOriginConfig> result = Optional.empty();
-        String normalizedPath = normalize(path);
-
-        result = findFirst(crossOriginConfigMatchables, normalizedPath)
+        Optional<CrossOriginConfig> result = findFirst(crossOriginConfigMatchables, normalize(path))
                 .or(secondaryLookup);
 
         return result;
@@ -200,10 +188,10 @@ class CrossOriginConfigAggregator implements Setter<CrossOriginConfigAggregator>
 
     /**
      * Given a map from path expressions to matchables, finds the first map entry with a path matcher that accepts the provided
-     * path.
+     * path and is enabled.
      *
      * @param matchables map from pathExpressions to matchables
-     * @param normalizedPath normalized path (from the request) to be matched
+     * @param normalizedPath unnormalized path (from the request) to be matched
      * @return Optional of the CrossOriginConfig
      */
     private static Optional<CrossOriginConfig> findFirst(Map<String, CrossOriginConfigMatchable> matchables,
@@ -211,13 +199,14 @@ class CrossOriginConfigAggregator implements Setter<CrossOriginConfigAggregator>
         return matchables.values().stream()
                 .filter(matchable -> matchable.matches(normalizedPath))
                 .map(CrossOriginConfigMatchable::get)
+                .filter(CrossOriginConfig::isEnabled)
                 .findFirst();
 
     }
 
     @Override
     public String toString() {
-        return "CrossOriginConfigAggregator{"
+        return "Aggregator{"
                 + "crossOriginConfigMatchables=" + crossOriginConfigMatchables
                 + ", isEnabled=" + isEnabled()
                 + '}';
@@ -260,8 +249,8 @@ class CrossOriginConfigAggregator implements Setter<CrossOriginConfigAggregator>
             this.matcher = PathMatcher.create(pathExpr);
         }
 
-        boolean matches(String path) {
-            return matcher.match(path).matches();
+        boolean matches(String unnormalizedPath) {
+            return matcher.match(unnormalizedPath).matches();
         }
 
         abstract CrossOriginConfig get();
@@ -290,6 +279,7 @@ class CrossOriginConfigAggregator implements Setter<CrossOriginConfigAggregator>
     private static class BuildableCrossOriginConfigMatchable extends CrossOriginConfigMatchable {
 
         private final CrossOriginConfig.Builder builder;
+        private CrossOriginConfig config = null;
 
         BuildableCrossOriginConfigMatchable(String pathExpr, CrossOriginConfig.Builder builder) {
             super(pathExpr);
@@ -297,7 +287,10 @@ class CrossOriginConfigAggregator implements Setter<CrossOriginConfigAggregator>
         }
 
         CrossOriginConfig get() {
-            return builder.build();
+            if (config == null) {
+                config = builder.build();
+            }
+            return config;
         }
     }
 }

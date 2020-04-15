@@ -77,10 +77,10 @@
  * <h2>The Helidon CORS API</h2>
  * You can define your application's CORS behavior programmatically -- together with configuration if you want -- by:
  * <ul>
- *     <li>creating a {@link io.helidon.webserver.cors.CrossOriginConfig.Builder} instance,</li>
- *     <li>operating on it to create the CORS set-up you want,</li>
- *     <li>using the builder's {@code build()} method to create the {@code CrossOriginConfig} instance, and</li>
- *     <li>using the {@code CORSSupportSE.Builder} to associate a path with the {@code CrossOriginConfig} object.</li>
+ *     <li>creating a {@link io.helidon.webserver.cors.MappedCrossOriginConfig.Builder} instance,</li>
+ *     <li>operating on the builder to prepare the CORS set-up you want,</li>
+ *     <li>using the builder's {@code build()} method to create the {@code CrossOriginConfig.Mapped} instance, and</li>
+ *     <li>using the {@code CORSSupportSE.Builder} to associate a path with the {@code CrossOriginConfig.Mapped} object.</li>
  * </ul>
  * <p>
  * The next example shows creating CORS information and associating it with the path {@code /cors3} within the app.
@@ -123,7 +123,7 @@
  * Sometimes you might want to prepare just one set of CORS information to match any path. The Helidon CORS API provides a
  * short-cut for this. The {@code CORSSupportSE.Builder} class supports all the mutator methods from {@code CrossOriginConfig}
  * such as {@code allowOrigins}, and on {@code CORSSupportSE.Builder} these methods implicitly affect the
- * {@value io.helidon.webserver.cors.CrossOriginConfigAggregator#PATHLESS_KEY} path. (See the
+ * {@value io.helidon.webserver.cors.Aggregator#PATHLESS_KEY} path. (See the
  * {@link io.helidon.webserver.PathMatcher} documentation.)
  * <p>
  * The following code
@@ -190,7 +190,7 @@
  *     values which designate <em>different</em> paths into a single, unified group of settings.
  *     The settings provided by the latest invocation of these methods override any previously-set values for a given path.</li>
  *     <li>Use of the convenience {@code CrossOriginConfig}-style methods defined by {@code Setter} affect the map entry with
- *     key {@value io.helidon.webserver.cors.CrossOriginConfigAggregator#PATHLESS_KEY}, <em>updating</em> any existing entry and
+ *     key {@value io.helidon.webserver.cors.Aggregator#PATHLESS_KEY}, <em>updating</em> any existing entry and
  *     <em>creating</em> one if needed. As a result, invoking {@code config} and {@code addCrossOriginConfig} methods with that
  *     path will overwrite any values set by earlier invocations of the convenience methods.</li>
  * </ul>

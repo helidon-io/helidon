@@ -58,19 +58,14 @@ import static io.helidon.webserver.cors.LogHelper.DECISION_LEVEL;
  * specific to the needs of CORS support.
  * </p>
  */
-class CrossOriginHelper {
-
-    /**
-     * Key for the node within the CORS config indicating whether CORS support is enabled.
-     */
-    static final String CORS_ENABLED_CONFIG_KEY = "enabled";
+class CORSSupportHelper {
 
     static final String ORIGIN_DENIED = "CORS origin is denied";
     static final String ORIGIN_NOT_IN_ALLOWED_LIST = "CORS origin is not in allowed list";
     static final String METHOD_NOT_IN_ALLOWED_LIST = "CORS method is not in allowed list";
     static final String HEADERS_NOT_IN_ALLOWED_LIST = "CORS headers not in allowed list";
 
-    static final Logger LOGGER = Logger.getLogger(CrossOriginHelper.class.getName());
+    static final Logger LOGGER = Logger.getLogger(CORSSupportHelper.class.getName());
 
     private static final Supplier<Optional<CrossOriginConfig>> EMPTY_SECONDARY_SUPPLIER = Optional::empty;
 
@@ -152,7 +147,7 @@ class CrossOriginHelper {
      * @param config Config node containing CORS set-up
      * @return new instance based on the config
      */
-    public static CrossOriginHelper create(Config config) {
+    public static CORSSupportHelper create(Config config) {
         return builder().config(config).build();
     }
 
@@ -161,24 +156,24 @@ class CrossOriginHelper {
      *
      * @return the new instance
      */
-    public static CrossOriginHelper create() {
+    public static CORSSupportHelper create() {
         return builder().build();
     }
 
-    private final CrossOriginConfigAggregator aggregator;
+    private final Aggregator aggregator;
     private final Supplier<Optional<CrossOriginConfig>> secondaryCrossOriginLookup;
 
-    private CrossOriginHelper() {
+    private CORSSupportHelper() {
         this(builder());
     }
 
-    private CrossOriginHelper(Builder builder) {
+    private CORSSupportHelper(Builder builder) {
         aggregator = builder.aggregator;
         secondaryCrossOriginLookup = builder.secondaryCrossOriginLookup;
     }
 
     /**
-     * Creates a builder for a new {@code CrossOriginHelper}.
+     * Creates a builder for a new {@code CORSSupportHelper}.
      *
      * @return initialized builder
      */
@@ -187,13 +182,13 @@ class CrossOriginHelper {
     }
 
     /**
-     * Builder class for {@code CrossOriginHelper}s.
+     * Builder class for {@code CORSSupportHelper}s.
      */
-    public static class Builder implements io.helidon.common.Builder<CrossOriginHelper> {
+    public static class Builder implements io.helidon.common.Builder<CORSSupportHelper> {
 
         private Supplier<Optional<CrossOriginConfig>> secondaryCrossOriginLookup = EMPTY_SECONDARY_SUPPLIER;
 
-        private final CrossOriginConfigAggregator aggregator = CrossOriginConfigAggregator.create();
+        private final Aggregator aggregator = Aggregator.create();
 
         /**
          * Sets the supplier for the secondary lookup of CORS information (typically <em>not</em> contained in
@@ -214,24 +209,24 @@ class CrossOriginHelper {
          * @return updated builder
          */
         public Builder config(Config config) {
-            aggregator.config(config);
+            aggregator.mappedConfig(config);
             return this;
         }
 
         /**
-         * Creates the {@code CrossOriginHelper}.
+         * Creates the {@code CORSSupportHelper}.
          *
-         * @return initialized {@code CrossOriginHelper}
+         * @return initialized {@code CORSSupportHelper}
          */
-        public CrossOriginHelper build() {
-            CrossOriginHelper result = new CrossOriginHelper(this);
+        public CORSSupportHelper build() {
+            CORSSupportHelper result = new CORSSupportHelper(this);
 
-            LOGGER.config(() -> String.format("CrossOriginHelper configured as: %s", result.toString()));
+            LOGGER.config(() -> String.format("CORSSupportHelper configured as: %s", result.toString()));
 
             return result;
         }
 
-        CrossOriginConfigAggregator aggregator() {
+        Aggregator aggregator() {
             return aggregator;
         }
     }
@@ -276,7 +271,8 @@ class CrossOriginHelper {
             return Optional.empty();
         }
 
-        Optional<CrossOriginConfig> crossOrigin = aggregator.lookupCrossOrigin(requestAdapter.path(), secondaryCrossOriginLookup);
+        Optional<CrossOriginConfig> crossOrigin = aggregator.lookupCrossOrigin(requestAdapter.path(),
+                secondaryCrossOriginLookup);
 
         RequestType requestType = requestType(requestAdapter);
 
@@ -295,7 +291,7 @@ class CrossOriginHelper {
 
     @Override
     public String toString() {
-        return String.format("CrossOriginHelper{isActive=%s, crossOriginConfigs=%s, secondaryCrossOriginLookup=%s}",
+        return String.format("CORSSupportHelper{isActive=%s, crossOriginConfigs=%s, secondaryCrossOriginLookup=%s}",
                 isActive(), aggregator, secondaryCrossOriginLookup == EMPTY_SECONDARY_SUPPLIER ? "(not set)" : "(set)");
     }
 

@@ -38,7 +38,7 @@ import io.helidon.webserver.Service;
  *         <li>from one or more {@link CrossOriginConfig} objects supplied programmatically, each associated with a path to which
  *         it applies, and</li>
  *         <li>by setting individual CORS-related attributes on the {@link Builder} (which affects the CORS behavior for the
- *         {@value CrossOriginConfigAggregator#PATHLESS_KEY} path).</li>
+ *         {@value Aggregator#PATHLESS_KEY} path).</li>
  *     </ul>
  * <p>
  *     See the {@link Builder#build} method for how the builder resolves conflicts among these sources.
@@ -51,7 +51,7 @@ import io.helidon.webserver.Service;
  */
 public abstract class CORSSupport implements Service, Handler {
 
-    private final CrossOriginHelper helper;
+    private final CORSSupportHelper helper;
 
     protected <T extends CORSSupport, B extends Builder<T, B>> CORSSupport(Builder<T, B> builder) {
         helper = builder.helperBuilder.build();
@@ -120,8 +120,8 @@ public abstract class CORSSupport implements Service, Handler {
     public abstract static class Builder<T extends CORSSupport, B extends Builder<T, B>> implements io.helidon.common.Builder<CORSSupport>,
             Setter<Builder<T, B>> {
 
-        private final CrossOriginHelper.Builder helperBuilder = CrossOriginHelper.builder();
-        private final CrossOriginConfigAggregator aggregator = helperBuilder.aggregator();
+        private final CORSSupportHelper.Builder helperBuilder = CORSSupportHelper.builder();
+        private final Aggregator aggregator = helperBuilder.aggregator();
 
         protected Builder() {
         }
@@ -139,7 +139,7 @@ public abstract class CORSSupport implements Service, Handler {
          * @return the updated builder
          */
         public B config(Config config) {
-            aggregator.config(config);
+            aggregator.mappedConfig(config);
             return me();
         }
 

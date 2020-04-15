@@ -23,11 +23,20 @@ package io.helidon.webserver.cors;
  * @param <T> the type of the implementing class so the fluid methods can return the correct type
  */
 interface Setter<T> {
+
+    /**
+     * Sets whether this config should be enabled or not.
+     *
+     * @param enabled true for this config to have effect; false for it to be ignored
+     * @return updated setter
+     */
+    T enabled(boolean enabled);
+
     /**
      * Sets the allowOrigins.
      *
      * @param origins the origin value(s)
-     * @return updated builder
+     * @return updated setter
      */
     T allowOrigins(String... origins);
 
@@ -35,7 +44,7 @@ interface Setter<T> {
      * Sets the allow headers.
      *
      * @param allowHeaders the allow headers value(s)
-     * @return updated builder
+     * @return updated setter
      */
     T allowHeaders(String... allowHeaders);
 
@@ -43,7 +52,7 @@ interface Setter<T> {
      * Sets the expose headers.
      *
      * @param exposeHeaders the expose headers value(s)
-     * @return updated builder
+     * @return updated setter
      */
     T exposeHeaders(String... exposeHeaders);
 
@@ -51,7 +60,7 @@ interface Setter<T> {
      * Sets the allow methods.
      *
      * @param allowMethods the allow method value(s)
-     * @return updated builder
+     * @return updated setter
      */
     T allowMethods(String... allowMethods);
 
@@ -59,7 +68,7 @@ interface Setter<T> {
      * Sets the allow credentials flag.
      *
      * @param allowCredentials the allow credentials flag
-     * @return updated builder
+     * @return updated setter
      */
     T allowCredentials(boolean allowCredentials);
 
@@ -67,7 +76,7 @@ interface Setter<T> {
      * Sets the maximum age.
      *
      * @param maxAge the maximum age
-     * @return updated builder
+     * @return updated setter
      */
     T maxAge(long maxAge);
 }
