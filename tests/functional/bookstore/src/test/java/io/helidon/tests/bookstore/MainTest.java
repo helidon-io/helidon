@@ -16,7 +16,6 @@
 
 package io.helidon.tests.bookstore;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -351,7 +350,7 @@ class MainTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"se", "mp"})
-    void routing(String edition) throws Exception {
+    void routing2(String edition) throws Exception {
 
         startTheApplication(editionToJarPath(edition), Collections.emptyList());
 
