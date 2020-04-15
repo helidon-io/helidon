@@ -28,7 +28,6 @@ module io.helidon.tests.apps.bookstore.mp {
 
     requires io.helidon.tests.apps.bookstore.common;
 
-    //opens io.helidon.tests.apps.bookstore.mp to weld.core.impl,hk2.utils,io.helidon.webserver;
     opens io.helidon.tests.apps.bookstore.mp to weld.core.impl;
 
     exports io.helidon.tests.apps.bookstore.mp;
