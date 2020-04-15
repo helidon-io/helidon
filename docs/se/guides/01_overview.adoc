@@ -71,6 +71,20 @@ Learn how to trace a Helidon SE application.
 [PILLARS]
 ====
 [CARD]
+.Maven Guide
+[link=mp/guides/25_maven_build.adoc]
+--
+Using Helidon in your Maven project.
+--
+
+[CARD]
+.Gradle Guide
+[link=mp/guides/26_gradle_build.adoc]
+--
+Using Helidon in your Gradle project.
+--
+
+[CARD]
 .GraalVM Native Images
 [link=mp/guides/36_graalnative.adoc]
 --

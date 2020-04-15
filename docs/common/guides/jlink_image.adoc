@@ -22,7 +22,6 @@
 // :keywords: helidon, guide, jlink, image
 // :helidon-uc-flavor: MP-or-SE
 // :helidon-lc-flavor: mp-or-se
-// :docker-image-size: some-number
 // :docker-multi-stage-url: https://docs.docker.com/develop/develop-images/multistage-build/
 
 This guide describes how to build a custom runtime image for your Helidon application
@@ -179,25 +178,7 @@ docker run --rm -p 8080:8080 helidon-quickstart-{helidon-lc-flavor}-jlink:latest
 
 You can exercise the application's endpoints as before.
 
-== What size is this?
-
-Let's take a look at the Docker image for a custom runtime that does
-not include the CDS archive:
-
-[source,bash,subs="attributes+"]
-----
-docker images helidon-quickstart-{helidon-lc-flavor}-jlink:latest
-----
-
-[source,bash,subs="attributes+"]
-----
-REPOSITORY                    TAG       IMAGE ID       CREATED        SIZE
-helidon-quickstart-{helidon-lc-flavor}-jlink   latest    1227ac82d199   5 days ago     {docker-image-size}MB
-----
-
-That's about 90MB smaller than a docker image based on `openjdk:11-jre-slim`
-
-== When should I use a Custom Runtime Image?
+== When should you use a Custom Runtime Image?
 
 Custom runtime images are ideal for use when you want all of the runtime performance of
 the JDK JVM in a reasonably compact form.

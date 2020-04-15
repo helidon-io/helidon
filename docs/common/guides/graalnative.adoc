@@ -23,9 +23,6 @@
 //:docker-multi-stage-url: https://docs.docker.com/develop/develop-images/multistage-build/
 // :helidon-uc-flavor: MP-or-SE
 // :helidon-lc-flavor: mp-or-se
-// :docker-image-size: some-number
-// :startup-secs: some-number
-// :docker-multi-stage-url: https://docs.docker.com/develop/develop-images/multistage-build/
 
 This guide describes how to build a GraalVM native image for a Helidon SE application.
 
@@ -178,35 +175,6 @@ docker run --rm -p 8080:8080 helidon-quickstart-{helidon-lc-flavor}-native:lates
 ----
 
 Again, it starts fast. You can exercise the application's endpoints as before.
-
-== How small and fast is this?
-
-First let's take a look at the Docker image size:
-
-[source,bash,subs="attributes+"]
-----
-docker images helidon-quickstart-{helidon-lc-flavor}-native:latest
-----
-
-[source,bash,subs="attributes+"]
-----
-REPOSITORY                     TAG       IMAGE ID       CREATED        SIZE
-helidon-quickstart-{helidon-lc-flavor}-native   latest    1227ac82d199   5 days ago     {docker-image-size}MB
-----
-
-That's much smaller than a Docker image with the application code plus
-the JRE and operating system files needed to run it.
-
-Startup times are quite impressive. These are just some informal numbers
-to show the magnitude of speed-up. Your mileage may vary:
-
-|===
-|Helidon {helidon-uc-flavor} Quickstart Java VM|{startup-secs-jvm} seconds
-|Helidon {helidon-uc-flavor} Quickstart Native|{startup-secs-native} seconds
-|===
-
-The startup time for Helidon {helidon-uc-flavor} with the normal Java VM is quite good.
-But the native executable is an order of magnitude faster. Memory footprint is similarly improved.
 
 == When should I use Native Images?
 

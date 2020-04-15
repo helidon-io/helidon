@@ -16,11 +16,10 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Custom Runtime Images with `jlink`
-:description: Helidon Custom Runtime Images
-:keywords: helidon, guide, jlink, image
-:helidon-uc-flavor: SE
-:helidon-lc-flavor: se
-:docker-multi-stage-url: https://docs.docker.com/develop/develop-images/multistage-build/
+= Maven Guide
+:description: Helidon Maven Guide
+:keywords: helidon, guide, maven, build
+:helidon-uc-flavor: MP
+:helidon-lc-flavor: mp
 
-include::../../common/guides/jlink_image.adoc[]
+include::../../common/guides/maven_build.adoc[]

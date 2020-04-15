@@ -21,7 +21,6 @@
 :keywords: helidon, guide, jlink, image
 :helidon-uc-flavor: MP
 :helidon-lc-flavor: mp
-:docker-image-size: 133
 :docker-multi-stage-url: https://docs.docker.com/develop/develop-images/multistage-build/
 
 include::../../common/guides/jlink_image.adoc[]

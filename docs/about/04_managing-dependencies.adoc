@@ -60,3 +60,13 @@ Once you have imported the BOM, you can declare dependencies on Helidon
     <artifactId>helidon-webserver</artifactId>
 </dependency>
 ----
+
+== For More Information
+
+-  Maven Build Guide for
+   <<se/guides/25_maven_build.adoc, SE>> and
+   <<mp/guides/25_maven_build.adoc, MP>>
+-  Gradle Build Guide for
+   <<se/guides/26_gradle_build.adoc, SE>> and
+   <<mp/guides/26_gradle_build.adoc, MP>>
+

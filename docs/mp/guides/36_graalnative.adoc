@@ -21,9 +21,6 @@
 :keywords: helidon, guide, graalvm, native-image
 :helidon-uc-flavor: MP
 :helidon-lc-flavor: mp
-:docker-image-size: TBD
-:startup-secs-jvm: TBD
-:startup-secs-native: TBD
 :docker-multi-stage-url: https://docs.docker.com/develop/develop-images/multistage-build/
 
 include::../../common/guides/graalnative.adoc[]
