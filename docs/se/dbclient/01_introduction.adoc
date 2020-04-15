@@ -16,10 +16,92 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Helidon DB Client
+= About Helidon DB Client
 :toc:
 :toc-placement: preamble
 :description: Helidon DB Client
 :keywords: helidon, se, database, dbclient
 
 == This page is Under Construction and will be available soon
+
+
+The Helidon SE DB Client provides a unified, reactive API for working with databases in non-blocking way. The DB Client simplfies how you work with databases and by allowing the use of blocking JDBC drivers in your reactive application by wrapping a blocking driver in an executor service. 
+
+== Helidon DB Client Features Overview
+
+[width="75%",options="header"]
+|====================
+| Feature |  Description
+| Unified API for data access and query |  The API was implemented as a layer above JDBC or MongoDB Reactive Streams Java Driver, so any relational databases with JDBC driver or MongoDB are supported.
+|Reactive database access with non-reactive drivers  |  Most JDBC drivers are blocking. Using them in a reactive application is problematic. Helidon DB Client allows the use of blocking JDBC drivers in your reactive application by wrapping a blocking driver in an executor service.
+|System Monitoring  |  The API offers support for health checks, metrics and tracing. 
+|Backpressure Management  |  Helidon DB Client performs database operations only when it’s requested by the consumer. This is propagated all the way to the TCP layer.
+|Improved portability between relational database drivers  |  The DB Client works with native database statements that can be used inline in the code or defined as named statements in database configuration. By moving the native query code to configuration files, the Helidon DB Client allows you to switch to another database by changing the configuration files, not the code.
+|====================
+
+== Get Started
+
+Before you begin you must:
+
+1. Add the DB Client dependencies to the Maven `pom.xml` file
+2. Use Helidon Config to configure the client.
+
+The <<about/04_managing-dependencies.adoc, Managing Dependencies>> page describes how you
+should declare dependency management for Helidon applications. For the DB Client you must include the following dependencies in your project:
+----
+<dependencies>
+     <dependency>
+         <groupId>io.helidon.dbclient</groupId><1>
+         <artifactId>helidon-dbclient</artifactId>
+     </dependency>
+     <dependency>
+         <groupId>io.helidon.dbclient</groupId><2>
+         <artifactId>helidon-dbclient-jdbc</artifactId>
+     </dependency>
+     <dependency>
+         <groupId>com.h2.database</groupId><3>
+         <artifactId>h2</artifactId>
+         <version>1.4.200</version>
+     </dependency>
+----
+
+<1>  Add the Helidon DB Client
+
+<2> Specify JDBC or MongoDB
+
+<3> Add the database details
+
+The DB Client must be configured before you begin. In the example below we'll use Helidon Config to set up your JDBC-based client:
+
+
+----
+db:
+  source: "jdbc"<1>
+  connection:
+    url: "jdbc:mysql://127.0.0.1:3306/pokemon?useSSL=false"<2>
+    username: "user"
+    password: "password"
+    poolName: "mysql"
+  statements:<3>
+    ping: "DO 0"
+    select-all-pokemons: "SELECT id, name FROM Pokemons"
+----
+<1> Source: JDBC or MongoDB
+
+<2> Connection: database connection parameters
+
+<3> Statements: named statements when used
+
+== DB Client API
+
+The Helidon DB Client API contains many methods to run various statements with parameters and to retrieve statement execution results. The following sections describe the options you can use to build and execute your statements.
+
+=== Executor Selection
+
+`DBClient` class has two methods to select whether statements will be executed in transaction or not:
+
+* `execute(Function<DbExecute, T> executor)`
+
+* `inTransaction(Function<DbTransaction, CompletionStage<T>> executor)`
+
+Both methods require `Function` interface argument with statements `executor`.
