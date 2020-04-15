@@ -26,9 +26,22 @@ The config component provides a Java API to load and process
 configuration properties from various sources into a `Config` object which the
 application can use to retrieve config data.
 
+
+=== What's New in Helidon SE Config {helidon-version}
+If you used a previous version of Helidon SE Config, take note of these important changes: 
+
+* When loaded from Config, the Resource class has been refactored to require a config node `resource` that will be used to read it.
+* Meta configuration has been refactored to be done through `ServiceLoader` services. If you created
+a custom ConfigSource, PollingStrategy or RetryPolicy, see the <<insert link to new advanced doc from Tomas>> 
+* Helidon Config now implements MicroProfile Config (not explicitly, you can cast between MP Config and Helidon Config).
+* There is a change in behavior between MP methods and SE methods of config related to system
+property handling:
+** MP TCK requires that system properties are fully mutable (as soon as the property is changed, it
+must be used), so MP Config methods work in this manner (with a certain performance overhead).
+** Helidon Config treats System properties as a mutable config source, with a time based polling strategy. So
+the change is reflected as well, though not immediately (this is only relevant if you use change notifications). 
+
 == Getting Started
-[NOTE] 
-If you used a previous version of Helidon SE Config, be sure to check out the What's New section for a list of important changes. 
 
 === Introducing the Config System
 A brief overview of the config system helps clarify its different parts
