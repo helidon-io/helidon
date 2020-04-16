@@ -37,8 +37,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
@@ -53,9 +51,6 @@ import javax.enterprise.inject.se.SeContainerInitializer;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.MpConfigProviderResolver;
-import io.helidon.messaging.connectors.kafka.HelidonToKafkaConfigParser;
-import io.helidon.messaging.connectors.kafka.KafkaConnector;
-import io.helidon.messaging.connectors.kafka.KafkaPublisher;
 import io.helidon.microprofile.messaging.MessagingCdiExtension;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -69,7 +64,6 @@ import org.eclipse.microprofile.reactive.messaging.spi.Connector;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -255,10 +249,8 @@ class KafkaCdiExtensionTest {
     void incomingKafkaOk() {
         LOGGER.fine("==========> test incomingKafkaOk()");
         List<String> testData = IntStream.range(0, 999).mapToObj(i -> "test" + i).collect(Collectors.toList());
-        CountDownLatch testChannelLatch = new CountDownLatch(testData.size());
         AbstractSampleBean kafkaConsumingBean = cdiContainer.select(AbstractSampleBean.Channel1.class).get();
-        kafkaConsumingBean.setCountDownLatch(testChannelLatch);
-        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_1, testChannelLatch, testData);
+        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_1, testData);
     }
 
     @Test
@@ -268,10 +260,8 @@ class KafkaCdiExtensionTest {
         // pushed in topic 7, and finally check the results coming from topic 7.
         List<String> testData = IntStream.range(0, 999).mapToObj(i -> Integer.toString(i)).collect(Collectors.toList());
         List<String> expected = testData.stream().map(i -> "Processed" + i).collect(Collectors.toList());
-        CountDownLatch testChannelLatch = new CountDownLatch(testData.size());
         AbstractSampleBean kafkaConsumingBean = cdiContainer.select(AbstractSampleBean.ChannelProcessor.class).get();
-        kafkaConsumingBean.setCountDownLatch(testChannelLatch);
-        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_2, testChannelLatch, expected);
+        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_2, expected);
     }
 
     @Test
@@ -280,19 +270,13 @@ class KafkaCdiExtensionTest {
         AbstractSampleBean kafkaConsumingBean = cdiContainer.select(AbstractSampleBean.ChannelError.class).get();
         // This is correctly processed
         List<String> testData = Arrays.asList("10");
-        CountDownLatch testChannelLatch = new CountDownLatch(testData.size());
-        kafkaConsumingBean.setCountDownLatch(testChannelLatch);
-        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_3, testChannelLatch, testData);
+        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_3, testData);
         // This will throw a run time error in KafkaSampleBean#error
         testData = Arrays.asList("error");
-        testChannelLatch = new CountDownLatch(testData.size());
-        kafkaConsumingBean.setCountDownLatch(testChannelLatch);
-        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_3, testChannelLatch, Arrays.asList("10"));
+        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_3, Arrays.asList("10"));
         // After an error, it cannot receive new data
         testData = Arrays.asList("20");
-        testChannelLatch = new CountDownLatch(0);
-        kafkaConsumingBean.setCountDownLatch(testChannelLatch);
-        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_3, testChannelLatch, Arrays.asList("10"));
+        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_3, Arrays.asList("10"));
     }
 
     @Test
@@ -300,83 +284,61 @@ class KafkaCdiExtensionTest {
         LOGGER.fine("==========> test withBackPressure()");
         List<String> testData = IntStream.range(0, 999).mapToObj(i -> "1").collect(Collectors.toList());
         List<String> expected = Arrays.asList("1", "1", "1");
-        CountDownLatch testChannelLatch = new CountDownLatch(expected.size());
         AbstractSampleBean kafkaConsumingBean = cdiContainer.select(AbstractSampleBean.Channel4.class).get();
-        kafkaConsumingBean.setCountDownLatch(testChannelLatch);
-        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_4, testChannelLatch, expected);
+        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_4, expected);
     }
 
     @Test
     void withBackPressureAndError() {
         LOGGER.fine("==========> test withBackPressureAndError()");
         List<String> testData = Arrays.asList("2222", "2222");
-        CountDownLatch testChannelLatch = new CountDownLatch(testData.size());
         AbstractSampleBean kafkaConsumingBean = cdiContainer.select(AbstractSampleBean.Channel5.class).get();
-        kafkaConsumingBean.setCountDownLatch(testChannelLatch);
-        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_5, testChannelLatch, testData);
+        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_5, testData);
+        kafkaConsumingBean.restart();
         testData = Arrays.asList("not a number");
-        testChannelLatch = new CountDownLatch(testData.size());
-        kafkaConsumingBean.setCountDownLatch(testChannelLatch);
-        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_5, testChannelLatch, Arrays.asList("2222", "2222", "error"));
+        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_5, Arrays.asList("error"));
     }
 
     @Test
     public void someEventsNoAckWithOnePartition() {
         LOGGER.fine("==========> test someEventsNoAckWithOnePartition()");
-        List<String> expected = new ArrayList<>();
+        List<String> uncommit = new ArrayList<>();
         // Push some messages that will ACK
         List<String> testData = IntStream.range(0, 100).mapToObj(i -> Integer.toString(i)).collect(Collectors.toList());
-        expected.addAll(testData);
-        CountDownLatch testChannelLatch = new CountDownLatch(testData.size());
         AbstractSampleBean.Channel6 kafkaConsumingBean = cdiContainer.select(AbstractSampleBean.Channel6.class).get();
-        kafkaConsumingBean.setCountDownLatch(testChannelLatch);
-        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_6, testChannelLatch, expected);
+        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_6, testData);
         // Next message will not ACK
+        kafkaConsumingBean.restart();
         testData = Arrays.asList(AbstractSampleBean.Channel6.NO_ACK);
-        expected.addAll(testData);
-        testChannelLatch = new CountDownLatch(testData.size());
-        kafkaConsumingBean.setCountDownLatch(testChannelLatch);
-        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_6, testChannelLatch, expected);
+        uncommit.addAll(testData);
+        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_6, testData);
         // As this topic only have one partition, next messages will not ACK because previous message wasn't
+        kafkaConsumingBean.restart();
         testData = IntStream.range(100, 200).mapToObj(i -> Integer.toString(i)).collect(Collectors.toList());
-        testChannelLatch = new CountDownLatch(testData.size());
-        kafkaConsumingBean.setCountDownLatch(testChannelLatch);
-        expected.addAll(testData);
-        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_6, testChannelLatch, expected);
+        uncommit.addAll(testData);
+        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_6, testData);
         // Restart, so we receive uncommitted messages again
         LOGGER.fine("Restarting");
         tearDown();
         setUp();
-        // Adding for expected last uncommitted messages
-        expected.clear();
-        expected.addAll(testData);
-        expected.add(AbstractSampleBean.Channel6.NO_ACK);
         testData = Arrays.asList("new message");
-        expected.addAll(testData);
-        testChannelLatch = new CountDownLatch(expected.size());
+        uncommit.addAll(testData);
         kafkaConsumingBean = cdiContainer.select(AbstractSampleBean.Channel6.class).get();
-        kafkaConsumingBean.setCountDownLatch(testChannelLatch);
         // We should find the new message and all the previous not ACK
-        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_6, testChannelLatch, expected);
+        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_6, uncommit);
     }
 
     @Test
     public void someEventsNoAckWithDifferentPartitions() {
         LOGGER.fine("==========> test someEventsNoAckWithDifferentPartitions()");
-        List<String> expected = new ArrayList<>();
         // Send the message that will not ACK. This will make in one partition to not commit any new message
         List<String> testData = Arrays.asList(AbstractSampleBean.Channel8.NO_ACK);
-        expected.addAll(testData);
-        CountDownLatch testChannelLatch = new CountDownLatch(testData.size());
         AbstractSampleBean.Channel8 kafkaConsumingBean = cdiContainer.select(AbstractSampleBean.Channel8.class).get();
-        kafkaConsumingBean.setCountDownLatch(testChannelLatch);
-        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_8, testChannelLatch, expected);
+        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_8, testData);
+        kafkaConsumingBean.restart();
         // Now sends new messages. Some of them will be lucky and will not go to the partition with no ACK
         testData = IntStream.range(2000, 2100).mapToObj(i -> Integer.toString(i)).collect(Collectors.toList());
-        expected.addAll(testData);
-        testChannelLatch = new CountDownLatch(testData.size());
-        kafkaConsumingBean.setCountDownLatch(testChannelLatch);
-        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_8, testChannelLatch, expected);
+        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_8, testData);
         int uncommited = kafkaConsumingBean.uncommitted();
         // At least one message was not committed
         assertTrue(uncommited > 0);
@@ -385,18 +347,20 @@ class KafkaCdiExtensionTest {
         LOGGER.fine("Restarting");
         tearDown();
         setUp();
-        // This message will not increase the partitions map counter. But we use it to wait all uncommitted messages are read
-        testData = Arrays.asList("any");
-        int expectedUncommited = testData.size() + uncommited;
+        // Uncommitted messages will be delivered again
         kafkaConsumingBean = cdiContainer.select(AbstractSampleBean.Channel8.class).get();
-        testChannelLatch = new CountDownLatch(expectedUncommited);
-        kafkaConsumingBean.setCountDownLatch(testChannelLatch);
-        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_8, testChannelLatch, Collections.emptyList());
-        assertEquals(expectedUncommited, kafkaConsumingBean.consumed().size());
+        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_8, Collections.emptyList(), uncommited);
+        assertEquals(uncommited, kafkaConsumingBean.consumed().size());
     }
 
     private void produceAndCheck(AbstractSampleBean kafkaConsumingBean, List<String> testData, String topic,
-            CountDownLatch testChannelLatch, List<String> expected) {
+            List<String> expected) {
+        produceAndCheck(kafkaConsumingBean, testData, topic, expected, expected.size());
+    }
+
+    private void produceAndCheck(AbstractSampleBean kafkaConsumingBean, List<String> testData, String topic,
+            List<String> expected, long requested) {
+        kafkaConsumingBean.expectedRequests(requested);
         Map<String, Object> config = new HashMap<>();
         config.put("bootstrap.servers", KAFKA_SERVER);
         config.put("key.serializer", LongSerializer.class.getName());
@@ -407,11 +371,7 @@ class KafkaCdiExtensionTest {
             //Send all test messages(async send means order is not guaranteed) and in parallel
             testData.parallelStream().map(s -> new ProducerRecord<>(topic, s)).forEach(msg -> producer.send(msg));
             // Wait till records are delivered
-            try {
-                testChannelLatch.await(30, TimeUnit.SECONDS);
-            } catch (InterruptedException e) {
-                LOGGER.fine("Time out");
-            }
+            kafkaConsumingBean.await();
             if (!expected.isEmpty()) {
                 Collections.sort(kafkaConsumingBean.consumed());
                 Collections.sort(expected);

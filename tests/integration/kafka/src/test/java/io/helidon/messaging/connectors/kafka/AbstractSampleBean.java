@@ -16,6 +16,9 @@
 
 package io.helidon.messaging.connectors.kafka;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -23,7 +26,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -47,19 +52,38 @@ abstract class AbstractSampleBean {
 
     private static final Logger LOGGER = Logger.getLogger(AbstractSampleBean.class.getName());
     private final List<String> consumed = Collections.synchronizedList(new ArrayList<>());
-    private CountDownLatch testChannelLatch = new CountDownLatch(0);
+    private final AtomicLong requests = new AtomicLong();
+    private final AtomicLong expectedRequests = new AtomicLong(Long.MAX_VALUE);
+    private CountDownLatch testChannelLatch = new CountDownLatch(1);
 
     protected List<String> consumed() {
         return consumed;
     }
 
-    protected void setCountDownLatch(CountDownLatch testChannelLatch) {
-        this.testChannelLatch = testChannelLatch;
+    void expectedRequests(long expectedRequests) {
+        this.expectedRequests.getAndSet(expectedRequests);
+    }
+
+    void await() {
+        try {
+            assertTrue(testChannelLatch.await(30, TimeUnit.SECONDS));
+        } catch (InterruptedException e) {
+            fail(e);
+        }
+    }
+
+    void restart() {
+        requests.getAndSet(0);
+        expectedRequests.getAndSet(Long.MAX_VALUE);
+        testChannelLatch = new CountDownLatch(1);
+        consumed.clear();
     }
 
     protected void countDown(String method) {
         LOGGER.fine("Count down triggered by " + method);
-        testChannelLatch.countDown();
+        if (requests.incrementAndGet() >= expectedRequests.get()) {
+            testChannelLatch.countDown();
+        }
     }
 
     @ApplicationScoped
