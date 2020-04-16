@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ public class SchemaScalar
     private GraphQLScalarType graphQLScalarType;
 
     /**
-     * The default format if none is specified;
+     * The default format if none is specified.
      */
     private String defaultFormat;
 
@@ -52,6 +52,7 @@ public class SchemaScalar
      * @param name              name
      * @param actualClass       actual class name
      * @param graphQLScalarType {@link GraphQLScalarType} to convert this {@link SchemaScalar}.
+     * @param defaultFormat default format or null if none
      */
     public SchemaScalar(String name, String actualClass, GraphQLScalarType graphQLScalarType, String defaultFormat) {
         this.name = name;

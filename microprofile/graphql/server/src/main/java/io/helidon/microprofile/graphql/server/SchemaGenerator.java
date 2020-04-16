@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -296,8 +296,8 @@ public class SchemaGenerator {
     }
 
     /**
-     * Process all {@link SchemaFieldDefinition}s and {@link SchemaArgument}s and update the default
-     * values for any scalars.
+     * Process all {@link SchemaFieldDefinition}s and {@link SchemaArgument}s and update the default values for any scalars.
+     *
      * @param schema {@link Schema} to update
      */
     @SuppressWarnings("unchecked")
@@ -311,7 +311,7 @@ public class SchemaGenerator {
                 if (isScalar(returnType)) {
                     fd.setFormat(ensureFormat(returnType, fd.getOriginalType().getName(), fd.getFormat()));
                 }
-                
+
                 fd.getArguments().forEach(a -> {
                     String returnTypeArgument = a.getArgumentType();
                     if (isScalar(returnTypeArgument)) {
@@ -493,7 +493,7 @@ public class SchemaGenerator {
                 if (format.length == 3) {
                     // a format exists on the method return type so format it after returning the value
                     final String graphQLType = getGraphQLType(fd.getReturnType());
-                    // TODO: Determine if this is a number OR date format
+                    // Determine if this is a number OR date format
                     dataFetcher = DataFetcherFactories.wrapDataFetcher(
                             DataFetcherUtils.newMethodDataFetcher(clazz, method, null,
                                                                   fd.getArguments().toArray(new SchemaArgument[0])),
@@ -683,7 +683,7 @@ public class SchemaGenerator {
         fd.setOriginalType(discoveredMethod.getMethod().getReturnType());
 
         if (format != null && format.length == 3) {
-            fd.setFormat(new String[] { format[1], format[2] });
+            fd.setFormat(new String[] {format[1], format[2] });
         }
 
         fd.setDescription(discoveredMethod.getDescription());
@@ -810,10 +810,8 @@ public class SchemaGenerator {
      * @param isQueryOrMutation indicates if this is for a query or mutation
      * @return a {@link DiscoveredMethod}
      */
-    private static DiscoveredMethod generateDiscoveredMethod(Method method,
-                                                             Class<?> clazz,
-                                                             PropertyDescriptor pd,
-                                                             boolean isInputType,
+    private static DiscoveredMethod generateDiscoveredMethod(Method method, Class<?> clazz,
+                                                             PropertyDescriptor pd, boolean isInputType,
                                                              boolean isQueryOrMutation) {
 
         String[] format = new String[0];
@@ -931,8 +929,38 @@ public class SchemaGenerator {
             description = getDescription(method.getAnnotation(Description.class));
         }
 
-        Parameter[] parameters = method.getParameters();
         // process the parameters for the method
+        processMethodParameters(method, discoveredMethod, annotatedName);
+
+        // process the return type for the method
+        ReturnType realReturnType = getReturnType(returnClazz, method.getGenericReturnType());
+        if (realReturnType.getReturnClass() != null && !ID.equals(returnClazzName)) {
+            discoveredMethod.setArrayReturnType(realReturnType.isArrayType());
+            discoveredMethod.setCollectionType(realReturnType.getCollectionType());
+            discoveredMethod.setMap(realReturnType.isMap());
+            discoveredMethod.setReturnType(realReturnType.getReturnClass());
+        } else {
+            discoveredMethod.setName(varName);
+            discoveredMethod.setReturnType(returnClazzName);
+            discoveredMethod.setMethod(method);
+        }
+
+        discoveredMethod.setArrayLevels(realReturnType.getArrayLevels());
+        discoveredMethod.setReturnTypeMandatory(isReturnTypeMandatory);
+        discoveredMethod.setDescription(description);
+
+        return discoveredMethod;
+    }
+
+    /**
+     * Process parameters for the given method.
+     * @param method            {@link Method} to process
+     * @param discoveredMethod  {@link DiscoveredMethod} to update
+     * @param annotatedName     annotated name or null
+     */
+    private static void processMethodParameters(Method method, DiscoveredMethod discoveredMethod, String annotatedName) {
+        // process the parameters for the method
+        Parameter[] parameters = method.getParameters();
         if (parameters != null && parameters.length > 0) {
             java.lang.reflect.Type[] genericParameterTypes = method.getGenericParameterTypes();
             int i = 0;
@@ -966,7 +994,7 @@ public class SchemaGenerator {
                 String[] argumentFormat = FormattingHelper.getFormattingAnnotation(parameter);
                 argument.setDescription(argumentDescription);
                 if (argumentFormat[0] != null) {
-                    argument.setFormat(new String[] { argumentFormat[1], argumentFormat[2] });
+                    argument.setFormat(new String[] {argumentFormat[1], argumentFormat[2] });
                 }
 
                 Source sourceAnnotation = parameter.getAnnotation(Source.class);
@@ -981,25 +1009,6 @@ public class SchemaGenerator {
                 discoveredMethod.addArgument(argument);
             }
         }
-
-        // process the return type for the method
-        ReturnType realReturnType = getReturnType(returnClazz, method.getGenericReturnType());
-        if (realReturnType.getReturnClass() != null && !ID.equals(returnClazzName)) {
-            discoveredMethod.setArrayReturnType(realReturnType.isArrayType());
-            discoveredMethod.setCollectionType(realReturnType.getCollectionType());
-            discoveredMethod.setMap(realReturnType.isMap());
-            discoveredMethod.setReturnType(realReturnType.getReturnClass());
-        } else {
-            discoveredMethod.setName(varName);
-            discoveredMethod.setReturnType(returnClazzName);
-            discoveredMethod.setMethod(method);
-        }
-
-        discoveredMethod.setArrayLevels(realReturnType.getArrayLevels());
-        discoveredMethod.setReturnTypeMandatory(isReturnTypeMandatory);
-        discoveredMethod.setDescription(description);
-
-        return discoveredMethod;
     }
 
     /**

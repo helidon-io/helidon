@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,13 +22,18 @@ import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
 
 import org.jboss.jandex.ClassInfo;
+import org.jboss.jandex.ClassType;
 import org.jboss.jandex.DotName;
 import org.jboss.jandex.Index;
 import org.jboss.jandex.IndexReader;
+import org.jboss.jandex.MethodInfo;
+import org.jboss.jandex.ParameterizedType;
+import org.jboss.jandex.Type;
 
 /**
  * Utilities for working with Jandex indexes.
@@ -117,12 +122,41 @@ public class JandexUtils {
     }
 
     /**
-     * Return a {@link Collection} of {@link Class}es which are implementors of a given class/interface
-     * and are not abstract.
+     * Return true if the given class, method and parameter has the specified annotation class name.
      *
-     * @param clazz  {@link Class} to check for implementors
+     * @param clazz           {@link Class} to check for annotation
+     * @param methodName      method name to check
+     * @param paramNumber     parameter number to check
+     * @param annotationClazz the annotation {@link Class} to check
+     * @return true if the given class, method and parameter has the specified annotation class name
+     */
+    public boolean hasAnnotation(String clazz, String methodName, int paramNumber, String annotationClazz) {
+        ClassInfo classByName = index.getClassByName(DotName.createSimple(clazz));
+        if (classByName != null) {
+            MethodInfo methodInfo = classByName.firstMethod(methodName);
+            if (methodInfo != null) {
+                Type type = methodInfo.parameters().get(paramNumber);
+                while (type instanceof ParameterizedType) {
+                    ParameterizedType pType = (ParameterizedType) type;
+                    List<Type> arguments = pType.arguments();
+                    int argumentSize = arguments.size();
+                    Type newType = arguments.size() > 0 ? arguments.get(argumentSize - 1) : null;
+                    if (newType instanceof ClassType) {
+                        ClassType classType = (ClassType) newType;
+                        return classType.hasAnnotation(DotName.createSimple(annotationClazz));
+                    }
+                    type = newType;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Return a {@link Collection} of {@link Class}es which are implementors of a given class/interface and are not abstract.
      *
-     * @return  a {@link Collection} of {@link Class}es
+     * @param clazz {@link Class} to check for implementors
+     * @return a {@link Collection} of {@link Class}es
      */
     public Collection<Class<?>> getKnownImplementors(String clazz) {
         return getKnownImplementors(clazz, false);

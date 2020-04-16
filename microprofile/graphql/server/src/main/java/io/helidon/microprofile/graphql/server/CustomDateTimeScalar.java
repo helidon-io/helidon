@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,6 @@ import static graphql.scalars.util.Kit.typeName;
 /**
  * Custom Time scalar. Copied initially from graphql.scalars.datetime.DateTimeScalar from extend scalars package.
  *
- * TODO: TO replace with new version.
  */
 public class CustomDateTimeScalar extends GraphQLScalarType {
 

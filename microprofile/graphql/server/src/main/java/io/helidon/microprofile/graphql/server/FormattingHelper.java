@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,7 +61,7 @@ public class FormattingHelper {
     /**
      * Indicates no formatting applied.
      */
-    private static final String[] NO_FORMATTING = new String[] { null, null, null };
+    private static final String[] NO_FORMATTING = new String[] {null, null, null };
 
     /**
      * No-args constructor.
@@ -79,7 +79,7 @@ public class FormattingHelper {
     protected static String[] getDefaultDateTimeFormat(String scalarName, String clazzName) {
         for (SchemaScalar scalar : SUPPORTED_SCALARS.values()) {
             if (scalarName.equals(scalar.getName()) && scalar.getActualClass().equals(clazzName)) {
-                return new String[] { scalar.getDefaultFormat(), DEFAULT_LOCALE };
+                return new String[] {scalar.getDefaultFormat(), DEFAULT_LOCALE };
             }
         }
         return NO_DEFAULT_FORMAT;
@@ -150,8 +150,8 @@ public class FormattingHelper {
         }
 
         return dateFormat.length == 2
-                ? new String[] { DATE, dateFormat[0], dateFormat[1] }
-                : new String[] { NUMBER, numberFormat[0], numberFormat[1] };
+                ? new String[] {DATE, dateFormat[0], dateFormat[1] }
+                : new String[] {NUMBER, numberFormat[0], numberFormat[1] };
     }
 
     /**
@@ -177,10 +177,10 @@ public class FormattingHelper {
                                                               org.eclipse.microprofile.graphql.NumberFormat numberFormat) {
         // check @NumberFormat first as this takes precedence
         if (numberFormat != null) {
-            return new String[] { numberFormat.value(), numberFormat.locale() };
+            return new String[] {numberFormat.value(), numberFormat.locale() };
         }
         if (jsonbNumberFormat != null) {
-            return new String[] { jsonbNumberFormat.value(), jsonbNumberFormat.locale() };
+            return new String[] {jsonbNumberFormat.value(), jsonbNumberFormat.locale() };
         }
         return new String[0];
     }
@@ -208,10 +208,10 @@ public class FormattingHelper {
                                                             DateFormat dateFormat) {
         // check @DateFormat first as this takes precedence
         if (dateFormat != null) {
-            return new String[] { dateFormat.value(), dateFormat.locale() };
+            return new String[] {dateFormat.value(), dateFormat.locale() };
         }
         if (jsonbDateFormat != null) {
-            return new String[] { jsonbDateFormat.value(), jsonbDateFormat.locale() };
+            return new String[] {jsonbDateFormat.value(), jsonbDateFormat.locale() };
         }
         return new String[0];
     }
