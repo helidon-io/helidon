@@ -18,7 +18,7 @@
  * GraphQL microprofile server module.
  */
 module helidon.microprofile.graphql.server {
-    requires cdi.api;
+    requires jakarta.enterprise.cdi.api;
 
     requires com.fasterxml.jackson.databind;
     requires io.helidon.microprofile.cdi;
