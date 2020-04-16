@@ -100,19 +100,43 @@ You then declare dependencies on Helidon (and other) components without specifyi
 
 == The `helidon-maven-plugin`
 
-Helidon provides a Maven plugin that provides the following goals:
+Helidon provides a Maven plugin that, among other things, provides the following goals:
 
 1. native-image: Build a <<{helidon-lc-flavor}/guides/36_graalnative.adoc,GraalVM native image>>.
 2. jlink-image:  Build a <<{helidon-lc-flavor}/guides/37_jlink_image.adoc,custom runtime Java image>>.
 
-For full documentation of the plugin please see
-
-https://github.com/oracle/helidon-build-tools/tree/master/helidon-maven-plugin[Helidon Maven Plugin README]
+For full documentation of the plugin please see the https://github.com/oracle/helidon-build-tools/tree/master/helidon-maven-plugin[Helidon Maven Plugin README].
 
 If you use the Helidon application parent POM you will have this plugin configured
-for you. If you need to configure the `helidon-maven-plugin` you can do so by passing
-system properties to Maven (for example `-Djlink.image.addClassDataSharingArchive=false`)
-or by overriding the configuration in your project's POM. Here are a couple of examples:
+for you. If you need to customize the `helidon-maven-plugin` you can do so in a few ways:
+
+1. Passing system properties to Maven on the command line.
+2. Setting system properties in your project's `pom.xml`
+3. Overriding the plugin configuration by using `pluginManagment`
+
+=== Pass Property on Command Line
+
+You can override many of the plugin attributes by passing a system property to the
+`mvn` command:
+
+```
+mvn -Djlink.image.addClassDataSharingArchive=false ...
+```
+
+=== Set Property in pom.xml
+
+Or you can set the properties in your project's pom.xml:
+
+```
+<properties>
+    <jlink.image.addClassDataSharingArchive>false</jlink.image.addClassDataSharingArchive>
+    <native.image.reportExceptionStackTraces>true</native.image.reportExceptionStackTraces>
+</properties>
+```
+
+=== Override Plugin Configuration using `pluginManagement`
+
+For full control you can override the plugin's configuration using `pluginManagement`:
 
 [source,xml]
 .Turn off generation of the CDS Archive when generating a custom Java runtime image
