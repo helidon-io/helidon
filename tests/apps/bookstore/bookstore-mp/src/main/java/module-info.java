@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,23 +14,21 @@
  * limitations under the License.
  */
 
-package io.helidon.tests.apps.bookstore.common;
-
-import java.util.Collection;
-
-import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 /**
- * Class BookGeneratorTest.
+ * Helidon MP Bookstore test application
  */
-public class BookGeneratorTest {
+module io.helidon.tests.apps.bookstore.mp {
+    requires java.logging;
+    requires java.json;
+    requires java.json.bind;
 
-    @Test
-    public void testGenerator() {
-        Collection<Book> bookStore = new BookGenerator().apply(10);
-        assertEquals(10, bookStore.size());
-        bookStore.forEach(book -> System.out.println(book));
-    }
+    requires io.helidon.microprofile.bundle.core;
+    requires io.helidon.microprofile.metrics;
+    requires io.helidon.microprofile.health;
+
+    requires io.helidon.tests.apps.bookstore.common;
+
+    opens io.helidon.tests.apps.bookstore.mp to weld.core.impl;
+
+    exports io.helidon.tests.apps.bookstore.mp;
 }

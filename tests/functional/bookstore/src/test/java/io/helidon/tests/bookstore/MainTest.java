@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package io.helidon.tests.apps.bookstore.se;
+package io.helidon.tests.bookstore;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -62,6 +63,9 @@ class MainTest {
     private static int port = localPlatform.getAvailablePorts().next();
     private static URL healthUrl;
 
+    private static final String MODULE_NAME_MP = "io.helidon.tests.apps.bookstore.mp";
+    private static final String MODULE_NAME_SE = "io.helidon.tests.apps.bookstore.se";
+
     @BeforeAll
     static void setup() throws Exception {
         System.out.println("Using port number" + port);
@@ -79,8 +83,29 @@ class MainTest {
         waitForApplicationDown();
     }
 
+    /**
+     * Start the application using the application jar and classpath
+     *
+     * @param appJarPath    Path to jar file with application
+     * @param javaArgs      Additional java arguments to pass
+     * @throws Exception
+     */
     void startTheApplication(String appJarPath, List<String> javaArgs) throws Exception {
-        Arguments args = toArguments(appJarPath, javaArgs);
+        Arguments args = toArguments(appJarPath, javaArgs, null);
+        application = localPlatform.launch("java", args);
+        waitForApplicationUp();
+    }
+
+    /**
+     * Start the application using the application jar and module path
+     *
+     * @param appJarPath    Path to jar file with application
+     * @param javaArgs      Additional java arguments to pass
+     * @param moduleName    Name of application's module that contains Main
+     * @throws Exception
+     */
+    void startTheApplicationModule(String appJarPath, List<String> javaArgs, String moduleName) throws Exception {
+        Arguments args = toArguments(appJarPath, javaArgs, moduleName);
         application = localPlatform.launch("java", args);
         waitForApplicationUp();
     }
@@ -96,7 +121,7 @@ class MainTest {
     }
 
     private void runExitOnStartedTest(String edition) throws Exception {
-        Arguments args = toArguments(editionToJarPath(edition), List.of("-Dexit.on.started=!"));
+        Arguments args = toArguments(editionToJarPath(edition), List.of("-Dexit.on.started=!"), null);
         CapturingApplicationConsole console = new CapturingApplicationConsole();
         application = localPlatform.launch("java", args, Console.of(console));
         Queue<String> stdOut = console.getCapturedOutputLines();
@@ -138,22 +163,32 @@ class MainTest {
 
     @Test
     void basicTestMetricsHealthSE() throws Exception {
-        runMetricsAndHealthTest("se", "jsonp");
+        runMetricsAndHealthTest("se", "jsonp", false);
     }
 
     @Test
     void basicTestMetricsHealthMP() throws Exception {
-        runMetricsAndHealthTest("mp", "");
+        runMetricsAndHealthTest("mp", "", false);
     }
 
     @Test
     void basicTestMetricsHealthJsonB() throws Exception {
-        runMetricsAndHealthTest("se", "jsonb");
+        runMetricsAndHealthTest("se", "jsonb", false);
     }
 
     @Test
     void basicTestMetricsHealthJackson() throws Exception {
-        runMetricsAndHealthTest("se", "jackson");
+        runMetricsAndHealthTest("se", "jackson", false);
+    }
+
+    @Test
+    void basicTestMetricsHealthSEModules() throws Exception {
+        runMetricsAndHealthTest("se", "jsonp", true);
+    }
+
+    @Test
+    void basicTestMetricsHealthMPModules() throws Exception {
+        runMetricsAndHealthTest("mp", "", true);
     }
 
     /**
@@ -215,16 +250,21 @@ class MainTest {
      *
      * @param edition "mp", "se"
      * @param jsonLibrary "jsonp", "jsonb" or "jackson"
+     * @param useModules true to use modulepath, false to use classpath
      * @throws Exception on test failure
      */
-    private void runMetricsAndHealthTest(String edition, String jsonLibrary) throws Exception {
+    private void runMetricsAndHealthTest(String edition, String jsonLibrary, boolean useModules) throws Exception {
 
         List<String> systemPropertyArgs = new LinkedList<>();
         if (jsonLibrary != null && !jsonLibrary.isEmpty()) {
             systemPropertyArgs.add("-Dapp.json-library=" + jsonLibrary);
         }
 
-        startTheApplication(editionToJarPath(edition), systemPropertyArgs);
+        if (useModules) {
+            startTheApplicationModule(editionToJarPath(edition), systemPropertyArgs, editionToModuleName(edition));
+        } else {
+            startTheApplication(editionToJarPath(edition), systemPropertyArgs);
+        }
 
         HttpURLConnection conn;
 
@@ -367,15 +407,25 @@ class MainTest {
         } while ((toBeUp && responseCode != 200) || (!toBeUp && responseCode != -1));
     }
 
-    private static Arguments toArguments(String appJarPath, List<String> javaArgs) {
+    private static Arguments toArguments(String appJarPath, List<String> javaArgs, String moduleName) {
         if (application != null) {
             Assertions.fail("Can't start the application, it is already running");
         }
 
         List<String> startArgs = new ArrayList<>(javaArgs);
         startArgs.add("-Dserver.port=" + port);
-        startArgs.add("-jar");
-        startArgs.add(appJarPath);
+
+        if (moduleName != null && ! moduleName.isEmpty() ) {
+            File jarFile = new File(appJarPath);
+            // --module-path target/bookstore-se.jar:target/libs -m io.helidon.tests.apps.bookstore.se/io.helidon.tests.apps.bookstore.se.Main
+            startArgs.add("--module-path");
+            startArgs.add(appJarPath + ":" + jarFile.getParent() + "/libs");
+            startArgs.add("-m");
+            startArgs.add(moduleName + "/" + moduleName + ".Main");
+        } else {
+            startArgs.add("-jar");
+            startArgs.add(appJarPath);
+        }
         return Arguments.of(startArgs);
     }
 
@@ -384,6 +434,16 @@ class MainTest {
             return appJarPathSE;
         } else if ("mp".equals(edition)) {
             return appJarPathMP;
+        } else {
+            throw new IllegalArgumentException("Invalid edition '" + edition + "'. Must be 'se' or 'mp'");
+        }
+    }
+
+    private static String editionToModuleName(String edition) {
+        if ("se".equals(edition)) {
+            return MODULE_NAME_SE;
+        } else if ("mp".equals(edition)) {
+            return MODULE_NAME_MP;
         } else {
             throw new IllegalArgumentException("Invalid edition '" + edition + "'. Must be 'se' or 'mp'");
         }

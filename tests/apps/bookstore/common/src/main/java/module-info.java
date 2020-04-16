@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,28 +14,14 @@
  * limitations under the License.
  */
 
-package io.helidon.tests.apps.bookstore.mp;
-
 /**
- * Class Author.
+ * Helidon Bookstore test app common code
  */
-public class Author {
-    private String first;
-    private String last;
+module io.helidon.tests.apps.bookstore.common {
 
-    public String getFirst() {
-        return first;
-    }
+    requires jakarta.enterprise.cdi.api;
 
-    public void setFirst(String first) {
-        this.first = first;
-    }
+    opens io.helidon.tests.apps.bookstore.common to weld.core.impl;
 
-    public String getLast() {
-        return last;
-    }
-
-    public void setLast(String last) {
-        this.last = last;
-    }
+    exports io.helidon.tests.apps.bookstore.common;
 }

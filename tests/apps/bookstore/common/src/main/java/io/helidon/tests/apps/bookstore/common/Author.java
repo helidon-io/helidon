@@ -16,21 +16,26 @@
 
 package io.helidon.tests.apps.bookstore.common;
 
-import java.util.Collection;
-
-import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 /**
- * Class BookGeneratorTest.
+ * Class Author.
  */
-public class BookGeneratorTest {
+public class Author {
+    private String first;
+    private String last;
 
-    @Test
-    public void testGenerator() {
-        Collection<Book> bookStore = new BookGenerator().apply(10);
-        assertEquals(10, bookStore.size());
-        bookStore.forEach(book -> System.out.println(book));
+    public String getFirst() {
+        return first;
+    }
+
+    public void setFirst(String first) {
+        this.first = first;
+    }
+
+    public String getLast() {
+        return last;
+    }
+
+    public void setLast(String last) {
+        this.last = last;
     }
 }
