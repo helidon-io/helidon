@@ -148,7 +148,7 @@ can skip the creation of the CDS archive by executing your build like this:
 mvn package -Pjlink-image -Djlink.image.addClassDataSharingArchive=false
 ----
 
-For more information see the
+For more information on available configuration options see the
 https://github.com/oracle/helidon-build-tools/tree/master/helidon-maven-plugin[`helidon-maven-plugin` documentation].
 
 === Multi-stage Docker build
