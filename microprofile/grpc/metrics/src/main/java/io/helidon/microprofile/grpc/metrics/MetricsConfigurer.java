@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,11 +32,9 @@ import io.helidon.microprofile.metrics.MetricUtil;
 
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.annotation.Counted;
+import org.eclipse.microprofile.metrics.annotation.Gauge;
 import org.eclipse.microprofile.metrics.annotation.Metered;
 import org.eclipse.microprofile.metrics.annotation.Timed;
-
-import static io.helidon.microprofile.metrics.MetricUtil.getMetricName;
-import static io.helidon.microprofile.metrics.MetricUtil.registerMetric;
 
 /**
  * A {@link AnnotatedServiceConfigurer} that adds a
@@ -105,18 +103,40 @@ public class MetricsConfigurer
             Method method = findAnnotatedMethod(annotatedMethod, annotation.annotationType());
             Class<?> annotatedClass = method.getDeclaringClass();
             String grpcMethodName = GrpcServiceBuilder.determineMethodName(annotatedMethod, rpcMethod);
-            String metricName = getMetricName(method,
-                                              annotatedClass,
-                                              MetricUtil.MatchingType.METHOD,
-                                              name,
-                                              absolute);
+            String metricName = MetricUtil.getMetricName(method,
+                                                         annotatedClass,
+                    MetricUtil.MatchingType.METHOD,
+                    name,
+                    absolute);
 
             LOGGER.log(Level.FINE, () -> String.format("Adding gRPC '%s' metric interceptor to service '%s' method '%s'",
                                                        annotation.annotationType().getSimpleName(),
                                                        builder.name(),
                                                        grpcMethodName));
 
-            registerMetric(method, annotatedClass, annotation, MetricUtil.MatchingType.METHOD);
+            if (annotation instanceof Metered) {
+                Metered metered = (Metered) annotation;
+                String displayName = metered.displayName().trim();
+                interceptor = interceptor.description(metered.description());
+                interceptor = interceptor.displayName(displayName.isEmpty() ? metricName : displayName);
+                interceptor = interceptor.reusable(metered.reusable());
+                interceptor = interceptor.units(metered.unit());
+            } else if (annotation instanceof Gauge) {
+                Gauge gauge = (Gauge) annotation;
+                String displayName = gauge.displayName().trim();
+                interceptor = interceptor.description(gauge.description());
+                interceptor = interceptor.displayName(displayName.isEmpty() ? metricName : displayName);
+                interceptor = interceptor.units(gauge.unit());
+            } else if (annotation instanceof Timed) {
+                Timed timed = (Timed) annotation;
+                String displayName = timed.displayName().trim();
+                interceptor = interceptor.description(timed.description());
+                interceptor = interceptor.displayName(displayName.isEmpty() ? metricName : displayName);
+                interceptor = interceptor.reusable(timed.reusable());
+                interceptor = interceptor.units(timed.unit());
+            }
+
+            MetricUtil.registerMetric(method, annotatedClass, annotation, MetricUtil.MatchingType.METHOD);
             builder.intercept(grpcMethodName, interceptor.nameFunction(new ConstantNamingFunction(metricName)));
         }
     }
