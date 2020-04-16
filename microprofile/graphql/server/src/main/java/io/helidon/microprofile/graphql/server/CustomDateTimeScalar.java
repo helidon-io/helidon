@@ -36,6 +36,8 @@ import static graphql.scalars.util.Kit.typeName;
 
 /**
  * Custom Time scalar. Copied initially from graphql.scalars.datetime.DateTimeScalar from extend scalars package.
+ *
+ * TODO: TO replace with new version.
  */
 public class CustomDateTimeScalar extends GraphQLScalarType {
 

@@ -106,12 +106,6 @@ public class ExecutionContext<C> {
             GraphQL.Builder builder = GraphQL.newGraphQL(this.graphQLSchema)
                     .subscriptionExecutionStrategy(new SubscriptionExecutionStrategy());
 
-            //            Instrumentation instrumentation = null; // getInstrumentation();
-            //
-            //            if (instrumentation != null) {
-            //                builder.instrumentation(instrumentation);
-            //            }
-
             graphQL = builder.build();
 
             LOGGER.info("Generated schema:\n" + schemaPrinter.print(graphQLSchema));

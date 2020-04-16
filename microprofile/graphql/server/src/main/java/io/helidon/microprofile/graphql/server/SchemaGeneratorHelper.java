@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.graphql.server;
 
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -117,7 +118,7 @@ public final class SchemaGeneratorHelper {
      */
     static final List<String> BOOLEAN_LIST = new ArrayList<>() {{
         add("boolean");
-        add(Boolean.class.getName());
+        add("java.lang.Boolean");
     }};
 
     /**
@@ -459,45 +460,17 @@ public final class SchemaGeneratorHelper {
     /**
      * Return the {@link DefaultValue} annotation value if it exists for a {@link Parameter} or null.
      *
-     * @param parameter {@link Parameter} to check
+     * @param annotatedElement {@link AnnotatedElement} to check
      * @return the {@link DefaultValue} annotation value if it exists or null
      */
-    protected static String getDefaultValueAnnotationValue(Parameter parameter) {
-        DefaultValue defaultValueAnnotation = parameter.getAnnotation(DefaultValue.class);
+    protected static String getDefaultValueAnnotationValue(AnnotatedElement annotatedElement) {
+        DefaultValue defaultValueAnnotation = annotatedElement.getAnnotation(DefaultValue.class);
         if (defaultValueAnnotation != null && !"".equals(defaultValueAnnotation.value())) {
             return defaultValueAnnotation.value();
         }
         return null;
     }
-
-    /**
-     * Return the {@link DefaultValue} annotation value if it exists for a {@link Field} or null.
-     *
-     * @param field {@link Field} to check
-     * @return the {@link DefaultValue} annotation value if it exists or null
-     */
-    protected static String getDefaultValueAnnotationValue(Field field) {
-        DefaultValue defaultValueAnnotation = field.getAnnotation(DefaultValue.class);
-        if (defaultValueAnnotation != null && !"".equals(defaultValueAnnotation.value())) {
-            return defaultValueAnnotation.value();
-        }
-        return null;
-    }
-
-    /**
-     * Return the {@link DefaultValue} annotation value if it exists for a {@link Method} or null.
-     *
-     * @param method {@link Method} to check
-     * @return the {@link DefaultValue} annotation value if it exists or null
-     */
-    protected static String getDefaultValueAnnotationValue(Method method) {
-        DefaultValue defaultValueAnnotation = method.getAnnotation(DefaultValue.class);
-        if (defaultValueAnnotation != null && !"".equals(defaultValueAnnotation.value())) {
-            return defaultValueAnnotation.value();
-        }
-        return null;
-    }
-
+    
     /**
      * Return the default description based upon the format and description.
      *
