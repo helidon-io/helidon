@@ -57,7 +57,7 @@ public class CrossOriginConfigTest {
         assertThat(c.allowHeaders(), arrayContaining("X-bar", "X-foo"));
         assertThat(c.exposeHeaders(), is(emptyArray()));
         assertThat(c.allowCredentials(), is(true));
-        assertThat(c.maxAge(), is(-1L));
+        assertThat(c.maxAgeSeconds(), is(-1L));
     }
 
     @Test
@@ -80,7 +80,7 @@ public class CrossOriginConfigTest {
         assertThat(b.allowHeaders(), arrayContaining(ALLOW_ALL));
         assertThat(b.exposeHeaders(), is(emptyArray()));
         assertThat(b.allowCredentials(), is(false));
-        assertThat(b.maxAge(), is(DEFAULT_AGE));
+        assertThat(b.maxAgeSeconds(), is(DEFAULT_AGE));
     }
 
     @Test
@@ -109,7 +109,7 @@ public class CrossOriginConfigTest {
         assertThat(b.allowMethods(), arrayContaining("*"));
         assertThat(b.allowHeaders(), arrayContaining("*"));
         assertThat(b.allowCredentials(), is(false));
-        assertThat(b.maxAge(), is(DEFAULT_AGE));
+        assertThat(b.maxAgeSeconds(), is(DEFAULT_AGE));
 
         b = m.get("/cors2");
         assertThat(b, notNullValue());
@@ -118,7 +118,7 @@ public class CrossOriginConfigTest {
         assertThat(b.allowMethods(), arrayContaining("DELETE", "PUT"));
         assertThat(b.allowHeaders(), arrayContaining("X-bar", "X-foo"));
         assertThat(b.allowCredentials(), is(true));
-        assertThat(b.maxAge(), is(-1L));
+        assertThat(b.maxAgeSeconds(), is(-1L));
 
         assertThat(m.get("/cors3"), nullValue());
     }

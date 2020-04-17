@@ -208,8 +208,8 @@ public abstract class CorsSupport implements Service, Handler {
         }
 
         @Override
-        public B maxAge(long maxAge) {
-            aggregator.maxAge(maxAge);
+        public B maxAgeSeconds(long maxAgeSeconds) {
+            aggregator.maxAgeSeconds(maxAgeSeconds);
             return me();
         }
 

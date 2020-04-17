@@ -119,7 +119,7 @@ class CrossOriginFilter implements ContainerRequestFilter, ContainerResponseFilt
             .exposeHeaders(crossOrigin.exposeHeaders())
             .allowMethods(crossOrigin.allowMethods())
             .allowCredentials(crossOrigin.allowCredentials())
-            .maxAge(crossOrigin.maxAge())
+            .maxAgeSeconds(crossOrigin.maxAge())
             .build();
     }
 }

@@ -62,7 +62,7 @@ class Loader {
                     .ifPresent(builder::allowCredentials);
             config.get("max-age")
                     .as(Long.class)
-                    .ifPresent(builder::maxAge);
+                    .ifPresent(builder::maxAgeSeconds);
             return builder;
         }
     }

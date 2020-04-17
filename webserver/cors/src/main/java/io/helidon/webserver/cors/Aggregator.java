@@ -170,8 +170,8 @@ class Aggregator implements CorsSetter<Aggregator> {
     }
 
     @Override
-    public Aggregator maxAge(long maxAge) {
-        pathlessCrossOriginConfigBuilder().maxAge(maxAge);
+    public Aggregator maxAgeSeconds(long maxAgeSeconds) {
+        pathlessCrossOriginConfigBuilder().maxAgeSeconds(maxAgeSeconds);
         return this;
     }
 

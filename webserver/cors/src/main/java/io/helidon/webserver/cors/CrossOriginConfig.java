@@ -101,7 +101,7 @@ public class CrossOriginConfig {
     private final String[] exposeHeaders;
     private final String[] allowMethods;
     private final boolean allowCredentials;
-    private final long maxAge;
+    private final long maxAgeSeconds;
 
     private CrossOriginConfig(Builder builder) {
         this.pathPrefix = builder.pathPrefix;
@@ -111,7 +111,7 @@ public class CrossOriginConfig {
         this.exposeHeaders = builder.exposeHeaders;
         this.allowMethods = builder.allowMethods;
         this.allowCredentials = builder.allowCredentials;
-        this.maxAge = builder.maxAge;
+        this.maxAgeSeconds = builder.maxAgeSeconds;
     }
 
     /**
@@ -146,7 +146,7 @@ public class CrossOriginConfig {
                 .allowMethods(original.allowMethods)
                 .allowOrigins(original.allowOrigins)
                 .exposeHeaders(original.exposeHeaders)
-                .maxAge(original.maxAge);
+                .maxAgeSeconds(original.maxAgeSeconds);
     }
 
     /**
@@ -210,8 +210,8 @@ public class CrossOriginConfig {
     /**
      * @return maximum age
      */
-    public long maxAge() {
-        return maxAge;
+    public long maxAgeSeconds() {
+        return maxAgeSeconds;
     }
 
     private static String[] copyOf(String[] strings) {
@@ -232,7 +232,7 @@ public class CrossOriginConfig {
         private String[] exposeHeaders;
         private String[] allowMethods = ALLOW_ALL;
         private boolean allowCredentials;
-        private long maxAge = DEFAULT_AGE;
+        private long maxAgeSeconds = DEFAULT_AGE;
 
         private Builder() {
         }
@@ -294,8 +294,8 @@ public class CrossOriginConfig {
         }
 
         @Override
-        public Builder maxAge(long maxAge) {
-            this.maxAge = maxAge;
+        public Builder maxAgeSeconds(long maxAgeSeconds) {
+            this.maxAgeSeconds = maxAgeSeconds;
             return this;
         }
 

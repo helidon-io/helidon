@@ -75,8 +75,8 @@ interface CorsSetter<T> {
     /**
      * Sets the maximum age.
      *
-     * @param maxAge the maximum age
+     * @param maxAgeSeconds the maximum age
      * @return updated setter
      */
-    T maxAge(long maxAge);
+    T maxAgeSeconds(long maxAgeSeconds);
 }

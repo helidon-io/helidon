@@ -539,9 +539,9 @@ class CorsSupportHelper {
         headers.add(ACCESS_CONTROL_ALLOW_METHODS, method);
         formatHeader(requestHeaders.toArray()).ifPresent(
                 h -> headers.add(ACCESS_CONTROL_ALLOW_HEADERS, h));
-        long maxAge = crossOrigin.maxAge();
-        if (maxAge > 0) {
-            headers.add(ACCESS_CONTROL_MAX_AGE, maxAge, "maxAge > 0");
+        long maxAgeSeconds = crossOrigin.maxAgeSeconds();
+        if (maxAgeSeconds > 0) {
+            headers.add(ACCESS_CONTROL_MAX_AGE, maxAgeSeconds, "maxAgeSeconds > 0");
         }
         headers.set(responseAdapter::header, "headers set on preflight request");
         return responseAdapter.ok();
