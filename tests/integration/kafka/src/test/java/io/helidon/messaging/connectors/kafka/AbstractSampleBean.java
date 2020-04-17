@@ -64,11 +64,11 @@ abstract class AbstractSampleBean {
         this.expectedRequests.getAndSet(expectedRequests);
     }
 
-    void await() {
+    boolean await() {
         try {
-            assertTrue(testChannelLatch.await(30, TimeUnit.SECONDS));
+            return testChannelLatch.await(30, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
-            fail(e);
+            return false;
         }
     }
 
@@ -150,14 +150,14 @@ abstract class AbstractSampleBean {
                             subscription.request(3);
                         }
                         @Override
-                        public void onNext(final Message<ConsumerRecord<Long, String>> msg) {
+                        public void onNext(Message<ConsumerRecord<Long, String>> msg) {
                             consumed().add(Integer.toString(Integer.parseInt(msg.getPayload().value())));
                             LOGGER.fine("Added " + msg.getPayload().value());
                             msg.ack();
                             countDown("onNext()");
                         }
                         @Override
-                        public void onError(final Throwable t) {
+                        public void onError(Throwable t) {
                             LOGGER.fine("Error " + t.getMessage() + ". Adding error in consumed() list");
                             consumed().add("error");
                             countDown("onError()");
@@ -183,14 +183,14 @@ abstract class AbstractSampleBean {
                             subscription.request(3);
                         }
                         @Override
-                        public void onNext(final Message<ConsumerRecord<Long, String>> msg) {
+                        public void onNext(Message<ConsumerRecord<Long, String>> msg) {
                             consumed().add(Integer.toString(Integer.parseInt(msg.getPayload().value())));
                             LOGGER.fine("Added " + msg.getPayload().value());
                             msg.ack();
                             countDown("onNext()");
                         }
                         @Override
-                        public void onError(final Throwable t) {
+                        public void onError(Throwable t) {
                             LOGGER.fine("Error " + t.getMessage() + ". Adding error in consumed() list");
                             consumed().add("error");
                             countDown("onError()");

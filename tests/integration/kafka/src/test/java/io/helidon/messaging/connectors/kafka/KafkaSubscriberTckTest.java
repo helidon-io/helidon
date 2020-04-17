@@ -31,7 +31,7 @@ import org.reactivestreams.tck.TestEnvironment;
 import org.testng.annotations.Test;
 
 @Test
-public class KafkaSubscriberTckTest extends SubscriberBlackboxVerification<Message<String>> {
+class KafkaSubscriberTckTest extends SubscriberBlackboxVerification<Message<String>> {
 
     protected KafkaSubscriberTckTest() {
         super(new TestEnvironment(50));

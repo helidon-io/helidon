@@ -347,10 +347,11 @@ class KafkaCdiExtensionTest {
         LOGGER.fine("Restarting");
         tearDown();
         setUp();
-        // Uncommitted messages will be delivered again
+        // Uncommitted messages will be delivered again, plus a new one
+        testData = Arrays.asList("new message");
         kafkaConsumingBean = cdiContainer.select(AbstractSampleBean.Channel8.class).get();
-        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_8, Collections.emptyList(), uncommited);
-        assertEquals(uncommited, kafkaConsumingBean.consumed().size());
+        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_8, Collections.emptyList(), uncommited + 1);
+        assertEquals(uncommited + 1, kafkaConsumingBean.consumed().size());
     }
 
     private void produceAndCheck(AbstractSampleBean kafkaConsumingBean, List<String> testData, String topic,
@@ -370,14 +371,15 @@ class KafkaCdiExtensionTest {
             LOGGER.fine("Producing " + testData.size() + " events");
             //Send all test messages(async send means order is not guaranteed) and in parallel
             testData.parallelStream().map(s -> new ProducerRecord<>(topic, s)).forEach(msg -> producer.send(msg));
-            // Wait till records are delivered
-            kafkaConsumingBean.await();
-            if (!expected.isEmpty()) {
-                Collections.sort(kafkaConsumingBean.consumed());
-                Collections.sort(expected);
-                assertEquals(expected, kafkaConsumingBean.consumed());
-            }
-
+        }
+        // Wait till records are delivered
+        boolean done = kafkaConsumingBean.await();
+        assertTrue(done, String.format("Timeout waiting for results.\nExpected: %s\nCurrent: %s",
+                expected.toString(), kafkaConsumingBean.consumed().toString()));
+        if (!expected.isEmpty()) {
+            Collections.sort(kafkaConsumingBean.consumed());
+            Collections.sort(expected);
+            assertEquals(expected, kafkaConsumingBean.consumed());
         }
     }
 

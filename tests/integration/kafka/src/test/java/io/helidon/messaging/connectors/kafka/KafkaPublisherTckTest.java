@@ -41,7 +41,7 @@ import org.reactivestreams.tck.TestEnvironment;
 import org.testng.annotations.Test;
 
 @Test
-public class KafkaPublisherTckTest extends PublisherVerification<KafkaMessage<String, Long>> {
+class KafkaPublisherTckTest extends PublisherVerification<KafkaMessage<String, Long>> {
 
     private static final String TEST_TOPIC_1 = "graph-done-1";
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(10);
