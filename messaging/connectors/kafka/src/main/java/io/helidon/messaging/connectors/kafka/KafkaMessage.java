@@ -20,7 +20,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Logger;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.eclipse.microprofile.reactive.messaging.Message;
@@ -33,7 +32,6 @@ import org.eclipse.microprofile.reactive.messaging.Message;
  */
 class KafkaMessage<K, V> implements Message<ConsumerRecord<K, V>> {
 
-    private static final Logger LOGGER = Logger.getLogger(KafkaMessage.class.getName());
     private final ConsumerRecord<K, V> consumerRecord;
     private final CompletableFuture<Void> kafkaCommit;
     private final long millisWaitingTimeout;

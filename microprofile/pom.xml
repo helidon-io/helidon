@@ -53,6 +53,5 @@
         <module>reactive-streams</module>
         <module>messaging</module>
         <module>cors</module>
-        <module>connectors</module>
     </modules>
 </project>

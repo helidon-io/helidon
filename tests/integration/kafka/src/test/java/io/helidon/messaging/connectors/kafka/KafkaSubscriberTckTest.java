@@ -20,8 +20,6 @@ package io.helidon.messaging.connectors.kafka;
 import java.util.Arrays;
 import java.util.UUID;
 
-import io.helidon.messaging.connectors.kafka.KafkaSubscriber;
-
 import org.apache.kafka.clients.producer.Producer;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.mockito.Mockito;
@@ -34,7 +32,7 @@ import org.testng.annotations.Test;
 class KafkaSubscriberTckTest extends SubscriberBlackboxVerification<Message<String>> {
 
     protected KafkaSubscriberTckTest() {
-        super(new TestEnvironment(50));
+        super(new TestEnvironment(1000));
     }
 
     @Override
@@ -45,8 +43,8 @@ class KafkaSubscriberTckTest extends SubscriberBlackboxVerification<Message<Stri
     @Override
     public Subscriber<Message<String>> createSubscriber() {
         Producer<Object, String> producer = Mockito.mock(Producer.class);
-        return KafkaSubscriber.<Object, String>builder(producer, Arrays.asList("topic"))
-                .backpressure(1).build();
+        return KafkaSubscriber.<Object, String>builder().producerSupplier(() -> producer)
+                .topics(Arrays.asList("topic")).backpressure(1).build();
     }
 
 }

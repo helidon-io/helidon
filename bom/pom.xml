@@ -681,13 +681,6 @@
                 <version>${helidon.version}</version>
             </dependency>
 
-            <!-- Reactive Messaging Kafka Connector -->
-            <dependency>
-                <groupId>io.helidon.microprofile.connectors.kafka</groupId>
-                <artifactId>helidon-microprofile-connectors-kafka</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-
             <!-- integrations -->
             <dependency>
                 <groupId>io.helidon.serviceconfiguration</groupId>

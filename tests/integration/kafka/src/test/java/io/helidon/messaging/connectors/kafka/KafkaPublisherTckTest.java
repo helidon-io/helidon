@@ -25,9 +25,6 @@ import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
-import io.helidon.messaging.connectors.kafka.KafkaMessage;
-import io.helidon.messaging.connectors.kafka.KafkaPublisher;
-
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -57,8 +54,9 @@ class KafkaPublisherTckTest extends PublisherVerification<KafkaMessage<String, L
         // This is buffered and it doesn't mean that it will publish them. The elements to publish depends on request
         Mockito.when(kafkaConsumer.poll(ArgumentMatchers.any(Duration.class))).thenReturn(createData(5));
         return ReactiveStreams.fromPublisher(
-                KafkaPublisher.<String, Long>builder(scheduler,
-                        kafkaConsumer, Arrays.asList(TEST_TOPIC_1)).pollTimeout(1L).periodExecutions(1L).build())
+                KafkaPublisher.<String, Long>builder().scheduler(scheduler)
+                .consumerSupplier(() -> kafkaConsumer).topics(Arrays.asList(TEST_TOPIC_1))
+                .pollTimeout(1L).periodExecutions(1L).autoCommit(true).build())
                 .limit(elements).buildRs();
     }
 
@@ -74,7 +72,8 @@ class KafkaPublisherTckTest extends PublisherVerification<KafkaMessage<String, L
     public Publisher<KafkaMessage<String, Long>> createFailedPublisher() {
         Consumer<String, Long> kafkaConsumer = Mockito.mock(Consumer.class);
         Mockito.doThrow(new RuntimeException("test error")).when(kafkaConsumer).poll(ArgumentMatchers.any(Duration.class));
-        return KafkaPublisher.<String, Long>builder(scheduler,
-                kafkaConsumer, Arrays.asList(TEST_TOPIC_1)).pollTimeout(1L).periodExecutions(1L).build();
+        return KafkaPublisher.<String, Long>builder().scheduler(scheduler)
+                .consumerSupplier(() -> kafkaConsumer).topics(Arrays.asList(TEST_TOPIC_1))
+                .pollTimeout(1L).periodExecutions(1L).autoCommit(true).build();
     }
 }

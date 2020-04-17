@@ -19,8 +19,8 @@ package io.helidon.messaging.connectors.kafka;
 import java.util.Objects;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.logging.Logger;
 
 import io.helidon.common.reactive.SequentialSubscriber;
@@ -40,13 +40,14 @@ import org.reactivestreams.Subscription;
 class EmittingPublisher<T> implements Publisher<T> {
 
     private static final Logger LOGGER = Logger.getLogger(EmittingPublisher.class.getName());
-    private Flow.Subscriber<? super T> subscriber;
-    private final AtomicReference<State> state = new AtomicReference<>(State.NOT_REQUESTED_YET);
-    private final AtomicLong requested = new AtomicLong();
-    private final AtomicBoolean terminated = new AtomicBoolean();
-    private final Callback<Long> requestsCallback;
 
-    EmittingPublisher(Callback<Long> requestsCallback) {
+    private final AtomicReference<State> state = new AtomicReference<>(State.NOT_REQUESTED_YET);
+    private final AtomicBoolean terminated = new AtomicBoolean();
+    private final Consumer<Long> requestsCallback;
+
+    private Flow.Subscriber<? super T> subscriber;
+
+    EmittingPublisher(Consumer<Long> requestsCallback) {
         this.requestsCallback = requestsCallback;
     }
 
@@ -55,19 +56,18 @@ class EmittingPublisher<T> implements Publisher<T> {
         Objects.requireNonNull(subscriber, "subscriber is null");
         subscriber.onSubscribe(new Subscription() {
             @Override
-            public void request(final long n) {
+            public void request(long n) {
                 if (n < 1) {
                     fail(new IllegalArgumentException("Rule §3.9 violated: non-positive request amount is forbidden"));
                 }
                 LOGGER.fine(() -> String.format("Request %s events", n));
-                requested.updateAndGet(r -> Long.MAX_VALUE - r > n ? n + r : Long.MAX_VALUE);
                 state.compareAndSet(State.NOT_REQUESTED_YET, State.READY_TO_EMIT);
-                requestsCallback.nofity(n);
+                requestsCallback.accept(n);
             }
 
             @Override
             public void cancel() {
-                LOGGER.fine("Subscription cancelled");
+                LOGGER.fine(() -> "Subscription cancelled");
                 state.compareAndSet(State.NOT_REQUESTED_YET, State.CANCELLED);
                 state.compareAndSet(State.READY_TO_EMIT, State.CANCELLED);
                 EmittingPublisher.this.subscriber = null;
@@ -147,9 +147,6 @@ class EmittingPublisher<T> implements Publisher<T> {
         READY_TO_EMIT {
             @Override
             <T> boolean emit(EmittingPublisher<T> publisher, T item) {
-                if (publisher.requested.getAndUpdate(r -> r > 0 ? r - 1 : 0) < 1) {
-                    return false;
-                }
                 try {
                     publisher.subscriber.onNext(item);
                     return true;

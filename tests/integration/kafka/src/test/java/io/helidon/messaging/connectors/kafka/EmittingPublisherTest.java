@@ -45,7 +45,7 @@ public class EmittingPublisherTest {
     void happyPathWithLongMaxReq() {
         List<String> result = new ArrayList<>();
 
-        EmittingPublisher<String> emitter = new EmittingPublisher<>(n -> LOGGER.fine(Long.toString(n)));
+        EmittingPublisher<String> emitter = new EmittingPublisher<>(n -> LOGGER.fine(() -> Long.toString(n)));
 
         ReactiveStreams
                 .fromPublisher(emitter)
@@ -58,54 +58,15 @@ public class EmittingPublisherTest {
     }
 
     @Test
-    void notEnoughReq() {
-        List<String> result = new ArrayList<>();
-
-        List<String> forbiddenSigs = new ArrayList<>();
-
-        EmittingPublisher<String> emitter = new EmittingPublisher<>(n -> LOGGER.fine(Long.toString(n)));
-
-        ReactiveStreams
-                .fromPublisher(emitter)
-                .buildRs(ENGINE).subscribe(new Subscriber<>() {
-            @Override
-            public void onSubscribe(final Subscription s) {
-                s.request(TEST_DATA.size());
-            }
-
-            @Override
-            public void onNext(final String s) {
-                result.add(s);
-            }
-
-            @Override
-            public void onError(final Throwable t) {
-                forbiddenSigs.add("onError");
-            }
-
-            @Override
-            public void onComplete() {
-                forbiddenSigs.add("onComplete");
-            }
-        });
-
-        TEST_DATA.forEach(emitter::emit);
-
-        assertFalse(emitter.emit("should be false"));
-        assertEquals(List.of(), forbiddenSigs);
-        assertEquals(TEST_DATA, result);
-    }
-
-    @Test
     void notReady() {
-        assertFalse(new EmittingPublisher<>(n -> LOGGER.fine(Long.toString(n))).emit(""));
+        assertFalse(new EmittingPublisher<>(n -> LOGGER.fine(() -> Long.toString(n))).emit(""));
     }
 
     @Test
     void emitOnCancelled() {
         List<String> forbiddenSigs = new ArrayList<>();
 
-        EmittingPublisher<String> emitter = new EmittingPublisher<>(n -> LOGGER.fine(Long.toString(n)));
+        EmittingPublisher<String> emitter = new EmittingPublisher<>(n -> LOGGER.fine(() -> Long.toString(n)));
 
         ReactiveStreams
                 .fromPublisher(emitter)
@@ -140,7 +101,7 @@ public class EmittingPublisherTest {
     void emitOnCompleted() {
         List<String> forbiddenSigs = new ArrayList<>();
         AtomicBoolean onCompleteCalled = new AtomicBoolean();
-        EmittingPublisher<String> emitter = new EmittingPublisher<>(n -> LOGGER.fine(Long.toString(n)));
+        EmittingPublisher<String> emitter = new EmittingPublisher<>(n -> LOGGER.fine(() -> Long.toString(n)));
         emitter.subscribe(new Subscriber<>() {
             @Override
             public void onSubscribe(final Subscription s) {

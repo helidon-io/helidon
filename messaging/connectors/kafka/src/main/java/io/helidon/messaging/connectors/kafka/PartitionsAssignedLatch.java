@@ -36,13 +36,13 @@ class PartitionsAssignedLatch extends CountDownLatch implements ConsumerRebalanc
 
     @Override
     public void onPartitionsRevoked(Collection<TopicPartition> partitions) {
-        LOGGER.fine("Partitions revoked: " + partitions);
+        LOGGER.fine(() -> "Partitions revoked: " + partitions);
         // Do nothing
     }
 
     @Override
     public void onPartitionsAssigned(Collection<TopicPartition> partitions) {
-        LOGGER.fine("Partitions assigned: " + partitions);
+        LOGGER.fine(() -> "Partitions assigned: " + partitions);
         this.countDown();
     }
 }

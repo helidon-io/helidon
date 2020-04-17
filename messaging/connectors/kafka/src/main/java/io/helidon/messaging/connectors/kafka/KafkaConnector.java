@@ -16,10 +16,8 @@
 
 package io.helidon.messaging.connectors.kafka;
 
-import java.io.Closeable;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.logging.Level;
@@ -33,8 +31,6 @@ import javax.inject.Inject;
 import io.helidon.common.configurable.ScheduledThreadPoolSupplier;
 import io.helidon.config.Config;
 
-import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.clients.producer.KafkaProducer;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.messaging.spi.Connector;
 import org.eclipse.microprofile.reactive.messaging.spi.IncomingConnectorFactory;
@@ -48,15 +44,16 @@ import org.eclipse.microprofile.reactive.streams.operators.SubscriberBuilder;
  */
 @ApplicationScoped
 @Connector(KafkaConnector.CONNECTOR_NAME)
-public class KafkaConnector implements IncomingConnectorFactory, OutgoingConnectorFactory, ResourceConnector {
+public class KafkaConnector implements IncomingConnectorFactory, OutgoingConnectorFactory {
 
+    private static final Logger LOGGER = Logger.getLogger(KafkaConnector.class.getName());
     /**
      * Microprofile messaging Kafka connector name.
      */
     static final String CONNECTOR_NAME = "helidon-kafka";
-    private static final Logger LOGGER = Logger.getLogger(KafkaConnector.class.getName());
+
     private final ScheduledExecutorService scheduler;
-    private final Queue<Closeable> resourcesToClose = new LinkedList<>();
+    private final Queue<KafkaPublisher<?, ?>> resources = new LinkedList<>();
 
     /**
      * Constructor to instance KafkaConnectorFactory.
@@ -79,36 +76,27 @@ public class KafkaConnector implements IncomingConnectorFactory, OutgoingConnect
      * @param event termination event
      */
     void terminate(@Observes @BeforeDestroyed(ApplicationScoped.class) Object event) {
-        close();
+        stop();
     }
 
     /**
      * Gets the open resources for testing verification purposes.
      * @return the opened resources
      */
-    Queue<Closeable> resources(){
-        return resourcesToClose;
+    Queue<KafkaPublisher<?, ?>> resources(){
+        return resources;
     }
 
     @Override
     public PublisherBuilder<? extends Message<?>> getPublisherBuilder(org.eclipse.microprofile.config.Config config) {
-        Config helidonConfig = (Config) config;
-        Map<String, Object> kafkaConfig  = HelidonToKafkaConfigParser.toMap(helidonConfig);
-        List<String> topics = HelidonToKafkaConfigParser.topicNameList(kafkaConfig);
-        KafkaPublisher<Object, Object> publisher = KafkaPublisher.builder(scheduler, new KafkaConsumer<>(kafkaConfig), topics)
-                .config(helidonConfig).build();
-        resourcesToClose.add(publisher);
+        KafkaPublisher<Object, Object> publisher = KafkaPublisher.builder().config((Config) config).scheduler(scheduler).build();
+        resources.add(publisher);
         return ReactiveStreams.fromPublisher(publisher);
     }
 
     @Override
     public SubscriberBuilder<? extends Message<?>, Void> getSubscriberBuilder(org.eclipse.microprofile.config.Config config) {
-        Config helidonConfig = (Config) config;
-        Map<String, Object> kafkaConfig  = HelidonToKafkaConfigParser.toMap(helidonConfig);
-        List<String> topics = HelidonToKafkaConfigParser.topicNameList(kafkaConfig);
-        KafkaSubscriber<Object, Object> subscriber = KafkaSubscriber.builder(new KafkaProducer<>(kafkaConfig), topics)
-                .config(helidonConfig).build();
-        return ReactiveStreams.fromSubscriber(subscriber);
+        return ReactiveStreams.fromSubscriber(KafkaSubscriber.create((Config) config));
     }
 
     /**
@@ -120,16 +108,18 @@ public class KafkaConnector implements IncomingConnectorFactory, OutgoingConnect
         return new KafkaConnector(config);
     }
 
-    @Override
-    public void close() {
-        LOGGER.fine("Terminating KafkaConnector...");
+    /**
+     * Stops the KafkaConnector and all the jobs and resources related to it.
+     */
+    public void stop() {
+        LOGGER.fine(() -> "Terminating KafkaConnector...");
         // Stops the scheduler first to make sure no new task will be triggered meanwhile consumers are closing
         scheduler.shutdown();
         List<Exception> failed = new LinkedList<>();
-        Closeable closeable;
-        while ((closeable = resourcesToClose.poll()) != null) {
+        KafkaPublisher<?, ?> resource;
+        while ((resource = resources.poll()) != null) {
             try {
-                closeable.close();
+                resource.stop();
             } catch (Exception e) {
                 // Continue closing
                 failed.add(e);

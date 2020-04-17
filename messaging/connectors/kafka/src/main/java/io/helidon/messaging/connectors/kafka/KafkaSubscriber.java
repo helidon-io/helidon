@@ -21,11 +21,13 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.config.Config;
 
+import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.eclipse.microprofile.reactive.messaging.Message;
@@ -33,31 +35,40 @@ import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 /**
  * Reactive streams subscriber implementation.
- *
- * @param <T> kafka record value type
+ * @param <K> kafka record key type
+ * @param <V> kafka record value type
  */
-class KafkaSubscriber<K, V> implements Subscriber<Message<V>> {
+public class KafkaSubscriber<K, V> implements Subscriber<Message<V>> {
 
     private static final Logger LOGGER = Logger.getLogger(KafkaSubscriber.class.getName());
     private static final String BACKPRESSURE_SIZE_KEY = "backpressure.size";
+
     private final long backpressure;
-    private final Producer<K, V> producer;
+    private final Supplier<Producer<K, V>> producerSupplier;
     private final List<String> topics;
     private final AtomicLong backpressureCounter = new AtomicLong();
-    private Subscription subscription;
 
-    private KafkaSubscriber(Producer<K, V> producer, List<String> topics, long backpressure){
+    private Subscription subscription;
+    private Producer<K, V> kafkaProducer;
+
+    private KafkaSubscriber(Supplier<Producer<K, V>> producerSupplier, List<String> topics, long backpressure){
         this.backpressure = backpressure;
-        this.producer = producer;
+        this.producerSupplier = producerSupplier;
         this.topics = topics;
     }
 
     @Override
     public void onSubscribe(Subscription subscription) {
-        if (this.subscription == null) {
-            this.subscription = subscription;
-            this.subscription.request(backpressure);
-        } else {
+        try {
+            if (this.subscription == null) {
+                this.kafkaProducer = producerSupplier.get();
+                this.subscription = subscription;
+                this.subscription.request(backpressure);
+            } else {
+                subscription.cancel();
+            }
+        } catch (RuntimeException e) {
+            LOGGER.log(Level.SEVERE, "Cannot start the Kafka producer", e);
             subscription.cancel();
         }
     }
@@ -70,7 +81,7 @@ class KafkaSubscriber<K, V> implements Subscriber<Message<V>> {
             CompletableFuture<Void> completableFuture = new CompletableFuture<>();
             futureList.add(completableFuture);
             ProducerRecord<K, V> record = new ProducerRecord<>(topic, message.getPayload());
-            producer.send(record, (metadata, exception) -> {
+            kafkaProducer.send(record, (metadata, exception) -> {
                 if (exception != null) {
                     subscription.cancel();
                     completableFuture.completeExceptionally(exception);
@@ -96,48 +107,114 @@ class KafkaSubscriber<K, V> implements Subscriber<Message<V>> {
     public void onError(Throwable t) {
         Objects.requireNonNull(t);
         LOGGER.log(Level.SEVERE, "The Kafka subscription has failed", t);
-        producer.close();
+        kafkaProducer.close();
     }
 
     @Override
     public void onComplete() {
-        LOGGER.fine("Subscriber has finished");
-        producer.close();
+        LOGGER.fine(() -> "Subscriber has finished");
+        kafkaProducer.close();
     }
 
-    static <K, V> KafkaSubscriberBuilder<K, V> builder(Producer<K, V> producer, List<String> topics) {
-        return new KafkaSubscriberBuilder<>(producer, topics);
+    /**
+     * A builder for KafkaSubscriber.
+     *
+     * @param <K> Key type
+     * @param <V> Value type
+     * @return builder to create a new instance
+     */
+    public static <K, V> Builder<K, V> builder() {
+        return new Builder<>();
+    }
+
+    /**
+     * Load this builder from a configuration.
+     *
+     * @param <K> Key type
+     * @param <V> Value type
+     * @param config configuration to load from
+     * @return updated builder instance
+     */
+    public static <K, V> KafkaSubscriber<K, V> create(Config config) {
+        return (KafkaSubscriber<K, V>) builder().config(config).build();
     }
 
     /**
      * Fluent API builder for {@link KafkaSubscriber}.
+     * @param <K> Key type
+     * @param <V> Value type
      */
-    static final class KafkaSubscriberBuilder<K, V> implements io.helidon.common.Builder<KafkaSubscriber<K, V>> {
+    public static final class Builder<K, V> implements io.helidon.common.Builder<KafkaSubscriber<K, V>> {
 
-        private final Producer<K, V> producer;
-        private final List<String> topics;
+        private Supplier<Producer<K, V>> producerSupplier;
+        private List<String> topics;
         private long backpressure = 5L;
 
-        private KafkaSubscriberBuilder(Producer<K, V> producer, List<String> topics) {
-            this.producer = producer;
-            this.topics = topics;
+        private Builder() {
         }
 
         @Override
         public KafkaSubscriber<K, V> build() {
-            if (topics.isEmpty()) {
+            if (Objects.isNull(topics) || topics.isEmpty()) {
                 throw new IllegalArgumentException("The topic is a required value");
             }
-            return new KafkaSubscriber<>(producer, topics, backpressure);
+            if (Objects.isNull(producerSupplier)) {
+                throw new IllegalArgumentException("The producerSupplier is a required value");
+            }
+            return new KafkaSubscriber<>(producerSupplier, topics, backpressure);
         }
 
-        KafkaSubscriberBuilder<K, V> config(Config config) {
+        /**
+         * Load this builder from a configuration.
+         *
+         * @param config configuration to load from
+         * @return updated builder instance
+         */
+        public Builder<K, V> config(Config config) {
+            KafkaConfig kafkaConfig = KafkaConfig.create(config);
+            producerSupplier(() -> new KafkaProducer<>(kafkaConfig.asMap()));
+            topics(kafkaConfig.topics());
             config.get(BACKPRESSURE_SIZE_KEY).asLong().ifPresent(this::backpressure);
             return this;
         }
 
-        KafkaSubscriberBuilder<K, V> backpressure(long backpressure) {
+        /**
+         * Defines how to instantiate the KafkaSubscriber. It will be invoked
+         * in {@link KafkaSubscriber#onSubscribe(Subscription)}
+         *
+         * This is a mandatory parameter.
+         *
+         * @param producerSupplier
+         * @return updated builder instance
+         */
+        public Builder<K, V> producerSupplier(Supplier<Producer<K, V>> producerSupplier) {
+            this.producerSupplier = producerSupplier;
+            return this;
+        }
+
+        /**
+         * Specifies the number of messages that are requested after processing them.
+         *
+         * The default value is 5.
+         *
+         * @param backpressure
+         * @return updated builder instance
+         */
+        public Builder<K, V> backpressure(long backpressure) {
             this.backpressure = backpressure;
+            return this;
+        }
+
+        /**
+         * The list of topics the messages should be sent to.
+         *
+         * This is a mandatory parameter.
+         *
+         * @param topics
+         * @return updated builder instance
+         */
+        public Builder<K, V> topics(List<String> topics) {
+            this.topics = topics;
             return this;
         }
     }
