@@ -40,7 +40,7 @@ import static io.helidon.webserver.cors.Aggregator.PATHLESS_KEY;
  *     </ul>
  *     and then invoke methods on the builder as needed. Finally invoke the builder's {@code build} method to create the
  *     instance.
- *     <li>Invoke the static {@link #build(Config)} method, passing a config node containing the cross-origin information to be
+ *     <li>Invoke the static {@link #create(Config)} method, passing a config node containing the cross-origin information to be
  *     converted. This is a convenience method equivalent to creating a builder using the config node and then invoking {@code
  *     build()}.
  *     </li>
@@ -123,12 +123,16 @@ public class CrossOriginConfig {
 
     /**
      * Creates a new {@code CrossOriginConfig.Builder} using the provided config node.
+     * <p>
+     *     Although this method is equivalent to {@code builder().config(config)} it conveniently combines those two steps for
+     *     use as a method reference.
+     * </p>
      *
      * @param config node containing cross-origin information
      * @return new {@code CrossOriginConfig.Builder} instance based on the configuration
      */
     public static Builder builder(Config config) {
-        return Loader.Basic.builder(config);
+        return Loader.Basic.applyConfig(builder(), config);
     }
 
     /**
@@ -154,7 +158,7 @@ public class CrossOriginConfig {
      * @param corsConfig node containing CORS information
      * @return new {@code CrossOriginConfig} based on the configuration
      */
-    public static CrossOriginConfig build(Config corsConfig) {
+    public static CrossOriginConfig create(Config corsConfig) {
         return builder(corsConfig).build();
     }
 
@@ -300,6 +304,17 @@ public class CrossOriginConfig {
         @Override
         public Builder maxAgeSeconds(long maxAgeSeconds) {
             this.maxAgeSeconds = maxAgeSeconds;
+            return this;
+        }
+
+        /**
+         * Augment or override existing settings using the provided {@code Config} node.
+         *
+         * @param corsConfig config node containing CORS information
+         * @return updated builder
+         */
+        public Builder config(Config corsConfig) {
+            Loader.Basic.applyConfig(this, corsConfig);
             return this;
         }
 

@@ -18,7 +18,7 @@
 /**
  * <h1>Helidon SE CORS Support</h1>
  * <p>
- * Use {@link io.helidon.webserver.cors.CorsSupportSe} and its {@link io.helidon.webserver.cors.CorsSupportSe.Builder} to add CORS
+ * Use {@link io.helidon.webserver.cors.CorsSupport} and its {@link io.helidon.webserver.cors.CorsSupport.Builder} to add CORS
  * handling to resources in your application.
  * <p>
  * Because Helidon SE does not use annotation processing to identify endpoints, you need to provide the CORS information for
@@ -63,10 +63,10 @@
  *         Config myAppConfig = Config.builder().sources(ConfigSources.classpath("myApp.yaml")).build();
  *         Routing.Builder builder = Routing.builder()
  *                 .any("/greet",
- *                      CorsSupportSe.from(myAppConfig.get("narrow")),
+ *                      CorsSupport.create(myAppConfig.get("narrow")),
  *                      (req, resp) -> resp.status(Http.Status.OK_200).send())
  *                 .get("/greet",
- *                      CorsSupportSe.from(myAppConfig.get("wide")),
+ *                      CorsSupport.create(myAppConfig.get("wide")),
  *                      (req, resp) -> resp.status(Http.Status.OK_200).send("Hello, World!"));
  *
  *     }</pre>
@@ -90,12 +90,12 @@
  *
  *         Routing.Builder builder = Routing.builder()
  *                 .register("/myapp",
- *                           CorsSupportSe.builder()
+ *                           CorsSupport.builder()
  *                                 .addCrossOrigin("/cors3", corsForCORS3) // links the CORS info with a path within the app
  *                                 .build(),
  *                           new MyApp());
  * </pre>
- * Notice that you pass <em>two</em> services to the {@code register} method: the {@code CorsSupportSe} instance and your app
+ * Notice that you pass <em>two</em> services to the {@code register} method: the {@code CorsSupport} instance and your app
  * instance. Helidon will process requests to the path you specify with those services in that order. Also, note that you have
  * to make sure you use the same path in this API call and in your {@code MyApp} service if you adjust the routing there.
  * <p>
@@ -108,11 +108,11 @@
  * {@code OPTIONS} requests.
  * </p>
  * <p>
- * Each {@code CorsSupportSe} instance can be enabled or disabled, either through configuration or using the API.
- * By default, when an application creates a new {@code CorsSupportSe.Builder} instance that builder's {@code build()} method will
- * create an enabled {@code CorsSupportSe} object. Any subsequent explicit setting on the builder, either expressly set by an
- * {@code enabled} entry in configuration passed to {@code CorsSupportSe.Builder.config} or set by invoking
- * {@code CorsSupportSe.Builder.enabled} follows the familiar "latest-wins" approach.
+ * Each {@code CorsSupport} instance can be enabled or disabled, either through configuration or using the API.
+ * By default, when an application creates a new {@code CorsSupport.Builder} instance that builder's {@code build()} method will
+ * create an enabled {@code CorsSupport} object. Any subsequent explicit setting on the builder, either expressly set by an
+ * {@code enabled} entry in configuration passed to {@code CorsSupport.Builder.config} or set by invoking
+ * {@code CorsSupport.Builder.enabled} follows the familiar "latest-wins" approach.
  * </p>
  */
 package io.helidon.webserver.cors;

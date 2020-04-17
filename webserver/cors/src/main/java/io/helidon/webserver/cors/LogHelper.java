@@ -25,7 +25,7 @@ import java.util.function.BiConsumer;
 import java.util.logging.Level;
 
 import io.helidon.common.http.Http;
-import io.helidon.webserver.cors.CorsSupport.RequestAdapter;
+import io.helidon.webserver.cors.CorsSupportBase.RequestAdapter;
 import io.helidon.webserver.cors.CorsSupportHelper.RequestType;
 
 import static io.helidon.common.http.Http.Header.HOST;

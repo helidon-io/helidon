@@ -17,7 +17,7 @@
 package io.helidon.webserver.cors;
 
 /**
- * Defines common behavior between {@code CrossOriginConfig} and {@link CorsSupport.Builder} for assigning CORS-related
+ * Defines common behavior between {@code CrossOriginConfig} and {@link CorsSupportBase.Builder} for assigning CORS-related
  * attributes.
  *
  * @param <T> the type of the implementing class so the fluid methods can return the correct type

@@ -81,12 +81,16 @@ public class MappedCrossOriginConfig implements Iterable<Map.Entry<String, Cross
 
     /**
      * Creates a new {@code Mapped.Builder} instance using the provided configuration.
+     * <p>
+     *     Although this method is equivalent to {@code builder().config(config)} it conveniently combines those two steps for
+     *     use as a method reference.
+     * </p>
      *
      * @param config node containing {@code Mapped} cross-origin information
      * @return new {@code Mapped.Builder} based on the config
      */
     public static Builder builder(Config config) {
-        return Loader.Mapped.builder(config);
+        return builder().config(config);
     }
 
     /**
@@ -95,7 +99,7 @@ public class MappedCrossOriginConfig implements Iterable<Map.Entry<String, Cross
      * @param config node containing {@code Mapped} cross-origin information
      * @return new {@code Mapped} instance based on the config
      */
-    public static MappedCrossOriginConfig from(Config config) {
+    public static MappedCrossOriginConfig create(Config config) {
         return builder(config).build();
     }
 
@@ -182,6 +186,16 @@ public class MappedCrossOriginConfig implements Iterable<Map.Entry<String, Cross
         public Builder put(String path, CrossOriginConfig.Builder builder) {
             builders.put(normalize(path), new Buildable(builder));
             return this;
+        }
+
+        /**
+         * Applies data in the provided config node.
+         *
+         * @param corsConfig {@code Config} node containing CORS information
+         * @return updated builder
+         */
+        public Builder config(Config corsConfig) {
+            return Loader.Mapped.applyConfig(corsConfig);
         }
     }
 }

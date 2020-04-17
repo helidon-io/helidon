@@ -32,8 +32,8 @@ import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
-import io.helidon.webserver.cors.CorsSupport.RequestAdapter;
-import io.helidon.webserver.cors.CorsSupport.ResponseAdapter;
+import io.helidon.webserver.cors.CorsSupportBase.RequestAdapter;
+import io.helidon.webserver.cors.CorsSupportBase.ResponseAdapter;
 import io.helidon.webserver.cors.LogHelper.Headers;
 
 import static io.helidon.common.http.Http.Header.HOST;

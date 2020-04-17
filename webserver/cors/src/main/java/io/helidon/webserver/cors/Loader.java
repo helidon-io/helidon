@@ -30,11 +30,7 @@ class Loader {
 
     static class Basic {
 
-        static CrossOriginConfig.Builder builder(Config config) {
-            return builder(CrossOriginConfig.builder(), config);
-        }
-
-        static CrossOriginConfig.Builder builder(CrossOriginConfig.Builder builder, Config config) {
+        static CrossOriginConfig.Builder applyConfig(CrossOriginConfig.Builder builder, Config config) {
             config.get("enabled")
                     .asBoolean()
                     .ifPresent(builder::enabled);
@@ -69,11 +65,11 @@ class Loader {
 
     static class Mapped {
 
-        static MappedCrossOriginConfig.Builder builder(Config config) {
-            return builder(MappedCrossOriginConfig.builder(), config);
+        static MappedCrossOriginConfig.Builder applyConfig(Config config) {
+            return applyConfig(MappedCrossOriginConfig.builder(), config);
         }
 
-        static MappedCrossOriginConfig.Builder builder(MappedCrossOriginConfig.Builder builder, Config config) {
+        static MappedCrossOriginConfig.Builder applyConfig(MappedCrossOriginConfig.Builder builder, Config config) {
             config.get("enabled").asBoolean().ifPresent(builder::enabled);
             Config pathsNode = config.get(CORS_PATHS_CONFIG_KEY);
 
