@@ -23,7 +23,7 @@ import javax.ws.rs.core.FeatureContext;
 import org.glassfish.jersey.internal.spi.AutoDiscoverable;
 
 /**
- * Class CrossOriginAutoDiscoverable.
+ * <em>Not for use by developers.</em> For Jersey auto-discovery support.
  */
 @ConstrainedTo(RuntimeType.SERVER)
 public class CrossOriginAutoDiscoverable implements AutoDiscoverable {
