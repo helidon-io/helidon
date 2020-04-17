@@ -16,10 +16,108 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Helidon WebClient
-:toc:
-:toc-placement: preamble
-:description: Helidon WebClient
-:keywords: helidon, se, rest, httpclient, webclient
 
-== This page is Under Construction and will be available soon
+
+= WebClient Introduction
+:pagename: WebClient-Introduction
+:description: Helidon WebClient
+:keywords: helidon, se, rest, httpclient, webclient, reactive
+
+// Have not included the configuration related info. Should this info be included in the Introduction doc or Configuration doc. Please confirm.
+
+WebClient is an HTTP client for Helidon SE 2.0. It handles the responses to the HTTP requests in a reactive way.
+
+Helidon WebClient provides the following features:
+
+* Reactive approach - Allows you to execute HTTP requests and handle the responses without having to wait for the server response. When the response is received, the client requests only a specific amount of data it can handle at a time. So, there is no overflow of memory.
+
+* Builder-like setup and execution - Creates every client and request as a builder pattern. This improves readability and code maintenance.
+
+* Redirect chain - Follows the redirect chain and perform requests on the correct endpoint by itself.
+
+* Tracing, metrics and security propagation - Automatically propogates the configured tracing, metrics and security settings of the Helidon WebServer to the WebClient and uses them during request and response.
+
+== Setting up the WebClient
+
+// Not clear of the info provided in the WebClient example setup README.md. Need more details to include info in the section; please provide.
+
+== Getting Started with WebClient
+
+// Need some info to get started with WebClient.
+
+=== Example of a Simple GET Request
+
+[source,java]
+----
+WebClient client = WebClient.builder()
+        .baseUri("http://localhost")
+        .build();
+
+CompletionStage<String> response = webClient.get()
+        .path("/endpoint")
+        .request(String.class);
+----
+
+=== Example of a GET Request With Json Object
+
+In this case, JsonObject processing is not present in the WebClient by default. So, you must first register the Json object before making a request.
+
+[source,java]
+.Register JsonObject to the request builder using the register method.
+----
+JsonProcessing jsonProcessing = JsonProcessing.create();
+WebClient client = WebClient.builder()
+        .baseUri("http://localhost")
+        .build();
+
+CompletionStage<JsonObject> response = webClient.get()
+        .path("/endpoint")
+        .register(jsonProcessing.newReader())
+        .request(JsonObject.class);
+----
+
+[source,java]
+.Make a GET or PUT request to the endpoint.
+----
+JsonProcessing jsonProcessing = JsonProcessing.create();
+JsonObject entity = //some JsonObject entity
+WebClient client = WebClient.builder()
+        .baseUri("http://localhost")
+        .build();
+
+CompletionStage<WebClientResponse> response = webClient.put()
+        .path("/endpoint")
+        .register(jsonProcessing.newWriter())
+        .submit(entity);
+----
+
+== Maven Coordinates
+
+The <<about/04_managing-dependencies.adoc,Managing Dependencies>> page describes how you should declare dependency management for Helidon applications. You must declare the following dependency in your project's pom.xml:
+
+[source,xml,subs="verbatim,attributes"]
+----
+<dependency>
+    <groupId>io.helidon.webclient</groupId>
+    <artifactId>helidon-webclient</artifactId>
+    <1>
+</dependency>
+----
+        
+<1> Dependency on WebClient.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
