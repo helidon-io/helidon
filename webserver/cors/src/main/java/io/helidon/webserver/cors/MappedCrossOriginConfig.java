@@ -22,7 +22,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
-import java.util.function.Function;
 
 import io.helidon.config.Config;
 
@@ -81,13 +80,23 @@ public class MappedCrossOriginConfig implements Iterable<Map.Entry<String, Cross
     }
 
     /**
+     * Creates a new {@code Mapped.Builder} instance using the provided configuration.
+     *
+     * @param config node containing {@code Mapped} cross-origin information
+     * @return new {@code Mapped.Builder} based on the config
+     */
+    public static Builder builder(Config config) {
+        return Loader.Mapped.builder(config);
+    }
+
+    /**
      * Creates a new {@code Mapped} instance using the provided configuration.
      *
      * @param config node containing {@code Mapped} cross-origin information
      * @return new {@code Mapped} instance based on the config
      */
     public static MappedCrossOriginConfig from(Config config) {
-        return Builder.from(config).build();
+        return builder(config).build();
     }
 
     @Override
@@ -139,7 +148,7 @@ public class MappedCrossOriginConfig implements Iterable<Map.Entry<String, Cross
     /**
      * Fluent builder for {@code Mapped} cross-origin config.
      */
-    public static class Builder implements io.helidon.common.Builder<MappedCrossOriginConfig>, Function<Config, Builder> {
+    public static class Builder implements io.helidon.common.Builder<MappedCrossOriginConfig> {
 
         private Optional<Boolean> enabledOpt = Optional.empty();
         private final Map<String, Buildable> builders = new HashMap<>();
@@ -147,25 +156,9 @@ public class MappedCrossOriginConfig implements Iterable<Map.Entry<String, Cross
         private Builder() {
         }
 
-        /**
-         * Creates a new {@code Mapped.Builder} instance using the provided configuration.
-         *
-         * @param config node containing {@code Mapped} cross-origin information
-         * @return new {@code Mapped.Builder} based on the config
-         */
-        public static Builder from(Config config) {
-            return Loader.Mapped.builder(config);
-        }
-
         @Override
         public MappedCrossOriginConfig build() {
             return new MappedCrossOriginConfig(this);
-        }
-
-
-        @Override
-        public Builder apply(Config config) {
-            return from(config);
         }
 
         /**

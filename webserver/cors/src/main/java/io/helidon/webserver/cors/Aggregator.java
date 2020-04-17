@@ -95,7 +95,7 @@ class Aggregator implements CorsSetter<Aggregator> {
     Aggregator mappedConfig(Config config) {
 
         if (config.exists()) {
-            ConfigValue<MappedCrossOriginConfig.Builder> mappedConfigValue = config.as(MappedCrossOriginConfig.Builder::from);
+            ConfigValue<MappedCrossOriginConfig.Builder> mappedConfigValue = config.as(MappedCrossOriginConfig::builder);
             if (mappedConfigValue.isPresent()) {
                 MappedCrossOriginConfig mapped = mappedConfigValue.get().build();
                 /*
