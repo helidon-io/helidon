@@ -57,7 +57,7 @@ public class CorsSupportSe extends CorsSupport {
         if (!config.exists()) {
             throw MissingValueException.create(config.key());
         }
-        Builder builder = builder().addCrossOrigin(PATHLESS_KEY, CrossOriginConfig.from(config));
+        Builder builder = builder().addCrossOrigin(PATHLESS_KEY, CrossOriginConfig.builder(config).build());
         return builder.build();
     }
 

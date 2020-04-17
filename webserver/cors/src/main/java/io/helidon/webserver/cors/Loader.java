@@ -84,7 +84,7 @@ class Loader {
                 if (!item.exists()) {
                     break;
                 }
-                ConfigValue<CrossOriginConfig.Builder> basicConfigValue = item.as(CrossOriginConfig.Builder::from);
+                ConfigValue<CrossOriginConfig.Builder> basicConfigValue = item.as(CrossOriginConfig::builder);
                 if (!basicConfigValue.isPresent()) {
                     continue;
                 }

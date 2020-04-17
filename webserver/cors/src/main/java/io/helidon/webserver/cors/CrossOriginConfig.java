@@ -17,7 +17,6 @@
 package io.helidon.webserver.cors;
 
 import java.util.Arrays;
-import java.util.function.Function;
 
 import io.helidon.config.Config;
 
@@ -26,22 +25,24 @@ import static io.helidon.webserver.cors.Aggregator.PATHLESS_KEY;
 /**
  * Represents information about cross origin request sharing.
  *
- * Applications can create instance in two ways:
+ * Applications can create a new instance in two ways:
  * <ul>
- *     <li>using a {@code Builder} explicitly
+ *     <li>Use a {@code Builder} explicitly.
  *     <p>
  *     Obtain a suitable builder by:
  *     </p>
  *     <ul>
- *         <li>explicitly getting a builder using {@link #builder()},</li>
- *         <li>invoking the static {@link Builder#from} method and
- *         passing an existing instance of {@code CrossOriginConfig}; the resulting {@code Builder} is
- *         intialized using the configuration node provided, or</li>
- *         <li>obtaining a {@link Config} instance and invoking {@code Config.as}, passing {@code Builder#from}</li>
+ *         <li>getting a new builder using the static {@link #builder()} method,</li>
+ *         <li>initializing a builder from an existing {@code CrossOriginConfig} instance using the static
+ *         {@link #builder(CrossOriginConfig)} method, or</li>
+ *         <li>initializing a builder from a {@code Config} node, invoking {@link Config#as} using
+ *         {@code corsConfig.as(CrossOriginConfig::builder).get()}</li>
  *     </ul>
- *     and then invoke methods on the builder, finally invoking the builder's {@code build} method to create the instance.
- *     <li>invoking the static {@link #from} method, passing a config node containing the cross-origin information to be
- *     converted.
+ *     and then invoke methods on the builder as needed. Finally invoke the builder's {@code build} method to create the
+ *     instance.
+ *     <li>Invoke the static {@link #build(Config)} method, passing a config node containing the cross-origin information to be
+ *     converted. This is a convenience method equivalent to creating a builder using the config node and then invoking {@code
+ *     build()}.
  *     </li>
  * </ul>
  *
@@ -121,13 +122,40 @@ public class CrossOriginConfig {
     }
 
     /**
-     * Creates a new {@code CrossOriginConfig} instance using the provided config node.
+     * Creates a new {@code CrossOriginConfig.Builder} using the provided config node.
      *
      * @param config node containing cross-origin information
-     * @return new {@code Basic} instance based on the configuration
+     * @return new {@code CrossOriginConfig.Builder} instance based on the configuration
      */
-    public static CrossOriginConfig from(Config config) {
-        return Builder.from(config).build();
+    public static Builder builder(Config config) {
+        return Loader.Basic.builder(config);
+    }
+
+    /**
+     * Initializes a new {@code CrossOriginConfig.Builder} from the values in an existing {@code CrossOriginConfig} object.
+     *
+     * @param original the existing cross-origin config object
+     * @return new Builder initialized from the existing object's settings
+     */
+    public static Builder builder(CrossOriginConfig original) {
+        return new Builder()
+                .pathPrefix(original.pathPrefix)
+                .enabled(original.enabled)
+                .allowCredentials(original.allowCredentials)
+                .allowHeaders(original.allowHeaders)
+                .allowMethods(original.allowMethods)
+                .allowOrigins(original.allowOrigins)
+                .exposeHeaders(original.exposeHeaders)
+                .maxAge(original.maxAge);
+    }
+
+    /**
+     * Creates a new {@code CrossOriginConfig} instance based on the provided configuration node.
+     * @param corsConfig node containing CORS information
+     * @return new {@code CrossOriginConfig} based on the configuration
+     */
+    public static CrossOriginConfig build(Config corsConfig) {
+        return builder(corsConfig).build();
     }
 
     /**
@@ -193,8 +221,7 @@ public class CrossOriginConfig {
     /**
      * Builder for {@link CrossOriginConfig}.
      */
-    public static class Builder implements CorsSetter<Builder>, io.helidon.common.Builder<CrossOriginConfig>,
-            Function<Config, Builder> {
+    public static class Builder implements CorsSetter<Builder>, io.helidon.common.Builder<CrossOriginConfig> {
 
         static final String[] ALLOW_ALL = {"*"};
 
@@ -210,38 +237,10 @@ public class CrossOriginConfig {
         private Builder() {
         }
 
-        /**
-         * Creates a new builder based on the values in an existing {@code CrossOriginConfig} object.
-         *
-         * @param original the existing cross-origin config object
-         * @return new Builder initialized from the existing object's settings
-         */
-        public static Builder from(CrossOriginConfig original) {
-            return new Builder()
-                    .pathPrefix(original.pathPrefix)
-                    .enabled(original.enabled)
-                    .allowCredentials(original.allowCredentials)
-                    .allowHeaders(original.allowHeaders)
-                    .allowMethods(original.allowMethods)
-                    .allowOrigins(original.allowOrigins)
-                    .exposeHeaders(original.exposeHeaders)
-                    .maxAge(original.maxAge);
-        }
-
-        /**
-         * Creates a new {@code Builder}instance from the specified configuration.
-         *
-         * @param config node containing cross-origin information
-         * @return new {@code Builder} initialized from the config
-         */
-        public static Builder from(Config config) {
-            return Loader.Basic.builder(config);
-        }
-
-        @Override
-        public Builder apply(Config config) {
-            return from(config);
-        }
+//        @Override
+//        public Builder apply(Config config) {
+//            return builder(config);
+//        }
 
         /**
          * Updates the path prefix for this cross-origin config.

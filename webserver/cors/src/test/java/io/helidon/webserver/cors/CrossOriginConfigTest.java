@@ -49,7 +49,7 @@ public class CrossOriginConfigTest {
         Config node = testConfig.get("narrow");
         assertThat(node, is(notNullValue()));
         assertThat(node.exists(), is(true));
-        CrossOriginConfig c = node.as(CrossOriginConfig::from).get();
+        CrossOriginConfig c = node.as(CrossOriginConfig::build).get();
 
         assertThat(c.isEnabled(), is(true));
         assertThat(c.allowOrigins(), arrayContaining("http://foo.bar", "http://bar.foo"));
@@ -63,7 +63,7 @@ public class CrossOriginConfigTest {
     @Test
     public void testMissing() {
         Assertions.assertThrows(MissingValueException.class, () -> {
-                CrossOriginConfig basic = testConfig.get("notThere").as(CrossOriginConfig::from).get();
+                CrossOriginConfig basic = testConfig.get("notThere").as(CrossOriginConfig::build).get();
         });
     }
 
@@ -72,7 +72,7 @@ public class CrossOriginConfigTest {
         Config node = testConfig.get("wide");
         assertThat(node, is(notNullValue()));
         assertThat(node.exists(), is(true));
-        CrossOriginConfig b = node.as(CrossOriginConfig::from).get();
+        CrossOriginConfig b = node.as(CrossOriginConfig::build).get();
 
         assertThat(b.isEnabled(), is(false));
         assertThat(b.allowOrigins(), arrayContaining(ALLOW_ALL));
@@ -88,7 +88,7 @@ public class CrossOriginConfigTest {
         Config node = testConfig.get("just-disabled");
         assertThat(node, is(notNullValue()));
         assertThat(node.exists(), is(true));
-        CrossOriginConfig b = node.as(CrossOriginConfig::from).get();
+        CrossOriginConfig b = node.as(CrossOriginConfig::build).get();
 
         assertThat(b.isEnabled(), is(false));
     }

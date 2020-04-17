@@ -233,7 +233,7 @@ class Aggregator implements CorsSetter<Aggregator> {
                 return ((BuildableCrossOriginConfigMatchable) matchable).builder;
             } else {
                 // Convert the existing entry that has a fixed cross-origin config to a pre-initialized builder.
-                newBuilder = CrossOriginConfig.Builder.from(matchable.get());
+                newBuilder = CrossOriginConfig.builder(matchable.get());
             }
         } else {
             // No existing entry.
