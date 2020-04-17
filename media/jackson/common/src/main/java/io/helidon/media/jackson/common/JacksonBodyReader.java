@@ -52,7 +52,7 @@ public final class JacksonBodyReader implements MessageBodyReader<Object> {
     public <U extends Object> Single<U> read(Publisher<DataChunk> publisher,
             GenericType<U> type, MessageBodyReaderContext context) {
 
-        return ContentReaders.readBytes(publisher).map(new BytesToObject<>(type, objectMapper)::map);
+        return ContentReaders.readBytes(publisher).map(new BytesToObject<>(type, objectMapper));
     }
 
     /**

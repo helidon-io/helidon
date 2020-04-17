@@ -50,7 +50,7 @@ public final class FileBodyWriter implements MessageBodyWriter<File> {
 
     @Override
     public Publisher<DataChunk> write(Single<File> content, GenericType<? extends File> type, MessageBodyWriterContext context) {
-        return content.flatMap(new FileToChunks(DEFAULT_RETRY_SCHEMA, context)::map);
+        return content.flatMap(new FileToChunks(DEFAULT_RETRY_SCHEMA, context));
     }
 
     /**
