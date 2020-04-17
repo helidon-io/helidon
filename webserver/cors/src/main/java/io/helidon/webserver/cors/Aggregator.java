@@ -92,7 +92,7 @@ class Aggregator implements Setter<Aggregator> {
      * @param config {@code Config} node containing
      * @return updated builder
      */
-    public Aggregator mappedConfig(Config config) {
+    Aggregator mappedConfig(Config config) {
 
         if (config.exists()) {
             ConfigValue<MappedCrossOriginConfig.Builder> mappedConfigValue = config.as(MappedCrossOriginConfig.Builder::from);
@@ -117,7 +117,7 @@ class Aggregator implements Setter<Aggregator> {
      * @param crossOrigin the cross origin information
      * @return updated builder
      */
-    public Aggregator addCrossOrigin(String pathExpr, CrossOriginConfig crossOrigin) {
+    Aggregator addCrossOrigin(String pathExpr, CrossOriginConfig crossOrigin) {
         crossOriginConfigMatchables.put(normalize(pathExpr), new FixedCrossOriginConfigMatchable(pathExpr, crossOrigin));
         return this;
     }
@@ -128,17 +128,12 @@ class Aggregator implements Setter<Aggregator> {
      * @param crossOrigin the cross origin information
      * @return updated builder
      */
-    public Aggregator addPathlessCrossOrigin(CrossOriginConfig crossOrigin) {
+    Aggregator addPathlessCrossOrigin(CrossOriginConfig crossOrigin) {
         crossOriginConfigMatchables.put(PATHLESS_KEY, new FixedCrossOriginConfigMatchable(PATHLESS_KEY, crossOrigin));
         return this;
     }
 
-    /**
-     * Sets whether the app wants to enable CORS.
-     *
-     * @param value whether CORS should be enabled
-     * @return updated builder
-     */
+    @Override
     public Aggregator enabled(boolean value) {
         isEnabled = value;
         return this;
