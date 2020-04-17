@@ -27,8 +27,8 @@ import org.junit.jupiter.api.Test;
 import java.util.concurrent.ExecutionException;
 
 import static io.helidon.common.http.Http.Header.ORIGIN;
-import static io.helidon.webserver.cors.CORSTestServices.SERVICE_1;
-import static io.helidon.webserver.cors.CORSTestServices.SERVICE_2;
+import static io.helidon.webserver.cors.CorsTestServices.SERVICE_1;
+import static io.helidon.webserver.cors.CorsTestServices.SERVICE_2;
 import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_CREDENTIALS;
 import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_HEADERS;
 import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_METHODS;
@@ -43,7 +43,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-public abstract class AbstractCORSTest {
+public abstract class AbstractCorsTest {
 
     abstract String contextRoot();
 

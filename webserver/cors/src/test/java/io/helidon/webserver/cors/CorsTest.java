@@ -39,7 +39,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class CORSTest extends AbstractCORSTest {
+public class CorsTest extends AbstractCorsTest {
 
     private static final String CONTEXT_ROOT = "/greet";
     private static WebServer server;

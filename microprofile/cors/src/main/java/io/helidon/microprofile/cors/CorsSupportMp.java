@@ -32,17 +32,17 @@ import io.helidon.webserver.cors.CrossOriginConfig;
 /**
  * MP implementation of {@link CorsSupport}.
  */
-class CorsSupportMP extends CorsSupport {
+class CorsSupportMp extends CorsSupport {
 
     /**
      *
-     * @return a new builder of CorsSupportMP
+     * @return a new builder of CorsSupportMp
      */
     static Builder builder() {
         return new Builder();
     }
 
-    private CorsSupportMP(Builder builder) {
+    private CorsSupportMp(Builder builder) {
         super(builder);
     }
 
@@ -71,11 +71,11 @@ class CorsSupportMP extends CorsSupport {
         super.prepareResponse(requestAdapter, responseAdapter);
     }
 
-    static class Builder extends CorsSupport.Builder<CorsSupportMP, Builder> {
+    static class Builder extends CorsSupport.Builder<CorsSupportMp, Builder> {
 
         @Override
-        public CorsSupportMP build() {
-            return new CorsSupportMP(this);
+        public CorsSupportMp build() {
+            return new CorsSupportMp(this);
         }
 
         @Override
@@ -91,11 +91,11 @@ class CorsSupportMP extends CorsSupport {
         }
     }
 
-    static class RequestAdapterMP implements RequestAdapter<ContainerRequestContext> {
+    static class RequestAdapterMp implements RequestAdapter<ContainerRequestContext> {
 
         private final ContainerRequestContext requestContext;
 
-        RequestAdapterMP(ContainerRequestContext requestContext) {
+        RequestAdapterMp(ContainerRequestContext requestContext) {
             this.requestContext = requestContext;
         }
 
@@ -134,15 +134,15 @@ class CorsSupportMP extends CorsSupport {
         }
     }
 
-    static class ResponseAdapterMP implements ResponseAdapter<Response> {
+    static class ResponseAdapterMp implements ResponseAdapter<Response> {
 
         private final MultivaluedMap<String, Object> headers;
 
-        ResponseAdapterMP(ContainerResponseContext responseContext) {
+        ResponseAdapterMp(ContainerResponseContext responseContext) {
             headers = responseContext.getHeaders();
         }
 
-        ResponseAdapterMP() {
+        ResponseAdapterMp() {
             headers = new MultivaluedHashMap<>();
         }
 

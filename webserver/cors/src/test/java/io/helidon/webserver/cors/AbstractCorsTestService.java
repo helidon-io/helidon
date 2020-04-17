@@ -22,7 +22,7 @@ import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 
-abstract class AbstractCORSTestService implements Service {
+abstract class AbstractCorsTestService implements Service {
 
     void ok(ServerRequest request, ServerResponse response) {
         response.status(Http.Status.OK_200.code());

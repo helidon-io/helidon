@@ -25,13 +25,13 @@ import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.spi.ConfigSource;
-import io.helidon.webserver.cors.CORSTestServices.CORSTestService;
+import io.helidon.webserver.cors.CorsTestServices.CORSTestService;
 import io.helidon.webclient.WebClient;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 
-import static io.helidon.webserver.cors.CORSTestServices.SERVICE_3;
+import static io.helidon.webserver.cors.CorsTestServices.SERVICE_3;
 
 public class TestUtil {
 
@@ -61,7 +61,7 @@ public class TestUtil {
         /*
          * Use the default config for the service at "/greet" and then programmatically add the config for /cors3.
          */
-        CorsSupportSE.Builder corsSupportBuilder = CorsSupportSE.builder();
+        CorsSupportSe.Builder corsSupportBuilder = CorsSupportSe.builder();
         corsSupportBuilder.addCrossOrigin(SERVICE_3.path(), cors3COC);
 
         /*
@@ -74,16 +74,16 @@ public class TestUtil {
 
         Routing.Builder builder = Routing.builder()
                 .register(GREETING_PATH,
-                          CorsSupportSE.builder().config(Config.create().get("cors-setup")).build(),
+                          CorsSupportSe.builder().config(Config.create().get("cors-setup")).build(),
                           new GreetService())
                 .register(OTHER_GREETING_PATH,
-                          CorsSupportSE.builder().config(twoCORSConfig.get("cors-2-setup")).build(),
+                          CorsSupportSe.builder().config(twoCORSConfig.get("cors-2-setup")).build(),
                           new GreetService("Other Hello"))
                 .any(TestHandlerRegistration.CORS4_CONTEXT_ROOT,
-                        CorsSupportSE.from(twoCORSConfig.get("somewhat-restrictive")), // handler settings from config subnode
+                        CorsSupportSe.from(twoCORSConfig.get("somewhat-restrictive")), // handler settings from config subnode
                         (req, resp) -> resp.status(Http.Status.OK_200).send())
                 .get(TestHandlerRegistration.CORS4_CONTEXT_ROOT,                       // handler settings in-line
-                        CorsSupportSE.builder()
+                        CorsSupportSe.builder()
                                 .allowOrigins("*")
                                 .allowMethods("GET")
                                 .build(),

@@ -22,11 +22,11 @@ import io.helidon.webserver.ServerResponse;
 /**
  * SE implementation of {@link CorsSupport.ResponseAdapter}.
  */
-class SEResponseAdapter implements CorsSupport.ResponseAdapter<ServerResponse> {
+class ResponseAdapterSe implements CorsSupport.ResponseAdapter<ServerResponse> {
 
     private final ServerResponse serverResponse;
 
-    SEResponseAdapter(ServerResponse serverResponse) {
+    ResponseAdapterSe(ServerResponse serverResponse) {
         this.serverResponse = serverResponse;
     }
 

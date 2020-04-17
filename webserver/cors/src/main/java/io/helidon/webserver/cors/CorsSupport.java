@@ -70,8 +70,8 @@ public abstract class CorsSupport implements Service, Handler {
             request.next();
             return;
         }
-        RequestAdapter<ServerRequest> requestAdapter = new SERequestAdapter(request);
-        ResponseAdapter<ServerResponse> responseAdapter = new SEResponseAdapter(response);
+        RequestAdapter<ServerRequest> requestAdapter = new RequestAdapterSe(request);
+        ResponseAdapter<ServerResponse> responseAdapter = new ResponseAdapterSe(response);
 
         Optional<ServerResponse> responseOpt = helper.processRequest(requestAdapter, responseAdapter);
 

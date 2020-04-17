@@ -24,11 +24,11 @@ import io.helidon.webserver.ServerRequest;
 /**
  * Helidon SE implementation of {@link CorsSupport.RequestAdapter}.
  */
-class SERequestAdapter implements CorsSupport.RequestAdapter<ServerRequest> {
+class RequestAdapterSe implements CorsSupport.RequestAdapter<ServerRequest> {
 
     private final ServerRequest request;
 
-    SERequestAdapter(ServerRequest request) {
+    RequestAdapterSe(ServerRequest request) {
         this.request = request;
     }
 

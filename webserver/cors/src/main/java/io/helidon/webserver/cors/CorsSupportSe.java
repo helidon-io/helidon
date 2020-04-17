@@ -24,15 +24,15 @@ import static io.helidon.webserver.cors.Aggregator.PATHLESS_KEY;
 /**
  * SE implementation of {@link CorsSupport}.
  */
-public class CorsSupportSE extends CorsSupport {
+public class CorsSupportSe extends CorsSupport {
 
-    private CorsSupportSE(Builder builder) {
+    private CorsSupportSe(Builder builder) {
         super(builder);
     }
 
     /**
      *
-     * @return new builder for CorsSupportSE
+     * @return new builder for CorsSupportSe
      */
     public static Builder builder() {
         return new Builder();
@@ -40,20 +40,20 @@ public class CorsSupportSE extends CorsSupport {
 
     /**
      *
-     * @return new CorsSupportSE with default settings
+     * @return new CorsSupportSe with default settings
      */
-    public static CorsSupportSE create() {
+    public static CorsSupportSe create() {
         return builder().build();
     }
 
     /**
-     * Creates a new {@code CorsSupportSE} instance based on the provided configuration expected to match the basic
+     * Creates a new {@code CorsSupportSe} instance based on the provided configuration expected to match the basic
      * {@code CrossOriginConfig} format.
      *
      * @param config node containing the cross-origin information
-     * @return initialized {@code CorsSupportSE} instance
+     * @return initialized {@code CorsSupportSe} instance
      */
-    public static CorsSupportSE from(Config config) {
+    public static CorsSupportSe from(Config config) {
         if (!config.exists()) {
             throw MissingValueException.create(config.key());
         }
@@ -61,11 +61,11 @@ public class CorsSupportSE extends CorsSupport {
         return builder.build();
     }
 
-    public static class Builder extends CorsSupport.Builder<CorsSupportSE, Builder> {
+    public static class Builder extends CorsSupport.Builder<CorsSupportSe, Builder> {
 
         @Override
-        public CorsSupportSE build() {
-            return new CorsSupportSE(this);
+        public CorsSupportSe build() {
+            return new CorsSupportSe(this);
         }
 
         @Override

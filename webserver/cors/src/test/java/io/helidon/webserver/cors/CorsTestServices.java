@@ -25,7 +25,7 @@ import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 
 
-class CORSTestServices {
+class CorsTestServices {
 
     static final CORSTestService SERVICE_1 = new CORSTestService("/cors1");
     static final CORSTestService SERVICE_2 = new CORSTestService("/cors2");
