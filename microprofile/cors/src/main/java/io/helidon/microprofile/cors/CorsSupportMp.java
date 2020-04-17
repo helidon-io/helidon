@@ -132,6 +132,12 @@ class CorsSupportMp extends CorsSupport {
         @Override
         public void next() {
         }
+
+        @Override
+        public String toString() {
+            return String.format("RequestAdapterMp{path=%s, method=%s, headers=%s}", path(), method(),
+                    requestContext.getHeaders());
+        }
     }
 
     static class ResponseAdapterMp implements ResponseAdapter<Response> {

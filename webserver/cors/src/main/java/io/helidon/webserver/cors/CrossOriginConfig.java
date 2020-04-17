@@ -214,6 +214,15 @@ public class CrossOriginConfig {
         return maxAgeSeconds;
     }
 
+    @Override
+    public String toString() {
+        return String.format("CrossOriginConfig{pathPrefix=%s, enabled=%b, origins=%s, allowHeaders=%s, exposeHeaders=%s, "
+                + "allowMethods=%s, allowCredentials=%b, maxAgeSeconds=%d", pathPrefix, enabled,
+                Arrays.toString(allowOrigins),
+                Arrays.toString(allowHeaders), Arrays.toString(exposeHeaders), Arrays.toString(allowMethods),
+                allowCredentials, maxAgeSeconds);
+    }
+
     private static String[] copyOf(String[] strings) {
         return strings != null ? Arrays.copyOf(strings, strings.length) : new String[0];
     }
@@ -236,11 +245,6 @@ public class CrossOriginConfig {
 
         private Builder() {
         }
-
-//        @Override
-//        public Builder apply(Config config) {
-//            return builder(config);
-//        }
 
         /**
          * Updates the path prefix for this cross-origin config.
@@ -302,6 +306,14 @@ public class CrossOriginConfig {
         @Override
         public CrossOriginConfig build() {
             return new CrossOriginConfig(this);
+        }
+
+        @Override
+        public String toString() {
+            return String.format("Builder{pathPrefix=%s, enabled=%b, origins=%s, allowHeaders=%s, exposeHeaders=%s, "
+                    + "allowMethods=%s, allowCredentials=%b, maxAgeSeconds=%d", pathPrefix, enabled, Arrays.toString(origins),
+                    Arrays.toString(allowHeaders), Arrays.toString(exposeHeaders), Arrays.toString(allowMethods),
+                    allowCredentials, maxAgeSeconds);
         }
     }
 }

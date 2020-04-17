@@ -259,6 +259,10 @@ class Aggregator implements CorsSetter<Aggregator> {
             return matcher.match(unnormalizedPath).matches();
         }
 
+        PathMatcher matcher() {
+            return matcher;
+        }
+
         abstract CrossOriginConfig get();
     }
 
@@ -275,6 +279,12 @@ class Aggregator implements CorsSetter<Aggregator> {
 
         CrossOriginConfig get() {
             return crossOriginConfig;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("FixedCrossOriginConfigMatchable{matcher=%s, crossOriginConfig=%s}",
+                    matcher(), crossOriginConfig);
         }
     }
 
@@ -297,6 +307,12 @@ class Aggregator implements CorsSetter<Aggregator> {
                 config = builder.build();
             }
             return config;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("BuildableCrossOriginConfigMatchable{matcher=%s, builder=%s, config=%s}",
+                    matcher(), builder, config);
         }
     }
 }

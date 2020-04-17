@@ -66,4 +66,9 @@ class RequestAdapterSe implements CorsSupport.RequestAdapter<ServerRequest> {
     public ServerRequest request() {
         return request;
     }
+
+    @Override
+    public String toString() {
+        return String.format("RequestAdapterSe{path=%s, method=%s, headers=%s}", path(), method(), request.headers().toMap());
+    }
 }
