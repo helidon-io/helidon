@@ -37,7 +37,10 @@ public class NullPOJO {
     @NonNull
     private String stringValue;
 
-    private List<@NonNull String> listNoNullStrings;
+    private List<@NonNull String> listNonNullStrings;
+    private List<List<@NonNull String>> listOfListOfNonNullStrings;
+
+    private List<List<String>> listOfListOfNullStrings;
 
     // should be nullable for type and non nullable for input type
     private String nonNullForInput;
@@ -50,11 +53,11 @@ public class NullPOJO {
     public NullPOJO(int id,
                     Long longValue,
                     @NonNull String stringValue,
-                    List<@NonNull String> listNoNullStrings) {
+                    List<@NonNull String> listNonNullStrings) {
         this.id = id;
         this.longValue = longValue;
         this.stringValue = stringValue;
-        this.listNoNullStrings = listNoNullStrings;
+        this.listNonNullStrings = listNonNullStrings;
     }
 
     public int getId() {
@@ -81,12 +84,12 @@ public class NullPOJO {
         this.stringValue = stringValue;
     }
 
-    public List<String> getListNoNullStrings() {
-        return listNoNullStrings;
+    public List<@NonNull String> getListNonNullStrings() {
+        return listNonNullStrings;
     }
 
-    public void setListNoNullStrings(List<String> listNoNullStrings) {
-        this.listNoNullStrings = listNoNullStrings;
+    public void setListNonNullStrings(List<String> listNonNullStrings) {
+        this.listNonNullStrings = listNonNullStrings;
     }
 
     public String getNonNullForInput() {
@@ -108,4 +111,21 @@ public class NullPOJO {
     public void setTestNullWithGet(String testNullWithGet) {
         this.testNullWithGet = testNullWithGet;
     }
+
+    public List<List<@NonNull String>> getListOfListOfNonNullStrings() {
+        return listOfListOfNonNullStrings;
+    }
+
+    public void setListOfListOfNonNullStrings(List<List<String>> listOfListOfNonNullStrings) {
+        this.listOfListOfNonNullStrings = listOfListOfNonNullStrings;
+    }
+
+    public List<List<String>> getListOfListOfNullStrings() {
+        return listOfListOfNullStrings;
+    }
+
+    public void setListOfListOfNullStrings(List<List<String>> listOfListOfNullStrings) {
+        this.listOfListOfNullStrings = listOfListOfNullStrings;
+    }
+
 }

@@ -24,6 +24,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
+import java.lang.reflect.ParameterizedType;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -69,7 +70,6 @@ import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getFi
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getGraphQLType;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getMethodName;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getRootArrayClass;
-import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getRootTypeName;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getSafeClass;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getScalar;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getSimpleName;
@@ -155,6 +155,15 @@ public class SchemaGenerator {
                 .collect(Collectors.toList());
 
         return generateSchemaFromClasses(listClasses.toArray(new Class<?>[0]));
+    }
+
+    /**
+     * Return the {@link JandexUtils} instance.
+     *
+     * @return the {@link JandexUtils} instance.
+     */
+    protected JandexUtils getJandexUtils() {
+        return jandexUtils;
     }
 
     /**
@@ -672,6 +681,8 @@ public class SchemaGenerator {
             }
         }
 
+        // check for NonNull annotations on Maps or Lists
+
         SchemaFieldDefinition fd = new SchemaFieldDefinition(optionalName != null
                                                                      ? optionalName
                                                                      : discoveredMethod.name,
@@ -683,7 +694,7 @@ public class SchemaGenerator {
         fd.setOriginalType(discoveredMethod.getMethod().getReturnType());
 
         if (format != null && format.length == 3) {
-            fd.setFormat(new String[] {format[1], format[2] });
+            fd.setFormat(new String[] { format[1], format[2] });
         }
 
         fd.setDescription(discoveredMethod.getDescription());
@@ -727,7 +738,7 @@ public class SchemaGenerator {
      * @return a {@link Map} of the methods and return types
      * @throws IntrospectionException if there were errors introspecting classes
      */
-    protected static Map<String, DiscoveredMethod> retrieveAllAnnotatedBeanMethods(Class<?> clazz)
+    protected Map<String, DiscoveredMethod> retrieveAllAnnotatedBeanMethods(Class<?> clazz)
             throws IntrospectionException {
         Map<String, DiscoveredMethod> mapDiscoveredMethods = new HashMap<>();
         for (Method m : getAllMethods(clazz)) {
@@ -755,8 +766,8 @@ public class SchemaGenerator {
      * @return a {@link Map} of the methods and return types
      * @throws IntrospectionException if there were errors introspecting classes
      */
-    protected static Map<String, DiscoveredMethod> retrieveGetterBeanMethods(Class<?> clazz,
-                                                                             boolean isInputType)
+    protected Map<String, DiscoveredMethod> retrieveGetterBeanMethods(Class<?> clazz,
+                                                                      boolean isInputType)
             throws IntrospectionException {
         Map<String, DiscoveredMethod> mapDiscoveredMethods = new HashMap<>();
 
@@ -792,7 +803,7 @@ public class SchemaGenerator {
      * @return all {@link Method}s for a given {@link Class}
      * @throws IntrospectionException
      */
-    protected static List<Method> getAllMethods(Class<?> clazz) throws IntrospectionException {
+    protected List<Method> getAllMethods(Class<?> clazz) throws IntrospectionException {
         return Arrays.asList(Introspector.getBeanInfo(clazz).getMethodDescriptors())
                 .stream()
                 .map(MethodDescriptor::getMethod)
@@ -810,9 +821,9 @@ public class SchemaGenerator {
      * @param isQueryOrMutation indicates if this is for a query or mutation
      * @return a {@link DiscoveredMethod}
      */
-    private static DiscoveredMethod generateDiscoveredMethod(Method method, Class<?> clazz,
-                                                             PropertyDescriptor pd, boolean isInputType,
-                                                             boolean isQueryOrMutation) {
+    private DiscoveredMethod generateDiscoveredMethod(Method method, Class<?> clazz,
+                                                      PropertyDescriptor pd, boolean isInputType,
+                                                      boolean isQueryOrMutation) {
 
         String[] format = new String[0];
         String description = null;
@@ -933,7 +944,7 @@ public class SchemaGenerator {
         processMethodParameters(method, discoveredMethod, annotatedName);
 
         // process the return type for the method
-        ReturnType realReturnType = getReturnType(returnClazz, method.getGenericReturnType());
+        ReturnType realReturnType = getReturnType(returnClazz, method.getGenericReturnType(), -1, method);
         if (realReturnType.getReturnClass() != null && !ID.equals(returnClazzName)) {
             discoveredMethod.setArrayReturnType(realReturnType.isArrayType());
             discoveredMethod.setCollectionType(realReturnType.getCollectionType());
@@ -946,7 +957,7 @@ public class SchemaGenerator {
         }
 
         discoveredMethod.setArrayLevels(realReturnType.getArrayLevels());
-        discoveredMethod.setReturnTypeMandatory(isReturnTypeMandatory);
+        discoveredMethod.setReturnTypeMandatory(isReturnTypeMandatory || realReturnType.isReturnTypeMandatory);
         discoveredMethod.setDescription(description);
 
         return discoveredMethod;
@@ -954,12 +965,12 @@ public class SchemaGenerator {
 
     /**
      * Process parameters for the given method.
-     * @param method            {@link Method} to process
-     * @param discoveredMethod  {@link DiscoveredMethod} to update
-     * @param annotatedName     annotated name or null
+     *
+     * @param method           {@link Method} to process
+     * @param discoveredMethod {@link DiscoveredMethod} to update
+     * @param annotatedName    annotated name or null
      */
-    private static void processMethodParameters(Method method, DiscoveredMethod discoveredMethod, String annotatedName) {
-        // process the parameters for the method
+    private void processMethodParameters(Method method, DiscoveredMethod discoveredMethod, String annotatedName) {
         Parameter[] parameters = method.getParameters();
         if (parameters != null && parameters.length > 0) {
             java.lang.reflect.Type[] genericParameterTypes = method.getGenericParameterTypes();
@@ -973,7 +984,7 @@ public class SchemaGenerator {
 
                 Class<?> paramType = parameter.getType();
 
-                ReturnType returnType = getReturnType(paramType, genericParameterTypes[i++]);
+                ReturnType returnType = getReturnType(paramType, genericParameterTypes[i], i++, method);
 
                 if (parameter.getAnnotation(Id.class) != null) {
                     if (!isValidIDType(paramType)) {
@@ -994,7 +1005,7 @@ public class SchemaGenerator {
                 String[] argumentFormat = FormattingHelper.getFormattingAnnotation(parameter);
                 argument.setDescription(argumentDescription);
                 if (argumentFormat[0] != null) {
-                    argument.setFormat(new String[] {argumentFormat[1], argumentFormat[2] });
+                    argument.setFormat(new String[] { argumentFormat[1], argumentFormat[2] });
                 }
 
                 Source sourceAnnotation = parameter.getAnnotation(Source.class);
@@ -1027,11 +1038,13 @@ public class SchemaGenerator {
      *
      * @param returnClazz       return type
      * @param genericReturnType generic return {@link java.lang.reflect.Type} may be null
+     * @param parameterNumber   the parameter number for the parameter
      * @return a {@link ReturnType}
      */
-    private static ReturnType getReturnType(Class<?> returnClazz, java.lang.reflect.Type genericReturnType) {
+    private ReturnType getReturnType(Class<?> returnClazz, java.lang.reflect.Type genericReturnType,
+                                     int parameterNumber, Method method) {
         ReturnType actualReturnType = new ReturnType();
-        SchemaGeneratorHelper.RootTypeResult rootTypeResult;
+        RootTypeResult rootTypeResult;
         String returnClazzName = returnClazz.getName();
         boolean isCollection = Collection.class.isAssignableFrom(returnClazz);
         boolean isMap = Map.class.isAssignableFrom(returnClazz);
@@ -1042,9 +1055,9 @@ public class SchemaGenerator {
             }
 
             actualReturnType.setMap(isMap);
-            // index is 0 for Collection and 1 for Map which assumes
-            // we are not interested in the map K, just the map V
-            rootTypeResult = getRootTypeName(genericReturnType, isCollection ? 0 : 1);
+            // index is 0 for Collection and 1 for Map which assumes we are not
+            // interested in the map K, just the map V which is what our implementation will do
+            rootTypeResult = getRootTypeName(genericReturnType, isCollection ? 0 : 1, parameterNumber, method);
             String rootType = rootTypeResult.getRootTypeName();
 
             // set the initial number of array levels to the levels of the root type
@@ -1069,6 +1082,53 @@ public class SchemaGenerator {
             actualReturnType.setReturnClass(returnClazzName);
         }
         return actualReturnType;
+    }
+
+    /**
+     * Return the inner most root type such as {@link String} for a List of List of String.
+     *
+     * @param genericReturnType the {@link java.lang.reflect.Type}
+     * @param index             the index to use, either 0 for {@link Collection} or 1 for {@link Map}
+     * @param parameterNumber   parameter number or -1 if parameter not being checked
+     * @param method            {@link Method} being checked
+     * @return the inner most root type
+     */
+    protected RootTypeResult getRootTypeName(java.lang.reflect.Type genericReturnType, int index,
+                                             int parameterNumber, Method method) {
+        int level = 1;
+        boolean isParameter = parameterNumber != -1;
+        String nonNullClazz = NonNull.class.getName();
+        boolean isReturnTypeMandatory;
+        if (genericReturnType instanceof ParameterizedType) {
+            ParameterizedType paramReturnType = (ParameterizedType) genericReturnType;
+            // loop until we get the actual return type in the case we have List<List<Type>>
+            java.lang.reflect.Type actualTypeArgument = paramReturnType.getActualTypeArguments()[index];
+            while (actualTypeArgument instanceof ParameterizedType) {
+                level++;
+                ParameterizedType parameterizedType2 = (ParameterizedType) actualTypeArgument;
+                actualTypeArgument = parameterizedType2.getActualTypeArguments()[index];
+            }
+            Class<?> clazz = actualTypeArgument.getClass();
+            boolean hasAnnotation = false;
+            if (jandexUtils.hasIndex()) {
+                if (isParameter) {
+                    hasAnnotation = jandexUtils
+                            .methodParameterHasAnnotation(method.getDeclaringClass().getName(), method.getName(),
+                                                          parameterNumber, nonNullClazz);
+                } else {
+                    hasAnnotation = jandexUtils.methodHasAnnotation(method.getDeclaringClass().getName(),
+                                                                    method.getName(), nonNullClazz);
+                }
+            }
+
+            isReturnTypeMandatory = hasAnnotation || isPrimitive(clazz.getName());
+            return new RootTypeResult(((Class<?>) actualTypeArgument).getName(), level, isReturnTypeMandatory);
+        } else {
+            Class<?> clazz = genericReturnType.getClass();
+            isReturnTypeMandatory = clazz.getAnnotation(NonNull.class) != null
+                    || isPrimitive(clazz.getName());
+            return new RootTypeResult(((Class<?>) genericReturnType).getName(), level, isReturnTypeMandatory);
+        }
     }
 
     /**
@@ -1113,7 +1173,7 @@ public class SchemaGenerator {
         private boolean isArrayReturnType;
 
         /**
-         * Indicates if the return type is a {@link Map}. Note: In the 1.0 mciroprofile spec the behaviour if {@link Map} is
+         * Indicates if the return type is a {@link Map}. Note: In the 1.0.1 microprofile spec the behaviour of {@link Map} is
          * undefined.
          */
         private boolean isMap;
@@ -1651,6 +1711,76 @@ public class SchemaGenerator {
          */
         public void setArrayLevels(int arrayLevels) {
             this.arrayLevels = arrayLevels;
+        }
+
+        /**
+         * Indicates if the return type is mandatory.
+         *
+         * @return if the return type is mandatory
+         */
+        public boolean isReturnTypeMandatory() {
+            return isReturnTypeMandatory;
+        }
+
+        /**
+         * Set if the return type is mandatory.
+         *
+         * @param returnTypeMandatory if the return type is mandatory
+         */
+        public void setReturnTypeMandatory(boolean returnTypeMandatory) {
+            isReturnTypeMandatory = returnTypeMandatory;
+        }
+    }
+
+    /**
+     * Represents a result for the method getRootTypeName.
+     */
+    public static class RootTypeResult {
+
+        /**
+         * The root type of the {@link Collection} or {@link Map}.
+         */
+        private final String rootTypeName;
+
+        /**
+         * The number of levels in total.
+         */
+        private final int levels;
+
+        /**
+         * Indicates if the return type is mandatory.
+         */
+        private boolean isReturnTypeMandatory;
+
+        /**
+         * Construct a root type result.
+         *
+         * @param rootTypeName          root type of the {@link Collection} or {@link Map}
+         * @param isReturnTypeMandatory indicates if the return type is mandatory
+         * @param levels                number of levels in total
+         */
+        public RootTypeResult(String rootTypeName, int levels, boolean isReturnTypeMandatory) {
+            this.rootTypeName = rootTypeName;
+            this.levels = levels;
+            this.isReturnTypeMandatory = isReturnTypeMandatory;
+        }
+
+        /**
+         * Return the root type of the {@link Collection} or {@link Map}.
+         *
+         * @return root type of the {@link Collection} or {@link Map}
+         */
+        public String getRootTypeName() {
+            return rootTypeName;
+        }
+
+        /**
+         * Return the number of levels in total.
+         *
+         * @return the number of levels in total
+         */
+        public int getLevels() {
+            return levels;
         }
 
         /**

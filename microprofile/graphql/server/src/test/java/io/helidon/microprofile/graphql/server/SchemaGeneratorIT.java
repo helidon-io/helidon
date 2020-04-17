@@ -72,6 +72,7 @@ import io.helidon.microprofile.graphql.server.test.types.TypeWithIDs;
 import io.helidon.microprofile.graphql.server.test.types.Vehicle;
 import io.helidon.microprofile.graphql.server.test.types.VehicleIncident;
 
+import org.eclipse.microprofile.graphql.NonNull;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -79,8 +80,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.opentest4j.AssertionFailedError;
 
-import static graphql.Scalars.GraphQLBoolean;
-import static graphql.Scalars.GraphQLString;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLObjectType.newObject;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ID;
@@ -192,6 +191,26 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
         assertThat(schema.getTypeByName("Address"), is(notNullValue()));
         assertThat(schema.getTypeByName("Query"), is(notNullValue()));
         generateGraphQLSchema(schema);
+    }
+
+    @Test
+    public void testJandexUtils() throws IOException {
+        setupIndex(indexFileName, NullPOJO.class, QueriesWithNulls.class);
+        SchemaGenerator schemaGenerator = new SchemaGenerator();
+        String queriesWithNulls = QueriesWithNulls.class.getName();
+        String nullPOJO = NullPOJO.class.getName();
+        String noNull = NonNull.class.getName();
+
+        JandexUtils jandexUtils = schemaGenerator.getJandexUtils();
+
+        assertThat(jandexUtils.methodParameterHasAnnotation(queriesWithNulls, "query1", 0, noNull), is(false));
+
+        assertThat(jandexUtils.fieldHasAnnotation(nullPOJO, "listNonNullStrings", noNull), is(true));
+        assertThat(jandexUtils.fieldHasAnnotation(nullPOJO, "listOfListOfNonNullStrings", noNull), is(true));
+        assertThat(jandexUtils.fieldHasAnnotation(nullPOJO, "listOfListOfNullStrings", noNull), is(false));
+
+        assertThat(jandexUtils.methodHasAnnotation(nullPOJO, "getListOfListOfNonNullStrings", noNull), is(true));
+
     }
 
     /**
@@ -364,8 +383,10 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
         assertReturnTypeMandatory(type, "longValue", false);
         assertReturnTypeMandatory(type, "stringValue", true);
         assertReturnTypeMandatory(type, "testNullWithGet", true);
-        // TODO: Figure out how to do this
-        // assertReturnTypeMandatory(type, "listNoNullStrings", true);
+        assertReturnTypeMandatory(type, "listNonNullStrings", true);
+        assertReturnTypeMandatory(type, "listOfListOfNonNullStrings", true);
+        assertReturnTypeMandatory(type, "listOfListOfNonNullStrings", true);
+        assertReturnTypeMandatory(type, "listOfListOfNullStrings", false);
 
         SchemaType query = schema.getTypeByName("Query");
         assertReturnTypeMandatory(query, "method1NotNull", true);

@@ -29,6 +29,7 @@ import java.util.logging.Logger;
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.ClassType;
 import org.jboss.jandex.DotName;
+import org.jboss.jandex.FieldInfo;
 import org.jboss.jandex.Index;
 import org.jboss.jandex.IndexReader;
 import org.jboss.jandex.MethodInfo;
@@ -122,7 +123,7 @@ public class JandexUtils {
     }
 
     /**
-     * Return true if the given class, method and parameter has the specified annotation class name.
+     * Return true if the given class, method and parameter has the specified annotation class name for a generic type.
      *
      * @param clazz           {@link Class} to check for annotation
      * @param methodName      method name to check
@@ -130,26 +131,76 @@ public class JandexUtils {
      * @param annotationClazz the annotation {@link Class} to check
      * @return true if the given class, method and parameter has the specified annotation class name
      */
-    public boolean hasAnnotation(String clazz, String methodName, int paramNumber, String annotationClazz) {
+    protected boolean methodParameterHasAnnotation(String clazz, String methodName, int paramNumber, String annotationClazz) {
         ClassInfo classByName = index.getClassByName(DotName.createSimple(clazz));
         if (classByName != null) {
             MethodInfo methodInfo = classByName.firstMethod(methodName);
             if (methodInfo != null) {
-                Type type = methodInfo.parameters().get(paramNumber);
-                while (type instanceof ParameterizedType) {
-                    ParameterizedType pType = (ParameterizedType) type;
-                    List<Type> arguments = pType.arguments();
-                    int argumentSize = arguments.size();
-                    Type newType = arguments.size() > 0 ? arguments.get(argumentSize - 1) : null;
-                    if (newType instanceof ClassType) {
-                        ClassType classType = (ClassType) newType;
-                        return classType.hasAnnotation(DotName.createSimple(annotationClazz));
-                    }
-                    type = newType;
-                }
+                ClassType classType = retrieveInnerMostType(methodInfo.parameters().get(paramNumber));
+                return classType != null && classType.hasAnnotation(DotName.createSimple(annotationClazz));
             }
         }
         return false;
+    }
+
+    /**
+     * Return true if the given field in a class has the specified annotation class name for a generic type.
+     *
+     * @param clazz           {@link Class} to check for annotation
+     * @param fieldName       field name to check
+     * @param annotationClazz the annotation {@link Class} to check
+     * @return true if the given class, method and parameter has the specified annotation class name
+     */
+    protected boolean fieldHasAnnotation(String clazz, String fieldName, String annotationClazz) {
+        ClassInfo classByName = index.getClassByName(DotName.createSimple(clazz));
+        if (classByName != null) {
+            FieldInfo field = classByName.field(fieldName);
+            if (field != null) {
+                ClassType classType = retrieveInnerMostType(field.type());
+                return classType != null && classType.hasAnnotation(DotName.createSimple(annotationClazz));
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Return true if the given method in a class has the specified annotation class name or a generic.
+     *
+     * @param clazz           {@link Class} to check for annotation
+     * @param methodName       method name to check
+     * @param annotationClazz the annotation {@link Class} to check
+     * @return true if the given class, method and parameter has the specified annotation class name
+     */
+    protected boolean methodHasAnnotation(String clazz, String methodName, String annotationClazz) {
+        ClassInfo classByName = index.getClassByName(DotName.createSimple(clazz));
+        if (classByName != null) {
+            MethodInfo method = classByName.firstMethod(methodName);
+            if (method != null) {
+                ClassType classType = retrieveInnerMostType(method.returnType());
+                return classType != null && classType.hasAnnotation(DotName.createSimple(annotationClazz));
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Retrieve the inner most type for a generic type.
+     * @param initialType the {@link Type} to add
+     * @return a {@link ClassType} representing the inner most type for a generic type
+     */
+    private ClassType retrieveInnerMostType(Type initialType) {
+        Type type = initialType;
+        while (type instanceof ParameterizedType) {
+            ParameterizedType pType = (ParameterizedType) type;
+            List<Type> arguments = pType.arguments();
+            int argumentSize = arguments.size();
+            Type newType = arguments.size() > 0 ? arguments.get(argumentSize - 1) : null;
+            if (newType instanceof ClassType) {
+                return (ClassType) newType;
+            }
+            type = newType;
+        }
+        return null;
     }
 
     /**

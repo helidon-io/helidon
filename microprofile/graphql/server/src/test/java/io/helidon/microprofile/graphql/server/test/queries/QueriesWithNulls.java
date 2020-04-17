@@ -75,5 +75,11 @@ public class QueriesWithNulls {
     public boolean validate(@Name("pojo") NullPOJO nullPOJO) {
         return false;
     }
+
+    // argument should be mandatory
+    @Query
+    public String testMandatoryArgument(@Name("arg1") int arg1) {
+        return null;
+    }
     
 }

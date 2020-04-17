@@ -21,7 +21,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
-import java.lang.reflect.ParameterizedType;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.LocalDate;
@@ -31,7 +30,6 @@ import java.time.OffsetDateTime;
 import java.time.OffsetTime;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,7 +48,6 @@ import org.eclipse.microprofile.graphql.Input;
 import org.eclipse.microprofile.graphql.Interface;
 import org.eclipse.microprofile.graphql.Mutation;
 import org.eclipse.microprofile.graphql.Name;
-import org.eclipse.microprofile.graphql.NonNull;
 import org.eclipse.microprofile.graphql.Query;
 import org.eclipse.microprofile.graphql.Type;
 
@@ -676,37 +673,6 @@ public final class SchemaGeneratorHelper {
     }
 
     /**
-     * Return the inner most root type such as {@link String} for a List of List of String.
-     *
-     * @param genericReturnType the {@link java.lang.reflect.Type}
-     * @param index             the index to use, either 0 for {@link Collection} or 1 for {@link Map}
-     * @return the inner most root type
-     */
-    protected static RootTypeResult getRootTypeName(java.lang.reflect.Type genericReturnType, int index) {
-        int level = 1;
-        boolean isReturnTypeMandatory;
-        if (genericReturnType instanceof ParameterizedType) {
-            ParameterizedType paramReturnType = (ParameterizedType) genericReturnType;
-            // loop until we get the actual return type in the case we have List<List<Type>>
-            java.lang.reflect.Type actualTypeArgument = paramReturnType.getActualTypeArguments()[index];
-            while (actualTypeArgument instanceof ParameterizedType) {
-                level++;
-                ParameterizedType parameterizedType2 = (ParameterizedType) actualTypeArgument;
-                actualTypeArgument = parameterizedType2.getActualTypeArguments()[index];
-            }
-            Class<?> clazz = actualTypeArgument.getClass();
-            isReturnTypeMandatory = clazz.getAnnotation(NonNull.class) != null
-                    || isPrimitive(clazz.getName());
-            return new RootTypeResult(((Class<?>) actualTypeArgument).getName(), level, isReturnTypeMandatory);
-        } else {
-            Class<?> clazz = genericReturnType.getClass();
-            isReturnTypeMandatory = clazz.getAnnotation(NonNull.class) != null
-                    || isPrimitive(clazz.getName());
-            return new RootTypeResult(((Class<?>) genericReturnType).getName(), level, isReturnTypeMandatory);
-        }
-    }
-
-    /**
      * Indicates if the method should be ignored.
      *
      * @param method      {@link Method} to check
@@ -766,75 +732,5 @@ public final class SchemaGeneratorHelper {
         return description == null || "".equals(description.value())
                 ? null
                 : description.value();
-    }
-
-    /**
-     * Represents a result for the method getRootTypeName.
-     */
-    public static class RootTypeResult {
-
-        /**
-         * The root type of the {@link Collection} or {@link Map}.
-         */
-        private final String rootTypeName;
-
-        /**
-         * The number of levels in total.
-         */
-        private final int levels;
-
-        /**
-         * Indicates if the return type is mandatory.
-         */
-        private boolean isReturnTypeMandatory;
-
-        /**
-         * Construct a root type result.
-         *
-         * @param rootTypeName          root type of the {@link Collection} or {@link Map}
-         * @param isReturnTypeMandatory indicates if the return type is mandatory
-         * @param levels                number of levels in total
-         */
-        public RootTypeResult(String rootTypeName, int levels, boolean isReturnTypeMandatory) {
-            this.rootTypeName = rootTypeName;
-            this.levels = levels;
-            this.isReturnTypeMandatory = isReturnTypeMandatory;
-        }
-
-        /**
-         * Return the root type of the {@link Collection} or {@link Map}.
-         *
-         * @return root type of the {@link Collection} or {@link Map}
-         */
-        public String getRootTypeName() {
-            return rootTypeName;
-        }
-
-        /**
-         * Return the number of levels in total.
-         *
-         * @return the number of levels in total
-         */
-        public int getLevels() {
-            return levels;
-        }
-
-        /**
-         * Indicates if the return type is mandatory.
-         *
-         * @return if the return type is mandatory
-         */
-        public boolean isReturnTypeMandatory() {
-            return isReturnTypeMandatory;
-        }
-
-        /**
-         * Set if the return type is mandatory.
-         *
-         * @param returnTypeMandatory if the return type is mandatory
-         */
-        public void setReturnTypeMandatory(boolean returnTypeMandatory) {
-            isReturnTypeMandatory = returnTypeMandatory;
-        }
     }
 }
