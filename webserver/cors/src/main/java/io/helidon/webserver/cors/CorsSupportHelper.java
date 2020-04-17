@@ -374,9 +374,7 @@ class CorsSupportHelper {
         Optional<String> hostOpt = requestAdapter.firstHeader(HOST);
 
         boolean result = originOpt.isEmpty() || (hostOpt.isPresent() && originOpt.get().contains("://" + hostOpt.get()));
-        if (!silent && LOGGER.isLoggable(DECISION_LEVEL)) {
-            LogHelper.isRequestTypeNormal(result, requestAdapter, originOpt, hostOpt);
-        }
+        LogHelper.logIsRequestTypeNormal(result, silent, requestAdapter, originOpt, hostOpt);
         return result;
     }
 
@@ -390,9 +388,8 @@ class CorsSupportHelper {
                 ? RequestType.PREFLIGHT
                 : RequestType.CORS;
 
-        if (!silent && !LOGGER.isLoggable(DECISION_LEVEL)) {
-            LogHelper.inferCORSRequestType(result, requestAdapter, methodName, requestContainsAccessControlRequestMethodHeader);
-        }
+        LogHelper.logInferRequestType(result, silent, requestAdapter, methodName,
+                requestContainsAccessControlRequestMethodHeader);
         return result;
     }
 
@@ -450,20 +447,20 @@ class CorsSupportHelper {
                     .add(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true")
                     .add(ACCESS_CONTROL_ALLOW_ORIGIN, origin)
                     .add(Http.Header.VARY, ORIGIN)
-                    .set(responseAdapter::header, "allow-credentials was set in CORS config");
+                    .setAndLog(responseAdapter::header, "allow-credentials was set in CORS config");
         } else {
             List<String> allowedOrigins = Arrays.asList(crossOrigin.allowOrigins());
             new Headers()
                     .add(ACCESS_CONTROL_ALLOW_ORIGIN, allowedOrigins.contains("*") ? "*" : origin)
                     .add(Http.Header.VARY, ORIGIN)
-                    .set(responseAdapter::header, "allow-credentials was not set in CORS config");
+                    .setAndLog(responseAdapter::header, "allow-credentials was not set in CORS config");
         }
 
         // Add Access-Control-Expose-Headers if non-empty
         Headers headers = new Headers();
         formatHeader(crossOrigin.exposeHeaders()).ifPresent(
                 h -> headers.add(ACCESS_CONTROL_EXPOSE_HEADERS, h));
-        headers.set(responseAdapter::header, "expose-headers was set in CORS config");
+        headers.setAndLog(responseAdapter::header, "expose-headers was set in CORS config");
     }
 
     /**
@@ -543,7 +540,7 @@ class CorsSupportHelper {
         if (maxAgeSeconds > 0) {
             headers.add(ACCESS_CONTROL_MAX_AGE, maxAgeSeconds, "maxAgeSeconds > 0");
         }
-        headers.set(responseAdapter::header, "headers set on preflight request");
+        headers.setAndLog(responseAdapter::header, "headers set on preflight request");
         return responseAdapter.ok();
     }
 

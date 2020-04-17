@@ -60,14 +60,17 @@ class LogHelper {
             return this;
         }
 
-        void set(BiConsumer<String, Object> consumer, String note) {
+        void setAndLog(BiConsumer<String, Object> consumer, String note) {
             headers.forEach(entry -> consumer.accept(entry.getKey(), entry.getValue()));
             LOGGER.log(DECISION_LEVEL, () -> note + ": " + headers + (notes == null ? "" : notes));
         }
     }
 
-    static <T> boolean isRequestTypeNormal(boolean result, RequestAdapter<T> requestAdapter, Optional<String> originOpt,
-            Optional<String> hostOpt) {
+    static <T> void logIsRequestTypeNormal(boolean result, boolean silent, RequestAdapter<T> requestAdapter,
+            Optional<String> originOpt, Optional<String> hostOpt) {
+        if (silent || !LOGGER.isLoggable(DECISION_LEVEL)) {
+            return;
+        }
         // If no origin header or same as host, then just normal
 
         List<String> reasonsWhyNormal = new ArrayList<>();
@@ -104,11 +107,13 @@ class LogHelper {
             LOGGER.log(LogHelper.DECISION_LEVEL,
                     () -> String.format("Request %s is cross-host: %s", requestAdapter, factorsWhyCrossHost));
         }
-        return result;
     }
 
-    static <T> RequestType inferCORSRequestType(RequestType result, RequestAdapter<T> requestAdapter, String methodName,
+    static <T> void logInferRequestType(RequestType result, boolean silent, RequestAdapter<T> requestAdapter, String methodName,
             boolean requestContainsAccessControlRequestMethodHeader) {
+        if (silent || !LOGGER.isLoggable(DECISION_LEVEL)) {
+            return;
+        }
         List<String> reasonsWhyCORS = new ArrayList<>(); // any reason is determinative
         List<String> factorsWhyPreflight = new ArrayList<>(); // factors contribute but, individually, do not determine
 
@@ -127,7 +132,5 @@ class LogHelper {
 
         LOGGER.log(DECISION_LEVEL, String.format("Request %s is of type %s; %s", requestAdapter, result.name(),
                 result == RequestType.PREFLIGHT ? factorsWhyPreflight : reasonsWhyCORS));
-
-        return result;
     }
 }
