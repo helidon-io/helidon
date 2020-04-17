@@ -38,7 +38,7 @@ class CorsSupportMP extends CorsSupport {
      *
      * @return a new builder of CorsSupportMP
      */
-    public static Builder builder() {
+    static Builder builder() {
         return new Builder();
     }
 
