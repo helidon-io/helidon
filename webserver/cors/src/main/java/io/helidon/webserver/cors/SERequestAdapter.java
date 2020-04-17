@@ -22,9 +22,9 @@ import java.util.Optional;
 import io.helidon.webserver.ServerRequest;
 
 /**
- * Helidon SE implementation of {@link CORSSupport.RequestAdapter}.
+ * Helidon SE implementation of {@link CorsSupport.RequestAdapter}.
  */
-class SERequestAdapter implements CORSSupport.RequestAdapter<ServerRequest> {
+class SERequestAdapter implements CorsSupport.RequestAdapter<ServerRequest> {
 
     private final ServerRequest request;
 

@@ -20,7 +20,7 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
 
 import static io.helidon.webserver.cors.Aggregator.PATHLESS_KEY;
-import static io.helidon.webserver.cors.CORSSupportHelper.parseHeader;
+import static io.helidon.webserver.cors.CorsSupportHelper.parseHeader;
 import static io.helidon.webserver.cors.CrossOriginConfig.CORS_PATHS_CONFIG_KEY;
 
 /**

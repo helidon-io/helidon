@@ -35,8 +35,8 @@ import javax.ws.rs.core.Response;
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
 import io.helidon.config.Config;
-import io.helidon.microprofile.cors.CORSSupportMP.RequestAdapterMP;
-import io.helidon.microprofile.cors.CORSSupportMP.ResponseAdapterMP;
+import io.helidon.microprofile.cors.CorsSupportMP.RequestAdapterMP;
+import io.helidon.microprofile.cors.CorsSupportMP.ResponseAdapterMP;
 import io.helidon.webserver.cors.CrossOriginConfig;
 
 import org.eclipse.microprofile.config.ConfigProvider;
@@ -59,12 +59,12 @@ class CrossOriginFilter implements ContainerRequestFilter, ContainerResponseFilt
     @Context
     private ResourceInfo resourceInfo;
 
-    private final CORSSupportMP cors;
+    private final CorsSupportMP cors;
 
     CrossOriginFilter() {
         Config config = (Config) ConfigProvider.getConfig();
 
-        cors = CORSSupportMP.builder().config(config.get(CORS_CONFIG_KEY))
+        cors = CorsSupportMP.builder().config(config.get(CORS_CONFIG_KEY))
                 .secondaryLookupSupplier(this::crossOriginFromAnnotationSupplier)
                 .build();
     }

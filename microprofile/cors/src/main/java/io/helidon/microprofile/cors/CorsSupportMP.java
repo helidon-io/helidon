@@ -26,23 +26,23 @@ import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
-import io.helidon.webserver.cors.CORSSupport;
+import io.helidon.webserver.cors.CorsSupport;
 import io.helidon.webserver.cors.CrossOriginConfig;
 
 /**
- * MP implementation of {@link CORSSupport}.
+ * MP implementation of {@link CorsSupport}.
  */
-class CORSSupportMP extends CORSSupport {
+class CorsSupportMP extends CorsSupport {
 
     /**
      *
-     * @return a new builder of CORSSupportMP
+     * @return a new builder of CorsSupportMP
      */
     public static Builder builder() {
         return new Builder();
     }
 
-    private CORSSupportMP(Builder builder) {
+    private CorsSupportMP(Builder builder) {
         super(builder);
     }
 
@@ -71,11 +71,11 @@ class CORSSupportMP extends CORSSupport {
         super.prepareResponse(requestAdapter, responseAdapter);
     }
 
-    static class Builder extends CORSSupport.Builder<CORSSupportMP, Builder> {
+    static class Builder extends CorsSupport.Builder<CorsSupportMP, Builder> {
 
         @Override
-        public CORSSupportMP build() {
-            return new CORSSupportMP(this);
+        public CorsSupportMP build() {
+            return new CorsSupportMP(this);
         }
 
         @Override

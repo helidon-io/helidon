@@ -25,12 +25,12 @@ import java.util.function.BiConsumer;
 import java.util.logging.Level;
 
 import io.helidon.common.http.Http;
-import io.helidon.webserver.cors.CORSSupport.RequestAdapter;
-import io.helidon.webserver.cors.CORSSupportHelper.RequestType;
+import io.helidon.webserver.cors.CorsSupport.RequestAdapter;
+import io.helidon.webserver.cors.CorsSupportHelper.RequestType;
 
 import static io.helidon.common.http.Http.Header.HOST;
 import static io.helidon.common.http.Http.Header.ORIGIN;
-import static io.helidon.webserver.cors.CORSSupportHelper.LOGGER;
+import static io.helidon.webserver.cors.CorsSupportHelper.LOGGER;
 import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_REQUEST_METHOD;
 
 class LogHelper {

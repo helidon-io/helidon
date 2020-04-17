@@ -61,7 +61,7 @@ public class TestUtil {
         /*
          * Use the default config for the service at "/greet" and then programmatically add the config for /cors3.
          */
-        CORSSupportSE.Builder corsSupportBuilder = CORSSupportSE.builder();
+        CorsSupportSE.Builder corsSupportBuilder = CorsSupportSE.builder();
         corsSupportBuilder.addCrossOrigin(SERVICE_3.path(), cors3COC);
 
         /*
@@ -74,16 +74,16 @@ public class TestUtil {
 
         Routing.Builder builder = Routing.builder()
                 .register(GREETING_PATH,
-                          CORSSupportSE.builder().config(Config.create().get("cors-setup")).build(),
+                          CorsSupportSE.builder().config(Config.create().get("cors-setup")).build(),
                           new GreetService())
                 .register(OTHER_GREETING_PATH,
-                          CORSSupportSE.builder().config(twoCORSConfig.get("cors-2-setup")).build(),
+                          CorsSupportSE.builder().config(twoCORSConfig.get("cors-2-setup")).build(),
                           new GreetService("Other Hello"))
                 .any(TestHandlerRegistration.CORS4_CONTEXT_ROOT,
-                        CORSSupportSE.from(twoCORSConfig.get("somewhat-restrictive")), // handler settings from config subnode
+                        CorsSupportSE.from(twoCORSConfig.get("somewhat-restrictive")), // handler settings from config subnode
                         (req, resp) -> resp.status(Http.Status.OK_200).send())
                 .get(TestHandlerRegistration.CORS4_CONTEXT_ROOT,                       // handler settings in-line
-                        CORSSupportSE.builder()
+                        CorsSupportSE.builder()
                                 .allowOrigins("*")
                                 .allowMethods("GET")
                                 .build(),

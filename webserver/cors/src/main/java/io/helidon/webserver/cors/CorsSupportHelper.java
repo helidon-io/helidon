@@ -32,8 +32,8 @@ import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
-import io.helidon.webserver.cors.CORSSupport.RequestAdapter;
-import io.helidon.webserver.cors.CORSSupport.ResponseAdapter;
+import io.helidon.webserver.cors.CorsSupport.RequestAdapter;
+import io.helidon.webserver.cors.CorsSupport.ResponseAdapter;
 import io.helidon.webserver.cors.LogHelper.Headers;
 
 import static io.helidon.common.http.Http.Header.HOST;
@@ -58,14 +58,14 @@ import static io.helidon.webserver.cors.LogHelper.DECISION_LEVEL;
  * specific to the needs of CORS support.
  * </p>
  */
-class CORSSupportHelper {
+class CorsSupportHelper {
 
     static final String ORIGIN_DENIED = "CORS origin is denied";
     static final String ORIGIN_NOT_IN_ALLOWED_LIST = "CORS origin is not in allowed list";
     static final String METHOD_NOT_IN_ALLOWED_LIST = "CORS method is not in allowed list";
     static final String HEADERS_NOT_IN_ALLOWED_LIST = "CORS headers not in allowed list";
 
-    static final Logger LOGGER = Logger.getLogger(CORSSupportHelper.class.getName());
+    static final Logger LOGGER = Logger.getLogger(CorsSupportHelper.class.getName());
 
     private static final Supplier<Optional<CrossOriginConfig>> EMPTY_SECONDARY_SUPPLIER = Optional::empty;
 
@@ -147,7 +147,7 @@ class CORSSupportHelper {
      * @param config Config node containing CORS set-up
      * @return new instance based on the config
      */
-    public static CORSSupportHelper create(Config config) {
+    public static CorsSupportHelper create(Config config) {
         return builder().config(config).build();
     }
 
@@ -156,24 +156,24 @@ class CORSSupportHelper {
      *
      * @return the new instance
      */
-    public static CORSSupportHelper create() {
+    public static CorsSupportHelper create() {
         return builder().build();
     }
 
     private final Aggregator aggregator;
     private final Supplier<Optional<CrossOriginConfig>> secondaryCrossOriginLookup;
 
-    private CORSSupportHelper() {
+    private CorsSupportHelper() {
         this(builder());
     }
 
-    private CORSSupportHelper(Builder builder) {
+    private CorsSupportHelper(Builder builder) {
         aggregator = builder.aggregator;
         secondaryCrossOriginLookup = builder.secondaryCrossOriginLookup;
     }
 
     /**
-     * Creates a builder for a new {@code CORSSupportHelper}.
+     * Creates a builder for a new {@code CorsSupportHelper}.
      *
      * @return initialized builder
      */
@@ -182,9 +182,9 @@ class CORSSupportHelper {
     }
 
     /**
-     * Builder class for {@code CORSSupportHelper}s.
+     * Builder class for {@code CorsSupportHelper}s.
      */
-    public static class Builder implements io.helidon.common.Builder<CORSSupportHelper> {
+    public static class Builder implements io.helidon.common.Builder<CorsSupportHelper> {
 
         private Supplier<Optional<CrossOriginConfig>> secondaryCrossOriginLookup = EMPTY_SECONDARY_SUPPLIER;
 
@@ -214,14 +214,14 @@ class CORSSupportHelper {
         }
 
         /**
-         * Creates the {@code CORSSupportHelper}.
+         * Creates the {@code CorsSupportHelper}.
          *
-         * @return initialized {@code CORSSupportHelper}
+         * @return initialized {@code CorsSupportHelper}
          */
-        public CORSSupportHelper build() {
-            CORSSupportHelper result = new CORSSupportHelper(this);
+        public CorsSupportHelper build() {
+            CorsSupportHelper result = new CorsSupportHelper(this);
 
-            LOGGER.config(() -> String.format("CORSSupportHelper configured as: %s", result.toString()));
+            LOGGER.config(() -> String.format("CorsSupportHelper configured as: %s", result.toString()));
 
             return result;
         }
@@ -291,7 +291,7 @@ class CORSSupportHelper {
 
     @Override
     public String toString() {
-        return String.format("CORSSupportHelper{isActive=%s, crossOriginConfigs=%s, secondaryCrossOriginLookup=%s}",
+        return String.format("CorsSupportHelper{isActive=%s, crossOriginConfigs=%s, secondaryCrossOriginLookup=%s}",
                 isActive(), aggregator, secondaryCrossOriginLookup == EMPTY_SECONDARY_SUPPLIER ? "(not set)" : "(set)");
     }
 

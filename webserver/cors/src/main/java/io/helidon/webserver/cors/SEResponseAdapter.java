@@ -20,9 +20,9 @@ import io.helidon.common.http.Http;
 import io.helidon.webserver.ServerResponse;
 
 /**
- * SE implementation of {@link CORSSupport.ResponseAdapter}.
+ * SE implementation of {@link CorsSupport.ResponseAdapter}.
  */
-class SEResponseAdapter implements CORSSupport.ResponseAdapter<ServerResponse> {
+class SEResponseAdapter implements CorsSupport.ResponseAdapter<ServerResponse> {
 
     private final ServerResponse serverResponse;
 
@@ -31,13 +31,13 @@ class SEResponseAdapter implements CORSSupport.ResponseAdapter<ServerResponse> {
     }
 
     @Override
-    public CORSSupport.ResponseAdapter<ServerResponse> header(String key, String value) {
+    public CorsSupport.ResponseAdapter<ServerResponse> header(String key, String value) {
         serverResponse.headers().add(key, value);
         return this;
     }
 
     @Override
-    public CORSSupport.ResponseAdapter<ServerResponse> header(String key, Object value) {
+    public CorsSupport.ResponseAdapter<ServerResponse> header(String key, Object value) {
         serverResponse.headers().add(key, value.toString());
         return this;
     }

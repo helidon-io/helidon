@@ -31,7 +31,7 @@ import io.helidon.webserver.Service;
  * A Helidon service and handler implementation that implements CORS, for both the application and for built-in Helidon
  * services (such as OpenAPI and metrics).
  * <p>
- *     The caller can set up the {@code CORSSupport} in a combination of these ways:
+ *     The caller can set up the {@code CorsSupport} in a combination of these ways:
  * </p>
  *     <ul>
  *         <li>from a {@link Config} node supplied programmatically,</li>
@@ -44,16 +44,16 @@ import io.helidon.webserver.Service;
  *     See the {@link Builder#build} method for how the builder resolves conflicts among these sources.
  * </p>
  * <p>
- *     If none of these sources is used, the {@code CORSSupport} applies defaults as described for
+ *     If none of these sources is used, the {@code CorsSupport} applies defaults as described for
  *     {@link CrossOriginConfig}.
  * </p>
  *
  */
-public abstract class CORSSupport implements Service, Handler {
+public abstract class CorsSupport implements Service, Handler {
 
-    private final CORSSupportHelper helper;
+    private final CorsSupportHelper helper;
 
-    protected <T extends CORSSupport, B extends Builder<T, B>> CORSSupport(Builder<T, B> builder) {
+    protected <T extends CorsSupport, B extends Builder<T, B>> CorsSupport(Builder<T, B> builder) {
         helper = builder.helperBuilder.build();
     }
 
@@ -112,15 +112,15 @@ public abstract class CORSSupport implements Service, Handler {
     }
 
     /**
-     * Builder for {@code CORSSupport} instances.
+     * Builder for {@code CorsSupport} instances.
      *
-     * @param <T> specific subtype of {@code CORSSupport} the builder creates
+     * @param <T> specific subtype of {@code CorsSupport} the builder creates
      * @param <B> type of the builder
      */
-    public abstract static class Builder<T extends CORSSupport, B extends Builder<T, B>> implements io.helidon.common.Builder<CORSSupport>,
+    public abstract static class Builder<T extends CorsSupport, B extends Builder<T, B>> implements io.helidon.common.Builder<CorsSupport>,
             Setter<Builder<T, B>> {
 
-        private final CORSSupportHelper.Builder helperBuilder = CORSSupportHelper.builder();
+        private final CorsSupportHelper.Builder helperBuilder = CorsSupportHelper.builder();
         private final Aggregator aggregator = helperBuilder.aggregator();
 
         protected Builder() {

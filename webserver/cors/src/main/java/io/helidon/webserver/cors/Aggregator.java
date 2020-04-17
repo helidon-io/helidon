@@ -25,7 +25,7 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
 import io.helidon.webserver.PathMatcher;
 
-import static io.helidon.webserver.cors.CORSSupportHelper.normalize;
+import static io.helidon.webserver.cors.CorsSupportHelper.normalize;
 
 /**
  * Collects CORS set-up information from various sources and looks up the relevant CORS information given a request's path.

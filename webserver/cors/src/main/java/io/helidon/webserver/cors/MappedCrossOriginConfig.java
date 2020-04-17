@@ -26,7 +26,7 @@ import java.util.function.Function;
 
 import io.helidon.config.Config;
 
-import static io.helidon.webserver.cors.CORSSupportHelper.normalize;
+import static io.helidon.webserver.cors.CorsSupportHelper.normalize;
 
 /**
  * Cross-origin {@link CrossOriginConfig} instances linked to paths, plus an {@code enabled} setting. Most developers will not
