@@ -16,6 +16,8 @@
 
 package io.helidon.microprofile.cors;
 
+import javax.ws.rs.ConstrainedTo;
+import javax.ws.rs.RuntimeType;
 import javax.ws.rs.core.FeatureContext;
 
 import org.glassfish.jersey.internal.spi.AutoDiscoverable;
@@ -23,6 +25,7 @@ import org.glassfish.jersey.internal.spi.AutoDiscoverable;
 /**
  * Class CrossOriginAutoDiscoverable.
  */
+@ConstrainedTo(RuntimeType.SERVER)
 public class CrossOriginAutoDiscoverable implements AutoDiscoverable {
 
     @Override
