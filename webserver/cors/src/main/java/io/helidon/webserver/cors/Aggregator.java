@@ -36,27 +36,27 @@ import static io.helidon.webserver.cors.CorsSupportHelper.normalize;
  *        <li>when <em>storing</em> cross-config information, the <em>latest</em> invocation that specifies the same path
  *        expression overwrites any preceding settings for the same path expression, and</li>
  *        <li>when <em>matching</em> against a request's path, the code checks the path matchers <em>in the order
- *        they were added</em> to the aggregator, whether by {@link #mappedConfig} or {@link #addCrossOrigin} or the {@link Setter}
+ *        they were added</em> to the aggregator, whether by {@link #mappedConfig} or {@link #addCrossOrigin} or the {@link CorsSetter}
  *        methods.
  *    </ul>
  * </p>
  * <p>
- *     The {@code Setter} methods affect the so-called "pathless" entry. Those methods have no explicit path, so we record
+ *     The {@code CorsSetter} methods affect the so-called "pathless" entry. Those methods have no explicit path, so we record
  *     their settings in an entry with path expression {@value #PATHLESS_KEY} which matches everything.
  * </p>
  * <p>
- *     If the developer uses the {@link #mappedConfig} or {@link #addCrossOrigin} methods <em>along with</em> the {@code Setter}
+ *     If the developer uses the {@link #mappedConfig} or {@link #addCrossOrigin} methods <em>along with</em> the {@code CorsSetter}
  *     methods, the results are predictable but might be confusing. The {@code config} and {@code addCrossOrigin} methods
- *     <em>overwrite</em> any entry with the same path expression, whereas the {@code Setter} methods <em>update</em> an existing
+ *     <em>overwrite</em> any entry with the same path expression, whereas the {@code CorsSetter} methods <em>update</em> an existing
  *     entry with path {@value #PATHLESS_KEY}, creating one if needed. So, if the config or an {@code addCrossOrigin}
  *     invocation sets values for that same path expression then results can be surprising.
  *     path
  * </p>
  *
  */
-class Aggregator implements Setter<Aggregator> {
+class Aggregator implements CorsSetter<Aggregator> {
 
-    // Key value for the map corresponding to the cross-origin config managed by the {@link Setter} methods
+    // Key value for the map corresponding to the cross-origin config managed by the {@link CorsSetter} methods
     static final String PATHLESS_KEY = "{+}";
 
     // Records paths and configs added via addCrossOriginConfig
@@ -280,7 +280,7 @@ class Aggregator implements Setter<Aggregator> {
 
     /**
      * Based on a {@code CrossOriginConfig.Builder}, primarily for supporting the "pathless" entry that can be updated by
-     * separate invocations of the {@link Setter} methods.
+     * separate invocations of the {@link CorsSetter} methods.
      */
     private static class BuildableCrossOriginConfigMatchable extends CrossOriginConfigMatchable {
 

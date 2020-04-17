@@ -22,7 +22,7 @@ package io.helidon.webserver.cors;
  *
  * @param <T> the type of the implementing class so the fluid methods can return the correct type
  */
-interface Setter<T> {
+interface CorsSetter<T> {
 
     /**
      * Sets whether this config should be enabled or not.

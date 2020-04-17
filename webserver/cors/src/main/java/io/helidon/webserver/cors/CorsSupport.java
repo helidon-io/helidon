@@ -118,7 +118,7 @@ public abstract class CorsSupport implements Service, Handler {
      * @param <B> type of the builder
      */
     public abstract static class Builder<T extends CorsSupport, B extends Builder<T, B>> implements io.helidon.common.Builder<CorsSupport>,
-            Setter<Builder<T, B>> {
+            CorsSetter<Builder<T, B>> {
 
         private final CorsSupportHelper.Builder helperBuilder = CorsSupportHelper.builder();
         private final Aggregator aggregator = helperBuilder.aggregator();

@@ -193,7 +193,7 @@ public class CrossOriginConfig {
     /**
      * Builder for {@link CrossOriginConfig}.
      */
-    public static class Builder implements Setter<Builder>, io.helidon.common.Builder<CrossOriginConfig>,
+    public static class Builder implements CorsSetter<Builder>, io.helidon.common.Builder<CrossOriginConfig>,
             Function<Config, Builder> {
 
         static final String[] ALLOW_ALL = {"*"};
