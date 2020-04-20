@@ -21,11 +21,6 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import io.helidon.config.Config;
-import io.helidon.webserver.Handler;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerRequest;
-import io.helidon.webserver.ServerResponse;
-import io.helidon.webserver.Service;
 
 /**
  * A Helidon service and handler implementation that implements CORS, for both the application and for built-in Helidon
@@ -48,34 +43,17 @@ import io.helidon.webserver.Service;
  *     {@link CrossOriginConfig}.
  * </p>
  *
+ * @param <Q> request type wrapped by request adapter
+ * @param <R> response type wrapped by response adapter
+ * @param <T> concrete subclass of {@code CorsSupportBase}
+ * @param <B> builder for concrete type {@code <T>}
  */
-public abstract class CorsSupportBase implements Service, Handler {
+public abstract class CorsSupportBase<T extends CorsSupportBase, B extends CorsSupportBase.Builder<T, B>, Q, R> {
 
-    private final CorsSupportHelper helper;
+    private final CorsSupportHelper<Q, R> helper;
 
     protected <T extends CorsSupportBase, B extends Builder<T, B>> CorsSupportBase(Builder<T, B> builder) {
         helper = builder.helperBuilder.build();
-    }
-
-    @Override
-    public void update(Routing.Rules rules) {
-        if (helper.isActive()) {
-            rules.any(this);
-        }
-    }
-
-    @Override
-    public void accept(ServerRequest request, ServerResponse response) {
-        if (!helper.isActive()) {
-            request.next();
-            return;
-        }
-        RequestAdapter<ServerRequest> requestAdapter = new RequestAdapterSe(request);
-        ResponseAdapter<ServerResponse> responseAdapter = new ResponseAdapterSe(response);
-
-        Optional<ServerResponse> responseOpt = helper.processRequest(requestAdapter, responseAdapter);
-
-        responseOpt.ifPresentOrElse(ServerResponse::send, () -> prepareCORSResponseAndContinue(requestAdapter, responseAdapter));
     }
 
     /**
@@ -83,12 +61,10 @@ public abstract class CorsSupportBase implements Service, Handler {
      *
      * @param requestAdapter wrapper around the request
      * @param responseAdapter wrapper around the response
-     * @param <T> type of the request wrapped by the adapter
-     * @param <U> type of the response wrapped by the adapter
      * @return Optional of the response type U; present if the response should be returned, empty if request processing should
      * continue
      */
-    protected <T, U> Optional<U> processRequest(RequestAdapter<T> requestAdapter, ResponseAdapter<U> responseAdapter) {
+    protected Optional<R> processRequest(RequestAdapter<Q> requestAdapter, ResponseAdapter<R> responseAdapter) {
         return helper.processRequest(requestAdapter, responseAdapter);
     }
 
@@ -97,18 +73,13 @@ public abstract class CorsSupportBase implements Service, Handler {
      *
      * @param requestAdapter wrapper around the request
      * @param responseAdapter wrapper around the reseponse
-     * @param <T> type of the request wrapped by the adapter
-     * @param <U> type of the response wrapped by the adapter
      */
-    protected <T, U> void prepareResponse(RequestAdapter<T> requestAdapter, ResponseAdapter<U> responseAdapter) {
+    protected void prepareResponse(RequestAdapter<Q> requestAdapter, ResponseAdapter<R> responseAdapter) {
         helper.prepareResponse(requestAdapter, responseAdapter);
     }
 
-    private void prepareCORSResponseAndContinue(RequestAdapter<ServerRequest> requestAdapter,
-            ResponseAdapter<ServerResponse> responseAdapter) {
-        helper.prepareResponse(requestAdapter, responseAdapter);
-
-        requestAdapter.request().next();
+    protected CorsSupportHelper<Q, R> helper() {
+        return helper;
     }
 
     /**
@@ -161,7 +132,7 @@ public abstract class CorsSupportBase implements Service, Handler {
          * @param crossOrigin the cross origin information
          * @return updated builder
          */
-        public B  addCrossOrigin(String path, CrossOriginConfig crossOrigin) {
+        public B addCrossOrigin(String path, CrossOriginConfig crossOrigin) {
             aggregator.addCrossOrigin(path, crossOrigin);
             return me();
         }

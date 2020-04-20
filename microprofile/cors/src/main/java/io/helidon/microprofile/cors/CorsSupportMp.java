@@ -32,7 +32,7 @@ import io.helidon.webserver.cors.CrossOriginConfig;
 /**
  * MP implementation of {@link CorsSupportBase}.
  */
-class CorsSupportMp extends CorsSupportBase {
+class CorsSupportMp extends CorsSupportBase<CorsSupportMp, CorsSupportMp.Builder, ContainerRequestContext, Response> {
 
     /**
      *
@@ -51,12 +51,12 @@ class CorsSupportMp extends CorsSupportBase {
      *
      * @param requestAdapter wrapper around the request
      * @param responseAdapter wrapper around the response
-     * @return Optional of the response type U; present if the response should be returned, empty if request processing should
+     * @return Optional of {@code Response}; present if the response should be returned, empty if request processing should
      * continue
      */
     @Override
-    protected <T, U> Optional<U> processRequest(RequestAdapter<T> requestAdapter,
-            ResponseAdapter<U> responseAdapter) {
+    protected Optional<Response> processRequest(RequestAdapter<ContainerRequestContext> requestAdapter,
+            ResponseAdapter<Response> responseAdapter) {
         return super.processRequest(requestAdapter, responseAdapter);
     }
 
@@ -67,7 +67,8 @@ class CorsSupportMp extends CorsSupportBase {
      * @param responseAdapter wrapper around the response
      */
     @Override
-    protected <T, U> void prepareResponse(RequestAdapter<T> requestAdapter, ResponseAdapter<U> responseAdapter) {
+    protected void prepareResponse(RequestAdapter<ContainerRequestContext> requestAdapter,
+            ResponseAdapter<Response> responseAdapter) {
         super.prepareResponse(requestAdapter, responseAdapter);
     }
 

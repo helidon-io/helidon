@@ -16,15 +16,23 @@
  */
 package io.helidon.webserver.cors;
 
+import java.util.Optional;
+
 import io.helidon.config.Config;
 import io.helidon.config.MissingValueException;
+import io.helidon.webserver.Handler;
+import io.helidon.webserver.Routing;
+import io.helidon.webserver.ServerRequest;
+import io.helidon.webserver.ServerResponse;
+import io.helidon.webserver.Service;
 
 import static io.helidon.webserver.cors.Aggregator.PATHLESS_KEY;
 
 /**
  * SE implementation of {@link CorsSupportBase}.
  */
-public class CorsSupport extends CorsSupportBase {
+public class CorsSupport extends CorsSupportBase<CorsSupport, CorsSupport.Builder, ServerRequest, ServerResponse>
+        implements Service, Handler {
 
     private CorsSupport(Builder builder) {
         super(builder);
@@ -44,6 +52,34 @@ public class CorsSupport extends CorsSupportBase {
      */
     public static CorsSupport create() {
         return builder().build();
+    }
+
+    @Override
+    public void update(Routing.Rules rules) {
+        if (helper().isActive()) {
+            rules.any(this);
+        }
+    }
+
+    @Override
+    public void accept(ServerRequest request, ServerResponse response) {
+        if (!helper().isActive()) {
+            request.next();
+            return;
+        }
+        RequestAdapter<ServerRequest> requestAdapter = new RequestAdapterSe(request);
+        ResponseAdapter<ServerResponse> responseAdapter = new ResponseAdapterSe(response);
+
+        Optional<ServerResponse> responseOpt = helper().processRequest(requestAdapter, responseAdapter);
+
+        responseOpt.ifPresentOrElse(ServerResponse::send, () -> prepareCORSResponseAndContinue(requestAdapter, responseAdapter));
+    }
+
+    private void prepareCORSResponseAndContinue(RequestAdapter<ServerRequest> requestAdapter,
+            ResponseAdapter<ServerResponse> responseAdapter) {
+        helper().prepareResponse(requestAdapter, responseAdapter);
+
+        requestAdapter.next();
     }
 
     /**

@@ -57,8 +57,10 @@ import static io.helidon.webserver.cors.LogHelper.DECISION_LEVEL;
  * To serve both masters, several methods here accept adapters for requests and responses. Both of these are minimal and very
  * specific to the needs of CORS support.
  * </p>
+ * @param <Q> type of request wrapped by request adapter
+ * @param <R> type of response wrapped by response adapter
  */
-class CorsSupportHelper {
+class CorsSupportHelper<Q, R> {
 
     static final String ORIGIN_DENIED = "CORS origin is denied";
     static final String ORIGIN_NOT_IN_ALLOWED_LIST = "CORS origin is not in allowed list";
@@ -258,15 +260,13 @@ class CorsSupportHelper {
      *
      * @param requestAdapter abstraction of a request
      * @param responseAdapter abstraction of a response
-     * @param <T> type for the {@code Request} managed by the requestAdapter
-     * @param <U> the type for the HTTP response as returned from the responseSetter
      * @return Optional of an error response if the request was an invalid CORS request; Optional.empty() if it was a
      *         valid CORS request
      */
-    public <T, U> Optional<U> processRequest(RequestAdapter<T> requestAdapter, ResponseAdapter<U> responseAdapter) {
+    public Optional<R> processRequest(RequestAdapter<Q> requestAdapter, ResponseAdapter<R> responseAdapter) {
 
         if (!isActive()) {
-            LOGGER.log(DECISION_LEVEL, () -> String.format("CORS ignoring request %s; processing is disabled", requestAdapter));
+            decisionLog(() -> String.format("CORS ignoring request %s; processing is disabled", requestAdapter));
             requestAdapter.next();
             return Optional.empty();
         }
@@ -277,7 +277,7 @@ class CorsSupportHelper {
         RequestType requestType = requestType(requestAdapter);
 
         if (requestType == RequestType.NORMAL) {
-            LOGGER.log(DECISION_LEVEL, "passing normal request through unchanged");
+            decisionLog("passing normal request through unchanged");
             return Optional.empty();
         }
 
@@ -295,24 +295,24 @@ class CorsSupportHelper {
                 isActive(), aggregator, secondaryCrossOriginLookup == EMPTY_SECONDARY_SUPPLIER ? "(not set)" : "(set)");
     }
 
-    static <T, U> Optional<U> processRequest(RequestType requestType, CrossOriginConfig crossOrigin,
-            RequestAdapter<T> requestAdapter,
-            ResponseAdapter<U> responseAdapter) {
+    Optional<R> processRequest(RequestType requestType, CrossOriginConfig crossOrigin,
+            RequestAdapter<Q> requestAdapter,
+            ResponseAdapter<R> responseAdapter) {
 
         switch (requestType) {
             case PREFLIGHT:
-                U result = processCORSPreFlightRequest(crossOrigin, requestAdapter,
+                R result = processCorsPreFlightRequest(crossOrigin, requestAdapter,
                         responseAdapter);
                 return Optional.of(result);
 
             case CORS:
-                Optional<U> corsResponse = processCORSRequest(crossOrigin, requestAdapter,
+                Optional<R> corsResponse = processCorsRequest(crossOrigin, requestAdapter,
                         responseAdapter);
                 if (corsResponse.isEmpty()) {
                     /*
                      * There has been no rejection of the CORS settings, so prep the response headers.
                      */
-                    addCORSHeadersToResponse(crossOrigin, requestAdapter, responseAdapter);
+                    addCorsHeadersToResponse(crossOrigin, requestAdapter, responseAdapter);
                 }
                 return corsResponse;
 
@@ -326,10 +326,8 @@ class CorsSupportHelper {
      *
      * @param requestAdapter abstraction of a request
      * @param responseAdapter abstraction of a response
-     * @param <T> type for the {@code Request} managed by the requestAdapter
-     * @param <U> the type for the HTTP response as returned from the responseSetter
      */
-    public <T, U> void prepareResponse(RequestAdapter<T> requestAdapter, ResponseAdapter<U> responseAdapter) {
+    public void prepareResponse(RequestAdapter<Q> requestAdapter, ResponseAdapter<R> responseAdapter) {
 
         if (!isActive()) {
             LOGGER.log(DECISION_LEVEL,
@@ -345,7 +343,7 @@ class CorsSupportHelper {
                             secondaryCrossOriginLookup)
                     .orElseThrow(() -> new IllegalArgumentException(
                             "Could not locate expected CORS information while preparing response to request " + requestAdapter));
-            addCORSHeadersToResponse(crossOrigin, requestAdapter, responseAdapter);
+            addCorsHeadersToResponse(crossOrigin, requestAdapter, responseAdapter);
         }
     }
 
@@ -353,10 +351,9 @@ class CorsSupportHelper {
      * Analyzes the request to determine the type of request, from the CORS perspective.
      *
      * @param requestAdapter request adatper
-     * @param <T> type of request wrapped by the adapter
      * @return RequestType the CORS request type of the request
      */
-    static <T> RequestType requestType(RequestAdapter<T> requestAdapter, boolean silent) {
+    RequestType requestType(RequestAdapter<Q> requestAdapter, boolean silent) {
         if (isRequestTypeNormal(requestAdapter, silent)) {
             return RequestType.NORMAL;
         }
@@ -364,11 +361,11 @@ class CorsSupportHelper {
         return inferCORSRequestType(requestAdapter, silent);
     }
 
-    static <T> RequestType requestType(RequestAdapter<T> requestAdapter) {
+    RequestType requestType(RequestAdapter<Q> requestAdapter) {
         return requestType(requestAdapter, false);
     }
 
-    private static <T> boolean isRequestTypeNormal(RequestAdapter<T> requestAdapter, boolean silent) {
+    private boolean isRequestTypeNormal(RequestAdapter<Q> requestAdapter, boolean silent) {
         // If no origin header or same as host, then just normal
         Optional<String> originOpt = requestAdapter.firstHeader(ORIGIN);
         Optional<String> hostOpt = requestAdapter.firstHeader(HOST);
@@ -378,7 +375,7 @@ class CorsSupportHelper {
         return result;
     }
 
-    private static <T> RequestType inferCORSRequestType(RequestAdapter<T> requestAdapter, boolean silent) {
+    private RequestType inferCORSRequestType(RequestAdapter<Q> requestAdapter, boolean silent) {
 
         String methodName = requestAdapter.method();
         boolean isMethodOPTION = methodName.equalsIgnoreCase(Http.Method.OPTIONS.name());
@@ -400,15 +397,13 @@ class CorsSupportHelper {
      * @param crossOriginConfig the CORS settings to apply to this request
      * @param requestAdapter abstraction of a request
      * @param responseAdapter abstraction of a response
-     * @param <T> type for the request wrapped by the requestAdapter
-     * @param <U> type for the response wrapper by the responseAdapter
      * @return Optional of an error response if the request was an invalid CORS request; Optional.empty() if it was a
      *         valid CORS request
      */
-    static <T, U> Optional<U> processCORSRequest(
+    Optional<R> processCorsRequest(
             CrossOriginConfig crossOriginConfig,
-            RequestAdapter<T> requestAdapter,
-            ResponseAdapter<U> responseAdapter) {
+            RequestAdapter<Q> requestAdapter,
+            ResponseAdapter<R> responseAdapter) {
 
         // If enabled but not whitelisted, deny request
         List<String> allowedOrigins = Arrays.asList(crossOriginConfig.allowOrigins());
@@ -430,12 +425,10 @@ class CorsSupportHelper {
      * @param crossOrigin the CORS settings to apply to the response
      * @param requestAdapter request adapter
      * @param responseAdapter response adapter
-     * @param <T> type for the request wrapped by the requestAdapter
-     * @param <U> type for the response wrapper by the responseAdapter
      */
-    static <T, U> void addCORSHeadersToResponse(CrossOriginConfig crossOrigin,
-            RequestAdapter<T> requestAdapter,
-            ResponseAdapter<U> responseAdapter) {
+    void addCorsHeadersToResponse(CrossOriginConfig crossOrigin,
+            RequestAdapter<Q> requestAdapter,
+            ResponseAdapter<R> responseAdapter) {
         // Add Access-Control-Allow-Origin and Access-Control-Allow-Credentials.
         //
         // Throw an exception if there is no ORIGIN because we should not even be here unless this is a CORS request, which would
@@ -473,13 +466,11 @@ class CorsSupportHelper {
      * @param crossOrigin the CORS settings to apply to this request
      * @param requestAdapter the request adapter
      * @param responseAdapter the response adapter
-     * @param <T> type for the request wrapped by the requestAdapter
-     * @param <U> type for the response wrapper by the responseAdapter
      * @return the response returned by the response adapter with CORS-related headers set (for a successful CORS preflight)
      */
-    static <T, U> U processCORSPreFlightRequest(CrossOriginConfig crossOrigin,
-            RequestAdapter<T> requestAdapter,
-            ResponseAdapter<U> responseAdapter) {
+    R processCorsPreFlightRequest(CrossOriginConfig crossOrigin,
+            RequestAdapter<Q> requestAdapter,
+            ResponseAdapter<R> responseAdapter) {
 
         Optional<String> originOpt = requestAdapter.firstHeader(ORIGIN);
         if (originOpt.isEmpty()) {
@@ -620,15 +611,25 @@ class CorsSupportHelper {
         return "CORS request does not have required header " + header;
     }
 
-    private static <T, U> U forbid(RequestAdapter<T> requestAdapter, ResponseAdapter<U> responseAdapter,
+    private R forbid(RequestAdapter<Q> requestAdapter, ResponseAdapter<R> responseAdapter,
             String reason) {
         return forbid(requestAdapter, responseAdapter, reason, null);
     }
 
-    private static <T, U> U forbid(RequestAdapter<T> requestAdapter, ResponseAdapter<U> responseAdapter, String publicReason,
+    private R forbid(RequestAdapter<Q> requestAdapter, ResponseAdapter<R> responseAdapter, String publicReason,
             Supplier<String> privateExplanation) {
-        LOGGER.log(DECISION_LEVEL, String.format("CORS denying request %s: %s", requestAdapter,
+        decisionLog(() -> String.format("CORS denying request %s: %s", requestAdapter,
                 publicReason + (privateExplanation == null ? "" : "; " + privateExplanation.get())));
         return responseAdapter.forbidden(publicReason);
+    }
+
+    private void decisionLog(Supplier<String> messageSupplier) {
+        if (LOGGER.isLoggable(DECISION_LEVEL)) {
+            decisionLog(messageSupplier.get());
+        }
+    }
+
+    private void decisionLog(String message) {
+        LOGGER.log(DECISION_LEVEL, () -> String.format("CORS:%s %s", message));
     }
 }
