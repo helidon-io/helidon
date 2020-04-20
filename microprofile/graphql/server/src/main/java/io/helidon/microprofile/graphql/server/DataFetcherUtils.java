@@ -17,8 +17,11 @@
 package io.helidon.microprofile.graphql.server;
 
 import java.lang.reflect.Method;
+import java.text.DateFormat;
 import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -51,7 +54,7 @@ public class DataFetcherUtils {
      * @param <V>    value type
      * @return a new {@link DataFetcher}
      */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings( { "unchecked", "rawtypes" })
     public static <V> DataFetcher<V> newMethodDataFetcher(Class<?> clazz, Method method, String source, SchemaArgument... args) {
         Object instance = CDI.current().select(clazz).get();
 
@@ -122,6 +125,34 @@ public class DataFetcherUtils {
                     .getPropertyValue(propertyName, source, environment.getFieldType(), environment);
 
             return rawValue != null ? numberFormat.format(rawValue) : null;
+        };
+    }
+
+    /**
+     * Create a new {@link DataFetcher} which formats a date/time.
+     *
+     * @param propertyName property to extract
+     * @param valueFormat  formatting value
+     * @param locale       formatting locale
+     * @param <S>          type of the source
+     * @return a new {@link DataFetcher}
+     */
+    public static <S> DataFetcher<String> newDateFormatPropertyDataFetcher(String propertyName,
+                                                                           String valueFormat, String locale) {
+        Locale actualLocale = SchemaGeneratorHelper.DEFAULT_LOCALE.equals(locale)
+                ? Locale.getDefault()
+                : Locale.forLanguageTag(locale);
+        DateFormat dateFormat = new SimpleDateFormat(valueFormat, actualLocale);
+
+        return environment -> {
+            S source = environment.getSource();
+            if (source == null) {
+                return null;
+            }
+            Object rawValue = PropertyDataFetcherHelper
+                    .getPropertyValue(propertyName, source, environment.getFieldType(), environment);
+
+            return rawValue != null ? dateFormat.format(rawValue) : null;
         };
     }
 

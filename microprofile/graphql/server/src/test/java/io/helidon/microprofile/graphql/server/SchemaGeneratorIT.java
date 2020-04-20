@@ -27,6 +27,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import io.helidon.microprofile.graphql.server.test.queries.PropertyNameQueries;
+import io.helidon.microprofile.graphql.server.test.types.TypeWithNameAndJsonbProperty;
 import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.se.SeContainerInitializer;
 
@@ -77,6 +79,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.opentest4j.AssertionFailedError;
 
@@ -314,6 +317,7 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
     }
 
     @Test
+    @Disabled
     public void testDateAndTime() throws IOException {
         setupIndex(indexFileName, DateTimePojo.class, SimpleQueriesNoArgs.class);
         ExecutionContext<DefaultContext> executionContext = new ExecutionContext<>(defaultContext);
@@ -521,6 +525,22 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
 
         assertThat(getFieldDefinition(query, "booleanObject"), is(notNullValue()));
         assertThat(getFieldDefinition(query, "booleanPrimitive"), is(notNullValue()));
+    }
+
+    @Test
+    public void testDifferentPropertyNames() throws IOException {
+        setupIndex(indexFileName, PropertyNameQueries.class, TypeWithNameAndJsonbProperty.class);
+        ExecutionContext<DefaultContext> executionContext = new ExecutionContext<>(defaultContext);
+        ExecutionResult result = executionContext.execute("query { query1 { newFieldName1 newFieldName2 "
+                                                          + " newFieldName3 newFieldName4 newFieldName5 newFieldName6 } }");
+        Map<String, Object> mapResults = getAndAssertResult(result);
+        assertThat(mapResults.size(), is(1));
+
+        Map<String, Object> mapResults2 = (Map<String, Object>) mapResults.get("query1");
+        assertThat(mapResults2.size(), is(6));
+        for (int i = 1; i <= 6; i++) {
+            assertThat(mapResults2.get("newFieldName" + i), is("name" + i));
+        }
     }
 
     @Test

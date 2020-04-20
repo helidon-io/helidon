@@ -120,6 +120,29 @@ public class FormattingHelper {
     }
 
     /**
+     * Returna {@link java.text.DateFormat } for the given type, locale and format.
+     *
+     * @param type   the GraphQL type or scalar
+     * @param locale the locale, either "" or the correct locale
+     * @return The correct {@link java.text.DateFormat } for the given type and locale
+     */
+    protected static java.text.DateFormat getCorrectDateFormat(String type, String locale) {
+        Locale actualLocale = DEFAULT_LOCALE.equals(locale)
+                ? Locale.getDefault()
+                : Locale.forLanguageTag(locale);
+        java.text.DateFormat  dateFormat;
+        if ("DateTime".equals(type)
+        ) {
+            dateFormat = java.text.DateFormat.getDateInstance(java.text.DateFormat.DEFAULT);
+        } else if ("Time".equals(type)) {
+            dateFormat = java.text.DateFormat.getTimeInstance(java.text.DateFormat.DEFAULT);
+        } else {
+            return null;
+        }
+        return dateFormat;
+    }
+
+    /**
      * Return a {@link NumberFormat} for the given type and locale.
      *
      * @param type   the GraphQL type or scalar
@@ -170,7 +193,7 @@ public class FormattingHelper {
      * Return the number format and locale for the given annotations.
      *
      * @param jsonbNumberFormat {@link JsonbNumberFormat} annotation, may be null
-     * @param numberFormat      {@Link org.eclipse.microprofile.graphql.NumberFormat} annotation, may be none
+     * @param numberFormat      {@link NumberFormat} annotation, may be none
      * @return the format ([0]) and locale ([1]) for a method in a {@link String} array or an empty array if not
      */
     private static String[] getNumberFormatAnnotationInternal(JsonbNumberFormat jsonbNumberFormat,
@@ -201,7 +224,7 @@ public class FormattingHelper {
      * Return the date format and locale for the given annotations.
      *
      * @param jsonbDateFormat {@link JsonbDateFormat} annotation, may be null
-     * @param dateFormat      {@Link DateFormat} annotation, may be none
+     * @param dateFormat      {@link DateFormat} annotation, may be none
      * @return the format ([0]) and locale ([1]) for a method in a {@link String} array or an empty array if not
      */
     private static String[] getDateFormatAnnotationInternal(JsonbDateFormat jsonbDateFormat,

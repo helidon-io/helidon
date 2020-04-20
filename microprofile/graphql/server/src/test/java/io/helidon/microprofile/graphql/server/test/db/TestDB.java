@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 
+import io.helidon.microprofile.graphql.server.test.types.TypeWithNameAndJsonbProperty;
 import javax.enterprise.context.ApplicationScoped;
 
 import io.helidon.microprofile.graphql.server.test.types.Address;
@@ -179,5 +180,9 @@ public class TestDB {
 
     public DefaultValuePOJO generatePOJO(String id, int value) {
         return new DefaultValuePOJO(id, value);
+    }
+
+    public TypeWithNameAndJsonbProperty getTypeWithNameAndJsonbProperty() {
+        return new TypeWithNameAndJsonbProperty("name1", "name2", "name3", "name4", "name5", "name6");
     }
 }

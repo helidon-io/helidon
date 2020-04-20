@@ -42,6 +42,7 @@ import java.util.stream.Stream;
 
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetcherFactories;
+import graphql.schema.PropertyDataFetcher;
 import org.eclipse.microprofile.graphql.Description;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Id;
@@ -54,6 +55,7 @@ import org.eclipse.microprofile.graphql.Query;
 import org.eclipse.microprofile.graphql.Source;
 import org.eclipse.microprofile.graphql.Type;
 
+import static io.helidon.microprofile.graphql.server.FormattingHelper.DATE;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.NUMBER;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.getCorrectNumberFormat;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.getFormattingAnnotation;
@@ -349,7 +351,6 @@ public class SchemaGenerator {
 
             setUnresolvedTypes.remove(returnType);
             try {
-                LOGGER.info("Checking unresolved type " + returnType);
                 String simpleName = getSimpleName(returnType, true);
 
                 SchemaScalar scalar = getScalar(returnType);
@@ -371,7 +372,6 @@ public class SchemaGenerator {
                             .filter(t -> t.getName().equals(simpleName)).count() > 0;
                     if (!fExists) {
                         SchemaType newType = generateType(returnType, false);
-                        LOGGER.info("Adding new type of " + newType.getName());
 
                         // update any return types to the discovered scalars
                         checkScalars(schema, newType);
@@ -412,8 +412,6 @@ public class SchemaGenerator {
             type.addFieldDefinition(fd);
 
             if (!ID.equals(valueTypeName) && valueTypeName.equals(fd.getReturnType())) {
-                LOGGER.info("In generateType: Adding unresolved type of " + valueTypeName + " for method "
-                                    + discoveredMethod.getName() + " on type " + realReturnType);
                 // value class was unchanged meaning we need to resolve
                 setUnresolvedTypes.add(valueTypeName);
             }
@@ -436,12 +434,9 @@ public class SchemaGenerator {
                                               Class<?> clazz)
             throws IntrospectionException, ClassNotFoundException {
 
-        LOGGER.info("Processing " + clazz.getName());
         for (Map.Entry<String, DiscoveredMethod> entry : retrieveAllAnnotatedBeanMethods(clazz).entrySet()) {
             DiscoveredMethod discoveredMethod = entry.getValue();
             Method method = discoveredMethod.getMethod();
-
-            LOGGER.info("Processing method " + discoveredMethod.getName() + ", " + discoveredMethod.getReturnType());
 
             SchemaFieldDefinition fd = null;
 
@@ -511,7 +506,7 @@ public class SchemaGenerator {
                     dataFetcher = DataFetcherFactories.wrapDataFetcher(
                             DataFetcherUtils.newMethodDataFetcher(clazz, method, null,
                                                                   fd.getArguments().toArray(new SchemaArgument[0])),
-                            (d, v) -> {
+                            (e, v) -> {
                                 NumberFormat numberFormat = getCorrectNumberFormat(
                                         graphQLType, format[2], format[1]);
                                 return v != null ? numberFormat.format(v) : null;
@@ -519,8 +514,8 @@ public class SchemaGenerator {
                     fd.setReturnType(STRING);
                 } else {
                     // no formatting, just call the method
-                    dataFetcher = DataFetcherUtils
-                            .newMethodDataFetcher(clazz, method, null, fd.getArguments().toArray(new SchemaArgument[0]));
+                    dataFetcher = DataFetcherUtils.newMethodDataFetcher(clazz, method, null,
+                                                                        fd.getArguments().toArray(new SchemaArgument[0]));
                 }
                 fd.setDataFetcher(dataFetcher);
                 fd.setDescription(discoveredMethod.getDescription());
@@ -562,7 +557,7 @@ public class SchemaGenerator {
         while (setInputTypes.size() > 0) {
             SchemaInputType type = setInputTypes.iterator().next();
             setInputTypes.remove(type);
-            LOGGER.info("Checking input type: " + type.getName());
+
             // check each field definition to see if any return types are unknownInputTypes
             for (SchemaFieldDefinition fdi : type.getFieldDefinitions()) {
                 String fdReturnType = fdi.getReturnType();
@@ -584,9 +579,6 @@ public class SchemaGenerator {
                         if (!schema.containsInputTypeWithName(newInputType.getName())) {
                             schema.addInputType(newInputType);
                             setInputTypes.add(newInputType);
-                            LOGGER.info("Adding new input type " + newInputType.getName());
-                        } else {
-                            LOGGER.info("Ignoring: " + newInputType.getName());
                         }
                         fdi.setReturnType(newInputType.getName());
                     }
@@ -655,11 +647,14 @@ public class SchemaGenerator {
      * @param optionalName     optional name for the field definition
      * @return a {@link SchemaFieldDefinition}
      */
-    @SuppressWarnings("rawTypes")
+    @SuppressWarnings("rawtypes")
     private SchemaFieldDefinition newFieldDefinition(DiscoveredMethod discoveredMethod, String optionalName) {
         String valueClassName = discoveredMethod.getReturnType();
         String graphQLType = getGraphQLType(valueClassName);
         DataFetcher dataFetcher = null;
+        String propertyName = discoveredMethod.getPropertyName();
+        String name = discoveredMethod.getName();
+
         boolean isArrayReturnType = discoveredMethod.isArrayReturnType || discoveredMethod.isCollectionType() || discoveredMethod
                 .isMap();
 
@@ -667,26 +662,32 @@ public class SchemaGenerator {
             if (discoveredMethod.isMap) {
                 // add DataFetcher that will just retrieve the values() from the map
                 // dataFetcher = DataFetcherUtils.newMapValuesDataFetcher(fieldName);
-                // TODO
             }
         }
 
         // check for format on the property
         // note: currently the format will be an array of [3] as defined by FormattingHelper.getFormattingAnnotation
         String[] format = discoveredMethod.getFormat();
-        if (discoveredMethod.getPropertyName() != null && format != null && format.length == 3 && format[0] != null) {
+        if (propertyName != null && format != null && format.length == 3 && format[0] != null) {
             if (!isGraphQLType(valueClassName)) {
                 if (NUMBER.equals(format[0])) {
                     dataFetcher = DataFetcherUtils
-                            .newNumberFormatPropertyDataFetcher(discoveredMethod.getPropertyName(), graphQLType, format[1],
+                            .newNumberFormatPropertyDataFetcher(propertyName, graphQLType, format[1],
                                                                 format[2]);
-                    // we must change the type of this to a String but keep the above type for the above data fetcher
+                    // change the type of this to a String but keep the above type for the above data fetcher
+                    graphQLType = SchemaGeneratorHelper.STRING;
+                } else if (DATE.equals(format[0])) {
+                    dataFetcher = DataFetcherUtils.newDateFormatPropertyDataFetcher(propertyName, format[1], format[2]);
+                    // change the type of this to a String but keep the above type for the above data fetcher
                     graphQLType = SchemaGeneratorHelper.STRING;
                 }
             }
+        } else {
+            // Add a PropertyDataFetcher if the name has been changed via annotation
+            if (propertyName != null && !propertyName.equals(name)) {
+                dataFetcher = new PropertyDataFetcher(propertyName);
+            }
         }
-
-        // check for NonNull annotations on Maps or Lists
 
         SchemaFieldDefinition fd = new SchemaFieldDefinition(optionalName != null
                                                                      ? optionalName
@@ -755,7 +756,6 @@ public class SchemaGenerator {
                 throw new RuntimeException("A class may not have both a Query and Mutation annotation");
             }
             if (isQuery || isMutation || hasSourceAnnotation) {
-                LOGGER.info("Processing Query or Mutation " + m.getName());
                 DiscoveredMethod discoveredMethod = generateDiscoveredMethod(m, clazz, null, false, true);
                 discoveredMethod.setMethodType(isQuery || hasSourceAnnotation ? QUERY_TYPE : MUTATION_TYPE);
                 mapDiscoveredMethods.put(discoveredMethod.getName(), discoveredMethod);
