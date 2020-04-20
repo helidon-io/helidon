@@ -61,6 +61,7 @@ import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 
+import io.helidon.webserver.cors.CorsEnabledServiceHelper;
 import io.smallrye.openapi.api.OpenApiConfig;
 import io.smallrye.openapi.api.OpenApiDocument;
 import io.smallrye.openapi.api.models.OpenAPIImpl;
@@ -80,6 +81,9 @@ import org.eclipse.microprofile.openapi.models.Reference;
 import org.eclipse.microprofile.openapi.models.media.Schema;
 import org.eclipse.microprofile.openapi.models.servers.ServerVariable;
 import org.yaml.snakeyaml.TypeDescription;
+
+import static io.helidon.webserver.cors.CorsEnabledServiceHelper.CORS_CONFIG_KEY;
+
 /**
  * Provides an endpoint and supporting logic for returning an OpenAPI document
  * that describes the endpoints handled by the server.
@@ -127,11 +131,13 @@ public class OpenAPISupport implements Service {
     private final OpenAPI model;
     private final ConcurrentMap<Format, String> cachedDocuments = new ConcurrentHashMap<>();
     private final Map<Class<?>, ExpandedTypeDescription> implsToTypes;
+    private final CorsEnabledServiceHelper corsEnabledServiceHelper;
 
     private OpenAPISupport(Builder builder) {
         adjustTypeDescriptions(helper().types());
         implsToTypes = buildImplsToTypes(helper());
         webContext = builder.webContext();
+        corsEnabledServiceHelper = CorsEnabledServiceHelper.create("OpenAPI", builder.corsConfig);
         model = prepareModel(builder.openAPIConfig(), builder.staticFile(), builder.perAppFilteredIndexViews());
     }
 
@@ -149,6 +155,7 @@ public class OpenAPISupport implements Service {
     public void configureEndpoint(Routing.Rules rules) {
 
         rules.get(JsonSupport.create())
+                .get(corsEnabledServiceHelper.processor())
                 .get(webContext, this::prepareResponse);
     }
 
@@ -628,6 +635,7 @@ public class OpenAPISupport implements Service {
 
         private Optional<String> webContext = Optional.empty();
         private Optional<String> staticFilePath = Optional.empty();
+        private Optional<Config> corsConfig = Optional.empty();
 
         @Override
         public OpenAPISupport build() {
@@ -652,6 +660,8 @@ public class OpenAPISupport implements Service {
             config.get("static-file")
                     .asString()
                     .ifPresent(this::staticFile);
+            config.get(CORS_CONFIG_KEY)
+                    .ifExists(this::corsConfig);
             return this;
         }
 
@@ -726,6 +736,12 @@ public class OpenAPISupport implements Service {
         public Builder staticFile(String path) {
             Objects.requireNonNull(path, "path to static file must be non-null");
             staticFilePath = Optional.of(path);
+            return this;
+        }
+
+        public Builder corsConfig(Config corsConfig) {
+            Objects.requireNonNull(corsConfig, "CORS config must be non-null");
+            this.corsConfig = Optional.of(corsConfig);
             return this;
         }
 

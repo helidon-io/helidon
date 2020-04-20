@@ -22,8 +22,10 @@ import java.util.Map;
 
 import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
 import io.helidon.webserver.WebServer;
 
+import io.helidon.webserver.cors.CorsEnabledServiceHelper;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -44,15 +46,20 @@ public class ServerTest {
     private static final String GREETING_PATH = "/openapi-greeting";
     private static final String TIME_PATH = "/openapi-time";
 
+    private static final Config OPENAPI_CONFIG_DISABLED_CORS = Config.create(
+            ConfigSources.classpath("serverNoCORS.properties").build()).get(OpenAPISupport.Builder.CONFIG_KEY);
+
     private static final OpenAPISupport.Builder GREETING_OPENAPI_SUPPORT_BUILDER
             = OpenAPISupport.builder()
                     .staticFile("src/test/resources/openapi-greeting.yml")
-                    .webContext(GREETING_PATH);
+                    .webContext(GREETING_PATH)
+                    .config(OPENAPI_CONFIG_DISABLED_CORS);
 
     private static final OpenAPISupport.Builder TIME_OPENAPI_SUPPORT_BUILDER
             = OpenAPISupport.builder()
                     .staticFile("src/test/resources/openapi-time-server.yml")
-                    .webContext(TIME_PATH);
+                    .webContext(TIME_PATH)
+                    .config(OPENAPI_CONFIG_DISABLED_CORS);
 
     public ServerTest() {
     }
