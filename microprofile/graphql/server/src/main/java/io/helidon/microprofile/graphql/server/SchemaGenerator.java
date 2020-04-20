@@ -105,6 +105,11 @@ public class SchemaGenerator {
     protected static final String SET = "set";
 
     /**
+     * Class name for {@link NonNull}.
+     */
+    protected static final String NON_NULL_CLASS = NonNull.class.getName();
+
+    /**
      * Logger.
      */
     private static final Logger LOGGER = Logger.getLogger(SchemaGenerator.class.getName());
@@ -692,9 +697,10 @@ public class SchemaGenerator {
                                                              discoveredMethod.getArrayLevels());
         fd.setDataFetcher(dataFetcher);
         fd.setOriginalType(discoveredMethod.getMethod().getReturnType());
+        fd.setArrayReturnTypeMandatory(discoveredMethod.isArrayReturnTypeMandatory());
 
         if (format != null && format.length == 3) {
-            fd.setFormat(new String[] { format[1], format[2] });
+            fd.setFormat(new String[] {format[1], format[2] });
         }
 
         fd.setDescription(discoveredMethod.getDescription());
@@ -824,11 +830,12 @@ public class SchemaGenerator {
     private DiscoveredMethod generateDiscoveredMethod(Method method, Class<?> clazz,
                                                       PropertyDescriptor pd, boolean isInputType,
                                                       boolean isQueryOrMutation) {
-
         String[] format = new String[0];
         String description = null;
         boolean isReturnTypeMandatory = false;
+        boolean isArrayReturnTypeMandatory = false;
         String defaultValue = null;
+        String className = clazz.getName();
 
         // retrieve the method name
         String varName = stripMethodName(method, !isQueryOrMutation);
@@ -858,8 +865,7 @@ public class SchemaGenerator {
         if (pd != null) {
             boolean fieldHasIdAnnotation = false;
             Field field = null;
-            // check for Id annotation on class or field associated with the method
-            // and if present change the type to ID
+
             try {
                 field = clazz.getDeclaredField(pd.getName());
                 fieldHasIdAnnotation = field != null && field.getAnnotation(Id.class) != null;
@@ -868,6 +874,7 @@ public class SchemaGenerator {
                 // default values only make sense for input types
                 defaultValue = isInputType ? getDefaultValueAnnotationValue(field) : null;
                 NonNull nonNullAnnotation = field.getAnnotation(NonNull.class);
+                isArrayReturnTypeMandatory = jandexUtils.fieldHasAnnotation(className, field.getName(), NON_NULL_CLASS);
 
                 if (isInputType) {
                     Method writeMethod = pd.getWriteMethod();
@@ -887,11 +894,21 @@ public class SchemaGenerator {
                         if (methodAnnotation != null) {
                             nonNullAnnotation = methodAnnotation;
                         }
+
+                        // the annotation on the set method parameter will override for the input type if it's present
+                        boolean isSetArrayMandatory = jandexUtils.methodParameterHasAnnotation(className, writeMethod.getName(),
+                                                                                               0, NON_NULL_CLASS);
+                        if (isSetArrayMandatory && !isArrayReturnTypeMandatory) {
+                            isArrayReturnTypeMandatory = true;
+                        }
                     }
                 } else {
                     NonNull methodAnnotation = method.getAnnotation(NonNull.class);
                     if (methodAnnotation != null) {
                         nonNullAnnotation = methodAnnotation;
+                    }
+                    if (!isArrayReturnTypeMandatory) {
+                        isArrayReturnTypeMandatory = jandexUtils.methodHasAnnotation(className, method.getName(), NON_NULL_CLASS);
                     }
                 }
 
@@ -900,7 +917,6 @@ public class SchemaGenerator {
                         || nonNullAnnotation != null && defaultValue == null;
 
             } catch (NoSuchFieldException e) {
-                // ignore
             }
 
             if (fieldHasIdAnnotation || method.getAnnotation(Id.class) != null) {
@@ -940,7 +956,6 @@ public class SchemaGenerator {
             description = getDescription(method.getAnnotation(Description.class));
         }
 
-        // process the parameters for the method
         processMethodParameters(method, discoveredMethod, annotatedName);
 
         // process the return type for the method
@@ -957,7 +972,9 @@ public class SchemaGenerator {
         }
 
         discoveredMethod.setArrayLevels(realReturnType.getArrayLevels());
-        discoveredMethod.setReturnTypeMandatory(isReturnTypeMandatory || realReturnType.isReturnTypeMandatory);
+        discoveredMethod.setReturnTypeMandatory(isReturnTypeMandatory);
+        discoveredMethod.setArrayReturnTypeMandatory(isArrayReturnTypeMandatory
+                                                             || realReturnType.isReturnTypeMandatory && !isInputType);
         discoveredMethod.setDescription(description);
 
         return discoveredMethod;
@@ -1005,7 +1022,7 @@ public class SchemaGenerator {
                 String[] argumentFormat = FormattingHelper.getFormattingAnnotation(parameter);
                 argument.setDescription(argumentDescription);
                 if (argumentFormat[0] != null) {
-                    argument.setFormat(new String[] { argumentFormat[1], argumentFormat[2] });
+                    argument.setFormat(new String[] {argumentFormat[1], argumentFormat[2] });
                 }
 
                 Source sourceAnnotation = parameter.getAnnotation(Source.class);
@@ -1070,7 +1087,7 @@ public class SchemaGenerator {
                 actualReturnType.setReturnClass(rootType);
             }
             actualReturnType.setArrayLevels(arrayLevels);
-            actualReturnType.setReturnTypeMandatory(rootTypeResult.isReturnTypeMandatory());
+            actualReturnType.setReturnTypeMandatory(rootTypeResult.isArrayReturnTypeMandatory());
         } else if (!returnClazzName.isEmpty() && returnClazzName.startsWith("[")) {
             // return type is array of either primitives or Objects/Interface/Enum.
             actualReturnType.setArrayType(true);
@@ -1228,6 +1245,11 @@ public class SchemaGenerator {
          * The default value for this discovered method.
          */
         private Object defaultValue;
+
+        /**
+         * If the return type is an array then indicates if the value in the array is mandatory.
+         */
+        private boolean isArrayReturnTypeMandatory;
 
         /**
          * Default constructor.
@@ -1532,6 +1554,24 @@ public class SchemaGenerator {
             this.defaultValue = defaultValue;
         }
 
+        /**
+         * Return if the array return type is mandatory.
+         *
+         * @return if the array return type is mandatory
+         */
+        public boolean isArrayReturnTypeMandatory() {
+            return isArrayReturnTypeMandatory;
+        }
+
+        /**
+         * Sets if the array return type is mandatory.
+         *
+         * @param arrayReturnTypeMandatory if the array return type is mandatory
+         */
+        public void setArrayReturnTypeMandatory(boolean arrayReturnTypeMandatory) {
+            isArrayReturnTypeMandatory = arrayReturnTypeMandatory;
+        }
+
         @Override
         public String toString() {
             return "DiscoveredMethod{"
@@ -1545,6 +1585,8 @@ public class SchemaGenerator {
                     + ", arrayLevels=" + arrayLevels
                     + ", source=" + source
                     + ", isQueryAnnotated=" + isQueryAnnotated
+                    + ", isReturnTypeMandatory=" + isReturnTypeMandatory
+                    + ", isArrayReturnTypeMandatory=" + isArrayReturnTypeMandatory
                     + ", description=" + description
                     + ", defaultValue=" + defaultValue
                     + ", method=" + method + '}';
@@ -1570,6 +1612,7 @@ public class SchemaGenerator {
                     && Objects.equals(method, that.method)
                     && Objects.equals(description, that.description)
                     && Objects.equals(isReturnTypeMandatory, that.isReturnTypeMandatory)
+                    && Objects.equals(isArrayReturnTypeMandatory, that.isArrayReturnTypeMandatory)
                     && Objects.equals(defaultValue, that.defaultValue)
                     && Objects.equals(collectionType, that.collectionType);
         }
@@ -1578,7 +1621,7 @@ public class SchemaGenerator {
         public int hashCode() {
             return Objects.hash(name, returnType, methodType, method, arrayLevels, isQueryAnnotated,
                                 collectionType, isArrayReturnType, isMap, source, description,
-                                isReturnTypeMandatory, defaultValue);
+                                isReturnTypeMandatory, defaultValue, isArrayReturnTypeMandatory);
         }
     }
 
@@ -1748,21 +1791,21 @@ public class SchemaGenerator {
         private final int levels;
 
         /**
-         * Indicates if the return type is mandatory.
+         * Indicates if the array return type is mandatory.
          */
-        private boolean isReturnTypeMandatory;
+        private boolean isArrayReturnTypeMandatory;
 
         /**
          * Construct a root type result.
          *
-         * @param rootTypeName          root type of the {@link Collection} or {@link Map}
-         * @param isReturnTypeMandatory indicates if the return type is mandatory
-         * @param levels                number of levels in total
+         * @param rootTypeName               root type of the {@link Collection} or {@link Map}
+         * @param isArrayReturnTypeMandatory indicates if the return type is mandatory
+         * @param levels                     number of levels in total
          */
-        public RootTypeResult(String rootTypeName, int levels, boolean isReturnTypeMandatory) {
+        public RootTypeResult(String rootTypeName, int levels, boolean isArrayReturnTypeMandatory) {
             this.rootTypeName = rootTypeName;
             this.levels = levels;
-            this.isReturnTypeMandatory = isReturnTypeMandatory;
+            this.isArrayReturnTypeMandatory = isArrayReturnTypeMandatory;
         }
 
         /**
@@ -1788,17 +1831,17 @@ public class SchemaGenerator {
          *
          * @return if the return type is mandatory
          */
-        public boolean isReturnTypeMandatory() {
-            return isReturnTypeMandatory;
+        public boolean isArrayReturnTypeMandatory() {
+            return isArrayReturnTypeMandatory;
         }
 
         /**
          * Set if the return type is mandatory.
          *
-         * @param returnTypeMandatory if the return type is mandatory
+         * @param arrayReturnTypeMandatory if the return type is mandatory
          */
-        public void setReturnTypeMandatory(boolean returnTypeMandatory) {
-            isReturnTypeMandatory = returnTypeMandatory;
+        public void setArrayReturnTypeMandatory(boolean arrayReturnTypeMandatory) {
+            isArrayReturnTypeMandatory = arrayReturnTypeMandatory;
         }
     }
 }

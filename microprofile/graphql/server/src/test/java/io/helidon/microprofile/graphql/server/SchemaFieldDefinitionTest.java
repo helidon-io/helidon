@@ -71,6 +71,10 @@ class SchemaFieldDefinitionTest {
         assertThat(format.length, is(2));
         assertThat(format[0], is("a"));
         assertThat(format[1], is("b"));
+
+        assertThat(schemaFieldDefinition.isArrayReturnTypeMandatory(), is(false));
+        schemaFieldDefinition.setArrayReturnTypeMandatory(true);
+        assertThat(schemaFieldDefinition.isArrayReturnTypeMandatory(), is(true));
     }
 
     @Test

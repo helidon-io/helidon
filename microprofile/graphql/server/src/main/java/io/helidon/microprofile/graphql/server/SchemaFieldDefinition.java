@@ -60,6 +60,12 @@ public class SchemaFieldDefinition
     private final List<SchemaArgument> listSchemaArguments;
 
     /**
+     * If the return type is an array then indicates if the value in the
+     * array is mandatory.
+     */
+    private boolean isArrayReturnTypeMandatory;
+
+    /**
      * {@link DataFetcher} to override default behaviour of field.
      */
     private DataFetcher dataFetcher;
@@ -122,6 +128,7 @@ public class SchemaFieldDefinition
             int count = getArrayLevels();
             sb.append(SPACER).append(repeat(count, OPEN_SQUARE))
                     .append(getReturnType())
+                    .append(isArrayReturnTypeMandatory() ? MANDATORY : NOTHING)
                     .append(repeat(count, CLOSE_SQUARE));
         } else {
             sb.append(SPACER).append(getReturnType());
@@ -293,6 +300,22 @@ public class SchemaFieldDefinition
         return originalType;
     }
 
+    /**
+     * Return if the array return type is mandatory.
+     * @return if the array return type is mandatory
+     */
+    public boolean isArrayReturnTypeMandatory() {
+        return isArrayReturnTypeMandatory;
+    }
+
+    /**
+     * Sets if the array return type is mandatory.
+     * @param arrayReturnTypeMandatory if the array return type is mandatory
+     */
+    public void setArrayReturnTypeMandatory(boolean arrayReturnTypeMandatory) {
+        isArrayReturnTypeMandatory = arrayReturnTypeMandatory;
+    }
+
     @Override
     public String toString() {
         return "FieldDefinition{"
@@ -300,6 +323,7 @@ public class SchemaFieldDefinition
                 + ", returnType='" + returnType + '\''
                 + ", isArrayReturnType=" + isArrayReturnType
                 + ", isReturnTypeMandatory=" + isReturnTypeMandatory
+                + ", isArrayReturnTypeMandatory=" + isArrayReturnTypeMandatory
                 + ", listArguments=" + listSchemaArguments
                 + ", arrayLevels=" + arrayLevels
                 + ", originalType=" + originalType

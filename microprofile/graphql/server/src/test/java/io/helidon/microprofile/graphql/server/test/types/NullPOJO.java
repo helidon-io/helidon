@@ -46,14 +46,21 @@ public class NullPOJO {
     private String nonNullForInput;
 
     private String testNullWithGet;
+    private String testNullWithSet;
+
+    private List<String> testInputOnly;
+    private List<String> testOutputOnly;
+
+    @NonNull
+    private List<String> listNullStringsWhichIsMandatory;
 
     public NullPOJO() {
     }
 
     public NullPOJO(int id,
                     Long longValue,
-                    @NonNull String stringValue,
-                    List<@NonNull String> listNonNullStrings) {
+                    String stringValue,
+                    List<String> listNonNullStrings) {
         this.id = id;
         this.longValue = longValue;
         this.stringValue = stringValue;
@@ -84,7 +91,7 @@ public class NullPOJO {
         this.stringValue = stringValue;
     }
 
-    public List<@NonNull String> getListNonNullStrings() {
+    public List<String> getListNonNullStrings() {
         return listNonNullStrings;
     }
 
@@ -112,10 +119,10 @@ public class NullPOJO {
         this.testNullWithGet = testNullWithGet;
     }
 
-    public List<List<@NonNull String>> getListOfListOfNonNullStrings() {
+    public List<List<String>> getListOfListOfNonNullStrings() {
         return listOfListOfNonNullStrings;
     }
-
+    
     public void setListOfListOfNonNullStrings(List<List<String>> listOfListOfNonNullStrings) {
         this.listOfListOfNonNullStrings = listOfListOfNonNullStrings;
     }
@@ -128,4 +135,39 @@ public class NullPOJO {
         this.listOfListOfNullStrings = listOfListOfNullStrings;
     }
 
+    public String getTestNullWithSet() {
+        return testNullWithSet;
+    }
+
+    // should be mandatory for input type and optional for type
+    @NonNull
+    public void setTestNullWithSet(String testNullWithSet) {
+        this.testNullWithSet = testNullWithSet;
+    }
+
+    public List<String> getListNullStringsWhichIsMandatory() {
+        return listNullStringsWhichIsMandatory;
+    }
+
+    public void setListNullStringsWhichIsMandatory(List<String> listNullStringsWhichIsMandatory) {
+        this.listNullStringsWhichIsMandatory = listNullStringsWhichIsMandatory;
+    }
+
+    public List<String> getTestInputOnly() {
+        return testInputOnly;
+    }
+
+    // array return type should be mandatory for input only
+    public void setTestInputOnly(List<@NonNull String> testInputOnly) {
+        this.testInputOnly = testInputOnly;
+    }
+
+    // array return type should be mandatory for output only
+    public List<@NonNull String> getTestOutputOnly() {
+        return testOutputOnly;
+    }
+
+    public void setTestOutputOnly(List<String> testOutputOnly) {
+        this.testOutputOnly = testOutputOnly;
+    }
 }

@@ -209,8 +209,7 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
         assertThat(jandexUtils.fieldHasAnnotation(nullPOJO, "listOfListOfNonNullStrings", noNull), is(true));
         assertThat(jandexUtils.fieldHasAnnotation(nullPOJO, "listOfListOfNullStrings", noNull), is(false));
 
-        assertThat(jandexUtils.methodHasAnnotation(nullPOJO, "getListOfListOfNonNullStrings", noNull), is(true));
-
+        assertThat(jandexUtils.methodHasAnnotation(nullPOJO, "getListOfListOfNonNullStrings", noNull), is(false));
     }
 
     /**
@@ -383,10 +382,19 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
         assertReturnTypeMandatory(type, "longValue", false);
         assertReturnTypeMandatory(type, "stringValue", true);
         assertReturnTypeMandatory(type, "testNullWithGet", true);
-        assertReturnTypeMandatory(type, "listNonNullStrings", true);
-        assertReturnTypeMandatory(type, "listOfListOfNonNullStrings", true);
-        assertReturnTypeMandatory(type, "listOfListOfNonNullStrings", true);
+        assertReturnTypeMandatory(type, "listNonNullStrings", false);
+        assertArrayReturnTypeMandatory(type, "listNonNullStrings", true);
+        assertArrayReturnTypeMandatory(type, "listOfListOfNonNullStrings", true);
+        assertReturnTypeMandatory(type, "listOfListOfNonNullStrings", false);
         assertReturnTypeMandatory(type, "listOfListOfNullStrings", false);
+        assertArrayReturnTypeMandatory(type, "listOfListOfNullStrings", false);
+        assertReturnTypeMandatory(type, "testNullWithSet", false);
+        assertReturnTypeMandatory(type, "listNullStringsWhichIsMandatory", true);
+        assertArrayReturnTypeMandatory(type, "listNullStringsWhichIsMandatory", false);
+        assertReturnTypeMandatory(type, "testInputOnly", false);
+        assertArrayReturnTypeMandatory(type, "testInputOnly", false);
+        assertReturnTypeMandatory(type, "testOutputOnly", false);
+        assertArrayReturnTypeMandatory(type, "testOutputOnly", true);
 
         SchemaType query = schema.getTypeByName("Query");
         assertReturnTypeMandatory(query, "method1NotNull", true);
@@ -400,6 +408,17 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
         SchemaType input = schema.getInputTypeByName("NullPOJOInput");
         assertReturnTypeMandatory(input, "nonNullForInput", true);
         assertReturnTypeMandatory(input, "testNullWithGet", false);
+        assertReturnTypeMandatory(input, "testNullWithSet", true);
+        assertReturnTypeMandatory(input, "listNonNullStrings", false);
+        assertArrayReturnTypeMandatory(input, "listNonNullStrings", true);
+
+        assertArrayReturnTypeMandatory(input, "listOfListOfNonNullStrings", true);
+
+        assertReturnTypeMandatory(input, "testInputOnly", false);
+        assertArrayReturnTypeMandatory(input, "testInputOnly", true);
+
+        assertReturnTypeMandatory(input, "testOutputOnly", false);
+        assertArrayReturnTypeMandatory(input, "testOutputOnly", false);
     }
 
     @Test
@@ -913,6 +932,14 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
         assertThat(fd, is(notNullValue()));
         assertThat("Return type for " + fdName + " should be mandatory=" + mandatory +
                            " but is " + fd.isReturnTypeMandatory(), fd.isReturnTypeMandatory(), is(mandatory));
+    }
+
+    private void assertArrayReturnTypeMandatory(SchemaType type, String fdName, boolean mandatory) {
+        assertThat(type, is(notNullValue()));
+        SchemaFieldDefinition fd = getFieldDefinition(type, fdName);
+        assertThat(fd, is(notNullValue()));
+        assertThat("Array return type for " + fdName + " should be mandatory=" + mandatory +
+                           " but is " + fd.isArrayReturnTypeMandatory(), fd.isArrayReturnTypeMandatory(), is(mandatory));
     }
 
     private void assertReturnTypeArgumentMandatory(SchemaType type, String fdName, String argumentName, boolean mandatory) {

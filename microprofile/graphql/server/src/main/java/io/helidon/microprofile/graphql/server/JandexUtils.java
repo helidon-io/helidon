@@ -152,6 +152,9 @@ public class JandexUtils {
      * @return true if the given class, method and parameter has the specified annotation class name
      */
     protected boolean fieldHasAnnotation(String clazz, String fieldName, String annotationClazz) {
+        if (!hasIndex()) {
+            return false;
+        }
         ClassInfo classByName = index.getClassByName(DotName.createSimple(clazz));
         if (classByName != null) {
             FieldInfo field = classByName.field(fieldName);
@@ -167,11 +170,14 @@ public class JandexUtils {
      * Return true if the given method in a class has the specified annotation class name or a generic.
      *
      * @param clazz           {@link Class} to check for annotation
-     * @param methodName       method name to check
+     * @param methodName      method name to check
      * @param annotationClazz the annotation {@link Class} to check
      * @return true if the given class, method and parameter has the specified annotation class name
      */
     protected boolean methodHasAnnotation(String clazz, String methodName, String annotationClazz) {
+        if (!hasIndex()) {
+            return false;
+        }
         ClassInfo classByName = index.getClassByName(DotName.createSimple(clazz));
         if (classByName != null) {
             MethodInfo method = classByName.firstMethod(methodName);
@@ -185,6 +191,7 @@ public class JandexUtils {
 
     /**
      * Retrieve the inner most type for a generic type.
+     *
      * @param initialType the {@link Type} to add
      * @return a {@link ClassType} representing the inner most type for a generic type
      */
