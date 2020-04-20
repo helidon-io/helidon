@@ -17,6 +17,7 @@
 package io.helidon.webserver.cors;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -48,11 +49,14 @@ import io.helidon.config.Config;
  * @param <T> concrete subclass of {@code CorsSupportBase}
  * @param <B> builder for concrete type {@code <T>}
  */
-public abstract class CorsSupportBase<T extends CorsSupportBase, B extends CorsSupportBase.Builder<T, B>, Q, R> {
+public abstract class CorsSupportBase<Q, R, T extends CorsSupportBase<Q, R, T, B>,
+        B extends CorsSupportBase.Builder<Q, R, T, B>> {
 
+    private final String name;
     private final CorsSupportHelper<Q, R> helper;
 
-    protected <T extends CorsSupportBase, B extends Builder<T, B>> CorsSupportBase(Builder<T, B> builder) {
+    protected CorsSupportBase(Builder<Q, R, T, B> builder) {
+        name = builder.name;
         helper = builder.helperBuilder.build();
     }
 
@@ -82,16 +86,24 @@ public abstract class CorsSupportBase<T extends CorsSupportBase, B extends CorsS
         return helper;
     }
 
+    protected String describe() {
+        // Partial toString implementation for use by subclasses
+        return String.format("name='%s', helper=%s", name, helper);
+    }
+
     /**
      * Builder for {@code CorsSupportBase} instances.
      *
+     * @param <Q> request type wrapped by request adapter
+     * @param <R> response type wrapped by response adapter
      * @param <T> specific subtype of {@code CorsSupportBase} the builder creates
      * @param <B> type of the builder
      */
-    public abstract static class Builder<T extends CorsSupportBase, B extends Builder<T, B>> implements io.helidon.common.Builder<CorsSupportBase>,
-            CorsSetter<Builder<T, B>> {
+    public abstract static class Builder<Q, R, T extends CorsSupportBase<Q, R, T, B>, B extends Builder<Q, R, T, B>>
+            implements io.helidon.common.Builder<CorsSupportBase<Q, R, T, B>>, CorsSetter<Builder<Q, R, T, B>> {
 
-        private final CorsSupportHelper.Builder helperBuilder = CorsSupportHelper.builder();
+        private String name = "";
+        private final CorsSupportHelper.Builder<Q, R> helperBuilder = CorsSupportHelper.builder();
         private final Aggregator aggregator = helperBuilder.aggregator();
 
         protected Builder() {
@@ -148,6 +160,19 @@ public abstract class CorsSupportBase<T extends CorsSupportBase, B extends CorsS
             return me();
         }
 
+        /**
+         * Sets the name to be used for the CORS support instance.
+         *
+         * @param name name to use
+         * @return updated builder
+         */
+        public B name(String name) {
+            Objects.requireNonNull(name, "CorsSupport name is optional but cannot be null");
+            this.name = name;
+            helperBuilder.name(name);
+            return me();
+        }
+
         @Override
         public B allowOrigins(String... origins) {
             aggregator.allowOrigins(origins);
@@ -191,7 +216,7 @@ public abstract class CorsSupportBase<T extends CorsSupportBase, B extends CorsS
          * @param secondaryLookupSupplier supplier of a CrossOriginConfig
          * @return updated builder
          */
-        protected Builder<T, B> secondaryLookupSupplier(Supplier<Optional<CrossOriginConfig>> secondaryLookupSupplier) {
+        protected Builder<Q, R, T, B> secondaryLookupSupplier(Supplier<Optional<CrossOriginConfig>> secondaryLookupSupplier) {
             helperBuilder.secondaryLookupSupplier(secondaryLookupSupplier);
             return this;
         }

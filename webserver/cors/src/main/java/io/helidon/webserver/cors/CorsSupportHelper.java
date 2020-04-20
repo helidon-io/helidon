@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
@@ -70,6 +71,8 @@ class CorsSupportHelper<Q, R> {
     static final Logger LOGGER = Logger.getLogger(CorsSupportHelper.class.getName());
 
     private static final Supplier<Optional<CrossOriginConfig>> EMPTY_SECONDARY_SUPPLIER = Optional::empty;
+
+    private final String name;
 
     /**
      * Trim leading or trailing slashes of a path.
@@ -149,8 +152,8 @@ class CorsSupportHelper<Q, R> {
      * @param config Config node containing CORS set-up
      * @return new instance based on the config
      */
-    public static CorsSupportHelper create(Config config) {
-        return builder().config(config).build();
+    public static <Q, R> CorsSupportHelper<Q, R> create(Config config) {
+        return CorsSupportHelper.<Q, R>builder().config(config).build();
     }
 
     /**
@@ -158,18 +161,15 @@ class CorsSupportHelper<Q, R> {
      *
      * @return the new instance
      */
-    public static CorsSupportHelper create() {
-        return builder().build();
+    public static <Q, R> CorsSupportHelper<Q, R> create() {
+        return CorsSupportHelper.<Q, R>builder().build();
     }
 
     private final Aggregator aggregator;
     private final Supplier<Optional<CrossOriginConfig>> secondaryCrossOriginLookup;
 
-    private CorsSupportHelper() {
-        this(builder());
-    }
-
-    private CorsSupportHelper(Builder builder) {
+    private CorsSupportHelper(Builder<Q, R>  builder) {
+        name = builder.name;
         aggregator = builder.aggregator;
         secondaryCrossOriginLookup = builder.secondaryCrossOriginLookup;
     }
@@ -179,18 +179,22 @@ class CorsSupportHelper<Q, R> {
      *
      * @return initialized builder
      */
-    public static Builder builder() {
-        return new Builder();
+    public static <Q, R> Builder<Q, R> builder() {
+        return new Builder<>();
     }
 
     /**
      * Builder class for {@code CorsSupportHelper}s.
+     *
+     * @param <Q> type of request wrapped by adapter
+     * @param <R> type of response wrapped by adapter
      */
-    public static class Builder implements io.helidon.common.Builder<CorsSupportHelper> {
+    public static class Builder<Q, R> implements io.helidon.common.Builder<CorsSupportHelper<Q, R>> {
 
         private Supplier<Optional<CrossOriginConfig>> secondaryCrossOriginLookup = EMPTY_SECONDARY_SUPPLIER;
 
         private final Aggregator aggregator = Aggregator.create();
+        private String name;
 
         /**
          * Sets the supplier for the secondary lookup of CORS information (typically <em>not</em> contained in
@@ -199,7 +203,7 @@ class CorsSupportHelper<Q, R> {
          * @param secondaryLookup the supplier
          * @return updated builder
          */
-        public Builder secondaryLookupSupplier(Supplier<Optional<CrossOriginConfig>> secondaryLookup) {
+        public Builder<Q, R> secondaryLookupSupplier(Supplier<Optional<CrossOriginConfig>> secondaryLookup) {
             secondaryCrossOriginLookup = secondaryLookup;
             return this;
         }
@@ -210,8 +214,20 @@ class CorsSupportHelper<Q, R> {
          * @param config config node containing CORS set-up information
          * @return updated builder
          */
-        public Builder config(Config config) {
+        public Builder<Q, R> config(Config config) {
             aggregator.mappedConfig(config);
+            return this;
+        }
+
+        /**
+         * Sets the name; typically the name from the CORS support instance this helper helps.
+         *
+         * @param name name to set
+         * @return updated builder
+         */
+        public Builder<Q, R> name(String name) {
+            Objects.requireNonNull(name, "CORS support name is optional but cannot be null");
+            this.name = name;
             return this;
         }
 
@@ -220,8 +236,8 @@ class CorsSupportHelper<Q, R> {
          *
          * @return initialized {@code CorsSupportHelper}
          */
-        public CorsSupportHelper build() {
-            CorsSupportHelper result = new CorsSupportHelper(this);
+        public CorsSupportHelper<Q, R> build() {
+            CorsSupportHelper<Q, R>  result = new CorsSupportHelper<>(this);
 
             LOGGER.config(() -> String.format("CorsSupportHelper configured as: %s", result.toString()));
 
@@ -630,6 +646,6 @@ class CorsSupportHelper<Q, R> {
     }
 
     private void decisionLog(String message) {
-        LOGGER.log(DECISION_LEVEL, () -> String.format("CORS:%s %s", message));
+        LOGGER.log(DECISION_LEVEL, () -> String.format("CORS:%s %s", name, message));
     }
 }

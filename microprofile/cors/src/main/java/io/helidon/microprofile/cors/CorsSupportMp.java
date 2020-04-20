@@ -32,7 +32,7 @@ import io.helidon.webserver.cors.CrossOriginConfig;
 /**
  * MP implementation of {@link CorsSupportBase}.
  */
-class CorsSupportMp extends CorsSupportBase<CorsSupportMp, CorsSupportMp.Builder, ContainerRequestContext, Response> {
+class CorsSupportMp extends CorsSupportBase<ContainerRequestContext, Response, CorsSupportMp, CorsSupportMp.Builder> {
 
     /**
      *
@@ -72,7 +72,12 @@ class CorsSupportMp extends CorsSupportBase<CorsSupportMp, CorsSupportMp.Builder
         super.prepareResponse(requestAdapter, responseAdapter);
     }
 
-    static class Builder extends CorsSupportBase.Builder<CorsSupportMp, Builder> {
+    @Override
+    public String toString() {
+        return String.format("CorsSupportMp{%s}", describe());
+    }
+
+    static class Builder extends CorsSupportBase.Builder<ContainerRequestContext, Response, CorsSupportMp, Builder> {
 
         @Override
         public CorsSupportMp build() {

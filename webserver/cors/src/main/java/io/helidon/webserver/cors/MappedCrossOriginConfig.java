@@ -33,6 +33,7 @@ import static io.helidon.webserver.cors.CorsSupportHelper.normalize;
  */
 public class MappedCrossOriginConfig implements Iterable<Map.Entry<String, CrossOriginConfig>> {
 
+    private String name = "";
     private boolean isEnabled = true;
 
     private final Map<String, Buildable> buildables;
@@ -60,9 +61,15 @@ public class MappedCrossOriginConfig implements Iterable<Map.Entry<String, Cross
             }
            return crossOriginConfig;
         }
+
+        @Override
+        public String toString() {
+            return String.format("Buildable{%s}", crossOriginConfig == null ? builder.toString() : crossOriginConfig.toString());
+        }
     }
 
     private MappedCrossOriginConfig(Builder builder) {
+        this.name = builder.nameOpt.orElse("");
         this.isEnabled = builder.enabledOpt.orElse(true);
         buildables = builder.builders;
 
@@ -142,6 +149,14 @@ public class MappedCrossOriginConfig implements Iterable<Map.Entry<String, Cross
     }
 
     /**
+     *
+     * @return the name set up for this CORS-enabled component or app
+     */
+    public String name() {
+        return name;
+    }
+
+    /**
      * Reports whether this instance is enabled.
      * @return current enabled state
      */
@@ -149,11 +164,17 @@ public class MappedCrossOriginConfig implements Iterable<Map.Entry<String, Cross
         return isEnabled;
     }
 
+    @Override
+    public String toString() {
+        return String.format("MappedCrossOriginConfig{name='%s', isEnabled=%b, buildables=%s}", name, isEnabled, buildables);
+    }
+
     /**
      * Fluent builder for {@code Mapped} cross-origin config.
      */
     public static class Builder implements io.helidon.common.Builder<MappedCrossOriginConfig> {
 
+        private Optional<String> nameOpt = Optional.empty();
         private Optional<Boolean> enabledOpt = Optional.empty();
         private final Map<String, Buildable> builders = new HashMap<>();
 
@@ -163,6 +184,17 @@ public class MappedCrossOriginConfig implements Iterable<Map.Entry<String, Cross
         @Override
         public MappedCrossOriginConfig build() {
             return new MappedCrossOriginConfig(this);
+        }
+
+        /**
+         * Sets the name for the CORS-enabled component or app (primarily for logging).
+         *
+         * @param name name for the component
+         * @return updated builder
+         */
+        public Builder name(String name) {
+            this.nameOpt = Optional.of(name);
+            return this;
         }
 
         /**

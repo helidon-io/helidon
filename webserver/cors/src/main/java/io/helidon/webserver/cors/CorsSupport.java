@@ -31,7 +31,7 @@ import static io.helidon.webserver.cors.Aggregator.PATHLESS_KEY;
 /**
  * SE implementation of {@link CorsSupportBase}.
  */
-public class CorsSupport extends CorsSupportBase<CorsSupport, CorsSupport.Builder, ServerRequest, ServerResponse>
+public class CorsSupport extends CorsSupportBase<ServerRequest, ServerResponse, CorsSupport, CorsSupport.Builder>
         implements Service, Handler {
 
     private CorsSupport(Builder builder) {
@@ -97,7 +97,12 @@ public class CorsSupport extends CorsSupportBase<CorsSupport, CorsSupport.Builde
         return builder.build();
     }
 
-    public static class Builder extends CorsSupportBase.Builder<CorsSupport, Builder> {
+    @Override
+    public String toString() {
+        return String.format("CorsSupport{%s}", describe());
+    }
+
+    public static class Builder extends CorsSupportBase.Builder<ServerRequest, ServerResponse, CorsSupport, Builder> {
 
         @Override
         public CorsSupport build() {
