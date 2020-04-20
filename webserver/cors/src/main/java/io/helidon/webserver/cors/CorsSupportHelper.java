@@ -307,8 +307,8 @@ class CorsSupportHelper<Q, R> {
 
     @Override
     public String toString() {
-        return String.format("CorsSupportHelper{isActive=%s, crossOriginConfigs=%s, secondaryCrossOriginLookup=%s}",
-                isActive(), aggregator, secondaryCrossOriginLookup == EMPTY_SECONDARY_SUPPLIER ? "(not set)" : "(set)");
+        return String.format("CorsSupportHelper{name='%s', isActive=%s, crossOriginConfigs=%s, secondaryCrossOriginLookup=%s}",
+                name, isActive(), aggregator, secondaryCrossOriginLookup == EMPTY_SECONDARY_SUPPLIER ? "(not set)" : "(set)");
     }
 
     Optional<R> processRequest(RequestType requestType, CrossOriginConfig crossOrigin,

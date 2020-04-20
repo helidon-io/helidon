@@ -104,6 +104,12 @@ public class CorsSupport extends CorsSupportBase<ServerRequest, ServerResponse, 
 
     public static class Builder extends CorsSupportBase.Builder<ServerRequest, ServerResponse, CorsSupport, Builder> {
 
+        private static int builderCount = 0; // To help distinguish otherwise-unnamed CorsSupport instances in log messages
+
+        Builder() {
+            name("SE " + builderCount++); // Initial name. The developer can (should) provide a more descriptive one.
+        }
+
         @Override
         public CorsSupport build() {
             return new CorsSupport(this);

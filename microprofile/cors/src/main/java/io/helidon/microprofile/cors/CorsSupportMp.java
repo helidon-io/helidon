@@ -79,6 +79,9 @@ class CorsSupportMp extends CorsSupportBase<ContainerRequestContext, Response, C
 
     static class Builder extends CorsSupportBase.Builder<ContainerRequestContext, Response, CorsSupportMp, Builder> {
 
+        Builder() {
+            name("CORS MP");
+        }
         @Override
         public CorsSupportMp build() {
             return new CorsSupportMp(this);

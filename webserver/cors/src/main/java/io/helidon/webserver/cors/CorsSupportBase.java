@@ -52,11 +52,10 @@ import io.helidon.config.Config;
 public abstract class CorsSupportBase<Q, R, T extends CorsSupportBase<Q, R, T, B>,
         B extends CorsSupportBase.Builder<Q, R, T, B>> {
 
-    private final String name;
     private final CorsSupportHelper<Q, R> helper;
 
     protected CorsSupportBase(Builder<Q, R, T, B> builder) {
-        name = builder.name;
+        builder.helperBuilder.name(builder.name);
         helper = builder.helperBuilder.build();
     }
 
@@ -88,7 +87,7 @@ public abstract class CorsSupportBase<Q, R, T extends CorsSupportBase<Q, R, T, B
 
     protected String describe() {
         // Partial toString implementation for use by subclasses
-        return String.format("name='%s', helper=%s", name, helper);
+        return helper.toString();
     }
 
     /**
