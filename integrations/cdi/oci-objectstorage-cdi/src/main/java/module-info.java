@@ -20,11 +20,11 @@
  */
 module io.helidon.integrations.cdi.oci.objectstorage {
 
-    requires javax.inject;
+    requires jakarta.inject.api;
     requires oci.java.sdk.common;
     requires oci.java.sdk.objectstorage.generated;
     requires oci.java.sdk.objectstorage.extensions;
-    requires cdi.api;
+    requires jakarta.enterprise.cdi.api;
     requires microprofile.config.api;
 
     exports io.helidon.integrations.cdi.oci.objectstorage;

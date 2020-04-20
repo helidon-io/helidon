@@ -22,5 +22,5 @@
        xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee
                            http://xmlns.jcp.org/xml/ns/javaee/beans_2_0.xsd"
        version="2.0"
-       bean-discovery-mode="annotated">
+       bean-discovery-mode="none">
 </beans>

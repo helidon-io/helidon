@@ -53,10 +53,9 @@ interface ConfigurableConnector {
                 .get(connectorName.get());
 
         return AdHocConfigBuilder
-                .from(channelConfig)
-                //It seams useless but its required by the spec
+                .from(connectorConfig)
                 .put(ConnectorFactory.CHANNEL_NAME_ATTRIBUTE, channelName)
-                .putAll(connectorConfig)
+                .putAll(channelConfig)
                 .build();
     }
 }

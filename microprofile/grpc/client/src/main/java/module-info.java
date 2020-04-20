@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,14 +15,17 @@
  */
 
 /**
- * @author jk  2019.08.15
+ * gRPC client implementation for Helidon MP.
  */
 module io.helidon.microprofile.grpc.client {
-    exports io.helidon.microprofile.grpc.client;
+    requires java.logging;
+
+    requires jakarta.enterprise.cdi.api;
+    requires jakarta.inject.api;
 
     requires transitive io.helidon.microprofile.grpc.core;
 
-    requires java.logging;
+    exports io.helidon.microprofile.grpc.client;
 
     provides javax.enterprise.inject.spi.Extension
             with io.helidon.microprofile.grpc.client.GrpcClientCdiExtension;

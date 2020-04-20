@@ -513,6 +513,7 @@ public final class HelidonReactiveStreamsEngine implements ReactiveStreamsEngine
         inlet
                 .onComplete(() -> complete(subscriberActivity))
                 .onError(e -> fail(subscriberActivity, e))
+                .compose(upstream -> new MultiCancelOnExecutor<>(upstream, coupledExecutor))
                 .takeUntil(Multi.from(publisherActivity, true))
                 .onCancel(() -> complete(subscriberActivity))
                 .subscribe(subscriber);
@@ -520,6 +521,7 @@ public final class HelidonReactiveStreamsEngine implements ReactiveStreamsEngine
         Multi<? extends R> outlet = Multi.from(publisher)
                 .onComplete(() -> complete(publisherActivity))
                 .onError(e -> fail(publisherActivity, e))
+                .compose(upstream -> new MultiCancelOnExecutor<>(upstream, coupledExecutor))
                 .takeUntil(Multi.from(subscriberActivity, true))
                 .onCancel(() -> complete(publisherActivity));
 
@@ -527,15 +529,11 @@ public final class HelidonReactiveStreamsEngine implements ReactiveStreamsEngine
     }
 
     static void complete(CompletableFuture<Object> cf) {
-        coupledExecutor.execute(() -> {
-            cf.complete(null);
-        });
+        cf.complete(null);
     }
 
     static void fail(CompletableFuture<Object> cf, Throwable ex) {
-        coupledExecutor.execute(() -> {
-            cf.completeExceptionally(ex);
-        });
+        cf.completeExceptionally(ex);
     }
 
     // Workaround for a TCK bug when calling cancel() from any method named onComplete().

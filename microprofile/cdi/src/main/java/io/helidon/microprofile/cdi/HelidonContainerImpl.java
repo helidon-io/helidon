@@ -100,6 +100,8 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
                 .ifPresent(contextBuilder::parent);
 
         ROOT_CONTEXT = contextBuilder.build();
+
+        CDI.setCDIProvider(new HelidonCdiProvider());
     }
 
     private final WeldBootstrap bootstrap;
@@ -198,7 +200,7 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
         bootstrap.deployBeans();
 
         cdi = new HelidonCdi(id, bootstrap, deployment);
-        CDI.setCDIProvider(() -> cdi);
+        HelidonCdiProvider.setCdi(cdi);
 
         beanManager.getEvent().select(BuildTimeEnd.Literal.INSTANCE).fire(id);
 
@@ -251,7 +253,15 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
 
         IN_RUNTIME.set(true);
 
-        BeanManager bm = CDI.current().getBeanManager();
+        BeanManager bm = null;
+        try {
+            bm = CDI.current().getBeanManager();
+        } catch (IllegalStateException e) {
+            LOGGER.log(Level.FINEST, "Cannot get current CDI, probably restarted", e);
+            // cannot access CDI - CDI is not yet initialized (probably shut down and started again)
+            initInContext();
+            bm = CDI.current().getBeanManager();
+        }
 
         Config config = (Config) ConfigProvider.getConfig();
 

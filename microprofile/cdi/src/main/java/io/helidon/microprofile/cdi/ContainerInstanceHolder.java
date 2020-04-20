@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.AtomicReference;
 final class ContainerInstanceHolder {
     private static final AtomicReference<HelidonContainer> CONTAINER = new AtomicReference<>();
     private static final List<Runnable> RESET_LISTENERS = new LinkedList<>();
+    private static boolean isReset = false;
 
     private ContainerInstanceHolder() {
     }
@@ -38,7 +39,12 @@ final class ContainerInstanceHolder {
         CONTAINER.set(container);
     }
 
-    static HelidonContainer get() {
+    // return true if the container was reset, indicating somebody started CDI by hand and then shut it down
+    static synchronized boolean isReset() {
+        return isReset;
+    }
+
+    static synchronized HelidonContainer get() {
         HelidonContainer helidonContainer = CONTAINER.get();
         if (null == helidonContainer) {
             helidonContainer = fromBuildTimeInitializer();
@@ -57,6 +63,7 @@ final class ContainerInstanceHolder {
     }
 
     static synchronized void reset() {
+        isReset = true;
         CONTAINER.set(null);
         for (Runnable resetListener : RESET_LISTENERS) {
             resetListener.run();

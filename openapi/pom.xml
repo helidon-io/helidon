@@ -132,12 +132,18 @@
             <artifactId>helidon-media-jsonp-server</artifactId>
         </dependency>
         <dependency>
+            <groupId>jakarta.json</groupId>
+            <artifactId>jakarta.json-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>org.eclipse</groupId>
             <artifactId>yasson</artifactId>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>org.glassfish</groupId>
-            <artifactId>javax.json</artifactId>
+            <artifactId>jakarta.json</artifactId>
             <scope>runtime</scope>
         </dependency>
         <dependency>

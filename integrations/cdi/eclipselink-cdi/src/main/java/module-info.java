@@ -25,8 +25,8 @@ module io.helidon.integrations.cdi.eclipselink {
     requires java.management;
 
     requires java.transaction;
-    requires cdi.api;
-    requires javax.inject;
+    requires jakarta.enterprise.cdi.api;
+    requires jakarta.inject.api;
     requires java.sql;
     requires org.eclipse.persistence.jpa;
     requires org.eclipse.persistence.core;

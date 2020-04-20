@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -301,7 +301,7 @@ public class CommandRetrier {
 
         Object result;
         try {
-            LOGGER.info(() -> "About to execute command with key "
+            LOGGER.fine(() -> "About to execute command with key "
                     + command.getCommandKey()
                     + " on thread " + Thread.currentThread().getName());
 

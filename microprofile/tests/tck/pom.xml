@@ -42,6 +42,15 @@
         <module>tck-reactive-operators</module>
     </modules>
 
+    <properties>
+        <!--
+        We do not want to fix problems in TCK tests themselves, let's ignore enforcer here
+         -->
+        <enforcer.skip>true</enforcer.skip>
+    </properties>
+
+
+
     <dependencies>
          <dependency>
             <groupId>org.testng</groupId>
