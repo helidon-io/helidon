@@ -18,6 +18,7 @@ package io.helidon.common.reactive;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -548,6 +549,35 @@ public interface Single<T> extends Subscribable<T> {
             CompletableFuture<T> future = new CompletableFuture<>();
             future.completeExceptionally(ex);
             return future;
+        }
+    }
+
+    /**
+     * Block until {@link io.helidon.common.reactive.Single} is completed, throws only unchecked exceptions.
+     *
+     * @throws java.util.concurrent.CancellationException if the computation was cancelled
+     * @throws CompletionException                        if this future completed
+     * @return T
+     */
+    default T await() {
+        return this.toStage().toCompletableFuture().join();
+    }
+
+    /**
+     * Block until {@link io.helidon.common.reactive.Single} is completed, throws only unchecked exceptions.
+     *
+     * @param timeout the maximum time to wait
+     * @param unit    the time unit of the timeout argument
+     * @return the result value
+     * @throws java.util.concurrent.CancellationException if this future was cancelled
+     * @throws CompletionException                        if this future completed exceptionally,
+     *                                                    was interrupted while waiting or the wait timed out
+     */
+    default T await(long timeout, TimeUnit unit) {
+        try {
+            return this.get(timeout, unit);
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            throw new CompletionException(e);
         }
     }
 }
