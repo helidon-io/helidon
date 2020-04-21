@@ -45,7 +45,7 @@ public class DataFetcherUtils {
     }
 
     /**
-     * Create a new {@link DataFetcher} for a {@link Class} and {@link Method}.
+     * Create a new {@link DataFetcher} for a {@link Class} and {@link Method} to be executed.
      *
      * @param clazz  {@link Class} to call
      * @param method {@link Method} to call
@@ -54,7 +54,7 @@ public class DataFetcherUtils {
      * @param <V>    value type
      * @return a new {@link DataFetcher}
      */
-    @SuppressWarnings( { "unchecked", "rawtypes" })
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public static <V> DataFetcher<V> newMethodDataFetcher(Class<?> clazz, Method method, String source, SchemaArgument... args) {
         Object instance = CDI.current().select(clazz).get();
 
