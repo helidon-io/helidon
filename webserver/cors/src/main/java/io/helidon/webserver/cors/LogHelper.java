@@ -92,10 +92,10 @@ class LogHelper {
             String partOfOriginMatchingHost = "://" + hostOpt.get();
             if (originOpt.get()
                     .contains(partOfOriginMatchingHost)) {
-                reasonsWhyNormal.add(String.format("header %s '%s' matches header %s '%s'; not cross-host", ORIGIN,
+                reasonsWhyNormal.add(String.format("header %s '%s' matches header %s '%s'", ORIGIN,
                         originOpt.get(), HOST, hostOpt.get()));
             } else {
-                factorsWhyCrossHost.add(String.format("header %s (%s) does not match header %s %s; cross-host", ORIGIN,
+                factorsWhyCrossHost.add(String.format("header %s '%s' does not match header %s '%s'", ORIGIN,
                         originOpt.get(), HOST, hostOpt.get()));
             }
         }

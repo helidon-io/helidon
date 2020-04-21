@@ -23,8 +23,6 @@ import java.util.logging.Logger;
 
 import io.helidon.config.Config;
 import io.helidon.webserver.Handler;
-import io.helidon.webserver.ServerRequest;
-import io.helidon.webserver.ServerResponse;
 
 /**
  * Allows services (including Helidon built-in services) to register CORS support easily.
@@ -90,14 +88,18 @@ public class CorsEnabledServiceHelper {
             crossOriginConfig = corsConfig.as(CrossOriginConfig::create)
                     .get();
         } else {
-            crossOriginConfig = CrossOriginConfig.builder().build();
+            // The built-in services need to support only the "read-only" HTTP methods (a.k.a CORS "simple" methods).
+            crossOriginConfig = CrossOriginConfig.builder()
+                    .allowMethods("GET", "HEAD", "OPTIONS")
+                    .build();
         }
         if (crossOriginConfig.isEnabled()) {
             builder.addCrossOrigin(crossOriginConfig).build();
-            LOGGER.log(Level.CONFIG, String.format("CORS for service %s configured with %s", serviceName, crossOriginConfig));
+            LOGGER.log(Level.CONFIG, String.format("CORS is configured for service %s with %s", serviceName,
+                    crossOriginConfig));
         } else {
             // CORS is disabled for this service. Return the no-op handler.
-            LOGGER.log(Level.CONFIG, () -> String.format("CORS for service %s is disabled", serviceName));
+            LOGGER.log(Level.CONFIG, () -> String.format("CORS is disabled for service %s", serviceName));
             return NO_OP_HANDLER;
         }
         return builder.build();
