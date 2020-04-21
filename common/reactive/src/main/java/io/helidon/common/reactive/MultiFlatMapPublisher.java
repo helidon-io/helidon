@@ -210,6 +210,8 @@ final class MultiFlatMapPublisher<T, R> implements Multi<R> {
                         sender.produced(1L);
                     } else {
                         // yes, go on a full drain loop
+                        sender.enqueue(item);
+                        q.offer(sender);
                         drainLoop();
                         return;
                     }
