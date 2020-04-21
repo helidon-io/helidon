@@ -16,7 +16,6 @@
  */
 package io.helidon.common.reactive;
 
-import org.reactivestreams.FlowAdapters;
 import org.testng.annotations.Ignore;
 import org.testng.annotations.Test;
 
