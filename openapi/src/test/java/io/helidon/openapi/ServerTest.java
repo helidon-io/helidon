@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,9 @@ package io.helidon.openapi;
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.function.Consumer;
 
+import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
@@ -49,6 +51,9 @@ public class ServerTest {
     private static final Config OPENAPI_CONFIG_DISABLED_CORS = Config.create(
             ConfigSources.classpath("serverNoCORS.properties").build()).get(OpenAPISupport.Builder.CONFIG_KEY);
 
+    private static final Config OPENAPI_CONFIG_RESTRICTED_CORS = Config.create(
+            ConfigSources.classpath("serverCORSRestricted.yaml").build()).get(OpenAPISupport.Builder.CONFIG_KEY);
+
     private static final OpenAPISupport.Builder GREETING_OPENAPI_SUPPORT_BUILDER
             = OpenAPISupport.builder()
                     .staticFile("src/test/resources/openapi-greeting.yml")
@@ -59,13 +64,14 @@ public class ServerTest {
             = OpenAPISupport.builder()
                     .staticFile("src/test/resources/openapi-time-server.yml")
                     .webContext(TIME_PATH)
-                    .config(OPENAPI_CONFIG_DISABLED_CORS);
+                    .config(OPENAPI_CONFIG_RESTRICTED_CORS);
 
     public ServerTest() {
     }
 
     @BeforeAll
     public static void startup() {
+        System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
         greetingWebServer = TestUtil.startServer(GREETING_OPENAPI_SUPPORT_BUILDER);
         timeWebServer = TestUtil.startServer(TIME_OPENAPI_SUPPORT_BUILDER);
     }
@@ -166,18 +172,76 @@ public class ServerTest {
 
     @Test
     public void testTimeAsConfig() throws Exception {
+        commonTestTimeAsConfig(null);
+    }
+
+    @Test
+    public void testTimeUnrestrictedCors() throws Exception {
+        commonTestTimeAsConfig(cnx -> {
+
+            cnx.setRequestProperty("Origin", "http://foo.bar");
+            cnx.setRequestProperty("Host", "http://localhost");
+        });
+
+    }
+
+    private void commonTestTimeAsConfig(Consumer<HttpURLConnection> headerSetter) throws Exception {
         HttpURLConnection cnx = TestUtil.getURLConnection(
                 timeWebServer.port(),
                 "GET",
                 TIME_PATH,
                 MediaType.APPLICATION_OPENAPI_YAML);
+        if (headerSetter != null) {
+            headerSetter.accept(cnx);
+        }
         Config c = TestUtil.configFromResponse(cnx);
         assertEquals("Returns the current time",
                 TestUtil.fromConfig(c, "paths./timecheck.get.summary"));
         assertEquals("string",
                 TestUtil.fromConfig(c,
                         "paths./timecheck.get.responses.200.content."
-                            + "application/json.schema.properties.message.type"));
+                                + "application/json.schema.properties.message.type"));
+    }
+
+    @Test
+    public void testCrossOriginGreetingWithoutCors() throws Exception {
+        HttpURLConnection cnx = TestUtil.getURLConnection(
+                greetingWebServer.port(),
+                "GET",
+                GREETING_PATH,
+                MediaType.APPLICATION_OPENAPI_YAML);
+        cnx.setRequestProperty("Origin", "http://foo.bar");
+        cnx.setRequestProperty("Host", "http://localhost");
+
+        Config c = TestUtil.configFromResponse(cnx);
+
+        assertEquals(Http.Status.OK_200.code(), cnx.getResponseCode());
+    }
+
+    @Test
+    public void testTimeRestrictedCorsValidOrigin() throws Exception {
+        HttpURLConnection cnx = TestUtil.getURLConnection(
+                timeWebServer.port(),
+                "GET",
+                TIME_PATH,
+                MediaType.APPLICATION_OPENAPI_YAML);
+        cnx.setRequestProperty("Origin", "http://foo.bar");
+        cnx.setRequestProperty("Host", "http://localhost");
+
+        assertEquals(Http.Status.OK_200.code(), cnx.getResponseCode());
+    }
+
+    @Test
+    public void testTimeRestrictedCorsInvalidOrigin() throws Exception {
+        HttpURLConnection cnx = TestUtil.getURLConnection(
+                timeWebServer.port(),
+                "GET",
+                TIME_PATH,
+                MediaType.APPLICATION_OPENAPI_YAML);
+        cnx.setRequestProperty("Origin", "http://other.com");
+        cnx.setRequestProperty("Host", "http://localhost");
+
+        assertEquals(Http.Status.FORBIDDEN_403.code(), cnx.getResponseCode());
     }
 
     @Test
