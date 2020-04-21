@@ -38,6 +38,9 @@
     <properties>
         <openapi-interfaces-dir>${project.build.directory}/extracted-sources/openapi-interfaces</openapi-interfaces-dir>
         <openapi-impls-dir>${project.build.directory}/extracted-sources/openapi-impls</openapi-impls-dir>
+
+        <!-- Allows test client to set Origin and Host headers (which are restricted) on CORS tests -->
+        <sun.net.http.allowRestrictedHeaders>true</sun.net.http.allowRestrictedHeaders>
     </properties>
 
     <build>

@@ -71,7 +71,6 @@ public class ServerTest {
     @BeforeAll
     public static void startup() {
         initLogging();
-        System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
         greetingWebServer = TestUtil.startServer(GREETING_OPENAPI_SUPPORT_BUILDER);
         timeWebServer = TestUtil.startServer(TIME_OPENAPI_SUPPORT_BUILDER);
     }
