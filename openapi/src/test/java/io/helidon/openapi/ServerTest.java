@@ -16,6 +16,7 @@
  */
 package io.helidon.openapi;
 
+import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.Map;
@@ -27,7 +28,6 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.webserver.WebServer;
 
-import io.helidon.webserver.cors.CorsEnabledServiceHelper;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -71,11 +71,28 @@ public class ServerTest {
 
     @BeforeAll
     public static void startup() {
+        initLogging();
         System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
         greetingWebServer = TestUtil.startServer(GREETING_OPENAPI_SUPPORT_BUILDER);
         timeWebServer = TestUtil.startServer(TIME_OPENAPI_SUPPORT_BUILDER);
     }
 
+    private static void initLogging() {
+        try {
+            java.util.logging.Logger logger = java.util.logging.Logger.getLogger("io.helidon.webserver.cors.CorsSupportHelper");
+            logger.setLevel(java.util.logging.Level.FINE);
+            java.util.logging.Handler h = new java.util.logging.ConsoleHandler();
+            h.setLevel(java.util.logging.Level.FINE);
+            logger.addHandler(h);
+        } catch (Throwable t) {
+            throw new RuntimeException(t);
+        }
+//        System.out.println("Starting to init handlers");
+//        for (java.util.logging.Handler h : logger.getHandlers()) {
+//            System.out.println("Initing handler " + h.toString());
+//            h.setLevel(java.util.logging.Level.FINE);
+//        }
+    }
 
     @AfterAll
     public static void shutdown() {
