@@ -126,6 +126,19 @@
                         <suiteXmlFile>tck-suite.xml</suiteXmlFile>
                     </suiteXmlFiles>
                 </configuration>
+                <dependencies>
+                    <!--
+                        Forcing resolution of opentracing-api:0.31.0
+                        to workaround proxy issues with shrinkwrap maven.
+                        Cannot override managed version of opentracing-api since
+                        0.31.0 is not compatible with Helidon
+                    -->
+                    <dependency>
+                        <groupId>io.opentracing</groupId>
+                        <artifactId>opentracing-api</artifactId>
+                        <version>0.31.0</version>
+                    </dependency>
+                </dependencies>
             </plugin>
         </plugins>
     </build>

@@ -33,7 +33,7 @@ public class SingleObserveOnTckTest extends FlowPublisherVerification<Long> {
     private static ScheduledExecutorService executor;
 
     public SingleObserveOnTckTest() {
-        super(new TestEnvironment(50));
+        super(new TestEnvironment(200));
     }
 
     @BeforeClass

@@ -25,7 +25,7 @@ import java.util.stream.IntStream;
 public class MultiLimitPublisherZeroTckTest extends FlowPublisherVerification<Integer> {
 
     public MultiLimitPublisherZeroTckTest() {
-        super(new TestEnvironment(50));
+        super(new TestEnvironment(200));
     }
 
     @Override

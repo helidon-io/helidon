@@ -26,7 +26,7 @@ import java.util.stream.IntStream;
 public class MultiDistinctPublisherModuloTckTest extends FlowPublisherVerification<Integer> {
 
     public MultiDistinctPublisherModuloTckTest() {
-        super(new TestEnvironment(50));
+        super(new TestEnvironment(200));
     }
     
     @Override
