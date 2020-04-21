@@ -16,7 +16,6 @@
  */
 package io.helidon.openapi;
 
-import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.Map;
