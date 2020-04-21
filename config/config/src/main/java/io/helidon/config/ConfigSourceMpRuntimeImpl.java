@@ -16,12 +16,17 @@
 
 package io.helidon.config;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Optional;
 import java.util.function.BiConsumer;
+import java.util.logging.Level;
 
 import io.helidon.config.spi.ConfigNode;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
+
+import static io.helidon.config.AbstractConfigImpl.LOGGER;
 
 class ConfigSourceMpRuntimeImpl extends ConfigSourceRuntimeBase {
     private final ConfigSource source;
@@ -38,7 +43,28 @@ class ConfigSourceMpRuntimeImpl extends ConfigSourceRuntimeBase {
 
     @Override
     public void onChange(BiConsumer<String, ConfigNode> change) {
-        // this is a no-op - MP config sources do not support changes
+        try {
+            // this is not a documented feature
+            // it is to enable MP config sources to be "mutable" in Helidon
+            // this requires some design decisions (and clarification of the MP Config Specification), as this
+            // is open to different interpretations for now
+            Method method = source.getClass().getMethod("registerChangeListener", BiConsumer.class);
+            BiConsumer<String, String> mpListener = (key, value) -> change.accept(key, ConfigNode.ValueNode.create(value));
+
+            method.invoke(source, mpListener);
+        } catch (NoSuchMethodException e) {
+            LOGGER.finest("No registerChangeListener(BiConsumer) method found on " + source.getClass() + ", change"
+                                  + " support not enabled for this config source (" + source.getName() + ")");
+        } catch (IllegalAccessException e) {
+            LOGGER.log(Level.WARNING, "Cannot invoke registerChangeListener(BiConsumer) method on " + source.getClass() + ", "
+                    + "change support not enabled for this config source ("
+                    + source.getName() + ")", e);
+        } catch (InvocationTargetException e) {
+            LOGGER.log(Level.WARNING, "Invocation of registerChangeListener(BiConsumer) method on " + source.getClass()
+                    + " failed with an exception, "
+                    + "change support not enabled for this config source ("
+                    + source.getName() + ")", e);
+        }
     }
 
     @Override
@@ -65,5 +91,11 @@ class ConfigSourceMpRuntimeImpl extends ConfigSourceRuntimeBase {
     @Override
     public String description() {
         return source.getName();
+    }
+
+    @Override
+    boolean changesSupported() {
+        // supported through a known method signature
+        return true;
     }
 }

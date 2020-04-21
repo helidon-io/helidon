@@ -20,13 +20,14 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 import javax.enterprise.context.Dependent;
+import javax.enterprise.inject.se.SeContainer;
+import javax.enterprise.inject.se.SeContainerInitializer;
 import javax.enterprise.inject.spi.CDI;
 import javax.enterprise.util.AnnotationLiteral;
 import javax.inject.Inject;
 import javax.inject.Qualifier;
 
 import io.helidon.config.test.infra.RestoreSystemPropertiesExt;
-import io.helidon.microprofile.cdi.HelidonContainer;
 import io.helidon.microprofile.config.Converters.Ctor;
 import io.helidon.microprofile.config.Converters.Of;
 import io.helidon.microprofile.config.Converters.Parse;
@@ -49,7 +50,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
  */
 @ExtendWith(RestoreSystemPropertiesExt.class)
 class MpConfigInjectionTest {
-    private static HelidonContainer container;
+    private static SeContainer container;
 
     @BeforeAll
     static void initClass() {
@@ -62,14 +63,16 @@ class MpConfigInjectionTest {
         System.setProperty("inject.ctor", "ctor");
 
         // CDI container
-        container = HelidonContainer.instance();
-        container.start();
+        // CDI container
+        container = SeContainerInitializer.newInstance()
+                .addBeanClasses(Bean.class, SubBean.class)
+                .initialize();
     }
 
     @AfterAll
     static void destroyClass() {
         if (null != container) {
-            container.shutdown();
+            container.close();
         }
     }
 
