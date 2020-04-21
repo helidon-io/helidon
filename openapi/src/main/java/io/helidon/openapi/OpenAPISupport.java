@@ -61,8 +61,8 @@ import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 import io.helidon.webserver.cors.CorsEnabledServiceHelper;
-
 import io.helidon.webserver.cors.CrossOriginConfig;
+
 import io.smallrye.openapi.api.OpenApiConfig;
 import io.smallrye.openapi.api.OpenApiDocument;
 import io.smallrye.openapi.api.models.OpenAPIImpl;

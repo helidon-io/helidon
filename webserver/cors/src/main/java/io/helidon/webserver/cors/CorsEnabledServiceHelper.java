@@ -16,7 +16,6 @@
  */
 package io.helidon.webserver.cors;
 
-import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -30,6 +29,7 @@ import io.helidon.webserver.Handler;
  *     service. The helper uses the {@link CrossOriginConfig} instance to set up CORS behavior for the service. If the caller
  *     passes a null {@code CrossOriginConfig} or invokes the other variant of {@code create} then the sets up CORS using a
  *     default configuration:
+ * </p>
  *     <pre>
  *     enabled: true
  *     allow-origins: ["*"]
@@ -39,7 +39,6 @@ import io.helidon.webserver.Handler;
  *     max-age: 3600
  *     </pre>
  *     All of those settings except for {@code allow-methods} are the defaults for {@code CrossOriginConfig}.
- * </p>
  */
 public class CorsEnabledServiceHelper {
 
@@ -55,9 +54,9 @@ public class CorsEnabledServiceHelper {
     private final String serviceName;
     private final CrossOriginConfig crossOriginConfig;
 
-    private CorsEnabledServiceHelper(String serviceName, CrossOriginConfig CrossOriginConfig) {
+    private CorsEnabledServiceHelper(String serviceName, CrossOriginConfig crossOriginConfig) {
         this.serviceName = serviceName;
-        this.crossOriginConfig = CrossOriginConfig;
+        this.crossOriginConfig = crossOriginConfig;
     }
 
     /**
