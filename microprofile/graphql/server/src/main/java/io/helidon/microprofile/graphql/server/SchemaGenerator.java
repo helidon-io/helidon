@@ -239,6 +239,7 @@ public class SchemaGenerator {
                     if (inputType.getName().equals(simpleName)) {
                         inputType.setName(inputType.getName() + "Input");
                     }
+
                     if (!schema.containsInputTypeWithName(inputType.getName())) {
                         schema.addInputType(inputType);
                         checkInputType(schema, inputType);
@@ -519,6 +520,7 @@ public class SchemaGenerator {
                 }
                 fd.setDataFetcher(dataFetcher);
                 fd.setDescription(discoveredMethod.getDescription());
+                final String newFdName = fd.getName();
 
                 schemaType.addFieldDefinition(fd);
 
@@ -758,7 +760,13 @@ public class SchemaGenerator {
             if (isQuery || isMutation || hasSourceAnnotation) {
                 DiscoveredMethod discoveredMethod = generateDiscoveredMethod(m, clazz, null, false, true);
                 discoveredMethod.setMethodType(isQuery || hasSourceAnnotation ? QUERY_TYPE : MUTATION_TYPE);
-                mapDiscoveredMethods.put(discoveredMethod.getName(), discoveredMethod);
+                String name = discoveredMethod.getName();
+                if (mapDiscoveredMethods.containsKey(name)) {
+                   throw new RuntimeException("A method named " + name + " already exists on "
+                                                      + "the " + (isMutation ? "mutation" : "query")
+                                                      + " " + discoveredMethod.getMethod().getName());
+                }
+                mapDiscoveredMethods.put(name, discoveredMethod);
             }
         }
         return mapDiscoveredMethods;

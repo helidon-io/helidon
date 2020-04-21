@@ -173,8 +173,7 @@ public class Schema
 
         sb.append(CLOSE_CURLY).append(NEWLINE).append(NEWLINE);
 
-        listSchemaTypes.stream()
-                .forEach(t -> sb.append(t.getSchemaAsString()).append("\n"));
+        listSchemaTypes.forEach(t -> sb.append(t.getSchemaAsString()).append("\n"));
 
         listInputTypes.forEach(s -> sb.append(s.getSchemaAsString()).append('\n'));
 
@@ -226,9 +225,7 @@ public class Schema
             };
 
             // add the type resolver to all interfaces and the Query object
-            setInterfaces.forEach(t -> {
-                builder.type(t.getName(), tr -> tr.typeResolver(typeResolver));
-            });
+            setInterfaces.forEach(t -> builder.type(t.getName(), tr -> tr.typeResolver(typeResolver)));
             builder.type(getQueryName(), tr -> tr.typeResolver(typeResolver));
         }
 
@@ -243,8 +240,7 @@ public class Schema
 
         // search for any types that have field definitions with DataFetchers
         getTypes().forEach(t -> {
-            boolean hasDataFetchers = t.getFieldDefinitions().stream().filter(fd -> fd.getDataFetcher() != null)
-                    .count() > 0;
+            boolean hasDataFetchers = t.getFieldDefinitions().stream().anyMatch(fd -> fd.getDataFetcher() != null);
             if (hasDataFetchers) {
                 final TypeRuntimeWiring.Builder runtimeBuilder = newTypeWiring(t.getName());
                 t.getFieldDefinitions().stream()

@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import io.helidon.microprofile.graphql.server.test.queries.DuplicateNameQueries;
 import io.helidon.microprofile.graphql.server.test.queries.PropertyNameQueries;
 import io.helidon.microprofile.graphql.server.test.types.TypeWithNameAndJsonbProperty;
 import javax.enterprise.inject.se.SeContainer;
@@ -266,6 +267,12 @@ public class SchemaGeneratorIT extends AbstractGraphQLTest {
     @Test
     public void testInvalidQueries() throws IOException {
         setupIndex(indexFileName, InvalidQueries.class);
+        assertThrows(RuntimeException.class, () -> new ExecutionContext<>(defaultContext));
+    }
+
+    @Test
+    public void testDuplicateQueryOrMutationNames() throws IOException {
+        setupIndex(indexFileName, DuplicateNameQueries.class);
         assertThrows(RuntimeException.class, () -> new ExecutionContext<>(defaultContext));
     }
 

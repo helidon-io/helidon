@@ -64,7 +64,7 @@ public class ExecutionContext<C> {
     private Schema schema;
 
     /**
-     * A context to pass to GrapQL for execution.
+     * A context to pass to GraphQL for execution.
      */
     private C context;
 
@@ -87,7 +87,7 @@ public class ExecutionContext<C> {
     }
 
     /**
-     * Construct an execution context in which ti execute GraphQL queries.
+     * Construct an execution context in which to execute GraphQL queries.
      *
      * @param context context
      */
@@ -98,7 +98,8 @@ public class ExecutionContext<C> {
             this.graphQLSchema = schema.generateGraphQLSchema();
             this.context = context;
             SchemaPrinter.Options options = SchemaPrinter.Options
-                    .defaultOptions().includeDirectives(false)
+                    .defaultOptions()
+                    .includeDirectives(false)
                     .includeScalarTypes(true)
                     .includeExtendedScalarTypes(true);
             SchemaPrinter schemaPrinter = new SchemaPrinter(options);
