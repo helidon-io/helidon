@@ -26,7 +26,7 @@ import java.util.concurrent.Flow;
 public class SingleDefaultIfEmptyNormalTckTest extends FlowPublisherVerification<Long> {
 
     public SingleDefaultIfEmptyNormalTckTest() {
-        super(new TestEnvironment(50));
+        super(new TestEnvironment(200));
     }
 
     @Override

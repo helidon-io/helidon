@@ -28,7 +28,7 @@ import java.util.stream.Stream;
 public class MultiFromStreamTckTest extends FlowPublisherVerification<Integer> {
 
     public MultiFromStreamTckTest() {
-        super(new TestEnvironment(50));
+        super(new TestEnvironment(200));
     }
 
     @Override

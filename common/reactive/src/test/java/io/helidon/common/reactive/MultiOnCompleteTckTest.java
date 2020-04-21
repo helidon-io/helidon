@@ -26,7 +26,7 @@ import java.util.stream.IntStream;
 public class MultiOnCompleteTckTest extends FlowPublisherVerification<Integer> {
 
     public MultiOnCompleteTckTest() {
-        super(new TestEnvironment(50));
+        super(new TestEnvironment(200));
     }
 
     @Override

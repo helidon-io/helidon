@@ -33,7 +33,7 @@ public class MultiObserveOnTckTest extends FlowPublisherVerification<Long> {
     private static ScheduledExecutorService executor;
 
     public MultiObserveOnTckTest() {
-        super(new TestEnvironment(50));
+        super(new TestEnvironment(200));
     }
 
     @BeforeClass

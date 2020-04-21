@@ -25,7 +25,7 @@ import java.util.concurrent.Flow;
 public class SingleFlatMapSingleTckTest extends FlowPublisherVerification<Integer> {
 
     public SingleFlatMapSingleTckTest() {
-        super(new TestEnvironment(50));
+        super(new TestEnvironment(200));
     }
 
     @Override

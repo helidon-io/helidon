@@ -1,6 +1,6 @@
 #!/bin/bash -e
 #
-# Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2019, 2020 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -33,9 +33,9 @@
 
 # Path to this script
 if [ -h "${0}" ] ; then
-  readonly SCRIPT_PATH="$(readlink "${0}")"
+    readonly SCRIPT_PATH="$(readlink "${0}")"
 else
-  readonly SCRIPT_PATH="${0}"
+    readonly SCRIPT_PATH="${0}"
 fi
 
 # Path to the root of the workspace
@@ -60,48 +60,47 @@ execArgs=""
 i=0
 for linkProp in `grep "<javadoc.link." ${POMFILE}  | cut -d '>' -f1 | cut -d '.' -f3`
 do
- linkPropNames[${i}]=${linkProp}
- execArgs+="\${javadoc.link.$linkProp} "
- i=$((i+1))
+    linkPropNames[${i}]=${linkProp}
+    execArgs+="\${javadoc.link.$linkProp} "
+    i=$((i+1))
 done
 
 # We create the array of propery values by asking maven to echo the properties
-linkPropValues=(`mvn -q -f ${POMFILE} -Dexec.executable="echo" -Dexec.args="${execArgs//$/\\$}" \
+linkPropValues=(`mvn -B -q -f ${POMFILE} -Dexec.executable="echo" -Dexec.args="${execArgs//$/\\$}" \
     --non-recursive org.codehaus.mojo:exec-maven-plugin:1.3.1:exec`)
 
 # Now that we have the two arrays, we can download package-list files
 for ((i=0;i<${#linkPropNames[@]};i++))
 {
-  name=${linkPropNames[${i}]}
-  value=${linkPropValues[${i}]}
+    name=${linkPropNames[${i}]}
+    value=${linkPropValues[${i}]}
 
-  outputDir=${WS_DIR}/etc/javadoc/${name}
-  mkdir -p ${outputDir}
+    outputDir=${WS_DIR}/etc/javadoc/${name}
+    mkdir -p ${outputDir}
 
-  # Go get package-list file! We save in a temp file so  we don't overwrite
-  # anything in the workspace until we  know the request is good
-  code=`curl -L -s --user-agent '' -o ${tmpOutputDir}/package-list -w "%{http_code}" ${value}/package-list`
+    # Go get package-list file! We save in a temp file so  we don't overwrite
+    # anything in the workspace until we  know the request is good
+    code=`curl -L -s --user-agent '' -o ${tmpOutputDir}/package-list -w "%{http_code}" ${value}/package-list`
 
-  if [ "$code" -ne "200" ]; then
-    # No package-list. Try element-list
-    rm -f ${tmpOutputDir}/package-list
-    code=`curl -L -s --user-agent '' -o ${tmpOutputDir}/element-list -w "%{http_code}" ${value}/element-list`
     if [ "$code" -ne "200" ]; then
-      rm -f ${tmpOutputDir}/element-list
-      echo ${code} ${name} ${value}
-      echo "WARNING! Could not download package-list nor element-list for" >&2 
-      echo "${value}" >&2
-      echo "You will need to find that yourself and put it in" >&2
-      echo "${outputDir}/" >&2
+        # No package-list. Try element-list
+        rm -f ${tmpOutputDir}/package-list
+        code=`curl -L -s --user-agent '' -o ${tmpOutputDir}/element-list -w "%{http_code}" ${value}/element-list`
+        if [ "$code" -ne "200" ]; then
+            rm -f ${tmpOutputDir}/element-list
+            echo ${code} ${name} ${value}
+            echo "WARNING! Could not download package-list nor element-list for" >&2
+            echo "${value}" >&2
+            echo "You will need to find that yourself and put it in" >&2
+            echo "${outputDir}/" >&2
+        else
+            echo ${code} ${name} ${value}/element-list
+            mv ${tmpOutputDir}/element-list ${outputDir}/
+        fi
     else
-      echo ${code} ${name} ${value}/element-list
-      mv ${tmpOutputDir}/element-list ${outputDir}/
+        echo ${code} ${name} ${value}/package-list
+        mv ${tmpOutputDir}/package-list ${outputDir}/
     fi
-  else
-    echo ${code} ${name} ${value}/package-list
-    mv ${tmpOutputDir}/package-list ${outputDir}/
-  fi
-  
 }
 
 echo "Done! You can find the package list files in ${WS_DIR}/etc/javadoc"

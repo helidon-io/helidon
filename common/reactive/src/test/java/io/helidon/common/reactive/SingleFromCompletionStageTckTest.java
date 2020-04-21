@@ -28,7 +28,7 @@ import java.util.concurrent.Flow;
 public class SingleFromCompletionStageTckTest extends FlowPublisherVerification<Long> {
 
     public SingleFromCompletionStageTckTest() {
-        super(new TestEnvironment(50));
+        super(new TestEnvironment(200));
     }
 
     @Override
