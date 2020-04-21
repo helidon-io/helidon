@@ -85,11 +85,6 @@ public class ServerTest {
         } catch (Throwable t) {
             throw new RuntimeException(t);
         }
-//        System.out.println("Starting to init handlers");
-//        for (java.util.logging.Handler h : logger.getHandlers()) {
-//            System.out.println("Initing handler " + h.toString());
-//            h.setLevel(java.util.logging.Level.FINE);
-//        }
     }
 
     @AfterAll
