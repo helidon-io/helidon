@@ -111,17 +111,17 @@ public class ServerCdiExtension implements Extension {
 
         ServerConfiguration serverConfig = serverConfigBuilder.build();
 
-        // JAX-RS applications (and resources)
-        registerJaxRsApplications(beanManager, serverConfig);
-
-        // reactive services
-        registerWebServerServices(beanManager, serverConfig);
-
         // redirect to the first page when root is accessed (if configured)
         registerDefaultRedirect();
 
         // register static content if configured
         registerStaticContent();
+
+        // reactive services
+        registerWebServerServices(beanManager, serverConfig);
+
+        // JAX-RS applications (and resources)
+        registerJaxRsApplications(beanManager, serverConfig);
 
         // start the webserver
         WebServer.Builder wsBuilder = WebServer.builder(routingBuilder.build());
