@@ -60,8 +60,8 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
-
 import io.helidon.webserver.cors.CorsEnabledServiceHelper;
+
 import io.smallrye.openapi.api.OpenApiConfig;
 import io.smallrye.openapi.api.OpenApiDocument;
 import io.smallrye.openapi.api.models.OpenAPIImpl;
@@ -739,6 +739,12 @@ public class OpenAPISupport implements Service {
             return this;
         }
 
+        /**
+         * Set the CORS config from the specified {@code Config} node. A missing node is OK.
+         *
+         * @param corsConfig config node containing CORS set-up
+         * @return updated builder instance
+         */
         public Builder corsConfig(Config corsConfig) {
             Objects.requireNonNull(corsConfig, "CORS config must be non-null");
             this.corsConfig = Optional.of(corsConfig);
