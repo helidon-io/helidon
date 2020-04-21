@@ -62,6 +62,7 @@ import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 import io.helidon.webserver.cors.CorsEnabledServiceHelper;
 
+import io.helidon.webserver.cors.CrossOriginConfig;
 import io.smallrye.openapi.api.OpenApiConfig;
 import io.smallrye.openapi.api.OpenApiDocument;
 import io.smallrye.openapi.api.models.OpenAPIImpl;
@@ -137,7 +138,7 @@ public class OpenAPISupport implements Service {
         adjustTypeDescriptions(helper().types());
         implsToTypes = buildImplsToTypes(helper());
         webContext = builder.webContext();
-        corsEnabledServiceHelper = CorsEnabledServiceHelper.create("OpenAPI", builder.corsConfig);
+        corsEnabledServiceHelper = CorsEnabledServiceHelper.create("OpenAPI", builder.crossOriginConfig);
         model = prepareModel(builder.openAPIConfig(), builder.staticFile(), builder.perAppFilteredIndexViews());
     }
 
@@ -635,7 +636,7 @@ public class OpenAPISupport implements Service {
 
         private Optional<String> webContext = Optional.empty();
         private Optional<String> staticFilePath = Optional.empty();
-        private Optional<Config> corsConfig = Optional.empty();
+        private CrossOriginConfig crossOriginConfig = null;
 
         @Override
         public OpenAPISupport build() {
@@ -661,7 +662,8 @@ public class OpenAPISupport implements Service {
                     .asString()
                     .ifPresent(this::staticFile);
             config.get(CORS_CONFIG_KEY)
-                    .ifExists(this::corsConfig);
+                    .as(CrossOriginConfig::create)
+                    .ifPresent(this::crossOriginConfig);
             return this;
         }
 
@@ -740,14 +742,14 @@ public class OpenAPISupport implements Service {
         }
 
         /**
-         * Set the CORS config from the specified {@code Config} node. A missing node is OK.
+         * Set the CORS config from the specified {@code CrossOriginConfig} object.
          *
-         * @param corsConfig config node containing CORS set-up
+         * @param crossOriginConfig {@code CrossOriginConfig} containing CORS set-up
          * @return updated builder instance
          */
-        public Builder corsConfig(Config corsConfig) {
-            Objects.requireNonNull(corsConfig, "CORS config must be non-null");
-            this.corsConfig = Optional.of(corsConfig);
+        public Builder crossOriginConfig(CrossOriginConfig crossOriginConfig) {
+            Objects.requireNonNull(crossOriginConfig, "CrossOriginConfig must be non-null");
+            this.crossOriginConfig = crossOriginConfig;
             return this;
         }
 

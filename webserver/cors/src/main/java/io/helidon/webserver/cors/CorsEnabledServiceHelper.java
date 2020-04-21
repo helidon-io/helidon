@@ -17,7 +17,6 @@
 package io.helidon.webserver.cors;
 
 import java.util.Objects;
-import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -26,6 +25,21 @@ import io.helidon.webserver.Handler;
 
 /**
  * Allows services (including Helidon built-in services) to register CORS support easily.
+ * <p>
+ *     Callers use either {@link #create(String)} or {@link #create(String, CrossOriginConfig)} to initialize the helper for a
+ *     service. The helper uses the {@link CrossOriginConfig} instance to set up CORS behavior for the service. If the caller
+ *     passes a null {@code CrossOriginConfig} or invokes the other variant of {@code create} then the sets up CORS using a
+ *     default configuration:
+ *     <pre>
+ *     enabled: true
+ *     allow-origins: ["*"]
+ *     allow-methods: ["GET", "HEAD", "OPTIONS"]
+ *     allow-headers: ["*"]
+ *     allow-credentials: false
+ *     max-age: 3600
+ *     </pre>
+ *     All of those settings except for {@code allow-methods} are the defaults for {@code CrossOriginConfig}.
+ * </p>
  */
 public class CorsEnabledServiceHelper {
 
@@ -39,41 +53,41 @@ public class CorsEnabledServiceHelper {
     private static final Logger LOGGER = Logger.getLogger(CorsEnabledServiceHelper.class.getName());
 
     private final String serviceName;
-    private final Config corsConfig;
+    private final CrossOriginConfig crossOriginConfig;
 
-    private CorsEnabledServiceHelper(String serviceName, Optional<Config> optCORSConfig) {
-        this(serviceName, optCORSConfig.orElse(null));
-    }
-
-    private CorsEnabledServiceHelper(String serviceName, Config corsConfig) {
+    private CorsEnabledServiceHelper(String serviceName, CrossOriginConfig CrossOriginConfig) {
         this.serviceName = serviceName;
-        this.corsConfig = corsConfig;
+        this.crossOriginConfig = CrossOriginConfig;
     }
 
     /**
      * Creates a new helper based on the provided config.
      *
      * @param serviceName name of the service (for logging)
-     * @param corsConfig {@link CrossOriginConfig} containing CORS set-up
+     * @param crossOriginConfig {@link CrossOriginConfig} containing CORS set-up; if null, a default is used
      * @return new helper initialized with the CORS configuration
      */
-    public static CorsEnabledServiceHelper create(String serviceName, Config corsConfig) {
-        Objects.requireNonNull(corsConfig,
-                "CrossOriginConfig passed to CORS service helper for registering routing rule must be non-null");
-        return new CorsEnabledServiceHelper(serviceName, Optional.of(corsConfig));
+    public static CorsEnabledServiceHelper create(String serviceName, CrossOriginConfig crossOriginConfig) {
+        if (crossOriginConfig == null) {
+            crossOriginConfig = defaultCrossOriginConfig();
+        }
+        return new CorsEnabledServiceHelper(serviceName, crossOriginConfig);
     }
 
     /**
-     * Creates a new helper based on the provided config.
+     * Creates a new helper based on a default CORS config for services.
      *
      * @param serviceName name of the service (for logging)
-     * @param optCORSConfig {@link Optional} of a {@link Config} node containing CORS set-up
-     * @return new helper initialized with the CORS configuration
+     * @return new helper initialized with a default CORS configuration
      */
-    public static CorsEnabledServiceHelper create(String serviceName, Optional<Config> optCORSConfig) {
-        Objects.requireNonNull(optCORSConfig,
-                "config passed to CORS service helper for registering routing rule must be non-null");
-        return new CorsEnabledServiceHelper(serviceName, optCORSConfig);
+    public static CorsEnabledServiceHelper create(String serviceName) {
+        return new CorsEnabledServiceHelper(serviceName, defaultCrossOriginConfig());
+    }
+
+    private static CrossOriginConfig defaultCrossOriginConfig() {
+        return CrossOriginConfig.builder()
+                .allowMethods("GET", "HEAD", "OPTIONS")
+                .build();
     }
 
     /**
@@ -83,16 +97,6 @@ public class CorsEnabledServiceHelper {
      */
     public Handler processor() {
         CorsSupport.Builder builder = CorsSupport.builder().name(serviceName);
-        CrossOriginConfig crossOriginConfig;
-        if (corsConfig != null && corsConfig.exists()) {
-            crossOriginConfig = corsConfig.as(CrossOriginConfig::create)
-                    .get();
-        } else {
-            // The built-in services need to support only the "read-only" HTTP methods (a.k.a CORS "simple" methods).
-            crossOriginConfig = CrossOriginConfig.builder()
-                    .allowMethods("GET", "HEAD", "OPTIONS")
-                    .build();
-        }
         if (crossOriginConfig.isEnabled()) {
             builder.addCrossOrigin(crossOriginConfig).build();
             LOGGER.log(Level.CONFIG, String.format("CORS is configured for service %s with %s", serviceName,
