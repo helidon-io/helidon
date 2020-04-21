@@ -43,7 +43,7 @@ public class MultiTimeoutNormalTckTest extends FlowPublisherVerification<Long> {
 
     @Override
     public Flow.Publisher<Long> createFailedFlowPublisher() {
-        return Multi.<Long>never().timeout(1, TimeUnit.MILLISECONDS, executor);
+        return Multi.<Long>never().timeout(10, TimeUnit.MILLISECONDS, executor);
     }
 
     @Override
