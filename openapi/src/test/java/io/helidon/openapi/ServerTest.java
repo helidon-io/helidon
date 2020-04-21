@@ -196,7 +196,7 @@ public class ServerTest {
         commonTestTimeAsConfig(cnx -> {
 
             cnx.setRequestProperty("Origin", "http://foo.bar");
-            cnx.setRequestProperty("Host", "http://localhost");
+            cnx.setRequestProperty("Host", "localhost");
         });
 
     }
@@ -227,7 +227,7 @@ public class ServerTest {
                 GREETING_PATH,
                 MediaType.APPLICATION_OPENAPI_YAML);
         cnx.setRequestProperty("Origin", "http://foo.bar");
-        cnx.setRequestProperty("Host", "http://localhost");
+        cnx.setRequestProperty("Host", "localhost");
 
         Config c = TestUtil.configFromResponse(cnx);
 
@@ -242,7 +242,7 @@ public class ServerTest {
                 TIME_PATH,
                 MediaType.APPLICATION_OPENAPI_YAML);
         cnx.setRequestProperty("Origin", "http://foo.bar");
-        cnx.setRequestProperty("Host", "http://localhost");
+        cnx.setRequestProperty("Host", "localhost");
 
         assertEquals(Http.Status.OK_200.code(), cnx.getResponseCode());
     }
@@ -255,7 +255,7 @@ public class ServerTest {
                 TIME_PATH,
                 MediaType.APPLICATION_OPENAPI_YAML);
         cnx.setRequestProperty("Origin", "http://other.com");
-        cnx.setRequestProperty("Host", "http://localhost");
+        cnx.setRequestProperty("Host", "localhost");
 
         assertEquals(Http.Status.FORBIDDEN_403.code(), cnx.getResponseCode());
     }
