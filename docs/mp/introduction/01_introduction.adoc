@@ -34,14 +34,6 @@ This makes it a good choice for Java EE developers.
 
 For comparison, the high-level differences between Helidon MP and Helidon SE are described below. 
 
-[width="100%",options="header"]
-|====================
-| Helidon MP |  Helidon SE
-| MicroProfile {mp-version} implementation; slightly larger footprint than SE (~13 MB)|  Microframework model with very small footprint and limited functionality (~7 MB)
-| Declarative style with dependency injection |  Functional style is reactive non-blocking 
-| Jakarta EE microprofile development experience; all Jakarta components (CDI, JAX-RS, JSON-P/B) |Transparent "no magic" development experience; pure java application development with no annotations and no dependency injections
-|
-|====================
 
 === MicroProfile APIs
 
