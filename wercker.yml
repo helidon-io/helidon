@@ -33,7 +33,7 @@ build:
   steps:
     - script:
         code: |
-            echo "noop"
+            ./etc/scripts/build.sh
 
 release:
   steps:
