@@ -27,7 +27,7 @@ import java.util.concurrent.TimeoutException;
 /**
  * CompletionStage with await functions, to achieve intentional blocking without checked exceptions.
  */
-public interface MultiCompletionStage extends CompletionStage<Void> {
+public interface MultiCompletionStage extends CompletionStage<Void>, AutoCloseable {
 
     /**
      * Create new MultiCompletableFuture.
@@ -60,11 +60,27 @@ public interface MultiCompletionStage extends CompletionStage<Void> {
     default void await(long timeout, TimeUnit unit) {
         try {
             this.toCompletableFuture().get(timeout, unit);
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+        } catch (InterruptedException | TimeoutException e) {
             throw new CompletionException(e);
+        } catch (ExecutionException e) {
+            throw new CompletionException(e.getCause());
         }
     }
 
-    class MultiCompletableFuture extends CompletableFuture<Void> implements MultiCompletionStage {
+    final class MultiCompletableFuture extends CompletableFuture<Void> implements MultiCompletionStage {
+
+        private Runnable cancelCallback;
+
+        void setCancelCallback(Runnable cancelCallback) {
+            this.cancelCallback = cancelCallback;
+        }
+
+        /**
+         * Cancel upstream.
+         */
+        @Override
+        public void close() {
+            cancelCallback.run();
+        }
     }
 }

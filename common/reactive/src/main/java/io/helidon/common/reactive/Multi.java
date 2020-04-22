@@ -848,7 +848,12 @@ public interface Multi<T> extends Subscribable<T> {
         MultiCompletionStage.MultiCompletableFuture future = MultiCompletionStage.createFuture();
         FunctionalSubscriber<T> subscriber = new FunctionalSubscriber<>(consumer,
                 future::completeExceptionally,
-                () -> future.complete(null), null);
+                () -> future.complete(null),
+                subscription -> {
+                    subscription.request(Long.MAX_VALUE);
+                    future.setCancelCallback(subscription::cancel);
+                }
+        );
         this.subscribe(subscriber);
         return future;
     }
