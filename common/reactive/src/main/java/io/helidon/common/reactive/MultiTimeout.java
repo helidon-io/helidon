@@ -54,7 +54,10 @@ final class MultiTimeout<T> implements Multi<T> {
 
     @Override
     public void subscribe(Flow.Subscriber<? super T> subscriber) {
-        source.subscribe(new TimeoutSubscriber<>(subscriber, timeout, unit, executor, fallback));
+        TimeoutSubscriber<T> parent = new TimeoutSubscriber<>(subscriber, timeout, unit, executor, fallback);
+        subscriber.onSubscribe(parent);
+        parent.schedule(0L);
+        source.subscribe(parent);
     }
 
     static final class TimeoutSubscriber<T> extends AtomicLong
@@ -78,7 +81,9 @@ final class MultiTimeout<T> implements Multi<T> {
 
         private long emitted;
 
-        private Flow.Subscription upstream;
+        private final AtomicReference<Flow.Subscription> upstream;
+
+        private final AtomicLong requestedInitial;
 
         TimeoutSubscriber(Flow.Subscriber<? super T> downstream, long timeout, TimeUnit unit,
                           ScheduledExecutorService executor, Flow.Publisher<T> fallback) {
@@ -90,16 +95,13 @@ final class MultiTimeout<T> implements Multi<T> {
             this.requested = new AtomicLong();
             this.future = new AtomicReference<>();
             this.fallbackSubscriber = new FallbackSubscriber<T>(downstream, requested);
+            this.upstream = new AtomicReference<>();
+            this.requestedInitial = new AtomicLong();
         }
 
         @Override
         public void onSubscribe(Flow.Subscription subscription) {
-            SubscriptionHelper.validate(upstream, subscription);
-            upstream = subscription;
-
-            schedule(0L);
-
-            downstream.onSubscribe(this);
+            SubscriptionHelper.deferredSetOnce(upstream, requestedInitial, subscription);
         }
 
         void schedule(long index) {
@@ -145,13 +147,13 @@ final class MultiTimeout<T> implements Multi<T> {
                 onError(new IllegalArgumentException("Rule §3.9 violated: non-positive requests are forbidden"));
                 return;
             }
-            upstream.request(n);
+            SubscriptionHelper.deferredRequest(upstream, requestedInitial, n);
             SubscriptionHelper.deferredRequest(fallbackSubscriber, requested, n);
         }
 
         @Override
         public void cancel() {
-            upstream.cancel();
+            SubscriptionHelper.cancel(upstream);
             TerminatedFuture.cancel(future);
             SubscriptionHelper.cancel(fallbackSubscriber);
         }
@@ -159,8 +161,7 @@ final class MultiTimeout<T> implements Multi<T> {
         void timeout(long index) {
             if (compareAndSet(index, Long.MAX_VALUE)) {
                 future.lazySet(TerminatedFuture.FINISHED);
-                upstream.cancel();
-                upstream = SubscriptionHelper.CANCELED;
+                SubscriptionHelper.cancel(upstream);
 
                 if (fallback == null) {
                     downstream.onError(new TimeoutException());
