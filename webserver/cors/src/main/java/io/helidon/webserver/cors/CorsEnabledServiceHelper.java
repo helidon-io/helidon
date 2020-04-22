@@ -97,7 +97,7 @@ public class CorsEnabledServiceHelper {
     public Handler processor() {
         CorsSupport.Builder builder = CorsSupport.builder().name(serviceName);
         if (crossOriginConfig.isEnabled()) {
-            builder.addCrossOrigin(crossOriginConfig).build();
+            builder.addCrossOrigin(crossOriginConfig);
             LOGGER.log(Level.CONFIG, String.format("CORS is configured for service %s with %s", serviceName,
                     crossOriginConfig));
         } else {
