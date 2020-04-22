@@ -31,7 +31,6 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import graphql.ExecutionResult;
 import graphql.schema.idl.SchemaPrinter;
 
 /**
@@ -89,8 +88,8 @@ public class GraphQLResource {
      * @return a {@link Response} object.
      */
     @GET
-    @Produces({ MediaType.APPLICATION_JSON })
-    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({MediaType.APPLICATION_JSON })
+    @Consumes({MediaType.APPLICATION_JSON })
     public Response processGraphQLQueryGET(@QueryParam("query") String query,
                                            @QueryParam("operationName") String operation,
                                            @QueryParam("variables") String variables) {
@@ -108,8 +107,8 @@ public class GraphQLResource {
      * @return a {@link Response} object.
      */
     @POST
-    @Produces({ MediaType.APPLICATION_JSON })
-    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({MediaType.APPLICATION_JSON })
+    @Consumes({MediaType.APPLICATION_JSON })
     public Response processGraphQLQueryPOST(String body) {
         Map<String, Object> json = JsonUtils.convertJSONtoMap(body);
         return processRequest(
@@ -142,8 +141,7 @@ public class GraphQLResource {
      * @return a {@link Response} containing the results of the query
      */
     private Response processRequest(String query, String operation, Map<String, Object> variables) {
-        ExecutionResult executionResult = context.execute(query, operation, variables);
-        return Response.ok(JsonUtils.convertMapToJson(executionResult.toSpecification())).build();
+        return Response.ok(JsonUtils.convertMapToJson(context.execute(query, operation, variables))).build();
     }
 
     /**

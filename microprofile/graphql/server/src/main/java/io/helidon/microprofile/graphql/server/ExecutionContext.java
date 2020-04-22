@@ -19,9 +19,12 @@ package io.helidon.microprofile.graphql.server;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
+
+import io.helidon.config.Config;
 
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
@@ -29,7 +32,7 @@ import graphql.GraphQL;
 import graphql.execution.SubscriptionExecutionStrategy;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.SchemaPrinter;
-import io.helidon.config.Config;
+import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.graphql.ConfigKey;
 
 import static graphql.ExecutionInput.newExecutionInput;
@@ -41,7 +44,57 @@ import static graphql.ExecutionInput.newExecutionInput;
  */
 public class ExecutionContext<C> {
 
+    /**
+     * Key for errors.
+     */
+    protected static final String ERRORS = "errors";
+
+    /**
+     * Key for extensions.
+     */
+    protected static final String EXTENSIONS = "extensions";
+
+    /**
+     * Key for locations.
+     */
+    protected static final String LOCATIONS = "locations";
+
+    /**
+     * Key for message.
+     */
+    protected static final String MESSAGE = "message";
+
+    /**
+     * Key for data.
+     */
+    protected static final String DATA = "data";
+
+    /**
+     * Key for line.
+     */
+    protected static final String LINE = "line";
+
+    /**
+     * Key for column.
+     */
+    protected static final String COLUMN = "column";
+
     private static final String EMPTY = "";
+
+    /**
+     * Config parts for default error message.
+     */
+    protected static final String[] MESSAGE_PARTS = ConfigKey.DEFAULT_ERROR_MESSAGE.split("\\.");
+
+    /**
+     * Config parts for whitelist.
+     */
+    protected static final String[] WHITELIST_PARTS = ConfigKey.EXCEPTION_WHITE_LIST.split("\\.");
+
+    /**
+     * Config parts for blacklist.
+     */
+    protected static final String[] BLACKLIST_PARTS = ConfigKey.EXCEPTION_BLACK_LIST.split("\\.");
 
     private static final Logger LOGGER = Logger.getLogger(ExecutionContext.class.getName());
 
@@ -138,14 +191,11 @@ public class ExecutionContext<C> {
             graphQL = builder.build();
 
             LOGGER.info("Generated schema:\n" + schemaPrinter.print(graphQLSchema));
-        } catch (RuntimeException | Error e) {
-            // unchecked exception
-            String message = "Unable to build GraphQL Schema: " + e;
+        } catch (Throwable t) {
+            // since we cannot generate the schema, just log the message and throw it
+            String message = "Unable to build GraphQL Schema: " + t.getMessage();
             LOGGER.warning(message);
-            throw new RuntimeException(message, e);
-        } catch (Exception e) {
-            // checked exception
-            throw new RuntimeException(e);
+            throw new RuntimeException(message, t);
         }
     }
 
@@ -153,11 +203,21 @@ public class ExecutionContext<C> {
      * Configure microprofile exception handling.
      */
     private void configureExceptionHandling() {
-        config = Config.create();
-        defaultErrorMessage = config.get(ConfigKey.DEFAULT_ERROR_MESSAGE).asString().orElse("Server Error");
+        config = (Config) ConfigProviderResolver.instance().getConfig();
 
-        String whitelist = config.get(ConfigKey.EXCEPTION_WHITE_LIST).asString().orElse(EMPTY);
-        String blacklist = config.get(ConfigKey.EXCEPTION_BLACK_LIST).asString().orElse(EMPTY);
+        defaultErrorMessage = config.get(MESSAGE_PARTS[0])
+                .get(MESSAGE_PARTS[1])
+                .get(MESSAGE_PARTS[2])
+                .asString().orElse("Server Error");
+
+        String whitelist = config.get(WHITELIST_PARTS[0])
+                .get(WHITELIST_PARTS[1])
+                .get(WHITELIST_PARTS[2])
+                .asString().orElse(EMPTY);
+        String blacklist = config.get(BLACKLIST_PARTS[0])
+                .get(BLACKLIST_PARTS[1])
+                .get(BLACKLIST_PARTS[2])
+                .asString().orElse(EMPTY);
 
         if (!EMPTY.equals(whitelist)) {
             exceptionWhitelist.addAll(Arrays.asList(whitelist.split(",")));
@@ -181,9 +241,9 @@ public class ExecutionContext<C> {
      * Execute the given query and return the the {@link ExecutionResult}.
      *
      * @param query query to execute
-     * @return the {@link ExecutionResult}
+     * @return the {@link Map} containing the execution result
      */
-    public ExecutionResult execute(String query) {
+    public Map<String, Object> execute(String query) {
         return execute(query, null, EMPTY_MAP);
     }
 
@@ -192,9 +252,9 @@ public class ExecutionContext<C> {
      *
      * @param query         query to execute
      * @param operationName the name of the operation
-     * @return the {@link ExecutionResult}
+     * @return the {@link Map} containing the execution result
      */
-    public ExecutionResult execute(String query, String operationName) {
+    public Map<String, Object> execute(String query, String operationName) {
         return execute(query, operationName, EMPTY_MAP);
     }
 
@@ -204,16 +264,69 @@ public class ExecutionContext<C> {
      * @param query         query to execute
      * @param operationName the name of the operation
      * @param mapVariables  the map of variables to pass through
-     * @return the {@link ExecutionResult}
+     * @return the {@link Map} containing the execution result
      */
-    public ExecutionResult execute(String query, String operationName, Map<String, Object> mapVariables) {
-        ExecutionInput.Builder executionInput = newExecutionInput()
-                .query(query)
-                .operationName(operationName)
-                .context(context)
-                .variables(mapVariables == null ? EMPTY_MAP : mapVariables);
+    public Map<String, Object> execute(String query, String operationName, Map<String, Object> mapVariables) {
+        try {
+            ExecutionInput executionInput = newExecutionInput()
+                    .query(query)
+                    .operationName(operationName)
+                    .context(context)
+                    .variables(mapVariables == null ? EMPTY_MAP : mapVariables)
+                    .build();
+            return graphQL.execute(executionInput).toSpecification();
+        } catch (RuntimeException | Error e) {
+            // unchecked exception
+            Map<String, Object> mapErrors = getErrorPayload(getUncheckedMessage(e), e);
+            LOGGER.warning(e.getMessage());
+            return mapErrors;
+        } catch (Exception e) {
+            // checked exception
+            Map<String, Object> mapErrors = getErrorPayload(getCheckedMessage(e), e);
+            LOGGER.warning(e.getMessage());
+            return mapErrors;
+        }
+    }
 
-        return graphQL.execute(executionInput.build());
+    /**
+     * Return the a new error payload.
+     *
+     * @param message the message to add
+     * @param t       the {@link Throwable} that caused the error
+     * @return the a new error payload
+     */
+    private Map<String, Object> getErrorPayload(String message, Throwable t) {
+        Map<String, Object> mapErrors = newErrorPayload();
+        addErrorPayload(mapErrors, message);
+        return mapErrors;
+    }
+
+    /**
+     * Return the message for an un-checked exception. This will return the default message unless the unchecked exception is on
+     * the whitelist.
+     *
+     * @param throwable {@link Throwable}
+     * @return the message for an un-checked exception
+     */
+    protected String getUncheckedMessage(Throwable throwable) {
+        String exceptionClass = throwable.getClass().getName();
+        return exceptionWhitelist.contains(exceptionClass)
+                ? throwable.getMessage()
+                : defaultErrorMessage;
+    }
+
+    /**
+     * Return the message for a checked exception. This will return the exception message unless the exception is on the
+     * blacklist.
+     *
+     * @param throwable {@link Throwable}
+     * @return the message for a checked exception
+     */
+    protected String getCheckedMessage(Throwable throwable) {
+        String exceptionClass = throwable.getClass().getName();
+        return exceptionBlacklist.contains(exceptionClass)
+                ? defaultErrorMessage
+                : throwable.getMessage();
     }
 
     /**
@@ -241,6 +354,88 @@ public class ExecutionContext<C> {
      */
     public List<String> getExceptionWhitelist() {
         return exceptionWhitelist;
+    }
+
+    /**
+     * Return the {@link Config}.
+     *
+     * @return the {@link Config}
+     */
+    public Config getConfig() {
+        return config;
+    }
+
+    /**
+     * Generate a new error payload.
+     *
+     * @return a new error payload
+     */
+    protected Map<String, Object> newErrorPayload() {
+        Map<String, Object> errorMap = new HashMap<>();
+        errorMap.put(DATA, null);
+        errorMap.put(ERRORS, new ArrayList<Map<String, Object>>());
+
+        return errorMap;
+    }
+
+    /**
+     * Add a message to the error payload.
+     *
+     * @param errorMap   error {@link Map} to add to
+     * @param message    message to add
+     * @param line       line number of message
+     * @param column     column of message
+     * @param extensions any extensions to add
+     */
+    @SuppressWarnings("unchecked")
+    protected void addErrorPayload(Map<String, Object> errorMap,
+                                   String message,
+                                   int line,
+                                   int column,
+                                   Map<String, Object> extensions) {
+        List<Map<String, Object>> listErrors = (List<Map<String, Object>>) errorMap.get(ERRORS);
+
+        if (listErrors == null) {
+            throw new IllegalArgumentException("Please initialize errorMap via newErrorPayload");
+        }
+
+        Map<String, Object> newErrorMap = new HashMap<>();
+
+        // inner map
+        newErrorMap.put(MESSAGE, message);
+
+        if (line != -1 && column != -1) {
+            ArrayList<Map<String, Object>> listLocations = new ArrayList<>();
+            listLocations.add(Map.of(LINE, line, COLUMN, column));
+            newErrorMap.put(LOCATIONS, listLocations);
+        }
+
+        if (extensions != null && extensions.size() > 0) {
+            newErrorMap.put(EXTENSIONS, extensions);
+        }
+
+        listErrors.add(newErrorMap);
+    }
+
+    /**
+     * Add a message to the error payload.
+     *
+     * @param errorMap   error {@link Map} to add to
+     * @param message    message to add
+     * @param extensions any extensions to add
+     */
+    protected void addErrorPayload(Map<String, Object> errorMap, String message, Map<String, Object> extensions) {
+        addErrorPayload(errorMap, message, -1, -1, extensions);
+    }
+
+    /**
+     * Add a message to the error payload.
+     *
+     * @param errorMap error {@link Map} to add to
+     * @param message  message to add
+     */
+    protected void addErrorPayload(Map<String, Object> errorMap, String message) {
+        addErrorPayload(errorMap, message, -1, -1, EMPTY_MAP);
     }
 
 }

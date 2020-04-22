@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 import graphql.ExecutionResult;
@@ -168,52 +169,44 @@ public abstract class AbstractGraphQLTest {
         return clazz.getName().replaceAll("\\.", "/") + ".class";
     }
 
-    protected boolean hasErrors(ExecutionResult executionResult) {
-        return executionResult.getErrors().size() > 0;
-    }
-
-    protected void displayErrors(ExecutionResult result) {
-        System.err.println(getError(result));
-    }
-
-    protected String getError(ExecutionResult result) {
+    @SuppressWarnings("unchecked")
+    protected String getError(List<Map<String, Object>> result) {
         assertThat(result, CoreMatchers.is(notNullValue()));
         StringBuilder sb = new StringBuilder("Errors: ");
-        result.getErrors().forEach(e -> sb.append(e.getErrorType()
-                                                          .toString())
-                .append(" ")
-                .append(e.getMessage())
-                .append(" ")
-                .append(e.getLocations() != null ? e.getLocations().toString() : "")
-                .append('\n'));
+        for (Map<String, Object> mapError : result) {
+            sb.append(mapError.get(ExecutionContext.MESSAGE)).append('\n');
+            List<Map<String, Object>> listLocations = (List<Map<String, Object>>) mapError.get(ExecutionContext.LOCATIONS);
+            Map<String, Object> mapExtensions = (Map<String, Object>) mapError.get(ExecutionContext.EXTENSIONS);
+
+            if (listLocations != null) {
+                for (Map<String, Object> mapLocations : listLocations) {
+                    sb.append(ExecutionContext.LINE).append(':')
+                            .append(mapLocations.get(ExecutionContext.LINE))
+                            .append(ExecutionContext.COLUMN).append(':')
+                            .append(mapLocations.get(ExecutionContext.COLUMN));
+                }
+            }
+
+            if (mapExtensions != null) {
+                mapExtensions.entrySet().forEach((e) -> sb.append(e.getKey() + "=" + e.getValue()));
+            }
+        }
         return sb.toString();
     }
 
     /**
-     * Assert an {@link ExecutionResult} is true and if not then display the error.
+     * Assert an {@link ExecutionResult} is true and if not then display the error and fail.
      *
      * @param result {@link ExecutionResult} data
      */
-    protected Map<String, Object> getAndAssertResult(ExecutionResult result) {
-        boolean failed = result.getErrors().size() > 0;
+    @SuppressWarnings("unchecked")
+    protected Map<String, Object> getAndAssertResult(Map<String, Object> result) {
+        List<Map<String, Object>> listErrors = (List<Map<String, Object>>) result.get(ExecutionContext.ERRORS);
+        boolean failed = listErrors != null && listErrors.size() > 0;
         if (failed) {
-            String sError = getError(result);
+            String sError = getError(listErrors);
             fail(sError);
         }
-        return result.getData();
-    }
-
-    /**
-     * Assert an {@link ExecutionResult} is true and if not then display the error.
-     *
-     * @param result {@link ExecutionResult} extensions
-     */
-    protected Map<Object, Object> getAndAssertExtensions(ExecutionResult result) {
-        boolean failed = result.getErrors().size() > 0;
-        if (failed) {
-            String sError = getError(result);
-            fail(sError);
-        }
-        return result.getExtensions();
+        return (Map<String, Object>) result.get(ExecutionContext.DATA);
     }
 }

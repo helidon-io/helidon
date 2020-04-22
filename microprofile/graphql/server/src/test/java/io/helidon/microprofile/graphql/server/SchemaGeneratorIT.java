@@ -220,7 +220,7 @@ public class SchemaGeneratorIT
     public void testObjectWithIgnorableFields() throws IOException {
         setupIndex(indexFileName, ObjectWithIgnorableFieldsAndMethods.class);
         ExecutionContext<DefaultContext> executionContext = new ExecutionContext<>(defaultContext);
-        ExecutionResult result = executionContext.execute("query { hero }");
+        executionContext.execute("query { hero }");
     }
 
     @Test
@@ -251,16 +251,16 @@ public class SchemaGeneratorIT
     public void testSimpleContactWithSelf() throws IOException {
         setupIndex(indexFileName, SimpleContactWithSelf.class);
         ExecutionContext<DefaultContext> executionContext = new ExecutionContext<>(defaultContext);
-        ExecutionResult result = executionContext.execute("query { hero }");
+        executionContext.execute("query { hero }");
     }
 
     @Test
     public void testNumberFormats() throws IOException {
         setupIndex(indexFileName, SimpleContactWithNumberFormats.class, NumberFormatQueriesAndMutations.class);
         ExecutionContext<DefaultContext> executionContext = new ExecutionContext<>(defaultContext);
-        ExecutionResult result = executionContext
-                .execute("query { simpleFormattingQuery { id name age bankBalance value longValue } }");
-        Map<String, Object> mapResults = getAndAssertResult(result);
+
+        Map<String, Object> mapResults = getAndAssertResult(executionContext
+                .execute("query { simpleFormattingQuery { id name age bankBalance value longValue } }"));
         assertThat(mapResults.size(), is(1));
 
         Map<String, Object> mapResults2 = (Map<String, Object>) mapResults.get("simpleFormattingQuery");
@@ -272,8 +272,7 @@ public class SchemaGeneratorIT
         assertThat(mapResults2.get("value"), is("10 value"));
         assertThat(mapResults2.get("longValue"), is(BigInteger.valueOf(Long.MAX_VALUE)));
 
-        result = executionContext.execute("mutation { generateDoubleValue }");
-        mapResults = getAndAssertResult(result);
+        mapResults = getAndAssertResult(executionContext.execute("mutation { generateDoubleValue }"));
         assertThat(mapResults, is(notNullValue()));
         assertThat(mapResults.get("generateDoubleValue"), is("Double-123456789"));
 
@@ -287,7 +286,7 @@ public class SchemaGeneratorIT
                         + "value: \"9 value\" "
                         + "longValue: 12345"
                         + " } ";
-        result = executionContext.execute("mutation { createSimpleContactWithNumberFormats (" + contactInput + ") { id name } }");
+        executionContext.execute("mutation { createSimpleContactWithNumberFormats (" + contactInput + ") { id name } }");
         //        mapResults = getAndAssertResult(result);
         //        assertThat(mapResults.size(), is(1));
         //        mapResults2 = (Map<String, Object>) mapResults.get("createSimpleContactWithNumberFormats");
@@ -300,28 +299,22 @@ public class SchemaGeneratorIT
         setupIndex(indexFileName, DateTimePojo.class, SimpleQueriesNoArgs.class);
         ExecutionContext<DefaultContext> executionContext = new ExecutionContext<>(defaultContext);
 
-        ExecutionResult result = executionContext.execute("query { dateAndTimePOJOQuery { offsetDateTime } }");
-        Map<String, Object> mapResults = getAndAssertResult(result);
+        Map<String, Object> mapResults = getAndAssertResult(executionContext.execute("query { dateAndTimePOJOQuery { offsetDateTime } }"));
         assertThat(mapResults.size(), is(1));
 
-        result = executionContext.execute("query { dateAndTimePOJOQuery { offsetTime } }");
-        mapResults = getAndAssertResult(result);
+        mapResults = getAndAssertResult(executionContext.execute("query { dateAndTimePOJOQuery { offsetTime } }"));
         assertThat(mapResults.size(), is(1));
 
-        result = executionContext.execute("query { dateAndTimePOJOQuery { zonedDateTime } }");
-        mapResults = getAndAssertResult(result);
+        mapResults = getAndAssertResult(executionContext.execute("query { dateAndTimePOJOQuery { zonedDateTime } }"));
         assertThat(mapResults.size(), is(1));
 
-        result = executionContext.execute("query { dateAndTimePOJOQuery { localDate } }");
-        mapResults = getAndAssertResult(result);
+        mapResults = getAndAssertResult(executionContext.execute("query { dateAndTimePOJOQuery { localDate } }"));
         assertThat(mapResults.size(), is(1));
 
-        result = executionContext.execute("query { dateAndTimePOJOQuery { localTime } }");
-        mapResults = getAndAssertResult(result);
+        mapResults = getAndAssertResult(executionContext.execute("query { dateAndTimePOJOQuery { localTime } }"));
         assertThat(mapResults.size(), is(1));
 
-        result = executionContext.execute("query { dateAndTimePOJOQuery { localDateTime } }");
-        mapResults = getAndAssertResult(result);
+        mapResults = getAndAssertResult(executionContext.execute("query { dateAndTimePOJOQuery { localDateTime } }"));
         assertThat(mapResults.size(), is(1));
 
         Schema schema = executionContext.getSchema();
@@ -409,8 +402,7 @@ public class SchemaGeneratorIT
         setupIndex(indexFileName, SimpleMutations.class);
         ExecutionContext<DefaultContext> executionContext = new ExecutionContext<>(defaultContext);
 
-        ExecutionResult result = executionContext.execute("mutation { createNewContact { id name age } }");
-        Map<String, Object> mapResults = getAndAssertResult(result);
+        Map<String, Object> mapResults = getAndAssertResult(executionContext.execute("mutation { createNewContact { id name age } }"));
         assertThat(mapResults.size(), is(1));
         Map<String, Object> mapResults2 = (Map<String, Object>) mapResults.get("createNewContact");
 
@@ -420,8 +412,7 @@ public class SchemaGeneratorIT
         assertThat(((String) mapResults2.get("name")).startsWith("Name"), is(true));
         assertThat(mapResults2.get("age"), is(notNullValue()));
 
-        result = executionContext.execute("mutation { createContactWithName(name: \"tim\") { id name age } }");
-        mapResults = getAndAssertResult(result);
+        mapResults = getAndAssertResult(executionContext.execute("mutation { createContactWithName(name: \"tim\") { id name age } }"));
         assertThat(mapResults.size(), is(1));
         mapResults2 = (Map<String, Object>) mapResults.get("createContactWithName");
 
@@ -430,8 +421,7 @@ public class SchemaGeneratorIT
         assertThat(mapResults2.get("name"), is("tim"));
         assertThat(mapResults2.get("age"), is(notNullValue()));
 
-        result = executionContext.execute("mutation { echoStringValue(value: \"echo\") }");
-        mapResults = getAndAssertResult(result);
+        mapResults = getAndAssertResult(executionContext.execute("mutation { echoStringValue(value: \"echo\") }"));
         assertThat(mapResults.size(), is(1));
         assertThat(mapResults.get("echoStringValue"), is("echo"));
     }
@@ -441,43 +431,36 @@ public class SchemaGeneratorIT
     public void testSimpleQueryGenerationNoArgs() throws IOException {
         setupIndex(indexFileName, SimpleQueriesNoArgs.class);
         ExecutionContext<DefaultContext> executionContext = new ExecutionContext<>(defaultContext);
-        ExecutionResult result = executionContext.execute("query { hero }");
 
-        Map<String, Object> mapResults = getAndAssertResult(result);
+        Map<String, Object> mapResults = getAndAssertResult(executionContext.execute("query { hero }"));
 
         assertThat(mapResults.size(), is(1));
         assertThat(mapResults.get("hero"), is("R2-D2"));
 
-        result = executionContext.execute("query { episodeCount }");
-        mapResults = getAndAssertResult(result);
+        mapResults = getAndAssertResult(executionContext.execute("query { episodeCount }"));
         assertThat(mapResults.size(), is(1));
         assertThat(mapResults.get("episodeCount"), is(9));
 
-        result = executionContext.execute("query { badGuy }");
-        mapResults = getAndAssertResult(result);
+        mapResults = getAndAssertResult(executionContext.execute("query { badGuy }"));
         assertThat(mapResults.size(), is(1));
         assertThat(mapResults.get("badGuy"), is("Darth Vader"));
 
-        result = executionContext.execute("query { allPeople { personId } }");
-        mapResults = getAndAssertResult(result);
+        mapResults = getAndAssertResult(executionContext.execute("query { allPeople { personId } }"));
         assertThat(mapResults.size(), is(1));
 
         ArrayList<Map<String, Object>> arrayList = (ArrayList<Map<String, Object>>) mapResults.get("allPeople");
         assertThat(arrayList.size(), is(TestDB.MAX_PEOPLE));
 
-        result = executionContext.execute("query { returnMediumSize }");
-        mapResults = getAndAssertResult(result);
+        mapResults = getAndAssertResult(executionContext.execute("query { returnMediumSize }"));
         assertThat(mapResults.size(), is(1));
         assertThat(mapResults.get("returnMediumSize"), is("M"));
 
-        result = executionContext.execute("query { returnCurrentDate }");
-        mapResults = getAndAssertResult(result);
+        mapResults = getAndAssertResult(executionContext.execute("query { returnCurrentDate }"));
         assertThat(mapResults.size(), is(1));
         assertThat(mapResults.get("returnCurrentDate"), is(notNullValue()));
 
-        result = executionContext
-                .execute("query { returnTypeWithIDs { intId integerId longId longPrimitiveId stringId uuidId } }");
-        mapResults = getAndAssertResult(result);
+        mapResults = getAndAssertResult(executionContext
+                .execute("query { returnTypeWithIDs { intId integerId longId longPrimitiveId stringId uuidId } }"));
         assertThat(mapResults.size(), is(1));
         Map<String, Object> results = (Map<String, Object>) mapResults.get("returnTypeWithIDs");
         TypeWithIDs value = (TypeWithIDs) JsonUtils.convertFromJson(JsonUtils.convertMapToJson(results), TypeWithIDs.class);
@@ -489,8 +472,7 @@ public class SchemaGeneratorIT
         assertThat(value.getStringId(), is("string"));
         assertThat(value.getUuidId(), is(notNullValue()));
 
-        result = executionContext.execute("query { getMultiLevelList { listOfListOfBigDecimal } }");
-        mapResults = getAndAssertResult(result);
+        mapResults = getAndAssertResult(executionContext.execute("query { getMultiLevelList { listOfListOfBigDecimal } }"));
         assertThat(mapResults.size(), is(1));
         assertThat(mapResults.get("getMultiLevelList"), is(notNullValue()));
 
@@ -509,9 +491,10 @@ public class SchemaGeneratorIT
     public void testDifferentPropertyNames() throws IOException {
         setupIndex(indexFileName, PropertyNameQueries.class, TypeWithNameAndJsonbProperty.class);
         ExecutionContext<DefaultContext> executionContext = new ExecutionContext<>(defaultContext);
-        ExecutionResult result = executionContext.execute("query { query1 { newFieldName1 newFieldName2 "
-                                                          + " newFieldName3 newFieldName4 newFieldName5 newFieldName6 } }");
-        Map<String, Object> mapResults = getAndAssertResult(result);
+
+        Map<String, Object> mapResults = getAndAssertResult(
+                executionContext.execute("query { query1 { newFieldName1 newFieldName2 "
+                                                 + " newFieldName3 newFieldName4 newFieldName5 newFieldName6 } }"));
         assertThat(mapResults.size(), is(1));
 
         Map<String, Object> mapResults2 = (Map<String, Object>) mapResults.get("query1");
@@ -525,8 +508,7 @@ public class SchemaGeneratorIT
     public void testIgnorable() throws IOException {
         setupIndex(indexFileName, QueriesWithIgnorable.class);
         ExecutionContext<DefaultContext> executionContext = new ExecutionContext<>(defaultContext);
-        ExecutionResult result = executionContext.execute("query { testIgnorableFields { id dontIgnore } }");
-        Map<String, Object> mapResults = getAndAssertResult(result);
+        Map<String, Object> mapResults = getAndAssertResult(executionContext.execute("query { testIgnorableFields { id dontIgnore } }"));
         assertThat(mapResults.size(), is(1));
 
         Map<String, Object> mapResults2 = (Map<String, Object>) mapResults.get("testIgnorableFields");
@@ -535,9 +517,8 @@ public class SchemaGeneratorIT
         assertThat(mapResults2.get("dontIgnore"), is(true));
 
         // ensure getting the fields generates an error that is caught by the getAndAssertResult
-        final ExecutionResult result2 = executionContext
-                .execute("query { testIgnorableFields { id dontIgnore pleaseIgnore ignoreThisAsWell } }");
-        assertThrows(AssertionFailedError.class, () -> getAndAssertResult(result2));
+        assertThrows(AssertionFailedError.class, () -> getAndAssertResult(executionContext
+                .execute("query { testIgnorableFields { id dontIgnore pleaseIgnore ignoreThisAsWell } }")));
 
         Schema schema = executionContext.getSchema();
         SchemaType type = schema.getTypeByName("ObjectWithIgnorableFieldsAndMethods");
@@ -604,8 +585,7 @@ public class SchemaGeneratorIT
         ExecutionContext<DefaultContext> executionContext = new ExecutionContext<>(defaultContext);
 
         // test with both fields as default
-        ExecutionResult result = executionContext.execute("mutation { generateDefaultValuePOJO { id value } }");
-        Map<String, Object> mapResults = getAndAssertResult(result);
+        Map<String, Object> mapResults = getAndAssertResult(executionContext.execute("mutation { generateDefaultValuePOJO { id value } }"));
         assertThat(mapResults.size(), is(1));
         Map<String, Object> results = (Map<String, Object>) mapResults.get("generateDefaultValuePOJO");
         assertThat(results, is(notNullValue()));
@@ -613,32 +593,28 @@ public class SchemaGeneratorIT
         assertThat(results.get("value"), is(1000));
 
         // test with a field overridden
-        result = executionContext.execute("mutation { generateDefaultValuePOJO(id: \"ID-123\") { id value } }");
-        mapResults = getAndAssertResult(result);
+        mapResults = getAndAssertResult(executionContext.execute("mutation { generateDefaultValuePOJO(id: \"ID-123\") { id value } }"));
         assertThat(mapResults.size(), is(1));
         results = (Map<String, Object>) mapResults.get("generateDefaultValuePOJO");
         assertThat(results, is(notNullValue()));
         assertThat(results.get("id"), is("ID-123"));
         assertThat(results.get("value"), is(1000));
 
-        result = executionContext.execute("query { echoDefaultValuePOJO { id value } }");
-        mapResults = getAndAssertResult(result);
+        mapResults = getAndAssertResult(executionContext.execute("query { echoDefaultValuePOJO { id value } }"));
         assertThat(mapResults.size(), is(1));
         results = (Map<String, Object>) mapResults.get("echoDefaultValuePOJO");
         assertThat(results, is(notNullValue()));
         assertThat(results.get("id"), is("ID-1"));
         assertThat(results.get("value"), is(1000));
 
-        result = executionContext.execute("query { echoDefaultValuePOJO(input: {id: \"X123\" value: 1}) { id value } }");
-        mapResults = getAndAssertResult(result);
+        mapResults = getAndAssertResult(executionContext.execute("query { echoDefaultValuePOJO(input: {id: \"X123\" value: 1}) { id value } }"));
         assertThat(mapResults.size(), is(1));
         results = (Map<String, Object>) mapResults.get("echoDefaultValuePOJO");
         assertThat(results, is(notNullValue()));
         assertThat(results.get("id"), is("X123"));
         assertThat(results.get("value"), is(1));
 
-        result = executionContext.execute("query { echoDefaultValuePOJO(input: {value: 1}) { id value } }");
-        mapResults = getAndAssertResult(result);
+        mapResults = getAndAssertResult(executionContext.execute("query { echoDefaultValuePOJO(input: {value: 1}) { id value } }"));
         assertThat(mapResults.size(), is(1));
         results = (Map<String, Object>) mapResults.get("echoDefaultValuePOJO");
         assertThat(results, is(notNullValue()));
@@ -678,9 +654,7 @@ public class SchemaGeneratorIT
 
         // since there is a @Source annotation in SimpleQueriesWithSource, then this should add a field
         // idAndName to the SimpleContact type
-        ExecutionResult result = executionContext.execute("query { findContact { id idAndName } }");
-
-        Map<String, Object> mapResults = getAndAssertResult(result);
+        Map<String, Object> mapResults = getAndAssertResult(executionContext.execute("query { findContact { id idAndName } }"));
 
         assertThat(mapResults.size(), is(1));
         Map<String, Object> mapResults2 = (Map<String, Object>) mapResults.get("findContact");
@@ -693,15 +667,13 @@ public class SchemaGeneratorIT
 
         String json = "contact: " + getContactAsQueryInput(contact1);
 
-        result = executionContext.execute("query { currentJob (" + json + ") }");
-        mapResults = getAndAssertResult(result);
+        mapResults = getAndAssertResult(executionContext.execute("query { currentJob (" + json + ") }"));
         assertThat(mapResults.size(), is(1));
         String currentJob = (String) mapResults.get("currentJob");
         assertThat(currentJob, is(notNullValue()));
 
         // test the query from the object
-        result = executionContext.execute("query { findContact { id idAndName currentJob } }");
-        mapResults = getAndAssertResult(result);
+        mapResults = getAndAssertResult(executionContext.execute("query { findContact { id idAndName currentJob } }"));
         assertThat(mapResults.size(), is(1));
         mapResults2 = (Map<String, Object>) mapResults.get("findContact");
         assertThat(mapResults2, is(notNullValue()));
@@ -710,8 +682,7 @@ public class SchemaGeneratorIT
         assertThat(mapResults2.get("currentJob"), is(notNullValue()));
 
         // test the query from the object
-        result = executionContext.execute("query { findContact { id lastNAddress(count: 1) { city } } }");
-        mapResults = getAndAssertResult(result);
+        mapResults = getAndAssertResult(executionContext.execute("query { findContact { id lastNAddress(count: 1) { city } } }"));
         assertThat(mapResults.size(), is(1));
         mapResults2 = (Map<String, Object>) mapResults.get("findContact");
         assertThat(mapResults2, is(notNullValue()));
@@ -738,9 +709,8 @@ public class SchemaGeneratorIT
     public void testMultiLevelListsAndArraysQueries() throws IOException {
         setupIndex(indexFileName, ArrayAndListQueries.class, MultiLevelListsAndArrays.class);
         ExecutionContext<DefaultContext> executionContext = new ExecutionContext<>(defaultContext);
-
-        ExecutionResult result = executionContext.execute("query { getMultiLevelList { intMultiLevelArray } }");
-        Map<String, Object> mapResults = getAndAssertResult(result);
+        
+        Map<String, Object> mapResults = getAndAssertResult(executionContext.execute("query { getMultiLevelList { intMultiLevelArray } }"));
         assertThat(mapResults.size(), is(1));
         Map<String, Object> mapResults2 = (Map<String, Object>) mapResults.get("getMultiLevelList");
         ArrayList<ArrayList<Integer>> intArrayList = (ArrayList<ArrayList<Integer>>) mapResults2.get("intMultiLevelArray");
@@ -757,8 +727,7 @@ public class SchemaGeneratorIT
         assertThat(integerArrayList2.contains(5), is(true));
         assertThat(integerArrayList2.contains(6), is(true));
 
-        result = executionContext.execute("query { returnListOfStringArrays }");
-        mapResults = getAndAssertResult(result);
+        mapResults = getAndAssertResult(executionContext.execute("query { returnListOfStringArrays }"));
         assertThat(mapResults.size(), is(1));
         ArrayList<ArrayList<String>> stringArrayList = (ArrayList<ArrayList<String>>) mapResults.get("returnListOfStringArrays");
         assertThat(stringArrayList, is(notNullValue()));
@@ -780,90 +749,75 @@ public class SchemaGeneratorIT
         setupIndex(indexFileName, SimpleQueriesWithArgs.class, Car.class, AbstractVehicle.class);
         ExecutionContext<DefaultContext> executionContext = new ExecutionContext<>(defaultContext);
 
-        ExecutionResult result = executionContext.execute("query { hero(heroType: \"human\") }");
-        Map<String, Object> mapResults = getAndAssertResult(result);
+        Map<String, Object> mapResults = getAndAssertResult(executionContext.execute("query { hero(heroType: \"human\") }"));
         assertThat(mapResults.size(), is(1));
         assertThat(mapResults.get("hero"), is("Luke"));
 
-        result = executionContext.execute("query { findLocalDates(numberOfValues: 10) }");
-        mapResults = getAndAssertResult(result);
+        mapResults = getAndAssertResult(executionContext.execute("query { findLocalDates(numberOfValues: 10) }"));
         assertThat(mapResults.size(), is(1));
         assertThat(mapResults.get("findLocalDates"), is(notNullValue()));
         List<LocalDate> listLocalDate = (List<LocalDate>) mapResults.get("findLocalDates");
         assertThat(listLocalDate.size(), is(10));
 
-        result = executionContext.execute("query { canFindContact(contact: { id: \"10\" name: \"tim\" age: 52 }) }");
-        mapResults = getAndAssertResult(result);
+        mapResults = getAndAssertResult(executionContext.execute("query { canFindContact(contact: { id: \"10\" name: \"tim\" age: 52 }) }"));
         assertThat(mapResults.size(), is(1));
         assertThat(mapResults.get("canFindContact"), is(false));
 
-        result = executionContext.execute("query { hero(heroType: \"droid\") }");
-        mapResults = getAndAssertResult(result);
+        mapResults = getAndAssertResult(executionContext.execute("query { hero(heroType: \"droid\") }"));
         assertThat(mapResults.size(), is(1));
         assertThat(mapResults.get("hero"), is("R2-D2"));
 
-        result = executionContext.execute("query { multiply(arg0: 10, arg1: 10) }");
-        mapResults = getAndAssertResult(result);
+        mapResults = getAndAssertResult(executionContext.execute("query { multiply(arg0: 10, arg1: 10) }"));
         assertThat(mapResults.size(), is(1));
         assertThat(mapResults.get("multiply"), is(BigInteger.valueOf(100)));
 
-        result = executionContext
-                .execute("query { findAPerson(personId: 1) { personId creditLimit workAddress { city state zipCode } } }");
-        mapResults = getAndAssertResult(result);
+        mapResults = getAndAssertResult(executionContext
+                .execute("query { findAPerson(personId: 1) { personId creditLimit workAddress { city state zipCode } } }"));
         assertThat(mapResults.size(), is(1));
         assertThat(mapResults.get("findAPerson"), is(notNullValue()));
 
-        result = executionContext.execute("query { findEnums(arg0: S) }");
-        mapResults = getAndAssertResult(result);
+        mapResults = getAndAssertResult(executionContext.execute("query { findEnums(arg0: S) }"));
         assertThat(mapResults.size(), is(1));
         assertThat(mapResults.get("findEnums"), is(notNullValue()));
 
-        result = executionContext.execute("query { getMonthFromDate(date: \"2020-12-20\") }");
-        mapResults = getAndAssertResult(result);
+        mapResults = getAndAssertResult(executionContext.execute("query { getMonthFromDate(date: \"2020-12-20\") }"));
         assertThat(mapResults.size(), is(1));
         assertThat(mapResults.get("getMonthFromDate"), is("DECEMBER"));
 
-        result = executionContext.execute("query { findOneEnum(enum: XL) }");
-        mapResults = getAndAssertResult(result);
+        mapResults = getAndAssertResult(executionContext.execute("query { findOneEnum(enum: XL) }"));
         assertThat(mapResults.size(), is(1));
         Collection<String> listEnums = (Collection<String>) mapResults.get("findOneEnum");
         assertThat(listEnums.size(), is(1));
         assertThat(listEnums.iterator().next(), is(EnumTestWithNameAnnotation.XL.toString()));
 
-        result = executionContext.execute("query { returnIntegerAsId(param1: 123) }");
-        mapResults = getAndAssertResult(result);
+        mapResults = getAndAssertResult(executionContext.execute("query { returnIntegerAsId(param1: 123) }"));
         assertThat(mapResults.size(), is(1));
         assertThat(mapResults.get("returnIntegerAsId"), is(123));
 
-        result = executionContext.execute("query { returnIntAsId(param1: 124) }");
-        mapResults = getAndAssertResult(result);
+        mapResults = getAndAssertResult(executionContext.execute("query { returnIntAsId(param1: 124) }"));
         assertThat(mapResults.size(), is(1));
         assertThat(mapResults.get("returnIntAsId"), is(124));
 
-        result = executionContext.execute("query { returnStringAsId(param1: \"StringValue\") }");
-        mapResults = getAndAssertResult(result);
+        mapResults = getAndAssertResult(executionContext.execute("query { returnStringAsId(param1: \"StringValue\") }"));
         assertThat(mapResults.size(), is(1));
         assertThat(mapResults.get("returnStringAsId"), is("StringValue"));
 
-        result = executionContext.execute("query { returnLongAsId(param1: " + Long.MAX_VALUE + ") }");
-        mapResults = getAndAssertResult(result);
+        mapResults = getAndAssertResult(executionContext.execute("query { returnLongAsId(param1: " + Long.MAX_VALUE + ") }"));
         assertThat(mapResults.size(), is(1));
         assertThat(mapResults.get("returnLongAsId"), is(BigInteger.valueOf(Long.MAX_VALUE)));
-
-        result = executionContext.execute("query { returnLongPrimitiveAsId(param1: " + Long.MAX_VALUE + ") }");
-        mapResults = getAndAssertResult(result);
+        
+        mapResults = getAndAssertResult(executionContext.execute("query { returnLongPrimitiveAsId(param1: " + Long.MAX_VALUE + ") }"));
         assertThat(mapResults.size(), is(1));
         assertThat(mapResults.get("returnLongPrimitiveAsId"), is(BigInteger.valueOf(Long.MAX_VALUE)));
 
         UUID uuid = UUID.randomUUID();
-        result = executionContext.execute("query { returnUUIDAsId(param1: \"" + uuid.toString() + "\") }");
-        mapResults = getAndAssertResult(result);
+        mapResults = getAndAssertResult(executionContext.execute("query { returnUUIDAsId(param1: \""
+                                                                         + uuid.toString() + "\") }"));
         assertThat(mapResults.size(), is(1));
         assertThat(mapResults.get("returnUUIDAsId"), is(uuid.toString()));
 
-        result = executionContext.execute(
-                "query { findPeopleFromState(state: \"MA\") { personId creditLimit workAddress { city state zipCode } } }");
-        mapResults = getAndAssertResult(result);
+        mapResults = getAndAssertResult(executionContext.execute(
+                "query { findPeopleFromState(state: \"MA\") { personId creditLimit workAddress { city state zipCode } } }"));
         assertThat(mapResults.size(), is(1));
         assertThat(mapResults.get("findPeopleFromState"), is(notNullValue()));
         ArrayList<Map<String, Object>> arrayList = (ArrayList<Map<String, Object>>) mapResults.get("findPeopleFromState");
@@ -871,9 +825,8 @@ public class SchemaGeneratorIT
         // since its random data we can't be sure if anyone was created in MA
         assertThat(arrayList.size() >= 0, is(true));
 
-        result = executionContext.execute(
-                "query { findPeopleFromState(state: \"MA\") { personId creditLimit workAddress { city state zipCode } } }");
-        mapResults = getAndAssertResult(result);
+        mapResults = getAndAssertResult(executionContext.execute(
+                "query { findPeopleFromState(state: \"MA\") { personId creditLimit workAddress { city state zipCode } } }"));
         assertThat(mapResults.size(), is(1));
 
         SimpleContact contact1 = new SimpleContact("c1", "Contact 1", 50);
@@ -885,10 +838,9 @@ public class SchemaGeneratorIT
                 + "   contact2: " + getContactAsQueryInput(contact2)
                 + "   relationship: \"married\""
                 + "}";
-        result = executionContext.execute("query { canFindContactRelationship( "
+        mapResults = getAndAssertResult(executionContext.execute("query { canFindContactRelationship( "
                                                   + json +
-                                                  ") }");
-        mapResults = getAndAssertResult(result);
+                                                  ") }"));
         assertThat(mapResults.size(), is(1));
     }
 

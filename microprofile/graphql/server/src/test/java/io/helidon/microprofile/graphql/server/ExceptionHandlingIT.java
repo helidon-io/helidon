@@ -16,81 +16,23 @@
 
 package io.helidon.microprofile.graphql.server;
 
-import java.beans.IntrospectionException;
-import java.io.File;
 import java.io.IOException;
-import java.math.BigInteger;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
-import java.util.UUID;
 
-import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ID;
+import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
+
+import io.helidon.microprofile.graphql.server.test.exception.ExceptionQueries;
+import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
+
+import org.hamcrest.Matchers;
+import org.junit.jupiter.api.Test;
+
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
-import graphql.ExecutionResult;
-import io.helidon.config.Config;
-import io.helidon.config.ConfigSources;
-import io.helidon.microprofile.graphql.server.test.db.TestDB;
-import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithNameAnnotation;
-import io.helidon.microprofile.graphql.server.test.mutations.SimpleMutations;
-import io.helidon.microprofile.graphql.server.test.mutations.VoidMutations;
-import io.helidon.microprofile.graphql.server.test.queries.ArrayAndListQueries;
-import io.helidon.microprofile.graphql.server.test.queries.DefaultValueQueries;
-import io.helidon.microprofile.graphql.server.test.queries.DescriptionQueries;
-import io.helidon.microprofile.graphql.server.test.queries.DuplicateNameQueries;
-import io.helidon.microprofile.graphql.server.test.queries.InvalidQueries;
-import io.helidon.microprofile.graphql.server.test.queries.NumberFormatQueriesAndMutations;
-import io.helidon.microprofile.graphql.server.test.queries.OddNamedQueriesAndMutations;
-import io.helidon.microprofile.graphql.server.test.queries.PropertyNameQueries;
-import io.helidon.microprofile.graphql.server.test.queries.QueriesWithIgnorable;
-import io.helidon.microprofile.graphql.server.test.queries.QueriesWithNulls;
-import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesNoArgs;
-import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesWithArgs;
-import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesWithSource;
-import io.helidon.microprofile.graphql.server.test.queries.VoidQueries;
-import io.helidon.microprofile.graphql.server.test.types.AbstractVehicle;
-import io.helidon.microprofile.graphql.server.test.types.Car;
-import io.helidon.microprofile.graphql.server.test.types.ContactRelationship;
-import io.helidon.microprofile.graphql.server.test.types.DateTimePojo;
-import io.helidon.microprofile.graphql.server.test.types.DefaultValuePOJO;
-import io.helidon.microprofile.graphql.server.test.types.DescriptionType;
-import io.helidon.microprofile.graphql.server.test.types.Level0;
-import io.helidon.microprofile.graphql.server.test.types.Motorbike;
-import io.helidon.microprofile.graphql.server.test.types.MultiLevelListsAndArrays;
-import io.helidon.microprofile.graphql.server.test.types.NullPOJO;
-import io.helidon.microprofile.graphql.server.test.types.ObjectWithIgnorableFieldsAndMethods;
-import io.helidon.microprofile.graphql.server.test.types.Person;
-import io.helidon.microprofile.graphql.server.test.types.PersonWithName;
-import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
-import io.helidon.microprofile.graphql.server.test.types.SimpleContactInputType;
-import io.helidon.microprofile.graphql.server.test.types.SimpleContactInputTypeWithAddress;
-import io.helidon.microprofile.graphql.server.test.types.SimpleContactInputTypeWithName;
-import io.helidon.microprofile.graphql.server.test.types.SimpleContactInputTypeWithNameValue;
-import io.helidon.microprofile.graphql.server.test.types.SimpleContactWithNumberFormats;
-import io.helidon.microprofile.graphql.server.test.types.SimpleContactWithSelf;
-import io.helidon.microprofile.graphql.server.test.types.TypeWithIDs;
-import io.helidon.microprofile.graphql.server.test.types.TypeWithNameAndJsonbProperty;
-import io.helidon.microprofile.graphql.server.test.types.Vehicle;
-import io.helidon.microprofile.graphql.server.test.types.VehicleIncident;
-import javax.enterprise.inject.se.SeContainer;
-import javax.enterprise.inject.se.SeContainerInitializer;
-import org.eclipse.microprofile.graphql.ConfigKey;
-import org.eclipse.microprofile.graphql.NonNull;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.opentest4j.AssertionFailedError;
 
 /**
  * Integration tests for testing exception handing in {@link SchemaGeneratorTest}.
@@ -101,6 +43,8 @@ public class ExceptionHandlingIT
 
     @Test
     public void testAllDefaultsForConfig() throws IOException {
+        setupConfig(null);
+
         setupIndex(indexFileName);
         ExecutionContext<DefaultContext> executionContext = new ExecutionContext<>(defaultContext);
         assertThat(executionContext, is(notNullValue()));
@@ -111,11 +55,148 @@ public class ExceptionHandlingIT
 
     @Test
     public void testDifferentMessage() throws IOException {
-        Properties properties = new Properties();
-        Config config = Config.create(ConfigSources.create(Map.of(ConfigKey.DEFAULT_ERROR_MESSAGE, "new message")).build());
+        Config config = setupConfig("config/config1.properties");
+        assertThat(config.get("mp").get("graphql").get("defaultErrorMessage").asString().get(), is("new message"));
+
         setupIndex(indexFileName);
+
         ExecutionContext<DefaultContext> executionContext = new ExecutionContext<>(defaultContext);
         assertThat(executionContext.getDefaultErrorMessage(), is("new message"));
+    }
+
+    @Test
+    public void testBlackListAndWhiteList() throws IOException {
+        setupConfig("config/config2.properties");
+
+        setupIndex(indexFileName);
+
+        ExecutionContext<DefaultContext> executionContext = new ExecutionContext<>(defaultContext);
+        assertThat(executionContext.getDefaultErrorMessage(), is("Server Error"));
+        assertThat(executionContext.getExceptionBlacklist().size(), is(2));
+        assertThat(executionContext.getExceptionWhitelist().size(), is(1));
+        assertThat(executionContext.getExceptionBlacklist().contains("java.io.IOException"), is(true));
+        assertThat(executionContext.getExceptionBlacklist().contains("java.util.concurrent.TimeoutException"), is(true));
+        assertThat(executionContext.getExceptionWhitelist()
+                           .contains("org.eclipse.microprofile.graphql.tck.apps.superhero.api.WeaknessNotFoundException"),
+                   is(true));
+    }
+
+    @Test
+    public void testEmptyErrorPayloads() throws IOException {
+        setupIndex(indexFileName, ExceptionQueries.class);
+        ExecutionContext<DefaultContext> executionContext = new ExecutionContext<>(new DefaultContext());
+
+        Map<String, Object> errorMap = executionContext.newErrorPayload();
+        assertPayload(errorMap);
+
+        List<Map<String, Object>> listMessages = (List<Map<String, Object>>) errorMap.get(ExecutionContext.ERRORS);
+        assertThat(listMessages, is(notNullValue()));
+        assertThat(listMessages.size(), is(0));
+    }
+
+    @Test
+    public void testErrorPayLoadWithMessages() throws IOException {
+        setupIndex(indexFileName, ExceptionQueries.class);
+        ExecutionContext<DefaultContext> executionContext = new ExecutionContext<>(new DefaultContext());
+
+        Map<String, Object> errorMap = executionContext.newErrorPayload();
+        assertPayload(errorMap);
+
+        List<Map<String, Object>> listMessages = (List<Map<String, Object>>) errorMap.get(ExecutionContext.ERRORS);
+        assertThat(listMessages, is(notNullValue()));
+        assertThat(listMessages.size(), is(0));
+
+        executionContext.addErrorPayload(errorMap, "error message 1");
+        executionContext.addErrorPayload(errorMap, "error message 2");
+        assertThat(listMessages.size(), is(2));
+
+        for (Map<String, Object> mapMessage : listMessages) {
+            assertThat(mapMessage.get(ExecutionContext.MESSAGE), is(notNullValue()));
+        }
+    }
+
+    @Test
+    public void testErrorPayLoadWithMessagesAndLocations() throws IOException {
+        setupIndex(indexFileName, ExceptionQueries.class);
+        ExecutionContext<DefaultContext> executionContext = new ExecutionContext<>(new DefaultContext());
+
+        Map<String, Object> errorMap = executionContext.newErrorPayload();
+        assertPayload(errorMap);
+
+        List<Map<String, Object>> listMessages = (List<Map<String, Object>>) errorMap.get(ExecutionContext.ERRORS);
+        assertThat(listMessages, is(notNullValue()));
+        assertThat(listMessages.size(), is(0));
+
+        executionContext.addErrorPayload(errorMap, "error message 1", 1, 10, ExecutionContext.EMPTY_MAP);
+        executionContext.addErrorPayload(errorMap, "error message 2", 1, 10, ExecutionContext.EMPTY_MAP);
+        assertThat(listMessages.size(), is(2));
+
+        for (Map<String, Object> mapMessage : listMessages) {
+            assertThat(mapMessage.get(ExecutionContext.MESSAGE), is(notNullValue()));
+            List<Map<String, Object>> listLocations = (List<Map<String, Object>>) mapMessage.get(ExecutionContext.LOCATIONS);
+            for (Map<String, Object> mapLocations : listLocations) {
+                assertThat(mapLocations, is(notNullValue()));
+                assertThat(mapLocations.get(ExecutionContext.LINE), is(1));
+                assertThat(mapLocations.get(ExecutionContext.COLUMN), is(10));
+            }
+        }
+    }
+
+    @Test
+    public void testErrorPayLoadWithMessagesLocationsAndExtensions() throws IOException {
+        setupIndex(indexFileName, ExceptionQueries.class);
+        ExecutionContext<DefaultContext> executionContext = new ExecutionContext<>(new DefaultContext());
+
+        Map<String, Object> errorMap = executionContext.newErrorPayload();
+        assertPayload(errorMap);
+
+        List<Map<String, Object>> listMessages = (List<Map<String, Object>>) errorMap.get(ExecutionContext.ERRORS);
+        assertThat(listMessages, is(notNullValue()));
+        assertThat(listMessages.size(), is(0));
+
+        executionContext.addErrorPayload(errorMap, "error message 1", 1, 10, Map.of("key", "value"));
+        executionContext.addErrorPayload(errorMap, "error message 2", 1, 10, Map.of("key", "value"));
+        assertThat(listMessages.size(), is(2));
+
+        for (Map<String, Object> mapMessage : listMessages) {
+            assertThat(mapMessage.get(ExecutionContext.MESSAGE), is(notNullValue()));
+            List<Map<String, Object>> listLocations = (List<Map<String, Object>>) mapMessage.get(ExecutionContext.LOCATIONS);
+            for (Map<String, Object> mapLocations : listLocations) {
+                assertThat(mapLocations, is(notNullValue()));
+                assertThat(mapLocations.get(ExecutionContext.LINE), is(1));
+                assertThat(mapLocations.get(ExecutionContext.COLUMN), is(10));
+            }
+            Map<String, Object> mapExtensions = (Map<String, Object>) mapMessage.get(ExecutionContext.EXTENSIONS);
+            assertThat(mapExtensions, is(notNullValue()));
+            assertThat(mapExtensions.get("key"), is("value"));
+        }
+    }
+
+    @Test
+    public void testExceptions() throws IOException {
+        setupIndex(indexFileName, ExceptionQueries.class);
+        ExecutionContext<DefaultContext> executionContext = new ExecutionContext<>(new DefaultContext());
+        Map<String, Object> mapResults = executionContext.execute("query { checkedQuery1(throwException: true) }");
+        assertThat(mapResults.size(), is(2));
+        List<Map<String, Object>> listErrors = (List<Map<String, Object>>) mapResults.get(ExecutionContext.ERRORS);
+        assertThat(listErrors, is(notNullValue()));
+        assertThat(listErrors.size(), is(1));
+
+        System.out.println(JsonUtils.convertMapToJson(mapResults));
+    }
+
+    private void assertPayload(Map<String, Object> errorMap) {
+        assertThat(errorMap, is(Matchers.notNullValue()));
+        assertThat(errorMap.size(), is(2));
+        assertThat(errorMap.get(ExecutionContext.DATA), is(nullValue()));
+    }
+
+    protected Config setupConfig(String propertiesFile) {
+        Config config = propertiesFile == null ? Config.create() : Config.create(ConfigSources.classpath(propertiesFile));
+        ConfigProviderResolver.instance()
+                .registerConfig((org.eclipse.microprofile.config.Config) config, Thread.currentThread().getContextClassLoader());
+
+        return config;
     }
 
 }
