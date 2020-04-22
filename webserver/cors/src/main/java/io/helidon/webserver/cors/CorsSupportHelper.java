@@ -82,6 +82,9 @@ class CorsSupportHelper<Q, R> {
      */
     public static String normalize(String path) {
         int length = path.length();
+        if (length == 0) {
+            return path;
+        }
         int beginIndex = path.charAt(0) == '/' ? 1 : 0;
         int endIndex = path.charAt(length - 1) == '/' ? length - 1 : length;
         return (endIndex <= beginIndex) ? "" : path.substring(beginIndex, endIndex);
