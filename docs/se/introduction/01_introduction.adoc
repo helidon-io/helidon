@@ -43,14 +43,14 @@ number of additional Helidon features:
 * JSON-B
 
 For details see the Helidon <<about/01_overview.adoc,documentation>> and
-<<guides/01_overview.adoc,guides>>.
+<<se/guides/01_overview.adoc,guides>>.
 
 == GraalVM Native Image support
 
 Helidon SE supports https://www.graalvm.org[GraalVM]
 https://www.graalvm.org/docs/reference-manual/native-image/[native images]
 for small footprint and lightening fast startup. For more information see
-the <<guides/36_graalnative.adoc,Graal native image guide>>.
+the <<se/guides/36_graalnative.adoc,Graal native image guide>>.
 
 == No Application Server
 
@@ -61,5 +61,5 @@ and efficient without unnecessary overhead or bloat.
 
 == Try it now
 
-Try the <<guides/02_quickstart-se.adoc,Helidon SE quickstart>> to get your
+Try the <<se/guides/02_quickstart.adoc,Helidon SE quickstart>> to get your
 first Helidon SE application up and running in minutes.
