@@ -19,14 +19,20 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+
     <parent>
-        <groupId>io.helidon.examples.webclient</groupId>
-        <artifactId>helidon-examples-webclient-project</artifactId>
+        <groupId>io.helidon.applications</groupId>
+        <artifactId>helidon-se</artifactId>
         <version>2.0.0-SNAPSHOT</version>
+        <relativePath>../../../applications/se/pom.xml</relativePath>
     </parent>
 
     <artifactId>helidon-examples-webclient-standalone</artifactId>
     <name>Helidon WebClient Standalone Example</name>
+
+    <properties>
+        <mainClass>io.helidon.examples.webclient.standalone.ServerMain</mainClass>
+    </properties>
 
     <dependencies>
         <dependency>
@@ -60,5 +66,19 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-libs</id>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>
