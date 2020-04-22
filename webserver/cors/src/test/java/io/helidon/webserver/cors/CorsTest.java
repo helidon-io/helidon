@@ -91,5 +91,6 @@ public class CorsTest extends AbstractCorsTest {
         assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_METHODS), present(is("PUT")));
         assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_HEADERS), notPresent());
         assertThat(res.headers().first(ACCESS_CONTROL_MAX_AGE), present(is("3600")));
+        assertThat(res.headers().all(ACCESS_CONTROL_ALLOW_ORIGIN).size(), is(1));
     }
 }

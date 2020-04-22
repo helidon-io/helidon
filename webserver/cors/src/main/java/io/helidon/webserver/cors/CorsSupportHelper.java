@@ -311,12 +311,6 @@ class CorsSupportHelper {
             case CORS:
                 Optional<U> corsResponse = processCORSRequest(crossOrigin, requestAdapter,
                         responseAdapter);
-                if (corsResponse.isEmpty()) {
-                    /*
-                     * There has been no rejection of the CORS settings, so prep the response headers.
-                     */
-                    addCORSHeadersToResponse(crossOrigin, requestAdapter, responseAdapter);
-                }
                 return corsResponse;
 
             default:
