@@ -125,7 +125,7 @@ public final class HealthSupport implements Service {
             return;
         }
         rules.get(webContext + "[/{*}]", JsonSupport.create())
-                .any(corsEnabledServiceHelper.processor())
+                .any(webContext, corsEnabledServiceHelper.processor())
                 .get(webContext, this::callAll)
                 .get(webContext + "/live", this::callLiveness)
                 .get(webContext + "/ready", this::callReadiness);

@@ -390,7 +390,7 @@ public final class MetricsSupport implements Service {
         Registry app = rf.getARegistry(MetricRegistry.Type.APPLICATION);
 
         // CORS first
-        rules.any(corsEnabledServiceHelper.processor());
+        rules.any(context, corsEnabledServiceHelper.processor());
 
         // register the metric registry and factory to be available to all
         rules.any(new MetricsContextHandler(app, rf));

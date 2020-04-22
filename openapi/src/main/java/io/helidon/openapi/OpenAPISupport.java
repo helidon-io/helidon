@@ -157,7 +157,7 @@ public class OpenAPISupport implements Service {
     public void configureEndpoint(Routing.Rules rules) {
 
         rules.get(JsonSupport.create())
-                .any(corsEnabledServiceHelper.processor())
+                .any(webContext, corsEnabledServiceHelper.processor())
                 .get(webContext, this::prepareResponse);
     }
 
