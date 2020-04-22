@@ -101,11 +101,33 @@ Learn how to build a Helidon MicroProfile (MP) application from scratch.
 [PILLARS]
 ====
 [CARD]
-.Creating Docker Images
-[link=guides/30_dockerfile.adoc]
+.Maven Guide
+[link=mp/guides/25_maven_build.adoc]
 --
-Learn how to package your application and the necessary runtime dependencies as
- a Docker image.
+Using Helidon in your Maven project.
+--
+
+[CARD]
+.Gradle Guide
+[link=mp/guides/26_gradle_build.adoc]
+--
+Using Helidon in your Gradle project.
+--
+
+[CARD]
+.GraalVM Native Images
+[link=mp/guides/36_graalnative.adoc]
+--
+Learn how to build a GraalVM native image for your Helidon application
+both on your desktop and as part of a Docker image.
+--
+
+[CARD]
+.Custom Runtime Images using `jlink`
+[link=mp/guides/37_jlink_image.adoc]
+--
+Learn how to build a custom runtime Java image for your Helidon application
+both on your desktop and as part of a Docker image.
 --
 
 [CARD]
