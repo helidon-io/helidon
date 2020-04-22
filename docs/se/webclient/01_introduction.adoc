@@ -23,44 +23,156 @@
 :description: Helidon WebClient
 :keywords: helidon, se, rest, httpclient, webclient, reactive
 
-// Have not included the configuration related info. Should this info be included in the Introduction doc or Configuration doc. Please confirm.
 
 WebClient is an HTTP client for Helidon SE 2.0. It handles the responses to the HTTP requests in a reactive way.
 
 Helidon WebClient provides the following features:
 
-* Reactive approach - Allows you to execute HTTP requests and handle the responses without having to wait for the server response. When the response is received, the client requests only a specific amount of data it can handle at a time. So, there is no overflow of memory.
+* *Reactive approach* +
+Allows you to execute HTTP requests and handle the responses without having to wait for the server response. When the response is received, the client requests only the amount of data that it can handle at that time. So, there is no overflow of memory.
 
-* Builder-like setup and execution - Creates every client and request as a builder pattern. This improves readability and code maintenance.
+* *Builder-like setup and execution* +
+Creates every client and request as a builder pattern. This improves readability and code maintenance.
 
-* Redirect chain - Follows the redirect chain and perform requests on the correct endpoint by itself.
+* *Redirect chain* +
+Follows the redirect chain and perform requests on the correct endpoint by itself.
 
-* Tracing, metrics and security propagation - Automatically propogates the configured tracing, metrics and security settings of the Helidon WebServer to the WebClient and uses them during request and response.
+* *Tracing, metrics and security propagation* +
+Automatically propogates the configured tracing, metrics and security settings of the Helidon WebServer to the WebClient and uses them during request and response.
 
-== Setting up the WebClient
+== Configuring the WebClient
 
-// Not clear of the info provided in the WebClient example setup README.md. Need more details to include info in the section; please provide.
+The WebClient default configuration may be suitable in most use cases. However, you can configure it to suit your specific requirements.
 
-== Getting Started with WebClient
+=== Example of a WebClient Configuration
 
-// Need some info to get started with WebClient.
+[source,java]
+----
+Config config = Config.create();
+WebClient client = WebClient.builder()
+        .baseUri("http://localhost")
+        .config(config.get("client"))
+        .build();
+----
 
-=== Example of a Simple GET Request
+=== Example of Yaml WebClient Configuration
 
+[source, java]
+----
+client:
+  connect-timeout-millis: 2000
+  read-timeout-millis: 2000
+  follow-redirects: true <1>
+  max-redirects: 5
+  cookies:
+    automatic-store-enabled: true
+    default-cookies:
+      - name: "env"
+        value: "dev"
+  headers:
+    - name: "Accept"
+      value: ["application/json","text/plain"] <2>
+  services:
+    exclude: ["io.helidon.webclient.DefaultServiceRegistry"]
+    config:
+      metrics: 
+        - methods: ["PUT", "POST", "DELETE"]
+        - type: METER
+          name-format: "client.meter.overall"
+        - type: TIMER
+          # meter per method
+          name-format: "client.meter.%1$s"
+        - methods: ["GET"]
+          type: COUNTER
+          errors: false
+          name-format: "client.counter.%1$s.success"
+          description: "Counter of successful GET requests"
+        - methods: ["PUT", "POST", "DELETE"]
+          type: COUNTER
+          success: false
+          name-format: "wc.counter.%1$s.error"
+          description: "Counter of failed PUT, POST and DELETE requests"
+        - methods: ["GET"]
+          type: GAUGE_IN_PROGRESS
+          name-format: "client.inprogress.%2$s"
+          description: "In progress requests to host"
+      tracing:
+  proxy:
+    use-system-selector: false
+    host: "hostName"
+    port: 80
+    no-proxy: ["localhost:8080", ".helidon.io", "192.168.1.1"] <3>
+  ssl:
+    server:
+      disable-hostname-verification: false
+      trust-all: false
+      truststore:
+        keystore-resource-path: "path to the keystore"
+        keystore-type: "JKS"
+        keystore-passphrase: "password"
+        trust-store: true <4>
+    client:
+      keystore:
+        keystore-resource-path: "path to client keystore"
+        keystore-passphrase: "password"
+        trust-store: true <5>
+----
+
+<1> Client functional settings
+<2> Default client headers and cookies
+<3> Proxy configuration
+<4> SSL configuration
+<5> Client service configuration
+
+== Creating the WebClient
+
+You can create WebClient by executing `WebClient.create()` method. This will create an instance of client with default settings and without a base uri set.
+
+To change the default settings and register
+additional services, you can use simple builder that allows you to customize the client behavior.
+
+=== Example
+.Create a WebClient with simple builder:
 [source,java]
 ----
 WebClient client = WebClient.builder()
         .baseUri("http://localhost")
         .build();
+----
 
-CompletionStage<String> response = webClient.get()
+== Creating and Executing the WebClient Request
+
+WebClient executes requests to the target endpoints and returns specific response type.
+
+It offers the following methods to specify the type of request you want to execute:
+
+* `put()`
+* `get()`
+* `method(String methodName)`
+
+These methods set specific request type based on their name or parameter to the new instance of `WebClientRequesBuilder` and return this instance based on configurations for specific request type.
+
+You can set configuration for every request type before it is sent.
+
+// Do we need to include how to configure the request. If so, please provide info for request type.
+
+For the final execution, use the following methods with variations and different parameters:
+
+* `CompletionStage<T> submit(Object entity, Class<T> responseType)`
+* `CompletionStage<T> request(Class<T> responseType)`
+
+=== Example
+.Execute a simple GET request to endpoint:
+[source,java]
+----
+CompletionStage<String> response = client.get()
         .path("/endpoint")
         .request(String.class);
 ----
 
-=== Example of a GET Request With Json Object
+== Designing the WebClient for JsonObject
 
-In this case, JsonObject processing is not present in the WebClient by default. So, you must first register the Json object before making a request.
+JsonObject processing is not present in the WebClient by default. So, you must first register the JsonObject before making a request.
 
 [source,java]
 .Register JsonObject to the request builder using the register method.
@@ -70,11 +182,11 @@ WebClient client = WebClient.builder()
         .baseUri("http://localhost")
         .build();
 
-CompletionStage<JsonObject> response = webClient.get()
+CompletionStage<JsonObject> response = client.get()
         .path("/endpoint")
         .register(jsonProcessing.newReader())
         .request(JsonObject.class);
-----
+---- 
 
 [source,java]
 .Make a GET or PUT request to the endpoint.
@@ -85,11 +197,23 @@ WebClient client = WebClient.builder()
         .baseUri("http://localhost")
         .build();
 
-CompletionStage<WebClientResponse> response = webClient.put()
+CompletionStage<WebClientResponse> response = client.put()
         .path("/endpoint")
         .register(jsonProcessing.newWriter())
         .submit(entity);
 ----
+
+== Using a Sample WebClient
+
+The sample setup shows you how to use the WebClient.
+
+. Set the port that will be used in one of folowing ways:
+.. Set explicit port to `application.yaml` in section `server.port`.
+.. Pass server port as the main method parameter to `ClientMain`.
+. Start `WebServer` by calling `ServerMain.main()`.
+. Start `WebClientExample` by calling `ClientMain.main()`.
+
+If you did not set port using config file, pass generated server port to the main method as a parameter.
 
 == Maven Coordinates
 
