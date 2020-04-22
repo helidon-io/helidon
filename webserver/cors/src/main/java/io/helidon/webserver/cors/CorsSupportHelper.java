@@ -60,6 +60,7 @@ import static io.helidon.webserver.cors.LogHelper.DECISION_LEVEL;
  */
 class CorsSupportHelper {
 
+    static final int SUCCESS_RANGE = 300;
     static final String ORIGIN_DENIED = "CORS origin is denied";
     static final String ORIGIN_NOT_IN_ALLOWED_LIST = "CORS origin is not in allowed list";
     static final String METHOD_NOT_IN_ALLOWED_LIST = "CORS method is not in allowed list";
@@ -333,10 +334,16 @@ class CorsSupportHelper {
      * @param <U> the type for the HTTP response as returned from the responseSetter
      */
     public <T, U> void prepareResponse(RequestAdapter<T> requestAdapter, ResponseAdapter<U> responseAdapter) {
-
         if (!isActive()) {
             LOGGER.log(DECISION_LEVEL,
-                    () -> String.format("CORS ignoring request %s; CORS processing is dieabled", requestAdapter));
+                    () -> String.format("CORS ignoring request %s; CORS processing is disabled", requestAdapter));
+            return;
+        }
+
+        // If not a successful response, skip CORS processing for response
+        if (responseAdapter.status() >= SUCCESS_RANGE) {
+            LOGGER.log(DECISION_LEVEL,
+                    () -> String.format("CORS ignoring response of status code %d", responseAdapter.status()));
             return;
         }
 

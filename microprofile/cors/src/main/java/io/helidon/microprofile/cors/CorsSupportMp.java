@@ -56,7 +56,7 @@ class CorsSupportMp extends CorsSupportBase {
      */
     @Override
     protected <T, U> Optional<U> processRequest(RequestAdapter<T> requestAdapter,
-            ResponseAdapter<U> responseAdapter) {
+                                                ResponseAdapter<U> responseAdapter) {
         return super.processRequest(requestAdapter, responseAdapter);
     }
 
@@ -142,14 +142,17 @@ class CorsSupportMp extends CorsSupportBase {
 
     static class ResponseAdapterMp implements ResponseAdapter<Response> {
 
+        private final int status;
         private final MultivaluedMap<String, Object> headers;
 
         ResponseAdapterMp(ContainerResponseContext responseContext) {
             headers = responseContext.getHeaders();
+            status = responseContext.getStatus();
         }
 
         ResponseAdapterMp() {
             headers = new MultivaluedHashMap<>();
+            status = Response.Status.OK.getStatusCode();
         }
 
         @Override
@@ -179,6 +182,11 @@ class CorsSupportMp extends CorsSupportBase {
              */
             builder.replaceAll(headers);
             return builder.build();
+        }
+
+        @Override
+        public int status() {
+            return status;
         }
     }
 }

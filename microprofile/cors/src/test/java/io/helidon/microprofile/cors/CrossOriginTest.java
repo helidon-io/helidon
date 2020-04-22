@@ -33,7 +33,6 @@ import javax.ws.rs.core.Response;
 import java.util.Set;
 
 import io.helidon.microprofile.server.Server;
-
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -46,7 +45,6 @@ import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_O
 import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_MAX_AGE;
 import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_REQUEST_HEADERS;
 import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_REQUEST_METHOD;
-
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -343,5 +341,16 @@ public class CrossOriginTest {
                 .put(Entity.entity("", MediaType.TEXT_PLAIN_TYPE));
         assertThat(res.getStatusInfo(), is(Response.Status.OK));
         assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN), is("http://foo.bar"));
+    }
+
+    @Test
+    void testErrorResponse() {
+        Response res = target.path("/app/notfound")
+                .request()
+                .header(ORIGIN, "http://foo.bar")
+                .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
+                .put(Entity.entity("", MediaType.TEXT_PLAIN_TYPE));
+        assertThat(res.getStatusInfo(), is(Response.Status.NOT_FOUND));
+        assertThat(res.getHeaders().containsKey(ACCESS_CONTROL_ALLOW_ORIGIN), is(false));
     }
 }
