@@ -333,5 +333,12 @@ public abstract class CorsSupportBase implements Service, Handler {
          * @return response instance
          */
         T ok();
+
+        /**
+         * Returns the status of the response.
+         *
+         * @return HTTP status code.
+         */
+        int status();
     }
 }
