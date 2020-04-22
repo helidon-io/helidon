@@ -70,21 +70,8 @@ public class ServerTest {
 
     @BeforeAll
     public static void startup() {
-        initLogging();
         greetingWebServer = TestUtil.startServer(GREETING_OPENAPI_SUPPORT_BUILDER);
         timeWebServer = TestUtil.startServer(TIME_OPENAPI_SUPPORT_BUILDER);
-    }
-
-    private static void initLogging() {
-        try {
-            java.util.logging.Logger logger = java.util.logging.Logger.getLogger("io.helidon.webserver.cors.CorsSupportHelper");
-            logger.setLevel(java.util.logging.Level.FINE);
-            java.util.logging.Handler h = new java.util.logging.ConsoleHandler();
-            h.setLevel(java.util.logging.Level.FINE);
-            logger.addHandler(h);
-        } catch (Throwable t) {
-            throw new RuntimeException(t);
-        }
     }
 
     @AfterAll
