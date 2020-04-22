@@ -317,7 +317,7 @@ public class SchemaGenerator {
      *
      * @param schema {@link Schema} to update
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "rawtypes"})
     private void processDefaultDateTimeValues(Schema schema) {
         // concatenate both the SchemaType and SchemaInputType
         Stream streamInputTypes = schema.getInputTypes().stream().map(it -> (SchemaType) it);
@@ -554,8 +554,6 @@ public class SchemaGenerator {
         Set<SchemaInputType> setInputTypes = new HashSet<>();
         setInputTypes.add(schemaInputType);
 
-        // setInputTypes contains all InputTypes that need to be checked for types other than
-        // Enum, Scalar or GraphQL Type
         while (setInputTypes.size() > 0) {
             SchemaInputType type = setInputTypes.iterator().next();
             setInputTypes.remove(type);
@@ -679,9 +677,9 @@ public class SchemaGenerator {
                     // change the type of this to a String but keep the above type for the above data fetcher
                     graphQLType = SchemaGeneratorHelper.STRING;
                 } else if (DATE.equals(format[0])) {
-                    dataFetcher = DataFetcherUtils.newDateFormatPropertyDataFetcher(propertyName, format[1], format[2]);
-                    // change the type of this to a String but keep the above type for the above data fetcher
-                    graphQLType = SchemaGeneratorHelper.STRING;
+//                    dataFetcher = DataFetcherUtils.newDateFormatPropertyDataFetcher(propertyName, format[1], format[2]);
+//                    // change the type of this to a String but keep the above type for the above data fetcher
+//                    graphQLType = SchemaGeneratorHelper.STRING;
                 }
             }
         } else {

@@ -97,38 +97,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * Integration tests for {@link SchemaGeneratorTest}.
  */
 @SuppressWarnings("unchecked")
-public class SchemaGeneratorIT extends AbstractGraphQLTest {
-
-    private String indexFileName = null;
-    private File indexFile = null;
-    private DefaultContext defaultContext = ExecutionContext.getDefaultContext();
-
-    private static SeContainer container;
-
-    @BeforeAll
-    public static void initialize() {
-        container = SeContainerInitializer.newInstance().initialize();
-    }
-
-    @AfterAll
-    public static void teardown() {
-        container.close();
-    }
-
-    @BeforeEach
-    public void setupTest() throws IOException {
-        System.clearProperty(JandexUtils.PROP_INDEX_FILE);
-        indexFileName = getTempIndexFile();
-        indexFile = null;
-    }
-
-    @AfterEach
-    public void teardownTest() {
-        if (indexFile != null) {
-            indexFile.delete();
-        }
-    }
-
+public class SchemaGeneratorIT
+        extends AbstractGraphQLIT {
+    
     /**
      * Test generation of Type with no-name.
      */

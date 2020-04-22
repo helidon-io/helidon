@@ -66,7 +66,6 @@
         <dependency>
             <groupId>io.helidon.microprofile.config</groupId>
             <artifactId>helidon-microprofile-config</artifactId>
-            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>jakarta.interceptor</groupId>

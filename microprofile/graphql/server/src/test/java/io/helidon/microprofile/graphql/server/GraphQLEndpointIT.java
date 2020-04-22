@@ -37,9 +37,10 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
- * Integration tests for microprofile-graphql implementation.
+ * Integration tests for microprofile-graphql implementation via /graphql endpoint.
  */
-public class GraphQLIT extends AbstractGraphQLIT {
+public class GraphQLEndpointIT
+        extends AbstractGraphQLEndpointIT {
 
     @BeforeAll
     public static void setup() throws IOException {

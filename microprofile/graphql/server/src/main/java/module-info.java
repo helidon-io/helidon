@@ -34,6 +34,7 @@ module helidon.microprofile.graphql.server {
     requires microprofile.graphql.api;
 
     exports io.helidon.microprofile.graphql.server;
+    requires io.helidon.config;
 
     provides javax.enterprise.inject.spi.Extension with
             io.helidon.microprofile.graphql.server.GraphQLCdiExtension;

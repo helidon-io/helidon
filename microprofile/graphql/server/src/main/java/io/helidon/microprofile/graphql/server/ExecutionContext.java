@@ -16,7 +16,10 @@
 
 package io.helidon.microprofile.graphql.server;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -26,6 +29,8 @@ import graphql.GraphQL;
 import graphql.execution.SubscriptionExecutionStrategy;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.SchemaPrinter;
+import io.helidon.config.Config;
+import org.eclipse.microprofile.graphql.ConfigKey;
 
 import static graphql.ExecutionInput.newExecutionInput;
 
@@ -35,6 +40,8 @@ import static graphql.ExecutionInput.newExecutionInput;
  * @param <C> the context that will be used when executing queries.
  */
 public class ExecutionContext<C> {
+
+    private static final String EMPTY = "";
 
     private static final Logger LOGGER = Logger.getLogger(ExecutionContext.class.getName());
 
@@ -69,6 +76,26 @@ public class ExecutionContext<C> {
     private C context;
 
     /**
+     * Default error message.
+     */
+    private String defaultErrorMessage;
+
+    /**
+     * List of blacklisted exceptions to hide.
+     */
+    private final List<String> exceptionBlacklist = new ArrayList<>();
+
+    /**
+     * List of whitelisted exceptions to allow through.
+     */
+    private final List<String> exceptionWhitelist = new ArrayList<>();
+
+    /**
+     * Configuration.
+     */
+    private Config config;
+
+    /**
      * Return the {@link GraphQLSchema} instance created.
      *
      * @return the {@link GraphQLSchema} instance
@@ -93,9 +120,10 @@ public class ExecutionContext<C> {
      */
     public ExecutionContext(C context) {
         try {
-            this.schemaGenerator = new SchemaGenerator();
-            this.schema = schemaGenerator.generateSchema();
-            this.graphQLSchema = schema.generateGraphQLSchema();
+            configureExceptionHandling();
+            schemaGenerator = new SchemaGenerator();
+            schema = schemaGenerator.generateSchema();
+            graphQLSchema = schema.generateGraphQLSchema();
             this.context = context;
             SchemaPrinter.Options options = SchemaPrinter.Options
                     .defaultOptions()
@@ -110,10 +138,33 @@ public class ExecutionContext<C> {
             graphQL = builder.build();
 
             LOGGER.info("Generated schema:\n" + schemaPrinter.print(graphQLSchema));
-        } catch (Exception e) {
+        } catch (RuntimeException | Error e) {
+            // unchecked exception
             String message = "Unable to build GraphQL Schema: " + e;
             LOGGER.warning(message);
             throw new RuntimeException(message, e);
+        } catch (Exception e) {
+            // checked exception
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Configure microprofile exception handling.
+     */
+    private void configureExceptionHandling() {
+        config = Config.create();
+        defaultErrorMessage = config.get(ConfigKey.DEFAULT_ERROR_MESSAGE).asString().orElse("Server Error");
+
+        String whitelist = config.get(ConfigKey.EXCEPTION_WHITE_LIST).asString().orElse(EMPTY);
+        String blacklist = config.get(ConfigKey.EXCEPTION_BLACK_LIST).asString().orElse(EMPTY);
+
+        if (!EMPTY.equals(whitelist)) {
+            exceptionWhitelist.addAll(Arrays.asList(whitelist.split(",")));
+        }
+
+        if (!EMPTY.equals(blacklist)) {
+            exceptionBlacklist.addAll(Arrays.asList(blacklist.split(",")));
         }
     }
 
@@ -164,4 +215,32 @@ public class ExecutionContext<C> {
 
         return graphQL.execute(executionInput.build());
     }
+
+    /**
+     * Return the default error message.
+     *
+     * @return the default error message
+     */
+    public String getDefaultErrorMessage() {
+        return defaultErrorMessage;
+    }
+
+    /**
+     * Return the list blacklisted exceptions to hide.
+     *
+     * @return the list blacklisted exceptions to hide
+     */
+    public List<String> getExceptionBlacklist() {
+        return exceptionBlacklist;
+    }
+
+    /**
+     * Return the list of whitelisted exceptions to allow through.
+     *
+     * @return the list of whitelisted exceptions to allow through
+     */
+    public List<String> getExceptionWhitelist() {
+        return exceptionWhitelist;
+    }
+
 }

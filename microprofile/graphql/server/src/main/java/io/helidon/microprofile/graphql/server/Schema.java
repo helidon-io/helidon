@@ -189,6 +189,7 @@ public class Schema
      *
      * @return the {@link RuntimeWiring}
      */
+    @SuppressWarnings("checkstyle:RegexpSinglelineJava")
     public RuntimeWiring getRuntimeWiring() {
         RuntimeWiring.Builder builder = newRuntimeWiring();
 
@@ -206,8 +207,7 @@ public class Schema
         if (setInterfaces.size() > 0) {
             final Map<String, String> mapTypes = new HashMap<>();
 
-            getTypes().stream().filter(t -> !t.isInterface()).forEach(t -> mapTypes.put(t.getName(), t
-                    .getValueClassName()));
+            getTypes().stream().filter(t -> !t.isInterface()).forEach(t -> mapTypes.put(t.getName(), t.getValueClassName()));
 
             // generate a TypeResolver for all types that are not interfaces
             TypeResolver typeResolver = env -> {
