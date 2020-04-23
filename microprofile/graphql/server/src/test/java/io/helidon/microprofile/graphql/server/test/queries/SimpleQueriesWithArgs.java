@@ -143,4 +143,8 @@ public class SimpleQueriesWithArgs {
         return false;
     }
 
+    @Query("additionQuery")
+    public int addNumbers(@Name("value1") int value1, @Name("value2") int value2) {
+        return value1 + value2;
+    }
 }

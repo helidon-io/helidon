@@ -16,13 +16,18 @@
 
 package io.helidon.microprofile.graphql.server.test.exception;
 
+import io.helidon.microprofile.graphql.server.test.db.TestDB;
+import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
 import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.GraphQLException;
 import org.eclipse.microprofile.graphql.Mutation;
 import org.eclipse.microprofile.graphql.Name;
 import org.eclipse.microprofile.graphql.Query;
 import java.io.IOError;
+import java.io.IOException;
+import java.security.AccessControlException;
 
 /**
  * Class that holds queries that raise various exceptions.
@@ -30,6 +35,9 @@ import java.io.IOError;
 @GraphQLApi
 @ApplicationScoped
 public class ExceptionQueries {
+
+    @Inject
+    private TestDB testDB;
 
     public ExceptionQueries() {
     }
@@ -39,17 +47,27 @@ public class ExceptionQueries {
         return "hello world";
     }
 
-    @Query
+    @Query("whiteListOfUncheckedException")
     public String uncheckedQuery1() {
-        throw new IOError(new RuntimeException("my exception"));
+        throw new IOError(new AccessControlException("my exception"));
     }
 
     @Query
-    public String checkedQuery1(@Name("throwException") boolean throwException) throws GraphQLException
+    public String checkedQuery1(@Name("throwException") boolean throwException) throws IOException
     {
         if (throwException) {
-            throw new GraphQLException("exception");
+            throw new IOException("exception");
         }
         return String.valueOf(throwException);
+    }
+
+    @Query("blackListOfIOException")
+    public String checkedException() throws IOException {
+        throw new IOException("unable to do this");
+    }
+
+    @Query("defaultContact")
+    public SimpleContact getDefaultContact() {
+        return testDB.createRandomContact();
     }
 }

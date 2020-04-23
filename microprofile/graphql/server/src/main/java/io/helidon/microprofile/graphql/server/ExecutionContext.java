@@ -26,12 +26,16 @@ import java.util.logging.Logger;
 
 import io.helidon.config.Config;
 
+import graphql.ExceptionWhileDataFetching;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
+import graphql.GraphQLError;
 import graphql.execution.SubscriptionExecutionStrategy;
+import graphql.language.SourceLocation;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.SchemaPrinter;
+import graphql.validation.ValidationError;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.graphql.ConfigKey;
 
@@ -79,6 +83,14 @@ public class ExecutionContext<C> {
      */
     protected static final String COLUMN = "column";
 
+    /**
+     * Key for path.
+     */
+    protected static final String PATH = "path";
+
+    /**
+     * Empty String.
+     */
     private static final String EMPTY = "";
 
     /**
@@ -96,6 +108,9 @@ public class ExecutionContext<C> {
      */
     protected static final String[] BLACKLIST_PARTS = ConfigKey.EXCEPTION_BLACK_LIST.split("\\.");
 
+    /**
+     * Logger.
+     */
     private static final Logger LOGGER = Logger.getLogger(ExecutionContext.class.getName());
 
     /**
@@ -112,11 +127,6 @@ public class ExecutionContext<C> {
      * {@link GraphQLSchema} instance to use for execution.
      */
     private GraphQLSchema graphQLSchema;
-
-    /**
-     * {@link SchemaGenerator} instance to use for {@link Schema} generation.
-     */
-    private final SchemaGenerator schemaGenerator;
 
     /**
      * {@link Schema} used.
@@ -174,7 +184,7 @@ public class ExecutionContext<C> {
     public ExecutionContext(C context) {
         try {
             configureExceptionHandling();
-            schemaGenerator = new SchemaGenerator();
+            SchemaGenerator schemaGenerator = new SchemaGenerator();
             schema = schemaGenerator.generateSchema();
             graphQLSchema = schema.generateGraphQLSchema();
             this.context = context;
@@ -274,7 +284,39 @@ public class ExecutionContext<C> {
                     .context(context)
                     .variables(mapVariables == null ? EMPTY_MAP : mapVariables)
                     .build();
-            return graphQL.execute(executionInput).toSpecification();
+
+            ExecutionResult result = graphQL.execute(executionInput);
+            List<GraphQLError> errors = result.getErrors();
+            boolean hasErrors = false;
+            Map<String, Object> mapErrors = newErrorPayload(result.getData());
+            if (errors != null && errors.size() > 0) {
+                for (GraphQLError error : errors) {
+                    if (error instanceof ExceptionWhileDataFetching) {
+                        ExceptionWhileDataFetching e = (ExceptionWhileDataFetching) error;
+                        Throwable cause = e.getException().getCause();
+                        hasErrors = true;
+                        if (cause != null) {
+                            if (cause instanceof Error || cause instanceof RuntimeException) {
+                                // unchecked
+                                addErrorPayload(mapErrors, getUncheckedMessage(cause), error);
+                            } else {
+                                // checked
+                                addErrorPayload(mapErrors, getCheckedMessage(cause), error);
+                            }
+                        }
+                    } else if (error instanceof ValidationError) {
+                        addErrorPayload(mapErrors, error.getMessage(), error);
+                        // the spec tests for empty "data" node on validation errors
+                        if (!mapErrors.containsKey(DATA)) {
+                            mapErrors.put(DATA, null);
+                        }
+
+                        hasErrors = true;
+                    }
+                }
+            }
+
+            return hasErrors ? mapErrors : result.toSpecification();
         } catch (RuntimeException | Error e) {
             // unchecked exception
             Map<String, Object> mapErrors = getErrorPayload(getUncheckedMessage(e), e);
@@ -297,7 +339,7 @@ public class ExecutionContext<C> {
      */
     private Map<String, Object> getErrorPayload(String message, Throwable t) {
         Map<String, Object> mapErrors = newErrorPayload();
-        addErrorPayload(mapErrors, message);
+        addErrorPayload(mapErrors, message, (String) null);
         return mapErrors;
     }
 
@@ -311,7 +353,7 @@ public class ExecutionContext<C> {
     protected String getUncheckedMessage(Throwable throwable) {
         String exceptionClass = throwable.getClass().getName();
         return exceptionWhitelist.contains(exceptionClass)
-                ? throwable.getMessage()
+                ? throwable.toString()
                 : defaultErrorMessage;
     }
 
@@ -326,7 +368,7 @@ public class ExecutionContext<C> {
         String exceptionClass = throwable.getClass().getName();
         return exceptionBlacklist.contains(exceptionClass)
                 ? defaultErrorMessage
-                : throwable.getMessage();
+                : throwable.toString();
     }
 
     /**
@@ -371,8 +413,18 @@ public class ExecutionContext<C> {
      * @return a new error payload
      */
     protected Map<String, Object> newErrorPayload() {
+        return newErrorPayload(null);
+    }
+
+    /**
+     * Generate a new error payload.
+     *
+     * @param initialData {@link Map} of initial data.
+     * @return a new error payload
+     */
+    protected Map<String, Object> newErrorPayload(Map<String, Object> initialData) {
         Map<String, Object> errorMap = new HashMap<>();
-        errorMap.put(DATA, null);
+        errorMap.put(DATA, initialData);
         errorMap.put(ERRORS, new ArrayList<Map<String, Object>>());
 
         return errorMap;
@@ -386,13 +438,15 @@ public class ExecutionContext<C> {
      * @param line       line number of message
      * @param column     column of message
      * @param extensions any extensions to add
+     * @param path       path to add
      */
     @SuppressWarnings("unchecked")
     protected void addErrorPayload(Map<String, Object> errorMap,
                                    String message,
                                    int line,
                                    int column,
-                                   Map<String, Object> extensions) {
+                                   Map<String, Object> extensions,
+                                   String path) {
         List<Map<String, Object>> listErrors = (List<Map<String, Object>>) errorMap.get(ERRORS);
 
         if (listErrors == null) {
@@ -414,6 +468,10 @@ public class ExecutionContext<C> {
             newErrorMap.put(EXTENSIONS, extensions);
         }
 
+        if (path != null) {
+            newErrorMap.put(PATH, List.of(path));
+        }
+
         listErrors.add(newErrorMap);
     }
 
@@ -423,9 +481,10 @@ public class ExecutionContext<C> {
      * @param errorMap   error {@link Map} to add to
      * @param message    message to add
      * @param extensions any extensions to add
+     * @param path       path to add
      */
-    protected void addErrorPayload(Map<String, Object> errorMap, String message, Map<String, Object> extensions) {
-        addErrorPayload(errorMap, message, -1, -1, extensions);
+    protected void addErrorPayload(Map<String, Object> errorMap, String message, Map<String, Object> extensions, String path) {
+        addErrorPayload(errorMap, message, -1, -1, extensions, path);
     }
 
     /**
@@ -433,9 +492,36 @@ public class ExecutionContext<C> {
      *
      * @param errorMap error {@link Map} to add to
      * @param message  message to add
+     * @param path     path to add
      */
-    protected void addErrorPayload(Map<String, Object> errorMap, String message) {
-        addErrorPayload(errorMap, message, -1, -1, EMPTY_MAP);
+    protected void addErrorPayload(Map<String, Object> errorMap, String message, String path) {
+        addErrorPayload(errorMap, message, -1, -1, EMPTY_MAP, path);
+    }
+
+    /**
+     * Add error payload from a given {@link GraphQLError}.
+     *
+     * @param errorMap error {@link Map} to add to
+     * @param message  message to add
+     * @param error    {@link GraphQLError} to retireve infornation from
+     */
+    protected void addErrorPayload(Map<String, Object> errorMap, String message, GraphQLError error) {
+        int line = -1;
+        int column = -1;
+        String path = null;
+        List<SourceLocation> locations = error.getLocations();
+        if (locations != null && locations.size() > 0) {
+            SourceLocation sourceLocation = locations.get(0);
+            line = sourceLocation.getLine();
+            column = sourceLocation.getColumn();
+        }
+
+        List<Object> listPath = error.getPath();
+        if (listPath != null && listPath.size() > 0) {
+            path = listPath.get(0).toString();
+        }
+
+        addErrorPayload(errorMap, message, line, column, error.getExtensions(), path);
     }
 
 }

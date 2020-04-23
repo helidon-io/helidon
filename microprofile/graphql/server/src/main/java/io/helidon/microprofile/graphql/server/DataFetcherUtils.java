@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.graphql.server;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.text.DateFormat;
 import java.text.NumberFormat;
@@ -27,6 +28,7 @@ import java.util.UUID;
 
 import javax.enterprise.inject.spi.CDI;
 
+import graphql.GraphQLException;
 import graphql.schema.DataFetcher;
 import graphql.schema.PropertyDataFetcherHelper;
 
@@ -94,7 +96,11 @@ public class DataFetcherUtils {
                 }
             }
 
-            return (V) method.invoke(instance, listArgumentValues.toArray());
+            try {
+                return (V) method.invoke(instance, listArgumentValues.toArray());
+            } catch (InvocationTargetException e) {
+                throw new GraphQLException(e.getTargetException());
+            }
         };
     }
 

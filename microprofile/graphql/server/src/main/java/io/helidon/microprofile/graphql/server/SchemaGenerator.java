@@ -510,7 +510,7 @@ public class SchemaGenerator {
                             (e, v) -> {
                                 NumberFormat numberFormat = getCorrectNumberFormat(
                                         graphQLType, format[2], format[1]);
-                                return v != null ? numberFormat.format(v) : null;
+                                return v != null && numberFormat != null ? numberFormat.format(v) : null;
                             });
                     fd.setReturnType(STRING);
                 } else {
@@ -520,7 +520,6 @@ public class SchemaGenerator {
                 }
                 fd.setDataFetcher(dataFetcher);
                 fd.setDescription(discoveredMethod.getDescription());
-                final String newFdName = fd.getName();
 
                 schemaType.addFieldDefinition(fd);
 
