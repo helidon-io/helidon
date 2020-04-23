@@ -236,12 +236,12 @@ class CorsSupportHelper {
     }
 
     /**
-     * Reports whether this helper, due to its set-up, will affect any requests or responses.
+     * Reports whether this helper, due to its set-up, will have a chance of affecting any requests or responses.
      *
-     * @return whether the helper will have any effect on requests or responses
+     * @return whether the helper might have any effect on requests or responses
      */
     public boolean isActive() {
-        return aggregator.isEnabled();
+        return aggregator.isEnabled() || (secondaryCrossOriginLookup != EMPTY_SECONDARY_SUPPLIER);
     }
 
     /**
@@ -270,7 +270,7 @@ class CorsSupportHelper {
     public <T, U> Optional<U> processRequest(RequestAdapter<T> requestAdapter, ResponseAdapter<U> responseAdapter) {
 
         if (!isActive()) {
-            LOGGER.log(DECISION_LEVEL, () -> String.format("CORS ignoring request %s; processing is disabled", requestAdapter));
+            LOGGER.log(DECISION_LEVEL, () -> String.format("CORS ignoring request %s; processing is inactive", requestAdapter));
             requestAdapter.next();
             return Optional.empty();
         }
@@ -330,7 +330,7 @@ class CorsSupportHelper {
     public <T, U> void prepareResponse(RequestAdapter<T> requestAdapter, ResponseAdapter<U> responseAdapter) {
         if (!isActive()) {
             LOGGER.log(DECISION_LEVEL,
-                    () -> String.format("CORS ignoring request %s; CORS processing is disabled", requestAdapter));
+                    () -> String.format("CORS ignoring request %s; CORS processing is inactive", requestAdapter));
             return;
         }
 

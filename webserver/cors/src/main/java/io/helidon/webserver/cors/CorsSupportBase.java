@@ -139,7 +139,7 @@ public abstract class CorsSupportBase implements Service, Handler {
          * @return the updated builder
          */
         public B config(Config config) {
-            aggregator.mappedConfig(config);
+            helperBuilder.config(config);
             return me();
         }
 
