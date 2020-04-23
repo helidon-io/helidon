@@ -19,11 +19,14 @@ package io.helidon.webserver.cors;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
+import java.util.logging.Logger;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
 import io.helidon.webserver.PathMatcher;
+import io.helidon.webserver.cors.LogHelper.MatcherChecks;
 
 import static io.helidon.webserver.cors.CorsSupportHelper.normalize;
 
@@ -58,6 +61,8 @@ class Aggregator implements CorsSetter<Aggregator> {
 
     // Key value for the map corresponding to the cross-origin config managed by the {@link CorsSetter} methods
     static final String PATHLESS_KEY = "{+}";
+
+    private static final Logger LOGGER = Logger.getLogger(Aggregator.class.getName());
 
     // Records paths and configs added via addCrossOriginConfig
     private final Map<String, CrossOriginConfigMatchable> crossOriginConfigMatchables = new LinkedHashMap<>();
@@ -103,9 +108,20 @@ class Aggregator implements CorsSetter<Aggregator> {
                  * Merge the newly-provided config with what we've assembled so far. We do not merge the config for a given path;
                  * we add paths that are not already present and override paths that are there.
                  */
-                mapped.forEach(this::addCrossOrigin);
+                AtomicBoolean foundCrossOrigin = new AtomicBoolean();
+                mapped.forEach((k, v) -> {
+                    addCrossOrigin(k, v);
+                    foundCrossOrigin.set(true);
+                });
 
                 isEnabled = mapped.isEnabled();
+                /*
+                 * If the config just set enabled to true without specifying any cross-origin set-up, create a wildcarded
+                 * default one.
+                 */
+                if (!foundCrossOrigin.get()) {
+                    addPathlessCrossOrigin(CrossOriginConfig.builder().build());
+                }
             }
         }
         return this;
@@ -203,12 +219,18 @@ class Aggregator implements CorsSetter<Aggregator> {
      */
     private static Optional<CrossOriginConfig> findFirst(Map<String, CrossOriginConfigMatchable> matchables,
             String normalizedPath) {
-        return matchables.values().stream()
+        MatcherChecks<CrossOriginConfigMatchable> checks = new MatcherChecks<>(LOGGER, CrossOriginConfigMatchable::get);
+        Optional<CrossOriginConfig> result = matchables.values().stream()
+                .peek(checks::put)
                 .filter(matchable -> matchable.matches(normalizedPath))
+                .peek(checks::matched)
                 .map(CrossOriginConfigMatchable::get)
                 .filter(CrossOriginConfig::isEnabled)
+                .peek(checks::enabled)
                 .findFirst();
 
+        checks.log();
+        return result;
     }
 
     @Override
