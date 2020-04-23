@@ -17,7 +17,6 @@
 package io.helidon.microprofile.graphql.server;
 
 import java.beans.IntrospectionException;
-import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.time.LocalDate;
@@ -29,11 +28,8 @@ import java.util.UUID;
 
 import io.helidon.microprofile.graphql.server.test.queries.DuplicateNameQueries;
 import io.helidon.microprofile.graphql.server.test.queries.PropertyNameQueries;
+import io.helidon.microprofile.graphql.server.test.types.InvalidNamedTypes;
 import io.helidon.microprofile.graphql.server.test.types.TypeWithNameAndJsonbProperty;
-import javax.enterprise.inject.se.SeContainer;
-import javax.enterprise.inject.se.SeContainerInitializer;
-
-import graphql.ExecutionResult;
 
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithNameAnnotation;
@@ -76,16 +72,10 @@ import io.helidon.microprofile.graphql.server.test.types.Vehicle;
 import io.helidon.microprofile.graphql.server.test.types.VehicleIncident;
 
 import org.eclipse.microprofile.graphql.NonNull;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.opentest4j.AssertionFailedError;
 
-import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
-import static graphql.schema.GraphQLObjectType.newObject;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ID;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -226,6 +216,42 @@ public class SchemaGeneratorIT
     @Test
     public void testVoidMutations() throws IOException {
         setupIndex(indexFileName, VoidMutations.class);
+        assertThrows(RuntimeException.class, () -> new ExecutionContext<>(defaultContext));
+    }
+
+    @Test
+    public void testInvalidNamedType() throws IOException {
+        setupIndex(indexFileName, InvalidNamedTypes.InvalidNamedPerson.class);
+        assertThrows(RuntimeException.class, () -> new ExecutionContext<>(defaultContext));
+    }
+
+    @Test
+    public void testInvalidNamedInputType() throws IOException {
+        setupIndex(indexFileName, InvalidNamedTypes.InvalidInputType.class);
+        assertThrows(RuntimeException.class, () -> new ExecutionContext<>(defaultContext));
+    }
+
+    @Test
+    public void testInvalidNamedInterface() throws IOException {
+        setupIndex(indexFileName, InvalidNamedTypes.InvalidInterface.class, InvalidNamedTypes.InvalidClass.class);
+        assertThrows(RuntimeException.class, () -> new ExecutionContext<>(defaultContext));
+    }
+
+    @Test
+    public void testInvalidNamedQuery() throws IOException {
+        setupIndex(indexFileName, InvalidNamedTypes.ClassWithInvalidQuery.class);
+        assertThrows(RuntimeException.class, () -> new ExecutionContext<>(defaultContext));
+    }
+
+    @Test
+    public void testInvalidNamedMutation() throws IOException {
+        setupIndex(indexFileName, InvalidNamedTypes.ClassWithInvalidMutation.class);
+        assertThrows(RuntimeException.class, () -> new ExecutionContext<>(defaultContext));
+    }
+
+    @Test
+    public void testInvalidNameEnum() throws IOException {
+        setupIndex(indexFileName, InvalidNamedTypes.Size.class);
         assertThrows(RuntimeException.class, () -> new ExecutionContext<>(defaultContext));
     }
 

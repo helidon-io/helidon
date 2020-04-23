@@ -33,6 +33,8 @@ import javax.ws.rs.core.Response;
 
 import graphql.schema.idl.SchemaPrinter;
 
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ensureRuntimeException;
+
 /**
  * A resource for servicing GraphQL requests.
  */
@@ -126,9 +128,7 @@ public class GraphQLResource {
             context = new ExecutionContext<>("Dummy Context");
             schemaPrinter = new SchemaPrinter(OPTIONS);
         } catch (Exception e) {
-            LOGGER.warning("Unable to build GraphQL Schema: " + e);
-            e.printStackTrace();
-            throw new RuntimeException(e);
+            ensureRuntimeException(LOGGER, "Unable to build GraphQL Schema: ", e);
         }
     }
 

@@ -65,6 +65,8 @@ import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ID;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.STRING;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.checkScalars;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ensureFormat;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ensureRuntimeException;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ensureValidName;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getArrayLevels;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getDefaultValueAnnotationValue;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getDescription;
@@ -205,15 +207,13 @@ public class SchemaGenerator {
                 Input inputAnnotation = clazz.getAnnotation(Input.class);
 
                 if (typeAnnotation != null && inputAnnotation != null) {
-                    throw new RuntimeException("Class " + clazz.getName() + " has been annotated with"
+                    ensureRuntimeException(LOGGER, "Class " + clazz.getName() + " has been annotated with"
                                                        + " both Type and Input");
                 }
 
                 if (typeAnnotation != null || interfaceAnnotation != null) {
-                    // interface or type
                     if (interfaceAnnotation != null && !clazz.isInterface()) {
-                        throw new RuntimeException(
-                                "Class " + clazz.getName() + " has been annotated with"
+                       ensureRuntimeException(LOGGER, "Class " + clazz.getName() + " has been annotated with"
                                         + " @Interface but is not one");
                     }
 
@@ -382,7 +382,7 @@ public class SchemaGenerator {
                     updateLongTypes(schema, returnType, simpleName);
                 }
             } catch (Exception e) {
-                throw new RuntimeException("Cannot get GraphQL type for " + returnType, e);
+                ensureRuntimeException(LOGGER, "Cannot get GraphQL type for " + returnType, e);
             }
         }
     }
@@ -752,16 +752,17 @@ public class SchemaGenerator {
             boolean isMutation = m.getAnnotation(Mutation.class) != null;
             boolean hasSourceAnnotation = Arrays.stream(m.getParameters()).anyMatch(p -> p.getAnnotation(Source.class) != null);
             if (isMutation && isQuery) {
-                throw new RuntimeException("A class may not have both a Query and Mutation annotation");
+                ensureRuntimeException(LOGGER, "The class " + clazz.getName()
+                                               + " may not have both a Query and Mutation annotation");
             }
             if (isQuery || isMutation || hasSourceAnnotation) {
                 DiscoveredMethod discoveredMethod = generateDiscoveredMethod(m, clazz, null, false, true);
                 discoveredMethod.setMethodType(isQuery || hasSourceAnnotation ? QUERY_TYPE : MUTATION_TYPE);
                 String name = discoveredMethod.getName();
                 if (mapDiscoveredMethods.containsKey(name)) {
-                   throw new RuntimeException("A method named " + name + " already exists on "
-                                                      + "the " + (isMutation ? "mutation" : "query")
-                                                      + " " + discoveredMethod.getMethod().getName());
+                   ensureRuntimeException(LOGGER, "A method named " + name + " already exists on "
+                                          + "the " + (isMutation ? "mutation" : "query")
+                                          + " " + discoveredMethod.getMethod().getName());
                 }
                 mapDiscoveredMethods.put(name, discoveredMethod);
             }
@@ -858,13 +859,13 @@ public class SchemaGenerator {
             }
         }
 
+        ensureValidName(LOGGER, varName);
+
         Class<?> returnClazz = method.getReturnType();
         String returnClazzName = returnClazz.getName();
         if ("void".equals(returnClazzName)) {
-            String message = "void is not a valid return type for a Query or Mutation method "
-                    + method.getName() + " on class " + clazz.getName();
-            LOGGER.warning(message);
-            throw new RuntimeException(message);
+            ensureRuntimeException(LOGGER, "void is not a valid return type for a Query or Mutation method "
+                    + method.getName() + " on class " + clazz.getName());
         }
 
         if (pd != null) {
@@ -1009,9 +1010,7 @@ public class SchemaGenerator {
                 ReturnType returnType = getReturnType(paramType, genericParameterTypes[i], i++, method);
 
                 if (parameter.getAnnotation(Id.class) != null) {
-                    if (!isValidIDType(paramType)) {
-                        throw new RuntimeException("A class of type " + paramType + " is not allowed to be an @Id");
-                    }
+                    validateIDClass(returnType.getReturnClass());
                     returnType.setReturnClass(ID);
                 }
 
@@ -1047,11 +1046,24 @@ public class SchemaGenerator {
     /**
      * Validate that a {@link Class} annotated with ID is a valid type.
      *
-     * @param returnClazz {@link Class}  to check
+     * @param returnClazz {@link Class} to check
      */
     private static void validateIDClass(Class<?> returnClazz) {
         if (!isValidIDType(returnClazz)) {
-            throw new RuntimeException("A class of type " + returnClazz + " is not allowed to be an @Id");
+            ensureRuntimeException(LOGGER, "A class of type " + returnClazz + " is not allowed to be an @Id");
+        }
+    }
+
+    /**
+     * Validate that a class annotated with ID is a valid type.
+     *
+     * @param returnClazz class to check
+     */
+    private static void validateIDClass(String returnClazz) {
+        try {
+            validateIDClass(Class.forName(returnClazz));
+        } catch (ClassNotFoundException e) {
+            // ignore
         }
     }
 

@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+import java.util.logging.Logger;
 
 import javax.enterprise.inject.spi.CDI;
 
@@ -34,11 +35,17 @@ import graphql.schema.PropertyDataFetcherHelper;
 
 import static io.helidon.microprofile.graphql.server.FormattingHelper.getCorrectNumberFormat;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ID;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ensureRuntimeException;
 
 /**
  * Utilities for working with {@link DataFetcher}s.
  */
 public class DataFetcherUtils {
+
+    /**
+     * Logger.
+     */
+    private static final Logger LOGGER = Logger.getLogger(DataFetcherUtils.class.getName());
 
     /**
      * Private constructor for utilities class.
@@ -118,8 +125,8 @@ public class DataFetcherUtils {
                                                                              String valueFormat, String locale) {
         NumberFormat numberFormat = getCorrectNumberFormat(type, locale, valueFormat);
         if (numberFormat == null) {
-            throw new RuntimeException("Unable to find number format for type="
-                                               + type + ", locale=" + locale + ", valueFormat=" + valueFormat);
+            ensureRuntimeException(LOGGER, "Unable to find number format for type="
+                                            + type + ", locale=" + locale + ", valueFormat=" + valueFormat);
         }
 
         return environment -> {

@@ -241,6 +241,17 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
     }
 
     @Test
+    public void testValidNames() {
+        assertThat(SchemaGeneratorHelper.isValidGraphQLName("Name"), is(true));
+        assertThat(SchemaGeneratorHelper.isValidGraphQLName("1Name"), is(false));
+        assertThat(SchemaGeneratorHelper.isValidGraphQLName("Name#"), is(false));
+        assertThat(SchemaGeneratorHelper.isValidGraphQLName("InvalidName#"), is(false));
+        assertThat(SchemaGeneratorHelper.isValidGraphQLName("valid_name"), is(true));
+        assertThat(SchemaGeneratorHelper.isValidGraphQLName("_valid_name"), is(true));
+        assertThat(SchemaGeneratorHelper.isValidGraphQLName("__valid_name"), is(false));
+    }
+
+    @Test
     public void testTypeNames() {
         assertThat(SchemaGeneratorHelper.getTypeName(Address.class), is("Address"));
         assertThat(SchemaGeneratorHelper.getTypeName(PersonWithName.class), is("Person"));

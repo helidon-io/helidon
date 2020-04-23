@@ -20,6 +20,7 @@ import java.lang.reflect.AnnotatedElement;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Locale;
+import java.util.logging.Logger;
 
 import javax.json.bind.annotation.JsonbDateFormat;
 import javax.json.bind.annotation.JsonbNumberFormat;
@@ -37,11 +38,17 @@ import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.INTEG
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.LONG_OBJECT;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.LONG_PRIMITIVE;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.SUPPORTED_SCALARS;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ensureRuntimeException;
 
 /**
  * Helper class for number formatting.
  */
 public class FormattingHelper {
+
+    /**
+     * Logger.
+     */
+    private static final Logger LOGGER = Logger.getLogger(FormattingHelper.class.getName());
 
     /**
      * Defines no default format.
@@ -168,7 +175,7 @@ public class FormattingHelper {
             return NO_FORMATTING;
         }
         if (dateFormat.length == 2 && numberFormat.length == 2) {
-            throw new RuntimeException("A date format and number format cannot be applied to the same element: "
+            ensureRuntimeException(LOGGER, "A date format and number format cannot be applied to the same element: "
                                                + annotatedElement);
         }
 

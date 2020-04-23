@@ -40,6 +40,7 @@ import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.graphql.ConfigKey;
 
 import static graphql.ExecutionInput.newExecutionInput;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ensureRuntimeException;
 
 /**
  * Defines a content in which to execute GraphQL commands.
@@ -203,9 +204,7 @@ public class ExecutionContext<C> {
             LOGGER.info("Generated schema:\n" + schemaPrinter.print(graphQLSchema));
         } catch (Throwable t) {
             // since we cannot generate the schema, just log the message and throw it
-            String message = "Unable to build GraphQL Schema: " + t.getMessage();
-            LOGGER.warning(message);
-            throw new RuntimeException(message, t);
+            ensureRuntimeException(LOGGER, "Unable to build GraphQL Schema: ", t);
         }
     }
 

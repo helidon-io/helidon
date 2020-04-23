@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import javax.json.bind.annotation.JsonbProperty;
 import javax.json.bind.annotation.JsonbTransient;
@@ -61,6 +62,11 @@ import static io.helidon.microprofile.graphql.server.SchemaGenerator.SET;
  * Helper class for {@link SchemaGenerator}.
  */
 public final class SchemaGeneratorHelper {
+
+    /**
+     * Logger.
+     */
+    private static final Logger LOGGER = Logger.getLogger(SchemaGeneratorHelper.class.getName());
 
     /**
      * List of supported scalars keyed by the full class name.
@@ -569,6 +575,7 @@ public final class SchemaGeneratorHelper {
         Input inputAnnotation = ignoreInputNameAnnotation ? null : clazz.getAnnotation(Input.class);
         Enum enumAnnotation = clazz.getAnnotation(Enum.class);
         Query queryAnnotation = clazz.getAnnotation(Query.class);
+        Mutation mutationAnnotation = clazz.getAnnotation(Mutation.class);
 
         String name = "";
         if (typeAnnotation != null) {
@@ -581,13 +588,29 @@ public final class SchemaGeneratorHelper {
             name = enumAnnotation.value();
         } else if (queryAnnotation != null) {
             name = queryAnnotation.value();
+        } else if (mutationAnnotation != null) {
+            name = mutationAnnotation.value();
         }
 
         if ("".equals(name)) {
             name = getNameAnnotationValue(clazz);
         }
 
+        ensureValidName(LOGGER, name);
+
         return name == null || name.isBlank() ? clazz.getSimpleName() : name;
+    }
+
+    /**
+     * Ensure the provided name is a valid GraphQL name.
+     * @param logger {@link Logger} to log to
+     * @param name to validate
+     */
+    protected static void ensureValidName(Logger logger, String name) {
+        if (name != null && !isValidGraphQLName(name)) {
+            ensureRuntimeException(LOGGER, "The name '" + name + "' is not a valid "
+                                   + "GraphQL name and cannot be used.");
+        }
     }
 
     /**
@@ -732,5 +755,41 @@ public final class SchemaGeneratorHelper {
         return description == null || "".equals(description.value())
                 ? null
                 : description.value();
+    }
+
+    /**
+     * Validates that a name is valid according to the graphql spec at.
+     * Ref: http://spec.graphql.org/June2018/#sec-Names
+     *
+     * @param name name to validate
+     * @return true if the name is valid
+     */
+    protected static boolean isValidGraphQLName(String name) {
+        return name != null && name.matches("[_A-Za-z][_0-9A-Za-z]*") && !name.startsWith("__");
+    }
+
+    /**
+     * Ensures a {@link RuntimeException} with the message suppleid is thrown and logged.
+     *
+     * @param message message to throw
+     * @param logger  the {@link Logger} to use
+     */
+    protected static void ensureRuntimeException(Logger logger, String message) {
+         ensureRuntimeException(logger, message, null);
+    }
+
+    /**
+     * Ensures a {@link RuntimeException} with the message suppleid is thrown and logged.
+     *
+     * @param message message to throw
+     * @param cause   cause of the erro
+     * @param logger  the {@link Logger} to use
+     */
+    protected static void ensureRuntimeException(Logger logger, String message, Throwable cause) {
+         logger.warning(message);
+         if (cause != null) {
+             cause.printStackTrace();
+         }
+         throw new RuntimeException(message, cause);
     }
 }
