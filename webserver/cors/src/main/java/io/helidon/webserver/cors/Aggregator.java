@@ -77,13 +77,13 @@ class Aggregator implements CorsSetter<Aggregator> {
     }
 
     /**
-     * Reports whether the sources of CORS information have left CORS enabled or not. If there has been an explicit setting,
-     * use the most recent. If no {@code CrossOriginConfig} instances were ever added -- either explicitly or using config --
-     * then the aggregator will never find a match among the matchables so it is as good as inactive.
+     * Reports whether the sources of CORS information have left CORS active or not. This is a combination of any explicit
+     * setting of {@code enabled} with whether any {@code CrossOriginConfig} instances were added -- either explicitly or using
+     * config. If not, then the aggregator will never find a match among the matchables so it is as good as inactive.
      *
-     * @return if CORS processing should be done
+     * @return if this aggregator will contribute to CORS processing
      */
-    public boolean isEnabled() {
+    public boolean isActive() {
         return isEnabled && !crossOriginConfigMatchables.isEmpty();
     }
 
@@ -215,7 +215,7 @@ class Aggregator implements CorsSetter<Aggregator> {
     public String toString() {
         return "Aggregator{"
                 + "crossOriginConfigMatchables=" + crossOriginConfigMatchables
-                + ", isEnabled=" + isEnabled()
+                + ", isActive=" + isActive()
                 + '}';
     }
 
