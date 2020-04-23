@@ -53,13 +53,13 @@ public class ServerTest {
     private static final Config OPENAPI_CONFIG_RESTRICTED_CORS = Config.create(
             ConfigSources.classpath("serverCORSRestricted.yaml").build()).get(OpenAPISupport.Builder.CONFIG_KEY);
 
-    private static final OpenAPISupport.Builder GREETING_OPENAPI_SUPPORT_BUILDER
+    static final OpenAPISupport.Builder GREETING_OPENAPI_SUPPORT_BUILDER
             = OpenAPISupport.builder()
                     .staticFile("src/test/resources/openapi-greeting.yml")
                     .webContext(GREETING_PATH)
                     .config(OPENAPI_CONFIG_DISABLED_CORS);
 
-    private static final OpenAPISupport.Builder TIME_OPENAPI_SUPPORT_BUILDER
+    static final OpenAPISupport.Builder TIME_OPENAPI_SUPPORT_BUILDER
             = OpenAPISupport.builder()
                     .staticFile("src/test/resources/openapi-time-server.yml")
                     .webContext(TIME_PATH)
@@ -198,47 +198,6 @@ public class ServerTest {
                 TestUtil.fromConfig(c,
                         "paths./timecheck.get.responses.200.content."
                                 + "application/json.schema.properties.message.type"));
-    }
-
-    @Test
-    public void testCrossOriginGreetingWithoutCors() throws Exception {
-        HttpURLConnection cnx = TestUtil.getURLConnection(
-                greetingWebServer.port(),
-                "GET",
-                GREETING_PATH,
-                MediaType.APPLICATION_OPENAPI_YAML);
-        cnx.setRequestProperty("Origin", "http://foo.bar");
-        cnx.setRequestProperty("Host", "localhost");
-
-        Config c = TestUtil.configFromResponse(cnx);
-
-        assertEquals(Http.Status.OK_200.code(), cnx.getResponseCode());
-    }
-
-    @Test
-    public void testTimeRestrictedCorsValidOrigin() throws Exception {
-        HttpURLConnection cnx = TestUtil.getURLConnection(
-                timeWebServer.port(),
-                "GET",
-                TIME_PATH,
-                MediaType.APPLICATION_OPENAPI_YAML);
-        cnx.setRequestProperty("Origin", "http://foo.bar");
-        cnx.setRequestProperty("Host", "localhost");
-
-        assertEquals(Http.Status.OK_200.code(), cnx.getResponseCode());
-    }
-
-    @Test
-    public void testTimeRestrictedCorsInvalidOrigin() throws Exception {
-        HttpURLConnection cnx = TestUtil.getURLConnection(
-                timeWebServer.port(),
-                "GET",
-                TIME_PATH,
-                MediaType.APPLICATION_OPENAPI_YAML);
-        cnx.setRequestProperty("Origin", "http://other.com");
-        cnx.setRequestProperty("Host", "localhost");
-
-        assertEquals(Http.Status.FORBIDDEN_403.code(), cnx.getResponseCode());
     }
 
     @Test
