@@ -824,6 +824,12 @@
                 <artifactId>helidon-cors</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <!-- Messaging -->
+            <dependency>
+                <groupId>io.helidon.messaging.connectors.kafka</groupId>
+                <artifactId>helidon-messaging-connectors-kafka</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 </project>

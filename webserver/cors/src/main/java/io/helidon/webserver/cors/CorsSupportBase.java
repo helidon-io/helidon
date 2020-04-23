@@ -121,7 +121,7 @@ public abstract class CorsSupportBase<Q, R, T extends CorsSupportBase<Q, R, T, B
          * @return the updated builder
          */
         public B config(Config config) {
-            aggregator.mappedConfig(config);
+            helperBuilder.config(config);
             return me();
         }
 
