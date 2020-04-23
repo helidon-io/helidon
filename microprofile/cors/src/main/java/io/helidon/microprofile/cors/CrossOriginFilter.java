@@ -86,6 +86,11 @@ class CrossOriginFilter implements ContainerRequestFilter, ContainerResponseFilt
         Method resourceMethod = resourceInfo.getResourceMethod();
         Class<?> resourceClass = resourceInfo.getResourceClass();
 
+        // Not available if matching failed and error response is returned
+        if (resourceClass == null || resourceMethod == null) {
+            return Optional.empty();
+        }
+
         CrossOrigin corsAnnot;
         OPTIONS optsAnnot = resourceMethod.getAnnotation(OPTIONS.class);
         Path pathAnnot = resourceMethod.getAnnotation(Path.class);

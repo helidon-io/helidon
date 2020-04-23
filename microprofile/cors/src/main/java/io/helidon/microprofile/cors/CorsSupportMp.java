@@ -151,14 +151,17 @@ class CorsSupportMp extends CorsSupportBase<ContainerRequestContext, Response, C
 
     static class ResponseAdapterMp implements ResponseAdapter<Response> {
 
+        private final int status;
         private final MultivaluedMap<String, Object> headers;
 
         ResponseAdapterMp(ContainerResponseContext responseContext) {
             headers = responseContext.getHeaders();
+            status = responseContext.getStatus();
         }
 
         ResponseAdapterMp() {
             headers = new MultivaluedHashMap<>();
+            status = Response.Status.OK.getStatusCode();
         }
 
         @Override
@@ -188,6 +191,11 @@ class CorsSupportMp extends CorsSupportBase<ContainerRequestContext, Response, C
              */
             builder.replaceAll(headers);
             return builder.build();
+        }
+
+        @Override
+        public int status() {
+            return status;
         }
     }
 }

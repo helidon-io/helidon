@@ -328,5 +328,12 @@ public abstract class CorsSupportBase<Q, R, T extends CorsSupportBase<Q, R, T, B
          * @return response instance
          */
         T ok();
+
+        /**
+         * Returns the status of the response.
+         *
+         * @return HTTP status code.
+         */
+        int status();
     }
 }
