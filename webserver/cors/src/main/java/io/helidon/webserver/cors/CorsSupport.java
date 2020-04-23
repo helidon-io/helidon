@@ -99,7 +99,7 @@ public class CorsSupport extends CorsSupportBase<ServerRequest, ServerResponse, 
 
     @Override
     public String toString() {
-        return String.format("CorsSupport{%s}", describe());
+        return String.format("CorsSupport[%s]{%s}", name(), describe());
     }
 
     public static class Builder extends CorsSupportBase.Builder<ServerRequest, ServerResponse, CorsSupport, Builder> {

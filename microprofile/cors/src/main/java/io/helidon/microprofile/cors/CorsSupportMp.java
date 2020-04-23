@@ -74,13 +74,15 @@ class CorsSupportMp extends CorsSupportBase<ContainerRequestContext, Response, C
 
     @Override
     public String toString() {
-        return String.format("CorsSupportMp{%s}", describe());
+        return String.format("CorsSupportMp[%s]{%s}", name(), describe());
     }
 
     static class Builder extends CorsSupportBase.Builder<ContainerRequestContext, Response, CorsSupportMp, Builder> {
 
+        private static int builderCount = 0; // To help distinguish otherwise-unnamed CorsSupport instances in log messages
+
         Builder() {
-            name("CORS MP");
+            name("MP " + builderCount++); // Initial name. Overridable by a subsequent setting.
         }
         @Override
         public CorsSupportMp build() {
