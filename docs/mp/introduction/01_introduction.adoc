@@ -32,30 +32,18 @@ MicroProfile has its roots in Java EE, the MicroProfile
 APIs follow a familiar, declarative approach with heavy use of annotations.
 This makes it a good choice for Java EE developers. 
 
-For comparison, the high-level differences between Helidon MP and Helidon SE are described below. 
 
+
+image::images/MP_components.png["MP Components",align="center"]
 
 === MicroProfile APIs
 
 
-MicroProfile starts with a core of Java EE APIs, then defines a number
+MicroProfile starts with a core set of Java EE APIs, such as Config, Metrics and Fault Tolerance. Helidon then defines a number
 of new APIs to add capabilities you need for writing modern cloud native
-applications.
+applications. 
 
-//sent new image to graphics on 4/13 that will replace this long list of bullets.
 
-* JAX-RS
-* JSON-P
-* JSON-B
-* CDI
-* MicroProfile Config
-* MicroProfile Fault Tolerance
-* MicroProfile Health Checks
-* MicroProfile JWT Authentication
-* MicroProfile Metrics
-* MicroProfile OpenAPI
-* MicroProfile OpenTracing
-* MicroProfile Rest Client
 
 For more information about the Helidon MicroProfile APIs see  https://github.com/oracle/helidon/wiki/Supported-APIs[the Helidon API Wiki page].
 
@@ -68,8 +56,7 @@ covered by MicroProfile. Examples include:
 * DataSource for Oracle UCP and HikariCP
 * JPA
 * JTA
-* Jedis
-* OCI Object storage
+
 
 
 === No Application Server
