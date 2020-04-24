@@ -53,4 +53,9 @@ class ResponseAdapterSe implements CorsSupportBase.ResponseAdapter<ServerRespons
         serverResponse.status(Http.Status.OK_200.code());
         return serverResponse;
     }
+
+    @Override
+    public int status() {
+        return serverResponse.status().code();
+    }
 }

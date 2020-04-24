@@ -16,6 +16,9 @@
  */
 package io.helidon.webserver.cors;
 
+import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
@@ -23,8 +26,6 @@ import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientRequestBuilder;
 import io.helidon.webclient.WebClientResponse;
 import org.junit.jupiter.api.Test;
-
-import java.util.concurrent.ExecutionException;
 
 import static io.helidon.common.http.Http.Header.ORIGIN;
 import static io.helidon.webserver.cors.CorsTestServices.SERVICE_1;
@@ -42,6 +43,7 @@ import static io.helidon.webserver.cors.TestUtil.path;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.core.IsNot.not;
 
 public abstract class AbstractCorsTest {
 
@@ -311,6 +313,26 @@ public abstract class AbstractCorsTest {
         assertThat(res.status(), is(Http.Status.OK_200));
         assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_ORIGIN), present(is("http://foo.bar")));
         assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_CREDENTIALS), present(is("true")));
+    }
+
+
+    @Test
+    void test2ErrorResponse() throws ExecutionException, InterruptedException {
+        WebClientRequestBuilder reqBuilder = client()
+                .get()
+                .path(path(SERVICE_2) + "/notfound")
+                .contentType(MediaType.TEXT_PLAIN);
+
+        Headers headers = reqBuilder.headers();
+        headers.add(ORIGIN, "http://foo.bar");
+
+        WebClientResponse res = reqBuilder
+                .submit()
+                .toCompletableFuture()
+                .get();
+
+        assertThat(res.status(), is(not(Http.Status.OK_200)));
+        assertThat(res.headers().first(ACCESS_CONTROL_ALLOW_ORIGIN), is(Optional.empty()));
     }
 
     WebClientResponse runTest1PreFlightAllowedOrigin() throws ExecutionException,

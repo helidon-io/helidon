@@ -17,15 +17,11 @@
 package io.helidon.webserver.cors;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 
 import io.helidon.config.Config;
-import io.helidon.webserver.Handler;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerRequest;
-import io.helidon.webserver.ServerResponse;
-import io.helidon.webserver.Service;
 
 /**
  * A Helidon service and handler implementation that implements CORS, for both the application and for built-in Helidon
@@ -48,34 +44,21 @@ import io.helidon.webserver.Service;
  *     {@link CrossOriginConfig}.
  * </p>
  *
+ * @param <Q> request type wrapped by request adapter
+ * @param <R> response type wrapped by response adapter
+ * @param <T> concrete subclass of {@code CorsSupportBase}
+ * @param <B> builder for concrete type {@code <T>}
  */
-public abstract class CorsSupportBase implements Service, Handler {
+public abstract class CorsSupportBase<Q, R, T extends CorsSupportBase<Q, R, T, B>,
+        B extends CorsSupportBase.Builder<Q, R, T, B>> {
 
-    private final CorsSupportHelper helper;
+    private final String name;
+    private final CorsSupportHelper<Q, R> helper;
 
-    protected <T extends CorsSupportBase, B extends Builder<T, B>> CorsSupportBase(Builder<T, B> builder) {
+    protected CorsSupportBase(Builder<Q, R, T, B> builder) {
+        name = builder.name;
+        builder.helperBuilder.name(builder.name);
         helper = builder.helperBuilder.build();
-    }
-
-    @Override
-    public void update(Routing.Rules rules) {
-        if (helper.isActive()) {
-            rules.any(this);
-        }
-    }
-
-    @Override
-    public void accept(ServerRequest request, ServerResponse response) {
-        if (!helper.isActive()) {
-            request.next();
-            return;
-        }
-        RequestAdapter<ServerRequest> requestAdapter = new RequestAdapterSe(request);
-        ResponseAdapter<ServerResponse> responseAdapter = new ResponseAdapterSe(response);
-
-        Optional<ServerResponse> responseOpt = helper.processRequest(requestAdapter, responseAdapter);
-
-        responseOpt.ifPresentOrElse(ServerResponse::send, () -> prepareCORSResponseAndContinue(requestAdapter, responseAdapter));
     }
 
     /**
@@ -83,12 +66,10 @@ public abstract class CorsSupportBase implements Service, Handler {
      *
      * @param requestAdapter wrapper around the request
      * @param responseAdapter wrapper around the response
-     * @param <T> type of the request wrapped by the adapter
-     * @param <U> type of the response wrapped by the adapter
      * @return Optional of the response type U; present if the response should be returned, empty if request processing should
      * continue
      */
-    protected <T, U> Optional<U> processRequest(RequestAdapter<T> requestAdapter, ResponseAdapter<U> responseAdapter) {
+    protected Optional<R> processRequest(RequestAdapter<Q> requestAdapter, ResponseAdapter<R> responseAdapter) {
         return helper.processRequest(requestAdapter, responseAdapter);
     }
 
@@ -97,30 +78,37 @@ public abstract class CorsSupportBase implements Service, Handler {
      *
      * @param requestAdapter wrapper around the request
      * @param responseAdapter wrapper around the reseponse
-     * @param <T> type of the request wrapped by the adapter
-     * @param <U> type of the response wrapped by the adapter
      */
-    protected <T, U> void prepareResponse(RequestAdapter<T> requestAdapter, ResponseAdapter<U> responseAdapter) {
+    protected void prepareResponse(RequestAdapter<Q> requestAdapter, ResponseAdapter<R> responseAdapter) {
         helper.prepareResponse(requestAdapter, responseAdapter);
     }
 
-    private void prepareCORSResponseAndContinue(RequestAdapter<ServerRequest> requestAdapter,
-            ResponseAdapter<ServerResponse> responseAdapter) {
-        helper.prepareResponse(requestAdapter, responseAdapter);
+    protected CorsSupportHelper<Q, R> helper() {
+        return helper;
+    }
 
-        requestAdapter.request().next();
+    protected String describe() {
+        // Partial toString implementation for use by subclasses
+        return helper.toString();
+    }
+
+    protected String name() {
+        return name;
     }
 
     /**
      * Builder for {@code CorsSupportBase} instances.
      *
+     * @param <Q> request type wrapped by request adapter
+     * @param <R> response type wrapped by response adapter
      * @param <T> specific subtype of {@code CorsSupportBase} the builder creates
      * @param <B> type of the builder
      */
-    public abstract static class Builder<T extends CorsSupportBase, B extends Builder<T, B>> implements io.helidon.common.Builder<CorsSupportBase>,
-            CorsSetter<Builder<T, B>> {
+    public abstract static class Builder<Q, R, T extends CorsSupportBase<Q, R, T, B>, B extends Builder<Q, R, T, B>>
+            implements io.helidon.common.Builder<CorsSupportBase<Q, R, T, B>>, CorsSetter<Builder<Q, R, T, B>> {
 
-        private final CorsSupportHelper.Builder helperBuilder = CorsSupportHelper.builder();
+        private String name = "";
+        private final CorsSupportHelper.Builder<Q, R> helperBuilder = CorsSupportHelper.builder();
         private final Aggregator aggregator = helperBuilder.aggregator();
 
         protected Builder() {
@@ -139,7 +127,7 @@ public abstract class CorsSupportBase implements Service, Handler {
          * @return the updated builder
          */
         public B config(Config config) {
-            aggregator.mappedConfig(config);
+            helperBuilder.config(config);
             return me();
         }
 
@@ -161,7 +149,7 @@ public abstract class CorsSupportBase implements Service, Handler {
          * @param crossOrigin the cross origin information
          * @return updated builder
          */
-        public B  addCrossOrigin(String path, CrossOriginConfig crossOrigin) {
+        public B addCrossOrigin(String path, CrossOriginConfig crossOrigin) {
             aggregator.addCrossOrigin(path, crossOrigin);
             return me();
         }
@@ -174,6 +162,19 @@ public abstract class CorsSupportBase implements Service, Handler {
          */
         public B addCrossOrigin(CrossOriginConfig crossOrigin) {
             aggregator.addPathlessCrossOrigin(crossOrigin);
+            return me();
+        }
+
+        /**
+         * Sets the name to be used for the CORS support instance.
+         *
+         * @param name name to use
+         * @return updated builder
+         */
+        public B name(String name) {
+            Objects.requireNonNull(name, "CorsSupport name is optional but cannot be null");
+            this.name = name;
+            helperBuilder.name(name);
             return me();
         }
 
@@ -220,7 +221,7 @@ public abstract class CorsSupportBase implements Service, Handler {
          * @param secondaryLookupSupplier supplier of a CrossOriginConfig
          * @return updated builder
          */
-        protected Builder<T, B> secondaryLookupSupplier(Supplier<Optional<CrossOriginConfig>> secondaryLookupSupplier) {
+        protected Builder<Q, R, T, B> secondaryLookupSupplier(Supplier<Optional<CrossOriginConfig>> secondaryLookupSupplier) {
             helperBuilder.secondaryLookupSupplier(secondaryLookupSupplier);
             return this;
         }
@@ -333,5 +334,12 @@ public abstract class CorsSupportBase implements Service, Handler {
          * @return response instance
          */
         T ok();
+
+        /**
+         * Returns the status of the response.
+         *
+         * @return HTTP status code.
+         */
+        int status();
     }
 }

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2020 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -17,12 +17,12 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = GraalVM Native Images
-:description: Helidon SE Native Images
-:keywords: helidon, guide, graalvm
-:helidon-tag: https://github.com/oracle/helidon/tree/{helidon-version}
-:quickstart-example: {helidon-tag}/examples/quickstarts/helidon-quickstart-se
-:docker-multi-stage-url: https://docs.docker.com/develop/develop-images/multistage-build/
-:openjdk-docker-217: https://github.com/docker-library/openjdk/issues/217
+
+//:description: Helidon Native Images
+//:keywords: helidon, guide, graalvm
+//:docker-multi-stage-url: https://docs.docker.com/develop/develop-images/multistage-build/
+// :helidon-uc-flavor: MP-or-SE
+// :helidon-lc-flavor: mp-or-se
 
 This guide describes how to build a GraalVM native image for a Helidon SE application.
 
@@ -39,7 +39,7 @@ In this guide you will learn how to build a native image locally on your machine
 |===
 |About 10 minutes
 | <<about/03_prerequisites.adoc,Helidon Prerequisites>>
-| GraalVM CE https://www.graalvm.org/downloads[19.2+ or 19.3+]
+| GraalVM CE https://www.graalvm.org/downloads[20.0.0+]
 |===
 
 == Install GraalVM and the Native Image Command
@@ -50,7 +50,7 @@ set the `GRAALVM_HOME` environment variable to point at your GraalVM installatio
 [source,bash]
 ----
 # Your path might be different
-export GRAALVM_HOME=/usr/local/graalvm-ce-19.2.0/Contents/Home/
+export GRAALVM_HOME=/usr/local/graalvm-ce-20.0.0/Contents/Home/
 ----
 
 Then install the optional `native-image` command:
@@ -76,27 +76,28 @@ Generate the project using the Helidon SE Quickstart Maven archetype.
 ----
 mvn archetype:generate -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
-    -DarchetypeArtifactId=helidon-quickstart-se \
+    -DarchetypeArtifactId=helidon-quickstart-{helidon-lc-flavor} \
     -DarchetypeVersion={helidon-version} \
     -DgroupId=io.helidon.examples \
-    -DartifactId=helidon-quickstart-se \
-    -Dpackage=io.helidon.examples.quickstart.se
+    -DartifactId=helidon-quickstart-{helidon-lc-flavor} \
+    -Dpackage=io.helidon.examples.quickstart.{helidon-lc-flavor}
+
 ----
 
 The archetype generates a Maven project in your current directory
-(for example, `helidon-quickstart-se`). Change into this directory and build.
+(for example, `helidon-quickstart-{helidon-lc-flavor}`). Change into this directory and build.
 
-[source,bash]
+[source,bash,subs="attributes+"]
 ----
-cd helidon-quickstart-se
+cd helidon-quickstart-{helidon-lc-flavor}
 mvn package
 ----
 
 At this point you can run the application using the JVM:
 
-[source,bash]
+[source,bash,subs="attributes+"]
 ----
-java -jar target/helidon-quickstart-se.jar
+java -jar target/helidon-quickstart-{helidon-lc-flavor}.jar
 ----
 
 In another shell test an endpoint:
@@ -111,7 +112,7 @@ The application should respond with `{"message":"Hello World!"}`
 Now stop the running application (by pressing Ctrl+C).
 
 For more information about the Quickstart application and other enpoints it supports see the
-<<guides/02_quickstart-se.adoc,Helidon SE Quickstart Guide>>.
+<<{helidon-lc-flavor}/guides/02_quickstart.adoc,Helidon {helidon-uc-flavor} Quickstart Guide>>.
 
 == Building a Native Image
 
@@ -138,13 +139,13 @@ mvn package -Pnative-image
 
 [TIP]
 This uses the `helidon-maven-plugin` to perform the native compilation using your installed
-copy of GraalVM. It might take a little while to complete.
+copy of GraalVM. It might take a while to complete.
 
 Once it completes start the application using the native executable (no JVM!):
 
-[source,bash]
+[source,bash,subs="attributes+"]
 ----
-./target/helidon-quickstart-se
+./target/helidon-quickstart-{helidon-lc-flavor}
 ----
 
 Yep, it starts fast. You can exercise the application's endpoints as before.
@@ -153,9 +154,9 @@ Yep, it starts fast. You can exercise the application's endpoints as before.
 
 Build the "native" Docker Image
 
-[source,bash]
+[source,bash,subs="attributes+"]
 ----
-docker build -t helidon-quickstart-se-native -f Dockerfile.native .
+docker build -t helidon-quickstart-{helidon-lc-flavor}-native -f Dockerfile.native .
 ----
 
 [TIP]
@@ -168,41 +169,12 @@ will be re-downloaded.
 
 Start the application:
 
-[source,bash]
+[source,bash,subs="attributes+"]
 ----
-docker run --rm -p 8080:8080 helidon-quickstart-se-native:latest
+docker run --rm -p 8080:8080 helidon-quickstart-{helidon-lc-flavor}-native:latest
 ----
 
 Again, it starts fast. You can exercise the application's endpoints as before.
-
-== How small and fast is this?
-
-First let's take a look at the Docker image size:
-
-[source,bash]
-----
-docker images helidon-quickstart-se-native:latest
-----
-
-----
-REPOSITORY             TAG       IMAGE ID       CREATED        SIZE
-quickstart-se-native   latest    1227ac82d199   5 days ago     21.4MB
-----
-
-That's much smaller than a Docker image with the application code plus
-the JRE and operating system files needed to run it.
-
-Startup times are quite impressive. These are just some informal numbers
-to show the magnitude of speed-up. Your mileage may vary:
-
-|===
-|Helidon SE Quickstart Java VM|0.921 seconds
-|Helidon SE Quickstart Native|0.026 seconds
-|===
-
-The startup time for Helidon SE with the normal Java VM is quite good
-at under a second. But the native executable is an order of magnitude
-faster. Memory footprint is similarly improved.
 
 == When should I use Native Images?
 
@@ -213,6 +185,5 @@ That said, native images do have some https://github.com/oracle/graal/blob/maste
 and for long running applications where startup and footprint are less of a priority, the Java SE
 HotSpot VM might be more appropriate.
 
-== What about Helidon MP?
-
-Currently GraalVM native image support is only available for Helidon SE.
+For information about creating custom Java runtime images see
+<<{helidon-lc-flavor}/guides/37_jlink_image.adoc,Custom Runtime Images with `jlink`>>

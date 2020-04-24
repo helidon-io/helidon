@@ -1,0 +1,186 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2020 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Maven Guide
+
+// :description: Maven Guide
+// :keywords: helidon, guide, maven
+// :helidon-uc-flavor: MP-or-SE
+// :helidon-lc-flavor: mp-or-se
+
+This guide describes Helidon's support for Maven projects.
+
+== Introduction
+
+Helidon supports Maven by providing the following:
+
+1. The Helidon Application parent POM
+2. Dependency managment via the Helidon BOM and Dependencies POMs
+3. The `helidon-maven-plugin`
+
+== The Helidon Application POM
+
+Helidon examples and projects generated using the <<{helidon-lc-flavor}/guides/02_quickstart.adoc,Helidon Quickstart>>
+use a Helidon application POM as their parent. This parent POM provides the following:
+
+1. Helidon dependency management.
+2. Maven plugin configurations to help in the building and packaging of your
+   Helidon application.
+
+If you want to use your own parent POM, then take a look at the
+https://github.com/oracle/helidon/tree/{helidon-version}/examples/quickstarts/helidon-standalone-quickstart-{helidon-lc-flavor}[standalone quickstart example].
+This example has a stand-alone POM that you can pattern your own application POM after.
+
+For more details on Helidon application POMs see the
+https://github.com/oracle/helidon/blob/{helidon-version}/docs-internal/application-pom.md[Helidon's Application POMS]
+
+
+== Dependency Management
+
+In Maven you use Dependency Management to manage the versions of the
+dependencies used by your project so that you do not need to specify
+versions when declaring project dependencies.
+
+Helidon provides two POMs that are used together for dependency management:
+
+1. The Helidon Bill of Materials (BOM) POM (`io.helidon:helidon-bom`): manages the version
+   of Helidon artifacts (to align with the Helidon version).
+2. The Helidon Dependencies POM (`io.helidon:helidon-dependencies`): manages the versions of third party
+   dependencies to ensure consistency across Helidon and your Helidon application.
+   Inherits the Helidon BOM POM.
+
+
+When you use a Helidon Application POM as your project's parent pom, you
+inheritent Helidon's dependency management. If
+you have your own parent, then you can import Helidon dependency management
+like this:
+
+[source,xml,subs="attributes+"]
+.Import Helidon Dependency Management
+----
+<dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>io.helidon</groupId>
+            <artifactId>helidon-dependencies</artifactId>
+            <version>{helidon-version}</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+    </dependencies>
+</dependencyManagement>
+----
+
+You then declare dependencies on Helidon (and other) components without specifying a version.
+
+[source,xml]
+.Component dependency
+----
+<dependency>
+    <groupId>io.helidon.webserver</groupId>
+    <artifactId>helidon-webserver</artifactId>
+</dependency>
+----
+
+
+== The `helidon-maven-plugin`
+
+Helidon provides a Maven plugin that, among other things, provides the following goals:
+
+1. native-image: Build a <<{helidon-lc-flavor}/guides/36_graalnative.adoc,GraalVM native image>>.
+2. jlink-image:  Build a <<{helidon-lc-flavor}/guides/37_jlink_image.adoc,custom runtime Java image>>.
+
+For full documentation of the plugin please see the https://github.com/oracle/helidon-build-tools/tree/master/helidon-maven-plugin[Helidon Maven Plugin README].
+
+If you use the Helidon application parent POM you will have this plugin configured
+for you. If you need to customize the `helidon-maven-plugin` you can do so in a few ways:
+
+1. Passing system properties to Maven on the command line.
+2. Setting system properties in your project's `pom.xml`
+3. Overriding the plugin configuration by using `pluginManagment`
+
+=== Pass Property on Command Line
+
+You can override many of the plugin attributes by passing a system property to the
+`mvn` command:
+
+```
+mvn -Djlink.image.addClassDataSharingArchive=false ...
+```
+
+=== Set Property in pom.xml
+
+Or you can set the properties in your project's pom.xml:
+
+```
+<properties>
+    <jlink.image.addClassDataSharingArchive>false</jlink.image.addClassDataSharingArchive>
+    <native.image.reportExceptionStackTraces>true</native.image.reportExceptionStackTraces>
+</properties>
+```
+
+=== Override Plugin Configuration using `pluginManagement`
+
+For full control you can override the plugin's configuration using `pluginManagement`:
+
+[source,xml]
+.Turn off generation of the CDS Archive when generating a custom Java runtime image
+----
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>io.helidon.build-tools</groupId>
+                    <artifactId>helidon-maven-plugin</artifactId>
+                    <executions>
+                        <execution>
+                            <id>jlink-image</id>
+                            <configuration>
+                                <addClassDataSharingArchive>false</addClassDataSharingArchive>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+----
+
+[source,xml]
+.Override final name of native image binary
+----
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>io.helidon.build-tools</groupId>
+                    <artifactId>helidon-maven-plugin</artifactId>
+                    <executions>
+                        <execution>
+                            <id>native-image</id>
+                            <configuration>
+                                <finalName>my-fantastic-service</finalName>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+----
+

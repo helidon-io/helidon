@@ -18,11 +18,16 @@ package io.helidon.webserver.cors;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.StringJoiner;
 import java.util.function.BiConsumer;
+import java.util.function.Function;
 import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import io.helidon.common.http.Http;
 import io.helidon.webserver.cors.CorsSupportBase.RequestAdapter;
@@ -36,6 +41,7 @@ import static io.helidon.webserver.cors.CrossOriginConfig.ACCESS_CONTROL_REQUEST
 class LogHelper {
 
     static final Level DECISION_LEVEL = Level.FINE;
+    static final Level DETAILED_DECISION_LEVEL = Level.FINER;
 
     private LogHelper() {
     }
@@ -92,10 +98,10 @@ class LogHelper {
             String partOfOriginMatchingHost = "://" + hostOpt.get();
             if (originOpt.get()
                     .contains(partOfOriginMatchingHost)) {
-                reasonsWhyNormal.add(String.format("header %s '%s' matches header %s '%s'; not cross-host", ORIGIN,
+                reasonsWhyNormal.add(String.format("header %s '%s' matches header %s '%s'", ORIGIN,
                         originOpt.get(), HOST, hostOpt.get()));
             } else {
-                factorsWhyCrossHost.add(String.format("header %s (%s) does not match header %s %s; cross-host", ORIGIN,
+                factorsWhyCrossHost.add(String.format("header %s '%s' does not match header %s '%s'", ORIGIN,
                         originOpt.get(), HOST, hostOpt.get()));
             }
         }
@@ -132,5 +138,68 @@ class LogHelper {
 
         LOGGER.log(DECISION_LEVEL, String.format("Request %s is of type %s; %s", requestAdapter, result.name(),
                 result == RequestType.PREFLIGHT ? factorsWhyPreflight : reasonsWhyCORS));
+    }
+
+    static class MatcherChecks<T> {
+        private final Map<CrossOriginConfig, MatcherCheck> checks;
+        private final Logger logger;
+        private final boolean isLoggable;
+        private final Function<T, CrossOriginConfig> getter;
+
+        MatcherChecks(Logger logger, Function<T, CrossOriginConfig> getter) {
+            this.logger = logger;
+            isLoggable = logger.isLoggable(DETAILED_DECISION_LEVEL);
+            this.getter = getter;
+            checks = isLoggable ? new LinkedHashMap<>() : null;
+        }
+
+        void put(T matcher) {
+            if (isLoggable) {
+                checks.put(getter.apply(matcher), new MatcherCheck());
+            }
+        }
+
+        void matched(T matcher) {
+            if (isLoggable) {
+                checks.get(getter.apply(matcher)).matched(true);
+            }
+        }
+
+        void enabled(CrossOriginConfig crossOriginConfig) {
+            if (isLoggable) {
+                checks.get(crossOriginConfig).enabled(true);
+            }
+        }
+
+        void log() {
+            if (!isLoggable) {
+                return;
+            }
+            List<String> results = new ArrayList<>();
+            checks.forEach((k, v) -> results.add(v.toString(k)));
+            logger.log(DETAILED_DECISION_LEVEL, results.stream()
+                    .collect(Collectors.joining(System.lineSeparator(), "Matching results: [", "]")));
+        }
+
+        private static class MatcherCheck {
+            private boolean matched;
+            private boolean enabled;
+
+            void matched(boolean value) {
+                matched = value;
+            }
+
+            void enabled(boolean value) {
+                enabled = value;
+            }
+
+            public String toString(CrossOriginConfig crossOriginConfig) {
+                return new StringJoiner(", ", MatcherCheck.class.getSimpleName() + "{", "}")
+                        .add("crossOriginConfig=" + crossOriginConfig)
+                        .add("matched=" + matched)
+                        .add("enabled=" + enabled)
+                        .toString();
+            }
+        }
     }
 }

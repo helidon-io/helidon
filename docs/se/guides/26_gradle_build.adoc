@@ -16,11 +16,10 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Reactive Streams Operators
-:toc:
-:toc-placement: preamble
-:spec-name: MicroProfile Reactive Streams Operators
-:description: {spec-name} support in Helidon MP
-:keywords: helidon, mp, microprofile, reactivestreams
+= Gradle Guide
+:description: Helidon Gradle Guide
+:keywords: helidon, guide, gradle, build
+:helidon-uc-flavor: SE
+:helidon-lc-flavor: se
 
-== This page is Under Construction and will be available soon
+include::../../common/guides/gradle_build.adoc[]

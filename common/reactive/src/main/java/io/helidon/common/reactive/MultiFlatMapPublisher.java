@@ -210,6 +210,8 @@ final class MultiFlatMapPublisher<T, R> implements Multi<R> {
                         sender.produced(1L);
                     } else {
                         // yes, go on a full drain loop
+                        sender.enqueue(item);
+                        q.offer(sender);
                         drainLoop();
                         return;
                     }
@@ -435,21 +437,8 @@ final class MultiFlatMapPublisher<T, R> implements Multi<R> {
 
             @Override
             public void onSubscribe(Flow.Subscription subscription) {
-                Objects.requireNonNull(subscription, "subscription is null");
-                for (;;) {
-                    Flow.Subscription current = get();
-                    if (current == this) {
-                        subscription.cancel();
-                        return;
-                    }
-                    if (current != null) {
-                        subscription.cancel();
-                        throw new IllegalStateException("Subscription already set!");
-                    }
-                    if (compareAndSet(null, subscription)) {
-                        subscription.request(prefetch);
-                        return;
-                    }
+                if (SubscriptionHelper.setOnce(this, subscription)) {
+                    subscription.request(prefetch);
                 }
             }
 

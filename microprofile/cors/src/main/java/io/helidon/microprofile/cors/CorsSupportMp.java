@@ -32,7 +32,7 @@ import io.helidon.webserver.cors.CrossOriginConfig;
 /**
  * MP implementation of {@link CorsSupportBase}.
  */
-class CorsSupportMp extends CorsSupportBase {
+class CorsSupportMp extends CorsSupportBase<ContainerRequestContext, Response, CorsSupportMp, CorsSupportMp.Builder> {
 
     /**
      *
@@ -51,12 +51,12 @@ class CorsSupportMp extends CorsSupportBase {
      *
      * @param requestAdapter wrapper around the request
      * @param responseAdapter wrapper around the response
-     * @return Optional of the response type U; present if the response should be returned, empty if request processing should
+     * @return Optional of {@code Response}; present if the response should be returned, empty if request processing should
      * continue
      */
     @Override
-    protected <T, U> Optional<U> processRequest(RequestAdapter<T> requestAdapter,
-            ResponseAdapter<U> responseAdapter) {
+    protected Optional<Response> processRequest(RequestAdapter<ContainerRequestContext> requestAdapter,
+            ResponseAdapter<Response> responseAdapter) {
         return super.processRequest(requestAdapter, responseAdapter);
     }
 
@@ -67,12 +67,23 @@ class CorsSupportMp extends CorsSupportBase {
      * @param responseAdapter wrapper around the response
      */
     @Override
-    protected <T, U> void prepareResponse(RequestAdapter<T> requestAdapter, ResponseAdapter<U> responseAdapter) {
+    protected void prepareResponse(RequestAdapter<ContainerRequestContext> requestAdapter,
+            ResponseAdapter<Response> responseAdapter) {
         super.prepareResponse(requestAdapter, responseAdapter);
     }
 
-    static class Builder extends CorsSupportBase.Builder<CorsSupportMp, Builder> {
+    @Override
+    public String toString() {
+        return String.format("CorsSupportMp[%s]{%s}", name(), describe());
+    }
 
+    static class Builder extends CorsSupportBase.Builder<ContainerRequestContext, Response, CorsSupportMp, Builder> {
+
+        private static int builderCount = 0; // To help distinguish otherwise-unnamed CorsSupport instances in log messages
+
+        Builder() {
+            name("MP " + builderCount++); // Initial name. Overridable by a subsequent setting.
+        }
         @Override
         public CorsSupportMp build() {
             return new CorsSupportMp(this);
@@ -142,14 +153,17 @@ class CorsSupportMp extends CorsSupportBase {
 
     static class ResponseAdapterMp implements ResponseAdapter<Response> {
 
+        private final int status;
         private final MultivaluedMap<String, Object> headers;
 
         ResponseAdapterMp(ContainerResponseContext responseContext) {
             headers = responseContext.getHeaders();
+            status = responseContext.getStatus();
         }
 
         ResponseAdapterMp() {
             headers = new MultivaluedHashMap<>();
+            status = Response.Status.OK.getStatusCode();
         }
 
         @Override
@@ -179,6 +193,11 @@ class CorsSupportMp extends CorsSupportBase {
              */
             builder.replaceAll(headers);
             return builder.build();
+        }
+
+        @Override
+        public int status() {
+            return status;
         }
     }
 }

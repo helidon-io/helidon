@@ -61,7 +61,7 @@ public class TestUtil {
         /*
          * Use the default config for the service at "/greet" and then programmatically add the config for /cors3.
          */
-        CorsSupport.Builder corsSupportBuilder = CorsSupport.builder();
+        CorsSupport.Builder corsSupportBuilder = CorsSupport.builder().name("CORS SE " + SERVICE_3);
         corsSupportBuilder.addCrossOrigin(SERVICE_3.path(), cors3COC);
 
         /*

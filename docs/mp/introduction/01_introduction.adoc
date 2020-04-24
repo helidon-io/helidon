@@ -53,7 +53,7 @@ applications:
 * MicroProfile OpenTracing
 * MicroProfile Rest Client
 
-For more information see <<guides/01_overview.adoc,guides>>.
+For more information see <<mp/guides/01_overview.adoc,guides>>.
 
 == Helidon MP CDI Extensions
 
@@ -76,5 +76,5 @@ and efficient without unnecessary overhead or bloat.
 
 == Try it now
 
-Try the <<guides/03_quickstart-mp.adoc,Helidon MP quickstart>> to get your
+Try the <<mp/guides/03_quickstart.adoc,Helidon MP quickstart>> to get your
 first Helidon MP application up and running in minutes.

@@ -1,7 +1,6 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!--
+///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2020 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -15,12 +14,13 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 
--->
+///////////////////////////////////////////////////////////////////////////////
 
-<beans xmlns="http://xmlns.jcp.org/xml/ns/javaee"
-       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee
-                           http://xmlns.jcp.org/xml/ns/javaee/beans_2_0.xsd"
-       version="2.0"
-       bean-discovery-mode="annotated">
-</beans>
+= Custom Runtime Images with `jlink`
+:description: Helidon Custom Runtime Images
+:keywords: helidon, guide, jlink, image
+:helidon-uc-flavor: SE
+:helidon-lc-flavor: se
+:docker-multi-stage-url: https://docs.docker.com/develop/develop-images/multistage-build/
+
+include::../../common/guides/jlink_image.adoc[]
