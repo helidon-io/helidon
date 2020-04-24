@@ -20,9 +20,13 @@ import java.beans.IntrospectionException;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.time.LocalDate;
+import java.time.OffsetTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -71,6 +75,7 @@ import io.helidon.microprofile.graphql.server.test.types.TypeWithIDs;
 import io.helidon.microprofile.graphql.server.test.types.Vehicle;
 import io.helidon.microprofile.graphql.server.test.types.VehicleIncident;
 
+import javax.swing.text.DateFormatter;
 import org.eclipse.microprofile.graphql.NonNull;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -327,37 +332,19 @@ public class SchemaGeneratorIT
                         + "value: \"9 value\" "
                         + "longValue: 12345"
                         + " } ";
-        executionContext.execute("mutation { createSimpleContactWithNumberFormats (" + contactInput + ") { id name } }");
-        //        mapResults = getAndAssertResult(result);
+
+        //        mapResults = getAndAssertResult(
+        //                executionContext.execute("mutation { createSimpleContactWithNumberFormats (" + contactInput + ") { id
+        //               name } }"));
         //        assertThat(mapResults.size(), is(1));
         //        mapResults2 = (Map<String, Object>) mapResults.get("createSimpleContactWithNumberFormats");
         //        assertThat(mapResults2, is(notNullValue()));
     }
 
     @Test
-    @Disabled
     public void testDateAndTime() throws IOException {
         setupIndex(indexFileName, DateTimePojo.class, SimpleQueriesNoArgs.class);
         ExecutionContext<DefaultContext> executionContext = new ExecutionContext<>(defaultContext);
-
-        Map<String, Object> mapResults = getAndAssertResult(
-                executionContext.execute("query { dateAndTimePOJOQuery { offsetDateTime } }"));
-        assertThat(mapResults.size(), is(1));
-
-        mapResults = getAndAssertResult(executionContext.execute("query { dateAndTimePOJOQuery { offsetTime } }"));
-        assertThat(mapResults.size(), is(1));
-
-        mapResults = getAndAssertResult(executionContext.execute("query { dateAndTimePOJOQuery { zonedDateTime } }"));
-        assertThat(mapResults.size(), is(1));
-
-        mapResults = getAndAssertResult(executionContext.execute("query { dateAndTimePOJOQuery { localDate } }"));
-        assertThat(mapResults.size(), is(1));
-
-        mapResults = getAndAssertResult(executionContext.execute("query { dateAndTimePOJOQuery { localTime } }"));
-        assertThat(mapResults.size(), is(1));
-
-        mapResults = getAndAssertResult(executionContext.execute("query { dateAndTimePOJOQuery { localDateTime } }"));
-        assertThat(mapResults.size(), is(1));
 
         Schema schema = executionContext.getSchema();
         SchemaType type = schema.getTypeByName("DateTimePojo");
@@ -372,6 +359,11 @@ public class SchemaGeneratorIT
         assertThat(fd.getFormat()[0], is("hh:mm:ss"));
         assertThat(fd.getDescription(), is(nullValue()));
 
+        fd = getFieldDefinition(type, "localDate2");
+        assertThat(fd, is(notNullValue()));
+        assertThat(fd.getFormat()[0], is("MM/dd/yyyy"));
+        assertThat(fd.getDescription(), is(nullValue()));
+
         // test default values for date and time
         assertDefaultFormat(type, "offsetTime", "HH:mm:ssZ");
         assertDefaultFormat(type, "localTime", "hh:mm:ss");
@@ -384,6 +376,20 @@ public class SchemaGeneratorIT
         assertThat(fd, is(notNullValue()));
         assertThat(fd.getDescription(), is(nullValue()));
         assertThat(fd.getFormat()[0], is("yyyy-MM-dd'T'HH:mm:ss"));
+
+        Map<String, Object> mapResults = getAndAssertResult(
+                executionContext.execute("query { dateAndTimePOJOQuery { offsetDateTime offsetTime zonedDateTime "
+                                             + "localDate localDate2 localTime localDateTime } }"));
+        assertThat(mapResults.size(), is(1));
+        Map<String, Object> mapResults2 = (Map<String, Object>) mapResults.get("dateAndTimePOJOQuery");
+        assertThat(mapResults2, is(notNullValue()));
+        assertThat(mapResults2.size(), is(7));
+
+        assertThat(mapResults2.get("localDate"), is("02/17/1968"));
+        assertThat(mapResults2.get("localDate2"), is("08/04/1970"));
+        assertThat(mapResults2.get("localTime"), is("10:10:20"));
+        assertThat(mapResults2.get("offsetTime"), is("08:10:01+0000"));
+
     }
 
     @Test
@@ -503,10 +509,10 @@ public class SchemaGeneratorIT
         assertThat(mapResults.size(), is(1));
         assertThat(mapResults.get("returnCurrentDate"), is(notNullValue()));
 
-        mapResults = getAndAssertResult(executionContext
-                                                .execute(
-                                                        "query { returnTypeWithIDs { intId integerId longId longPrimitiveId "
-                                                                + "stringId uuidId } }"));
+        mapResults = getAndAssertResult(
+                executionContext.execute("query { returnTypeWithIDs { intId integerId longId longPrimitiveId "
+                                                + "stringId uuidId } }"));
+
         assertThat(mapResults.size(), is(1));
         Map<String, Object> results = (Map<String, Object>) mapResults.get("returnTypeWithIDs");
         TypeWithIDs value = (TypeWithIDs) JsonUtils.convertFromJson(JsonUtils.convertMapToJson(results), TypeWithIDs.class);

@@ -31,8 +31,8 @@ public class JsonUtils {
     /**
      * JSONB instance.
      */
-    private static final Jsonb JSONB = JsonbBuilder.newBuilder().withConfig(
-            new JsonbConfig().withNullValues(true)).build();
+    private static final Jsonb JSONB = JsonbBuilder.newBuilder()
+            .withConfig(new JsonbConfig().withNullValues(true)).build();
 
     /**
      * Private constructor for utilities class.

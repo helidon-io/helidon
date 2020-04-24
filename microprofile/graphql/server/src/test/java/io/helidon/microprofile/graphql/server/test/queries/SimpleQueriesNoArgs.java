@@ -22,6 +22,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.OffsetTime;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -152,7 +153,10 @@ public class SimpleQueriesNoArgs {
 
     @Query("dateAndTimePOJOQuery")
     public DateTimePojo dateTimePojo() {
-        return new DateTimePojo(LocalDate.now(), LocalDate.now(), LocalTime.now(), OffsetTime.now(),
+        return new DateTimePojo(LocalDate.of(1968,2,17),
+                                LocalDate.of(1970,8,4),
+                                LocalTime.of(10,10,20),
+                                OffsetTime.of(8, 10, 1, 0, ZoneOffset.UTC),
                                 LocalDateTime.now(), OffsetDateTime.now(), ZonedDateTime.now(), LocalDate.now());
     }
 }

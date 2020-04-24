@@ -26,6 +26,8 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.ParameterizedType;
 import java.text.NumberFormat;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAccessor;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -57,6 +59,7 @@ import org.eclipse.microprofile.graphql.Type;
 
 import static io.helidon.microprofile.graphql.server.FormattingHelper.DATE;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.NUMBER;
+import static io.helidon.microprofile.graphql.server.FormattingHelper.getCorrectDateFormatter;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.getCorrectNumberFormat;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.getFormattingAnnotation;
 import static io.helidon.microprofile.graphql.server.SchemaGenerator.DiscoveredMethod.MUTATION_TYPE;
@@ -79,10 +82,10 @@ import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getSc
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getSimpleName;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getTypeName;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.isArrayType;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.isDateTimeScalar;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.isEnumClass;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.isGraphQLType;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.isPrimitive;
-import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.isScalar;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.isValidIDType;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.shouldIgnoreField;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.shouldIgnoreMethod;
@@ -325,16 +328,20 @@ public class SchemaGenerator {
         streamAll.forEach(t -> {
             t.getFieldDefinitions().forEach(fd -> {
                 String returnType = fd.getReturnType();
-                if (isScalar(returnType)) {
-                    fd.setFormat(ensureFormat(returnType, fd.getOriginalType().getName(), fd.getFormat()));
-                }
-
-                fd.getArguments().forEach(a -> {
-                    String returnTypeArgument = a.getArgumentType();
-                    if (isScalar(returnTypeArgument)) {
-                        a.setFormat(ensureFormat(returnTypeArgument, a.getOriginalType().getName(), a.getFormat()));
+                // only check Date/Time/DateTime scalars that don't have data fetchers already
+                // as default formatting has already been dealt with
+                if (isDateTimeScalar(returnType) && fd.getDataFetcher() == null) {
+                    String[] existingFormat = fd.getFormat();
+                    String[] newFormat = ensureFormat(returnType, fd.getOriginalType().getName(), existingFormat);
+                    if (!Arrays.equals(newFormat, existingFormat) && newFormat.length == 2) {
+                        // formats differ so set the new format and DataFetcher
+                        fd.setFormat(newFormat);
+                        // create the raw array to pass to the retrieveFormattingDataFetcher method
+                        fd.setDataFetcher(retrieveFormattingDataFetcher(new String[] {DATE, newFormat[0], newFormat[1]},
+                                                                        fd.getName(), fd.getOriginalType().getName()));
+                        //fd.setReturnType(STRING);
                     }
-                });
+                }
             });
         });
     }
@@ -500,19 +507,39 @@ public class SchemaGenerator {
             if (fd != null) {
                 DataFetcher dataFetcher = null;
                 String[] format = discoveredMethod.getFormat();
+
+                // if the type is a Date/Time/DateTime scalar and there is currently no format,
+                // then use the default format if there is one
+                if (format.length != 3 && isDateTimeScalar(discoveredMethod.getReturnType())) {
+                    String[] newFormat = ensureFormat(discoveredMethod.getReturnType(),
+                                                      fd.getOriginalType().getName(), new String[0]);
+                    if (newFormat.length == 2) {
+                        format = new String[] {DATE, newFormat[0], newFormat[1]};
+                    }
+                }
                 if (format.length == 3) {
                     // a format exists on the method return type so format it after returning the value
                     final String graphQLType = getGraphQLType(fd.getReturnType());
-                    // Determine if this is a number OR date format
-                    dataFetcher = DataFetcherFactories.wrapDataFetcher(
-                            DataFetcherUtils.newMethodDataFetcher(clazz, method, null,
-                                                                  fd.getArguments().toArray(new SchemaArgument[0])),
-                            (e, v) -> {
-                                NumberFormat numberFormat = getCorrectNumberFormat(
-                                        graphQLType, format[2], format[1]);
-                                return v != null && numberFormat != null ? numberFormat.format(v) : null;
-                            });
-                    fd.setReturnType(STRING);
+                    final DataFetcher methodDataFetcher = DataFetcherUtils.newMethodDataFetcher(clazz, method, null,
+                                                                      fd.getArguments().toArray(new SchemaArgument[0]));
+                    final String[] newFormat = new String[] {format[0], format[1], format[2]};
+                    if (isDateTimeScalar(discoveredMethod.getReturnType())) {
+                        dataFetcher = DataFetcherFactories.wrapDataFetcher(methodDataFetcher,
+                                (e, v) -> {
+                                    DateTimeFormatter dateTimeFormatter = getCorrectDateFormatter(
+                                            graphQLType, newFormat[2], newFormat[1]);
+                                    return v instanceof TemporalAccessor
+                                        ? dateTimeFormatter.format((TemporalAccessor) v) : null;
+                                });
+                    } else {
+                        dataFetcher = DataFetcherFactories.wrapDataFetcher(methodDataFetcher,
+                                (e, v) -> {
+                                    NumberFormat numberFormat = getCorrectNumberFormat(
+                                            graphQLType, newFormat[2], newFormat[1]);
+                                    return v != null && numberFormat != null ? numberFormat.format(v) : null;
+                                });
+                        fd.setReturnType(STRING);
+                    }
                 } else {
                     // no formatting, just call the method
                     dataFetcher = DataFetcherUtils.newMethodDataFetcher(clazz, method, null,
@@ -669,17 +696,8 @@ public class SchemaGenerator {
         String[] format = discoveredMethod.getFormat();
         if (propertyName != null && format != null && format.length == 3 && format[0] != null) {
             if (!isGraphQLType(valueClassName)) {
-                if (NUMBER.equals(format[0])) {
-                    dataFetcher = DataFetcherUtils
-                            .newNumberFormatPropertyDataFetcher(propertyName, graphQLType, format[1],
-                                                                format[2]);
-                    // change the type of this to a String but keep the above type for the above data fetcher
-                    graphQLType = SchemaGeneratorHelper.STRING;
-                } else if (DATE.equals(format[0])) {
-//                    dataFetcher = DataFetcherUtils.newDateFormatPropertyDataFetcher(propertyName, format[1], format[2]);
-//                    // change the type of this to a String but keep the above type for the above data fetcher
-//                    graphQLType = SchemaGeneratorHelper.STRING;
-                }
+                dataFetcher = retrieveFormattingDataFetcher(format, propertyName, graphQLType);
+                graphQLType = SchemaGeneratorHelper.STRING;
             }
         } else {
             // Add a PropertyDataFetcher if the name has been changed via annotation
@@ -706,6 +724,20 @@ public class SchemaGenerator {
         fd.setDescription(discoveredMethod.getDescription());
         fd.setDefaultValue(discoveredMethod.getDefaultValue());
         return fd;
+    }
+
+    /**
+     * Return the correct formatting {@link DataFetcher} to format the date or number field.
+     *
+     * @param rawFormat    raw format with [0] = type, [1] = locale, [2] = format
+     * @param propertyName property to fetch from
+     * @param type         the type of the data - from Class.getName()
+     * @return the correct {@link DataFetcher}
+     */
+    private DataFetcher retrieveFormattingDataFetcher(String[] rawFormat, String propertyName, String type) {
+        return NUMBER.equals(rawFormat[0])
+                ? new DataFetcherUtils.NumberFormattingDataFetcher(propertyName, type, rawFormat[1], rawFormat[2])
+                : new DataFetcherUtils.DateFormattingDataFetcher(propertyName, type, rawFormat[1], rawFormat[2]);
     }
 
     /**
@@ -946,9 +978,9 @@ public class SchemaGenerator {
         }
 
         // check for method return type number format
-        String[] methodNumberFormat = getFormattingAnnotation(method);
-        if (methodNumberFormat[0] != null) {
-            format = methodNumberFormat;
+        String[] methodFormat = getFormattingAnnotation(method);
+        if (methodFormat[0] != null) {
+            format = methodFormat;
         }
 
         DiscoveredMethod discoveredMethod = new DiscoveredMethod();

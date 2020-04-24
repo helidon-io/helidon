@@ -21,21 +21,25 @@ import java.lang.reflect.Method;
 import java.text.DateFormat;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAccessor;
 import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Logger;
 
+import graphql.schema.DataFetchingEnvironment;
+import graphql.schema.PropertyDataFetcher;
 import javax.enterprise.inject.spi.CDI;
 
 import graphql.GraphQLException;
 import graphql.schema.DataFetcher;
 import graphql.schema.PropertyDataFetcherHelper;
 
+import static io.helidon.microprofile.graphql.server.FormattingHelper.getCorrectDateFormatter;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.getCorrectNumberFormat;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ID;
-import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ensureRuntimeException;
 
 /**
  * Utilities for working with {@link DataFetcher}s.
@@ -112,33 +116,62 @@ public class DataFetcherUtils {
     }
 
     /**
-     * Create a new {@link DataFetcher} which formats a number.
-     *
-     * @param propertyName property to extract
-     * @param type         GraphQL type of the property
-     * @param valueFormat  formatting value
-     * @param locale       formatting locale
-     * @param <S>          type of the source
-     * @return a new {@link DataFetcher}
+     * An implementation of a {@link PropertyDataFetcher} which returns a formatted number.
      */
-    public static <S> DataFetcher<String> newNumberFormatPropertyDataFetcher(String propertyName, String type,
-                                                                             String valueFormat, String locale) {
-        NumberFormat numberFormat = getCorrectNumberFormat(type, locale, valueFormat);
-        if (numberFormat == null) {
-            ensureRuntimeException(LOGGER, "Unable to find number format for type="
-                                            + type + ", locale=" + locale + ", valueFormat=" + valueFormat);
+    public static class NumberFormattingDataFetcher extends PropertyDataFetcher {
+
+        /**
+         * {@link NumberFormat} to format with.
+         */
+        private NumberFormat numberFormat;
+
+        /**
+         * Construct a new NumberFormattingDataFetcher.
+         * @param propertyName property to extract
+         * @param type         GraphQL type of the property
+         * @param valueFormat  formatting value
+         * @param locale       formatting locale
+         */
+        public NumberFormattingDataFetcher(String propertyName, String type, String valueFormat, String locale) {
+            super(propertyName);
+            numberFormat = getCorrectNumberFormat(type, locale, valueFormat);
         }
 
-        return environment -> {
-            S source = environment.getSource();
-            if (source == null) {
-                return null;
-            }
-            Object rawValue = PropertyDataFetcherHelper
-                    .getPropertyValue(propertyName, source, environment.getFieldType(), environment);
+        @Override
+        public Object get(DataFetchingEnvironment environment) {
+            Object originalResult = super.get(environment);
+            return originalResult != null ? numberFormat.format(originalResult) : null;
+        }
+    }
 
-            return rawValue != null ? numberFormat.format(rawValue) : null;
-        };
+    /**
+     * An implementation of a {@link PropertyDataFetcher} which returns a formatted date.
+     */
+    public static class DateFormattingDataFetcher extends PropertyDataFetcher {
+
+        /**
+         * {@link DateTimeFormatter} to format with.
+         */
+        private DateTimeFormatter dateTimeFormatter;
+
+        /**
+         * Construct a new NumberFormattingDataFetcher.
+         * @param propertyName property to extract
+         * @param type         GraphQL type of the property
+         * @param valueFormat  formatting value
+         * @param locale       formatting locale
+         */
+        public DateFormattingDataFetcher(String propertyName, String type, String valueFormat, String locale) {
+            super(propertyName);
+            dateTimeFormatter = getCorrectDateFormatter(type, locale, valueFormat);
+        }
+
+        @Override
+        public Object get(DataFetchingEnvironment environment) {
+            Object originalResult = super.get(environment);
+            return originalResult instanceof TemporalAccessor
+                    ? dateTimeFormatter.format((TemporalAccessor) originalResult) : null;
+            }
     }
 
     /**

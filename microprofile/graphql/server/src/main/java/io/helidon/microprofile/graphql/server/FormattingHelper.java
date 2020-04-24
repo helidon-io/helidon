@@ -19,6 +19,7 @@ package io.helidon.microprofile.graphql.server;
 import java.lang.reflect.AnnotatedElement;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 import java.util.logging.Logger;
 
@@ -35,9 +36,15 @@ import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.DEFAU
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.FLOAT;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.INT;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.INTEGER_LIST;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.LOCAL_DATE_CLASS;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.LOCAL_DATE_TIME_CLASS;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.LOCAL_TIME_CLASS;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.LONG_OBJECT;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.LONG_PRIMITIVE;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.OFFSET_DATE_TIME_CLASS;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.OFFSET_TIME_CLASS;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.SUPPORTED_SCALARS;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ZONED_DATE_TIME_CLASS;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ensureRuntimeException;
 
 /**
@@ -68,7 +75,7 @@ public class FormattingHelper {
     /**
      * Indicates no formatting applied.
      */
-    private static final String[] NO_FORMATTING = new String[] {null, null, null };
+    private static final String[] NO_FORMATTING = new String[] { null, null, null };
 
     /**
      * No-args constructor.
@@ -86,7 +93,7 @@ public class FormattingHelper {
     protected static String[] getDefaultDateTimeFormat(String scalarName, String clazzName) {
         for (SchemaScalar scalar : SUPPORTED_SCALARS.values()) {
             if (scalarName.equals(scalar.getName()) && scalar.getActualClass().equals(clazzName)) {
-                return new String[] {scalar.getDefaultFormat(), DEFAULT_LOCALE };
+                return new String[] { scalar.getDefaultFormat(), DEFAULT_LOCALE };
             }
         }
         return NO_DEFAULT_FORMAT;
@@ -127,26 +134,41 @@ public class FormattingHelper {
     }
 
     /**
-     * Returna {@link java.text.DateFormat } for the given type, locale and format.
+     * Returna {@link DateTimeFormatter} for the given type, locale and format.
      *
      * @param type   the GraphQL type or scalar
      * @param locale the locale, either "" or the correct locale
+     * @param format the format to use, may be null
      * @return The correct {@link java.text.DateFormat } for the given type and locale
      */
-    protected static java.text.DateFormat getCorrectDateFormat(String type, String locale) {
+    protected static DateTimeFormatter getCorrectDateFormatter(String type, String locale, String format) {
         Locale actualLocale = DEFAULT_LOCALE.equals(locale)
                 ? Locale.getDefault()
                 : Locale.forLanguageTag(locale);
-        java.text.DateFormat  dateFormat;
-        if ("DateTime".equals(type)
-        ) {
-            dateFormat = java.text.DateFormat.getDateInstance(java.text.DateFormat.DEFAULT);
-        } else if ("Time".equals(type)) {
-            dateFormat = java.text.DateFormat.getTimeInstance(java.text.DateFormat.DEFAULT);
+
+        DateTimeFormatter formatter;
+
+        if (format != null) {
+            formatter = DateTimeFormatter.ofPattern(format, actualLocale);
         } else {
-            return null;
+            // handle defaults if not format specified
+            if (OFFSET_TIME_CLASS.equals(type)) {
+                formatter = DateTimeFormatter.ISO_OFFSET_TIME.withLocale(actualLocale);
+            } else if (LOCAL_TIME_CLASS.equals(type)) {
+                formatter = DateTimeFormatter.ISO_LOCAL_TIME.withLocale(actualLocale);
+            } else if (OFFSET_DATE_TIME_CLASS.equals(type)) {
+                formatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME.withLocale(actualLocale);
+            } else if (ZONED_DATE_TIME_CLASS.equals(type)) {
+                formatter = DateTimeFormatter.ISO_ZONED_DATE_TIME.withLocale(actualLocale);
+            } else if (LOCAL_DATE_TIME_CLASS.equals(type)) {
+                formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME.withLocale(actualLocale);
+            } else if (LOCAL_DATE_CLASS.equals(type)) {
+                formatter = DateTimeFormatter.ISO_LOCAL_DATE.withLocale(actualLocale);
+            } else {
+                return null;
+            }
         }
-        return dateFormat;
+        return formatter;
     }
 
     /**
@@ -176,7 +198,7 @@ public class FormattingHelper {
         }
         if (dateFormat.length == 2 && numberFormat.length == 2) {
             ensureRuntimeException(LOGGER, "A date format and number format cannot be applied to the same element: "
-                                               + annotatedElement);
+                    + annotatedElement);
         }
 
         return dateFormat.length == 2
