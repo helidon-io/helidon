@@ -28,16 +28,16 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 /**
- * Tests {@link io.helidon.media.common.PublisherInputStream}.
+ * Tests {@link SubscriberInputStream}.
  */
-public class PublisherInputStreamTest {
+public class SubscriberInputStreamTest {
 
     @Test
     public void chunkWith0xFFValue() {
         final byte[] bytes = new byte[]{
             0, 1, 2, 3, 4, 5, 6, (byte) 0xFF, 7, 8, 9, 10
         };
-        InputStream is = new PublisherInputStream(
+        InputStream is = new SubscriberInputStream(
                 new DataChunkPublisher(
                         new DataChunk[]{DataChunk.create(bytes)}));
         try {
