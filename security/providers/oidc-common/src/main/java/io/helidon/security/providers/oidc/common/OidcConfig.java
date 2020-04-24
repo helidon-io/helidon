@@ -243,6 +243,11 @@ import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
  *     <td>Maximal number of times we can redirect to an identity server. When the number is reached, no further redirects
  *     happen and the request finishes with an error (status {@code 401})</td>
  * </tr>
+ * <tr>
+ *     <td>server-type</td>
+ *     <td>&nbsp;</td>
+ *     <td>Type of identity server. Currently supported is {@code idcs} or not configured (for default).</td>
+ * </tr>
  * </table>
  */
 public final class OidcConfig {
@@ -325,31 +330,15 @@ public final class OidcConfig {
         this.realm = builder.realm;
         this.redirectAttemptParam = builder.redirectAttemptParam;
         this.maxRedirects = builder.maxRedirects;
+        this.appClient = builder.appClient;
+        this.tokenEndpoint = builder.tokenEndpoint;
+        this.generalClient = builder.generalClient;
 
         if (null == builder.signJwk) {
             this.signJwk = JwkKeys.builder().build();
         } else {
             this.signJwk = builder.signJwk;
         }
-
-        ClientBuilder clientBuilder = ClientBuilder.newBuilder();
-
-        if (builder.proxyHost != null) {
-            clientBuilder.property(ClientProperties.PROXY_URI,
-                                   builder.proxyUri);
-        }
-
-        this.generalClient = clientBuilder.build();
-
-        HttpAuthenticationFeature basicAuth = HttpAuthenticationFeature.basicBuilder()
-                .credentials(builder.clientId, builder.clientSecret)
-                .build();
-
-        this.appClient = clientBuilder
-                .register(basicAuth)
-                .build();
-
-        this.tokenEndpoint = appClient.target(builder.tokenEndpointUri);
 
         if (validateJwtWithJwk) {
             this.introspectEndpoint = null;
@@ -688,6 +677,8 @@ public final class OidcConfig {
      * A fluent API {@link io.helidon.common.Builder} to build instances of {@link OidcConfig}.
      */
     public static class Builder implements io.helidon.common.Builder<OidcConfig> {
+        private static final String DEFAULT_SERVER_TYPE = "@default";
+
         private String issuer;
         private String audience;
         private String baseScopes = DEFAULT_BASE_SCOPES;
@@ -736,9 +727,24 @@ public final class OidcConfig {
         private String redirectAttemptParam = DEFAULT_ATTEMPT_PARAM;
         private int maxRedirects = DEFAULT_MAX_REDIRECTS;
         private boolean cookieSameSiteDefault = true;
+        private String serverType;
+        private Client generalClient;
+        private WebTarget tokenEndpoint;
+        private Client appClient;
 
         @Override
         public OidcConfig build() {
+            if (null != serverType) {
+                // explicit server type
+                if (!"idcs".equals(serverType)) {
+                    LOGGER.warning("OIDC server-type is configured to " + serverType + ", currently only \"idcs\", and"
+                                           + " \"" + DEFAULT_SERVER_TYPE + "\" are supported");
+                    serverType = DEFAULT_SERVER_TYPE;
+                }
+            } else {
+                serverType = DEFAULT_SERVER_TYPE;
+            }
+
             if ((null == proxyUri) && (null != proxyHost)) {
                 this.proxyUri = proxyProtocol
                         + "://"
@@ -776,26 +782,6 @@ public final class OidcConfig {
                                                             "authorization_endpoint",
                                                             "/oauth2/v1/authorize");
 
-            if (validateJwtWithJwk) {
-                if (null == signJwk) {
-                    // not configured - use default location
-                    URI jwkUri = getOidcEndpoint(collector,
-                                                 null,
-                                                 "jwks_uri",
-                                                 null);
-                    if (null != jwkUri) {
-                        this.signJwk = JwkKeys.builder()
-                                .resource(Resource.create(jwkUri))
-                                .build();
-                    }
-                }
-            } else {
-                this.introspectUri = getOidcEndpoint(collector,
-                                                     introspectUri,
-                                                     "introspection_endpoint",
-                                                     "/oauth2/v1/introspect");
-            }
-
             if ((null == issuer) && (null != oidcMetadata)) {
                 this.issuer = oidcMetadata.getString("issuer");
             }
@@ -821,6 +807,49 @@ public final class OidcConfig {
                         }
                     }
                 }
+            }
+
+            ClientBuilder clientBuilder = ClientBuilder.newBuilder();
+
+            if (proxyHost != null) {
+                clientBuilder.property(ClientProperties.PROXY_URI, proxyUri);
+            }
+
+            this.generalClient = clientBuilder.build();
+
+
+            HttpAuthenticationFeature basicAuth = HttpAuthenticationFeature.basicBuilder()
+                    .credentials(clientId, clientSecret)
+                    .build();
+
+            appClient = clientBuilder
+                    .register(basicAuth)
+                    .build();
+
+            tokenEndpoint = appClient.target(tokenEndpointUri);
+
+            if (validateJwtWithJwk) {
+                if (null == signJwk) {
+                    // not configured - use default location
+                    URI jwkUri = getOidcEndpoint(collector,
+                                                 null,
+                                                 "jwks_uri",
+                                                 null);
+                    if (null != jwkUri) {
+                        if ("idcs".equals(serverType)) {
+                            this.signJwk = IdcsSupport.signJwk(generalClient, tokenEndpoint, collector, jwkUri);
+                        } else {
+                            this.signJwk = JwkKeys.builder()
+                                    .resource(Resource.create(jwkUri))
+                                    .build();
+                        }
+                    }
+                }
+            } else {
+                this.introspectUri = getOidcEndpoint(collector,
+                                                     introspectUri,
+                                                     "introspection_endpoint",
+                                                     "/oauth2/v1/introspect");
             }
 
             return new OidcConfig(this);
@@ -930,6 +959,10 @@ public final class OidcConfig {
             config.get("redirect").asBoolean().ifPresent(this::redirect);
             config.get("redirect-attempt-param").asString().ifPresent(this::redirectAttemptParam);
             config.get("max-redirects").asInt().ifPresent(this::maxRedirects);
+
+            // type of the identity server
+            // now uses hardcoded switch - should change to service loader eventually
+            config.get("server-type").asString().ifPresent(this::serverType);
 
             return this;
         }
@@ -1398,6 +1431,19 @@ public final class OidcConfig {
          */
         public Builder maxRedirects(int maxRedirects) {
             this.maxRedirects = maxRedirects;
+            return this;
+        }
+
+        /**
+         * Configure one of the supported types of identity servers.
+         *
+         * If the type does not have an explicit mapping, a warning is logged and the default implementation is used.
+         *
+         * @param type Type of identity server. Currently supported is {@code idcs} or not configured (for default).
+         * @return updated builder instance
+         */
+        public Builder serverType(String type) {
+            this.serverType = type;
             return this;
         }
     }
