@@ -60,6 +60,8 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
+import io.helidon.webserver.cors.CorsEnabledServiceHelper;
+import io.helidon.webserver.cors.CrossOriginConfig;
 
 import io.smallrye.openapi.api.OpenApiConfig;
 import io.smallrye.openapi.api.OpenApiDocument;
@@ -80,6 +82,9 @@ import org.eclipse.microprofile.openapi.models.Reference;
 import org.eclipse.microprofile.openapi.models.media.Schema;
 import org.eclipse.microprofile.openapi.models.servers.ServerVariable;
 import org.yaml.snakeyaml.TypeDescription;
+
+import static io.helidon.webserver.cors.CorsEnabledServiceHelper.CORS_CONFIG_KEY;
+
 /**
  * Provides an endpoint and supporting logic for returning an OpenAPI document
  * that describes the endpoints handled by the server.
@@ -110,9 +115,10 @@ public class OpenAPISupport implements Service {
     private static final String DEFAULT_STATIC_FILE_PATH_PREFIX = "META-INF/openapi.";
     private static final String OPENAPI_EXPLICIT_STATIC_FILE_LOG_MESSAGE_FORMAT = "Using specified OpenAPI static file %s";
     private static final String OPENAPI_DEFAULTED_STATIC_FILE_LOG_MESSAGE_FORMAT = "Using default OpenAPI static file %s";
+    private static final String FEATURE_NAME = "OpenAPI";
 
     static {
-        HelidonFeatures.register(HelidonFlavor.SE, "OpenAPI");
+        HelidonFeatures.register(HelidonFlavor.SE, FEATURE_NAME);
     }
 
     private static final JsonReaderFactory JSON_READER_FACTORY = Json.createReaderFactory(Collections.emptyMap());
@@ -127,11 +133,13 @@ public class OpenAPISupport implements Service {
     private final OpenAPI model;
     private final ConcurrentMap<Format, String> cachedDocuments = new ConcurrentHashMap<>();
     private final Map<Class<?>, ExpandedTypeDescription> implsToTypes;
+    private final CorsEnabledServiceHelper corsEnabledServiceHelper;
 
     private OpenAPISupport(Builder builder) {
         adjustTypeDescriptions(helper().types());
         implsToTypes = buildImplsToTypes(helper());
         webContext = builder.webContext();
+        corsEnabledServiceHelper = CorsEnabledServiceHelper.create(FEATURE_NAME, builder.crossOriginConfig);
         model = prepareModel(builder.openAPIConfig(), builder.staticFile(), builder.perAppFilteredIndexViews());
     }
 
@@ -149,6 +157,7 @@ public class OpenAPISupport implements Service {
     public void configureEndpoint(Routing.Rules rules) {
 
         rules.get(JsonSupport.create())
+                .any(webContext, corsEnabledServiceHelper.processor())
                 .get(webContext, this::prepareResponse);
     }
 
@@ -628,6 +637,7 @@ public class OpenAPISupport implements Service {
 
         private Optional<String> webContext = Optional.empty();
         private Optional<String> staticFilePath = Optional.empty();
+        private CrossOriginConfig crossOriginConfig = null;
 
         @Override
         public OpenAPISupport build() {
@@ -652,6 +662,9 @@ public class OpenAPISupport implements Service {
             config.get("static-file")
                     .asString()
                     .ifPresent(this::staticFile);
+            config.get(CORS_CONFIG_KEY)
+                    .as(CrossOriginConfig::create)
+                    .ifPresent(this::crossOriginConfig);
             return this;
         }
 
@@ -726,6 +739,18 @@ public class OpenAPISupport implements Service {
         public Builder staticFile(String path) {
             Objects.requireNonNull(path, "path to static file must be non-null");
             staticFilePath = Optional.of(path);
+            return this;
+        }
+
+        /**
+         * Set the CORS config from the specified {@code CrossOriginConfig} object.
+         *
+         * @param crossOriginConfig {@code CrossOriginConfig} containing CORS set-up
+         * @return updated builder instance
+         */
+        public Builder crossOriginConfig(CrossOriginConfig crossOriginConfig) {
+            Objects.requireNonNull(crossOriginConfig, "CrossOriginConfig must be non-null");
+            this.crossOriginConfig = crossOriginConfig;
             return this;
         }
 

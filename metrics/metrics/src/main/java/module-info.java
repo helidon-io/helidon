@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ module io.helidon.metrics {
 
     requires io.helidon.common;
     requires io.helidon.common.metrics;
+    requires io.helidon.webserver.cors;
 
     requires transitive microprofile.metrics.api;
     requires java.management;
