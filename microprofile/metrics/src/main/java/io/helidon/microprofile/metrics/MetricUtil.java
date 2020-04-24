@@ -26,8 +26,15 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Logger;
 
+import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;
+import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.Tag;
+import org.eclipse.microprofile.metrics.annotation.ConcurrentGauge;
+import org.eclipse.microprofile.metrics.annotation.Counted;
+import org.eclipse.microprofile.metrics.annotation.Metered;
+import org.eclipse.microprofile.metrics.annotation.Timed;
 
 /**
  * Class MetricUtil.
@@ -100,26 +107,111 @@ public final class MetricUtil {
                         methods = Arrays.asList(declaringClass.getDeclaredMethods());
                     }
                 }
-                result = declaringClass.getName() + "." + result;
+                result = declaringClass.getName() + '.' + result;
             }
         } else if (matchingType == MatchingType.CLASS) {
             if (explicitName == null || explicitName.isEmpty()) {
                 result = getElementName(element, clazz);
                 if (!absolute) {
-                    result = clazz.getName() + "." + result;
+                    result = clazz.getName() + '.' + result;
                 }
             } else {
                 // Absolute must be false at class level, issue warning here
                 if (absolute) {
                     LOGGER.warning(() -> "Attribute 'absolute=true' in metric annotation ignored at class level");
                 }
-                result = clazz.getPackage().getName() + "." + explicitName
-                        + "." + getElementName(element, clazz);
+                result = clazz.getPackage().getName() + '.' + explicitName
+                        + '.' + getElementName(element, clazz);
             }
         } else {
             throw new InternalError("Unknown matching type");
         }
         return result;
+    }
+
+    /**
+     * Register a metric.
+     *
+     * @param element the annotated element
+     * @param clazz the annotated class
+     * @param lookupResult the annotation lookup result
+     * @param <E> the annotated element type
+     */
+    public static <E extends Member & AnnotatedElement>
+    void registerMetric(E element, Class<?> clazz, LookupResult<? extends Annotation> lookupResult) {
+        registerMetric(element, clazz, lookupResult.getAnnotation(), lookupResult.getType());
+    }
+
+    /**
+     * Register a metric.
+     *
+     * @param element the annotated element
+     * @param clazz the annotated class
+     * @param annotation the annotation to register
+     * @param type the {@link MatchingType} indicating the type of annotated element
+     * @param <E> the annotated element type
+     */
+    public static <E extends Member & AnnotatedElement>
+    void registerMetric(E element, Class<?> clazz, Annotation annotation, MatchingType type) {
+        MetricRegistry registry = getMetricRegistry();
+
+        if (annotation instanceof Counted) {
+            Counted counted = (Counted) annotation;
+            String metricName = getMetricName(element, clazz, type, counted.name().trim(), counted.absolute());
+            String displayName = counted.displayName().trim();
+            Metadata meta = Metadata.builder()
+                    .withName(metricName)
+                    .withDisplayName(displayName.isEmpty() ? metricName : displayName)
+                    .withDescription(counted.description().trim())
+                    .withType(MetricType.COUNTER)
+                    .withUnit(counted.unit().trim())
+                    .reusable(counted.reusable()).build();
+            registry.counter(meta);
+            LOGGER.fine(() -> "### Registered counter " + metricName);
+        } else if (annotation instanceof Metered) {
+            Metered metered = (Metered) annotation;
+            String metricName = getMetricName(element, clazz, type, metered.name().trim(), metered.absolute());
+            String displayName = metered.displayName().trim();
+            Metadata meta = Metadata.builder()
+                    .withName(metricName)
+                    .withDisplayName(displayName.isEmpty() ? metricName : displayName)
+                    .withDescription(metered.description().trim())
+                    .withType(MetricType.METERED)
+                    .withUnit(metered.unit().trim())
+                    .reusable(metered.reusable()).build();
+            registry.meter(meta);
+            LOGGER.fine(() -> "### Registered meter " + metricName);
+        } else if (annotation instanceof ConcurrentGauge) {
+            ConcurrentGauge concurrentGauge = (ConcurrentGauge) annotation;
+            String metricName = getMetricName(element, clazz, type, concurrentGauge.name().trim(),
+                    concurrentGauge.absolute());
+            String displayName = concurrentGauge.displayName().trim();
+            Metadata meta = Metadata.builder()
+                    .withName(metricName)
+                    .withDisplayName(displayName.isEmpty() ? metricName : displayName)
+                    .withDescription(concurrentGauge.description().trim())
+                    .withType(MetricType.METERED)
+                    .withUnit(concurrentGauge.unit().trim()).build();
+            registry.concurrentGauge(meta);
+            LOGGER.fine(() -> "### Registered ConcurrentGauge " + metricName);
+        } else if (annotation instanceof Timed) {
+            Timed timed = (Timed) annotation;
+            String metricName = getMetricName(element, clazz, type, timed.name().trim(), timed.absolute());
+            String displayName = timed.displayName().trim();
+            Metadata meta = Metadata.builder()
+                    .withName(metricName)
+                    .withDisplayName(displayName.isEmpty() ? metricName : displayName)
+                    .withDescription(timed.description().trim())
+                    .withType(MetricType.TIMER)
+                    .withUnit(timed.unit().trim())
+                    .reusable(timed.reusable()).build();
+            registry.timer(meta);
+            LOGGER.fine(() -> "### Registered timer " + metricName);
+        }
+    }
+
+    private static MetricRegistry getMetricRegistry() {
+        return RegistryProducer.getDefaultRegistry();
     }
 
     static <E extends Member & AnnotatedElement>

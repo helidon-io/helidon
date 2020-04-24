@@ -33,6 +33,7 @@ import io.helidon.microprofile.metrics.MetricsCdiExtension;
 
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.annotation.Counted;
+import org.eclipse.microprofile.metrics.annotation.Gauge;
 import org.eclipse.microprofile.metrics.annotation.Metered;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
@@ -118,6 +119,36 @@ public class MetricsConfigurer
 
             MetricUtil.LookupResult<? extends Annotation> lookupResult
                     = MetricUtil.lookupAnnotation(method, annotation.annotationType(), annotatedClass);
+
+            if (annotation instanceof Metered) {
+                Metered metered = (Metered) annotation;
+                String displayName = metered.displayName().trim();
+                interceptor = interceptor.description(metered.description());
+                interceptor = interceptor.displayName(displayName.isEmpty() ? metricName : displayName);
+                interceptor = interceptor.reusable(metered.reusable());
+                interceptor = interceptor.units(metered.unit());
+            } else if (annotation instanceof Gauge) {
+                Gauge gauge = (Gauge) annotation;
+                String displayName = gauge.displayName().trim();
+                interceptor = interceptor.description(gauge.description());
+                interceptor = interceptor.displayName(displayName.isEmpty() ? metricName : displayName);
+                interceptor = interceptor.units(gauge.unit());
+            } else if (annotation instanceof Timed) {
+                Timed timed = (Timed) annotation;
+                String displayName = timed.displayName().trim();
+                interceptor = interceptor.description(timed.description());
+                interceptor = interceptor.displayName(displayName.isEmpty() ? metricName : displayName);
+                interceptor = interceptor.reusable(timed.reusable());
+                interceptor = interceptor.units(timed.unit());
+            } else if (annotation instanceof Counted) {
+                Counted counted = (Counted) annotation;
+                String displayName = counted.displayName().trim();
+                interceptor = interceptor.description(counted.description());
+                interceptor = interceptor.displayName(displayName.isEmpty() ? metricName : displayName);
+                interceptor = interceptor.reusable(counted.reusable());
+                interceptor = interceptor.units(counted.unit());
+            }
+
             MetricsCdiExtension.registerMetric(method, annotatedClass, lookupResult);
             builder.intercept(grpcMethodName, interceptor.nameFunction(new ConstantNamingFunction(metricName)));
         }
