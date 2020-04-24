@@ -127,6 +127,17 @@ public class GrpcMetrics
     }
 
     /**
+     * Set the display name to apply to the metric.
+     *
+     * @param displayName the display name to apply to the metric
+     * @return a {@link io.helidon.grpc.metrics.GrpcMetrics} interceptor
+     * @see org.eclipse.microprofile.metrics.Metadata
+     */
+    public GrpcMetrics displayName(String displayName) {
+        return new GrpcMetrics(metricRule.displayName(displayName));
+    }
+
+    /**
      * Set the units to apply to the metric.
      *
      * @param units the units to apply to the metric
@@ -135,6 +146,16 @@ public class GrpcMetrics
      */
     public GrpcMetrics units(String units) {
         return new GrpcMetrics(metricRule.units(units));
+    }
+
+    /**
+     * Set the reusability of the metric.
+     * @param reusable {@code true} if this metric may be reused
+     * @return a {@link io.helidon.grpc.metrics.GrpcMetrics} interceptor
+     * @see org.eclipse.microprofile.metrics.Metadata
+     */
+    public GrpcMetrics reusable(boolean reusable) {
+        return new GrpcMetrics(metricRule.reusable(reusable));
     }
 
     /**
@@ -442,12 +463,25 @@ public class GrpcMetrics
         private Optional<String> description = Optional.empty();
 
         /**
+         * The display name of the metric.
+         *
+         * @see org.eclipse.microprofile.metrics.Metadata
+         */
+        private String displayName;
+
+        /**
          * The unit of the metric.
          *
          * @see org.eclipse.microprofile.metrics.Metadata
          * @see org.eclipse.microprofile.metrics.MetricUnits
          */
         private Optional<String> units = Optional.empty();
+
+        /**
+         * The reusability status of this metric.
+         * @see org.eclipse.microprofile.metrics.Metadata
+         */
+        private boolean reusable;
 
         /**
          * The function to use to obtain the metric name.
@@ -462,8 +496,10 @@ public class GrpcMetrics
             this.type = copy.type;
             this.tags = copy.tags;
             this.description = copy.description;
+            this.displayName = copy.displayName;
             this.units = copy.units;
             this.nameFunction = copy.nameFunction;
+            this.reusable = copy.reusable;
         }
 
         /**
@@ -489,6 +525,11 @@ public class GrpcMetrics
             this.description.ifPresent(builder::withDescription);
             this.units.ifPresent(builder::withUnit);
 
+            String displayName = this.displayName;
+            builder.withDisplayName(displayName == null ? name : displayName);
+
+            builder = this.reusable ? builder.reusable() : builder.notReusable();
+
             return builder.build();
         }
 
@@ -508,6 +549,12 @@ public class GrpcMetrics
             return rules;
         }
 
+        private MetricsRules displayName(String displayName) {
+            MetricsRules rules = new MetricsRules(this);
+            rules.displayName = displayName;
+            return rules;
+        }
+
         private MetricsRules nameFunction(NamingFunction function) {
             MetricsRules rules = new MetricsRules(this);
             rules.nameFunction = Optional.of(function);
@@ -517,6 +564,12 @@ public class GrpcMetrics
         private MetricsRules units(String units) {
             MetricsRules rules = new MetricsRules(this);
             rules.units = Optional.of(units);
+            return rules;
+        }
+
+        private MetricsRules reusable(boolean reusable) {
+            MetricsRules rules = new MetricsRules(this);
+            rules.reusable = reusable;
             return rules;
         }
 
