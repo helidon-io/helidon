@@ -25,7 +25,7 @@ import java.util.function.Function;
  * If the upstream fails, generate a fallback Single and emit its signals.
  * @param <T> the element type of the source and fallback
  */
-final class SingleOnErrorResumeWith<T> implements Single<T> {
+final class SingleOnErrorResumeWith<T> extends CompletionSingle<T> {
 
     private final Single<T> source;
 

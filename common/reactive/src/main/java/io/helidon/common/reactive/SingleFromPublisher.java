@@ -23,7 +23,7 @@ import java.util.concurrent.Flow;
  * an error otherwise.
  * @param <T> the element type of the flow
  */
-final class SingleFromPublisher<T> implements Single<T> {
+final class SingleFromPublisher<T> extends CompletionSingle<T> {
 
     private final Flow.Publisher<T> source;
 

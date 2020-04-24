@@ -17,19 +17,20 @@
 
 package io.helidon.common.reactive;
 
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
-import org.testng.TestException;
 
 public class AwaitTest {
 
@@ -46,6 +47,19 @@ public class AwaitTest {
     }
 
     @Test
+    void forEachWhenComplete() throws InterruptedException, ExecutionException, TimeoutException {
+        AtomicLong sum = new AtomicLong();
+        CompletableFuture<Void> completeFuture = new CompletableFuture<>();
+        testMulti()
+                .forEach(sum::addAndGet)
+
+                .whenComplete((aVoid, throwable) -> Optional.ofNullable(throwable)
+                        .ifPresentOrElse(completeFuture::completeExceptionally, () -> completeFuture.complete(null)));
+        completeFuture.get(SAFE_WAIT_MILLIS, TimeUnit.MILLISECONDS);
+        assertEquals(EXPECTED_SUM, sum.get());
+    }
+
+    @Test
     void forEachAwaitTimeout() {
         AtomicLong sum = new AtomicLong();
         testMulti()
@@ -55,20 +69,18 @@ public class AwaitTest {
     }
 
     @Test
-    void forEachAutoCloseable() throws Exception {
+    void forEachCancel() throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
-        AtomicBoolean cancelled = new AtomicBoolean(false);
-        try (MultiCompletionStage stage = testMulti()
-                .onCancel(() -> cancelled.set(true))
-                .forEach(l -> latch.countDown())
-        ) {
-            //Wait for 1 item out of 5
-            latch.await(50, TimeUnit.MILLISECONDS);
-            //Let auto-closeable cancel
-            throw new TestException("Cancel!");
-        } catch (TestException e) {
-            assertTrue(cancelled.get(), "Auto-closeable should cancel upstream of foreach!");
-        }
+        CompletableFuture<Void> cancelled = new CompletableFuture<>();
+        Single<Void> single = testMulti()
+                .onCancel(() -> cancelled.complete(null))
+                .forEach(l -> latch.countDown());
+
+        single.cancel();
+        // Wait for 1 item out of 5
+        latch.await(50, TimeUnit.MILLISECONDS);
+        // Expect cancel eventually(100 millis had to be enough)
+        cancelled.get(100, TimeUnit.MILLISECONDS);
     }
 
     @Test

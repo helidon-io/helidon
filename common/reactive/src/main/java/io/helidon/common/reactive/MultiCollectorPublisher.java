@@ -35,7 +35,7 @@ import java.util.stream.Collector;
  * @param <A> the collection type
  * @param <R> the result type
  */
-final class MultiCollectorPublisher<T, A, R> implements Single<R> {
+final class MultiCollectorPublisher<T, A, R> extends CompletionSingle<R> {
 
     private final Multi<T> source;
 

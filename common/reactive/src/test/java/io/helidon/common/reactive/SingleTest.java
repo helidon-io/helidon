@@ -15,6 +15,7 @@
  */
 package io.helidon.common.reactive;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.Flow.Subscription;
@@ -289,7 +290,7 @@ public class SingleTest {
 
     @Test
     public void testBadSingleToFuture() throws InterruptedException, TimeoutException {
-        Single<String> single = new Single<String>() {
+        Single<String> single = new CompletionSingle<String>() {
             @Override
             public void subscribe(Subscriber<? super String> subscriber) {
                 throw new IllegalStateException("foo!");
@@ -313,7 +314,7 @@ public class SingleTest {
 
     @Test
     public void testToFutureDoubleOnError() throws InterruptedException, TimeoutException {
-        Single<String> single = new Single<String>() {
+        Single<String> single = new CompletionSingle<String>() {
             @Override
             public void subscribe(Subscriber<? super String> subscriber) {
                 subscriber.onSubscribe(new Subscription() {
@@ -338,7 +339,7 @@ public class SingleTest {
 
     @Test
     public void testToFutureDoubleOnNext() throws InterruptedException, ExecutionException {
-        Single<String> single = new Single<String>() {
+        Single<String> single = new CompletionSingle<String>() {
             @Override
             public void subscribe(Subscriber<? super String> subscriber) {
                 subscriber.onSubscribe(new Subscription() {
@@ -386,7 +387,7 @@ public class SingleTest {
     public void testToFutureDoubleOnSubscribe() throws InterruptedException, ExecutionException {
         TestSubscription subscription1 = new TestSubscription();
         TestSubscription subscription2 = new TestSubscription();
-        Single<String> single = new Single<String>() {
+        Single<String> single = new CompletionSingle<String>() {
             @Override
             public void subscribe(Subscriber<? super String> subscriber) {
                 subscriber.onSubscribe(subscription1);

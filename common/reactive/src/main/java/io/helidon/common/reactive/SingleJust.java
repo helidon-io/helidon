@@ -23,7 +23,7 @@ import java.util.concurrent.Flow.Subscriber;
  *
  * @param <T> item type
  */
-final class SingleJust<T> implements Single<T> {
+final class SingleJust<T> extends CompletionSingle<T> {
 
     private final T value;
 

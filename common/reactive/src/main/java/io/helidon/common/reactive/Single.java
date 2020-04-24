@@ -43,7 +43,7 @@ import io.helidon.common.mapper.Mapper;
  * @param <T> item type
  * @see Multi
  */
-public interface Single<T> extends Subscribable<T> {
+public interface Single<T> extends Subscribable<T>, CompletionStage<T> {
 
     // --------------------------------------------------------------------------------------------------------
     // Factory (source-like) methods
@@ -129,6 +129,18 @@ public interface Single<T> extends Subscribable<T> {
             return (Single<T>) source;
         }
         return new SingleFromPublisher<>(source);
+    }
+
+    /**
+     * Create a {@link Single} instance that publishes the first and only item received from the given {@link Single}.
+     *
+     * @param <T>    item type
+     * @param single source {@link Single} publisher
+     * @return Single
+     * @throws NullPointerException if source is {@code null}
+     */
+    static <T> Single<T> from(Single<T> single) {
+        return from((Publisher<T>) single);
     }
 
     /**
@@ -542,7 +554,7 @@ public interface Single<T> extends Subscribable<T> {
      */
     default CompletionStage<T> toStage() {
         try {
-            SingleToFuture<T> subscriber = new SingleToFuture<>();
+            SingleToFuture<T> subscriber = new SingleToFuture<>(false);
             this.subscribe(subscriber);
             return subscriber;
         } catch (Throwable ex) {
@@ -560,7 +572,7 @@ public interface Single<T> extends Subscribable<T> {
      * @return T
      */
     default T await() {
-        return this.toStage().toCompletableFuture().join();
+        return this.toCompletableFuture().join();
     }
 
     /**
@@ -575,9 +587,27 @@ public interface Single<T> extends Subscribable<T> {
      */
     default T await(long timeout, TimeUnit unit) {
         try {
-            return this.get(timeout, unit);
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            return this.toCompletableFuture().get(timeout, unit);
+        } catch (ExecutionException e) {
+            throw new CompletionException(e.getCause());
+        } catch (InterruptedException | TimeoutException e) {
             throw new CompletionException(e);
         }
+    }
+
+    /**
+     * Cancel upstream.
+     *
+     * @return new {@link Single} for eventually received single value.
+     */
+    default Single<T> cancel() {
+        CompletableFuture<T> future = new CompletableFuture<>();
+        FunctionalSubscriber<T> subscriber = new FunctionalSubscriber<>(future::complete,
+                future::completeExceptionally,
+                () -> future.complete(null),
+                Flow.Subscription::cancel
+        );
+        this.subscribe(subscriber);
+        return Single.from(future);
     }
 }

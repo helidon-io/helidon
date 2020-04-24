@@ -17,7 +17,7 @@ package io.helidon.common.reactive;
 
 import java.util.concurrent.Flow;
 
-final class MultiFirstPublisher<T> implements Single<T> {
+final class MultiFirstPublisher<T> extends CompletionSingle<T> {
 
     private final Multi<T> source;
 

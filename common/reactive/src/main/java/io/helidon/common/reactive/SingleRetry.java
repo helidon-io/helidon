@@ -29,7 +29,7 @@ import java.util.function.BiPredicate;
  * @param <T> the element type of the source
  * @param <U> the signal type of the publisher indicating when to retry
  */
-final class SingleRetry<T, U> implements Single<T> {
+final class SingleRetry<T, U> extends CompletionSingle<T> {
 
     private final Single<T> source;
 

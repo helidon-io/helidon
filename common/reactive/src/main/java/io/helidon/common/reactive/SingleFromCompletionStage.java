@@ -22,7 +22,7 @@ import java.util.concurrent.Flow;
  * Signal the outcome of the give CompletionStage.
  * @param <T> the element type of the source and result
  */
-final class SingleFromCompletionStage<T> implements Single<T> {
+final class SingleFromCompletionStage<T> extends CompletionSingle<T> {
 
     private final CompletionStage<T> source;
 

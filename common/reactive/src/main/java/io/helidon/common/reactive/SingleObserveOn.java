@@ -23,7 +23,7 @@ import java.util.concurrent.Flow;
  * Re-emit the item or terminal signals on the given executor's thread.
  * @param <T> the element type
  */
-final class SingleObserveOn<T> implements Single<T> {
+final class SingleObserveOn<T> extends CompletionSingle<T> {
 
     private final Single<T> source;
 

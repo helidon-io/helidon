@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * or completes within a specified time window.
  * @param <T> the element type
  */
-final class SingleTimeout<T> implements Single<T> {
+final class SingleTimeout<T> extends CompletionSingle<T> {
 
     private final Single<T> source;
 

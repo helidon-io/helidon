@@ -31,7 +31,7 @@ import io.helidon.common.reactive.MultiTappedPublisher.RunnableChain;
  * user callbacks.
  * @param <T> the element type of the sequence
  */
-final class SingleTappedPublisher<T> implements Single<T> {
+final class SingleTappedPublisher<T> extends CompletionSingle<T> {
 
     private final Single<T> source;
 

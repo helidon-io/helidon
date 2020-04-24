@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,11 @@ import java.util.concurrent.atomic.AtomicReference;
 final class SingleToFuture<T> extends CompletableFuture<T> implements Subscriber<T> {
 
     private final AtomicReference<Subscription> ref = new AtomicReference<>();
+    private final boolean completeWithoutValue;
+
+    SingleToFuture(boolean completeWithoutValue) {
+        this.completeWithoutValue = completeWithoutValue;
+    }
 
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
@@ -71,7 +76,11 @@ final class SingleToFuture<T> extends CompletableFuture<T> implements Subscriber
     @Override
     public void onComplete() {
         if (ref.getAndSet(null) != null) {
-            super.completeExceptionally(new IllegalStateException("Completed without value"));
+            if (completeWithoutValue) {
+                super.complete(null);
+            } else {
+                super.completeExceptionally(new IllegalStateException("Completed without value"));
+            }
         }
     }
 

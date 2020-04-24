@@ -26,7 +26,7 @@ import java.util.concurrent.Flow.Subscriber;
  *
  * @param <T> item type
  */
-final class SingleError<T> implements Single<T> {
+final class SingleError<T> extends CompletionSingle<T> {
 
     private final Throwable error;
 

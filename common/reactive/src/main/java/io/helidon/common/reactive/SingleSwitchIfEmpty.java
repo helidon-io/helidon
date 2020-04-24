@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * Switch to another Single if the main is empty.
  * @param <T> the element type
  */
-final class SingleSwitchIfEmpty<T> implements Single<T> {
+final class SingleSwitchIfEmpty<T> extends CompletionSingle<T> {
 
     private final Single<T> source;
 
