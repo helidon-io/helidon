@@ -307,7 +307,7 @@ public class MultiFlatMapPublisherTest {
     }
 
     @Test
-    void multi() throws ExecutionException, InterruptedException {
+    public void multi() throws ExecutionException, InterruptedException {
         assertEquals(EXPECTED_EMISSION_COUNT, Multi.from(TEST_DATA)
                 .flatMap(MultiFlatMapPublisherTest::asyncFlowPublisher, MAX_CONCURRENCY, false, PREFETCH)
                 .distinct()
@@ -336,6 +336,49 @@ public class MultiFlatMapPublisherTest {
         } catch (InterruptedException e) {
             e.printStackTrace();
             throw new RuntimeException(e);
+        }
+    }
+
+    @Test
+    public void innerSourceOrderPreserved() {
+        ExecutorService executor1 = Executors.newSingleThreadExecutor();
+        ExecutorService executor2 = Executors.newSingleThreadExecutor();
+        try {
+            for (int p = 1; p < 256; p *= 2) {
+                for (int i = 0; i < 1000; i++) {
+                    TestSubscriber<Integer> ts = new TestSubscriber<>(Long.MAX_VALUE);
+
+                    Multi.just(
+                            Multi.range(1, 100).observeOn(executor1),
+                            Multi.range(200, 100).observeOn(executor2)
+                    )
+                            .flatMap(v -> v, 3, false, p)
+                            .subscribe(ts);
+
+                    ts.awaitDone(5, TimeUnit.SECONDS)
+                            .assertItemCount(200)
+                            .assertComplete();
+
+                    int last1 = 0;
+                    int last2 = 199;
+                    for (Integer v : ts.getItems()) {
+                        if (v < 200) {
+                            if (last1 + 1 != v) {
+                                fail("Out of order items: " + last1 + " -> " + v + " (p: " + p + ")");
+                            }
+                            last1 = v;
+                        } else {
+                            if (last2 + 1 != v) {
+                                fail("Out of order items: " + last2 + " -> " + v + " (p: " + p + ")");
+                            }
+                            last2 = v;
+                        }
+                    }
+                }
+            }
+        } finally {
+            executor1.shutdown();
+            executor2.shutdown();
         }
     }
 }
