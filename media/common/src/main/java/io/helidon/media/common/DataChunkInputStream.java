@@ -32,11 +32,10 @@ import io.helidon.common.http.DataChunk;
  * in Jersey. It subscribes to a Helidon publisher of data chunks and makes the data available to
  * Jersey using the blocking {@link InputStream} API.
  *
- * This implementation is documented here {@code /docs-internal/subscriberinputstream.md}.
+ * This implementation is documented here {@code /docs-internal/datachunkinputstream.md}.
  */
-public class SubscriberInputStream extends InputStream implements Flow.Subscriber<DataChunk> {
-
-    private static final Logger LOGGER = Logger.getLogger(SubscriberInputStream.class.getName());
+public class DataChunkInputStream extends InputStream {
+    private static final Logger LOGGER = Logger.getLogger(DataChunkInputStream.class.getName());
 
     private final Flow.Publisher<DataChunk> originalPublisher;
     private CompletableFuture<DataChunk> current = new CompletableFuture<>();
@@ -57,7 +56,7 @@ public class SubscriberInputStream extends InputStream implements Flow.Subscribe
      *
      * @param originalPublisher The original publisher.
      */
-    public SubscriberInputStream(Flow.Publisher<DataChunk> originalPublisher) {
+    public DataChunkInputStream(Flow.Publisher<DataChunk> originalPublisher) {
         this.originalPublisher = originalPublisher;
     }
 
@@ -82,7 +81,7 @@ public class SubscriberInputStream extends InputStream implements Flow.Subscribe
     @Override
     public void close() {
         // Assert: if current != next, next cannot ever be resolved with a chunk that needs releasing
-        current.whenComplete(SubscriberInputStream::releaseChunk);
+        current.whenComplete(DataChunkInputStream::releaseChunk);
         current = null;
     }
 
@@ -103,7 +102,7 @@ public class SubscriberInputStream extends InputStream implements Flow.Subscribe
     @Override
     public int read(byte[] buf, int off, int len) throws IOException {
         if (subscribed.compareAndSet(false, true)) {
-            originalPublisher.subscribe(this);       // subscribe for first time
+            originalPublisher.subscribe(new DataChunkSubscriber());       // subscribe for first time
         }
 
         if (current == null) {
@@ -150,32 +149,35 @@ public class SubscriberInputStream extends InputStream implements Flow.Subscribe
         }
     }
 
-    // -- Flow.Subscriber -----------------------------------------------------
+    // -- DataChunkSubscriber -------------------------------------------------
     //
     // Following methods are executed by Netty IO threads (except first chunk)
     // ------------------------------------------------------------------------
 
-    @Override
-    public void onSubscribe(Flow.Subscription subscription) {
-        this.subscription = subscription;
-        subscription.request(1);
-    }
+    private class DataChunkSubscriber implements Flow.Subscriber<DataChunk> {
 
-    @Override
-    public void onNext(DataChunk item) {
-        LOGGER.finest(() -> "Processing chunk: " + item.id());
-        CompletableFuture<DataChunk> prev = next;
-        next = new CompletableFuture<>();
-        prev.complete(item);
-    }
+        @Override
+        public void onSubscribe(Flow.Subscription subscription) {
+            DataChunkInputStream.this.subscription = subscription;
+            subscription.request(1);
+        }
 
-    @Override
-    public void onError(Throwable throwable) {
-        next.completeExceptionally(throwable);
-    }
+        @Override
+        public void onNext(DataChunk item) {
+            LOGGER.finest(() -> "Processing chunk: " + item.id());
+            CompletableFuture<DataChunk> prev = next;
+            next = new CompletableFuture<>();
+            prev.complete(item);
+        }
 
-    @Override
-    public void onComplete() {
-        next.complete(null);
+        @Override
+        public void onError(Throwable throwable) {
+            next.completeExceptionally(throwable);
+        }
+
+        @Override
+        public void onComplete() {
+            next.complete(null);
+        }
     }
 }
