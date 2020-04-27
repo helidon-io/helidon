@@ -43,7 +43,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class DataChunkInputStreamTest {
 
     @Test
-    public void differentThreadWithError() throws Exception {
+    public void differentThreads() throws Exception {
         List<String> test_data = List.of("test0", "test1", "test2", "test3");
         List<String> result = new ArrayList<>();
         OriginThreadPublisher<String, String> pub = new OriginThreadPublisher<>() {
