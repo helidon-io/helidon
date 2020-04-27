@@ -33,6 +33,9 @@ import io.helidon.security.jwt.jwk.JwkKeys;
  * Oracle IDCS specific implementations for {@code idcs} server type.
  */
 class IdcsSupport {
+    // prevent instantiation
+    private IdcsSupport() {
+    }
     // load signature jwk with a token
     static JwkKeys signJwk(Client generalClient, WebTarget tokenEndpoint, Errors.Collector collector, URI signJwkUri) {
         //  need to get token to be able to request this endpoint
