@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,19 +17,17 @@
 package io.helidon.security.examples.google;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
-
+import io.helidon.common.http.Http;
+import io.helidon.webclient.WebClient;
 import io.helidon.webserver.WebServer;
 
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.config.testing.OptionalMatcher.value;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -37,16 +35,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * Google login common unit tests.
  */
 public abstract class GoogleMainTest {
-    private static Client client;
+    private static WebClient client;
 
     @BeforeAll
     public static void classInit() {
-        client = ClientBuilder.newClient();
-    }
-
-    @AfterAll
-    public static void classDestroy() {
-        client.close();
+        client = WebClient.create();
     }
 
     static void stopServer(WebServer server) throws InterruptedException {
@@ -67,14 +60,17 @@ public abstract class GoogleMainTest {
     }
 
     @Test
-    public void testEndpoint() {
-        Response response = client.target("http://localhost:" + port() + "/rest/profile")
+    public void testEndpoint() throws ExecutionException, InterruptedException {
+        client.get()
+                .uri("http://localhost:" + port() + "/rest/profile")
                 .request()
+                .thenAccept(it -> {
+                    assertThat(it.status(), is(Http.Status.UNAUTHORIZED_401));
+                    assertThat(it.headers().first(Http.Header.WWW_AUTHENTICATE),
+                               value(is("Bearer realm=\"helidon\",scope=\"openid profile email\"")));
+                })
+                .toCompletableFuture()
                 .get();
-
-        assertThat(response.getStatusInfo().toEnum(), is(Response.Status.UNAUTHORIZED));
-        assertThat(response.getHeaders().getFirst(HttpHeaders.WWW_AUTHENTICATE),
-                   is("Bearer realm=\"helidon\",scope=\"openid profile email\""));
     }
 
     abstract int port();

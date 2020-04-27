@@ -36,6 +36,7 @@ import org.junit.jupiter.api.Test;
 public class MainTest {
 
     private static WebServer webServer;
+    private static WebClient webClient;
     private static final JsonBuilderFactory JSON_BUILDER = Json.createBuilderFactory(Collections.emptyMap());
     private static final JsonObject TEST_JSON_OBJECT;
 
@@ -58,6 +59,16 @@ public class MainTest {
                 Assertions.fail("Failed to start webserver");
             }
         }
+
+        JsonProcessing jsonProcessing = JsonProcessing.create();
+        webClient = WebClient.builder()
+                .baseUri("http://localhost:" + webServer.port())
+                .mediaSupport(MediaSupport.builder()
+                                      .registerDefaults()
+                                      .registerReader(jsonProcessing.newReader())
+                                      .registerWriter(jsonProcessing.newWriter())
+                                      .build())
+                .build();
     }
 
     @AfterAll
@@ -71,24 +82,10 @@ public class MainTest {
 
     @Test
     public void testHelloWorld() throws Exception {
-        JsonProcessing jsonProcessing = JsonProcessing.create();
-        WebClient webClient = WebClient.builder()
-                .baseUri("http://localhost:" + webServer.port())
-                .mediaSupport(MediaSupport.builder()
-                                      .registerDefaults()
-                                      .registerReader(jsonProcessing.newReader())
-                                      .registerWriter(jsonProcessing.newWriter())
-                                      .build())
-                .build();
-
         webClient.get()
                 .path("/greet")
                 .request(JsonObject.class)
                 .thenAccept(jsonObject -> Assertions.assertEquals("Hello World!", jsonObject.getString("message")))
-                .exceptionally(throwable -> {
-                    Assertions.fail(throwable);
-                    return null;
-                })
                 .toCompletableFuture()
                 .get();
 
@@ -96,10 +93,6 @@ public class MainTest {
                 .path("/greet/Joe")
                 .request(JsonObject.class)
                 .thenAccept(jsonObject -> Assertions.assertEquals("Hello Joe!", jsonObject.getString("message")))
-                .exceptionally(throwable -> {
-                    Assertions.fail(throwable);
-                    return null;
-                })
                 .toCompletableFuture()
                 .get();
 
@@ -111,10 +104,6 @@ public class MainTest {
                         .path("/greet/Joe")
                         .request(JsonObject.class))
                 .thenAccept(jsonObject -> Assertions.assertEquals("Hola Joe!", jsonObject.getString("message")))
-                .exceptionally(throwable -> {
-                    Assertions.fail(throwable);
-                    return null;
-                })
                 .toCompletableFuture()
                 .get();
 
@@ -122,10 +111,6 @@ public class MainTest {
                 .path("/health")
                 .request()
                 .thenAccept(response -> Assertions.assertEquals(200, response.status().code()))
-                .exceptionally(throwable -> {
-                    Assertions.fail(throwable);
-                    return null;
-                })
                 .toCompletableFuture()
                 .get();
 
@@ -133,10 +118,6 @@ public class MainTest {
                 .path("/metrics")
                 .request()
                 .thenAccept(response -> Assertions.assertEquals(200, response.status().code()))
-                .exceptionally(throwable -> {
-                    Assertions.fail(throwable);
-                    return null;
-                })
                 .toCompletableFuture()
                 .get();
     }

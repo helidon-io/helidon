@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,19 +15,13 @@
  */
 package io.helidon.webserver;
 
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.nio.CharBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import io.helidon.common.http.FormParams;
 import io.helidon.common.http.MediaType;
+import io.helidon.webclient.WebClient;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -42,6 +36,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class FormParamsSupportTest {
 
     private static WebServer testServer;
+    private static WebClient webClient;
 
     @BeforeAll
     public static void startup() throws InterruptedException, ExecutionException, TimeoutException {
@@ -58,6 +53,10 @@ public class FormParamsSupportTest {
                 .start()
                 .toCompletableFuture()
                 .get(10, TimeUnit.SECONDS);
+
+        webClient = WebClient.builder()
+                .baseUri("http://localhost:" + testServer.port())
+                .build();
     }
 
     @AfterAll
@@ -67,60 +66,30 @@ public class FormParamsSupportTest {
 
     @Test
     public void urlEncodedTest() throws Exception {
-        HttpURLConnection cnx = getURLConnection(testServer.port(),
-                "PUT", "/params", MediaType.APPLICATION_FORM_URLENCODED);
-        stringToRequest(cnx, "key1=val+1&key2=val2_1&key2=val2_2");
-        String response = stringFromResponse(cnx, MediaType.TEXT_PLAIN);
-
-        assertThat(response, containsString("key1=[val 1]"));
-        assertThat(response, containsString("key2=[val2_1, val2_2]"));
+        webClient.put()
+                .path("/params")
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .submit("key1=val+1&key2=val2_1&key2=val2_2", String.class)
+                .thenAccept(it -> {
+                    assertThat(it, containsString("key1=[val 1]"));
+                    assertThat(it, containsString("key2=[val2_1, val2_2]"));
+                })
+                .toCompletableFuture()
+                .get();
     }
 
     @Test
     public void plainTextTest() throws Exception{
-        HttpURLConnection cnx = getURLConnection(testServer.port(),
-                "PUT", "/params", MediaType.TEXT_PLAIN);
-        stringToRequest(cnx, "key1=val 1\nkey2=val2_1\nkey2=val2_2");
-        String response = stringFromResponse(cnx, MediaType.TEXT_PLAIN);
-
-        assertThat(response, containsString("key1=[val 1]"));
-        assertThat(response, containsString("key2=[val2_1, val2_2]"));
+        webClient.put()
+                .path("/params")
+                .contentType(MediaType.TEXT_PLAIN)
+                .submit("key1=val 1\nkey2=val2_1\nkey2=val2_2", String.class)
+                .thenAccept(it -> {
+                    assertThat(it, containsString("key1=[val 1]"));
+                    assertThat(it, containsString("key2=[val2_1, val2_2]"));
+                })
+                .toCompletableFuture()
+                .get();
     }
 
-    private static HttpURLConnection getURLConnection(
-            int port,
-            String method,
-            String path,
-            MediaType mediaType) throws Exception {
-        URL url = new URL("http://localhost:" + port + path);
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setRequestMethod(method);
-        conn.setReadTimeout(20000 /* ms */);
-        if (mediaType != null) {
-            conn.setRequestProperty("Content-Type", mediaType.toString());
-        }
-        System.out.println("Connecting: " + method + " " + url);
-        return conn;
-    }
-
-    private static void stringToRequest(HttpURLConnection cnx, String payload) throws IOException {
-        cnx.setDoOutput(true);
-        OutputStreamWriter osw = new OutputStreamWriter(cnx.getOutputStream());
-        osw.write(payload);
-        osw.flush();
-        osw.close();
-    }
-
-    private static String stringFromResponse(HttpURLConnection cnx, MediaType mediaType) throws IOException {
-        try (final InputStreamReader isr = new InputStreamReader(
-                cnx.getInputStream(), mediaType.charset().orElse(StandardCharsets.UTF_8.name()))) {
-            StringBuilder sb = new StringBuilder();
-            CharBuffer cb = CharBuffer.allocate(1024);
-            while (isr.read(cb) != -1) {
-                cb.flip();
-                sb.append(cb);
-            }
-            return sb.toString();
-        }
-    }
 }

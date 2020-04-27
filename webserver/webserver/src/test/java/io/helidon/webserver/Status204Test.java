@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,8 @@
 
 package io.helidon.webserver;
 
-import java.net.HttpURLConnection;
-
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-
 import io.helidon.common.http.Http;
+import io.helidon.webclient.WebClient;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,7 +27,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
- * Tests specific header expectation from 204 NO CONTENT status code together with {@link HttpURLConnection} based JAX-RS client.
+ * Tests specific header expectation from 204 NO CONTENT status code together with {@link io.helidon.webclient.WebClient}.
  */
 public class Status204Test {
 
@@ -59,12 +52,18 @@ public class Status204Test {
     }
 
     @Test
-    public void callPutAndGet() {
-        WebTarget target = ClientBuilder.newClient()
-                                        .target("http://localhost:" + server.port());
-        Response response = target.request().put(Entity.entity("test call", MediaType.TEXT_PLAIN));
-        assertThat(response.getStatus(), is(204));
-        String s = target.request().get(String.class);
-        assertThat(s, is("test"));
+    public void callPutAndGet() throws Exception {
+        WebClient webClient = WebClient.builder()
+                .baseUri("http://localhost:" + server.port())
+                .build();
+
+        webClient.put()
+                .submit("test call")
+                .thenAccept(it -> assertThat(it.status(), is(Http.Status.NO_CONTENT_204)))
+                .thenCompose(it -> webClient.get().request(String.class))
+                .thenAccept(it -> assertThat(it, is("test")))
+                .toCompletableFuture()
+                .get();
+
     }
 }

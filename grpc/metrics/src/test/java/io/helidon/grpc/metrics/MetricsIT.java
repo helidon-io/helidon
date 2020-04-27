@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,33 +16,30 @@
 
 package io.helidon.grpc.metrics;
 
-import java.io.StringReader;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
-import javax.json.Json;
 import javax.json.JsonStructure;
 import javax.json.JsonValue;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.core.MediaType;
 
+import io.helidon.common.http.MediaType;
 import io.helidon.grpc.server.GrpcRouting;
 import io.helidon.grpc.server.GrpcServer;
 import io.helidon.grpc.server.GrpcServerConfiguration;
 import io.helidon.grpc.server.test.Echo;
 import io.helidon.grpc.server.test.EchoServiceGrpc;
+import io.helidon.media.common.MediaSupport;
+import io.helidon.media.jsonp.common.JsonProcessing;
 import io.helidon.metrics.MetricsSupport;
+import io.helidon.webclient.WebClient;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 
 import io.grpc.Channel;
 import io.grpc.ManagedChannelBuilder;
-import org.glassfish.jersey.client.ClientProperties;
-import org.glassfish.jersey.logging.LoggingFeature;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -65,9 +62,9 @@ public class MetricsIT {
     private static WebServer webServer;
 
     /**
-     * The JAX-RS {@link Client} to use to make http requests to the {@link WebServer}.
+     * The Helidon {@link WebClient} to use to make http requests to the {@link WebServer}.
      */
-    private static Client client;
+    private static WebClient client;
 
     /**
      * The {@link Logger} to use for logging.
@@ -93,9 +90,14 @@ public class MetricsIT {
         // start the server at a free port
         startWebServer();
 
-        client = ClientBuilder.newBuilder()
-                .register(new LoggingFeature(LOGGER, Level.WARNING, LoggingFeature.Verbosity.PAYLOAD_ANY, 500))
-                .property(ClientProperties.FOLLOW_REDIRECTS, true)
+
+        JsonProcessing jsonProcessing = JsonProcessing.create();
+        client = WebClient.builder()
+                .followRedirects(true)
+                .mediaSupport(MediaSupport.builder()
+                                      .registerReader(jsonProcessing.newReader())
+                                      .registerWriter(jsonProcessing.newWriter())
+                                      .build())
                 .build();
 
         startGrpcServer();
@@ -117,22 +119,22 @@ public class MetricsIT {
     // ----- test methods ---------------------------------------------------
 
     @Test
-    public void shouldPublishMetrics() {
+    public void shouldPublishMetrics() throws ExecutionException, InterruptedException {
         // call the gRPC Echo service so that there should be some metrics
         EchoServiceGrpc.newBlockingStub(channel).echo(Echo.EchoRequest.newBuilder().setMessage("foo").build());
 
         // request the application metrics in json format from the web server
-        String metrics = client.target("http://localhost:" + webServer.port())
+        client.get()
+                .uri("http://localhost:" + webServer.port())
                 .path("metrics/application")
-                .request()
                 .accept(MediaType.APPLICATION_JSON)
-                .get(String.class);
-
-        // verify that the json response
-        JsonStructure json = Json.createReader(new StringReader(metrics)).read();
-        JsonValue     value = json.getValue("/EchoService.Echo");
-
-        assertThat(value, is(notNullValue()));
+                .request(JsonStructure.class)
+                .thenAccept(it -> {
+                    JsonValue value = it.getValue("/EchoService.Echo");
+                    assertThat(value, is(notNullValue()));
+                })
+                .toCompletableFuture()
+                .get();
     }
 
     // ----- helper methods -------------------------------------------------

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,14 +18,12 @@ package io.helidon.security.examples.outbound;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
 
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.WebTarget;
-
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.security.SecurityContext;
+import io.helidon.webclient.WebClient;
+import io.helidon.webclient.WebClientRequestBuilder;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.ServerRequest;
@@ -36,13 +34,14 @@ import io.helidon.webserver.WebServer;
  * Example utilities.
  */
 public final class OutboundOverrideUtil {
-    private static final Client CLIENT = ClientBuilder.newClient();
+    private static final WebClient CLIENT = WebClient.create();
 
     private OutboundOverrideUtil() {
     }
 
-    static WebTarget webTarget(int port) {
-        return CLIENT.target("http://localhost:" + port + "/hello");
+    static WebClientRequestBuilder webTarget(int port) {
+        return CLIENT.get()
+                .uri("http://localhost:" + port + "/hello");
     }
 
     static Void sendError(Throwable throwable, ServerResponse res) {

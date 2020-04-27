@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,12 @@
 
 package io.helidon.examples.openapi;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
 import java.util.Collections;
 
 import javax.json.Json;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
-import javax.json.JsonReader;
 import javax.json.JsonReaderFactory;
-import javax.json.JsonWriter;
 
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
@@ -77,32 +72,6 @@ public class GreetService implements Service {
             .put("/greeting", this::updateGreetingHandler);
     }
 
-    /**
-     * Creates a {@link GreetingMessage} from the incoming HTTP payload.
-     *
-     * @param conn {@code HttpURLConnection} with the payload to convert
-     * @return {@code GreetingMessage} instance reflecting the payload
-     * @throws IOException in case of errors reading the payload
-     */
-    public static GreetingMessage fromPayload(HttpURLConnection conn) throws IOException {
-        JsonReader jsonReader = JSON_RF.createReader(conn.getInputStream());
-        return GreetingMessage.fromRest(jsonReader.readObject());
-    }
-
-    /**
-     * Writes the specified {@code GreetingMessage} into the payload of the
-     * specified connection.
-     *
-     * @param conn {@code HttpURLConnection} with the payload to be written
-     * @param msg {@code GreetingMessage} to be written to the payload
-     * @throws IOException in case of errors writing the payload
-     */
-    public static void toPayload(HttpURLConnection conn, GreetingMessage msg) throws IOException {
-        OutputStream os = conn.getOutputStream();
-        try (JsonWriter jsonWriter = Json.createWriter(os)) {
-            jsonWriter.writeObject(msg.forRest());
-        }
-    }
     /**
      * Return a worldly greeting message.
      * @param request the server request

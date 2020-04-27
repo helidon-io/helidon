@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,18 @@
 
 package io.helidon.webserver;
 
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.core.Response;
 
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.http.Http;
 import io.helidon.common.pki.KeyConfig;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.webclient.Ssl;
+import io.helidon.webclient.WebClient;
 
-import org.glassfish.jersey.client.ClientProperties;
-import org.glassfish.jersey.logging.LoggingFeature;
 import org.hamcrest.Matcher;
 import org.hamcrest.core.AllOf;
 import org.hamcrest.core.StringContains;
@@ -44,6 +38,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * The MultiPortTest.
@@ -52,39 +47,17 @@ public class MultiPortTest {
 
     private static final Logger LOGGER = Logger.getLogger(MultiPortTest.class.getName());
 
-    private static Client client;
+    private static WebClient webClient;
     private Handler commonHandler;
     private SSLContext ssl;
     private WebServer webServer;
 
     @BeforeAll
     public static void createClientAcceptingAllCertificates() throws Exception {
-
-        // Create a trust manager that does not validate certificate chains
-        TrustManager[] trustAllCerts = new TrustManager[] {
-                new X509TrustManager() {
-                    public java.security.cert.X509Certificate[] getAcceptedIssuers() {
-                        return null;
-                    }
-
-                    public void checkClientTrusted(java.security.cert.X509Certificate[] certs, String authType) {
-                    }
-
-                    public void checkServerTrusted(java.security.cert.X509Certificate[] certs, String authType) {
-                    }
-                }
-        };
-
-        // Install the all-trusting trust manager
-        SSLContext sc = SSLContext.getInstance("SSL");
-        sc.init(null, trustAllCerts, new java.security.SecureRandom());
-
-        client = ClientBuilder.newBuilder()
-                              .register(new LoggingFeature(LOGGER, Level.WARNING, LoggingFeature.Verbosity.PAYLOAD_ANY, 1500))
-                              .property(ClientProperties.FOLLOW_REDIRECTS, true)
-                              .sslContext(sc)
-                              .hostnameVerifier((s, sslSession) -> true)
-                              .build();
+        webClient = WebClient.builder()
+                .followRedirects(true)
+                .ssl(Ssl.builder().trustAll(true).build())
+                .build();
     }
 
     @BeforeEach
@@ -115,8 +88,17 @@ public class MultiPortTest {
     }
 
     private void assertResponse(final String protocol, int port, String path, Matcher<String> matcher) {
-        Response response = client.target(protocol + "://localhost:" + port).path(path).request().get();
-        assertThat("Unexpected response: " + response, response.readEntity(String.class), matcher);
+        try {
+            webClient.get()
+                    .uri(protocol + "://localhost:" + port)
+                    .path(path)
+                    .request(String.class)
+                    .thenAccept(it -> assertThat("Unexpected response: " + it, it, matcher))
+                    .toCompletableFuture()
+                    .get();
+        } catch (Exception e) {
+            fail(e);
+        }
     }
 
     @Test
@@ -241,7 +223,7 @@ public class MultiPortTest {
                                                                                   .orElseThrow(() -> new IllegalStateException(
                                                                                           "Header 'Host' not found!")),
                                                                                req.webServer().port(),
-                                                                               req.uri()));
+                                                                               req.path()));
                                                          res.send();
                                                      })
                                              )
@@ -252,15 +234,38 @@ public class MultiPortTest {
                 .toCompletableFuture()
                 .join();
 
-        Response response = client.target("http://localhost:" + webServer.port("redirect")).path("/foo").request().get();
-        assertThat("Unexpected response: " + response, response.getHeaderString("Location"),
-                   AllOf.allOf(StringContains.containsString("https://localhost:"), StringContains.containsString("/foo")));
-        assertThat("Unexpected response: " + response, response.getStatus(), is(Http.Status.MOVED_PERMANENTLY_301.code()));
+        WebClient webClient = WebClient.builder()
+                .ssl(Ssl.builder().trustAll(true).build())
+                .build();
 
+//        Response response = client.target("http://localhost:" + webServer.port("redirect")).path("/foo").request().get();
+//        assertThat("Unexpected response: " + response, response.getHeaderString("Location"),
+//                   AllOf.allOf(StringContains.containsString("https://localhost:"), StringContains.containsString("/foo")));
+//        assertThat("Unexpected response: " + response, response.getStatus(), is(Http.Status.MOVED_PERMANENTLY_301.code()));
+//
+//        assertResponse("https", webServer.port(), "/foo", is("Root! 1"));
+//
+//        Response responseRedirected = client.target(response.getHeaderString("Location")).request().get();
+//        assertThat("Unexpected response: " + responseRedirected, responseRedirected.readEntity(String.class), is("Root! 2"));
         assertResponse("https", webServer.port(), "/foo", is("Root! 1"));
-
-        Response responseRedirected = client.target(response.getHeaderString("Location")).request().get();
-        assertThat("Unexpected response: " + responseRedirected, responseRedirected.readEntity(String.class), is("Root! 2"));
+        webClient.get()
+                .uri("http://localhost:" + webServer.port("redirect"))
+                .path("/foo")
+                .request()
+                .thenApply(it -> {
+                    assertThat("Unexpected response: " + it,
+                               it.headers().first(Http.Header.LOCATION).get(),
+                               AllOf.allOf(StringContains.containsString("https://localhost:"),
+                                           StringContains.containsString("/foo")));
+                    assertThat("Unexpected response: " + it, it.status(), is(Http.Status.MOVED_PERMANENTLY_301));
+                    return it;
+                })
+                .thenCompose(it -> webClient.get()
+                        .uri(it.headers().first(Http.Header.LOCATION).get())
+                        .request(String.class))
+                .thenAccept(it -> assertThat("Unexpected response: " + it, it, is("Root! 2")))
+                .toCompletableFuture()
+                .get();
     }
 
     @Test

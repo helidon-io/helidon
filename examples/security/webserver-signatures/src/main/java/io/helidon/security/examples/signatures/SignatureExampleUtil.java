@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,11 +20,10 @@ import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-
+import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.security.SecurityContext;
+import io.helidon.webclient.WebClient;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.ServerRequest;
@@ -35,7 +34,7 @@ import io.helidon.webserver.WebServer;
  * Common code for both examples (builder and config based).
  */
 final class SignatureExampleUtil {
-    private static final Client CLIENT = ClientBuilder.newClient();
+    private static final WebClient CLIENT = WebClient.create();
 
     private static final int START_TIMEOUT_SECONDS = 10;
 
@@ -82,15 +81,19 @@ final class SignatureExampleUtil {
         res.headers().contentType(MediaType.TEXT_PLAIN.withCharset("UTF-8"));
 
         securityContext.ifPresentOrElse(context -> {
-            CLIENT.target("http://localhost:" + svc2port + path)
+            CLIENT.get()
+                    .uri("http://localhost:" + svc2port + path)
                     .request()
-                    .rx()
-                    .get()
-                    .thenAccept(response -> {
-                        if (response.getStatus() == 200) {
-                            res.send(response.readEntity(String.class));
+                    .thenAccept(it -> {
+                        if (it.status() == Http.Status.OK_200) {
+                            it.content().as(String.class)
+                                    .thenAccept(res::send)
+                                    .exceptionally(throwable -> {
+                                        res.send("Getting server response failed!");
+                                        return null;
+                                    });
                         } else {
-                            res.send("Request failed, status: " + response.getStatus());
+                            res.send("Request failed, status: " + it.status());
                         }
                     });
 
