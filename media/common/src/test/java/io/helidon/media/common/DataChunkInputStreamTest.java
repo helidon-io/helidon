@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,16 +28,16 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 /**
- * Tests {@link io.helidon.media.common.PublisherInputStream}.
+ * Tests {@link DataChunkInputStream}.
  */
-public class PublisherInputStreamTest {
+public class DataChunkInputStreamTest {
 
     @Test
     public void chunkWith0xFFValue() {
         final byte[] bytes = new byte[]{
             0, 1, 2, 3, 4, 5, 6, (byte) 0xFF, 7, 8, 9, 10
         };
-        InputStream is = new PublisherInputStream(
+        InputStream is = new DataChunkInputStream(
                 new DataChunkPublisher(
                         new DataChunk[]{DataChunk.create(bytes)}));
         try {
