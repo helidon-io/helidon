@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,17 +23,16 @@ import javax.websocket.Endpoint;
 import javax.websocket.EndpointConfig;
 import javax.websocket.MessageHandler;
 import javax.websocket.Session;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.core.Response;
 
 import java.io.IOException;
 import java.net.URI;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
+import io.helidon.common.http.Http;
+import io.helidon.webclient.WebClient;
 import io.helidon.webserver.WebServer;
 import org.glassfish.tyrus.client.ClientManager;
 import org.junit.jupiter.api.AfterAll;
@@ -51,7 +50,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class MessageBoardTest {
     private static final Logger LOGGER = Logger.getLogger(MessageBoardTest.class.getName());
 
-    private static Client restClient = ClientBuilder.newClient();
+    private static WebClient restClient = WebClient.create();
     private static ClientManager websocketClient = ClientManager.createClient();
     private static WebServer server;
 
@@ -68,12 +67,16 @@ public class MessageBoardTest {
     }
 
     @Test
-    public void testBoard() throws IOException, DeploymentException, InterruptedException {
+    public void testBoard() throws IOException, DeploymentException, InterruptedException, ExecutionException {
         // Post messages using REST resource
         URI restUri = URI.create("http://localhost:" + server.port() + "/rest/board");
         for (String message : messages) {
-            Response res = restClient.target(restUri).request().post(Entity.text(message));
-            assertThat(res.getStatus(), is(204));
+            restClient.method(Http.Method.POST.name())
+                    .uri(restUri)
+                    .submit(message)
+                    .thenAccept(it -> assertThat(it.status(), is(Http.Status.NO_CONTENT_204)))
+                    .toCompletableFuture()
+                    .get();
             LOGGER.info("Posting message '" + message + "'");
         }
 

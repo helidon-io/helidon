@@ -131,6 +131,11 @@ final class NettyClient implements WebClient {
         return WebClientRequestBuilderImpl.create(eventGroup, configuration, Http.RequestMethod.create(method));
     }
 
+    @Override
+    public WebClientRequestBuilder method(Http.Method method) {
+        return WebClientRequestBuilderImpl.create(eventGroup, configuration, method);
+    }
+
     static void configureDefaults(Config globalConfig) {
         if (DEFAULTS_CONFIGURED.compareAndSet(false, true)) {
             Config config = globalConfig.get("client");
