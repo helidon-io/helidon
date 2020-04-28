@@ -33,6 +33,7 @@ import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.spi.CDI;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
+import javax.ws.rs.ServiceUnavailableException;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
@@ -176,10 +177,14 @@ public final class Mp1Main {
 
         // Rest Client
         invoke(collector, "Rest client", "Properties message", aBean::restClientMessage);
+
         // + JSON-P
         invoke(collector, "Rest client JSON-P", "json-p", aBean::restClientJsonP);
         // + JSON-B
         invoke(collector, "Rest client JSON-B", "json-b", aBean::restClientJsonB);
+
+        // Message from rest client, originating in BeanClass.BeanType
+        invoke(collector, "Rest client bean type", "Properties message", aBean::restClientBeanType);
 
         // Fault Tolerance
         invoke(collector, "FT Fallback", "Fallback success", aBean::fallback);
@@ -223,6 +228,9 @@ public final class Mp1Main {
         // OpenAPI
         validateOpenAPI(collector, target);
 
+        // Overall JAX-RS injection
+        validateInjection(collector, target);
+
         // Static content
         validateStaticContent(collector, target);
 
@@ -246,6 +254,17 @@ public final class Mp1Main {
         } else {
             collector.fatal("Endpoint " + path + " should contain static content from /web/resource.txt. Status received: "
                                     + response.getStatus());
+        }
+    }
+
+    private static void validateInjection(Errors.Collector collector, WebTarget target) {
+        String path = "/cdi/fields";
+        WebTarget fieldsTarget = target.path(path);
+
+        try {
+            fieldsTarget.request().get(String.class);
+        } catch (Exception e) {
+            collector.fatal(e, "JAX-RS field injection failed. Check the server log.");
         }
     }
 
@@ -405,13 +424,18 @@ public final class Mp1Main {
             collector.fatal("There should be at least one readiness healtcheck provided by this app");
         }
 
-        health = target.path("/health/live")
-                .request(MediaType.APPLICATION_JSON)
-                .get(JsonObject.class);
+        try {
+            health = target.path("/health/live")
+                    .request(MediaType.APPLICATION_JSON)
+                    .get(JsonObject.class);
 
-        checks = health.getJsonArray("checks");
-        if (checks.size() < 1) {
-            collector.fatal("There should be at least one liveness healtcheck provided by this app");
+            checks = health.getJsonArray("checks");
+            if (checks.size() < 1) {
+                collector.fatal("There should be at least one liveness healtcheck provided by this app");
+            }
+        } catch (ServiceUnavailableException e) {
+            collector.fatal(e, "Failed to invoke health endpoint. Exception: " + e.getClass().getName()
+                    + ", message: " + e.getMessage() + ", " + e.getResponse().readEntity(String.class));
         }
     }
 
