@@ -35,9 +35,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.spi.CreationalContext;
 import javax.enterprise.inject.Any;
 import javax.enterprise.inject.Default;
-import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.spi.Bean;
-import javax.enterprise.inject.spi.CDI;
 import javax.enterprise.inject.spi.InjectionPoint;
 import javax.json.Json;
 import javax.json.JsonArray;
@@ -89,16 +87,18 @@ public class WeldFeature implements Feature {
 
                     String contextId = bm.getContextId();
                     List<Bean<?>> beans = bm.getBeans();
-                    // TODO it should be sufficient to create proxy classes, no need to actually select stuff
-                    // the selected stuff is cached and may cause trouble in runtime (configuration!!!)
+
                     iterateBeans(bm, cpp, processed, beans);
 
                     weldProxyConfigs.forEach(proxy -> {
                         initializeProxy(access,
                                         processedExplicitProxy,
                                         contextId,
+                                        // bean class is the class defining the beans (such as bean producer, or the bean type
+                                        // itself if this is a managed bean - used to generate name of the client proxy class
                                         proxy.beanClass,
-                                        proxy.interfaces);
+                                        // actual types of the bean - used to generate the client proxy class
+                                        proxy.types);
                     });
                 } catch (Exception ex) {
                     warn(() -> "Error processing object " + obj);
@@ -124,14 +124,14 @@ public class WeldFeature implements Feature {
     private void initializeProxy(DuringSetupAccess access,
                                  Set<Set<Type>> processedExplicitProxy,
                                  String contextId,
-                                 String beanType,
+                                 String beanClassName,
                                  String... typeClasses) {
 
-        trace(() -> beanType);
+        trace(() -> beanClassName);
 
-        Class<?> beanClass = access.findClassByName(beanType);
+        Class<?> beanClass = access.findClassByName(beanClassName);
         if (null == beanClass) {
-            warn(() -> "  Bean class not found: " + beanType);
+            warn(() -> "  Bean class not found: " + beanClassName);
             return;
         }
 
@@ -140,7 +140,7 @@ public class WeldFeature implements Feature {
         for (String typeClass : typeClasses) {
             Class<?> theClass = access.findClassByName(typeClass);
             if (null == theClass) {
-                warn(() -> "  Class not found: " + typeClass);
+                warn(() -> "  Type class not found: " + typeClass);
                 return;
             }
             types.add(theClass);
@@ -178,23 +178,18 @@ public class WeldFeature implements Feature {
 
             try {
                 Object proxy = cpp.getClientProxy(bean);
-                trace(() -> "Created proxy for bean: " + bean.getBeanClass() + ": " + proxy.getClass());
+                trace(() -> "Created proxy for bean class: "
+                        + bean.getBeanClass().getName()
+                        + ", bean type: "
+                        + bean.getTypes()
+                        + ", proxy class: "
+                        + proxy.getClass().getName());
             } catch (Exception e) {
                 // try interfaces
                 warn(() -> "Failed to create a proxy for bean "
                         + bean.getBeanClass() + ", "
                         + e.getClass().getName() + ": "
-                        + e.getMessage() + ", trying with interfaces");
-
-                Class<?>[] interfaces = bean.getBeanClass().getInterfaces();
-                for (Class<?> anInterface : interfaces) {
-                    Instance<?> select = CDI.current().select(anInterface);
-                    select.forEach(it -> {
-                        trace(() -> "Found proxy via interface: "
-                                + anInterface.getName()
-                                + ": " + it.getClass().getName());
-                    });
-                }
+                        + e.getMessage() + " - this bean will not work in native-image");
             }
 
             // now we also need to handle all types
@@ -233,8 +228,9 @@ public class WeldFeature implements Feature {
      * Proxy used to initialize Weld.
      */
     static final class ProxyBean implements Bean<Object> {
-
+        // this is the bean class (producer class, or the type itself for managed beans)
         private final Class<?> beanClass;
+        // the types of the produced bean (or
         private final Set<Type> types;
 
         ProxyBean(Class<?> beanClass, Set<Type> types) {
@@ -299,16 +295,18 @@ public class WeldFeature implements Feature {
     }
 
     private static class WeldProxyConfig {
+        // bean class
         private final String beanClass;
-        private final String[] interfaces;
+        // bean types
+        private final String[] types;
 
         private WeldProxyConfig(JsonObject jsonValue) {
             this.beanClass = jsonValue.getString("bean-class");
             JsonArray array = jsonValue.getJsonArray("ifaces");
             int size = array.size();
-            interfaces = new String[size];
+            types = new String[size];
             for (int i = 0; i < size; i++) {
-                interfaces[i] = array.getString(i);
+                types[i] = array.getString(i);
             }
         }
     }

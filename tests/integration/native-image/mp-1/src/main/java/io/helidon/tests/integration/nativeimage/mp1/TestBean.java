@@ -59,6 +59,10 @@ public class TestBean {
         return restClient().message();
     }
 
+    public String restClientBeanType() {
+        return restClient().beanType();
+    }
+
     public String restClientJsonP() {
         return restClient()
                 .jsonProcessing()
