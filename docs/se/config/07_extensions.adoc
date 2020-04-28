@@ -517,12 +517,12 @@ interface PollingStrategy.Polled {
 }
 ----
 
-To support polling startegies that can be configured in meta configuration, also implement the `PollingStrategyProvider` Java service loader SPI.
+To support polling strategies that can be configured in meta configuration, also implement the `PollingStrategyProvider` Java service loader SPI.
 
 === ChangeWatcher SPI
 
 An implementation of `ChangeWatcher` gets the underlying source information and a change listener.
-The "watcher" than watches for changes of the source and notifies the listener when a change occurs.
+The "watcher" then watches for changes of the source and notifies the listener when a change occurs.
 
 This is designed to support sources that can react on changes (such as file system).
 When a polling mechanism is needed, please check `PollingStrategy` above.
