@@ -122,7 +122,7 @@ public final class ContentReaders {
      * @return a input stream content reader
      */
     public static Reader<InputStream> inputStreamReader() {
-        return (publisher, clazz) -> CompletableFuture.completedFuture(new PublisherInputStream(publisher));
+        return (publisher, clazz) -> CompletableFuture.completedFuture(new DataChunkInputStream(publisher));
     }
 
     /**
