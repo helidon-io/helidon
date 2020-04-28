@@ -6,5 +6,29 @@
     [
         "javax.ws.rs.container.ResourceInfo",
         "org.glassfish.hk2.api.ProxyCtl"
+    ],
+    [
+        "javax.ws.rs.core.HttpHeaders",
+        "org.glassfish.hk2.api.ProxyCtl"
+    ],
+    [
+        "javax.ws.rs.core.Configuration",
+        "org.glassfish.hk2.api.ProxyCtl"
+    ],
+    [
+        "javax.ws.rs.ext.Providers",
+        "org.glassfish.hk2.api.ProxyCtl"
+    ],
+    [
+        "javax.ws.rs.core.Request",
+        "org.glassfish.hk2.api.ProxyCtl"
+    ],
+    [
+        "javax.ws.rs.core.SecurityContext",
+        "org.glassfish.hk2.api.ProxyCtl"
+    ],
+    [
+        "javax.ws.rs.container.ResourceContext",
+        "org.glassfish.hk2.api.ProxyCtl"
     ]
 ]
