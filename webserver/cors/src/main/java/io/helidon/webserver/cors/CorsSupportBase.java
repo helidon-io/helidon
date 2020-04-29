@@ -132,6 +132,18 @@ public abstract class CorsSupportBase<Q, R, T extends CorsSupportBase<Q, R, T, B
         }
 
         /**
+         * Merges mapped CORS config information. Typically, the app or component will retrieve the provided {@code Config}
+         * instance from its own config.
+         *
+         * @param config the mapped CORS config information
+         * @return the updated builder
+         */
+        public B mappedConfig(Config config) {
+            helperBuilder.mappedConfig(config);
+            return me();
+        }
+
+        /**
          * Sets whether CORS support should be enabled or not.
          *
          * @param value whether to use CORS support

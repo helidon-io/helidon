@@ -64,7 +64,9 @@ class CrossOriginFilter implements ContainerRequestFilter, ContainerResponseFilt
     CrossOriginFilter() {
         Config config = (Config) ConfigProvider.getConfig();
 
-        cors = CorsSupportMp.builder().config(config.get(CORS_CONFIG_KEY))
+        CorsSupportMp.Builder corsBuilder = CorsSupportMp.builder();
+        config.get(CORS_CONFIG_KEY).ifExists(corsBuilder::mappedConfig);
+        cors = corsBuilder
                 .secondaryLookupSupplier(this::crossOriginFromAnnotationSupplier)
                 .build();
     }
