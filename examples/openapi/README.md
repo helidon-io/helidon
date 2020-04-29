@@ -9,10 +9,9 @@ with the application.
 
 ## Build and run
 
-With JDK8+
 ```bash
 mvn package
-java -jar helidon-examples-openapi.jar
+java -jar target/helidon-examples-openapi.jar
 ```
 
 Try the endpoints:
