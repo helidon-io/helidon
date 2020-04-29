@@ -107,24 +107,3 @@ View the https://github.com/oracle/helidon/blob/2.0.0-M1/CHANGELOG.md#backward-i
 
 
 
-== Helidon SE
-
-Helidon SE is the functional programming style provided by all Helidon libraries.
-
-
-NOTE: Helidon SE gives you full transparency and puts you in control. There is
- no magic!
-
-<<se/introduction/01_introduction.adoc, About Helidon SE>>
-
-== Helidon MP
-
-Helidon MP is our MicroProfile implementation.
-
-https://microprofile.io[MicroProfile] is a platform definition that is familiar
- to enterprise Java developers. It provides a declarative programming style that
- is portable. It includes popular Java APIs such as `JAX-RS` and `CDI`.
-
-NOTE: Helidon MP is built on top of the Helidon libraries.
-
-<<mp/introduction/01_introduction.adoc, About Helidon MP>>
