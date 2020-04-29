@@ -23,14 +23,14 @@ RUN set -x \
     && apt-get -y install curl unzip
 
 RUN set -x && \
-    curl -O https://archive.apache.org/dist/maven/maven-3/3.6.0/binaries/apache-maven-3.6.0-bin.zip && \
+    curl -O https://archive.apache.org/dist/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.zip && \
     unzip apache-maven-*-bin.zip && \
     rm apache-maven-*-bin.zip && \
     mv apache-maven-* maven
 
 RUN echo "done!"
 
-FROM helidon/jdk8-graalvm:19.2.0
+FROM helidon/jdk8-graalvm:19.3.1
 
 COPY --from=build /build/maven /usr/share/maven
 RUN ln -s /usr/share/maven/bin/mvn /bin/
