@@ -144,13 +144,11 @@ public class MpConfigProviderResolver extends ConfigProviderResolver {
             config = ((ConfigDelegate) config).delegate();
         }
 
-        io.helidon.config.Config helidonConfig = (io.helidon.config.Config) config;
-
         if (null != currentConfig) {
-            currentConfig.set(helidonConfig);
+            currentConfig.set(config);
         }
 
-        ConfigDelegate newConfig = new ConfigDelegate(helidonConfig);
+        ConfigDelegate newConfig = new ConfigDelegate(config);
         CONFIGS.put(classLoader, newConfig);
 
         return newConfig;
@@ -192,18 +190,29 @@ public class MpConfigProviderResolver extends ConfigProviderResolver {
      * that hold a reference to configuration obtained at build time.
      */
     public static final class ConfigDelegate implements io.helidon.config.Config, Config {
-        private AtomicReference<io.helidon.config.Config> delegate;
+        private final AtomicReference<Config> delegate = new AtomicReference<>();
+        private final AtomicReference<io.helidon.config.Config> helidonDelegate = new AtomicReference<>();
 
-        private ConfigDelegate(io.helidon.config.Config delegate) {
-            this.delegate = new AtomicReference<>(delegate);
+        private ConfigDelegate(Config delegate) {
+            set(delegate);
+        }
+
+        private void set(Config delegate) {
+            this.delegate.set(delegate);
+            if (delegate instanceof io.helidon.config.Config) {
+                this.helidonDelegate.set((io.helidon.config.Config) delegate);
+            } else {
+                this.helidonDelegate.set(io.helidon.config.Config.create(delegate));
+            }
         }
 
         private void set(io.helidon.config.Config newDelegate) {
-            this.delegate.set(newDelegate);
+            this.delegate.set((Config) newDelegate);
+            this.helidonDelegate.set(newDelegate);
         }
 
         private io.helidon.config.Config getCurrent() {
-            return delegate.get().context().last();
+            return helidonDelegate.get().context().last();
         }
 
         @Override
@@ -283,22 +292,22 @@ public class MpConfigProviderResolver extends ConfigProviderResolver {
 
         @Override
         public <T> T getValue(String propertyName, Class<T> propertyType) {
-            return ((Config) getCurrent()).getValue(propertyName, propertyType);
+            return delegate.get().getValue(propertyName, propertyType);
         }
 
         @Override
         public <T> Optional<T> getOptionalValue(String propertyName, Class<T> propertyType) {
-            return ((Config) getCurrent()).getOptionalValue(propertyName, propertyType);
+            return delegate.get().getOptionalValue(propertyName, propertyType);
         }
 
         @Override
         public Iterable<String> getPropertyNames() {
-            return ((Config) getCurrent()).getPropertyNames();
+            return delegate.get().getPropertyNames();
         }
 
         @Override
         public Iterable<ConfigSource> getConfigSources() {
-            return ((Config) getCurrent()).getConfigSources();
+            return delegate.get().getConfigSources();
         }
 
         /**
@@ -307,7 +316,7 @@ public class MpConfigProviderResolver extends ConfigProviderResolver {
          * @return the instance backing this config delegate
          */
         public Config delegate() {
-            return (Config) getCurrent();
+            return delegate.get();
         }
     }
 }

@@ -187,6 +187,9 @@ class BuilderImpl implements Config.Builder {
         Objects.requireNonNull(type);
         Objects.requireNonNull(mapper);
 
+        if (String.class.equals(type)) {
+            return this;
+        }
         addMapper(type, config -> mapper.apply(config.asString().get()));
 
         return this;

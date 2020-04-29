@@ -17,6 +17,7 @@
 package io.helidon.config;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -372,6 +373,50 @@ public interface Config {
      */
     static Builder builder() {
         return new BuilderImpl();
+    }
+
+    /**
+     * This method allows use to use Helidon Config on top of an MP config.
+     * There is a limitation - the converters configured with MP config will not be available, unless
+     * the implementation is coming from Helidon.
+     *
+     * @param mpConfig MP Config instance
+     * @return a new Helidon config using only the mpConfig as its config source
+     */
+    @SuppressWarnings("unchecked")
+    static Config create(org.eclipse.microprofile.config.Config mpConfig) {
+        if (mpConfig instanceof Config) {
+            return (Config) mpConfig;
+        }
+
+        Builder builder = Config.builder()
+                .disableEnvironmentVariablesSource()
+                .disableSystemPropertiesSource()
+                .disableMapperServices()
+                .disableCaching()
+                .disableSourceServices()
+                .disableParserServices()
+                .disableFilterServices();
+
+        if (mpConfig instanceof MpConfig) {
+            ((MpConfig)mpConfig).converters()
+                    .forEach((clazz, converter) -> {
+                        Class<Object> cl = (Class<Object>) clazz;
+                        builder.addStringMapper(cl, converter::convert);
+                    });
+        }
+
+        Map<String, String> allConfig = new HashMap<>();
+        mpConfig.getPropertyNames()
+                .forEach(it -> {
+                    // covering the condition where a config key disappears between getting the property names and requesting
+                    // the value
+                    Optional<String> optionalValue = mpConfig.getOptionalValue(it, String.class);
+                    optionalValue.ifPresent(value -> allConfig.put(it, value));
+                });
+
+        return builder.addSource(ConfigSources.create(allConfig))
+                .build();
     }
 
     /**
