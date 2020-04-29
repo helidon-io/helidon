@@ -26,8 +26,6 @@ import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 
-import static io.helidon.webserver.cors.Aggregator.PATHLESS_KEY;
-
 /**
  * SE implementation of {@link CorsSupportBase}.
  */
@@ -93,8 +91,21 @@ public class CorsSupport extends CorsSupportBase<ServerRequest, ServerResponse, 
         if (!config.exists()) {
             throw MissingValueException.create(config.key());
         }
-        Builder builder = builder().addCrossOrigin(PATHLESS_KEY, CrossOriginConfig.builder(config).build());
-        return builder.build();
+        return builder().config(config).build();
+    }
+
+    /**
+     * Creates a new {@code CorsSupport} instance based on the provided configuration expected to contain mapped cross-origin
+     * config information.
+     *
+     * @param config node containing the mapped cross-origin information
+     * @return initialized {@code CorsSupport} instance
+     */
+    public static CorsSupport createMapped(Config config) {
+        if (!config.exists()) {
+            throw MissingValueException.create(config.key());
+        }
+        return builder().mappedConfig(config).build();
     }
 
     @Override

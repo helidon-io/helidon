@@ -71,16 +71,28 @@ public class TestUtil {
          * Load a specific config for "/othergreet."
          */
         Config twoCORSConfig = minimalConfig(ConfigSources.classpath("twoCORS.yaml"));
+        Config twoCORSMappedConfig = twoCORSConfig.get("cors-2-setup");
+        if (!twoCORSMappedConfig.exists()) {
+            throw new IllegalArgumentException("Expected config 'cors-2-setup' from twoCORS.yaml not found");
+        }
+        Config somewhatRestrictedConfig = twoCORSConfig.get("somewhat-restrictive");
+        if (!somewhatRestrictedConfig.exists()) {
+            throw new IllegalArgumentException("Expected config 'somewhat-restrictive' from twoCORS.yaml not found");
+        }
+        Config corsMappedSetupConfig = Config.create().get("cors-setup");
+        if (!corsMappedSetupConfig.exists()) {
+            throw new IllegalArgumentException("Expected config 'cors-setup' from default app config not found");
+        }
 
         Routing.Builder builder = Routing.builder()
                 .register(GREETING_PATH,
-                          CorsSupport.builder().config(Config.create().get("cors-setup")).build(),
+                          CorsSupport.createMapped(corsMappedSetupConfig),
                           new GreetService())
                 .register(OTHER_GREETING_PATH,
-                          CorsSupport.builder().config(twoCORSConfig.get("cors-2-setup")).build(),
+                          CorsSupport.createMapped(twoCORSMappedConfig),
                           new GreetService("Other Hello"))
                 .any(TestHandlerRegistration.CORS4_CONTEXT_ROOT,
-                        CorsSupport.create(twoCORSConfig.get("somewhat-restrictive")), // handler settings from config subnode
+                        CorsSupport.create(somewhatRestrictedConfig), // handler settings from config subnode
                         (req, resp) -> resp.status(Http.Status.OK_200).send())
                 .get(TestHandlerRegistration.CORS4_CONTEXT_ROOT,                       // handler settings in-line
                         CorsSupport.builder()
