@@ -34,7 +34,11 @@ public class MessageQueueService implements Service {
     }
 
     private void handlePost(ServerRequest request, ServerResponse response) {
-        request.content().as(String.class).thenAccept(messageQueue::push);
-        response.status(204).send();
+        request.content()
+                .as(String.class)
+                .thenAccept(it -> {
+                    messageQueue.push(it);
+                    response.status(204).send();
+                });
     }
 }
