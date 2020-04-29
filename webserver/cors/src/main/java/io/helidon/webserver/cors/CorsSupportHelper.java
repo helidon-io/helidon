@@ -151,16 +151,6 @@ class CorsSupportHelper<Q, R> {
     }
 
     /**
-     * Creates a new instance using CORS config in the provided {@link Config}.
-     *
-     * @param config Config node containing CORS set-up
-     * @return new instance based on the config
-     */
-    public static <Q, R> CorsSupportHelper<Q, R> create(Config config) {
-        return CorsSupportHelper.<Q, R>builder().config(config).build();
-    }
-
-    /**
      * Creates a new instance that is enabled but with no path mappings.
      *
      * @return the new instance
@@ -219,6 +209,17 @@ class CorsSupportHelper<Q, R> {
          * @return updated builder
          */
         public Builder<Q, R> config(Config config) {
+            aggregator.config(config);
+            return this;
+        }
+
+        /**
+         * Adds mapped cross-origin information via config.
+         *
+         * @param config config node containing mapped CORS set-up information
+         * @return updated builder
+         */
+        public Builder<Q, R> mappedConfig(Config config) {
             aggregator.mappedConfig(config);
             return this;
         }

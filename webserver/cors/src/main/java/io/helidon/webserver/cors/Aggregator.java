@@ -92,10 +92,21 @@ class Aggregator implements CorsSetter<Aggregator> {
         return isEnabled && !crossOriginConfigMatchables.isEmpty();
     }
 
+    Aggregator config(Config config) {
+        if (config.exists()) {
+            ConfigValue<CrossOriginConfig.Builder> configValue = config.as(CrossOriginConfig::builder);
+            if (configValue.isPresent()) {
+                CrossOriginConfig crossOriginConfig = configValue.get().build();
+                addPathlessCrossOrigin(crossOriginConfig);
+            }
+        }
+        return this;
+    }
+
     /**
-     * Add cross-origin information from a {@link Config} node.
+     * Add mapped cross-origin information from a {@link Config} node.
      *
-     * @param config {@code Config} node containing
+     * @param config {@code Config} node containing mapped {@code CrossOriginConfig} data
      * @return updated builder
      */
     Aggregator mappedConfig(Config config) {
