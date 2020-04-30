@@ -37,10 +37,8 @@ import javax.enterprise.inject.spi.CDI;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.microprofile.server.Server;
 import io.helidon.microprofile.server.ServerCdiExtension;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -49,8 +47,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
 public abstract class AbstractCDITest {
-
-    static Server singleServerReference;
 
     static {
         try (InputStream is = AbstractCDITest.class.getResourceAsStream("/logging.properties")) {
@@ -81,7 +77,6 @@ public abstract class AbstractCDITest {
     @AfterEach
     public void tearDown() {
         try {
-            singleServerReference.stop();
             cdiContainer.close();
         } catch (Throwable t) {
             //emergency cleanup see #1446
@@ -109,22 +104,18 @@ public abstract class AbstractCDITest {
     }
 
     private static SeContainer startCdiContainer(Map<String, String> p, Set<Class<?>> beanClasses) {
-        p = new HashMap<>(p);
-        p.put("mp.initializer.allow", "true");
         Config config = Config.builder()
                 .sources(ConfigSources.create(p))
+                .addSource(ConfigSources.create(Map.of("mp.initializer.allow", "true")))
                 .build();
 
-        final Server.Builder builder = Server.builder();
-        assertNotNull(builder);
-        builder.config(config);
-        singleServerReference = builder.build();
         ConfigProviderResolver.instance()
-                .registerConfig((org.eclipse.microprofile.config.Config) config, Thread.currentThread().getContextClassLoader());
-        final SeContainerInitializer initializer = SeContainerInitializer.newInstance();
-        assertNotNull(initializer);
-        initializer.addBeanClasses(beanClasses.toArray(new Class<?>[0]));
-        return initializer.initialize();
+                .registerConfig((org.eclipse.microprofile.config.Config) config,
+                        Thread.currentThread().getContextClassLoader());
+
+        return SeContainerInitializer.newInstance()
+                .addBeanClasses(beanClasses.toArray(new Class<?>[0]))
+                .initialize();
     }
 
     protected static void stopCdiContainer() {
@@ -143,8 +134,8 @@ public abstract class AbstractCDITest {
     }
 
     protected static final class CdiTestCase {
-        private String name;
-        private Class<?>[] clazzes;
+        private final String name;
+        private final Class<?>[] clazzes;
 
         private CdiTestCase(String name, Class<?>... clazzes) {
             this.name = name;
