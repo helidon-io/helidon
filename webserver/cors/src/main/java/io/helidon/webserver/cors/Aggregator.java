@@ -93,13 +93,14 @@ class Aggregator implements CorsSetter<Aggregator> {
     }
 
     Aggregator config(Config config) {
+        CrossOriginConfig crossOriginConfigToAdd = null;
         if (config.exists()) {
             ConfigValue<CrossOriginConfig.Builder> configValue = config.as(CrossOriginConfig::builder);
             if (configValue.isPresent()) {
-                CrossOriginConfig crossOriginConfig = configValue.get().build();
-                addPathlessCrossOrigin(crossOriginConfig);
+                 crossOriginConfigToAdd = configValue.get().build();
             }
         }
+        addPathlessCrossOrigin(crossOriginConfigToAdd != null ? crossOriginConfigToAdd : CrossOriginConfig.builder().build());
         return this;
     }
 

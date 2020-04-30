@@ -17,12 +17,20 @@
 package io.helidon.webserver.cors;
 
 import io.helidon.config.Config;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayOutputStream;
 import java.util.Optional;
+import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
+import java.util.logging.StreamHandler;
 
 import static io.helidon.webserver.cors.CustomMatchers.present;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.greaterThan;
 
@@ -33,17 +41,39 @@ import static org.hamcrest.Matchers.greaterThan;
  */
 class MissingConfigTest {
 
-    private static final Config EMPTY = Config.empty();
+    private static final Config MISSING = Config.empty().get("anything");
+    private static final Logger BASE_LOGGER = Logger.getLogger(CorsSupportBase.class.getName());
+
+    private ByteArrayOutputStream os;
+    private StreamHandler handler;
+
+    @BeforeEach
+    void setupLoggingCapture() {
+        os = new ByteArrayOutputStream();
+        handler = new StreamHandler(os, new SimpleFormatter());
+        handler.setLevel(Level.INFO);
+    }
 
     @Test
     void testCrossOriginConfig() {
-        CrossOriginConfig coc = CrossOriginConfig.create(EMPTY);
+        CrossOriginConfig coc = CrossOriginConfig.create(MISSING);
         checkCrossOriginConfig(coc);
     }
 
     @Test
-    void testCorsSupport() {
-        CorsSupport cs = CorsSupport.create(EMPTY);
+    void testCorsSupportBuilderConfig() {
+        CorsSupport cs = checkForLogMessage(() -> CorsSupport.builder().config(MISSING).build());
+        checkCorsSupport(cs);
+    }
+
+    @Test
+    void testCorsSupportCreate() {
+        CorsSupport cs = checkForLogMessage(() -> CorsSupport.create(MISSING));
+        checkCorsSupport(cs);
+    }
+
+    private static void checkCorsSupport(CorsSupport cs) {
+
         assertThat(cs.helper().isActive(), is(true));
         Aggregator aggregator = cs.helper().aggregator();
         assertThat(aggregator.isActive(), is(true));
@@ -52,9 +82,22 @@ class MissingConfigTest {
         checkCrossOriginConfig(cocOpt.get());
     }
 
-    private void checkCrossOriginConfig(CrossOriginConfig coc) {
+    private static void checkCrossOriginConfig(CrossOriginConfig coc) {
         assertThat(coc.allowCredentials(), is(false));
         assertThat(coc.allowMethods().length, greaterThan(0));
         assertThat(coc.allowMethods()[0], is("*"));
+    }
+
+    private <T> T checkForLogMessage(Supplier<T> supplier) {
+        try {
+            BASE_LOGGER.addHandler(handler);
+            T result = supplier.get();
+            handler.flush();
+            assertThat(os.toString(), containsString("Attempt to load"));
+            return result;
+        } finally {
+            os.reset();
+            BASE_LOGGER.removeHandler(handler);
+        }
     }
 }
