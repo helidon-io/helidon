@@ -106,7 +106,7 @@ public class MainTest {
         }
     }
 
-    @Order(1)
+    @Order(1) // Make sure this runs before changed to the greeting message so responses are as expected
     @Test
     public void testHelloWorld() throws Exception {
         
