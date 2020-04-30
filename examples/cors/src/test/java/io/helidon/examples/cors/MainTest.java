@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,10 +68,6 @@ public class MainTest {
     private static WebServer webServer;
     private static WebClient webClient;
 
-    private static final JsonReaderFactory JSON_RF = Json.createReaderFactory(Collections.emptyMap());
-
-    private static final JsonBuilderFactory JSON_BF = Json.createBuilderFactory(Collections.emptyMap());
-
     private static final JsonProcessing JSON_PROCESSING = JsonProcessing.create();
 
     @BeforeAll
@@ -106,7 +102,7 @@ public class MainTest {
         }
     }
 
-    @Order(1) // Make sure this runs before changed to the greeting message so responses are as expected
+    @Order(1) // Make sure this runs before the greeting message changes so responses are deterministic.
     @Test
     public void testHelloWorld() throws Exception {
         
@@ -136,7 +132,7 @@ public class MainTest {
         assertEquals(200, r.status().code(), "HTTP response2");
     }
 
-    @Test
+    @Test // No order, so this runs after the greeting change to Hola.
     void testAnonymousGreetWithCors() throws Exception {
         WebClientRequestBuilder builder = webClient.get();
         Headers headers = builder.headers();
@@ -145,7 +141,7 @@ public class MainTest {
 
         WebClientResponse r = getResponse("/greet", builder);
         assertEquals(200, r.status().code(), "HTTP response");
-        assertTrue(fromPayload(r).getMessage().contains("World"));
+        assertTrue(fromPayload(r).getMessage().contains("Hola World"));
         headers = r.headers();
         Optional<String> allowOrigin = headers.value(CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN);
         assertTrue(allowOrigin.isPresent(),
@@ -153,7 +149,7 @@ public class MainTest {
         assertEquals(allowOrigin.get(), "*");
     }
 
-    @Test
+    @Test // No order, so this runs after the greeting change to Hola.
     void testNamedGreetWithCors() throws Exception {
         WebClientRequestBuilder builder = webClient.get();
         Headers headers = builder.headers();
@@ -162,7 +158,7 @@ public class MainTest {
 
         WebClientResponse r = getResponse("/greet/Maria", builder);
         assertEquals(200, r.status().code(), "HTTP response");
-        assertTrue(fromPayload(r).getMessage().contains("Maria"));
+        assertTrue(fromPayload(r).getMessage().contains("Hola Maria"));
         headers = r.headers();
         Optional<String> allowOrigin = headers.value(CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN);
         assertTrue(allowOrigin.isPresent(),
@@ -170,14 +166,42 @@ public class MainTest {
         assertEquals(allowOrigin.get(), "*");
     }
 
+    @Order(2)
     @Test
     void testGreetingChangeWithCors() throws Exception {
-        WebClientRequestBuilder builder = webClient.put();
+
+        // Send pre-flight request and check response.
+
+        WebClientRequestBuilder builder = webClient.method("OPTIONS");
         Headers headers = builder.headers();
         headers.add("Origin", "http://foo.com");
         headers.add("Host", "bar.com");
+        headers.add("Access-Control-Request-Method", "PUT");
 
-        WebClientResponse r = putResponse("/greet/greeting", new GreetingMessage("Hola"), builder);
+        WebClientResponse r = builder.path("/greet/greeting")
+                .submit()
+                .toCompletableFuture()
+                .get();
+
+        Headers preflightReponseHeaders = r.headers();
+        List<String> allowMethods = preflightReponseHeaders.values(CrossOriginConfig.ACCESS_CONTROL_ALLOW_METHODS);
+        assertTrue(allowMethods.size() > 0,
+                "pre-flight response does not include " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_METHODS);
+        assertEquals(allowMethods.get(0), "PUT");
+        List<String> allowOrigin = preflightReponseHeaders.values(CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN);
+        assertTrue(allowOrigin.size() > 0,
+                "pre-flight response does not include " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN);
+        assertEquals(allowOrigin.get(0), "http://foo.com");
+
+        // Send the follow-up request.
+
+        builder = webClient.put();
+        headers = builder.headers();
+        headers.add("Origin", "http://foo.com");
+        headers.add("Host", "bar.com");
+        headers.addAll(preflightReponseHeaders);
+
+        r = putResponse("/greet/greeting", new GreetingMessage("Hola"), builder);
         assertEquals(204, r.status().code(), "HTTP response3");
         headers = r.headers();
         List<String> allowOrigins = headers.values(CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN);
@@ -200,12 +224,6 @@ public class MainTest {
 
     private static WebClientResponse getResponse(String path) throws ExecutionException, InterruptedException {
         return getResponse(path, webClient.get());
-//        return webClient.get()
-//                .accept(MediaType.APPLICATION_JSON)
-//                .path(path)
-//                .submit()
-//                .toCompletableFuture()
-//                .get();
     }
 
     private static WebClientResponse getResponse(String path, WebClientRequestBuilder builder) throws ExecutionException,

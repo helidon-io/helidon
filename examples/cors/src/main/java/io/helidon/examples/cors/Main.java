@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -103,19 +103,15 @@ public final class Main {
         HealthSupport health = HealthSupport.builder()
                 .addLiveness(HealthChecks.healthChecks())   // Adds a convenient set of checks
                 .build();
-        
-        Routing.Builder builder = Routing.builder()
+
+        // Note: Add the CORS routing *before* registering the GreetService routing.
+        return Routing.builder()
                 .register(JsonSupport.create())
                 .register(health)                   // Health at "/health"
-                .register(metrics);                 // Metrics at "/metrics"
-
-        // *Before* registering the GreetService routing, add the CORS routing if the config was present. 
-        config.get("restrictive-cors").ifExists(c -> builder.put(CorsSupport.create(c)));
-        config.get("open-cors").ifExists(c -> builder.any(CorsSupport.create(c)));
-
-        return builder
+                .register(metrics)                 // Metrics at "/metrics"
+                .put(CorsSupport.create(config.get("restrictive-cors")))
+                .any(CorsSupport.create(config.get("open-cors")))
                 .register("/greet", greetService)
                 .build();
     }
-
 }
