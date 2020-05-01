@@ -17,8 +17,10 @@
 package io.helidon.examples.cors;
 
 import java.io.IOException;
+import java.util.Set;
 import java.util.logging.LogManager;
 
+import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.health.HealthSupport;
 import io.helidon.health.checks.HealthChecks;
@@ -110,7 +112,8 @@ public final class Main {
                 .register(health)                   // Health at "/health"
                 .register(metrics)                 // Metrics at "/metrics"
                 .put(CorsSupport.create(config.get("restrictive-cors")))
-                .any(CorsSupport.create(config.get("open-cors")))
+                .get(CorsSupport.create(config.get("open-cors")))
+                .options(CorsSupport.create())
                 .register("/greet", greetService)
                 .build();
     }
