@@ -242,8 +242,7 @@ class CorsSupportHelper<Q, R> {
             return this;
         }
 
-
-        private boolean shouldAddDefaultBehavior() {
+        private boolean shouldRequestDefaultBehavior() {
             return requestDefaultBehaviorIfNone
                     && (secondaryCrossOriginLookup == null || secondaryCrossOriginLookup == EMPTY_SECONDARY_SUPPLIER);
         }
@@ -254,8 +253,8 @@ class CorsSupportHelper<Q, R> {
          * @return initialized {@code CorsSupportHelper}
          */
         public CorsSupportHelper<Q, R> build() {
-            if (shouldAddDefaultBehavior()) {
-                aggregatorBuilder.addDefaultBehaviorIfNone();
+            if (shouldRequestDefaultBehavior()) {
+                aggregatorBuilder.requestDefaultBehaviorIfNone();
             }
 
             CorsSupportHelper<Q, R>  result = new CorsSupportHelper<>(this);

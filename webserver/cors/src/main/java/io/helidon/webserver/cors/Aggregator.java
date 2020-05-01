@@ -104,9 +104,13 @@ class Aggregator {
 
         private final Map<String, CrossOriginConfigMatchable> crossOriginConfigMatchables = new LinkedHashMap<>();
         private boolean isEnabled = true;
+        private boolean requestDefaultBehaviorIfNone = false;
 
         @Override
         public Aggregator build() {
+            if (requestDefaultBehaviorIfNone && crossOriginConfigMatchables.isEmpty()) {
+                addPathlessCrossOrigin(CrossOriginConfig.builder().build());
+            }
             return new Aggregator(this);
         }
 
@@ -168,10 +172,8 @@ class Aggregator {
             return this;
         }
 
-        Builder addDefaultBehaviorIfNone() {
-            if (crossOriginConfigMatchables.isEmpty()) {
-                addPathlessCrossOrigin(CrossOriginConfig.builder().build());
-            }
+        Builder requestDefaultBehaviorIfNone() {
+            requestDefaultBehaviorIfNone = true;
             return this;
         }
 
