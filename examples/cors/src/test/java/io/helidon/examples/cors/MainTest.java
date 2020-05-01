@@ -141,7 +141,7 @@ public class MainTest {
 
         WebClientResponse r = getResponse("/greet", builder);
         assertEquals(200, r.status().code(), "HTTP response");
-        assertTrue(fromPayload(r).getMessage().contains("Hola World"));
+        assertTrue(fromPayload(r).getMessage().contains("Cheers World"));
         headers = r.headers();
         Optional<String> allowOrigin = headers.value(CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN);
         assertTrue(allowOrigin.isPresent(),
@@ -158,7 +158,7 @@ public class MainTest {
 
         WebClientResponse r = getResponse("/greet/Maria", builder);
         assertEquals(200, r.status().code(), "HTTP response");
-        assertTrue(fromPayload(r).getMessage().contains("Hola Maria"));
+        assertTrue(fromPayload(r).getMessage().contains("Cheers Maria"));
         headers = r.headers();
         Optional<String> allowOrigin = headers.value(CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN);
         assertTrue(allowOrigin.isPresent(),
@@ -170,7 +170,7 @@ public class MainTest {
     @Test
     void testGreetingChangeWithCors() throws Exception {
 
-        // Send pre-flight request and check response.
+        // Send the pre-flight request and check the response.
 
         WebClientRequestBuilder builder = webClient.method("OPTIONS");
         Headers headers = builder.headers();
@@ -183,15 +183,16 @@ public class MainTest {
                 .toCompletableFuture()
                 .get();
 
-        Headers preflightReponseHeaders = r.headers();
-        List<String> allowMethods = preflightReponseHeaders.values(CrossOriginConfig.ACCESS_CONTROL_ALLOW_METHODS);
-        assertTrue(allowMethods.size() > 0,
+        Headers preflightResponseHeaders = r.headers();
+        List<String> allowMethods = preflightResponseHeaders.values(CrossOriginConfig.ACCESS_CONTROL_ALLOW_METHODS);
+        assertFalse(allowMethods.isEmpty(),
                 "pre-flight response does not include " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_METHODS);
-        assertEquals(allowMethods.get(0), "PUT");
-        List<String> allowOrigin = preflightReponseHeaders.values(CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN);
-        assertTrue(allowOrigin.size() > 0,
+        assertTrue(allowMethods.contains("PUT"));
+        List<String> allowOrigins = preflightResponseHeaders.values(CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN);
+        assertFalse(allowOrigins.isEmpty(),
                 "pre-flight response does not include " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN);
-        assertEquals(allowOrigin.get(0), "http://foo.com");
+        assertTrue(allowOrigins.contains("http://foo.com"), "Header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN
+                + " should contain '*' but does not; " + allowOrigins);
 
         // Send the follow-up request.
 
@@ -199,15 +200,15 @@ public class MainTest {
         headers = builder.headers();
         headers.add("Origin", "http://foo.com");
         headers.add("Host", "bar.com");
-        headers.addAll(preflightReponseHeaders);
+        headers.addAll(preflightResponseHeaders);
 
-        r = putResponse("/greet/greeting", new GreetingMessage("Hola"), builder);
+        r = putResponse("/greet/greeting", new GreetingMessage("Cheers"), builder);
         assertEquals(204, r.status().code(), "HTTP response3");
         headers = r.headers();
-        List<String> allowOrigins = headers.values(CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN);
+        allowOrigins = headers.values(CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN);
         assertFalse(allowOrigins.isEmpty(),
                 "Expected CORS header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN + " has no value(s)");
-        assertTrue(allowOrigins.contains("*"), "Header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN
+        assertTrue(allowOrigins.contains("http://foo.com"), "Header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN
                 + " should contain '*' but does not; " + allowOrigins);
     }
 

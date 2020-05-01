@@ -17,6 +17,7 @@
 package io.helidon.examples.cors;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Set;
 import java.util.logging.LogManager;
 
@@ -59,8 +60,10 @@ public final class Main {
     static WebServer startServer() throws IOException {
 
         // load logging configuration
-        LogManager.getLogManager().readConfiguration(
-                Main.class.getResourceAsStream("/logging.properties"));
+        try (InputStream is = Main.class.getResourceAsStream("/logging.properties")) {
+            LogManager.getLogManager()
+                    .readConfiguration(is);
+        }
 
         // By default this will pick up application.yaml from the classpath
         Config config = Config.create();

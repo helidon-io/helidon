@@ -60,7 +60,7 @@ public class GreetService implements Service {
     private static final JsonBuilderFactory JSON_BF = Json.createBuilderFactory(Collections.emptyMap());
 
     private static final JsonReaderFactory JSON_RF = Json.createReaderFactory(Collections.emptyMap());
-    
+
     GreetService(Config config) {
         this.greeting = config.get("app.greeting").asString().orElse("Ciao");
     }
@@ -77,32 +77,6 @@ public class GreetService implements Service {
             .put("/greeting", this::updateGreetingHandler);
     }
 
-    /**
-     * Creates a {@link GreetingMessage} from the incoming HTTP payload.
-     *
-     * @param conn {@code HttpURLConnection} with the payload to convert
-     * @return {@code GreetingMessage} instance reflecting the payload
-     * @throws IOException in case of errors reading the payload
-     */
-    public static GreetingMessage fromPayload(HttpURLConnection conn) throws IOException {
-        JsonReader jsonReader = JSON_RF.createReader(conn.getInputStream());
-        return GreetingMessage.fromRest(jsonReader.readObject());
-    }
-    
-    /**
-     * Writes the specified {@code GreetingMessage} into the payload of the
-     * specified connection.
-     *
-     * @param conn {@code HttpURLConnection} with the payload to be written
-     * @param msg {@code GreetingMessage} to be written to the payload
-     * @throws IOException in case of errors writing the payload
-     */
-    public static void toPayload(HttpURLConnection conn, GreetingMessage msg) throws IOException {
-        OutputStream os = conn.getOutputStream();
-        try (JsonWriter jsonWriter = Json.createWriter(os)) {
-            jsonWriter.writeObject(msg.forRest());
-        }
-    }
     /**
      * Return a worldly greeting message.
      * @param request the server request
@@ -153,5 +127,4 @@ public class GreetService implements Service {
                                        ServerResponse response) {
         request.content().as(JsonObject.class).thenAccept(jo -> updateGreetingFromJson(jo, response));
     }
-
 }
