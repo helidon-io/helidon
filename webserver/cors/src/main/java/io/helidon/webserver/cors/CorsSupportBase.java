@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import io.helidon.config.Config;
 
@@ -51,6 +53,8 @@ import io.helidon.config.Config;
  */
 public abstract class CorsSupportBase<Q, R, T extends CorsSupportBase<Q, R, T, B>,
         B extends CorsSupportBase.Builder<Q, R, T, B>> {
+
+    private static final Logger LOGGER = Logger.getLogger(CorsSupportBase.class.getName());
 
     private final String name;
     private final CorsSupportHelper<Q, R> helper;
@@ -131,6 +135,7 @@ public abstract class CorsSupportBase<Q, R, T extends CorsSupportBase<Q, R, T, B
          * @return the updated builder
          */
         public B config(Config config) {
+            reportUseOfMissingConfig(config);
             helperBuilder.config(config);
             return me();
         }
@@ -143,6 +148,7 @@ public abstract class CorsSupportBase<Q, R, T extends CorsSupportBase<Q, R, T, B
          * @return the updated builder
          */
         public B mappedConfig(Config config) {
+            reportUseOfMissingConfig(config);
             helperBuilder.mappedConfig(config);
             return me();
         }
@@ -245,6 +251,15 @@ public abstract class CorsSupportBase<Q, R, T extends CorsSupportBase<Q, R, T, B
         protected Builder requestDefaultBehaviorIfNone() {
             requestDefaultBehaviorIfNone = true;
             return this;
+        }
+
+        private void reportUseOfMissingConfig(Config config) {
+            if (!config.exists()) {
+                LOGGER.log(Level.INFO,
+                        String.format(
+                                "Attempt to load %s using empty config with key '%s'; continuing with default CORS information",
+                                getClass().getSuperclass().getSimpleName(), config.key().toString()));
+            }
         }
     }
 

@@ -400,6 +400,11 @@ class CorsSupportHelper<Q, R> {
         return requestType(requestAdapter, false);
     }
 
+    // Primarily for testing.
+    Aggregator aggregator() {
+        return aggregator;
+    }
+
     private boolean isRequestTypeNormal(RequestAdapter<Q> requestAdapter, boolean silent) {
         // If no origin header or same as host, then just normal
         Optional<String> originOpt = requestAdapter.firstHeader(ORIGIN);

@@ -19,7 +19,6 @@ package io.helidon.webserver.cors;
 import java.util.Optional;
 
 import io.helidon.config.Config;
-import io.helidon.config.MissingValueException;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
@@ -88,9 +87,6 @@ public class CorsSupport extends CorsSupportBase<ServerRequest, ServerResponse, 
      * @return initialized {@code CorsSupport} instance
      */
     public static CorsSupport create(Config config) {
-        if (!config.exists()) {
-            throw MissingValueException.create(config.key());
-        }
         return builder().config(config).build();
     }
 
@@ -102,9 +98,6 @@ public class CorsSupport extends CorsSupportBase<ServerRequest, ServerResponse, 
      * @return initialized {@code CorsSupport} instance
      */
     public static CorsSupport createMapped(Config config) {
-        if (!config.exists()) {
-            throw MissingValueException.create(config.key());
-        }
         return builder().mappedConfig(config).build();
     }
 
