@@ -15,6 +15,8 @@
  */
 package io.helidon.webserver.examples.basics;
 
+import java.util.concurrent.Flow;
+
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.MediaType;
@@ -23,11 +25,10 @@ import io.helidon.media.common.ContentReaders;
 import io.helidon.media.common.MessageBodyReader;
 import io.helidon.media.common.MessageBodyReaderContext;
 
-import java.util.concurrent.Flow;
-
 public class NameReader implements MessageBodyReader<Name> {
 
-    private NameReader() {}
+    private NameReader() {
+    }
 
     static NameReader create() {
         return new NameReader();
@@ -36,7 +37,7 @@ public class NameReader implements MessageBodyReader<Name> {
     @Override
     public <U extends Name> Single<U> read(Flow.Publisher<DataChunk> publisher, GenericType<U> type,
                                            MessageBodyReaderContext context) {
-        return (Single<U>)ContentReaders.readString(publisher, context.charset()).map(Name::new);
+        return (Single<U>) ContentReaders.readString(publisher, context.charset()).map(Name::new);
     }
 
     @Override
