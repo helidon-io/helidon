@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ public class Main {
         long now = System.nanoTime();
 
         // everything is configured through application.yaml
-        Server server = Server.create(StaticContentApp.class);
+        Server server = Server.create();
 
         now = System.nanoTime() - now;
         System.out.println("Create server: " + TimeUnit.MILLISECONDS.convert(now, TimeUnit.NANOSECONDS));

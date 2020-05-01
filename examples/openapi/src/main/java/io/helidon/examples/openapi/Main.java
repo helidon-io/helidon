@@ -100,7 +100,7 @@ public final class Main {
         MetricsSupport metrics = MetricsSupport.create();
         GreetService greetService = new GreetService(config);
         HealthSupport health = HealthSupport.builder()
-                .add(HealthChecks.healthChecks())   // Adds a convenient set of checks
+                .addLiveness(HealthChecks.healthChecks())   // Adds a convenient set of checks
                 .build();
 
         return Routing.builder()

@@ -40,5 +40,6 @@
         <module>oidc</module>
         <module>openapi-basic</module>
         <module>websocket</module>
+        <module>messaging-sse</module>
     </modules>
 </project>

@@ -29,11 +29,25 @@ import io.helidon.webserver.WebServer;
  */
 class TestWebServer implements WebServer {
 
+    private static final MediaSupport DEFAULT_MEDIA_SUPPORT = MediaSupport.createWithDefaults();
+
     private final CompletableFuture<WebServer> startFuture = new CompletableFuture<>();
     private final CompletableFuture<WebServer> shutdownFuture = new CompletableFuture<>();
     private final ServerConfiguration configuration = ServerConfiguration.builder().build();
     private final ContextualRegistry context = ContextualRegistry.create();
-    private final MediaSupport mediaSupport = MediaSupport.createWithDefaults();
+    private final MediaSupport mediaSupport;
+
+    TestWebServer() {
+        this.mediaSupport = DEFAULT_MEDIA_SUPPORT;
+    }
+
+    TestWebServer(MediaSupport mediaSupport) {
+        if (mediaSupport == null) {
+            this.mediaSupport = DEFAULT_MEDIA_SUPPORT;
+        } else {
+            this.mediaSupport = mediaSupport;
+        }
+    }
 
     @Override
     public ServerConfiguration configuration() {

@@ -5,7 +5,6 @@ This application demonstrates use of the StaticContentSupport to serve static fi
 
 ## Build and run
 
-With JDK8+
 ```bash
 mvn package
 java -jar target/helidon-examples-webserver-static-content.jar

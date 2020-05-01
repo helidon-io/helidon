@@ -75,8 +75,8 @@ public class Server {
 
         // add support for standard and gRPC health checks
         HealthSupport health = HealthSupport.builder()
-                .add(HealthChecks.healthChecks())
-                .add(grpcServer.healthChecks())
+                .addLiveness(HealthChecks.healthChecks())
+                .addLiveness(grpcServer.healthChecks())
                 .build();
 
         // start web server with health endpoint

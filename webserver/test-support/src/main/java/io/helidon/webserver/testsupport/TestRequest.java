@@ -28,6 +28,7 @@ import java.util.Objects;
 import java.util.concurrent.TimeoutException;
 
 import io.helidon.common.http.Http;
+import io.helidon.media.common.MediaSupport;
 
 /**
  * An API to compose a test request.
@@ -37,7 +38,7 @@ public class TestRequest {
     private final TestClient testClient;
     private final String path;
     private final StringBuilder query = new StringBuilder();
-    private final Map<String, List<String>> headers = new HashMap();
+    private final Map<String, List<String>> headers = new HashMap<>();
     private volatile Http.Version version = Http.Version.V1_1;
 
     /**

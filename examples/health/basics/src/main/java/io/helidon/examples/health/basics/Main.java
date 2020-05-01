@@ -39,8 +39,8 @@ public final class Main {
      */
     public static void main(String[] args) {
         HealthSupport health = HealthSupport.builder()
-                .add(HealthChecks.healthChecks())
-                .add((HealthCheck) () -> HealthCheckResponse.named("exampleHealthCheck")
+                .addLiveness(HealthChecks.healthChecks())
+                .addReadiness((HealthCheck) () -> HealthCheckResponse.named("exampleHealthCheck")
                         .up()
                         .withData("time", System.currentTimeMillis())
                         .build())

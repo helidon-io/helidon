@@ -6,7 +6,6 @@ sets the username and password.
 
 ## Build and run
 
-With JDK8+
 ```bash
 mvn package
 java -jar target/helidon-examples-security-outbound-override.jar

@@ -23,6 +23,7 @@ import javax.ws.rs.client.ClientBuilder;
 
 import io.helidon.microprofile.server.Main;
 
+import io.helidon.microprofile.server.Server;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -35,9 +36,12 @@ import static org.junit.jupiter.api.Assertions.assertAll;
  * Unit test for {@link HelloWorldResource}.
  */
 class ImplicitHelloWorldTest {
+    private static Server server;
+
+
     @BeforeAll
     static void initClass() {
-        Main.main(new String[0]);
+        server = Server.create().start();
     }
 
     @AfterAll
@@ -49,7 +53,7 @@ class ImplicitHelloWorldTest {
     @Test
     void testJsonResource() {
         JsonObject jsonObject = ClientBuilder.newClient()
-                .target("http://localhost:" + Main.serverPort() + "/helloworld/unit")
+                .target("http://localhost:" + server.port()  + "/helloworld/unit")
                 .request()
                 .get(JsonObject.class);
 
