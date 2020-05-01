@@ -58,6 +58,9 @@ public abstract class CorsSupportBase<Q, R, T extends CorsSupportBase<Q, R, T, B
     protected CorsSupportBase(Builder<Q, R, T, B> builder) {
         name = builder.name;
         builder.helperBuilder.name(builder.name);
+        if (builder.requestDefaultBehaviorIfNone) {
+            builder.helperBuilder.requestDefaultBehaviorIfNone();
+        }
         helper = builder.helperBuilder.build();
     }
 
@@ -109,7 +112,8 @@ public abstract class CorsSupportBase<Q, R, T extends CorsSupportBase<Q, R, T, B
 
         private String name = "";
         private final CorsSupportHelper.Builder<Q, R> helperBuilder = CorsSupportHelper.builder();
-        private final Aggregator aggregator = helperBuilder.aggregator();
+        private final Aggregator.Builder aggregatorBuilder = helperBuilder.aggregatorBuilder();
+        private boolean requestDefaultBehaviorIfNone = false;
 
         protected Builder() {
         }
@@ -150,7 +154,7 @@ public abstract class CorsSupportBase<Q, R, T extends CorsSupportBase<Q, R, T, B
          * @return updated builder
          */
         public B enabled(boolean value) {
-            aggregator.enabled(value);
+            aggregatorBuilder.enabled(value);
             return me();
         }
 
@@ -162,7 +166,7 @@ public abstract class CorsSupportBase<Q, R, T extends CorsSupportBase<Q, R, T, B
          * @return updated builder
          */
         public B addCrossOrigin(String path, CrossOriginConfig crossOrigin) {
-            aggregator.addCrossOrigin(path, crossOrigin);
+            aggregatorBuilder.addCrossOrigin(path, crossOrigin);
             return me();
         }
 
@@ -173,7 +177,7 @@ public abstract class CorsSupportBase<Q, R, T extends CorsSupportBase<Q, R, T, B
          * @return updated builder
          */
         public B addCrossOrigin(CrossOriginConfig crossOrigin) {
-            aggregator.addPathlessCrossOrigin(crossOrigin);
+            aggregatorBuilder.addPathlessCrossOrigin(crossOrigin);
             return me();
         }
 
@@ -192,37 +196,37 @@ public abstract class CorsSupportBase<Q, R, T extends CorsSupportBase<Q, R, T, B
 
         @Override
         public B allowOrigins(String... origins) {
-            aggregator.allowOrigins(origins);
+            aggregatorBuilder.allowOrigins(origins);
             return me();
         }
 
         @Override
         public B allowHeaders(String... allowHeaders) {
-            aggregator.allowHeaders(allowHeaders);
+            aggregatorBuilder.allowHeaders(allowHeaders);
             return me();
         }
 
         @Override
         public B exposeHeaders(String... exposeHeaders) {
-            aggregator.exposeHeaders(exposeHeaders);
+            aggregatorBuilder.exposeHeaders(exposeHeaders);
             return me();
         }
 
         @Override
         public B allowMethods(String... allowMethods) {
-            aggregator.allowMethods(allowMethods);
+            aggregatorBuilder.allowMethods(allowMethods);
             return me();
         }
 
         @Override
         public B allowCredentials(boolean allowCredentials) {
-            aggregator.allowCredentials(allowCredentials);
+            aggregatorBuilder.allowCredentials(allowCredentials);
             return me();
         }
 
         @Override
         public B maxAgeSeconds(long maxAgeSeconds) {
-            aggregator.maxAgeSeconds(maxAgeSeconds);
+            aggregatorBuilder.maxAgeSeconds(maxAgeSeconds);
             return me();
         }
 
@@ -235,6 +239,11 @@ public abstract class CorsSupportBase<Q, R, T extends CorsSupportBase<Q, R, T, B
          */
         protected Builder<Q, R, T, B> secondaryLookupSupplier(Supplier<Optional<CrossOriginConfig>> secondaryLookupSupplier) {
             helperBuilder.secondaryLookupSupplier(secondaryLookupSupplier);
+            return this;
+        }
+
+        protected Builder requestDefaultBehaviorIfNone() {
+            requestDefaultBehaviorIfNone = true;
             return this;
         }
     }

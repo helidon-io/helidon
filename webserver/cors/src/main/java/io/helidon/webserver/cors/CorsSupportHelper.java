@@ -164,7 +164,7 @@ class CorsSupportHelper<Q, R> {
 
     private CorsSupportHelper(Builder<Q, R>  builder) {
         name = builder.name;
-        aggregator = builder.aggregator;
+        aggregator = builder.aggregatorBuilder.build();
         secondaryCrossOriginLookup = builder.secondaryCrossOriginLookup;
     }
 
@@ -187,8 +187,9 @@ class CorsSupportHelper<Q, R> {
 
         private Supplier<Optional<CrossOriginConfig>> secondaryCrossOriginLookup = EMPTY_SECONDARY_SUPPLIER;
 
-        private final Aggregator aggregator = Aggregator.create();
+        private final Aggregator.Builder aggregatorBuilder = Aggregator.builder();
         private String name;
+        private boolean requestDefaultBehaviorIfNone;
 
         /**
          * Sets the supplier for the secondary lookup of CORS information (typically <em>not</em> contained in
@@ -209,7 +210,7 @@ class CorsSupportHelper<Q, R> {
          * @return updated builder
          */
         public Builder<Q, R> config(Config config) {
-            aggregator.config(config);
+            aggregatorBuilder.config(config);
             return this;
         }
 
@@ -220,7 +221,7 @@ class CorsSupportHelper<Q, R> {
          * @return updated builder
          */
         public Builder<Q, R> mappedConfig(Config config) {
-            aggregator.mappedConfig(config);
+            aggregatorBuilder.mappedConfig(config);
             return this;
         }
 
@@ -236,12 +237,27 @@ class CorsSupportHelper<Q, R> {
             return this;
         }
 
+        public Builder<Q, R> requestDefaultBehaviorIfNone() {
+            requestDefaultBehaviorIfNone = true;
+            return this;
+        }
+
+
+        private boolean shouldAddDefaultBehavior() {
+            return requestDefaultBehaviorIfNone
+                    && (secondaryCrossOriginLookup == null || secondaryCrossOriginLookup == EMPTY_SECONDARY_SUPPLIER);
+        }
+
         /**
          * Creates the {@code CorsSupportHelper}.
          *
          * @return initialized {@code CorsSupportHelper}
          */
         public CorsSupportHelper<Q, R> build() {
+            if (shouldAddDefaultBehavior()) {
+                aggregatorBuilder.addDefaultBehaviorIfNone();
+            }
+
             CorsSupportHelper<Q, R>  result = new CorsSupportHelper<>(this);
 
             LOGGER.config(() -> String.format("CorsSupportHelper configured as: %s", result.toString()));
@@ -249,8 +265,8 @@ class CorsSupportHelper<Q, R> {
             return result;
         }
 
-        Aggregator aggregator() {
-            return aggregator;
+        Aggregator.Builder aggregatorBuilder() {
+            return aggregatorBuilder;
         }
     }
 
