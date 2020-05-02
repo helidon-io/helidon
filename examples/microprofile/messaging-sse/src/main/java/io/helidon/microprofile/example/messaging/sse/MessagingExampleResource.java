@@ -47,7 +47,7 @@ public class MessagingExampleResource {
 
 
     /**
-     * Process send
+     * Process send.
      * @param msg message to process
      */
     @Path("/send/{msg}")
@@ -58,7 +58,7 @@ public class MessagingExampleResource {
     }
 
     /**
-     * Consume event
+     * Consume event.
      *
      * @param eventSink sink
      * @param sse       event

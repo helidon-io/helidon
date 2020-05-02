@@ -15,6 +15,7 @@
  */
 
 /**
- * Helidon MicroProfile Messaging Example
+ * Helidon MicroProfile Messaging Example.
  */
 package io.helidon.microprofile.example.messaging.sse;
+

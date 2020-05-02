@@ -34,7 +34,7 @@ import org.reactivestreams.FlowAdapters;
 import org.reactivestreams.Publisher;
 
 /**
- * Bean for message processing
+ * Bean for message processing.
  */
 @ApplicationScoped
 public class MsgProcessingBean {
@@ -42,7 +42,7 @@ public class MsgProcessingBean {
     private SseBroadcaster sseBroadcaster;
 
     /**
-     * Create a publisher for the emitter
+     * Create a publisher for the emitter.
      *
      * @return A Publisher from the emitter
      */
@@ -55,7 +55,7 @@ public class MsgProcessingBean {
     }
 
     /**
-     * Returns a builder for a processor that maps a string into three variants
+     * Returns a builder for a processor that maps a string into three variants.
      *
      * @return ProcessorBuilder
      */
@@ -76,7 +76,7 @@ public class MsgProcessingBean {
     }
 
     /**
-     * Maps a message to an sse event
+     * Maps a message to an sse event.
      *
      * @param msg to wrap
      * @return an outbound SSE event
@@ -89,7 +89,7 @@ public class MsgProcessingBean {
     }
 
     /**
-     * Broadcasts an event
+     * Broadcasts an event.
      *
      * @param sseEvent Event to broadcast
      */
@@ -100,7 +100,7 @@ public class MsgProcessingBean {
     }
 
     /**
-     * Consumes events
+     * Consumes events.
      *
      * @param eventSink event sink
      * @param sse event
@@ -113,7 +113,7 @@ public class MsgProcessingBean {
     }
 
     /**
-     * Emit a message
+     * Emit a message.
      *
      * @param msg message to emit
      */
