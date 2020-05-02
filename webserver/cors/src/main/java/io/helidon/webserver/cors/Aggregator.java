@@ -37,28 +37,15 @@ import static io.helidon.webserver.cors.CorsSupportHelper.normalize;
  * HTTP method.
  * <p>
  *    The caller builds the cross-config information over multiple invocations of the builder methods. The behavior is that
- *    of a {@link LinkedHashMap}:
- *    <ul>
- *        <li>when <em>storing</em> cross-config information, the <em>latest</em> invocation that specifies the same path
- *        expression overwrites any preceding settings for the same path expression, and</li>
- *        <li>when <em>matching</em> against a request's path, the code checks the path matchers <em>in the order
- *        they were added</em> to the aggregator, whether by {@link Builder#mappedConfig} or {@link Builder#addCrossOrigin} or the
- *        {@link CorsSetter}
- *        methods.
- *    </ul>
+ *    of a {@link List}: when <em>matching</em> against a request's path and method, the aggregator checks the path matchers
+ *    <em>in the order they were added</em> to the aggregator, whether by {@link Builder#mappedConfig} or
+ *    {@link Builder#addCrossOrigin} or the {@link CorsSetter} methods.
  * </p>
  * <p>
- *     The {@code CorsSetter} methods affect the so-called "pathless" entry. Those methods have no explicit path, so we record
- *     their settings in an entry with path expression {@value #PATHLESS_KEY} which matches everything.
- * </p>
- * <p>
- *     If the developer uses the {@link Builder#mappedConfig} or {@link Builder#addCrossOrigin} methods <em>along with</em> the
- *     {@code CorsSetter}
- *     methods, the results are predictable but might be confusing. The {@code config} and {@code addCrossOrigin} methods
- *     <em>overwrite</em> any entry with the same path expression, whereas the {@code CorsSetter} methods <em>update</em> an existing
- *     entry with path {@value #PATHLESS_KEY}, creating one if needed. So, if the config or an {@code addCrossOrigin}
- *     invocation sets values for that same path expression then results can be surprising.
- *     path
+ *     The {@code CorsSetter} methods affect a distinct "pathless" entry. Those methods have no explicit path, so we record
+ *     their settings in an entry with path expression {@value #PATHLESS_KEY} which matches everything. The first time the
+ *     caller invokes a {@code CorsSetter} method, the aggregator creates this distinct entry and adds it to the list, thus (as
+ *     with any other entry) determining the order, relative to other entries, with which it will be checked.
  * </p>
  *
  */
