@@ -307,7 +307,7 @@ class CorsSupportHelper<Q, R> {
             return Optional.empty();
         }
 
-        Optional<CrossOriginConfig> crossOrigin = aggregator.lookupCrossOrigin(requestAdapter.path(),
+        Optional<CrossOriginConfig> crossOrigin = aggregator.lookupCrossOrigin(requestAdapter.path(), requestAdapter.method(),
                 secondaryCrossOriginLookup);
 
         RequestType requestType = requestType(requestAdapter);
@@ -374,6 +374,7 @@ class CorsSupportHelper<Q, R> {
         if (requestType == RequestType.CORS) {
             CrossOriginConfig crossOrigin = aggregator.lookupCrossOrigin(
                             requestAdapter.path(),
+                            requestAdapter.method(),
                             secondaryCrossOriginLookup)
                     .orElseThrow(() -> new IllegalArgumentException(
                             "Could not locate expected CORS information while preparing response to request " + requestAdapter));

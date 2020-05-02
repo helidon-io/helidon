@@ -218,6 +218,21 @@ public class CrossOriginConfig {
         return maxAgeSeconds;
     }
 
+    /**
+     * Reports whether the specified HTTP method name matches this {@code CrossOriginConfig}.
+     *
+     * @param method HTTP method name to check
+     * @return true if this {@code CrossOriginConfig} matches the specified method; false otherwise
+     */
+    public boolean matches(String method) {
+        for (String allowMethod : allowMethods) {
+            if (allowMethod.equals(method) || allowMethod.equals("*")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Override
     public String toString() {
         return String.format("CrossOriginConfig{pathPrefix=%s, enabled=%b, origins=%s, allowHeaders=%s, exposeHeaders=%s, "

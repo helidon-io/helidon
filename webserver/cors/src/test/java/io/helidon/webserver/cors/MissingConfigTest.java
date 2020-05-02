@@ -77,7 +77,7 @@ class MissingConfigTest {
         assertThat(cs.helper().isActive(), is(true));
         Aggregator aggregator = cs.helper().aggregator();
         assertThat(aggregator.isActive(), is(true));
-        Optional<CrossOriginConfig> cocOpt = aggregator.lookupCrossOrigin("/any/path", () -> Optional.empty());
+        Optional<CrossOriginConfig> cocOpt = aggregator.lookupCrossOrigin("/any/path", "GET", () -> Optional.empty());
         assertThat(cocOpt, present());
         checkCrossOriginConfig(cocOpt.get());
     }
