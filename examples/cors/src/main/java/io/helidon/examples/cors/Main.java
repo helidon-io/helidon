@@ -31,6 +31,7 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.cors.CorsSupport;
+import io.helidon.webserver.cors.CrossOriginConfig;
 
 /**
  * Simple Hello World rest application.
@@ -110,14 +111,45 @@ public final class Main {
                 .build();
 
         // Note: Add the CORS routing *before* registering the GreetService routing.
-        return Routing.builder()
+        Routing.Builder builder = Routing.builder()
                 .register(JsonSupport.create())
                 .register(health)                   // Health at "/health"
-                .register(metrics)                 // Metrics at "/metrics"
-                .put(CorsSupport.create(config.get("restrictive-cors")))
-                .get(CorsSupport.create(config.get("open-cors")))
-                .options(CorsSupport.create())
+                .register(metrics);                 // Metrics at "/metrics"
+        return routingForCors(builder, config)
                 .register("/greet", greetService)
                 .build();
     }
+
+    private static Routing.Builder routingForCors(Routing.Builder builder, Config config) {
+        return builder
+                .put(CorsSupport.create(config.get("restrictive-cors")))
+                .get(CorsSupport.create(config.get("open-cors")))
+                .options(CorsSupport.create());
+    }
+
+    /**
+     * Alternative way to construct routing for CORS, including letting deployers override CORS set-up using
+     * configuration.
+     *
+     * @param builder the {@code Routing.Builder} in use
+     * @param config configuration possibly containing restrictive-cors, open-cors, and cors (for overriding)
+     * @return updated builder
+     */
+    private static Routing.Builder routingForCorsWithOverride(Routing.Builder builder, Config config) {
+        CorsSupport.Builder corsBuilder = CorsSupport.builder();
+
+        // Where there might be overlap in CORS set-up, add from most restrictive to least.
+
+        config.get("restrictive-cors").ifExists(c -> corsBuilder.addCrossOrigin(CrossOriginConfig.create(c)));
+        config.get("open-cors").ifExists(c -> corsBuilder.addCrossOrigin(CrossOriginConfig.create(c)));
+
+        // Last, handle possible overrides including path expressions.
+        config.get("cors").ifExists(corsBuilder::mappedConfig);
+        CorsSupport cs = corsBuilder.build();
+        builder.any(cs);
+        return builder;
+    }
+
+
+
 }
