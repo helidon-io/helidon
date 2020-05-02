@@ -40,7 +40,7 @@ public class MultiTimeoutFallbackTckTest extends FlowPublisherVerification<Long>
     @Override
     public Flow.Publisher<Long> createFlowPublisher(long l) {
         return Multi.<Long>never()
-                .timeout(1, TimeUnit.MILLISECONDS, executor, Multi.rangeLong(0, l));
+                .timeout(100, TimeUnit.MILLISECONDS, executor, Multi.rangeLong(0, l));
     }
 
     @Override
