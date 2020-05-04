@@ -48,7 +48,7 @@ import io.helidon.webserver.cors.LogHelper.MatcherChecks;
 class Aggregator {
 
     // Key value for the map corresponding to the cross-origin config managed by the {@link CorsSetter} methods
-    static final String PATHLESS_KEY = "/{+}";
+    static final String PATHLESS_KEY = "{+}";
 
     private static final Logger LOGGER = Logger.getLogger(Aggregator.class.getName());
 
