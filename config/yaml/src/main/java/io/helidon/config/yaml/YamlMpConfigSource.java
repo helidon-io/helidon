@@ -36,9 +36,9 @@ import org.yaml.snakeyaml.Yaml;
  * MicroProfile {@link org.eclipse.microprofile.config.spi.ConfigSource} that can be used
  * to add YAML files from classpath or file system using the
  * {@link org.eclipse.microprofile.config.spi.ConfigProviderResolver#getBuilder()}.
+ * <p>The YAML file is transformed to a flat map as follows:</p>
+ * <strong>Object nodes</strong>
  * <p>
- * The YAML file is transformed to a flat map as follows:
- * <h4>Object nodes</h4>
  * Each node in the tree is dot separated.
  * <pre>
  * server:
@@ -50,7 +50,8 @@ import org.yaml.snakeyaml.Yaml;
  * server.host=localhost
  * server.port=8080
  * </pre>
- * <h4>List nodes (arrays)</h4>
+ * <strong>List nodes (arrays)</strong>
+ * <p>
  * Each node will be indexed (0 based)
  * <pre>
  * providers:
