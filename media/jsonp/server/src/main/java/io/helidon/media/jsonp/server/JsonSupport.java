@@ -70,6 +70,7 @@ import io.helidon.webserver.WebServer;
  * @see JsonpBodyReader
  * @see JsonpBodyWriter
  */
+@Deprecated
 public final class JsonSupport implements Service, Handler {
 
     static {
