@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Set;
 import java.util.logging.LogManager;
+import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
@@ -37,6 +38,10 @@ import io.helidon.webserver.cors.CrossOriginConfig;
  * Simple Hello World rest application.
  */
 public final class Main {
+
+    // Set using java -DuseOverride=true -jar target/helidon-examples-core.jar
+    // or during build tests using mvn test -DargLine=-DuseOverride=true
+    static final boolean useOverride = Boolean.getBoolean("useOverride");
 
     /**
      * Cannot be instantiated.
@@ -103,7 +108,6 @@ public final class Main {
      */
     private static Routing createRouting(Config config) {
 
-
         MetricsSupport metrics = MetricsSupport.create();
         GreetService greetService = new GreetService(config);
         HealthSupport health = HealthSupport.builder()
@@ -115,15 +119,28 @@ public final class Main {
                 .register(JsonSupport.create())
                 .register(health)                   // Health at "/health"
                 .register(metrics);                 // Metrics at "/metrics"
-        return routingForCors(builder, config)
+        if (useOverride) {
+            Logger.getLogger(Main.class.getName()).info("Using the override configuration");
+        }
+        return (useOverride ? routingForCorsWithOverride(builder, config) : routingForCors(builder, config))
                 .register("/greet", greetService)
                 .build();
     }
 
     private static Routing.Builder routingForCors(Routing.Builder builder, Config config) {
+
+        // The default CorsSupport object (for example, CorsSupport.create()) allows sharing for any HTTP method and with any
+        // origin. Using CorsSupport.create(Config) with a missing config node yields  a default CorsSupport, which might not be
+        // what you want. This example warns if either expected config node is missing and then continues with the default.
+
+        Config restrictiveConfig = config.get("restrictive-cors");
+        Config openConfig = config.get("open-cors");
+        if (!restrictiveConfig.exists() || !openConfig.exists()) {
+            Logger.getLogger(Main.class.getName()).warning("Missing config; continuing with default CORS support");
+        }
         return builder
-                .put(CorsSupport.create(config.get("restrictive-cors")))
-                .get(CorsSupport.create(config.get("open-cors")))
+                .put(CorsSupport.create(restrictiveConfig))
+                .get(CorsSupport.create(openConfig))
                 .options(CorsSupport.create());
     }
 
@@ -136,20 +153,23 @@ public final class Main {
      * @return updated builder
      */
     private static Routing.Builder routingForCorsWithOverride(Routing.Builder builder, Config config) {
+        Config restrictiveConfig = config.get("restrictive-cors");
+        Config openConfig = config.get("open-cors");
+        if (!restrictiveConfig.exists() || !openConfig.exists()) {
+            Logger.getLogger(Main.class.getName()).warning("Missing config; continuing with default CORS support");
+        }
+
         CorsSupport.Builder corsBuilder = CorsSupport.builder();
+
+        // Use possible overrides first.
+        config.get("cors").ifExists(corsBuilder::mappedConfig);
 
         // Where there might be overlap in CORS set-up, add from most restrictive to least.
 
-        config.get("restrictive-cors").ifExists(c -> corsBuilder.addCrossOrigin(CrossOriginConfig.create(c)));
-        config.get("open-cors").ifExists(c -> corsBuilder.addCrossOrigin(CrossOriginConfig.create(c)));
+        corsBuilder.addCrossOrigin(CrossOriginConfig.create(restrictiveConfig));
+        corsBuilder.addCrossOrigin(CrossOriginConfig.create(openConfig));
 
-        // Last, handle possible overrides including path expressions.
-        config.get("cors").ifExists(corsBuilder::mappedConfig);
-        CorsSupport cs = corsBuilder.build();
-        builder.any(cs);
+        builder.any(corsBuilder.build());
         return builder;
     }
-
-
-
 }

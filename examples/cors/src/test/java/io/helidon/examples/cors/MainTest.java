@@ -132,7 +132,8 @@ public class MainTest {
         assertEquals(200, r.status().code(), "HTTP response2");
     }
 
-    @Test // No order, so this runs after the greeting change to Hola.
+    @Order(10) // Run after the non-CORS tests (so the greeting is Hola) but before the CORS test that changes the greeting again.
+    @Test
     void testAnonymousGreetWithCors() throws Exception {
         WebClientRequestBuilder builder = webClient.get();
         Headers headers = builder.headers();
@@ -141,7 +142,8 @@ public class MainTest {
 
         WebClientResponse r = getResponse("/greet", builder);
         assertEquals(200, r.status().code(), "HTTP response");
-        assertTrue(fromPayload(r).getMessage().contains("Cheers World"));
+        String payload = fromPayload(r).getMessage();
+        assertTrue(payload.contains("Hola World"), "HTTP response payload was " + payload);
         headers = r.headers();
         Optional<String> allowOrigin = headers.value(CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN);
         assertTrue(allowOrigin.isPresent(),
@@ -149,7 +151,8 @@ public class MainTest {
         assertEquals(allowOrigin.get(), "*");
     }
 
-    @Test // No order, so this runs after the greeting change to Hola.
+    @Order(12) // Run after CORS test changes greeting to Cheers.
+    @Test
     void testNamedGreetWithCors() throws Exception {
         WebClientRequestBuilder builder = webClient.get();
         Headers headers = builder.headers();
@@ -166,7 +169,7 @@ public class MainTest {
         assertEquals(allowOrigin.get(), "*");
     }
 
-    @Order(2)
+    @Order(11) // Run after the non-CORS tests but before other CORS tests.
     @Test
     void testGreetingChangeWithCors() throws Exception {
 
@@ -212,15 +215,17 @@ public class MainTest {
                 + " should contain '*' but does not; " + allowOrigins);
     }
 
+    @Order(100) // After all other tests so the can rely on deterministic greetings.
     @Test
-    void testForbiddenGreetingChangeWithCors() throws Exception {
+    void testGreetingChangeWithCorsAndOtherOrigin() throws Exception {
         WebClientRequestBuilder builder = webClient.put();
         Headers headers = builder.headers();
         headers.add("Origin", "http://other.com");
         headers.add("Host", "bar.com");
 
-        WebClientResponse r = putResponse("/greet/greeting", new GreetingMessage("Hola"), builder);
-        assertEquals(403, r.status().code(), "HTTP response3");
+        WebClientResponse r = putResponse("/greet/greeting", new GreetingMessage("Ahoy"), builder);
+        // Result depends on whether we are using overrides or not.
+        assertEquals(Main.useOverride ? 204 : 403, r.status().code(), "HTTP response3");
     }
 
     private static WebClientResponse getResponse(String path) throws ExecutionException, InterruptedException {
