@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.util.function.Consumer;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
+import io.helidon.media.common.MediaSupport;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.testsupport.MediaPublisher;
 import io.helidon.webserver.testsupport.TestClient;
@@ -148,17 +149,18 @@ public class MainTest {
         TMain tm = new TMain();
         callTestedMethod.accept(tm);
         assertNotNull(tm.routing);
-        return TestClient.create(tm.routing);
+        return TestClient.create(tm.routing, tm.mediaSupport);
     }
 
     static class TMain extends Main {
 
         private Routing routing;
+        private MediaSupport mediaSupport;
 
         @Override
-        protected void startServer(Routing routing) {
+        protected void startServer(Routing routing, MediaSupport mediaSupport) {
             this.routing = routing;
+            this.mediaSupport = mediaSupport;
         }
     }
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ public class TestRequest {
     private final TestClient testClient;
     private final String path;
     private final StringBuilder query = new StringBuilder();
-    private final Map<String, List<String>> headers = new HashMap();
+    private final Map<String, List<String>> headers = new HashMap<>();
     private volatile Http.Version version = Http.Version.V1_1;
 
     /**

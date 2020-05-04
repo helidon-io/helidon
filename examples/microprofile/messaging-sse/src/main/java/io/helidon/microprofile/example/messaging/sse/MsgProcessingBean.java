@@ -33,11 +33,19 @@ import org.glassfish.jersey.media.sse.OutboundEvent;
 import org.reactivestreams.FlowAdapters;
 import org.reactivestreams.Publisher;
 
+/**
+ * Bean for message processing.
+ */
 @ApplicationScoped
 public class MsgProcessingBean {
     private final SubmissionPublisher<String> emitter = new SubmissionPublisher<>();
     private SseBroadcaster sseBroadcaster;
 
+    /**
+     * Create a publisher for the emitter.
+     *
+     * @return A Publisher from the emitter
+     */
     @Outgoing("multiplyVariants")
     public Publisher<String> preparePublisher() {
         // Create new publisher for emitting to by this::process
@@ -46,6 +54,11 @@ public class MsgProcessingBean {
                 .buildRs();
     }
 
+    /**
+     * Returns a builder for a processor that maps a string into three variants.
+     *
+     * @return ProcessorBuilder
+     */
     @Incoming("multiplyVariants")
     @Outgoing("wrapSseEvent")
     public ProcessorBuilder<String, String> multiply() {
@@ -62,6 +75,12 @@ public class MsgProcessingBean {
                 );
     }
 
+    /**
+     * Maps a message to an sse event.
+     *
+     * @param msg to wrap
+     * @return an outbound SSE event
+     */
     @Incoming("wrapSseEvent")
     @Outgoing("broadcast")
     public OutboundSseEvent wrapSseEvent(String msg) {
@@ -69,12 +88,23 @@ public class MsgProcessingBean {
         return new OutboundEvent.Builder().data(msg).build();
     }
 
+    /**
+     * Broadcasts an event.
+     *
+     * @param sseEvent Event to broadcast
+     */
     @Incoming("broadcast")
     public void broadcast(OutboundSseEvent sseEvent) {
         // Broadcast to all sse sinks
         this.sseBroadcaster.broadcast(sseEvent);
     }
 
+    /**
+     * Consumes events.
+     *
+     * @param eventSink event sink
+     * @param sse event
+     */
     public void addSink(final SseEventSink eventSink, final Sse sse) {
         if (this.sseBroadcaster == null) {
             this.sseBroadcaster = sse.newBroadcaster();
@@ -82,6 +112,11 @@ public class MsgProcessingBean {
         this.sseBroadcaster.register(eventSink);
     }
 
+    /**
+     * Emit a message.
+     *
+     * @param msg message to emit
+     */
     public void process(final String msg) {
         emitter.submit(msg);
     }

@@ -4,7 +4,6 @@ An example gRPC outbound security
 
 ## Build and run
 
-With JDK8+
 ```bash
 mvn -f ../pom.xml -pl common/security-outbound package
 java -jar target/helidon-examples-grpc-security-outbound.jar

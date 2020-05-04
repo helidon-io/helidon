@@ -5,7 +5,6 @@ Helidon MP QuickStart, enhanced with OpenAPI support.
 
 ## Build and run
 
-With JDK8+
 ```bash
 mvn package
 java -jar target/helidon-examples-microprofile-openapi-basic.jar

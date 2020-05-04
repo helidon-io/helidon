@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,24 +14,8 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.example.staticc;
-
-import java.util.Set;
-
-import javax.enterprise.context.ApplicationScoped;
-import javax.ws.rs.ApplicationPath;
-import javax.ws.rs.core.Application;
-
 /**
- * Example JAX-RS application with static content.
+ * Helidon MicroProfile Messaging Example.
  */
-@ApplicationScoped
-@ApplicationPath("/")
-public class StaticContentApp extends Application {
-    @Override
-    public Set<Class<?>> getClasses() {
-        return Set.of(
-                HelloWorldResource.class
-        );
-    }
-}
+package io.helidon.microprofile.example.messaging.sse;
+

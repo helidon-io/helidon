@@ -1,6 +1,6 @@
 # JPA Integration Example
 
-With Java 8+:
+With Java:
 ```bash
 mvn package
 java -jar target/helidon-integrations-examples-jpa.jar

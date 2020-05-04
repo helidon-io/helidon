@@ -30,7 +30,6 @@ the most up-to-date value. Sometimes that is all you need.
 
 ## Build and run
 
-With JDK8+
 ```bash
 mvn package
 java -jar target/helidon-examples-config-changes.jar

@@ -12,7 +12,6 @@ There are three examples with exactly the same behavior
 
 ## Build and run
 
-With JDK8+
 ```bash
 mvn package
 java -jar target/helidon-examples-security-jersey.jar

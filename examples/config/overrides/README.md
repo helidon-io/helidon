@@ -21,7 +21,6 @@ take precedence over the settings in the original config sources.
 
 ## Build and run
 
-With JDK8+
 ```bash
 mvn package
 java -jar target/helidon-examples-config-overrides.jar

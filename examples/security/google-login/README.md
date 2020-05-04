@@ -19,7 +19,6 @@ Update the following files with your client id (it should support http://localho
 
 ## Build and run
 
-With JDK8+
 ```bash
 mvn package
 java -jar target/helidon-examples-security-google-login.jar

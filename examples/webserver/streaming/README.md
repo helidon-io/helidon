@@ -7,7 +7,6 @@ to the size of the file being uploaded or downloaded.
 
 ## Build and run
 
-With JDK8+
 ```bash
 mvn package
 java -jar target/helidon-examples-webserver-streaming.jar

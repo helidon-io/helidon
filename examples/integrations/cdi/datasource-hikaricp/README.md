@@ -67,7 +67,6 @@ docker run --rm -d \
     -p 8080:8080 helidon-examples-integrations-datasource-hikaricp:latest
 ```
 
-With JDK8+
 ```bash
 mvn package
 java -jar target/helidon-examples-integrations-datasource-hikaricp.jar
