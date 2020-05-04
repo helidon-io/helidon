@@ -21,7 +21,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 import io.helidon.config.Config;
-import io.helidon.config.ConfigSources;
+import io.helidon.config.mp.MpConfigSources;
+
+import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 
 /**
  * Detached configuration of a single connector.
@@ -49,13 +51,9 @@ class AdHocConfigBuilder {
     }
 
     org.eclipse.microprofile.config.Config build() {
-        Config newConfig = Config.builder(ConfigSources.create(configuration))
-                .disableEnvironmentVariablesSource()
-                .disableSystemPropertiesSource()
-                .disableFilterServices()
-                .disableSourceServices()
-                .disableParserServices()
+        return ConfigProviderResolver.instance()
+                .getBuilder()
+                .withSources(MpConfigSources.create(configuration))
                 .build();
-        return (org.eclipse.microprofile.config.Config) newConfig;
     }
 }

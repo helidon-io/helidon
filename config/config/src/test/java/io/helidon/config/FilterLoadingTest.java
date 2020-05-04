@@ -28,7 +28,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 public class FilterLoadingTest {
 
-    private static final String ORIGINAL_VALUE_SUBJECT_TO_AUTO_FILTERING = "originalValue";
+    static final String ORIGINAL_VALUE_SUBJECT_TO_AUTO_FILTERING = "originalValue";
     private static final String ORIGINAL_VALUE_SUBJECT_TO_AUTO_FILTERING_VIA_PROVIDER = "originalValueForProviderTest";
 
     private static final String UNAFFECTED_KEY = "key1";

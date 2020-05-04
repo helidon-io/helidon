@@ -15,6 +15,7 @@
  */
 
 import io.helidon.config.yaml.YamlConfigParser;
+import io.helidon.config.yaml.YamlMpConfigSourceProvider;
 
 /**
  * YAML Parser implementation.
@@ -27,9 +28,11 @@ module io.helidon.config.yaml {
 
     requires transitive io.helidon.config;
     requires io.helidon.common;
+    requires static microprofile.config.api;
 
     exports io.helidon.config.yaml;
 
     provides io.helidon.config.spi.ConfigParser with YamlConfigParser;
+    provides org.eclipse.microprofile.config.spi.ConfigSourceProvider with YamlMpConfigSourceProvider;
 
 }

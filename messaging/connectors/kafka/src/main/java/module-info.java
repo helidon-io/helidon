@@ -22,10 +22,12 @@ module io.helidon.messaging.connectors.kafka {
     requires static kafka.clients;
     requires org.reactivestreams;
     requires transitive io.helidon.config;
+    requires io.helidon.config.mp;
     requires transitive microprofile.reactive.messaging.api;
     requires transitive microprofile.reactive.streams.operators.api;
     requires io.helidon.common.context;
     requires io.helidon.common.configurable;
+    requires microprofile.config.api;
 
     exports io.helidon.messaging.connectors.kafka;
 }

@@ -17,14 +17,6 @@
 
 package io.helidon.messaging.connectors.kafka;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-
-import com.salesforce.kafka.test.junit5.SharedKafkaTestResource;
-
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -49,9 +41,11 @@ import javax.enterprise.inject.se.SeContainerInitializer;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.config.MpConfigProviderResolver;
+import io.helidon.config.mp.MpConfigProviderResolver;
+import io.helidon.config.mp.MpConfigSources;
 import io.helidon.microprofile.messaging.MessagingCdiExtension;
 
+import com.salesforce.kafka.test.junit5.SharedKafkaTestResource;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -59,12 +53,19 @@ import org.apache.kafka.common.serialization.LongDeserializer;
 import org.apache.kafka.common.serialization.LongSerializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.reactive.messaging.spi.Connector;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 class KafkaCdiExtensionTest {
 
@@ -481,11 +482,13 @@ class KafkaCdiExtensionTest {
 
     private SeContainer startCdiContainer(Map<String, String> p, Set<Class<?>> beanClasses) {
         p.put("mp.initializer.allow", "true");
-        Config config = Config.builder()
-                .sources(ConfigSources.create(p))
+        org.eclipse.microprofile.config.Config config = ConfigProviderResolver.instance()
+                .getBuilder()
+                .withSources(MpConfigSources.create(p))
                 .build();
+
         MpConfigProviderResolver.instance()
-                .registerConfig((org.eclipse.microprofile.config.Config) config,
+                .registerConfig(config,
                         Thread.currentThread().getContextClassLoader());
         final SeContainerInitializer initializer = SeContainerInitializer.newInstance();
         assertNotNull(initializer);

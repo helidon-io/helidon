@@ -23,7 +23,10 @@ module io.helidon.microprofile.config {
     requires jakarta.inject.api;
     requires io.helidon.common;
     requires io.helidon.config;
-    requires microprofile.config.api;
+    requires transitive microprofile.config.api;
+    requires io.helidon.config.mp;
+    requires java.annotation;
+    requires io.helidon.common.serviceloader;
 
     exports io.helidon.microprofile.config;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,11 +35,8 @@ import org.jboss.arquillian.container.spi.client.container.ContainerConfiguratio
  */
 public class HelidonContainerConfiguration implements ContainerConfiguration {
     private String appClassName = null;
-    private String resourceClassName = null;
     private int port = 8080;
     private boolean deleteTmp = true;
-    private boolean addResourcesToApps = false;
-    private boolean replaceConfigSourcesWithMp = false;
     private boolean useRelativePath = false;
 
     public String getApp() {
@@ -48,14 +45,6 @@ public class HelidonContainerConfiguration implements ContainerConfiguration {
 
     public void setApp(String app) {
         this.appClassName = app;
-    }
-
-    public String getResource() {
-        return resourceClassName;
-    }
-
-    public void setResource(String resource) {
-        this.resourceClassName = resource;
     }
 
     public int getPort() {
@@ -80,22 +69,6 @@ public class HelidonContainerConfiguration implements ContainerConfiguration {
 
     public void setUseRelativePath(boolean b) {
         this.useRelativePath = b;
-    }
-
-    public boolean getAddResourcesToApps() {
-        return addResourcesToApps;
-    }
-
-    public void setAddResourcesToApps(boolean addResourcesToApps) {
-        this.addResourcesToApps = addResourcesToApps;
-    }
-
-    public void setReplaceConfigSourcesWithMp(boolean replaceConfigSourcesWithMp) {
-        this.replaceConfigSourcesWithMp = replaceConfigSourcesWithMp;
-    }
-
-    public boolean getReplaceConfigSourcesWithMp() {
-        return replaceConfigSourcesWithMp;
     }
 
     @Override

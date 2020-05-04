@@ -34,7 +34,7 @@ import io.helidon.config.spi.ConfigNode.ValueNode;
 public abstract class AbstractNodeBuilderImpl<ID, B> {
 
     private final B thisBuilder;
-    private Function<String, String> tokenResolver;
+    private final Function<String, String> tokenResolver;
 
     @SuppressWarnings("unchecked")
     AbstractNodeBuilderImpl(Function<String, String> tokenResolver) {
@@ -79,13 +79,6 @@ public abstract class AbstractNodeBuilderImpl<ID, B> {
             return "";
         }
     }
-
-    /**
-     * Human readable description of current builder implementation to be used in logs and exception messages.
-     *
-     * @return builder description
-     */
-    protected abstract String typeDescription();
 
     /**
      * Returns id computed from key.

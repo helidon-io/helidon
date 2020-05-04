@@ -34,13 +34,6 @@
             <artifactId>helidon-arquillian</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <!-- TCK requires Jackson, not JSON-B -->
-                    <groupId>jakarta.json.bind</groupId>
-                    <artifactId>jakarta.json.bind-api</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.eclipse.microprofile.rest.client</groupId>

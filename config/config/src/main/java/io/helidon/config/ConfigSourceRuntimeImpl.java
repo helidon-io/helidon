@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Properties;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -50,7 +49,7 @@ import io.helidon.config.spi.WatchableSource;
  * config source.
  *
  */
-public class ConfigSourceRuntimeImpl extends ConfigSourceRuntimeBase implements org.eclipse.microprofile.config.spi.ConfigSource {
+class ConfigSourceRuntimeImpl implements ConfigSourceRuntime {
     private static final Logger LOGGER = Logger.getLogger(ConfigSourceRuntimeImpl.class.getName());
 
     private final List<BiConsumer<String, ConfigNode>> listeners = new LinkedList<>();
@@ -72,7 +71,6 @@ public class ConfigSourceRuntimeImpl extends ConfigSourceRuntimeBase implements 
     // for eager sources, this is the data we get initially, everything else is handled through change listeners
     private Optional<ObjectNode> initialData;
     private Map<String, ConfigNode> loadedData;
-    private Map<String, String> mpData;
 
     @SuppressWarnings("unchecked")
     ConfigSourceRuntimeImpl(BuilderImpl.ConfigContextImpl configContext, ConfigSource source) {
@@ -182,7 +180,6 @@ public class ConfigSourceRuntimeImpl extends ConfigSourceRuntimeBase implements 
         return isLazy;
     }
 
-    @Override
     boolean changesSupported() {
         return changesSupported;
     }
@@ -233,16 +230,11 @@ public class ConfigSourceRuntimeImpl extends ConfigSourceRuntimeBase implements 
         this.initialData = loadedData;
 
         this.loadedData = new HashMap<>();
-        mpData = new HashMap<>();
 
         initialData.ifPresent(data -> {
             Map<ConfigKeyImpl, ConfigNode> keyToNodeMap = ConfigHelper.createFullKeyToNodeMap(data);
 
-            keyToNodeMap.forEach((key, value) -> {
-                Optional<String> directValue = value.value();
-                directValue.ifPresent(stringValue -> mpData.put(key.toString(), stringValue));
-                this.loadedData.put(key.toString(), value);
-            });
+            keyToNodeMap.forEach((key, value) -> this.loadedData.put(key.toString(), value));
         });
 
         dataLoaded = true;
@@ -254,10 +246,6 @@ public class ConfigSourceRuntimeImpl extends ConfigSourceRuntimeBase implements 
         return singleNodeFunction.apply(key);
     }
 
-    @Override
-    public org.eclipse.microprofile.config.spi.ConfigSource asMpSource() {
-        return this;
-    }
 
     @Override
     public String description() {
@@ -265,49 +253,8 @@ public class ConfigSourceRuntimeImpl extends ConfigSourceRuntimeBase implements 
     }
 
     /*
-     * MP Config related methods
-     */
-
-    @Override
-    public Map<String, String> getProperties() {
-        if (isSystemProperties()) {
-            // this is a "hack" for MP TCK tests
-            // System properties act as a mutable source for the purpose of MicroProfile
-            Map<String, String> result = new HashMap<>();
-            Properties properties = System.getProperties();
-            for (String key : properties.stringPropertyNames()) {
-                result.put(key, properties.getProperty(key));
-            }
-            return result;
-        }
-        initialLoad();
-        return new HashMap<>(mpData);
-    }
-
-    @Override
-    public String getValue(String propertyName) {
-        initialLoad();
-        return mpData.get(propertyName);
-    }
-
-    @Override
-    public String getName() {
-        return configSource.description();
-    }
-
-    /*
      Runtime impl base
      */
-
-    @Override
-    boolean isSystemProperties() {
-        return configSource instanceof ConfigSources.SystemPropertiesConfigSource;
-    }
-
-    @Override
-    boolean isEnvironmentVariables() {
-        return configSource instanceof ConfigSources.EnvironmentVariablesConfigSource;
-    }
 
     private Function<String, Optional<ConfigNode>> objectNodeToSingleNode() {
         return key -> {
@@ -338,10 +285,6 @@ public class ConfigSourceRuntimeImpl extends ConfigSourceRuntimeBase implements 
                     }
                 });
 
-    }
-
-    ConfigSource unwrap() {
-        return configSource;
     }
 
     private static final class PollingStrategyStarter implements Runnable {

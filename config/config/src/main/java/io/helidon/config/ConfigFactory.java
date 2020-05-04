@@ -23,7 +23,6 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import io.helidon.config.spi.ConfigFilter;
 import io.helidon.config.spi.ConfigNode;
@@ -44,8 +43,6 @@ final class ConfigFactory {
     private final Function<String, List<String>> aliasGenerator;
     private final ConcurrentMap<PrefixedKey, AbstractConfigImpl> configCache;
     private final Instant timestamp;
-    private final List<ConfigSourceRuntimeBase> configSources;
-    private final List<org.eclipse.microprofile.config.spi.ConfigSource> mpConfigSources;
 
     /**
      * Create new instance of the factory operating on specified {@link ConfigSource}.
@@ -60,8 +57,7 @@ final class ConfigFactory {
                   ObjectNode node,
                   ConfigFilter filter,
                   ProviderImpl provider,
-                  Function<String, List<String>> aliasGenerator,
-                  List<ConfigSourceRuntimeBase> configSources) {
+                  Function<String, List<String>> aliasGenerator) {
 
         Objects.requireNonNull(mapperManager, "mapperManager argument is null.");
         Objects.requireNonNull(node, "node argument is null.");
@@ -73,14 +69,9 @@ final class ConfigFactory {
         this.filter = filter;
         this.provider = provider;
         this.aliasGenerator = aliasGenerator;
-        this.configSources = configSources;
 
         configCache = new ConcurrentHashMap<>();
         timestamp = Instant.now();
-
-        this.mpConfigSources = configSources.stream()
-                .map(ConfigSourceRuntime::asMpSource)
-                .collect(Collectors.toList());
     }
 
     Instant timestamp() {
@@ -159,14 +150,6 @@ final class ConfigFactory {
 
     ProviderImpl provider() {
         return provider;
-    }
-
-    List<ConfigSourceRuntimeBase> configSources() {
-        return configSources;
-    }
-
-    List<org.eclipse.microprofile.config.spi.ConfigSource> mpConfigSources() {
-        return mpConfigSources;
     }
 
     /**

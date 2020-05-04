@@ -159,8 +159,12 @@ public class ServerCdiExtension implements Extension {
     private void registerJaxRsApplications(BeanManager beanManager, ServerConfiguration serverConfig) {
         JaxRsCdiExtension jaxRs = beanManager.getExtension(JaxRsCdiExtension.class);
 
-        jaxRs.applicationsToRun()
-                .forEach(it -> addApplication(serverConfig, jaxRs, it));
+        List<JaxRsApplication> jaxRsApplications = jaxRs.applicationsToRun();
+        if (jaxRsApplications.isEmpty()) {
+            LOGGER.warning("There are no JAX-RS applications or resources. Maybe you forgot META-INF/beans.xml file?");
+        } else {
+            jaxRsApplications.forEach(it -> addApplication(serverConfig, jaxRs, it));
+        }
     }
 
     private void registerDefaultRedirect() {
@@ -256,7 +260,7 @@ public class ServerCdiExtension implements Extension {
         }
 
         Routing.Builder routing = routingBuilder(namedRouting, routingNameRequired, serverConfig,
-                applicationMeta.appName());
+                                                 applicationMeta.appName());
 
         JerseySupport jerseySupport = jaxRs.toJerseySupport(jaxRsExecutorService, applicationMeta);
         if (contextRoot.isPresent()) {
@@ -281,19 +285,19 @@ public class ServerCdiExtension implements Extension {
      */
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     public Routing.Builder routingBuilder(Optional<String> namedRouting, boolean routingNameRequired,
-                                           ServerConfiguration serverConfig, String appName) {
+                                          ServerConfiguration serverConfig, String appName) {
         if (namedRouting.isPresent()) {
             String socket = namedRouting.get();
             if (null == serverConfig.socket(socket)) {
                 if (routingNameRequired) {
                     throw new IllegalStateException("Application "
-                            + appName
-                            + " requires routing "
-                            + socket
-                            + " to exist, yet such a socket is not configured for web server");
+                                                            + appName
+                                                            + " requires routing "
+                                                            + socket
+                                                            + " to exist, yet such a socket is not configured for web server");
                 } else {
                     LOGGER.info("Routing " + socket + " does not exist, using default routing for application "
-                            + appName);
+                                        + appName);
 
                     return serverRoutingBuilder();
                 }
@@ -318,7 +322,6 @@ public class ServerCdiExtension implements Extension {
             registerWebServerService(aClass, service, serverConfig);
         }
     }
-
 
     private static List<Bean<?>> prioritySort(Set<Bean<?>> beans) {
         List<Bean<?>> prioritized = new ArrayList<>(beans);

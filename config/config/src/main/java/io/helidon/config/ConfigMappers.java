@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,10 +44,8 @@ import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAccessor;
 import java.util.AbstractMap;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -81,100 +79,96 @@ public final class ConfigMappers {
     }
 
     private static Map<Class<?>, Function<Config, ?>> initEssentialMappers() {
-        Map<Class<?>, Function<Config, ?>> essentials = new HashMap<>();
 
-        essentials.put(Config.class, (node) -> node);
-
-        essentials.put(String.class, wrap(value -> value));
-
-        essentials.put(OptionalInt.class, (node) -> {
-            if (!node.exists()) {
-                return OptionalInt.empty();
-            }
-
-            return OptionalInt.of(wrap(Integer::parseInt).apply(node));
-        });
-
-        essentials.put(OptionalLong.class, (node) -> {
-            if (!node.exists()) {
-                return OptionalLong.empty();
-            }
-
-            return OptionalLong.of(wrap(Long::parseLong).apply(node));
-        });
-
-        essentials.put(OptionalDouble.class, (node) -> {
-            if (!node.exists()) {
-                return OptionalDouble.empty();
-            }
-
-            return OptionalDouble.of(wrap(Double::parseDouble).apply(node));
-        });
-
-        return Collections.unmodifiableMap(essentials);
+        return Map.of(Config.class, (node) -> node,
+                      String.class, wrap(value -> value),
+                      OptionalInt.class, ConfigMappers::optionalIntEssential,
+                      OptionalLong.class, ConfigMappers::optionalLongEssential,
+                      OptionalDouble.class, ConfigMappers::optionalDoubleEssential);
     }
 
     static Map<Class<?>, Function<Config, ?>> essentialMappers() {
         return ESSENTIAL_MAPPERS;
     }
 
+    private static OptionalDouble optionalDoubleEssential(Config node) {
+        if (!node.exists()) {
+            return OptionalDouble.empty();
+        }
+
+        return OptionalDouble.of(wrap(Double::parseDouble).apply(node));
+    }
+
+    private static OptionalLong optionalLongEssential(Config node) {
+        if (!node.exists()) {
+            return OptionalLong.empty();
+        }
+
+        return OptionalLong.of(wrap(Long::parseLong).apply(node));
+    }
+
+    private static OptionalInt optionalIntEssential(Config node) {
+        if (!node.exists()) {
+            return OptionalInt.empty();
+        }
+
+        return OptionalInt.of(wrap(Integer::parseInt).apply(node));
+    }
+
     private static Map<Class<?>, Function<Config, ?>> initBuiltInMappers() {
-        Map<Class<?>, Function<Config, ?>> builtIns = new HashMap<>();
 
         //primitive types
-        builtIns.put(Byte.class, wrap(ConfigMappers::toByte));
-        builtIns.put(Short.class, wrap(ConfigMappers::toShort));
-        builtIns.put(Integer.class, wrap(ConfigMappers::toInt));
-        builtIns.put(Long.class, wrap(ConfigMappers::toLong));
-        builtIns.put(Float.class, wrap(ConfigMappers::toFloat));
-        builtIns.put(Double.class, wrap(ConfigMappers::toDouble));
-        builtIns.put(Boolean.class, wrap(ConfigMappers::toBoolean));
-        builtIns.put(Character.class, wrap(ConfigMappers::toChar));
-        //java.lang
-        builtIns.put(Class.class, wrap(ConfigMappers::toClass));
-        //javax.math
-        builtIns.put(BigDecimal.class, wrap(ConfigMappers::toBigDecimal));
-        builtIns.put(BigInteger.class, wrap(ConfigMappers::toBigInteger));
-        //java.time
-        builtIns.put(Duration.class, wrap(ConfigMappers::toDuration));
-        builtIns.put(Period.class, wrap(ConfigMappers::toPeriod));
-        builtIns.put(LocalDate.class, wrap(ConfigMappers::toLocalDate));
-        builtIns.put(LocalDateTime.class, wrap(ConfigMappers::toLocalDateTime));
-        builtIns.put(LocalTime.class, wrap(ConfigMappers::toLocalTime));
-        builtIns.put(ZonedDateTime.class, wrap(ConfigMappers::toZonedDateTime));
-        builtIns.put(ZoneId.class, wrap(ConfigMappers::toZoneId));
-        builtIns.put(ZoneOffset.class, wrap(ConfigMappers::toZoneOffset));
-        builtIns.put(Instant.class, wrap(ConfigMappers::toInstant));
-        builtIns.put(OffsetTime.class, wrap(ConfigMappers::toOffsetTime));
-        builtIns.put(OffsetDateTime.class, wrap(ConfigMappers::toOffsetDateTime));
-        builtIns.put(YearMonth.class, wrap(YearMonth::parse));
-        //java.io
-        builtIns.put(File.class, wrap(ConfigMappers::toFile));
-        //java.nio
-        builtIns.put(Path.class, wrap(ConfigMappers::toPath));
-        builtIns.put(Charset.class, wrap(ConfigMappers::toCharset));
-        //java.net
-        builtIns.put(URI.class, wrap(ConfigMappers::toUri));
-        builtIns.put(URL.class, wrap(ConfigMappers::toUrl));
-        //java.util
-        builtIns.put(Pattern.class, wrap(ConfigMappers::toPattern));
-        builtIns.put(UUID.class, wrap(ConfigMappers::toUUID));
-        builtIns.put(Map.class, wrapMapper(ConfigMappers::toMap));
-        builtIns.put(Properties.class, wrapMapper(ConfigMappers::toProperties));
+        return Map.ofEntries(Map.entry(Byte.class, wrap(ConfigMappers::toByte)),
+                             Map.entry(Short.class, wrap(ConfigMappers::toShort)),
+                             Map.entry(Integer.class, wrap(ConfigMappers::toInt)),
+                             Map.entry(Long.class, wrap(ConfigMappers::toLong)),
+                             Map.entry(Float.class, wrap(ConfigMappers::toFloat)),
+                             Map.entry(Double.class, wrap(ConfigMappers::toDouble)),
+                             Map.entry(Boolean.class, wrap(ConfigMappers::toBoolean)),
+                             Map.entry(Character.class, wrap(ConfigMappers::toChar)),
+                             //java.lang
+                             Map.entry(Class.class, wrap(ConfigMappers::toClass)),
+                             //javax.math
+                             Map.entry(BigDecimal.class, wrap(ConfigMappers::toBigDecimal)),
+                             Map.entry(BigInteger.class, wrap(ConfigMappers::toBigInteger)),
+                             //java.time
+                             Map.entry(Duration.class, wrap(ConfigMappers::toDuration)),
+                             Map.entry(Period.class, wrap(ConfigMappers::toPeriod)),
+                             Map.entry(LocalDate.class, wrap(ConfigMappers::toLocalDate)),
+                             Map.entry(LocalDateTime.class, wrap(ConfigMappers::toLocalDateTime)),
+                             Map.entry(LocalTime.class, wrap(ConfigMappers::toLocalTime)),
+                             Map.entry(ZonedDateTime.class, wrap(ConfigMappers::toZonedDateTime)),
+                             Map.entry(ZoneId.class, wrap(ConfigMappers::toZoneId)),
+                             Map.entry(ZoneOffset.class, wrap(ConfigMappers::toZoneOffset)),
+                             Map.entry(Instant.class, wrap(ConfigMappers::toInstant)),
+                             Map.entry(OffsetTime.class, wrap(ConfigMappers::toOffsetTime)),
+                             Map.entry(OffsetDateTime.class, wrap(ConfigMappers::toOffsetDateTime)),
+                             Map.entry(YearMonth.class, wrap(YearMonth::parse)),
+                             //java.io
+                             Map.entry(File.class, wrap(ConfigMappers::toFile)),
+                             //java.nio
+                             Map.entry(Path.class, wrap(ConfigMappers::toPath)),
+                             Map.entry(Charset.class, wrap(ConfigMappers::toCharset)),
+                             //java.net
+                             Map.entry(URI.class, wrap(ConfigMappers::toUri)),
+                             Map.entry(URL.class, wrap(ConfigMappers::toUrl)),
+                             //java.util
+                             Map.entry(Pattern.class, wrap(ConfigMappers::toPattern)),
+                             Map.entry(UUID.class, wrap(ConfigMappers::toUUID)),
+                             Map.entry(Map.class, wrapMapper(ConfigMappers::toMap)),
+                             Map.entry(Properties.class, wrapMapper(ConfigMappers::toProperties)),
 
-        // obsolete stuff
-        //noinspection UseOfObsoleteDateTimeApi,deprecation
-        builtIns.put(Date.class, wrap(ConfigMappers::toDate));
-        //noinspection UseOfObsoleteDateTimeApi,deprecation
-        builtIns.put(Calendar.class, wrap(ConfigMappers::toCalendar));
-        //noinspection UseOfObsoleteDateTimeApi,deprecation
-        builtIns.put(GregorianCalendar.class, wrap(ConfigMappers::toGregorianCalendar));
-        //noinspection UseOfObsoleteDateTimeApi,deprecation
-        builtIns.put(TimeZone.class, wrap(ConfigMappers::toTimeZone));
-        //noinspection UseOfObsoleteDateTimeApi,deprecation
-        builtIns.put(SimpleTimeZone.class, wrap(ConfigMappers::toSimpleTimeZone));
-
-        return Collections.unmodifiableMap(builtIns);
+                             // obsolete stuff
+                             // noinspection UseOfObsoleteDateTimeApi
+                             Map.entry(Date.class, wrap(ConfigMappers::toDate)),
+                             // noinspection UseOfObsoleteDateTimeApi
+                             Map.entry(Calendar.class, wrap(ConfigMappers::toCalendar)),
+                             // noinspection UseOfObsoleteDateTimeApi
+                             Map.entry(GregorianCalendar.class, wrap(ConfigMappers::toGregorianCalendar)),
+                             // noinspection UseOfObsoleteDateTimeApi
+                             Map.entry(TimeZone.class, wrap(ConfigMappers::toTimeZone)),
+                             // noinspection UseOfObsoleteDateTimeApi
+                             Map.entry(SimpleTimeZone.class, wrap(ConfigMappers::toSimpleTimeZone)));
     }
 
     static Map<Class<?>, Function<Config, ?>> builtInMappers() {

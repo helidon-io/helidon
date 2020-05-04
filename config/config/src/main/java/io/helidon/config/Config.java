@@ -17,7 +17,6 @@
 package io.helidon.config;
 
 import java.time.Instant;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -41,7 +40,7 @@ import io.helidon.config.spi.OverrideSource;
  * <h1>Configuration</h1>
  * Immutable tree-structured configuration.
  * <h2>Loading Configuration</h2>
- * Load the default configuration using the {@link #create} method.
+ * Load the default configuration using the {@link Config#create} method.
  * <pre>{@code
  * Config config = Config.create();
  * }</pre> Use {@link Config.Builder} to construct a new {@code Config} instance
@@ -234,7 +233,7 @@ import io.helidon.config.spi.OverrideSource;
  * <h2><a id="multipleSources">Handling Multiple Configuration
  * Sources</a></h2>
  * A {@code Config} instance, including the default {@code Config} returned by
- * {@link #create}, might be associated with multiple {@link ConfigSource}s. The
+ * {@link Config#create}, might be associated with multiple {@link ConfigSource}s. The
  * config system merges these together so that values from config sources with higher priority have
  * precedence over values from config sources with lower priority.
  */
@@ -373,50 +372,6 @@ public interface Config {
      */
     static Builder builder() {
         return new BuilderImpl();
-    }
-
-    /**
-     * This method allows use to use Helidon Config on top of an MP config.
-     * There is a limitation - the converters configured with MP config will not be available, unless
-     * the implementation is coming from Helidon.
-     *
-     * @param mpConfig MP Config instance
-     * @return a new Helidon config using only the mpConfig as its config source
-     */
-    @SuppressWarnings("unchecked")
-    static Config create(org.eclipse.microprofile.config.Config mpConfig) {
-        if (mpConfig instanceof Config) {
-            return (Config) mpConfig;
-        }
-
-        Builder builder = Config.builder()
-                .disableEnvironmentVariablesSource()
-                .disableSystemPropertiesSource()
-                .disableMapperServices()
-                .disableCaching()
-                .disableSourceServices()
-                .disableParserServices()
-                .disableFilterServices();
-
-        if (mpConfig instanceof MpConfig) {
-            ((MpConfig)mpConfig).converters()
-                    .forEach((clazz, converter) -> {
-                        Class<Object> cl = (Class<Object>) clazz;
-                        builder.addStringMapper(cl, converter::convert);
-                    });
-        }
-
-        Map<String, String> allConfig = new HashMap<>();
-        mpConfig.getPropertyNames()
-                .forEach(it -> {
-                    // covering the condition where a config key disappears between getting the property names and requesting
-                    // the value
-                    Optional<String> optionalValue = mpConfig.getOptionalValue(it, String.class);
-                    optionalValue.ifPresent(value -> allConfig.put(it, value));
-                });
-
-        return builder.addSource(ConfigSources.create(allConfig))
-                .build();
     }
 
     /**
@@ -854,6 +809,7 @@ public interface Config {
     //
     // config changes
     //
+
     /**
      * Register a {@link Consumer} that is invoked each time a change occurs on whole Config or on a particular Config node.
      * <p>
@@ -1021,8 +977,8 @@ public interface Config {
          */
         MISSING(false, false);
 
-        private boolean exists;
-        private boolean isLeaf;
+        private final boolean exists;
+        private final boolean isLeaf;
 
         Type(boolean exists, boolean isLeaf) {
             this.exists = exists;
@@ -1159,14 +1115,6 @@ public interface Config {
      * @see ConfigFilter
      */
     interface Builder {
-        /**
-         * Disable loading of config sources from Java service loader.
-         * This disables loading of MicroProfile Config sources.
-         *
-         * @return updated builder instance
-         */
-        Builder disableSourceServices();
-
         /**
          * Sets ordered list of {@link ConfigSource} instance to be used as single source of configuration
          * to be wrapped into {@link Config} API.

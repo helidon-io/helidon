@@ -39,7 +39,7 @@ import javax.json.JsonObject;
 import javax.json.JsonReaderFactory;
 import javax.json.stream.JsonParsingException;
 
-import io.helidon.config.MpConfigProviderResolver;
+import io.helidon.config.mp.MpConfigProviderResolver;
 
 import com.oracle.svm.core.annotate.AutomaticFeature;
 import com.oracle.svm.core.jdk.proxy.DynamicProxyRegistry;

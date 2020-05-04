@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,7 +63,9 @@ import javax.inject.Provider;
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
 import io.helidon.common.NativeImageHelper;
-import io.helidon.config.MpConfig;
+import io.helidon.config.mp.MpConfig;
+import io.helidon.config.mp.MpConfigImpl;
+import io.helidon.config.mp.MpConfigProviderResolver;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
@@ -77,7 +79,7 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
 public class ConfigCdiExtension implements Extension {
     private static final Logger LOGGER = Logger.getLogger(ConfigCdiExtension.class.getName());
     private static final Pattern SPLIT_PATTERN = Pattern.compile("(?<!\\\\),");
-    private static final Pattern ESCAPED_COMMA_PATTERN = Pattern.compile("\\\\,", Pattern.LITERAL);
+    private static final Pattern ESCAPED_COMMA_PATTERN = Pattern.compile("\\,", Pattern.LITERAL);
     private static final Annotation CONFIG_PROPERTY_LITERAL = new ConfigProperty() {
         @Override
         public String name() {
@@ -176,10 +178,17 @@ public class ConfigCdiExtension implements Extension {
                 .createWith(creationalContext -> new SerializableConfig());
 
         abd.addBean()
-                .addTransitiveTypeClosure(Config.class)
-                .beanClass(Config.class)
+                .addTransitiveTypeClosure(io.helidon.config.Config.class)
+                .beanClass(io.helidon.config.Config.class)
                 .scope(ApplicationScoped.class)
-                .createWith(creationalContext -> (Config) ConfigProvider.getConfig());
+                .createWith(creationalContext -> {
+                    Config config = ConfigProvider.getConfig();
+                    if (config instanceof io.helidon.config.Config) {
+                        return config;
+                    } else {
+                        return MpConfig.toHelidonConfig(config);
+                    }
+                });
 
         Set<Type> types = ips.stream()
                 .map(InjectionPoint::getType)
@@ -258,6 +267,10 @@ public class ConfigCdiExtension implements Extension {
              */
         FieldTypes fieldTypes = FieldTypes.create(type);
         org.eclipse.microprofile.config.Config config = ConfigProvider.getConfig();
+        if (config instanceof MpConfigProviderResolver.ConfigDelegate) {
+            // get the actual instance to have access to Helidon specific methods
+            config = ((MpConfigProviderResolver.ConfigDelegate) config).delegate();
+        }
         String defaultValue = defaultValue(annotation);
         Object value = configValue(config, fieldTypes, configKey, defaultValue);
 
@@ -298,11 +311,13 @@ public class ConfigCdiExtension implements Extension {
         if (String.class.equals(type)) {
             return (T) value;
         }
-        if (config instanceof io.helidon.config.Config) {
-            return ((io.helidon.config.Config) config).convert(type, value);
-        }
-        if (config instanceof MpConfig) {
-            return ((MpConfig) config).convert(key, type, value);
+        if (config instanceof MpConfigImpl) {
+            return ((MpConfigImpl) config).getConverter(type)
+                    .orElseThrow(() -> new IllegalArgumentException("Did not find converter for type "
+                                                                            + type.getName()
+                                                                            + ", for key "
+                                                                            + key))
+                    .convert(value);
         }
 
         throw new IllegalArgumentException("Helidon CDI MP Config implementation requires Helidon config instance. "

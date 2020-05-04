@@ -30,6 +30,7 @@ import javax.inject.Inject;
 
 import io.helidon.common.configurable.ScheduledThreadPoolSupplier;
 import io.helidon.config.Config;
+import io.helidon.config.mp.MpConfig;
 
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.messaging.spi.Connector;
@@ -89,14 +90,18 @@ public class KafkaConnector implements IncomingConnectorFactory, OutgoingConnect
 
     @Override
     public PublisherBuilder<? extends Message<?>> getPublisherBuilder(org.eclipse.microprofile.config.Config config) {
-        KafkaPublisher<Object, Object> publisher = KafkaPublisher.builder().config((Config) config).scheduler(scheduler).build();
+        KafkaPublisher<Object, Object> publisher = KafkaPublisher.builder()
+                .config(MpConfig.toHelidonConfig(config))
+                .scheduler(scheduler)
+                .build();
+
         resources.add(publisher);
         return ReactiveStreams.fromPublisher(publisher);
     }
 
     @Override
     public SubscriberBuilder<? extends Message<?>, Void> getSubscriberBuilder(org.eclipse.microprofile.config.Config config) {
-        return ReactiveStreams.fromSubscriber(KafkaSubscriber.create((Config) config));
+        return ReactiveStreams.fromSubscriber(KafkaSubscriber.create(MpConfig.toHelidonConfig(config)));
     }
 
     /**

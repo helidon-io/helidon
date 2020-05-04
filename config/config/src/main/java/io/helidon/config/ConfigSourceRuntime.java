@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,6 @@ import java.util.Optional;
 import java.util.function.BiConsumer;
 
 import io.helidon.config.spi.ConfigNode;
-
-import org.eclipse.microprofile.config.spi.ConfigSource;
 
 /**
  * The runtime of a config source. For a single {@link Config}, there is one source runtime for each configured
@@ -53,13 +51,6 @@ public interface ConfigSourceRuntime {
      * @return value on the key, or empty if not present
      */
     Optional<ConfigNode> node(String key);
-
-    /**
-     * Get the underlying config source as a MicroProfile {@link org.eclipse.microprofile.config.spi.ConfigSource}.
-     *
-     * @return MP Config source
-     */
-    ConfigSource asMpSource();
 
     /**
      * Description of the underlying config source.

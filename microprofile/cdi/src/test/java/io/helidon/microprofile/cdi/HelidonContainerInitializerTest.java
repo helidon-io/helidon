@@ -23,9 +23,9 @@ import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.se.SeContainerInitializer;
 import javax.enterprise.inject.spi.CDI;
 
-import io.helidon.config.Config;
-import io.helidon.config.ConfigSources;
+import io.helidon.config.mp.MpConfigSources;
 
+import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -59,7 +59,11 @@ class HelidonContainerInitializerTest {
     @Test
     void testRestart() {
         // this is a reproducer for bug 1554
-        Config config = Config.create(ConfigSources.create(Map.of(HelidonContainerInitializer.CONFIG_ALLOW_INITIALIZER, "true")));
+        Config config = ConfigProviderResolver.instance()
+                .getBuilder()
+                .withSources(MpConfigSources.create(Map.of(HelidonContainerInitializer.CONFIG_ALLOW_INITIALIZER, "true")))
+                .build();
+
         configResolver.registerConfig((org.eclipse.microprofile.config.Config) config, cl);
         // now we can start using SeContainerInitializer
         SeContainer container = SeContainerInitializer.newInstance()
@@ -79,7 +83,11 @@ class HelidonContainerInitializerTest {
     @Test
     void testRestart2() {
         // this is a reproducer for bug 1554
-        Config config = Config.create(ConfigSources.create(Map.of(HelidonContainerInitializer.CONFIG_ALLOW_INITIALIZER, "true")));
+        Config config = ConfigProviderResolver.instance()
+                .getBuilder()
+                .withSources(MpConfigSources.create(Map.of(HelidonContainerInitializer.CONFIG_ALLOW_INITIALIZER, "true")))
+                .build();
+
         configResolver.registerConfig((org.eclipse.microprofile.config.Config) config, cl);
         // now we can start using SeContainerInitializer
         SeContainerInitializer seContainerInitializer = SeContainerInitializer.newInstance();
@@ -103,8 +111,13 @@ class HelidonContainerInitializerTest {
 
         assertThrows(IllegalStateException.class, SeContainerInitializer::newInstance);
 
-        Config config = Config.create(ConfigSources.create(Map.of(HelidonContainerInitializer.CONFIG_ALLOW_INITIALIZER, "true")));
-        configResolver.registerConfig((org.eclipse.microprofile.config.Config) config, cl);
+        Config config = ConfigProviderResolver.instance()
+                .getBuilder()
+                .withSources(MpConfigSources
+                                     .create(Map.of(HelidonContainerInitializer.CONFIG_ALLOW_INITIALIZER, "true")))
+                .build();
+
+        configResolver.registerConfig(config, cl);
 
         SeContainerInitializer seContainerInitializer = SeContainerInitializer.newInstance();
         assertThat(seContainerInitializer, instanceOf(HelidonContainerInitializer.class));

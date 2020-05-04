@@ -58,6 +58,5 @@
         <module>test-mappers-2-complex</module>
         <module>test-meta-source</module>
         <module>test-parsers-1-complex</module>
-        <module>test-mp-reference</module>
     </modules>
 </project>

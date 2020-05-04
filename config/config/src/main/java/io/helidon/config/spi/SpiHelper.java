@@ -25,7 +25,7 @@ final class SpiHelper {
      *
      * @see io.helidon.config.spi.ConfigNode.ObjectNode#empty()
      */
-    public static final class EmptyObjectNodeHolder {
+    static final class EmptyObjectNodeHolder {
 
         private EmptyObjectNodeHolder() {
             throw new AssertionError("Instantiation not allowed.");

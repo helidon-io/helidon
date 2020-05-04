@@ -104,9 +104,7 @@ public class JaxRsCdiExtension implements Extension {
         if (applications.isEmpty() && applicationMetas.isEmpty()) {
             // create a synthetic application from all resource classes
             // the classes set must be created before the lambda, as resources are cleared later on
-            if (resources.isEmpty()) {
-                LOGGER.warning("There are no JAX-RS applications or resources. Maybe you forgot META-INF/beans.xml file?");
-            } else {
+            if (!resources.isEmpty()) {
                 Set<Class<?>> classes = new HashSet<>(resources);
                 applicationMetas.add(JaxRsApplication.builder()
                                              .synthetic(true)

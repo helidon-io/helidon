@@ -33,10 +33,6 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.eclipse.microprofile.config</groupId>
-            <artifactId>microprofile-config-api</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.microprofile.cdi</groupId>
             <artifactId>helidon-microprofile-cdi</artifactId>
         </dependency>
@@ -74,7 +70,6 @@
         <dependency>
             <groupId>io.helidon.microprofile.config</groupId>
             <artifactId>helidon-microprofile-config</artifactId>
-            <scope>runtime</scope>
         </dependency>
         <dependency>
             <!-- this is to include JSON-P native image configuration -->

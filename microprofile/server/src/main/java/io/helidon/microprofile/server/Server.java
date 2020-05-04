@@ -30,6 +30,8 @@ import javax.ws.rs.core.Application;
 
 import io.helidon.common.configurable.ServerThreadPoolSupplier;
 import io.helidon.common.context.Contexts;
+import io.helidon.config.mp.MpConfig;
+import io.helidon.config.mp.MpConfigSources;
 import io.helidon.microprofile.cdi.HelidonContainer;
 
 import org.eclipse.microprofile.config.Config;
@@ -207,7 +209,7 @@ public interface Server {
             if (null == defaultExecutorService) {
                 defaultExecutorService = ServerThreadPoolSupplier.builder()
                         .name("server")
-                        .config(((io.helidon.config.Config) config)
+                        .config(MpConfig.toHelidonConfig(config)
                                         .get("server.executor-service"))
                         .build();
             }
@@ -317,7 +319,11 @@ public interface Server {
          * @return modified builder
          */
         public Builder config(io.helidon.config.Config config) {
-            this.config = (Config) config;
+            this.config = ConfigProviderResolver.instance()
+                    .getBuilder()
+                    .withSources(MpConfigSources.create(config))
+                    .build();
+
             return this;
         }
 

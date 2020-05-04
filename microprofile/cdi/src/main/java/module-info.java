@@ -29,6 +29,7 @@ module io.helidon.microprofile.cdi {
 
     requires io.helidon.common;
     requires io.helidon.config;
+    requires io.helidon.config.mp;
 
     requires weld.core.impl;
     requires weld.spi;
@@ -36,6 +37,7 @@ module io.helidon.microprofile.cdi {
     requires weld.se.core;
     requires io.helidon.common.context;
     requires jakarta.inject.api;
+    requires microprofile.config.api;
 
     exports io.helidon.microprofile.cdi;
 
