@@ -23,8 +23,7 @@ import javax.json.Json;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 
-import io.helidon.media.common.MediaSupport;
-import io.helidon.media.jsonp.common.JsonProcessing;
+import io.helidon.media.jsonp.common.JsonpSupport;
 import io.helidon.webclient.WebClient;
 import io.helidon.webserver.WebServer;
 
@@ -73,7 +72,7 @@ public class MainTest {
     public void testHelloWorld() throws Exception {
         WebClient webClient = WebClient.builder()
                 .baseUri("http://localhost:" + webServer.port())
-                .addMediaService(JsonProcessing.create())
+                .addMediaService(JsonpSupport.create())
                 .build();
 
         webClient.get()

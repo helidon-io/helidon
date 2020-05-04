@@ -35,6 +35,7 @@ import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
  * A {@link Service} and a {@link Handler} that provides Jackson
  * support to Helidon.
  */
+@Deprecated
 public final class JacksonSupport implements Service, Handler {
 
     static {

@@ -20,7 +20,7 @@ import javax.json.JsonStructure;
 
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
-import io.helidon.media.jsonp.common.JsonProcessing;
+import io.helidon.media.jsonp.common.JsonpSupport;
 import io.helidon.media.jsonp.common.JsonpBodyReader;
 import io.helidon.media.jsonp.common.JsonpBodyWriter;
 import io.helidon.webserver.Handler;
@@ -45,7 +45,7 @@ import io.helidon.webserver.WebServer;
  *
  * <h3>Get Instance</h3>
  * Use factory methods {@link #create()} or
- * {@link #create(io.helidon.media.jsonp.common.JsonProcessing)} to acquire an
+ * {@link #create(JsonpSupport)} to acquire an
  * instance.
  *
  * <h3>Usage with Routing</h3> {@code JsonSupport} should be registered on the
@@ -76,12 +76,12 @@ public final class JsonSupport implements Service, Handler {
         HelidonFeatures.register(HelidonFlavor.SE, "WebServer", "JSON-P");
     }
 
-    private static final JsonSupport INSTANCE = new JsonSupport(JsonProcessing.create());
+    private static final JsonSupport INSTANCE = new JsonSupport(JsonpSupport.create());
 
     private final JsonpBodyReader reader;
     private final JsonpBodyWriter writer;
 
-    private JsonSupport(JsonProcessing processing) {
+    private JsonSupport(JsonpSupport processing) {
         reader = processing.newReader();
         writer = processing.newWriter();
     }
@@ -105,7 +105,7 @@ public final class JsonSupport implements Service, Handler {
     /**
      * Returns a singleton instance of JsonSupport with default configuration.
      * <p>
-     * Use {@link #create(io.helidon.media.jsonp.common.JsonProcessing)} method
+     * Use {@link #create(JsonpSupport)} method
      * to create a new instance with specific configuration.
      *
      * @return a singleton instance with default configuration
@@ -119,9 +119,9 @@ public final class JsonSupport implements Service, Handler {
      *
      * @param processing processing to get JSON-P readers and writers
      * @return JsonSupport to register with web server
-     * @see io.helidon.media.jsonp.common.JsonProcessing#builder()
+     * @see JsonpSupport#builder()
      */
-    public static JsonSupport create(JsonProcessing processing) {
+    public static JsonSupport create(JsonpSupport processing) {
         if (null == processing) {
             throw new NullPointerException("JsonProcessing argument must not be null.");
         }

@@ -22,7 +22,7 @@ import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 
 import io.helidon.media.common.MediaSupport;
-import io.helidon.media.jsonp.common.JsonProcessing;
+import io.helidon.media.jsonp.common.JsonpSupport;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientRequestBuilder;
 
@@ -94,7 +94,7 @@ public class MediaSupportTest extends TestParent {
     public void testReaderRegisteredOnClient() throws Exception {
         WebClient client = WebClient.builder()
                 .baseUri("http://localhost:" + webServer.port() + "/greet")
-                .addReader(JsonProcessing.reader())
+                .addReader(JsonpSupport.reader())
                 .build();
 
         client.get()
@@ -117,7 +117,7 @@ public class MediaSupportTest extends TestParent {
     public void testWriterRegisteredOnClient() throws Exception {
         WebClient client = WebClient.builder()
                 .baseUri("http://localhost:" + webServer.port() + "/greet")
-                .addWriter(JsonProcessing.writer())
+                .addWriter(JsonpSupport.writer())
                 .build();
 
         client.put()
@@ -146,7 +146,7 @@ public class MediaSupportTest extends TestParent {
                 .thenAccept(it -> fail("JsonObject should not have been handled."))
                 .thenCompose(it -> {
                     WebClientRequestBuilder requestBuilder = client.get();
-                    requestBuilder.readerContext().registerReader(JsonProcessing.reader());
+                    requestBuilder.readerContext().registerReader(JsonpSupport.reader());
                     return requestBuilder.request(JsonObject.class);
                 })
                 .thenAccept(jsonObject -> assertThat(jsonObject.getString("message"), is(DEFAULT_GREETING + " World!")))

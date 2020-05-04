@@ -35,6 +35,7 @@ import io.helidon.webserver.Service;
  * A {@link Service} and a {@link Handler} that provides <a
  * href="http://json-b.net/">JSON-B</a> support to Helidon.
  */
+@Deprecated
 public final class JsonBindingSupport implements Service, Handler {
 
     static {

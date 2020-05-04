@@ -14,26 +14,26 @@
  * limitations under the License.
  */
 
-package io.helidon.media.jsonp.common;
+package io.helidon.media.jsonb.common;
 
 import io.helidon.config.Config;
 import io.helidon.media.common.spi.MediaService;
 import io.helidon.media.common.spi.MediaServiceProvider;
 
 /**
- * JSON Processing support SPI provider.
+ * JSON-B support SPI provider.
  */
-public class JsonProcessingProvider implements MediaServiceProvider {
+public class JsonbProvider implements MediaServiceProvider {
 
-    private static final String JSON_P = "json-p";
+    private static final String JSON_B = "json-b";
 
     @Override
     public MediaService create(String type, Config config) {
-        return JsonProcessing.create();
+        return JsonbSupport.create();
     }
 
     @Override
     public String type() {
-        return JSON_P;
+        return JSON_B;
     }
 }

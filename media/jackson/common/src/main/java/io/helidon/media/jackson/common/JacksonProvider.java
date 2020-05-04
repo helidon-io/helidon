@@ -29,7 +29,7 @@ public class JacksonProvider implements MediaServiceProvider {
 
     @Override
     public MediaService create(String type, Config config) {
-        return JacksonProcessing.create();
+        return JacksonSupport.create();
     }
 
     @Override

@@ -15,12 +15,13 @@
  */
 
 import io.helidon.media.common.spi.MediaServiceProvider;
-import io.helidon.media.jsonb.common.JsonBindingProvider;
+import io.helidon.media.jsonb.common.JsonbProvider;
+import io.helidon.media.jsonb.common.JsonbSupport;
 
 /**
  * JSON-B support common classes.
  *
- * @see io.helidon.media.jsonb.common.JsonBinding
+ * @see JsonbSupport
  */
 module io.helidon.media.jsonb.common {
 
@@ -34,5 +35,5 @@ module io.helidon.media.jsonb.common {
 
     exports io.helidon.media.jsonb.common;
 
-    provides MediaServiceProvider with JsonBindingProvider;
+    provides MediaServiceProvider with JsonbProvider;
 }

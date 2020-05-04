@@ -25,7 +25,7 @@ import java.util.concurrent.ExecutionException;
 
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
-import io.helidon.media.jsonp.common.JsonProcessing;
+import io.helidon.media.jsonp.common.JsonpSupport;
 import io.helidon.metrics.RegistryFactory;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientServiceRequest;
@@ -71,7 +71,7 @@ public class ClientMainTest {
         WebClient.Builder builder = WebClient.builder()
                 .baseUri("http://localhost:" + port + "/greet")
                 .config(config.get("client"))
-                .addMediaService(JsonProcessing.create());
+                .addMediaService(JsonpSupport.create());
         for (WebClientService service : services) {
             builder.register(service);
         }

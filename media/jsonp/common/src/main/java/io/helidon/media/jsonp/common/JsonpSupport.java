@@ -29,12 +29,12 @@ import io.helidon.media.common.spi.MediaService;
 /**
  * Support for JSON Processing integration.
  */
-public final class JsonProcessing implements MediaService {
+public final class JsonpSupport implements MediaService {
 
     private final JsonReaderFactory jsonReaderFactory;
     private final JsonWriterFactory jsonWriterFactory;
 
-    private JsonProcessing(JsonReaderFactory readerFactory, JsonWriterFactory writerFactory) {
+    private JsonpSupport(JsonReaderFactory readerFactory, JsonWriterFactory writerFactory) {
         this.jsonReaderFactory = readerFactory;
         this.jsonWriterFactory = writerFactory;
     }
@@ -67,7 +67,7 @@ public final class JsonProcessing implements MediaService {
      * Provides a default instance for JSON-P readers and writers.
      * @return json processing with default configuration
      */
-    public static JsonProcessing create() {
+    public static JsonpSupport create() {
         return Builder.DEFAULT_INSTANCE;
     }
 
@@ -76,7 +76,7 @@ public final class JsonProcessing implements MediaService {
      * @param jsonPConfig configuration of the processing library
      * @return a configured JSON-P instance
      */
-    public static JsonProcessing create(Map<String, ?> jsonPConfig) {
+    public static JsonpSupport create(Map<String, ?> jsonPConfig) {
         return builder().jsonProcessingConfig(jsonPConfig).build();
     }
 
@@ -108,17 +108,17 @@ public final class JsonProcessing implements MediaService {
     }
 
     /**
-     * Fluent-API builder for {@link io.helidon.media.jsonp.common.JsonProcessing}.
+     * Fluent-API builder for {@link JsonpSupport}.
      */
-    public static class Builder implements io.helidon.common.Builder<JsonProcessing> {
-        private static final JsonProcessing DEFAULT_INSTANCE = new JsonProcessing(readerFactory(null), writerFactory(null));
+    public static class Builder implements io.helidon.common.Builder<JsonpSupport> {
+        private static final JsonpSupport DEFAULT_INSTANCE = new JsonpSupport(readerFactory(null), writerFactory(null));
 
         private JsonWriterFactory jsonWriterFactory;
         private JsonReaderFactory jsonReaderFactory;
         private Map<String, ?> jsonPConfig;
 
         @Override
-        public JsonProcessing build() {
+        public JsonpSupport build() {
             if ((null == jsonReaderFactory) && (null == jsonWriterFactory) && (null == jsonPConfig)) {
                 return DEFAULT_INSTANCE;
             }
@@ -135,7 +135,7 @@ public final class JsonProcessing implements MediaService {
                 jsonReaderFactory = readerFactory(jsonPConfig);
             }
 
-            return new JsonProcessing(jsonReaderFactory, jsonWriterFactory);
+            return new JsonpSupport(jsonReaderFactory, jsonWriterFactory);
         }
 
         private static JsonReaderFactory readerFactory(Map<String, ?> jsonPConfig) {

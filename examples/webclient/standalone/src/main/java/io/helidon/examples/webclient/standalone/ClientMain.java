@@ -31,7 +31,7 @@ import javax.json.JsonObject;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
-import io.helidon.media.jsonp.common.JsonProcessing;
+import io.helidon.media.jsonp.common.JsonpSupport;
 import io.helidon.metrics.RegistryFactory;
 import io.helidon.webclient.FileSubscriber;
 import io.helidon.webclient.WebClient;
@@ -93,7 +93,7 @@ public class ClientMain {
                 .baseUri(url)
                 .config(config.get("client"))
                 //Since JSON processing support is not present by default, we have to add it.
-                .addMediaService(JsonProcessing.create())
+                .addMediaService(JsonpSupport.create())
                 .build();
 
         performPutMethod(webClient)

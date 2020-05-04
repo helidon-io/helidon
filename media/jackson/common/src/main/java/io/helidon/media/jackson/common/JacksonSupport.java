@@ -17,6 +17,8 @@ package io.helidon.media.jackson.common;
 
 import java.util.Objects;
 
+import io.helidon.common.HelidonFeatures;
+import io.helidon.common.HelidonFlavor;
 import io.helidon.media.common.MessageBodyReaderContext;
 import io.helidon.media.common.MessageBodyWriterContext;
 import io.helidon.media.common.spi.MediaService;
@@ -29,18 +31,22 @@ import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 /**
  * Support for Jackson integration.
  */
-public final class JacksonProcessing implements MediaService {
+public final class JacksonSupport implements MediaService {
+
+    static {
+        HelidonFeatures.register(HelidonFlavor.SE, "Media", "Jackson");
+    }
 
     private static final ObjectMapper MAPPER = new ObjectMapper()
             .registerModule(new ParameterNamesModule())
             .registerModule(new Jdk8Module())
             .registerModule(new JavaTimeModule());
 
-    private static final JacksonProcessing DEFAULT_JACKSON = new JacksonProcessing(MAPPER);
+    private static final JacksonSupport DEFAULT_JACKSON = new JacksonSupport(MAPPER);
 
     private final ObjectMapper objectMapper;
 
-    private JacksonProcessing(final ObjectMapper objectMapper) {
+    private JacksonSupport(final ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
     }
 
@@ -87,25 +93,25 @@ public final class JacksonProcessing implements MediaService {
     }
 
     /**
-     * Creates a new {@link JacksonProcessing}.
+     * Creates a new {@link JacksonSupport}.
      *
      * @param objectMapper must not be {@code null}
-     * @return a new {@link JacksonProcessing}
+     * @return a new {@link JacksonSupport}
      *
      * @exception NullPointerException if {@code objectMapper}
      * is {@code null}
      */
-    public static JacksonProcessing create(ObjectMapper objectMapper) {
+    public static JacksonSupport create(ObjectMapper objectMapper) {
         Objects.requireNonNull(objectMapper);
-        return new JacksonProcessing(objectMapper);
+        return new JacksonSupport(objectMapper);
     }
 
     /**
-     * Creates a new {@link JacksonProcessing}.
+     * Creates a new {@link JacksonSupport}.
      *
-     * @return a new {@link JacksonProcessing}
+     * @return a new {@link JacksonSupport}
      */
-    public static JacksonProcessing create() {
+    public static JacksonSupport create() {
         return DEFAULT_JACKSON;
     }
 

@@ -23,8 +23,7 @@ import java.util.concurrent.ExecutionException;
 import javax.json.JsonObject;
 
 import io.helidon.common.context.Context;
-import io.helidon.media.common.MediaSupport;
-import io.helidon.media.jsonp.common.JsonProcessing;
+import io.helidon.media.jsonp.common.JsonpSupport;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
 
@@ -53,7 +52,7 @@ class TracingTest extends TestParent {
         WebClient client = WebClient.builder()
                 .baseUri(uri)
                 .context(context)
-                .addMediaService(JsonProcessing.create())
+                .addMediaService(JsonpSupport.create())
                 .build();
 
         WebClientResponse response = client.get()
@@ -93,7 +92,7 @@ class TracingTest extends TestParent {
         WebClient client = WebClient.builder()
                 .baseUri("http://localhost:" + webServer.port() + "/greet")
                 .context(context)
-                .addMediaService(JsonProcessing.create())
+                .addMediaService(JsonpSupport.create())
                 .build();
 
         WebClientResponse response = client.get()

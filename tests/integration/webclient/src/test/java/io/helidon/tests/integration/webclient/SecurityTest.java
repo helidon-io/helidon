@@ -17,10 +17,7 @@
 package io.helidon.tests.integration.webclient;
 
 import javax.json.JsonObject;
-import javax.json.JsonPatch;
 
-import io.helidon.common.http.Http;
-import io.helidon.media.jsonp.common.JsonProcessing;
 import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
 import io.helidon.webclient.security.WebClientSecurity;
 

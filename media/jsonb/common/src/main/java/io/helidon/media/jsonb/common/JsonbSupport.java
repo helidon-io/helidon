@@ -20,6 +20,8 @@ import java.util.Objects;
 import javax.json.bind.Jsonb;
 import javax.json.bind.JsonbBuilder;
 
+import io.helidon.common.HelidonFeatures;
+import io.helidon.common.HelidonFlavor;
 import io.helidon.media.common.MessageBodyReaderContext;
 import io.helidon.media.common.MessageBodyWriterContext;
 import io.helidon.media.common.spi.MediaService;
@@ -29,14 +31,18 @@ import io.helidon.media.common.spi.MediaService;
  *
  * @see Jsonb
  */
-public final class JsonBinding implements MediaService {
+public final class JsonbSupport implements MediaService {
+
+    static {
+        HelidonFeatures.register(HelidonFlavor.SE, "WebServer", "JSON-B");
+    }
 
     private static final Jsonb JSON_B = JsonbBuilder.create();
-    private static final JsonBinding DEFAULT = new JsonBinding(JSON_B);
+    private static final JsonbSupport DEFAULT = new JsonbSupport(JSON_B);
 
     private final Jsonb jsonb;
 
-    private JsonBinding(final Jsonb jsonb) {
+    private JsonbSupport(final Jsonb jsonb) {
         this.jsonb = jsonb;
     }
 
@@ -83,26 +89,26 @@ public final class JsonBinding implements MediaService {
     }
 
     /**
-     * Creates a new {@link JsonBinding}.
+     * Creates a new {@link JsonbSupport}.
      *
      * @param jsonb the JSON-B to use; must not be {@code null}
      *
-     * @return a new {@link JsonBinding}
+     * @return a new {@link JsonbSupport}
      *
      * @exception NullPointerException if {@code jsonb} is {@code
      * null}
      */
-    public static JsonBinding create(final Jsonb jsonb) {
+    public static JsonbSupport create(final Jsonb jsonb) {
         Objects.requireNonNull(jsonb);
-        return new JsonBinding(jsonb);
+        return new JsonbSupport(jsonb);
     }
 
     /**
-     * Creates a new {@link JsonBinding}.
+     * Creates a new {@link JsonbSupport}.
      *
-     * @return a new {@link JsonBinding}
+     * @return a new {@link JsonbSupport}
      */
-    public static JsonBinding create() {
+    public static JsonbSupport create() {
         return DEFAULT;
     }
 }

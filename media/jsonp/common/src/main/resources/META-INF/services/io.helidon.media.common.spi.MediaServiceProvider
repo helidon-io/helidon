@@ -14,4 +14,4 @@
 # limitations under the License.
 #
 
-io.helidon.media.jsonp.common.JsonProcessingProvider
+io.helidon.media.jsonp.common.JsonpProvider

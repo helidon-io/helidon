@@ -15,12 +15,13 @@
  */
 
 import io.helidon.media.common.spi.MediaServiceProvider;
-import io.helidon.media.jsonp.common.JsonProcessingProvider;
+import io.helidon.media.jsonp.common.JsonpProvider;
+import io.helidon.media.jsonp.common.JsonpSupport;
 
 /**
  * JSON-P support common classes.
  *
- * @see io.helidon.media.jsonp.common.JsonProcessing
+ * @see JsonpSupport
  */
 module io.helidon.media.jsonp.common {
 
@@ -34,5 +35,5 @@ module io.helidon.media.jsonp.common {
 
     exports io.helidon.media.jsonp.common;
 
-    provides MediaServiceProvider with JsonProcessingProvider;
+    provides MediaServiceProvider with JsonpProvider;
 }
