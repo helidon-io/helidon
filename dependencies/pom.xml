@@ -96,7 +96,7 @@
         <version.lib.narayana>5.9.3.Final</version.lib.narayana>
         <version.lib.netty>4.1.45.Final</version.lib.netty>
         <version.lib.oci-java-sdk-objectstorage>1.10.0</version.lib.oci-java-sdk-objectstorage>
-        <version.lib.ojdbc8>19.3.0.0</version.lib.ojdbc8>
+        <version.lib.ojdbc8>19.6.0.0</version.lib.ojdbc8>
         <version.lib.opentracing>0.33.0</version.lib.opentracing>
         <version.lib.opentracing.grpc>0.2.1</version.lib.opentracing.grpc>
         <version.lib.opentracing.tracerresolver>0.1.8</version.lib.opentracing.tracerresolver>
@@ -676,12 +676,12 @@
                 <version>${version.lib.h2}</version>
             </dependency>
             <dependency>
-                <groupId>com.oracle.ojdbc</groupId>
+                <groupId>com.oracle.database.jdbc</groupId>
                 <artifactId>ojdbc8</artifactId>
                 <version>${version.lib.ojdbc8}</version>
             </dependency>
             <dependency>
-                <groupId>com.oracle.ojdbc</groupId>
+                <groupId>com.oracle.database.jdbc</groupId>
                 <artifactId>ucp</artifactId>
                 <version>${version.lib.ucp}</version>
             </dependency>
