@@ -30,7 +30,7 @@ import io.helidon.common.http.MediaType;
 import io.helidon.common.http.Parameters;
 import io.helidon.common.http.Reader;
 import io.helidon.media.common.MediaSupport;
-import io.helidon.media.jsonp.common.JsonProcessing;
+import io.helidon.media.jsonp.common.JsonpSupport;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.HttpException;
 import io.helidon.webserver.RequestPredicate;
@@ -260,8 +260,7 @@ public class Main {
 
         // Create a media support that contains the defaults and our custom Name reader
         MediaSupport mediaSupport = MediaSupport.builder()
-                .registerDefaults()
-                .registerReader(NameReader.create())
+                .addReader(NameReader.create())
                 .build();
 
         startServer(routing, mediaSupport);
@@ -286,8 +285,7 @@ public class Main {
                                  .build();
 
         MediaSupport mediaSupport = MediaSupport.builder()
-                .registerDefaults()
-                .registerWriter(JsonProcessing.create().newWriter())
+                .addWriter(JsonpSupport.writer())
                 .build();
 
         startServer(routing, mediaSupport);
