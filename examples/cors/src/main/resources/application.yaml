@@ -32,7 +32,7 @@ open-cors: # defaults to "*" for all the "allows" values
 # you set the useOverride system property is set to true.
 cors:
   paths:
-    - path-prefix: /greeting
+    - path-prefix: /greet/greeting
       allow-origins: ["http://foo.com", "http://there.com", "http://other.com"]
       allow-methods: ["PUT", "DELETE"]
 
