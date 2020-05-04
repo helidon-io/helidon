@@ -138,7 +138,7 @@ public class MainTest {
         WebClientRequestBuilder builder = webClient.get();
         Headers headers = builder.headers();
         headers.add("Origin", "http://foo.com");
-        headers.add("Host", "bar.com");
+        headers.add("Host", "here.com");
 
         WebClientResponse r = getResponse("/greet", builder);
         assertEquals(200, r.status().code(), "HTTP response");
@@ -157,7 +157,7 @@ public class MainTest {
         WebClientRequestBuilder builder = webClient.get();
         Headers headers = builder.headers();
         headers.add("Origin", "http://foo.com");
-        headers.add("Host", "bar.com");
+        headers.add("Host", "here.com");
 
         WebClientResponse r = getResponse("/greet/Maria", builder);
         assertEquals(200, r.status().code(), "HTTP response");
@@ -178,7 +178,7 @@ public class MainTest {
         WebClientRequestBuilder builder = webClient.method("OPTIONS");
         Headers headers = builder.headers();
         headers.add("Origin", "http://foo.com");
-        headers.add("Host", "bar.com");
+        headers.add("Host", "here.com");
         headers.add("Access-Control-Request-Method", "PUT");
 
         WebClientResponse r = builder.path("/greet/greeting")
@@ -202,7 +202,7 @@ public class MainTest {
         builder = webClient.put();
         headers = builder.headers();
         headers.add("Origin", "http://foo.com");
-        headers.add("Host", "bar.com");
+        headers.add("Host", "here.com");
         headers.addAll(preflightResponseHeaders);
 
         r = putResponse("/greet/greeting", new GreetingMessage("Cheers"), builder);
@@ -215,13 +215,13 @@ public class MainTest {
                 + " should contain '*' but does not; " + allowOrigins);
     }
 
-    @Order(100) // After all other tests so the can rely on deterministic greetings.
+    @Order(100) // After all other tests so we can rely on deterministic greetings.
     @Test
     void testGreetingChangeWithCorsAndOtherOrigin() throws Exception {
         WebClientRequestBuilder builder = webClient.put();
         Headers headers = builder.headers();
         headers.add("Origin", "http://other.com");
-        headers.add("Host", "bar.com");
+        headers.add("Host", "here.com");
 
         WebClientResponse r = putResponse("/greet/greeting", new GreetingMessage("Ahoy"), builder);
         // Result depends on whether we are using overrides or not.

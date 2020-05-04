@@ -115,44 +115,20 @@ public final class Main {
                 .build();
 
         // Note: Add the CORS routing *before* registering the GreetService routing.
-        Routing.Builder builder = Routing.builder()
+        return Routing.builder()
                 .register(JsonSupport.create())
                 .register(health)                   // Health at "/health"
-                .register(metrics);                 // Metrics at "/metrics"
-        if (useOverride) {
-            Logger.getLogger(Main.class.getName()).info("Using the override configuration");
-        }
-        return (useOverride ? routingForCorsWithOverride(builder, config) : routingForCors(builder, config))
-                .register("/greet", greetService)
+                .register(metrics)                 // Metrics at "/metrics"
+                .register("/greet", corsSupportForGreeting(config), greetService)
                 .build();
     }
 
-    private static Routing.Builder routingForCors(Routing.Builder builder, Config config) {
+    private static CorsSupport corsSupportForGreeting(Config config) {
 
         // The default CorsSupport object (for example, CorsSupport.create()) allows sharing for any HTTP method and with any
-        // origin. Using CorsSupport.create(Config) with a missing config node yields  a default CorsSupport, which might not be
+        // origin. Using CorsSupport.create(Config) with a missing config node yields a default CorsSupport, which might not be
         // what you want. This example warns if either expected config node is missing and then continues with the default.
 
-        Config restrictiveConfig = config.get("restrictive-cors");
-        Config openConfig = config.get("open-cors");
-        if (!restrictiveConfig.exists() || !openConfig.exists()) {
-            Logger.getLogger(Main.class.getName()).warning("Missing config; continuing with default CORS support");
-        }
-        return builder
-                .put(CorsSupport.create(restrictiveConfig))
-                .get(CorsSupport.create(openConfig))
-                .options(CorsSupport.create());
-    }
-
-    /**
-     * Alternative way to construct routing for CORS, including letting deployers override CORS set-up using
-     * configuration.
-     *
-     * @param builder the {@code Routing.Builder} in use
-     * @param config configuration possibly containing restrictive-cors, open-cors, and cors (for overriding)
-     * @return updated builder
-     */
-    private static Routing.Builder routingForCorsWithOverride(Routing.Builder builder, Config config) {
         Config restrictiveConfig = config.get("restrictive-cors");
         Config openConfig = config.get("open-cors");
         if (!restrictiveConfig.exists() || !openConfig.exists()) {
@@ -162,14 +138,18 @@ public final class Main {
         CorsSupport.Builder corsBuilder = CorsSupport.builder();
 
         // Use possible overrides first.
-        config.get("cors").ifExists(corsBuilder::mappedConfig);
+        if (useOverride) {
+            config.get("cors")
+                    .ifExists(c -> {
+                        Logger.getLogger(Main.class.getName()).info("Using the override configuration");
+                        corsBuilder.mappedConfig(c);
+                    });
+        }
+        corsBuilder
+                .config(restrictiveConfig)
+                .config(openConfig)
+                .build();
 
-        // Where there might be overlap in CORS set-up, add from most restrictive to least.
-
-        corsBuilder.addCrossOrigin(CrossOriginConfig.create(restrictiveConfig));
-        corsBuilder.addCrossOrigin(CrossOriginConfig.create(openConfig));
-
-        builder.any(corsBuilder.build());
-        return builder;
+        return corsBuilder.build();
     }
 }
