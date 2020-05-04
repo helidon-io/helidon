@@ -89,12 +89,26 @@ public final class Priorities {
      * @param defaultPriority default priority for elements that do not have it
      */
     public static void sort(List<?> list, int defaultPriority) {
-        list.sort(Comparator.comparingInt(it -> {
+        list.sort(priorityComparator(defaultPriority));
+    }
+
+    /**
+     * Returns a comparator for two objects, the classes for which are implementations of
+     * {@link io.helidon.common.Prioritized}, and/or optionally annotated with {@link javax.annotation.Priority}
+     * and which applies a specified default priority if either or both classes lack the annotation.
+     *
+     * @param <S> type of object being compared
+     * @param defaultPriority used if the classes for either or both objects
+     * lack the {@code Priority} annotation
+     * @return comparator
+     */
+    public static <S> Comparator<S> priorityComparator(int defaultPriority) {
+        return Comparator.comparingInt(it -> {
             if (it instanceof Class) {
                 return find((Class<?>) it, defaultPriority);
             } else {
                 return find(it, defaultPriority);
             }
-        }));
+        });
     }
 }

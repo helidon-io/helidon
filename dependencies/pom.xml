@@ -602,6 +602,39 @@
                 </exclusions>
             </dependency>
             <dependency>
+                <groupId>org.eclipse.microprofile.metrics</groupId>
+                <artifactId>microprofile-metrics-api</artifactId>
+                <version>${version.lib.microprofile-metrics-api}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.osgi</groupId>
+                        <artifactId>org.osgi.annotation.versioning</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.microprofile.metrics</groupId>
+                <artifactId>microprofile-metrics-rest-tck</artifactId>
+                <version>${version.lib.microprofile-metrics-api}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.jboss.arquillian.junit</groupId>
+                        <artifactId>arquillian-junit-container</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.microprofile.metrics</groupId>
+                <artifactId>microprofile-metrics-api-tck</artifactId>
+                <version>${version.lib.microprofile-metrics-api}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.jboss.arquillian.junit</groupId>
+                        <artifactId>arquillian-junit-container</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
                 <groupId>org.eclipse.microprofile.reactive-streams-operators</groupId>
                 <artifactId>microprofile-reactive-streams-operators-api</artifactId>
                 <version>${version.lib.microprofile-reactive-streams-operators-api}</version>
