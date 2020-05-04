@@ -307,10 +307,12 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         return submit(requestEntity, WebClientResponse.class);
     }
 
+    @Override
     public MessageBodyReaderContext readerContext() {
         return readerContext;
     }
 
+    @Override
     public MessageBodyWriterContext writerContext() {
         return writerContext;
     }
