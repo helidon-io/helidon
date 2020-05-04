@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -97,7 +97,7 @@ public final class Main {
 
         MetricsSupport metrics = MetricsSupport.create();
         EmployeeService employeeService = new EmployeeService(config);
-        HealthSupport health = HealthSupport.builder().add(HealthChecks.healthChecks())
+        HealthSupport health = HealthSupport.builder().addLiveness(HealthChecks.healthChecks())
                 .build(); // Adds a convenient set of checks
 
         return Routing.builder().register(JsonBindingSupport.create())
