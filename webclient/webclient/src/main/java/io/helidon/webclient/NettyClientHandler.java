@@ -101,8 +101,7 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
             this.publisher = new HttpResponsePublisher(ctx);
             this.responseCloser = new ResponseCloser(ctx);
             this.clientResponse.contentPublisher(publisher)
-                    .mediaSupport(requestConfiguration.mediaSupport())
-                    .requestBodyReaders(requestConfiguration.requestReaders())
+                    .readerContext(requestConfiguration.readerContext())
                     .status(helidonStatus(response.status()))
                     .httpVersion(Http.Version.create(response.protocolVersion().toString()))
                     .responseCloser(responseCloser);

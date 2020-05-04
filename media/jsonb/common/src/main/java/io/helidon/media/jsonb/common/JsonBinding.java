@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,75 +15,95 @@
  */
 package io.helidon.media.jsonb.common;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.Charset;
 import java.util.Objects;
-import java.util.concurrent.Flow;
-import java.util.function.Function;
 
 import javax.json.bind.Jsonb;
-import javax.json.bind.JsonbException;
+import javax.json.bind.JsonbBuilder;
 
-import io.helidon.common.http.DataChunk;
-import io.helidon.common.http.Reader;
-import io.helidon.media.common.CharBuffer;
-import io.helidon.media.common.ContentReaders;
-import io.helidon.media.common.ContentWriters;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
+import io.helidon.media.common.MediaSupport;
+import io.helidon.media.common.MessageBodyReaderContext;
+import io.helidon.media.common.MessageBodyWriterContext;
+import io.helidon.media.common.spi.MediaService;
 
 /**
- * Contains utility methods for working with JSON-B.
+ * Support for JSON-B integration.
  *
  * @see Jsonb
  */
-public final class JsonBinding {
+public final class JsonBinding implements MediaService {
 
-    private JsonBinding() {
-        super();
+    private static final Jsonb JSON_B = JsonbBuilder.create();
+    private static final JsonBinding DEFAULT = new JsonBinding(JSON_B);
+
+    private final Jsonb jsonb;
+
+    private JsonBinding(final Jsonb jsonb) {
+        this.jsonb = jsonb;
     }
 
     /**
-     * Returns a new {@link Reader} that converts a {@link Flow.Publisher Publisher} of {@link java.nio.ByteBuffer}s to
-     * a Java object.
+     * Creates new JSON-B reader instance.
      *
-     * <p>This method is intended for the derivation of other, more specific readers.</p>
-     *
-     * @param jsonb the {@link Jsonb} to use; must not be {@code null}
-     * @return the byte array content reader that transforms a publisher of byte buffers to a completion stage that
-     * might end exceptionally with a {@link RuntimeException} in case of I/O error
-     * @exception NullPointerException if {@code objectMapper} is {@code null}
+     * @return JSON-B reader instance
      */
-    public static Reader<Object> reader(final Jsonb jsonb) {
-        Objects.requireNonNull(jsonb);
-        return (publisher, cls) -> ContentReaders.byteArrayReader()
-            .apply(publisher)
-            .thenApply(bytes -> {
-                    try (InputStream inputStream = new ByteArrayInputStream(bytes)) {
-                        return jsonb.fromJson(inputStream, cls);
-                    } catch (final IOException ioException) {
-                        throw new JsonbException(ioException.getMessage(), ioException);
-                    }
-                });
+    public static JsonbBodyReader reader() {
+        return create().newReader();
     }
 
     /**
-     * Returns a function (writer) converting {@link Object}s to {@link Flow.Publisher Publisher}s
-     * of {@link DataChunk}s by using the supplied {@link Jsonb}.
+     * Creates new JSON-B writer instance.
      *
-     * @param jsonb the {@link Jsonb} to use; must not be {@code null}
-     * @param charset the charset to use; may be null
-     * @return created function
-     * @exception NullPointerException if {@code jsonb} is {@code null}
+     * @return JSON-B writer instance
      */
-    public static Function<Object, Flow.Publisher<DataChunk>> writer(final Jsonb jsonb, final Charset charset) {
+    public static JsonbBodyWriter writer() {
+        return create().newWriter();
+    }
+
+    /**
+     * Creates new JSON-B reader instance.
+     *
+     * @return JSON-B reader instance
+     */
+    public JsonbBodyReader newReader() {
+        return JsonbBodyReader.create(jsonb);
+    }
+
+    /**
+     * Creates new JSON-B writer instance.
+     *
+     * @return JSON-B writer instance
+     */
+    public JsonbBodyWriter newWriter() {
+        return JsonbBodyWriter.create(jsonb);
+    }
+
+    @Override
+    public void register(MessageBodyReaderContext readerContext, MessageBodyWriterContext writerContext) {
+        readerContext.registerReader(newReader());
+        writerContext.registerWriter(newWriter());
+    }
+
+    /**
+     * Creates a new {@link JsonBinding}.
+     *
+     * @param jsonb the JSON-B to use; must not be {@code null}
+     *
+     * @return a new {@link JsonBinding}
+     *
+     * @exception NullPointerException if {@code jsonb} is {@code
+     * null}
+     */
+    public static JsonBinding create(final Jsonb jsonb) {
         Objects.requireNonNull(jsonb);
-        return payload -> {
-            CharBuffer buffer = new CharBuffer();
-            jsonb.toJson(payload, buffer);
-            return ContentWriters.charBufferWriter(charset == null ? UTF_8 : charset).apply(buffer);
-        };
+        return new JsonBinding(jsonb);
+    }
+
+    /**
+     * Creates a new {@link JsonBinding}.
+     *
+     * @return a new {@link JsonBinding}
+     */
+    public static JsonBinding create() {
+        return DEFAULT;
     }
 }

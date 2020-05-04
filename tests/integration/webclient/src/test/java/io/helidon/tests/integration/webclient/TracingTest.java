@@ -42,7 +42,6 @@ import static org.hamcrest.Matchers.iterableWithSize;
  * Test tracing integration.
  */
 class TracingTest extends TestParent {
-    private static final JsonProcessing JSON_PROCESSING = JsonProcessing.create();
 
     @Test
     void testTracingNoServerSuccess() throws ExecutionException, InterruptedException {
@@ -54,11 +53,7 @@ class TracingTest extends TestParent {
         WebClient client = WebClient.builder()
                 .baseUri(uri)
                 .context(context)
-                .mediaSupport(MediaSupport.builder()
-                                      .registerDefaults()
-                                      .registerReader(JSON_PROCESSING.newReader())
-                                      .registerWriter(JSON_PROCESSING.newWriter())
-                                      .build())
+                .addMediaService(JsonProcessing.create())
                 .build();
 
         WebClientResponse response = client.get()
@@ -98,11 +93,7 @@ class TracingTest extends TestParent {
         WebClient client = WebClient.builder()
                 .baseUri("http://localhost:" + webServer.port() + "/greet")
                 .context(context)
-                .mediaSupport(MediaSupport.builder()
-                                      .registerDefaults()
-                                      .registerReader(JSON_PROCESSING.newReader())
-                                      .registerWriter(JSON_PROCESSING.newWriter())
-                                      .build())
+                .addMediaService(JsonProcessing.create())
                 .build();
 
         WebClientResponse response = client.get()

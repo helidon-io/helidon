@@ -19,10 +19,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
-import io.helidon.media.common.MessageBodyReader;
-import io.helidon.media.common.MessageBodyWriter;
 import io.helidon.webclient.spi.WebClientService;
 
 /**
@@ -33,16 +30,12 @@ class RequestConfiguration extends WebClientConfiguration {
     private final URI requestURI;
     private final WebClientServiceRequest clientServiceRequest;
     private final List<WebClientService> services;
-    private final Set<MessageBodyReader<?>> requestReaders;
-    private final Set<MessageBodyWriter<?>> requestWriters;
 
     private RequestConfiguration(Builder builder) {
         super(builder);
         requestURI = builder.requestURI;
         clientServiceRequest = builder.clientServiceRequest;
         services = builder.services;
-        requestReaders = builder.requestReaders;
-        requestWriters = builder.messageBodyWriters;
     }
 
     URI requestURI() {
@@ -57,14 +50,6 @@ class RequestConfiguration extends WebClientConfiguration {
         return services;
     }
 
-    Set<MessageBodyReader<?>> requestReaders() {
-        return requestReaders;
-    }
-
-    Set<MessageBodyWriter<?>> requestWriters() {
-        return requestWriters;
-    }
-
     static Builder builder(URI requestURI) {
         return new Builder(requestURI);
     }
@@ -74,8 +59,6 @@ class RequestConfiguration extends WebClientConfiguration {
         private WebClientServiceRequest clientServiceRequest;
         private URI requestURI;
         private List<WebClientService> services = new ArrayList<>();
-        private Set<MessageBodyReader<?>> requestReaders;
-        private Set<MessageBodyWriter<?>> messageBodyWriters;
 
         private Builder(URI requestURI) {
             this.requestURI = requestURI;
@@ -88,16 +71,6 @@ class RequestConfiguration extends WebClientConfiguration {
 
         Builder services(List<WebClientService> services) {
             this.services = Collections.unmodifiableList(services);
-            return this;
-        }
-
-        Builder requestReaders(Set<MessageBodyReader<?>> requestReaders) {
-            this.requestReaders = requestReaders;
-            return this;
-        }
-
-        Builder requestWriters(Set<MessageBodyWriter<?>> messageBodyWriters) {
-            this.messageBodyWriters = messageBodyWriters;
             return this;
         }
 

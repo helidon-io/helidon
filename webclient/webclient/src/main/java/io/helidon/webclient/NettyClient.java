@@ -44,7 +44,7 @@ final class NettyClient implements WebClient {
     private static final LazyValue<String> DEFAULT_USER_AGENT = LazyValue
             .create(() -> "Helidon/" + Version.VERSION + " (java " + System.getProperty("java.runtime.version") + ")");
     private static final Proxy DEFAULT_PROXY = Proxy.noProxy();
-    private static final MediaSupport DEFAULT_MEDIA_SUPPORT = MediaSupport.createWithDefaults();
+    private static final MediaSupport DEFAULT_MEDIA_SUPPORT = MediaSupport.create();
     private static final Ssl DEFAULT_SSL = Ssl.builder().build();
 
     private static final AtomicBoolean DEFAULTS_CONFIGURED = new AtomicBoolean();
@@ -57,7 +57,8 @@ final class NettyClient implements WebClient {
                     .followRedirects(DEFAULT_FOLLOW_REDIRECTS)
                     .maxRedirects(DEFAULT_NUMBER_OF_REDIRECTS)
                     .userAgent(DEFAULT_USER_AGENT)
-                    .mediaSupport(DEFAULT_MEDIA_SUPPORT)
+                    .readerContext(DEFAULT_MEDIA_SUPPORT.readerContext())
+                    .writerContext(DEFAULT_MEDIA_SUPPORT.writerContext())
                     .proxy(DEFAULT_PROXY)
                     .ssl(DEFAULT_SSL)
                     .build();
@@ -80,6 +81,8 @@ final class NettyClient implements WebClient {
      */
     NettyClient(Builder builder) {
         this.configuration = builder.configuration();
+
+        //EDIT Read only reader and writer contexts? Flag
 
         // we need to configure these - if user wants to override, they must
         // do it before first usage

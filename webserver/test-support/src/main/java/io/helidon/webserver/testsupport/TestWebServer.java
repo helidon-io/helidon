@@ -21,6 +21,8 @@ import java.util.concurrent.CompletionStage;
 
 import io.helidon.common.http.ContextualRegistry;
 import io.helidon.media.common.MediaSupport;
+import io.helidon.media.common.MessageBodyReaderContext;
+import io.helidon.media.common.MessageBodyWriterContext;
 import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 
@@ -29,7 +31,7 @@ import io.helidon.webserver.WebServer;
  */
 class TestWebServer implements WebServer {
 
-    private static final MediaSupport DEFAULT_MEDIA_SUPPORT = MediaSupport.createWithDefaults();
+    private static final MediaSupport DEFAULT_MEDIA_SUPPORT = MediaSupport.create();
 
     private final CompletableFuture<WebServer> startFuture = new CompletableFuture<>();
     private final CompletableFuture<WebServer> shutdownFuture = new CompletableFuture<>();
@@ -52,11 +54,6 @@ class TestWebServer implements WebServer {
     @Override
     public ServerConfiguration configuration() {
         return configuration;
-    }
-
-    @Override
-    public MediaSupport mediaSupport() {
-        return mediaSupport;
     }
 
     @Override
@@ -87,6 +84,16 @@ class TestWebServer implements WebServer {
     @Override
     public ContextualRegistry context() {
         return context;
+    }
+
+    @Override
+    public MessageBodyReaderContext readerContext() {
+        return mediaSupport.readerContext();
+    }
+
+    @Override
+    public MessageBodyWriterContext writerContext() {
+        return mediaSupport.writerContext();
     }
 
     @Override

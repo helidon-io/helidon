@@ -25,12 +25,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -52,8 +50,7 @@ import io.helidon.common.http.MediaType;
 import io.helidon.common.http.Parameters;
 import io.helidon.common.reactive.Single;
 import io.helidon.media.common.MessageBodyReadableContent;
-import io.helidon.media.common.MessageBodyReader;
-import io.helidon.media.common.MessageBodyWriter;
+import io.helidon.media.common.MessageBodyReaderContext;
 import io.helidon.media.common.MessageBodyWriterContext;
 import io.helidon.webclient.spi.WebClientService;
 
@@ -94,8 +91,9 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     private final Http.RequestMethod method;
     private final WebClientRequestHeaders headers;
     private final Parameters queryParams;
-    private final MessageBodyWriterContext writerContext;
     private final AtomicBoolean handled;
+    private final MessageBodyReaderContext readerContext;
+    private final MessageBodyWriterContext writerContext;
 
     private URI uri;
     private Http.Version httpVersion;
@@ -106,8 +104,6 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     private RequestConfiguration requestConfiguration;
     private HttpRequest.Path path;
     private List<WebClientService> services;
-    private Set<MessageBodyReader<?>> messageBodyReaders;
-    private Set<MessageBodyWriter<?>> messageBodyWriters;
 
     private WebClientRequestBuilderImpl(LazyValue<NioEventLoopGroup> eventGroup,
                                         WebClientConfiguration configuration,
@@ -124,9 +120,8 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         this.httpVersion = Http.Version.V1_1;
         this.redirectionCount = 0;
         this.services = configuration.clientServices();
-        this.writerContext = MessageBodyWriterContext.create(configuration.mediaSupport(), null, headers, null);
-        this.messageBodyReaders = new HashSet<>();
-        this.messageBodyWriters = new HashSet<>();
+        this.readerContext = MessageBodyReaderContext.create(configuration.readerContext());
+        this.writerContext = MessageBodyWriterContext.create(configuration.writerContext(), headers);
         Context.Builder contextBuilder = Context.builder().id("webclient-" + REQUEST_NUMBER.incrementAndGet());
         configuration.context().ifPresentOrElse(contextBuilder::parent,
                                                 () -> Contexts.context().ifPresent(contextBuilder::parent));
@@ -157,9 +152,6 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         builder.proxy = clientRequest.proxy();
         builder.fragment = clientRequest.fragment();
         builder.redirectionCount = clientRequest.redirectionCount() + 1;
-        builder.messageBodyReaders.addAll(clientRequest.configuration().requestReaders());
-        builder.messageBodyWriters.addAll(clientRequest.configuration().requestWriters());
-        builder.messageBodyWriters.forEach(builder.writerContext::registerWriter);
         int maxRedirects = builder.configuration.maxRedirects();
         if (builder.redirectionCount > maxRedirects) {
             throw new WebClientException("Max number of redirects extended! (" + maxRedirects + ")");
@@ -242,19 +234,6 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     }
 
     @Override
-    public WebClientRequestBuilder register(MessageBodyWriter<?> messageBodyWriter) {
-        writerContext.registerWriter(messageBodyWriter);
-        messageBodyWriters.add(messageBodyWriter);
-        return this;
-    }
-
-    @Override
-    public WebClientRequestBuilder register(MessageBodyReader<?> messageBodyReader) {
-        messageBodyReaders.add(messageBodyReader);
-        return this;
-    }
-
-    @Override
     public WebClientRequestBuilder httpVersion(Http.Version httpVersion) {
         this.httpVersion = httpVersion;
         return this;
@@ -326,6 +305,14 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     @Override
     public CompletionStage<WebClientResponse> submit(Object requestEntity) {
         return submit(requestEntity, WebClientResponse.class);
+    }
+
+    public MessageBodyReaderContext readerContext() {
+        return readerContext;
+    }
+
+    public MessageBodyWriterContext writerContext() {
+        return writerContext;
     }
 
     Http.RequestMethod method() {
@@ -402,10 +389,10 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
             requestConfiguration = RequestConfiguration.builder(uri)
                     .update(configuration)
                     .clientServiceRequest(serviceRequest)
+                    .setReaderContext(readerContext)
+                    .setWriterContext(writerContext)
                     .services(services)
                     .context(context)
-                    .requestReaders(Collections.unmodifiableSet(messageBodyReaders))
-                    .requestWriters(Collections.unmodifiableSet(messageBodyWriters))
                     .build();
             WebClientRequestImpl clientRequest = new WebClientRequestImpl(this);
 
@@ -420,6 +407,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
 
             ChannelFuture channelFuture = bootstrap.connect(uri.getHost(), uri.getPort());
             channelFuture.addListener((ChannelFutureListener) future -> {
+                channelFuture.channel().attr(REQUEST).set(clientRequest);
                 Throwable cause = future.cause();
                 if (null == cause) {
                     RequestContentSubscriber requestContentSubscriber = new RequestContentSubscriber(request,
@@ -434,7 +422,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
                     result.completeExceptionally(new WebClientException(uri.toString(), cause));
                 }
             });
-            channelFuture.channel().attr(REQUEST).set(clientRequest);
+
             if (responseType.rawType().equals(WebClientResponse.class)) {
                 return (CompletionStage<T>) result;
             } else {

@@ -28,4 +28,7 @@ module io.helidon.media.common {
     requires io.helidon.config;
 
     exports io.helidon.media.common;
+    exports io.helidon.media.common.spi;
+
+    uses io.helidon.media.common.spi.MediaServiceProvider;
 }

@@ -31,8 +31,8 @@ import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpRequest;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.http.Parameters;
-import io.helidon.media.common.MessageBodyReader;
-import io.helidon.media.common.MessageBodyWriter;
+import io.helidon.media.common.MessageBodyReaderContext;
+import io.helidon.media.common.MessageBodyWriterContext;
 import io.helidon.webclient.spi.WebClientService;
 
 /**
@@ -146,20 +146,18 @@ public interface WebClientRequestBuilder {
     WebClientRequestBuilder queryParams(Parameters queryParams);
 
     /**
-     * Register new message body writer.
+     * Returns reader context of the request builder.
      *
-     * @param messageBodyWriter message body writer
-     * @return updated builder instance
+     * @return request reader context
      */
-    WebClientRequestBuilder register(MessageBodyWriter<?> messageBodyWriter);
+    MessageBodyReaderContext readerContext();
 
     /**
-     * Register new message body reader.
+     * Returns writer context of the request builder.
      *
-     * @param messageBodyReader message body reader
-     * @return updated builder instance
+     * @return request writer context
      */
-    WebClientRequestBuilder register(MessageBodyReader<?> messageBodyReader);
+    MessageBodyWriterContext writerContext();
 
     /**
      * Sets http version.

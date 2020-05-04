@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,12 @@ import java.util.stream.Collectors;
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
 import io.helidon.media.common.MediaSupport;
+import io.helidon.media.common.MediaSupportBuilder;
+import io.helidon.media.common.MessageBodyReader;
+import io.helidon.media.common.MessageBodyReaderContext;
+import io.helidon.media.common.MessageBodyWriter;
+import io.helidon.media.common.MessageBodyWriterContext;
+import io.helidon.media.common.spi.MediaService;
 
 /**
  * Represents a immutably configured WEB server.
@@ -86,10 +92,18 @@ public interface WebServer {
     io.helidon.common.http.ContextualRegistry context();
 
     /**
-     * Get the parent media support configuration.
-     * @return media support configuration
+     * Get the parent {@link MessageBodyReaderContext} context.
+     *
+     * @return media body reader context
      */
-    MediaSupport mediaSupport();
+    MessageBodyReaderContext readerContext();
+
+    /**
+     * Get the parent {@link MessageBodyWriterContext} context.
+     *
+     * @return media body writer context
+     */
+    MessageBodyWriterContext writerContext();
 
     /**
      * Returns a port number the default server socket is bound to and is listening on;
@@ -224,7 +238,10 @@ public interface WebServer {
      * WebServer builder class provides a convenient way to set up WebServer with multiple server
      * sockets and optional multiple routings.
      */
-    final class Builder implements io.helidon.common.Builder<WebServer> {
+    final class Builder implements io.helidon.common.Builder<WebServer>, MediaSupportBuilder<Builder> {
+
+        private static final MediaSupport DEFAULT_MEDIA_SUPPORT = MediaSupport.create();
+
         static {
             HelidonFeatures.register(HelidonFlavor.SE, "WebServer");
         }
@@ -232,12 +249,14 @@ public interface WebServer {
         private final Map<String, Routing> routings = new HashMap<>();
         private final Routing defaultRouting;
         private ServerConfiguration configuration;
-        private MediaSupport mediaSupport;
+        private MessageBodyReaderContext readerContext;
+        private MessageBodyWriterContext writerContext;
 
         private Builder(Routing defaultRouting) {
             Objects.requireNonNull(defaultRouting, "Parameter 'default routing' must not be null!");
-
             this.defaultRouting = defaultRouting;
+            readerContext = MessageBodyReaderContext.create(DEFAULT_MEDIA_SUPPORT.readerContext());
+            writerContext = MessageBodyWriterContext.create(DEFAULT_MEDIA_SUPPORT.writerContext());
         }
 
         /**
@@ -303,23 +322,30 @@ public interface WebServer {
             return addNamedRouting(name, routingBuilder.get());
         }
 
-        /**
-         * Set the server wide media support configuration.
-         * @param mediaSupport media support configuration
-         * @return an updated builder
-         */
+        @Override
         public Builder mediaSupport(MediaSupport mediaSupport) {
-            this.mediaSupport = mediaSupport;
+            Objects.requireNonNull(mediaSupport);
+            this.readerContext = MessageBodyReaderContext.create(mediaSupport.readerContext());
+            this.writerContext = MessageBodyWriterContext.create(mediaSupport.writerContext());
             return this;
         }
 
-        /**
-         * Set the server wide media support configuration.
-         * @param mediaSupportBuilder media support builder
-         * @return an updated builder
-         */
-        public Builder mediaSupport(Supplier<MediaSupport> mediaSupportBuilder) {
-            this.mediaSupport = mediaSupportBuilder != null ? mediaSupportBuilder.get() : null;
+        @Override
+        public Builder addMediaService(MediaService mediaService) {
+            Objects.requireNonNull(mediaService);
+            mediaService.register(readerContext, writerContext);
+            return this;
+        }
+
+        @Override
+        public Builder addReader(MessageBodyReader<?> reader) {
+            readerContext.registerReader(reader);
+            return this;
+        }
+
+        @Override
+        public Builder addWriter(MessageBodyWriter<?> writer) {
+            writerContext.registerWriter(writer);
             return this;
         }
 
@@ -342,16 +368,13 @@ public interface WebServer {
                 throw new IllegalStateException("No server socket configuration found for named routings: " + unpairedRoutings);
             }
 
-            if (mediaSupport == null) {
-                mediaSupport = MediaSupport.createWithDefaults();
-            }
             WebServer result = new NettyWebServer(configuration == null
                                                           // this is happening once per microservice, no need to store in
                                                           // a constant; also the configuration creates instances of context etc.
                                                           // that should not be initialized unless needed
                                                           ? ServerConfiguration.builder().build()
                                                           : configuration,
-                                                  defaultRouting, routings, mediaSupport);
+                                                  defaultRouting, routings, writerContext, readerContext);
             if (defaultRouting instanceof RequestRouting) {
                 ((RequestRouting) defaultRouting).fireNewWebServer(result);
             }

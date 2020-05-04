@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,74 +15,98 @@
  */
 package io.helidon.media.jackson.common;
 
-import java.io.IOException;
-import java.nio.charset.Charset;
 import java.util.Objects;
-import java.util.concurrent.Flow;
-import java.util.function.Function;
 
-import io.helidon.common.http.DataChunk;
-import io.helidon.common.http.Reader;
-import io.helidon.media.common.CharBuffer;
-import io.helidon.media.common.ContentReaders;
-import io.helidon.media.common.ContentWriters;
+import io.helidon.media.common.MessageBodyReaderContext;
+import io.helidon.media.common.MessageBodyWriterContext;
+import io.helidon.media.common.spi.MediaService;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 
 /**
- * Utility methods for Jackson integration.
+ * Support for Jackson integration.
  */
-public final class JacksonProcessing {
+public final class JacksonProcessing implements MediaService {
 
-    private JacksonProcessing() {
-        super();
+    private static final ObjectMapper MAPPER = new ObjectMapper()
+            .registerModule(new ParameterNamesModule())
+            .registerModule(new Jdk8Module())
+            .registerModule(new JavaTimeModule());
+
+    private static final JacksonProcessing DEFAULT_JACKSON = new JacksonProcessing(MAPPER);
+
+    private final ObjectMapper objectMapper;
+
+    private JacksonProcessing(final ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
     }
 
     /**
-     * Returns a {@link Reader} that converts a {@link Flow.Publisher Publisher} of {@link java.nio.ByteBuffer}s to
-     * a Java object.
+     * Creates new Jackson reader instance.
      *
-     * <p>This method is intended for the derivation of other, more specific readers.</p>
-     *
-     * @param objectMapper the {@link ObjectMapper} to use; must not be {@code null}
-     * @return the byte array content reader that transforms a publisher of byte buffers to a completion stage that
-     * might end exceptionally with a {@link RuntimeException} in case of I/O error
-     * @exception NullPointerException if {@code objectMapper} is {@code null}
+     * @return Jackson reader instance
      */
-    public static Reader<Object> reader(final ObjectMapper objectMapper) {
-        Objects.requireNonNull(objectMapper);
-        return (publisher, cls) -> ContentReaders.byteArrayReader()
-            .apply(publisher)
-            .thenApply(bytes -> {
-                    try {
-                        return objectMapper.readValue(bytes, cls);
-                    } catch (final IOException wrapMe) {
-                        throw new JacksonRuntimeException(wrapMe.getMessage(), wrapMe);
-                    }
-                });
+    public static JacksonBodyReader reader() {
+        return create().newReader();
     }
 
     /**
-     * Returns a function (writer) converting {@link Object}s to {@link Flow.Publisher Publisher}s
-     * of {@link DataChunk}s by using the supplied {@link ObjectMapper}.
+     * Creates new Jackson writer instance.
      *
-     * @param objectMapper the {@link ObjectMapper} to use; must not be {@code null}
-     * @param charset the charset to use; may be null
-     * @return created function
-     * @exception NullPointerException if {@code objectMapper} is {@code null}
+     * @return Jackson writer instance
      */
-    public static Function<Object, Flow.Publisher<DataChunk>> writer(final ObjectMapper objectMapper, final Charset charset) {
-        Objects.requireNonNull(objectMapper);
-        return payload -> {
-            CharBuffer buffer = new CharBuffer();
-            try {
-                objectMapper.writeValue(buffer, payload);
-            } catch (final IOException wrapMe) {
-                throw new JacksonRuntimeException(wrapMe.getMessage(), wrapMe);
-            }
-            return ContentWriters.charBufferWriter(charset == null ? UTF_8 : charset).apply(buffer);
-        };
+    public static JacksonBodyWriter writer() {
+        return create().newWriter();
     }
+
+    /**
+     * Creates new Jackson reader instance.
+     *
+     * @return Jackson reader instance
+     */
+    public JacksonBodyReader newReader() {
+        return JacksonBodyReader.create(objectMapper);
+    }
+
+    /**
+     * Creates new Jackson writer instance.
+     *
+     * @return Jackson writer instance
+     */
+    public JacksonBodyWriter newWriter() {
+        return JacksonBodyWriter.create(objectMapper);
+    }
+
+    @Override
+    public void register(MessageBodyReaderContext readerContext, MessageBodyWriterContext writerContext) {
+        readerContext.registerReader(newReader());
+        writerContext.registerWriter(newWriter());
+    }
+
+    /**
+     * Creates a new {@link JacksonProcessing}.
+     *
+     * @param objectMapper must not be {@code null}
+     * @return a new {@link JacksonProcessing}
+     *
+     * @exception NullPointerException if {@code objectMapper}
+     * is {@code null}
+     */
+    public static JacksonProcessing create(ObjectMapper objectMapper) {
+        Objects.requireNonNull(objectMapper);
+        return new JacksonProcessing(objectMapper);
+    }
+
+    /**
+     * Creates a new {@link JacksonProcessing}.
+     *
+     * @return a new {@link JacksonProcessing}
+     */
+    public static JacksonProcessing create() {
+        return DEFAULT_JACKSON;
+    }
+
 }

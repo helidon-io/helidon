@@ -17,8 +17,10 @@
 package io.helidon.tests.integration.webclient;
 
 import javax.json.JsonObject;
+import javax.json.JsonPatch;
 
 import io.helidon.common.http.Http;
+import io.helidon.media.jsonp.common.JsonProcessing;
 import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
 import io.helidon.webclient.security.WebClientSecurity;
 
@@ -50,11 +52,7 @@ public class SecurityTest extends TestParent {
                     .path(path)
                     .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER, "jack")
                     .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD, "password")
-                    .request()
-                    .thenCompose(response -> {
-                        assertThat(response.status(), is(Http.Status.OK_200));
-                        return response.content().as(JsonObject.class);
-                    })
+                    .request(JsonObject.class)
                     .thenAccept(jsonObject -> assertThat(jsonObject.getString("message"), is("Hello jack!")))
                     .toCompletableFuture()
                     .get();
