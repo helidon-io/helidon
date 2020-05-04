@@ -113,7 +113,7 @@ Note that the example `MainTest` class follows these same steps.
 ## Using overrides
 The app accepts CORS override settings if you set the system property `useOverride` to true. 
 
-With the same server running, tepeat the `OPTIONS` request from above, but change the `Origin` to `elsewhere.com`:
+With the same server running, repeat the `OPTIONS` request from above, but change the `Origin` to `elsewhere.com`:
 ```bash
 curl -i -X OPTIONS \
     -H "Access-Control-Request-Method: PUT" \
@@ -129,4 +129,5 @@ This fails because the app set up CORS using the configuration in `application.y
 `foo.com` and `bar.com`. 
 
 Stop and rerun the app, this time telling it to allow overriding:
- 
+```bash
+java -DuseOverride=true -jar helidon-examples-cors.jar
