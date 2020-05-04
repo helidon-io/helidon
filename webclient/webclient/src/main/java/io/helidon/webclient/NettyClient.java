@@ -82,8 +82,6 @@ final class NettyClient implements WebClient {
     NettyClient(Builder builder) {
         this.configuration = builder.configuration();
 
-        //EDIT Read only reader and writer contexts? Flag
-
         // we need to configure these - if user wants to override, they must
         // do it before first usage
         configureDefaults(EMPTY_CONFIG);

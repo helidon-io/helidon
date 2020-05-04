@@ -190,7 +190,6 @@ public final class MediaSupport {
             if (registerDefaults) {
                 addMediaService(DefaultMediaService.create(includeStackTraces));
             }
-            //EDIT: create immutable context instance. Wrapper class? Adding flags?
             return new MediaSupport(readerContext, writerContext);
         }
     }
