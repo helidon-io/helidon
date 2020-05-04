@@ -52,7 +52,7 @@ final class ConfigSourcesRuntime {
         return new ConfigSourcesRuntime(List.of(new ConfigSourceRuntimeImpl(null, ConfigSources.empty())),
                                         MergingStrategy.fallback());
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

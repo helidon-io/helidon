@@ -54,6 +54,9 @@ public class ServerRunner {
 
     /**
      * Start the server. Needed for reflection.
+     *
+     * @param config configuration
+     * @param port port to start the server on
      */
     public void start(Config config, int port) {
         // attempt a stop
