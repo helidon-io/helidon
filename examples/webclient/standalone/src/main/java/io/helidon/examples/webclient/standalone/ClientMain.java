@@ -31,7 +31,6 @@ import javax.json.JsonObject;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
-import io.helidon.media.common.MediaSupport;
 import io.helidon.media.jsonp.common.JsonProcessing;
 import io.helidon.metrics.RegistryFactory;
 import io.helidon.webclient.FileSubscriber;
