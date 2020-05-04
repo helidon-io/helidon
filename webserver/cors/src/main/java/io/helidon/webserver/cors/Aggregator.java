@@ -28,8 +28,6 @@ import io.helidon.config.ConfigValue;
 import io.helidon.webserver.PathMatcher;
 import io.helidon.webserver.cors.LogHelper.MatcherChecks;
 
-import static io.helidon.webserver.cors.CorsSupportHelper.normalize;
-
 /**
  * Collects CORS set-up information from various sources and looks up the relevant CORS information given a request's path and
  * HTTP method.
@@ -50,7 +48,7 @@ import static io.helidon.webserver.cors.CorsSupportHelper.normalize;
 class Aggregator {
 
     // Key value for the map corresponding to the cross-origin config managed by the {@link CorsSetter} methods
-    static final String PATHLESS_KEY = "{+}";
+    static final String PATHLESS_KEY = "/{+}";
 
     private static final Logger LOGGER = Logger.getLogger(Aggregator.class.getName());
 
@@ -160,7 +158,7 @@ class Aggregator {
          * @return updated builder
          */
         Builder addCrossOrigin(String pathExpr, CrossOriginConfig crossOrigin) {
-            crossOriginConfigMatchables.add(new FixedCrossOriginConfigMatchable(normalize(pathExpr), crossOrigin));
+            crossOriginConfigMatchables.add(new FixedCrossOriginConfigMatchable(pathExpr, crossOrigin));
             return this;
         }
 
@@ -254,7 +252,7 @@ class Aggregator {
     Optional<CrossOriginConfig> lookupCrossOrigin(String path, String method,
             Supplier<Optional<CrossOriginConfig>> secondaryLookup) {
 
-        Optional<CrossOriginConfig> result = findFirst(crossOriginConfigMatchables, normalize(path), method)
+        Optional<CrossOriginConfig> result = findFirst(crossOriginConfigMatchables, path, method)
                 .or(secondaryLookup);
 
         return result;
