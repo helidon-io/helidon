@@ -20,9 +20,9 @@ import javax.json.JsonStructure;
 
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
-import io.helidon.media.jsonp.common.JsonpSupport;
 import io.helidon.media.jsonp.common.JsonpBodyReader;
 import io.helidon.media.jsonp.common.JsonpBodyWriter;
+import io.helidon.media.jsonp.common.JsonpSupport;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
