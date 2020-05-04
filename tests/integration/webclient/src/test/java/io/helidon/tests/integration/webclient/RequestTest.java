@@ -24,6 +24,8 @@ import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 
 import io.helidon.common.http.Http;
+import io.helidon.common.http.MediaType;
+import io.helidon.media.jsonp.common.JsonProcessing;
 import io.helidon.webclient.WebClientException;
 
 import org.junit.jupiter.api.Assertions;
@@ -65,6 +67,9 @@ public class RequestTest extends TestParent {
     public void testIncorrect() throws ExecutionException, InterruptedException {
         webClient.get()
                 .path("/incorrect")
+                .queryParam("query", "parameter")
+                .headers(headers -> headers.addAccept(MediaType.APPLICATION_JSON))
+                .fragment("someFragment")
                 .request()
                 .thenAccept(response -> {
                     if (response.status() != Http.Status.NOT_FOUND_404) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,7 +77,7 @@ abstract class Request implements ServerRequest {
         this.queryParams = UriComponent.decodeQuery(req.uri().getRawQuery(), true);
         this.eventListener = new MessageBodyEventListener();
         MessageBodyReaderContext readerContext = MessageBodyReaderContext
-                .create(webServer.mediaSupport(), eventListener, headers, headers.contentType());
+                .create(webServer.readerContext(), eventListener, headers, headers.contentType());
         this.content = MessageBodyReadableContent.create(req.bodyPublisher(), readerContext);
     }
 

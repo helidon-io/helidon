@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,6 +81,14 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
         this.contentType = Optional.empty();
         this.readers = new MessageBodyOperators<>();
         this.sreaders = new MessageBodyOperators<>();
+    }
+
+    private MessageBodyReaderContext(MessageBodyReaderContext parent) {
+        super(parent);
+        this.headers = parent.headers;
+        this.contentType = parent.contentType;
+        this.readers = new MessageBodyOperators<>(parent.readers);
+        this.sreaders = new MessageBodyOperators<>(parent.sreaders);
     }
 
     /**
@@ -274,7 +282,17 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
     }
 
     /**
-     * Create a new empty writer context backed by the specified headers.
+     * Creates a new parented reader context.
+     *
+     * @param parent parent reader context
+     * @return new instance of MessageBodyReaderContext
+     */
+    public static MessageBodyReaderContext create(MessageBodyReaderContext parent) {
+        return new MessageBodyReaderContext(parent);
+    }
+
+    /**
+     * Create a new empty reader context backed by the specified headers.
      *
      * @param mediaSupport mediaSupport instance used to derived the parent
      * context, may be {@code null}
@@ -293,7 +311,7 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
     }
 
     /**
-     * Create a new empty writer context backed by the specified headers.
+     * Create a new empty reader context backed by the specified headers.
      *
      * @param parent parent context, must not be {@code null}
      * @param eventListener subscription event listener, may be {@code null}

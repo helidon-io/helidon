@@ -27,9 +27,6 @@ import java.util.Arrays;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import io.helidon.microprofile.messaging.MethodSignatureResolver;
-import io.helidon.microprofile.messaging.MethodSignatureType;
-
 public class SignatureTypeConsistencyTest {
 
     /**
@@ -38,7 +35,7 @@ public class SignatureTypeConsistencyTest {
      */
     @Test
     void isTypeUsedByResolver() throws IOException {
-        String srcFileName = String.format("%s.java", MethodSignatureResolver.class.getName().replaceAll("\\.", File.separator));
+        String srcFileName = String.format("%s.java", MethodSignatureResolver.class.getName().replaceAll("\\.", "\\" + File.separator));
         Path resolverSrcPath = Paths.get("src", "main", "java", srcFileName);
         String resolverSrc = new String(Files.readAllBytes(resolverSrcPath));
 

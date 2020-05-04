@@ -67,7 +67,9 @@ public class RequestContentTest {
         doReturn(URI.create("http://0.0.0.0:1234")).when(bareRequestMock).uri();
         doReturn(flux).when(bareRequestMock).bodyPublisher();
         WebServer webServer = mock(WebServer.class);
-        doReturn(MediaSupport.createWithDefaults()).when(webServer).mediaSupport();
+        MediaSupport mediaSupport = MediaSupport.create();
+        doReturn(mediaSupport.readerContext()).when(webServer).readerContext();
+        doReturn(mediaSupport.writerContext()).when(webServer).writerContext();
         return new RequestTestStub(bareRequestMock, webServer);
     }
 

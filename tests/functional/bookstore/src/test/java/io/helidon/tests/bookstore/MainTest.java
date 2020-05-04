@@ -76,14 +76,9 @@ class MainTest {
         healthUrl = new URL("http://localhost:" + port + "/health");
         appJarPathSE = Paths.get(appJarPathSE).normalize().toString();
         appJarPathMP = Paths.get(appJarPathMP).normalize().toString();
-        JsonProcessing jsonProcessing = JsonProcessing.create();
         webClient = WebClient.builder()
                 .baseUri("http://localhost:" + port)
-                .mediaSupport(MediaSupport.builder()
-                                      .registerDefaults()
-                                      .registerReader(jsonProcessing.newReader())
-                                      .registerWriter(jsonProcessing.newWriter())
-                                      .build())
+                .addMediaService(JsonProcessing.create())
                 .build();
     }
 
@@ -438,7 +433,7 @@ class MainTest {
             File jarFile = new File(appJarPath);
             // --module-path target/bookstore-se.jar:target/libs -m io.helidon.tests.apps.bookstore.se/io.helidon.tests.apps.bookstore.se.Main
             startArgs.add("--module-path");
-            startArgs.add(appJarPath + ":" + jarFile.getParent() + "/libs");
+            startArgs.add(appJarPath + File.pathSeparator + jarFile.getParent() + File.separator + "libs");
             startArgs.add("-m");
             startArgs.add(moduleName + "/" + moduleName + ".Main");
         } else {

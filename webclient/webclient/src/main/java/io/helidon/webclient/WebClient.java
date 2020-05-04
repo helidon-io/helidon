@@ -33,6 +33,10 @@ import io.helidon.common.http.Http;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.media.common.MediaSupport;
+import io.helidon.media.common.MediaSupportBuilder;
+import io.helidon.media.common.MessageBodyReader;
+import io.helidon.media.common.MessageBodyWriter;
+import io.helidon.media.common.spi.MediaService;
 import io.helidon.webclient.spi.WebClientService;
 import io.helidon.webclient.spi.WebClientServiceProvider;
 
@@ -89,7 +93,7 @@ public interface WebClient {
      */
     WebClientRequestBuilder method(Http.Method method);
 
-    final class Builder implements io.helidon.common.Builder<WebClient> {
+    final class Builder implements io.helidon.common.Builder<WebClient>, MediaSupportBuilder<Builder> {
 
         static {
             HelidonFeatures.register(HelidonFlavor.SE, "WebClient");
@@ -163,15 +167,27 @@ public interface WebClient {
             return this;
         }
 
-        /**
-         * Sets media support of the client. This {@link MediaSupport} instance contains reader and writers
-         * which will be used as default for each request.
-         *
-         * @param mediaSupport media support
-         * @return updated builder instance
-         */
+        @Override
         public Builder mediaSupport(MediaSupport mediaSupport) {
             configuration.mediaSupport(mediaSupport);
+            return this;
+        }
+
+        @Override
+        public Builder addMediaService(MediaService mediaService) {
+            configuration.addMediaService(mediaService);
+            return this;
+        }
+
+        @Override
+        public Builder addReader(MessageBodyReader<?> reader) {
+            configuration.addReader(reader);
+            return this;
+        }
+
+        @Override
+        public Builder addWriter(MessageBodyWriter<?> writer) {
+            configuration.addWriter(writer);
             return this;
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import java.util.concurrent.CompletionStage;
 
 import io.helidon.common.http.ContextualRegistry;
 import io.helidon.media.common.MediaSupport;
+import io.helidon.media.common.MessageBodyReaderContext;
+import io.helidon.media.common.MessageBodyWriterContext;
 import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 
@@ -33,16 +35,11 @@ class TestWebServer implements WebServer {
     private final CompletableFuture<WebServer> shutdownFuture = new CompletableFuture<>();
     private final ServerConfiguration configuration = ServerConfiguration.builder().build();
     private final ContextualRegistry context = ContextualRegistry.create();
-    private final MediaSupport mediaSupport = MediaSupport.createWithDefaults();
+    private final MediaSupport mediaSupport = MediaSupport.create();
 
     @Override
     public ServerConfiguration configuration() {
         return configuration;
-    }
-
-    @Override
-    public MediaSupport mediaSupport() {
-        return mediaSupport;
     }
 
     @Override
@@ -73,6 +70,16 @@ class TestWebServer implements WebServer {
     @Override
     public ContextualRegistry context() {
         return context;
+    }
+
+    @Override
+    public MessageBodyReaderContext readerContext() {
+        return mediaSupport.readerContext();
+    }
+
+    @Override
+    public MessageBodyWriterContext writerContext() {
+        return mediaSupport.writerContext();
     }
 
     @Override

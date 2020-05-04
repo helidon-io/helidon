@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,10 +22,15 @@ import javax.json.Json;
 import javax.json.JsonReaderFactory;
 import javax.json.JsonWriterFactory;
 
+import io.helidon.media.common.MediaSupport;
+import io.helidon.media.common.MessageBodyReaderContext;
+import io.helidon.media.common.MessageBodyWriterContext;
+import io.helidon.media.common.spi.MediaService;
+
 /**
  * Support for JSON Processing integration.
  */
-public final class JsonProcessing {
+public final class JsonProcessing implements MediaService {
 
     private final JsonReaderFactory jsonReaderFactory;
     private final JsonWriterFactory jsonWriterFactory;
@@ -37,6 +42,7 @@ public final class JsonProcessing {
 
     /**
      * Create a new JSON-P entity reader.
+     *
      * @return JsonEntityReader
      */
     public JsonpBodyReader newReader() {
@@ -45,10 +51,17 @@ public final class JsonProcessing {
 
     /**
      * Create a new JSON-P entity writer.
+     *
      * @return JsonEntityWriter
      */
     public JsonpBodyWriter newWriter() {
         return new JsonpBodyWriter(jsonWriterFactory);
+    }
+
+    @Override
+    public void register(MessageBodyReaderContext readerContext, MessageBodyWriterContext writerContext) {
+        readerContext.registerReader(newReader());
+        writerContext.registerWriter(newWriter());
     }
 
     /**
@@ -66,6 +79,24 @@ public final class JsonProcessing {
      */
     public static JsonProcessing create(Map<String, ?> jsonPConfig) {
         return builder().jsonProcessingConfig(jsonPConfig).build();
+    }
+
+    /**
+     * Create a new JSON-P entity reader.
+     *
+     * @return JsonEntityReader
+     */
+    public static JsonpBodyReader reader() {
+        return create().newReader();
+    }
+
+    /**
+     * Create a new JSON-P entity writer.
+     *
+     * @return JsonEntityReader
+     */
+    public static JsonpBodyWriter writer() {
+        return create().newWriter();
     }
 
     /**

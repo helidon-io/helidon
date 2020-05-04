@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import javax.net.ssl.SSLContext;
@@ -35,6 +36,12 @@ import io.helidon.common.LazyValue;
 import io.helidon.common.context.Context;
 import io.helidon.config.Config;
 import io.helidon.media.common.MediaSupport;
+import io.helidon.media.common.MediaSupportBuilder;
+import io.helidon.media.common.MessageBodyReader;
+import io.helidon.media.common.MessageBodyReaderContext;
+import io.helidon.media.common.MessageBodyWriter;
+import io.helidon.media.common.MessageBodyWriterContext;
+import io.helidon.media.common.spi.MediaService;
 import io.helidon.webclient.spi.WebClientService;
 
 import io.netty.handler.ssl.ClientAuth;
@@ -63,7 +70,8 @@ class WebClientConfiguration {
     private final Proxy proxy;
     private final boolean followRedirects;
     private final int maxRedirects;
-    private final MediaSupport mediaSupport;
+    private final MessageBodyReaderContext readerContext;
+    private final MessageBodyWriterContext writerContext;
     private final Ssl ssl;
     private final URI uri;
 
@@ -89,7 +97,8 @@ class WebClientConfiguration {
                                                            enableAutomaticCookieStore);
         this.config = builder.config;
         this.context = builder.context;
-        this.mediaSupport = builder.mediaSupport;
+        this.readerContext = builder.readerContext;
+        this.writerContext = builder.writerContext;
         this.clientServices = Collections.unmodifiableList(builder.clientServices);
         this.uri = builder.uri;
     }
@@ -236,8 +245,12 @@ class WebClientConfiguration {
         return clientServices;
     }
 
-    MediaSupport mediaSupport() {
-        return mediaSupport;
+    MessageBodyReaderContext readerContext() {
+        return readerContext;
+    }
+
+    MessageBodyWriterContext writerContext() {
+        return writerContext;
     }
 
     URI uri() {
@@ -248,7 +261,7 @@ class WebClientConfiguration {
      * A fluent API builder for {@link WebClientConfiguration}.
      */
     static class Builder<B extends Builder<B, T>, T extends WebClientConfiguration>
-            implements io.helidon.common.Builder<T> {
+            implements io.helidon.common.Builder<T>, MediaSupportBuilder<B> {
 
         private final WebClientRequestHeaders clientHeaders;
 
@@ -266,7 +279,8 @@ class WebClientConfiguration {
         private Ssl ssl;
         private URI uri;
         private Map<String, String> defaultCookies;
-        private MediaSupport mediaSupport;
+        private MessageBodyReaderContext readerContext;
+        private MessageBodyWriterContext writerContext;
         private List<WebClientService> clientServices;
         @SuppressWarnings("unchecked")
         private B me = (B) this;
@@ -432,10 +446,13 @@ class WebClientConfiguration {
             return me;
         }
 
+        @Override
         public B mediaSupport(MediaSupport mediaSupport) {
-            this.mediaSupport = mediaSupport;
+            writerContext(mediaSupport.writerContext());
+            readerContext(mediaSupport.readerContext());
             return me;
         }
+
 
         public B context(Context context) {
             this.context = context;
@@ -452,8 +469,44 @@ class WebClientConfiguration {
             return me;
         }
 
+        public B addReader(MessageBodyReader<?> reader) {
+            this.readerContext.registerReader(reader);
+            return me;
+        }
+
+        public B addWriter(MessageBodyWriter<?> writer) {
+            this.writerContext.registerWriter(writer);
+            return me;
+        }
+
+        public B addMediaService(MediaService mediaService) {
+            Objects.requireNonNull(mediaService);
+            mediaService.register(readerContext, writerContext);
+            return me;
+        }
+
         private B enableAutomaticCookieStore(Boolean enableAutomaticCookieStore) {
             this.enableAutomaticCookieStore = enableAutomaticCookieStore;
+            return me;
+        }
+
+        B readerContext(MessageBodyReaderContext readerContext) {
+            this.readerContext = MessageBodyReaderContext.create(readerContext);
+            return me;
+        }
+
+        B writerContext(MessageBodyWriterContext writerContext) {
+            this.writerContext = MessageBodyWriterContext.create(writerContext);
+            return me;
+        }
+
+        B setReaderContext(MessageBodyReaderContext readerContext) {
+            this.readerContext = readerContext;
+            return me;
+        }
+
+        B setWriterContext(MessageBodyWriterContext writerContext) {
+            this.writerContext = writerContext;
             return me;
         }
 
@@ -503,7 +556,8 @@ class WebClientConfiguration {
             cookieStore(configuration.cookieManager.getCookieStore());
             cookiePolicy(configuration.cookiePolicy);
             clientServices(configuration.clientServices);
-            mediaSupport(configuration.mediaSupport);
+            readerContext(configuration.readerContext);
+            writerContext(configuration.writerContext);
             context(configuration.context);
             configuration.cookieManager.defaultCookies().forEach(this::defaultCookie);
             config = configuration.config;

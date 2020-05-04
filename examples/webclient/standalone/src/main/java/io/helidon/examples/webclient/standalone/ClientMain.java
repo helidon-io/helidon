@@ -52,7 +52,6 @@ public class ClientMain {
 
     private static final MetricRegistry METRIC_REGISTRY = RegistryFactory.getInstance()
             .getRegistry(MetricRegistry.Type.APPLICATION);
-    private static final JsonProcessing JSON_PROCESSING = JsonProcessing.create();
     private static final JsonBuilderFactory JSON_BUILDER = Json.createBuilderFactory(Collections.emptyMap());
     private static final JsonObject JSON_NEW_GREETING;
 
@@ -95,11 +94,7 @@ public class ClientMain {
                 .baseUri(url)
                 .config(config.get("client"))
                 //Since JSON processing support is not present by default, we have to add it.
-                .mediaSupport(MediaSupport.builder()
-                                      .registerDefaults()
-                                      .registerReader(JSON_PROCESSING.newReader())
-                                      .registerWriter(JSON_PROCESSING.newWriter())
-                                      .build())
+                .addMediaService(JsonProcessing.create())
                 .build();
 
         performPutMethod(webClient)

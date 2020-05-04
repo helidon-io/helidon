@@ -21,9 +21,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.json.Json;
 import javax.json.JsonObject;
-import javax.json.JsonReaderFactory;
 
-import io.helidon.media.common.MediaSupport;
 import io.helidon.media.jsonp.common.JsonProcessing;
 import io.helidon.webclient.WebClient;
 import io.helidon.webserver.WebServer;
@@ -37,7 +35,6 @@ public class MainTest {
 
     private static WebServer webServer;
     private static WebClient webClient;
-    private static final JsonReaderFactory JSON = Json.createReaderFactory(Collections.emptyMap());
     private static final JsonObject TEST_JSON_OBJECT;
 
     static {
@@ -60,14 +57,9 @@ public class MainTest {
                 Assertions.fail("Failed to start webserver");
             }
         }
-        JsonProcessing jsonProcessing = JsonProcessing.create();
         webClient = WebClient.builder()
                 .baseUri("http://localhost:" + webServer.port())
-                .mediaSupport(MediaSupport.builder()
-                                      .registerDefaults()
-                                      .registerReader(jsonProcessing.newReader())
-                                      .registerWriter(jsonProcessing.newWriter())
-                                      .build())
+                .addMediaService(JsonProcessing.create())
                 .build();
     }
 

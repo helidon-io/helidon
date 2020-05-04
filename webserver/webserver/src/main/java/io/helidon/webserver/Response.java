@@ -72,7 +72,7 @@ abstract class Response implements ServerResponse {
         this.completionStage = bareResponse.whenCompleted().thenApply(a -> this);
         this.sendLockSupport = new SendLockSupport();
         this.eventListener = new MessageBodyEventListener();
-        this.writerContext = MessageBodyWriterContext.create(webServer.mediaSupport(), eventListener, headers, acceptedTypes);
+        this.writerContext = MessageBodyWriterContext.create(webServer.writerContext(), eventListener, headers, acceptedTypes);
     }
 
     /**
