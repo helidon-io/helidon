@@ -127,8 +127,20 @@ public final class MediaSupport {
         }
 
         @Override
+        public Builder addStreamReader(MessageBodyStreamReader<?> streamReader) {
+            readerContext.registerReader(streamReader);
+            return this;
+        }
+
+        @Override
         public Builder addWriter(MessageBodyWriter<?> writer) {
             writerContext.registerWriter(writer);
+            return this;
+        }
+
+        @Override
+        public Builder addStreamWriter(MessageBodyStreamWriter<?> streamWriter) {
+            writerContext.registerWriter(streamWriter);
             return this;
         }
 

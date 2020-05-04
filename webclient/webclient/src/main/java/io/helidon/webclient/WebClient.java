@@ -34,6 +34,8 @@ import io.helidon.config.Config;
 import io.helidon.media.common.MediaSupport;
 import io.helidon.media.common.MediaSupportBuilder;
 import io.helidon.media.common.MessageBodyReader;
+import io.helidon.media.common.MessageBodyStreamReader;
+import io.helidon.media.common.MessageBodyStreamWriter;
 import io.helidon.media.common.MessageBodyWriter;
 import io.helidon.media.common.spi.MediaService;
 import io.helidon.webclient.spi.WebClientService;
@@ -177,8 +179,20 @@ public interface WebClient {
         }
 
         @Override
+        public Builder addStreamReader(MessageBodyStreamReader<?> streamReader) {
+            configuration.addStreamReader(streamReader);
+            return this;
+        }
+
+        @Override
         public Builder addWriter(MessageBodyWriter<?> writer) {
             configuration.addWriter(writer);
+            return this;
+        }
+
+        @Override
+        public Builder addStreamWriter(MessageBodyStreamWriter<?> streamWriter) {
+            configuration.addStreamWriter(streamWriter);
             return this;
         }
 

@@ -29,6 +29,8 @@ import io.helidon.media.common.MediaSupport;
 import io.helidon.media.common.MediaSupportBuilder;
 import io.helidon.media.common.MessageBodyReader;
 import io.helidon.media.common.MessageBodyReaderContext;
+import io.helidon.media.common.MessageBodyStreamReader;
+import io.helidon.media.common.MessageBodyStreamWriter;
 import io.helidon.media.common.MessageBodyWriter;
 import io.helidon.media.common.MessageBodyWriterContext;
 import io.helidon.media.common.spi.MediaService;
@@ -344,8 +346,20 @@ public interface WebServer {
         }
 
         @Override
+        public Builder addStreamReader(MessageBodyStreamReader<?> streamReader) {
+            readerContext.registerReader(streamReader);
+            return this;
+        }
+
+        @Override
         public Builder addWriter(MessageBodyWriter<?> writer) {
             writerContext.registerWriter(writer);
+            return this;
+        }
+
+        @Override
+        public Builder addStreamWriter(MessageBodyStreamWriter<?> streamWriter) {
+            writerContext.registerWriter(streamWriter);
             return this;
         }
 

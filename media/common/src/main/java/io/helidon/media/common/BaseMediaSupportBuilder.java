@@ -35,17 +35,33 @@ public interface BaseMediaSupportBuilder<T> {
     /**
      * Registers new reader.
      *
-     * @param reader new reader
+     * @param reader reader
      * @return updated instance of the builder
      */
     T addReader(MessageBodyReader<?> reader);
 
     /**
+     * Registers new stream reader.
+     *
+     * @param streamReader stream reader
+     * @return updated instance of the builder
+     */
+    T addStreamReader(MessageBodyStreamReader<?> streamReader);
+
+    /**
      * Registers new writer.
      *
-     * @param writer new writer
+     * @param writer writer
      * @return updated instance of the builder
      */
     T addWriter(MessageBodyWriter<?> writer);
+
+    /**
+     * Registers new stream writer.
+     *
+     * @param streamWriter stream writer
+     * @return updated instance of the builder
+     */
+    T addStreamWriter(MessageBodyStreamWriter<?> streamWriter);
 
 }
