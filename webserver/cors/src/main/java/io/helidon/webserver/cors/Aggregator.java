@@ -23,7 +23,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
-import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
 import io.helidon.webserver.PathMatcher;
@@ -304,14 +303,9 @@ class Aggregator {
             this.matcher = PathMatcher.create(pathExpr);
         }
 
-//        boolean matches(String unnormalizedPath) {
-//            return matcher.match(unnormalizedPath).matches();
-//        }
         boolean matches(String path, String method) {
-            return matcher.match(path).matches()
-                    && (method.equals(Http.Method.OPTIONS.name()) || get().matches(method));
+            return matcher.match(path).matches() && get().matches(method);
         }
-
 
         PathMatcher matcher() {
             return matcher;
