@@ -57,8 +57,8 @@ final class NettyClient implements WebClient {
                     .followRedirects(DEFAULT_FOLLOW_REDIRECTS)
                     .maxRedirects(DEFAULT_NUMBER_OF_REDIRECTS)
                     .userAgent(DEFAULT_USER_AGENT)
-                    .readerContext(DEFAULT_MEDIA_SUPPORT.readerContext())
-                    .writerContext(DEFAULT_MEDIA_SUPPORT.writerContext())
+                    .readerContextParent(DEFAULT_MEDIA_SUPPORT.readerContext())
+                    .writerContextParent(DEFAULT_MEDIA_SUPPORT.writerContext())
                     .proxy(DEFAULT_PROXY)
                     .ssl(DEFAULT_SSL)
                     .build();

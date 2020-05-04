@@ -450,8 +450,8 @@ class WebClientConfiguration {
 
         @Override
         public B mediaSupport(MediaSupport mediaSupport) {
-            writerContext(mediaSupport.writerContext());
-            readerContext(mediaSupport.readerContext());
+            writerContextParent(mediaSupport.writerContext());
+            readerContextParent(mediaSupport.readerContext());
             return me;
         }
 
@@ -504,22 +504,22 @@ class WebClientConfiguration {
             return me;
         }
 
-        B readerContext(MessageBodyReaderContext readerContext) {
+        B readerContextParent(MessageBodyReaderContext readerContext) {
             this.readerContext = MessageBodyReaderContext.create(readerContext);
             return me;
         }
 
-        B writerContext(MessageBodyWriterContext writerContext) {
+        B writerContextParent(MessageBodyWriterContext writerContext) {
             this.writerContext = MessageBodyWriterContext.create(writerContext);
             return me;
         }
 
-        B setReaderContext(MessageBodyReaderContext readerContext) {
+        B readerContext(MessageBodyReaderContext readerContext) {
             this.readerContext = readerContext;
             return me;
         }
 
-        B setWriterContext(MessageBodyWriterContext writerContext) {
+        B writerContext(MessageBodyWriterContext writerContext) {
             this.writerContext = writerContext;
             return me;
         }
@@ -570,8 +570,8 @@ class WebClientConfiguration {
             cookieStore(configuration.cookieManager.getCookieStore());
             cookiePolicy(configuration.cookiePolicy);
             clientServices(configuration.clientServices);
-            readerContext(configuration.readerContext);
-            writerContext(configuration.writerContext);
+            readerContextParent(configuration.readerContext);
+            writerContextParent(configuration.writerContext);
             context(configuration.context);
             configuration.cookieManager.defaultCookies().forEach(this::defaultCookie);
             config = configuration.config;

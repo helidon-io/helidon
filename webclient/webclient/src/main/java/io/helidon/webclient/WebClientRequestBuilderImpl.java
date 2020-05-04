@@ -391,8 +391,8 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
             requestConfiguration = RequestConfiguration.builder(uri)
                     .update(configuration)
                     .clientServiceRequest(serviceRequest)
-                    .setReaderContext(readerContext)
-                    .setWriterContext(writerContext)
+                    .readerContext(readerContext)
+                    .writerContext(writerContext)
                     .services(services)
                     .context(context)
                     .build();
