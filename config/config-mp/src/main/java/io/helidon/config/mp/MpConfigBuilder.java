@@ -16,14 +16,41 @@
 
 package io.helidon.config.mp;
 
+import java.io.File;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.net.URI;
+import java.net.URL;
+import java.nio.charset.Charset;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.OffsetTime;
+import java.time.Period;
+import java.time.YearMonth;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ServiceLoader;
+import java.util.SimpleTimeZone;
+import java.util.TimeZone;
+import java.util.UUID;
+import java.util.regex.Pattern;
 
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.common.serviceloader.Priorities;
@@ -109,24 +136,65 @@ public class MpConfigBuilder implements ConfigBuilder {
                     .map(OrdinalSource::new)
                     .forEach(sources::add);
         }
-        // built-in converters
-        converters.add(new OrdinalConverter(ConfigMappers::toBoolean, Boolean.class, 1));
-        converters.add(new OrdinalConverter(ConfigMappers::toBoolean, Boolean.TYPE, 1));
-        converters.add(new OrdinalConverter(Byte::parseByte, Byte.class, 1));
-        converters.add(new OrdinalConverter(Byte::parseByte, Byte.TYPE, 1));
-        converters.add(new OrdinalConverter(Short::parseShort, Short.class, 1));
-        converters.add(new OrdinalConverter(Short::parseShort, Short.TYPE, 1));
-        converters.add(new OrdinalConverter(Integer::parseInt, Integer.class, 1));
-        converters.add(new OrdinalConverter(Integer::parseInt, Integer.TYPE, 1));
-        converters.add(new OrdinalConverter(Long::parseLong, Long.class, 1));
-        converters.add(new OrdinalConverter(Long::parseLong, Long.TYPE, 1));
-        converters.add(new OrdinalConverter(Float::parseFloat, Float.class, 1));
-        converters.add(new OrdinalConverter(Float::parseFloat, Float.TYPE, 1));
-        converters.add(new OrdinalConverter(Double::parseDouble, Double.class, 1));
-        converters.add(new OrdinalConverter(Double::parseDouble, Double.TYPE, 1));
-        converters.add(new OrdinalConverter(MpConfigBuilder::toChar, Character.class, 1));
-        converters.add(new OrdinalConverter(MpConfigBuilder::toChar, Character.TYPE, 1));
-        converters.add(new OrdinalConverter(MpConfigBuilder::toClass, Class.class, 1));
+        // built-in converters - required by specification
+        addBuiltIn(converters, Boolean.class, ConfigMappers::toBoolean);
+        addBuiltIn(converters, Boolean.TYPE, ConfigMappers::toBoolean);
+        addBuiltIn(converters, Byte.class, Byte::parseByte);
+        addBuiltIn(converters, Byte.TYPE, Byte::parseByte);
+        addBuiltIn(converters, Short.class, Short::parseShort);
+        addBuiltIn(converters, Short.TYPE, Short::parseShort);
+        addBuiltIn(converters, Integer.class, Integer::parseInt);
+        addBuiltIn(converters, Integer.TYPE, Integer::parseInt);
+        addBuiltIn(converters, Long.class, Long::parseLong);
+        addBuiltIn(converters, Long.TYPE, Long::parseLong);
+        addBuiltIn(converters, Float.class, Float::parseFloat);
+        addBuiltIn(converters, Float.TYPE, Float::parseFloat);
+        addBuiltIn(converters, Double.class, Double::parseDouble);
+        addBuiltIn(converters, Double.TYPE, Double::parseDouble);
+        addBuiltIn(converters, Character.class, MpConfigBuilder::toChar);
+        addBuiltIn(converters, Character.TYPE, MpConfigBuilder::toChar);
+        addBuiltIn(converters, Class.class, MpConfigBuilder::toClass);
+
+        // built-in converters - Helidon
+        //javax.math
+        addBuiltIn(converters, BigDecimal.class, ConfigMappers::toBigDecimal);
+        addBuiltIn(converters, BigInteger.class, ConfigMappers::toBigInteger);
+        //java.time
+        addBuiltIn(converters, Duration.class, ConfigMappers::toDuration);
+        addBuiltIn(converters, Period.class, ConfigMappers::toPeriod);
+        addBuiltIn(converters, LocalDate.class, ConfigMappers::toLocalDate);
+        addBuiltIn(converters, LocalDateTime.class, ConfigMappers::toLocalDateTime);
+        addBuiltIn(converters, LocalTime.class, ConfigMappers::toLocalTime);
+        addBuiltIn(converters, ZonedDateTime.class, ConfigMappers::toZonedDateTime);
+        addBuiltIn(converters, ZoneId.class, ConfigMappers::toZoneId);
+        addBuiltIn(converters, ZoneOffset.class, ConfigMappers::toZoneOffset);
+        addBuiltIn(converters, Instant.class, ConfigMappers::toInstant);
+        addBuiltIn(converters, OffsetTime.class, ConfigMappers::toOffsetTime);
+        addBuiltIn(converters, OffsetDateTime.class, ConfigMappers::toOffsetDateTime);
+        addBuiltIn(converters, YearMonth.class, YearMonth::parse); ;
+        //java.io
+        addBuiltIn(converters, File.class, MpConfigBuilder::toFile);
+        //java.nio
+        addBuiltIn(converters, Path.class, MpConfigBuilder::toPath);
+        addBuiltIn(converters, Charset.class, ConfigMappers::toCharset);
+        //java.net
+        addBuiltIn(converters, URI.class, ConfigMappers::toUri);
+        addBuiltIn(converters, URL.class, ConfigMappers::toUrl);
+        //java.util
+        addBuiltIn(converters, Pattern.class, ConfigMappers::toPattern);
+        addBuiltIn(converters, UUID.class, ConfigMappers::toUUID);
+
+        // obsolete stuff
+        // noinspection UseOfObsoleteDateTimeApi
+        addBuiltIn(converters, Date.class, ConfigMappers::toDate);
+        // noinspection UseOfObsoleteDateTimeApi
+        addBuiltIn(converters, Calendar.class, ConfigMappers::toCalendar);
+        // noinspection UseOfObsoleteDateTimeApi
+        addBuiltIn(converters, GregorianCalendar.class, ConfigMappers::toGregorianCalendar);
+        // noinspection UseOfObsoleteDateTimeApi
+        addBuiltIn(converters, TimeZone.class, ConfigMappers::toTimeZone);
+        // noinspection UseOfObsoleteDateTimeApi
+        addBuiltIn(converters, SimpleTimeZone.class, ConfigMappers::toSimpleTimeZone);
 
         if (useDiscoveredConverters) {
             ServiceLoader.load(Converter.class)
@@ -164,12 +232,24 @@ public class MpConfigBuilder implements ConfigBuilder {
         return new MpConfigImpl(sources, converters, filters);
     }
 
+    private <T> void addBuiltIn(List<OrdinalConverter> converters, Class<T> clazz, Converter<T> converter) {
+        converters.add(new OrdinalConverter(converter, clazz, 1));
+    }
+
     ConfigBuilder metaConfig(io.helidon.config.Config metaConfig) {
         io.helidon.config.Config helidonConfig = io.helidon.config.Config.builder()
                 .config(metaConfig)
                 .build();
         this.sources.add(new OrdinalSource(MpConfigSources.create(helidonConfig)));
         return this;
+    }
+
+    private static File toFile(String value) {
+        return new File(value);
+    }
+
+    private static Path toPath(String value) {
+        return Paths.get(value);
     }
 
     private static Class<?> toClass(String stringValue) {
