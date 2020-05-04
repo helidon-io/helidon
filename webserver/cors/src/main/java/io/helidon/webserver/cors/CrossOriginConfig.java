@@ -25,7 +25,7 @@ import static io.helidon.webserver.cors.Aggregator.PATHLESS_KEY;
 /**
  * Represents information about cross origin request sharing.
  *
- * Applications can create a new instance in two ways:
+ * Applications can obtain a new instance in three ways:
  * <ul>
  *     <li>Use a {@code Builder} explicitly.
  *     <p>
@@ -42,14 +42,20 @@ import static io.helidon.webserver.cors.Aggregator.PATHLESS_KEY;
  *     instance.
  *     <li>Invoke the static {@link #create(Config)} method, passing a config node containing the cross-origin information to be
  *     converted. This is a convenience method equivalent to creating a builder using the config node and then invoking {@code
- *     build()}.
- *     </li>
+ *     build()}.</li>
+ *     <li>Use the static {@link #DEFAULT} constant which represents the default CORS behavior as if by {@code
+ *     CrossOriginConfig.builder().build()}.</li>
  * </ul>
  *
  * @see MappedCrossOriginConfig
  *
  */
 public class CrossOriginConfig {
+
+    /**
+     * Fixed instance containing default cross-origin sharing.
+     */
+    public static final CrossOriginConfig DEFAULT = builder().build();
 
     /**
      * Key for the node within the CORS config that contains the list of path information.
