@@ -25,9 +25,6 @@ restrictive-cors:
   allow-origins: ["http://foo.com", "http://there.com"]
   allow-methods: ["PUT", "DELETE"]
 
-open-cors: # defaults to "*" for all the "allows" values
-  max-age: -1
-
 # The the example app uses the following for overriding other settings if
 # you set the useOverride system property is set to true.
 cors:

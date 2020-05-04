@@ -130,9 +130,9 @@ public final class Main {
         // what you want. This example warns if either expected config node is missing and then continues with the default.
 
         Config restrictiveConfig = config.get("restrictive-cors");
-        Config openConfig = config.get("open-cors");
-        if (!restrictiveConfig.exists() || !openConfig.exists()) {
-            Logger.getLogger(Main.class.getName()).warning("Missing config; continuing with default CORS support");
+        if (!restrictiveConfig.exists()) {
+            Logger.getLogger(Main.class.getName())
+                    .warning("Missing restrictive config; continuing with default CORS support");
         }
 
         CorsSupport.Builder corsBuilder = CorsSupport.builder();
@@ -146,8 +146,8 @@ public final class Main {
                     });
         }
         corsBuilder
-                .config(restrictiveConfig)
-                .config(openConfig)
+                .config(restrictiveConfig) // restricted sharing for PUT, DELETE
+                .addCrossOrigin(CrossOriginConfig.builder().build()) // open sharing for other methods
                 .build();
 
         return corsBuilder.build();
