@@ -71,14 +71,9 @@ public class MainTest {
 
     @Test
     public void testHelloWorld() throws Exception {
-        JsonProcessing jsonProcessing = JsonProcessing.create();
         WebClient webClient = WebClient.builder()
                 .baseUri("http://localhost:" + webServer.port())
-                .mediaSupport(MediaSupport.builder()
-                                      .registerDefaults()
-                                      .registerReader(jsonProcessing.newReader())
-                                      .registerWriter(jsonProcessing.newWriter())
-                                      .build())
+                .addMediaService(JsonProcessing.create())
                 .build();
 
         webClient.get()

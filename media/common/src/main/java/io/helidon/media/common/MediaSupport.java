@@ -50,6 +50,11 @@ public final class MediaSupport {
         return builder().config(config).build();
     }
 
+    /**
+     * Creates new empty instance without registered defaults.
+     *
+     * @return empty instance
+     */
     public static MediaSupport empty() {
         return builder().registerDefaults(false).build();
     }
