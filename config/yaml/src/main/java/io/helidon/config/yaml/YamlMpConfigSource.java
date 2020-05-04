@@ -65,7 +65,6 @@ import org.yaml.snakeyaml.Yaml;
  * names.1=second
  * names.2=third
  * </pre>
- * </ul>
  */
 public class YamlMpConfigSource implements ConfigSource {
     private final Map<String, String> properties;

@@ -27,7 +27,10 @@ import org.eclipse.microprofile.config.Config;
 /**
  * Utilities for Helidon MicroProfile Config implementation.
  */
-public class MpConfig {
+public final class MpConfig {
+    private MpConfig() {
+    }
+
     /**
      * This method allows use to use Helidon Config on top of an MP config.
      * There is a limitation - the converters configured with MP config will not be available, unless

@@ -55,7 +55,10 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
  *     <li>{@link #create(io.helidon.config.Config)} - create a MicroProfile config source from Helidon SE Config instance</li>
  * </ul>
  */
-public class MpConfigSources {
+public final class MpConfigSources {
+    private MpConfigSources() {
+    }
+
     /**
      * In memory config source based on the provided map.
      * The config source queries the map each time {@link org.eclipse.microprofile.config.spi.ConfigSource#getValue(String)}

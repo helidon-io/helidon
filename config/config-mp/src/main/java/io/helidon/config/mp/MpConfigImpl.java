@@ -165,8 +165,8 @@ public class MpConfigImpl implements Config {
     /**
      * Return the {@link Converter} used by this instance to produce instances of the specified type from string values.
      *
-     * <bold>This method is from a future version of MP Config specification and may changed before it
-     * is released. It is nevertheless needed to process annotations with default values.</bold>
+     * This method is from a future version of MP Config specification and may changed before it
+     * is released. It is nevertheless needed to process annotations with default values.
      *
      * @param <T> the conversion type
      * @param forType the type to be produced by the converter

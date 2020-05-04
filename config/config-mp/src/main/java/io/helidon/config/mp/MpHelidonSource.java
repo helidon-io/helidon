@@ -34,7 +34,10 @@ import io.helidon.config.spi.ParsableSource;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
-class MpHelidonSource {
+final class MpHelidonSource {
+    private MpHelidonSource() {
+    }
+
     static ConfigSource create(io.helidon.config.spi.ConfigSource source) {
         source.init(it -> {
             throw new UnsupportedOperationException(

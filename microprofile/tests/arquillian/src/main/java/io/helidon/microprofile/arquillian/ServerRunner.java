@@ -37,6 +37,9 @@ public class ServerRunner {
 
     private Server server;
 
+    /**
+     * Needed for reflection.
+     */
     public ServerRunner() {
     }
 
@@ -49,6 +52,9 @@ public class ServerRunner {
         return value.startsWith("/") ? value : "/" + value;
     }
 
+    /**
+     * Start the server. Needed for reflection.
+     */
     public void start(Config config, int port) {
         // attempt a stop
         stop();
@@ -67,6 +73,9 @@ public class ServerRunner {
         LOGGER.finest(() -> "Started server");
     }
 
+    /**
+     * Stop the server. Needed for reflection.
+     */
     public void stop() {
         if (null != server) {
             LOGGER.finest(() -> "Stopping server");
