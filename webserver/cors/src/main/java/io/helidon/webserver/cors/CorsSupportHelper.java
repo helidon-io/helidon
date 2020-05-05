@@ -527,7 +527,7 @@ class CorsSupportHelper<Q, R> {
         // Check if method is allowed
         List<String> allowedMethods = Arrays.asList(crossOrigin.allowMethods());
         if (!allowedMethods.contains("*")
-                && !contains(requestedMethod, allowedMethods, String::equals)) {
+                && !contains(requestedMethod, allowedMethods, String::equalsIgnoreCase)) {
             return forbid(requestAdapter,
                     responseAdapter,
                     METHOD_NOT_IN_ALLOWED_LIST,

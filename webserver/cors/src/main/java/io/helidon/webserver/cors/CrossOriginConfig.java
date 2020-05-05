@@ -236,7 +236,7 @@ public class CrossOriginConfig {
      */
     public boolean matches(String method) {
         for (String allowMethod : allowMethods) {
-            if (allowMethod.equals(method) || allowMethod.equals("*")) {
+            if (allowMethod.equalsIgnoreCase(method) || allowMethod.equals("*")) {
                 return true;
             }
         }
