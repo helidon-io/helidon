@@ -147,7 +147,7 @@ public final class Main {
         }
         corsBuilder
                 .config(restrictiveConfig) // restricted sharing for PUT, DELETE
-                .addCrossOrigin(CrossOriginConfig.builder().build()) // open sharing for other methods
+                .addCrossOrigin(CrossOriginConfig.DEFAULT) // open sharing for other methods
                 .build();
 
         return corsBuilder.build();

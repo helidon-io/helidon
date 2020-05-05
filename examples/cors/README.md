@@ -40,7 +40,7 @@ curl -X GET http://localhost:8080/greet/Jose
 The following requests illustrate the CORS protocol.
 
 By setting `Origin` and `Host` headers that do not match we trigger CORS processing in the
- server. Note the new returned headers `Access-Control-Allow-Origin` and `Vary`:
+ server. Note the new returned headers `Access-Control-Allow-Origin` and `Vary` related to CORS:
 
 ```bash
 # Follow the CORS protocol for GET
@@ -113,7 +113,7 @@ Note that the example `MainTest` class follows these same steps.
 ## Using overrides
 The app accepts CORS override settings if you set the system property `useOverride` to true. 
 
-With the same server running, repeat the `OPTIONS` request from above, but change the `Origin` to `elsewhere.com`:
+With the same server running, repeat the `OPTIONS` request from above, but change the `Origin` to `other.com`:
 ```bash
 curl -i -X OPTIONS \
     -H "Access-Control-Request-Method: PUT" \
@@ -125,9 +125,29 @@ Date: Mon, 4 May 2020 10:49:41 -0500
 transfer-encoding: chunked
 connection: keep-alive
 ```
-This fails because the app set up CORS using the configuration in `application.yaml` which allows sharing only with 
-`foo.com` and `bar.com`. 
+This fails because the app set up CORS using the "restrictive-cors" configuration in `application.yaml` which allows 
+sharing only with `foo.com` and `there.com`. 
 
 Stop and rerun the app, this time telling it to allow overriding:
 ```bash
 java -DuseOverride=true -jar helidon-examples-cors.jar
+```
+Send the previous `OPTIONS` request again and note the successful result:
+```bash
+HTTP/1.1 200 OK
+Access-Control-Allow-Methods: PUT
+Access-Control-Allow-Origin: http://other.com
+Access-Control-Max-Age: 3600
+Date: Mon, 4 May 2020 18:52:54 -0500
+transfer-encoding: chunked
+connection: keep-alive
+```
+By setting the `useOverride` system property, you told the application to use the "cors" configuration in 
+`application.yaml`.
+
+Keep in mind that, typically, you would not use a property to control this behavior. You as the developer would decide 
+whether your app should provide this overriding feature and, if so, would _always_ look for the "cors" config section
+and use it for overriding. Note that there is nothing particular about the config key "cors" here; you can write your
+app to look for any config key you want. Just make sure your users know what key value to use to set up any overrides
+they want. (We used a property only so that you could see how overriding would work overriding without having to change 
+the application code.)
