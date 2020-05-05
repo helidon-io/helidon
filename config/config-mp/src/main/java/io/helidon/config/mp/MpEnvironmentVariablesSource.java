@@ -44,7 +44,7 @@ class MpEnvironmentVariablesSource implements ConfigSource {
     @Override
     public String getValue(String propertyName) {
         // environment variable config source is immutable - we can safely cache all requested keys, so we
-        // not not execute the regular expression on every get
+        // do not execute the regular expression on every get
         return cache.computeIfAbsent(propertyName, theKey -> {
             // According to the spec, we have three ways of looking for a property
             // 1. Exact match

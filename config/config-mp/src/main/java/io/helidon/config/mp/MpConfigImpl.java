@@ -229,7 +229,7 @@ public class MpConfigImpl implements Config {
         String result = stringValue;
 
         for (MpConfigFilter filter : filters) {
-            result = filter.apply(propertyName, stringValue);
+            result = filter.apply(propertyName, result);
         }
 
         return Optional.ofNullable(result);
