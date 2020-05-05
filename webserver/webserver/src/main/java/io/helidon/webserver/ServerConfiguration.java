@@ -32,6 +32,7 @@ import io.helidon.common.context.Context;
 import io.helidon.common.http.ContextualRegistry;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
+import io.helidon.config.DeprecatedConfig;
 
 import io.opentracing.Tracer;
 import io.opentracing.util.GlobalTracer;
@@ -504,7 +505,10 @@ public interface ServerConfiguration extends SocketConfiguration {
             }
             configureSocket(config, defaultSocketBuilder);
 
-            config.get("workers").asInt().ifPresent(this::workersCount);
+            DeprecatedConfig.get(config, "worker-count", "workers")
+                    .asInt()
+                    .ifPresent(this::workersCount);
+
             config.get("features.print-details").asBoolean().ifPresent(this::printFeatureDetails);
 
             // sockets
@@ -541,8 +545,12 @@ public interface ServerConfiguration extends SocketConfiguration {
                     .map(this::string2InetAddress)
                     .ifPresent(soConfigBuilder::bindAddress);
             config.get("backlog").asInt().ifPresent(soConfigBuilder::backlog);
-            config.get("timeout").asInt().ifPresent(soConfigBuilder::timeoutMillis);
-            config.get("receive-buffer").asInt().ifPresent(soConfigBuilder::receiveBufferSize);
+            DeprecatedConfig.get(config, "timeout-millis", "timeout")
+                    .asInt()
+                    .ifPresent(soConfigBuilder::timeoutMillis);
+            DeprecatedConfig.get(config, "receive-buffer-size", "receive-buffer")
+                    .asInt()
+                    .ifPresent(soConfigBuilder::receiveBufferSize);
             config.get("ssl-protocols").asList(String.class).ifPresent(soConfigBuilder::enabledSSlProtocols);
 
             // ssl
