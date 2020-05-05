@@ -129,10 +129,11 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
             if (configuredScopeAudience.endsWith("/")) {
                 this.scopeAppender = (stringBuilder, scope) -> stringBuilder.append(configuredScopeAudience).append(scope);
             } else {
-                this.scopeAppender = (stringBuilder, scope) -> stringBuilder.append(configuredScopeAudience).append("/").append(scope);
+                this.scopeAppender = (stringBuilder, scope) -> stringBuilder.append(configuredScopeAudience)
+                        .append("/")
+                        .append(scope);
             }
         }
-
 
         if (oidcConfig.validateJwtWithJwk()) {
             this.jwtValidator = (signedJwt, collector) -> {
