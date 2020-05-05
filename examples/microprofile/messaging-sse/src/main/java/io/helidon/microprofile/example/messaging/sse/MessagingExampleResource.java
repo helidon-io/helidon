@@ -46,6 +46,10 @@ public class MessagingExampleResource {
     }
 
 
+    /**
+     * Process send.
+     * @param msg message to process
+     */
     @Path("/send/{msg}")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -53,6 +57,12 @@ public class MessagingExampleResource {
         msgBean.process(msg);
     }
 
+    /**
+     * Consume event.
+     *
+     * @param eventSink sink
+     * @param sse       event
+     */
     @GET
     @Path("sse")
     @Produces(MediaType.SERVER_SENT_EVENTS)

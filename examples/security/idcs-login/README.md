@@ -39,7 +39,6 @@ Edit application.yaml for IdcsMain.java or OidcConfig variable definition for Id
 
 ## Build and run
 
-With JDK8+
 ```bash
 mvn package
 java -jar target/helidon-examples-security-oidc.jar

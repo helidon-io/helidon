@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.ReadOnlyParameters;
 import io.helidon.common.reactive.Single;
+import io.helidon.media.common.MediaSupport;
 import io.helidon.webserver.BareRequest;
 import io.helidon.webserver.BareResponse;
 import io.helidon.webserver.Handler;
@@ -50,6 +51,7 @@ public class TestClient {
     private static final Duration TIMEOUT = Duration.ofMinutes(10);
 
     private final Routing routing;
+    private final MediaSupport mediaSupport;
     private final Handler mockingHandler;
 
     /**
@@ -59,12 +61,12 @@ public class TestClient {
      * @param mockingHandler a handler representing mocking
      * @throws NullPointerException if routing parameter is null
      */
-    private TestClient(Routing routing, Handler mockingHandler) {
+    private TestClient(Routing routing, MediaSupport mediaSupport, Handler mockingHandler) {
         Objects.requireNonNull(routing, "Parameter 'routing' is null!");
         this.routing = routing;
+        this.mediaSupport = mediaSupport;
         this.mockingHandler = mockingHandler;
     }
-
 
     /**
      * Creates new {@link TestClient} instance with specified routing.
@@ -83,11 +85,23 @@ public class TestClient {
      * Creates new {@link TestClient} instance with specified routing.
      *
      * @param routing a routing to test
+     * @param mediaSupport media support
+     * @return new instance
+     * @throws NullPointerException if routing parameter is null
+     */
+    public static TestClient create(Routing routing, MediaSupport mediaSupport) {
+        return new TestClient(routing, mediaSupport, null);
+    }
+
+    /**
+     * Creates new {@link TestClient} instance with specified routing.
+     *
+     * @param routing a routing to test
      * @return new instance
      * @throws NullPointerException if routing parameter is null
      */
     public static TestClient create(Routing routing) {
-        return new TestClient(routing, null);
+        return new TestClient(routing, null, null);
     }
 
     /**
@@ -118,7 +132,7 @@ public class TestClient {
                       URI path,
                       Map<String, List<String>> headers,
                       Flow.Publisher<DataChunk> publisher) throws InterruptedException, TimeoutException {
-        TestBareRequest req = new TestBareRequest(method, version, path, headers, publisher);
+        TestBareRequest req = new TestBareRequest(method, version, path, headers, publisher, mediaSupport);
         TestBareResponse res = new TestBareResponse(req.webServer);
         routing.route(req, res);
         try {
@@ -139,17 +153,18 @@ public class TestClient {
         private final URI path;
         private final Map<String, List<String>> headers;
         private final Flow.Publisher<DataChunk> publisher;
-        private final TestWebServer webServer = new TestWebServer();
+        private final TestWebServer webServer;
 
         TestBareRequest(Http.RequestMethod method,
                         Http.Version version,
                         URI path,
                         Map<String, List<String>> headers,
-                        Flow.Publisher<DataChunk> publisher) {
+                        Flow.Publisher<DataChunk> publisher,
+                        MediaSupport mediaSupport) {
             Objects.requireNonNull(method, "Parameter 'method' is null!");
             Objects.requireNonNull(version, "Parameter 'version' is null!");
             Objects.requireNonNull(path, "Parameter 'path' is null!");
-            webServer.start();
+            webServer = new TestWebServer(mediaSupport);
             this.method = method;
             this.version = version;
             this.path = path;

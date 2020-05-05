@@ -163,6 +163,7 @@
                                 <addClasspath>true</addClasspath>
                                 <classpathPrefix>libs</classpathPrefix>
                                 <mainClass>${mainClass}</mainClass>
+                                <useUniqueVersions>false</useUniqueVersions>
                             </manifest>
                         </archive>
                     </configuration>

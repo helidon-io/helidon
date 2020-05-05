@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2020 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -38,6 +38,8 @@ security:
       scope-audience: "http://localhost:7987/test-application"
       proxy-host: "${ALIAS=security.properties.proxy-host}"
       frontend-uri: "${ALIAS=security.properties.frontend-uri}"
+      # support for non-public signature JWK (and maybe other IDCS specific handling)
+      server-type: "idcs"
   - idcs-role-mapper:
       multitenant: false
       oidc-config:
