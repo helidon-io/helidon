@@ -80,6 +80,8 @@ import org.jboss.shrinkwrap.descriptor.api.Descriptor;
  */
 public class HelidonDeployableContainer implements DeployableContainer<HelidonContainerConfiguration> {
     private static final Logger LOGGER = Logger.getLogger(HelidonDeployableContainer.class.getName());
+    // runnables that must be executed on stop
+    private static final ConcurrentLinkedQueue<Runnable> STOP_RUNNABLES = new ConcurrentLinkedQueue<>();
 
     /**
      * The configuration for this container.
@@ -91,7 +93,6 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
      */
     private final Map<String, RunContext> contexts = new HashMap<>();
 
-    private static ConcurrentLinkedQueue<Runnable> stopCalls = new ConcurrentLinkedQueue<>();
     private Server dummyServer = null;
 
     @Override
@@ -121,7 +122,6 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
 
     @Override
     public void stop() {
-        // No-op
         if (null != dummyServer) {
             dummyServer.stop();
         }
@@ -130,7 +130,6 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
     @Override
     public ProtocolDescription getDefaultProtocol() {
         return new ProtocolDescription(HelidonLocalProtocol.PROTOCOL_NAME);
-        // return new ProtocolDescription(LocalProtocol.NAME);
     }
 
     @Override
@@ -203,7 +202,7 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
                 .getDeclaredConstructor()
                 .newInstance();
 
-        stopCalls.add(() -> {
+        STOP_RUNNABLES.add(() -> {
             try {
                 context.runnerClass.getDeclaredMethod("stop").invoke(context.runner);
             } catch (ReflectiveOperationException e) {
@@ -349,10 +348,10 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
     }
 
     void stopAll() {
-        Runnable polled = stopCalls.poll();
+        Runnable polled = STOP_RUNNABLES.poll();
         while (Objects.nonNull(polled)) {
             polled.run();
-            polled = stopCalls.poll();
+            polled = STOP_RUNNABLES.poll();
         }
         dummyServer.stop();
     }

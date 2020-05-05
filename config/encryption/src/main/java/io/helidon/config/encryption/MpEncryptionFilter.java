@@ -35,7 +35,7 @@ import org.eclipse.microprofile.config.Config;
  * <p>
  * Password in properties must be stored as follows:
  * <ul>
- * <li>${AES=base64} - encrypted password using a master password (must be provided to Prime through configuration, system
+ * <li>${AES=base64} - encrypted password using a master password (must be provided to prime through configuration, system
  * property or environment variable)</li>
  * <li>${RSA=base64} - encrypted password using a public key (private key must be available to Prime instance,
  * its location must be provided to prime through configuration, system property or environment variable)</li>
