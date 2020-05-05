@@ -24,7 +24,7 @@
 Helidon is a collection of Java libraries for writing microservices. Helidon
 offers two programming models: Helidion SE and <<mp/introduction/01_introduction.adoc,Helidon MP>>.
 
-== Helidon SE
+== Helidon SE Components
 
 Helidon SE is a compact toolkit that embraces the latest Java SE features:
 reactive streams, asynchrous and functional programming, and fluent style
@@ -34,7 +34,7 @@ The REST framework for Helidon SE is the Helidon WebServer. It's built on top
 of Netty and uses a straight forward request routing API and supports a
 number of additional Helidon features:
 
-image::images/SE_components.png[SE Components]
+image::/docs/images/SE_components.png[SE Components]
 
 * *Reactive Web Server* +
 WebServer provides an asynchonous and reactive API for creating web applications. The API is inspired by popular NodeJS and Java frameworks.
