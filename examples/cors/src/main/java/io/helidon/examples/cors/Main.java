@@ -121,7 +121,7 @@ public final class Main {
 
     private static CorsSupport corsSupportForGreeting(Config config) {
 
-        // The default CorsSupport object (for example, CorsSupport.create()) allows sharing for any HTTP method and with any
+        // The default CorsSupport object (obtained using CorsSupport.create()) allows sharing for any HTTP method and with any
         // origin. Using CorsSupport.create(Config) with a missing config node yields a default CorsSupport, which might not be
         // what you want. This example warns if either expected config node is missing and then continues with the default.
 
@@ -141,7 +141,7 @@ public final class Main {
                 });
         corsBuilder
                 .config(restrictiveConfig) // restricted sharing for PUT, DELETE
-                .addCrossOrigin(CrossOriginConfig.DEFAULT) // open sharing for other methods
+                .addCrossOrigin(CrossOriginConfig.create()) // open sharing for other methods
                 .build();
 
         return corsBuilder.build();
