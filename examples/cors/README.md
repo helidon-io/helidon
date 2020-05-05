@@ -60,7 +60,7 @@ content-length: 27
 
 {"greeting":"Hola World!"}
 ```
-Note the new returned headers `Access-Control-Allow-Origin` and `Vary` in the response.
+Note the new headers `Access-Control-Allow-Origin` and `Vary` in the response.
 
 The same happens for a `GET` requesting a personalized greeting (by passing the name of the
  person to be greeted):
@@ -126,8 +126,9 @@ Note that the tests in the example `MainTest` class follow these same steps.
 
 ## Using overrides
 
-The app is written to accept CORS override settings if the config contains a "cors" section. (It is commented out in 
-the example.) 
+The `Main#corsSupportForGreeting` method loads override settings for any other CORS set-up if the config contains a 
+"cors" section. (That section is initially commented out in the example `application.yaml` file.) Not all applications 
+need this feature, but the example shows how easy it is to add.
 
 With the same server running, repeat the `OPTIONS` request from above, but change the `Origin` header to refer to 
 `other.com`:
