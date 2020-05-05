@@ -43,19 +43,14 @@ import static io.helidon.webserver.cors.Aggregator.PATHLESS_KEY;
  *     <li>Invoke the static {@link #create(Config)} method, passing a config node containing the cross-origin information to be
  *     converted. This is a convenience method equivalent to creating a builder using the config node and then invoking {@code
  *     build()}.</li>
- *     <li>Use the static {@link #DEFAULT} constant which represents the default CORS behavior as if by {@code
- *     CrossOriginConfig.builder().build()}.</li>
+ *     <li>Invoke the static {@link #create()} method which returns a {@code CrossOriginConfig} instance which implements
+ *     the default CORS behavior.</li>
  * </ul>
  *
  * @see MappedCrossOriginConfig
  *
  */
 public class CrossOriginConfig {
-
-    /**
-     * Fixed instance containing default cross-origin sharing.
-     */
-    public static final CrossOriginConfig DEFAULT = builder().build();
 
     /**
      * Key for the node within the CORS config that contains the list of path information.
@@ -157,6 +152,15 @@ public class CrossOriginConfig {
                 .allowOrigins(original.allowOrigins)
                 .exposeHeaders(original.exposeHeaders)
                 .maxAgeSeconds(original.maxAgeSeconds);
+    }
+
+    /**
+     * Creates a new {@code CrossOriginConfig} instance which represents the default CORS behavior.
+     *
+     * @return new default {@code CrossOriginConfig} instance
+     */
+    public static CrossOriginConfig create() {
+        return builder().build();
     }
 
     /**
