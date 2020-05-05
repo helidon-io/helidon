@@ -25,11 +25,10 @@ restrictive-cors:
   allow-origins: ["http://foo.com", "http://there.com"]
   allow-methods: ["PUT", "DELETE"]
 
-# The the example app uses the following for overriding other settings if
-# you set the useOverride system property is set to true.
-cors:
-  paths:
-    - path-prefix: /greeting
-      allow-origins: ["http://foo.com", "http://there.com", "http://other.com"]
-      allow-methods: ["PUT", "DELETE"]
+# The the example app uses the following for overriding other settings.
+#cors:
+#  paths:
+#    - path-prefix: /greeting
+#      allow-origins: ["http://foo.com", "http://there.com", "http://other.com"]
+#      allow-methods: ["PUT", "DELETE"]
 

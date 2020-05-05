@@ -111,7 +111,7 @@ curl -i -X GET -H "Origin: http://foo.com" -H "Host: here.com" http://localhost:
 Note that the example `MainTest` class follows these same steps.
 
 ## Using overrides
-The app accepts CORS override settings if you set the system property `useOverride` to true. 
+The app accepts CORS override settings if the config contains a "cors" section. (It is commented out in the example.) 
 
 With the same server running, repeat the `OPTIONS` request from above, but change the `Origin` to `other.com`:
 ```bash
@@ -128,9 +128,9 @@ connection: keep-alive
 This fails because the app set up CORS using the "restrictive-cors" configuration in `application.yaml` which allows 
 sharing only with `foo.com` and `there.com`. 
 
-Stop and rerun the app, this time telling it to allow overriding:
+Stop the running app, uncomment the commented section at the end of `application.yaml`, and build and run the app again.
 ```bash
-java -DuseOverride=true -jar helidon-examples-cors.jar
+java  -jar helidon-examples-cors.jar
 ```
 Send the previous `OPTIONS` request again and note the successful result:
 ```bash
@@ -142,12 +142,6 @@ Date: Mon, 4 May 2020 18:52:54 -0500
 transfer-encoding: chunked
 connection: keep-alive
 ```
-By setting the `useOverride` system property, you told the application to use the "cors" configuration in 
-`application.yaml`.
-
-Keep in mind that, typically, you would not use a property to control this behavior. You as the developer would decide 
-whether your app should provide this overriding feature and, if so, would _always_ look for the "cors" config section
-and use it for overriding. Note that there is nothing particular about the config key "cors" here; you can write your
-app to look for any config key you want. Just make sure your users know what key value to use to set up any overrides
-they want. (We used a property only so that you could see how overriding would work overriding without having to change 
-the application code.)
+By uncommenting the override portion of the config file, you told the application to use the "cors" configuration in 
+`application.yaml` for overriding. You can choose whatever key name you want for the override. Just make sure you tell 
+your end users whatever the key is your app uses for overrides. 

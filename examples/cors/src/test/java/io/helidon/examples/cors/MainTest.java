@@ -30,6 +30,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.logging.Logger;
 
 import javax.json.Json;
 import javax.json.JsonBuilderFactory;
@@ -42,6 +43,7 @@ import javax.json.JsonString;
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
+import io.helidon.config.Config;
 import io.helidon.media.common.MediaSupport;
 import io.helidon.media.jsonp.common.JsonProcessing;
 import io.helidon.webclient.WebClient;
@@ -69,6 +71,8 @@ public class MainTest {
     private static WebClient webClient;
 
     private static final JsonProcessing JSON_PROCESSING = JsonProcessing.create();
+
+    private static final Logger LOGGER = Logger.getLogger(MainTest.class.getPackageName());
 
     @BeforeAll
     public static void start() throws Exception {
@@ -151,24 +155,6 @@ public class MainTest {
         assertEquals(allowOrigin.get(), "*");
     }
 
-    @Order(12) // Run after CORS test changes greeting to Cheers.
-    @Test
-    void testNamedGreetWithCors() throws Exception {
-        WebClientRequestBuilder builder = webClient.get();
-        Headers headers = builder.headers();
-        headers.add("Origin", "http://foo.com");
-        headers.add("Host", "here.com");
-
-        WebClientResponse r = getResponse("/greet/Maria", builder);
-        assertEquals(200, r.status().code(), "HTTP response");
-        assertTrue(fromPayload(r).getMessage().contains("Cheers Maria"));
-        headers = r.headers();
-        Optional<String> allowOrigin = headers.value(CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN);
-        assertTrue(allowOrigin.isPresent(),
-                "Expected CORS header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN + " is absent");
-        assertEquals(allowOrigin.get(), "*");
-    }
-
     @Order(11) // Run after the non-CORS tests but before other CORS tests.
     @Test
     void testGreetingChangeWithCors() throws Exception {
@@ -215,6 +201,24 @@ public class MainTest {
                 + " should contain '*' but does not; " + allowOrigins);
     }
 
+    @Order(12) // Run after CORS test changes greeting to Cheers.
+    @Test
+    void testNamedGreetWithCors() throws Exception {
+        WebClientRequestBuilder builder = webClient.get();
+        Headers headers = builder.headers();
+        headers.add("Origin", "http://foo.com");
+        headers.add("Host", "here.com");
+
+        WebClientResponse r = getResponse("/greet/Maria", builder);
+        assertEquals(200, r.status().code(), "HTTP response");
+        assertTrue(fromPayload(r).getMessage().contains("Cheers Maria"));
+        headers = r.headers();
+        Optional<String> allowOrigin = headers.value(CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN);
+        assertTrue(allowOrigin.isPresent(),
+                "Expected CORS header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN + " is absent");
+        assertEquals(allowOrigin.get(), "*");
+    }
+
     @Order(100) // After all other tests so we can rely on deterministic greetings.
     @Test
     void testGreetingChangeWithCorsAndOtherOrigin() throws Exception {
@@ -225,7 +229,8 @@ public class MainTest {
 
         WebClientResponse r = putResponse("/greet/greeting", new GreetingMessage("Ahoy"), builder);
         // Result depends on whether we are using overrides or not.
-        assertEquals(Main.useOverride ? 204 : 403, r.status().code(), "HTTP response3");
+        boolean isOverriding = Config.create().get("cors").exists();
+        assertEquals(isOverriding ? 204 : 403, r.status().code(), "HTTP response3");
     }
 
     private static WebClientResponse getResponse(String path) throws ExecutionException, InterruptedException {

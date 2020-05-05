@@ -39,10 +39,6 @@ import io.helidon.webserver.cors.CrossOriginConfig;
  */
 public final class Main {
 
-    // Set using java -DuseOverride=true -jar target/helidon-examples-core.jar
-    // or during build tests using mvn test -DargLine=-DuseOverride=true
-    static final boolean useOverride = Boolean.getBoolean("useOverride");
-
     /**
      * Cannot be instantiated.
      */
@@ -138,13 +134,11 @@ public final class Main {
         CorsSupport.Builder corsBuilder = CorsSupport.builder();
 
         // Use possible overrides first.
-        if (useOverride) {
-            config.get("cors")
-                    .ifExists(c -> {
-                        Logger.getLogger(Main.class.getName()).info("Using the override configuration");
-                        corsBuilder.mappedConfig(c);
-                    });
-        }
+        config.get("cors")
+                .ifExists(c -> {
+                    Logger.getLogger(Main.class.getName()).info("Using the override configuration");
+                    corsBuilder.mappedConfig(c);
+                });
         corsBuilder
                 .config(restrictiveConfig) // restricted sharing for PUT, DELETE
                 .addCrossOrigin(CrossOriginConfig.DEFAULT) // open sharing for other methods
