@@ -24,7 +24,7 @@ import io.helidon.config.ConfigValue;
 import org.eclipse.microprofile.reactive.messaging.spi.ConnectorFactory;
 
 class ConfigurableConnector {
-    
+
     static org.eclipse.microprofile.config.Config getConnectorConfig(String channelName, String connectorName, Config rootConfig) {
 
         Config incomingChannelConfig = rootConfig.get("mp.messaging.incoming");
@@ -37,7 +37,7 @@ class ConfigurableConnector {
 
         Config channelConfig = channelsConfig
                 .get(channelName);
-        
+
         ConfigValue<String> configConnectorName = channelConfig
                 .get("connector")
                 .asString();
@@ -55,7 +55,7 @@ class ConfigurableConnector {
                 .get("mp.messaging.connector")
                 .get(configConnectorName.get());
 
-        return ConnectorConfigBuilder
+        return (org.eclipse.microprofile.config.Config) ConnectorConfigBuilder
                 .from(connectorConfig)
                 .put(ConnectorFactory.CHANNEL_NAME_ATTRIBUTE, channelName)
                 .putAll(channelConfig)

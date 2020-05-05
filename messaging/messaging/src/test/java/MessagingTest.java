@@ -15,9 +15,14 @@
  *
  */
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 import io.helidon.common.reactive.Multi;
@@ -346,5 +351,59 @@ public class MessagingTest {
 
         TestConnector.latch.await(200, TimeUnit.MILLISECONDS);
         assertEquals(TestConnector.TEST_DATA.stream().map(s -> ">>" + s).collect(Collectors.toList()), TestConnector.receivedData);
+    }
+
+    @Test
+    void processorConfigApi() throws InterruptedException, TimeoutException, ExecutionException {
+
+        CompletableFuture<Map<String, String>> completableFuture = new CompletableFuture<>();
+        ArrayList<String> publisherProps = new ArrayList<>();
+
+        Channel<String> fromConnectorChannel = Channel.builder(String.class)
+                .name("from-test-connector")
+                .publisherConfig(TestConfigurableConnector.configBuilder()
+                        .url("http://source.com")
+                        .port(8888)
+                        .build()
+                )
+                .build();
+
+        Channel<CompletableFuture<Map<String, String>>> toConnectorChannel = Channel.<CompletableFuture<Map<String, String>>>builder()
+                .name("to-test-connector")
+                .subscriberConfig(TestConfigurableConnector.configBuilder()
+                        .url("http://sink.com")
+                        .port(9999)
+                        .build()
+                )
+                .build();
+
+        Messaging.builder()
+                .connector(TestConfigurableConnector.create())
+
+                .processor(fromConnectorChannel, toConnectorChannel,
+                        ReactiveStreams.<Message<String>>builder()
+                                .map(Message::getPayload)
+                                .peek(publisherProps::add)
+                                .map(s -> Message.of(completableFuture))
+                )
+
+                .build()
+                .start();
+
+        Map<String, String> subscriberProps = completableFuture.get(200, TimeUnit.MILLISECONDS);
+
+        assertEquals(Map.of(
+                "channel-name", "to-test-connector",
+                "connector", "test-configurable-connector",
+                "port", "9999",
+                "url", "http://sink.com"
+        ), subscriberProps);
+
+        assertEquals(List.of(
+                "channel-name=from-test-connector",
+                "connector=test-configurable-connector",
+                "port=8888",
+                "url=http://source.com"
+        ), publisherProps);
     }
 }

@@ -17,25 +17,25 @@
 
 package io.helidon.messaging;
 
-import org.reactivestreams.Subscriber;
-import org.reactivestreams.Subscription;
-
 import java.util.UUID;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
+
 public class ContextSubscriber<T> implements Subscriber<T> {
 
-    private String prefix;
-    private Subscriber subscriber;
+    private final String prefix;
+    private final Subscriber<T> subscriber;
 
-    public ContextSubscriber(final String prefix, final Subscriber subscriber) {
+    public ContextSubscriber(final String prefix, final Subscriber<T> subscriber) {
         this.prefix = prefix;
         this.subscriber = subscriber;
     }
 
-    static <T> ContextSubscriber<T> create(String prefix, Subscriber subscriber) {
+    static <T> ContextSubscriber<T> create(String prefix, Subscriber<T> subscriber) {
         return new ContextSubscriber<>(prefix, subscriber);
     }
 

@@ -17,16 +17,20 @@
 
 package io.helidon.messaging;
 
+import java.util.Objects;
+
+import io.helidon.config.Config;
+
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
-
-import java.util.Objects;
 
 public final class Channel<PAYLOAD> {
     private String name;
     private Publisher<Message<PAYLOAD>> publisher;
     private Subscriber<Message<PAYLOAD>> subscriber;
+    Config publisherConfig;
+    Config subscriberConfig;
 
     void connect() {
         Objects.requireNonNull(publisher, "Missing publisher for channel " + name);
@@ -34,28 +38,24 @@ public final class Channel<PAYLOAD> {
         publisher.subscribe(subscriber);
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
+    void setName(String name) {
         this.name = name;
     }
 
-    public Publisher<Message<PAYLOAD>> getPublisher() {
+    Publisher<Message<PAYLOAD>> getPublisher() {
         return publisher;
     }
 
-    public void setPublisher(Publisher<Message<PAYLOAD>> publisher) {
-        this.publisher = publisher;
+    void setPublisher(Publisher<? extends Message<?>> publisher) {
+        this.publisher = (Publisher<Message<PAYLOAD>>) publisher;
     }
 
-    public Subscriber<Message<PAYLOAD>> getSubscriber() {
+    Subscriber<Message<PAYLOAD>> getSubscriber() {
         return subscriber;
     }
 
-    public void setSubscriber(Subscriber<Message<PAYLOAD>> subscriber) {
-        this.subscriber = subscriber;
+    void setSubscriber(Subscriber<? extends Message<?>> subscriber) {
+        this.subscriber = (Subscriber<Message<PAYLOAD>>) subscriber;
     }
 
     public String name() {
@@ -63,19 +63,33 @@ public final class Channel<PAYLOAD> {
     }
 
     public static <PAYLOAD> Channel<PAYLOAD> create(String name) {
-       return Channel.<PAYLOAD>builder().name(name).build();
+        return Channel.<PAYLOAD>builder().name(name).build();
     }
 
     public static <PAYLOAD> Channel.Builder<PAYLOAD> builder() {
         return new Channel.Builder<PAYLOAD>();
     }
 
-    final static class Builder<PAYLOAD> implements io.helidon.common.Builder<Channel<PAYLOAD>> {
+    public static <PAYLOAD> Channel.Builder<PAYLOAD> builder(Class<PAYLOAD> clazz) {
+        return new Channel.Builder<PAYLOAD>();
+    }
+
+    public final static class Builder<PAYLOAD> implements io.helidon.common.Builder<Channel<PAYLOAD>> {
 
         private final Channel<PAYLOAD> channel = new Channel<>();
 
-        public Builder<PAYLOAD> name(String name){
+        public Builder<PAYLOAD> name(String name) {
             channel.setName(name);
+            return this;
+        }
+
+        public Builder<PAYLOAD> publisherConfig(Config config) {
+            channel.publisherConfig = config;
+            return this;
+        }
+
+        public Builder<PAYLOAD> subscriberConfig(Config config) {
+            channel.subscriberConfig = config;
             return this;
         }
 

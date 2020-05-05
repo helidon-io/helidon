@@ -20,16 +20,17 @@ package io.helidon.messaging;
 import java.util.HashMap;
 import java.util.Map;
 
+import io.helidon.common.Builder;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 
 /**
  * Detached configuration of a single connector.
  */
-class ConnectorConfigBuilder {
+public class ConnectorConfigBuilder implements Builder<Config> {
     private final Map<String, String> configuration = new HashMap<>();
 
-    private ConnectorConfigBuilder() {
+    protected ConnectorConfigBuilder() {
     }
 
     static ConnectorConfigBuilder from(Config config) {
@@ -38,7 +39,7 @@ class ConnectorConfigBuilder {
         return result;
     }
 
-    ConnectorConfigBuilder put(String key, String value) {
+    protected ConnectorConfigBuilder put(String key, String value) {
         configuration.put(key, value);
         return this;
     }
@@ -48,7 +49,8 @@ class ConnectorConfigBuilder {
         return this;
     }
 
-    org.eclipse.microprofile.config.Config build() {
+    @Override
+    public Config build() {
         Config newConfig = Config.builder(ConfigSources.create(configuration))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
@@ -56,6 +58,6 @@ class ConnectorConfigBuilder {
                 .disableSourceServices()
                 .disableParserServices()
                 .build();
-        return (org.eclipse.microprofile.config.Config) newConfig;
+        return newConfig;
     }
 }

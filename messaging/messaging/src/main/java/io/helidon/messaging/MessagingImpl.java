@@ -28,6 +28,7 @@ import java.util.concurrent.Flow;
 import io.helidon.common.configurable.ThreadPoolSupplier;
 import io.helidon.common.reactive.Multi;
 import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
 import io.helidon.config.ConfigValue;
 
 import org.eclipse.microprofile.reactive.messaging.Message;
@@ -114,21 +115,11 @@ class MessagingImpl implements Messaging {
         emitters.add(emitter);
     }
 
-    Channel getOrCreateChannel(String name) {
-        Channel ch = channelMap.get(name);
-        if (ch == null) {
-            ch = new Channel();
-            ch.setName(name);
-            channelMap.put(name, ch);
-        }
-        return ch;
-    }
-
     void registerChannel(Channel<?> channel) {
         Channel<?> ch = channelMap.get(channel.name());
         if (ch == null) {
             ch = channel;
-            channelMap.put(ch.getName(), ch);
+            channelMap.put(ch.name(), ch);
         }
     }
 
@@ -140,38 +131,48 @@ class MessagingImpl implements Messaging {
         return annotation.value();
     }
 
-    private void findConnectors(Channel channel) {
-        if (config == null) {
-            return;
+    private void findConnectors(Channel<?> channel) {
+        Config.Builder configBuilder = Config.builder()
+                .disableSystemPropertiesSource()
+                .disableEnvironmentVariablesSource();
+        if (config != null) {
+            configBuilder.addSource(ConfigSources.create(config));
         }
-        //Looks suspicious but incoming connector configured for outgoing channel is ok
-        ConfigValue<String> incomingConnectorName =
-                config.get(ConnectorFactory.OUTGOING_PREFIX)
-                        .get(channel.getName())
-                        .get(ConnectorFactory.CONNECTOR_ATTRIBUTE)
-                        .asString();
-        ConfigValue<String> outgoingConnectorName =
-                config.get(ConnectorFactory.INCOMING_PREFIX)
-                        .get(channel.getName()).get(ConnectorFactory
-                        .CONNECTOR_ATTRIBUTE)
-                        .asString();
+
+        if (channel.publisherConfig != null) {
+            configBuilder
+                    .addSource(ConnectorConfigHelper
+                            .prefixedConfigSource(ConnectorFactory.OUTGOING_PREFIX + channel.name(),
+                                    channel.publisherConfig));
+        }
+
+        if (channel.subscriberConfig != null) {
+            configBuilder
+                    .addSource(ConnectorConfigHelper
+                            .prefixedConfigSource(ConnectorFactory.INCOMING_PREFIX + channel.name(),
+                                    channel.subscriberConfig));
+        }
+        Config mergedConfig = configBuilder.build();
+
+        ConfigValue<String> incomingConnectorName = ConnectorConfigHelper.getIncomingConnectorName(mergedConfig, channel.name());
+        ConfigValue<String> outgoingConnectorName = ConnectorConfigHelper.getOutgoingConnectorName(mergedConfig, channel.name());
 
         if (incomingConnectorName.isPresent()) {
             String connectorName = incomingConnectorName.get();
-            org.eclipse.microprofile.config.Config connectorConfig =
-                    ConfigurableConnector.getConnectorConfig(channel.getName(), connectorName, config);
+            org.eclipse.microprofile.config.Config incomingConnectorConfig =
+                    ConfigurableConnector.getConnectorConfig(channel.name(), connectorName, mergedConfig);
             channel.setPublisher(
                     incomingConnectors.get(connectorName)
-                            .getPublisherBuilder(connectorConfig)
+                            .getPublisherBuilder(incomingConnectorConfig)
                             .buildRs());
         }
         if (outgoingConnectorName.isPresent()) {
             String connectorName = outgoingConnectorName.get();
-            org.eclipse.microprofile.config.Config connectorConfig =
-                    ConfigurableConnector.getConnectorConfig(channel.getName(), connectorName, config);
+            org.eclipse.microprofile.config.Config outgoingConnectorConfig =
+                    ConfigurableConnector.getConnectorConfig(channel.name(), connectorName, mergedConfig);
             channel.setSubscriber(
                     outgoingConnectors.get(connectorName)
-                            .getSubscriberBuilder(connectorConfig)
+                            .getSubscriberBuilder(outgoingConnectorConfig)
                             .build());
         }
     }

@@ -17,11 +17,6 @@
 
 package io.helidon.messaging;
 
-import org.eclipse.microprofile.reactive.messaging.Message;
-import org.reactivestreams.FlowAdapters;
-import org.reactivestreams.Publisher;
-import org.reactivestreams.Subscriber;
-
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -29,9 +24,14 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 import java.util.concurrent.SubmissionPublisher;
 
+import org.eclipse.microprofile.reactive.messaging.Message;
+import org.reactivestreams.FlowAdapters;
+import org.reactivestreams.Publisher;
+import org.reactivestreams.Subscriber;
+
 public final class Emitter<PAYLOAD> implements Publisher<Message<PAYLOAD>> {
 
-    private SubmissionPublisher<Message<? extends PAYLOAD>> submissionPublisher;
+    private SubmissionPublisher<Message<PAYLOAD>> submissionPublisher;
     private final Set<Channel<PAYLOAD>> channels = new HashSet<>();
 
     private Emitter() {
@@ -50,7 +50,7 @@ public final class Emitter<PAYLOAD> implements Publisher<Message<PAYLOAD>> {
         return future;
     }
 
-    public <M extends Message<? extends PAYLOAD>> void send(M msg) {
+    public void send(Message<PAYLOAD> msg) {
         submissionPublisher.submit(msg);
     }
 
@@ -67,7 +67,7 @@ public final class Emitter<PAYLOAD> implements Publisher<Message<PAYLOAD>> {
         submissionPublisher.subscribe(FlowAdapters.toFlowSubscriber(ContextSubscriber.create("emitter-message", s)));
     }
 
-    Set<Channel<PAYLOAD>> channels(){
+    Set<Channel<PAYLOAD>> channels() {
         return this.channels;
     }
 
