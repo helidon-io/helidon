@@ -171,7 +171,7 @@ public class MpConfigBuilder implements ConfigBuilder {
         addBuiltIn(converters, Instant.class, ConfigMappers::toInstant);
         addBuiltIn(converters, OffsetTime.class, ConfigMappers::toOffsetTime);
         addBuiltIn(converters, OffsetDateTime.class, ConfigMappers::toOffsetDateTime);
-        addBuiltIn(converters, YearMonth.class, YearMonth::parse); ;
+        addBuiltIn(converters, YearMonth.class, YearMonth::parse);
         //java.io
         addBuiltIn(converters, File.class, MpConfigBuilder::toFile);
         //java.nio
