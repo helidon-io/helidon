@@ -102,7 +102,8 @@ class CrossOriginFilter implements ContainerRequestFilter, ContainerResponseFilt
             Optional<Method> optionsMethod = Arrays.stream(resourceClass.getDeclaredMethods())
                     .filter(m -> {
                         OPTIONS optsAnnot2 = m.getAnnotation(OPTIONS.class);
-                        Path pathAnnot2 = m.getAnnotation(Path.class);if (optsAnnot2 != null) {
+                        Path pathAnnot2 = m.getAnnotation(Path.class);
+                        if (optsAnnot2 != null) {
                             if (pathAnnot != null) {
                                 return pathAnnot2 != null && pathAnnot.value()
                                         .equals(pathAnnot2.value());
