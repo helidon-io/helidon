@@ -112,6 +112,7 @@ public class CorsSupport extends CorsSupportBase<ServerRequest, ServerResponse, 
 
         Builder() {
             name("SE " + builderCount++); // Initial name. The developer can (should) provide a more descriptive one.
+            requestDefaultBehaviorIfNone();
         }
 
         @Override
