@@ -16,32 +16,31 @@
 
 package io.helidon.microprofile.arquillian;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
 import java.util.logging.Logger;
 
 import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.spi.CDI;
 import javax.ws.rs.ApplicationPath;
-import javax.ws.rs.Path;
-import javax.ws.rs.core.Application;
 
-import io.helidon.config.Config;
 import io.helidon.microprofile.server.Server;
 import io.helidon.microprofile.server.ServerCdiExtension;
 
-import org.glassfish.jersey.server.ResourceConfig;
+import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 
 /**
  * Runner to start server using reflection (as we need to run in a different classloader).
+ * As we invoke this from a different classloader, the class must be public.
  */
-class ServerRunner {
+public class ServerRunner {
     private static final Logger LOGGER = Logger.getLogger(ServerRunner.class.getName());
 
     private Server server;
 
-    ServerRunner() {
+    /**
+     * Needed for reflection.
+     */
+    public ServerRunner() {
     }
 
     private static String getContextRoot(Class<?> application) {
@@ -53,22 +52,34 @@ class ServerRunner {
         return value.startsWith("/") ? value : "/" + value;
     }
 
-    void start(Config config, HelidonContainerConfiguration containerConfig, Set<String> classNames, ClassLoader cl) {
-        Server.Builder builder = Server.builder()
-                .port(containerConfig.getPort())
-                .config(config);
+    /**
+     * Start the server. Needed for reflection.
+     *
+     * @param config configuration
+     * @param port port to start the server on
+     */
+    public void start(Config config, int port) {
+        // attempt a stop
+        stop();
 
+        ConfigProviderResolver.instance()
+                .registerConfig(config, Thread.currentThread().getContextClassLoader());
 
-        handleClasses(cl, classNames, builder, containerConfig.getAddResourcesToApps());
+        server = Server.builder()
+                .port(port)
+                .config(config)
+                .build()
+                // this is a blocking operation, we will be released once the server is started
+                // or it fails to start
+                .start();
 
-        server = builder.build();
-        // this is a blocking operation, we will be released once the server is started
-        // or it fails to start
-        server.start();
         LOGGER.finest(() -> "Started server");
     }
 
-    void stop() {
+    /**
+     * Stop the server. Needed for reflection.
+     */
+    public void stop() {
         if (null != server) {
             LOGGER.finest(() -> "Stopping server");
             server.stop();
@@ -90,49 +101,6 @@ class ServerRunner {
             }
         } catch (IllegalStateException e) {
             //noop container is not running
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private void handleClasses(ClassLoader classLoader,
-                               Set<String> classNames,
-                               Server.Builder builder,
-                               boolean addResourcesToApps) {
-
-        // first create classes end get all applications
-        List<Class<?>> applicationClasses = new LinkedList<>();
-        List<Class<?>> resourceClasses = new LinkedList<>();
-
-        for (String className : classNames) {
-            try {
-                LOGGER.finest(() -> "Will attempt to add class: " + className);
-                final Class<?> c = classLoader.loadClass(className);
-                if (Application.class.isAssignableFrom(c)) {
-                    LOGGER.finest(() -> "Adding application class: " + c.getName());
-                    applicationClasses.add(c);
-                } else if (c.isAnnotationPresent(Path.class) && !c.isInterface()) {
-                    LOGGER.finest(() -> "Adding resource class: " + c.getName());
-                    resourceClasses.add(c);
-                } else {
-                    LOGGER.finest(() -> "Class " + c.getName() + " is neither annotated with Path nor an application.");
-                }
-            } catch (NoClassDefFoundError | ClassNotFoundException e) {
-                throw new HelidonArquillianException("Failed to load class to be added to server: " + className, e);
-            }
-        }
-
-        // workaround for tck-jwt-auth
-        if (addResourcesToApps) {
-            for (Class<?> aClass : applicationClasses) {
-                ResourceConfig resourceConfig = ResourceConfig.forApplicationClass((Class<? extends Application>) aClass);
-                resourceClasses.forEach(resourceConfig::register);
-                builder.addApplication(getContextRoot(aClass), resourceConfig);
-            }
-            if (applicationClasses.isEmpty()) {
-                for (Class<?> resourceClass : resourceClasses) {
-                    builder.addResourceClass(resourceClass);
-                }
-            }
         }
     }
 }

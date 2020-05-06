@@ -18,13 +18,12 @@
 -->
 
 <arquillian xmlns="http://jboss.org/schema/arquillian"
-            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-            xsi:schemaLocation="
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="
         http://jboss.org/schema/arquillian
         http://jboss.org/schema/arquillian/arquillian_1_0.xsd">
 
     <engine>
         <property name="deploymentExportPath">target/deployments</property>
-        <property name="javaVmArguments">-Xdebug -Xrunjdwp:transport=dt_socket,address=8000,server=y,suspend=y</property>
-</engine>
+    </engine>
 </arquillian>

@@ -16,6 +16,7 @@
 
 package io.helidon.webserver;
 
+import java.net.BindException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.HashMap;
@@ -214,8 +215,16 @@ class NettyWebServer implements WebServer {
                         if (!channelFuture.isSuccess()) {
                             LOGGER.info(() -> "Channel '" + name + "' startup failed with message '"
                                     + channelFuture.cause().getMessage() + "'.");
-                            channelsUpFuture.completeExceptionally(new IllegalStateException("Channel startup failed: " + name,
+                            Throwable cause = channelFuture.cause();
+
+                            String message = "Channel startup failed: " + name;
+                            if (cause instanceof BindException) {
+                                message = message + ", failed to listen on " + configuration.bindAddress() + ":" + port;
+                            }
+
+                            channelsUpFuture.completeExceptionally(new IllegalStateException(message,
                                                                                              channelFuture.cause()));
+
                             return;
                         }
 
@@ -274,7 +283,7 @@ class NettyWebServer implements WebServer {
 
     private void started(WebServer server) {
         if (EXIT_ON_STARTED) {
-            LOGGER.info(String.format("Exiting, -D%s set.",  EXIT_ON_STARTED_KEY));
+            LOGGER.info(String.format("Exiting, -D%s set.", EXIT_ON_STARTED_KEY));
             System.exit(0);
         } else {
             startFuture.complete(server);
@@ -330,7 +339,7 @@ class NettyWebServer implements WebServer {
                 } else {
                     StringBuilder sb = new StringBuilder();
                     sb.append(workerFuture.cause() != null ? "Worker Group problem: " + workerFuture.cause().getMessage() : "")
-                      .append(bossFuture.cause() != null ? "Boss Group problem: " + bossFuture.cause().getMessage() : "");
+                            .append(bossFuture.cause() != null ? "Boss Group problem: " + bossFuture.cause().getMessage() : "");
                     threadGroupsShutdownFuture
                             .completeExceptionally(new IllegalStateException("Unable to shutdown Netty thread groups: " + sb));
                 }

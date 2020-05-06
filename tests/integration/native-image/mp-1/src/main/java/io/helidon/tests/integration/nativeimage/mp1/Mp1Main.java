@@ -21,6 +21,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.LinkedList;
 import java.util.List;
@@ -50,6 +51,8 @@ import io.helidon.security.jwt.jwk.JwkRSA;
 
 import io.opentracing.Tracer;
 import io.opentracing.util.GlobalTracer;
+import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException;
 
 import static io.helidon.common.http.Http.Status.FORBIDDEN_403;
@@ -106,19 +109,23 @@ public final class Mp1Main {
         long time = System.currentTimeMillis() - now;
         System.out.println("Tests finished in " + time + " millis");
 
+        Config config = ConfigProvider.getConfig();
+        List<String> names = new ArrayList<>();
+        config.getPropertyNames()
+                .forEach(names::add);
+        names.sort(String::compareTo);
+
+        System.out.println("All configuration options:");
+        names.forEach(it -> {
+            config.getOptionalValue(it, String.class)
+                    .ifPresent(value -> System.out.println(it + "=" + value));
+        });
+
         server.stop();
 
         if (failed) {
             System.exit(-1);
         }
-
-
-//        try {
-//            Thread.sleep(5000);
-//            System.setProperty("app.message", "New message through change support");
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
     }
 
     private static String generateJwtToken() {
