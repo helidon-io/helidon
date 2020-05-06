@@ -95,7 +95,7 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
         if (msg instanceof HttpResponse) {
             ctx.channel().config().setAutoRead(false);
             HttpResponse response = (HttpResponse) msg;
-            WebClientRequestBuilder.ClientRequest clientRequest = ctx.channel().attr(REQUEST).get();
+            WebClientRequestImpl clientRequest = ctx.channel().attr(REQUEST).get();
             RequestConfiguration requestConfiguration = clientRequest.configuration();
 
             this.publisher = new HttpResponsePublisher(ctx);

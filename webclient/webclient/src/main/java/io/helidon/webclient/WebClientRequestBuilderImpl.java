@@ -74,7 +74,7 @@ import io.netty.util.AttributeKey;
  * Implementation of {@link WebClientRequestBuilder}.
  */
 class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
-    static final AttributeKey<ClientRequest> REQUEST = AttributeKey.valueOf("request");
+    static final AttributeKey<WebClientRequestImpl> REQUEST = AttributeKey.valueOf("request");
 
     private static final AtomicLong REQUEST_NUMBER = new AtomicLong(0);
     private static final String DEFAULT_TRANSPORT_PROTOCOL = "http";
@@ -141,7 +141,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
      * @param clientRequest previous request
      * @return client request builder
      */
-    static WebClientRequestBuilder create(WebClientRequestBuilder.ClientRequest clientRequest) {
+    static WebClientRequestBuilder create(WebClientRequestImpl clientRequest) {
         WebClientRequestBuilderImpl builder = new WebClientRequestBuilderImpl(NettyClient.eventGroup(),
                                                                               clientRequest.configuration(),
                                                                               clientRequest.method());

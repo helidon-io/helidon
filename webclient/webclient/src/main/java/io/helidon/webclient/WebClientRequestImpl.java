@@ -52,7 +52,16 @@ class WebClientRequestImpl implements WebClientRequestBuilder.ClientRequest {
         requestConfiguration = builder.requestConfiguration();
         proxy = builder.proxy();
         redirectionCount = builder.redirectionCount();
-        properties = builder.properties();
+        properties = Map.copyOf(builder.properties());
+    }
+
+    /**
+     * Request configuration.
+     *
+     * @return configuration
+     */
+    RequestConfiguration configuration() {
+        return requestConfiguration;
     }
 
     @Override
@@ -60,10 +69,6 @@ class WebClientRequestImpl implements WebClientRequestBuilder.ClientRequest {
         return clientRequestHeaders;
     }
 
-    @Override
-    public RequestConfiguration configuration() {
-        return requestConfiguration;
-    }
 
     @Override
     public Map<String, String> properties() {

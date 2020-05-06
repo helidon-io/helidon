@@ -56,8 +56,8 @@ class RequestConfiguration extends WebClientConfiguration {
 
     static final class Builder extends WebClientConfiguration.Builder<Builder, RequestConfiguration> {
 
+        private final URI requestURI;
         private WebClientServiceRequest clientServiceRequest;
-        private URI requestURI;
         private List<WebClientService> services = new ArrayList<>();
 
         private Builder(URI requestURI) {

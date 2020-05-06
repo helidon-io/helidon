@@ -33,7 +33,7 @@ class RedirectInterceptor implements HttpInterceptor {
 
     @Override
     public void handleInterception(HttpResponse httpResponse,
-                                   WebClientRequestBuilder.ClientRequest clientRequest,
+                                   WebClientRequestImpl clientRequest,
                                    CompletableFuture<WebClientResponse> responseFuture) {
         if (clientRequest.method() != Http.Method.GET) {
             throw new WebClientException("Redirecting is currently supported only for GET method.");

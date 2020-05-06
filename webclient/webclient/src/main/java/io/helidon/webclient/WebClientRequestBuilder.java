@@ -314,16 +314,9 @@ public interface WebClientRequestBuilder {
         WebClientRequestHeaders headers();
 
         /**
-         * Current request configuration.
+         * Request immutable list of properties.
          *
-         * @return request configuration
-         */
-        RequestConfiguration configuration();
-
-        /**
-         * TODO
-         *
-         * @return
+         * @return request properties
          */
         Map<String, String> properties();
 
