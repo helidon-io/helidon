@@ -60,7 +60,8 @@ public class Status204Test {
         webClient.put()
                 .submit("test call")
                 .thenAccept(it -> assertThat(it.status(), is(Http.Status.NO_CONTENT_204)))
-                .thenCompose(it -> webClient.get().request(String.class))
+                .thenCompose(it -> webClient.get()
+                        .request(String.class))
                 .thenAccept(it -> assertThat(it, is("test")))
                 .toCompletableFuture()
                 .get();

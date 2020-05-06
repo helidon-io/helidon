@@ -219,7 +219,8 @@ public class SecureServer {
 
             // Use the admin user's credentials call the "upper" ReST endpoint which will call
             // the "Upper" method on the secure gRPC StringService.
-            client.get().uri("http://127.0.0.1:" + webServer.port())
+            client.get()
+                    .uri("http://127.0.0.1:" + webServer.port())
                     .path("upper")
                     .queryParam("value", name)
                     .context(context)
