@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,6 @@ public class OutputStreamPublisherTest {
         subscriber.requestMax();
         PrintWriter printer = new PrintWriter(publisher);
         printer.print("foo");
-        publisher.signalCloseComplete(null);
         printer.close();
         assertThat(subscriber.isComplete(), is(equalTo(true)));
         assertThat(subscriber.getLastError(), is(nullValue()));
@@ -65,5 +64,12 @@ public class OutputStreamPublisherTest {
             assertThat(ex.getCause(), is(not(nullValue())));
             assertThat(ex.getCause(), is(instanceOf(IllegalStateException.class)));
         }
+    }
+
+    @Test
+    public void testCloseOnNoDataWritten() throws IOException {
+        OutputStreamPublisher publisher = new OutputStreamPublisher();
+        // this should return immediately
+        publisher.close();
     }
 }
