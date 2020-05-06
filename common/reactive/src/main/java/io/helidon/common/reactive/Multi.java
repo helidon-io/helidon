@@ -855,7 +855,7 @@ public interface Multi<T> extends Subscribable<T> {
      * Terminal stage, invokes provided consumer for every item in the stream.
      *
      * @param consumer consumer to be invoked for each item
-     * @return Single completed when the stream terminate
+     * @return Single completed when the stream terminates
      */
     default Single<Void> forEach(Consumer<? super T> consumer) {
         CompletableFuture<Void> future = new CompletableFuture<>();
