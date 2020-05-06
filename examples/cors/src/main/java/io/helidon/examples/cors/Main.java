@@ -18,11 +18,9 @@ package io.helidon.examples.cors;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Set;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
-import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.health.HealthSupport;
 import io.helidon.health.checks.HealthChecks;

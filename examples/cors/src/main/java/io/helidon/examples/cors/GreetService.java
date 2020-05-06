@@ -16,17 +16,12 @@
 
 package io.helidon.examples.cors;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
 import java.util.Collections;
 
 import javax.json.Json;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
-import javax.json.JsonReader;
 import javax.json.JsonReaderFactory;
-import javax.json.JsonWriter;
 
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
