@@ -151,18 +151,15 @@ public class HelloWorldResource {
         assert this.transaction.getStatus() == Status.STATUS_ACTIVE;
         assert this.entityManager != null;
         assert this.entityManager.isJoinedToTransaction();
-        Greeting greeting = null;
-        // See https://tools.ietf.org/html/rfc7231#section-4.3.3; we
-        // track whether JPA does an insert or an update.
-        boolean created = false;
-        try {
-            greeting = this.entityManager.getReference(Greeting.class, firstPart);
-            assert greeting != null;
-            greeting.setSecondPart(secondPart);
-        } catch (final EntityNotFoundException entityNotFoundException) {
-            greeting = new Greeting(firstPart, secondPart);
-            this.entityManager.persist(greeting);
-            created = true;
+        Greeting greeting = this.entityManager.find(Greeting.class, firstPart);
+        final boolean created;
+        if (greeting == null) {
+          greeting = new Greeting(firstPart, secondPart);
+          this.entityManager.persist(greeting);
+          created = true;
+        } else {
+          greeting.setSecondPart(secondPart);
+          created = false;
         }
         assert this.entityManager.contains(greeting);
         if (created) {
