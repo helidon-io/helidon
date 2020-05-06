@@ -20,7 +20,6 @@ import java.util.concurrent.CompletionStage;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.http.HttpRequest;
-import io.helidon.common.http.Parameters;
 import io.helidon.webclient.spi.WebClientService;
 
 /**

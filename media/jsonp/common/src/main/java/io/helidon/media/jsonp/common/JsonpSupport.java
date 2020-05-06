@@ -22,9 +22,9 @@ import javax.json.Json;
 import javax.json.JsonReaderFactory;
 import javax.json.JsonWriterFactory;
 
+import io.helidon.media.common.MediaSupport;
 import io.helidon.media.common.MessageBodyReaderContext;
 import io.helidon.media.common.MessageBodyWriterContext;
-import io.helidon.media.common.MediaSupport;
 
 /**
  * Support for JSON Processing integration.
