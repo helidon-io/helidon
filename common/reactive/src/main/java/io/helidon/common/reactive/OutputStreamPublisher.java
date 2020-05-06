@@ -21,6 +21,7 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.Objects;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Flow;
@@ -59,6 +60,9 @@ public class OutputStreamPublisher extends OutputStream implements Flow.Publishe
                 @Override
                 public void cancel() {
                     subscriber.cancel();
+                    // when write is called, an exception is thrown as it is a cancelled subscriber
+                    // when close is called, we do not throw an exception, as that should be silent
+                    completionResult.complete(null);
                 }
             });
         }
@@ -90,6 +94,8 @@ public class OutputStreamPublisher extends OutputStream implements Flow.Publishe
         }
         try {
             completionResult.get(HARD_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
+        } catch (CancellationException e) {
+            throw new IOException(e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IOException(e);
