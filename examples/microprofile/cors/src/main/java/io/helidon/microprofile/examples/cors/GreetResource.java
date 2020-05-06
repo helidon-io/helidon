@@ -152,13 +152,13 @@ public class GreetResource {
 
     @OPTIONS
     @CrossOrigin()
-    public void optionsForRetrievingUnnamedGreetings() {
+    public void optionsForRetrievingUnnamedGreeting() {
     }
 
     @OPTIONS
     @CrossOrigin()
     @Path("/{name}")
-    public void optionsForRetrievingNamedGreetings() {
+    public void optionsForRetrievingNamedGreeting() {
     }
 
     private JsonObject createResponse(String who) {
