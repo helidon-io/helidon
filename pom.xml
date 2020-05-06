@@ -199,6 +199,7 @@
                     <version>${version.plugin.javadoc}</version>
                     <configuration>
                         <source>8</source>
+                        <release>8</release>
                         <!-- we are not interested in each file that is generated -->
                         <quiet>true</quiet>
                         <offlineLinks>
