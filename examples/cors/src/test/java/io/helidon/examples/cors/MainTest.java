@@ -27,14 +27,13 @@ import javax.json.JsonObject;
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
-import io.helidon.media.common.MediaSupport;
-import io.helidon.media.jsonp.common.JsonProcessing;
+import io.helidon.media.jsonp.common.JsonpSupport;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientRequestBuilder;
 import io.helidon.webclient.WebClientResponse;
 import io.helidon.webserver.WebServer;
-
 import io.helidon.webserver.cors.CrossOriginConfig;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -53,8 +52,6 @@ public class MainTest {
     private static WebServer webServer;
     private static WebClient webClient;
 
-    private static final JsonProcessing JSON_PROCESSING = JsonProcessing.create();
-
     private static final Logger LOGGER = Logger.getLogger(MainTest.class.getPackageName());
 
     @BeforeAll
@@ -62,11 +59,7 @@ public class MainTest {
         webServer = Main.startServer();
         webClient = WebClient.builder()
                         .baseUri("http://localhost:" + webServer.port())
-                        .mediaSupport(MediaSupport.builder()
-                                        .registerDefaults()
-                                        .registerReader(JSON_PROCESSING.newReader())
-                                        .registerWriter(JSON_PROCESSING.newWriter())
-                                        .build())
+                        .addMediaSupport(JsonpSupport.create())
                         .build();
 
         long timeout = 2000; // 2 seconds should be enough to start the server
