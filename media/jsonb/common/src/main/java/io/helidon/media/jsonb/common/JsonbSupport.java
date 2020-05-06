@@ -22,9 +22,9 @@ import javax.json.bind.JsonbBuilder;
 
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
+import io.helidon.media.common.MediaSupport;
 import io.helidon.media.common.MessageBodyReaderContext;
 import io.helidon.media.common.MessageBodyWriterContext;
-import io.helidon.media.common.MediaSupport;
 
 /**
  * Support for JSON-B integration.

@@ -114,12 +114,6 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
         return this;
     }
 
-    public MessageBodyReaderContext register(MediaSupport mediaSupport) {
-        mediaSupport.readers().forEach(this::registerReader);
-        mediaSupport.streamReaders().forEach(this::registerReader);
-        return this;
-    }
-
     /**
      * Register a reader function with the given type.
      * @param <T> supported type

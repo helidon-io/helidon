@@ -25,16 +25,16 @@ import java.util.stream.Collectors;
 
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
-import io.helidon.media.common.MediaContextBuilder;
 import io.helidon.media.common.MediaContext;
-import io.helidon.media.common.ParentingMediaContextBuilder;
+import io.helidon.media.common.MediaContextBuilder;
+import io.helidon.media.common.MediaSupport;
 import io.helidon.media.common.MessageBodyReader;
 import io.helidon.media.common.MessageBodyReaderContext;
 import io.helidon.media.common.MessageBodyStreamReader;
 import io.helidon.media.common.MessageBodyStreamWriter;
 import io.helidon.media.common.MessageBodyWriter;
 import io.helidon.media.common.MessageBodyWriterContext;
-import io.helidon.media.common.MediaSupport;
+import io.helidon.media.common.ParentingMediaContextBuilder;
 
 /**
  * Represents a immutably configured WEB server.

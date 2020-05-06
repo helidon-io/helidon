@@ -36,7 +36,7 @@ import java.util.Collections;
  * Example request reader registration:
  * <pre><code>
  * Routing.builder()
- *        .get("/foo", (res, req) -> {
+ *        .get("/foo", (res, req) -&gt {
  *            MessageBodyReadableContent content = req.content();
  *            DefaultMediaSupport.create().readers().forEach(content::registerReader);
  *            content.as(String.class)
@@ -46,7 +46,7 @@ import java.util.Collections;
  * Example response writer registration:
  * <pre><code>
  * Routing.builder()
- *        .get("/foo", (res, req) -> {
+ *        .get("/foo", (res, req) -&gt {
  *           MessageBodyWriterContext writerContext = res.writerContext();
  *           DefaultMediaSupport.create().writers().forEach(writerContext::registerWriter);
  *           res.send("Example entity");
