@@ -72,7 +72,7 @@ public class MainTest {
     public void testHelloWorld() throws Exception {
         WebClient webClient = WebClient.builder()
                 .baseUri("http://localhost:" + webServer.port())
-                .addMediaService(JsonpSupport.create())
+                .addMediaSupport(JsonpSupport.create())
                 .build();
 
         webClient.get()

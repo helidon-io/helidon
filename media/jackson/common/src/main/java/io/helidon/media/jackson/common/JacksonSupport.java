@@ -19,9 +19,9 @@ import java.util.Objects;
 
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
+import io.helidon.media.common.MediaSupport;
 import io.helidon.media.common.MessageBodyReaderContext;
 import io.helidon.media.common.MessageBodyWriterContext;
-import io.helidon.media.common.spi.MediaService;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
@@ -30,8 +30,10 @@ import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 
 /**
  * Support for Jackson integration.
+ *
+ * For usage examples navigate to the {@link MediaSupport}
  */
-public final class JacksonSupport implements MediaService {
+public final class JacksonSupport implements MediaSupport {
 
     static {
         HelidonFeatures.register(HelidonFlavor.SE, "Media", "Jackson");

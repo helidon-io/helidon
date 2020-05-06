@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import io.helidon.media.common.spi.MediaServiceProvider;
+import io.helidon.media.common.spi.MediaSupportProvider;
 import io.helidon.media.jackson.common.JacksonSupport;
 import io.helidon.media.jackson.common.JacksonProvider;
 
@@ -39,5 +39,5 @@ module io.helidon.media.jackson.common {
 
     exports io.helidon.media.jackson.common;
 
-    provides MediaServiceProvider with JacksonProvider;
+    provides MediaSupportProvider with JacksonProvider;
 }

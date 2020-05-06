@@ -17,18 +17,18 @@
 package io.helidon.media.jackson.common;
 
 import io.helidon.config.Config;
-import io.helidon.media.common.spi.MediaService;
-import io.helidon.media.common.spi.MediaServiceProvider;
+import io.helidon.media.common.MediaSupport;
+import io.helidon.media.common.spi.MediaSupportProvider;
 
 /**
  * Jackson support SPI provider.
  */
-public class JacksonProvider implements MediaServiceProvider {
+public class JacksonProvider implements MediaSupportProvider {
 
     private static final String JACKSON = "jackson";
 
     @Override
-    public MediaService create(String type, Config config) {
+    public MediaSupport create(Config config) {
         return JacksonSupport.create();
     }
 

@@ -17,18 +17,18 @@
 package io.helidon.media.jsonb.common;
 
 import io.helidon.config.Config;
-import io.helidon.media.common.spi.MediaService;
-import io.helidon.media.common.spi.MediaServiceProvider;
+import io.helidon.media.common.MediaSupport;
+import io.helidon.media.common.spi.MediaSupportProvider;
 
 /**
  * JSON-B support SPI provider.
  */
-public class JsonbProvider implements MediaServiceProvider {
+public class JsonbProvider implements MediaSupportProvider {
 
     private static final String JSON_B = "json-b";
 
     @Override
-    public MediaService create(String type, Config config) {
+    public MediaSupport create(Config config) {
         return JsonbSupport.create();
     }
 

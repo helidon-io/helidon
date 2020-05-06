@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import io.helidon.media.common.spi.MediaSupportProvider;
+
 /**
  * Media type support common classes.
  *
@@ -30,5 +32,5 @@ module io.helidon.media.common {
     exports io.helidon.media.common;
     exports io.helidon.media.common.spi;
 
-    uses io.helidon.media.common.spi.MediaServiceProvider;
+    uses MediaSupportProvider;
 }

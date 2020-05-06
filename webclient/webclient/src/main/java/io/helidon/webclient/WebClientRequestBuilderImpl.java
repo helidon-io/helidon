@@ -85,7 +85,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         DEFAULT_SUPPORTED_PROTOCOLS.put("https", 443);
     }
 
-    private final Map<String, List<String>> properties;
+    private final Map<String, String> properties;
     private final LazyValue<NioEventLoopGroup> eventGroup;
     private final WebClientConfiguration configuration;
     private final Http.RequestMethod method;
@@ -180,8 +180,8 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     }
 
     @Override
-    public WebClientRequestBuilder property(String propertyName, String... propertyValue) {
-        properties.put(propertyName, Arrays.asList(propertyValue));
+    public WebClientRequestBuilder property(String propertyName, String propertyValue) {
+        properties.put(propertyName, propertyValue);
         return this;
     }
 
@@ -276,7 +276,12 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
 
     @Override
     public <T> CompletionStage<T> request(GenericType<T> responseType) {
-        return Contexts.runInContext(context, () -> invoke(Single.empty(), responseType));
+        return Contexts.runInContext(context, () -> invokeWithEntity(Single.empty(), responseType));
+    }
+
+    @Override
+    public CompletionStage<WebClientResponse> request() {
+        return Contexts.runInContext(context, () -> invoke(Single.empty()));
     }
 
     @Override
@@ -286,7 +291,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
 
     @Override
     public <T> CompletionStage<T> submit(Flow.Publisher<DataChunk> requestEntity, Class<T> responseType) {
-        return Contexts.runInContext(context, () -> invoke(requestEntity, GenericType.create(responseType)));
+        return Contexts.runInContext(context, () -> invokeWithEntity(requestEntity, GenericType.create(responseType)));
     }
 
     @Override
@@ -294,17 +299,19 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         GenericType<T> responseGenericType = GenericType.create(responseType);
         Flow.Publisher<DataChunk> dataChunkPublisher = writerContext.marshall(
                 Single.just(requestEntity), GenericType.create(requestEntity), null);
-        return Contexts.runInContext(context, () -> invoke(dataChunkPublisher, responseGenericType));
+        return Contexts.runInContext(context, () -> invokeWithEntity(dataChunkPublisher, responseGenericType));
     }
 
     @Override
     public CompletionStage<WebClientResponse> submit(Flow.Publisher<DataChunk> requestEntity) {
-        return submit(requestEntity, WebClientResponse.class);
+        return Contexts.runInContext(context, () -> invoke(requestEntity));
     }
 
     @Override
     public CompletionStage<WebClientResponse> submit(Object requestEntity) {
-        return submit(requestEntity, WebClientResponse.class);
+        Flow.Publisher<DataChunk> dataChunkPublisher = writerContext.marshall(
+                Single.just(requestEntity), GenericType.create(requestEntity), null);
+        return submit(dataChunkPublisher);
     }
 
     @Override
@@ -349,7 +356,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         return requestConfiguration;
     }
 
-    Map<String, List<String>> properties() {
+    Map<String, String> properties() {
         return properties;
     }
 
@@ -365,8 +372,13 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         return context;
     }
 
-    @SuppressWarnings("unchecked")
-    private <T> CompletionStage<T> invoke(Flow.Publisher<DataChunk> requestEntity, GenericType<T> responseType) {
+    private <T> CompletionStage<T> invokeWithEntity(Flow.Publisher<DataChunk> requestEntity, GenericType<T> responseType) {
+        return invoke(requestEntity)
+                .thenApply(this::getContentFromClientResponse)
+                .thenCompose(content -> content.as(responseType));
+    }
+
+    private CompletionStage<WebClientResponse> invoke(Flow.Publisher<DataChunk> requestEntity) {
         this.uri = prepareFinalURI();
         CompletableFuture<WebClientServiceRequest> sent = new CompletableFuture<>();
         CompletableFuture<WebClientServiceResponse> responseReceived = new CompletableFuture<>();
@@ -424,13 +436,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
                     result.completeExceptionally(new WebClientException(uri.toString(), cause));
                 }
             });
-
-            if (responseType.rawType().equals(WebClientResponse.class)) {
-                return (CompletionStage<T>) result;
-            } else {
-                return result.thenApply(this::getContentFromClientResponse)
-                        .thenCompose(content -> content.as(responseType));
-            }
+            return result;
         });
 
     }

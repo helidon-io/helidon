@@ -77,7 +77,7 @@ public interface WebClientRequestBuilder {
      * @param propertyValue property value
      * @return updated builder instance
      */
-    WebClientRequestBuilder property(String propertyName, String... propertyValue);
+    WebClientRequestBuilder property(String propertyName, String propertyValue);
 
     /**
      * Explicitly configure a context to use.
@@ -242,9 +242,7 @@ public interface WebClientRequestBuilder {
      *
      * @return request completion stage
      */
-    default CompletionStage<WebClientResponse> request() {
-        return request(WebClientResponse.class);
-    }
+    CompletionStage<WebClientResponse> request();
 
     /**
      * Performs prepared request.
@@ -323,7 +321,12 @@ public interface WebClientRequestBuilder {
          */
         RequestConfiguration configuration();
 
-        Map<String, List<String>> properties();
+        /**
+         * TODO
+         *
+         * @return
+         */
+        Map<String, String> properties();
 
         /**
          * Proxy used by current request.

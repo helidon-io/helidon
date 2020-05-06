@@ -127,7 +127,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
     /**
      * Create a new writer context.
      *
-     * @param mediaSupport media support used to derive the parent context, may
+     * @param mediaContext media support used to derive the parent context, may
      * be {@code null}
      * @param eventListener message body subscription event listener, may be
      * {@code null}
@@ -135,13 +135,13 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      * @param acceptedTypes accepted types, may be {@code null}
      * @return MessageBodyWriterContext
      */
-    public static MessageBodyWriterContext create(MediaSupport mediaSupport, EventListener eventListener, Parameters headers,
-            List<MediaType> acceptedTypes) {
+    public static MessageBodyWriterContext create(MediaContext mediaContext, EventListener eventListener, Parameters headers,
+                                                  List<MediaType> acceptedTypes) {
 
-        if (mediaSupport == null) {
+        if (mediaContext == null) {
             return new MessageBodyWriterContext(null, eventListener, headers, acceptedTypes);
         }
-        return new MessageBodyWriterContext(mediaSupport.writerContext(), eventListener, headers, acceptedTypes);
+        return new MessageBodyWriterContext(mediaContext.writerContext(), eventListener, headers, acceptedTypes);
     }
 
     /**

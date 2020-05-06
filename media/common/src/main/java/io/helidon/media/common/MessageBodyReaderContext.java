@@ -114,6 +114,12 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
         return this;
     }
 
+    public MessageBodyReaderContext register(MediaSupport mediaSupport) {
+        mediaSupport.readers().forEach(this::registerReader);
+        mediaSupport.streamReaders().forEach(this::registerReader);
+        return this;
+    }
+
     /**
      * Register a reader function with the given type.
      * @param <T> supported type
@@ -294,20 +300,20 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
     /**
      * Create a new empty reader context backed by the specified headers.
      *
-     * @param mediaSupport mediaSupport instance used to derived the parent
+     * @param mediaContext mediaSupport instance used to derived the parent
      * context, may be {@code null}
      * @param eventListener subscription event listener, may be {@code null}
      * @param headers backing headers, must not be {@code null}
      * @param contentType content type, must not be {@code null}
      * @return MessageBodyReaderContext
      */
-    public static MessageBodyReaderContext create(MediaSupport mediaSupport, EventListener eventListener,
-            ReadOnlyParameters headers, Optional<MediaType> contentType) {
+    public static MessageBodyReaderContext create(MediaContext mediaContext, EventListener eventListener,
+                                                  ReadOnlyParameters headers, Optional<MediaType> contentType) {
 
-        if (mediaSupport == null) {
+        if (mediaContext == null) {
             return new MessageBodyReaderContext(null, eventListener, headers, contentType);
         }
-        return new MessageBodyReaderContext(mediaSupport.readerContext(), eventListener, headers, contentType);
+        return new MessageBodyReaderContext(mediaContext.readerContext(), eventListener, headers, contentType);
     }
 
     /**

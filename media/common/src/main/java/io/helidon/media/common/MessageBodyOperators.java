@@ -32,10 +32,10 @@ import io.helidon.common.GenericType;
  */
 final class MessageBodyOperators<T extends MessageBodyOperator<?>> implements Iterable<T>, AutoCloseable {
 
-    private final MessageBodyOperators<T> parent;
     private final LinkedList<T> operators;
     private final ReadWriteLock lock;
     private final AtomicBoolean readLocked;
+    private MessageBodyOperators<T> parent;
 
     /**
      * Create a new parented registry.

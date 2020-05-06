@@ -24,12 +24,14 @@ import javax.json.JsonWriterFactory;
 
 import io.helidon.media.common.MessageBodyReaderContext;
 import io.helidon.media.common.MessageBodyWriterContext;
-import io.helidon.media.common.spi.MediaService;
+import io.helidon.media.common.MediaSupport;
 
 /**
  * Support for JSON Processing integration.
+ *
+ * For usage examples navigate to {@link MediaSupport}
  */
-public final class JsonpSupport implements MediaService {
+public final class JsonpSupport implements MediaSupport {
 
     private final JsonReaderFactory jsonReaderFactory;
     private final JsonWriterFactory jsonWriterFactory;

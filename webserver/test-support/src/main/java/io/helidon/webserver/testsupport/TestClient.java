@@ -36,7 +36,7 @@ import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.ReadOnlyParameters;
 import io.helidon.common.reactive.Single;
-import io.helidon.media.common.MediaSupport;
+import io.helidon.media.common.MediaContext;
 import io.helidon.webserver.BareRequest;
 import io.helidon.webserver.BareResponse;
 import io.helidon.webserver.Handler;
@@ -51,7 +51,7 @@ public class TestClient {
     private static final Duration TIMEOUT = Duration.ofMinutes(10);
 
     private final Routing routing;
-    private final MediaSupport mediaSupport;
+    private final MediaContext mediaContext;
     private final Handler mockingHandler;
 
     /**
@@ -61,10 +61,10 @@ public class TestClient {
      * @param mockingHandler a handler representing mocking
      * @throws NullPointerException if routing parameter is null
      */
-    private TestClient(Routing routing, MediaSupport mediaSupport, Handler mockingHandler) {
+    private TestClient(Routing routing, MediaContext mediaContext, Handler mockingHandler) {
         Objects.requireNonNull(routing, "Parameter 'routing' is null!");
         this.routing = routing;
-        this.mediaSupport = mediaSupport;
+        this.mediaContext = mediaContext;
         this.mockingHandler = mockingHandler;
     }
 
@@ -85,12 +85,12 @@ public class TestClient {
      * Creates new {@link TestClient} instance with specified routing.
      *
      * @param routing a routing to test
-     * @param mediaSupport media support
+     * @param mediaContext media support
      * @return new instance
      * @throws NullPointerException if routing parameter is null
      */
-    public static TestClient create(Routing routing, MediaSupport mediaSupport) {
-        return new TestClient(routing, mediaSupport, null);
+    public static TestClient create(Routing routing, MediaContext mediaContext) {
+        return new TestClient(routing, mediaContext, null);
     }
 
     /**
@@ -132,7 +132,7 @@ public class TestClient {
                       URI path,
                       Map<String, List<String>> headers,
                       Flow.Publisher<DataChunk> publisher) throws InterruptedException, TimeoutException {
-        TestBareRequest req = new TestBareRequest(method, version, path, headers, publisher, mediaSupport);
+        TestBareRequest req = new TestBareRequest(method, version, path, headers, publisher, mediaContext);
         TestBareResponse res = new TestBareResponse(req.webServer);
         routing.route(req, res);
         try {
@@ -160,11 +160,11 @@ public class TestClient {
                         URI path,
                         Map<String, List<String>> headers,
                         Flow.Publisher<DataChunk> publisher,
-                        MediaSupport mediaSupport) {
+                        MediaContext mediaContext) {
             Objects.requireNonNull(method, "Parameter 'method' is null!");
             Objects.requireNonNull(version, "Parameter 'version' is null!");
             Objects.requireNonNull(path, "Parameter 'path' is null!");
-            webServer = new TestWebServer(mediaSupport);
+            webServer = new TestWebServer(mediaContext);
             this.method = method;
             this.version = version;
             this.path = path;

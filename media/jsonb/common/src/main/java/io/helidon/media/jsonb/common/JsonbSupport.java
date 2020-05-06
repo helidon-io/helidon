@@ -24,14 +24,16 @@ import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
 import io.helidon.media.common.MessageBodyReaderContext;
 import io.helidon.media.common.MessageBodyWriterContext;
-import io.helidon.media.common.spi.MediaService;
+import io.helidon.media.common.MediaSupport;
 
 /**
  * Support for JSON-B integration.
  *
+ * For usage examples navigate to the {@link MediaSupport}
+ *
  * @see Jsonb
  */
-public final class JsonbSupport implements MediaService {
+public final class JsonbSupport implements MediaSupport {
 
     static {
         HelidonFeatures.register(HelidonFlavor.SE, "WebServer", "JSON-B");

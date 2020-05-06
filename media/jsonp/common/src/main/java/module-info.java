@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import io.helidon.media.common.spi.MediaServiceProvider;
+import io.helidon.media.common.spi.MediaSupportProvider;
 import io.helidon.media.jsonp.common.JsonpProvider;
 import io.helidon.media.jsonp.common.JsonpSupport;
 
@@ -35,5 +35,5 @@ module io.helidon.media.jsonp.common {
 
     exports io.helidon.media.jsonp.common;
 
-    provides MediaServiceProvider with JsonpProvider;
+    provides MediaSupportProvider with JsonpProvider;
 }

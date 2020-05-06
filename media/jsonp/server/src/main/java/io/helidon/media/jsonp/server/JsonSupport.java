@@ -20,6 +20,7 @@ import javax.json.JsonStructure;
 
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
+import io.helidon.media.common.MediaSupport;
 import io.helidon.media.jsonp.common.JsonpBodyReader;
 import io.helidon.media.jsonp.common.JsonpBodyWriter;
 import io.helidon.media.jsonp.common.JsonpSupport;
@@ -65,6 +66,7 @@ import io.helidon.webserver.WebServer;
  *        .get("/foo/bar", ...);  // It can NOT use JSON structures
  * }</pre>
  *
+ * @deprecated use {@link io.helidon.media.jsonp.common.JsonpSupport} with {@link WebServer.Builder#addMediaSupport(MediaSupport)}
  * @see Routing
  * @see JsonStructure
  * @see JsonpBodyReader

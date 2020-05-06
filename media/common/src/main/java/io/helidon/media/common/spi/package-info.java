@@ -14,6 +14,6 @@
  * limitations under the License.
  */
 /**
- * This package provides extensibility for the {@link io.helidon.media.common.MediaSupport}.
+ * This package provides extensibility for the {@link io.helidon.media.common.MediaContext}.
  */
 package io.helidon.media.common.spi;

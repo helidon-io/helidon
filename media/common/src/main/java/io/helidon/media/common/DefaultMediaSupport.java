@@ -15,40 +15,42 @@
  */
 package io.helidon.media.common;
 
-import io.helidon.media.common.spi.MediaService;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * MediaService which registers default readers and writers to the contexts.
  */
-public class DefaultMediaService implements MediaService {
+public class DefaultMediaSupport implements MediaSupport {
 
     private final boolean includeStackTraces;
 
-    private DefaultMediaService(boolean includeStackTraces) {
+    private DefaultMediaSupport(boolean includeStackTraces) {
         this.includeStackTraces = includeStackTraces;
     }
 
     /**
-     * Creates new instance of {@link DefaultMediaService}.
+     * Creates new instance of {@link DefaultMediaSupport}.
      *
      * @param includeStackTraces include stack traces
      * @return new service instance
      */
-    public static DefaultMediaService create(boolean includeStackTraces) {
-        return new DefaultMediaService(includeStackTraces);
+    public static DefaultMediaSupport create(boolean includeStackTraces) {
+        return new DefaultMediaSupport(includeStackTraces);
     }
 
     @Override
-    public void register(MessageBodyReaderContext readerContext, MessageBodyWriterContext writerContext) {
-        readerContext
-                .registerReader(StringBodyReader.create())
-                .registerReader(InputStreamBodyReader.create());
+    public Collection<MessageBodyReader<?>> readers() {
+        return List.of(StringBodyReader.create(),
+                       InputStreamBodyReader.create());
+    }
 
-        writerContext
-                .registerWriter(CharSequenceBodyWriter.create())
-                .registerWriter(ByteChannelBodyWriter.create())
-                .registerWriter(PathBodyWriter.create())
-                .registerWriter(FileBodyWriter.create())
-                .registerWriter(ThrowableBodyWriter.create(includeStackTraces));
+    @Override
+    public Collection<MessageBodyWriter<?>> writers() {
+        return List.of(CharSequenceBodyWriter.create(),
+                       ByteChannelBodyWriter.create(),
+                       PathBodyWriter.create(),
+                       FileBodyWriter.create(),
+                       ThrowableBodyWriter.create(includeStackTraces));
     }
 }

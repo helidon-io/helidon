@@ -71,7 +71,7 @@ public class ClientMainTest {
         WebClient.Builder builder = WebClient.builder()
                 .baseUri("http://localhost:" + port + "/greet")
                 .config(config.get("client"))
-                .addMediaService(JsonpSupport.create());
+                .addMediaSupport(JsonpSupport.create());
         for (WebClientService service : services) {
             builder.register(service);
         }

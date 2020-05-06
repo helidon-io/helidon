@@ -93,7 +93,7 @@ public class ClientMain {
                 .baseUri(url)
                 .config(config.get("client"))
                 //Since JSON processing support is not present by default, we have to add it.
-                .addMediaService(JsonpSupport.create())
+                .addMediaSupport(JsonpSupport.create())
                 .build();
 
         performPutMethod(webClient)

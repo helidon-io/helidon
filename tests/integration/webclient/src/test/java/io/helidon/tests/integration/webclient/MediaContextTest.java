@@ -21,7 +21,7 @@ import javax.json.Json;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 
-import io.helidon.media.common.MediaSupport;
+import io.helidon.media.common.MediaContext;
 import io.helidon.media.jsonp.common.JsonpSupport;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientRequestBuilder;
@@ -36,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * Tests for MediaSupport functionality in WebClient.
  */
-public class MediaSupportTest extends TestParent {
+public class MediaContextTest extends TestParent {
 
     private static final JsonBuilderFactory JSON_BUILDER = Json.createBuilderFactory(Collections.emptyMap());
     private static final String DEFAULT_GREETING;
@@ -76,7 +76,7 @@ public class MediaSupportTest extends TestParent {
     public void testMediaSupportWithoutDefaults() throws Exception {
         WebClient client = WebClient.builder()
                 .baseUri("http://localhost:" + webServer.port() + "/greet")
-                .mediaSupport(MediaSupport.empty())
+                .mediaContext(MediaContext.empty())
                 .build();
 
         client.get()

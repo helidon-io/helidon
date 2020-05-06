@@ -31,13 +31,14 @@ import io.helidon.common.HelidonFlavor;
 import io.helidon.common.context.Context;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
+import io.helidon.media.common.MediaContext;
+import io.helidon.media.common.MediaContextBuilder;
 import io.helidon.media.common.MediaSupport;
-import io.helidon.media.common.MediaSupportBuilder;
 import io.helidon.media.common.MessageBodyReader;
 import io.helidon.media.common.MessageBodyStreamReader;
 import io.helidon.media.common.MessageBodyStreamWriter;
 import io.helidon.media.common.MessageBodyWriter;
-import io.helidon.media.common.spi.MediaService;
+import io.helidon.media.common.ParentingMediaContextBuilder;
 import io.helidon.webclient.spi.WebClientService;
 import io.helidon.webclient.spi.WebClientServiceProvider;
 
@@ -79,6 +80,41 @@ public interface WebClient {
     WebClientRequestBuilder get();
 
     /**
+     * Create a request builder for a post method.
+     *
+     * @return client request builder
+     */
+    WebClientRequestBuilder post();
+
+    /**
+     * Create a request builder for a delete method.
+     *
+     * @return client request builder
+     */
+    WebClientRequestBuilder delete();
+
+    /**
+     * Create a request builder for a options method.
+     *
+     * @return client request builder
+     */
+    WebClientRequestBuilder options();
+
+    /**
+     * Create a request builder for a trace method.
+     *
+     * @return client request builder
+     */
+    WebClientRequestBuilder trace();
+
+    /**
+     * Create a request builder for a head method.
+     *
+     * @return client request builder
+     */
+    WebClientRequestBuilder head();
+
+    /**
      * Create a request builder for a method based on method parameter.
      *
      * @param method request method
@@ -86,7 +122,9 @@ public interface WebClient {
      */
     WebClientRequestBuilder method(String method);
 
-    final class Builder implements io.helidon.common.Builder<WebClient>, MediaSupportBuilder<Builder> {
+    final class Builder implements io.helidon.common.Builder<WebClient>,
+                                   ParentingMediaContextBuilder<Builder>,
+                                   MediaContextBuilder<Builder> {
 
         static {
             HelidonFeatures.register(HelidonFlavor.SE, "WebClient");
@@ -161,14 +199,14 @@ public interface WebClient {
         }
 
         @Override
-        public Builder mediaSupport(MediaSupport mediaSupport) {
-            configuration.mediaSupport(mediaSupport);
+        public Builder mediaContext(MediaContext mediaContext) {
+            configuration.mediaContext(mediaContext);
             return this;
         }
 
         @Override
-        public Builder addMediaService(MediaService mediaService) {
-            configuration.addMediaService(mediaService);
+        public Builder addMediaSupport(MediaSupport mediaSupport) {
+            configuration.addMediaSupport(mediaSupport);
             return this;
         }
 

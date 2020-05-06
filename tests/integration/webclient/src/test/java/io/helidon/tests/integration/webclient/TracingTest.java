@@ -52,7 +52,7 @@ class TracingTest extends TestParent {
         WebClient client = WebClient.builder()
                 .baseUri(uri)
                 .context(context)
-                .addMediaService(JsonpSupport.create())
+                .addMediaSupport(JsonpSupport.create())
                 .build();
 
         WebClientResponse response = client.get()
@@ -92,7 +92,7 @@ class TracingTest extends TestParent {
         WebClient client = WebClient.builder()
                 .baseUri("http://localhost:" + webServer.port() + "/greet")
                 .context(context)
-                .addMediaService(JsonpSupport.create())
+                .addMediaSupport(JsonpSupport.create())
                 .build();
 
         WebClientResponse response = client.get()

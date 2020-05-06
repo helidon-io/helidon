@@ -44,7 +44,7 @@ class RedirectInterceptor implements HttpInterceptor {
             CompletionStage<WebClientResponse> redirectResponse = WebClientRequestBuilderImpl
                     .create(clientRequest)
                     .uri(newUri)
-                    .request(WebClientResponse.class);
+                    .request();
             redirectResponse.whenComplete((clResponse, throwable) -> {
                 if (throwable == null) {
                     responseFuture.complete(clResponse);

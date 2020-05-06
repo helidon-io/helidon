@@ -24,6 +24,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -35,15 +36,16 @@ import javax.net.ssl.SSLException;
 import io.helidon.common.LazyValue;
 import io.helidon.common.context.Context;
 import io.helidon.config.Config;
+import io.helidon.media.common.MediaContext;
+import io.helidon.media.common.MediaContextBuilder;
 import io.helidon.media.common.MediaSupport;
-import io.helidon.media.common.MediaSupportBuilder;
 import io.helidon.media.common.MessageBodyReader;
 import io.helidon.media.common.MessageBodyReaderContext;
 import io.helidon.media.common.MessageBodyStreamReader;
 import io.helidon.media.common.MessageBodyStreamWriter;
 import io.helidon.media.common.MessageBodyWriter;
 import io.helidon.media.common.MessageBodyWriterContext;
-import io.helidon.media.common.spi.MediaService;
+import io.helidon.media.common.ParentingMediaContextBuilder;
 import io.helidon.webclient.spi.WebClientService;
 
 import io.netty.handler.ssl.ClientAuth;
@@ -263,9 +265,12 @@ class WebClientConfiguration {
      * A fluent API builder for {@link WebClientConfiguration}.
      */
     static class Builder<B extends Builder<B, T>, T extends WebClientConfiguration>
-            implements io.helidon.common.Builder<T>, MediaSupportBuilder<B> {
+            implements io.helidon.common.Builder<T>,
+                       ParentingMediaContextBuilder<B>,
+                       MediaContextBuilder<B> {
 
         private final WebClientRequestHeaders clientHeaders;
+        private final Map<String, String> defaultCookies;
 
         private Config config;
         private Context context;
@@ -280,7 +285,6 @@ class WebClientConfiguration {
         private boolean enableAutomaticCookieStore;
         private Ssl ssl;
         private URI uri;
-        private Map<String, String> defaultCookies;
         private MessageBodyReaderContext readerContext;
         private MessageBodyWriterContext writerContext;
         private List<WebClientService> clientServices;
@@ -449,28 +453,33 @@ class WebClientConfiguration {
         }
 
         @Override
-        public B mediaSupport(MediaSupport mediaSupport) {
-            writerContextParent(mediaSupport.writerContext());
-            readerContextParent(mediaSupport.readerContext());
+        public B mediaContext(MediaContext mediaContext) {
+            writerContextParent(mediaContext.writerContext());
+            readerContextParent(mediaContext.readerContext());
             return me;
         }
 
-
+        /**
+         * Sets specific context in which all of the requests will be running.
+         *
+         * @return updated builder instance
+         */
         public B context(Context context) {
             this.context = context;
             return me;
         }
 
-        public B clientServices(List<WebClientService> clientServices) {
-            this.clientServices = clientServices;
-            return me;
-        }
-
+        /**
+         * Base uri for each request.
+         *
+         * @return updated builder instance
+         */
         public B uri(URI uri) {
             this.uri = uri;
             return me;
         }
 
+        @Override
         public B addReader(MessageBodyReader<?> reader) {
             this.readerContext.registerReader(reader);
             return me;
@@ -482,6 +491,7 @@ class WebClientConfiguration {
             return me;
         }
 
+        @Override
         public B addWriter(MessageBodyWriter<?> writer) {
             this.writerContext.registerWriter(writer);
             return me;
@@ -493,9 +503,10 @@ class WebClientConfiguration {
             return me;
         }
 
-        public B addMediaService(MediaService mediaService) {
-            Objects.requireNonNull(mediaService);
-            mediaService.register(readerContext, writerContext);
+        @Override
+        public B addMediaSupport(MediaSupport mediaSupport) {
+            Objects.requireNonNull(mediaSupport);
+            mediaSupport.register(readerContext, writerContext);
             return me;
         }
 
@@ -521,6 +532,11 @@ class WebClientConfiguration {
 
         B writerContext(MessageBodyWriterContext writerContext) {
             this.writerContext = writerContext;
+            return me;
+        }
+
+        B clientServices(List<WebClientService> clientServices) {
+            this.clientServices = clientServices;
             return me;
         }
 

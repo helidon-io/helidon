@@ -16,19 +16,19 @@
 package io.helidon.media.common;
 
 /**
- * Extended interface of the base media support builder methods.
+ * Builder of {@link MediaContext} that can be parented.
  *
  * @param <T> Type of the class which this builder support is added to.
  */
-public interface MediaSupportBuilder<T> extends BaseMediaSupportBuilder<T> {
+public interface ParentingMediaContextBuilder<T> {
 
     /**
-     * Sets the new {@link MediaSupport} and overrides the existing one.
-     * This method overrides all previously registered readers and writers.
+     * Sets the {@link MediaContext} parent and overrides the existing one.
+     * This method discards all previously registered readers and writers via builder.
      *
-     * @param mediaSupport media support
+     * @param mediaContext media context
      * @return updated instance of the builder
      */
-    T mediaSupport(MediaSupport mediaSupport);
+    T mediaContext(MediaContext mediaContext);
 
 }

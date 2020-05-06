@@ -15,22 +15,20 @@
  */
 package io.helidon.media.common;
 
-import io.helidon.media.common.spi.MediaService;
-
 /**
  * Adds methods to support adding readers, writers and media services to the builder.
  *
  * @param <T> Type of the class which this builder support is added to.
  */
-public interface BaseMediaSupportBuilder<T> {
+public interface MediaContextBuilder<T> {
 
     /**
-     * Adds new instance of {@link MediaService}.
+     * Adds new instance of {@link MediaSupport}.
      *
-     * @param mediaService media service
+     * @param mediaSupport media support
      * @return updated instance of the builder
      */
-    T addMediaService(MediaService mediaService);
+    T addMediaSupport(MediaSupport mediaSupport);
 
     /**
      * Registers new reader.

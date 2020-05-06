@@ -39,7 +39,7 @@ class WebClientRequestImpl implements WebClientRequestBuilder.ClientRequest {
     private final String query;
     private final String fragment;
     private final int redirectionCount;
-    private final Map<String, List<String>> properties;
+    private final Map<String, String> properties;
 
     WebClientRequestImpl(WebClientRequestBuilderImpl builder) {
         clientRequestHeaders = new WebClientRequestHeadersImpl(builder.headers());
@@ -67,7 +67,7 @@ class WebClientRequestImpl implements WebClientRequestBuilder.ClientRequest {
     }
 
     @Override
-    public Map<String, List<String>> properties() {
+    public Map<String, String> properties() {
         return properties;
     }
 

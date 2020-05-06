@@ -20,7 +20,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 import io.helidon.common.http.ContextualRegistry;
-import io.helidon.media.common.MediaSupport;
+import io.helidon.media.common.MediaContext;
 import io.helidon.media.common.MessageBodyReaderContext;
 import io.helidon.media.common.MessageBodyWriterContext;
 import io.helidon.webserver.ServerConfiguration;
@@ -31,23 +31,23 @@ import io.helidon.webserver.WebServer;
  */
 class TestWebServer implements WebServer {
 
-    private static final MediaSupport DEFAULT_MEDIA_SUPPORT = MediaSupport.create();
+    private static final MediaContext DEFAULT_MEDIA_SUPPORT = MediaContext.create();
 
     private final CompletableFuture<WebServer> startFuture = new CompletableFuture<>();
     private final CompletableFuture<WebServer> shutdownFuture = new CompletableFuture<>();
     private final ServerConfiguration configuration = ServerConfiguration.builder().build();
     private final ContextualRegistry context = ContextualRegistry.create();
-    private final MediaSupport mediaSupport;
+    private final MediaContext mediaContext;
 
     TestWebServer() {
-        this.mediaSupport = DEFAULT_MEDIA_SUPPORT;
+        this.mediaContext = DEFAULT_MEDIA_SUPPORT;
     }
 
-    TestWebServer(MediaSupport mediaSupport) {
-        if (mediaSupport == null) {
-            this.mediaSupport = DEFAULT_MEDIA_SUPPORT;
+    TestWebServer(MediaContext mediaContext) {
+        if (mediaContext == null) {
+            this.mediaContext = DEFAULT_MEDIA_SUPPORT;
         } else {
-            this.mediaSupport = mediaSupport;
+            this.mediaContext = mediaContext;
         }
     }
 
@@ -88,12 +88,12 @@ class TestWebServer implements WebServer {
 
     @Override
     public MessageBodyReaderContext readerContext() {
-        return mediaSupport.readerContext();
+        return mediaContext.readerContext();
     }
 
     @Override
     public MessageBodyWriterContext writerContext() {
-        return mediaSupport.writerContext();
+        return mediaContext.writerContext();
     }
 
     @Override

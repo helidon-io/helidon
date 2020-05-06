@@ -83,7 +83,7 @@ class TestParent {
                 .baseUri("http://localhost:" + webServer.port() + "/greet")
                 .config(CONFIG.get("client"))
                 .context(context)
-                .addMediaService(JsonpSupport.create());
+                .addMediaSupport(JsonpSupport.create());
 
         Stream.of(clientServices).forEach(builder::register);
         return builder.build();

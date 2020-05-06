@@ -38,7 +38,7 @@ import io.helidon.common.http.DataChunk;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
 import io.helidon.media.common.ContentReaders;
-import io.helidon.media.common.MediaSupport;
+import io.helidon.media.common.MediaContext;
 import io.helidon.media.common.MessageBodyFilter;
 import io.helidon.webserver.utils.TestUtils;
 
@@ -67,9 +67,9 @@ public class RequestContentTest {
         doReturn(URI.create("http://0.0.0.0:1234")).when(bareRequestMock).uri();
         doReturn(flux).when(bareRequestMock).bodyPublisher();
         WebServer webServer = mock(WebServer.class);
-        MediaSupport mediaSupport = MediaSupport.create();
-        doReturn(mediaSupport.readerContext()).when(webServer).readerContext();
-        doReturn(mediaSupport.writerContext()).when(webServer).writerContext();
+        MediaContext mediaContext = MediaContext.create();
+        doReturn(mediaContext.readerContext()).when(webServer).readerContext();
+        doReturn(mediaContext.writerContext()).when(webServer).writerContext();
         return new RequestTestStub(bareRequestMock, webServer);
     }
 

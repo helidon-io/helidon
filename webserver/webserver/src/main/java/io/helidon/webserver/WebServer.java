@@ -25,15 +25,16 @@ import java.util.stream.Collectors;
 
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
-import io.helidon.media.common.MediaSupport;
-import io.helidon.media.common.MediaSupportBuilder;
+import io.helidon.media.common.MediaContextBuilder;
+import io.helidon.media.common.MediaContext;
+import io.helidon.media.common.ParentingMediaContextBuilder;
 import io.helidon.media.common.MessageBodyReader;
 import io.helidon.media.common.MessageBodyReaderContext;
 import io.helidon.media.common.MessageBodyStreamReader;
 import io.helidon.media.common.MessageBodyStreamWriter;
 import io.helidon.media.common.MessageBodyWriter;
 import io.helidon.media.common.MessageBodyWriterContext;
-import io.helidon.media.common.spi.MediaService;
+import io.helidon.media.common.MediaSupport;
 
 /**
  * Represents a immutably configured WEB server.
@@ -240,9 +241,11 @@ public interface WebServer {
      * WebServer builder class provides a convenient way to set up WebServer with multiple server
      * sockets and optional multiple routings.
      */
-    final class Builder implements io.helidon.common.Builder<WebServer>, MediaSupportBuilder<Builder> {
+    final class Builder implements io.helidon.common.Builder<WebServer>,
+                                   ParentingMediaContextBuilder<Builder>,
+                                   MediaContextBuilder<Builder> {
 
-        private static final MediaSupport DEFAULT_MEDIA_SUPPORT = MediaSupport.create();
+        private static final MediaContext DEFAULT_MEDIA_SUPPORT = MediaContext.create();
 
         static {
             HelidonFeatures.register(HelidonFlavor.SE, "WebServer");
@@ -325,17 +328,17 @@ public interface WebServer {
         }
 
         @Override
-        public Builder mediaSupport(MediaSupport mediaSupport) {
-            Objects.requireNonNull(mediaSupport);
-            this.readerContext = MessageBodyReaderContext.create(mediaSupport.readerContext());
-            this.writerContext = MessageBodyWriterContext.create(mediaSupport.writerContext());
+        public Builder mediaContext(MediaContext mediaContext) {
+            Objects.requireNonNull(mediaContext);
+            this.readerContext = MessageBodyReaderContext.create(mediaContext.readerContext());
+            this.writerContext = MessageBodyWriterContext.create(mediaContext.writerContext());
             return this;
         }
 
         @Override
-        public Builder addMediaService(MediaService mediaService) {
-            Objects.requireNonNull(mediaService);
-            mediaService.register(readerContext, writerContext);
+        public Builder addMediaSupport(MediaSupport mediaSupport) {
+            Objects.requireNonNull(mediaSupport);
+            mediaSupport.register(readerContext, writerContext);
             return this;
         }
 

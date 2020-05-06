@@ -16,11 +16,12 @@
 package io.helidon.media.common.spi;
 
 import io.helidon.config.Config;
+import io.helidon.media.common.MediaSupport;
 
 /**
  * Java service loader interface.
  */
-public interface MediaServiceProvider {
+public interface MediaSupportProvider {
 
     /**
      * Config key expected under {@code media-support.services.config}.
@@ -32,10 +33,9 @@ public interface MediaServiceProvider {
     /**
      * Create a new service instance based on configuration.
      *
-     * @param type type
      * @param config configuration of this service
      * @return a new media service instance
      */
-    MediaService create(String type, Config config);
+    MediaSupport create(Config config);
 
 }

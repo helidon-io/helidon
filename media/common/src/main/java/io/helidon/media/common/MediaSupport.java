@@ -15,183 +15,94 @@
  */
 package io.helidon.media.common;
 
-import io.helidon.config.Config;
-import io.helidon.media.common.spi.MediaService;
+import java.util.Collection;
+import java.util.Collections;
 
 /**
- * Media support.
+ * Service used to register readers and writers to the respective context.
+ * <p>
+ * MediaSupport instances can be used with WebServer and WebClient to register readers and writer.
+ * Each of these have method addMediaSupport(), which will add corresponding support.
+ * </p><br>
+ * Example usage:
+ * <pre><code>
+ * WebServer.builder()
+ *          .addMediaSupport(MediaSupport)
+ *          .build();
+ * </code></pre>
+ * If you need to register MediaSupport on the request or response, you will need to register them to
+ * the corresponding context.
+ * <br>
+ * Example request reader registration:
+ * <pre><code>
+ * Routing.builder()
+ *        .get("/foo", (res, req) -> {
+ *            MessageBodyReadableContent content = req.content();
+ *            DefaultMediaSupport.create().readers().forEach(content::registerReader);
+ *            content.as(String.class)
+ *                   .thenAccept(System.out::print);
+ *        })
+ * </code></pre>
+ * Example response writer registration:
+ * <pre><code>
+ * Routing.builder()
+ *        .get("/foo", (res, req) -> {
+ *           MessageBodyWriterContext writerContext = res.writerContext();
+ *           DefaultMediaSupport.create().writers().forEach(writerContext::registerWriter);
+ *           res.send("Example entity");
+ *        })
+ * </code></pre>
+ * (DefaultMediaSupport is used only to illustrate the registration)
  */
-public final class MediaSupport {
-
-    private final MessageBodyReaderContext readerContext;
-    private final MessageBodyWriterContext writerContext;
-
-    private MediaSupport(MessageBodyReaderContext readerContext, MessageBodyWriterContext writerContext) {
-        this.readerContext = readerContext;
-        this.writerContext = writerContext;
-    }
+public interface MediaSupport {
 
     /**
-     * Create a new instance with default readers and writers registered to the contexts.
+     * Method used to register readers and writers.
      *
-     * @return MediaSupport
+     * @param readerContext reader context
+     * @param writerContext writer context
      */
-    public static MediaSupport create() {
-        return builder().build();
+    default void register(MessageBodyReaderContext readerContext, MessageBodyWriterContext writerContext) {
+        readers().forEach(readerContext::registerReader);
+        writers().forEach(writerContext::registerWriter);
+        streamReaders().forEach(readerContext::registerReader);
+        streamWriters().forEach(writerContext::registerWriter);
     }
 
     /**
-     * Create a new instance based on the configuration.
+     * Returns the collection of the readers which should be registered.
      *
-     * @param config a {@link Config}
-     * @return MediaSupport
+     * @return readers
      */
-    public static MediaSupport create(Config config) {
-        return builder().config(config).build();
+    default Collection<MessageBodyReader<?>> readers() {
+        return Collections.emptyList();
     }
 
     /**
-     * Creates new empty instance without registered defaults.
+     * Returns the collection of the writers which should be registered.
      *
-     * @return empty instance
+     * @return writers
      */
-    public static MediaSupport empty() {
-        return builder().registerDefaults(false).build();
+    default Collection<MessageBodyWriter<?>> writers() {
+        return Collections.emptyList();
     }
 
     /**
-     * Create a new {@link Builder} instance.
+     * Returns the collection of the stream readers which should be registered.
      *
-     * @return a new {@link Builder}
+     * @return stream readers
      */
-    public static Builder builder() {
-        return new Builder();
+    default Collection<MessageBodyStreamReader<?>> streamReaders() {
+        return Collections.emptyList();
     }
 
     /**
-     * Get the configured reader context.
+     * Returns the collection of the stream writers which should be registered.
      *
-     * @return MessageBodyReaderContext
+     * @return stream writers
      */
-    public MessageBodyReaderContext readerContext() {
-        return readerContext;
-    }
-
-    /**
-     * Get the configured writer context.
-     *
-     * @return MessageBodyWriterContext
-     */
-    public MessageBodyWriterContext writerContext() {
-        return writerContext;
-    }
-
-    /**
-     * MediaSupport builder.
-     */
-    public static class Builder implements io.helidon.common.Builder<MediaSupport>,
-                                           BaseMediaSupportBuilder<Builder> {
-
-        private final MessageBodyReaderContext readerContext;
-        private final MessageBodyWriterContext writerContext;
-        private boolean registerDefaults = true;
-        private boolean includeStackTraces = false;
-
-        private Builder() {
-            this.readerContext = MessageBodyReaderContext.create();
-            this.writerContext = MessageBodyWriterContext.create();
-        }
-
-        /**
-         * Configures this {@link Builder} from the supplied {@link Config}.
-         *
-         * @param config a {@link Config}
-         * @return this {@link Builder}
-         */
-        public Builder config(Config config) {
-            config.get("server-errors-include-stack-traces").asBoolean().ifPresent(this::includeStackTraces);
-            config.get("register-defaults").asBoolean().ifPresent(this::registerDefaults);
-            return this;
-        }
-
-        @Override
-        public Builder addMediaService(MediaService mediaService) {
-            mediaService.register(readerContext, writerContext);
-            return this;
-        }
-
-        @Override
-        public Builder addReader(MessageBodyReader<?> reader) {
-            readerContext.registerReader(reader);
-            return this;
-        }
-
-        @Override
-        public Builder addStreamReader(MessageBodyStreamReader<?> streamReader) {
-            readerContext.registerReader(streamReader);
-            return this;
-        }
-
-        @Override
-        public Builder addWriter(MessageBodyWriter<?> writer) {
-            writerContext.registerWriter(writer);
-            return this;
-        }
-
-        @Override
-        public Builder addStreamWriter(MessageBodyStreamWriter<?> streamWriter) {
-            writerContext.registerWriter(streamWriter);
-            return this;
-        }
-
-        /**
-         * Register a new stream reader.
-         * @param reader reader to register
-         * @return this builder instance
-         */
-        public Builder registerStreamReader(MessageBodyStreamReader<?> reader) {
-            readerContext.registerReader(reader);
-            return this;
-        }
-
-        /**
-         * Register a new stream writer.
-         * @param writer writer to register
-         * @return this builder instance
-         */
-        public Builder registerStreamWriter(MessageBodyStreamWriter<?> writer) {
-            writerContext.registerWriter(writer);
-            return this;
-        }
-
-        /**
-         * Whether defaults should be included.
-         *
-         * @param registerDefaults register defaults
-         * @return this builder instance
-         */
-        public Builder registerDefaults(boolean registerDefaults) {
-            this.registerDefaults = registerDefaults;
-            return this;
-        }
-
-        /**
-         *
-         * @param includeStackTraces include stack traces
-         * @return this builder instance
-         */
-        public Builder includeStackTraces(boolean includeStackTraces) {
-            this.includeStackTraces = includeStackTraces;
-            return this;
-        }
-
-        @Override
-        public MediaSupport build() {
-            if (registerDefaults) {
-                addMediaService(DefaultMediaService.create(includeStackTraces));
-            }
-            return new MediaSupport(readerContext, writerContext);
-        }
+    default Collection<MessageBodyStreamWriter<?>> streamWriters() {
+        return Collections.emptyList();
     }
 
 }
