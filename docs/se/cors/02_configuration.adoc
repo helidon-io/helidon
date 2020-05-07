@@ -112,7 +112,7 @@ config.get("my-cors") // <1>
     .ifExists(builder::mappedConfig);
 
 config.get("restrictive-cors") // <2>
-    .ifExixts(builder::config);
+    .ifExists(builder::config);
 
 builder.addCrossOriginConfig(CrossOriginConfig.create()); // <3>
 

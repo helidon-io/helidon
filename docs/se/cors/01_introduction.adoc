@@ -22,12 +22,11 @@
 :pagename: cors-introduction
 :description: Helidon SE CORS Support
 :keywords: helidon, java, cors, se
+:javadoc-base-url-api: {javadoc-base-url}io.helidon.webserver.cors/io/helidon/webserver/cors
 :helidon-tag: https://github.com/oracle/helidon/tree/{helidon-version}
 :quickstart-example: {helidon-tag}/examples/quickstarts/helidon-quickstart-se
 :cors-spec: https://www.w3.org/TR/cors/
 :helidon-se-cors-example: {helidon-tag}/examples/cors
-:model-reader-java: {mp-openapi-prefix}/api/src/main/java/org/eclipse/microprofile/openapi/OASModelReader.java
-:filter-java: {mp-openapi-prefix}/api/src/main/java/org/eclipse/microprofile/openapi/OASFilter.java
 
 Easily allow your Helidon SE application to support link:{cors-spec}[cross-origin resource sharing] (CORS).
 
@@ -86,4 +85,19 @@ should declare dependency management for Helidon applications. Then declare the 
 </dependency>
 ----
 
+== Next steps
+=== Learn how to use configuration
+Instead of hard-coding the creation of `CorsSupport` in your code, you can instead have your application load the
+details from configuration. The example (see below) uses configuration
+to load the detailed CORS set-up for `PUT` and `DELETE` as in the code illustration above.
+The <<se/cors/02_configuration.adoc, next page>> of this document has the details. It also shows a
+very simple but powerful way to implement CORS set-up overloading using configuration.
+
+=== Review the example
 See the Helidon CORS support in action by building and running the CORS example link:{helidon-se-cors-example}[here].
+
+=== Read the JavaDoc
+The Java package information for link:{javadoc-base-url-api}/package-summary.html[`io/helidon/webserver/cors`] and the JavaDoc
+for link:{javadoc-base-url-api}/CorsSupport.html[`CorsSupport`] and
+link:{javadoc-base-url-api}/CrossOriginConfig.html[`CrossOriginConfig`] describe in more detail how to use
+those classes.
