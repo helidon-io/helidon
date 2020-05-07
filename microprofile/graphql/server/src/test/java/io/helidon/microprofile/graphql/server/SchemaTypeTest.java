@@ -27,7 +27,7 @@ import static org.hamcrest.Matchers.nullValue;
  * Tests for {@link SchemaType} and {@link SchemaInputType} classes.
  */
 class SchemaTypeTest {
-    
+
     private static final Class<?> STRING = String.class;
     private static final Class<?> INTEGER = Integer.class;
 
@@ -66,8 +66,8 @@ class SchemaTypeTest {
         schemaType.setImplementingInterface("Contact");
 
         assertThat(schemaType.getSchemaAsString(), is("type Person implements Contact {\n" +
-                                                        "person(\nfilter: String, \nage: Int!\n): Person!\n" +
-                                                        "}\n"));
+                                                              "person(\nfilter: String, \nage: Int!\n): Person!\n" +
+                                                              "}\n"));
     }
 
     @Test
@@ -80,8 +80,8 @@ class SchemaTypeTest {
         assertThat(schemaType.getFieldDefinitions().get(0).equals(schemaFieldDefinition), is(true));
 
         assertThat(schemaType.getSchemaAsString(), is("type Person {\n" +
-                                                        "person(\nfilter: String\n): Person!\n" +
-                                                        "}\n"));
+                                                              "person(\nfilter: String\n): Person!\n" +
+                                                              "}\n"));
         assertThat(schemaType.getGraphQLName(), is("type"));
     }
 
@@ -96,8 +96,8 @@ class SchemaTypeTest {
         assertThat(schemaType.getFieldDefinitions().get(0).equals(schemaFieldDefinition), is(true));
 
         assertThat(schemaType.getSchemaAsString(), is("\"Type Description\"\ntype Person {\n" +
-                                                        "person(\nfilter: String\n): Person!\n" +
-                                                        "}\n"));
+                                                              "person(\nfilter: String\n): Person!\n" +
+                                                              "}\n"));
         assertThat(schemaType.getGraphQLName(), is("type"));
     }
 
@@ -110,8 +110,8 @@ class SchemaTypeTest {
         schemaType.addFieldDefinition(schemaFieldDefinition);
 
         assertThat(schemaType.getSchemaAsString(), is("type Person {\n" +
-                                                        "person(\nfilter: String, \nage: Int!\n): Person!\n" +
-                                                        "}\n"));
+                                                              "person(\nfilter: String, \nage: Int!\n): Person!\n" +
+                                                              "}\n"));
     }
 
     @Test
@@ -128,7 +128,8 @@ class SchemaTypeTest {
         schemaType.addFieldDefinition(schemaFieldDefinition);
 
         assertThat(schemaType.getSchemaAsString(),
-                   is("type Person {\nperson(\n\"Argument1 Description\"\nfilter: String, \n\"Argument 2 Description\"\nage: Int!\n)"
+                   is("type Person {\nperson(\n\"Argument1 Description\"\nfilter: String, \n\"Argument 2 Description\"\nage: "
+                              + "Int!\n)"
                               + ": Person!\n}\n"));
     }
 
@@ -143,8 +144,23 @@ class SchemaTypeTest {
         assertThat(schemaType.getGraphQLName(), is("interface"));
 
         assertThat(schemaType.getSchemaAsString(), is("interface Person {\n" +
-                                                        "person(\nfilter: String, \nage: Int! = 30\n): Person!\n" +
-                                                        "}\n"));
+                                                              "person(\nfilter: String, \nage: Int! = 30\n): Person!\n" +
+                                                              "}\n"));
+    }
+
+    @Test
+    public void testTypeInterfaceStringOutputWith2ArgumentsAndStringDefault() {
+        SchemaType schemaType = new SchemaType("Person", "com.oracle.Person");
+        SchemaFieldDefinition schemaFieldDefinition = new SchemaFieldDefinition("person", "Person", false, true, 0);
+        schemaFieldDefinition.addArgument(new SchemaArgument("filter", "String", false, "hello", STRING));
+        schemaFieldDefinition.addArgument(new SchemaArgument("age", "Int", true, 30, INTEGER));
+        schemaType.addFieldDefinition(schemaFieldDefinition);
+        schemaType.setIsInterface(true);
+        assertThat(schemaType.getGraphQLName(), is("interface"));
+
+        assertThat(schemaType.getSchemaAsString(), is("interface Person {\n" +
+                                                              "person(\nfilter: String = \"hello\", \nage: Int! = 30\n): Person!\n" +
+                                                              "}\n"));
     }
 
     @Test
@@ -161,9 +177,9 @@ class SchemaTypeTest {
         schemaType.addFieldDefinition(schemaFieldDefinition2);
 
         assertThat(schemaType.getSchemaAsString(), is("type Person {\n" +
-                                                        "person(\npersonId: String!\n): Person!\n" +
-                                                        "people(\nfilter: String, \nage: Int!\n): [Person]\n" +
-                                                        "}\n"));
+                                                              "person(\npersonId: String!\n): Person!\n" +
+                                                              "people(\nfilter: String, \nage: Int!\n): [Person]\n" +
+                                                              "}\n"));
     }
 
     @Test

@@ -105,10 +105,12 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
     }
 
     private SchemaGenerator schemaGenerator;
+    private Context defaultContext;
 
     @BeforeEach
     public void beforeEach() {
-        schemaGenerator = new SchemaGenerator();
+        defaultContext = ExecutionContext.getDefaultContext();
+        schemaGenerator = new SchemaGenerator(defaultContext);
     }
 
     @Test
@@ -271,10 +273,9 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
     @Test
     public void testGetSimpleName() throws ClassNotFoundException {
         assertThat(SchemaGeneratorHelper.getSimpleName(InnerClass.AnInnerClass.class.getName()), is("AnInnerClass"));
-        assertThat(SchemaGeneratorHelper.getSimpleName(SchemaGeneratorHelper.INT), is((SchemaGeneratorHelper.INT)));
+        assertThat(SchemaGeneratorHelper.getSimpleName(int.class.getName()), is(int.class.getName()));
         assertThat(SchemaGeneratorHelper.getSimpleName(SchemaGeneratorHelper.ID), is(SchemaGeneratorHelper.ID));
         assertThat(SchemaGeneratorHelper.getSimpleName(SchemaGeneratorHelper.BOOLEAN), is(SchemaGeneratorHelper.BOOLEAN));
-        assertThat(SchemaGeneratorHelper.getSimpleName(SchemaGeneratorHelper.FLOAT), is(SchemaGeneratorHelper.FLOAT));
         assertThat(SchemaGeneratorHelper.getSimpleName(SchemaGeneratorHelper.STRING), is(SchemaGeneratorHelper.STRING));
     }
 
@@ -387,7 +388,7 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
 
     @Test
     public void testGetRootType() throws NoSuchFieldException, NoSuchMethodException {
-        SchemaGenerator schemaGenerator = new SchemaGenerator();
+        SchemaGenerator schemaGenerator = new SchemaGenerator(ExecutionContext.getDefaultContext());
         ParameterizedType stringArrayListType = getParameterizedType("listStringArray");
         SchemaGenerator.RootTypeResult rootTypeName =
                 schemaGenerator.getRootTypeName(stringArrayListType.getActualTypeArguments()[0], 0,
@@ -459,7 +460,7 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
 
     @Test
     public void testFormatAnnotationFromSchema() throws IntrospectionException, ClassNotFoundException {
-        SchemaGenerator schemaGenerator = new SchemaGenerator();
+        SchemaGenerator schemaGenerator = new SchemaGenerator(ExecutionContext.getDefaultContext());
         Schema schema = schemaGenerator.generateSchemaFromClasses(SimpleContactWithNumberFormats.class);
         assertThat(schema, is(notNullValue()));
     }
@@ -539,7 +540,7 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
     }
 
     private void testEnum(Class<?> clazz, String expectedName) throws IntrospectionException, ClassNotFoundException {
-        SchemaGenerator schemaGenerator = new SchemaGenerator();
+        SchemaGenerator schemaGenerator = new SchemaGenerator(ExecutionContext.getDefaultContext());
         Schema schema = schemaGenerator.generateSchemaFromClasses(clazz);
         assertThat(schema, is(notNullValue()));
 

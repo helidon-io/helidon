@@ -137,9 +137,15 @@ public class SchemaGenerator {
     private Set<DiscoveredMethod> setAdditionalMethods = new HashSet<>();
 
     /**
+     * A {@link Context} to be passed to execution.
+     */
+    private Context context;
+
+    /**
      * Construct a {@link SchemaGenerator} instance.
      */
-    public SchemaGenerator() {
+    public SchemaGenerator(Context context) {
+        this.context = context;
         jandexUtils = new JandexUtils();
         jandexUtils.loadIndex();
         if (!jandexUtils.hasIndex()) {
@@ -211,13 +217,13 @@ public class SchemaGenerator {
 
                 if (typeAnnotation != null && inputAnnotation != null) {
                     ensureRuntimeException(LOGGER, "Class " + clazz.getName() + " has been annotated with"
-                                                       + " both Type and Input");
+                            + " both Type and Input");
                 }
 
                 if (typeAnnotation != null || interfaceAnnotation != null) {
                     if (interfaceAnnotation != null && !clazz.isInterface()) {
-                       ensureRuntimeException(LOGGER, "Class " + clazz.getName() + " has been annotated with"
-                                        + " @Interface but is not one");
+                        ensureRuntimeException(LOGGER, "Class " + clazz.getName() + " has been annotated with"
+                                + " @Interface but is not one");
                     }
 
                     // assuming value for annotation overrides @Name
@@ -320,7 +326,7 @@ public class SchemaGenerator {
      *
      * @param schema {@link Schema} to update
      */
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     private void processDefaultDateTimeValues(Schema schema) {
         // concatenate both the SchemaType and SchemaInputType
         Stream streamInputTypes = schema.getInputTypes().stream().map(it -> (SchemaType) it);
@@ -337,9 +343,10 @@ public class SchemaGenerator {
                         // formats differ so set the new format and DataFetcher
                         fd.setFormat(newFormat);
                         // create the raw array to pass to the retrieveFormattingDataFetcher method
-                        fd.setDataFetcher(retrieveFormattingDataFetcher(new String[] {DATE, newFormat[0], newFormat[1]},
-                                                                        fd.getName(), fd.getOriginalType().getName()));
-                        //fd.setReturnType(STRING);
+                        DataFetcher dataFetcher = retrieveFormattingDataFetcher(new String[] {DATE, newFormat[0], newFormat[1] },
+                                                                        fd.getName(), fd.getOriginalType().getName());
+                        fd.setDataFetcher(dataFetcher);
+                        // context.addFormatter(null, fd.getName(), (FormattingProvider) dataFetcher);
                     }
                 }
             });
@@ -514,30 +521,35 @@ public class SchemaGenerator {
                     String[] newFormat = ensureFormat(discoveredMethod.getReturnType(),
                                                       fd.getOriginalType().getName(), new String[0]);
                     if (newFormat.length == 2) {
-                        format = new String[] {DATE, newFormat[0], newFormat[1]};
+                        format = new String[] { DATE, newFormat[0], newFormat[1] };
                     }
                 }
                 if (format.length == 3) {
                     // a format exists on the method return type so format it after returning the value
                     final String graphQLType = getGraphQLType(fd.getReturnType());
                     final DataFetcher methodDataFetcher = DataFetcherUtils.newMethodDataFetcher(clazz, method, null,
-                                                                      fd.getArguments().toArray(new SchemaArgument[0]));
-                    final String[] newFormat = new String[] {format[0], format[1], format[2]};
+                                                                                                fd.getArguments().toArray(
+                                                                                                        new SchemaArgument[0]));
+                    final String[] newFormat = new String[] {format[0], format[1], format[2] };
                     if (isDateTimeScalar(discoveredMethod.getReturnType())) {
                         dataFetcher = DataFetcherFactories.wrapDataFetcher(methodDataFetcher,
-                                (e, v) -> {
-                                    DateTimeFormatter dateTimeFormatter = getCorrectDateFormatter(
-                                            graphQLType, newFormat[2], newFormat[1]);
-                                    return v instanceof TemporalAccessor
-                                        ? dateTimeFormatter.format((TemporalAccessor) v) : null;
-                                });
+                                                                           (e, v) -> {
+                                                                               DateTimeFormatter dateTimeFormatter =
+                                                                                       getCorrectDateFormatter(
+                                                                                       graphQLType, newFormat[2], newFormat[1]);
+                                                                               return v instanceof TemporalAccessor
+                                                                                       ? dateTimeFormatter
+                                                                                       .format((TemporalAccessor) v) : null;
+                                                                           });
                     } else {
                         dataFetcher = DataFetcherFactories.wrapDataFetcher(methodDataFetcher,
-                                (e, v) -> {
-                                    NumberFormat numberFormat = getCorrectNumberFormat(
-                                            graphQLType, newFormat[2], newFormat[1]);
-                                    return v != null && numberFormat != null ? numberFormat.format(v) : null;
-                                });
+                                                                           (e, v) -> {
+                                                                               NumberFormat numberFormat = getCorrectNumberFormat(
+                                                                                       graphQLType, newFormat[2], newFormat[1]);
+                                                                               return v != null && numberFormat != null
+                                                                                       ? numberFormat.format(v)
+                                                                                       : null;
+                                                                           });
                         fd.setReturnType(STRING);
                     }
                 } else {
@@ -697,7 +709,7 @@ public class SchemaGenerator {
         if (propertyName != null && format != null && format.length == 3 && format[0] != null) {
             if (!isGraphQLType(valueClassName)) {
                 dataFetcher = retrieveFormattingDataFetcher(format, propertyName, graphQLType);
-                graphQLType = SchemaGeneratorHelper.STRING;
+                context.addFormatter(discoveredMethod.method, propertyName, (FormattingProvider) dataFetcher);
             }
         } else {
             // Add a PropertyDataFetcher if the name has been changed via annotation
@@ -718,7 +730,7 @@ public class SchemaGenerator {
         fd.setArrayReturnTypeMandatory(discoveredMethod.isArrayReturnTypeMandatory());
 
         if (format != null && format.length == 3) {
-            fd.setFormat(new String[] {format[1], format[2] });
+            fd.setFormat(new String[] { format[1], format[2] });
         }
 
         fd.setDescription(discoveredMethod.getDescription());
@@ -767,10 +779,19 @@ public class SchemaGenerator {
                 });
             });
         });
+
+        // look through set of additional methods added for Source annotations
+        setAdditionalMethods.forEach(m -> {
+            m.getArguments().forEach(a -> {
+                if (a.getArgumentType().equals(longReturnType)) {
+                    a.setArgumentType(shortReturnType);
+                }
+            });
+        });
     }
 
     /**
-     * Return a {@link Map} of all the discovered methods which have the {@link Query} annotation.
+     * Return a {@link Map} of all the discovered methods which have the {@link Query} or {@link Mutation} annotations.
      *
      * @param clazz Class to introspect
      * @return a {@link Map} of the methods and return types
@@ -785,16 +806,16 @@ public class SchemaGenerator {
             boolean hasSourceAnnotation = Arrays.stream(m.getParameters()).anyMatch(p -> p.getAnnotation(Source.class) != null);
             if (isMutation && isQuery) {
                 ensureRuntimeException(LOGGER, "The class " + clazz.getName()
-                                               + " may not have both a Query and Mutation annotation");
+                        + " may not have both a Query and Mutation annotation");
             }
             if (isQuery || isMutation || hasSourceAnnotation) {
                 DiscoveredMethod discoveredMethod = generateDiscoveredMethod(m, clazz, null, false, true);
                 discoveredMethod.setMethodType(isQuery || hasSourceAnnotation ? QUERY_TYPE : MUTATION_TYPE);
                 String name = discoveredMethod.getName();
                 if (mapDiscoveredMethods.containsKey(name)) {
-                   ensureRuntimeException(LOGGER, "A method named " + name + " already exists on "
-                                          + "the " + (isMutation ? "mutation" : "query")
-                                          + " " + discoveredMethod.getMethod().getName());
+                    ensureRuntimeException(LOGGER, "A method named " + name + " already exists on "
+                            + "the " + (isMutation ? "mutation" : "query")
+                            + " " + discoveredMethod.getMethod().getName());
                 }
                 mapDiscoveredMethods.put(name, discoveredMethod);
             }
@@ -1059,6 +1080,7 @@ public class SchemaGenerator {
                 argument.setDescription(argumentDescription);
                 if (argumentFormat[0] != null) {
                     argument.setFormat(new String[] {argumentFormat[1], argumentFormat[2] });
+                    // TODO: Need to set return type
                 }
 
                 Source sourceAnnotation = parameter.getAnnotation(Source.class);

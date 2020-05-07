@@ -17,50 +17,37 @@
 package io.helidon.microprofile.graphql.server;
 
 import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
- * A default implementation of {@link Context} to be supplied to {@link ExecutionContext}.
- * Any other implementations should extend this.
+ * A Default Context to be supplied to {@link ExecutionContext}.
  */
-public class DefaultContext
-        implements Context {
+public interface Context {
 
     /**
-     * Defines a {@link Map} keyed by a {@link Pair} of full method name and argument name with value the formatter.
+     * Return the formatter for the given method and argument.
+     *
+     * @param method       {@link Method} method
+     * @param argumentName argument name
+     * @return the formatter for the given method and argument
      */
-    private Map<Pair<String, String>, FormattingProvider> mapFormatting = new HashMap<>();
+    public Object getFormatter(Method method, String argumentName);
 
     /**
-     * No-args constructor.
+     * Add a formatter for the given method and argument.
+     * @param method       {@link Method} method
+     * @param argumentName argument name
+     * @param formatter    formatter
      */
-    public DefaultContext() {
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public Object getFormatter(Method method, String argumentName) {
-        return mapFormatting.get(generatePair(method, argumentName));
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void addFormatter(Method method, String argumentName, FormattingProvider formatter) {
-        mapFormatting.put(generatePair(method, argumentName), formatter);
-    }
+    public void addFormatter(Method method, String argumentName, FormattingProvider formatter);
 
     /**
      * Generate a {@link Pair} from the given method and argument.
-     *
      * @param method       {@link Method} method
      * @param argumentName argument name
      * @return a new {@link Pair}
      */
     private Pair<String, String> generatePair(Method method, String argumentName) {
-        return new Pair<>(method.getDeclaringClass() + "_" + method.getName(), argumentName);
+        return new Pair<>(method.getClass() + "_" + method.getName(), argumentName);
     }
+
 }

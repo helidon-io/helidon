@@ -47,7 +47,7 @@ public class ExceptionHandlingIT
         setupConfig(null);
 
         setupIndex(indexFileName);
-        ExecutionContext<DefaultContext> executionContext = new ExecutionContext<>(defaultContext);
+        ExecutionContext executionContext =  new ExecutionContext(defaultContext);
         assertThat(executionContext, is(notNullValue()));
         assertThat(executionContext.getDefaultErrorMessage(), is("Server Error"));
         assertThat(executionContext.getExceptionBlacklist().size(), is(0));
@@ -61,7 +61,7 @@ public class ExceptionHandlingIT
 
         setupIndex(indexFileName);
 
-        ExecutionContext<DefaultContext> executionContext = new ExecutionContext<>(defaultContext);
+        ExecutionContext executionContext =  new ExecutionContext(defaultContext);
         assertThat(executionContext.getDefaultErrorMessage(), is("new message"));
     }
 
@@ -71,7 +71,7 @@ public class ExceptionHandlingIT
 
         setupIndex(indexFileName);
 
-        ExecutionContext<DefaultContext> executionContext = new ExecutionContext<>(defaultContext);
+        ExecutionContext executionContext =  new ExecutionContext(defaultContext);
         assertThat(executionContext.getDefaultErrorMessage(), is("Server Error"));
         assertThat(executionContext.getExceptionBlacklist().size(), is(2));
         assertThat(executionContext.getExceptionWhitelist().size(), is(1));
@@ -85,7 +85,7 @@ public class ExceptionHandlingIT
     @Test
     public void testEmptyErrorPayloads() throws IOException {
         setupIndex(indexFileName, ExceptionQueries.class);
-        ExecutionContext<DefaultContext> executionContext = new ExecutionContext<>(new DefaultContext());
+        ExecutionContext executionContext =  new ExecutionContext(new DefaultContext());
 
         Map<String, Object> errorMap = executionContext.newErrorPayload();
         assertPayload(errorMap);
@@ -98,7 +98,7 @@ public class ExceptionHandlingIT
     @Test
     public void testErrorPayLoadWithMessages() throws IOException {
         setupIndex(indexFileName, ExceptionQueries.class);
-        ExecutionContext<DefaultContext> executionContext = new ExecutionContext<>(new DefaultContext());
+        ExecutionContext executionContext =  new ExecutionContext(new DefaultContext());
 
         Map<String, Object> errorMap = executionContext.newErrorPayload();
         assertPayload(errorMap);
@@ -119,7 +119,7 @@ public class ExceptionHandlingIT
     @Test
     public void testErrorPayLoadWithMessagesAndLocations() throws IOException {
         setupIndex(indexFileName, ExceptionQueries.class);
-        ExecutionContext<DefaultContext> executionContext = new ExecutionContext<>(new DefaultContext());
+        ExecutionContext executionContext =  new ExecutionContext(new DefaultContext());
 
         Map<String, Object> errorMap = executionContext.newErrorPayload();
         assertPayload(errorMap);
@@ -151,7 +151,7 @@ public class ExceptionHandlingIT
     @Test
     public void testErrorPayLoadWithMessagesLocationsAndExtensions() throws IOException {
         setupIndex(indexFileName, ExceptionQueries.class);
-        ExecutionContext<DefaultContext> executionContext = new ExecutionContext<>(new DefaultContext());
+        ExecutionContext executionContext =  new ExecutionContext(new DefaultContext());
 
         Map<String, Object> errorMap = executionContext.newErrorPayload();
         assertPayload(errorMap);
@@ -213,7 +213,7 @@ public class ExceptionHandlingIT
     }
 
     private void assertMessageValue(String query, String expectedMessage, boolean dataExpected) {
-        ExecutionContext<DefaultContext> executionContext = new ExecutionContext<>(new DefaultContext());
+        ExecutionContext executionContext =  new ExecutionContext(new DefaultContext());
         Map<String, Object> mapResults = executionContext.execute(query);
         if (dataExpected && mapResults.size() != 2) {
             System.out.println(JsonUtils.convertMapToJson(mapResults));

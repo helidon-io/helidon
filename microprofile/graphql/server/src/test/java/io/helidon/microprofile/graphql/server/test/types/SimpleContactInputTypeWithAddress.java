@@ -16,8 +16,6 @@
 
 package io.helidon.microprofile.graphql.server.test.types;
 
-import java.util.Objects;
-
 import org.eclipse.microprofile.graphql.Input;
 
 /**

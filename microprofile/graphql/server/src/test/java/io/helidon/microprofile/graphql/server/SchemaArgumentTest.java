@@ -33,9 +33,9 @@ class SchemaArgumentTest {
 
     @Test
     public void testConstructors() {
-        SchemaArgument schemaArgument = new SchemaArgument("name", "Integer", true, null, INTEGER);
+        SchemaArgument schemaArgument = new SchemaArgument("name", "Int", true, null, INTEGER);
         assertThat(schemaArgument.getArgumentName(), is("name"));
-        assertThat(schemaArgument.getArgumentType(), is("Integer"));
+        assertThat(schemaArgument.getArgumentType(), is("Int"));
         assertThat(schemaArgument.isMandatory(), is(true));
         assertThat(schemaArgument.getDefaultValue(), is(nullValue()));
         assertThat(schemaArgument.getOriginalType().getName(), is(Integer.class.getName()));
@@ -75,17 +75,17 @@ class SchemaArgumentTest {
 
     @Test
     public void testSchemaGeneration() {
-        SchemaArgument schemaArgument = new SchemaArgument("name", "Integer", true, null, INTEGER);
-        assertThat(schemaArgument.getSchemaAsString(), is("name: Integer!"));
+        SchemaArgument schemaArgument = new SchemaArgument("name", "Int", true, null, INTEGER);
+        assertThat(schemaArgument.getSchemaAsString(), is("name: Int!"));
 
-        schemaArgument = new SchemaArgument("name", "Integer", true, 10, INTEGER);
-        assertThat(schemaArgument.getSchemaAsString(), is("name: Integer! = 10"));
+        schemaArgument = new SchemaArgument("name", "Int", true, 10, INTEGER);
+        assertThat(schemaArgument.getSchemaAsString(), is("name: Int! = 10"));
 
-        schemaArgument = new SchemaArgument("name", "Integer", false, null, INTEGER);
-        assertThat(schemaArgument.getSchemaAsString(), is("name: Integer"));
+        schemaArgument = new SchemaArgument("name", "Int", false, null, INTEGER);
+        assertThat(schemaArgument.getSchemaAsString(), is("name: Int"));
 
-        schemaArgument = new SchemaArgument("name", "Integer", false, 10, INTEGER);
-        assertThat(schemaArgument.getSchemaAsString(), is("name: Integer = 10"));
+        schemaArgument = new SchemaArgument("name", "Int", false, 10, INTEGER);
+        assertThat(schemaArgument.getSchemaAsString(), is("name: Int = 10"));
 
         schemaArgument = new SchemaArgument("name", "String", false, "The Default Value", STRING);
         assertThat(schemaArgument.getSchemaAsString(), is("name: String = \"The Default Value\""));
@@ -93,8 +93,8 @@ class SchemaArgumentTest {
         schemaArgument = new SchemaArgument("name", "String", true, "The Default Value", STRING);
         assertThat(schemaArgument.getSchemaAsString(), is("name: String! = \"The Default Value\""));
 
-        schemaArgument = new SchemaArgument("name", "Integer", false, 10, INTEGER);
+        schemaArgument = new SchemaArgument("name", "Int", false, 10, INTEGER);
         schemaArgument.setDescription("Description");
-        assertThat(schemaArgument.getSchemaAsString(), is("\"Description\"\nname: Integer = 10"));
+        assertThat(schemaArgument.getSchemaAsString(), is("\"Description\"\nname: Int = 10"));
     }
 }

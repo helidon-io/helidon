@@ -25,6 +25,7 @@ import org.eclipse.microprofile.graphql.Mutation;
 import org.eclipse.microprofile.graphql.Name;
 import org.eclipse.microprofile.graphql.NumberFormat;
 import org.eclipse.microprofile.graphql.Query;
+import java.math.BigDecimal;
 
 /**
  * Class that holds queries and mutations that have various formatting types.
@@ -38,7 +39,7 @@ public class NumberFormatQueriesAndMutations {
 
     @Query("simpleFormattingQuery")
     public SimpleContactWithNumberFormats retrieveFormattedObject() {
-        return new SimpleContactWithNumberFormats(1, "Tim", 50, 1200.0f, 10, Long.MAX_VALUE);
+        return new SimpleContactWithNumberFormats(1, "Tim", 50, 1200.0f, 10, Long.MAX_VALUE, BigDecimal.valueOf(100));
     }
 
     @Mutation("generateDoubleValue")
@@ -50,5 +51,15 @@ public class NumberFormatQueriesAndMutations {
     @Mutation("createSimpleContactWithNumberFormats")
     public SimpleContactWithNumberFormats createContact(@Name("contact") SimpleContactWithNumberFormats contact) {
         return contact;
+    }
+
+    @Query
+    public int echoNumberUnformatted(@Name("number") @NumberFormat("ID-#########") int number) {
+        return number;
+    }
+
+    @Query
+    public BigDecimal echoBigDecimalUsingFormat(@Name("param1") @NumberFormat("BD-####") BigDecimal param1) {
+        return param1;
     }
 }

@@ -52,6 +52,10 @@ import org.eclipse.microprofile.graphql.Name;
 import org.eclipse.microprofile.graphql.Query;
 import org.eclipse.microprofile.graphql.Type;
 
+import static io.helidon.microprofile.graphql.server.CustomScalars.CUSTOM_BIGDECIMAL_SCALAR;
+import static io.helidon.microprofile.graphql.server.CustomScalars.CUSTOM_BIGINTEGER_SCALAR;
+import static io.helidon.microprofile.graphql.server.CustomScalars.CUSTOM_FLOAT_SCALAR;
+import static io.helidon.microprofile.graphql.server.CustomScalars.CUSTOM_INT_SCALAR;
 import static io.helidon.microprofile.graphql.server.ElementGenerator.OPEN_SQUARE;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.getDefaultDateTimeFormat;
 import static io.helidon.microprofile.graphql.server.SchemaGenerator.GET;
@@ -94,9 +98,74 @@ public final class SchemaGeneratorHelper {
     protected static final String LOCAL_DATE_CLASS = LocalDate.class.getName();
 
     /**
+     * {@link BigDecimal} class name.
+     */
+    protected static final String BIG_DECIMAL_CLASS = BigDecimal.class.getName();
+
+    /**
      * {@link Long} class name.
      */
     protected static final String LONG_CLASS = Long.class.getName();
+
+    /**
+     * Class name for long primitive.
+     */
+    protected static final String LONG_PRIMITIVE_CLASS = long.class.getName();
+
+    /**
+     * {@link Float} class name.
+     */
+    protected static final String FLOAT_CLASS = Float.class.getName();
+
+    /**
+     * Class name for float primitive.
+     */
+    protected static final String FLOAT_PRIMITIVE_CLASS = float.class.getName();
+
+    /**
+     * {@link Double} class name.
+     */
+    protected static final String DOUBLE_CLASS = Double.class.getName();
+
+    /**
+     * Class name for double primitive.
+     */
+    protected static final String DOUBLE_PRIMITIVE_CLASS = double.class.getName();
+
+    /**
+     * Class name for {@link BigInteger}.
+     */
+    protected static final String BIG_INTEGER_CLASS = BigInteger.class.getName();
+
+    /**
+     * Class name for {@link Integer}.
+     */
+    protected static final String INTEGER_CLASS = Integer.class.getName();
+
+    /**
+     * Class name for int.
+     */
+    protected static final String INTEGER_PRIMITIVE_CLASS = int.class.getName();
+
+    /**
+     * Class name for {@link Byte}.
+     */
+    protected static final String BYTE_CLASS = Byte.class.getName();
+
+    /**
+     * Class name for byte.
+     */
+    protected static final String BYTE_PRIMITIVE_CLASS = byte.class.getName();
+
+    /**
+     * Class name for {@link Short}.
+     */
+    protected static final String SHORT_CLASS = Short.class.getName();
+
+    /**
+     * Class name for short.
+     */
+    protected static final String SHORT_PRIMITIVE_CLASS = short.class.getName();
 
     /**
      * Date scalar.
@@ -113,121 +182,7 @@ public final class SchemaGeneratorHelper {
      */
     protected static final String TIME_SCALAR = "Time";
 
-
-    /**
-     * Logger.
-     */
-    private static final Logger LOGGER = Logger.getLogger(SchemaGeneratorHelper.class.getName());
-
-    /**
-     * List of supported scalars keyed by the full class name.
-     */
-    static final Map<String, SchemaScalar> SUPPORTED_SCALARS = new HashMap<>() {{
-        // Object Scalar
-        put(Object.class.getName(), new SchemaScalar("Object", Object.class.getName(), ExtendedScalars.Object, null));
-
-        // Time scalars
-        put(OffsetTime.class.getName(),
-            new SchemaScalar(TIME_SCALAR, OFFSET_TIME_CLASS, CustomTimeScalar.INSTANCE, "HH:mm:ssZ"));
-        put(LocalTime.class.getName(),
-            new SchemaScalar(TIME_SCALAR, LOCAL_TIME_CLASS, CustomTimeScalar.INSTANCE, "HH:mm:ss"));
-
-        // DateTime scalars
-        put(OffsetDateTime.class.getName(),
-            new SchemaScalar(DATETIME_SCALAR, OFFSET_DATE_TIME_CLASS, CustomDateTimeScalar.INSTANCE,
-                             "yyyy-MM-dd'T'HH:mm:ssZ"));
-        put(ZonedDateTime.class.getName(),
-            new SchemaScalar(DATETIME_SCALAR, ZONED_DATE_TIME_CLASS, CustomDateTimeScalar.INSTANCE,
-                             "yyyy-MM-dd'T'HH:mm:ssZ'['VV']'"));
-        put(LocalDateTime.class.getName(),
-            new SchemaScalar(DATETIME_SCALAR, LOCAL_DATE_TIME_CLASS, CustomDateTimeScalar.INSTANCE, "yyyy-MM-dd'T'HH:mm:ss"));
-
-        // Date scalar
-        put(LocalDate.class.getName(), new SchemaScalar(DATE_SCALAR, LOCAL_DATE_CLASS, ExtendedScalars.Date, "yyyy-MM-dd"));
-
-        // BigDecimal scalars
-        put(BigDecimal.class.getName(), new SchemaScalar(BIG_DECIMAL, LONG_CLASS, Scalars.GraphQLBigDecimal, null));
-
-        // BigInter scalars
-        put(BigInteger.class.getName(), new SchemaScalar(BIG_INTEGER, LONG_CLASS, Scalars.GraphQLBigInteger, null));
-        put(long.class.getName(), new SchemaScalar(BIG_INTEGER, LONG_CLASS, Scalars.GraphQLBigInteger, null));
-        put(Long.class.getName(), new SchemaScalar(BIG_INTEGER, LONG_CLASS, Scalars.GraphQLBigInteger, null));
-    }};
-
-    /**
-     * List of types the should map to a GraphQL Float.
-     */
-    static final List<String> FLOAT_LIST = new ArrayList<>() {{
-        add("double");
-        add("Double");
-        add("java.lang.Double");
-        add("float");
-        add("Float");
-        add("java.lang.Float");
-        add("java.lang.Number");
-    }};
-
-    /**
-     * List of types that should map to a GraphQL Boolean.
-     */
-    static final List<String> BOOLEAN_LIST = new ArrayList<>() {{
-        add("boolean");
-        add("java.lang.Boolean");
-    }};
-
-    /**
-     * List of types that should map to a GraphQL Int.
-     */
-    static final List<String> INTEGER_LIST = new ArrayList<>() {{
-        add("short");
-        add("int");
-        add("Short");
-        add("Integer");
-        add("java.lang.Integer");
-        add("java.lang.Short");
-        add("java.lang.Byte");
-        add("byte");
-    }};
-
-    /**
-     * List of types that should map to a GraphQL String.
-     */
-    static final List<String> STRING_LIST = new ArrayList<>() {{
-        add("java.lang.String");
-        add("java.lang.Character");
-        add("char");
-    }};
-
-    /**
-     * List of array primitive types and their array mapping. See https://docs.oracle.com/javase/6/docs/api/java/lang/Class
-     * .html#getName%28%29
-     */
-    static final Map<String, String> PRIMITIVE_ARRAY_MAP = new HashMap<>() {{
-        put("[Z", "boolean");
-        put("[B", "byte");
-        put("[C", "char");
-        put("[D", "double");
-        put("[F", "float");
-        put("[I", "int");
-        put("[J", "long");
-        put("[S", "short");
-    }};
-
-    /**
-     * List of all Java primitives.
-     */
-    static final List<String> JAVA_PRIMITIVE_TYPES = new ArrayList<>() {{
-        add("byte");
-        add("short");
-        add("int");
-        add("long");
-        add("float");
-        add("double");
-        add("boolean");
-        add("char");
-    }};
-
-    /**
+     /**
      * Defines a {@link BigDecimal} type.
      */
     static final String BIG_DECIMAL = "BigDecimal";
@@ -268,24 +223,105 @@ public final class SchemaGeneratorHelper {
     protected static final String BOOLEAN = "Boolean";
 
     /**
-     * Class name for long primitive.
+     * Logger.
      */
-    protected static final String LONG_PRIMITIVE = long.class.getName();
+    private static final Logger LOGGER = Logger.getLogger(SchemaGeneratorHelper.class.getName());
 
     /**
-     * Class name for Long object.
+     * List of supported scalars keyed by the full class name.
      */
-    protected static final String LONG_OBJECT = Long.class.getName();
+    static final Map<String, SchemaScalar> SUPPORTED_SCALARS = new HashMap<>() {{
+        // Object Scalar
+        put(Object.class.getName(), new SchemaScalar("Object", Object.class.getName(), ExtendedScalars.Object, null));
+
+        // Time scalars
+        put(OffsetTime.class.getName(),
+            new SchemaScalar(TIME_SCALAR, OFFSET_TIME_CLASS, CustomTimeScalar.INSTANCE, "HH:mm:ssZ"));
+        put(LocalTime.class.getName(),
+            new SchemaScalar(TIME_SCALAR, LOCAL_TIME_CLASS, CustomTimeScalar.INSTANCE, "HH:mm:ss"));
+
+        // DateTime scalars
+        put(OFFSET_DATE_TIME_CLASS,
+            new SchemaScalar(DATETIME_SCALAR, OFFSET_DATE_TIME_CLASS, CustomDateTimeScalar.INSTANCE,
+                             "yyyy-MM-dd'T'HH:mm:ssZ"));
+        put(ZONED_DATE_TIME_CLASS,
+            new SchemaScalar(DATETIME_SCALAR, ZONED_DATE_TIME_CLASS, CustomDateTimeScalar.INSTANCE,
+                             "yyyy-MM-dd'T'HH:mm:ssZ'['VV']'"));
+        put(LOCAL_DATE_TIME_CLASS,
+            new SchemaScalar(DATETIME_SCALAR, LOCAL_DATE_TIME_CLASS, CustomDateTimeScalar.INSTANCE, "yyyy-MM-dd'T'HH:mm:ss"));
+
+        // Date scalar
+        put(LOCAL_DATE_CLASS, new SchemaScalar(DATE_SCALAR, LOCAL_DATE_CLASS, ExtendedScalars.Date, "yyyy-MM-dd"));
+
+        // BigDecimal scalars
+        put(BIG_DECIMAL_CLASS, new SchemaScalar(BIG_DECIMAL, BIG_DECIMAL_CLASS, CUSTOM_BIGDECIMAL_SCALAR, null));
+
+        // BigInteger scalars
+        put(BIG_INTEGER_CLASS, new SchemaScalar(BIG_INTEGER, BIG_INTEGER_CLASS, CUSTOM_BIGINTEGER_SCALAR, null));
+        put(LONG_PRIMITIVE_CLASS, new SchemaScalar(BIG_INTEGER, LONG_CLASS, CUSTOM_BIGINTEGER_SCALAR, null));
+        put(LONG_CLASS, new SchemaScalar(BIG_INTEGER, LONG_CLASS, CUSTOM_BIGINTEGER_SCALAR, null));
+
+        // Int scalars
+        put(INTEGER_CLASS, new SchemaScalar(INT, INTEGER_CLASS, CUSTOM_INT_SCALAR, null));
+        put(INTEGER_PRIMITIVE_CLASS, new SchemaScalar(INT, INTEGER_PRIMITIVE_CLASS, CUSTOM_INT_SCALAR, null));
+        put(BYTE_CLASS, new SchemaScalar(INT, BYTE_CLASS, CUSTOM_INT_SCALAR, null));
+        put(BYTE_PRIMITIVE_CLASS, new SchemaScalar(INT, BYTE_PRIMITIVE_CLASS, CUSTOM_INT_SCALAR, null));
+        put(SHORT_CLASS, new SchemaScalar(INT, SHORT_CLASS, CUSTOM_INT_SCALAR, null));
+        put(SHORT_PRIMITIVE_CLASS, new SchemaScalar(INT, SHORT_PRIMITIVE_CLASS, CUSTOM_INT_SCALAR, null));
+
+        // Float scalars
+        put(FLOAT_CLASS, new SchemaScalar(FLOAT, FLOAT_CLASS, CUSTOM_FLOAT_SCALAR, null));
+        put(FLOAT_PRIMITIVE_CLASS, new SchemaScalar(FLOAT, FLOAT_PRIMITIVE_CLASS, CUSTOM_FLOAT_SCALAR, null));
+        put(DOUBLE_CLASS, new SchemaScalar(FLOAT, DOUBLE_CLASS, CUSTOM_FLOAT_SCALAR, null));
+        put(DOUBLE_PRIMITIVE_CLASS, new SchemaScalar(FLOAT, DOUBLE_PRIMITIVE_CLASS, CUSTOM_FLOAT_SCALAR, null));
+    }};
 
     /**
-     * Class name for {@link BigDecimal}.
+     * List of types that should map to a GraphQL Boolean.
      */
-    protected static final String BIG_DECIMAL_OBJECT = BigDecimal.class.getName();
+    static final List<String> BOOLEAN_LIST = new ArrayList<>() {{
+        add("boolean");
+        add("java.lang.Boolean");
+    }};
+
 
     /**
-     * Class name for {@link BigInteger}.
+     * List of types that should map to a GraphQL String.
      */
-    protected static final String BIG_INTEGER_OBJECT = BigInteger.class.getName();
+    static final List<String> STRING_LIST = new ArrayList<>() {{
+        add("java.lang.String");
+        add("java.lang.Character");
+        add("char");
+    }};
+
+    /**
+     * List of array primitive types and their array mapping. See https://docs.oracle.com/javase/6/docs/api/java/lang/Class
+     * .html#getName%28%29
+     */
+    static final Map<String, String> PRIMITIVE_ARRAY_MAP = new HashMap<>() {{
+        put("[Z", "boolean");
+        put("[B", "byte");
+        put("[C", "char");
+        put("[D", "double");
+        put("[F", "float");
+        put("[I", "int");
+        put("[J", "long");
+        put("[S", "short");
+    }};
+
+    /**
+     * List of all Java primitives.
+     */
+    static final List<String> JAVA_PRIMITIVE_TYPES = new ArrayList<>() {{
+        add("byte");
+        add("short");
+        add("int");
+        add("long");
+        add("float");
+        add("double");
+        add("boolean");
+        add("char");
+    }};
 
     /**
      * Private no-args constructor.
@@ -337,10 +373,9 @@ public final class SchemaGeneratorHelper {
      */
     protected static String getSimpleName(String className, boolean ignoreInputNameAnnotation)
             throws ClassNotFoundException {
-        if (INT.equals(className)
-                || FLOAT.equals(className) || ID.equals(className)
+        if (ID.equals(className)
                 || STRING.equals(className) || BOOLEAN.equalsIgnoreCase(className)
-                || LONG_OBJECT.equals(className) || LONG_PRIMITIVE.equals(className)) {
+                || getScalar(className) != null) {
             return className;
         }
         // return the type name taking into account any annotations
@@ -375,11 +410,7 @@ public final class SchemaGeneratorHelper {
      * @return the GraphQL type
      */
     protected static String getGraphQLType(String className) {
-        if (INTEGER_LIST.contains(className)) {
-            return INT;
-        } else if (FLOAT_LIST.contains(className)) {
-            return FLOAT;
-        } else if (BOOLEAN_LIST.contains(className)) {
+        if (BOOLEAN_LIST.contains(className)) {
             return BOOLEAN;
         } else if (STRING_LIST.contains(className)) {
             return STRING;
@@ -402,15 +433,13 @@ public final class SchemaGeneratorHelper {
                 || DATETIME_SCALAR.equals(scalarName);
     }
     /**
-     * Return true if the type type is a GraphQLType.
+     * Return true if the type type is a native GraphQLType.
      *
      * @param type the type to check
      * @return true if the type type is a GraphQLType
      */
     protected static boolean isGraphQLType(String type) {
-        return INT.equals(type) || FLOAT.equals(type)
-                || BOOLEAN.equals(type) || STRING.equals(type)
-                || ID.equals(type);
+        return BOOLEAN.equals(type) || STRING.equals(type) || ID.equals(type);
     }
 
     /**

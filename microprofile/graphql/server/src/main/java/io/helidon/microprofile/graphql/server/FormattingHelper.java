@@ -29,18 +29,23 @@ import javax.json.bind.annotation.JsonbNumberFormat;
 import org.eclipse.microprofile.graphql.DateFormat;
 
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.BIG_DECIMAL;
-import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.BIG_DECIMAL_OBJECT;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.BIG_DECIMAL_CLASS;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.BIG_INTEGER;
-import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.BIG_INTEGER_OBJECT;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.BIG_INTEGER_CLASS;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.DEFAULT_LOCALE;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.DOUBLE_CLASS;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.DOUBLE_PRIMITIVE_CLASS;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.FLOAT;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.FLOAT_CLASS;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.FLOAT_PRIMITIVE_CLASS;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.INT;
-import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.INTEGER_LIST;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.INTEGER_CLASS;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.INTEGER_PRIMITIVE_CLASS;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.LOCAL_DATE_CLASS;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.LOCAL_DATE_TIME_CLASS;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.LOCAL_TIME_CLASS;
-import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.LONG_OBJECT;
-import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.LONG_PRIMITIVE;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.LONG_CLASS;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.LONG_PRIMITIVE_CLASS;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.OFFSET_DATE_TIME_CLASS;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.OFFSET_TIME_CLASS;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.SUPPORTED_SCALARS;
@@ -75,7 +80,7 @@ public class FormattingHelper {
     /**
      * Indicates no formatting applied.
      */
-    private static final String[] NO_FORMATTING = new String[] { null, null, null };
+    private static final String[] NO_FORMATTING = new String[] {null, null, null };
 
     /**
      * No-args constructor.
@@ -93,7 +98,7 @@ public class FormattingHelper {
     protected static String[] getDefaultDateTimeFormat(String scalarName, String clazzName) {
         for (SchemaScalar scalar : SUPPORTED_SCALARS.values()) {
             if (scalarName.equals(scalar.getName()) && scalar.getActualClass().equals(clazzName)) {
-                return new String[] { scalar.getDefaultFormat(), DEFAULT_LOCALE };
+                return new String[] {scalar.getDefaultFormat(), DEFAULT_LOCALE };
             }
         }
         return NO_DEFAULT_FORMAT;
@@ -114,15 +119,20 @@ public class FormattingHelper {
         NumberFormat numberFormat;
         if (FLOAT.equals(type)
                 || BIG_DECIMAL.equals(type)
-                || BIG_DECIMAL_OBJECT.equals(type)
+                || BIG_DECIMAL_CLASS.equals(type)
+                || FLOAT_CLASS.equals(type)
+                || FLOAT_PRIMITIVE_CLASS.equals(type)
         ) {
             numberFormat = NumberFormat.getNumberInstance(actualLocale);
         } else if (INT.equals(type)
-                || BIG_INTEGER.equals(type)
-                || LONG_OBJECT.equals(type)
-                || BIG_INTEGER_OBJECT.equals(type)
-                || LONG_PRIMITIVE.equals(type)
-                || INTEGER_LIST.contains(type)) {
+                || INTEGER_CLASS.equals(type)
+                || INTEGER_PRIMITIVE_CLASS.equals(type)
+                || BIG_INTEGER_CLASS.equals(type)
+                || LONG_CLASS.equals(type)
+                || DOUBLE_CLASS.equals(type)
+                || DOUBLE_PRIMITIVE_CLASS.equals(type)
+                || LONG_PRIMITIVE_CLASS.equals(type)
+                || BIG_INTEGER.equals(type)) {
             numberFormat = NumberFormat.getIntegerInstance(actualLocale);
         } else {
             return null;

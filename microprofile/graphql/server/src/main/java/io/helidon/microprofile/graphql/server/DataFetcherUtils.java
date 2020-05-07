@@ -29,9 +29,10 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Logger;
 
+import javax.enterprise.inject.spi.CDI;
+
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.PropertyDataFetcher;
-import javax.enterprise.inject.spi.CDI;
 
 import graphql.GraphQLException;
 import graphql.schema.DataFetcher;
@@ -40,6 +41,7 @@ import graphql.schema.PropertyDataFetcherHelper;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.getCorrectDateFormatter;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.getCorrectNumberFormat;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ID;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ensureRuntimeException;
 
 /**
  * Utilities for working with {@link DataFetcher}s.
@@ -84,6 +86,8 @@ public class DataFetcherUtils {
                 }
             }
 
+            Context context = environment.getContext();
+
             if (args.length > 0) {
                 for (SchemaArgument argument : args) {
                     Object key = environment.getArgument(argument.getArgumentName());
@@ -118,12 +122,19 @@ public class DataFetcherUtils {
     /**
      * An implementation of a {@link PropertyDataFetcher} which returns a formatted number.
      */
-    public static class NumberFormattingDataFetcher extends PropertyDataFetcher {
+    public static class NumberFormattingDataFetcher
+            extends PropertyDataFetcher
+            implements NumberFormattingProvider {
 
         /**
          * {@link NumberFormat} to format with.
          */
         private NumberFormat numberFormat;
+
+        /**
+         * Indicates if this is a scalar.
+         */
+        private boolean isScalar;
 
         /**
          * Construct a new NumberFormattingDataFetcher.
@@ -135,12 +146,28 @@ public class DataFetcherUtils {
         public NumberFormattingDataFetcher(String propertyName, String type, String valueFormat, String locale) {
             super(propertyName);
             numberFormat = getCorrectNumberFormat(type, locale, valueFormat);
+            if (numberFormat == null) {
+                ensureRuntimeException(LOGGER, "Unable to get number format for property '"
+                        + propertyName + "' and type '" + type + "'");
+            }
+            isScalar = SchemaGeneratorHelper.getScalar(type) != null;
         }
 
         @Override
         public Object get(DataFetchingEnvironment environment) {
             Object originalResult = super.get(environment);
+            if (isScalar) {
+                return new FormattedNumberImpl(numberFormat, originalResult != null ? numberFormat.format(originalResult) : null);
+            }
             return originalResult != null ? numberFormat.format(originalResult) : null;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public NumberFormat getNumberFormat() {
+            return numberFormat;
         }
     }
 

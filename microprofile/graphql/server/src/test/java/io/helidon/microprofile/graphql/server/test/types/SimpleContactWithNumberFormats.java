@@ -20,6 +20,7 @@ import javax.json.bind.annotation.JsonbNumberFormat;
 
 import org.eclipse.microprofile.graphql.NumberFormat;
 import org.eclipse.microprofile.graphql.Type;
+import java.math.BigDecimal;
 
 /**
  * Defines a simple contact which contains number formats.
@@ -41,20 +42,27 @@ public class SimpleContactWithNumberFormats {
 
     private Long longValue;
 
+    @NumberFormat("BigDecimal-##########")
+    private BigDecimal bigDecimal;
+
     public Integer getFormatMethod(@NumberFormat("0 'years old'") int age) {
         return age;
     }
 
+
     public SimpleContactWithNumberFormats(Integer id,
                                           String name, Integer age,
                                           Float bankBalance,
-                                         int value, Long longValue) {
+                                          int value,
+                                          Long longValue,
+                                          BigDecimal bigDecimal) {
         this.id = id;
         this.name = name;
         this.age = age;
         this.bankBalance = bankBalance;
         this.value = value;
         this.longValue = longValue;
+        this.bigDecimal = bigDecimal;
     }
 
     @NumberFormat("0 'id'")
@@ -108,5 +116,13 @@ public class SimpleContactWithNumberFormats {
 
     public void setLongValue(Long longValue) {
         this.longValue = longValue;
+    }
+
+    public BigDecimal getBigDecimal() {
+        return bigDecimal;
+    }
+
+    public void setBigDecimal(BigDecimal bigDecimal) {
+        this.bigDecimal = bigDecimal;
     }
 }

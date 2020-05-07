@@ -20,13 +20,9 @@ import java.beans.IntrospectionException;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.time.LocalDate;
-import java.time.OffsetTime;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -75,7 +71,6 @@ import io.helidon.microprofile.graphql.server.test.types.TypeWithIDs;
 import io.helidon.microprofile.graphql.server.test.types.Vehicle;
 import io.helidon.microprofile.graphql.server.test.types.VehicleIncident;
 
-import javax.swing.text.DateFormatter;
 import org.eclipse.microprofile.graphql.NonNull;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -102,7 +97,7 @@ public class SchemaGeneratorIT
     public void testTypeGenerationWithNoName() throws IOException, IntrospectionException, ClassNotFoundException {
         setupIndex(indexFileName, Person.class);
 
-        SchemaGenerator schemaGenerator = new SchemaGenerator();
+        SchemaGenerator schemaGenerator = new SchemaGenerator(defaultContext);
         Schema schema = schemaGenerator.generateSchema();
         assertThat(schema.getTypeByName("Person"), is(notNullValue()));
         assertThat(schema.getTypeByName("Address"), is(notNullValue()));
@@ -114,7 +109,7 @@ public class SchemaGeneratorIT
     @Test
     public void testLevel0() throws IOException, IntrospectionException, ClassNotFoundException {
         setupIndex(indexFileName, Level0.class);
-        SchemaGenerator schemaGenerator = new SchemaGenerator();
+        SchemaGenerator schemaGenerator = new SchemaGenerator(defaultContext);
         Schema schema = schemaGenerator.generateSchema();
         assertThat(schema.containsTypeWithName("Level0"), is(true));
         assertThat(schema.containsTypeWithName("Level1"), is(true));
@@ -125,7 +120,7 @@ public class SchemaGeneratorIT
     @Test
     public void testMultipleLevelsOfGenerics() throws IntrospectionException, ClassNotFoundException, IOException {
         setupIndex(indexFileName, MultiLevelListsAndArrays.class);
-        SchemaGenerator schemaGenerator = new SchemaGenerator();
+        SchemaGenerator schemaGenerator = new SchemaGenerator(defaultContext);
         Schema schema = schemaGenerator.generateSchema();
         assertThat(schema.containsTypeWithName("MultiLevelListsAndArrays"), is(true));
         assertThat(schema.containsTypeWithName("Person"), is(true));
@@ -139,7 +134,7 @@ public class SchemaGeneratorIT
     @Test
     public void testPersonWithName() throws IOException, IntrospectionException, ClassNotFoundException {
         setupIndex(indexFileName, PersonWithName.class);
-        SchemaGenerator schemaGenerator = new SchemaGenerator();
+        SchemaGenerator schemaGenerator = new SchemaGenerator(defaultContext);
         Schema schema = schemaGenerator.generateSchema();
 
         assertThat(schema, is(notNullValue()));
@@ -150,7 +145,7 @@ public class SchemaGeneratorIT
     @Test
     public void testMultipleLevels() throws IOException, IntrospectionException, ClassNotFoundException {
         setupIndex(indexFileName, Level0.class);
-        SchemaGenerator schemaGenerator = new SchemaGenerator();
+        SchemaGenerator schemaGenerator = new SchemaGenerator(defaultContext);
         Schema schema = schemaGenerator.generateSchema();
 
         assertThat(schema, is(notNullValue()));
@@ -166,7 +161,7 @@ public class SchemaGeneratorIT
     @Test
     public void testJandexUtils() throws IOException {
         setupIndex(indexFileName, NullPOJO.class, QueriesWithNulls.class);
-        SchemaGenerator schemaGenerator = new SchemaGenerator();
+        SchemaGenerator schemaGenerator = new SchemaGenerator(defaultContext);
         String queriesWithNulls = QueriesWithNulls.class.getName();
         String nullPOJO = NullPOJO.class.getName();
         String noNull = NonNull.class.getName();
@@ -214,81 +209,81 @@ public class SchemaGeneratorIT
     @Test
     public void testObjectWithIgnorableFields() throws IOException {
         setupIndex(indexFileName, ObjectWithIgnorableFieldsAndMethods.class);
-        ExecutionContext<DefaultContext> executionContext = new ExecutionContext<>(defaultContext);
+        ExecutionContext executionContext =  new ExecutionContext(defaultContext);
         executionContext.execute("query { hero }");
     }
 
     @Test
     public void testVoidMutations() throws IOException {
         setupIndex(indexFileName, VoidMutations.class);
-        assertThrows(RuntimeException.class, () -> new ExecutionContext<>(defaultContext));
+        assertThrows(RuntimeException.class, () ->  new ExecutionContext(defaultContext));
     }
 
     @Test
     public void testInvalidNamedType() throws IOException {
         setupIndex(indexFileName, InvalidNamedTypes.InvalidNamedPerson.class);
-        assertThrows(RuntimeException.class, () -> new ExecutionContext<>(defaultContext));
+        assertThrows(RuntimeException.class, () ->  new ExecutionContext(defaultContext));
     }
 
     @Test
     public void testInvalidNamedInputType() throws IOException {
         setupIndex(indexFileName, InvalidNamedTypes.InvalidInputType.class);
-        assertThrows(RuntimeException.class, () -> new ExecutionContext<>(defaultContext));
+        assertThrows(RuntimeException.class, () ->  new ExecutionContext(defaultContext));
     }
 
     @Test
     public void testInvalidNamedInterface() throws IOException {
         setupIndex(indexFileName, InvalidNamedTypes.InvalidInterface.class, InvalidNamedTypes.InvalidClass.class);
-        assertThrows(RuntimeException.class, () -> new ExecutionContext<>(defaultContext));
+        assertThrows(RuntimeException.class, () ->  new ExecutionContext(defaultContext));
     }
 
     @Test
     public void testInvalidNamedQuery() throws IOException {
         setupIndex(indexFileName, InvalidNamedTypes.ClassWithInvalidQuery.class);
-        assertThrows(RuntimeException.class, () -> new ExecutionContext<>(defaultContext));
+        assertThrows(RuntimeException.class, () ->  new ExecutionContext(defaultContext));
     }
 
     @Test
     public void testInvalidNamedMutation() throws IOException {
         setupIndex(indexFileName, InvalidNamedTypes.ClassWithInvalidMutation.class);
-        assertThrows(RuntimeException.class, () -> new ExecutionContext<>(defaultContext));
+        assertThrows(RuntimeException.class, () ->  new ExecutionContext(defaultContext));
     }
 
     @Test
     public void testInvalidNameEnum() throws IOException {
         setupIndex(indexFileName, InvalidNamedTypes.Size.class);
-        assertThrows(RuntimeException.class, () -> new ExecutionContext<>(defaultContext));
+        assertThrows(RuntimeException.class, () ->  new ExecutionContext(defaultContext));
     }
 
     @Test
     public void testVoidQueries() throws IOException {
         setupIndex(indexFileName, VoidQueries.class);
-        assertThrows(RuntimeException.class, () -> new ExecutionContext<>(defaultContext));
+        assertThrows(RuntimeException.class, () ->  new ExecutionContext(defaultContext));
     }
 
     @Test
     public void testInvalidQueries() throws IOException {
         setupIndex(indexFileName, InvalidQueries.class);
-        assertThrows(RuntimeException.class, () -> new ExecutionContext<>(defaultContext));
+        assertThrows(RuntimeException.class, () ->  new ExecutionContext(defaultContext));
     }
 
     @Test
     public void testDuplicateQueryOrMutationNames() throws IOException {
         setupIndex(indexFileName, DuplicateNameQueries.class);
-        assertThrows(RuntimeException.class, () -> new ExecutionContext<>(defaultContext));
+        assertThrows(RuntimeException.class, () ->  new ExecutionContext(defaultContext));
     }
 
     @Test
     public void testSimpleContactWithSelf() throws IOException {
         setupIndex(indexFileName, SimpleContactWithSelf.class);
-        ExecutionContext<DefaultContext> executionContext = new ExecutionContext<>(defaultContext);
+        ExecutionContext executionContext =  new ExecutionContext(defaultContext);
         executionContext.execute("query { hero }");
     }
 
     @Test
     public void testQueriesWithVariables() throws IOException {
         setupIndex(indexFileName, SimpleQueriesWithArgs.class);
-        ExecutionContext<DefaultContext> executionContext = new ExecutionContext<>(defaultContext);
+        ExecutionContext executionContext =  new ExecutionContext(defaultContext);
         Map<String, Object> mapVariables = Map.of("first", 10, "second", 20);
         Map<String, Object> mapResults = getAndAssertResult(executionContext.execute(
                 "query additionQuery($first: Int!, $second: Int!) {"
@@ -301,14 +296,13 @@ public class SchemaGeneratorIT
     @Test
     public void testNumberFormats() throws IOException {
         setupIndex(indexFileName, SimpleContactWithNumberFormats.class, NumberFormatQueriesAndMutations.class);
-        ExecutionContext<DefaultContext> executionContext = new ExecutionContext<>(defaultContext);
+        ExecutionContext executionContext =  new ExecutionContext(defaultContext);
 
         Map<String, Object> mapResults = getAndAssertResult(executionContext
-                                                                    .execute(
-                                                                            "query { simpleFormattingQuery { id name age "
-                                                                                    + "bankBalance value longValue } }"));
+                                                                    .execute("query { simpleFormattingQuery { id name age "
+                                                                             + "bankBalance value longValue bigDecimal } }"));
         assertThat(mapResults.size(), is(1));
-
+                              
         Map<String, Object> mapResults2 = (Map<String, Object>) mapResults.get("simpleFormattingQuery");
         assertThat(mapResults2, is(notNullValue()));
         assertThat(mapResults2.get("id"), is("1 id"));
@@ -317,10 +311,15 @@ public class SchemaGeneratorIT
         assertThat(mapResults2.get("bankBalance"), is("$ 1200.00"));
         assertThat(mapResults2.get("value"), is("10 value"));
         assertThat(mapResults2.get("longValue"), is(BigInteger.valueOf(Long.MAX_VALUE)));
+        assertThat(mapResults2.get("bigDecimal"), is("BigDecimal-100"));
 
         mapResults = getAndAssertResult(executionContext.execute("mutation { generateDoubleValue }"));
         assertThat(mapResults, is(notNullValue()));
         assertThat(mapResults.get("generateDoubleValue"), is("Double-123456789"));
+        
+        mapResults = getAndAssertResult(executionContext.execute("query { echoBigDecimalUsingFormat(param1: \"BD-123\") }"));
+        assertThat(mapResults, is(notNullValue()));
+        assertThat(mapResults.get("echoBigDecimalUsingFormat"), is(123));
 
         // create a new contact
         String contactInput =
@@ -331,20 +330,24 @@ public class SchemaGeneratorIT
                         + "bankBalance: \"$ 1000.01\" "
                         + "value: \"9 value\" "
                         + "longValue: 12345"
+                        + "bigDecimal: \"BigDecimal-12345\""
                         + " } ";
 
-        //        mapResults = getAndAssertResult(
-        //                executionContext.execute("mutation { createSimpleContactWithNumberFormats (" + contactInput + ") { id
-        //               name } }"));
-        //        assertThat(mapResults.size(), is(1));
-        //        mapResults2 = (Map<String, Object>) mapResults.get("createSimpleContactWithNumberFormats");
-        //        assertThat(mapResults2, is(notNullValue()));
+        mapResults = getAndAssertResult(
+                executionContext.execute("mutation { createSimpleContactWithNumberFormats (" + contactInput +
+                                                 ") { id name } }"));
+        assertThat(mapResults.size(), is(1));
+        mapResults2 = (Map<String, Object>) mapResults.get("createSimpleContactWithNumberFormats");
+        assertThat(mapResults2, is(notNullValue()));
+
+
     }
 
     @Test
+    @Disabled
     public void testDateAndTime() throws IOException {
         setupIndex(indexFileName, DateTimePojo.class, SimpleQueriesNoArgs.class);
-        ExecutionContext<DefaultContext> executionContext = new ExecutionContext<>(defaultContext);
+        ExecutionContext executionContext =  new ExecutionContext(defaultContext);
 
         Schema schema = executionContext.getSchema();
         SchemaType type = schema.getTypeByName("DateTimePojo");
@@ -395,7 +398,7 @@ public class SchemaGeneratorIT
     @Test
     public void testNulls() throws IOException {
         setupIndex(indexFileName, NullPOJO.class, QueriesWithNulls.class);
-        ExecutionContext<DefaultContext> executionContext = new ExecutionContext<>(defaultContext);
+        ExecutionContext executionContext =  new ExecutionContext(defaultContext);
         Schema schema = executionContext.getSchema();
         assertThat(schema, is(notNullValue()));
 
@@ -448,7 +451,7 @@ public class SchemaGeneratorIT
     @SuppressWarnings("unchecked")
     public void testSimpleMutations() throws IOException {
         setupIndex(indexFileName, SimpleMutations.class);
-        ExecutionContext<DefaultContext> executionContext = new ExecutionContext<>(defaultContext);
+        ExecutionContext executionContext =  new ExecutionContext(defaultContext);
 
         Map<String, Object> mapResults = getAndAssertResult(
                 executionContext.execute("mutation { createNewContact { id name age } }"));
@@ -480,7 +483,7 @@ public class SchemaGeneratorIT
     @SuppressWarnings("unchecked")
     public void testSimpleQueryGenerationNoArgs() throws IOException {
         setupIndex(indexFileName, SimpleQueriesNoArgs.class);
-        ExecutionContext<DefaultContext> executionContext = new ExecutionContext<>(defaultContext);
+        ExecutionContext executionContext =  new ExecutionContext(defaultContext);
 
         Map<String, Object> mapResults = getAndAssertResult(executionContext.execute("query { hero }"));
 
@@ -542,7 +545,7 @@ public class SchemaGeneratorIT
     @Test
     public void testDifferentPropertyNames() throws IOException {
         setupIndex(indexFileName, PropertyNameQueries.class, TypeWithNameAndJsonbProperty.class);
-        ExecutionContext<DefaultContext> executionContext = new ExecutionContext<>(defaultContext);
+        ExecutionContext executionContext =  new ExecutionContext(defaultContext);
 
         Map<String, Object> mapResults = getAndAssertResult(
                 executionContext.execute("query { query1 { newFieldName1 newFieldName2 "
@@ -559,7 +562,7 @@ public class SchemaGeneratorIT
     @Test
     public void testIgnorable() throws IOException {
         setupIndex(indexFileName, QueriesWithIgnorable.class);
-        ExecutionContext<DefaultContext> executionContext = new ExecutionContext<>(defaultContext);
+        ExecutionContext executionContext =  new ExecutionContext(defaultContext);
         Map<String, Object> mapResults = getAndAssertResult(
                 executionContext.execute("query { testIgnorableFields { id dontIgnore } }"));
         assertThat(mapResults.size(), is(1));
@@ -591,7 +594,7 @@ public class SchemaGeneratorIT
     @Test
     public void testDescriptions() throws IOException {
         setupIndex(indexFileName, DescriptionType.class, DescriptionQueries.class);
-        ExecutionContext<DefaultContext> executionContext = new ExecutionContext<>(defaultContext);
+        ExecutionContext executionContext =  new ExecutionContext(defaultContext);
 
         Schema schema = executionContext.getSchema();
         assertThat(schema, is(notNullValue()));
@@ -638,7 +641,7 @@ public class SchemaGeneratorIT
     @Test
     public void testDefaultValues() throws IOException {
         setupIndex(indexFileName, DefaultValuePOJO.class, DefaultValueQueries.class);
-        ExecutionContext<DefaultContext> executionContext = new ExecutionContext<>(defaultContext);
+        ExecutionContext executionContext =  new ExecutionContext(defaultContext);
 
         // test with both fields as default
         Map<String, Object> mapResults = getAndAssertResult(
@@ -695,7 +698,7 @@ public class SchemaGeneratorIT
     @Test
     public void setOddNamedQueriesAndMutations() throws IOException {
         setupIndex(indexFileName, DefaultValuePOJO.class, OddNamedQueriesAndMutations.class);
-        ExecutionContext<DefaultContext> executionContext = new ExecutionContext<>(defaultContext);
+        ExecutionContext executionContext =  new ExecutionContext(defaultContext);
 
         Schema schema = executionContext.getSchema();
         assertThat(schema, is(notNullValue()));
@@ -710,7 +713,7 @@ public class SchemaGeneratorIT
     @SuppressWarnings("unchecked")
     public void testSimpleQueriesWithSource() throws IOException {
         setupIndex(indexFileName, SimpleQueriesWithSource.class, SimpleContact.class);
-        ExecutionContext<DefaultContext> executionContext = new ExecutionContext<>(defaultContext);
+        ExecutionContext executionContext =  new ExecutionContext(defaultContext);
 
         // since there is a @Source annotation in SimpleQueriesWithSource, then this should add a field
         // idAndName to the SimpleContact type
@@ -754,7 +757,7 @@ public class SchemaGeneratorIT
     public void testInputType() throws IOException {
         setupIndex(indexFileName, SimpleContactInputType.class, SimpleContactInputTypeWithName.class,
                    SimpleContactInputTypeWithNameValue.class, SimpleContactInputTypeWithAddress.class);
-        ExecutionContext<DefaultContext> executionContext = new ExecutionContext<>(defaultContext);
+        ExecutionContext executionContext =  new ExecutionContext(defaultContext);
         Schema schema = executionContext.getSchema();
         assertThat(schema.getInputTypes().size(), is(5));
         assertThat(schema.containsInputTypeWithName("MyInputType"), is(true));
@@ -768,7 +771,7 @@ public class SchemaGeneratorIT
     @SuppressWarnings("unchecked")
     public void testMultiLevelListsAndArraysQueries() throws IOException {
         setupIndex(indexFileName, ArrayAndListQueries.class, MultiLevelListsAndArrays.class);
-        ExecutionContext<DefaultContext> executionContext = new ExecutionContext<>(defaultContext);
+        ExecutionContext executionContext =  new ExecutionContext(defaultContext);
 
         Map<String, Object> mapResults = getAndAssertResult(
                 executionContext.execute("query { getMultiLevelList { intMultiLevelArray } }"));
@@ -808,7 +811,7 @@ public class SchemaGeneratorIT
     @SuppressWarnings("unchecked")
     public void testSimpleQueryGenerationWithArgs() throws IOException {
         setupIndex(indexFileName, SimpleQueriesWithArgs.class, Car.class, AbstractVehicle.class);
-        ExecutionContext<DefaultContext> executionContext = new ExecutionContext<>(defaultContext);
+        ExecutionContext executionContext =  new ExecutionContext(defaultContext);
 
         Map<String, Object> mapResults = getAndAssertResult(executionContext.execute("query { hero(heroType: \"human\") }"));
         assertThat(mapResults.size(), is(1));
@@ -918,7 +921,7 @@ public class SchemaGeneratorIT
     }
 
     private void assertInterfaceResults() throws IntrospectionException, ClassNotFoundException {
-        SchemaGenerator schemaGenerator = new SchemaGenerator();
+        SchemaGenerator schemaGenerator = new SchemaGenerator(defaultContext);
         Schema schema = schemaGenerator.generateSchema();
         System.out.println(schema.generateGraphQLSchema());
         assertThat(schema, is(notNullValue()));

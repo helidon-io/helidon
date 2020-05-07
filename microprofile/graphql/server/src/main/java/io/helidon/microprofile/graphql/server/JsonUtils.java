@@ -16,12 +16,23 @@
 
 package io.helidon.microprofile.graphql.server;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.json.bind.Jsonb;
 import javax.json.bind.JsonbBuilder;
 import javax.json.bind.JsonbConfig;
+
+import static io.helidon.microprofile.graphql.server.ElementGenerator.CLOSE_CURLY;
+import static io.helidon.microprofile.graphql.server.ElementGenerator.CLOSE_SQUARE;
+import static io.helidon.microprofile.graphql.server.ElementGenerator.COLON;
+import static io.helidon.microprofile.graphql.server.ElementGenerator.COMMA_SPACE;
+import static io.helidon.microprofile.graphql.server.ElementGenerator.OPEN_CURLY;
+import static io.helidon.microprofile.graphql.server.ElementGenerator.OPEN_SQUARE;
+import static io.helidon.microprofile.graphql.server.ElementGenerator.QUOTE;
+import static io.helidon.microprofile.graphql.server.ElementGenerator.SPACER;
 
 /**
  * Various Json utilities.
@@ -65,7 +76,7 @@ public class JsonUtils {
     }
 
     /**
-     * Concert a Json object into the representative Java object.
+     * Convert a Json object into the representative Java object.
      *
      * @param json  the json
      * @param clazz {@link Class} to convert to
@@ -74,5 +85,63 @@ public class JsonUtils {
     public static Object convertFromJson(String json, Class<?> clazz) {
         return JSONB.fromJson(json, clazz);
     }
+
+    /**
+     * Convert JSON value to a GraphQLSDL format.
+     * @param value value to convert
+     * @return JSON value converted to a GraphQLSDL format
+     */
+    public static String convertJsonToGraphQLSDL(Object value) {
+        return convertJsonToGraphQLSDL(value, false);
+    }
+
+    /**
+     * Convert JSON value to a GraphQLSDL format.
+     * @param value value to convert
+     * @param isKey indicates if this value is a key
+     * @return JSON value converted to a GraphQLSDL format
+     */
+    @SuppressWarnings({"unchecked", "rawTypes"})
+    public static String convertJsonToGraphQLSDL(Object value, boolean isKey) {
+        StringBuffer sb = new StringBuffer();
+        if (value instanceof Map) {
+            sb.append(convertJsonMapToGraphQLSDL((Map) value));
+        } else if (value instanceof Number) {
+            sb.append(value);
+        } else if (value instanceof String) {
+            if (isKey) {
+                sb.append(value.toString());
+            } else {
+                sb.append(QUOTE).append(value.toString().replaceAll("\"", "\\\\\"")).append(QUOTE);
+            }
+        } else if (value instanceof Collection) {
+            sb.append(OPEN_SQUARE);
+            sb.append(((Collection) value).stream()
+                              .map(JsonUtils::convertJsonToGraphQLSDL)
+                              .collect(Collectors.joining(COMMA_SPACE))).append(CLOSE_SQUARE);
+        } else {
+            sb.append(value.toString());
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Convert a Json {@link Map} to a GraphQL SDL.
+     *
+     * @param map Json {@link Map} to convert
+     * @return GraphQL SDL.
+     */
+    @SuppressWarnings("unchecked")
+    private static String convertJsonMapToGraphQLSDL(Map<String, Object> map) {
+        StringBuffer sb = new StringBuffer(OPEN_CURLY);
+
+        for (Map.Entry<String, Object> entry : map.entrySet()) {
+            sb.append(SPACER).append(convertJsonToGraphQLSDL(entry.getKey(), true)).append(COLON).append(SPACER);
+            sb.append(convertJsonToGraphQLSDL(entry.getValue()));
+        }
+
+        return sb.append(SPACER).append(CLOSE_CURLY).toString();
+    }
+
 }
 

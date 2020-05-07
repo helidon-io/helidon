@@ -16,14 +16,27 @@
 
 package io.helidon.microprofile.graphql.server;
 
-import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.STRING;
-import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.isGraphQLType;
-import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.isScalar;
+import java.util.Map;
+import java.util.logging.Logger;
+
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.BIG_DECIMAL;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.BIG_INTEGER;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.BOOLEAN;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.FLOAT;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.INT;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ensureRuntimeException;
+
 
 /**
  * An interface representing a class which can generate a GraphQL representation of it's state.
  */
 public interface ElementGenerator {
+
+    /**
+     * Logger.
+     */
+    Logger LOGGER = Logger.getLogger(ElementGenerator.class.getName());
+
     /**
      * Empty string.
      */
@@ -60,6 +73,16 @@ public interface ElementGenerator {
     String CLOSE_SQUARE = "]";
 
     /**
+     * Open curly bracket.
+     */
+    String OPEN_CURLY = "{";
+
+    /**
+     * Close curly bracket.
+     */
+    String CLOSE_CURLY = "}";
+
+    /**
      * Newline.
      */
     char NEWLINE = '\n';
@@ -78,16 +101,6 @@ public interface ElementGenerator {
      * Mandatory indicator.
      */
     char MANDATORY = '!';
-
-    /**
-     * Open curly bracket.
-     */
-    char OPEN_CURLY = '{';
-
-    /**
-     * Close curly bracket.
-     */
-    char CLOSE_CURLY = '}';
 
     /**
      * Open parenthesis.
@@ -115,22 +128,42 @@ public interface ElementGenerator {
      */
     default String generateDefaultValue(Object defaultValue, String argumentType) {
         StringBuilder sb = new StringBuilder();
+        Object finalDefaultValue = defaultValue;
         sb.append(SPACER)
                 .append(EQUALS)
                 .append(SPACER);
 
+        boolean isJson = false;
+
+        // check for JSON
+        if (defaultValue instanceof String) {
+            String stringDefault = (String) defaultValue;
+            if (stringDefault.contains(OPEN_CURLY) && stringDefault.contains(CLOSE_CURLY)) {
+                try {
+                    // is possibly JSON, so convert from JSON to GraphQLSDL format
+                    finalDefaultValue = JsonUtils.convertJsonToGraphQLSDL(JsonUtils.convertJSONtoMap(stringDefault));
+                    isJson = true;
+                } catch (Exception e) {
+                    ensureRuntimeException(LOGGER, "Unable to parse default JSON value of"
+                            + "[" + stringDefault + "] for " + this);
+                }
+            }
+        }
         // determine how the default value should be rendered
-        if (isScalar(argumentType) || isGraphQLType(argumentType) && STRING.equals(argumentType)) {
-            sb.append(QUOTE)
-                    .append(defaultValue)
-                    .append(QUOTE);
-        } else {
-            // Workaround for graphql profile TCK bug in 1.0.1
-            if (defaultValue.toString().contains("\":") || defaultValue.toString().contains(" name: \"Cape\"")) {
+        if (FLOAT.equals(argumentType) || INT.equals(argumentType)
+                || BOOLEAN.equals(argumentType) || BIG_INTEGER.equals(argumentType)
+                || BIG_DECIMAL.equals(argumentType) || isJson) {
+            // no quotes required
+            // Workaround for graphql profile TCK bug in 1.0.1 - https://github.com/eclipse/microprofile-graphql/pull/228
+            if (defaultValue.toString().contains(" name: \"Cape\"")) {
                 sb.append("{}");
             } else {
-                sb.append(defaultValue);
+                sb.append(finalDefaultValue);
             }
+        } else {
+            sb.append(QUOTE)
+                    .append(finalDefaultValue)
+                    .append(QUOTE);
         }
         return sb.toString();
     }

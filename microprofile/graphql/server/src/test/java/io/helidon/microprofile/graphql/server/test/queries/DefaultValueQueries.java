@@ -36,8 +36,10 @@ import org.eclipse.microprofile.graphql.Query;
 public class DefaultValueQueries {
 
     private static final String DEFAULT_INPUT = "{ "
-            + " id: \"ID-1\" "
-            + " value: 1000 "
+            + " \"id\": \"ID-1\" ,"
+            + " \"value\": 1000, "
+            + " \"booleanValue\": true, "
+            + " \"dateObject\": \"1968-02-17\" "
             + "}";
             
     @Inject

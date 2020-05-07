@@ -33,7 +33,7 @@ public abstract class AbstractGraphQLIT
 
     protected String indexFileName = null;
     protected File indexFile = null;
-    protected DefaultContext defaultContext = ExecutionContext.getDefaultContext();
+    protected Context defaultContext;
 
     private static SeContainer container;
 
@@ -52,6 +52,7 @@ public abstract class AbstractGraphQLIT
         System.clearProperty(JandexUtils.PROP_INDEX_FILE);
         indexFileName = getTempIndexFile();
         indexFile = null;
+        defaultContext = ExecutionContext.getDefaultContext();
     }
 
     @AfterEach

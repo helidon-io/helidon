@@ -63,7 +63,7 @@ public class GraphQLResource {
     /**
      * {@link ExecutionContext} for this resource.
      */
-    private ExecutionContext<String> context;
+    private ExecutionContext context;
 
     /**
      * {@link SchemaPrinter} to retrieve the schema.
@@ -125,7 +125,7 @@ public class GraphQLResource {
     @PostConstruct
     public void init() {
         try {
-            context = new ExecutionContext<>("Dummy Context");
+            context = new ExecutionContext(new DefaultContext());
             schemaPrinter = new SchemaPrinter(OPTIONS);
         } catch (Exception e) {
             ensureRuntimeException(LOGGER, "Unable to build GraphQL Schema: ", e);

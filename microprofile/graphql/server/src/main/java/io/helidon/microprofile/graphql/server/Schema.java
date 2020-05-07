@@ -25,6 +25,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import graphql.GraphQLException;
+import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.TypeResolver;
@@ -234,6 +235,7 @@ public class Schema
             LOGGER.info("Register Scalar: " + s);
             builder.scalar(s.getGraphQLScalarType());
         });
+
 
         // we should now have the query runtime binding
         builder.type(typeRuntimeBuilder);

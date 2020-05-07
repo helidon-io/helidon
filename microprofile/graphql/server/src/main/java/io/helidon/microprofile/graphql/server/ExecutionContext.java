@@ -45,9 +45,8 @@ import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ensur
 /**
  * Defines a content in which to execute GraphQL commands.
  *
- * @param <C> the context that will be used when executing queries.
  */
-public class ExecutionContext<C> {
+public class ExecutionContext {
 
     /**
      * Key for errors.
@@ -137,7 +136,7 @@ public class ExecutionContext<C> {
     /**
      * A context to pass to GraphQL for execution.
      */
-    private C context;
+    private Context context;
 
     /**
      * Default error message.
@@ -182,10 +181,10 @@ public class ExecutionContext<C> {
      *
      * @param context context
      */
-    public ExecutionContext(C context) {
+    public ExecutionContext(Context context) {
         try {
             configureExceptionHandling();
-            SchemaGenerator schemaGenerator = new SchemaGenerator();
+            SchemaGenerator schemaGenerator = new SchemaGenerator(context);
             schema = schemaGenerator.generateSchema();
             graphQLSchema = schema.generateGraphQLSchema();
             this.context = context;
@@ -242,7 +241,7 @@ public class ExecutionContext<C> {
      *
      * @return a new {@link DefaultContext
      */
-    public static DefaultContext getDefaultContext() {
+    public static Context getDefaultContext() {
         return new DefaultContext();
     }
 
