@@ -34,7 +34,7 @@ import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * Tests for MediaSupport functionality in WebClient.
+ * Tests for MediaContext functionality in WebClient.
  */
 public class MediaContextTest extends TestParent {
 

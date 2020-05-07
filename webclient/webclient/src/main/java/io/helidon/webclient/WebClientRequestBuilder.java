@@ -17,6 +17,7 @@ package io.helidon.webclient;
 
 import java.net.URI;
 import java.net.URL;
+import java.time.temporal.TemporalUnit;
 import java.util.Map;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
@@ -77,6 +78,14 @@ public interface WebClientRequestBuilder {
      * @return updated builder instance
      */
     WebClientRequestBuilder skipUriEncoding();
+
+    /**
+     * Sets if redirects should be followed at this request or not.
+     *
+     * @param followRedirects follow redirects
+     * @return updated builder instance
+     */
+    WebClientRequestBuilder followRedirects(boolean followRedirects);
 
     /**
      * Add a property to be used by a {@link WebClientService}.
@@ -174,6 +183,24 @@ public interface WebClientRequestBuilder {
      * @return updated builder instance
      */
     WebClientRequestBuilder httpVersion(Http.Version httpVersion);
+
+    /**
+     * Sets new connection timeout for this request.
+     *
+     * @param amount amount of time
+     * @param unit   time unit
+     * @return updated builder instance
+     */
+    WebClientRequestBuilder connectTimeout(long amount, TemporalUnit unit);
+
+    /**
+     * Sets new read timeout for this request.
+     *
+     * @param amount amount of time
+     * @param unit   time unit
+     * @return updated builder instance
+     */
+    WebClientRequestBuilder readTimeout(long amount, TemporalUnit unit);
 
     /**
      * Fragment of the request.

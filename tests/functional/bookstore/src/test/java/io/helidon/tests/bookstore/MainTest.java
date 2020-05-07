@@ -432,7 +432,7 @@ class MainTest {
             File jarFile = new File(appJarPath);
             // --module-path target/bookstore-se.jar:target/libs -m io.helidon.tests.apps.bookstore.se/io.helidon.tests.apps.bookstore.se.Main
             startArgs.add("--module-path");
-            startArgs.add(appJarPath + ":" + jarFile.getParent() + "/libs");
+            startArgs.add(appJarPath + File.pathSeparatorChar + jarFile.getParent() + "/libs");
             startArgs.add("-m");
             startArgs.add(moduleName + "/" + moduleName + ".Main");
         } else {

@@ -21,6 +21,8 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -101,11 +103,14 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     private Context context;
     private Proxy proxy;
     private String fragment;
+    private boolean followRedirects;
     private boolean skipUriEncoding;
     private int redirectionCount;
     private RequestConfiguration requestConfiguration;
     private HttpRequest.Path path;
     private List<WebClientService> services;
+    private Duration readTimeout;
+    private Duration connectTimeout;
 
     private WebClientRequestBuilderImpl(LazyValue<NioEventLoopGroup> eventGroup,
                                         WebClientConfiguration configuration,
@@ -130,6 +135,9 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
                                                 () -> Contexts.context().ifPresent(contextBuilder::parent));
         this.context = contextBuilder.build();
         this.handled = new AtomicBoolean();
+        this.followRedirects = configuration.followRedirects();
+        this.readTimeout = configuration.readTimout();
+        this.connectTimeout = configuration.connectTimeout();
     }
 
     public static WebClientRequestBuilder create(LazyValue<NioEventLoopGroup> eventGroup,
@@ -185,6 +193,12 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     @Override
     public WebClientRequestBuilder skipUriEncoding() {
         this.skipUriEncoding = true;
+        return this;
+    }
+
+    @Override
+    public WebClientRequestBuilder followRedirects(boolean followRedirects) {
+        this.followRedirects = followRedirects;
         return this;
     }
 
@@ -245,6 +259,18 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     @Override
     public WebClientRequestBuilder httpVersion(Http.Version httpVersion) {
         this.httpVersion = httpVersion;
+        return this;
+    }
+
+    @Override
+    public WebClientRequestBuilder connectTimeout(long amount, TemporalUnit unit) {
+        this.connectTimeout = Duration.of(amount, unit);
+        return this;
+    }
+
+    @Override
+    public WebClientRequestBuilder readTimeout(long amount, TemporalUnit unit) {
+        this.readTimeout = Duration.of(amount, unit);
         return this;
     }
 
@@ -411,9 +437,12 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
 
             requestConfiguration = RequestConfiguration.builder(uri)
                     .update(configuration)
+                    .followRedirects(followRedirects)
                     .clientServiceRequest(serviceRequest)
                     .readerContext(readerContext)
                     .writerContext(writerContext)
+                    .connectTimeout(connectTimeout)
+                    .readTimeout(readTimeout)
                     .services(services)
                     .context(context)
                     .build();
@@ -426,7 +455,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
             bootstrap.group(group)
                     .channel(NioSocketChannel.class)
                     .handler(new NettyClientInitializer(requestConfiguration, result, responseReceived, complete))
-                    .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, (int) configuration.connectTimeout().toMillis());
+                    .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, (int) connectTimeout.toMillis());
 
             ChannelFuture channelFuture = bootstrap.connect(uri.getHost(), uri.getPort());
             channelFuture.addListener((ChannelFutureListener) future -> {
