@@ -27,7 +27,7 @@ offers two programming models: Helidion SE and <<mp/introduction/01_introduction
 == Helidon SE Components
 
 Helidon SE is a compact toolkit that embraces the latest Java SE features:
-reactive streams, asynchrous and functional programming, and fluent style
+reactive streams, asynchrous and functional programming, and fluent-style
 APIs.
 
 The REST framework for Helidon SE is the Helidon WebServer. It's built on top
@@ -36,65 +36,58 @@ number of additional Helidon features:
 
 image::/docs/images/SE_components.png[SE Components]
 
-* *Reactive Web Server* +
+==== Reactive Web Server +
 WebServer provides an asynchonous and reactive API for creating web applications. The API is inspired by popular NodeJS and Java frameworks.
 http://se/webserver/01_introduction.adoc[Learn more].
 
-* *Health Checks* +
+==== Health Checks +
 The health check API combines the statuses of all the dependencies that affect availability and the ability to perform correctly such as network latency and storage. http://se/health/01_health.adoc[Learn more].
 
 
-* *gRPC*  +
+==== gRPC  +
 Helidon gRPC Server provides a framework for creating gRPC (general-purpose Remote Procedure Calls) applications.
 http://se/grpc/01_introduction.adoc[Learn more]. 
 
-* *Config* +
-The configuration component provides a Java API to load and process configuration properties in key/value form into a Config object which the application can use to retrieve config data.
+==== Configuration +
+The Config component provides a Java API to load and process configuration properties in key/value form into a Config object which the application can use to retrieve config data.
 http://se/config/introduction.adoc[Learn more].
 
-* *Metrics* +
+==== Metrics +
 Heldion supports both a base set and a Helidon-specific set of metrics that expose information in JSON format (as specified by the MicroProfile Metrics specification) or in plain text (for Prometheus metrics). 
 http://se/metrics/01_metrics.adoc[Learn more].
 
-* *Helidon DB Client* +
+==== Helidon DB Client +
 The new Helidon SE DB Client for Helidon 2.0 provides a unified, reactive API for working with databases in non-blocking way. 
 http://se/dbclient/01_introduction.adoc[Learn more].
 
-* *Security* +
+=== Security +
 The security modules modules support authentication, authorization, outbound security and audits for your applications.
 http://se/security/01_introduction.adoc[Learn more].
 
 
-* *OpenTracing* +
+==== OpenTracing +
 Helidon includes support for tracing through the OpenTracing APIs. Tracing is integrated with WebServer, gRPC Server, and Security.
 
-* *Helidon Web Client* +
+==== Helidon Web Client +
 The new Helidon WebClient for Helidon SE 2.0 allows you to perform any HTTP requests to the target endpoint (via GET, PUT, etc.), and handle the provided response in a reactive way.
 
-* *OpenAPI* +
+==== OpenAPI +
 The OpenAPI in Helidon SE allows your Helidon SE application to serve an OpenAPI document that describes your application’s endpoints.
 
-
-* JSON-P +
-
-* JSON-B
-
-For details see the Helidon <<about/01_overview.adoc,documentation>> and
-<<guides/01_overview.adoc,guides>>.
-
-== GraalVM Native Image support
+==== GraalVM Native Image support
 
 Helidon SE supports https://www.graalvm.org[GraalVM]
 https://www.graalvm.org/docs/reference-manual/native-image/[native images]
-for small footprint and lightening fast startup. For more information see
-the <<guides/36_graalnative.adoc,Graal native image guide>>.
+for small footprint and lightening fast startup. <<guides/36_graalnative.adoc,Learn more.>>.
 
-== No Application Server
+==== Netty I/O Client-Server Framework
 
-Helidon is a collection of libraries that runs on top of Netty.
+Helidon runs on top of Netty so there is no need for an application server.
 It is not derived from a Java EE
 application server. That means your cloud native application is compact
 and efficient without unnecessary overhead or bloat.
+
+==== JSON-P and JSON-B +
 
 == Next Steps
 
