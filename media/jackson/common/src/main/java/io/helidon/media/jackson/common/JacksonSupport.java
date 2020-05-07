@@ -15,13 +15,15 @@
  */
 package io.helidon.media.jackson.common;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
 import io.helidon.media.common.MediaSupport;
-import io.helidon.media.common.MessageBodyReaderContext;
-import io.helidon.media.common.MessageBodyWriterContext;
+import io.helidon.media.common.MessageBodyReader;
+import io.helidon.media.common.MessageBodyWriter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
@@ -89,9 +91,13 @@ public final class JacksonSupport implements MediaSupport {
     }
 
     @Override
-    public void register(MessageBodyReaderContext readerContext, MessageBodyWriterContext writerContext) {
-        readerContext.registerReader(newReader());
-        writerContext.registerWriter(newWriter());
+    public Collection<MessageBodyReader<?>> readers() {
+        return List.of(newReader());
+    }
+
+    @Override
+    public Collection<MessageBodyWriter<?>> writers() {
+        return List.of(newWriter());
     }
 
     /**
