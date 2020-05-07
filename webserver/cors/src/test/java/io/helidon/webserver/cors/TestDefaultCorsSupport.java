@@ -73,7 +73,7 @@ public class TestDefaultCorsSupport {
                     .baseUri("http://localhost:" + server.port())
                     .get();
 
-            WebClientRequestBuilder reqBuilder = client.method("OPTIONS")
+            WebClientRequestBuilder reqBuilder = client.options()
                     .path("/greet");
 
             Headers h = reqBuilder.headers();
@@ -104,7 +104,7 @@ public class TestDefaultCorsSupport {
                     .baseUri("http://localhost:" + server.port())
                     .get();
 
-            WebClientRequestBuilder reqBuilder = client.method("OPTIONS")
+            WebClientRequestBuilder reqBuilder = client.options()
                     .path("/greet");
 
             Headers h = reqBuilder.headers();

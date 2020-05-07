@@ -138,7 +138,7 @@ public class RequestTest extends TestParent {
                     .get();
         } catch (ExecutionException e) {
             WebClientException ce = (WebClientException) e.getCause();
-            assertThat(ce.getMessage(), startsWith("Entity of the request with status 404"));
+            assertThat(ce.getMessage(), startsWith("Request failed with code 404"));
             return;
         } catch (Exception e) {
             fail(e);

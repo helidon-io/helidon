@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,6 +68,7 @@ import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpVersion;
+import io.netty.util.AsciiString;
 import io.netty.util.AttributeKey;
 
 /**
@@ -100,6 +101,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     private Context context;
     private Proxy proxy;
     private String fragment;
+    private boolean skipUriEncoding;
     private int redirectionCount;
     private RequestConfiguration requestConfiguration;
     private HttpRequest.Path path;
@@ -113,6 +115,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         this.configuration = configuration;
         this.method = method;
         this.uri = configuration.uri();
+        this.skipUriEncoding = false;
         this.path = ClientPath.create(null, "", new HashMap<>());
         //Default headers added to the current headers of the request
         this.headers = new WebClientRequestHeadersImpl(this.configuration.headers());
@@ -176,6 +179,12 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     @Override
     public WebClientRequestBuilder uri(URI uri) {
         this.uri = uri;
+        return this;
+    }
+
+    @Override
+    public WebClientRequestBuilder skipUriEncoding() {
+        this.skipUriEncoding = true;
         return this;
     }
 
@@ -444,9 +453,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     private MessageBodyReadableContent getContentFromClientResponse(WebClientResponse response) {
         //If the response status is greater then 300, ask user to change requested entity to ClientResponse
         if (response.status().code() >= Http.Status.MOVED_PERMANENTLY_301.code()) {
-            throw new WebClientException("Entity of the request with status " + response.status().code()
-                                                 + " could not be automatically handled! "
-                                                 + "Request for ClientResponse instead.");
+            throw new WebClientException("Request failed with code " + response.status().code());
         }
         return response.content();
     }
@@ -459,8 +466,8 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
                 throw new WebClientException("Invalid uri " + uri + ". Uri.getHost() returned null.");
             }
             String scheme = Optional.ofNullable(uri.getScheme())
-                    .orElseThrow(() -> new WebClientException("Transport protocol has be to be specified in uri: " + uri
-                            .toString()));
+                    .orElseThrow(() -> new WebClientException("Transport protocol has be to be specified in uri: "
+                                                                      + uri.toString()));
             if (!DEFAULT_SUPPORTED_PROTOCOLS.containsKey(scheme)) {
                 throw new WebClientException(scheme + " transport protocol is not supported!");
             }
@@ -475,6 +482,18 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
             String query = resolveQuery();
             fragment = fragment == null ? uri.getFragment() : fragment;
             try {
+                if (skipUriEncoding) {
+                    StringBuilder sb = new StringBuilder();
+                    sb.append(scheme).append("://").append(uri.getHost()).append(":").append(port).append(path);
+                    if (query != null) {
+                        sb.append('?');
+                        sb.append(query);
+                    } else if (fragment != null) {
+                        sb.append('#');
+                        sb.append(fragment);
+                    }
+                    return URI.create(sb.toString());
+                }
                 return new URI(scheme, null, uri.getHost(), port, path, query, fragment);
             } catch (URISyntaxException e) {
                 throw new WebClientException("Could not create URI instance for the request.", e);
@@ -531,10 +550,6 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
 
     private HttpHeaders toNettyHttpHeaders() {
         HttpHeaders headers = new DefaultHttpHeaders();
-        headers.set(HttpHeaderNames.HOST, uri.getHost());
-        headers.set(HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE);
-        headers.set(HttpHeaderNames.ACCEPT_ENCODING, HttpHeaderValues.GZIP);
-        headers.set(HttpHeaderNames.USER_AGENT, configuration.userAgent());
         try {
             Map<String, List<String>> cookieHeaders = this.configuration.cookieManager().get(uri, new HashMap<>());
             List<String> cookies = new ArrayList<>(cookieHeaders.get(Http.Header.COOKIE));
@@ -546,7 +561,17 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
             throw new WebClientException("An error occurred while setting cookies.", e);
         }
         this.headers.toMap().forEach(headers::add);
+        addHeaderIfAbsent(headers, HttpHeaderNames.HOST, uri.getHost() + ":" + uri.getPort());
+        addHeaderIfAbsent(headers, HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE);
+        addHeaderIfAbsent(headers, HttpHeaderNames.ACCEPT_ENCODING, HttpHeaderValues.GZIP);
+        addHeaderIfAbsent(headers, HttpHeaderNames.USER_AGENT, configuration.userAgent());
         return headers;
+    }
+
+    private void addHeaderIfAbsent(HttpHeaders headers, AsciiString header, Object headerValue) {
+        if (!headers.contains(header)) {
+            headers.set(header, headerValue);
+        }
     }
 
     /**

@@ -70,6 +70,15 @@ public interface WebClientRequestBuilder {
     WebClientRequestBuilder uri(URI uri);
 
     /**
+     * Disables final uri encoding.
+     *
+     * This setting skips all parts of {@link URI} from encoding.
+     *
+     * @return updated builder instance
+     */
+    WebClientRequestBuilder skipUriEncoding();
+
+    /**
      * Add a property to be used by a {@link WebClientService}.
      *
      * @param propertyName  property name

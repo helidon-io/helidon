@@ -25,6 +25,7 @@ import java.util.logging.Logger;
 import javax.json.JsonObject;
 
 import io.helidon.common.http.Headers;
+import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
 import io.helidon.media.jsonp.common.JsonpSupport;
@@ -137,7 +138,7 @@ public class MainTest {
 
         // Send the pre-flight request and check the response.
 
-        WebClientRequestBuilder builder = webClient.method("OPTIONS");
+        WebClientRequestBuilder builder = webClient.method(Http.Method.OPTIONS);
         Headers headers = builder.headers();
         headers.add("Origin", "http://foo.com");
         headers.add("Host", "here.com");

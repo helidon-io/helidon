@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
 import io.helidon.common.context.Context;
+import io.helidon.common.http.Http;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.media.common.MediaContext;
@@ -121,6 +122,14 @@ public interface WebClient {
      * @return client request builder
      */
     WebClientRequestBuilder method(String method);
+
+    /**
+     * Create a request builder for a method based on method parameter.
+     *
+     * @param method request method
+     * @return client request builder
+     */
+    WebClientRequestBuilder method(Http.Method method);
 
     final class Builder implements io.helidon.common.Builder<WebClient>,
                                    ParentingMediaContextBuilder<Builder>,

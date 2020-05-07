@@ -144,14 +144,16 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
 
             csr.whenComplete((clientSerResponse, throwable) -> {
                 responseReceived.complete(clientServiceResponse);
-                if (shouldResponseAutomaticallyClose(clientResponse)) {
-                    responseCloser.close().addListener(future -> {
-                        LOGGER.finest("Response automatically closed. No entity expected.");
+                responseReceived.thenRun(() -> {
+                    if (shouldResponseAutomaticallyClose(clientResponse)) {
+                        responseCloser.close().addListener(future -> {
+                            LOGGER.finest("Response automatically closed. No entity expected.");
+                            responseFuture.complete(clientResponse);
+                        });
+                    } else {
                         responseFuture.complete(clientResponse);
-                    });
-                } else {
-                    responseFuture.complete(clientResponse);
-                }
+                    }
+                });
             });
         }
 
