@@ -18,8 +18,6 @@ package io.helidon.microprofile.examples.cors;
 
 import java.util.Collections;
 
-import io.helidon.microprofile.cors.CrossOrigin;
-
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.json.Json;
@@ -36,6 +34,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import io.helidon.microprofile.cors.CrossOrigin;
+
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -44,20 +44,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 
 /**
- * A simple JAX-RS resource to greet you. Examples:
- *
- * Get default greeting message:
- * curl -X GET http://localhost:8080/greet
- *
- * Get greeting message for Joe:
- * curl -X GET http://localhost:8080/greet/Joe
- *
- * Change greeting
- * curl -X PUT -H "Content-Type: application/json" -d '{"greeting" : "Howdy"}' http://localhost:8080/greet/greeting
- *
- * The message is returned as a JSON object.
- * 
- * This example also shows how Helidon MP apps can support CORS.
+ * A simple JAX-RS resource to greet you with CORS support.
  */
 @Path("/greet")
 @RequestScoped
@@ -88,7 +75,6 @@ public class GreetResource {
      */
     @SuppressWarnings("checkstyle:designforextension")
     @GET
-    @CrossOrigin()
     @Produces(MediaType.APPLICATION_JSON)
     public JsonObject getDefaultMessage() {
         return createResponse("World");
@@ -103,7 +89,6 @@ public class GreetResource {
     @SuppressWarnings("checkstyle:designforextension")
     @Path("/{name}")
     @GET
-    @CrossOrigin()
     @Produces(MediaType.APPLICATION_JSON)
     public JsonObject getMessage(@PathParam("name") String name) {
         return createResponse(name);
