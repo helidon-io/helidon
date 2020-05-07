@@ -87,7 +87,7 @@ final class WebClientResponseImpl implements WebClientResponse {
         }
         CompletableFuture<Void> toReturn = new CompletableFuture<>();
         responseCloser.close().addListener(future -> {
-            LOGGER.finest("Response from " + lastEndpointUri + " has been closed.");
+            LOGGER.finest(() -> "Response from has been closed.");
             toReturn.complete(null);
         });
         return toReturn;

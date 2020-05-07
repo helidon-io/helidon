@@ -55,10 +55,10 @@ Single<Object> empty2 = Single.empty();
 ```
 
 #### MediaSupport refactored
-`MediaSupport` class has been used as the holder object of media operator contexts. Now the name has changed to `MediaContext` and
-`MediaSupport` is an interface which defines media support for given type in form of readers, writers etc. Classes `JsonProcessing`,
-`JsonBinding` and `Jackson` are now renamed to `JsonpSupport`, `JsonbSupport` and `JacksonSupport` and are implementing
-`MediaSupport` interface. 
+The `MediaSupport` class has been used as holder object of media operator contexts. Now, the name has changed to `MediaContext`, 
+and`MediaSupport` will be the name given to the interface which defines media support for given type (readers, writers etc.)  
+The Classes `JsonProcessing`, `JsonBinding` and `Jackson` are now renamed to `JsonpSupport`, `JsonbSupport` and `JacksonSupport` 
+and are implementing the `MediaSupport` interface.
 
 ```java
 //before
