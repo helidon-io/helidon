@@ -15,6 +15,7 @@
  */
 package io.helidon.webclient;
 
+import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +44,7 @@ final class WebClientResponseImpl implements WebClientResponse {
     private final Http.Version version;
     private final MessageBodyReaderContext readerContext;
     private final NettyClientHandler.ResponseCloser responseCloser;
+    private final URI lastEndpointUri;
 
     private WebClientResponseImpl(Builder builder) {
         headers = WebClientResponseHeadersImpl.create(builder.headers);
@@ -51,6 +53,7 @@ final class WebClientResponseImpl implements WebClientResponse {
         version = builder.version;
         readerContext = builder.readerContext;
         responseCloser = builder.responseCloser;
+        lastEndpointUri = builder.lastEndpointUri;
     }
 
     /**
@@ -73,10 +76,18 @@ final class WebClientResponseImpl implements WebClientResponse {
     }
 
     @Override
+    public URI lastEndpointURI() {
+        return lastEndpointUri;
+    }
+
+    @Override
     public CompletionStage<Void> close() {
+        if (responseCloser.isClosed()) {
+            return CompletableFuture.completedFuture(null);
+        }
         CompletableFuture<Void> toReturn = new CompletableFuture<>();
         responseCloser.close().addListener(future -> {
-            LOGGER.finest("Response has been closed.");
+            LOGGER.finest("Response from " + lastEndpointUri + " has been closed.");
             toReturn.complete(null);
         });
         return toReturn;
@@ -106,6 +117,7 @@ final class WebClientResponseImpl implements WebClientResponse {
         private Http.Version version = Http.Version.V1_1;
         private NettyClientHandler.ResponseCloser responseCloser;
         private MessageBodyReaderContext readerContext;
+        private URI lastEndpointUri;
 
         @Override
         public WebClientResponseImpl build() {
@@ -176,6 +188,17 @@ final class WebClientResponseImpl implements WebClientResponse {
          */
         Builder responseCloser(NettyClientHandler.ResponseCloser responseCloser) {
             this.responseCloser = responseCloser;
+            return this;
+        }
+
+        /**
+         * Set last endpoint uri.
+         *
+         * @param lastEndpointUri endpoint uri
+         * @return updated builder instance
+         */
+        Builder lastEndpointURI(URI lastEndpointUri) {
+            this.lastEndpointUri = lastEndpointUri;
             return this;
         }
     }
