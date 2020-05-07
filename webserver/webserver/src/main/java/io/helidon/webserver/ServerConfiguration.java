@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
@@ -38,10 +39,9 @@ import io.opentracing.Tracer;
 import io.opentracing.util.GlobalTracer;
 
 /**
- * Immutable {@link WebServer} configuration.
- * <p>
- * Use {@link #builder()} to compose new instance.
+ * {@link WebServer} configuration.
  */
+@Deprecated
 public interface ServerConfiguration extends SocketConfiguration {
 
     /**
@@ -145,9 +145,25 @@ public interface ServerConfiguration extends SocketConfiguration {
      * @param name the name of the additional server socket
      * @return an additional named server socket configuration or {@code null} if there is no such
      * named server socket
+     * @deprecated since 2.0.0, please use {@link #namedSocket(String)} instead
      */
+    @Deprecated
     default SocketConfiguration socket(String name) {
-        return Optional.ofNullable(sockets()).map(map -> map.get(name)).orElse(null);
+        return namedSocket(name).orElse(null);
+    }
+
+    /**
+     * A socket configuration of an additional named server socket.
+     * <p>
+     * An additional named server socket may have a dedicated {@link Routing} configured
+     * through {@link io.helidon.webserver.WebServer.Builder#addNamedRouting(String, Routing)}.
+     *
+     * @param name the name of the additional server socket
+     * @return an additional named server socket configuration or {@code empty} if there is no such
+     * named server socket configured
+     */
+    default Optional<SocketConfiguration> namedSocket(String name) {
+        return Optional.ofNullable(sockets().get(name));
     }
 
     /**
@@ -158,7 +174,7 @@ public interface ServerConfiguration extends SocketConfiguration {
      * An additional named server socket may have a dedicated {@link Routing} configured
      * through {@link io.helidon.webserver.WebServer.Builder#addNamedRouting(String, Routing)}.
      *
-     * @return a map of all the configured server sockets
+     * @return a map of all the configured server sockets, never null
      */
     Map<String, SocketConfiguration> sockets();
 
@@ -230,8 +246,13 @@ public interface ServerConfiguration extends SocketConfiguration {
 
     /**
      * A {@link ServerConfiguration} builder.
+     *
+     * @deprecated since 2.0.0 - use {@link io.helidon.webserver.WebServer.Builder} instead
      */
-    final class Builder implements io.helidon.common.Builder<ServerConfiguration> {
+    @Deprecated
+    final class Builder implements SocketConfiguration.SocketConfigurationBuilder<Builder>,
+                                   io.helidon.common.Builder<ServerConfiguration> {
+
         private static final AtomicInteger WEBSERVER_COUNTER = new AtomicInteger(1);
         private final SocketConfiguration.Builder defaultSocketBuilder = SocketConfiguration.builder();
         private final Map<String, SocketConfiguration> sockets = new HashMap<>();
@@ -343,7 +364,10 @@ public interface ServerConfiguration extends SocketConfiguration {
          * @param port        the port to bind; if {@code 0} or less, any available ephemeral port will be used
          * @param bindAddress the address to bind; if {@code null}, all local addresses will be bound
          * @return an updated builder
+         *
+         * @deprecated since 2.0.0, please use {@link #addSocket(String, SocketConfiguration)} instead
          */
+        @Deprecated
         public Builder addSocket(String name, int port, InetAddress bindAddress) {
             Objects.requireNonNull(name, "Parameter 'name' must not be null!");
             return addSocket(name, SocketConfiguration.builder()
@@ -629,6 +653,18 @@ public interface ServerConfiguration extends SocketConfiguration {
 
         boolean printFeatureDetails() {
             return printFeatureDetails;
+        }
+
+        @Override
+        public Builder timeout(long amount, TimeUnit unit) {
+            this.defaultSocketBuilder.timeout(amount, unit);
+            return this;
+        }
+
+        @Override
+        public Builder tls(TlsConfig tlsConfig) {
+            this.defaultSocketBuilder.tls(tlsConfig);
+            return this;
         }
     }
 }

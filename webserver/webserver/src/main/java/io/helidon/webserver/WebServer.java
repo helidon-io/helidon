@@ -16,15 +16,18 @@
 
 package io.helidon.webserver;
 
+import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
+import io.helidon.config.Config;
 import io.helidon.media.common.MediaContext;
 import io.helidon.media.common.MediaContextBuilder;
 import io.helidon.media.common.MediaSupport;
@@ -41,9 +44,9 @@ import io.helidon.media.common.ParentingMediaContextBuilder;
  * <p>
  * Provides basic lifecycle and monitoring API.
  * <p>
- * Instance can be created from {@link Routing} and optionally from {@link ServerConfiguration} using
- * {@link #create(Routing)}, {@link #create(ServerConfiguration, Routing)} or {@link #builder(Routing)}methods and their builder
- * enabled overloads.
+ * Instance can be created from {@link Routing} and optionally from {@link io.helidon.config.Config} using
+ * {@link #create(Routing)}, {@link #create(Routing, io.helidon.config.Config)} or {@link #builder(Routing)}methods and
+ * their builder enabled overloads.
  */
 public interface WebServer {
 
@@ -138,7 +141,12 @@ public interface WebServer {
      * @return a new web server instance
      * @throws IllegalStateException if none SPI implementation found
      * @throws NullPointerException if 'routing' parameter is {@code null}
+     *
+     * @deprecated since 2.0.0 - please use {@link #create(io.helidon.webserver.Routing, io.helidon.config.Config)} instead
+     *  for instances based on {@link io.helidon.config.Config}, or {@link #builder(io.helidon.webserver.Routing)} to configure
+     *  server configuration by hand (as you would on {@link SocketConfiguration.Builder} now.
      */
+    @Deprecated
     static WebServer create(Supplier<? extends ServerConfiguration> configurationBuilder, Routing routing) {
         return create(configurationBuilder != null ? configurationBuilder.get() : null, routing);
     }
@@ -152,7 +160,12 @@ public interface WebServer {
      * @return a new web server instance
      * @throws IllegalStateException if none SPI implementation found
      * @throws NullPointerException  if 'routingBuilder' parameter is {@code null}
+     *
+     * @deprecated since 2.0.0 - please use {@link #create(java.util.function.Supplier, io.helidon.config.Config)} instead
+     *  for instances based on {@link io.helidon.config.Config}, or {@link #builder(java.util.function.Supplier)} to configure
+     *  server configuration by hand (as you would on {@link SocketConfiguration.Builder} now.
      */
+    @Deprecated
     static WebServer create(Supplier<? extends ServerConfiguration> configurationBuilder,
                             Supplier<? extends Routing> routingBuilder) {
         Objects.requireNonNull(routingBuilder, "Parameter 'routingBuilder' must not be null!");
@@ -167,7 +180,12 @@ public interface WebServer {
      * @return a new web server instance
      * @throws IllegalStateException if none SPI implementation found
      * @throws NullPointerException  if 'routingBuilder' parameter is {@code null}
+     *
+     * @deprecated since 2.0.0 - please use {@link #create(java.util.function.Supplier, io.helidon.config.Config)} instead
+     *  for instances based on {@link io.helidon.config.Config}, or {@link #builder(java.util.function.Supplier)} to configure
+     *  server configuration by hand (as you would on {@link SocketConfiguration.Builder} now.
      */
+    @Deprecated
     static WebServer create(ServerConfiguration configuration,
                             Supplier<? extends Routing> routingBuilder) {
         Objects.requireNonNull(routingBuilder, "Parameter 'routingBuilder' must not be null!");
@@ -183,7 +201,7 @@ public interface WebServer {
      * @throws NullPointerException  if 'routing' parameter is {@code null}
      */
     static WebServer create(Routing routing) {
-        return create((ServerConfiguration) null, routing);
+        return builder(routing).build();
     }
 
     /**
@@ -192,14 +210,50 @@ public interface WebServer {
      * @param configuration a server configuration instance
      * @param routing       a routing instance
      * @return a new web server instance
-     * @throws IllegalStateException if none SPI implementation found
      * @throws NullPointerException  if 'routing' parameter is {@code null}
+     *
+     * @deprecated since 2.0.0 - please use {@link #create(Routing, io.helidon.config.Config)} instead
+     *  for instances based on {@link io.helidon.config.Config}, or {@link #builder(Routing)} to configure
+     *  server configuration by hand (as you would on {@link SocketConfiguration.Builder} now.
      */
+    @Deprecated
     static WebServer create(ServerConfiguration configuration, Routing routing) {
         Objects.requireNonNull(routing, "Parameter 'routing' is null!");
 
         return builder(routing).config(configuration)
-                               .build();
+                .build();
+    }
+
+    /**
+     * Creates new instance from provided configuration and routing.
+     *
+     * @param routing       a routing instance
+     * @param config        configuration located on server configuration node
+     * @return a new web server instance
+     * @throws NullPointerException  if 'routing' parameter is {@code null}
+     *
+     * @since 2.0.0
+     */
+    static WebServer create(Routing routing, Config config) {
+        return builder(routing)
+                .config(config)
+                .build();
+    }
+
+    /**
+     * Creates new instance from provided configuration and routing.
+     *
+     * @param routingBuilder  a supplier of routing (such as {@link Routing.Builder}
+     * @param config        configuration located on server configuration node
+     * @return a new web server instance
+     * @throws NullPointerException  if 'routing' parameter is {@code null}
+     *
+     * @since 2.0.0
+     */
+    static WebServer create(Supplier<Routing> routingBuilder, Config config) {
+        return builder(routingBuilder.get())
+                .config(config)
+                .build();
     }
 
     /**
@@ -242,6 +296,7 @@ public interface WebServer {
      * sockets and optional multiple routings.
      */
     final class Builder implements io.helidon.common.Builder<WebServer>,
+                                   SocketConfiguration.SocketConfigurationBuilder<Builder>,
                                    ParentingMediaContextBuilder<Builder>,
                                    MediaContextBuilder<Builder> {
 
@@ -253,7 +308,12 @@ public interface WebServer {
 
         private final Map<String, Routing> routings = new HashMap<>();
         private final Routing defaultRouting;
-        private ServerConfiguration configuration;
+        // internal use - we may keep this even after we remove the public access to ServerConfiguration
+        @SuppressWarnings("deprecation")
+        private final ServerConfiguration.Builder configurationBuilder = ServerConfiguration.builder();
+        // for backward compatibility
+        @SuppressWarnings("deprecation")
+        private ServerConfiguration explicitConfig;
         private MessageBodyReaderContext readerContext;
         private MessageBodyWriterContext writerContext;
 
@@ -265,13 +325,51 @@ public interface WebServer {
         }
 
         /**
+         * Builds the {@link WebServer} instance as configured by this builder and its parameters.
+         *
+         * @return a ready to use {@link WebServer}
+         * @throws IllegalStateException if there are unpaired named routings (as described
+         *                               at {@link #addNamedRouting(String, Routing)})
+         */
+        @Override
+        public WebServer build() {
+            if (null == explicitConfig) {
+                explicitConfig = configurationBuilder.build();
+            }
+
+            String unpairedRoutings =
+                    routings.keySet()
+                            .stream()
+                            .filter(routingName -> explicitConfig.namedSocket(routingName).isEmpty())
+                            .collect(Collectors.joining(", "));
+            if (!unpairedRoutings.isEmpty()) {
+                throw new IllegalStateException("No server socket configuration found for named routings: " + unpairedRoutings);
+            }
+
+            WebServer result = new NettyWebServer(explicitConfig,
+                                                  defaultRouting,
+                                                  routings,
+                                                  writerContext,
+                                                  readerContext);
+
+            if (defaultRouting instanceof RequestRouting) {
+                ((RequestRouting) defaultRouting).fireNewWebServer(result);
+            }
+            return result;
+        }
+
+        /**
          * Set a configuration of the {@link WebServer}.
+         * Once this method is called, all other methods on this interface related to
+         * server configuration are ignored.
          *
          * @param configuration the configuration
          * @return an updated builder
+         * @deprecated since 2.0.0 - please use methods on this builder, or {@link #config(io.helidon.config.Config)} instead
          */
+        @Deprecated
         public Builder config(ServerConfiguration configuration) {
-            this.configuration = configuration;
+            this.explicitConfig = configuration;
             return this;
         }
 
@@ -280,9 +378,22 @@ public interface WebServer {
          *
          * @param configurationBuilder the configuration builder
          * @return an updated builder
+         * @deprecated since 2.0.0 - see {@link #config(ServerConfiguration)}
          */
+        @Deprecated
         public Builder config(Supplier<ServerConfiguration> configurationBuilder) {
-            this.configuration = configurationBuilder != null ? configurationBuilder.get() : null;
+            return config(configurationBuilder.get());
+        }
+
+        /**
+         * Update this server configuration from the config provided.
+         *
+         * @param config config located on server node
+         * @return an updated builder
+         * @since 2.0.0
+         */
+        public Builder config(Config config) {
+            this.configurationBuilder.config(config);
             return this;
         }
 
@@ -366,36 +477,40 @@ public interface WebServer {
             return this;
         }
 
-        /**
-         * Builds the {@link WebServer} instance as configured by this builder and its parameters.
-         *
-         * @return a ready to use {@link WebServer}
-         * @throws IllegalStateException if there are unpaired named routings (as described
-         *                               at {@link #addNamedRouting(String, Routing)})
-         */
         @Override
-        public WebServer build() {
+        public Builder port(int port) {
+            configurationBuilder.port(port);
+            return this;
+        }
 
-            String unpairedRoutings =
-                    routings.keySet()
-                            .stream()
-                            .filter(routingName -> configuration == null || configuration.socket(routingName) == null)
-                            .collect(Collectors.joining(", "));
-            if (!unpairedRoutings.isEmpty()) {
-                throw new IllegalStateException("No server socket configuration found for named routings: " + unpairedRoutings);
-            }
+        @Override
+        public Builder bindAddress(InetAddress bindAddress) {
+            configurationBuilder.bindAddress(bindAddress);
+            return this;
+        }
 
-            WebServer result = new NettyWebServer(configuration == null
-                                                          // this is happening once per microservice, no need to store in
-                                                          // a constant; also the configuration creates instances of context etc.
-                                                          // that should not be initialized unless needed
-                                                          ? ServerConfiguration.builder().build()
-                                                          : configuration,
-                                                  defaultRouting, routings, writerContext, readerContext);
-            if (defaultRouting instanceof RequestRouting) {
-                ((RequestRouting) defaultRouting).fireNewWebServer(result);
-            }
-            return result;
+        @Override
+        public Builder backlog(int backlog) {
+            configurationBuilder.backlog(backlog);
+            return this;
+        }
+
+        @Override
+        public Builder timeout(long amount, TimeUnit unit) {
+            configurationBuilder.timeout(amount, unit);
+            return this;
+        }
+
+        @Override
+        public Builder receiveBufferSize(int receiveBufferSize) {
+            configurationBuilder.receiveBufferSize(receiveBufferSize);
+            return this;
+        }
+
+        @Override
+        public Builder tls(TlsConfig tlsConfig) {
+            configurationBuilder.tls(tlsConfig);
+            return this;
         }
     }
 }
