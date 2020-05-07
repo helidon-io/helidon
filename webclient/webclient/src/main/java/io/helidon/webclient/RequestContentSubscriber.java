@@ -127,14 +127,7 @@ class RequestContentSubscriber implements Flow.Subscriber<DataChunk> {
     private void sendData(DataChunk data) {
         LOGGER.finest(() -> "Sending data chunk");
         DefaultHttpContent httpContent = new DefaultHttpContent(Unpooled.wrappedBuffer(data.data()));
-        ChannelFuture channelFuture;
-        if (data.flush()) {
-            channelFuture = channel.writeAndFlush(httpContent);
-        } else {
-            channelFuture = channel.write(httpContent);
-        }
-
-        channelFuture
+        channel.writeAndFlush(httpContent)
                 .addListener(future -> {
                     data.release();
                     subscription.request(1);
