@@ -23,9 +23,11 @@
 :keywords: helidon, se, database, dbclient
 
 
-The Helidon SE DB Client provides a unified, reactive API for working with databases in non-blocking way. The DB Client simplfies how you work with databases by allowing the use of blocking JDBC drivers in your reactive application by wrapping a blocking driver in an executor service. 
+The Helidon SE DB Client provides a unified, reactive API for working with databases in non-blocking way. 
 
 == Helidon DB Client Features Overview
+
+The DB Client simplfies how you work with databases by allowing the use of blocking JDBC drivers in your reactive application by wrapping a blocking driver in an executor service. Specifically, the Heldion DB Client provides the following:
 
 * *Unified API for data access and query* +
 The API was implemented as a layer above JDBC or MongoDB Reactive Streams Java Driver, so any relational databases with JDBC driver or MongoDB are supported.
@@ -43,7 +45,7 @@ Helidon DB Client performs database operations only when it’s requested by the
 The DB Client works with native database statements that can be used inline in the code or defined as named statements in database configuration. +
 By moving the native query code to configuration files, the Helidon DB Client allows you to switch to another database by changing the configuration files, not the code.
 
-== Get Started
+== Getting Started
 
 Before you begin you must:
 
@@ -96,7 +98,7 @@ db:
 
 <3> Statements: named statements when used
 
-== DB Client API
+== Using DB Client API Methods
 
 The Helidon DB Client API contains many methods to run various statements with parameters and to retrieve statement execution results. The following sections describe the options you can use to build and execute your statements.
 
