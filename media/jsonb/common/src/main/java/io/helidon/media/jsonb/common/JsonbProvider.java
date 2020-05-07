@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,23 +14,26 @@
  * limitations under the License.
  */
 
+package io.helidon.media.jsonb.common;
+
+import io.helidon.config.Config;
+import io.helidon.media.common.MediaSupport;
 import io.helidon.media.common.spi.MediaSupportProvider;
 
 /**
- * Media type support common classes.
- *
- * @see io.helidon.media.common.ContentReaders
- * @see io.helidon.media.common.ContentWriters
+ * JSON-B support SPI provider.
  */
-module io.helidon.media.common {
-    requires java.logging;
-    requires io.helidon.common.mapper;
-    requires io.helidon.common.reactive;
-    requires io.helidon.common.http;
-    requires io.helidon.config;
+public class JsonbProvider implements MediaSupportProvider {
 
-    exports io.helidon.media.common;
-    exports io.helidon.media.common.spi;
+    private static final String JSON_B = "json-b";
 
-    uses MediaSupportProvider;
+    @Override
+    public MediaSupport create(Config config) {
+        return JsonbSupport.create();
+    }
+
+    @Override
+    public String type() {
+        return JSON_B;
+    }
 }

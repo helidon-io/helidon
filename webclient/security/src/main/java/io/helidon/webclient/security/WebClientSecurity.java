@@ -98,7 +98,7 @@ public class WebClientSecurity implements WebClientService {
                 .asChildOf(context.tracingSpan())
                 .start();
 
-        String explicitProvider = request.properties().first(PROVIDER_NAME).orElse(null);
+        String explicitProvider = request.properties().get(PROVIDER_NAME);
 
         OutboundSecurityClientBuilder clientBuilder;
 
@@ -110,10 +110,11 @@ public class WebClientSecurity implements WebClientService {
                     .headers(request.headers().toMap());
 
             EndpointConfig.Builder outboundEp = context.endpointConfig().derive();
-            Map<String, List<String>> propMap = request.properties().toMap();
+            Map<String, String> propMap = request.properties();
 
             for (String name : propMap.keySet()) {
-                request.properties().first(name).ifPresent(property -> outboundEp.addAtribute(name, property));
+                Optional.ofNullable(request.properties().get(name))
+                        .ifPresent(property -> outboundEp.addAtribute(name, property));
             }
 
             clientBuilder = context.outboundClientBuilder()

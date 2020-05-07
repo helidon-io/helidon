@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,8 @@ import java.util.logging.Logger;
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
 import io.helidon.common.context.Context;
-import io.helidon.media.common.MediaSupport;
+import io.helidon.media.common.MessageBodyReaderContext;
+import io.helidon.media.common.MessageBodyWriterContext;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
@@ -78,7 +79,8 @@ class NettyWebServer implements WebServer {
     private final io.helidon.common.http.ContextualRegistry contextualRegistry;
     private final ConcurrentMap<String, Channel> channels = new ConcurrentHashMap<>();
     private final List<HttpInitializer> initializers = new LinkedList<>();
-    private final MediaSupport mediaSupport;
+    private final MessageBodyWriterContext writerContext;
+    private final MessageBodyReaderContext readerContext;
 
     private volatile boolean started;
     private final AtomicBoolean shutdownThreadGroupsInitiated = new AtomicBoolean(false);
@@ -95,7 +97,8 @@ class NettyWebServer implements WebServer {
     NettyWebServer(ServerConfiguration config,
                    Routing routing,
                    Map<String, Routing> namedRoutings,
-                   MediaSupport mediaSupport) {
+                   MessageBodyWriterContext writerContext,
+                   MessageBodyReaderContext readerContext) {
         Set<Map.Entry<String, SocketConfiguration>> sockets = config.sockets().entrySet();
 
         HelidonFeatures.print(HelidonFlavor.SE, config.printFeatureDetails());
@@ -110,7 +113,8 @@ class NettyWebServer implements WebServer {
             this.contextualRegistry = io.helidon.common.http.ContextualRegistry.create(config.context());
         }
         this.configuration = config;
-        this.mediaSupport = mediaSupport;
+        this.readerContext = MessageBodyReaderContext.create(readerContext);
+        this.writerContext = MessageBodyWriterContext.create(writerContext);
 
         for (Map.Entry<String, SocketConfiguration> entry : sockets) {
             String name = entry.getKey();
@@ -173,8 +177,13 @@ class NettyWebServer implements WebServer {
     }
 
     @Override
-    public MediaSupport mediaSupport() {
-        return mediaSupport;
+    public MessageBodyReaderContext readerContext() {
+        return readerContext;
+    }
+
+    @Override
+    public MessageBodyWriterContext writerContext() {
+        return writerContext;
     }
 
     @Override

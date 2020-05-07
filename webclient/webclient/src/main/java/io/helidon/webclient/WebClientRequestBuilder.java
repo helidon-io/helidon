@@ -17,7 +17,6 @@ package io.helidon.webclient;
 
 import java.net.URI;
 import java.net.URL;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
@@ -31,8 +30,8 @@ import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpRequest;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.http.Parameters;
-import io.helidon.media.common.MessageBodyReader;
-import io.helidon.media.common.MessageBodyWriter;
+import io.helidon.media.common.MessageBodyReaderContext;
+import io.helidon.media.common.MessageBodyWriterContext;
 import io.helidon.webclient.spi.WebClientService;
 
 /**
@@ -77,7 +76,7 @@ public interface WebClientRequestBuilder {
      * @param propertyValue property value
      * @return updated builder instance
      */
-    WebClientRequestBuilder property(String propertyName, String... propertyValue);
+    WebClientRequestBuilder property(String propertyName, String propertyValue);
 
     /**
      * Explicitly configure a context to use.
@@ -146,20 +145,18 @@ public interface WebClientRequestBuilder {
     WebClientRequestBuilder queryParams(Parameters queryParams);
 
     /**
-     * Register new message body writer.
+     * Returns reader context of the request builder.
      *
-     * @param messageBodyWriter message body writer
-     * @return updated builder instance
+     * @return request reader context
      */
-    WebClientRequestBuilder register(MessageBodyWriter<?> messageBodyWriter);
+    MessageBodyReaderContext readerContext();
 
     /**
-     * Register new message body reader.
+     * Returns writer context of the request builder.
      *
-     * @param messageBodyReader message body reader
-     * @return updated builder instance
+     * @return request writer context
      */
-    WebClientRequestBuilder register(MessageBodyReader<?> messageBodyReader);
+    MessageBodyWriterContext writerContext();
 
     /**
      * Sets http version.
@@ -244,9 +241,7 @@ public interface WebClientRequestBuilder {
      *
      * @return request completion stage
      */
-    default CompletionStage<WebClientResponse> request() {
-        return request(WebClientResponse.class);
-    }
+    CompletionStage<WebClientResponse> request();
 
     /**
      * Performs prepared request.
@@ -319,13 +314,11 @@ public interface WebClientRequestBuilder {
         WebClientRequestHeaders headers();
 
         /**
-         * Current request configuration.
+         * Request immutable list of properties.
          *
-         * @return request configuration
+         * @return request properties
          */
-        RequestConfiguration configuration();
-
-        Map<String, List<String>> properties();
+        Map<String, String> properties();
 
         /**
          * Proxy used by current request.

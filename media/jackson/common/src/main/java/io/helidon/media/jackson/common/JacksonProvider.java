@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,23 +14,26 @@
  * limitations under the License.
  */
 
+package io.helidon.media.jackson.common;
+
+import io.helidon.config.Config;
+import io.helidon.media.common.MediaSupport;
 import io.helidon.media.common.spi.MediaSupportProvider;
 
 /**
- * Media type support common classes.
- *
- * @see io.helidon.media.common.ContentReaders
- * @see io.helidon.media.common.ContentWriters
+ * Jackson support SPI provider.
  */
-module io.helidon.media.common {
-    requires java.logging;
-    requires io.helidon.common.mapper;
-    requires io.helidon.common.reactive;
-    requires io.helidon.common.http;
-    requires io.helidon.config;
+public class JacksonProvider implements MediaSupportProvider {
 
-    exports io.helidon.media.common;
-    exports io.helidon.media.common.spi;
+    private static final String JACKSON = "jackson";
 
-    uses MediaSupportProvider;
+    @Override
+    public MediaSupport create(Config config) {
+        return JacksonSupport.create();
+    }
+
+    @Override
+    public String type() {
+        return JACKSON;
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,21 +22,28 @@ import javax.json.Json;
 import javax.json.JsonReaderFactory;
 import javax.json.JsonWriterFactory;
 
+import io.helidon.media.common.MediaSupport;
+import io.helidon.media.common.MessageBodyReaderContext;
+import io.helidon.media.common.MessageBodyWriterContext;
+
 /**
  * Support for JSON Processing integration.
+ *
+ * For usage examples navigate to {@link MediaSupport}
  */
-public final class JsonProcessing {
+public final class JsonpSupport implements MediaSupport {
 
     private final JsonReaderFactory jsonReaderFactory;
     private final JsonWriterFactory jsonWriterFactory;
 
-    private JsonProcessing(JsonReaderFactory readerFactory, JsonWriterFactory writerFactory) {
+    private JsonpSupport(JsonReaderFactory readerFactory, JsonWriterFactory writerFactory) {
         this.jsonReaderFactory = readerFactory;
         this.jsonWriterFactory = writerFactory;
     }
 
     /**
      * Create a new JSON-P entity reader.
+     *
      * @return JsonEntityReader
      */
     public JsonpBodyReader newReader() {
@@ -45,17 +52,24 @@ public final class JsonProcessing {
 
     /**
      * Create a new JSON-P entity writer.
+     *
      * @return JsonEntityWriter
      */
     public JsonpBodyWriter newWriter() {
         return new JsonpBodyWriter(jsonWriterFactory);
     }
 
+    @Override
+    public void register(MessageBodyReaderContext readerContext, MessageBodyWriterContext writerContext) {
+        readerContext.registerReader(newReader());
+        writerContext.registerWriter(newWriter());
+    }
+
     /**
      * Provides a default instance for JSON-P readers and writers.
      * @return json processing with default configuration
      */
-    public static JsonProcessing create() {
+    public static JsonpSupport create() {
         return Builder.DEFAULT_INSTANCE;
     }
 
@@ -64,8 +78,26 @@ public final class JsonProcessing {
      * @param jsonPConfig configuration of the processing library
      * @return a configured JSON-P instance
      */
-    public static JsonProcessing create(Map<String, ?> jsonPConfig) {
+    public static JsonpSupport create(Map<String, ?> jsonPConfig) {
         return builder().jsonProcessingConfig(jsonPConfig).build();
+    }
+
+    /**
+     * Create a new JSON-P entity reader.
+     *
+     * @return JsonEntityReader
+     */
+    public static JsonpBodyReader reader() {
+        return create().newReader();
+    }
+
+    /**
+     * Create a new JSON-P entity writer.
+     *
+     * @return JsonEntityReader
+     */
+    public static JsonpBodyWriter writer() {
+        return create().newWriter();
     }
 
     /**
@@ -78,17 +110,17 @@ public final class JsonProcessing {
     }
 
     /**
-     * Fluent-API builder for {@link io.helidon.media.jsonp.common.JsonProcessing}.
+     * Fluent-API builder for {@link JsonpSupport}.
      */
-    public static class Builder implements io.helidon.common.Builder<JsonProcessing> {
-        private static final JsonProcessing DEFAULT_INSTANCE = new JsonProcessing(readerFactory(null), writerFactory(null));
+    public static class Builder implements io.helidon.common.Builder<JsonpSupport> {
+        private static final JsonpSupport DEFAULT_INSTANCE = new JsonpSupport(readerFactory(null), writerFactory(null));
 
         private JsonWriterFactory jsonWriterFactory;
         private JsonReaderFactory jsonReaderFactory;
         private Map<String, ?> jsonPConfig;
 
         @Override
-        public JsonProcessing build() {
+        public JsonpSupport build() {
             if ((null == jsonReaderFactory) && (null == jsonWriterFactory) && (null == jsonPConfig)) {
                 return DEFAULT_INSTANCE;
             }
@@ -105,7 +137,7 @@ public final class JsonProcessing {
                 jsonReaderFactory = readerFactory(jsonPConfig);
             }
 
-            return new JsonProcessing(jsonReaderFactory, jsonWriterFactory);
+            return new JsonpSupport(jsonReaderFactory, jsonWriterFactory);
         }
 
         private static JsonReaderFactory readerFactory(Map<String, ?> jsonPConfig) {
