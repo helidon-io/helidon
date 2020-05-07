@@ -42,7 +42,7 @@ class WebServerBinder extends AbstractBinder {
     @Override
     protected void configure() {
         bindFactory(WebServerRequestReferencingFactory.class).to(ServerRequest.class)
-                                                             .proxy(false)
+                                                             .proxy(true).proxyForSameScope(false)
                                                              .in(RequestScoped.class);
         bindFactory(ReferencingFactory.<ServerRequest>referenceFactory()).to(new GenericType<Ref<ServerRequest>>() { })
                                                                          .in(RequestScoped.class);
