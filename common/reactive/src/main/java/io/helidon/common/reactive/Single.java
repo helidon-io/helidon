@@ -18,7 +18,6 @@ package io.helidon.common.reactive;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -28,6 +27,7 @@ import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
@@ -43,7 +43,7 @@ import io.helidon.common.mapper.Mapper;
  * @param <T> item type
  * @see Multi
  */
-public interface Single<T> extends Subscribable<T>, CompletionStage<T> {
+public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitable<T> {
 
     // --------------------------------------------------------------------------------------------------------
     // Factory (source-like) methods
@@ -565,37 +565,6 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T> {
     }
 
     /**
-     * Block until {@link io.helidon.common.reactive.Single} is completed, throws only unchecked exceptions.
-     *
-     * @throws java.util.concurrent.CancellationException if the computation was cancelled
-     * @throws CompletionException                        if this future completed
-     * @return T
-     */
-    default T await() {
-        return this.toCompletableFuture().join();
-    }
-
-    /**
-     * Block until {@link io.helidon.common.reactive.Single} is completed, throws only unchecked exceptions.
-     *
-     * @param timeout the maximum time to wait
-     * @param unit    the time unit of the timeout argument
-     * @return the result value
-     * @throws java.util.concurrent.CancellationException if this future was cancelled
-     * @throws CompletionException                        if this future completed exceptionally,
-     *                                                    was interrupted while waiting or the wait timed out
-     */
-    default T await(long timeout, TimeUnit unit) {
-        try {
-            return this.toCompletableFuture().get(timeout, unit);
-        } catch (ExecutionException e) {
-            throw new CompletionException(e.getCause());
-        } catch (InterruptedException | TimeoutException e) {
-            throw new CompletionException(e);
-        }
-    }
-
-    /**
      * Cancel upstream.
      *
      * @return new {@link Single} for eventually received single value.
@@ -610,4 +579,115 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T> {
         this.subscribe(subscriber);
         return Single.from(future);
     }
+
+    @Override
+    <U> CompletionAwaitable<U> thenApply(Function<? super T, ? extends U> fn);
+
+    @Override
+    <U> CompletionAwaitable<U> thenApplyAsync(Function<? super T, ? extends U> fn);
+
+    @Override
+    <U> CompletionAwaitable<U> thenApplyAsync(Function<? super T, ? extends U> fn, Executor executor);
+
+    @Override
+    CompletionAwaitable<Void> thenAccept(Consumer<? super T> action);
+
+    @Override
+    CompletionAwaitable<Void> thenAcceptAsync(Consumer<? super T> action);
+
+    @Override
+    CompletionAwaitable<Void> thenAcceptAsync(Consumer<? super T> action, Executor executor);
+
+    @Override
+    CompletionAwaitable<Void> thenRun(Runnable action);
+
+    @Override
+    CompletionAwaitable<Void> thenRunAsync(Runnable action);
+
+    @Override
+    CompletionAwaitable<Void> thenRunAsync(Runnable action, Executor executor);
+
+    @Override
+    <U, V> CompletionAwaitable<V> thenCombine(CompletionStage<? extends U> other, BiFunction<? super T, ? super U, ? extends V> fn);
+
+    @Override
+    <U, V> CompletionAwaitable<V> thenCombineAsync(CompletionStage<? extends U> other, BiFunction<? super T, ? super U, ? extends V> fn);
+
+    @Override
+    <U, V> CompletionAwaitable<V> thenCombineAsync(CompletionStage<? extends U> other, BiFunction<? super T, ? super U, ? extends V> fn, Executor executor);
+
+    @Override
+    <U> CompletionAwaitable<Void> thenAcceptBoth(CompletionStage<? extends U> other, BiConsumer<? super T, ? super U> action);
+
+    @Override
+    <U> CompletionAwaitable<Void> thenAcceptBothAsync(CompletionStage<? extends U> other, BiConsumer<? super T, ? super U> action);
+
+    @Override
+    <U> CompletionAwaitable<Void> thenAcceptBothAsync(CompletionStage<? extends U> other, BiConsumer<? super T, ? super U> action, Executor executor);
+
+    @Override
+    CompletionAwaitable<Void> runAfterBoth(CompletionStage<?> other, Runnable action);
+
+    @Override
+    CompletionAwaitable<Void> runAfterBothAsync(CompletionStage<?> other, Runnable action);
+
+    @Override
+    CompletionAwaitable<Void> runAfterBothAsync(CompletionStage<?> other, Runnable action, Executor executor);
+
+    @Override
+    <U> CompletionAwaitable<U> applyToEither(CompletionStage<? extends T> other, Function<? super T, U> fn);
+
+    @Override
+    <U> CompletionAwaitable<U> applyToEitherAsync(CompletionStage<? extends T> other, Function<? super T, U> fn);
+
+    @Override
+    <U> CompletionAwaitable<U> applyToEitherAsync(CompletionStage<? extends T> other, Function<? super T, U> fn, Executor executor);
+
+    @Override
+    CompletionAwaitable<Void> acceptEither(CompletionStage<? extends T> other, Consumer<? super T> action);
+
+    @Override
+    CompletionAwaitable<Void> acceptEitherAsync(CompletionStage<? extends T> other, Consumer<? super T> action);
+
+    @Override
+    CompletionAwaitable<Void> acceptEitherAsync(CompletionStage<? extends T> other, Consumer<? super T> action, Executor executor);
+
+    @Override
+    CompletionAwaitable<Void> runAfterEither(CompletionStage<?> other, Runnable action);
+
+    @Override
+    CompletionAwaitable<Void> runAfterEitherAsync(CompletionStage<?> other, Runnable action);
+
+    @Override
+    CompletionAwaitable<Void> runAfterEitherAsync(CompletionStage<?> other, Runnable action, Executor executor);
+
+    @Override
+    <U> CompletionAwaitable<U> thenCompose(Function<? super T, ? extends CompletionStage<U>> fn);
+
+    @Override
+    <U> CompletionAwaitable<U> thenComposeAsync(Function<? super T, ? extends CompletionStage<U>> fn);
+
+    @Override
+    <U> CompletionAwaitable<U> thenComposeAsync(Function<? super T, ? extends CompletionStage<U>> fn, Executor executor);
+
+    @Override
+    <U> CompletionAwaitable<U> handle(BiFunction<? super T, Throwable, ? extends U> fn);
+
+    @Override
+    <U> CompletionAwaitable<U> handleAsync(BiFunction<? super T, Throwable, ? extends U> fn);
+
+    @Override
+    <U> CompletionAwaitable<U> handleAsync(BiFunction<? super T, Throwable, ? extends U> fn, Executor executor);
+
+    @Override
+    CompletionAwaitable<T> whenComplete(BiConsumer<? super T, ? super Throwable> action);
+
+    @Override
+    CompletionAwaitable<T> whenCompleteAsync(BiConsumer<? super T, ? super Throwable> action);
+
+    @Override
+    CompletionAwaitable<T> whenCompleteAsync(BiConsumer<? super T, ? super Throwable> action, Executor executor);
+
+    @Override
+    CompletionAwaitable<T> exceptionally(Function<Throwable, ? extends T> fn);
 }

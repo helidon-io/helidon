@@ -47,6 +47,22 @@ public class AwaitTest {
     }
 
     @Test
+    void forEachAwaitChain() {
+        AtomicLong sum = new AtomicLong();
+        AtomicLong completedTimes = new AtomicLong();
+        testMulti()
+                .forEach(sum::addAndGet)
+                .whenComplete((aVoid, throwable) -> completedTimes.incrementAndGet())
+                .whenComplete((aVoid, throwable) -> completedTimes.incrementAndGet())
+                .whenComplete((aVoid, throwable) -> completedTimes.incrementAndGet())
+                .thenRun(completedTimes::incrementAndGet)
+                .thenAccept(aVoid -> completedTimes.incrementAndGet())
+                .await();
+        assertEquals(EXPECTED_SUM, sum.get());
+        assertEquals(5, completedTimes.get());
+    }
+
+    @Test
     void forEachWhenComplete() throws InterruptedException, ExecutionException, TimeoutException {
         AtomicLong sum = new AtomicLong();
         CompletableFuture<Void> completeFuture = new CompletableFuture<>();
