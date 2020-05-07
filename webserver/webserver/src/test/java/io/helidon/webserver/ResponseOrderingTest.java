@@ -146,7 +146,7 @@ public class ResponseOrderingTest {
                     .append("\n");
         }
 
-        webClient.method(Http.Method.POST.name())
+        webClient.post()
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .submit(sb.toString().getBytes(), String.class)
                 .thenAccept(it -> assertThat(it, is(sb.toString())));

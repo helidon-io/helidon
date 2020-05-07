@@ -100,7 +100,7 @@ public class SslTest {
 
     @Test
     public void multipleSslRequestsNonKeepAlive() throws Exception {
-        WebClientRequestBuilder requestBuilder = client.method(Http.Method.POST.name())
+        WebClientRequestBuilder requestBuilder = client.post()
                 .uri("https://localhost:" + webServer.port());
 
         // send an entity that won't be consumed, as such a new connection will be created by the server

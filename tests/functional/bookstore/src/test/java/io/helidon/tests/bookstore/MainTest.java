@@ -16,7 +16,6 @@
 
 package io.helidon.tests.bookstore;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,8 +34,7 @@ import javax.json.JsonObject;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
-import io.helidon.media.common.MediaSupport;
-import io.helidon.media.jsonp.common.JsonProcessing;
+import io.helidon.media.jsonp.common.JsonpSupport;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
 
@@ -77,14 +75,9 @@ class MainTest {
         healthUrl = new URL("http://localhost:" + port + "/health");
         appJarPathSE = Paths.get(appJarPathSE).normalize().toString();
         appJarPathMP = Paths.get(appJarPathMP).normalize().toString();
-        JsonProcessing jsonProcessing = JsonProcessing.create();
         webClient = WebClient.builder()
                 .baseUri("http://localhost:" + port)
-                .mediaSupport(MediaSupport.builder()
-                                      .registerDefaults()
-                                      .registerReader(jsonProcessing.newReader())
-                                      .registerWriter(jsonProcessing.newWriter())
-                                      .build())
+                .addMediaSupport(JsonpSupport.create())
                 .build();
     }
 
@@ -234,7 +227,7 @@ class MainTest {
                 .toCompletableFuture()
                 .get();
 
-        webClient.method(Http.Method.POST.name())
+        webClient.post()
                 .path("/books")
                 .submit(json)
                 .thenAccept(it -> assertThat("HTTP response POST", it.status(), is(Http.Status.OK_200)))
@@ -263,7 +256,7 @@ class MainTest {
                 .toCompletableFuture()
                 .get();
 
-        webClient.method(Http.Method.DELETE.name())
+        webClient.delete()
                 .path("/books/123456")
                 .request()
                 .thenAccept(it -> assertThat("HTTP response delete book", it.status(), is(Http.Status.OK_200)))

@@ -71,7 +71,7 @@ public class MessageBoardTest {
         // Post messages using REST resource
         URI restUri = URI.create("http://localhost:" + server.port() + "/rest/board");
         for (String message : messages) {
-            restClient.method(Http.Method.POST.name())
+            restClient.post()
                     .uri(restUri)
                     .submit(message)
                     .thenAccept(it -> assertThat(it.status(), is(Http.Status.NO_CONTENT_204)))

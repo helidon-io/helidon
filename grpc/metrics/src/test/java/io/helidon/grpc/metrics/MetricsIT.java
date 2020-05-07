@@ -30,8 +30,7 @@ import io.helidon.grpc.server.GrpcServer;
 import io.helidon.grpc.server.GrpcServerConfiguration;
 import io.helidon.grpc.server.test.Echo;
 import io.helidon.grpc.server.test.EchoServiceGrpc;
-import io.helidon.media.common.MediaSupport;
-import io.helidon.media.jsonp.common.JsonProcessing;
+import io.helidon.media.jsonp.common.JsonpSupport;
 import io.helidon.metrics.MetricsSupport;
 import io.helidon.webclient.WebClient;
 import io.helidon.webserver.Routing;
@@ -91,13 +90,9 @@ public class MetricsIT {
         startWebServer();
 
 
-        JsonProcessing jsonProcessing = JsonProcessing.create();
         client = WebClient.builder()
                 .followRedirects(true)
-                .mediaSupport(MediaSupport.builder()
-                                      .registerReader(jsonProcessing.newReader())
-                                      .registerWriter(jsonProcessing.newWriter())
-                                      .build())
+                .addMediaSupport(JsonpSupport.create())
                 .build();
 
         startGrpcServer();

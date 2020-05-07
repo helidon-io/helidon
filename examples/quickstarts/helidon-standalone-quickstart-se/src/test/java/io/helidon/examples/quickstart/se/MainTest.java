@@ -23,8 +23,7 @@ import javax.json.Json;
 import javax.json.JsonObject;
 import javax.json.JsonReaderFactory;
 
-import io.helidon.media.common.MediaSupport;
-import io.helidon.media.jsonp.common.JsonProcessing;
+import io.helidon.media.jsonp.common.JsonpSupport;
 import io.helidon.webclient.WebClient;
 import io.helidon.webserver.WebServer;
 
@@ -60,14 +59,9 @@ public class MainTest {
                 Assertions.fail("Failed to start webserver");
             }
         }
-        JsonProcessing jsonProcessing = JsonProcessing.create();
         webClient = WebClient.builder()
                 .baseUri("http://localhost:" + webServer.port())
-                .mediaSupport(MediaSupport.builder()
-                                      .registerDefaults()
-                                      .registerReader(jsonProcessing.newReader())
-                                      .registerWriter(jsonProcessing.newWriter())
-                                      .build())
+                .addMediaSupport(JsonpSupport.create())
                 .build();
     }
 

@@ -19,7 +19,7 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * MediaService which registers default readers and writers to the contexts.
+ * MediaSupport which registers default readers and writers to the contexts.
  */
 public class DefaultMediaSupport implements MediaSupport {
 
