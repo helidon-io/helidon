@@ -15,6 +15,8 @@
  */
 package io.helidon.media.jsonb.common;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 
 import javax.json.bind.Jsonb;
@@ -23,8 +25,8 @@ import javax.json.bind.JsonbBuilder;
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
 import io.helidon.media.common.MediaSupport;
-import io.helidon.media.common.MessageBodyReaderContext;
-import io.helidon.media.common.MessageBodyWriterContext;
+import io.helidon.media.common.MessageBodyReader;
+import io.helidon.media.common.MessageBodyWriter;
 
 /**
  * Support for JSON-B integration.
@@ -85,9 +87,13 @@ public final class JsonbSupport implements MediaSupport {
     }
 
     @Override
-    public void register(MessageBodyReaderContext readerContext, MessageBodyWriterContext writerContext) {
-        readerContext.registerReader(newReader());
-        writerContext.registerWriter(newWriter());
+    public Collection<MessageBodyReader<?>> readers() {
+        return List.of(newReader());
+    }
+
+    @Override
+    public Collection<MessageBodyWriter<?>> writers() {
+        return List.of(newWriter());
     }
 
     /**

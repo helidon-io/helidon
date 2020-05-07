@@ -23,7 +23,6 @@ import io.helidon.common.http.DataChunk;
 
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.DefaultHttpRequest;
@@ -127,14 +126,7 @@ class RequestContentSubscriber implements Flow.Subscriber<DataChunk> {
     private void sendData(DataChunk data) {
         LOGGER.finest(() -> "Sending data chunk");
         DefaultHttpContent httpContent = new DefaultHttpContent(Unpooled.wrappedBuffer(data.data()));
-        ChannelFuture channelFuture;
-        if (data.flush()) {
-            channelFuture = channel.writeAndFlush(httpContent);
-        } else {
-            channelFuture = channel.write(httpContent);
-        }
-
-        channelFuture
+        channel.writeAndFlush(httpContent)
                 .addListener(future -> {
                     data.release();
                     subscription.request(1);

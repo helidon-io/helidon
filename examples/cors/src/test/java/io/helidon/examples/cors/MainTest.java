@@ -138,7 +138,7 @@ public class MainTest {
 
         // Send the pre-flight request and check the response.
 
-        WebClientRequestBuilder builder = webClient.method(Http.Method.OPTIONS);
+        WebClientRequestBuilder builder = webClient.options();
         Headers headers = builder.headers();
         headers.add("Origin", "http://foo.com");
         headers.add("Host", "here.com");

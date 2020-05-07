@@ -15,7 +15,9 @@
  */
 package io.helidon.media.jsonp.common;
 
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.json.Json;
@@ -23,8 +25,8 @@ import javax.json.JsonReaderFactory;
 import javax.json.JsonWriterFactory;
 
 import io.helidon.media.common.MediaSupport;
-import io.helidon.media.common.MessageBodyReaderContext;
-import io.helidon.media.common.MessageBodyWriterContext;
+import io.helidon.media.common.MessageBodyReader;
+import io.helidon.media.common.MessageBodyWriter;
 
 /**
  * Support for JSON Processing integration.
@@ -60,9 +62,13 @@ public final class JsonpSupport implements MediaSupport {
     }
 
     @Override
-    public void register(MessageBodyReaderContext readerContext, MessageBodyWriterContext writerContext) {
-        readerContext.registerReader(newReader());
-        writerContext.registerWriter(newWriter());
+    public Collection<MessageBodyReader<?>> readers() {
+        return List.of(newReader());
+    }
+
+    @Override
+    public Collection<MessageBodyWriter<?>> writers() {
+        return List.of(newWriter());
     }
 
     /**

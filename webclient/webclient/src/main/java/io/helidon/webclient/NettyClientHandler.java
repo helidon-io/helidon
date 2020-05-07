@@ -104,7 +104,8 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
                     .readerContext(requestConfiguration.readerContext())
                     .status(helidonStatus(response.status()))
                     .httpVersion(Http.Version.create(response.protocolVersion().toString()))
-                    .responseCloser(responseCloser);
+                    .responseCloser(responseCloser)
+                    .lastEndpointURI(requestConfiguration.requestURI());
 
             for (HttpInterceptor interceptor : HTTP_INTERCEPTORS) {
                 if (interceptor.shouldIntercept(response.status(), requestConfiguration)) {
@@ -143,17 +144,25 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
             }
 
             csr.whenComplete((clientSerResponse, throwable) -> {
-                responseReceived.complete(clientServiceResponse);
-                responseReceived.thenRun(() -> {
-                    if (shouldResponseAutomaticallyClose(clientResponse)) {
-                        responseCloser.close().addListener(future -> {
-                            LOGGER.finest("Response automatically closed. No entity expected.");
+                if (throwable != null) {
+                    responseCloser.close()
+                            .addListener(future -> {
+                                responseReceived.completeExceptionally(throwable);
+                                responseFuture.completeExceptionally(throwable);
+                            });
+                } else {
+                    responseReceived.complete(clientServiceResponse);
+                    responseReceived.thenRun(() -> {
+                        if (shouldResponseAutomaticallyClose(clientResponse)) {
+                            responseCloser.close().addListener(future -> {
+                                LOGGER.finest("Response automatically closed. No entity expected.");
+                                responseFuture.complete(clientResponse);
+                            });
+                        } else {
                             responseFuture.complete(clientResponse);
-                        });
-                    } else {
-                        responseFuture.complete(clientResponse);
-                    }
-                });
+                        }
+                    });
+                }
             });
         }
 
