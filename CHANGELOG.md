@@ -54,6 +54,30 @@ Multi<Object> empty1 = Multi.empty();
 Single<Object> empty2 = Single.empty();
 ```
 
+#### MediaSupport refactored
+`MediaSupport` class has been used as the holder object of media operator contexts. Now the name has changed to `MediaContext` and
+`MediaSupport` is an interface which defines media support for given type in form of readers, writers etc. Classes `JsonProcessing`,
+`JsonBinding` and `Jackson` are now renamed to `JsonpSupport`, `JsonbSupport` and `JacksonSupport` and are implementing
+`MediaSupport` interface. 
+
+```java
+//before
+JsonProcessing jsonProcessing = new JsonProcessing();
+MediaSupport mediaSupport = MediaSupport.builder()
+    .registerReader(jsonProcessing.newReader())
+    .registerWriter(jsonProcessing.newWriter())
+    .build();
+
+WebServer.builder()
+    .mediaSupport(mediaSupport)
+    .build();
+
+//after
+WebServer.builder()
+    .addMediaSupport(JsonpSupport.create()) //registers reader and writer for Json-P
+    .build()
+```
+
 ## [2.0.0-M2] 
 
 ### Notes
