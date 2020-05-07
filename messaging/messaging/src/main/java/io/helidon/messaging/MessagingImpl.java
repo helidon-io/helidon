@@ -21,8 +21,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
 
 import io.helidon.common.configurable.ThreadPoolSupplier;
@@ -31,12 +29,10 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.ConfigValue;
 
-import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.messaging.spi.Connector;
 import org.eclipse.microprofile.reactive.messaging.spi.ConnectorFactory;
 import org.eclipse.microprofile.reactive.messaging.spi.IncomingConnectorFactory;
 import org.eclipse.microprofile.reactive.messaging.spi.OutgoingConnectorFactory;
-import org.reactivestreams.Publisher;
 
 class MessagingImpl implements Messaging {
 
@@ -72,31 +68,6 @@ class MessagingImpl implements Messaging {
                 .forEach(Stoppable::stop);
         emitters.forEach(Emitter::complete);
         threadPoolSupplier.get().shutdown();
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public <T> Emitter<T> emitter(String channel) {
-        Publisher<?> publisher = channelMap.get(channel).getPublisher();
-        if (publisher instanceof Emitter) {
-            return (Emitter<T>) publisher;
-        }
-        throw new MessagingException("Channel " + channel + " doesn't have emitter as publisher!");
-    }
-
-    @Override
-    public <T> CompletionStage<Void> send(final String channel, final T msg) {
-        CompletableFuture<Void> future = new CompletableFuture<>();
-        this.emitter(channel).send(Message.of(msg, () -> {
-            future.complete(null);
-            return CompletableFuture.completedStage(null);
-        }));
-        return future;
-    }
-
-    @Override
-    public <T, M extends Message<T>> void send(final String channel, final M msg) {
-        this.emitter(channel).send(msg);
     }
 
     void setConfig(final Config config) {
@@ -139,18 +110,18 @@ class MessagingImpl implements Messaging {
             configBuilder.addSource(ConfigSources.create(config));
         }
 
-        if (channel.publisherConfig != null) {
+        if (channel.getPublisherConfig() != null) {
             configBuilder
                     .addSource(ConnectorConfigHelper
                             .prefixedConfigSource(ConnectorFactory.OUTGOING_PREFIX + channel.name(),
-                                    channel.publisherConfig));
+                                    channel.getPublisherConfig()));
         }
 
-        if (channel.subscriberConfig != null) {
+        if (channel.getSubscriberConfig() != null) {
             configBuilder
                     .addSource(ConnectorConfigHelper
                             .prefixedConfigSource(ConnectorFactory.INCOMING_PREFIX + channel.name(),
-                                    channel.subscriberConfig));
+                                    channel.getSubscriberConfig()));
         }
         Config mergedConfig = configBuilder.build();
 
@@ -160,7 +131,7 @@ class MessagingImpl implements Messaging {
         if (incomingConnectorName.isPresent()) {
             String connectorName = incomingConnectorName.get();
             org.eclipse.microprofile.config.Config incomingConnectorConfig =
-                    ConfigurableConnector.getConnectorConfig(channel.name(), connectorName, mergedConfig);
+                    ConnectorConfigHelper.getConnectorConfig(channel.name(), connectorName, mergedConfig);
             channel.setPublisher(
                     incomingConnectors.get(connectorName)
                             .getPublisherBuilder(incomingConnectorConfig)
@@ -169,7 +140,7 @@ class MessagingImpl implements Messaging {
         if (outgoingConnectorName.isPresent()) {
             String connectorName = outgoingConnectorName.get();
             org.eclipse.microprofile.config.Config outgoingConnectorConfig =
-                    ConfigurableConnector.getConnectorConfig(channel.name(), connectorName, mergedConfig);
+                    ConnectorConfigHelper.getConnectorConfig(channel.name(), connectorName, mergedConfig);
             channel.setSubscriber(
                     outgoingConnectors.get(connectorName)
                             .getSubscriberBuilder(outgoingConnectorConfig)

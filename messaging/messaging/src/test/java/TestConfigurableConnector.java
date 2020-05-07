@@ -1,19 +1,3 @@
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
-
-import io.helidon.messaging.ConnectorConfigBuilder;
-
-import org.eclipse.microprofile.config.Config;
-import org.eclipse.microprofile.reactive.messaging.Message;
-import org.eclipse.microprofile.reactive.messaging.spi.Connector;
-import org.eclipse.microprofile.reactive.messaging.spi.ConnectorFactory;
-import org.eclipse.microprofile.reactive.messaging.spi.IncomingConnectorFactory;
-import org.eclipse.microprofile.reactive.messaging.spi.OutgoingConnectorFactory;
-import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
-import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
-import org.eclipse.microprofile.reactive.streams.operators.SubscriberBuilder;
-
 /*
  * Copyright (c)  2020 Oracle and/or its affiliates.
  *
@@ -31,6 +15,23 @@ import org.eclipse.microprofile.reactive.streams.operators.SubscriberBuilder;
  *
  */
 
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
+
+import io.helidon.config.mp.MpConfig;
+import io.helidon.messaging.ConnectorConfigBuilder;
+
+import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.reactive.messaging.Message;
+import org.eclipse.microprofile.reactive.messaging.spi.Connector;
+import org.eclipse.microprofile.reactive.messaging.spi.ConnectorFactory;
+import org.eclipse.microprofile.reactive.messaging.spi.IncomingConnectorFactory;
+import org.eclipse.microprofile.reactive.messaging.spi.OutgoingConnectorFactory;
+import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
+import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
+import org.eclipse.microprofile.reactive.streams.operators.SubscriberBuilder;
+
 @Connector(TestConfigurableConnector.CONNECTOR_NAME)
 public class TestConfigurableConnector implements IncomingConnectorFactory, OutgoingConnectorFactory {
 
@@ -45,8 +46,7 @@ public class TestConfigurableConnector implements IncomingConnectorFactory, Outg
 
     @Override
     public PublisherBuilder<? extends Message<?>> getPublisherBuilder(final Config config) {
-        io.helidon.config.Config helidonConfig = (io.helidon.config.Config) config;
-        System.out.println("getPublisherBuilder config: ");
+        io.helidon.config.Config helidonConfig = MpConfig.toHelidonConfig(config);
         printConfig(helidonConfig);
         return ReactiveStreams.fromIterable(config.getPropertyNames())
                 .map(n -> n + "=" + config.getValue(n, String.class))
@@ -55,8 +55,7 @@ public class TestConfigurableConnector implements IncomingConnectorFactory, Outg
 
     @Override
     public SubscriberBuilder<? extends Message<?>, Void> getSubscriberBuilder(final Config config) {
-        io.helidon.config.Config helidonConfig = (io.helidon.config.Config) config;
-        System.out.println("getSubscriberBuilder config: ");
+        io.helidon.config.Config helidonConfig = MpConfig.toHelidonConfig(config);
         printConfig(helidonConfig);
         return ReactiveStreams.<Message<CompletableFuture<Map<String, String>>>>builder()
                 .map(Message::getPayload)

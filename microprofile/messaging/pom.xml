@@ -36,16 +36,6 @@
         <dependency>
             <groupId>org.eclipse.microprofile.reactive.messaging</groupId>
             <artifactId>microprofile-reactive-messaging-api</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.eclipse.microprofile.reactive-streams-operators</groupId>
-                    <artifactId>microprofile-reactive-streams-operators-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.eclipse.microprofile.reactive-streams-operators</groupId>
-                    <artifactId>microprofile-reactive-streams-operators-core</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.config</groupId>

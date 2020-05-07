@@ -29,6 +29,27 @@ import org.reactivestreams.FlowAdapters;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 
+/**
+ * Emitter is convenience publisher for one or multiple channels,
+ * publishing is as easy as calling {@link Emitter#send(Object)} method.
+ *
+ * <pre>{@code
+ *  Channel<String> simpleChannel = Channel.create();
+ *
+ *  Emitter<String> emitter = Emitter.create(simpleChannel);
+ *
+ *  Messaging messaging = Messaging.builder()
+ *          .emitter(emitter)
+ *          .listener(simpleChannel, System.out::println)
+ *          .build();
+ *
+ *  messaging.start();
+ *
+ *  emitter.send(Message.of("Hello world!"));
+ * }</pre>
+ *
+ * @param <PAYLOAD> message payload type
+ */
 public final class Emitter<PAYLOAD> implements Publisher<Message<PAYLOAD>> {
 
     private SubmissionPublisher<Message<PAYLOAD>> submissionPublisher;
@@ -41,6 +62,15 @@ public final class Emitter<PAYLOAD> implements Publisher<Message<PAYLOAD>> {
         submissionPublisher = new SubmissionPublisher<>(executor, maxBufferCapacity);
     }
 
+    /**
+     * Send raw payload to downstream, wrapped to {@link Message} when demand is higher than 0.
+     * Publishes the given item to each current subscriber by asynchronously invoking
+     * its onNext method, blocking uninterruptibly while resources for any subscriber
+     * are unavailable.
+     *
+     * @param msg payload to be wrapped and sent(or buffered if there is no demand)
+     * @return callback being invoked when message is acked
+     */
     public CompletionStage<Void> send(PAYLOAD msg) {
         CompletableFuture<Void> future = new CompletableFuture<>();
         submissionPublisher.submit(Message.of(msg, () -> {
@@ -50,14 +80,35 @@ public final class Emitter<PAYLOAD> implements Publisher<Message<PAYLOAD>> {
         return future;
     }
 
-    public void send(Message<PAYLOAD> msg) {
-        submissionPublisher.submit(msg);
+    /**
+     * Send {@link Message} to downstream when demand is higher than 0. Publishes the given item
+     * to each current subscriber by asynchronously invoking its onNext method,
+     * blocking uninterruptibly while resources for any subscriber are unavailable.
+     *
+     * @param msg message wrapper with payload
+     * @return estimate of the maximum lag (number of items submitted but not yet consumed)
+     * among all current subscribers. This value is at least one (accounting for this
+     * submitted item) if there are any subscribers, else zero.
+     * @throws IllegalStateException                           if emitter has been already completed
+     * @throws NullPointerException                            if message is null
+     * @throws java.util.concurrent.RejectedExecutionException if thrown by Executor
+     */
+    public int send(Message<PAYLOAD> msg) {
+        return submissionPublisher.submit(msg);
     }
 
+    /**
+     * Send onComplete signal to all subscribers.
+     */
     public void complete() {
         submissionPublisher.close();
     }
 
+    /**
+     * Send onError signal to all subscribers.
+     *
+     * @param e error to send in onError signal downstream
+     */
     public void error(Exception e) {
         submissionPublisher.closeExceptionally(e);
     }
@@ -71,12 +122,27 @@ public final class Emitter<PAYLOAD> implements Publisher<Message<PAYLOAD>> {
         return this.channels;
     }
 
+    /**
+     * Create new Emitter to serve as a publisher for supplied channel.
+     *
+     * @param channel   to serve as publisher in
+     * @param <PAYLOAD> message payload type
+     * @return new emitter
+     */
     public static <PAYLOAD> Emitter<PAYLOAD> create(Channel<PAYLOAD> channel) {
         Emitter.Builder<PAYLOAD> builder = Emitter.<PAYLOAD>builder()
                 .channel(channel);
         return builder.build();
     }
 
+    /**
+     * Create new Emitter to serve as a broadcast publisher for supplied channels.
+     *
+     * @param channel   to serve as publisher in
+     * @param channels  to serve as publisher for
+     * @param <PAYLOAD> message payload type
+     * @return new emitter
+     */
     public static <PAYLOAD> Emitter<PAYLOAD> create(Channel<PAYLOAD> channel, Channel<PAYLOAD>... channels) {
         Emitter.Builder<PAYLOAD> builder = Emitter.<PAYLOAD>builder()
                 .channel(channel);
@@ -86,18 +152,31 @@ public final class Emitter<PAYLOAD> implements Publisher<Message<PAYLOAD>> {
         return builder.build();
     }
 
+    /**
+     * Prepare new builder for Emitter construction.
+     *
+     * @param <PAYLOAD> message payload type
+     * @return new emitter builder
+     */
     public static <PAYLOAD> Emitter.Builder<PAYLOAD> builder() {
         return new Emitter.Builder<PAYLOAD>();
     }
 
-    public static <PAYLOAD> Emitter.Builder<PAYLOAD> builder(Class<PAYLOAD> clazz) {
-        return new Emitter.Builder<PAYLOAD>();
-    }
-
-    public final static class Builder<PAYLOAD> implements io.helidon.common.Builder<Emitter<PAYLOAD>> {
+    /**
+     * Builder for {@link io.helidon.messaging.Emitter}.
+     *
+     * @param <PAYLOAD> message payload type
+     */
+    public static final class Builder<PAYLOAD> implements io.helidon.common.Builder<Emitter<PAYLOAD>> {
 
         private final Emitter<PAYLOAD> emitter = new Emitter<>();
 
+        /**
+         * Add new {@link io.helidon.messaging.Channel} for Emitter to publish to.
+         *
+         * @param channel to serve as publisher in
+         * @return this builder
+         */
         public Builder<PAYLOAD> channel(Channel<PAYLOAD> channel) {
             emitter.channels.add(channel);
             return this;

@@ -68,7 +68,7 @@ public class EmitterTest {
         Channel<String> simpleChannel3 = Channel.create("simple-channel-3");
 
 
-        Emitter<String> emitter = Emitter.builder(String.class)
+        Emitter<String> emitter = Emitter.<String>builder()
                 .channel(simpleChannel1)
                 .channel(simpleChannel2)
                 .channel(simpleChannel3)

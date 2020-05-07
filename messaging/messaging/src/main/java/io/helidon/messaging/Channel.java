@@ -18,6 +18,7 @@
 package io.helidon.messaging;
 
 import java.util.Objects;
+import java.util.UUID;
 
 import io.helidon.config.Config;
 
@@ -25,12 +26,17 @@ import org.eclipse.microprofile.reactive.messaging.Message;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 
+/**
+ * Channel representing publisher - subscriber relationship.
+ *
+ * @param <PAYLOAD> payload type wrapped in {@link Message} being emitted by publisher and received by subscriber.
+ */
 public final class Channel<PAYLOAD> {
     private String name;
     private Publisher<Message<PAYLOAD>> publisher;
     private Subscriber<Message<PAYLOAD>> subscriber;
-    Config publisherConfig;
-    Config subscriberConfig;
+    private Config publisherConfig;
+    private Config subscriberConfig;
 
     void connect() {
         Objects.requireNonNull(publisher, "Missing publisher for channel " + name);
@@ -46,6 +52,7 @@ public final class Channel<PAYLOAD> {
         return publisher;
     }
 
+    @SuppressWarnings("unchecked")
     void setPublisher(Publisher<? extends Message<?>> publisher) {
         this.publisher = (Publisher<Message<PAYLOAD>>) publisher;
     }
@@ -54,40 +61,86 @@ public final class Channel<PAYLOAD> {
         return subscriber;
     }
 
+    @SuppressWarnings("unchecked")
     void setSubscriber(Subscriber<? extends Message<?>> subscriber) {
         this.subscriber = (Subscriber<Message<PAYLOAD>>) subscriber;
     }
 
+    Config getPublisherConfig() {
+        return publisherConfig;
+    }
+
+    Config getSubscriberConfig() {
+        return subscriberConfig;
+    }
+
+    /**
+     * Channel name, used to pair configuration of connectors vs. channel configuration.
+     *
+     * @return channel name
+     */
     public String name() {
         return name;
     }
 
+    /**
+     * Create new empty channel with given name.
+     *
+     * @param name      channel name
+     * @param <PAYLOAD> message payload type
+     * @return new channel
+     */
     public static <PAYLOAD> Channel<PAYLOAD> create(String name) {
         return Channel.<PAYLOAD>builder().name(name).build();
     }
 
+    /**
+     * New builder for configuring new channel.
+     *
+     * @param <PAYLOAD> message payload type
+     * @return channel builder
+     */
     public static <PAYLOAD> Channel.Builder<PAYLOAD> builder() {
         return new Channel.Builder<PAYLOAD>();
     }
 
-    public static <PAYLOAD> Channel.Builder<PAYLOAD> builder(Class<PAYLOAD> clazz) {
-        return new Channel.Builder<PAYLOAD>();
-    }
-
-    public final static class Builder<PAYLOAD> implements io.helidon.common.Builder<Channel<PAYLOAD>> {
+    /**
+     * Channel builder.
+     *
+     * @param <PAYLOAD> message payload type
+     */
+    public static final class Builder<PAYLOAD> implements io.helidon.common.Builder<Channel<PAYLOAD>> {
 
         private final Channel<PAYLOAD> channel = new Channel<>();
 
+        /**
+         * Channel name, used to pair configuration of connectors vs. channel configuration.
+         *
+         * @param name channel name
+         * @return this builder
+         */
         public Builder<PAYLOAD> name(String name) {
             channel.setName(name);
             return this;
         }
 
+        /**
+         * Config available to publisher connector.
+         *
+         * @param config config supplied to publishing connector
+         * @return this builder
+         */
         public Builder<PAYLOAD> publisherConfig(Config config) {
             channel.publisherConfig = config;
             return this;
         }
 
+        /**
+         * Config available to subscriber connector.
+         *
+         * @param config config supplied to subscribing connector
+         * @return this builder
+         */
         public Builder<PAYLOAD> subscriberConfig(Config config) {
             channel.subscriberConfig = config;
             return this;
@@ -95,6 +148,9 @@ public final class Channel<PAYLOAD> {
 
         @Override
         public Channel<PAYLOAD> build() {
+            if (channel.name == null) {
+                channel.name = UUID.randomUUID().toString();
+            }
             return channel;
         }
 

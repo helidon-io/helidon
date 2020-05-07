@@ -19,19 +19,19 @@ import java.util.LinkedList;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 import org.eclipse.microprofile.reactive.messaging.Message;
 
 public class TestMessages<T> extends LinkedList<TestMessages.TestMessage<T>> {
 
     public void assertAllAcked() {
-        assertTrue(this.stream().allMatch(TestMessage::acked));
+        assertThat(this.stream().allMatch(TestMessage::acked), is(true));
     }
 
     public void assertNoneAcked() {
-        assertFalse(this.stream().anyMatch(TestMessage::acked));
+        assertThat(this.stream().anyMatch(TestMessage::acked), is(false));
     }
 
     public Message<T> of(T payload) {

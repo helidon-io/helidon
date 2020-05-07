@@ -17,6 +17,13 @@
 
 package io.helidon.messaging;
 
+/**
+ * Messaging connector which can be notified about messaging stop.
+ */
 public interface Stoppable {
+
+    /**
+     * Invoked during {@link Messaging#stop()}.
+     */
     void stop();
 }

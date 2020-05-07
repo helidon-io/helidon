@@ -75,10 +75,10 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-class KafkaCdiExtensionTest {
+class KafkaMpTest extends AbstractKafkaTest{
 
-    private static final Logger LOGGER = Logger.getLogger(KafkaCdiExtensionTest.class.getName());
-    private static final Connector KAFKA_CONNECTOR_LITERAL = new Connector() {
+    private static final Logger LOGGER = Logger.getLogger(KafkaMpTest.class.getName());
+    protected static final Connector KAFKA_CONNECTOR_LITERAL = new Connector() {
 
         @Override
         public Class<? extends Annotation> annotationType() {
@@ -243,6 +243,8 @@ class KafkaCdiExtensionTest {
         return p;
     }
 
+    @BeforeEach
+    void setUp() {
     @BeforeAll
     static void prepareTopics() {
         kafkaResource.getKafkaTestUtils().createTopic(TEST_TOPIC_1, 4, (short) 1);

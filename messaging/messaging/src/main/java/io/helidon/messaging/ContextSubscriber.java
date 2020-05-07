@@ -25,12 +25,12 @@ import io.helidon.common.context.Contexts;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
-public class ContextSubscriber<T> implements Subscriber<T> {
+class ContextSubscriber<T> implements Subscriber<T> {
 
     private final String prefix;
     private final Subscriber<T> subscriber;
 
-    public ContextSubscriber(final String prefix, final Subscriber<T> subscriber) {
+    ContextSubscriber(final String prefix, final Subscriber<T> subscriber) {
         this.prefix = prefix;
         this.subscriber = subscriber;
     }
@@ -59,7 +59,7 @@ public class ContextSubscriber<T> implements Subscriber<T> {
         runInNewContext(subscriber::onComplete);
     }
 
-    protected void runInNewContext(Runnable runnable) {
+    void runInNewContext(Runnable runnable) {
         Context.Builder contextBuilder = Context.builder()
                 .id(String.format("%s-%s:", prefix, UUID.randomUUID().toString()));
         Contexts.context().ifPresent(contextBuilder::parent);

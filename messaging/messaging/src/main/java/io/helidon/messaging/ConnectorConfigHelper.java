@@ -22,13 +22,18 @@ import java.util.stream.Collectors;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.ConfigValue;
+import io.helidon.config.mp.MpConfigSources;
 import io.helidon.config.spi.ConfigSource;
 
+import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.reactive.messaging.spi.ConnectorFactory;
 
-public final class ConnectorConfigHelper {
+final class ConnectorConfigHelper {
 
-    public static ConfigValue<String> getIncomingConnectorName(Config config, String channelName) {
+    private ConnectorConfigHelper() {
+    }
+
+    static ConfigValue<String> getIncomingConnectorName(Config config, String channelName) {
         //Looks suspicious but incoming connector configured for outgoing channel is ok
         return config.get(ConnectorFactory.OUTGOING_PREFIX)
                 .get(channelName)
@@ -36,7 +41,7 @@ public final class ConnectorConfigHelper {
                 .asString();
     }
 
-    public static ConfigValue<String> getOutgoingConnectorName(Config config, String channelName) {
+    static ConfigValue<String> getOutgoingConnectorName(Config config, String channelName) {
         //Looks suspicious but outgoing connector configured for incoming channel is ok
         return config.get(ConnectorFactory.INCOMING_PREFIX)
                 .get(channelName)
@@ -44,7 +49,7 @@ public final class ConnectorConfigHelper {
                 .asString();
     }
 
-    public static ConfigSource prefixedConfigSource(String prefix, Config config) {
+    static ConfigSource prefixedConfigSource(String prefix, Config config) {
         return ConfigSources.create(config
                 .detach()
                 .asMap()
@@ -52,6 +57,50 @@ public final class ConnectorConfigHelper {
                 .entrySet()
                 .stream()
                 .collect(Collectors.toMap(e -> prefix + "." + e.getKey(), Map.Entry::getValue)))
+                .build();
+    }
+
+    static org.eclipse.microprofile.config.Config getConnectorConfig(String channelName,
+                                                                     String connectorName,
+                                                                     Config rootConfig) {
+
+        Config incomingChannelConfig = rootConfig.get("mp.messaging.incoming");
+        Config outgoingChannelConfig = rootConfig.get("mp.messaging.outgoing");
+
+        Config channelsConfig = (Config) ConnectorConfigBuilder
+                .create(incomingChannelConfig)
+                .putAll(outgoingChannelConfig)
+                .build();
+
+        Config channelConfig = channelsConfig
+                .get(channelName);
+
+        ConfigValue<String> configConnectorName = channelConfig
+                .get("connector")
+                .asString();
+
+        if (!configConnectorName.isPresent()) {
+            throw new MessagingException(String
+                    .format("No connector configured for channel %s", channelName));
+        }
+        if (!configConnectorName.get().equals(connectorName)) {
+            throw new MessagingException(String
+                    .format("Connector name miss match for channel%s", channelName));
+        }
+
+        Config connectorConfig = rootConfig
+                .get("mp.messaging.connector")
+                .get(configConnectorName.get());
+
+        return ConfigProviderResolver
+                .instance()
+                .getBuilder()
+                .withSources(
+                        MpConfigSources.create(ConnectorConfigBuilder
+                                .create(connectorConfig)
+                                .put(ConnectorFactory.CHANNEL_NAME_ATTRIBUTE, channelName)
+                                .putAll(channelConfig)
+                                .build()))
                 .build();
     }
 }

@@ -17,7 +17,6 @@
 
 package io.helidon.messaging;
 
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -41,7 +40,7 @@ import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 
 /**
- * Helidon Reactive Messaging
+ * Helidon Reactive Messaging.
  */
 public interface Messaging {
 
@@ -54,12 +53,6 @@ public interface Messaging {
      * Invoke stop method in all connectors implementing it. Stopped messaging cannot be started again.
      */
     void stop();
-
-    <T> Emitter<T> emitter(String channel);
-
-    <T> CompletionStage<Void> send(String channel, T msg);
-
-    <T, M extends Message<T>> void send(String channel, M msg);
 
     /**
      * Create builder for constructing new Messaging.
@@ -109,6 +102,13 @@ public interface Messaging {
             return this;
         }
 
+        /**
+         * Register new emitter and all its channels.
+         *
+         * @param emitter   to be registered
+         * @param <PAYLOAD> message payload type
+         * @return this builder
+         */
         public <PAYLOAD> Builder emitter(Emitter<PAYLOAD> emitter) {
             messaging.addEmitter(emitter);
             for (Channel<PAYLOAD> ch : emitter.channels()) {
@@ -118,28 +118,78 @@ public interface Messaging {
             return this;
         }
 
+        /**
+         * Register {@link PublisherBuilder} to be used for construction of the publisher for supplied {@link Channel}.
+         *
+         * @param channel          to be publisher constructed for
+         * @param publisherBuilder to be used for construction of the publisher
+         * @param <PAYLOAD>        message payload type
+         * @return this builder
+         */
         public <PAYLOAD> Builder publisher(Channel<PAYLOAD> channel,
                                            PublisherBuilder<Message<PAYLOAD>> publisherBuilder) {
             return this.publisher(channel, publisherBuilder.buildRs());
         }
 
+        /**
+         * Register {@link Publisher} to be used for supplied {@link Channel}.
+         *
+         * @param channel   to use publisher in
+         * @param publisher to publish in supplied channel
+         * @param wrapper   function to be used for raw payload wrapping,
+         *                  if null simple {@link Message#of(Object)} is used.
+         * @param <PAYLOAD> message payload type
+         * @return this builder
+         */
         public <PAYLOAD> Builder publisher(Channel<PAYLOAD> channel,
                                            Publisher<PAYLOAD> publisher,
                                            Function<PAYLOAD, Message<PAYLOAD>> wrapper) {
+            if (wrapper == null) {
+                wrapper = Message::of;
+            }
             return this.publisher(channel, ReactiveStreams.fromPublisher(publisher).map(wrapper).buildRs());
         }
 
+        /**
+         * Register {@link Flow.Publisher} to be used for supplied {@link Channel}.
+         *
+         * @param channel   to use publisher in
+         * @param publisher to publish in supplied channel
+         * @param wrapper   function to be used for raw payload wrapping,
+         *                  if null simple {@link Message#of(Object)} is used.
+         * @param <PAYLOAD> message payload type
+         * @return this builder
+         */
         public <PAYLOAD> Builder publisher(Channel<PAYLOAD> channel,
                                            Flow.Publisher<PAYLOAD> publisher,
                                            Function<PAYLOAD, Message<PAYLOAD>> wrapper) {
+            if (wrapper == null) {
+                wrapper = Message::of;
+            }
             return this.publisher(channel, FlowAdapters.toPublisher(publisher), wrapper);
         }
 
+        /**
+         * Register {@link Flow.Publisher} to be used for supplied {@link Channel}.
+         *
+         * @param channel   to use publisher in
+         * @param publisher to publish in supplied channel
+         * @param <PAYLOAD> message payload type
+         * @return this builder
+         */
         public <PAYLOAD> Builder publisher(Channel<PAYLOAD> channel,
                                            Flow.Publisher<Message<PAYLOAD>> publisher) {
             return publisher(channel, FlowAdapters.toPublisher(publisher));
         }
 
+        /**
+         * Register {@link Publisher} to be used for supplied {@link Channel}.
+         *
+         * @param channel   to use publisher in
+         * @param publisher to publish in supplied channel
+         * @param <PAYLOAD> message payload type
+         * @return this builder
+         */
         public <PAYLOAD> Builder publisher(Channel<PAYLOAD> channel,
                                            Publisher<Message<PAYLOAD>> publisher) {
             this.messaging.registerChannel(channel);
@@ -147,6 +197,18 @@ public interface Messaging {
             return this;
         }
 
+        /**
+         * Register {@link java.util.function.Consumer} for listening every payload coming from upstream.
+         * This listener creates unbounded({@link Long#MAX_VALUE}) demand.
+         * {@link org.eclipse.microprofile.reactive.messaging.Message}s are automatically acked and unwrapped.
+         * Equivalent of
+         * {@link org.eclipse.microprofile.reactive.streams.operators.ProcessorBuilder#forEach(java.util.function.Consumer)}.
+         *
+         * @param channel   to use subscriber in
+         * @param consumer  to consume payloads
+         * @param <PAYLOAD> message payload type
+         * @return this builder
+         */
         public <PAYLOAD> Builder listener(Channel<PAYLOAD> channel, Consumer<PAYLOAD> consumer) {
             this.messaging.registerChannel(channel);
             channel.setSubscriber(Builder.<PAYLOAD>unwrapProcessorBuilder()
@@ -155,14 +217,30 @@ public interface Messaging {
             return this;
         }
 
-        public <PAYLOAD, RESULT> Builder subscriber(Channel<PAYLOAD> channel, Flow.Subscriber<Message<PAYLOAD>> subscriber) {
+        /**
+         * Register {@link Flow.Subscriber} to be used for supplied {@link Channel}.
+         *
+         * @param channel    to use subscriber in
+         * @param subscriber to subscribe to supplied channel
+         * @param <PAYLOAD>  message payload type
+         * @return this builder
+         */
+        public <PAYLOAD> Builder subscriber(Channel<PAYLOAD> channel, Flow.Subscriber<Message<PAYLOAD>> subscriber) {
             this.subscriber(channel, FlowAdapters.toSubscriber(subscriber));
             return this;
         }
 
-        public <PAYLOAD, RESULT> Builder subscriber(Channel<PAYLOAD> channel, Consumer<Multi<Message<PAYLOAD>>> subscriber) {
+        /**
+         * Use provided {@link Multi} to subscribe to supplied {@link Channel}.
+         *
+         * @param channel   to use subscriber in
+         * @param consumer  to subscribe to supplied channel
+         * @param <PAYLOAD> message payload type
+         * @return this builder
+         */
+        public <PAYLOAD> Builder subscriber(Channel<PAYLOAD> channel, Consumer<Multi<Message<PAYLOAD>>> consumer) {
             Processor<Message<PAYLOAD>, Message<PAYLOAD>> processor = ReactiveStreams.<Message<PAYLOAD>>builder().buildRs();
-            subscriber.accept(Multi.from(FlowAdapters.toFlowPublisher(processor)));
+            consumer.accept(Multi.from(FlowAdapters.toFlowPublisher(processor)));
             this.subscriber(channel, processor);
             return this;
         }
@@ -173,6 +251,14 @@ public interface Messaging {
             return this;
         }
 
+        /**
+         * Register {@link Subscriber} to be used for supplied {@link Channel}.
+         *
+         * @param channel    to use subscriber in
+         * @param subscriber to subscribe to supplied channel
+         * @param <PAYLOAD>  message payload type
+         * @return this builder
+         */
         public <PAYLOAD> Builder subscriber(Channel<PAYLOAD> channel,
                                             Subscriber<Message<PAYLOAD>> subscriber) {
             this.messaging.registerChannel(channel);
@@ -181,6 +267,17 @@ public interface Messaging {
             return this;
         }
 
+        /**
+         * Register {@link Processor} to be used is {@code in} {@link Channel}'s subscriber
+         * and {@code out} {@link Channel}'s publisher.
+         *
+         * @param in        {@link Channel} to use supplied {@link Processor} as subscriber in
+         * @param out       {@link Channel} to use supplied {@link Processor} as publisher in
+         * @param processor to be used between supplied channels
+         * @param <PAYLOAD> message payload type of in channel
+         * @param <RESULT>  message payload type of out channel
+         * @return this builder
+         */
         public <PAYLOAD, RESULT> Builder processor(Channel<PAYLOAD> in, Channel<RESULT> out,
                                                    Processor<Message<PAYLOAD>, Message<RESULT>> processor) {
             this.messaging.registerChannel(in);
@@ -190,6 +287,17 @@ public interface Messaging {
             return this;
         }
 
+        /**
+         * Register {@link ProcessorBuilder} for building {@link Processor}
+         * to be used is {@code in} {@link Channel}'s subscriber and {@code out} {@link Channel}'s publisher.
+         *
+         * @param in               {@link Channel} to use supplied {@link Processor} as subscriber in
+         * @param out              {@link Channel} to use supplied {@link Processor} as publisher in
+         * @param processorBuilder to be used between supplied channels
+         * @param <PAYLOAD>        message payload type of in channel
+         * @param <RESULT>         message payload type of out channel
+         * @return this builder
+         */
         public <PAYLOAD, RESULT> Builder processor(Channel<PAYLOAD> in, Channel<RESULT> out,
                                                    ProcessorBuilder<Message<PAYLOAD>, Message<RESULT>> processorBuilder) {
 
@@ -197,6 +305,16 @@ public interface Messaging {
             return processor(in, out, processor);
         }
 
+        /**
+         * Register a mapping function between two channels.
+         *
+         * @param in              {@link Channel} to map from
+         * @param out             {@link Channel} to map to
+         * @param messageFunction mapping function
+         * @param <PAYLOAD>       message payload type of in channel
+         * @param <RESULT>        message payload type of out channel
+         * @return this builder
+         */
         public <PAYLOAD, RESULT> Builder processor(Channel<PAYLOAD> in, Channel<RESULT> out,
                                                    Function<PAYLOAD, RESULT> messageFunction) {
 

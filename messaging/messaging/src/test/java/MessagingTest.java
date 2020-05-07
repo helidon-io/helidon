@@ -15,10 +15,11 @@
  *
  */
 
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -31,9 +32,9 @@ import io.helidon.config.ConfigSources;
 import io.helidon.messaging.Channel;
 import io.helidon.messaging.Messaging;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
@@ -272,9 +273,9 @@ public class MessagingTest {
         messaging.start();
         testData.assertEquals();
 
-        assertFalse(connector.stoppedFuture.isDone());
+        assertThat(connector.stoppedFuture.isDone(), is(false));
         messaging.stop();
-        assertTrue(connector.stoppedFuture.isDone());
+        assertThat(connector.stoppedFuture.isDone(), is(true));
     }
 
     @Test
@@ -320,7 +321,7 @@ public class MessagingTest {
                 .start();
 
         TestConnector.latch.await(200, TimeUnit.MILLISECONDS);
-        assertEquals(TestConnector.TEST_DATA.stream().map(s -> ">>" + s).collect(Collectors.toList()), TestConnector.receivedData);
+        assertThat(TestConnector.receivedData, equalTo(TestConnector.TEST_DATA.stream().map(s -> ">>" + s).collect(Collectors.toList())));
     }
 
 
@@ -350,16 +351,16 @@ public class MessagingTest {
                 .start();
 
         TestConnector.latch.await(200, TimeUnit.MILLISECONDS);
-        assertEquals(TestConnector.TEST_DATA.stream().map(s -> ">>" + s).collect(Collectors.toList()), TestConnector.receivedData);
+        assertThat(TestConnector.receivedData, equalTo(TestConnector.TEST_DATA.stream().map(s -> ">>" + s).collect(Collectors.toList())));
     }
 
     @Test
     void processorConfigApi() throws InterruptedException, TimeoutException, ExecutionException {
 
         CompletableFuture<Map<String, String>> completableFuture = new CompletableFuture<>();
-        ArrayList<String> publisherProps = new ArrayList<>();
+        HashSet<String> publisherProps = new HashSet<>();
 
-        Channel<String> fromConnectorChannel = Channel.builder(String.class)
+        Channel<String> fromConnectorChannel = Channel.<String>builder()
                 .name("from-test-connector")
                 .publisherConfig(TestConfigurableConnector.configBuilder()
                         .url("http://source.com")
@@ -392,18 +393,18 @@ public class MessagingTest {
 
         Map<String, String> subscriberProps = completableFuture.get(200, TimeUnit.MILLISECONDS);
 
-        assertEquals(Map.of(
+        assertThat(subscriberProps, equalTo(Map.of(
                 "channel-name", "to-test-connector",
                 "connector", "test-configurable-connector",
                 "port", "9999",
                 "url", "http://sink.com"
-        ), subscriberProps);
+        )));
 
-        assertEquals(List.of(
+        assertThat(publisherProps, equalTo(Set.of(
                 "channel-name=from-test-connector",
                 "connector=test-configurable-connector",
                 "port=8888",
                 "url=http://source.com"
-        ), publisherProps);
+        )));
     }
 }

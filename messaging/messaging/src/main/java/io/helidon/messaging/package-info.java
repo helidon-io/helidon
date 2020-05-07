@@ -15,19 +15,7 @@
  *
  */
 
-package io.helidon.messaging;
-
 /**
- * Reactive Messaging specific exception.
+ * Helidon Reactive Messaging.
  */
-public class MessagingException extends RuntimeException {
-
-    /**
-     * Create new MessagingException with supplied message.
-     *
-     * @param message supplied message
-     */
-    public MessagingException(final String message) {
-        super(message);
-    }
-}
+package io.helidon.messaging;

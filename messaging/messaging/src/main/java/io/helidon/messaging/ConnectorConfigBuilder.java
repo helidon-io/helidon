@@ -27,14 +27,14 @@ import io.helidon.config.ConfigSources;
 /**
  * Detached configuration of a single connector.
  */
-public class ConnectorConfigBuilder implements Builder<Config> {
+public abstract class ConnectorConfigBuilder implements Builder<Config> {
     private final Map<String, String> configuration = new HashMap<>();
 
     protected ConnectorConfigBuilder() {
     }
 
-    static ConnectorConfigBuilder from(Config config) {
-        ConnectorConfigBuilder result = new ConnectorConfigBuilder();
+    static ConnectorConfigBuilder create(Config config) {
+        ConnectorConfigBuilder result = new ConnectorConfigBuilder(){};
         result.putAll(config);
         return result;
     }
@@ -51,13 +51,11 @@ public class ConnectorConfigBuilder implements Builder<Config> {
 
     @Override
     public Config build() {
-        Config newConfig = Config.builder(ConfigSources.create(configuration))
+        return Config.builder(ConfigSources.create(configuration))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .disableFilterServices()
-                .disableSourceServices()
                 .disableParserServices()
                 .build();
-        return newConfig;
     }
 }

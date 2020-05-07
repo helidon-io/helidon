@@ -20,9 +20,9 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.fail;
-
-import org.junit.jupiter.api.Assertions;
 
 public class LatchedTestData<E> extends CountDownLatch {
 
@@ -45,7 +45,7 @@ public class LatchedTestData<E> extends CountDownLatch {
         } catch (InterruptedException e) {
             fail(e);
         }
-        Assertions.assertEquals(expected, result);
+        assertThat(result, equalTo(expected));
     }
 
     void assertEquals() {
