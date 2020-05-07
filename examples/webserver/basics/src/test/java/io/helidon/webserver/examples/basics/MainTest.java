@@ -20,7 +20,7 @@ import java.util.function.Consumer;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
-import io.helidon.media.common.MediaSupport;
+import io.helidon.media.common.MediaContext;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.testsupport.MediaPublisher;
 import io.helidon.webserver.testsupport.TestClient;
@@ -149,18 +149,18 @@ public class MainTest {
         TMain tm = new TMain();
         callTestedMethod.accept(tm);
         assertNotNull(tm.routing);
-        return TestClient.create(tm.routing, tm.mediaSupport);
+        return TestClient.create(tm.routing, tm.mediaContext);
     }
 
     static class TMain extends Main {
 
         private Routing routing;
-        private MediaSupport mediaSupport;
+        private MediaContext mediaContext;
 
         @Override
-        protected void startServer(Routing routing, MediaSupport mediaSupport) {
+        protected void startServer(Routing routing, MediaContext mediaContext) {
             this.routing = routing;
-            this.mediaSupport = mediaSupport;
+            this.mediaContext = mediaContext;
         }
     }
 }

@@ -25,7 +25,7 @@ import static io.helidon.webserver.cors.Aggregator.PATHLESS_KEY;
 /**
  * Represents information about cross origin request sharing.
  *
- * Applications can create a new instance in two ways:
+ * Applications can obtain a new instance in three ways:
  * <ul>
  *     <li>Use a {@code Builder} explicitly.
  *     <p>
@@ -42,8 +42,9 @@ import static io.helidon.webserver.cors.Aggregator.PATHLESS_KEY;
  *     instance.
  *     <li>Invoke the static {@link #create(Config)} method, passing a config node containing the cross-origin information to be
  *     converted. This is a convenience method equivalent to creating a builder using the config node and then invoking {@code
- *     build()}.
- *     </li>
+ *     build()}.</li>
+ *     <li>Invoke the static {@link #create()} method which returns a {@code CrossOriginConfig} instance which implements
+ *     the default CORS behavior.</li>
  * </ul>
  *
  * @see MappedCrossOriginConfig
@@ -154,6 +155,15 @@ public class CrossOriginConfig {
     }
 
     /**
+     * Creates a new {@code CrossOriginConfig} instance which represents the default CORS behavior.
+     *
+     * @return new default {@code CrossOriginConfig} instance
+     */
+    public static CrossOriginConfig create() {
+        return builder().build();
+    }
+
+    /**
      * Creates a new {@code CrossOriginConfig} instance based on the provided configuration node.
      * @param corsConfig node containing CORS information
      * @return new {@code CrossOriginConfig} based on the configuration
@@ -216,6 +226,21 @@ public class CrossOriginConfig {
      */
     public long maxAgeSeconds() {
         return maxAgeSeconds;
+    }
+
+    /**
+     * Reports whether the specified HTTP method name matches this {@code CrossOriginConfig}.
+     *
+     * @param method HTTP method name to check
+     * @return true if this {@code CrossOriginConfig} matches the specified method; false otherwise
+     */
+    public boolean matches(String method) {
+        for (String allowMethod : allowMethods) {
+            if (allowMethod.equalsIgnoreCase(method) || allowMethod.equals("*")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override

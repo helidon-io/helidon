@@ -41,7 +41,7 @@ public abstract class AbstractConfigSourceBuilder<B extends AbstractConfigSource
     private Function<Config.Key, Optional<ConfigParser>> parserMapping;
 
     @SuppressWarnings("unchecked")
-    private B me = (B) this;
+    private final B me = (B) this;
 
     /**
      * {@inheritDoc}

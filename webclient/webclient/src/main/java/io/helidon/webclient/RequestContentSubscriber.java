@@ -119,7 +119,7 @@ class RequestContentSubscriber implements Flow.Subscriber<DataChunk> {
                 .addListener(completeOnFailureListener("An exception occurred when writing last http content."))
                 .addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
 
-        WebClientRequestBuilder.ClientRequest clientRequest = channel.attr(REQUEST).get();
+        WebClientRequestImpl clientRequest = channel.attr(REQUEST).get();
         WebClientServiceRequest serviceRequest = clientRequest.configuration().clientServiceRequest();
         sent.complete(serviceRequest);
     }

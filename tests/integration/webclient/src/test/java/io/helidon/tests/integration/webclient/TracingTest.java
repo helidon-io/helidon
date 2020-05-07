@@ -23,8 +23,7 @@ import java.util.concurrent.ExecutionException;
 import javax.json.JsonObject;
 
 import io.helidon.common.context.Context;
-import io.helidon.media.common.MediaSupport;
-import io.helidon.media.jsonp.common.JsonProcessing;
+import io.helidon.media.jsonp.common.JsonpSupport;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
 
@@ -42,7 +41,6 @@ import static org.hamcrest.Matchers.iterableWithSize;
  * Test tracing integration.
  */
 class TracingTest extends TestParent {
-    private static final JsonProcessing JSON_PROCESSING = JsonProcessing.create();
 
     @Test
     void testTracingNoServerSuccess() throws ExecutionException, InterruptedException {
@@ -54,11 +52,7 @@ class TracingTest extends TestParent {
         WebClient client = WebClient.builder()
                 .baseUri(uri)
                 .context(context)
-                .mediaSupport(MediaSupport.builder()
-                                      .registerDefaults()
-                                      .registerReader(JSON_PROCESSING.newReader())
-                                      .registerWriter(JSON_PROCESSING.newWriter())
-                                      .build())
+                .addMediaSupport(JsonpSupport.create())
                 .build();
 
         WebClientResponse response = client.get()
@@ -98,11 +92,7 @@ class TracingTest extends TestParent {
         WebClient client = WebClient.builder()
                 .baseUri("http://localhost:" + webServer.port() + "/greet")
                 .context(context)
-                .mediaSupport(MediaSupport.builder()
-                                      .registerDefaults()
-                                      .registerReader(JSON_PROCESSING.newReader())
-                                      .registerWriter(JSON_PROCESSING.newWriter())
-                                      .build())
+                .addMediaSupport(JsonpSupport.create())
                 .build();
 
         WebClientResponse response = client.get()

@@ -29,8 +29,8 @@ import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.http.Parameters;
 import io.helidon.common.http.Reader;
-import io.helidon.media.common.MediaSupport;
-import io.helidon.media.jsonp.common.JsonProcessing;
+import io.helidon.media.common.MediaContext;
+import io.helidon.media.jsonp.common.JsonpSupport;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.HttpException;
 import io.helidon.webserver.RequestPredicate;
@@ -81,11 +81,11 @@ public class Main {
      * {@link java.util.concurrent.CompletionStage CompletionStages} to provide reactive access.
      *
      * @param routing the routing to drive by WebServer instance
-     * @param mediaSupport media support
+     * @param mediaContext media support
      */
-    protected void startServer(Routing routing, MediaSupport mediaSupport) {
+    protected void startServer(Routing routing, MediaContext mediaContext) {
         WebServer.builder(routing)
-                .mediaSupport(mediaSupport)
+                .mediaContext(mediaContext)
                 .build()
                  .start()
                  // All lifecycle operations are non-blocking and provides CompletionStage
@@ -259,12 +259,11 @@ public class Main {
                                  .build();
 
         // Create a media support that contains the defaults and our custom Name reader
-        MediaSupport mediaSupport = MediaSupport.builder()
-                .registerDefaults()
-                .registerReader(NameReader.create())
+        MediaContext mediaContext = MediaContext.builder()
+                .addReader(NameReader.create())
                 .build();
 
-        startServer(routing, mediaSupport);
+        startServer(routing, mediaContext);
     }
 
     /**
@@ -285,12 +284,11 @@ public class Main {
                                                                 .build())
                                  .build();
 
-        MediaSupport mediaSupport = MediaSupport.builder()
-                .registerDefaults()
-                .registerWriter(JsonProcessing.create().newWriter())
+        MediaContext mediaContext = MediaContext.builder()
+                .addWriter(JsonpSupport.writer())
                 .build();
 
-        startServer(routing, mediaSupport);
+        startServer(routing, mediaContext);
     }
 
     /**

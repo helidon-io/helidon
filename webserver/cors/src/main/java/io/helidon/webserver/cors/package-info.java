@@ -61,16 +61,15 @@
  * </p>
  *     <pre>{@code
  *         Config myAppConfig = Config.builder().sources(ConfigSources.classpath("myApp.yaml")).build();
- *         Routing.Builder builder = Routing.builder()
- *                 .any("/greet",
- *                      CorsSupport.create(myAppConfig.get("narrow")),
- *                      (req, resp) -> resp.status(Http.Status.OK_200).send())
- *                 .get("/greet",
- *                      CorsSupport.create(myAppConfig.get("wide")),
- *                      (req, resp) -> resp.status(Http.Status.OK_200).send("Hello, World!"));
- *
+ *         Routing.Builder builder = Routing.builder();
+ *         myAppConfig.get("narrow").ifPresent(c -> builder.any(
+ *                          "/greet", CorsSupport.create(c),
+ *                          (req, resp) -> resp.status(Http.Status.OK_200).send()));
+ *         myAppConfig.get("wide".ifPresent(c -> builder.get(
+ *                          "/greet", CorsSupport.create(c),
+ *                          (req, resp) -> resp.status(Http.Status.OK_200).send("Hello, World!")));
  *     }</pre>
- * This sets up more restrictive CORS behavior for more sensitive HTTP methods ({@code PUT} for example and more liberal CORS
+ * This sets up more restrictive CORS behavior for more sensitive HTTP methods ({@code PUT} for example) and more liberal CORS
  * behavior for {@code GET}.
  *
  * <h2>The Helidon CORS API</h2>

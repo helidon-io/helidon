@@ -19,7 +19,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
@@ -28,9 +27,7 @@ import java.util.logging.Logger;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
-import io.helidon.media.common.MediaSupport;
 import io.helidon.media.common.MessageBodyReadableContent;
-import io.helidon.media.common.MessageBodyReader;
 import io.helidon.media.common.MessageBodyReaderContext;
 
 /**
@@ -44,8 +41,7 @@ final class WebClientResponseImpl implements WebClientResponse {
     private final Flow.Publisher<DataChunk> publisher;
     private final Http.ResponseStatus status;
     private final Http.Version version;
-    private final MediaSupport mediaSupport;
-    private final Set<MessageBodyReader<?>> requestReaders;
+    private final MessageBodyReaderContext readerContext;
     private final NettyClientHandler.ResponseCloser responseCloser;
 
     private WebClientResponseImpl(Builder builder) {
@@ -53,8 +49,7 @@ final class WebClientResponseImpl implements WebClientResponse {
         publisher = builder.publisher;
         status = builder.status;
         version = builder.version;
-        mediaSupport = builder.mediaSupport;
-        requestReaders = builder.requestReaders;
+        readerContext = builder.readerContext;
         responseCloser = builder.responseCloser;
     }
 
@@ -90,8 +85,7 @@ final class WebClientResponseImpl implements WebClientResponse {
     @Override
     public MessageBodyReadableContent content() {
         Optional<MediaType> mediaType = headers.contentType();
-        MessageBodyReaderContext readerContext = MessageBodyReaderContext.create(mediaSupport, null, headers, mediaType);
-        requestReaders.forEach(readerContext::registerReader);
+        MessageBodyReaderContext readerContext = MessageBodyReaderContext.create(this.readerContext, null, headers, mediaType);
         return MessageBodyReadableContent.create(publisher, readerContext);
     }
 
@@ -107,12 +101,11 @@ final class WebClientResponseImpl implements WebClientResponse {
 
         private final Map<String, List<String>> headers = new HashMap<>();
 
-        private MediaSupport mediaSupport;
         private Flow.Publisher<DataChunk> publisher;
         private Http.ResponseStatus status = Http.Status.INTERNAL_SERVER_ERROR_500;
         private Http.Version version = Http.Version.V1_1;
-        private Set<MessageBodyReader<?>> requestReaders;
         private NettyClientHandler.ResponseCloser responseCloser;
+        private MessageBodyReaderContext readerContext;
 
         @Override
         public WebClientResponseImpl build() {
@@ -131,24 +124,13 @@ final class WebClientResponseImpl implements WebClientResponse {
         }
 
         /**
-         * Registered request body readers.
+         * Reader context of the request.
          *
-         * @param requestReaders registered request readers
+         * @param readerContext message body reader
          * @return updated builder instance
          */
-        Builder requestBodyReaders(Set<MessageBodyReader<?>> requestReaders) {
-            this.requestReaders = requestReaders;
-            return this;
-        }
-
-        /**
-         * Media support of the request.
-         *
-         * @param mediaSupport media support
-         * @return updated builder instance
-         */
-        Builder mediaSupport(MediaSupport mediaSupport) {
-            this.mediaSupport = mediaSupport;
+        Builder readerContext(MessageBodyReaderContext readerContext) {
+            this.readerContext = readerContext;
             return this;
         }
 

@@ -72,7 +72,7 @@ public abstract class AbstractCorsTest {
     @Test
     void test1PreFlightAllowedHeaders1() throws ExecutionException, InterruptedException {
         WebClientRequestBuilder reqBuilder = client()
-                .method(Http.Method.OPTIONS.name())
+                .options()
                 .path(path(SERVICE_1));
 
         Headers headers = reqBuilder.headers();
@@ -95,7 +95,7 @@ public abstract class AbstractCorsTest {
     @Test
     void test1PreFlightAllowedHeaders2() throws ExecutionException, InterruptedException {
         WebClientRequestBuilder reqBuilder = client()
-                .method(Http.Method.OPTIONS.name())
+                .options()
                 .path(path(SERVICE_1));
 
         Headers headers = reqBuilder.headers();
@@ -119,7 +119,7 @@ public abstract class AbstractCorsTest {
     @Test
     void test2PreFlightForbiddenOrigin() throws ExecutionException, InterruptedException {
         WebClientRequestBuilder reqBuilder = client()
-                .method(Http.Method.OPTIONS.name())
+                .options()
                 .path(path(SERVICE_2));
 
         Headers headers = reqBuilder.headers();
@@ -137,7 +137,7 @@ public abstract class AbstractCorsTest {
     @Test
     void test2PreFlightAllowedOrigin() throws ExecutionException, InterruptedException {
         WebClientRequestBuilder reqBuilder = client()
-                .method(Http.Method.OPTIONS.name())
+                .options()
                 .path(path(SERVICE_2));
 
         Headers headers = reqBuilder.headers();
@@ -161,7 +161,7 @@ public abstract class AbstractCorsTest {
     @Test
     void test2PreFlightForbiddenMethod() throws ExecutionException, InterruptedException {
         WebClientRequestBuilder reqBuilder = client()
-                .method(Http.Method.OPTIONS.name())
+                .options()
                 .path(path(SERVICE_2));
 
         Headers headers = reqBuilder.headers();
@@ -179,7 +179,7 @@ public abstract class AbstractCorsTest {
     @Test
     void test2PreFlightForbiddenHeader() throws ExecutionException, InterruptedException {
         WebClientRequestBuilder reqBuilder = client()
-                .method(Http.Method.OPTIONS.name())
+                .options()
                 .path(path(SERVICE_2));
 
         Headers headers = reqBuilder.headers();
@@ -198,7 +198,7 @@ public abstract class AbstractCorsTest {
     @Test
     void test2PreFlightAllowedHeaders1() throws ExecutionException, InterruptedException {
         WebClientRequestBuilder reqBuilder = client()
-                .method(Http.Method.OPTIONS.name())
+                .options()
                 .path(path(contextRoot(), SERVICE_2));
 
         Headers headers = reqBuilder.headers();
@@ -227,7 +227,7 @@ public abstract class AbstractCorsTest {
     @Test
     void test2PreFlightAllowedHeaders2() throws ExecutionException, InterruptedException {
         WebClientRequestBuilder reqBuilder = client()
-                .method(Http.Method.OPTIONS.name())
+                .options()
                 .path(path(SERVICE_2));
 
         Headers headers = reqBuilder.headers();
@@ -252,7 +252,7 @@ public abstract class AbstractCorsTest {
     @Test
     void test2PreFlightAllowedHeaders3() throws ExecutionException, InterruptedException {
         WebClientRequestBuilder reqBuilder = client()
-                .method(Http.Method.OPTIONS.name())
+                .options()
                 .path(path(SERVICE_2));
 
         Headers headers = reqBuilder.headers();
@@ -338,7 +338,7 @@ public abstract class AbstractCorsTest {
     WebClientResponse runTest1PreFlightAllowedOrigin() throws ExecutionException,
             InterruptedException {
         WebClientRequestBuilder reqBuilder = client()
-                .method(Http.Method.OPTIONS.name())
+                .options()
                 .path(path(contextRoot(), SERVICE_1));
 
         Headers headers = reqBuilder.headers();

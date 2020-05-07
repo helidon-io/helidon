@@ -16,12 +16,9 @@
 
 package io.helidon.tests.bookstore;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.file.Paths;
@@ -30,13 +27,16 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
-import java.util.stream.Collectors;
 
 import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
-import javax.json.JsonReader;
-import javax.json.stream.JsonParser;
+
+import io.helidon.common.http.Http;
+import io.helidon.common.http.MediaType;
+import io.helidon.media.jsonp.common.JsonpSupport;
+import io.helidon.webclient.WebClient;
+import io.helidon.webclient.WebClientResponse;
 
 import com.oracle.bedrock.runtime.Application;
 import com.oracle.bedrock.runtime.LocalPlatform;
@@ -51,7 +51,9 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThan;
 
 class MainTest {
 
@@ -62,6 +64,7 @@ class MainTest {
     private static LocalPlatform localPlatform = LocalPlatform.get();
     private static int port = localPlatform.getAvailablePorts().next();
     private static URL healthUrl;
+    private static WebClient webClient;
 
     private static final String MODULE_NAME_MP = "io.helidon.tests.apps.bookstore.mp";
     private static final String MODULE_NAME_SE = "io.helidon.tests.apps.bookstore.se";
@@ -72,6 +75,10 @@ class MainTest {
         healthUrl = new URL("http://localhost:" + port + "/health");
         appJarPathSE = Paths.get(appJarPathSE).normalize().toString();
         appJarPathMP = Paths.get(appJarPathMP).normalize().toString();
+        webClient = WebClient.builder()
+                .baseUri("http://localhost:" + port)
+                .addMediaSupport(JsonpSupport.create())
+                .build();
     }
 
     @AfterEach
@@ -135,10 +142,10 @@ class MainTest {
 
         String eol = System.getProperty("line.separator");
         Assertions.fail("quickstart " + edition + " did not exit as expected." + eol
-                        + eol
-                        + "stdOut: " + stdOut + eol
-                        + eol
-                        + " stdErr: " + console.getCapturedErrorLines());
+                                + eol
+                                + "stdOut: " + stdOut + eol
+                                + eol
+                                + " stdErr: " + console.getCapturedErrorLines());
     }
 
     @Test
@@ -197,13 +204,12 @@ class MainTest {
      * So we set a system property to select the library to use before starting
      * the server
      *
-     * @param edition "mp", "se"
+     * @param edition     "mp", "se"
      * @param jsonLibrary "jsonp", "jsonb" or "jackson"
      * @throws Exception on test failure
      */
     private void runJsonFunctionalTest(String edition, String jsonLibrary) throws Exception {
-        HttpURLConnection conn;
-        String json = getBookAsJson();
+        JsonObject json = getBookAsJsonObject();
         int numberOfBooks = 1000;
         List<String> systemPropertyArgs = new LinkedList<>();
 
@@ -214,32 +220,48 @@ class MainTest {
 
         startTheApplication(editionToJarPath(edition), systemPropertyArgs);
 
-        conn = getURLConnection("GET", "/books");
-        assertThat("HTTP response GET books", conn.getResponseCode(), is(200));
+        webClient.get()
+                .path("/books")
+                .request(JsonArray.class)
+                .thenAccept(bookArray -> assertThat("Number of books", bookArray.size(), is(numberOfBooks)))
+                .toCompletableFuture()
+                .get();
 
-        JsonParser parser = Json.createParser(conn.getInputStream());
-        parser.next();
-        JsonArray bookArray = parser.getArray();
-        assertThat("Number of books", bookArray.size(), is(numberOfBooks));
+        webClient.post()
+                .path("/books")
+                .submit(json)
+                .thenAccept(it -> assertThat("HTTP response POST", it.status(), is(Http.Status.OK_200)))
+                .thenCompose(it -> webClient.get()
+                        .path("/books/123456")
+                        .request(JsonObject.class))
+                .thenAccept(it -> assertThat("Checking if correct ISBN", it.getString("isbn"), is("123456")))
+                .toCompletableFuture()
+                .get();
 
-        conn = getURLConnection("POST", "/books");
-        writeJsonContent(conn, json);
-        assertThat("HTTP response POST", conn.getResponseCode(), is(200));
+        webClient.get()
+                .path("/books/0000")
+                .request()
+                .thenAccept(it -> assertThat("HTTP response GET bad ISBN", it.status(), is(Http.Status.NOT_FOUND_404)))
+                .toCompletableFuture()
+                .get();
 
-        conn = getURLConnection("GET", "/books/123456");
-        assertThat("HTTP response GET good ISBN", conn.getResponseCode(), is(200));
-        JsonReader jsonReader = Json.createReader(conn.getInputStream());
-        JsonObject jsonObject = jsonReader.readObject();
-        assertThat("Checking if correct ISBN", jsonObject.getString("isbn"), is("123456"));
+        webClient.get()
+                .path("/books")
+                .request()
+                .thenApply(it -> {
+                    assertThat("HTTP response list books", it.status(), is(Http.Status.OK_200));
+                    return it;
+                })
+                .thenCompose(WebClientResponse::close)
+                .toCompletableFuture()
+                .get();
 
-        conn = getURLConnection("GET", "/books/0000");
-        assertThat("HTTP response GET bad ISBN", conn.getResponseCode(), is(404));
-
-        conn = getURLConnection("GET", "/books");
-        assertThat("HTTP response list books", conn.getResponseCode(), is(200));
-
-        conn = getURLConnection("DELETE", "/books/123456");
-        assertThat("HTTP response delete book", conn.getResponseCode(), is(200));
+        webClient.delete()
+                .path("/books/123456")
+                .request()
+                .thenAccept(it -> assertThat("HTTP response delete book", it.status(), is(Http.Status.OK_200)))
+                .toCompletableFuture()
+                .get();
     }
 
     /**
@@ -248,7 +270,7 @@ class MainTest {
      * So we set a system property to select the library to use before starting
      * the server
      *
-     * @param edition "mp", "se"
+     * @param edition     "mp", "se"
      * @param jsonLibrary "jsonp", "jsonb" or "jackson"
      * @param useModules true to use modulepath, false to use classpath
      * @throws Exception on test failure
@@ -266,51 +288,58 @@ class MainTest {
             startTheApplication(editionToJarPath(edition), systemPropertyArgs);
         }
 
-        HttpURLConnection conn;
-
         // Get Prometheus style metrics
-        conn = getURLConnection("GET", "/metrics");
-        conn.setRequestProperty("Accept", "*/*");
-        assertThat("Checking Prometheus Metrics response\"", conn.getResponseCode(), is(200));
-        String s = readAllAsString(conn.getInputStream());
-
-        // Make sure we got prometheus metrics
-        assertThat("Making sure we got Prometheus format", s.startsWith("# TYPE"));
+        webClient.get()
+                .accept(MediaType.WILDCARD)
+                .path("/metrics")
+                .request(String.class)
+                // Make sure we got prometheus metrics
+                .thenAccept(it -> assertThat("Making sure we got Prometheus format", it, startsWith("# TYPE")))
+                .toCompletableFuture()
+                .get();
 
         // Get JSON encoded metrics
-        conn = getURLConnection("GET", "/metrics");
-        assertThat("Checking JSON Metrics response\"", conn.getResponseCode(), is(200));
-
-        // Makes sure we got JSON metrics
-        JsonReader jsonReader = Json.createReader(conn.getInputStream());
-        JsonObject jsonObject = jsonReader.readObject();
-        assertThat("Checking request count",
-                   jsonObject.getJsonObject("vendor").getInt("requests.count") > 0);
+        webClient.get()
+                .accept(MediaType.APPLICATION_JSON)
+                .path("/metrics")
+                .request(JsonObject.class)
+                // Makes sure we got JSON metrics
+                .thenAccept(it -> assertThat("Checking request count",
+                                             it.getJsonObject("vendor").getInt("requests.count"),
+                                             greaterThan(0)))
+                .toCompletableFuture()
+                .get();
 
         // Get JSON encoded metrics/base
-        conn = getURLConnection("GET", "/metrics/base");
-        assertThat("Checking JSON Base Metrics response", conn.getResponseCode(), is(200));
-
-        // Makes sure we got JSON metrics
-        jsonReader = Json.createReader(conn.getInputStream());
-        jsonObject = jsonReader.readObject();
-        assertThat("Checking thread count", jsonObject.getInt("thread.count") > 0);
+        webClient.get()
+                .accept(MediaType.APPLICATION_JSON)
+                .path("/metrics/base")
+                .request(JsonObject.class)
+                // Makes sure we got JSON metrics
+                .thenAccept(it -> assertThat("Checking request count",
+                                             it.getInt("thread.count"),
+                                             greaterThan(0)))
+                .toCompletableFuture()
+                .get();
 
         // Get JSON encoded health check
-        conn = getURLConnection("GET", "/health");
-        assertThat("Checking health response", conn.getResponseCode(), is(200));
-
-        jsonReader = Json.createReader(conn.getInputStream());
-        jsonObject = jsonReader.readObject();
-        assertThat("Checking health outcome", jsonObject.getString("outcome"), is("UP"));
-        assertThat("Checking health status", jsonObject.getString("status"), is("UP"));
-
-        // Verify that built-in health checks are disabled in MP according to
-        // 'microprofile-config.properties' setting in bookstore application
-        if (edition.equals("mp")) {
-            assertThat("Checking built-in health checks disabled",
-                       jsonObject.getJsonArray("checks").size(), is(0));
-        }
+        webClient.get()
+                .accept(MediaType.APPLICATION_JSON)
+                .path("/health")
+                .request(JsonObject.class)
+                .thenAccept(it -> {
+                    assertThat("Checking health outcome", it.getString("outcome"), is("UP"));
+                    assertThat("Checking health status", it.getString("status"), is("UP"));
+                    // Verify that built-in health checks are disabled in MP according to
+                    // 'microprofile-config.properties' setting in bookstore application
+                    if (edition.equals("mp")) {
+                        assertThat("Checking built-in health checks disabled",
+                                   it.getJsonArray("checks").size(),
+                                   is(0));
+                    }
+                })
+                .toCompletableFuture()
+                .get();
     }
 
     @ParameterizedTest
@@ -318,55 +347,39 @@ class MainTest {
     void routing(String edition) throws Exception {
 
         startTheApplication(editionToJarPath(edition), Collections.emptyList());
-        HttpURLConnection conn;
 
-        conn = getURLConnection("GET", "/boo%6bs");
+        webClient.get()
+                .accept(MediaType.APPLICATION_JSON)
+                .skipUriEncoding()
+                .path("/boo%6bs")
+                .request()
+                .thenAccept(it -> {
+                    if ("se".equals(edition)) {
+                        assertThat("Checking encode URL response SE", it.status(), is(Http.Status.OK_200));
+                    } else {
+                        // JAXRS does not decode URLs before matching
+                        assertThat("Checking encode URL response MP", it.status(), is(Http.Status.NOT_FOUND_404));
+                    }
+                })
+                .toCompletableFuture()
+                .get();
 
-        if ("se".equals(edition)) {
-            assertThat("Checking encode URL response SE", conn.getResponseCode(), is(200));
-        } else {
-            // JAXRS does not decode URLs before matching
-            assertThat("Checking encode URL response MP", conn.getResponseCode(), is(404));
-        }
-
-        conn = getURLConnection("GET", "/badurl");
-        assertThat("Checking encode URL response", conn.getResponseCode(), is(404));
+        webClient.get()
+                .accept(MediaType.APPLICATION_JSON)
+                .path("/badurl")
+                .request()
+                .thenAccept(it -> assertThat("Checking encode URL response", it.status(), is(Http.Status.NOT_FOUND_404)))
+                .toCompletableFuture()
+                .get();
     }
 
-    private HttpURLConnection getURLConnection(String method, String path) throws Exception {
-        URL url = new URL("http://localhost:" + port + path);
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setRequestMethod(method);
-        conn.setRequestProperty("Accept", "application/json");
-        System.out.println("Connecting: " + method + " " + url);
-        return conn;
-    }
-
-    private String getBookAsJson() throws IOException {
+    private JsonObject getBookAsJsonObject() throws IOException {
         InputStream is = getClass().getClassLoader().getResourceAsStream("book.json");
         if (is != null) {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-            return reader.lines().collect(Collectors.joining(System.lineSeparator()));
+            return Json.createReader(is).readObject();
         } else {
             throw new IOException("Could not find resource book.json");
         }
-    }
-
-    private String readAllAsString(InputStream is) {
-        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-        return reader.lines().collect(Collectors.joining(System.lineSeparator()));
-    }
-
-    private void writeJsonContent(HttpURLConnection conn, String json) throws IOException {
-        int jsonLength = json.getBytes().length;
-
-        conn.setDoOutput(true);
-        conn.setRequestProperty("Content-Type", "application/json");
-        conn.setRequestProperty("Content-Length", Integer.toString(jsonLength));
-        conn.setFixedLengthStreamingMode(jsonLength);
-        OutputStream outputStream = conn.getOutputStream();
-        outputStream.write(json.getBytes());
-        outputStream.close();
     }
 
     private void waitForApplicationUp() throws Exception {
@@ -380,7 +393,7 @@ class MainTest {
     /**
      * Wait for the application to be up or down.
      *
-     * @param url URL to ping. URL should return 200 when application is up.
+     * @param url    URL to ping. URL should return 200 when application is up.
      * @param toBeUp true if waiting to come up, false if waiting to go down
      * @throws Exception on a failure
      */
