@@ -23,10 +23,10 @@ import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.CDI;
 
-import io.helidon.config.Config;
-import io.helidon.config.ConfigSources;
-import io.helidon.config.MpConfigProviderResolver;
+import io.helidon.config.mp.MpConfigProviderResolver;
+import io.helidon.config.mp.MpConfigSources;
 
+import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.junit.jupiter.api.Test;
 
@@ -68,13 +68,18 @@ class MainTest {
         assertThat(extension.events(), contains(TestExtension.BUILD_TIME_START,
                                                 TestExtension.BUILD_TIME_END));
 
-        Config config = Config.create(ConfigSources.create(Map.of("key", "value")));
+
+        Config config = ConfigProviderResolver.instance()
+                .getBuilder()
+                .withSources(MpConfigSources.create(Map.of("key", "value")))
+                .build();
+
         ConfigProviderResolver.instance()
-                .registerConfig((org.eclipse.microprofile.config.Config) config, Thread.currentThread().getContextClassLoader());
+                .registerConfig(config, Thread.currentThread().getContextClassLoader());
 
         instance.start();
 
-        Config runtimeConfig = extension.runtimeConfig();
+        Object runtimeConfig = extension.runtimeConfig();
         assertThat(runtimeConfig, instanceOf(MpConfigProviderResolver.ConfigDelegate.class));
         assertThat(((MpConfigProviderResolver.ConfigDelegate) runtimeConfig).delegate(), sameInstance(config));
 

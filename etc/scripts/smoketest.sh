@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2019, 2020 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ on_error(){
 trap on_error ERR
 
 usage(){
-  cat <<EOF
+    cat <<EOF
 
 DESCRIPTION: Helidon Smoke Test Script
 
@@ -84,187 +84,201 @@ $(basename ${0}) [ --staged ] [ --giturl=URL ] [ --clean ] [--help ] --version=V
 EOF
 }
 
-readonly SCRATCH=$(mktemp -d /var/tmp/helidon-smoke.XXXX) 
-
 # parse command line args
 ARGS=( "${@}" )
 for ((i=0;i<${#ARGS[@]};i++))
 {
-  ARG=${ARGS[${i}]}
-  case ${ARG} in
-  "--staged")
-    readonly STAGED_PROFILE="-Possrh-staging"
-    ;;
-  "--clean")
-    readonly CLEAN_MVN_REPO="true"
-    ;;
-  "--version="*)
-    VERSION=${ARG#*=}
-    ;;
-  "--giturl="*)
-    GIT_URL=${ARG#*=}
-    ;;
-  "--help")
-    usage
-    exit 0
-    ;;
-  *)
-    if [ "${ARG}" = "full" ] || [ "${ARG}" = "quick" ] ; then
-      readonly COMMAND="${ARG}"
-    else
-      echo "ERROR: unknown argument: ${ARG}"
-      exit 1
-    fi
-    ;;
-  esac
+    ARG=${ARGS[${i}]}
+    case ${ARG} in
+    "--staged")
+        readonly STAGED_PROFILE="-Possrh-staging"
+        ;;
+    "--clean")
+        readonly CLEAN_MVN_REPO="true"
+        ;;
+    "--version="*)
+        VERSION=${ARG#*=}
+        ;;
+    "--giturl="*)
+        GIT_URL=${ARG#*=}
+        ;;
+    "--help")
+        usage
+        exit 0
+        ;;
+    *)
+        if [ "${ARG}" = "full" ] || [ "${ARG}" = "quick" ] ; then
+            readonly COMMAND="${ARG}"
+        else
+            echo "ERROR: unknown argument: ${ARG}"
+            exit 1
+        fi
+        ;;
+    esac
 }
 
 if [ -z "${COMMAND}" ] ; then
-  echo "ERROR: no command provided"
-  exit 1
+    echo "ERROR: no command provided"
+    exit 1
 fi
 
 if [ -z "${VERSION}" ] ; then
-  echo "ERROR: no version provided. Please use --version option to specify a version"
-  exit 1
+    echo "ERROR: no version provided. Please use --version option to specify a version"
+    exit 1
 fi
 
 # Path to this script
 if [ -h "${0}" ] ; then
-  readonly SCRIPT_PATH="$(readlink "${0}")"
+    readonly SCRIPT_PATH="$(readlink "${0}")"
 else
-  readonly SCRIPT_PATH="${0}"
+    readonly SCRIPT_PATH="${0}"
 fi
 
 readonly SCRIPT_DIR=$(dirname ${SCRIPT_PATH})
 
+readonly DATESTAMP=$(date +%Y-%m-%d)
+mkdir -p /var/tmp/helidon-smoke
+readonly SCRATCH=$(mktemp -d /var/tmp/helidon-smoke/${VERSION}-${DATESTAMP}.XXXX)
+
 if [ -z "${GIT_URL}" ] ; then
-  cd ${SCRIPT_DIR}
-  GIT_URL=$(git remote get-url origin)
+    cd ${SCRIPT_DIR}
+    GIT_URL=$(git remote get-url origin)
 fi
 
 if [ -z "${GIT_URL}" ] ; then
-  echo "ERROR: can't determine URL of git repository. Pleas use --giturl option"
-  exit 1
+    echo "ERROR: can't determine URL of git repository. Pleas use --giturl option"
+    exit 1
 fi
 
 full(){
-  echo "===== Full Test ====="
-  cd ${SCRATCH}
-  quick
-  cd ${SCRATCH}
+    echo "===== Full Test ====="
+    cd ${SCRATCH}
+    quick
+    cd ${SCRATCH}
 
-  echo "===== Cloning Workspace ${GIT_URL} ====="
-  git clone ${GIT_URL}
-  cd ${SCRATCH}/helidon
+    echo "===== Checking out tags/${VERSION} ====="
+    if [[ "${VERSION}" =~ .*SNAPSHOT ]]; then
+        echo "WARNING! SNAPSHOT version. Skipping tag checkout"
+    else
+        git checkout tags/${VERSION}
+    fi
 
-  echo "===== Checking out tags/${VERSION} ====="
-  git checkout tags/${VERSION}
+    echo "===== Building examples ====="
+    cd ${SCRATCH}/helidon/examples
+    mvn ${MAVEN_ARGS} clean install ${STAGED_PROFILE}
+    cd ${SCRATCH}
 
+    # Primes dependencies for native-image builds
+    cd ${SCRATCH}/helidon/tests/integration/native-image
+    mvn ${MAVEN_ARGS} clean install ${STAGED_PROFILE}
 
-  echo "===== Running tests ====="
-  cd ${SCRATCH}/helidon/tests
-  mvn clean install ${STAGED_PROFILE}
+    echo "===== Running native image tests ====="
+    if [ -z "${GRAALVM_HOME}" ]; then
+        echo "WARNING! GRAALVM_HOME is not set. Skipping native image tests"
+    else
+        readonly native_image_tests="se-1 mp-1 mp-2 mp-3"
+        for native_test in ${native_image_tests}; do
+            cd ${SCRATCH}/helidon/tests/integration/native-image/${native_test}
+            mvn ${MAVEN_ARGS} clean package -Pnative-image ${STAGED_PROFILE}
+        done
+    fi
 
-
-  echo "===== Building examples ====="
-  cd ${SCRATCH}/helidon/examples
-  mvn clean install ${STAGED_PROFILE}
-  cd ${SCRATCH}
-
+    echo "===== Building examples ====="
+    cd ${SCRATCH}/helidon/examples
+    mvn ${MAVEN_ARGS} clean install ${STAGED_PROFILE}
+    cd ${SCRATCH}
 }
 
 waituntilready() {
-  # Give app a chance to start --retry will retry until it is up
-  sleep 3
-  curl -s --retry-connrefused --retry 3 -X GET http://localhost:8080/health/live
-  echo
+    # Give app a chance to start --retry will retry until it is up
+    # --retry-connrefused requires curl 7.51.0 or newer
+    sleep 3
+    curl -s --retry-connrefused --retry 3 -X GET http://localhost:8080/health/live
+    echo
 }
 
 testGET() {
-  http_code=`curl -s -o /dev/null -w "%{http_code}" -X GET $1`
-  if [ ${http_code} -ne "200" ]; then
-      echo "ERROR: Bad HTTP code. Expected 200 got ${http_code}. GET $1"
-      kill ${PID}
-      return 1
-  fi
-  return 0
+    http_code=`curl -s -o /dev/null -w "%{http_code}" -X GET $1`
+    if [ ${http_code} -ne "200" ]; then
+        echo "ERROR: Bad HTTP code. Expected 200 got ${http_code}. GET $1"
+        kill ${PID}
+        return 1
+    fi
+    return 0
 }
 
 quick(){
 
-  echo "===== Quick Test ====="
-  cd ${SCRATCH}
+    echo "===== Quick Test ====="
+    cd ${SCRATCH}
 
-  echo "===== Testing Archetypes ====="
-  mvn archetype:generate -DinteractiveMode=false \
-    -DarchetypeGroupId=io.helidon.archetypes \
-    -DarchetypeArtifactId=helidon-quickstart-se \
-    -DarchetypeVersion=${VERSION} \
-    -DgroupId=io.helidon.examples \
-    -DartifactId=helidon-quickstart-se \
-    -Dpackage=io.helidon.examples.quickstart.se \
-    ${STAGED_PROFILE}
-  
-  mvn -f helidon-quickstart-se/pom.xml ${STAGED_PROFILE} clean package 
+    echo "===== Testing Archetypes ====="
+    mvn ${MAVEN_ARGS} archetype:generate -DinteractiveMode=false \
+        -DarchetypeGroupId=io.helidon.archetypes \
+        -DarchetypeArtifactId=helidon-quickstart-se \
+        -DarchetypeVersion=${VERSION} \
+        -DgroupId=io.helidon.examples \
+        -DartifactId=helidon-quickstart-se \
+        -Dpackage=io.helidon.examples.quickstart.se \
+        ${STAGED_PROFILE}
 
-  echo "===== Running and pinging SE app ====="
-  java -jar helidon-quickstart-se/target/helidon-quickstart-se.jar &
-  PID=$!
+    mvn ${MAVEN_ARGS} -f helidon-quickstart-se/pom.xml ${STAGED_PROFILE} clean package
 
-  # Wait for app to come up
-  waituntilready
+    echo "===== Running and pinging SE app ====="
+    java -jar helidon-quickstart-se/target/helidon-quickstart-se.jar &
+    PID=$!
 
-  # Hit some endpoints
-  testGET http://localhost:8080/greet
-  testGET http://localhost:8080/greet/Joe
-  testGET http://localhost:8080/health
-  testGET http://localhost:8080/metrics
+    # Wait for app to come up
+    waituntilready
 
-  kill ${PID}
+    # Hit some endpoints
+    testGET http://localhost:8080/greet
+    testGET http://localhost:8080/greet/Joe
+    testGET http://localhost:8080/health
+    testGET http://localhost:8080/metrics
 
-  mvn archetype:generate -DinteractiveMode=false \
-    -DarchetypeGroupId=io.helidon.archetypes \
-    -DarchetypeArtifactId=helidon-quickstart-mp \
-    -DarchetypeVersion=${VERSION} \
-    -DgroupId=io.helidon.examples \
-    -DartifactId=helidon-quickstart-mp \
-    -Dpackage=io.helidon.examples.quickstart.mp \
-    ${STAGED_PROFILE}
+    kill ${PID}
 
-  mvn -f helidon-quickstart-mp/pom.xml ${STAGED_PROFILE} clean package 
+    mvn ${MAVEN_ARGS} archetype:generate -DinteractiveMode=false \
+        -DarchetypeGroupId=io.helidon.archetypes \
+        -DarchetypeArtifactId=helidon-quickstart-mp \
+        -DarchetypeVersion=${VERSION} \
+        -DgroupId=io.helidon.examples \
+        -DartifactId=helidon-quickstart-mp \
+        -Dpackage=io.helidon.examples.quickstart.mp \
+        ${STAGED_PROFILE}
 
-  echo "===== Running and pinging MP app ====="
-  java -jar helidon-quickstart-mp/target/helidon-quickstart-mp.jar &
-  PID=$!
+    mvn ${MAVEN_ARGS} -f helidon-quickstart-mp/pom.xml ${STAGED_PROFILE} clean package
 
-  waituntilready
+    echo "===== Running and pinging MP app ====="
+    java -jar helidon-quickstart-mp/target/helidon-quickstart-mp.jar &
+    PID=$!
 
-  testGET http://localhost:8080/greet
-  testGET http://localhost:8080/greet/Joe
-  testGET http://localhost:8080/metrics
-  testGET http://localhost:8080/health
-  testGET http://localhost:8080/openapi
+    waituntilready
 
-  kill ${PID}
-    
+    testGET http://localhost:8080/greet
+    testGET http://localhost:8080/greet/Joe
+    testGET http://localhost:8080/metrics
+    testGET http://localhost:8080/health
+    testGET http://localhost:8080/openapi
+
+    kill ${PID}
 }
 
 cd ${SCRATCH}
 
 readonly OUTPUTFILE=${SCRATCH}/helidon-smoketest-log.txt
-readonly LOCAL_MVN_REPO=$(mvn help:evaluate -Dexpression=settings.localRepository | grep -v '\[INFO\]')
+readonly LOCAL_MVN_REPO=$(mvn ${MAVEN_ARGS} help:evaluate -Dexpression=settings.localRepository | grep -v '\[INFO\]')
 
 echo "===== Running in ${SCRATCH} ====="
 echo "===== Log file: ${OUTPUTFILE} ====="
 
 if [ ! -z "${CLEAN_MVN_REPO}" -a -d "${LOCAL_MVN_REPO}" ]; then
-  echo "===== Cleaning release from local maven repository ${LOCAL_MVN_REPO}  ====="
-  find -d ${LOCAL_MVN_REPO}/io/helidon  -name ${VERSION} -type d -exec rm -rf {} \; 
+    echo "===== Cleaning release from local maven repository ${LOCAL_MVN_REPO}  ====="
+    find ${LOCAL_MVN_REPO}/io/helidon -depth  -name ${VERSION} -type d -exec rm -rf {} \;
 fi
 
 # Invoke command
 ${COMMAND} | tee $OUTPUTFILE
 
 echo "===== Log file: ${OUTPUTFILE} ====="
-

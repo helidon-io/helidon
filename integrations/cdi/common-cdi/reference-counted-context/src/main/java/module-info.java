@@ -22,7 +22,7 @@
  */
 module io.helidon.integrations.cdi.referencecountedcontext {
     requires io.helidon.integrations.cdi.delegates;
-    requires cdi.api;
+    requires jakarta.enterprise.cdi.api;
 
     exports io.helidon.integrations.cdi.referencecountedcontext;
 }

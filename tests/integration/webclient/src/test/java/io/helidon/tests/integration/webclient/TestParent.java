@@ -21,8 +21,7 @@ import java.util.stream.Stream;
 
 import io.helidon.common.context.Context;
 import io.helidon.config.Config;
-import io.helidon.media.common.MediaSupport;
-import io.helidon.media.jsonp.common.JsonProcessing;
+import io.helidon.media.jsonp.common.JsonpSupport;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
@@ -40,7 +39,6 @@ import org.junit.jupiter.api.BeforeAll;
 class TestParent {
 
     protected static final Config CONFIG = Config.create();
-    private static final JsonProcessing JSON_PROCESSING = JsonProcessing.create();
 
     protected static WebServer webServer;
     protected static WebClient webClient;
@@ -85,11 +83,8 @@ class TestParent {
                 .baseUri("http://localhost:" + webServer.port() + "/greet")
                 .config(CONFIG.get("client"))
                 .context(context)
-                .mediaSupport(MediaSupport.builder()
-                                      .registerDefaults()
-                                      .registerReader(JSON_PROCESSING.newReader())
-                                      .registerWriter(JSON_PROCESSING.newWriter())
-                                      .build());
+                .addMediaSupport(JsonpSupport.create());
+
         Stream.of(clientServices).forEach(builder::register);
         return builder.build();
     }

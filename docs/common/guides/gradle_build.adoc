@@ -1,0 +1,64 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2020 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Gradle Guide
+
+// :description: Gradle Guide
+// :keywords: helidon, guide, gradle
+// :helidon-uc-flavor: MP-or-SE
+// :helidon-lc-flavor: mp-or-se
+
+This guide describes Helidon's support for Gradle projects.
+
+== Introduction
+
+While most of Helidon's examples use Maven, you can also use Helidon
+with a Gradle project. We recommend Gradle 6+.
+
+== Gradle Example
+
+The Helidon
+https://github.com/oracle/helidon/tree/{helidon-version}/examples/quickstarts/helidon-quickstart-{helidon-lc-flavor}[Quickstart Example]
+contains a `build.gradle` file that you can use as an example for building
+your Helidon application using Gradle.
+
+== Dependency Management
+
+Gradle supports using a Maven POM to perform dependency management. You
+can use the Helidon Dependencies POM for this purpose. Once you import
+the Helidon dependency management POM you can specify dependencies
+without providing a version.
+
+
+[source,xml]
+.Using the Helidon Dependencies POM
+----
+dependencies {
+    // import Helidon dependency management
+    implementation platform("io.helidon:helidon-dependencies:${project.helidonversion}")
+
+    implementation 'io.helidon.microprofile.bundles:helidon-microprofile'
+    implementation 'org.glassfish.jersey.media:jersey-media-json-binding'
+
+    runtimeOnly 'org.jboss:jandex'
+    runtimeOnly 'javax.activation:javax.activation-api'
+
+    testCompileOnly 'org.junit.jupiter:junit-jupiter-api:'
+}
+----
+

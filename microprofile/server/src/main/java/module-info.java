@@ -26,15 +26,18 @@ module io.helidon.microprofile.server {
 
     requires transitive io.helidon.microprofile.cdi;
 
-    requires transitive cdi.api;
+    requires io.helidon.config.mp;
+    requires io.helidon.microprofile.config;
+    requires transitive jakarta.enterprise.cdi.api;
     requires transitive java.ws.rs;
-    requires javax.interceptor.api;
+    requires jakarta.interceptor.api;
 
     requires java.logging;
     requires io.helidon.common.serviceloader;
 
     // there is now a hardcoded dependency on Weld, to configure additional bean defining annotation
     requires java.management;
+    requires microprofile.config.api;
 
     exports io.helidon.microprofile.server;
 

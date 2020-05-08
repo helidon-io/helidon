@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,13 @@ package io.helidon.microprofile.metrics;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Member;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
-import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.function.Function;
 
 import javax.enterprise.context.Dependent;
@@ -29,12 +33,17 @@ import javax.interceptor.AroundConstruct;
 import javax.interceptor.AroundInvoke;
 import javax.interceptor.InvocationContext;
 
+import io.helidon.metrics.Registry;
+
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.Tag;
 
-import static io.helidon.microprofile.metrics.MetricUtil.getMetricID;
+import static io.helidon.microprofile.metrics.MetricUtil.MatchingType;
+import static io.helidon.microprofile.metrics.MetricUtil.getMetricName;
 import static io.helidon.microprofile.metrics.MetricUtil.lookupAnnotation;
+import static io.helidon.microprofile.metrics.MetricUtil.tags;
 
 /**
  * Common methods for interceptors.
@@ -52,8 +61,8 @@ import static io.helidon.microprofile.metrics.MetricUtil.lookupAnnotation;
  * the array of tag values for that instance of the annotation,</li>
  * <li>a {@code Function} that accepts an instance of the annotation and returns
  * whether the name is absolute or not,
- * <li>a {@code Function} that accepts an instance of {@code MetricRegistry} and
- * returns a map of the metrics of the relevant type.
+ * <li>the simple metric type name, and
+ * <li>the {@code Class} for the metric type.
  * </ul>
  * For example, the constructor for the implementation that handles
  * {@code Metered} might use this:
@@ -64,7 +73,8 @@ import static io.helidon.microprofile.metrics.MetricUtil.lookupAnnotation;
  *             Metered::name,
  *             Metered::tags,
  *             Metered::absolute,
- *             MetricRegistry::getMeters);
+ *             metricTypeName,
+ *             metricTypeClass);
  * }
  * </pre>
  * <li>{@link #prepareAndInvoke} to perform any steps before invoking the intercepted
@@ -77,27 +87,32 @@ import static io.helidon.microprofile.metrics.MetricUtil.lookupAnnotation;
 abstract class InterceptorBase<T extends Metric, A extends Annotation> {
 
     private final MetricRegistry registry;
+    private final Registry hRegistry;
     private final Class<A> annotationClass;
     private final Function<A, String> nameFunction;
     private final Function<A, String[]> tagsFunction;
     private final Function<A, Boolean> isAbsoluteFunction;
-    private final Function<MetricRegistry, SortedMap<MetricID, T>> metricsMapFunction;
+    private final Map<AnnotatedElement, T> elementMetricMap = new HashMap<>();
     private final String metricTypeName;
+    private final Class<T> metricClass;
+    private final Map<String, String> universalTags; // Get global and app tags for later
 
     InterceptorBase(MetricRegistry registry,
                     Class<A> annotationClass,
                     Function<A, String> nameFunction,
                     Function<A, String[]> tagsFunction,
                     Function<A, Boolean> isAbsoluteFunction,
-                    Function<MetricRegistry, SortedMap<MetricID, T>> metricsMapFunction,
-                    String metricTypeName) {
+                    String metricTypeName,
+                    Class<T> metricClass) {
         this.registry = registry;
+        hRegistry = Registry.class.cast(registry);
         this.annotationClass = annotationClass;
         this.nameFunction = nameFunction;
         this.tagsFunction = tagsFunction;
         this.isAbsoluteFunction = isAbsoluteFunction;
-        this.metricsMapFunction = metricsMapFunction;
         this.metricTypeName = metricTypeName;
+        this.metricClass = metricClass;
+        universalTags = new MetricID("base").getTags();
     }
 
     protected <T> Optional<T> getMetric(Map<MetricID, T> metricMap, MetricID metricID) {
@@ -129,16 +144,10 @@ abstract class InterceptorBase<T extends Metric, A extends Annotation> {
     private <E extends Member & AnnotatedElement> Object called(InvocationContext context, E element) throws Exception {
         MetricUtil.LookupResult<A> lookupResult = lookupAnnotation(element, annotationClass, getClass(context, element));
         if (lookupResult != null) {
-            A annot = lookupResult.getAnnotation();
-            MetricID metricID = getMetricID(element, getClass(context, element), lookupResult.getType(),
-                                              nameFunction.apply(annot), tagsFunction.apply(annot),
-                                              isAbsoluteFunction.apply(annot));
-            Optional<T> metric = getMetric(metricsMapFunction.apply(registry), metricID);
-            T metricInstance = metric.orElseGet(() -> {
-                throw new IllegalStateException("No " + metricTypeName + " with ID [" + metricID
-                                                        + "] found in registry [" + registry + "]");
-            });
+            T metricInstance = getMetricForElement(element, getClass(context, element), lookupResult);
+
             Exception ex = null;
+            A annot = lookupResult.getAnnotation();
             try {
                 return prepareAndInvoke(metricInstance, annot, context);
             } catch (Exception e) {
@@ -183,5 +192,125 @@ abstract class InterceptorBase<T extends Metric, A extends Annotation> {
                               A annotation,
                               InvocationContext context,
                               Exception ex) throws Exception {
+    }
+
+    /**
+     * Return the metric for the given site, either by returning the cached one associated with the site or by looking up the
+     * metric in the registry.
+     *
+     * @param element the annotated element being invoked
+     * @param clazz the type of metric
+     * @param lookupResult the combination of the annotation and the matching type
+     * @param <E> specific type of element
+     * @return the metric to be updated for the annotated element being invoked
+     */
+    private <E extends Member & AnnotatedElement> T getMetricForElement(E element, Class<?> clazz,
+            MetricUtil.LookupResult<A> lookupResult) {
+
+        T metric = elementMetricMap.computeIfAbsent(element, e -> createMetricForElement(element, clazz, lookupResult));
+        return metric;
+    }
+
+    /**
+     * Retrieves from the registry -- and stores in the site-to-metric map -- the metric coresponding to the specified site.
+     *
+     * @param element the annotated element being invoked
+     * @param clazz the type of metric
+     * @param lookupResult the combinatino of the annotation and the matching type
+     * @param <E> specific type of element
+     * @return the metric retrieved from the registry and added to the site-to-metric map
+     */
+    private <E extends Member & AnnotatedElement> T createMetricForElement(E element, Class<?> clazz,
+            MetricUtil.LookupResult<A> lookupResult) {
+
+        /*
+         * Build the metric name that should exist for this annotation site and look up all metric IDs associated with that name.
+         * (This is very efficient in the registry.)
+         */
+        A annot = lookupResult.getAnnotation();
+        MatchingType matchingType = lookupResult.getType();
+
+        String metricName = getMetricName(element, clazz, matchingType, nameFunction.apply(annot),
+                isAbsoluteFunction.apply(annot));
+        Optional<Map.Entry<? extends Metric, List<MetricID>>> matchingEntry = hRegistry.getOptionalMetricWithIDsEntry(metricName);
+        if (!matchingEntry.isPresent()) {
+            throw new IllegalStateException(String.format("No %s with name %s found in registry [%s]", metricTypeName,
+                    metricName, registry));
+        }
+
+        /*
+         * Build a simple (no config use) metric ID for the metric corresponding to this annotation site.
+         */
+        Tag[] tagsFromAnnotation = tags(tagsFunction.apply(annot));
+        SimpleMetricID simpleMetricID = new SimpleMetricID(metricName, universalTags, tagsFromAnnotation);
+
+        /*
+         * Find the metric ID associated with the metric name that matches on name and tags.
+         */
+        MetricID metricID = matchingEntry.get().getValue().stream()
+                .filter(simpleMetricID::matches)
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException(String.format(
+                        "No %s with name %s and matching tags %s found in registry", metricTypeName, metricName,
+                        tagsFromAnnotation)));
+
+        /*
+         * Retrieve the metric corresponding to the matching metric ID.
+         */
+        Metric metric = registry.getMetrics().get(metricID);
+        return metricClass.cast(metric);
+    }
+
+    /**
+     * A near-replica of the MP MetricID, but one that does not repeatedly access config to get global and app-level tags.
+     * Instead, those come from a single MP MetricID which we instantiate and keep for future reference.
+     */
+    private static class SimpleMetricID {
+
+        private final String name;
+        private final Map<String, String> tags;
+
+        private SimpleMetricID(String name, Map<String, String> univTags, Tag... tagExprs) {
+            this.name = name;
+            tags = computeTags(univTags, tagExprs);
+        }
+
+        private static Map<String, String> computeTags(Map<String, String> univTags, Tag... tags) {
+            if (univTags.isEmpty() && (tags == null || tags.length == 0)) {
+                return Collections.emptyMap();
+            }
+            Map<String, String> result = new TreeMap<>(univTags);
+            if (tags != null && tags.length > 0) {
+                for (Tag tag : tags) {
+                    result.put(tag.getTagName(), tag.getTagValue());
+                }
+            }
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            SimpleMetricID that = (SimpleMetricID) o;
+            return equals(that.name, that.tags);
+        }
+
+        private boolean matches(MetricID metricID) {
+            return equals(metricID.getName(), metricID.getTags());
+        }
+
+        private boolean equals(String otherName, Map<String, String> otherTags) {
+            return name.equals(otherName) && tags.equals(otherTags);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(name, tags);
+        }
     }
 }

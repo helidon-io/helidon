@@ -22,7 +22,8 @@ RUN set -x \
     && apt-get -y update \
     && apt-get -y install curl
 
-RUN curl -O -L https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-19.3.1/graalvm-ce-java11-linux-amd64-19.3.1.tar.gz && \
+RUN curl -O -L \
+    https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-20.0.0/graalvm-ce-java11-linux-amd64-20.0.0.tar.gz && \
     tar -xvzf graalvm-*.tar.gz && \
     rm graalvm-*.tar.gz && \
     mv graalvm-* graalvm && \
@@ -39,7 +40,6 @@ RUN cd graalvm && \
     bin/polyglot lib/polyglot \
     bin/lli \
     lib/libjvmcicompiler.so \
-    lib/liblcms.so \
     lib/graalvm/graal-truffle-compiler-libgraal.jar \
     lib/graalvm/graaljs-launcher.jar \
     lib/graalvm/sulong-launcher.jar

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoField;
 import java.util.Calendar;
@@ -32,11 +31,11 @@ import io.helidon.common.mapper.MapperManager;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
- * Test database types {@link Mapper}s. 
+ * Test database types {@link io.helidon.common.mapper.Mapper}s.
  */
 public class MapperTest {
 
@@ -66,6 +65,7 @@ public class MapperTest {
      * @return current time with date set to 1. 1. 1970 (epoch)
      */
     private static OffsetDateTime currentTime() {
+        // this returns time in current timezone, but moved to 1970 January, so daylight savings will cause mayhem
         return OffsetDateTime.now()
                 .with(ChronoField.YEAR, 1970)
                 .with(ChronoField.MONTH_OF_YEAR, 1)
@@ -93,7 +93,8 @@ public class MapperTest {
         OffsetDateTime dt = currentTime();
         java.sql.Time source = new java.sql.Time(dt.toInstant().toEpochMilli());
         LocalTime target = mm.map(source, java.sql.Time.class, LocalTime.class);
-        assertThat(target.toEpochSecond(LocalDate.EPOCH, dt.getOffset()), is(source.getTime()/1000));
+
+        assertThat(target, is(source.toLocalTime()));
     }    
 
     @Test

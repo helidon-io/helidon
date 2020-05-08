@@ -19,10 +19,10 @@
  */
 module io.helidon.microprofile.tyrus {
     requires java.logging;
-    requires javax.inject;
-    requires javax.interceptor.api;
+    requires jakarta.inject.api;
+    requires jakarta.interceptor.api;
 
-    requires cdi.api;
+    requires jakarta.enterprise.cdi.api;
     requires transitive jakarta.websocket.api;
 
     requires io.helidon.common;
@@ -34,5 +34,9 @@ module io.helidon.microprofile.tyrus {
     requires tyrus.spi;
 
     exports io.helidon.microprofile.tyrus;
+
+    // this is needed for CDI extensions that use non-public observer methods
+    opens io.helidon.microprofile.tyrus to weld.core.impl;
+
     provides javax.enterprise.inject.spi.Extension with io.helidon.microprofile.tyrus.WebSocketCdiExtension;
 }

@@ -26,6 +26,12 @@ Next build the docs (including aggregated javadocs):
 mvn site
 ```
 
+Without javadocs:
+
+```
+mvn site -Dmaven.javadoc.skip
+```
+
 ## View the docs
 
 The built docs will be in the top level target directory:

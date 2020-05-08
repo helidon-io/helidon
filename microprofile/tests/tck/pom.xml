@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2018, 2020 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -35,13 +35,21 @@
         <module>tck-health</module>
         <module>tck-metrics</module>
         <module>tck-messaging</module>
-        <module>tck-fault-tolerance</module>
         <module>tck-jwt-auth</module>
         <module>tck-openapi</module>
         <module>tck-opentracing</module>
         <module>tck-rest-client</module>
         <module>tck-reactive-operators</module>
     </modules>
+
+    <properties>
+        <!--
+        We do not want to fix problems in TCK tests themselves, let's ignore enforcer here
+         -->
+        <enforcer.skip>true</enforcer.skip>
+    </properties>
+
+
 
     <dependencies>
          <dependency>
@@ -68,4 +76,13 @@
             </plugins>
         </pluginManagement>
     </build>
+
+    <profiles>
+        <profile>
+            <id>tck-ft</id>
+            <modules>
+                <module>tck-fault-tolerance</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>

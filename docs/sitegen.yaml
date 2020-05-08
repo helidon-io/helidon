@@ -21,7 +21,7 @@ engine:
       - "asciidoctor-diagram"
     attributes:
       plantumlconfig: "_plantuml-config.txt"
-      javadoc-base-url: "./apidocs/index.html"
+      javadoc-base-url: "./apidocs/"
       helidon-version: "${project.version}"
       microprofile-openapi-version: "${version.lib.microprofile-openapi-api}"
       jandex-plugin-version: ${version.plugin.jandex}
@@ -84,22 +84,6 @@ backend:
               items:
                 - includes:
                     - "se/guides/*.adoc"
-            - title: "Reactive webserver"
-              pathprefix: "/se/webserver"
-              glyph:
-                type: "icon"
-                value: "settings_ethernet"
-              items:
-                - includes:
-                    - "se/webserver/*.adoc"
-            - title: "gRPC server"
-              pathprefix: "/se/grpc"
-              glyph:
-                type: "icon"
-                value: "swap_horiz"
-              items:
-                - includes:
-                    - "se/grpc/*.adoc"
             - title: "Config"
               pathprefix: "/se/config"
               glyph:
@@ -108,30 +92,30 @@ backend:
               items:
                 - includes:
                     - "se/config/*.adoc"
-            - title: "Security"
-              pathprefix: "/se/security"
+            - title: "CORS"
+              pathprefix: "/se/cors"
               glyph:
                 type: "icon"
-                value: "security"
+                value: "swap_horiz"
               items:
                 - includes:
-                    - "se/security/*.adoc"
-            - title: "Metrics"
-              pathprefix: "/se/metrics"
+                    - "se/cors/*.adoc"
+            - title: "DB Client"
+              pathprefix: "/se/dbclient"
               glyph:
                 type: "icon"
-                value: "av_timer"
+                value: "storage"
               items:
                 - includes:
-                    - "se/metrics/*.adoc"
-            - title: "Tracing"
-              pathprefix: "/se/tracing"
+                    - "se/dbclient/*.adoc"
+            - title: "gRPC server"
+              pathprefix: "/se/grpc"
               glyph:
                 type: "icon"
-                value: "timeline"
+                value: "swap_horiz"
               items:
                 - includes:
-                    - "se/tracing/*.adoc"
+                    - "se/grpc/*.adoc"
             - title: "Health Checks"
               pathprefix: "/se/health"
               glyph:
@@ -140,6 +124,14 @@ backend:
               items:
                 - includes:
                     - "se/health/*.adoc"
+            - title: "Metrics"
+              pathprefix: "/se/metrics"
+              glyph:
+                type: "icon"
+                value: "av_timer"
+              items:
+                - includes:
+                    - "se/metrics/*.adoc"
             - title: "OpenAPI"
               pathprefix: "/se/openapi"
               glyph:
@@ -148,19 +140,51 @@ backend:
               items:
                 - includes:
                     - "se/openapi/*.adoc"
-            - title: "DB Client"
-              pathprefix: "/se/dbclient"
+            - title: "Reactive Streams"
+              pathprefix: "/se/reactivestreams"
               glyph:
                 type: "icon"
-                value: "donut_large"
+                value: "waves"
               items:
                 - includes:
-                    - "se/dbclient/*.adoc"
+                    - "se/reactivestreams/*.adoc"
+            - title: "Reactive Messaging"
+              pathprefix: "/se/reactivemessaging"
+              glyph:
+                type: "icon"
+                value: "message"
+              items:
+                - includes:
+                    - "se/reactivemessaging/*.adoc"
+            - title: "Reactive Webserver"
+              pathprefix: "/se/webserver"
+              glyph:
+                type: "icon"
+                value: "settings_ethernet"
+              items:
+                - includes:
+                    - "se/webserver/*.adoc"
+            - title: "Security"
+              pathprefix: "/se/security"
+              glyph:
+                type: "icon"
+                value: "security"
+              items:
+                - includes:
+                    - "se/security/*.adoc"
+            - title: "Tracing"
+              pathprefix: "/se/tracing"
+              glyph:
+                type: "icon"
+                value: "timeline"
+              items:
+                - includes:
+                    - "se/tracing/*.adoc"
             - title: "Web Client"
               pathprefix: "/se/webclient"
               glyph:
                 type: "icon"
-                value: "donut_large"
+                value: "http"
               items:
                 - includes:
                     - "se/webclient/*.adoc"
@@ -230,11 +254,19 @@ backend:
               items:
                 - includes:
                     - "mp/jaxrs/*.adoc"
+            - title: "JPA"
+              pathprefix: "/mp/jpa"
+              glyph:
+                type: "icon"
+                value: "dns"
+              items:
+                - includes:
+                    - "mp/jpa/*.adoc"
             - title: "JWT Auth"
               pathprefix: "/mp/jwtauth"
               glyph:
                 type: "icon"
-                value: "security"
+                value: "verified_user"
               items:
                 - includes:
                     - "mp/jwtauth/*.adoc"
@@ -254,19 +286,27 @@ backend:
               items:
                 - includes:
                     - "mp/openapi/*.adoc"
-            - title: "JPA/JTA"
-              pathprefix: "/mp/jpa"
+            - title: "Reactive Streams"
+              pathprefix: "/mp/reactivestreams"
               glyph:
                 type: "icon"
-                value: "security"
+                value: "waves"
               items:
                 - includes:
-                    - "mp/jpa/*.adoc"
+                    - "mp/reactivestreams/*.adoc"
+            - title: "Reactive Messaging"
+              pathprefix: "/mp/reactivemessaging"
+              glyph:
+                type: "icon"
+                value: "message"
+              items:
+                - includes:
+                    - "mp/reactivemessaging/*.adoc"
             - title: "REST Client"
               pathprefix: "/mp/restclient"
               glyph:
                 type: "icon"
-                value: "security"
+                value: "airplay"
               items:
                 - includes:
                     - "mp/restclient/*.adoc"
@@ -274,7 +314,7 @@ backend:
               pathprefix: "/mp/security"
               glyph:
                 type: "icon"
-                value: "timeline"
+                value: "security"
               items:
                 - includes:
                     - "mp/security/*.adoc"
@@ -290,7 +330,7 @@ backend:
               pathprefix: "/mp/websocket"
               glyph:
                 type: "icon"
-                value: "timeline"
+                value: "sync_alt"
               items:
                 - includes:
                     - "mp/websocket/*.adoc"

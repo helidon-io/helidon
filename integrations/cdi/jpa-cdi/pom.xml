@@ -77,8 +77,8 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.microprofile.config</groupId>
-            <artifactId>helidon-microprofile-config</artifactId>
+            <groupId>io.helidon.microprofile.cdi</groupId>
+            <artifactId>helidon-microprofile-cdi</artifactId>
             <scope>test</scope>
         </dependency>
 
@@ -96,19 +96,23 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>javax.annotation</groupId>
-            <artifactId>javax.annotation-api</artifactId>
+            <groupId>jakarta.annotation</groupId>
+            <artifactId>jakarta.annotation-api</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>javax.enterprise</groupId>
-            <artifactId>cdi-api</artifactId>
+            <groupId>jakarta.enterprise</groupId>
+            <artifactId>jakarta.enterprise.cdi-api</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>javax.transaction</groupId>
-            <artifactId>javax.transaction-api</artifactId>
+            <groupId>jakarta.transaction</groupId>
+            <artifactId>jakarta.transaction-api</artifactId>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.activation</groupId>
+            <artifactId>jakarta.activation-api</artifactId>
         </dependency>
 
         <!-- Compile-scoped dependencies. -->
@@ -122,12 +126,6 @@
             <artifactId>helidon-integrations-cdi-reference-counted-context</artifactId>
             <scope>compile</scope>
         </dependency>
-        <dependency>
-            <groupId>io.helidon.microprofile.cdi</groupId>
-            <artifactId>helidon-microprofile-cdi</artifactId>
-            <scope>compile</scope>
-        </dependency>
-
     </dependencies>
 
     <build>
@@ -382,13 +380,13 @@
             </activation>
             <dependencies>
                 <dependency>
-                    <groupId>javax.xml.bind</groupId>
-                    <artifactId>jaxb-api</artifactId>
+                    <groupId>jakarta.xml.bind</groupId>
+                    <artifactId>jakarta.xml.bind-api</artifactId>
                     <scope>compile</scope>
                 </dependency>
                 <dependency>
-                    <groupId>javax.activation</groupId>
-                    <artifactId>javax.activation-api</artifactId>
+                    <groupId>jakarta.activation</groupId>
+                    <artifactId>jakarta.activation-api</artifactId>
                     <scope>compile</scope>
                 </dependency>
                 <dependency>

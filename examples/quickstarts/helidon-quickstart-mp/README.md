@@ -67,6 +67,55 @@ kubectl create -f app.yaml               # Deploy application
 kubectl get service helidon-quickstart-mp  # Verify deployed service
 ```
 
+## Build a native image with GraalVM
+
+GraalVM allows you to compile your programs ahead-of-time into a native
+ executable. See https://www.graalvm.org/docs/reference-manual/aot-compilation/
+ for more information.
+
+You can build a native executable in 2 different ways:
+* With a local installation of GraalVM
+* Using Docker
+
+### Local build
+
+Download Graal VM at https://www.graalvm.org/downloads, the version
+ currently supported for Helidon is `20.0`.
+
+```
+# Setup the environment
+export GRAALVM_HOME=/path
+# build the native executable
+mvn package -Pnative-image
+```
+
+You can also put the Graal VM `bin` directory in your PATH, or pass
+ `-DgraalVMHome=/path` to the Maven command.
+
+See https://github.com/oracle/helidon-build-tools/tree/master/helidon-maven-plugin#goal-native-image
+ for more information.
+
+Start the application:
+
+```
+./target/helidon-quickstart-mp
+```
+
+### Multi-stage Docker build
+
+Build the "native" Docker Image
+
+```
+docker build -t helidon-quickstart-mp-native -f Dockerfile.native .
+```
+
+Start the application:
+
+```
+docker run --rm -p 8080:8080 helidon-quickstart-mp-native:latest
+```
+
+
 ## Build a Java Runtime Image using jlink
 
 You can build a custom Java Runtime Image (JRI) containing the application jars and the JDK modules 
@@ -93,7 +142,7 @@ See https://github.com/oracle/helidon-build-tools/tree/master/helidon-maven-plug
 Start the application:
 
 ```
-./target/helidon-quickstart-se/bin/start
+./target/helidon-quickstart-mp/bin/start
 ```
 
 ### Multi-stage Docker build
@@ -101,17 +150,17 @@ Start the application:
 Build the "jlink" Docker Image
 
 ```
-docker build -t helidon-quickstart-se-jlink -f Dockerfile.jlink .
+docker build -t helidon-quickstart-mp-jlink -f Dockerfile.jlink .
 ```
 
 Start the application:
 
 ```
-docker run --rm -p 8080:8080 helidon-quickstart-se-jlink:latest
+docker run --rm -p 8080:8080 helidon-quickstart-mp-jlink:latest
 ```
 
 See the start script help:
 
 ```
-docker run --rm helidon-quickstart-se-jlink:latest --help
+docker run --rm helidon-quickstart-mp-jlink:latest --help
 ```

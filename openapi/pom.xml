@@ -102,6 +102,16 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <!-- Allows test client to set restricted headers Origin and Host -->
+                    <systemPropertyVariables>
+                        <sun.net.http.allowRestrictedHeaders>true</sun.net.http.allowRestrictedHeaders>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
     <dependencies>
@@ -132,12 +142,18 @@
             <artifactId>helidon-media-jsonp-server</artifactId>
         </dependency>
         <dependency>
+            <groupId>jakarta.json</groupId>
+            <artifactId>jakarta.json-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>org.eclipse</groupId>
             <artifactId>yasson</artifactId>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>org.glassfish</groupId>
-            <artifactId>javax.json</artifactId>
+            <artifactId>jakarta.json</artifactId>
             <scope>runtime</scope>
         </dependency>
         <dependency>
@@ -156,6 +172,10 @@
         <dependency>
             <groupId>org.eclipse.microprofile.openapi</groupId>
             <artifactId>microprofile-openapi-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-cors</artifactId>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

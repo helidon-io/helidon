@@ -20,6 +20,7 @@ package io.helidon.microprofile.reactive;
 import java.util.Iterator;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Flow;
 import java.util.concurrent.ForkJoinPool;
 import java.util.function.Consumer;
@@ -512,6 +513,7 @@ public final class HelidonReactiveStreamsEngine implements ReactiveStreamsEngine
         inlet
                 .onComplete(() -> complete(subscriberActivity))
                 .onError(e -> fail(subscriberActivity, e))
+                .compose(upstream -> new MultiCancelOnExecutor<>(upstream, coupledExecutor))
                 .takeUntil(Multi.from(publisherActivity, true))
                 .onCancel(() -> complete(subscriberActivity))
                 .subscribe(subscriber);
@@ -519,6 +521,7 @@ public final class HelidonReactiveStreamsEngine implements ReactiveStreamsEngine
         Multi<? extends R> outlet = Multi.from(publisher)
                 .onComplete(() -> complete(publisherActivity))
                 .onError(e -> fail(publisherActivity, e))
+                .compose(upstream -> new MultiCancelOnExecutor<>(upstream, coupledExecutor))
                 .takeUntil(Multi.from(subscriberActivity, true))
                 .onCancel(() -> complete(publisherActivity));
 
@@ -526,17 +529,27 @@ public final class HelidonReactiveStreamsEngine implements ReactiveStreamsEngine
     }
 
     static void complete(CompletableFuture<Object> cf) {
-        ForkJoinPool.commonPool().submit(() -> {
-            cf.complete(null);
-            return null;
-        });
+        cf.complete(null);
     }
 
     static void fail(CompletableFuture<Object> cf, Throwable ex) {
-        ForkJoinPool.commonPool().submit(() -> {
-            cf.completeExceptionally(ex);
-            return null;
-        });
+        cf.completeExceptionally(ex);
+    }
+
+    // Workaround for a TCK bug when calling cancel() from any method named onComplete().
+    private static volatile ExecutorService coupledExecutor = ForkJoinPool.commonPool();
+
+    /**
+     * Override the ExecutorService used by the cross-termination and cross-cancellation
+     * of a Coupled stage.
+     * @param executor the executor to use, null resets it to the default ForkJoinPool
+     */
+    public static void setCoupledExecutor(ExecutorService executor) {
+        if (executor == null) {
+            coupledExecutor = ForkJoinPool.commonPool();
+        } else {
+            coupledExecutor = executor;
+        }
     }
 }
 

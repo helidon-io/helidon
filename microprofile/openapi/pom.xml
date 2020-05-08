@@ -72,7 +72,7 @@
                         </goals>
                         <phase>process-test-classes</phase>
                         <configuration>
-                            <classesDir>${project.build.directory}/test-classes}</classesDir>
+                            <classesDir>${project.build.directory}/test-classes</classesDir>
                             <indexName>other.idx</indexName>
                             <fileSets>
                                 <fileSet>
@@ -103,8 +103,8 @@
             <artifactId>helidon-openapi</artifactId>
         </dependency>
         <dependency>
-            <groupId>javax.interceptor</groupId>
-            <artifactId>javax.interceptor-api</artifactId>
+            <groupId>jakarta.interceptor</groupId>
+            <artifactId>jakarta.interceptor-api</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>

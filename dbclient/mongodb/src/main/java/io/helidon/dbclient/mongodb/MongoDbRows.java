@@ -25,7 +25,6 @@ import java.util.function.Function;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.mapper.MapperException;
-import io.helidon.common.reactive.MappingProcessor;
 import io.helidon.common.reactive.Multi;
 import io.helidon.dbclient.DbMapperManager;
 import io.helidon.dbclient.DbRow;
@@ -162,9 +161,7 @@ public final class MongoDbRows<T> implements DbRows<T> {
             Flow.Publisher<?> parentPublisher = parent.publisher();
             Function<Object, T> mappingFunction = (Function<Object, T>) resultMapper;
             // otherwise we must apply mapping
-            MappingProcessor<Object, T> processor = MappingProcessor.create(mappingFunction);
-            parentPublisher.subscribe(processor);
-            return processor;
+            return Multi.from(parentPublisher).map(mappingFunction::apply);
         }
 
         @Override

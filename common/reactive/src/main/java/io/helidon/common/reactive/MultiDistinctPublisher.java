@@ -18,7 +18,6 @@
 package io.helidon.common.reactive;
 
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Flow;
 import java.util.function.Function;
@@ -58,11 +57,7 @@ final class MultiDistinctPublisher<T, K> implements Multi<T> {
 
         @Override
         public void onSubscribe(Flow.Subscription subscription) {
-            Objects.requireNonNull(subscription, "subscription is null");
-            if (upstream != null) {
-                subscription.cancel();
-                throw new IllegalStateException("Subscription already set");
-            }
+            SubscriptionHelper.validate(upstream, subscription);
             this.upstream = subscription;
             downstream.onSubscribe(this);
         }
@@ -71,7 +66,7 @@ final class MultiDistinctPublisher<T, K> implements Multi<T> {
         public void onNext(T item) {
             Flow.Subscription s = upstream;
             Set<K> m = memory;
-            if (s != null && m != null) {
+            if (s != SubscriptionHelper.CANCELED && m != null) {
                 boolean pass;
                 try {
                     pass = memory.add(keySelector.apply(item));
@@ -91,9 +86,8 @@ final class MultiDistinctPublisher<T, K> implements Multi<T> {
 
         @Override
         public void onError(Throwable throwable) {
-            if (upstream != null) {
-                // FIXME better to set it to SubscriptionHelper.CANCELED
-                upstream = null;
+            if (upstream != SubscriptionHelper.CANCELED) {
+                upstream = SubscriptionHelper.CANCELED;
                 memory = null;
                 downstream.onError(throwable);
             }
@@ -101,9 +95,8 @@ final class MultiDistinctPublisher<T, K> implements Multi<T> {
 
         @Override
         public void onComplete() {
-            if (upstream != null) {
-                // FIXME better to set it to SubscriptionHelper.CANCELED
-                upstream = null;
+            if (upstream != SubscriptionHelper.CANCELED) {
+                upstream = SubscriptionHelper.CANCELED;
                 memory = null;
                 downstream.onComplete();
             }
@@ -111,21 +104,14 @@ final class MultiDistinctPublisher<T, K> implements Multi<T> {
 
         @Override
         public void request(long n) {
-            Flow.Subscription s = upstream;
-            if (s != null) {
-                s.request(n);
-            }
+            upstream.request(n);
         }
 
         @Override
         public void cancel() {
-            Flow.Subscription s = upstream;
-            // FIXME better to set it to SubscriptionHelper.CANCELED
-            upstream = null;
             memory = null;
-            if (s != null) {
-                s.cancel();
-            }
+            upstream.cancel();
+            upstream = SubscriptionHelper.CANCELED;
         }
     }
 }

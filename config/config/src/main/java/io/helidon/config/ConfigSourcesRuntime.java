@@ -37,11 +37,11 @@ import io.helidon.config.spi.MergingStrategy;
 final class ConfigSourcesRuntime {
     private final List<RuntimeWithData> loadedData = new LinkedList<>();
 
-    private List<ConfigSourceRuntimeBase> allSources;
-    private MergingStrategy mergingStrategy;
-    private Consumer<Optional<ObjectNode>> changeListener;
+    private final List<ConfigSourceRuntimeImpl> allSources;
+    private final MergingStrategy mergingStrategy;
+    private volatile Consumer<Optional<ObjectNode>> changeListener;
 
-    ConfigSourcesRuntime(List<ConfigSourceRuntimeBase> allSources,
+    ConfigSourcesRuntime(List<ConfigSourceRuntimeImpl> allSources,
                          MergingStrategy mergingStrategy) {
         this.allSources = allSources;
         this.mergingStrategy = mergingStrategy;
@@ -51,10 +51,6 @@ final class ConfigSourcesRuntime {
     static ConfigSourcesRuntime empty() {
         return new ConfigSourcesRuntime(List.of(new ConfigSourceRuntimeImpl(null, ConfigSources.empty())),
                                         MergingStrategy.fallback());
-    }
-
-    List<ConfigSourceRuntimeBase> allSources() {
-        return allSources;
     }
 
     @Override
@@ -137,7 +133,7 @@ final class ConfigSourcesRuntime {
 
     synchronized Optional<ObjectNode> load() {
 
-        for (ConfigSourceRuntimeBase source : allSources) {
+        for (ConfigSourceRuntimeImpl source : allSources) {
             if (source.isLazy()) {
                 loadedData.add(new RuntimeWithData(source, Optional.empty()));
             } else {
@@ -197,10 +193,10 @@ final class ConfigSourcesRuntime {
     }
 
     private static final class RuntimeWithData {
-        private final ConfigSourceRuntimeBase runtime;
+        private final ConfigSourceRuntimeImpl runtime;
         private Optional<ObjectNode> data;
 
-        private RuntimeWithData(ConfigSourceRuntimeBase runtime, Optional<ObjectNode> data) {
+        private RuntimeWithData(ConfigSourceRuntimeImpl runtime, Optional<ObjectNode> data) {
             this.runtime = runtime;
             this.data = data;
         }
@@ -209,7 +205,7 @@ final class ConfigSourcesRuntime {
             this.data = data;
         }
 
-        private ConfigSourceRuntimeBase runtime() {
+        private ConfigSourceRuntimeImpl runtime() {
             return runtime;
         }
 

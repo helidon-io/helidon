@@ -38,6 +38,10 @@
     <properties>
         <mainClass>io.helidon.demo.todos.frontend.Main</mainClass>
         <exec.mainClass>${mainClass}</exec.mainClass>
+        <version.nodejs>v12.16.1</version.nodejs>
+        <version.npm>6.13.4</version.npm>
+        <npm.download.root>https://registry.npmjs.org/npm/-/</npm.download.root>
+        <npm.proxy.auto>false</npm.proxy.auto>
     </properties>
 
     <dependencies>
@@ -120,10 +124,12 @@
             <plugin>
                 <groupId>com.github.eirslett</groupId>
                 <artifactId>frontend-maven-plugin</artifactId>
-                <version>1.6</version>
+                <version>1.9.1</version>
                 <configuration>
-                    <nodeVersion>v8.11.1</nodeVersion>
-                    <npmVersion>5.6.0</npmVersion>
+                    <nodeVersion>${version.nodejs}</nodeVersion>
+                    <npmVersion>${version.npm}</npmVersion>
+                    <npmDownloadRoot>${npm.download.root}</npmDownloadRoot>
+                    <npmInheritsProxyConfigFromMaven>${npm.proxy.auto}</npmInheritsProxyConfigFromMaven>
                 </configuration>
                 <executions>
                     <execution>

@@ -18,5 +18,5 @@ package io.helidon.config.spi;
 /**
  * Java service loader service to create a polling strategy factory based on meta configuration.
  */
-public interface ChangeWatcherProvider extends MetaConfigurableProvider<ChangeWatcher> {
+public interface ChangeWatcherProvider extends MetaConfigurableProvider<ChangeWatcher<?>> {
 }

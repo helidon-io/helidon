@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,8 @@ import java.time.Instant;
 import java.time.chrono.ChronoZonedDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
@@ -31,6 +33,7 @@ import io.helidon.common.http.MediaType;
  * Request {@link Handler} processing a static content.
  */
 abstract class StaticContentHandler {
+    private static final Logger LOGGER = Logger.getLogger(StaticContentHandler.class.getName());
 
     private final String welcomeFilename;
     private final ContentTypeSelector contentTypeSelector;
@@ -84,6 +87,7 @@ abstract class StaticContentHandler {
                 throw httpException;
             }
         } catch (Exception e) {
+            LOGGER.log(Level.FINE, "Failed to access static resource", e);
             throw new HttpException("Cannot access static resource!", Http.Status.INTERNAL_SERVER_ERROR_500, e);
         }
     }

@@ -26,7 +26,7 @@ import java.util.concurrent.Flow;
 public class SingleDeferTckTest extends FlowPublisherVerification<Integer> {
 
     public SingleDeferTckTest() {
-        super(new TestEnvironment(50));
+        super(new TestEnvironment(200));
     }
 
     @Override

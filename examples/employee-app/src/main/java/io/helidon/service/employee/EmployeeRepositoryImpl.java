@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
@@ -56,71 +59,71 @@ public final class EmployeeRepositoryImpl implements EmployeeRepository {
     }
 
     @Override
-    public List<Employee> getByLastName(String name) {
+    public CompletionStage<List<Employee>> getByLastName(String name) {
         List<Employee> matchList = eList.stream().filter((e) -> (e.getLastName().contains(name)))
                 .collect(Collectors.toList());
 
-        return matchList;
+        return CompletableFuture.completedFuture(matchList);
     }
 
     @Override
-    public List<Employee> getByTitle(String title) {
+    public CompletionStage<List<Employee>> getByTitle(String title) {
         List<Employee> matchList = eList.stream().filter((e) -> (e.getTitle().contains(title)))
                 .collect(Collectors.toList());
 
-        return matchList;
+        return CompletableFuture.completedFuture(matchList);
     }
 
     @Override
-    public List<Employee> getByDepartment(String department) {
+    public CompletableFuture<List<Employee>> getByDepartment(String department) {
         List<Employee> matchList = eList.stream().filter((e) -> (e.getDepartment().contains(department)))
                 .collect(Collectors.toList());
 
-        return matchList;
+        return CompletableFuture.completedFuture(matchList);
     }
 
     @Override
-    public List<Employee> getAll() {
-        return eList;
+    public CompletionStage<List<Employee>> getAll() {
+        return CompletableFuture.completedFuture(eList);
     }
 
     @Override
-    public Employee getById(String id) {
-        Employee match;
-        match = eList.stream().filter(e -> e.getId().equals(id)).findFirst().get();
-        return match;
+    public CompletionStage<Optional<Employee>> getById(String id) {
+        return CompletableFuture.completedFuture(eList.stream().filter(e -> e.getId().equals(id)).findFirst());
     }
 
     @Override
-    public Employee save(Employee employee) {
-        Employee nextEmployee = Employee.of(null, employee.getFirstName(), employee.getLastName(), employee.getEmail(),
-                employee.getPhone(), employee.getBirthDate(), employee.getTitle(), employee.getDepartment());
+    public CompletionStage<Employee> save(Employee employee) {
+        Employee nextEmployee = Employee.of(null,
+                                            employee.getFirstName(),
+                                            employee.getLastName(),
+                                            employee.getEmail(),
+                                            employee.getPhone(),
+                                            employee.getBirthDate(),
+                                            employee.getTitle(),
+                                            employee.getDepartment());
         eList.add(nextEmployee);
-        return nextEmployee;
+        return CompletableFuture.completedFuture(nextEmployee);
     }
 
     @Override
-    public Employee update(Employee updatedEmployee, String id) {
+    public CompletionStage<Long> update(Employee updatedEmployee, String id) {
         deleteById(id);
         Employee e = Employee.of(id, updatedEmployee.getFirstName(), updatedEmployee.getLastName(),
-                updatedEmployee.getEmail(), updatedEmployee.getPhone(), updatedEmployee.getBirthDate(),
-                updatedEmployee.getTitle(), updatedEmployee.getDepartment());
+                                 updatedEmployee.getEmail(), updatedEmployee.getPhone(), updatedEmployee.getBirthDate(),
+                                 updatedEmployee.getTitle(), updatedEmployee.getDepartment());
         eList.add(e);
-        return e;
+        return CompletableFuture.completedFuture(1L);
     }
 
     @Override
-    public void deleteById(String id) {
-        int matchIndex;
-        matchIndex = eList.stream().filter(e -> e.getId().equals(id)).findFirst().map(e -> eList.indexOf(e)).get();
-        eList.remove(matchIndex);
+    public CompletionStage<Long> deleteById(String id) {
+        return CompletableFuture.completedFuture(eList.stream()
+                                                         .filter(e -> e.getId().equals(id))
+                                                         .findFirst()
+                                                         .map(eList::indexOf)
+                                                         .map(eList::remove)
+                                                         .map(it -> 1L)
+                                                         .orElse(0L));
     }
-
-    @Override
-    public boolean isIdFound(String id) {
-        Employee match = null;
-        match = eList.stream().filter(e -> e.getId().equals(id)).findFirst().orElse(match);
-        return (match != null);
-    }
-
 }

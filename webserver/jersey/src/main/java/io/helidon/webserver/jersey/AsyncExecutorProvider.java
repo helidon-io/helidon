@@ -17,6 +17,7 @@
 package io.helidon.webserver.jersey;
 
 import java.util.concurrent.ExecutorService;
+import java.util.function.Supplier;
 
 import io.helidon.common.configurable.ThreadPoolSupplier;
 import io.helidon.config.Config;
@@ -26,16 +27,24 @@ import org.glassfish.jersey.spi.ExecutorServiceProvider;
 
 @ManagedAsyncExecutor
 class AsyncExecutorProvider implements ExecutorServiceProvider {
-    private final ThreadPoolSupplier executorServiceSupplier;
+    private final Supplier<ExecutorService> executorServiceSupplier;
 
-    AsyncExecutorProvider(Config config) {
-        this.executorServiceSupplier = ThreadPoolSupplier.builder()
-                .corePoolSize(1)
-                .maxPoolSize(10)
-                .prestart(false)
-                .threadNamePrefix("helidon-jersey-async")
-                .config(config)
-                .build();
+    AsyncExecutorProvider(Supplier<ExecutorService> supplier) {
+        this.executorServiceSupplier = supplier;
+    }
+
+    static ExecutorServiceProvider create(Config config) {
+        return new AsyncExecutorProvider(ThreadPoolSupplier.builder()
+                                                 .corePoolSize(1)
+                                                 .maxPoolSize(10)
+                                                 .prestart(false)
+                                                 .threadNamePrefix("helidon-jersey-async")
+                                                 .config(config.get("async-executor-service"))
+                                                 .build());
+    }
+
+    static ExecutorServiceProvider create(ExecutorService executor) {
+        return new AsyncExecutorProvider(() -> executor);
     }
 
     @Override

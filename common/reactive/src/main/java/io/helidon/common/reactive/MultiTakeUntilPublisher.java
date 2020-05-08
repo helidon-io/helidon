@@ -135,10 +135,7 @@ final class MultiTakeUntilPublisher<T, U> implements Multi<T> {
 
             @Override
             public void onSubscribe(Flow.Subscription subscription) {
-                // FIXME use SubscriptionHelper.setOnce when it becomes available
-                if (!compareAndSet(null, subscription)) {
-                    subscription.cancel();
-                } else {
+                if (SubscriptionHelper.setOnce(this, subscription)) {
                     subscription.request(Long.MAX_VALUE);
                 }
             }

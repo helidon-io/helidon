@@ -33,7 +33,7 @@ import javax.websocket.server.ServerEndpoint;
  * Class MessageBoardEndpoint.
  */
 @ServerEndpoint(
-        value = "/board",
+        value = "/websocket",
         encoders = { MessageBoardEndpoint.UppercaseEncoder.class }
 )
 public class MessageBoardEndpoint {

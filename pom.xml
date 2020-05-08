@@ -56,12 +56,7 @@
         <version.lib.asciidoctor.diagram>1.5.4.1</version.lib.asciidoctor.diagram>
         <version.lib.asm>6.0</version.lib.asm>
         <version.lib.checkstyle>8.29</version.lib.checkstyle>
-        <version.lib.classfilewriter>1.2.4.Final</version.lib.classfilewriter>
         <version.lib.groovy-all>2.4.14</version.lib.groovy-all>
-        <version.lib.jboss-annotations-api_1.3_spec>1.0.0.Final</version.lib.jboss-annotations-api_1.3_spec>
-        <version.lib.jboss-el-api_3.0_spec>1.0.0.Final</version.lib.jboss-el-api_3.0_spec>
-        <version.lib.jboss-interceptors-api_1.2_spec>1.0.0.Final</version.lib.jboss-interceptors-api_1.2_spec>
-        <version.lib.jboss.logging>3.2.1.Final</version.lib.jboss.logging>
         <version.lib.jgit>4.9.9.201903122025-r</version.lib.jgit>
         <version.lib.jsch>0.1.55</version.lib.jsch>
         <version.lib.netty.tcnative>2.0.26.Final</version.lib.netty.tcnative>
@@ -77,9 +72,9 @@
         <version.lib.zipkin.junit>2.12.5</version.lib.zipkin.junit>
         <version.lib.bedrock>5.0.11</version.lib.bedrock>
         <version.lib.okhttp3>3.14.1</version.lib.okhttp3>
+        <version.lib.okio>1.17.2</version.lib.okio>
         <version.lib.awaitility>3.1.6</version.lib.awaitility>
         <version.lib.weld-junit>2.0.0.Final</version.lib.weld-junit>
-        <version.lib.weld>3.1.2.Final</version.lib.weld>
         <version.lib.jmh>1.23</version.lib.jmh>
         <!--
         !Version statement! - end
@@ -94,12 +89,11 @@
         <version.plugin.dependency>3.0.0</version.plugin.dependency>
         <version.plugin.directory>0.1</version.plugin.directory>
         <version.plugin.eclipselink>2.7.1.1</version.plugin.eclipselink>
-        <version.plugin.enforcer>1.4.1</version.plugin.enforcer>
         <version.plugin.enforcer>3.0.0-M1</version.plugin.enforcer>
         <version.plugin.exec>1.6.0</version.plugin.exec>
         <version.plugin.failsafe>2.19.1</version.plugin.failsafe>
         <version.plugin.glassfish-copyright>2.3</version.plugin.glassfish-copyright>
-        <version.plugin.helidon-build-tools>2.0.0-M1</version.plugin.helidon-build-tools>
+        <version.plugin.helidon-build-tools>2.0.0-M3</version.plugin.helidon-build-tools>
         <version.plugin.hibernate-enhance>${version.lib.hibernate}</version.plugin.hibernate-enhance>
         <version.plugin.jacoco>0.8.5</version.plugin.jacoco>
         <version.plugin.jandex>1.0.6</version.plugin.jandex>
@@ -137,13 +131,13 @@
         <javadoc.link.prometheus>https://static.javadoc.io/io.prometheus/simpleclient/${version.lib.prometheus}</javadoc.link.prometheus>
         <javadoc.link.zipkin>https://static.javadoc.io/io.zipkin.reporter2/zipkin-reporter/${version.lib.zipkin}</javadoc.link.zipkin>
         <javadoc.link.jakarta-jsonb>https://static.javadoc.io/jakarta.json.bind/jakarta.json.bind-api/${version.lib.jsonb-api}</javadoc.link.jakarta-jsonb>
-        <javadoc.link.jakarta-persistence>https://static.javadoc.io/jakarta.persistence/jakarta.persistence-api/${version.lib.jakarta-persistence-api}</javadoc.link.jakarta-persistence>
+        <javadoc.link.jakarta-persistence>https://static.javadoc.io/jakarta.persistence/jakarta.persistence-api/${version.lib.persistence-api}</javadoc.link.jakarta-persistence>
         <javadoc.link.jakarta-jsonp>https://static.javadoc.io/jakarta.json/jakarta.json-api/1.1.6</javadoc.link.jakarta-jsonp>
         <javadoc.link.javax-jsonb>https://static.javadoc.io/javax.json.bind/javax.json.bind-api/1.0</javadoc.link.javax-jsonb>
         <javadoc.link.javax-jaxb>https://static.javadoc.io/javax.xml.bind/jaxb-api/${version.lib.jaxb-api}</javadoc.link.javax-jaxb>
         <javadoc.link.javax-persistence>https://static.javadoc.io/javax.persistence/javax.persistence-api/${version.lib.persistence-api}</javadoc.link.javax-persistence>
         <javadoc.link.javax-transaction>https://static.javadoc.io/javax.transaction/javax.transaction-api/${version.lib.transaction-api}</javadoc.link.javax-transaction>
-        <javadoc.link.microprofile-config>https://static.javadoc.io/org.eclipse.microprofile.config/microprofile-config-api/${version.lib.microprofile-config-api}</javadoc.link.microprofile-config>
+        <javadoc.link.microprofile-config>https://static.javadoc.io/org.eclipse.microprofile.config/microprofile-config-api/${version.lib.microprofile-config}</javadoc.link.microprofile-config>
         <javadoc.link.microprofile-health>https://static.javadoc.io/org.eclipse.microprofile.health/microprofile-health-api/${version.lib.microprofile-health}</javadoc.link.microprofile-health>
         <javadoc.link.microprofile-metrics>https://static.javadoc.io/org.eclipse.microprofile.metrics/microprofile-metrics-api/${version.lib.microprofile-metrics-api}</javadoc.link.microprofile-metrics>
         <javadoc.link.weld>https://docs.jboss.org/weld/javadoc/3.0/weld-spi/</javadoc.link.weld>
@@ -175,6 +169,7 @@
         <module>webclient</module>
         <module>integrations</module>
         <module>dbclient</module>
+        <module>messaging</module>
     </modules>
 
 
@@ -608,6 +603,25 @@
         </pluginManagement>
         <plugins>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>enforce-dependencies</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <dependencyConvergence>
+                                    <uniqueVersions>true</uniqueVersions>
+                                </dependencyConvergence>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.commonjava.maven.plugins</groupId>
                 <artifactId>directory-maven-plugin</artifactId>
                 <executions>
@@ -748,6 +762,22 @@
                 <version>${version.lib.reactivestreams}</version>
             </dependency>
             <dependency>
+                <groupId>org.apache.maven.wagon</groupId>
+                <artifactId>wagon-provider-api</artifactId>
+                <version>${version.lib.maven-wagon}</version>
+            </dependency>
+            <dependency>
+                <!--
+                Required for dependency convergence
+                Used by both
+                io.rest-assured:rest-assured (from metrics rest TCK)
+                hamcrest-integration (from metrics API TCK)
+                -->
+                <groupId>org.hamcrest</groupId>
+                <artifactId>hamcrest-library</artifactId>
+                <version>${version.lib.hamcrest}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.jboss.weld.se</groupId>
                 <artifactId>weld-se-core</artifactId>
                 <version>${version.lib.weld}</version>
@@ -759,57 +789,9 @@
                 </exclusions>
             </dependency>
             <dependency>
-                <groupId>org.jboss.weld.environment</groupId>
-                <artifactId>weld-environment-common</artifactId>
-                <version>${version.lib.weld}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.weld.probe</groupId>
-                <artifactId>weld-probe-core</artifactId>
-                <version>${version.lib.weld}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.weld</groupId>
-                <artifactId>weld-core-bom</artifactId>
-                <version>${version.lib.weld}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.classfilewriter</groupId>
-                <artifactId>jboss-classfilewriter</artifactId>
-                <version>${version.lib.classfilewriter}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.spec.javax.annotation</groupId>
-                <artifactId>jboss-annotations-api_1.3_spec</artifactId>
-                <version>${version.lib.jboss-annotations-api_1.3_spec}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.spec.javax.el</groupId>
-                <artifactId>jboss-el-api_3.0_spec</artifactId>
-                <version>${version.lib.jboss-el-api_3.0_spec}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.spec.javax.interceptor</groupId>
-                <artifactId>jboss-interceptors-api_1.2_spec</artifactId>
-                <version>${version.lib.jboss-interceptors-api_1.2_spec}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.logging</groupId>
-                <artifactId>jboss-logging</artifactId>
-                <version>${version.lib.jboss.logging}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.jboss.weld</groupId>
                 <artifactId>weld-junit5</artifactId>
                 <version>${version.lib.weld-junit}</version>
-            </dependency>
-            <dependency>
-                <!-- if needed (as excluded from weld) -->
-                <groupId>org.codehaus.groovy</groupId>
-                <artifactId>groovy-all</artifactId>
-                <version>${version.lib.groovy-all}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.microprofile.health</groupId>
@@ -820,6 +802,12 @@
                 <groupId>org.eclipse.microprofile.jwt</groupId>
                 <artifactId>microprofile-jwt-auth-tck</artifactId>
                 <version>${version.lib.microprofile-jwt}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>javax.enterprise</groupId>
+                        <artifactId>cdi-api</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.microprofile.jwt</groupId>
@@ -893,6 +881,11 @@
                 <version>${version.lib.arquillian}</version>
             </dependency>
             <dependency>
+                <groupId>org.jboss.arquillian.test</groupId>
+                <artifactId>arquillian-test-spi</artifactId>
+                <version>${version.lib.arquillian}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.jboss.arquillian.container</groupId>
                 <artifactId>arquillian-container-spi</artifactId>
                 <version>${version.lib.arquillian}</version>
@@ -932,6 +925,18 @@
                 <groupId>com.squareup.okhttp3</groupId>
                 <artifactId>okhttp</artifactId>
                 <version>${version.lib.okhttp3}</version>
+            </dependency>
+            <dependency>
+                <!-- required for dependency convergence
+                used from both
+                com.squareup.okhttp3:mockwebserver:3.13.1
+                com.squareup.moshi:moshi:1.8.0
+                both referenced by
+                io.zipkin.zipkin2:zipkin-junit:2.12.5
+                -->
+                <groupId>com.squareup.okio</groupId>
+                <artifactId>okio</artifactId>
+                <version>${version.lib.okio}</version>
             </dependency>
             <dependency>
                 <groupId>org.awaitility</groupId>

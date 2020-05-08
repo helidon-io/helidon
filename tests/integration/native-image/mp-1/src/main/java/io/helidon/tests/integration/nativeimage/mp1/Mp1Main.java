@@ -21,6 +21,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.LinkedList;
 import java.util.List;
@@ -33,6 +34,7 @@ import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.spi.CDI;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
+import javax.ws.rs.ServiceUnavailableException;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
@@ -49,6 +51,8 @@ import io.helidon.security.jwt.jwk.JwkRSA;
 
 import io.opentracing.Tracer;
 import io.opentracing.util.GlobalTracer;
+import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException;
 
 import static io.helidon.common.http.Http.Status.FORBIDDEN_403;
@@ -70,6 +74,14 @@ public final class Mp1Main {
      * @param args command line arguments.
      */
     public static void main(final String[] args) {
+
+        String property = System.getProperty("java.class.path");
+        if (null == property || property.trim().isEmpty()) {
+            System.out.println("** Running on module path");
+        } else {
+            System.out.println("** Running on class path");
+        }
+
         // cleanup before tests
         cleanup();
 
@@ -79,7 +91,7 @@ public final class Mp1Main {
         //Main.main(args);
 
         Server server = Server.builder()
-                .port(0)
+                .port(7001)
                 .applications(new JaxRsApplicationNoCdi())
                 .retainDiscoveredApplications(true)
                 .basePath("/cdi")
@@ -97,19 +109,23 @@ public final class Mp1Main {
         long time = System.currentTimeMillis() - now;
         System.out.println("Tests finished in " + time + " millis");
 
+        Config config = ConfigProvider.getConfig();
+        List<String> names = new ArrayList<>();
+        config.getPropertyNames()
+                .forEach(names::add);
+        names.sort(String::compareTo);
+
+        System.out.println("All configuration options:");
+        names.forEach(it -> {
+            config.getOptionalValue(it, String.class)
+                    .ifPresent(value -> System.out.println(it + "=" + value));
+        });
+
         server.stop();
 
         if (failed) {
             System.exit(-1);
         }
-
-
-//        try {
-//            Thread.sleep(5000);
-//            System.setProperty("app.message", "New message through change support");
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
     }
 
     private static String generateJwtToken() {
@@ -168,10 +184,14 @@ public final class Mp1Main {
 
         // Rest Client
         invoke(collector, "Rest client", "Properties message", aBean::restClientMessage);
+
         // + JSON-P
         invoke(collector, "Rest client JSON-P", "json-p", aBean::restClientJsonP);
         // + JSON-B
         invoke(collector, "Rest client JSON-B", "json-b", aBean::restClientJsonB);
+
+        // Message from rest client, originating in BeanClass.BeanType
+        invoke(collector, "Rest client bean type", "Properties message", aBean::restClientBeanType);
 
         // Fault Tolerance
         invoke(collector, "FT Fallback", "Fallback success", aBean::fallback);
@@ -215,8 +235,44 @@ public final class Mp1Main {
         // OpenAPI
         validateOpenAPI(collector, target);
 
+        // Overall JAX-RS injection
+        validateInjection(collector, target);
+
+        // Static content
+        validateStaticContent(collector, target);
+
         collector.collect()
                 .checkValid();
+    }
+
+    private static void validateStaticContent(Errors.Collector collector, WebTarget target) {
+        String path = "/static/resource.txt";
+        String expected = "classpath-resource-text";
+
+        Response response = target.path(path)
+                .request()
+                .get();
+
+        if (response.getStatus() == OK_200.code()) {
+            String entity = response.readEntity(String.class);
+            if (!expected.equals(entity)) {
+                collector.fatal("Endpoint " + path + "should return \"" + expected + "\", but returned \"" + entity + "\"");
+            }
+        } else {
+            collector.fatal("Endpoint " + path + " should contain static content from /web/resource.txt. Status received: "
+                                    + response.getStatus());
+        }
+    }
+
+    private static void validateInjection(Errors.Collector collector, WebTarget target) {
+        String path = "/cdi/fields";
+        WebTarget fieldsTarget = target.path(path);
+
+        try {
+            fieldsTarget.request().get(String.class);
+        } catch (Exception e) {
+            collector.fatal(e, "JAX-RS field injection failed. Check the server log.");
+        }
     }
 
     private static void validateBasicAuthProtectedResource(Errors.Collector collector, WebTarget target) {
@@ -375,13 +431,18 @@ public final class Mp1Main {
             collector.fatal("There should be at least one readiness healtcheck provided by this app");
         }
 
-        health = target.path("/health/live")
-                .request(MediaType.APPLICATION_JSON)
-                .get(JsonObject.class);
+        try {
+            health = target.path("/health/live")
+                    .request(MediaType.APPLICATION_JSON)
+                    .get(JsonObject.class);
 
-        checks = health.getJsonArray("checks");
-        if (checks.size() < 1) {
-            collector.fatal("There should be at least one liveness healtcheck provided by this app");
+            checks = health.getJsonArray("checks");
+            if (checks.size() < 1) {
+                collector.fatal("There should be at least one liveness healtcheck provided by this app");
+            }
+        } catch (ServiceUnavailableException e) {
+            collector.fatal(e, "Failed to invoke health endpoint. Exception: " + e.getClass().getName()
+                    + ", message: " + e.getMessage() + ", " + e.getResponse().readEntity(String.class));
         }
     }
 

@@ -35,12 +35,11 @@ final class SingleTappedPublisher<T> implements Single<T> {
 
     private final Single<T> source;
 
-    // FIXME contravariance in the API signatures
-    private final Consumer<Flow.Subscription> onSubscribeCallback;
+    private final Consumer<? super Flow.Subscription> onSubscribeCallback;
 
-    private final Consumer<T> onNextCallback;
+    private final Consumer<? super T> onNextCallback;
 
-    private final Consumer<Throwable> onErrorCallback;
+    private final Consumer<? super Throwable> onErrorCallback;
 
     private final Runnable onCompleteCallback;
 
@@ -49,9 +48,9 @@ final class SingleTappedPublisher<T> implements Single<T> {
     private final Runnable onCancelCallback;
 
     SingleTappedPublisher(Single<T> source,
-                          Consumer<Flow.Subscription> onSubscribeCallback,
-                          Consumer<T> onNextCallback,
-                          Consumer<Throwable> onErrorCallback,
+                          Consumer<? super Flow.Subscription> onSubscribeCallback,
+                          Consumer<? super T> onNextCallback,
+                          Consumer<? super Throwable> onErrorCallback,
                           Runnable onCompleteCallback,
                           LongConsumer onRequestCallback,
                           Runnable onCancelCallback) {
@@ -87,7 +86,7 @@ final class SingleTappedPublisher<T> implements Single<T> {
     }
 
     @Override
-    public Single<T> onError(Consumer<Throwable> onErrorConsumer) {
+    public Single<T> onError(Consumer<? super Throwable> onErrorConsumer) {
         return new SingleTappedPublisher<>(
                 source,
                 onSubscribeCallback,
@@ -113,7 +112,7 @@ final class SingleTappedPublisher<T> implements Single<T> {
     }
 
     @Override
-    public Single<T> peek(Consumer<T> consumer) {
+    public Single<T> peek(Consumer<? super T> consumer) {
         return new SingleTappedPublisher<>(
                 source,
                 onSubscribeCallback,

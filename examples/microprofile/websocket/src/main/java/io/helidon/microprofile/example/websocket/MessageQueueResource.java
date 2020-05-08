@@ -36,7 +36,6 @@ public class MessageQueueResource {
      * @param s The string.
      */
     @POST
-    @Path("board")
     @Consumes("text/plain")
     public void push(String s) {
         messageQueue.push(s);

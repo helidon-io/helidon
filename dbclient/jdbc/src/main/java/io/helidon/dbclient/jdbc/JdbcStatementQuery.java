@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -450,7 +450,15 @@ class JdbcStatementQuery extends JdbcStatement<DbStatementQuery, DbRows<DbRow>> 
                     @SuppressWarnings("unchecked")
                     <SRC, T> T map(SRC value, Class<T> type) {
                         Class<SRC> theClass = (Class<SRC>) value.getClass();
-                        return mapperManager.map(value, theClass, type);
+
+                        try {
+                            return mapperManager.map(value, theClass, type);
+                        } catch (MapperException e) {
+                            if (type.equals(String.class)) {
+                                return (T) String.valueOf(value);
+                            }
+                            throw e;
+                        }
                     }
 
                     @SuppressWarnings("unchecked")

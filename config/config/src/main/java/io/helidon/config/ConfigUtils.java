@@ -19,24 +19,14 @@ package io.helidon.config;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.charset.UnsupportedCharsetException;
-import java.time.Duration;
-import java.util.Comparator;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.Spliterator;
-import java.util.Spliterators;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
-
-import javax.annotation.Priority;
 
 import io.helidon.config.spi.ConfigNode;
 
@@ -49,68 +39,6 @@ final class ConfigUtils {
 
     private ConfigUtils() {
         throw new AssertionError("Instantiation not allowed.");
-    }
-
-    /**
-     * Convert iterable items to an ordered serial stream.
-     *
-     * @param items items to be streamed.
-     * @param <S>   expected streamed item type.
-     * @return stream of items.
-     */
-    static <S> Stream<S> asStream(Iterable<? extends S> items) {
-        return asStream(items.iterator());
-    }
-
-    /**
-     * Converts an iterator to a stream.
-     *
-     * @param <S> type of the base items
-     * @param iterator iterator over the items
-     * @return stream of the items
-     */
-    static <S> Stream<S> asStream(Iterator<? extends S> iterator) {
-        return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED), false);
-    }
-
-    /**
-     * Sorts items represented by an {@link Iterable} instance based on a {@code Priority} annotation attached to each
-     * item's Java type and return the sorted items as an ordered serial {@link Stream}.
-     * <p>
-     * Instances are sorted by {@code Priority.value()} attached <em>directly</em> to the instance of each item's class.
-     * If there is no {@code Priority} annotation attached to an item's class the {@code defaultPriority} value is used
-     * instead. Items with higher priority values have higher priority and take precedence (are returned sooner from
-     * the stream).
-     *
-     * @param items           items to be ordered by priority and streamed.
-     * @param defaultPriority default priority to be used in case an item does not have a priority defined.
-     * @param <S>             item type.
-     * @return prioritized stream of items.
-     */
-    static <S> Stream<? extends S> asPrioritizedStream(Iterable<? extends S> items, int defaultPriority) {
-        return asStream(items).sorted(priorityComparator(defaultPriority));
-    }
-
-    /**
-     * Returns a comparator for two objects, the classes for which are
-     * optionally annotated with {@link Priority} and which applies a specified
-     * default priority if either or both classes lack the annotation.
-     *
-     * @param <S> type of object being compared
-     * @param defaultPriority used if the classes for either or both objects
-     * lack the {@code Priority} annotation
-     * @return comparator
-     */
-    static <S> Comparator<S> priorityComparator(int defaultPriority) {
-        return (service1, service2) -> {
-            int service1Priority = Optional.ofNullable(service1.getClass().getAnnotation(Priority.class))
-                    .map(Priority::value)
-                    .orElse(defaultPriority);
-            int service2Priority = Optional.ofNullable(service2.getClass().getAnnotation(Priority.class))
-                    .map(Priority::value)
-                    .orElse(defaultPriority);
-            return service2Priority - service1Priority;
-        };
     }
 
     /**
@@ -187,55 +115,4 @@ final class ConfigUtils {
             throw new ConfigException("Unsupported response content-encoding '" + contentEncoding + "'.", ex);
         }
     }
-
-    /**
-     * Allows to {@link #schedule()} execution of specified {@code command} using specified {@link ScheduledExecutorService}.
-     * Task is not executed immediately but scheduled with specified {@code delay}.
-     * It is possible to postpone an execution of the command by calling {@link #schedule()} again before the command is finished.
-     * <p>
-     * It can be used to implement Rx Debounce operator (http://reactivex.io/documentation/operators/debounce.html).
-     */
-    static class ScheduledTask {
-        private final ScheduledExecutorService executorService;
-        private final Runnable command;
-        private final Duration delay;
-        private volatile ScheduledFuture<?> scheduled;
-        private final Object lock = new Object();
-
-        /**
-         * Initialize task.
-         *
-         * @param executorService service to be used to schedule {@code command} execution on
-         * @param command         the command to be executed on {@code executorService}
-         * @param delay           the {@code command} is scheduled with specified delay
-         */
-        ScheduledTask(ScheduledExecutorService executorService, Runnable command, Duration delay) {
-            this.executorService = executorService;
-            this.command = command;
-            this.delay = delay;
-        }
-
-        /**
-         * Schedule execution of {@code command} on specified {@code executorService} with initial {@code delay}.
-         * <p>
-         * Scheduling can be repeated. Not finished task is canceled.
-         *
-         * @return whether a previously-scheduled action was canceled in scheduling this new new action
-         */
-        public boolean schedule() {
-            boolean result = false;
-            synchronized (lock) {
-                if (scheduled != null) {
-                    if (!scheduled.isCancelled() && !scheduled.isDone()) {
-                        scheduled.cancel(false);
-                        LOGGER.log(Level.FINER, String.format("Cancelling and rescheduling %s task.", command));
-                        result = true;
-                    }
-                }
-                scheduled = executorService.schedule(command, delay.toMillis(), TimeUnit.MILLISECONDS);
-            }
-            return result;
-        }
-    }
-
 }
