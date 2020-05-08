@@ -21,8 +21,8 @@
  */
 module io.helidon.integrations.jedis.cdi {
     requires java.desktop; // For java.beans
-    requires cdi.api;
-    requires javax.inject;
+    requires jakarta.enterprise.cdi.api;
+    requires jakarta.inject.api;
     requires java.sql;
     requires microprofile.config.api;
     requires jedis;

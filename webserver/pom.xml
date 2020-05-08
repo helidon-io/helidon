@@ -37,5 +37,6 @@
         <module>test-support</module>
         <module>access-log</module>
         <module>tyrus</module>
+        <module>cors</module>
     </modules>
 </project>

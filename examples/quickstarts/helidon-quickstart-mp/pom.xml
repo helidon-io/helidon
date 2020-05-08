@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2018, 2020 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -31,18 +31,10 @@
     <artifactId>helidon-quickstart-mp</artifactId>
     <name>Helidon Quickstart MP Example</name>
 
-    <properties>
-        <mainClass>io.helidon.examples.quickstart.mp.Main</mainClass>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
             <artifactId>helidon-microprofile</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.glassfish.jersey.media</groupId>
-            <artifactId>jersey-media-json-binding</artifactId>
         </dependency>
         <dependency>
             <groupId>org.jboss</groupId>
@@ -51,8 +43,8 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>javax.activation</groupId>
-            <artifactId>javax.activation-api</artifactId>
+            <groupId>jakarta.activation</groupId>
+            <artifactId>jakarta.activation-api</artifactId>
             <scope>runtime</scope>
         </dependency>
         <dependency>

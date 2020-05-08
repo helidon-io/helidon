@@ -25,6 +25,7 @@ import java.util.concurrent.Flow.Subscription;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -240,11 +241,8 @@ public class MultiTest {
     @Test
     public void testMapBadMapper() {
         MultiTestSubscriber<String> subscriber = new MultiTestSubscriber<>();
-        Multi.<String>just("foo", "bar").map(new Mapper<String, String>() {
-            @Override
-            public String map(String item) {
-                throw new IllegalStateException("foo!");
-            }
+        Multi.<String>just("foo", "bar").map((Function<String, String>) item -> {
+            throw new IllegalStateException("foo!");
         }).subscribe(subscriber);
         assertThat(subscriber.isComplete(), is(equalTo(false)));
         assertThat(subscriber.getLastError(), is(instanceOf(IllegalStateException.class)));
@@ -254,7 +252,7 @@ public class MultiTest {
     @Test
     public void testMapBadMapperNullValue() {
         MultiTestSubscriber<String> subscriber = new MultiTestSubscriber<>();
-        Multi.just("foo", "bar").map((Mapper<String, String>) item -> null).subscribe(subscriber);
+        Multi.just("foo", "bar").map((Function<String, String>) item -> null).subscribe(subscriber);
         assertThat(subscriber.isComplete(), is(equalTo(false)));
         assertThat(subscriber.getLastError(), is(instanceOf(NullPointerException.class)));
         assertThat(subscriber.getItems(), is(empty()));

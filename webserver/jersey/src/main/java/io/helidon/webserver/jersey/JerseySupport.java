@@ -53,7 +53,6 @@ import io.helidon.webserver.Service;
 
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.glassfish.jersey.internal.PropertiesDelegate;
 import org.glassfish.jersey.internal.util.collection.Ref;
 import org.glassfish.jersey.server.ApplicationHandler;
@@ -129,10 +128,20 @@ public class JerseySupport implements Service {
      *                and Config
      */
     private JerseySupport(Builder builder) {
-        ExecutorService executorService = (builder.executorService != null) ? builder.executorService : getDefaultThreadPool();
+        ExecutorService executorService = (builder.executorService != null)
+                ? builder.executorService
+                : getDefaultThreadPool(builder.config);
         this.service = Contexts.wrap(executorService);
 
-        builder.resourceConfig.register(new AsyncExecutorProvider(builder.config));
+        // make sure we have a wrapped async executor as well
+        if (builder.asyncExecutorService == null) {
+            // create a new one from configuration
+            builder.resourceConfig.register(AsyncExecutorProvider.create(builder.config));
+        } else {
+            // use the one provided
+            builder.resourceConfig.register(AsyncExecutorProvider.create(builder.asyncExecutorService));
+        }
+
         this.appHandler = new ApplicationHandler(builder.resourceConfig, new ServerBinder(executorService));
         this.container = new HelidonJerseyContainer(appHandler, builder.resourceConfig);
     }
@@ -143,11 +152,9 @@ public class JerseySupport implements Service {
         appHandler.onStartup(container);
     }
 
-    private static ExecutorService getDefaultThreadPool() {
+    private static synchronized ExecutorService getDefaultThreadPool(Config config) {
         if (DEFAULT_THREAD_POOL.get() == null) {
-            Config executorConfig = ((Config) ConfigProvider.getConfig())
-                    .get("server.executor-service");
-
+            Config executorConfig = config.get("executor-service");
             DEFAULT_THREAD_POOL.set(ServerThreadPoolSupplier.builder()
                                             .name("server")
                                             .config(executorConfig)
@@ -444,6 +451,7 @@ public class JerseySupport implements Service {
         private ResourceConfig resourceConfig;
         private ExecutorService executorService;
         private Config config = Config.empty();
+        private ExecutorService asyncExecutorService;
 
         private Builder() {
             this(null);
@@ -546,6 +554,18 @@ public class JerseySupport implements Service {
          */
         public Builder executorService(ExecutorService executorService) {
             this.executorService = executorService;
+            return this;
+        }
+
+        /**
+         * Sets the executor service to use for a handling of asynchronous requests
+         * with {@link javax.ws.rs.container.AsyncResponse}.
+         *
+         * @param executorService the executor service to use for a handling of asynchronous requests
+         * @return an updated instance
+         */
+        public Builder asyncExecutorService(ExecutorService executorService) {
+            this.asyncExecutorService = executorService;
             return this;
         }
 

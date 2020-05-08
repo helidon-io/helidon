@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,8 +75,8 @@ public class Server {
 
         // add support for standard and gRPC health checks
         HealthSupport health = HealthSupport.builder()
-                .add(HealthChecks.healthChecks())
-                .add(grpcServer.healthChecks())
+                .addLiveness(HealthChecks.healthChecks())
+                .addLiveness(grpcServer.healthChecks())
                 .build();
 
         // start web server with health endpoint

@@ -24,9 +24,12 @@ module io.helidon.microprofile.accesslog {
 
     requires io.helidon.microprofile.server;
     requires io.helidon.webserver.accesslog;
-    requires javax.interceptor.api;
+    requires jakarta.interceptor.api;
 
     exports io.helidon.microprofile.accesslog;
+
+    // this is needed for CDI extensions that use non-public observer methods
+    opens io.helidon.microprofile.accesslog to weld.core.impl;
 
     provides Extension with io.helidon.microprofile.accesslog.AccessLogCdiExtension;
 }

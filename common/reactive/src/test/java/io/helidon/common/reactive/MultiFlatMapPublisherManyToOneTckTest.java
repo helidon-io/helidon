@@ -26,7 +26,7 @@ import java.util.stream.IntStream;
 public class MultiFlatMapPublisherManyToOneTckTest extends FlowPublisherVerification<Integer> {
 
     public MultiFlatMapPublisherManyToOneTckTest() {
-        super(new TestEnvironment(50));
+        super(new TestEnvironment(200));
     }
 
     @Override

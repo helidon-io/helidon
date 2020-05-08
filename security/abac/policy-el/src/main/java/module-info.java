@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ module io.helidon.security.abac.policy.el {
     requires io.helidon.security.abac.policy;
     requires java.logging;
     // expected to be provided by the actual EL implementation
-    requires static javax.el.api;
+    requires static jakarta.el.api;
     requires java.desktop;
     requires io.helidon.security.util;
 

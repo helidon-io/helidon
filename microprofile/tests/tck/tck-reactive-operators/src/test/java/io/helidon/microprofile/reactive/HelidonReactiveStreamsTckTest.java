@@ -17,23 +17,16 @@
 
 package io.helidon.microprofile.reactive;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.stream.Collectors;
 
-import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreamsFactory;
-import org.eclipse.microprofile.reactive.streams.operators.spi.ReactiveStreamsEngine;
 import org.eclipse.microprofile.reactive.streams.operators.tck.ReactiveStreamsTck;
-import org.eclipse.microprofile.reactive.streams.operators.tck.api.ReactiveStreamsApiVerification;
-import org.eclipse.microprofile.reactive.streams.operators.tck.spi.CoupledStageVerification;
-import org.eclipse.microprofile.reactive.streams.operators.tck.spi.CustomCoupledStageVerification;
-import org.eclipse.microprofile.reactive.streams.operators.tck.spi.ReactiveStreamsSpiVerification;
 import org.reactivestreams.tck.TestEnvironment;
-import org.testng.annotations.AfterSuite;
-import org.testng.annotations.Factory;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
+@Test
 public class HelidonReactiveStreamsTckTest extends ReactiveStreamsTck<HelidonReactiveStreamsEngine> {
 
     public HelidonReactiveStreamsTckTest() {
@@ -45,4 +38,22 @@ public class HelidonReactiveStreamsTckTest extends ReactiveStreamsTck<HelidonRea
         return new HelidonReactiveStreamsEngine();
     }
 
+    private ExecutorService executor;
+
+    @BeforeClass(alwaysRun = true)
+    public void before() {
+        executor = Executors.newSingleThreadExecutor();
+        HelidonReactiveStreamsEngine.setCoupledExecutor(executor);
+    }
+
+    @AfterClass(alwaysRun = true)
+    public void after() {
+        HelidonReactiveStreamsEngine.setCoupledExecutor(null);
+        executor.shutdown();
+    }
+
+    @Test
+    public void hasExecutor() {
+        org.testng.Assert.assertNotNull(executor);
+    }
 }

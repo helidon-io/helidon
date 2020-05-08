@@ -42,8 +42,12 @@
             <artifactId>helidon-webserver</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-mp</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.glassfish</groupId>
-            <artifactId>javax.json</artifactId>
+            <artifactId>jakarta.json</artifactId>
         </dependency>
         <dependency>
             <groupId>org.graalvm.sdk</groupId>

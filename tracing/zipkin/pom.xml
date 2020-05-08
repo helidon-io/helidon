@@ -56,12 +56,6 @@
         <dependency>
             <groupId>io.opentracing.brave</groupId>
             <artifactId>brave-opentracing</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>io.zipkin.brave</groupId>
-                    <artifactId>brave-tests</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <dependency>

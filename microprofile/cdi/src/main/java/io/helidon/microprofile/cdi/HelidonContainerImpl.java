@@ -43,9 +43,10 @@ import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
-import io.helidon.config.Config;
-import io.helidon.config.MpConfigProviderResolver;
+import io.helidon.config.mp.MpConfig;
+import io.helidon.config.mp.MpConfigProviderResolver;
 
+import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.weld.AbstractCDI;
 import org.jboss.weld.bean.builtin.BeanManagerProxy;
@@ -100,6 +101,8 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
                 .ifPresent(contextBuilder::parent);
 
         ROOT_CONTEXT = contextBuilder.build();
+
+        CDI.setCDIProvider(new HelidonCdiProvider());
     }
 
     private final WeldBootstrap bootstrap;
@@ -149,7 +152,9 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
         };
         setResourceLoader(resourceLoader);
 
-        Config config = (Config) ConfigProvider.getConfig();
+        Config mpConfig = ConfigProvider.getConfig();
+        io.helidon.config.Config config = MpConfig.toHelidonConfig(mpConfig);
+
         Map<String, String> properties = config.get("cdi")
                 .detach()
                 .asMap()
@@ -198,7 +203,7 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
         bootstrap.deployBeans();
 
         cdi = new HelidonCdi(id, bootstrap, deployment);
-        CDI.setCDIProvider(() -> cdi);
+        HelidonCdiProvider.setCdi(cdi);
 
         beanManager.getEvent().select(BuildTimeEnd.Literal.INSTANCE).fire(id);
 
@@ -251,9 +256,17 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
 
         IN_RUNTIME.set(true);
 
-        BeanManager bm = CDI.current().getBeanManager();
+        BeanManager bm = null;
+        try {
+            bm = CDI.current().getBeanManager();
+        } catch (IllegalStateException e) {
+            LOGGER.log(Level.FINEST, "Cannot get current CDI, probably restarted", e);
+            // cannot access CDI - CDI is not yet initialized (probably shut down and started again)
+            initInContext();
+            bm = CDI.current().getBeanManager();
+        }
 
-        Config config = (Config) ConfigProvider.getConfig();
+        org.eclipse.microprofile.config.Config config = ConfigProvider.getConfig();
 
         MpConfigProviderResolver.runtimeStart(config);
 
@@ -306,7 +319,8 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
         now = System.currentTimeMillis() - now;
         LOGGER.fine("Container started in " + now + " millis (this excludes the initialization time)");
 
-        HelidonFeatures.print(HelidonFlavor.MP, config.get("features.print-details").asBoolean().orElse(false));
+        HelidonFeatures.print(HelidonFlavor.MP,
+                              config.getOptionalValue("features.print-details", Boolean.class).orElse(false));
 
         // shutdown hook should be added after all initialization is done, otherwise a race condition may happen
         Runtime.getRuntime().addShutdownHook(shutdownHook);

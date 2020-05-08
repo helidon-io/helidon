@@ -21,7 +21,7 @@ module io.helidon.security.jwt {
     requires transitive io.helidon.config;
     requires transitive io.helidon.common;
     requires transitive io.helidon.common.configurable;
-    requires transitive org.glassfish.java.json;
+    requires transitive java.json;
     requires io.helidon.security.util;
     requires java.logging;
 

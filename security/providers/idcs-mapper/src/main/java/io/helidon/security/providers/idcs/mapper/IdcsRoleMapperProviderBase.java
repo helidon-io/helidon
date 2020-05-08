@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -302,7 +302,17 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
          * @return updated builder instance
          */
         public B config(Config config) {
-            config.get("oidc-config").as(OidcConfig::create).ifPresent(this::oidcConfig);
+            config.get("oidc-config").ifExists(it -> {
+                OidcConfig.Builder builder = OidcConfig.builder();
+                // we do not need JWT validation at all
+                builder.validateJwtWithJwk(false);
+                // this is an IDCS specific extension
+                builder.serverType("idcs");
+                builder.config(it);
+
+                oidcConfig(builder.build());
+            });
+
             config.get("subject-types").asList(cfg -> cfg.asString().map(SubjectType::valueOf).get())
                     .ifPresent(list -> list.forEach(this::addSubjectType));
             config.get("default-idcs-subject-type").asString().ifPresent(this::defaultIdcsSubjectType);

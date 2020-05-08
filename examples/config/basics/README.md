@@ -10,7 +10,6 @@ containing config in HOCON (Human-Optimized Config Object Notation) format
 
 ## Build and run
 
-With JDK8+
 ```bash
 mvn package
 java -jar target/helidon-examples-config-basics.jar

@@ -27,7 +27,7 @@
 
     <properties>
         <helidon.version>2.0.0-SNAPSHOT</helidon.version>
-        <mainClass>io.helidon.examples.quickstart.mp.Main</mainClass>
+        <mainClass>io.helidon.microprofile.cdi.Main</mainClass>
 
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>${maven.compiler.source}</maven.compiler.target>
@@ -72,18 +72,14 @@
             <artifactId>helidon-microprofile</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.glassfish.jersey.media</groupId>
-            <artifactId>jersey-media-json-binding</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.jboss</groupId>
             <artifactId>jandex</artifactId>
             <scope>runtime</scope>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>javax.activation</groupId>
-            <artifactId>javax.activation-api</artifactId>
+            <groupId>jakarta.activation</groupId>
+            <artifactId>jakarta.activation-api</artifactId>
             <scope>runtime</scope>
         </dependency>
         <dependency>
@@ -164,6 +160,7 @@
                                 <addClasspath>true</addClasspath>
                                 <classpathPrefix>libs</classpathPrefix>
                                 <mainClass>${mainClass}</mainClass>
+                                <useUniqueVersions>false</useUniqueVersions>
                             </manifest>
                         </archive>
                     </configuration>

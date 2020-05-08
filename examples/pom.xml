@@ -52,6 +52,7 @@
         <module>employee-app</module>
         <module>dbclient</module>
         <module>webclient</module>
+        <module>cors</module>
     </modules>
 
     <build>

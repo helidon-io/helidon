@@ -34,11 +34,14 @@
 
     <modules>
         <module>zipkin-mp-2.2</module>
+        <module>mp-grpc</module>
         <module>mp-security-client</module>
         <module>health</module>
         <module>mp-ws-services</module>
         <module>webclient</module>
         <module>security</module>
+        <module>mp-gh-1538</module>
+        <module>kafka</module>
     </modules>
 
     <profiles>

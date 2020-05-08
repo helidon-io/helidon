@@ -49,7 +49,7 @@ public class ThrowableBodyWriter implements MessageBodyWriter<Throwable> {
                                       GenericType<? extends Throwable> type,
                                       MessageBodyWriterContext context) {
         context.contentType(MediaType.TEXT_PLAIN);
-        return content.mapMany(new ThrowableToChunks(context.charset()));
+        return content.flatMap(new ThrowableToChunks(context.charset()));
     }
 
     /**

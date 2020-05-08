@@ -26,8 +26,8 @@
 module io.helidon.integrations.cdi.hibernate {
     requires java.transaction;
     requires java.sql;
-    requires javax.inject;
-    requires cdi.api;
+    requires jakarta.inject.api;
+    requires jakarta.enterprise.cdi.api;
     requires org.hibernate.orm.core;
 
     exports io.helidon.integrations.cdi.hibernate;

@@ -44,6 +44,7 @@ of new APIs to add capabilities you need for writing modern cloud native
 applications. 
 
 
+For more information see <<mp/guides/01_overview.adoc,guides>>.
 
 For more information about the Helidon MicroProfile APIs see  https://github.com/oracle/helidon/wiki/Supported-APIs[the Helidon API Wiki page].
 
@@ -79,5 +80,5 @@ Asynchronous messaging is a commonly used form of communication in the world of 
 
 == Next Steps
 
-Try the <<guides/03_quickstart-mp.adoc,Helidon MP quickstart>> to get your
+Try the <<mp/guides/03_quickstart.adoc,Helidon MP quickstart>> to get your
 first Helidon MP application up and running in minutes.

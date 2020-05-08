@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -442,7 +442,7 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
     private void logCircuitBreakerState(String preamble) {
         if (introspector.hasCircuitBreaker()) {
             String hystrixState = isCircuitBreakerOpen() ? "OPEN" : "CLOSED";
-            LOGGER.info(() -> preamble + ": breaker for " + getCommandKey() + " in state "
+            LOGGER.fine(() -> preamble + ": breaker for " + getCommandKey() + " in state "
                     + breakerHelper.getState() + " (Hystrix: " + hystrixState
                     + " Thread:" + Thread.currentThread().getName() + ")");
         }
@@ -464,7 +464,7 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
             try {
                 int waitTime = 250;
                 while (runThread.getState() == Thread.State.RUNNABLE && waitTime <= threadWaitingPeriod) {
-                    LOGGER.info(() -> "Waiting for completion of thread " + runThread);
+                    LOGGER.fine(() -> "Waiting for completion of thread " + runThread);
                     Thread.sleep(waitTime);
                     waitTime += 250;
                 }

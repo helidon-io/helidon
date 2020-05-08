@@ -23,16 +23,13 @@
  * io.helidon.integrations.datasource.hikaricp.cdi.HikariCPBackedDataSourceExtension
  */
 module io.helidon.integrations.datasource.hikaricp.cdi {
-    requires cdi.api;
-    requires javax.inject;
+    requires jakarta.enterprise.cdi.api;
+    requires jakarta.inject.api;
     requires java.sql;
     requires java.annotation;
     requires microprofile.config.api;
-    requires io.helidon.service.configuration.microprofile.config;
     requires io.helidon.integrations.datasource.cdi;
-    requires io.helidon.service.configuration.hikaricp;
     requires com.zaxxer.hikari;
 
     exports io.helidon.integrations.datasource.hikaricp.cdi;
-    exports io.helidon.integrations.datasource.hikaricp.cdi.config;
 }

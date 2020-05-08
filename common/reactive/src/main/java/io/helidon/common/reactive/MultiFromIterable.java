@@ -97,7 +97,7 @@ final class MultiFromIterable<T> implements Multi<T> {
                         iterator = null;
                         if (isCanceled == BAD_REQUEST) {
                             downstream.onError(new IllegalArgumentException(
-                                    "Rule §3.9 violated: non-positive request amount is forbidded"));
+                                    "Rule §3.9 violated: non-positive request amount is forbidden"));
                         }
                         return;
                     }

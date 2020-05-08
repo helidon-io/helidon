@@ -45,7 +45,7 @@ public final class CharSequenceBodyWriter implements MessageBodyWriter<CharSeque
             MessageBodyWriterContext context) {
 
         context.contentType(MediaType.TEXT_PLAIN);
-        return content.mapMany(new CharSequenceToChunks(context.charset()));
+        return content.flatMap(new CharSequenceToChunks(context.charset()));
     }
 
     /**

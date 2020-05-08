@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,8 @@ public final class Main {
         CONTAINER = ContainerInstanceHolder.get();
     }
 
+    private static HelidonContainer inUse;
+
     private Main() {
     }
 
@@ -58,13 +60,21 @@ public final class Main {
      * @param args command line arguments, currently ignored
      */
     public static void main(String[] args) {
-        CONTAINER.start();
+        if (ContainerInstanceHolder.isReset()) {
+            // in case somebody restarted the container, we need to get a new one
+            inUse = ContainerInstanceHolder.get();
+        } else {
+            // use the statically initialized one
+            inUse = CONTAINER;
+        }
+
+        inUse.start();
     }
 
     /**
      * Shutdown CDI container.
      */
     public static void shutdown() {
-        CONTAINER.shutdown();
+        inUse.shutdown();
     }
 }

@@ -52,7 +52,7 @@ OK, so if you need to add a new link to external javadocs this is what you do
    download a `package-list` (`element-list`) file it will complain. You'll then need 
    to figure out why the URL is no good. But better now, rather than during a javadoc build.
    
-4. If all goes well goes well you should have a `package-list` (`element-list`) file in
+4. If all goes well you should have a `package-list` (`element-list`) file in
    this directory under the component's name. You can now run a javadoc build and verify
    all is good.
    

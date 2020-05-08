@@ -121,46 +121,53 @@ public class MetricsCdiExtension implements Extension {
 
         if (annotation instanceof Counted) {
             Counted counted = (Counted) annotation;
-            String metricName = getMetricName(element, clazz, lookupResult.getType(), counted.name(), counted.absolute());
+            String metricName = getMetricName(element, clazz, lookupResult.getType(), counted.name().trim(),
+                                              counted.absolute());
+            String displayName = counted.displayName().trim();
             Metadata meta = new HelidonMetadata(metricName,
-                                                counted.displayName(),
-                                                counted.description(),
+                                                displayName.isEmpty() ? metricName : displayName,
+                                                counted.description().trim(),
                                                 MetricType.COUNTER,
-                                                counted.unit(),
+                                                counted.unit().trim(),
                                                 counted.reusable());
             registry.counter(meta, tags(counted.tags()));
             LOGGER.log(Level.FINE, () -> "Registered counter " + metricName);
         } else if (annotation instanceof Metered) {
             Metered metered = (Metered) annotation;
-            String metricName = getMetricName(element, clazz, lookupResult.getType(), metered.name(), metered.absolute());
+            String metricName = getMetricName(element, clazz, lookupResult.getType(), metered.name().trim(),
+                                              metered.absolute());
+            String displayName = metered.displayName().trim();
             Metadata meta = new HelidonMetadata(metricName,
-                                                metered.displayName(),
-                                                metered.description(),
+                                                displayName.isEmpty() ? metricName : displayName,
+                                                metered.description().trim(),
                                                 MetricType.METERED,
-                                                metered.unit(),
+                                                metered.unit().trim(),
                                                 metered.reusable());
             registry.meter(meta, tags(metered.tags()));
             LOGGER.log(Level.FINE, () -> "Registered meter " + metricName);
         } else if (annotation instanceof Timed) {
             Timed timed = (Timed) annotation;
-            String metricName = getMetricName(element, clazz, lookupResult.getType(), timed.name(), timed.absolute());
+            String metricName = getMetricName(element, clazz, lookupResult.getType(), timed.name().trim(),
+                                              timed.absolute());
+            String displayName = timed.displayName().trim();
             Metadata meta = new HelidonMetadata(metricName,
-                                                timed.displayName(),
-                                                timed.description(),
+                                                displayName.isEmpty() ? metricName : displayName,
+                                                timed.description().trim(),
                                                 MetricType.TIMER,
-                                                timed.unit(),
+                                                timed.unit().trim(),
                                                 timed.reusable());
             registry.timer(meta, tags(timed.tags()));
             LOGGER.log(Level.FINE, () -> "Registered timer " + metricName);
         } else if (annotation instanceof ConcurrentGauge) {
             ConcurrentGauge concurrentGauge = (ConcurrentGauge) annotation;
-            String metricName = getMetricName(element, clazz, lookupResult.getType(), concurrentGauge.name(),
-                                              concurrentGauge.absolute());
+            String metricName = getMetricName(element, clazz, lookupResult.getType(), concurrentGauge.name().trim(),
+                    concurrentGauge.absolute());
+            String displayName = concurrentGauge.displayName().trim();
             Metadata meta = new HelidonMetadata(metricName,
-                                                concurrentGauge.displayName(),
-                                                concurrentGauge.description(),
+                                                displayName.isEmpty() ? metricName : displayName,
+                                                concurrentGauge.description().trim(),
                                                 MetricType.CONCURRENT_GAUGE,
-                                                concurrentGauge.unit(),
+                                                concurrentGauge.unit().trim(),
                                                 concurrentGauge.reusable());
             registry.concurrentGauge(meta, tags(concurrentGauge.tags()));
             LOGGER.log(Level.FINE, () -> "Registered concurrent gauge " + metricName);

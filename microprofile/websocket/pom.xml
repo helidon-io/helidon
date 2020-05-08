@@ -31,6 +31,10 @@
 
     <description>Helidon MP integration with Tyrus</description>
 
+    <properties>
+        <surefire.argLine>-Dmp.initializer.allow=true</surefire.argLine>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.glassfish.tyrus</groupId>
@@ -53,8 +57,8 @@
             <artifactId>jakarta.websocket-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>javax.enterprise</groupId>
-            <artifactId>cdi-api</artifactId>
+            <groupId>jakarta.enterprise</groupId>
+            <artifactId>jakarta.enterprise.cdi-api</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>

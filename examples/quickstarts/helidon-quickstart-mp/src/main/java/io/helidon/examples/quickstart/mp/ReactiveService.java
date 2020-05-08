@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,21 +19,24 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
 import io.helidon.microprofile.server.RoutingPath;
-import io.helidon.security.SecurityContext;
+import io.helidon.security.Security;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.Service;
 
 /**
- * TODO javadoc.
+ * Reactive service.
+ * <p>
+ * Helidon WebServer reactive services can be used in MP as well.
+ * Injection is limited to {@link javax.enterprise.context.ApplicationScoped}.
  */
 @ApplicationScoped
 @RoutingPath("/reactive")
 public class ReactiveService implements Service {
     @Inject
-    private SecurityContext securityContext;
+    private Security security;
 
     @Override
     public void update(Routing.Rules rules) {
-        rules.get("/", (req, res) -> res.send("Context: " + securityContext));
+        rules.get("/", (req, res) -> res.send("Security: " + security));
     }
 }

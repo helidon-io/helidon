@@ -46,13 +46,10 @@
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
             <artifactId>helidon-microprofile</artifactId>
-            <exclusions>
-                <exclusion>
-                    <!-- this library uses method handles and that is not (maybe yet) supported by native-image -->
-                    <groupId>io.helidon.config</groupId>
-                    <artifactId>helidon-config-object-mapping</artifactId>
-                </exclusion>
-            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.security.providers</groupId>
+            <artifactId>helidon-security-providers-oidc</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.tracing</groupId>
@@ -95,6 +92,11 @@
             <plugin>
                 <groupId>org.jboss.jandex</groupId>
                 <artifactId>jandex-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>make-index</id>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

@@ -26,10 +26,4 @@
         <property name="deploymentExportPath">target/deployments</property>
         <property name="port">8080</property>
     </engine>
-
-    <container qualifier="helidon-embedded" default="true">
-        <configuration>
-            <property name="addResourcesToApps">true</property>
-        </configuration>
-    </container>
 </arquillian>

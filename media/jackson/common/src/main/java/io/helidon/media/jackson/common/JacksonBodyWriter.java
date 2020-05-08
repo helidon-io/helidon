@@ -56,7 +56,7 @@ public final class JacksonBodyWriter implements MessageBodyWriter<Object> {
 
         MediaType contentType = context.findAccepted(MediaType.JSON_PREDICATE, MediaType.APPLICATION_JSON);
         context.contentType(contentType);
-        return content.mapMany(new ObjectToChunks(objectMapper, context.charset()));
+        return content.flatMap(new ObjectToChunks(objectMapper, context.charset()));
     }
 
     /**
