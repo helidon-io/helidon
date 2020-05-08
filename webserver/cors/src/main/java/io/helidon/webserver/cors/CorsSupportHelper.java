@@ -164,7 +164,7 @@ class CorsSupportHelper<Q, R> {
 
     private CorsSupportHelper(Builder<Q, R>  builder) {
         name = builder.name;
-        aggregator = builder.aggregator;
+        aggregator = builder.aggregatorBuilder.build();
         secondaryCrossOriginLookup = builder.secondaryCrossOriginLookup;
     }
 
@@ -187,8 +187,9 @@ class CorsSupportHelper<Q, R> {
 
         private Supplier<Optional<CrossOriginConfig>> secondaryCrossOriginLookup = EMPTY_SECONDARY_SUPPLIER;
 
-        private final Aggregator aggregator = Aggregator.create();
+        private final Aggregator.Builder aggregatorBuilder = Aggregator.builder();
         private String name;
+        private boolean requestDefaultBehaviorIfNone;
 
         /**
          * Sets the supplier for the secondary lookup of CORS information (typically <em>not</em> contained in
@@ -209,7 +210,7 @@ class CorsSupportHelper<Q, R> {
          * @return updated builder
          */
         public Builder<Q, R> config(Config config) {
-            aggregator.config(config);
+            aggregatorBuilder.config(config);
             return this;
         }
 
@@ -220,7 +221,7 @@ class CorsSupportHelper<Q, R> {
          * @return updated builder
          */
         public Builder<Q, R> mappedConfig(Config config) {
-            aggregator.mappedConfig(config);
+            aggregatorBuilder.mappedConfig(config);
             return this;
         }
 
@@ -236,12 +237,26 @@ class CorsSupportHelper<Q, R> {
             return this;
         }
 
+        public Builder<Q, R> requestDefaultBehaviorIfNone() {
+            requestDefaultBehaviorIfNone = true;
+            return this;
+        }
+
+        private boolean shouldRequestDefaultBehavior() {
+            return requestDefaultBehaviorIfNone
+                    && (secondaryCrossOriginLookup == null || secondaryCrossOriginLookup == EMPTY_SECONDARY_SUPPLIER);
+        }
+
         /**
          * Creates the {@code CorsSupportHelper}.
          *
          * @return initialized {@code CorsSupportHelper}
          */
         public CorsSupportHelper<Q, R> build() {
+            if (shouldRequestDefaultBehavior()) {
+                aggregatorBuilder.requestDefaultBehaviorIfNone();
+            }
+
             CorsSupportHelper<Q, R>  result = new CorsSupportHelper<>(this);
 
             LOGGER.config(() -> String.format("CorsSupportHelper configured as: %s", result.toString()));
@@ -249,8 +264,8 @@ class CorsSupportHelper<Q, R> {
             return result;
         }
 
-        Aggregator aggregator() {
-            return aggregator;
+        Aggregator.Builder aggregatorBuilder() {
+            return aggregatorBuilder;
         }
     }
 
@@ -292,9 +307,6 @@ class CorsSupportHelper<Q, R> {
             return Optional.empty();
         }
 
-        Optional<CrossOriginConfig> crossOrigin = aggregator.lookupCrossOrigin(requestAdapter.path(),
-                secondaryCrossOriginLookup);
-
         RequestType requestType = requestType(requestAdapter);
 
         if (requestType == RequestType.NORMAL) {
@@ -302,38 +314,22 @@ class CorsSupportHelper<Q, R> {
             return Optional.empty();
         }
 
-        // If this is a CORS request of some sort and there is no matching CORS configuration, deny the request.
-        if (crossOrigin.isEmpty()) {
-            return Optional.of(forbid(requestAdapter, responseAdapter, ORIGIN_DENIED,
-                    () -> "no matching CORS configuration for path " + requestAdapter.path()));
+        switch (requestType) {
+            case PREFLIGHT:
+                return Optional.of(processCorsPreFlightRequest(requestAdapter, responseAdapter));
+
+            case CORS:
+                return processCorsRequest(requestAdapter, responseAdapter);
+
+            default:
+                throw new IllegalArgumentException("Unexpected value for enum RequestType");
         }
-        return processRequest(requestType, crossOrigin.get(), requestAdapter, responseAdapter);
     }
 
     @Override
     public String toString() {
         return String.format("CorsSupportHelper{name='%s', isActive=%s, crossOriginConfigs=%s, secondaryCrossOriginLookup=%s}",
                 name, isActive(), aggregator, secondaryCrossOriginLookup == EMPTY_SECONDARY_SUPPLIER ? "(not set)" : "(set)");
-    }
-
-    Optional<R> processRequest(RequestType requestType, CrossOriginConfig crossOrigin,
-            RequestAdapter<Q> requestAdapter,
-            ResponseAdapter<R> responseAdapter) {
-
-        switch (requestType) {
-            case PREFLIGHT:
-                R result = processCorsPreFlightRequest(crossOrigin, requestAdapter,
-                        responseAdapter);
-                return Optional.of(result);
-
-            case CORS:
-                Optional<R> corsResponse = processCorsRequest(crossOrigin, requestAdapter,
-                        responseAdapter);
-                return corsResponse;
-
-            default:
-                throw new IllegalArgumentException("Unexpected value for enum RequestType");
-        }
     }
 
     /**
@@ -359,6 +355,7 @@ class CorsSupportHelper<Q, R> {
         if (requestType == RequestType.CORS) {
             CrossOriginConfig crossOrigin = aggregator.lookupCrossOrigin(
                             requestAdapter.path(),
+                            requestAdapter.method(),
                             secondaryCrossOriginLookup)
                     .orElseThrow(() -> new IllegalArgumentException(
                             "Could not locate expected CORS information while preparing response to request " + requestAdapter));
@@ -418,16 +415,23 @@ class CorsSupportHelper<Q, R> {
      * Validates information about an incoming request as a CORS request and, if anything is wrong with CORS information,
      * returns an {@code Optional} error response reporting the problem.
      *
-     * @param crossOriginConfig the CORS settings to apply to this request
      * @param requestAdapter abstraction of a request
      * @param responseAdapter abstraction of a response
      * @return Optional of an error response if the request was an invalid CORS request; Optional.empty() if it was a
      *         valid CORS request
      */
     Optional<R> processCorsRequest(
-            CrossOriginConfig crossOriginConfig,
             RequestAdapter<Q> requestAdapter,
             ResponseAdapter<R> responseAdapter) {
+
+        Optional<CrossOriginConfig> crossOriginOpt = aggregator.lookupCrossOrigin(requestAdapter.path(), requestAdapter.method(),
+                secondaryCrossOriginLookup);
+        if (crossOriginOpt.isEmpty()) {
+            return Optional.of(forbid(requestAdapter, responseAdapter, ORIGIN_DENIED,
+                    () -> "no matching CORS configuration for path " + requestAdapter.path()));
+        }
+
+        CrossOriginConfig crossOriginConfig = crossOriginOpt.get();
 
         // If enabled but not whitelisted, deny request
         List<String> allowedOrigins = Arrays.asList(crossOriginConfig.allowOrigins());
@@ -487,19 +491,29 @@ class CorsSupportHelper<Q, R> {
      * Having determined that we have a pre-flight request, we will always return either a forbidden or a successful response.
      * </p>
      *
-     * @param crossOrigin the CORS settings to apply to this request
      * @param requestAdapter the request adapter
      * @param responseAdapter the response adapter
      * @return the response returned by the response adapter with CORS-related headers set (for a successful CORS preflight)
      */
-    R processCorsPreFlightRequest(CrossOriginConfig crossOrigin,
-            RequestAdapter<Q> requestAdapter,
-            ResponseAdapter<R> responseAdapter) {
+    R processCorsPreFlightRequest(RequestAdapter<Q> requestAdapter, ResponseAdapter<R> responseAdapter) {
 
         Optional<String> originOpt = requestAdapter.firstHeader(ORIGIN);
         if (originOpt.isEmpty()) {
             return forbid(requestAdapter, responseAdapter, noRequiredHeader(ORIGIN));
         }
+
+        // Access-Control-Request-Method had to be present in order for this to be assessed as a preflight request.
+        String requestedMethod = requestAdapter.firstHeader(ACCESS_CONTROL_REQUEST_METHOD).get();
+
+        // Lookup the CrossOriginConfig using the requested method, not the current method (which we know is OPTIONS).
+        Optional<CrossOriginConfig> crossOriginOpt = aggregator.lookupCrossOrigin(
+                requestAdapter.path(), requestedMethod, secondaryCrossOriginLookup);
+        if (crossOriginOpt.isEmpty()) {
+            return forbid(requestAdapter, responseAdapter, ORIGIN_DENIED,
+                    () -> String.format("no matching CORS configuration for path %s and requested method %s",
+                            requestAdapter.path(), requestedMethod));
+        }
+        CrossOriginConfig crossOrigin = crossOriginOpt.get();
 
         // If enabled but not whitelisted, deny request
         List<String> allowedOrigins = Arrays.asList(crossOrigin.allowOrigins());
@@ -510,26 +524,16 @@ class CorsSupportHelper<Q, R> {
                     () -> "actual origin: " + originOpt.get() + ", allowedOrigins: " + allowedOrigins);
         }
 
-        Optional<String> methodOpt = requestAdapter.firstHeader(ACCESS_CONTROL_REQUEST_METHOD);
-        if (methodOpt.isEmpty()) {
-            return forbid(requestAdapter,
-                    responseAdapter,
-                    METHOD_NOT_IN_ALLOWED_LIST,
-                    () -> "header " + ACCESS_CONTROL_REQUEST_METHOD + " absent from request");
-        }
-
         // Check if method is allowed
-        String method = methodOpt.get();
         List<String> allowedMethods = Arrays.asList(crossOrigin.allowMethods());
         if (!allowedMethods.contains("*")
-                && !contains(method, allowedMethods, String::equals)) {
+                && !contains(requestedMethod, allowedMethods, String::equalsIgnoreCase)) {
             return forbid(requestAdapter,
                     responseAdapter,
                     METHOD_NOT_IN_ALLOWED_LIST,
-                    () -> String.format("header %s had value %s but allowedMethods is %s", ACCESS_CONTROL_REQUEST_METHOD,
-                            methodOpt.get(), allowedMethods));
+                    () -> String.format("header %s requested method %s but allowedMethods is %s", ACCESS_CONTROL_REQUEST_METHOD,
+                            requestedMethod, allowedMethods));
         }
-
         // Check if headers are allowed
         Set<String> requestHeaders = parseHeader(requestAdapter.allHeaders(ACCESS_CONTROL_REQUEST_HEADERS));
         List<String> allowedHeaders = Arrays.asList(crossOrigin.allowHeaders());
@@ -548,7 +552,7 @@ class CorsSupportHelper<Q, R> {
         if (crossOrigin.allowCredentials()) {
             headers.add(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true", "allowCredentials config was set");
         }
-        headers.add(ACCESS_CONTROL_ALLOW_METHODS, method);
+        headers.add(ACCESS_CONTROL_ALLOW_METHODS, requestedMethod);
         formatHeader(requestHeaders.toArray()).ifPresent(
                 h -> headers.add(ACCESS_CONTROL_ALLOW_HEADERS, h));
         long maxAgeSeconds = crossOrigin.maxAgeSeconds();

@@ -30,7 +30,8 @@
 :filter-java: {mp-openapi-prefix}/api/src/main/java/org/eclipse/microprofile/openapi/OASFilter.java
 :helidon-tag: https://github.com/oracle/helidon/tree/{helidon-version}
 :quickstart-example: {helidon-tag}/examples/quickstarts/helidon-quickstart-se
-
+:javadoc-base-url-api: {javadoc-base-url}io.helidon.webserver.cors/io/helidon/webserver/cors
+:javadoc-base-url-webserver: {javadoc-base-url}io.helidon.webserver/io/helidon/webserver
 
 link:{cors-spec}[Cross-origin resource sharing] (CORS) support in Helidon SE provides a flexible
 mechanism that allows a Helidon SE application to control how other web applications can access its resources, even if that web application is not served from the same domain.
@@ -51,7 +52,7 @@ simple requests and stricter for others. In practice, you can use as many types 
 your application.
 
 . Add the CORS dependencies to the Maven `pom.xml` file.
-. Add the CORS support in your application. (LINK)
+. Add the CORS support in your application. See <<adding-cors-support>>.
 
 The <<about/04_managing-dependencies.adoc, Managing Dependencies>> page describes how you
 should declare dependency management for Helidon applications. For CORS support, you must include
@@ -65,16 +66,16 @@ the following dependency in your project:
 </dependency>
 ----
 
-== Adding CORS Support in Your Helidon SE Application
+== Adding CORS Support in Your Helidon SE Application [[adding-cors-support]]
 Because Helidon SE does not use annotation processing to identify endpoints, you need to
 provide the CORS information for your application another way.
 
 The high-level process for adding CORS support in your Helidon SE application is:
 
-. Create a `CrossOriginConfig` instance for each type of resource sharing that you decided your application should provide.
+. Create a link:{javadoc-base-url-api}/CrossOriginConfig.html[`CrossOriginConfig`] instance for each type of resource sharing that you decided your application should provide.
 The `CrossOriginConfig` Java class represents the details for a particular type of sharing.
 
-. Create a `CorsSupport` instance that includes the `CrossOriginConfig` instances from the previous step.
+. Create a link:{javadoc-base-url-api}/CorsSupport.html[`CorsSupport`] instance that includes the `CrossOriginConfig` instances from the previous step.
 .  Use that `CorsSupport` instance to set up the routing rules.
 
 Each of these classes has an associated builder.

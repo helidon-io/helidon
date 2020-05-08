@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,30 @@
  * limitations under the License.
  */
 
+import io.helidon.media.common.spi.MediaSupportProvider;
+import io.helidon.media.jackson.common.JacksonSupport;
+import io.helidon.media.jackson.common.JacksonProvider;
+
 /**
  * Jackson support common classes.
  *
- * @see io.helidon.media.jackson.common.JacksonProcessing
+ * @see JacksonSupport
  */
 module io.helidon.media.jackson.common {
 
     requires com.fasterxml.jackson.databind;
     requires com.fasterxml.jackson.core;
+    requires com.fasterxml.jackson.datatype.jdk8;
+    requires com.fasterxml.jackson.datatype.jsr310;
+    requires com.fasterxml.jackson.module.paramnames;
     requires io.helidon.common;
     requires io.helidon.common.http;
     requires io.helidon.common.mapper;
     requires io.helidon.common.reactive;
     requires io.helidon.media.common;
+    requires io.helidon.config;
+
     exports io.helidon.media.jackson.common;
+
+    provides MediaSupportProvider with JacksonProvider;
 }

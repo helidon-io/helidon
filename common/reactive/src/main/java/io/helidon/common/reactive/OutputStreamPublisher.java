@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,15 @@ package io.helidon.common.reactive;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.time.Duration;
 import java.util.Objects;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Flow;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Output stream that {@link java.util.concurrent.Flow.Publisher} publishes any data written to it as {@link ByteBuffer}
@@ -30,6 +35,8 @@ import java.util.concurrent.Flow;
  */
 @SuppressWarnings("WeakerAccess")
 public class OutputStreamPublisher extends OutputStream implements Flow.Publisher<ByteBuffer> {
+
+    private static final long HARD_TIMEOUT_MILLIS = Duration.ofMinutes(10).toMillis();
 
     private static final byte[] FLUSH_BUFFER = new byte[0];
 
@@ -39,6 +46,7 @@ public class OutputStreamPublisher extends OutputStream implements Flow.Publishe
     private final RequestedCounter requested = new RequestedCounter();
 
     private final CompletableFuture<?> completionResult = new CompletableFuture<>();
+    private final AtomicBoolean written = new AtomicBoolean();
 
     @Override
     public void subscribe(Flow.Subscriber<? super ByteBuffer> subscriberParam) {
@@ -52,6 +60,9 @@ public class OutputStreamPublisher extends OutputStream implements Flow.Publishe
                 @Override
                 public void cancel() {
                     subscriber.cancel();
+                    // when write is called, an exception is thrown as it is a cancelled subscriber
+                    // when close is called, we do not throw an exception, as that should be silent
+                    completionResult.complete(null);
                 }
             });
         }
@@ -76,13 +87,22 @@ public class OutputStreamPublisher extends OutputStream implements Flow.Publishe
     @Override
     public void close() throws IOException {
         complete();
+
+        if (!written.get() && !completionResult.isCompletedExceptionally()) {
+            // no need to wait for
+            return;
+        }
         try {
-            completionResult.get();
+            completionResult.get(HARD_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
+        } catch (CancellationException e) {
+            throw new IOException(e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IOException(e);
         } catch (ExecutionException e) {
             throw new IOException(e.getCause());
+        } catch (TimeoutException e) {
+            throw new IOException("Timed out while waiting for subscriber to read data", e);
         }
     }
 
@@ -103,7 +123,7 @@ public class OutputStreamPublisher extends OutputStream implements Flow.Publishe
      * @param throwable represents a completion error condition that should be thrown when a {@code close()} method is invoked
      *                  on this publishing output stream. If set to {@code null}, the {@code close()} method will exit normally.
      */
-    public void signalCloseComplete(Throwable throwable) {
+    void signalCloseComplete(Throwable throwable) {
         if (throwable == null) {
             completionResult.complete(null);
         } else {
@@ -124,11 +144,22 @@ public class OutputStreamPublisher extends OutputStream implements Flow.Publishe
     private void publish(byte[] buffer, int offset, int length) throws IOException {
         Objects.requireNonNull(buffer);
 
+        if (length > 0) {
+            written.set(true);
+        }
+
         try {
             final Flow.Subscriber<? super ByteBuffer> sub = subscriber.get();
 
+            long start = System.currentTimeMillis();
+
             while (!subscriber.isClosed() && !requested.tryDecrement()) {
                 Thread.sleep(250); // wait until some data can be sent or the stream has been closed
+
+                long diff = System.currentTimeMillis() - start;
+                if (diff > HARD_TIMEOUT_MILLIS) {
+                    throw new IOException("Timed out while waiting for subscriber to read data");
+                }
             }
 
             synchronized (invocationLock) {
@@ -155,6 +186,7 @@ public class OutputStreamPublisher extends OutputStream implements Flow.Publishe
         subscriber.close(sub -> {
             synchronized (invocationLock) {
                 sub.onComplete();
+                signalCloseComplete(null);
             }
         });
     }
@@ -163,6 +195,7 @@ public class OutputStreamPublisher extends OutputStream implements Flow.Publishe
         subscriber.close(sub -> {
             synchronized (invocationLock) {
                 sub.onError(t);
+                signalCloseComplete(t);
             }
         });
     }
@@ -180,6 +213,6 @@ public class OutputStreamPublisher extends OutputStream implements Flow.Publishe
     private ByteBuffer createBuffer(byte[] buffer, int offset, int length) {
         ByteBuffer byteBuffer = ByteBuffer.allocate(length - offset);
         byteBuffer.put(buffer, offset, length);
-        return (ByteBuffer) byteBuffer.clear();     // resets counters
+        return byteBuffer.clear();     // resets counters
     }
 }

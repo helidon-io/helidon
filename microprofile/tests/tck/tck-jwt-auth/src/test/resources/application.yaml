@@ -1,0 +1,4 @@
+# Configure this source as the least important one
+config_ordinal: 0
+mp.jwt.verify.issuer:  "https://server.example.com"
+helidon.mp.jwt.verify.publickey.location: "/publicKey.pem"

@@ -35,7 +35,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.helidon.config.spi.ConfigFilter;
-import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 
 /**
@@ -133,8 +132,7 @@ class ProviderImpl implements Config.Context {
                                                   rootNode.orElseGet(ObjectNode::empty),
                                                   targetFilter,
                                                   this,
-                                                  aliasGenerator,
-                                                  configSource.allSources());
+                                                  aliasGenerator);
         AbstractConfigImpl config = factory.config();
         // initialize filters
         initializeFilters(config, targetFilter);
@@ -148,7 +146,7 @@ class ProviderImpl implements Config.Context {
     private ObjectNode resolveKeys(ObjectNode rootNode) {
         Function<String, String> resolveTokenFunction = Function.identity();
         if (keyResolving) {
-            Map<String, String> flattenValueNodes = flattenNodes(rootNode);
+            Map<String, String> flattenValueNodes = ConfigHelper.flattenNodes(rootNode);
 
             if (flattenValueNodes.isEmpty()) {
                 return rootNode;
@@ -164,15 +162,6 @@ class ProviderImpl implements Config.Context {
             };
         }
         return ObjectNodeBuilderImpl.create(rootNode, resolveTokenFunction).build();
-    }
-
-    private Map<String, String> flattenNodes(ConfigNode node) {
-        return ConfigHelper.flattenNodes(ConfigKeyImpl.of(), node)
-                .filter(e -> e.getValue() instanceof ValueNodeImpl)
-                .collect(Collectors.toMap(
-                        e -> e.getKey().toString(),
-                        e -> Config.Key.escapeName(((ValueNodeImpl) e.getValue()).get())
-                ));
     }
 
     private Map<String, String> tokenToValueMap(Map<String, String> flattenValueNodes) {
@@ -253,7 +242,6 @@ class ProviderImpl implements Config.Context {
 
         filterProviders.stream()
                 .map(providerFunction -> providerFunction.apply(config))
-                .sorted(ConfigUtils.priorityComparator(ConfigFilter.PRIORITY))
                 .forEachOrdered(chain::addFilter);
 
         chain.filterProviders.stream()

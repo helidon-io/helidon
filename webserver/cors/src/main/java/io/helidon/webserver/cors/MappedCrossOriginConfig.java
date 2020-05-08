@@ -25,8 +25,6 @@ import java.util.function.BiConsumer;
 
 import io.helidon.config.Config;
 
-import static io.helidon.webserver.cors.CorsSupportHelper.normalize;
-
 /**
  * Cross-origin {@link CrossOriginConfig} instances linked to paths, plus an {@code enabled} setting. Most developers will not
  * need to use this directly from their applications.
@@ -144,7 +142,7 @@ public class MappedCrossOriginConfig implements Iterable<Map.Entry<String, Cross
      * @return {@code Optional} of the corresponding basic cross-origin information
      */
     public CrossOriginConfig get(String pathExpr) {
-        Buildable b = buildables.get(normalize(pathExpr));
+        Buildable b = buildables.get(pathExpr);
         return b == null ? null : b.get();
     }
 
@@ -216,7 +214,7 @@ public class MappedCrossOriginConfig implements Iterable<Map.Entry<String, Cross
          * @return updated builder
          */
         public Builder put(String path, CrossOriginConfig.Builder builder) {
-            builders.put(normalize(path), new Buildable(builder));
+            builders.put(path, new Buildable(builder));
             return this;
         }
 

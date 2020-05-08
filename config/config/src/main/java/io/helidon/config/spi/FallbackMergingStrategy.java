@@ -50,14 +50,17 @@ final class FallbackMergingStrategy implements MergingStrategy {
         return builder.build();
     }
 
-    private static ObjectNode.Builder addNode(ObjectNode.Builder builder, String key, ConfigNode node) {
+    private static void addNode(ObjectNode.Builder builder, String key, ConfigNode node) {
         switch (node.nodeType()) {
         case OBJECT:
-            return builder.addObject(key, (ObjectNode) node);
+            builder.addObject(key, (ObjectNode) node);
+            return;
         case LIST:
-            return builder.addList(key, (ListNode) node);
+            builder.addList(key, (ListNode) node);
+            return;
         case VALUE:
-            return builder.addValue(key, (ValueNode) node);
+            builder.addValue(key, (ValueNode) node);
+            return;
         default:
             throw new IllegalArgumentException("Unsupported node type: " + node.getClass().getName());
         }

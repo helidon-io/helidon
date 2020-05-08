@@ -31,6 +31,7 @@ module helidon.tests.nimage.mp {
     requires microprofile.rest.client.api;
     requires microprofile.metrics.api;
     requires java.json.bind;
+    requires microprofile.config.api;
 
     exports io.helidon.tests.integration.nativeimage.mp1;
 

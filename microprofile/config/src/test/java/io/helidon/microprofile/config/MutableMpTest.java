@@ -118,7 +118,9 @@ public class MutableMpTest {
 
         public void setValue(String value) {
             this.value.set(value);
-            listener.accept("value", value);
+            if (null != listener) {
+                listener.accept("value", value);
+            }
         }
     }
 }

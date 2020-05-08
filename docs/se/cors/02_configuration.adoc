@@ -17,8 +17,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Using Configuration for CORS
-:javadoc-base-url-api: {javadoc-base-url}?io/helidon/webserver/cors
-:javadoc-base-url-webserver: {javadoc-base-url}?io/helidon/webserver
+:javadoc-base-url-api: {javadoc-base-url}io.helidon.webserver.cors/io/helidon/webserver/cors
+:javadoc-base-url-webserver: {javadoc-base-url}io.helidon.webserver/io/helidon/webserver
 :pagename: cors-configuration
 :description: Helidon CORS Configuration
 :keywords: helidon, java, cors, configuration
@@ -30,6 +30,7 @@ Your application can use configuration in setting up CORS behavior.
 == Understanding CORS Configuration Formats
 The support in Helidon for CORS configuration works with two closely-related formats. Each corresponds to a class
 in the Helidon CORS library which holds CORS information.
+// tag::basic-config[]
 
 === Basic Cross-Origin Configuration
 Cross-origin configuration is the basic building block of CORS information. The table below defines the methods on the `CrossOriginConfig.Builder` class and the configuration keys that map to the headers defined in the CORS protocol.
@@ -60,6 +61,7 @@ restrictive-cors:
   allow-methods: ["PUT", "DELETE"]
 ...
 ----
+// tag::mapped-config[]
 
 === Mapped Cross-Origin Configuration
 In some cases, you or your users might want to configure CORS behavior based on URL path matching. The following example of the  _mapped_
@@ -87,6 +89,7 @@ link:{javadoc-base-url-webserver}/PathMatcher.html[`PathMatcher`] class.
 Arrange the entries in the order that you want Helidon to check them. Usually this is from most specific to most general.
 Helidon CORS support searches the cross-origin entries in the order you define them until it finds an entry that
 matches an incoming request's path expression and HTTP method.
+// end::mapped-config[]
 
 You might want to avoid using mapped configuration to set up the _normal_ CORS behavior in your application, because you have to
 make sure the paths are the same in the configuration and in the code that establishes routing for your application.
@@ -112,7 +115,7 @@ config.get("my-cors") // <1>
     .ifExists(builder::mappedConfig);
 
 config.get("restrictive-cors") // <2>
-    .ifExixts(builder::config);
+    .ifExists(builder::config);
 
 builder.addCrossOriginConfig(CrossOriginConfig.create()); // <3>
 

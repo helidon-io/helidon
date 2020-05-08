@@ -41,7 +41,7 @@ public abstract class AbstractSourceBuilder<B extends AbstractSourceBuilder<B, U
     private boolean optional = false;
 
     @SuppressWarnings("unchecked")
-    private B me = (B) this;
+    private final B me = (B) this;
 
     /**
      * Configure builder from meta configuration.

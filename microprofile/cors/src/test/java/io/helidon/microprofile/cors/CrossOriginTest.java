@@ -19,6 +19,7 @@ package io.helidon.microprofile.cors;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.RequestScoped;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
 import javax.ws.rs.HttpMethod;
 import javax.ws.rs.OPTIONS;
 import javax.ws.rs.PUT;
@@ -84,7 +85,7 @@ public class CrossOriginTest {
 
         @Override
         public Set<Class<?>> getClasses() {
-            return Set.of(CorsResource1.class, CorsResource2.class, CorsResource3.class);
+            return Set.of(CorsResource0.class, CorsResource1.class, CorsResource2.class, CorsResource3.class);
         }
     }
 
@@ -144,6 +145,34 @@ public class CrossOriginTest {
         @PUT
         public Response putCors() {
             return Response.ok().build();
+        }
+    }
+
+    @RequestScoped
+    @Path("/cors0")
+    static public class CorsResource0 {
+
+        @PUT
+        @Path("/subpath")
+        public Response put() {
+            return Response.ok().build();
+        }
+
+        @GET
+        public Response get() {
+            return Response.ok().build();
+        }
+
+        @OPTIONS
+        @CrossOrigin(value = {"http://foo.bar", "http://bar.foo"},
+                allowMethods = {"PUT"})
+        @Path("/subpath")
+        public void optionsForSubpath() {
+        }
+
+        @OPTIONS
+        @CrossOrigin()
+        public void optionsForMainPath() {
         }
     }
 
@@ -352,5 +381,41 @@ public class CrossOriginTest {
                 .put(Entity.entity("", MediaType.TEXT_PLAIN_TYPE));
         assertThat(res.getStatusInfo(), is(Response.Status.NOT_FOUND));
         assertThat(res.getHeaders().containsKey(ACCESS_CONTROL_ALLOW_ORIGIN), is(false));
+    }
+
+    @Test
+    void testMainPathInPresenceOfSubpath() {
+        Response res = target.path("/app/cors0")
+                .request()
+                .header(ORIGIN, "http://foo.bar")
+                .get();
+        assertThat(res.getStatusInfo(), is(Response.Status.OK));
+        assertThat(res.getHeaders().containsKey(ACCESS_CONTROL_ALLOW_ORIGIN), is(true));
+        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN), is("*"));
+    }
+
+    @Test
+    void testSubPathPreflightAllowed() {
+        Response res = target.path("/app/cors0/subpath")
+                .request()
+                .header(ORIGIN, "http://foo.bar")
+                .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
+                .options();
+        assertThat(res.getStatusInfo(), is(Response.Status.OK));
+        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN), is("http://foo.bar"));
+        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_METHODS), is("PUT"));
+        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_HEADERS), is(nullValue()));
+        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_MAX_AGE), is("3600"));
+    }
+
+    @Test
+    void testSubPathActualAllowed() {
+        Response res = target.path("/app/cors0/subpath")
+                .request()
+                .header(ORIGIN, "http://foo.bar")
+                .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
+                .put(Entity.entity("", MediaType.TEXT_PLAIN_TYPE));
+        assertThat(res.getStatusInfo(), is(Response.Status.OK));
+        assertThat(res.getHeaders().getFirst(ACCESS_CONTROL_ALLOW_ORIGIN), is("http://foo.bar"));
     }
 }

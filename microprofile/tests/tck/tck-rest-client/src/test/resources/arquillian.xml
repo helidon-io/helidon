@@ -27,8 +27,6 @@
 
     <container qualifier="helidon-embedded" default="true">
         <configuration>
-            <property name="addResourcesToApps">false</property>
-            <property name="replaceConfigSourcesWithMp">true</property>
             <property name="useRelativePath">false</property>
         </configuration>
     </container>

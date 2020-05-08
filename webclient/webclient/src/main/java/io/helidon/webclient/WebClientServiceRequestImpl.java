@@ -16,11 +16,12 @@
 package io.helidon.webclient;
 
 import java.net.URI;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 import io.helidon.common.context.Context;
-import io.helidon.common.http.HashParameters;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Parameters;
 
@@ -38,7 +39,7 @@ class WebClientServiceRequestImpl implements WebClientServiceRequest {
     private final Parameters queryParams;
     private final Path path;
     private final String fragment;
-    private final HashParameters parameters;
+    private final Map<String, String> parameters;
     private final CompletionStage<WebClientServiceRequest> sent;
     private final CompletableFuture<WebClientServiceResponse> responseReceived;
     private final CompletableFuture<WebClientServiceResponse> complete;
@@ -57,7 +58,7 @@ class WebClientServiceRequestImpl implements WebClientServiceRequest {
         this.queryParams = queryParams();
         this.path = requestBuilder.path();
         this.fragment = requestBuilder.fragment();
-        this.parameters = HashParameters.create(requestBuilder.properties());
+        this.parameters = new HashMap<>(requestBuilder.properties());
         this.sent = sent;
         this.complete = complete;
     }
@@ -88,7 +89,7 @@ class WebClientServiceRequestImpl implements WebClientServiceRequest {
     }
 
     @Override
-    public Parameters properties() {
+    public Map<String, String> properties() {
         return parameters;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -172,7 +172,7 @@ public interface ConfigValue<T> {
         Objects.requireNonNull(supplier);
 
         Optional<T> optional = asOptional();
-        if (!optional.isPresent()) {
+        if (optional.isEmpty()) {
             Optional<T> supplied = supplier.get();
             Objects.requireNonNull(supplied);
             optional = supplied;
@@ -348,6 +348,6 @@ public interface ConfigValue<T> {
      * @return the optional value as a {@code Stream}
      */
     default Stream<T> stream() {
-        return asOptional().map(Stream::of).orElseGet(Stream::empty);
+        return asOptional().stream();
     }
 }

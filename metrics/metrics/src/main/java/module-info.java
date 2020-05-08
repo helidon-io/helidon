@@ -29,6 +29,8 @@ module io.helidon.metrics {
     requires io.helidon.webserver;
     requires io.helidon.media.jsonp.server;
     requires java.json;
+    requires io.helidon.config.mp;
+    requires microprofile.config.api;
 
     provides io.helidon.common.metrics.InternalBridge
             with io.helidon.metrics.InternalBridgeImpl;

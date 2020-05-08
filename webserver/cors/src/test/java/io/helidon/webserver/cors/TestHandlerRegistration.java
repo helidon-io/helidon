@@ -68,7 +68,7 @@ public class TestHandlerRegistration {
         @Test
     void test4PreFlightAllowedHeaders2() throws ExecutionException, InterruptedException {
         WebClientRequestBuilder reqBuilder = client
-                .method(Http.Method.OPTIONS.name())
+                .options()
                 .path(CORS4_CONTEXT_ROOT);
 
         Headers headers = reqBuilder.headers();
