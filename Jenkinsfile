@@ -18,6 +18,9 @@ pipeline {
   agent {
     label "linux"
   }
+  options {
+    parallelsAlwaysFailFast()
+  }
   environment {
     NPM_CONFIG_REGISTRY = credentials('npm-registry')
   }
