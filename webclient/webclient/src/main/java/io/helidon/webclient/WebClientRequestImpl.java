@@ -16,7 +16,6 @@
 package io.helidon.webclient;
 
 import java.net.URI;
-import java.util.List;
 import java.util.Map;
 
 import io.helidon.common.http.Http;
@@ -39,7 +38,7 @@ class WebClientRequestImpl implements WebClientRequestBuilder.ClientRequest {
     private final String query;
     private final String fragment;
     private final int redirectionCount;
-    private final Map<String, List<String>> properties;
+    private final Map<String, String> properties;
 
     WebClientRequestImpl(WebClientRequestBuilderImpl builder) {
         clientRequestHeaders = new WebClientRequestHeadersImpl(builder.headers());
@@ -53,7 +52,16 @@ class WebClientRequestImpl implements WebClientRequestBuilder.ClientRequest {
         requestConfiguration = builder.requestConfiguration();
         proxy = builder.proxy();
         redirectionCount = builder.redirectionCount();
-        properties = builder.properties();
+        properties = Map.copyOf(builder.properties());
+    }
+
+    /**
+     * Request configuration.
+     *
+     * @return configuration
+     */
+    RequestConfiguration configuration() {
+        return requestConfiguration;
     }
 
     @Override
@@ -61,13 +69,9 @@ class WebClientRequestImpl implements WebClientRequestBuilder.ClientRequest {
         return clientRequestHeaders;
     }
 
-    @Override
-    public RequestConfiguration configuration() {
-        return requestConfiguration;
-    }
 
     @Override
-    public Map<String, List<String>> properties() {
+    public Map<String, String> properties() {
         return properties;
     }
 

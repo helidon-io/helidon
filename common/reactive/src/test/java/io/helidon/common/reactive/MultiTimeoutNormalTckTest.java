@@ -33,7 +33,7 @@ public class MultiTimeoutNormalTckTest extends FlowPublisherVerification<Long> {
     private static ScheduledExecutorService executor;
 
     public MultiTimeoutNormalTckTest() {
-        super(new TestEnvironment(50));
+        super(new TestEnvironment(200));
     }
 
     @Override

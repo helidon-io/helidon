@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -38,6 +37,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -62,19 +63,23 @@ import javax.inject.Provider;
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
 import io.helidon.common.NativeImageHelper;
-import io.helidon.config.Config;
-import io.helidon.config.MissingValueException;
+import io.helidon.config.mp.MpConfig;
+import io.helidon.config.mp.MpConfigImpl;
+import io.helidon.config.mp.MpConfigProviderResolver;
 
+import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
 /**
- * Extension to enable config injection in CDI container (all of {@link Config}, {@link org.eclipse.microprofile.config.Config}
- * and {@link ConfigProperty}).
+ * Extension to enable config injection in CDI container (all of {@link io.helidon.config.Config},
+ * {@link org.eclipse.microprofile.config.Config} and {@link ConfigProperty}).
  */
 public class ConfigCdiExtension implements Extension {
     private static final Logger LOGGER = Logger.getLogger(ConfigCdiExtension.class.getName());
+    private static final Pattern SPLIT_PATTERN = Pattern.compile("(?<!\\\\),");
+    private static final Pattern ESCAPED_COMMA_PATTERN = Pattern.compile("\\,", Pattern.LITERAL);
     private static final Annotation CONFIG_PROPERTY_LITERAL = new ConfigProperty() {
         @Override
         public String name() {
@@ -111,7 +116,6 @@ public class ConfigCdiExtension implements Extension {
     }
 
     private final List<InjectionPoint> ips = new LinkedList<>();
-    private Config runtimeHelidonConfig;
 
     /**
      * Constructor invoked by CDI container.
@@ -174,10 +178,17 @@ public class ConfigCdiExtension implements Extension {
                 .createWith(creationalContext -> new SerializableConfig());
 
         abd.addBean()
-                .addTransitiveTypeClosure(Config.class)
-                .beanClass(Config.class)
+                .addTransitiveTypeClosure(io.helidon.config.Config.class)
+                .beanClass(io.helidon.config.Config.class)
                 .scope(ApplicationScoped.class)
-                .createWith(creationalContext -> (Config) ConfigProvider.getConfig());
+                .createWith(creationalContext -> {
+                    Config config = ConfigProvider.getConfig();
+                    if (config instanceof io.helidon.config.Config) {
+                        return config;
+                    } else {
+                        return MpConfig.toHelidonConfig(config);
+                    }
+                });
 
         Set<Type> types = ips.stream()
                 .map(InjectionPoint::getType)
@@ -233,7 +244,7 @@ public class ConfigCdiExtension implements Extension {
             // this is build-time of native-image - e.g. run from command line or maven
             // logging may not be working/configured to deliver this message as it should
             System.err.println("You are accessing configuration key '" + configKey + "' during"
-                                       + " container initialization. This will not work nice with Graal native-image");
+                                       + " container initialization. This will not work nicely with Graal native-image");
         }
 
         Type type = ip.getType();
@@ -255,7 +266,11 @@ public class ConfigCdiExtension implements Extension {
                 Map<String, String> - a detached key/value mapping of whole subtree
              */
         FieldTypes fieldTypes = FieldTypes.create(type);
-        Config config = (Config) ConfigProvider.getConfig();
+        org.eclipse.microprofile.config.Config config = ConfigProvider.getConfig();
+        if (config instanceof MpConfigProviderResolver.ConfigDelegate) {
+            // get the actual instance to have access to Helidon specific methods
+            config = ((MpConfigProviderResolver.ConfigDelegate) config).delegate();
+        }
         String defaultValue = defaultValue(annotation);
         Object value = configValue(config, fieldTypes, configKey, defaultValue);
 
@@ -284,9 +299,31 @@ public class ConfigCdiExtension implements Extension {
     }
 
     private static <T> T withDefault(Config config, String key, Class<T> type, String defaultValue) {
-        return config.get(key)
-                .as(type)
-                .orElseGet(() -> (null == defaultValue) ? null : config.convert(type, defaultValue));
+        return config.getOptionalValue(key, type)
+                .orElseGet(() -> convert(key, config, defaultValue, type));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> T convert(String key, Config config, String value, Class<T> type) {
+        if (null == value) {
+            return null;
+        }
+        if (String.class.equals(type)) {
+            return (T) value;
+        }
+        if (config instanceof MpConfigImpl) {
+            return ((MpConfigImpl) config).getConverter(type)
+                    .orElseThrow(() -> new IllegalArgumentException("Did not find converter for type "
+                                                                            + type.getName()
+                                                                            + ", for key "
+                                                                            + key))
+                    .convert(value);
+        }
+
+        throw new IllegalArgumentException("Helidon CDI MP Config implementation requires Helidon config instance. "
+                                                   + "Current config is " + config.getClass().getName()
+                                                   + ", which is not supported, as we cannot convert arbitrary String values");
+
     }
 
     private static Object parameterizedConfigValue(Config config,
@@ -321,7 +358,13 @@ public class ConfigCdiExtension implements Extension {
                                                                     typeArg2);
             }
         } else if (Map.class.isAssignableFrom(rawType)) {
-            return config.get(configKey).detach().asMap().get();
+            Map<String, String> result = new HashMap<>();
+            config.getPropertyNames()
+                    .forEach(name -> {
+                        // workaround for race condition (if key disappears from source after we call getPropertyNames
+                        config.getOptionalValue(name, String.class).ifPresent(value -> result.put(name, value));
+                    });
+            return result;
         } else if (Set.class.isAssignableFrom(rawType)) {
             return new LinkedHashSet<>(asList(config, configKey, typeArg, defaultValue));
         } else {
@@ -330,32 +373,71 @@ public class ConfigCdiExtension implements Extension {
         }
     }
 
-    private static <T> List<T> asList(Config config, String configKey, Class<T> typeArg, String defaultValue) {
-        try {
-            return config.get(configKey).asList(typeArg).get();
-        } catch (MissingValueException e) {
-            // if default
-            if (null == defaultValue) {
-                //noinspection ThrowInsideCatchBlockWhichIgnoresCaughtException
-                throw new NoSuchElementException("Missing list value for key "
-                                                         + configKey
-                                                         + ", original message: "
-                                                         + e.getMessage());
-            } else {
-                if (defaultValue.isEmpty()) {
-                    return Collections.emptyList();
-                }
+    static String[] toArray(String stringValue) {
+        String[] values = SPLIT_PATTERN.split(stringValue, -1);
 
-                List<T> result = new LinkedList<>();
-
-                String[] values = defaultValue.split(",");
-                for (String value : values) {
-                    result.add(config.convert(typeArg, value));
-                }
-
-                return result;
-            }
+        for (int i = 0; i < values.length; i++) {
+            String value = values[i];
+            values[i] = ESCAPED_COMMA_PATTERN.matcher(value).replaceAll(Matcher.quoteReplacement(","));
         }
+        return values;
+    }
+
+    private static <T> List<T> asList(Config config, String configKey, Class<T> typeArg, String defaultValue) {
+        // first try to see if we have a direct value
+        Optional<String> optionalValue = config.getOptionalValue(configKey, String.class);
+        if (optionalValue.isPresent()) {
+            return toList(configKey, config, optionalValue.get(), typeArg);
+        }
+
+        /*
+         we also support indexed value
+         e.g. for key "my.list" you can have both:
+         my.list=12,13,14
+         or (not and):
+         my.list.0=12
+         my.list.1=13
+         */
+
+        String indexedConfigKey = configKey + ".0";
+        optionalValue = config.getOptionalValue(indexedConfigKey, String.class);
+        if (optionalValue.isPresent()) {
+            List<T> result = new LinkedList<>();
+
+            // first element is already in
+            result.add(convert(indexedConfigKey, config, optionalValue.get(), typeArg));
+
+            // hardcoded limit to lists of 1000 elements
+            for (int i = 1; i < 1000; i++) {
+                indexedConfigKey = configKey + "." + i;
+                optionalValue = config.getOptionalValue(indexedConfigKey, String.class);
+                if (optionalValue.isPresent()) {
+                    result.add(convert(indexedConfigKey, config, optionalValue.get(), typeArg));
+                } else {
+                    // finish the iteration on first missing index
+                    break;
+                }
+            }
+            return result;
+        } else {
+            if (null == defaultValue) {
+                throw new NoSuchElementException("Missing list value for key " + configKey);
+            }
+
+            return toList(configKey, config, defaultValue, typeArg);
+        }
+    }
+
+    private static <T> List<T> toList(String configKey, Config config, String stringValue, Class<T> typeArg) {
+        if (stringValue.isEmpty()) {
+            return List.of();
+        }
+        // we have a comma separated list
+        List<T> result = new LinkedList<>();
+        for (String value : toArray(stringValue)) {
+            result.add(convert(configKey, config, value, typeArg));
+        }
+        return result;
     }
 
     private String defaultValue(ConfigProperty annotation) {

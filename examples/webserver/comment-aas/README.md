@@ -5,7 +5,6 @@ This application allows users to add or read short comments related to a single 
 
 ## Build and run
 
-With JDK8+
 ```bash
 mvn package
 java -jar target/helidon-examples-webserver-comment-aas.jar

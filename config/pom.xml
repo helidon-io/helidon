@@ -46,6 +46,7 @@
         <module>testing</module>
         <module>test-infrastructure</module>
         <module>tests</module>
+        <module>config-mp</module>
     </modules>
 
     <build>

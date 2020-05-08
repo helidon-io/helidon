@@ -16,7 +16,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-:javadoc-base-url-api: {javadoc-base-url}?io/helidon/config
+:javadoc-base-url-api: {javadoc-base-url}io.helidon.config/io/helidon/config
 
 = Extensions
 :description: Helidon config extensions
@@ -49,30 +49,92 @@ Each config extension implements one of the interfaces defined in the Configurat
 //converts a `Config` object tree to a Java type specific to the application.
 //`PollingStrategy`:: Implements a custom technique for notifying the Config system
 //when the data underlying a `ConfigSource` or `OverrideSource` has changed.
-* `ConfigSource` - Loads raw configuration data from a given type of source and
-delegates to a `ConfigParser`, producing the in-memory data structure which
-represents the loaded and parsed configuration.
-* `ConfigParser` - Translates configuration content in a given format into the
-corresponding internal config data structures.
-* `OverrideSource` - Provides key/value pairs which override config values loaded
-from any `ConfigSource`, given the key and _ignoring_ the original value.
+* `ConfigSource` - Loads raw configuration data from a given type of source and delegates to a `ConfigParser`, producing the in-memory data structure which represents the loaded and parsed configuration.
+* `ConfigParser` - Translates configuration content in a given format into the corresponding internal config data structures.
+* `OverrideSource` - Provides key/value pairs which override config values loaded from any `ConfigSource`, given the key and _ignoring_ the original value.
 * `ConfigFilter` - Transforms config `String` values returned from any value-type
 `Config` node, given the key _and_ the original value.
-* `ConfigMapperProvider` - Provides one or more ``ConfigMapper``s each of which
-converts a `Config` object tree to a Java type specific to the application.
-* `PollingStrategy` - Implements a custom technique for notifying the Config system
-when the data underlying a `ConfigSource` or `OverrideSource` has changed.
+* `ConfigMapperProvider` - Provides one or more ``ConfigMapper``s each of which converts a `Config` object tree to a Java type specific to the application.
+* `PollingStrategy` - Implements a custom technique to trigger polling of underlying sources for changes
+* `ChangeWatcher` - Implements a custom technique to watch underlying sources for changes and notifying the config system of such a change
 
-The config system itself implements several of these SPIs, as noted in the sections
-below.
+The extension mechanism of Config can also use Java `ServiceLoader`.
+For this purpose, you implement providers that serve as factories for your implementation of an extension.
+This is to support meta-configuration even for custom extensions.
+Service providers:
+
+* `ConfigMapperProvider` - support for config mappers, automatically discovered by the config system
+* `ConfigFilter` - support for config filters, automatically discovered by the config system
+* `ConfigParser` - support for config parsers, automatically discovered by the config system
+* `ConfigSourceProvider` - support for named config sources, configurable through meta configuration
+* `ChangeWatcherProvider` - support for named change watchers, configurable through meta configuration
+* `OverrideSourceProvider` - support for named override sources, configurable through meta configuration
+* `PollingStrategyProvider` - support for named polling strategies, configurable through meta configuration
+* `RetryPolicyProvider` - support for retry policies, configurable through meta configuration
+
+The config system itself implements several of these SPIs, as noted in the sections below.
+
+== Setting up an extension
+
+You can configure a custom extension in two ways:
+
+1. Manual configuration with builder
+2. Automatic configuration using a Java service loader
+
+=== Manual configuration with builder
+
+The following example shows configuration of all possible extensions with `Config` (all custom extension have a name prefix `My`):
+
+[source,java]
+----
+Config config = Config.builder()
+                .addSource(FileConfigSource.builder()
+                                   .changeWatcher(MyChangeWatcher.create())
+                                   .pollingStrategy(MyPollingStrategy.create())
+                                   .parser(MyConfigParser.create())
+                                   .retryPolicy(MyRetryPolicy.create()))
+                .addSource(MySource.create())
+                .addFilter(MyFilter.create())
+                .overrides(MyOverrides.create())
+                .build()
+----
+
+=== Automatic configuration using a service loader
+
+The following extensions are loaded using a service loader for any configuration instance, and do not require an explicit setup:
+
+* `ConfigParser` - each config parser on the classpath that implements `ConfigParserProvider` as a Java service loader service
+* `ConfigFilter` - each filter on the classpath that implements `ConfigFilter` as a Java service loader service
+
+Other extensions are only used from Java service loader when you use meta configuration.
+Mapping is done through the type configured in meta configuration, and the type defined by the extension provider interface.
+For example for config sources, the interface defines the following methods (only subset shown):
+
+[source,java]
+----
+boolean supports(String type);
+ConfigSource create(String type, Config metaConfig);
+----
+
+Considering the following meta configuration:
+
+[source,yaml]
+----
+sources:
+  - type: "my-type"
+    properties:
+      my-config: "configuration"
+----
+
+The config system would iterate through all `ConfigSourceProvider` implementations found through Java `ServiceLoader` based on their priority.
+First provider that returns `true` when `supports("my-type")` is called would be used, and an instance of a `ConfigSource` created using `create("my-type", config)`, where `config` is located on the node of `properties` from meta configuration.
 
 === About Priority [[priority-info]]
-The config system invokes extensions of a given type in priority order. 
-Developers can express the relative 
-importance of an extension by annotating the implementation class with
-`@javax.annotation.Priority`. The default value is 100. 
-A _lower_ priority value represents _greater_ importance. The sections below for
-each interface tell which SPIs support `@Priority`.
+
+The config system invokes extensions of a given type in priority order.
+Developers can express the relative importance of an extension by annotating the service implementation class with
+`@javax.annotation.Priority`.
+The default value is 100. A _lower_ priority value represents _greater_ importance.
 
 == ConfigSource SPI [[Config-SPI-ConfigSource]]
 
@@ -83,129 +145,176 @@ Implement a link:{javadoc-base-url-api}/spi/ConfigSource.html[`ConfigSource`] to
 load raw configuration data from a type of source that the config system does
 not already support.
 
-[plantuml, config/spi-ConfigSource, png, title="ConfigSource SPI", align="center"]
+[plantuml,config/spi-ConfigSource,png,title="ConfigSource SPI",align="center"]
 ----
 together {
+    hide empty members
+
     interface ConfigSource {
         + void init(ConfigContext context)
-        + Optional<ObjectNode> load()
         ..
         + String description()
-        ..
-        + Flow.Publisher<Optional<ObjectNode>> changes()
+        + boolean exists()
+        + boolean optional()
     }
 
     interface ConfigContext {
-        Optional<ConfigParser> findParser(String mediaType)
+        + ConfigSourceRuntime sourceRuntime(ConfigSource source)
+    }
+
+    interface ParsableSource extends ConfigSource {
+        + Optional<Content> load()
+        + Optional<ConfigParser> parser()
+        + Optoinal<String> mediaType()
+    }
+
+    interface NodeConfigSource extends ConfigSource {
+        + Optional<NodeContent> load()
+    }
+
+    interface LazyConfigSource extends ConfigSource {
+        + Optional<ConfigNode> node(String key)
+    }
+
+    interface PollableSource extends ConfigSource {
+        + isModified(Object stamp)
+        + Optional<PolllingStrategy> pollingStrategy()
+    }
+
+    interface WatchableSource extends ConfigSource {
+        + Class<T> targetType();
+        + T target()
+        + Optional<ChangeWatcher<T>> changeWatcher()
+    }
+
+    interface EventConfigSource extends ConfigSource {
+        + void onChange(BiConsumer<String, ConfigNode> changedNode);
     }
 }
 
 ConfigSource -[hidden]> ConfigContext
+----
 
-together {
-    interface List<E>
-    interface Map<K,V>
-    interface ConfigNode
+For config sources that work directly with config nodes, the followin API is available.
+These interfaces have an implementation provided by Helidon.
+The interfaces `ConfigNode`, `ObjectNode`, `ValueNode` and
+`ListNode` represent the in-memory data structure for loaded and parsed configuration data.
 
-    Map -[hidden]> ConfigNode
-    ConfigNode -[hidden]> List
+[plantuml,config/spi-node,png,title="ConfigNode API",align="center"]
+----
+hide empty members
+
+interface ConfigNode {
+    Optional<String> value()
 }
 
-ConfigSource -[hidden]--> Map
+interface ConfigNode.ValueNode extends ConfigNode {
+    {static} + ValueNode create(String value)
+    + String get()
+}
 
-together {
-    interface ConfigNode.ValueNode extends ConfigNode
-    interface ConfigNode.ListNode extends ConfigNode, List
-    interface ConfigNode.ObjectNode extends ConfigNode, Map
+interface ConfigNode.ListNode extends ConfigNode {
+    {static} + Builder builder()
+}
+note bottom of ConfigNode.ListNode: extends List<ConfigNode>
 
-    interface ConfigNode.ValueNode
-    note bottom: extends Supplier<String>
+interface ConfigNode.ObjectNode extends ConfigNode {
+    {static} + ObjectNode empty()
+    {static} + ObjectNdoe simple(String key, String value)
+    {static} + Builder builder()
+}
+note bottom of ConfigNode.ObjectNode: extends Map<String, ConfigNode>
+----
 
-    interface ConfigNode.ListNode
-    note bottom: extends List<ConfigNode>
+For config sources that work return data (`NodeConfigSource` and `ParsableConfigSource`) a
+`Content` must be returned that describes the loaded data.
+The following diagram depicts the `Content` API.
 
-    interface ConfigNode.ObjectNode
-    note bottom: extends Map<String, ConfigNode>
+[plantuml,config/spi-content,png,title="Content API",align="center"]
+----
+hide empty members
+
+interface ConfigContent {
+    + void close()
+    + Optional<Object> stamp()
+}
+
+interface NodeContent extends ConfigContent {
+    + ConfigNode.ObjectNode data()
+}
+
+interface ConfigParser.Content extends ConfigContent {
+    + Optional<String> mediaType()
+    + Charset charset()
+    + InputStream data()
 }
 ----
 
-The interfaces `ConfigNode`, `ObjectNode`, `ValueNode` and
- `ListNode` represent the in-memory data structure for loaded and parsed configuration data.
+Some of the methods provided are not always mandatory, yet they are part of the APIs to simplify the overall class structure:
 
-//TODO example [P2] Issue #29
-
+* ConfigContent.stamp() - this method is used by `PollingStrategy` to determine if content has been changed.
+This can be always
+`empty` for sources, that do not implement `PollableSource`
+* ConfigParser.Content.charset() - this can return any `Charset` for media types that are binary
+* ConfigParser.Content.mediaType() - this can be used to override media type (that would otherwise be "guessed" from the underlying source)
+* ParsableSource.parser() - this can be used to override parser (that would otherwise be based on `mediaType`)
+* ParsableSource.mediaType() - return the configured or "guessed" media type of this source, see
+`io.helidon.common.media.type.MediaTypes`, if not returned, media type must be present on `Content`, or provided through media type mapping
 
 == ConfigParser SPI [[Config-SPI-ConfigParser]]
 
-The parsing step converts config data in some format into the corresponding
-in-memory representation of config ``ObjectNode``s. The config system can already parse 
-several data formats (for example 
-Java `Properties`, YAML, and HOCON). Implement the 
-link:{javadoc-base-url-api}/spi/ConfigParser.html[`ConfigParser`] SPI to allow the
-config system to handle additional formats.
+The parsing step converts config data in some format into the corresponding in-memory representation of config ``ObjectNode``s.
+The config system can already parse several data formats (for example Java `Properties`, YAML, and HOCON).
+Implement the
+link:{javadoc-base-url-api}/spi/ConfigParser.html[`ConfigParser`] SPI to allow the config system to handle additional formats.
 
-[plantuml, config/spi-ConfigParser, png, title="ConfigParser SPI", align="center"]
+[plantuml,config/spi-ConfigParser,png,title="ConfigParser SPI",align="center"]
 ----
+hide empty members
+
 interface ConfigParser {
     + Set<String> getSupportedMediaTypes()
     + ObjectNode parse(Content content)
 }
 
 interface ConfigParser.Content {
-    + String getMediaType()
-    + Instant getTimestamp()
-    ..
-    + Readable asReadable()
-    + void close()
+    + Optional<String> mediaType()
+    + Charset charset()
+    + InputStream data()
 }
 
 ConfigParser -[hidden]> ConfigParser.Content
 ----
 
-The `ConfigParser.Content` interface defines operations on the content that is to
-to be parsed by a `ConfigParser` implementation:
+The `ConfigParser.Content` interface defines operations on the content that is to be parsed by a `ConfigParser` implementation:
 
-// TODO
-// When our asciidoc impl supports labeled lists replace what follows with the
-// commmented doc below.
-* `getStamp()` - Returns a stamp (for example, a time stamp) that is different for
-different values of the content.
-* `getMediaType()` - Reports the media type of the content.
-* `asReadable()` - Provides a `Readable` and `Autocloseable` object from which
-the content can be read.
+* `mediaType()` - Reports the media type of the content (if it is to override media type defined on the config source)
+* `data()` - Provides the `InputStream` with config source data
+* `charset()` - Defines the charset to use to parse the stream in case this is a text based media type, ignored by parsers of binary content
 
-//`getStamp()`:: Returns a stamp (for example, a time stamp) that is different for
-//different values of the content.
-//`getMediaType()`:: Reports the media type of the content.
-//`asReadable()`:: Provides a `Readable` and `Autocloseable` object from which
-//the content can be read.
 
 The application can register parsers for a builder by invoking `Config.Builder#addParser(ConfigParser)`.
-The config system also uses the Java service loader mechanism to load automatically, 
-for all builders, any parsers listed in the 
-`META-INF/services/io.helidon.config.spi.ConfigParser` resource on the
-runtime classpath. Prevent autoloading of parsers for a given builder
-by invoking `Config.Builder#disableParserServices()`.
+The config system also uses the Java service loader mechanism to load automatically, for all builders, any parsers listed in the
+`META-INF/services/io.helidon.config.spi.ConfigParser` resource on the runtime classpath.
+Prevent autoloading of parsers for a given builder by invoking `Config.Builder#disableParserServices()`.
 
-`ConfigParser` accepts `@Priority`. See <<priority-info, About Priority>>.
+`ConfigParser` accepts `@Priority`.
+See <<priority-info, About Priority>>.
 
 [source,java]
 .Example custom parser implementation listed in `META-INF/services/io.helidon.config.spi.ConfigParser`
 ----
-myModule.MyConfigParser
+my.module.MyConfigParser
 ----
 
 [source,java]
 .Example custom parser definition in `module-info.java`
 ----
-module myModule {
+module my.module {
     requires transitive io.helidon.config;
     provides io.helidon.config.spi.ConfigParser with myModule.MyConfigParser;
 }
 ----
-
-//TODO example [P2] Issue #29
-
 
 == OverrideSource SPI [[Config-SPI-OverrideSource]]
 
@@ -215,36 +324,33 @@ application has provided. Each override has:
 
 * a `Predicate<Config.Key>` (a boolean-valued function that operates on 
 the config key), and 
-* a replacement, _overriding_, `String` value the config system should use if the predicate
-evaluates to true.
+* a replacement, _overriding_, `String` value the config system should use if the predicate evaluates to true.
 
-To furnish overrides to the config system, implement the 
-link:{javadoc-base-url-api}/spi/OverrideSource.html[`OverrideSource`] SPI one or 
-more times and pass instances of those implementations to the config builder's
+To furnish overrides to the config system, implement the
+link:{javadoc-base-url-api}/spi/OverrideSource.html[`OverrideSource`] SPI one or more times and pass instances of those implementations to the config builder's
 link:{javadoc-base-url-api}/Config.Builder.html#overrides-java.util.function.Supplier-[`overrides`]
-method. The config system will apply the overrides returned from each 
-`OverrideSource` to each config key requested from a `Config` that is based on 
-that `Config.Builder`.
+method.
+The config system will apply the overrides returned from each
+`OverrideSource` to each config key requested from a `Config` that is based on that `Config.Builder`.
 
-[plantuml, config/spi-OverrideSource, png, title="OverrideSource SPI", align="center"]
+To support custom override sources in meta configuration, also implement the
+link:{javadoc-base-url-api}/spi/OverrideSourceProvider.html[`OverrideSourceProvider`] service loader SPI
+
+[plantuml,config/spi-OverrideSource,png,title="OverrideSource SPI",align="center"]
 ----
 interface OverrideSource {
     + Optional<OverrideSource.OverrideData> load() throws ConfigException
 }
 ----
 
-//TODO example [P2] Issue #29
-
+Note that override sources can also implement `PollableSource`, and `WatchableSource` to add change support.
 
 == ConfigFilter SPI [[Config-SPI-ConfigFilter]]
 
-Before returning a `String` from `Config.value()` the config system applies any 
-_filters_ set up on the `Config.Builder` used to create the config tree that
-contains the config node of interest. The application provides filters as 
-implementations of the 
+Before returning a `String` from `Config.value()` the config system applies any _filters_ set up on the `Config.Builder` used to create the config tree that contains the config node of interest.
+The application provides filters as implementations of the
 link:{javadoc-base-url-api}/spi/ConfigFilter.html[`ConfigFilter`] interface.
-Each filter is a function which accepts a `Config.Key` and an input `String` value
-and returns a `String` value the config system should use for that key going forward.
+Each filter is a function which accepts a `Config.Key` and an input `String` value and returns a `String` value the config system should use for that key going forward.
 The filter can return the original value or return some other value. 
 
 The application registers filters and filter providers by passing `ConfigFilter` 
@@ -293,9 +399,6 @@ interface ConfigFilter {
     + String apply(Config.Key key, String stringValue)
 }
 ----
-
-//TODO example [P2] Issue #29
-
 
 == ConfigMapperProvider SPI [[Config-SPI-ConfigMapperProvider]]
 
@@ -361,69 +464,93 @@ If no priority is explicitly assigned, the value of `100` is assumed.
 [source,java]
 .Reference custom mapper provider implementation in `META-INF/services/io.helidon.config.spi.ConfigMapperProvider`
 ----
-myModule.MyConfigMapperProvider
+my.module.MyConfigMapperProvider
 ----
 
 [source,java]
 .Reference custom mapper provider implementation in `module-info.java`
 ----
-module myModule {
+module my.module {
     requires transitive io.helidon.config;
-    provides io.helidon.config.spi.ConfigMapperProvider with myModule.MyConfigMapperProvider;
+    provides io.helidon.config.spi.ConfigMapperProvider with my.module.MyConfigMapperProvider;
 }
 ----
 
-//TODO example [P2] Issue #29
+== Change support SPI [[Config-SPI-PollingStrategy]]
 
+Once it loads a `Config` tree from ``ConfigSource``s the config system does not itself change the in-memory `Config` tree.
+Even so, the underlying data available via the tree's ``ConfigSource``s can change.
+Implementations of link:{javadoc-base-url-api}/spi/PollingStrategy.html[`PollingStrategy`]
+may trigger regular check whether a source has new data.
+Implementation of link:{javadoc-base-url-api}/spi/ChangeWatcher.html[`ChangeWatcher`]
+may watch the underlying source for changes and trigger an update.
 
-== PollingStrategy SPI [[Config-SPI-PollingStrategy]]
+=== PollingStrategy SPI
 
-Once it loads a `Config` tree from ``ConfigSource``s the config
-system does not itself change the in-memory `Config` tree. Even so, the
-underlying data available via the tree's ``ConfigSource``s can change.
-Implementations of link:{javadoc-base-url-api}/spi/PollingStrategy.html[`PollingStrategy`] 
-informs other interested code when changes to that underlying data might have 
-occurred.
+An implementation of `PollingStrategy` gets an instance to poll, and triggers its `poll`
+method.
+The result of `poll` method may be used to update the polling strategy schedule.
 
-In implementations of `PollingStrategy` the `#ticks()` method
-returns a `Flow.Publisher` of ``PollingEvent``s to which the
-application or the ``ConfigSource``s themselves can subscribe. Generally,
-each event is a hint to the subscriber that
-it should check to see if any of the underlying config data it relies on
-has changed. Note that a ``PollingStrategy``'s publication of an
-event does not necessarily guarantee that the underlying data has in fact
-changed, although this might be true for some `PollingStrategy`
-implementations.
+The approach of checking for changes is part of the config system, and the `PollingStrategy` does not need to be concerned with it.
+This is based on the source `stamp` as defined in `ConfigContent`
+and used in `PollableSource.isModified(Object)` methods.
 
-The config system offers polling strategies for periodic time-based
-checks and for a file watcher. Often an application can create a config source
-simply by using one of the methods on `ConfigSources` (for example,
-`ConfigSources#file(path)` to get a builder and then invoke `pollingStrategy` 
-passing one of the predefined strategies. But the application can implement
-its own `PollingStrategy` and set it on the config source builder instead.
+If a more sophisticated solution is needed, you may need to implement a `ChangeWatcher` instead.
 
-[plantuml, config/spi-PollingStrategy, png, title="PollingStrategy SPI", align="center"]
+The config system offers polling strategy for periodic time-based checks.
+Often an application can create a config source simply by using one of the methods on `ConfigSources` (for example,
+`ConfigSources#file(path)` to get a builder and then invoke `pollingStrategy`
+passing a polling strategy.
+But the application can implement its own `PollingStrategy` and set it on the config source builder instead.
+
+[plantuml,config/spi-PollingStrategy,png,title="PollingStrategy SPI",align="center"]
 ----
+hide empty members
+
 interface PollingStrategy {
-    + Flow.Publisher<PollingEvent> ticks()
+    + void start(Polled polled)
+    + stop()
 }
 
-interface PollingStrategy.PollingEvent {
-    + Instant getTimestamp()
+interface PollingStrategy.Polled {
+    + ChangeEventType poll(Instant when)
 }
-
-PollingStrategy -[hidden]> PollingStrategy.PollingEvent
 ----
 
-`The PollingStrategy` `ticks()` method returns a `Publisher` of ``PollingEvent``s. 
-Each event becomes available as the particular `PollingStrategy` publishes it.
-Depending on the implementation of the polling strategy, such events might 
-indicate that the underlying source data _has_ changed or that it _might have_ changed.
-In either case the subscribers to the publisher are notified. If the `ConfigSource`
-itself subscribes to the publisher, for example, then it might choose to reload 
-the underlying data when its subscriber receives an event.
+To support polling strategies that can be configured in meta configuration, also implement the `PollingStrategyProvider` Java service loader SPI.
 
-//TODO example [P2] Issue #29
+=== ChangeWatcher SPI
+
+An implementation of `ChangeWatcher` gets the underlying source information and a change listener.
+The "watcher" then watches for changes of the source and notifies the listener when a change occurs.
+
+This is designed to support sources that can react on changes (such as file system).
+When a polling mechanism is needed, please check `PollingStrategy` above.
+
+The config system offers a change watcher for any `Path` based config source (such as `FileConfigSource`) and for the `etcd` config source.
+
+To use a change watcher, simply create a config source using its builder and register the change watcher on the builder (the config source must support appropriate type of change watchers).
+
+[plantuml,config/spi-ChangeWatcher,png,title="ChangeWatcher SPI",align="center"]
+----
+hide empty members
+
+interface ChangeWatcher<T> {
+    + void start(T target, Consumer<ChangeEvent<T>> listener)
+    + stop()
+    + Class<T> type()
+}
+
+interface ChangeWatcher.ChangeEvvent<T> {
+    + Instant changeTime()
+    + T target()
+    + ChangeEventType type()
+    {static} + create(T target, ChangeEventType type, Instant instant)
+    {static} + create(T target, ChangeEventType type)
+}
+----
+
+To support change watchers that can be configured in meta configuration, also implement the `ChangeWatcherProvider` Java service loader SPI.
 
 == RetryPolicy SPI [[Config-SPI-RetryPolicy]]
 
@@ -466,14 +593,10 @@ interface RetryPolicy {
 }
 ----
 
-The application can try to cancel the overall execution of a `RetryPolicy` by invoking
-the `RetryPolicy#cancel(boolean mayInterruptIfRunning)` method. Ideally the retry policy
-implementation should be able to abort the execution of the retry policy, even while
-a function call is in progress, but the policy must respond to cancels between
-function calls. In either case `cancel` returns `true` if the retry was aborted
-without a successful call to the function, and `false` otherwise, including if 
-the function call had already completed successfully or had previously been 
-successfully canceled.
+The application can try to cancel the overall execution of a `RetryPolicy` by invoking the `RetryPolicy#cancel(boolean mayInterruptIfRunning)` method.
+Ideally the retry policy implementation should be able to abort the execution of the retry policy, even while a function call is in progress, but the policy must respond to cancels between function calls.
+In either case `cancel` returns `true` if the retry was aborted without a successful call to the function, and `false` otherwise, including if the function call had already completed successfully or had previously been successfully canceled.
 
-//TODO example [P2] Issue #29
+To support retry policies in meta configuration, also implement the Java service loader SPI
+`RetryPolicyProvider`.
 

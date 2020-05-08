@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class SingleRetryTckTest extends FlowPublisherVerification<Long> {
 
     public SingleRetryTckTest() {
-        super(new TestEnvironment(50));
+        super(new TestEnvironment(200));
     }
 
     @Override

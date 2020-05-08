@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,16 @@ import java.util.stream.Collectors;
 
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
+import io.helidon.media.common.MediaContext;
+import io.helidon.media.common.MediaContextBuilder;
 import io.helidon.media.common.MediaSupport;
+import io.helidon.media.common.MessageBodyReader;
+import io.helidon.media.common.MessageBodyReaderContext;
+import io.helidon.media.common.MessageBodyStreamReader;
+import io.helidon.media.common.MessageBodyStreamWriter;
+import io.helidon.media.common.MessageBodyWriter;
+import io.helidon.media.common.MessageBodyWriterContext;
+import io.helidon.media.common.ParentingMediaContextBuilder;
 
 /**
  * Represents a immutably configured WEB server.
@@ -86,10 +95,18 @@ public interface WebServer {
     io.helidon.common.http.ContextualRegistry context();
 
     /**
-     * Get the parent media support configuration.
-     * @return media support configuration
+     * Get the parent {@link MessageBodyReaderContext} context.
+     *
+     * @return media body reader context
      */
-    MediaSupport mediaSupport();
+    MessageBodyReaderContext readerContext();
+
+    /**
+     * Get the parent {@link MessageBodyWriterContext} context.
+     *
+     * @return media body writer context
+     */
+    MessageBodyWriterContext writerContext();
 
     /**
      * Returns a port number the default server socket is bound to and is listening on;
@@ -127,7 +144,7 @@ public interface WebServer {
     }
 
     /**
-     * Creates new instance form provided configuration and routing.
+     * Creates new instance from provided configuration and routing.
      *
      * @param configurationBuilder a server configuration builder that will be built as a first step
      *                             of this method execution; may be {@code null}
@@ -143,7 +160,7 @@ public interface WebServer {
     }
 
     /**
-     * Creates new instance form provided configuration and routing.
+     * Creates new instance from provided configuration and routing.
      *
      * @param configuration  a server configuration instance
      * @param routingBuilder a routing builder that will be built as a second step of this method execution
@@ -158,7 +175,7 @@ public interface WebServer {
     }
 
     /**
-     * Creates new instance form provided routing and default configuration.
+     * Creates new instance from provided routing and default configuration.
      *
      * @param routing a routing instance
      * @return a new web server instance
@@ -170,7 +187,7 @@ public interface WebServer {
     }
 
     /**
-     * Creates new instance form provided configuration and routing.
+     * Creates new instance from provided configuration and routing.
      *
      * @param configuration a server configuration instance
      * @param routing       a routing instance
@@ -186,7 +203,7 @@ public interface WebServer {
     }
 
     /**
-     * Creates new instance form provided routing and default configuration.
+     * Creates new instance from provided routing and default configuration.
      *
      * @param routingBuilder a routing builder instance that will be built as a first step
      *                       of this method execution
@@ -224,7 +241,12 @@ public interface WebServer {
      * WebServer builder class provides a convenient way to set up WebServer with multiple server
      * sockets and optional multiple routings.
      */
-    final class Builder implements io.helidon.common.Builder<WebServer> {
+    final class Builder implements io.helidon.common.Builder<WebServer>,
+                                   ParentingMediaContextBuilder<Builder>,
+                                   MediaContextBuilder<Builder> {
+
+        private static final MediaContext DEFAULT_MEDIA_SUPPORT = MediaContext.create();
+
         static {
             HelidonFeatures.register(HelidonFlavor.SE, "WebServer");
         }
@@ -232,12 +254,14 @@ public interface WebServer {
         private final Map<String, Routing> routings = new HashMap<>();
         private final Routing defaultRouting;
         private ServerConfiguration configuration;
-        private MediaSupport mediaSupport;
+        private MessageBodyReaderContext readerContext;
+        private MessageBodyWriterContext writerContext;
 
         private Builder(Routing defaultRouting) {
             Objects.requireNonNull(defaultRouting, "Parameter 'default routing' must not be null!");
-
             this.defaultRouting = defaultRouting;
+            readerContext = MessageBodyReaderContext.create(DEFAULT_MEDIA_SUPPORT.readerContext());
+            writerContext = MessageBodyWriterContext.create(DEFAULT_MEDIA_SUPPORT.writerContext());
         }
 
         /**
@@ -303,23 +327,42 @@ public interface WebServer {
             return addNamedRouting(name, routingBuilder.get());
         }
 
-        /**
-         * Set the server wide media support configuration.
-         * @param mediaSupport media support configuration
-         * @return an updated builder
-         */
-        public Builder mediaSupport(MediaSupport mediaSupport) {
-            this.mediaSupport = mediaSupport;
+        @Override
+        public Builder mediaContext(MediaContext mediaContext) {
+            Objects.requireNonNull(mediaContext);
+            this.readerContext = MessageBodyReaderContext.create(mediaContext.readerContext());
+            this.writerContext = MessageBodyWriterContext.create(mediaContext.writerContext());
             return this;
         }
 
-        /**
-         * Set the server wide media support configuration.
-         * @param mediaSupportBuilder media support builder
-         * @return an updated builder
-         */
-        public Builder mediaSupport(Supplier<MediaSupport> mediaSupportBuilder) {
-            this.mediaSupport = mediaSupportBuilder != null ? mediaSupportBuilder.get() : null;
+        @Override
+        public Builder addMediaSupport(MediaSupport mediaSupport) {
+            Objects.requireNonNull(mediaSupport);
+            mediaSupport.register(readerContext, writerContext);
+            return this;
+        }
+
+        @Override
+        public Builder addReader(MessageBodyReader<?> reader) {
+            readerContext.registerReader(reader);
+            return this;
+        }
+
+        @Override
+        public Builder addStreamReader(MessageBodyStreamReader<?> streamReader) {
+            readerContext.registerReader(streamReader);
+            return this;
+        }
+
+        @Override
+        public Builder addWriter(MessageBodyWriter<?> writer) {
+            writerContext.registerWriter(writer);
+            return this;
+        }
+
+        @Override
+        public Builder addStreamWriter(MessageBodyStreamWriter<?> streamWriter) {
+            writerContext.registerWriter(streamWriter);
             return this;
         }
 
@@ -342,16 +385,13 @@ public interface WebServer {
                 throw new IllegalStateException("No server socket configuration found for named routings: " + unpairedRoutings);
             }
 
-            if (mediaSupport == null) {
-                mediaSupport = MediaSupport.createWithDefaults();
-            }
             WebServer result = new NettyWebServer(configuration == null
                                                           // this is happening once per microservice, no need to store in
                                                           // a constant; also the configuration creates instances of context etc.
                                                           // that should not be initialized unless needed
                                                           ? ServerConfiguration.builder().build()
                                                           : configuration,
-                                                  defaultRouting, routings, mediaSupport);
+                                                  defaultRouting, routings, writerContext, readerContext);
             if (defaultRouting instanceof RequestRouting) {
                 ((RequestRouting) defaultRouting).fireNewWebServer(result);
             }

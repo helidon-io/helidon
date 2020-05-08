@@ -91,5 +91,5 @@ and efficient without unnecessary overhead or bloat.
 
 == Next Steps
 
-Try the <<guides/02_quickstart-se.adoc,Helidon SE quickstart>> to get your
+Try the <<se/guides/02_quickstart.adoc,Helidon SE quickstart>> to get your
 first Helidon SE application up and running in minutes.

@@ -57,7 +57,7 @@ public class JsonbBodyWriter implements MessageBodyWriter<Object> {
 
         MediaType contentType = context.findAccepted(MediaType.JSON_PREDICATE, MediaType.APPLICATION_JSON);
         context.contentType(contentType);
-        return content.flatMap(new ObjectToChunks(jsonb, context.charset())::map);
+        return content.flatMap(new ObjectToChunks(jsonb, context.charset()));
     }
 
     /**

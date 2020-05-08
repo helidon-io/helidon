@@ -23,6 +23,7 @@ import javax.json.bind.JsonbBuilder;
 
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
+import io.helidon.media.common.MediaSupport;
 import io.helidon.media.jsonb.common.JsonbBodyReader;
 import io.helidon.media.jsonb.common.JsonbBodyWriter;
 import io.helidon.webserver.Handler;
@@ -30,11 +31,15 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
+import io.helidon.webserver.WebServer;
 
 /**
  * A {@link Service} and a {@link Handler} that provides <a
  * href="http://json-b.net/">JSON-B</a> support to Helidon.
+ *
+ * @deprecated use {@link io.helidon.media.jsonb.common.JsonbSupport} with {@link WebServer.Builder#addMediaSupport(MediaSupport)}
  */
+@Deprecated
 public final class JsonBindingSupport implements Service, Handler {
 
     static {

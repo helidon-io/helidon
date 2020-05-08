@@ -24,7 +24,7 @@ import java.util.stream.IntStream;
 public class SingleMapperPublisherTckTest extends FlowPublisherVerification<Integer> {
 
     public SingleMapperPublisherTckTest() {
-        super(new TestEnvironment(50));
+        super(new TestEnvironment(200));
     }
 
     @Override

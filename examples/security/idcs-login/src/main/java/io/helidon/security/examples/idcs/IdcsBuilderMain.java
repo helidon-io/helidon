@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,6 +69,8 @@ public final class IdcsBuilderMain {
                         "https://idcs-tenant-id.identity.oracle.com"))
                 //.proxyHost("proxy.proxy.com")
                 .frontendUri("http://your.host:your.port")
+                // tell us it is IDCS, so we can modify the behavior
+                .serverType("idcs")
                 .build();
 
         Security security = Security.builder()

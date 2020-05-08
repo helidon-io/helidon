@@ -33,7 +33,7 @@ interface HttpInterceptor {
      * @param responseFuture completable future of the current response
      */
     void handleInterception(HttpResponse httpResponse,
-                            WebClientRequestBuilder.ClientRequest clientRequest,
+                            WebClientRequestImpl clientRequest,
                             CompletableFuture<WebClientResponse> responseFuture);
 
     /**

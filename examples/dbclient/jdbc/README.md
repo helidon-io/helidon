@@ -12,9 +12,17 @@ mvn package
 ## Run
 
 This example requires a MySQL database, start it using docker:
-`docker run --rm --name mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=pokemon -e MYSQL_USER=user -e MYSQL_PASSWORD=password  mysql:5.7`
 
-Then run the `io.helidon.examples.dbclient.jdbc.JdbcExampleMain` class
+```
+docker run --rm --name mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=pokemon -e MYSQL_USER=user -e MYSQL_PASSWORD=password  mysql:5.7
+```
+
+Then run the application:
+
+```
+java -jar target/helidon-examples-dbclient-jdbc.jar
+```
+
  
 ## Exercise
 

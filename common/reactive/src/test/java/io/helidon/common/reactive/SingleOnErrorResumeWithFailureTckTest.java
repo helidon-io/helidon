@@ -26,7 +26,7 @@ import java.util.concurrent.Flow;
 public class SingleOnErrorResumeWithFailureTckTest extends FlowPublisherVerification<Integer> {
 
     public SingleOnErrorResumeWithFailureTckTest() {
-        super(new TestEnvironment(50));
+        super(new TestEnvironment(200));
     }
 
     @Override

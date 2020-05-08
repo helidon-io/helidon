@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,7 +77,6 @@ class ResponseWriter implements ContainerResponseWriter {
         @Override
         public void close() throws IOException {
             try {
-                super.signalCloseComplete(null);
                 super.close();
             } catch (ConnectionClosedException e) {
                 throw new IOException("Cannot close the connection because it's already closed.", e);
