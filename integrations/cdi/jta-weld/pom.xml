@@ -73,23 +73,17 @@
             <groupId>org.jboss.weld.module</groupId>
             <artifactId>weld-jta</artifactId>
             <scope>runtime</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.jboss.weld</groupId>
-                    <artifactId>weld-core-impl</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <!-- Provided-scoped dependencies. -->
         <dependency>
-            <groupId>javax.transaction</groupId>
-            <artifactId>javax.transaction-api</artifactId>
+            <groupId>jakarta.transaction</groupId>
+            <artifactId>jakarta.transaction-api</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>javax.enterprise</groupId>
-            <artifactId>cdi-api</artifactId>
+            <groupId>jakarta.enterprise</groupId>
+            <artifactId>jakarta.enterprise.cdi-api</artifactId>
             <scope>provided</scope>
         </dependency>
 

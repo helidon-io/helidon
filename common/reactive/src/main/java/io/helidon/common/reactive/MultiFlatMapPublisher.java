@@ -174,23 +174,10 @@ final class MultiFlatMapPublisher<T, R> implements Multi<R> {
         @Override
         public void request(long n) {
             if (n <= 0L) {
-                doError(new IllegalArgumentException("Rule §3.9 violated: non-positive request amount is forbidded"));
+                doError(new IllegalArgumentException("Rule §3.9 violated: non-positive request amount is forbidden"));
             } else {
-                // FIXME replace with SubscriptionHelper.addRequest
-                for (;;) {
-                    long current = requested.get();
-                    if (current == Long.MAX_VALUE) {
-                        return;
-                    }
-                    long update = current + n;
-                    if (update < 0L) {
-                        update = Long.MAX_VALUE;
-                    }
-                    if (requested.compareAndSet(current, update)) {
-                        drain();
-                        return;
-                    }
-                }
+                SubscriptionHelper.addRequest(requested, n);
+                drain();
             }
         }
 
@@ -223,6 +210,8 @@ final class MultiFlatMapPublisher<T, R> implements Multi<R> {
                         sender.produced(1L);
                     } else {
                         // yes, go on a full drain loop
+                        sender.enqueue(item);
+                        q.offer(sender);
                         drainLoop();
                         return;
                     }
@@ -448,21 +437,8 @@ final class MultiFlatMapPublisher<T, R> implements Multi<R> {
 
             @Override
             public void onSubscribe(Flow.Subscription subscription) {
-                Objects.requireNonNull(subscription, "subscription is null");
-                for (;;) {
-                    Flow.Subscription current = get();
-                    if (current == this) {
-                        subscription.cancel();
-                        return;
-                    }
-                    if (current != null) {
-                        subscription.cancel();
-                        throw new IllegalStateException("Subscription already set!");
-                    }
-                    if (compareAndSet(null, subscription)) {
-                        subscription.request(prefetch);
-                        return;
-                    }
+                if (SubscriptionHelper.setOnce(this, subscription)) {
+                    subscription.request(prefetch);
                 }
             }
 

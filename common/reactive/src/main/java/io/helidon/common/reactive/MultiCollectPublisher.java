@@ -30,11 +30,11 @@ final class MultiCollectPublisher<T, U> implements Single<U> {
 
     private final Multi<T> source;
 
-    private final Supplier<U> collectionSupplier;
+    private final Supplier<? extends U> collectionSupplier;
 
     private final BiConsumer<U, T> accumulator;
 
-    MultiCollectPublisher(Multi<T> source, Supplier<U> collectionSupplier, BiConsumer<U, T> combiner) {
+    MultiCollectPublisher(Multi<T> source, Supplier<? extends U> collectionSupplier, BiConsumer<U, T> combiner) {
         this.source = source;
         this.collectionSupplier = collectionSupplier;
         this.accumulator = combiner;

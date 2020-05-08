@@ -611,6 +611,13 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
 
             URL url = Thread.currentThread().getContextClassLoader().getResource(uri);
             if (url == null) {
+                // if uri starts with "/", remove it
+                if (uri.startsWith("/")) {
+                    url = Thread.currentThread().getContextClassLoader().getResource(uri.substring(1));
+                }
+            }
+
+            if (url == null) {
                 is = JwtAuthProvider.class.getResourceAsStream(uri);
 
                 if (null == is) {
@@ -873,6 +880,18 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
             mpConfig.getOptionalValue(CONFIG_PUBLIC_KEY, String.class).ifPresent(this::publicKey);
             mpConfig.getOptionalValue(CONFIG_PUBLIC_KEY_PATH, String.class).ifPresent(this::publicKeyPath);
             mpConfig.getOptionalValue(CONFIG_EXPECTED_ISSUER, String.class).ifPresent(this::expectedIssuer);
+
+            if (null == publicKey && null == publicKeyPath) {
+                // this is a fix for incomplete TCK tests
+                // we will configure this location in our tck configuration
+                String key = "helidon.mp.jwt.verify.publickey.location";
+                mpConfig.getOptionalValue(key, String.class).ifPresent(it -> {
+                    publicKeyPath(it);
+                    LOGGER.warning("You have configured public key for JWT-Auth provider using a property"
+                                           + " reserved for TCK tests (" + key + "). Please use "
+                                           + CONFIG_PUBLIC_KEY_PATH + " instead.");
+                });
+            }
 
             return this;
         }

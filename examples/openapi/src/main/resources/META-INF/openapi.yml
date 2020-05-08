@@ -21,7 +21,7 @@ info:
   version: 1.0.0
 
 servers:
-  - url: http://localhost:8000
+  - url: http://localhost:8080
     description: Local test server
 
 paths:

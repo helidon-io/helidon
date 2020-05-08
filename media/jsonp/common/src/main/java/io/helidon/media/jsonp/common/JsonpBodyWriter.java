@@ -54,7 +54,7 @@ public class JsonpBodyWriter implements MessageBodyWriter<JsonStructure> {
 
         MediaType contentType = context.findAccepted(MediaType.JSON_PREDICATE, MediaType.APPLICATION_JSON);
         context.contentType(contentType);
-        return content.mapMany(new JsonStructureToChunks(jsonWriterFactory, context.charset()));
+        return content.flatMap(new JsonStructureToChunks(jsonWriterFactory, context.charset()));
     }
 
     static final class JsonStructureToChunks implements Mapper<JsonStructure, Publisher<DataChunk>> {

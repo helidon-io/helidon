@@ -141,7 +141,7 @@ public class ValueResolvingFilter implements ConfigFilter {
          * either case save the result in a simple boolean for efficiency in
          * #apply.
          */
-        if (!failOnMissingReferenceSetting.isPresent()) {
+        if (failOnMissingReferenceSetting.isEmpty()) {
             failOnMissingReferenceSetting = Optional.of(
                     config
                         .get(ConfigFilters.ValueResolvingBuilder.FAIL_ON_MISSING_REFERENCE_KEY_NAME)

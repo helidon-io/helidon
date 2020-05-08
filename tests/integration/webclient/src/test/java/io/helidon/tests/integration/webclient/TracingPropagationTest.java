@@ -20,11 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
-import javax.json.JsonObject;
-
 import io.helidon.common.context.Context;
-import io.helidon.media.common.MediaSupport;
-import io.helidon.media.jsonp.common.JsonProcessing;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
 import io.helidon.webserver.WebServer;
@@ -44,7 +40,6 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
  * Test tracing integration.
  */
 class TracingPropagationTest {
-    private static final JsonProcessing JSON_PROCESSING = JsonProcessing.create();
 
     @Test
     void testTracingSuccess() throws ExecutionException, InterruptedException {
@@ -60,11 +55,6 @@ class TracingPropagationTest {
         WebClient client = WebClient.builder()
                 .baseUri(uri)
                 .context(context)
-                .mediaSupport(MediaSupport.builder()
-                                      .registerDefaults()
-                                      .registerReader(JSON_PROCESSING.newReader())
-                                      .registerWriter(JSON_PROCESSING.newWriter())
-                                      .build())
                 .build();
 
         client.get()

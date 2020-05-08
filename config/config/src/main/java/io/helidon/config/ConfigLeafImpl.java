@@ -59,7 +59,7 @@ class ConfigLeafImpl extends ConfigExistingImpl<ValueNode> {
         }
 
         Optional<String> value = value();
-        if (!value.isPresent()) {
+        if (value.isEmpty()) {
             return ConfigValues.create(this, Optional::empty, aConfig -> aConfig.asList(type));
         }
 
@@ -89,7 +89,7 @@ class ConfigLeafImpl extends ConfigExistingImpl<ValueNode> {
     @Override
     public <T> ConfigValue<List<T>> asList(Function<Config, T> mapper) throws ConfigMappingException {
         Optional<String> value = value();
-        if (!value.isPresent()) {
+        if (value.isEmpty()) {
             return ConfigValues.create(this, Optional::empty, aConfig -> aConfig.asList(mapper));
         }
 

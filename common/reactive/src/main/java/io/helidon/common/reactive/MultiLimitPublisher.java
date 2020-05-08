@@ -59,15 +59,10 @@ final class MultiLimitPublisher<T> implements Multi<T> {
 
         @Override
         public void onSubscribe(Flow.Subscription subscription) {
-            Objects.requireNonNull(subscription, "subscription is null");
-            if (upstream != null) {
-                subscription.cancel();
-                throw new IllegalStateException("Subscription already set");
-            }
+            SubscriptionHelper.validate(upstream, subscription);
             if (remaining == 0L) {
                 subscription.cancel();
-                // FIXME use SubscriptionHelper.CANCELED instead for clarity
-                upstream = null;
+                upstream = SubscriptionHelper.CANCELED;
                 downstream.onSubscribe(EmptySubscription.INSTANCE);
                 downstream.onComplete();
             } else {
@@ -79,14 +74,13 @@ final class MultiLimitPublisher<T> implements Multi<T> {
         @Override
         public void onNext(T item) {
             Flow.Subscription s = upstream;
-            if (s != null) {
+            if (s != SubscriptionHelper.CANCELED) {
                 long r = remaining - 1;
                 remaining = r;
                 downstream.onNext(item);
                 if (r == 0L) {
                     s.cancel();
-                    // FIXME use SubscriptionHelper.CANCELED instead for clarity
-                    upstream = null;
+                    upstream = SubscriptionHelper.CANCELED;
                     downstream.onComplete();
                 }
             }
@@ -95,9 +89,8 @@ final class MultiLimitPublisher<T> implements Multi<T> {
         @Override
         public void onError(Throwable throwable) {
             Flow.Subscription s = upstream;
-            if (s != null) {
-                // FIXME use SubscriptionHelper.CANCELED instead for clarity
-                upstream = null;
+            if (s != SubscriptionHelper.CANCELED) {
+                upstream = SubscriptionHelper.CANCELED;
                 downstream.onError(throwable);
             }
         }
@@ -105,28 +98,21 @@ final class MultiLimitPublisher<T> implements Multi<T> {
         @Override
         public void onComplete() {
             Flow.Subscription s = upstream;
-            if (s != null) {
-                // FIXME use SubscriptionHelper.CANCELED instead for clarity
-                upstream = null;
+            if (s != SubscriptionHelper.CANCELED) {
+                upstream = SubscriptionHelper.CANCELED;
                 downstream.onComplete();
             }
         }
 
         @Override
         public void request(long n) {
-            Flow.Subscription s = upstream;
-            if (s != null) {
-                s.request(n);
-            }
+            upstream.request(n);
         }
 
         @Override
         public void cancel() {
-            Flow.Subscription s = upstream;
-            upstream = null;
-            if (s != null) {
-                s.cancel();
-            }
+            upstream.cancel();
+            upstream = SubscriptionHelper.CANCELED;
         }
     }
 }

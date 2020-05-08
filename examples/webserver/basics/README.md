@@ -8,7 +8,6 @@ methods.
 
 ## Build and run
 
-With JDK8+
 ```bash
 mvn package
 ```

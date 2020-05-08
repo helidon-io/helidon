@@ -24,7 +24,6 @@ module io.helidon.tracing.jersey.client {
     requires java.annotation;
 
     requires java.ws.rs;
-    requires javax.inject;
     requires jersey.client;
     requires jersey.common;
 

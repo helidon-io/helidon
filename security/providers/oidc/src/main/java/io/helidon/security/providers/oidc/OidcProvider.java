@@ -19,6 +19,7 @@ package io.helidon.security.providers.oidc;
 import java.io.UnsupportedEncodingException;
 import java.lang.annotation.Annotation;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -102,6 +103,7 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
     private final boolean propagate;
     private final OidcOutboundConfig outboundConfig;
     private final boolean useJwtGroups;
+    private final BiConsumer<StringBuilder, String> scopeAppender;
 
     private OidcProvider(Builder builder, OidcOutboundConfig oidcOutboundConfig) {
         this.oidcConfig = builder.oidcConfig;
@@ -117,6 +119,20 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
             paramHeaderHandler = TokenHandler.forHeader(OidcConfig.PARAM_HEADER_NAME);
         } else {
             paramHeaderHandler = null;
+        }
+
+        // clean the scope audience - must end with / if exists
+        String configuredScopeAudience = oidcConfig.scopeAudience();
+        if (null == configuredScopeAudience || configuredScopeAudience.isEmpty()) {
+            this.scopeAppender = (stringBuilder, scope) -> stringBuilder.append(scope);
+        } else {
+            if (configuredScopeAudience.endsWith("/")) {
+                this.scopeAppender = (stringBuilder, scope) -> stringBuilder.append(configuredScopeAudience).append(scope);
+            } else {
+                this.scopeAppender = (stringBuilder, scope) -> stringBuilder.append(configuredScopeAudience)
+                        .append("/")
+                        .append(scope);
+            }
         }
 
         if (oidcConfig.validateJwtWithJwk()) {
@@ -317,16 +333,20 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
 
             StringBuilder scopes = new StringBuilder(oidcConfig.baseScopes());
 
-            expectedScopes
-                    .forEach(scope -> scopes.append(' ').append(oidcConfig.scopeAudience()).append(scope));
+            for (String expectedScope : expectedScopes) {
+                if (scopes.length() > 0) {
+                    // space after base scopes
+                    scopes.append(' ');
+                }
+                String scope = expectedScope;
+                if (scope.startsWith("/")) {
+                    scope = scope.substring(1);
+                }
+                scopeAppender.accept(scopes, scope);
+            }
 
             String scopeString;
-            try {
-                scopeString = URLEncoder.encode(scopes.toString(), "UTF-8");
-            } catch (UnsupportedEncodingException e) {
-                // UTF-8 should be supported. If not, just use openid to be able to connect
-                scopeString = oidcConfig.baseScopes();
-            }
+            scopeString = URLEncoder.encode(scopes.toString(), StandardCharsets.UTF_8);
 
             String authorizationEndpoint = oidcConfig.authorizationEndpointUri();
 

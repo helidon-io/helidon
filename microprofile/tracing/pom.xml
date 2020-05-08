@@ -36,8 +36,8 @@
 
     <dependencies>
         <dependency>
-            <groupId>javax.enterprise</groupId>
-            <artifactId>cdi-api</artifactId>
+            <groupId>jakarta.enterprise</groupId>
+            <artifactId>jakarta.enterprise.cdi-api</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -61,9 +61,13 @@
             <artifactId>microprofile-opentracing-api</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.tracing</groupId>
+            <artifactId>helidon-tracing-tracer-resolver</artifactId>
+        </dependency>
+        <dependency>
             <!-- Jersey on java 9 -->
-            <groupId>javax.activation</groupId>
-            <artifactId>javax.activation-api</artifactId>
+            <groupId>jakarta.activation</groupId>
+            <artifactId>jakarta.activation-api</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>

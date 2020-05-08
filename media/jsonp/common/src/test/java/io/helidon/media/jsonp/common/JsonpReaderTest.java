@@ -41,7 +41,7 @@ public class JsonpReaderTest {
 
     private final static MessageBodyReaderContext CONTEXT = MessageBodyReaderContext.create();
 
-    private final static JsonpBodyReader READER = JsonProcessing.create().newReader();
+    private final static JsonpBodyReader READER = JsonpSupport.create().newReader();
 
     @Test
     public void simpleJsonObject() throws Exception {

@@ -18,7 +18,7 @@
  * Provides classes and interfaces that wrap existing CDI constructs.
  */
 module io.helidon.integrations.cdi.delegates {
-    requires cdi.api;
+    requires jakarta.enterprise.cdi.api;
 
     exports io.helidon.integrations.cdi.delegates;
 }

@@ -53,7 +53,7 @@ public final class ByteChannelBodyWriter implements MessageBodyWriter<ReadableBy
             MessageBodyWriterContext context) {
 
         context.contentType(MediaType.APPLICATION_OCTET_STREAM);
-        return content.mapMany(mapper);
+        return content.flatMap(mapper);
     }
 
     /**

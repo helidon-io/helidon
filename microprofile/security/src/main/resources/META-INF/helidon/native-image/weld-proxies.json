@@ -1,0 +1,14 @@
+[
+    {
+        "bean-class": "io.helidon.security.SecurityContext",
+        "ifaces": [
+            "io.helidon.security.SecurityContext"
+        ]
+    },
+    {
+        "bean-class": "io.helidon.security.Security",
+        "ifaces": [
+            "io.helidon.security.Security"
+        ]
+    }
+]

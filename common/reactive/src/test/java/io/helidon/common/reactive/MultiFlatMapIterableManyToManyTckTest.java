@@ -26,7 +26,7 @@ import java.util.stream.IntStream;
 public class MultiFlatMapIterableManyToManyTckTest extends FlowPublisherVerification<Integer> {
 
     public MultiFlatMapIterableManyToManyTckTest() {
-        super(new TestEnvironment(50));
+        super(new TestEnvironment(200));
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,11 @@
 
 package io.helidon.service.employee;
 
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.concurrent.TimeUnit;
 
+import io.helidon.common.http.Http;
+import io.helidon.common.http.MediaType;
+import io.helidon.webclient.WebClient;
 import io.helidon.webserver.WebServer;
 
 import org.junit.jupiter.api.AfterAll;
@@ -30,6 +31,7 @@ import org.junit.jupiter.api.Test;
 public class MainTest {
 
     private static WebServer webServer;
+    private static WebClient webClient;
 
     @BeforeAll
     public static void startTheServer() throws Exception {
@@ -44,6 +46,11 @@ public class MainTest {
                 Assertions.fail("Failed to start webserver");
             }
         }
+
+        webClient = WebClient.builder()
+                .baseUri("http://localhost:" + webServer.port())
+                .addHeader(Http.Header.ACCEPT, MediaType.APPLICATION_JSON.toString())
+                .build();
     }
 
     @AfterAll
@@ -57,24 +64,35 @@ public class MainTest {
 
     @Test
     public void testHelloWorld() throws Exception {
-        HttpURLConnection conn;
+        webClient.get()
+                .path("/employees")
+                .request()
+                .thenAccept(response -> {
+                    response.close();
+                    Assertions.assertEquals(Http.Status.OK_200, response.status(), "HTTP response2");
+                })
+                .toCompletableFuture()
+                .get();
 
-        conn = getURLConnection("GET", "/employees");
-        Assertions.assertEquals(200, conn.getResponseCode(), "HTTP response2");
+        webClient.get()
+                .path("/health")
+                .request()
+                .thenAccept(response -> {
+                    response.close();
+                    Assertions.assertEquals(Http.Status.OK_200, response.status(), "HTTP response2");
+                })
+                .toCompletableFuture()
+                .get();
 
-        conn = getURLConnection("GET", "/health");
-        Assertions.assertEquals(200, conn.getResponseCode(), "HTTP response2");
-
-        conn = getURLConnection("GET", "/metrics");
-        Assertions.assertEquals(200, conn.getResponseCode(), "HTTP response2");
+        webClient.get()
+                .path("/metrics")
+                .request()
+                .thenAccept(response -> {
+                    response.close();
+                    Assertions.assertEquals(Http.Status.OK_200, response.status(), "HTTP response2");
+                })
+                .toCompletableFuture()
+                .get();
     }
 
-    private HttpURLConnection getURLConnection(String method, String path) throws Exception {
-        URL url = new URL("http://localhost:" + webServer.port() + path);
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setRequestMethod(method);
-        conn.setRequestProperty("Accept", "application/json");
-        System.out.println("Connecting: " + method + " " + url);
-        return conn;
-    }
 }

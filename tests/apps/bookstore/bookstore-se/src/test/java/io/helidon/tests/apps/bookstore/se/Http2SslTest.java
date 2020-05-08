@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,8 +27,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnJre;
-import org.junit.jupiter.api.condition.JRE;
 
 import static io.helidon.tests.apps.bookstore.se.TestServer.APPLICATION_JSON;
 
@@ -52,7 +50,6 @@ public class Http2SslTest {
     }
 
     @Test
-    @DisabledOnJre(JRE.JAVA_8)
     public void testHelloWorldHtt2Ssl() throws Exception {
         Request.Builder builder = TestServer.newRequestBuilder(webServer, "/books", true);
 
@@ -91,7 +88,6 @@ public class Http2SslTest {
     }
 
     @Test
-    @DisabledOnJre(JRE.JAVA_8)
     public void testHelloWorldHtt2SslPostFirst() throws Exception {
         Request.Builder builder = TestServer.newRequestBuilder(webServer, "/books", true);
         Request postBook = builder.post(

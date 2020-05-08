@@ -26,7 +26,7 @@ import java.util.stream.IntStream;
 public class MultiSkipPublisherTckTest extends FlowPublisherVerification<Integer> {
 
     public MultiSkipPublisherTckTest() {
-        super(new TestEnvironment(50));
+        super(new TestEnvironment(200));
     }
 
     @Override

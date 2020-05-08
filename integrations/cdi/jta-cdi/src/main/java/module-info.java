@@ -27,9 +27,9 @@ module io.helidon.integrations.jta.cdi {
     requires java.annotation;
     requires java.sql;
     requires java.rmi;
-    requires javax.interceptor.api;
-    requires javax.inject;
-    requires cdi.api;
+    requires jakarta.interceptor.api;
+    requires jakarta.inject.api;
+    requires jakarta.enterprise.cdi.api;
     requires cdi;    // org.jboss.narayana.jta
     requires jta;    //org.jboss.narayana.jta.jta
     requires common; // org.jboss.narayana.common

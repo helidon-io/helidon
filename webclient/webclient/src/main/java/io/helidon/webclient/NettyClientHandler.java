@@ -95,17 +95,17 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
         if (msg instanceof HttpResponse) {
             ctx.channel().config().setAutoRead(false);
             HttpResponse response = (HttpResponse) msg;
-            WebClientRequestBuilder.ClientRequest clientRequest = ctx.channel().attr(REQUEST).get();
+            WebClientRequestImpl clientRequest = ctx.channel().attr(REQUEST).get();
             RequestConfiguration requestConfiguration = clientRequest.configuration();
 
             this.publisher = new HttpResponsePublisher(ctx);
             this.responseCloser = new ResponseCloser(ctx);
             this.clientResponse.contentPublisher(publisher)
-                    .mediaSupport(requestConfiguration.mediaSupport())
-                    .requestBodyReaders(requestConfiguration.requestReaders())
+                    .readerContext(requestConfiguration.readerContext())
                     .status(helidonStatus(response.status()))
                     .httpVersion(Http.Version.create(response.protocolVersion().toString()))
-                    .responseCloser(responseCloser);
+                    .responseCloser(responseCloser)
+                    .lastEndpointURI(requestConfiguration.requestURI());
 
             for (HttpInterceptor interceptor : HTTP_INTERCEPTORS) {
                 if (interceptor.shouldIntercept(response.status(), requestConfiguration)) {
@@ -144,14 +144,24 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
             }
 
             csr.whenComplete((clientSerResponse, throwable) -> {
-                responseReceived.complete(clientServiceResponse);
-                if (shouldResponseAutomaticallyClose(clientResponse)) {
-                    responseCloser.close().addListener(future -> {
-                        LOGGER.finest("Response automatically closed. No entity expected.");
-                        responseFuture.complete(clientResponse);
-                    });
+                if (throwable != null) {
+                    responseCloser.close()
+                            .addListener(future -> {
+                                responseReceived.completeExceptionally(throwable);
+                                responseFuture.completeExceptionally(throwable);
+                            });
                 } else {
-                    responseFuture.complete(clientResponse);
+                    responseReceived.complete(clientServiceResponse);
+                    responseReceived.thenRun(() -> {
+                        if (shouldResponseAutomaticallyClose(clientResponse)) {
+                            responseCloser.close().addListener(future -> {
+                                LOGGER.finest("Response automatically closed. No entity expected.");
+                                responseFuture.complete(clientResponse);
+                            });
+                        } else {
+                            responseFuture.complete(clientResponse);
+                        }
+                    });
                 }
             });
         }

@@ -16,7 +16,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-:javadoc-base-url-api: {javadoc-base-url}?io/helidon/config
+:javadoc-base-url-api: {javadoc-base-url}io.helidon.config/io/helidon/config
 
 = Loading Configuration: Config Sources and Parsers
 :description: A summary of Helidon config sources and parsers

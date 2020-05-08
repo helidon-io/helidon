@@ -34,6 +34,10 @@
             <artifactId>helidon-jersey-client</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.jersey</groupId>
+            <artifactId>helidon-jersey-common</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-context</artifactId>
         </dependency>

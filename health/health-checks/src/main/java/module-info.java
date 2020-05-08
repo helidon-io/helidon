@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,8 @@ module io.helidon.health.checks {
     requires java.logging;
     requires java.management;
 
-    requires static cdi.api;
-    requires static javax.inject;
+    requires static jakarta.enterprise.cdi.api;
+    requires static jakarta.inject.api;
 
     requires io.helidon.common;
     requires io.helidon.health;
@@ -31,4 +31,7 @@ module io.helidon.health.checks {
     requires microprofile.health.api;
 
     exports io.helidon.health.checks;
+
+    // required for CDI
+    opens io.helidon.health.checks to weld.core.impl;
 }

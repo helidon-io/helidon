@@ -1,0 +1,162 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2020 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Reactive Messaging
+:toc:
+:toc-placement: preamble
+:spec-name: MicroProfile Reactive Messaging
+:description: {spec-name} support in Helidon MP
+:keywords: helidon, mp, microprofile, messaging
+
+== Reactive Messaging
+
+https://download.eclipse.org/microprofile/microprofile-reactive-messaging-1.0/microprofile-reactive-messaging-spec.html[MicroProfile Reactive Messaging]
+uses CDI beans to produce, consume or process messages over Reactive Streams.
+Such messaging bean is expected to be either in `ApplicationScoped` or `Dependent` scope.
+Messages are managed by methods annotated by `@Incoming` and `@Outgoing`
+and the invocation is always driven by message core - either at assembly time, or for every message coming from the stream.
+
+WARNING: Messaging methods are not meant to be invoked directly!
+
+[[terms]]
+.Terms definition
+|===
+|https://download.eclipse.org/microprofile/microprofile-reactive-messaging-1.0/microprofile-reactive-messaging-spec.html#_supported_method_signatures[messaging method]| bean method invoked by messaging Specification
+|https://download.eclipse.org/microprofile/microprofile-reactive-messaging-1.0/microprofile-reactive-messaging-spec.html#_connector[connector]| Reactive Messaging connector
+|https://download.eclipse.org/microprofile/microprofile-reactive-messaging-1.0/microprofile-reactive-messaging-spec.html#_channel[channel]| named pair of producer and consumer, both sides can be either messaging method or connector
+|===
+
+The bean can have methods annotated by
+https://download.eclipse.org/microprofile/microprofile-reactive-messaging-1.0/microprofile-reactive-messaging-spec.html#_message_consumption_with_incoming[`@Incoming`],
+https://download.eclipse.org/microprofile/microprofile-reactive-messaging-1.0/microprofile-reactive-messaging-spec.html#_message_production_with_outgoing[`@Outgoing`] or both.
+
+=== Consuming methods with `@Incoming` annotation
+
+The annotation has one required attribute `value` that defines the channel name.
+
+Such annotated <<terms,messaging method>> can function in two ways:
+
+* consume every message coming from the stream connected to the <<terms, channel>>
+* prepare reactive stream's subscriber and connect it to the channel
+
+[source,java]
+.Example consuming every message from channel `example-channel-2`:
+----
+@Incoming("example-channel-2")
+public void printMessage(String msg) {
+    System.out.println("Just received message: " + msg);
+}
+----
+
+[source,java]
+.Example preparing reactive stream subscriber for channel `example-channel-1`:
+----
+@Incoming("example-channel-2")
+public Subscriber<String> printMessage() {
+    return ReactiveStreams.<String>builder()
+                .forEach(msg -> System.out.println("Just received message: " + msg))
+                .build();
+}
+----
+
+=== Producing methods with `@Outgoing` annotation
+
+The annotation has one required attribute `value` that defines the
+https://download.eclipse.org/microprofile/microprofile-reactive-messaging-1.0/microprofile-reactive-messaging-spec.html#_channel[channel]
+name.
+
+Such annotated <<terms,messaging method>> can function in two ways:
+
+* produce exactly one message to the stream connected to the
+https://download.eclipse.org/microprofile/microprofile-reactive-messaging-1.0/microprofile-reactive-messaging-spec.html#_channel[channel]
+* prepare reactive stream's publisher and connect it to the
+https://download.eclipse.org/microprofile/microprofile-reactive-messaging-1.0/microprofile-reactive-messaging-spec.html#_channel[channel]
+
+[source,java]
+.Example producing exactly one message to channel `example-channel-1`:
+----
+@Outgoing("example-channel-1")
+public String produceMessage() {
+    return "foo";
+}
+----
+
+[source,java]
+.Example preparing reactive stream publisher publishing three messages to the channel `example-channel-1`:
+----
+@Outgoing("example-channel-1")
+public Publisher<String> printMessage() {
+    return ReactiveStreams.of("foo", "bar", "baz").buildRs();
+}
+----
+
+=== Processing methods with `@Incoming` and `@Outgoing` annotation
+
+Such
+https://download.eclipse.org/microprofile/microprofile-reactive-messaging-1.0/microprofile-reactive-messaging-spec.html#_method_consuming_and_producing[methods]
+acts as processors, consuming messages from one channel and producing to another.
+
+Such annotated <<terms,messaging method>> can function in multiple ways:
+
+* process every message
+* prepare reactive stream's processor and connect it between the channels
+* on every message prepare new publisher(equivalent to `flatMap` operator)
+
+[source,java]
+.Example processing every message from channel `example-channel-1` to channel `example-channel-2`:
+----
+@Incoming("example-channel-1")
+@Outgoing("example-channel-2")
+public String processMessage(String msg) {
+    return msg.toUpperCase();
+}
+----
+
+[source,java]
+.Example preparing processor stream to be connected between channels `example-channel-1` and `example-channel-2`:
+----
+@Incoming("example-channel-1")
+@Outgoing("example-channel-2")
+public Processor<String, String> processMessage() {
+    return ReactiveStreams.<String>builder()
+                .map(String::toUpperCase)
+                .buildRs();
+}
+----
+
+[source,java]
+.Example processing every message from channel `example-channel-1`as stream to be flattened to channel `example-channel-2`:
+----
+@Incoming("example-channel-1")
+@Outgoing("example-channel-2")
+public String processMessage(String msg) {
+    return ReactiveStreams.of(msg.toUpperCase(), msg.toLowerCase()).buildRs();
+}
+----
+
+=== Dependency
+
+Declare the following dependency in your project:
+
+[source,xml]
+----
+<dependency>
+   <groupId>io.helidon.microprofile.messaging</groupId>
+   <artifactId>helidon-microprofile-messaging</artifactId>
+</dependency>
+----

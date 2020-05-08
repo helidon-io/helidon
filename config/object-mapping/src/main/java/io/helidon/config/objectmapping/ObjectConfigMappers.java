@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,10 @@
  */
 package io.helidon.config.objectmapping;
 
-import java.lang.invoke.MethodHandle;
 import java.util.Collection;
+import java.util.List;
 import java.util.function.Function;
 
-import io.helidon.common.HelidonFeatures;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigMappingException;
 import io.helidon.config.MissingValueException;
@@ -31,16 +30,12 @@ import io.helidon.config.objectmapping.ReflectionUtil.PropertyAccessor;
  */
 class ObjectConfigMappers {
 
-    static {
-        HelidonFeatures.register("Config", "Object Mapping");
-    }
-
     abstract static class MethodHandleConfigMapper<T, P> implements Function<Config, T> {
         private final Class<T> type;
         private final String methodName;
-        private final MethodHandle methodHandle;
+        private final HelidonMethodHandle methodHandle;
 
-        MethodHandleConfigMapper(Class<T> type, String methodName, MethodHandle methodHandle) {
+        MethodHandleConfigMapper(Class<T> type, String methodName, HelidonMethodHandle methodHandle) {
             this.type = type;
             this.methodName = methodName;
             this.methodHandle = methodHandle;
@@ -51,7 +46,7 @@ class ObjectConfigMappers {
         @Override
         public T apply(Config config) throws ConfigMappingException, MissingValueException {
             try {
-                return type.cast(methodHandle.invoke(invokeParameter(config)));
+                return type.cast(methodHandle.invoke(List.of(invokeParameter(config))));
             } catch (ConfigMappingException ex) {
                 throw ex;
             } catch (Throwable ex) {
@@ -62,7 +57,7 @@ class ObjectConfigMappers {
     }
 
     static class ConfigMethodHandleConfigMapper<T> extends MethodHandleConfigMapper<T, Config> {
-        ConfigMethodHandleConfigMapper(Class<T> type, String methodName, MethodHandle methodHandle) {
+        ConfigMethodHandleConfigMapper(Class<T> type, String methodName, HelidonMethodHandle methodHandle) {
             super(type, methodName, methodHandle);
         }
 
@@ -73,7 +68,7 @@ class ObjectConfigMappers {
     }
 
     static class StringMethodHandleConfigMapper<T> extends MethodHandleConfigMapper<T, String> {
-        StringMethodHandleConfigMapper(Class<T> type, String methodName, MethodHandle methodHandle) {
+        StringMethodHandleConfigMapper(Class<T> type, String methodName, HelidonMethodHandle methodHandle) {
             super(type, methodName, methodHandle);
         }
 
@@ -176,10 +171,10 @@ class ObjectConfigMappers {
     static class GenericConfigMapper<T> implements Function<Config, T> {
 
         private final Class<T> type;
-        private final MethodHandle constructorHandle;
+        private final HelidonMethodHandle constructorHandle;
         private final Collection<PropertyAccessor<?>> propertyAccessors;
 
-        GenericConfigMapper(Class<T> type, MethodHandle constructorHandle) {
+        GenericConfigMapper(Class<T> type, HelidonMethodHandle constructorHandle) {
             this.type = type;
             this.constructorHandle = constructorHandle;
 
@@ -192,7 +187,7 @@ class ObjectConfigMappers {
         @Override
         public T apply(Config config) throws ConfigMappingException, MissingValueException {
             try {
-                T instance = type.cast(constructorHandle.invoke());
+                T instance = type.cast(constructorHandle.invoke(List.of()));
 
                 for (PropertyAccessor<?> propertyAccessor : propertyAccessors) {
                     propertyAccessor.set(instance, config.get(propertyAccessor.name()));

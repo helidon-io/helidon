@@ -21,10 +21,18 @@ import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreamsFactor
 import org.eclipse.microprofile.reactive.streams.operators.tck.ReactiveStreamsTck;
 import org.reactivestreams.tck.TestEnvironment;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+
+@Test
 public class HelidonReactiveStreamsEngineTckTest extends ReactiveStreamsTck<HelidonReactiveStreamsEngine> {
 
     public HelidonReactiveStreamsEngineTckTest() {
-        super(new TestEnvironment(50));
+        super(new TestEnvironment(200));
     }
 
     @Override
@@ -40,5 +48,24 @@ public class HelidonReactiveStreamsEngineTckTest extends ReactiveStreamsTck<Heli
     @Override
     protected boolean isEnabled(Object test) {
         return true;
+    }
+
+    private ExecutorService executor;
+
+    @BeforeClass(alwaysRun = true)
+    public void before() {
+        executor = Executors.newSingleThreadExecutor();
+        HelidonReactiveStreamsEngine.setCoupledExecutor(executor);
+    }
+
+    @AfterClass(alwaysRun = true)
+    public void after() {
+        HelidonReactiveStreamsEngine.setCoupledExecutor(null);
+        executor.shutdown();
+    }
+
+    @Test
+    public void hasExecutor() {
+        org.testng.Assert.assertNotNull(executor);
     }
 }
