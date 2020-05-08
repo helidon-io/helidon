@@ -27,7 +27,7 @@
 
     <properties>
         <helidon.version>2.0.0-SNAPSHOT</helidon.version>
-        <mainClass>io.helidon.examples.quickstart.mp.Main</mainClass>
+        <mainClass>io.helidon.microprofile.cdi.Main</mainClass>
 
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>${maven.compiler.source}</maven.compiler.target>
@@ -160,6 +160,7 @@
                                 <addClasspath>true</addClasspath>
                                 <classpathPrefix>libs</classpathPrefix>
                                 <mainClass>${mainClass}</mainClass>
+                                <useUniqueVersions>false</useUniqueVersions>
                             </manifest>
                         </archive>
                     </configuration>

@@ -1,8 +1,0 @@
-= HikariCP Service Configuration
-
-NOTE: This project is deprecated and slated for removal.
-
-This project consists primarily of a `ServiceConfiguration`
-implementation for the
-https://github.com/brettwooldridge/HikariCP/blob/dev/README.md#-hikaricpits-fasterhikari-hikal%C4%93-origin-japanese-light-ray[Hikari
-connection pool].

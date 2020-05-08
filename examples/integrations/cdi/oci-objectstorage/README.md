@@ -29,7 +29,7 @@ docker run --rm -d -p 8080:8080 \
     helidon-examples-integrations-cdi-oci-objectstorage:latest
 ```
 
-With Java 8+:
+With Java:
 ```bash
 mvn package
 java -Doci.auth.fingerprint="${OCI_AUTH_FINGERPRINT}" \

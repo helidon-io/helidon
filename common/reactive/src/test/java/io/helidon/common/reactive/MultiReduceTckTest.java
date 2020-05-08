@@ -28,7 +28,7 @@ import java.util.stream.IntStream;
 public class MultiReduceTckTest extends FlowPublisherVerification<Integer> {
 
     public MultiReduceTckTest() {
-        super(new TestEnvironment(50));
+        super(new TestEnvironment(200));
     }
 
     @Override

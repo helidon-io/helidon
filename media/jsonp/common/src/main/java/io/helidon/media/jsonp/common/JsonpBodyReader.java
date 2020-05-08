@@ -56,7 +56,7 @@ public final class JsonpBodyReader implements MessageBodyReader<JsonStructure> {
             MessageBodyReaderContext context) {
 
         return ContentReaders.readBytes(publisher)
-                .map(new BytesToJsonStructure<>(jsonFactory, type, context.charset())::map);
+                .map(new BytesToJsonStructure<>(jsonFactory, type, context.charset()));
     }
 
     private static final class BytesToJsonStructure<T extends JsonStructure> implements Mapper<byte[], T> {

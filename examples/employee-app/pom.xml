@@ -38,7 +38,7 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.oracle.ojdbc</groupId>
+            <groupId>com.oracle.database.jdbc</groupId>
             <artifactId>ojdbc8</artifactId>
         </dependency>
         <dependency>
@@ -68,6 +68,11 @@
         <dependency>
             <groupId>io.helidon.dbclient</groupId>
             <artifactId>helidon-dbclient-jdbc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

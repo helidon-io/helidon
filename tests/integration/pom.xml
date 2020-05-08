@@ -40,6 +40,8 @@
         <module>mp-ws-services</module>
         <module>webclient</module>
         <module>security</module>
+        <module>mp-gh-1538</module>
+        <module>kafka</module>
     </modules>
 
     <profiles>

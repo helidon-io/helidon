@@ -17,7 +17,7 @@ docker run --rm -d \
     -p 8080:8080 helidon-examples-integrations-cdi-jedis:latest
 ```
 
-With Java 8+:
+With Java:
 ```bash
 mvn package
 java -jar target/helidon-examples-integrations-cdi-jedis.jar

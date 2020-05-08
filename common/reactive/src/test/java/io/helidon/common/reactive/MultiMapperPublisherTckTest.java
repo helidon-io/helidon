@@ -24,7 +24,7 @@ import org.reactivestreams.tck.flow.FlowPublisherVerification;
 public class MultiMapperPublisherTckTest extends FlowPublisherVerification<Integer> {
 
     public MultiMapperPublisherTckTest() {
-        super(new TestEnvironment(50));
+        super(new TestEnvironment(200));
     }
 
     @Override

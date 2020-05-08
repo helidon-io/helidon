@@ -83,6 +83,12 @@ class TestSubscriber<T> implements Flow.Subscriber<T> {
         if (upstream.get() == null) {
             errors.add(new IllegalStateException("onSubscribe not called before onNext!"));
         }
+        if (!errors.isEmpty()) {
+            errors.add(new IllegalStateException("onNext called after onError!"));
+        }
+        if (completions != 0) {
+            errors.add(new IllegalStateException("onNext called after onComplete!"));
+        }
         items.add(item);
     }
 

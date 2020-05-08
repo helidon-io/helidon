@@ -18,21 +18,25 @@ package io.helidon.microprofile.config;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
+import java.util.Map;
 
 import javax.enterprise.context.Dependent;
+import javax.enterprise.inject.se.SeContainer;
+import javax.enterprise.inject.se.SeContainerInitializer;
 import javax.enterprise.inject.spi.CDI;
 import javax.enterprise.util.AnnotationLiteral;
 import javax.inject.Inject;
 import javax.inject.Qualifier;
 
 import io.helidon.config.test.infra.RestoreSystemPropertiesExt;
-import io.helidon.microprofile.cdi.HelidonContainer;
 import io.helidon.microprofile.config.Converters.Ctor;
 import io.helidon.microprofile.config.Converters.Of;
 import io.helidon.microprofile.config.Converters.Parse;
 import io.helidon.microprofile.config.Converters.ValueOf;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
+import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -49,27 +53,31 @@ import static org.junit.jupiter.api.Assertions.assertAll;
  */
 @ExtendWith(RestoreSystemPropertiesExt.class)
 class MpConfigInjectionTest {
-    private static HelidonContainer container;
+    private static SeContainer container;
 
     @BeforeAll
     static void initClass() {
 
-        // System properties for injection
+        // Removed use of system properties, as those stay around after test is finished
+        ConfigProviderResolver configProvider = ConfigProviderResolver.instance();
 
-        System.setProperty("inject.of", "of");
-        System.setProperty("inject.valueOf", "valueOf");
-        System.setProperty("inject.parse", "parse");
-        System.setProperty("inject.ctor", "ctor");
+        configProvider.registerConfig(configProvider.getBuilder()
+                                              .addDefaultSources()
+                                              .withSources(new TestSource())
+                                              .build(),
+                                      Thread.currentThread().getContextClassLoader());
+
 
         // CDI container
-        container = HelidonContainer.instance();
-        container.start();
+        container = SeContainerInitializer.newInstance()
+                .addBeanClasses(Bean.class, SubBean.class)
+                .initialize();
     }
 
     @AfterAll
     static void destroyClass() {
         if (null != container) {
-            container.shutdown();
+            container.close();
         }
     }
 
@@ -130,5 +138,29 @@ class MpConfigInjectionTest {
     @Dependent
     @Specific
     public static class SubBean extends Bean {
+    }
+
+    private static class TestSource implements ConfigSource {
+        private final Map<String, String> properties = Map.of(
+                "inject.of", "of",
+                "inject.valueOf", "valueOf",
+                "inject.parse", "parse",
+                "inject.ctor", "ctor"
+        );
+
+        @Override
+        public Map<String, String> getProperties() {
+            return properties;
+        }
+
+        @Override
+        public String getValue(String propertyName) {
+            return properties.get(propertyName);
+        }
+
+        @Override
+        public String getName() {
+            return getClass().getName();
+        }
     }
 }

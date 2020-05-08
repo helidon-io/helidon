@@ -16,7 +16,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-:javadoc-base-url-api: {javadoc-base-url}?io/helidon/config
+:javadoc-base-url-api: {javadoc-base-url}io.helidon.config/io/helidon/config
 
 = The Configuration Component
 :description: Helidon config introduction

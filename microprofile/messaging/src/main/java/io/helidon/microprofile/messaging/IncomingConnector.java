@@ -61,12 +61,9 @@ class IncomingConnector implements SubscribingConnector {
     @Override
     @SuppressWarnings("unchecked")
     public Subscriber<? super Object> getSubscriber(String channelName) {
-        Subscriber<? super Object> subscriber = subscriberMap.get(channelName);
-        if (subscriber == null) {
-            subscriber = (Subscriber<? super Object>) (Subscriber<?>)
-                    connectorFactory.getSubscriberBuilder(getConnectorConfig(channelName)).build();
-            subscriberMap.put(channelName, subscriber);
-        }
+        Subscriber<? super Object> subscriber = subscriberMap.computeIfAbsent(
+                channelName, cn -> (Subscriber<? super Object>) (Subscriber<?>)
+                connectorFactory.getSubscriberBuilder(getConnectorConfig(channelName)).build());
         return subscriber;
     }
 
