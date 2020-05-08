@@ -92,6 +92,14 @@ backend:
               items:
                 - includes:
                     - "se/config/*.adoc"
+            - title: "CORS"
+              pathprefix: "/se/cors"
+              glyph:
+                type: "icon"
+                value: "swap_horiz"
+              items:
+                - includes:
+                    - "se/cors/*.adoc"
             - title: "DB Client"
               pathprefix: "/se/dbclient"
               glyph:
