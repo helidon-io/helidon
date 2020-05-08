@@ -29,7 +29,7 @@ import java.util.stream.IntStream;
 public class MultiCollectorTckTest extends FlowPublisherVerification<List<Integer>> {
 
     public MultiCollectorTckTest() {
-        super(new TestEnvironment(50));
+        super(new TestEnvironment(200));
     }
 
     @Override

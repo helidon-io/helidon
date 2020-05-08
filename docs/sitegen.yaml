@@ -21,7 +21,7 @@ engine:
       - "asciidoctor-diagram"
     attributes:
       plantumlconfig: "_plantuml-config.txt"
-      javadoc-base-url: "./apidocs/index.html"
+      javadoc-base-url: "./apidocs/"
       helidon-version: "${project.version}"
       microprofile-openapi-version: "${version.lib.microprofile-openapi-api}"
       jandex-plugin-version: ${version.plugin.jandex}
@@ -92,6 +92,14 @@ backend:
               items:
                 - includes:
                     - "se/config/*.adoc"
+            - title: "CORS"
+              pathprefix: "/se/cors"
+              glyph:
+                type: "icon"
+                value: "swap_horiz"
+              items:
+                - includes:
+                    - "se/cors/*.adoc"
             - title: "DB Client"
               pathprefix: "/se/dbclient"
               glyph:

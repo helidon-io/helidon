@@ -1,8 +1,32 @@
-# WebClient example setup
+# Standalone WebClient Example
 
-1. Set port which will be used using one of these two ways.
-    * Set explicit port to application.yaml in section server.port
-    * Pass server port as the main method parameter to ClientMain
-2. Start WebServer by calling ServerMain.main()
-3. Start WebClientExample by calling ClientMain.main()
-    * If you didn't set port via config file, pass generated server port to the main method as parameter
+This example demonstrates how to use the Helidon SE WebClient from a
+standalone Java program to connect to a server.
+
+## Build
+
+```
+mvn package
+```
+
+## Run
+
+First, start the server:
+
+```
+java -jar target/helidon-examples-webclient-standalone.jar
+```
+
+Note the port number that it displays. For example:
+
+```
+WEB server is up! http://localhost:PORT/greet
+```
+
+Then run the client, passing the port number. It will connect
+to the server:
+
+```
+java -cp "target/classes:target/libs/*" io.helidon.examples.webclient.standalone.ClientMain PORT
+```
+

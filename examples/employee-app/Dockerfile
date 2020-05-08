@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2019, 2020 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
 #
 
 # 1st stage, build the app
-FROM maven:3.5.4-jdk-9 as build
+FROM maven:3.6-jdk-11 as build
 
 WORKDIR /helidon
 
@@ -33,13 +33,13 @@ RUN mvn package -DskipTests
 RUN echo "done!"
 
 # 2nd stage, build the runtime image
-FROM openjdk:8-jre-slim
+FROM openjdk:11-jre-slim
 WORKDIR /helidon
 
 # Copy the binary built in the 1st stage
-COPY --from=build /helidon/target/helidon-examples-employee-app ./
+COPY --from=build /helidon/target/helidon-examples-employee-app.jar ./
 COPY --from=build /helidon/target/libs ./libs
 
-CMD ["java", "-jar", "helidon-examples-employee-app"]
+CMD ["java", "-jar", "helidon-examples-employee-app.jar"]
 
 EXPOSE 8080

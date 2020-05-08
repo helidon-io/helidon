@@ -129,7 +129,7 @@ public class GreetService implements Service {
      */
     private void redirect(ServerRequest request,
                           ServerResponse response) {
-        response.headers().add(Http.Header.LOCATION, "http://localhost:" + Main.serverPort + "/greet/");
+        response.headers().add(Http.Header.LOCATION, "http://localhost:" + Main.serverPort + "/greet");
         response.status(Http.Status.MOVED_PERMANENTLY_301).send();
     }
 

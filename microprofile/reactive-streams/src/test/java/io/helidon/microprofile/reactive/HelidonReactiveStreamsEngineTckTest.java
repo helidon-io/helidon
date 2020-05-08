@@ -32,7 +32,7 @@ import org.testng.annotations.Test;
 public class HelidonReactiveStreamsEngineTckTest extends ReactiveStreamsTck<HelidonReactiveStreamsEngine> {
 
     public HelidonReactiveStreamsEngineTckTest() {
-        super(new TestEnvironment(50));
+        super(new TestEnvironment(200));
     }
 
     @Override

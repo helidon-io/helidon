@@ -78,7 +78,7 @@ public class ContentCharsetTest {
         } else {
             contentType = Optional.of(MediaType.parse(contentTypeValue));
         }
-        return MessageBodyReaderContext.create((MediaSupport) null, null,
-                ReadOnlyParameters.empty(), contentType);
+        return MessageBodyReaderContext.create((MediaContext) null, null,
+                                               ReadOnlyParameters.empty(), contentType);
     }
 }

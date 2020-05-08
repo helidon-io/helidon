@@ -15,6 +15,7 @@
  */
 package io.helidon.webclient;
 
+import java.net.URI;
 import java.util.concurrent.CompletionStage;
 
 import io.helidon.common.http.Http;
@@ -56,6 +57,13 @@ public interface WebClientResponse {
      * @return http version
      */
     Http.Version version();
+
+    /**
+     * URI of the last request. (after redirection)
+     *
+     * @return last URI
+     */
+    URI lastEndpointURI();
 
     /**
      * Closes created response.

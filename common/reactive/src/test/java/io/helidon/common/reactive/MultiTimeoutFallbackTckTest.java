@@ -34,13 +34,13 @@ public class MultiTimeoutFallbackTckTest extends FlowPublisherVerification<Long>
     private static ScheduledExecutorService executor;
 
     public MultiTimeoutFallbackTckTest() {
-        super(new TestEnvironment(50));
+        super(new TestEnvironment(200));
     }
 
     @Override
     public Flow.Publisher<Long> createFlowPublisher(long l) {
         return Multi.<Long>never()
-                .timeout(1, TimeUnit.MILLISECONDS, executor, Multi.rangeLong(0, l));
+                .timeout(100, TimeUnit.MILLISECONDS, executor, Multi.rangeLong(0, l));
     }
 
     @Override

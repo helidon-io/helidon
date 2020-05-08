@@ -29,9 +29,17 @@ import java.util.stream.Collectors;
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
 import io.helidon.common.context.Context;
+import io.helidon.common.http.Http;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
+import io.helidon.media.common.MediaContext;
+import io.helidon.media.common.MediaContextBuilder;
 import io.helidon.media.common.MediaSupport;
+import io.helidon.media.common.MessageBodyReader;
+import io.helidon.media.common.MessageBodyStreamReader;
+import io.helidon.media.common.MessageBodyStreamWriter;
+import io.helidon.media.common.MessageBodyWriter;
+import io.helidon.media.common.ParentingMediaContextBuilder;
 import io.helidon.webclient.spi.WebClientService;
 import io.helidon.webclient.spi.WebClientServiceProvider;
 
@@ -73,6 +81,41 @@ public interface WebClient {
     WebClientRequestBuilder get();
 
     /**
+     * Create a request builder for a post method.
+     *
+     * @return client request builder
+     */
+    WebClientRequestBuilder post();
+
+    /**
+     * Create a request builder for a delete method.
+     *
+     * @return client request builder
+     */
+    WebClientRequestBuilder delete();
+
+    /**
+     * Create a request builder for a options method.
+     *
+     * @return client request builder
+     */
+    WebClientRequestBuilder options();
+
+    /**
+     * Create a request builder for a trace method.
+     *
+     * @return client request builder
+     */
+    WebClientRequestBuilder trace();
+
+    /**
+     * Create a request builder for a head method.
+     *
+     * @return client request builder
+     */
+    WebClientRequestBuilder head();
+
+    /**
      * Create a request builder for a method based on method parameter.
      *
      * @param method request method
@@ -80,7 +123,17 @@ public interface WebClient {
      */
     WebClientRequestBuilder method(String method);
 
-    final class Builder implements io.helidon.common.Builder<WebClient> {
+    /**
+     * Create a request builder for a method based on method parameter.
+     *
+     * @param method request method
+     * @return client request builder
+     */
+    WebClientRequestBuilder method(Http.Method method);
+
+    final class Builder implements io.helidon.common.Builder<WebClient>,
+                                   ParentingMediaContextBuilder<Builder>,
+                                   MediaContextBuilder<Builder> {
 
         static {
             HelidonFeatures.register(HelidonFlavor.SE, "WebClient");
@@ -154,15 +207,39 @@ public interface WebClient {
             return this;
         }
 
-        /**
-         * Sets media support of the client. This {@link MediaSupport} instance contains reader and writers
-         * which will be used as default for each request.
-         *
-         * @param mediaSupport media support
-         * @return updated builder instance
-         */
-        public Builder mediaSupport(MediaSupport mediaSupport) {
-            configuration.mediaSupport(mediaSupport);
+        @Override
+        public Builder mediaContext(MediaContext mediaContext) {
+            configuration.mediaContext(mediaContext);
+            return this;
+        }
+
+        @Override
+        public Builder addMediaSupport(MediaSupport mediaSupport) {
+            configuration.addMediaSupport(mediaSupport);
+            return this;
+        }
+
+        @Override
+        public Builder addReader(MessageBodyReader<?> reader) {
+            configuration.addReader(reader);
+            return this;
+        }
+
+        @Override
+        public Builder addStreamReader(MessageBodyStreamReader<?> streamReader) {
+            configuration.addStreamReader(streamReader);
+            return this;
+        }
+
+        @Override
+        public Builder addWriter(MessageBodyWriter<?> writer) {
+            configuration.addWriter(writer);
+            return this;
+        }
+
+        @Override
+        public Builder addStreamWriter(MessageBodyStreamWriter<?> streamWriter) {
+            configuration.addStreamWriter(streamWriter);
             return this;
         }
 

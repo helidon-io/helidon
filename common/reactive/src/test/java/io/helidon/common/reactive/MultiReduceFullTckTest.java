@@ -26,7 +26,7 @@ import java.util.concurrent.Flow;
 public class MultiReduceFullTckTest extends FlowPublisherVerification<Integer> {
 
     public MultiReduceFullTckTest() {
-        super(new TestEnvironment(50));
+        super(new TestEnvironment(200));
     }
 
     @Override

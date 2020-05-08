@@ -27,7 +27,7 @@ import java.util.concurrent.Flow;
 public class MultiRangeTckTest extends FlowPublisherVerification<Integer> {
 
     public MultiRangeTckTest() {
-        super(new TestEnvironment(50));
+        super(new TestEnvironment(200));
     }
 
     @Override

@@ -16,6 +16,7 @@
 
 package io.helidon.tests.integration.webclient;
 
+import java.net.URI;
 import java.util.Collections;
 import java.util.concurrent.ExecutionException;
 
@@ -25,6 +26,7 @@ import javax.json.JsonObject;
 
 import io.helidon.common.http.Http;
 import io.helidon.webclient.WebClientException;
+import io.helidon.webclient.WebClientResponse;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -84,6 +86,14 @@ public class RequestTest extends TestParent {
                 .thenAccept(jsonObject -> Assertions.assertEquals("Hello World!", jsonObject.getString("message")))
                 .toCompletableFuture()
                 .get();
+
+        WebClientResponse response = webClient.get()
+                .path("/redirect")
+                .followRedirects(false)
+                .request()
+                .toCompletableFuture()
+                .get();
+        assertThat(response.status(), is(Http.Status.MOVED_PERMANENTLY_301));
     }
 
     @Test
@@ -138,12 +148,45 @@ public class RequestTest extends TestParent {
                     .get();
         } catch (ExecutionException e) {
             WebClientException ce = (WebClientException) e.getCause();
-            assertThat(ce.getMessage(), startsWith("Entity of the request with status 404"));
+            assertThat(ce.getMessage(), startsWith("Request failed with code 404"));
             return;
         } catch (Exception e) {
             fail(e);
         }
         fail("This request entity process should have failed.");
+    }
+
+    @Test
+    public void testResponseLastUri() throws Exception {
+        URI defaultTemplate = URI.create("http://localhost:" + Main.serverPort + "/greet");
+        URI redirectTemplate = URI.create("http://localhost:" + Main.serverPort + "/greet/redirect");
+
+        WebClientResponse response = webClient.get()
+                .path("/redirect")
+                .request()
+                .toCompletableFuture()
+                .get();
+
+        assertThat(response.lastEndpointURI(), is(defaultTemplate));
+        response.close();
+
+        response = webClient.get()
+                .path("/redirect")
+                .followRedirects(false )
+                .request()
+                .toCompletableFuture()
+                .get();
+
+        assertThat(response.lastEndpointURI(), is(redirectTemplate));
+        response.close();
+
+        response = webClient.get()
+                .request()
+                .toCompletableFuture()
+                .get();
+
+        assertThat(response.lastEndpointURI(), is(defaultTemplate));
+        response.close();
     }
 
 }

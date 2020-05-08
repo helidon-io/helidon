@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,16 +21,16 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -52,8 +52,7 @@ import io.helidon.common.http.MediaType;
 import io.helidon.common.http.Parameters;
 import io.helidon.common.reactive.Single;
 import io.helidon.media.common.MessageBodyReadableContent;
-import io.helidon.media.common.MessageBodyReader;
-import io.helidon.media.common.MessageBodyWriter;
+import io.helidon.media.common.MessageBodyReaderContext;
 import io.helidon.media.common.MessageBodyWriterContext;
 import io.helidon.webclient.spi.WebClientService;
 
@@ -71,13 +70,14 @@ import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpVersion;
+import io.netty.util.AsciiString;
 import io.netty.util.AttributeKey;
 
 /**
  * Implementation of {@link WebClientRequestBuilder}.
  */
 class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
-    static final AttributeKey<ClientRequest> REQUEST = AttributeKey.valueOf("request");
+    static final AttributeKey<WebClientRequestImpl> REQUEST = AttributeKey.valueOf("request");
 
     private static final AtomicLong REQUEST_NUMBER = new AtomicLong(0);
     private static final String DEFAULT_TRANSPORT_PROTOCOL = "http";
@@ -88,26 +88,29 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         DEFAULT_SUPPORTED_PROTOCOLS.put("https", 443);
     }
 
-    private final Map<String, List<String>> properties;
+    private final Map<String, String> properties;
     private final LazyValue<NioEventLoopGroup> eventGroup;
     private final WebClientConfiguration configuration;
     private final Http.RequestMethod method;
     private final WebClientRequestHeaders headers;
     private final Parameters queryParams;
-    private final MessageBodyWriterContext writerContext;
     private final AtomicBoolean handled;
+    private final MessageBodyReaderContext readerContext;
+    private final MessageBodyWriterContext writerContext;
 
     private URI uri;
     private Http.Version httpVersion;
     private Context context;
     private Proxy proxy;
     private String fragment;
+    private boolean followRedirects;
+    private boolean skipUriEncoding;
     private int redirectionCount;
     private RequestConfiguration requestConfiguration;
     private HttpRequest.Path path;
     private List<WebClientService> services;
-    private Set<MessageBodyReader<?>> messageBodyReaders;
-    private Set<MessageBodyWriter<?>> messageBodyWriters;
+    private Duration readTimeout;
+    private Duration connectTimeout;
 
     private WebClientRequestBuilderImpl(LazyValue<NioEventLoopGroup> eventGroup,
                                         WebClientConfiguration configuration,
@@ -117,6 +120,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         this.configuration = configuration;
         this.method = method;
         this.uri = configuration.uri();
+        this.skipUriEncoding = false;
         this.path = ClientPath.create(null, "", new HashMap<>());
         //Default headers added to the current headers of the request
         this.headers = new WebClientRequestHeadersImpl(this.configuration.headers());
@@ -124,14 +128,16 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         this.httpVersion = Http.Version.V1_1;
         this.redirectionCount = 0;
         this.services = configuration.clientServices();
-        this.writerContext = MessageBodyWriterContext.create(configuration.mediaSupport(), null, headers, null);
-        this.messageBodyReaders = new HashSet<>();
-        this.messageBodyWriters = new HashSet<>();
+        this.readerContext = MessageBodyReaderContext.create(configuration.readerContext());
+        this.writerContext = MessageBodyWriterContext.create(configuration.writerContext(), headers);
         Context.Builder contextBuilder = Context.builder().id("webclient-" + REQUEST_NUMBER.incrementAndGet());
         configuration.context().ifPresentOrElse(contextBuilder::parent,
                                                 () -> Contexts.context().ifPresent(contextBuilder::parent));
         this.context = contextBuilder.build();
         this.handled = new AtomicBoolean();
+        this.followRedirects = configuration.followRedirects();
+        this.readTimeout = configuration.readTimout();
+        this.connectTimeout = configuration.connectTimeout();
     }
 
     public static WebClientRequestBuilder create(LazyValue<NioEventLoopGroup> eventGroup,
@@ -146,7 +152,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
      * @param clientRequest previous request
      * @return client request builder
      */
-    static WebClientRequestBuilder create(WebClientRequestBuilder.ClientRequest clientRequest) {
+    static WebClientRequestBuilder create(WebClientRequestImpl clientRequest) {
         WebClientRequestBuilderImpl builder = new WebClientRequestBuilderImpl(NettyClient.eventGroup(),
                                                                               clientRequest.configuration(),
                                                                               clientRequest.method());
@@ -157,9 +163,6 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         builder.proxy = clientRequest.proxy();
         builder.fragment = clientRequest.fragment();
         builder.redirectionCount = clientRequest.redirectionCount() + 1;
-        builder.messageBodyReaders.addAll(clientRequest.configuration().requestReaders());
-        builder.messageBodyWriters.addAll(clientRequest.configuration().requestWriters());
-        builder.messageBodyWriters.forEach(builder.writerContext::registerWriter);
         int maxRedirects = builder.configuration.maxRedirects();
         if (builder.redirectionCount > maxRedirects) {
             throw new WebClientException("Max number of redirects extended! (" + maxRedirects + ")");
@@ -188,8 +191,20 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     }
 
     @Override
-    public WebClientRequestBuilder property(String propertyName, String... propertyValue) {
-        properties.put(propertyName, Arrays.asList(propertyValue));
+    public WebClientRequestBuilder skipUriEncoding() {
+        this.skipUriEncoding = true;
+        return this;
+    }
+
+    @Override
+    public WebClientRequestBuilder followRedirects(boolean followRedirects) {
+        this.followRedirects = followRedirects;
+        return this;
+    }
+
+    @Override
+    public WebClientRequestBuilder property(String propertyName, String propertyValue) {
+        properties.put(propertyName, propertyValue);
         return this;
     }
 
@@ -242,21 +257,20 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     }
 
     @Override
-    public WebClientRequestBuilder register(MessageBodyWriter<?> messageBodyWriter) {
-        writerContext.registerWriter(messageBodyWriter);
-        messageBodyWriters.add(messageBodyWriter);
-        return this;
-    }
-
-    @Override
-    public WebClientRequestBuilder register(MessageBodyReader<?> messageBodyReader) {
-        messageBodyReaders.add(messageBodyReader);
-        return this;
-    }
-
-    @Override
     public WebClientRequestBuilder httpVersion(Http.Version httpVersion) {
         this.httpVersion = httpVersion;
+        return this;
+    }
+
+    @Override
+    public WebClientRequestBuilder connectTimeout(long amount, TemporalUnit unit) {
+        this.connectTimeout = Duration.of(amount, unit);
+        return this;
+    }
+
+    @Override
+    public WebClientRequestBuilder readTimeout(long amount, TemporalUnit unit) {
+        this.readTimeout = Duration.of(amount, unit);
         return this;
     }
 
@@ -297,7 +311,12 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
 
     @Override
     public <T> CompletionStage<T> request(GenericType<T> responseType) {
-        return Contexts.runInContext(context, () -> invoke(Single.empty(), responseType));
+        return Contexts.runInContext(context, () -> invokeWithEntity(Single.empty(), responseType));
+    }
+
+    @Override
+    public CompletionStage<WebClientResponse> request() {
+        return Contexts.runInContext(context, () -> invoke(Single.empty()));
     }
 
     @Override
@@ -307,7 +326,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
 
     @Override
     public <T> CompletionStage<T> submit(Flow.Publisher<DataChunk> requestEntity, Class<T> responseType) {
-        return Contexts.runInContext(context, () -> invoke(requestEntity, GenericType.create(responseType)));
+        return Contexts.runInContext(context, () -> invokeWithEntity(requestEntity, GenericType.create(responseType)));
     }
 
     @Override
@@ -315,17 +334,29 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         GenericType<T> responseGenericType = GenericType.create(responseType);
         Flow.Publisher<DataChunk> dataChunkPublisher = writerContext.marshall(
                 Single.just(requestEntity), GenericType.create(requestEntity), null);
-        return Contexts.runInContext(context, () -> invoke(dataChunkPublisher, responseGenericType));
+        return Contexts.runInContext(context, () -> invokeWithEntity(dataChunkPublisher, responseGenericType));
     }
 
     @Override
     public CompletionStage<WebClientResponse> submit(Flow.Publisher<DataChunk> requestEntity) {
-        return submit(requestEntity, WebClientResponse.class);
+        return Contexts.runInContext(context, () -> invoke(requestEntity));
     }
 
     @Override
     public CompletionStage<WebClientResponse> submit(Object requestEntity) {
-        return submit(requestEntity, WebClientResponse.class);
+        Flow.Publisher<DataChunk> dataChunkPublisher = writerContext.marshall(
+                Single.just(requestEntity), GenericType.create(requestEntity), null);
+        return submit(dataChunkPublisher);
+    }
+
+    @Override
+    public MessageBodyReaderContext readerContext() {
+        return readerContext;
+    }
+
+    @Override
+    public MessageBodyWriterContext writerContext() {
+        return writerContext;
     }
 
     Http.RequestMethod method() {
@@ -360,7 +391,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         return requestConfiguration;
     }
 
-    Map<String, List<String>> properties() {
+    Map<String, String> properties() {
         return properties;
     }
 
@@ -376,8 +407,13 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         return context;
     }
 
-    @SuppressWarnings("unchecked")
-    private <T> CompletionStage<T> invoke(Flow.Publisher<DataChunk> requestEntity, GenericType<T> responseType) {
+    private <T> CompletionStage<T> invokeWithEntity(Flow.Publisher<DataChunk> requestEntity, GenericType<T> responseType) {
+        return invoke(requestEntity)
+                .thenApply(this::getContentFromClientResponse)
+                .thenCompose(content -> content.as(responseType));
+    }
+
+    private CompletionStage<WebClientResponse> invoke(Flow.Publisher<DataChunk> requestEntity) {
         this.uri = prepareFinalURI();
         CompletableFuture<WebClientServiceRequest> sent = new CompletableFuture<>();
         CompletableFuture<WebClientServiceResponse> responseReceived = new CompletableFuture<>();
@@ -401,11 +437,14 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
 
             requestConfiguration = RequestConfiguration.builder(uri)
                     .update(configuration)
+                    .followRedirects(followRedirects)
                     .clientServiceRequest(serviceRequest)
+                    .readerContext(readerContext)
+                    .writerContext(writerContext)
+                    .connectTimeout(connectTimeout)
+                    .readTimeout(readTimeout)
                     .services(services)
                     .context(context)
-                    .requestReaders(Collections.unmodifiableSet(messageBodyReaders))
-                    .requestWriters(Collections.unmodifiableSet(messageBodyWriters))
                     .build();
             WebClientRequestImpl clientRequest = new WebClientRequestImpl(this);
 
@@ -416,10 +455,11 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
             bootstrap.group(group)
                     .channel(NioSocketChannel.class)
                     .handler(new NettyClientInitializer(requestConfiguration, result, responseReceived, complete))
-                    .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, (int) configuration.connectTimeout().toMillis());
+                    .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, (int) connectTimeout.toMillis());
 
             ChannelFuture channelFuture = bootstrap.connect(uri.getHost(), uri.getPort());
             channelFuture.addListener((ChannelFutureListener) future -> {
+                channelFuture.channel().attr(REQUEST).set(clientRequest);
                 Throwable cause = future.cause();
                 if (null == cause) {
                     RequestContentSubscriber requestContentSubscriber = new RequestContentSubscriber(request,
@@ -434,13 +474,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
                     result.completeExceptionally(new WebClientException(uri.toString(), cause));
                 }
             });
-            channelFuture.channel().attr(REQUEST).set(clientRequest);
-            if (responseType.rawType().equals(WebClientResponse.class)) {
-                return (CompletionStage<T>) result;
-            } else {
-                return result.thenApply(this::getContentFromClientResponse)
-                        .thenCompose(content -> content.as(responseType));
-            }
+            return result;
         });
 
     }
@@ -448,9 +482,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     private MessageBodyReadableContent getContentFromClientResponse(WebClientResponse response) {
         //If the response status is greater then 300, ask user to change requested entity to ClientResponse
         if (response.status().code() >= Http.Status.MOVED_PERMANENTLY_301.code()) {
-            throw new WebClientException("Entity of the request with status " + response.status().code()
-                                                 + " could not be automatically handled! "
-                                                 + "Request for ClientResponse instead.");
+            throw new WebClientException("Request failed with code " + response.status().code());
         }
         return response.content();
     }
@@ -463,8 +495,8 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
                 throw new WebClientException("Invalid uri " + uri + ". Uri.getHost() returned null.");
             }
             String scheme = Optional.ofNullable(uri.getScheme())
-                    .orElseThrow(() -> new WebClientException("Transport protocol has be to be specified in uri: " + uri
-                            .toString()));
+                    .orElseThrow(() -> new WebClientException("Transport protocol has be to be specified in uri: "
+                                                                      + uri.toString()));
             if (!DEFAULT_SUPPORTED_PROTOCOLS.containsKey(scheme)) {
                 throw new WebClientException(scheme + " transport protocol is not supported!");
             }
@@ -479,6 +511,18 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
             String query = resolveQuery();
             fragment = fragment == null ? uri.getFragment() : fragment;
             try {
+                if (skipUriEncoding) {
+                    StringBuilder sb = new StringBuilder();
+                    sb.append(scheme).append("://").append(uri.getHost()).append(":").append(port).append(path);
+                    if (query != null) {
+                        sb.append('?');
+                        sb.append(query);
+                    } else if (fragment != null) {
+                        sb.append('#');
+                        sb.append(fragment);
+                    }
+                    return URI.create(sb.toString());
+                }
                 return new URI(scheme, null, uri.getHost(), port, path, query, fragment);
             } catch (URISyntaxException e) {
                 throw new WebClientException("Could not create URI instance for the request.", e);
@@ -535,10 +579,6 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
 
     private HttpHeaders toNettyHttpHeaders() {
         HttpHeaders headers = new DefaultHttpHeaders();
-        headers.set(HttpHeaderNames.HOST, uri.getHost());
-        headers.set(HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE);
-        headers.set(HttpHeaderNames.ACCEPT_ENCODING, HttpHeaderValues.GZIP);
-        headers.set(HttpHeaderNames.USER_AGENT, configuration.userAgent());
         try {
             Map<String, List<String>> cookieHeaders = this.configuration.cookieManager().get(uri, new HashMap<>());
             List<String> cookies = new ArrayList<>(cookieHeaders.get(Http.Header.COOKIE));
@@ -550,7 +590,17 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
             throw new WebClientException("An error occurred while setting cookies.", e);
         }
         this.headers.toMap().forEach(headers::add);
+        addHeaderIfAbsent(headers, HttpHeaderNames.HOST, uri.getHost() + ":" + uri.getPort());
+        addHeaderIfAbsent(headers, HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE);
+        addHeaderIfAbsent(headers, HttpHeaderNames.ACCEPT_ENCODING, HttpHeaderValues.GZIP);
+        addHeaderIfAbsent(headers, HttpHeaderNames.USER_AGENT, configuration.userAgent());
         return headers;
+    }
+
+    private void addHeaderIfAbsent(HttpHeaders headers, AsciiString header, Object headerValue) {
+        if (!headers.contains(header)) {
+            headers.set(header, headerValue);
+        }
     }
 
     /**

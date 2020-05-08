@@ -12,9 +12,17 @@ mvn package
 ## Run
 
 This example requires a mongoDB database, start it using docker:
-`docker run --rm --name mongo -p 27017:27017 mongo`
 
-Then run the `io.helidon.examples.dbclient.mongo.MongoDbExampleMain` class
+```
+docker run --rm --name mongo -p 27017:27017 mongo
+```
+
+Then run the application:
+
+```
+java -jar target/helidon-examples-dbclient-mongodb.jar
+```
+
  
 ## Exercise
 

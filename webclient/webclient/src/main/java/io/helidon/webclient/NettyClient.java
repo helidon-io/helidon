@@ -25,7 +25,7 @@ import io.helidon.common.LazyValue;
 import io.helidon.common.Version;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
-import io.helidon.media.common.MediaSupport;
+import io.helidon.media.common.MediaContext;
 
 import io.netty.channel.nio.NioEventLoopGroup;
 
@@ -44,7 +44,7 @@ final class NettyClient implements WebClient {
     private static final LazyValue<String> DEFAULT_USER_AGENT = LazyValue
             .create(() -> "Helidon/" + Version.VERSION + " (java " + System.getProperty("java.runtime.version") + ")");
     private static final Proxy DEFAULT_PROXY = Proxy.noProxy();
-    private static final MediaSupport DEFAULT_MEDIA_SUPPORT = MediaSupport.createWithDefaults();
+    private static final MediaContext DEFAULT_MEDIA_SUPPORT = MediaContext.create();
     private static final Ssl DEFAULT_SSL = Ssl.builder().build();
 
     private static final AtomicBoolean DEFAULTS_CONFIGURED = new AtomicBoolean();
@@ -57,7 +57,8 @@ final class NettyClient implements WebClient {
                     .followRedirects(DEFAULT_FOLLOW_REDIRECTS)
                     .maxRedirects(DEFAULT_NUMBER_OF_REDIRECTS)
                     .userAgent(DEFAULT_USER_AGENT)
-                    .mediaSupport(DEFAULT_MEDIA_SUPPORT)
+                    .readerContextParent(DEFAULT_MEDIA_SUPPORT.readerContext())
+                    .writerContextParent(DEFAULT_MEDIA_SUPPORT.writerContext())
                     .proxy(DEFAULT_PROXY)
                     .ssl(DEFAULT_SSL)
                     .build();
@@ -92,17 +93,47 @@ final class NettyClient implements WebClient {
 
     @Override
     public WebClientRequestBuilder put() {
-        return WebClientRequestBuilderImpl.create(eventGroup, configuration, Http.Method.PUT);
+        return method(Http.Method.PUT);
     }
 
     @Override
     public WebClientRequestBuilder get() {
-        return WebClientRequestBuilderImpl.create(eventGroup, configuration, Http.Method.GET);
+        return method(Http.Method.GET);
+    }
+
+    @Override
+    public WebClientRequestBuilder post() {
+        return method(Http.Method.POST);
+    }
+
+    @Override
+    public WebClientRequestBuilder delete() {
+        return method(Http.Method.DELETE);
+    }
+
+    @Override
+    public WebClientRequestBuilder options() {
+        return method(Http.Method.OPTIONS);
+    }
+
+    @Override
+    public WebClientRequestBuilder trace() {
+        return method(Http.Method.TRACE);
+    }
+
+    @Override
+    public WebClientRequestBuilder head() {
+        return method(Http.Method.HEAD);
     }
 
     @Override
     public WebClientRequestBuilder method(String method) {
         return WebClientRequestBuilderImpl.create(eventGroup, configuration, Http.RequestMethod.create(method));
+    }
+
+    @Override
+    public WebClientRequestBuilder method(Http.Method method) {
+        return WebClientRequestBuilderImpl.create(eventGroup, configuration, method);
     }
 
     static void configureDefaults(Config globalConfig) {

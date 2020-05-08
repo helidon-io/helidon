@@ -49,7 +49,7 @@ public final class PathBodyWriter implements MessageBodyWriter<Path> {
 
     @Override
     public Publisher<DataChunk> write(Single<Path> content, GenericType<? extends Path> type, MessageBodyWriterContext context) {
-        return content.flatMap(new PathToChunks(DEFAULT_RETRY_SCHEMA, context)::map);
+        return content.flatMap(new PathToChunks(DEFAULT_RETRY_SCHEMA, context));
     }
 
     /**

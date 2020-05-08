@@ -40,7 +40,6 @@
     </properties>
 
     <modules>
-        <module>serviceconfiguration</module>
         <module>cdi</module>
         <module>graal</module>
     </modules>

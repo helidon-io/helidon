@@ -40,7 +40,6 @@ javax.sql.DataSource.example.dataSource.password = tiger
 
 ## Build and run
 
-With JDK8+
 ```bash
 mvn package
 java -jar target/helidon-integrations-examples-datasource-hikaricp-mysql.jar

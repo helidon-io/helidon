@@ -14,10 +14,14 @@
  * limitations under the License.
  */
 
+import io.helidon.media.common.spi.MediaSupportProvider;
+import io.helidon.media.jsonb.common.JsonbProvider;
+import io.helidon.media.jsonb.common.JsonbSupport;
+
 /**
  * JSON-B support common classes.
  *
- * @see io.helidon.media.jsonb.common.JsonBinding
+ * @see JsonbSupport
  */
 module io.helidon.media.jsonb.common {
 
@@ -25,8 +29,11 @@ module io.helidon.media.jsonb.common {
     requires io.helidon.common.http;
     requires io.helidon.common.mapper;
     requires io.helidon.common.reactive;
+    requires io.helidon.config;
     requires io.helidon.media.common;
     requires transitive java.json.bind;
-    
+
     exports io.helidon.media.jsonb.common;
+
+    provides MediaSupportProvider with JsonbProvider;
 }

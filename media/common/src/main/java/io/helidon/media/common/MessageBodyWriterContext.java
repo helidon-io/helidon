@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -111,10 +111,23 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
         this.charsetCached = true;
     }
 
+    private MessageBodyWriterContext(MessageBodyWriterContext writerContext, Parameters headers) {
+        super(writerContext);
+        Objects.requireNonNull(headers, "headers cannot be null!");
+        this.headers = headers;
+        this.writers = new MessageBodyOperators<>(writerContext.writers);
+        this.swriters = new MessageBodyOperators<>(writerContext.swriters);
+        this.acceptedTypes = List.copyOf(writerContext.acceptedTypes);
+        this.contentTypeCache = writerContext.contentTypeCache;
+        this.contentTypeCached = writerContext.contentTypeCached;
+        this.charsetCache = writerContext.charsetCache;
+        this.charsetCached = writerContext.charsetCached;
+    }
+
     /**
      * Create a new writer context.
      *
-     * @param mediaSupport media support used to derive the parent context, may
+     * @param mediaContext media support used to derive the parent context, may
      * be {@code null}
      * @param eventListener message body subscription event listener, may be
      * {@code null}
@@ -122,13 +135,13 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      * @param acceptedTypes accepted types, may be {@code null}
      * @return MessageBodyWriterContext
      */
-    public static MessageBodyWriterContext create(MediaSupport mediaSupport, EventListener eventListener, Parameters headers,
-            List<MediaType> acceptedTypes) {
+    public static MessageBodyWriterContext create(MediaContext mediaContext, EventListener eventListener, Parameters headers,
+                                                  List<MediaType> acceptedTypes) {
 
-        if (mediaSupport == null) {
+        if (mediaContext == null) {
             return new MessageBodyWriterContext(null, eventListener, headers, acceptedTypes);
         }
-        return new MessageBodyWriterContext(mediaSupport.writerContext(), eventListener, headers, acceptedTypes);
+        return new MessageBodyWriterContext(mediaContext.writerContext(), eventListener, headers, acceptedTypes);
     }
 
     /**
@@ -154,6 +167,27 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      */
     public static MessageBodyWriterContext create(Parameters headers) {
         return new MessageBodyWriterContext(headers);
+    }
+
+    /**
+     * Create a new parented writer context.
+     *
+     * @param parent parent writer context
+     * @return MessageBodyWriterContext
+     */
+    public static MessageBodyWriterContext create(MessageBodyWriterContext parent) {
+        return new MessageBodyWriterContext(parent, parent.headers);
+    }
+
+    /**
+     * Create a new parented writer context backed by the specified headers.
+     *
+     * @param parent parent writer context
+     * @param headers headers
+     * @return MessageBodyWriterContext
+     */
+    public static MessageBodyWriterContext create(MessageBodyWriterContext parent, Parameters headers) {
+        return new MessageBodyWriterContext(parent, headers);
     }
 
     /**
@@ -260,7 +294,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
                 return applyFilters(Multi.<DataChunk>empty());
             }
             if (byte[].class.equals(type.rawType())) {
-                return applyFilters(((Single<byte[]>) content).flatMap(BYTES_MAPPER::map));
+                return applyFilters(((Single<byte[]>) content).flatMap(BYTES_MAPPER));
             }
             MessageBodyWriter<T> writer;
             if (fallback != null) {

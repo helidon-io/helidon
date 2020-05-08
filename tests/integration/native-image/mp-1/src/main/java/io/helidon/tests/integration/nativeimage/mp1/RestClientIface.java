@@ -34,6 +34,10 @@ public interface RestClientIface {
     String message();
 
     @GET
+    @Path("/beantype")
+    String beanType();
+
+    @GET
     @Path("/jsonp")
     JsonObject jsonProcessing();
 

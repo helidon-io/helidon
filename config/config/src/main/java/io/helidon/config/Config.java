@@ -40,7 +40,7 @@ import io.helidon.config.spi.OverrideSource;
  * <h1>Configuration</h1>
  * Immutable tree-structured configuration.
  * <h2>Loading Configuration</h2>
- * Load the default configuration using the {@link #create} method.
+ * Load the default configuration using the {@link Config#create} method.
  * <pre>{@code
  * Config config = Config.create();
  * }</pre> Use {@link Config.Builder} to construct a new {@code Config} instance
@@ -233,7 +233,7 @@ import io.helidon.config.spi.OverrideSource;
  * <h2><a id="multipleSources">Handling Multiple Configuration
  * Sources</a></h2>
  * A {@code Config} instance, including the default {@code Config} returned by
- * {@link #create}, might be associated with multiple {@link ConfigSource}s. The
+ * {@link Config#create}, might be associated with multiple {@link ConfigSource}s. The
  * config system merges these together so that values from config sources with higher priority have
  * precedence over values from config sources with lower priority.
  */
@@ -809,6 +809,7 @@ public interface Config {
     //
     // config changes
     //
+
     /**
      * Register a {@link Consumer} that is invoked each time a change occurs on whole Config or on a particular Config node.
      * <p>
@@ -976,8 +977,8 @@ public interface Config {
          */
         MISSING(false, false);
 
-        private boolean exists;
-        private boolean isLeaf;
+        private final boolean exists;
+        private final boolean isLeaf;
 
         Type(boolean exists, boolean isLeaf) {
             this.exists = exists;
@@ -1114,14 +1115,6 @@ public interface Config {
      * @see ConfigFilter
      */
     interface Builder {
-        /**
-         * Disable loading of config sources from Java service loader.
-         * This disables loading of MicroProfile Config sources.
-         *
-         * @return updated builder instance
-         */
-        Builder disableSourceServices();
-
         /**
          * Sets ordered list of {@link ConfigSource} instance to be used as single source of configuration
          * to be wrapped into {@link Config} API.
