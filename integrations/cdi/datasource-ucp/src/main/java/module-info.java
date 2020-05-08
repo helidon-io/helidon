@@ -30,9 +30,7 @@ module io.helidon.integrations.datasource.ucp.cdi {
     requires jakarta.enterprise.cdi.api;
     requires microprofile.config.api;
     requires ucp;
-    requires io.helidon.service.configuration.microprofile.config;
     requires io.helidon.integrations.datasource.cdi;
 
     exports io.helidon.integrations.datasource.ucp.cdi;
-    exports io.helidon.integrations.datasource.ucp.cdi.config;
 }

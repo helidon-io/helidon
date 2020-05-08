@@ -16,41 +16,40 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= CORS Configuration
-:javadoc-base-url-api: {javadoc-base-url}io/helidon/webserver/cors
-:javadoc-base-url-webserver: {javadoc-base-url}io/helidon/webserver
+= Using Configuration for CORS
+:javadoc-base-url-api: {javadoc-base-url}io.helidon.webserver.cors/io/helidon/webserver/cors
+:javadoc-base-url-webserver: {javadoc-base-url}io.helidon.webserver/io/helidon/webserver
 :pagename: cors-configuration
 :description: Helidon CORS Configuration
 :keywords: helidon, java, cors, configuration
+:cors-se-intro: 01_introduction.adoc
 
-From your application retreive and use configuration to set up the app's CORS behavior.
+Your application can use configuration in setting up CORS behavior.
 
-== CORS configuration formats
+== Understanding CORS Configuration Formats [[cors-configuration-formats]]
 The support in Helidon for CORS configuration works with two closely-related formats. Each corresponds to a class
 in the Helidon CORS library which holds CORS information.
 // tag::basic-config[]
 
-=== Basic cross-origin configuration [[basic-cors-config]]
-This is the basic building block of CORS information. The table lists the possible settings in a
-single instance:
+=== Basic Cross-Origin Configuration
+Cross-origin configuration is the basic building block of CORS information. The table below defines the methods on the `CrossOriginConfig.Builder` class and the configuration keys that map to the headers defined in the CORS protocol.
 [[config-key-table]]
-|===
-| Config key | Default | Corresponding HTTP header
+[width="100%",options="header"]
+|====================
+ Methods | Configuration Key | Default | CORS Header Name
+ |`allowCredentials`|`allow-credentials`|`false`|`Access-Control-Allow-Credentials`
+|`allowHeaders`|`allow-headers`|`["*"]`|`Access-Control-Allow-Headers`
+|`allowMethods`|`allow-methods`|`["*"]`|`Access-Control-Allow-Methods`
+|`allowOrigins`|`allow-origins`|`["*"]`|`Access-Control-Allow-Origins`
+|`exposeHeaders`|`expose-headers`|`none`|`Access-COntrol-Expose-Headers`
+|`maxAgeSeconds`|`max-age`|`3600`|`Access-Control-Max-Age`
+|`enabled`|`enabled`|`true`|n/a|
+|====================
+//include::{cors-se-intro}[tag=config-table]
 
-| `allow-credentials` | `false` | `Access-Control-Allow-Credentials`
-| `allow-headers` | `["*"]` | `Access-Control-Allow-Headers`
-| `allow-methods` | `["*"]` | `Access-Control-Allow-Methods`
-| `allow-origins` | `["*"]` | `Access-Control-Allow-Origins`
-| `expose-headers` | none | `Access-Control-Expose-Headers`
-| `max-age` | 3600 | `Access-Control-Allow-Age`
-| `enabled` | `true` | n/a
-|===
+If the cross-origin configuration is disabled (`enabled` = false), then the Helidon CORS implementation ignores the cross-origin configuration entry.
 
-All except `enabled` correspond to HTTP headers which the CORS protocol uses.
-// end::basic-config[]
-
-==== Defining units of CORS behavior
-The following example, if loaded and used by the application, would limit cross-origin resource sharing for `PUT` and
+The following example, when loaded and used by the application, limits cross-origin resource sharing for `PUT` and
 `DELETE` operations to only `foo.com` and `there.com`:
 
 [source,hocon]
@@ -63,9 +62,9 @@ restrictive-cors:
 ----
 // tag::mapped-config[]
 
-=== Mapped cross-origin configuration [[mapped-cors-config]]
-In some cases, you or your users might want to configure CORS behavior based on URL path matching. The _mapped_
-configuration format permits this:
+=== Mapped Cross-Origin Configuration
+In some cases, you or your users might want to configure CORS behavior based on URL path matching. The following example of the  _mapped_
+configuration format illustrates this.
 
 [source,hocon]
 ----
@@ -86,25 +85,24 @@ CORS would be denied to `PATCH` HTTP requests.
 Path expressions can be any expression accepted by the
 link:{javadoc-base-url-webserver}/PathMatcher.html[`PathMatcher`] class.
 
-Arrange the entries in the order you want Helidon to check them. Usually this is from most specific to most general.
+Arrange the entries in the order that you want Helidon to check them. Usually this is from most specific to most general.
 Helidon CORS support searches the cross-origin entries in the order you define them until it finds an entry that
 matches an incoming request's path expression and HTTP method.
 // end::mapped-config[]
 
-You might want to avoid using mapped configuration to set up the _normal_ CORS behavior in your app, because you have to
+You might want to avoid using mapped configuration to set up the _normal_ CORS behavior in your application, because you have to
 make sure the paths are the same in the configuration and in the code that establishes routing for your application.
 You _can_ use mapped configuration to your advantage if you want to allow your users to override the CORS behavior set up
 in the application code. See the example below.
 
-== Using CORS configuration from the application
+== Using CORS Configuration From the Application
 To use basic or mapped CORS configuration, you add logic to your application to load sections of configuration and
 use the loaded config to build `CrossOriginConfig` instances. (The
-<<se/cors/01_introduction.adoc#intro-quick-start-code-example,code example in the QuickStart introduction>> shows
+<<se/cors/01_introduction.adoc#intro-quick-start-code-example, `CrossOriginConfig` Routing Example>> shows
 this in practice.)
 
-The link:{javadoc-base-url-api}/CrossOriginConfig.Builder.html[`CrossOriginConfig.Builder`] class has methods that
-correspond directly to each of the settings described in the <<config-key-table,earlier table>>. You can also create
-a `CrossOriginConfig` instance directly from a config node.
+You can create
+a `CrossOriginConfig` instance directly from a config node, as shown in this example.
 
 [source,java]
 ----
@@ -127,6 +125,7 @@ CorsSupport corsSupport = builder.build(); // <4>
 <3> Provide default CORS handling for requests that do not match earlier entries.
 <4> Obtain the finished `CorsSupport` instance, suitable for use in creating the application's routing.
 
-As each request arrives, Helidon checks it against the mapped cross-origin config first because the application added
-it to the `CorsSupport.Builder` first. This is how you provide overriding behavior.
+As each request arrives, Helidon checks it against the cross-origin config instances in the order that your application added them to the `CorsSupport.Builder`. The `my-cors` mapped configuration acts as an override because the application added it to the builder first.
 
+== Next Steps
+See the Helidon CORS support in action by building and running the link:{helidon-se-cors-example}[CORS example].

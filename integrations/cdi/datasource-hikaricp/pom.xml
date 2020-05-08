@@ -42,16 +42,6 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.serviceconfiguration</groupId>
-            <artifactId>helidon-serviceconfiguration-config-source</artifactId>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.serviceconfiguration</groupId>
-            <artifactId>helidon-serviceconfiguration-hikaricp</artifactId>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
             <groupId>com.zaxxer</groupId>
             <artifactId>HikariCP</artifactId>
             <scope>compile</scope>
@@ -122,10 +112,6 @@
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <classpathDependencyExcludes>
-                        <classpathDependencyExclude>io.helidon.serviceconfiguration:helidon-serviceconfiguration-hikaricp-accs</classpathDependencyExclude>
-                        <classpathDependencyExclude>io.helidon.serviceconfiguration:helidon-serviceconfiguration-hikaricp-localhost</classpathDependencyExclude>
-                    </classpathDependencyExcludes>
                     <systemPropertyVariables>
                         <java.util.logging.config.file>${project.basedir}/src/test/logging.properties</java.util.logging.config.file>
                     </systemPropertyVariables>
