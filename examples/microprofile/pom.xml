@@ -41,5 +41,6 @@
         <module>openapi-basic</module>
         <module>websocket</module>
         <module>messaging-sse</module>
+        <module>cors</module>
     </modules>
 </project>
