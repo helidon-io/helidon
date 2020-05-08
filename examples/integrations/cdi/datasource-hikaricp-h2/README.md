@@ -8,7 +8,6 @@ database.
 
 ## Build and run
 
-With JDK8+
 ```bash
 mvn package
 java -jar target/helidon-integrations-examples-datasource-hikaricp-h2.jar

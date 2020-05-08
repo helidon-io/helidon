@@ -20,13 +20,18 @@
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon.examples.dbclient</groupId>
-        <artifactId>helidon-examples-dbclient-project</artifactId>
+        <groupId>io.helidon.applications</groupId>
+        <artifactId>helidon-se</artifactId>
         <version>2.0.0-SNAPSHOT</version>
+        <relativePath>../../../applications/se/pom.xml</relativePath>
     </parent>
 
     <artifactId>helidon-examples-dbclient-mongodb</artifactId>
     <name>Helidon Examples DB Client MongoDB</name>
+
+    <properties>
+        <mainClass>io.helidon.examples.dbclient.mongo.MongoDbExampleMain</mainClass>
+    </properties>
 
     <dependencies>
         <dependency>
@@ -95,4 +100,19 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-libs</id>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
 </project>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -192,11 +192,19 @@ public abstract class MessageBodyContext implements MessageBodyFilters {
     protected MessageBodyContext(MessageBodyContext parent, EventListener eventListener) {
         if (parent != null) {
             this.filters = new MessageBodyOperators<>(parent.filters);
-            this.eventListener = eventListener;
         } else {
             this.filters = new MessageBodyOperators<>();
-            this.eventListener = eventListener;
         }
+        this.eventListener = eventListener;
+    }
+
+    /**
+     * Create a new parented content support instance.
+     *
+     * @param parent content filters parent
+     */
+    protected MessageBodyContext(MessageBodyContext parent) {
+        this(parent, parent.eventListener);
     }
 
     /**

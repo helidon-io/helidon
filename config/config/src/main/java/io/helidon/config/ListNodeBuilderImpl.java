@@ -105,11 +105,6 @@ public class ListNodeBuilderImpl extends AbstractNodeBuilderImpl<Integer, ListNo
     }
 
     @Override
-    protected String typeDescription() {
-        return "a LIST node";
-    }
-
-    @Override
     protected Integer id(MergingKey key) {
         String name = key.first();
         try {

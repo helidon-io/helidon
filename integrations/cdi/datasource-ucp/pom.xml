@@ -36,22 +36,17 @@
     <dependencies>
         <!-- Compile-scoped dependencies. -->
         <dependency>
-            <groupId>io.helidon.serviceconfiguration</groupId>
-            <artifactId>helidon-serviceconfiguration-config-source</artifactId>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>helidon-integrations-cdi-datasource</artifactId>
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>com.oracle.ojdbc</groupId>
+            <groupId>com.oracle.database.jdbc</groupId>
             <artifactId>ucp</artifactId>
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>com.oracle.ojdbc</groupId>
+            <groupId>com.oracle.database.jdbc</groupId>
             <artifactId>ojdbc8</artifactId>
             <scope>compile</scope>
         </dependency>

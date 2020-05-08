@@ -17,24 +17,17 @@
 package io.helidon.config;
 
 import java.time.Instant;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
-
-import org.eclipse.microprofile.config.spi.ConfigSource;
 
 /**
  * Abstract common implementation of {@link Config} extended by appropriate Config node types:
  * {@link ConfigListImpl}, {@link ConfigMissingImpl}, {@link ConfigObjectImpl}, {@link ConfigLeafImpl}.
  */
-abstract class AbstractConfigImpl implements Config, org.eclipse.microprofile.config.Config {
+abstract class AbstractConfigImpl implements Config {
 
     public static final Logger LOGGER = Logger.getLogger(AbstractConfigImpl.class.getName());
 
@@ -45,8 +38,6 @@ abstract class AbstractConfigImpl implements Config, org.eclipse.microprofile.co
     private final Type type;
     private final Context context;
     private final ConfigMapperManager mapperManager;
-    private final boolean useSystemProperties;
-    private final boolean useEnvironmentVariables;
 
     /**
      * Initializes Config implementation.
@@ -73,26 +64,6 @@ abstract class AbstractConfigImpl implements Config, org.eclipse.microprofile.co
         this.type = type;
 
         context = new NodeContextImpl();
-
-        boolean sysProps = false;
-        boolean envVars = false;
-        int index = 0;
-        for (ConfigSourceRuntimeBase configSource : factory.configSources()) {
-            if (index == 0 && configSource.isSystemProperties()) {
-                sysProps = true;
-            }
-            if (configSource.isEnvironmentVariables()) {
-                envVars = true;
-            }
-
-            if (sysProps && envVars) {
-                break;
-            }
-            index++;
-        }
-
-        this.useEnvironmentVariables = envVars;
-        this.useSystemProperties = sysProps;
     }
 
     /**
@@ -164,117 +135,6 @@ abstract class AbstractConfigImpl implements Config, org.eclipse.microprofile.co
         return asList(Config.class);
     }
 
-    /*
-     * MicroProfile Config methods
-     */
-    @Override
-    public <T> T getValue(String propertyName, Class<T> propertyType) {
-        Config config = factory.context().last();
-        try {
-            return mpFindValue(config, propertyName, propertyType);
-        } catch (MissingValueException e) {
-            throw new NoSuchElementException(e.getMessage());
-        } catch (ConfigMappingException e) {
-            throw new IllegalArgumentException(e);
-        }
-    }
-
-    @Override
-    public <T> Optional<T> getOptionalValue(String propertyName, Class<T> propertyType) {
-        try {
-            return Optional.of(getValue(propertyName, propertyType));
-        } catch (NoSuchElementException e) {
-            return Optional.empty();
-        } catch (ConfigMappingException e) {
-            throw new IllegalArgumentException(e);
-        }
-    }
-
-    @Override
-    public Iterable<String> getPropertyNames() {
-        Set<String> keys = new HashSet<>(factory.context().last()
-                                                 .asMap()
-                                                 .orElseGet(Collections::emptyMap)
-                                                 .keySet());
-
-        if (useSystemProperties) {
-            keys.addAll(System.getProperties().stringPropertyNames());
-        }
-
-        return keys;
-    }
-
-    @Override
-    public Iterable<ConfigSource> getConfigSources() {
-        Config config = factory.context().last();
-        if (null == config) {
-            // maybe we are in progress of initializing this config (e.g. filter processing)
-            config = this;
-        }
-
-        if (config instanceof AbstractConfigImpl) {
-            return ((AbstractConfigImpl) config).mpConfigSources();
-        }
-        return Collections.emptyList();
-    }
-
-    private Iterable<ConfigSource> mpConfigSources() {
-        return new LinkedList<>(factory.mpConfigSources());
-    }
-
-    private <T> T mpFindValue(Config config, String propertyName, Class<T> propertyType) {
-        // this is a workaround TCK tests that expect system properties to be mutable
-        //  Helidon config does the same, yet with a slight delay (polling reasons)
-        //  we need to check if system properties are enabled and first - if so, do this
-
-        String property = null;
-        if (useSystemProperties) {
-            property = System.getProperty(propertyName);
-        }
-
-        if (null == property) {
-            ConfigValue<T> value = config
-                    .get(propertyName)
-                    .as(propertyType);
-
-            if (value.isPresent()) {
-                return value.get();
-            }
-
-            // try to find in env vars
-            if (useEnvironmentVariables) {
-                T envVar = mpFindEnvVar(config, propertyName, propertyType);
-                if (null != envVar) {
-                    return envVar;
-                }
-            }
-
-            return value.get();
-        } else {
-            return config.get(propertyName).convert(propertyType, property);
-        }
-    }
-
-    private <T> T mpFindEnvVar(Config config, String propertyName, Class<T> propertyType) {
-        String result = System.getenv(propertyName);
-
-        // now let's resolve all variants required by the specification
-        if (null == result) {
-            for (String alias : EnvironmentVariableAliases.aliasesOf(propertyName)) {
-                result = System.getenv(alias);
-                if (null != result) {
-                    break;
-                }
-            }
-        }
-
-        if (null != result) {
-            return config.convert(propertyType, result);
-        }
-
-        return null;
-    }
-
     private Config contextConfig(Config rootConfig) {
         return rootConfig
                 .get(AbstractConfigImpl.this.prefix)
@@ -312,7 +172,5 @@ abstract class AbstractConfigImpl implements Config, org.eclipse.microprofile.co
         public Config reload() {
             return AbstractConfigImpl.this.contextConfig(AbstractConfigImpl.this.factory.context().reload());
         }
-
     }
-
 }

@@ -18,6 +18,8 @@ package io.helidon.config;
 
 import io.helidon.config.spi.ConfigFilter;
 
+import static io.helidon.config.FilterLoadingTest.ORIGINAL_VALUE_SUBJECT_TO_AUTO_FILTERING;
+
 /**
  * Abstract superclass for making sure simple priority works.
  * <p>
@@ -34,7 +36,11 @@ public abstract class AutoLoadedConfigPriority implements ConfigFilter {
 
     @Override
     public String apply(Config.Key key, String stringValue) {
-        if (key.toString().equals(KEY_SUBJECT_TO_AUTO_FILTERING)) {
+        // the original implementation was wrong (priorities were inversed and this test was wrong)
+        // the new approach makes sure the filter with higher priority modifies the value, and
+        // any filter down the filter chain sees the modified value, and ignores it
+        if (key.toString().equals(KEY_SUBJECT_TO_AUTO_FILTERING)
+                && stringValue.equals(ORIGINAL_VALUE_SUBJECT_TO_AUTO_FILTERING)) {
             return getExpectedValue();
         }
         return stringValue;

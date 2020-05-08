@@ -26,7 +26,7 @@ import java.util.concurrent.Flow;
 public class MultiSwitchIfEmptyFallbackTckTest extends FlowPublisherVerification<Long> {
 
     public MultiSwitchIfEmptyFallbackTckTest() {
-        super(new TestEnvironment(50));
+        super(new TestEnvironment(200));
     }
 
     @Override

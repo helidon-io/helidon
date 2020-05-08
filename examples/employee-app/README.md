@@ -13,7 +13,6 @@ The service uses Helidon DB Client that provides reactive and non-blocking acces
 
 ## Build and run
 
-With JDK8+
 ```bash
 mvn package
 java -jar target/employee-app.jar

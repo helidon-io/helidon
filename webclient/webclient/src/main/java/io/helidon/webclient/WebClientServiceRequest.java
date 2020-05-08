@@ -15,11 +15,11 @@
  */
 package io.helidon.webclient;
 
+import java.util.Map;
 import java.util.concurrent.CompletionStage;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.http.HttpRequest;
-import io.helidon.common.http.Parameters;
 import io.helidon.webclient.spi.WebClientService;
 
 /**
@@ -65,8 +65,8 @@ public interface WebClientServiceRequest extends HttpRequest {
      * Properties configured by user when creating this client request.
      *
      * @return properties that were configured
-     * @see WebClientRequestBuilder#property(String, String...)
+     * @see WebClientRequestBuilder#property(String, String)
      */
-    Parameters properties();
+    Map<String, String> properties();
 
 }

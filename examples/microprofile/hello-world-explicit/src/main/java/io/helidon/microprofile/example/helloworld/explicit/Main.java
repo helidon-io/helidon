@@ -34,8 +34,7 @@ public class Main {
      */
     public static void main(String[] args) {
         Server server = Server.builder()
-                .addApplication(HelloWorldApplication.class)
-                // using a customized helidon config instance (in this case the default...)
+                // Provide a MicroProfile config instance (in this case the default...)
                 .config(ConfigProviderResolver.instance()
                                 .getBuilder()
                                 .build())

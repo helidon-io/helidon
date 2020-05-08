@@ -68,6 +68,11 @@
                 <artifactId>helidon-webserver-tyrus</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.webserver</groupId>
+                <artifactId>helidon-webserver-cors</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
             <!-- Helidon Jersey -->
             <dependency>
                 <groupId>io.helidon.jersey</groupId>
@@ -161,6 +166,11 @@
                 <artifactId>helidon-microprofile-grpc-client</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.microprofile</groupId>
+                <artifactId>helidon-microprofile-cors</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
             <!-- media -->
             <dependency>
                 <groupId>io.helidon.media</groupId>
@@ -236,6 +246,11 @@
             <dependency>
                 <groupId>io.helidon.config</groupId>
                 <artifactId>helidon-config-object-mapping</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.config</groupId>
+                <artifactId>helidon-config-mp</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <!-- security -->
@@ -806,6 +821,18 @@
             <dependency>
                 <groupId>io.helidon.microprofile.openapi</groupId>
                 <artifactId>helidon-microprofile-openapi</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <!-- CORS support -->
+            <dependency>
+                <groupId>io.helidon.webserver.cors</groupId>
+                <artifactId>helidon-cors</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <!-- Messaging -->
+            <dependency>
+                <groupId>io.helidon.messaging.connectors.kafka</groupId>
+                <artifactId>helidon-messaging-connectors-kafka</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
         </dependencies>

@@ -27,7 +27,7 @@ import java.util.stream.IntStream;
 public class MultiDropWhileTckTest extends FlowPublisherVerification<Integer> {
 
     public MultiDropWhileTckTest() {
-        super(new TestEnvironment(50));
+        super(new TestEnvironment(200));
     }
 
     @Override
