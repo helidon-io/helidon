@@ -17,20 +17,20 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = CORS Configuration
-:javadoc-base-url-api: {javadoc-base-url}?io/helidon/webserver/cors
-:javadoc-base-url-webserver: {javadoc-base-url}?io/helidon/webserver
+:javadoc-base-url-api: {javadoc-base-url}io/helidon/webserver/cors
+:javadoc-base-url-webserver: {javadoc-base-url}io/helidon/webserver
 :pagename: cors-configuration
 :description: Helidon CORS Configuration
 :keywords: helidon, java, cors, configuration
 
 From your application retreive and use configuration to set up the app's CORS behavior.
 
-[[cors-configuration-formats]]
 == CORS configuration formats
 The support in Helidon for CORS configuration works with two closely-related formats. Each corresponds to a class
 in the Helidon CORS library which holds CORS information.
+// tag::basic-config[]
 
-=== Basic cross-origin configuration
+=== Basic cross-origin configuration [[basic-cors-config]]
 This is the basic building block of CORS information. The table lists the possible settings in a
 single instance:
 [[config-key-table]]
@@ -47,7 +47,9 @@ single instance:
 |===
 
 All except `enabled` correspond to HTTP headers which the CORS protocol uses.
+// end::basic-config[]
 
+==== Defining units of CORS behavior
 The following example, if loaded and used by the application, would limit cross-origin resource sharing for `PUT` and
 `DELETE` operations to only `foo.com` and `there.com`:
 
@@ -59,8 +61,9 @@ restrictive-cors:
   allow-methods: ["PUT", "DELETE"]
 ...
 ----
+// tag::mapped-config[]
 
-=== Mapped cross-origin configuration
+=== Mapped cross-origin configuration [[mapped-cors-config]]
 In some cases, you or your users might want to configure CORS behavior based on URL path matching. The _mapped_
 configuration format permits this:
 
@@ -86,6 +89,7 @@ link:{javadoc-base-url-webserver}/PathMatcher.html[`PathMatcher`] class.
 Arrange the entries in the order you want Helidon to check them. Usually this is from most specific to most general.
 Helidon CORS support searches the cross-origin entries in the order you define them until it finds an entry that
 matches an incoming request's path expression and HTTP method.
+// end::mapped-config[]
 
 You might want to avoid using mapped configuration to set up the _normal_ CORS behavior in your app, because you have to
 make sure the paths are the same in the configuration and in the code that establishes routing for your application.
