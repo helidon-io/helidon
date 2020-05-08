@@ -52,7 +52,7 @@ simple requests and stricter for others. In practice, you can use as many types 
 your application.
 
 . Add the CORS dependencies to the Maven `pom.xml` file.
-. Add the CORS support in your application. See <<adding-cors-support>>.
+. Add the CORS support in your application.
 
 The <<about/04_managing-dependencies.adoc, Managing Dependencies>> page describes how you
 should declare dependency management for Helidon applications. For CORS support, you must include
@@ -147,4 +147,4 @@ The few additional lines identified above allow the application to participate i
 
 
 == Next Steps
-See the Helidon CORS support in action by building and running the CORS example link:{helidon-se-cors-example}[here].
+See the Helidon CORS support in action by building and running the link:{helidon-se-cors-example}[CORS example].
