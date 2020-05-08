@@ -608,22 +608,28 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
     CompletionAwaitable<Void> thenRunAsync(Runnable action, Executor executor);
 
     @Override
-    <U, V> CompletionAwaitable<V> thenCombine(CompletionStage<? extends U> other, BiFunction<? super T, ? super U, ? extends V> fn);
+    <U, V> CompletionAwaitable<V> thenCombine(CompletionStage<? extends U> other,
+                                              BiFunction<? super T, ? super U, ? extends V> fn);
 
     @Override
-    <U, V> CompletionAwaitable<V> thenCombineAsync(CompletionStage<? extends U> other, BiFunction<? super T, ? super U, ? extends V> fn);
+    <U, V> CompletionAwaitable<V> thenCombineAsync(CompletionStage<? extends U> other,
+                                                   BiFunction<? super T, ? super U, ? extends V> fn);
 
     @Override
-    <U, V> CompletionAwaitable<V> thenCombineAsync(CompletionStage<? extends U> other, BiFunction<? super T, ? super U, ? extends V> fn, Executor executor);
+    <U, V> CompletionAwaitable<V> thenCombineAsync(CompletionStage<? extends U> other,
+                                                   BiFunction<? super T, ? super U, ? extends V> fn, Executor executor);
 
     @Override
-    <U> CompletionAwaitable<Void> thenAcceptBoth(CompletionStage<? extends U> other, BiConsumer<? super T, ? super U> action);
+    <U> CompletionAwaitable<Void> thenAcceptBoth(CompletionStage<? extends U> other,
+                                                 BiConsumer<? super T, ? super U> action);
 
     @Override
-    <U> CompletionAwaitable<Void> thenAcceptBothAsync(CompletionStage<? extends U> other, BiConsumer<? super T, ? super U> action);
+    <U> CompletionAwaitable<Void> thenAcceptBothAsync(CompletionStage<? extends U> other,
+                                                      BiConsumer<? super T, ? super U> action);
 
     @Override
-    <U> CompletionAwaitable<Void> thenAcceptBothAsync(CompletionStage<? extends U> other, BiConsumer<? super T, ? super U> action, Executor executor);
+    <U> CompletionAwaitable<Void> thenAcceptBothAsync(CompletionStage<? extends U> other,
+                                                      BiConsumer<? super T, ? super U> action, Executor executor);
 
     @Override
     CompletionAwaitable<Void> runAfterBoth(CompletionStage<?> other, Runnable action);
@@ -641,7 +647,8 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
     <U> CompletionAwaitable<U> applyToEitherAsync(CompletionStage<? extends T> other, Function<? super T, U> fn);
 
     @Override
-    <U> CompletionAwaitable<U> applyToEitherAsync(CompletionStage<? extends T> other, Function<? super T, U> fn, Executor executor);
+    <U> CompletionAwaitable<U> applyToEitherAsync(CompletionStage<? extends T> other, Function<? super T, U> fn,
+                                                  Executor executor);
 
     @Override
     CompletionAwaitable<Void> acceptEither(CompletionStage<? extends T> other, Consumer<? super T> action);
@@ -650,7 +657,8 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
     CompletionAwaitable<Void> acceptEitherAsync(CompletionStage<? extends T> other, Consumer<? super T> action);
 
     @Override
-    CompletionAwaitable<Void> acceptEitherAsync(CompletionStage<? extends T> other, Consumer<? super T> action, Executor executor);
+    CompletionAwaitable<Void> acceptEitherAsync(CompletionStage<? extends T> other, Consumer<? super T> action,
+                                                Executor executor);
 
     @Override
     CompletionAwaitable<Void> runAfterEither(CompletionStage<?> other, Runnable action);
