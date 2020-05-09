@@ -27,6 +27,13 @@
 :quickstart-example: {helidon-tag}/examples/quickstarts/helidon-quickstart-mp
 :cors-spec: https://www.w3.org/TR/cors/
 :helidon-mp-cors-example: {helidon-tag}/examples/microprofile/cors
+:cors-se: ../../se/cors
+:cors-se-intro: {cors-se}/01_introduction.adoc
+:cors-se-config: {cors-se}/02_configuration.adoc
+:cors-config-table-src: {cors-se-intro}
+:cors-mapped-config-src: {cors-se-config}
+:mapped-config-top-key: cors
+:cors-config-table-exclude-methods:
 
 You and your users can override the annotated CORS set-up using MicroProfile configuration.
 
@@ -34,26 +41,14 @@ You and your users can override the annotated CORS set-up using MicroProfile con
 The support in Helidon MP for CORS configuration works with the following format.
 
 [[config-key-table]]
-[width="100%",options="header"]
-|====================
-|  Configuration Key | Default | CORS Header Name
-|`allow-credentials`|`false`|`Access-Control-Allow-Credentials`
-|`allow-headers`|`["*"]`|`Access-Control-Allow-Headers`
-|`allow-methods`|`["*"]`|`Access-Control-Allow-Methods`
-|`allow-origins`|`["*"]`|`Access-Control-Allow-Origins`
-|`expose-headers`|`none`|`Access-COntrol-Expose-Headers`
-|`max-age`|`3600`|`Access-Control-Max-Age`
-|`enabled`|`true`|n/a|
-|====================
-//include::{cors-se-intro}[tag=config-table]
+include::{cors-config-table-src}[tag=cors-config-table]
 
 If the cross-origin configuration is disabled (`enabled` = false), then the Helidon CORS implementation ignores the cross-origin configuration entry.
 
 Although there are two types of CORS cross-origin configuration, for Helidon MP use
 the mapped format.
 
-include::../../se/cors/02_configuration.adoc[tag=mapped-config]
-//include::se/cors/02_configuration.adoc[tag=mapped-config]
+include::{cors-mapped-config-src}[tag=mapped-config]
 
 The following example shows how you can express similar configuration using properties-file syntax
 in your applications's `META-INF/microprofile-config.properties` file. Note that the top-level config key

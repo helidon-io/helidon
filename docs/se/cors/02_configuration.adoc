@@ -23,29 +23,21 @@
 :description: Helidon CORS Configuration
 :keywords: helidon, java, cors, configuration
 :cors-se-intro: 01_introduction.adoc
+:cors-config-table-src: {cors-se-intro}
+:mapped-config-top-key: my-cors
+:cors-config-table-exclude-methods:
 
 Your application can use configuration in setting up CORS behavior.
 
 == Understanding CORS Configuration Formats [[cors-configuration-formats]]
 The support in Helidon for CORS configuration works with two closely-related formats. Each corresponds to a class
 in the Helidon CORS library which holds CORS information.
-// tag::basic-config[]
 
 === Basic Cross-Origin Configuration
 Cross-origin configuration is the basic building block of CORS information. The table below defines the methods on the `CrossOriginConfig.Builder` class and the configuration keys that map to the headers defined in the CORS protocol.
+
 [[config-key-table]]
-[width="100%",options="header"]
-|====================
- Methods | Configuration Key | Default | CORS Header Name
- |`allowCredentials`|`allow-credentials`|`false`|`Access-Control-Allow-Credentials`
-|`allowHeaders`|`allow-headers`|`["*"]`|`Access-Control-Allow-Headers`
-|`allowMethods`|`allow-methods`|`["*"]`|`Access-Control-Allow-Methods`
-|`allowOrigins`|`allow-origins`|`["*"]`|`Access-Control-Allow-Origins`
-|`exposeHeaders`|`expose-headers`|`none`|`Access-COntrol-Expose-Headers`
-|`maxAgeSeconds`|`max-age`|`3600`|`Access-Control-Max-Age`
-|`enabled`|`enabled`|`true`|n/a|
-|====================
-//include::{cors-se-intro}[tag=config-table]
+include::{cors-config-table-src}[tag=cors-config-table]
 
 If the cross-origin configuration is disabled (`enabled` = false), then the Helidon CORS implementation ignores the cross-origin configuration entry.
 
@@ -66,10 +58,10 @@ restrictive-cors:
 In some cases, you or your users might want to configure CORS behavior based on URL path matching. The following example of the  _mapped_
 configuration format illustrates this.
 
-[source,hocon]
+[source,hocon,subs="attributes+"]
 ----
 ...
-my-cors:
+{mapped-config-top-key}:
   paths:
     - path-prefix: /greeting <1>
       allow-origins: ["http://foo.com", "http://there.com", "http://other.com"]
