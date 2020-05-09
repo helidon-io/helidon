@@ -230,6 +230,14 @@ backend:
               items:
                 - includes:
                     - "mp/extensions/*.adoc"
+            - title: "CORS"
+              pathprefix: "/mp/cors"
+              glyph:
+                type: "icon"
+                value: "swap_horiz"
+              items:
+                - includes:
+                    - "mp/cors/*.adoc"
             - title: "gRPC server"
               pathprefix: "/mp/grpc"
               glyph:

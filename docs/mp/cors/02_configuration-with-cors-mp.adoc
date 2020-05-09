@@ -55,7 +55,7 @@ the mapped format.
 include::../../se/cors/02_configuration.adoc[tag=mapped-config]
 //include::se/cors/02_configuration.adoc[tag=mapped-config]
 
-The following example shows how you can express the same configuration using properties-file syntax
+The following example shows how you can express similar configuration using properties-file syntax
 in your applications's `META-INF/microprofile-config.properties` file. Note that the top-level config key
 must be `cors`.
 

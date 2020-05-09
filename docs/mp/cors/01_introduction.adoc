@@ -78,15 +78,16 @@ The example below extends the Helidon MP QuickStart application (the greeting ap
 * Permit unrestricted sharing of the resource that returns greetings, and
 * Restrict sharing of the resource that
 updates the greeting so that only the origins `http://foo.com` and `http://there.com` can change the greeting.
+
 [source,java]
 ----
 @OPTIONS
-@CrossOrigin() <1>
+@CrossOrigin() // <1>
 public void options() {}
 
 @OPTIONS
 @Path("/greeting")
-@CrossOrigin(allowMethods = {"PUT"}, allowOrigins = {"http://foo.com", "http://there.com"}) <2>
+@CrossOrigin(allowMethods = {"PUT"}, allowOrigins = {"http://foo.com", "http://there.com"}) // <2>
 public void optionsForGreeting() {}
 ----
 <1> Uses the default cross-origin sharing, which permits sharing via all HTTP methods to all origins.
