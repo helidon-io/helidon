@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,8 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
  * ConfigFileAuthenticationDetailsProvider}.
  */
 public final class OciConfigConfigSource implements ConfigSource {
+
+  private static final ThreadLocal<Map<String, String>> PROPERTIES = new ThreadLocal<>();
 
   private volatile Map<String, String> properties;
 
@@ -98,32 +100,45 @@ public final class OciConfigConfigSource implements ConfigSource {
   @Override
   public String getValue(final String propertyName) {
     final String returnValue;
-    if (propertyName == null || propertyName.equals("oci.auth.profile") || propertyName.equals("oci.config.path")) {
+    if (propertyName == null) {
       returnValue = null;
+    } else if (propertyName.equals(ConfigSource.CONFIG_ORDINAL)) {
+      returnValue = String.valueOf(this.getOrdinal());
     } else {
       Map<String, String> properties = this.properties;
       if (properties == null) {
-        final Config config = ConfigProvider.getConfig();
-        assert config != null;
-        final String profile = config.getOptionalValue("oci.auth.profile", String.class).orElse("DEFAULT");
-        assert profile != null;
-        final String configFilePath = config.getOptionalValue("oci.config.path", String.class).orElse(null);
-        final ConfigFileAuthenticationDetailsProvider provider;
-        ConfigFileAuthenticationDetailsProvider temp = null;
+        properties = PROPERTIES.get();
+      }
+      if (properties == null) {
+        PROPERTIES.set(Collections.emptyMap());
         try {
-          if (configFilePath == null) {
-            temp = new ConfigFileAuthenticationDetailsProvider(profile);
-          } else {
-            temp = new ConfigFileAuthenticationDetailsProvider(configFilePath, profile);
+          // Reentrant call; i.e. this causes a new
+          // OciConfigConfigSource instance to be created and queried
+          // for various values.
+          final Config config = ConfigProvider.getConfig();
+          assert config != null;
+          final String profile = config.getOptionalValue("oci.auth.profile", String.class).orElse("DEFAULT");
+          assert profile != null;
+          final String configFilePath = config.getOptionalValue("oci.config.path", String.class).orElse(null);
+          final ConfigFileAuthenticationDetailsProvider provider;
+          ConfigFileAuthenticationDetailsProvider temp = null;
+          try {
+            if (configFilePath == null) {
+              temp = new ConfigFileAuthenticationDetailsProvider(profile);
+            } else {
+              temp = new ConfigFileAuthenticationDetailsProvider(configFilePath, profile);
+            }
+          } catch (final IOException ioException) {
+            temp = null;
+          } finally {
+            provider = temp;
           }
-        } catch (final IOException ioException) {
-          temp = null;
+          properties = createProperties(provider);
+          assert properties != null;
+          this.properties = properties;
         } finally {
-          provider = temp;
+          PROPERTIES.remove();
         }
-        properties = createProperties(provider);
-        assert properties != null;
-        this.properties = properties;
       }
       assert properties != null;
       returnValue = properties.get(propertyName);
@@ -177,6 +192,9 @@ public final class OciConfigConfigSource implements ConfigSource {
   @Override
   public Map<String, String> getProperties() {
     Map<String, String> properties = this.properties;
+    if (properties == null) {
+      properties = PROPERTIES.get();
+    }
     return properties == null || properties.isEmpty() ? Collections.emptyMap() : properties;
   }
 
