@@ -96,7 +96,7 @@ backend:
               pathprefix: "/se/cors"
               glyph:
                 type: "icon"
-                value: "swap_horiz"
+                value: "share"
               items:
                 - includes:
                     - "se/cors/*.adoc"
@@ -234,7 +234,7 @@ backend:
               pathprefix: "/mp/cors"
               glyph:
                 type: "icon"
-                value: "swap_horiz"
+                value: "share"
               items:
                 - includes:
                     - "mp/cors/*.adoc"
