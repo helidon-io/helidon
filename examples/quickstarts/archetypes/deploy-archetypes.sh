@@ -43,7 +43,7 @@ else
 fi
 
 readonly MAVEN_DEPLOY_ARGS="org.apache.maven.plugins:maven-deploy-plugin:2.8.2:deploy -DaltDeploymentRepository=ossrh::default::${MAVEN_REPO_URL}"
-readonly MAVEN_ARGS="-B clean verify -DskipTests gpg:sign -Dgpg.passphase=${GPG_PASSPHRASE} ${MAVEN_DEPLOY_ARGS}"
+readonly MAVEN_ARGS="${MAVEN_ARGS} clean verify -DskipTests gpg:sign ${MAVEN_DEPLOY_ARGS}"
 
 ${MY_DIR}/create-archetypes.sh \
     --version="${MVN_VERSION}" \
