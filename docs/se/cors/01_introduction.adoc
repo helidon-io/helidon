@@ -79,23 +79,46 @@ The `CrossOriginConfig` Java class represents the details for a particular type 
 .  Use that `CorsSupport` instance to set up the routing rules.
 
 Each of these classes has an associated builder.
-// tag::config-table[]
-The table below defines the methods on the `CrossOriginConfig.Builder` class and the configuration keys that map to the headers defined in the CORS protocol.
+// tag::cors-config-table[]
+The table below describes
+ifndef::cors-config-table-exclude-methods[the methods on the `CrossOriginConfig.Builder` class and ]
+the configuration keys that map to the headers defined in the CORS protocol.
 
-[width="100%",options="header"]
+ifndef::cors-config-table-exclude-methods[]
+[width="100%",options="header",cols="4*"]
+endif::[]
+ifdef::cors-config-table-exclude-methods[]
+[width="100%",options="header",cols="3*"]
+endif::[]
+
 |====================
- Methods | Configuration Key | Default | CORS Header Name
- |`allowCredentials`|`allow-credentials`|`false`|`Access-Control-Allow-Credentials`
-|`allowHeaders`|`allow-headers`|`["*"]`|`Access-Control-Allow-Headers`
-|`allowMethods`|`allow-methods`|`["*"]`|`Access-Control-Allow-Methods`
-|`allowOrigins`|`allow-origins`|`["*"]`|`Access-Control-Allow-Origins`
-|`exposeHeaders`|`expose-headers`|`none`|`Access-COntrol-Expose-Headers`
-|`maxAgeSeconds`|`max-age`|`3600`|`Access-Control-Max-Age`
-|`enabled`|`enabled`|`true`|n/a|
+ifndef::cors-config-table-exclude-methods[| Methods ]
+| Configuration Key | Default | CORS Header Name
+
+ifndef::cors-config-table-exclude-methods[|`allowCredentials`]
+|`allow-credentials`|`false`|`Access-Control-Allow-Credentials`
+
+ifndef::cors-config-table-exclude-methods[|`allowHeaders`]
+|`allow-headers`|`["*"]`|`Access-Control-Allow-Headers`
+
+ifndef::cors-config-table-exclude-methods[|`allowMethods`]
+|`allow-methods`|`["*"]`|`Access-Control-Allow-Methods`
+
+ifndef::cors-config-table-exclude-methods[|`allowOrigins`]
+|`allow-origins`|`["*"]`|`Access-Control-Allow-Origins`
+
+ifndef::cors-config-table-exclude-methods[|`exposeHeaders`]
+|`expose-headers`|`none`|`Access-COntrol-Expose-Headers`
+
+ifndef::cors-config-table-exclude-methods[|`maxAgeSeconds`]
+|`max-age`|`3600`|`Access-Control-Max-Age`
+
+ifndef::cors-config-table-exclude-methods[|`enabled`]
+|`enabled`|`true`|n/a|
 |====================
 
 If the cross-origin configuration is disabled (`enabled` = false), then the Helidon CORS implementation ignores the cross-origin configuration entry.
-// end::config-table[]
+// end::cors-config-table[]
 
 == Sample Routing Setup Using the CrossOriginConfig API
 
