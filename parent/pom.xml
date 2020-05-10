@@ -22,7 +22,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.helidon</groupId>
     <artifactId>helidon-parent</artifactId>
-    <version>2.0.0-M3-SNAPSHOT</version>
+    <version>2.0.0-M3</version>
     <packaging>pom</packaging>
 
     <name>Helidon Parent</name>
@@ -47,7 +47,7 @@
     <scm>
         <developerConnection>scm:git:git@github.com:oracle/helidon.git</developerConnection>
         <connection>scm:git:git@github.com:oracle/helidon.git</connection>
-        <tag>HEAD</tag>
+        <tag>2.0.0-M3</tag>
         <url>https://github.com/oracle/helidon</url>
     </scm>
 
