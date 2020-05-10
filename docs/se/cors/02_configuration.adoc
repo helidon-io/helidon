@@ -34,12 +34,10 @@ The support in Helidon for CORS configuration works with two closely-related for
 in the Helidon CORS library which holds CORS information.
 
 === Basic Cross-Origin Configuration
-Cross-origin configuration is the basic building block of CORS information. The table below defines the methods on the `CrossOriginConfig.Builder` class and the configuration keys that map to the headers defined in the CORS protocol.
+Cross-origin configuration is the basic building block of CORS information.
 
 [[config-key-table]]
 include::{cors-config-table-src}[tag=cors-config-table]
-
-If the cross-origin configuration is disabled (`enabled` = false), then the Helidon CORS implementation ignores the cross-origin configuration entry.
 
 The following example, when loaded and used by the application, limits cross-origin resource sharing for `PUT` and
 `DELETE` operations to only `foo.com` and `there.com`:
