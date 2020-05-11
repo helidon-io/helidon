@@ -124,19 +124,32 @@ public class GreetResource {
         greetingProvider.setMessage(newGreeting);
         return Response.status(Response.Status.NO_CONTENT).build();
     }
-    
+
+    /**
+     * CORS set-up for updateGreeting.
+     */
     @OPTIONS
     @Path("/greeting")
     @CrossOrigin(value = {"http://foo.com", "http://there.com"},
             allowMethods = {HttpMethod.PUT})
+    @APIResponses({
+            @APIResponse(name = "normal", responseCode = "200", description = "Preflight request granted"),
+            @APIResponse(name = "bad preflight", responseCode = "403",
+                    description = "Preflight request denied")})
     public void optionsForUpdatingGreeting() {
     }
 
+    /**
+     * CORS set-up for getDefaultMessage.
+     */
     @OPTIONS
     @CrossOrigin()
     public void optionsForRetrievingUnnamedGreeting() {
     }
 
+    /**
+     * CORS set-up for getMessage.
+     */
     @OPTIONS
     @CrossOrigin()
     @Path("/{name}")

@@ -92,6 +92,14 @@ backend:
               items:
                 - includes:
                     - "se/config/*.adoc"
+            - title: "CORS"
+              pathprefix: "/se/cors"
+              glyph:
+                type: "icon"
+                value: "share"
+              items:
+                - includes:
+                    - "se/cors/*.adoc"
             - title: "DB Client"
               pathprefix: "/se/dbclient"
               glyph:
@@ -222,6 +230,14 @@ backend:
               items:
                 - includes:
                     - "mp/extensions/*.adoc"
+            - title: "CORS"
+              pathprefix: "/mp/cors"
+              glyph:
+                type: "icon"
+                value: "share"
+              items:
+                - includes:
+                    - "mp/cors/*.adoc"
             - title: "gRPC server"
               pathprefix: "/mp/grpc"
               glyph:

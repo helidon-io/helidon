@@ -15,11 +15,12 @@
  */
 package io.helidon.microprofile.examples.cors;
 
-import org.eclipse.microprofile.config.inject.ConfigProperty;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import java.util.concurrent.atomic.AtomicReference;
+
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
  * Provider for greeting message.
