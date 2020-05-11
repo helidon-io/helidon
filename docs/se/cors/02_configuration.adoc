@@ -33,6 +33,7 @@ Your application can use configuration in setting up CORS behavior.
 The support in Helidon for CORS configuration works with two closely-related formats. Each corresponds to a class
 in the Helidon CORS library which holds CORS information.
 
+[[basic-cross-origin-config]]
 === Basic Cross-Origin Configuration
 Cross-origin configuration is the basic building block of CORS information.
 

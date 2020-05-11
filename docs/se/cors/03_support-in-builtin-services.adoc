@@ -1,0 +1,232 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2020 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= CORS in Helidon Built-in Services
+:toc:
+:toc-placement: preamble
+:pagename: cors-built-in-service-support
+:description: Helidon SE CORS Support in Built-in Services
+:keywords: helidon, java, cors, se, services
+:helidon-tag: https://github.com/oracle/helidon/tree/{helidon-version}
+:quickstart-example: {helidon-tag}/examples/quickstarts/helidon-quickstart-se
+:cors-spec: https://www.w3.org/TR/cors/
+:helidon-se-cors-example: {helidon-tag}/examples/cors
+:helidon-tag: https://github.com/oracle/helidon/tree/{helidon-version}
+:quickstart-example: {helidon-tag}/examples/quickstarts/helidon-quickstart-se
+:javadoc-base-url-api: {javadoc-base-url}io.helidon.webserver.cors/io/helidon/webserver/cors
+:javadoc-base-url-webserver: {javadoc-base-url}io.helidon.webserver/io/helidon/webserver
+:cors-se-intro: 01_introduction.adoc
+:cors-config-table-src: {cors-se-intro}
+:health-page: ../health/01_health.adoc
+:metrics-page: ../metrics/01_metrics.adoc
+:openapi-page: ../openapi/01_openapi.adoc
+
+Several built-in Helidon services -- health, metrics, and OpenAPI -- automatically support cross-origin resource
+sharing and you can control how they do so.
+
+== Getting Started
+To use built-in services with CORS support and tailor its behavior the CORS behavior, you need to:
+
+. Add the built-in service or services to your application. The health, metrics, and OpenAPI services automatically
+include default CORS support.
+. Use the Helidon API or configuration to customize the CORS behavior as needed.
+
+The documentation for the individual services describes how to add each service to your application, including
+adding a maven dependency and including the service in your application's routing rules. In your
+application's configuration file, the configuration for each service appears under its own key.
+|====
+| Helidon Service Documentation | Configuration Key
+
+| <<{health-page}, health>> | `health`
+| <<{metrics-page}, metrics>> | `metrics`
+| <<{openapi-page}, OpenAPI>> | `openapi`
+|====
+
+The link:{quickstart-example}[Helidon SE QuickStart example] uses these services, so use that as a template for your
+own app or use the example project itself to experiment with customizing the CORS behavior in the built-in services.
+
+== Understanding CORS Support in Helidon Services
+Helidon lets you easily include link:{health-page}[health], link:{metrics-page}[metrics], and
+link:{openapi-page}[OpenAPI] services in your Helidon application.
+These services add endpoints to your application so that clients can retrieve information about it.
+As with the application endpoints you write, these endpoints represent resources that can be shared across origins.
+
+For example, several websites related to OpenAPI run a web app in your browser.
+You tell the browser app the URL for your application, and the browser app uses the URL to retrieve the OpenAPI document
+which describes your application's endpoints.
+The browser app then displays a U/I you use to "drive" your application: you provide input, have the web app
+send requests to your application endpoints, and view the responses.
+This is exactly the situation CORS addresses: an app in the browser from one origin -- the U/I downloaded from the
+website -- requests a resource from another origin -- the `/openapi` endpoint which Helidon's OpenAPI built-in
+service automatically adds to your application.
+
+Integrating CORS support into these built-in services allows such third-party web sites and their browser apps -- or
+more generally, apps from any other origin -- to work with your Helidon application.
+
+Because all three of these built-in Helidon services rely only on `GET` endpoints, by default the
+integrated CORS support in all thress services permits
+any origin to share their resources using `GET`, `HEAD`, and `OPTIONS` HTTP requests. You can customize the CORS set-up
+for these built-in services independently from each other, using either the Helidon API, configuration or both.
+
+include::{cors-config-table-src}[tag=cors-config-table]
+
+== Controlling CORS for Built-in Services using the API
+Although services such as health, metrics, and OpenAPI are built-in to Helidon, to use them your application must create
+instances of the services and uses those instances in building your application's routing rules.
+
+Recall that each
+service type has a `Builder` class. To control the CORS behavior of a built-in service, follow these steps:
+
+. Create a `Builder` for the type of service of interest.
+. Build an instance of `CrossOriginConfig` with the settings you want.
+. Invoke the `builder.crossOriginConfig` method, passing that `CrossOriginConfig` instance.
+. Invoke the builder's `build` method to initialize the service instance.
+. Use the service instance in preparing the routing rules.
+
+The following excerpt shows changes to the link:{quickstart-example}[Helidon SE QuickStart example] which limit
+sharing of the `/metrics` endpoint to `http://foo.com`.
+[source,java]
+----
+private static Routing createRouting(Config config) {
+
+        CrossOriginConfig metricsCrossOriginConfig = CrossOriginConfig.builder() // <1>
+                .allowOrigins("http://foo.com")
+                .build();
+        MetricsSupport metrics = MetricsSupport.builder()
+                .crossOriginConfig(metricsCrossOriginConfig) // <2>
+                .build();
+        GreetService greetService = new GreetService(config);
+        HealthSupport health = HealthSupport.builder()
+                .addLiveness(HealthChecks.healthChecks())   // Adds a convenient set of checks
+                .build();
+
+        return Routing.builder()
+                .register(health)                   // Health at "/health"
+                .register(metrics)                  // Metrics at "/metrics" // <3>
+                .register("/greet", greetService)
+                .build();
+    }
+----
+<1> Create the `CrossOriginConfig` for metrics, limiting sharing to `http://foo.com`.
+<2> Use the `CrossOriginConfig` instance in constructing the `MetricsSupport` service.
+<3> Use the `MetricsSupport` object in creating the routing rules.
+
+== Configuring CORS for Built-in Services
+You can also use configuration to control whether and how each of the built-in services works with CORS.
+
+Your application can pass configuration to the builder for each built-in service.
+For the health, metrics, and OpenAPI services, that configuration can include a section for CORS.
+
+The following example restricts sharing of the
+`/health` resource, provided by the health built-in service, to only the origin `http://there.com`.
+[source,hocon]
+----
+...
+health:
+  cors:
+    allow-origins: [http://there.com]
+...
+----
+Modify your application to load the `health` config node and use it constructing the `HealthSupport` service.
+The following code shows this change made in the the QuickStart SE example.
+[source,java]
+----
+HealthSupport health = HealthSupport.builder()
+        .config(config.get("health")) // <1>
+        .addLiveness(HealthChecks.healthChecks())   // Adds a convenient set of checks
+        .build();
+----
+<1> Use the `health` config section (if present) to configure the health service.
+
+You have full control over the CORS configuration for a built-in Helidon service. Use a basic CORS config section
+as described in the <<se/cors/02_configuration.adoc,CORS configuration>> documentation.
+
+Remember that if you set configuration in a file that you include as part of your application JAR file, you need to
+rebuild and restart your application for any changes to take effect.
+
+== Accessing the Shared Resources
+=== Build and Run the Application
+Build and run the QuickStart application is usual.
+[source,bash]
+----
+mvn package
+java -jar target/helidon-quickstart-se.jar
+
+...
+WEB server is up! http://localhost:8080/greet
+----
+
+=== Retrieve Metrics
+The metrics service rejects attempts to access metrics on behalf of a disallowed origin.
+[source,bash]
+----
+curl -i -H "Origin: http://other.com" http://localhost:8080/metrics
+
+HTTP/1.1 403 Forbidden
+Date: Mon, 11 May 2020 11:08:09 -0500
+transfer-encoding: chunked
+connection: keep-alive
+----
+
+But accesses from `foo.com` succeed.
+[source,bash]
+----
+curl -i -H "Origin: http://foo.com" http://localhost:8080/metrics
+HTTP/1.1 200 OK
+Access-Control-Allow-Origin: http://foo.com
+Content-Type: text/plain
+Date: Mon, 11 May 2020 11:08:16 -0500
+Vary: Origin
+connection: keep-alive
+content-length: 6065
+
+# TYPE base_classloader_loadedClasses_count gauge
+# HELP base_classloader_loadedClasses_count Displays the number of classes that are currently loaded in the Java virtual machine.
+base_classloader_loadedClasses_count 3568
+...
+----
+
+=== Retrieve Health
+The health service rejects requests from origins not specifically approved.
+
+[source,bash]
+----
+curl -i -H "Origin: http://foo.com" http://localhost:8080/health
+
+HTTP/1.1 403 Forbidden
+Date: Mon, 11 May 2020 12:06:55 -0500
+transfer-encoding: chunked
+connection: keep-alive
+----
+
+It response successfully only to cross-origin requests from `http://there.com`.
+
+[source,bash]
+----
+curl -i -H "Origin: http://there.com" http://localhost:8080/health
+HTTP/1.1 200 OK
+Access-Control-Allow-Origin: http://there.com
+Content-Type: application/json
+Date: Mon, 11 May 2020 12:07:32 -0500
+Vary: Origin
+connection: keep-alive
+content-length: 461
+
+{"outcome":"UP",...}
+----
+
