@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -136,6 +136,17 @@ public interface SocketConfiguration {
                 throw new ConfigException("Illegal value of 'bind-address' configuration key. Expecting host or ip address!", e);
             }
         }
+
+        /**
+         * A helper method that just calls {@link #bindAddress(String)}.
+         *
+         * @param address host to listen on
+         * @return this builder
+         */
+        default B host(String address) {
+            return bindAddress(address);
+        }
+
         /**
          * Configures local address where the server listens on with the server socket.
          * If not configured, then listens an all local addresses.
@@ -317,7 +328,7 @@ public interface SocketConfiguration {
          * default protocols
          * @return this builder
          *
-         * @deprecated since 2.0.0, please use {@link io.helidon.webserver.TlsConfig.Builder#enabledTlsProtocols(String...)}
+         * @deprecated since 2.0.0, please use {@link io.helidon.webserver.TlsConfig.Builder#enabledProtocols(String...)}
          *              instead
          */
         @Deprecated
@@ -339,9 +350,9 @@ public interface SocketConfiguration {
         @Deprecated
         public Builder enabledSSlProtocols(List<String> protocols) {
             if (null == protocols) {
-                this.tlsConfigBuilder.enabledTlsProtocols(List.of());
+                this.tlsConfigBuilder.enabledProtocols(List.of());
             } else {
-                this.tlsConfigBuilder.enabledTlsProtocols(protocols);
+                this.tlsConfigBuilder.enabledProtocols(protocols);
             }
             return this;
         }

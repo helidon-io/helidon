@@ -22,11 +22,14 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
+import io.helidon.common.context.Context;
 import io.helidon.config.Config;
 import io.helidon.media.common.MediaContext;
 import io.helidon.media.common.MediaContextBuilder;
@@ -39,6 +42,8 @@ import io.helidon.media.common.MessageBodyWriter;
 import io.helidon.media.common.MessageBodyWriterContext;
 import io.helidon.media.common.ParentingMediaContextBuilder;
 
+import io.opentracing.Tracer;
+
 /**
  * Represents a immutably configured WEB server.
  * <p>
@@ -49,6 +54,13 @@ import io.helidon.media.common.ParentingMediaContextBuilder;
  * their builder enabled overloads.
  */
 public interface WebServer {
+
+    /**
+     * The default server socket configuration name. All the default server socket
+     * configuration such as {@link Builder#hasSocket(String)} or {@link WebServer#port(String)}
+     * is accessible using this name.
+     */
+    String DEFAULT_SOCKET_NAME = "@default";
 
     /**
      * Gets effective server configuration.
@@ -120,7 +132,7 @@ public interface WebServer {
      * @return a listen port; or {@code -1} if unknown or the default server socket is not active
      */
     default int port() {
-        return port(ServerConfiguration.DEFAULT_SOCKET_NAME);
+        return port(WebServer.DEFAULT_SOCKET_NAME);
     }
 
     /**
@@ -282,13 +294,24 @@ public interface WebServer {
     }
 
     /**
+     * Creates a fluent API builder of the {@link io.helidon.webserver.WebServer}.
+     * Before calling the {@link io.helidon.webserver.WebServer.Builder#build()} method, you should
+     * configure the default routing.
+     *
+     * @return a new builder
+     */
+    static Builder builder() {
+        return new Builder();
+    }
+
+    /**
      * Creates a builder of the {@link WebServer}.
      *
      * @param routing the routing; must not be {@code null}
      * @return the builder
      */
     static Builder builder(Routing routing) {
-        return new Builder(routing);
+        return builder().routing(routing);
     }
 
     /**
@@ -300,6 +323,7 @@ public interface WebServer {
                                    ParentingMediaContextBuilder<Builder>,
                                    MediaContextBuilder<Builder> {
 
+        private static final Logger LOGGER = Logger.getLogger(Builder.class.getName());
         private static final MediaContext DEFAULT_MEDIA_SUPPORT = MediaContext.create();
 
         static {
@@ -307,7 +331,7 @@ public interface WebServer {
         }
 
         private final Map<String, Routing> routings = new HashMap<>();
-        private final Routing defaultRouting;
+        private Routing defaultRouting;
         // internal use - we may keep this even after we remove the public access to ServerConfiguration
         @SuppressWarnings("deprecation")
         private final ServerConfiguration.Builder configurationBuilder = ServerConfiguration.builder();
@@ -317,9 +341,7 @@ public interface WebServer {
         private MessageBodyReaderContext readerContext;
         private MessageBodyWriterContext writerContext;
 
-        private Builder(Routing defaultRouting) {
-            Objects.requireNonNull(defaultRouting, "Parameter 'default routing' must not be null!");
-            this.defaultRouting = defaultRouting;
+        private Builder() {
             readerContext = MessageBodyReaderContext.create(DEFAULT_MEDIA_SUPPORT.readerContext());
             writerContext = MessageBodyWriterContext.create(DEFAULT_MEDIA_SUPPORT.writerContext());
         }
@@ -333,6 +355,10 @@ public interface WebServer {
          */
         @Override
         public WebServer build() {
+            if (null == defaultRouting) {
+                LOGGER.warning("Creating a web server with no default routing configured.");
+                defaultRouting = Routing.builder().build();
+            }
             if (null == explicitConfig) {
                 explicitConfig = configurationBuilder.build();
             }
@@ -356,6 +382,30 @@ public interface WebServer {
                 ((RequestRouting) defaultRouting).fireNewWebServer(result);
             }
             return result;
+        }
+
+        /**
+         * Configure the default routing of this WebServer. Default routing is the one
+         * available on the default listen {@link #bindAddress(String) host} and {@link #port() port} of the WebServer
+         *
+         * @param defaultRouting new default routing; if already configured, this instance would replace the existing instance
+         * @return updated builder instance
+         */
+        public Builder routing(Routing defaultRouting) {
+            this.defaultRouting = Objects.requireNonNull(defaultRouting);
+            return this;
+        }
+
+        /**
+         * Configure the default routing of this WebServer. Default routing is the one
+         * available on the default listen {@link #bindAddress(String) host} and {@link #port() port} of the WebServer
+         *
+         * @param defaultRouting new default routing; if already configured, this instance would replace the existing instance
+         * @return updated builder instance
+         */
+        public Builder routing(Supplier<Routing> defaultRouting) {
+            this.defaultRouting = Objects.requireNonNull(defaultRouting).get();
+            return this;
         }
 
         /**
@@ -522,5 +572,125 @@ public interface WebServer {
             configurationBuilder.experimental(experimental);
             return this;
         }
+
+        /**
+         * A helper method to support fluentAPI when invoking another method.
+         * <p>
+         * Example:
+         * <pre>
+         *     WebServer.Builder builder = WebServer.builder();
+         *     updateBuilder(builder);
+         *     return builder.build();
+         * </pre>
+         * Can be changed to:
+         * <pre>
+         *     return WebServer.builder()
+         *              .update(this::updateBuilder)
+         *              .build();
+         * </pre>
+         *
+         *
+         * @param updateFunction function to update this builder
+         * @return an updated builder
+         */
+        public Builder update(Consumer<Builder> updateFunction) {
+            updateFunction.accept(this);
+            return this;
+        }
+
+        /**
+         * Adds an additional named server socket configuration. As a result, the server will listen
+         * on multiple ports.
+         * <p>
+         * An additional named server socket may have a dedicated {@link Routing} configured
+         * through {@link io.helidon.webserver.WebServer.Builder#addNamedRouting(String, Routing)}.
+         *
+         * @param name                the name of the additional server socket configuration
+         * @param socketConfiguration the additional named server socket configuration, never null
+         * @return an updated builder
+         */
+        public Builder addSocket(String name, SocketConfiguration socketConfiguration) {
+            configurationBuilder.addSocket(name, Objects.requireNonNull(socketConfiguration));
+            return this;
+        }
+
+        /**
+         * Adds an additional named server socket configuration builder. As a result, the server will listen
+         * on multiple ports.
+         * <p>
+         * An additional named server socket may have a dedicated {@link Routing} configured
+         * through {@link io.helidon.webserver.WebServer.Builder#addNamedRouting(String, Routing)}.
+         *
+         * @param name                       the name of the additional server socket configuration
+         * @param socketConfigurationBuilder the additional named server socket configuration builder; will be built as
+         *                                   a first step of this method execution
+         * @return an updated builder
+         */
+        public Builder addSocket(String name, Supplier<SocketConfiguration> socketConfigurationBuilder) {
+            configurationBuilder.addSocket(name, socketConfigurationBuilder);
+            return this;
+        }
+
+        /**
+         * Add a named socket and routing.
+         *
+         * @param name name of the socket
+         * @param socketConfiguration configuration of the socket
+         * @param routing routing to use for this socket
+         *
+         * @return an updated builder
+         */
+        public Builder addSocket(String name, SocketConfiguration socketConfiguration, Routing routing) {
+            addSocket(name, socketConfiguration);
+            addNamedRouting(name, routing);
+            return this;
+        }
+
+        /**
+         * Sets an <a href="http://opentracing.io">opentracing.io</a>
+         * tracer. (Default is {@link io.opentracing.util.GlobalTracer}.)
+         *
+         * @param tracer a tracer to set
+         * @return an updated builder
+         */
+        public Builder tracer(Tracer tracer) {
+            configurationBuilder.tracer(tracer);
+            return this;
+        }
+
+        /**
+         * Sets an <a href="http://opentracing.io">opentracing.io</a>
+         * tracer. (Default is {@link io.opentracing.util.GlobalTracer}.)
+         *
+         * @param tracerBuilder a tracer builder to set; will be built as a first step of this method execution
+         * @return updated builder
+         */
+        public Builder tracer(Supplier<? extends Tracer> tracerBuilder) {
+            configurationBuilder.tracer(tracerBuilder);
+            return this;
+        }
+
+        /**
+         * A method to validate a named socket configuration exists in this builder.
+         *
+         * @param socketName name of the socket, using {@link io.helidon.webserver.WebServer#DEFAULT_SOCKET_NAME}
+         *                   will always return {@code true}
+         * @return {@code true} in case the named socket is configured in this builder
+         */
+        public boolean hasSocket(String socketName) {
+            return DEFAULT_SOCKET_NAME.equals(socketName)
+                    || configurationBuilder.sockets().containsKey(socketName);
+        }
+
+        /**
+         * Configure the application scoped context to be used as a parent for webserver request contexts.
+         * @param context top level context
+         * @return an updated builder
+         */
+        public Builder context(Context context) {
+            configurationBuilder.context(context);
+            return this;
+        }
+
     }
 }

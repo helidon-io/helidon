@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,9 @@ import io.opentracing.util.GlobalTracer;
 
 /**
  * {@link WebServer} configuration.
+ *
+ * @deprecated since 2.0.0 - please use methods directly on {@link io.helidon.webserver.WebServer.Builder}, that fully
+ *  replaces this class
  */
 @Deprecated
 public interface ServerConfiguration extends SocketConfiguration {
@@ -49,8 +52,11 @@ public interface ServerConfiguration extends SocketConfiguration {
      * configuration (e.g., {@link #port()} or {@link #backlog()}) is accessible through
      * {@link #socket(String)} or {@link #sockets()} with this
      * {@link #DEFAULT_SOCKET_NAME default socket name}.
+     *
+     * @deprecated since 2.0.0, please use {@link WebServer#DEFAULT_SOCKET_NAME}
      */
-    String DEFAULT_SOCKET_NAME = "@default";
+    @Deprecated
+    String DEFAULT_SOCKET_NAME = WebServer.DEFAULT_SOCKET_NAME;
 
     /**
      * Returns the count of threads in the pool used to process HTTP requests.
@@ -388,7 +394,7 @@ public interface ServerConfiguration extends SocketConfiguration {
          */
         public Builder addSocket(String name, SocketConfiguration socketConfiguration) {
             Objects.requireNonNull(name, "Parameter 'name' must not be null!");
-            this.sockets.put(name, socketConfiguration != null ? socketConfiguration : SocketConfiguration.DEFAULT);
+            this.sockets.put(name, socketConfiguration);
             return this;
         }
 
@@ -451,7 +457,7 @@ public interface ServerConfiguration extends SocketConfiguration {
          * default protocols
          * @return an updated builder
          */
-        public Builder enabledSSlProtocols(String... protocols){
+        public Builder enabledSSlProtocols(String... protocols) {
             this.defaultSocketBuilder.enabledSSlProtocols(protocols);
             return this;
         }
@@ -462,7 +468,7 @@ public interface ServerConfiguration extends SocketConfiguration {
          *  the default protocols
          * @return an updated builder
          */
-        public Builder enabledSSlProtocols(List<String> protocols){
+        public Builder enabledSSlProtocols(List<String> protocols) {
             this.defaultSocketBuilder.enabledSSlProtocols(protocols);
             return this;
         }
@@ -575,13 +581,20 @@ public interface ServerConfiguration extends SocketConfiguration {
             DeprecatedConfig.get(config, "receive-buffer-size", "receive-buffer")
                     .asInt()
                     .ifPresent(soConfigBuilder::receiveBufferSize);
-            config.get("ssl-protocols").asList(String.class).ifPresent(soConfigBuilder::enabledSSlProtocols);
+
+            Optional<List<String>> enabledProtocols = DeprecatedConfig.get(config, "ssl.protocols", "ssl-protocols")
+                    .asList(String.class)
+                    .asOptional();
 
             // ssl
             Config sslConfig = config.get("ssl");
             if (sslConfig.exists()) {
                 try {
-                    soConfigBuilder.ssl(SSLContextBuilder.create(sslConfig));
+                    TlsConfig.Builder builder = TlsConfig.builder();
+                    enabledProtocols.ifPresent(builder::enabledProtocols);
+                    builder.config(sslConfig);
+
+                    soConfigBuilder.tls(builder.build());
                 } catch (IllegalStateException e) {
                     throw new ConfigException("Cannot load SSL configuration.", e);
                 }

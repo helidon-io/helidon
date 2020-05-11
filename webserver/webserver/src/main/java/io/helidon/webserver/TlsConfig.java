@@ -42,6 +42,10 @@ import io.helidon.common.pki.KeyConfig;
 import io.helidon.config.Config;
 import io.helidon.config.DeprecatedConfig;
 
+/**
+ * A class wrapping transport layer security (TLS) configuration for
+ * WebServer sockets.
+ */
 public final class TlsConfig {
     private static final String PROTOCOL = "TLS";
     private static final Random RANDOM = new SecureRandom();
@@ -56,8 +60,23 @@ public final class TlsConfig {
         this.enabled = (null != sslContext);
     }
 
+    /**
+     * A fluent API builder for {@link io.helidon.webserver.TlsConfig}.
+     *
+     * @return a new builder instance
+     */
     public static Builder builder() {
         return new Builder();
+    }
+
+    /**
+     * Create TLS configuration from config.
+     *
+     * @param config located on the node of the tls configuration (usually this is {@code ssl})
+     * @return a new TLS configuration
+     */
+    public static TlsConfig create(Config config) {
+        return builder().config(config).build();
     }
 
     Collection<String> enabledTlsProtocols() {
@@ -68,6 +87,12 @@ public final class TlsConfig {
         return sslContext;
     }
 
+    /**
+     * Whether this TLS config has security enabled (and the socket is going to be
+     * protected by one of the TLS protocols), or no (and the socket is going to be plain).
+     *
+     * @return {@code true} if this configuration represents a TLS configuration, {@code false} for plain configuration
+     */
     public boolean enabled() {
         return enabled;
     }
@@ -127,10 +152,12 @@ public final class TlsConfig {
             config.get("trust")
                     .ifExists(it -> trust(KeyConfig.create(it)));
 
+            config.get("protocols").asList(String.class).ifPresent(this::enabledProtocols);
             config.get("session-cache-size").asLong().ifPresent(this::sessionCacheSize);
             DeprecatedConfig.get(config, "session-timeout-seconds", "session-timeout")
                     .asLong()
                     .ifPresent(this::sessionTimeoutSeconds);
+
 
             return this;
         }
@@ -155,8 +182,8 @@ public final class TlsConfig {
          * @return this builder
          * @throws java.lang.NullPointerException in case the protocols is null
          */
-        public Builder enabledTlsProtocols(String... protocols) {
-            return enabledTlsProtocols(Arrays.asList(Objects.requireNonNull(protocols)));
+        public Builder enabledProtocols(String... protocols) {
+            return enabledProtocols(Arrays.asList(Objects.requireNonNull(protocols)));
         }
 
         /**
@@ -167,7 +194,9 @@ public final class TlsConfig {
          * @return this builder
          * @throws java.lang.NullPointerException in case the protocols is null
          */
-        public Builder enabledTlsProtocols(Collection<String> protocols) {
+        public Builder enabledProtocols(Collection<String> protocols) {
+            Objects.requireNonNull(protocols);
+
             this.enabledTlsProtocols.clear();
             this.enabledTlsProtocols.addAll(protocols);
             return this;
