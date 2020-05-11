@@ -27,7 +27,7 @@
 #if( $jsonSupport.matches("y|yes|true") )
         <dependency>
             <groupId>io.helidon.media.jsonp</groupId>
-            <artifactId>helidon-media-jsonp-server</artifactId>
+            <artifactId>helidon-media-jsonp-common</artifactId>
         </dependency>
 #end
 #if( $applicationYaml.matches("y|yes|true") )
