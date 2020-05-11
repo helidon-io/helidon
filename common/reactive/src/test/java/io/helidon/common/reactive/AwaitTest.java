@@ -27,8 +27,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.testng.Assert.assertThrows;
 
 import org.junit.jupiter.api.Test;
 
@@ -43,7 +45,7 @@ public class AwaitTest {
         testMulti()
                 .forEach(sum::addAndGet)
                 .await();
-        assertEquals(EXPECTED_SUM, sum.get());
+        assertThat(sum.get(), equalTo(EXPECTED_SUM));
     }
 
     @Test
@@ -58,8 +60,8 @@ public class AwaitTest {
                 .thenRun(completedTimes::incrementAndGet)
                 .thenAccept(aVoid -> completedTimes.incrementAndGet())
                 .await();
-        assertEquals(EXPECTED_SUM, sum.get());
-        assertEquals(5, completedTimes.get());
+        assertThat(sum.get(), equalTo(EXPECTED_SUM));
+        assertThat(completedTimes.get(), is(5L));
     }
 
     @Test
@@ -72,7 +74,7 @@ public class AwaitTest {
                 .whenComplete((aVoid, throwable) -> Optional.ofNullable(throwable)
                         .ifPresentOrElse(completeFuture::completeExceptionally, () -> completeFuture.complete(null)));
         completeFuture.get(SAFE_WAIT_MILLIS, TimeUnit.MILLISECONDS);
-        assertEquals(EXPECTED_SUM, sum.get());
+        assertThat(sum.get(), equalTo(EXPECTED_SUM));
     }
 
     @Test
@@ -81,7 +83,7 @@ public class AwaitTest {
         testMulti()
                 .forEach(sum::addAndGet)
                 .await(SAFE_WAIT_MILLIS, TimeUnit.MILLISECONDS);
-        assertEquals(EXPECTED_SUM, sum.get());
+        assertThat(sum.get(), equalTo(EXPECTED_SUM));
     }
 
     @Test
@@ -108,12 +110,12 @@ public class AwaitTest {
 
     @Test
     void singleAwait() {
-        assertEquals(EXPECTED_SUM, (long) testSingle().await());
+        assertThat(testSingle().await(), equalTo(EXPECTED_SUM));
     }
 
     @Test
     void singleAwaitTimeout() {
-        assertEquals(EXPECTED_SUM, (long) testSingle().await(SAFE_WAIT_MILLIS, TimeUnit.MILLISECONDS));
+        assertThat(testSingle().await(SAFE_WAIT_MILLIS, TimeUnit.MILLISECONDS), equalTo(EXPECTED_SUM));
     }
 
     @Test
