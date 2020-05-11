@@ -16,18 +16,39 @@
 
 package io.helidon.webserver;
 
+import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.security.KeyStore;
+import java.security.SecureRandom;
+import java.security.Security;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
+import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
+import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSessionContext;
+import javax.net.ssl.TrustManagerFactory;
+
+import io.helidon.common.pki.KeyConfig;
+import io.helidon.config.Config;
+import io.helidon.config.DeprecatedConfig;
 
 public final class TlsConfig {
+    private static final String PROTOCOL = "TLS";
+    private static final Random RANDOM = new SecureRandom();
+
     private final Set<String> enabledTlsProtocols;
     private final SSLContext sslContext;
-    private boolean enabled;
+    private final boolean enabled;
 
     private TlsConfig(Builder builder) {
         this.enabledTlsProtocols = Set.copyOf(builder.enabledTlsProtocols);
@@ -56,15 +77,62 @@ public final class TlsConfig {
      */
     public static class Builder implements io.helidon.common.Builder<TlsConfig> {
         private final Set<String> enabledTlsProtocols = new HashSet<>();
+
         private SSLContext sslContext;
+        private KeyConfig privateKeyConfig;
+        private KeyConfig trustConfig;
+        private long sessionCacheSize;
+        private long sessionTimeoutSeconds;
+
         private boolean enabled;
+        private Boolean explicitEnabled;
 
         private Builder() {
         }
 
         @Override
         public TlsConfig build() {
+            boolean enabled;
+
+            if (null == explicitEnabled) {
+                enabled = this.enabled;
+            } else {
+                enabled = explicitEnabled;
+            }
+
+            if (!enabled) {
+                this.sslContext = null;
+                // ssl is disabled
+                return new TlsConfig(this);
+            }
+
+            if (null == sslContext) {
+                // no explicit ssl context, build it using private key and trust store
+                sslContext = newSSLContext();
+            }
+
             return new TlsConfig(this);
+        }
+
+        /**
+         * Update this builder from configuration.
+         *
+         * @param config config on the node of SSL configuration
+         * @return this builder
+         */
+        public Builder config(Config config) {
+            config.get("private-key")
+                    .ifExists(it -> privateKey(KeyConfig.create(it)));
+
+            config.get("trust")
+                    .ifExists(it -> trust(KeyConfig.create(it)));
+
+            config.get("session-cache-size").asLong().ifPresent(this::sessionCacheSize);
+            DeprecatedConfig.get(config, "session-timeout-seconds", "session-timeout")
+                    .asLong()
+                    .ifPresent(this::sessionTimeoutSeconds);
+
+            return this;
         }
 
         /**
@@ -75,6 +143,7 @@ public final class TlsConfig {
          * @return this builder
          */
         public Builder sslContext(SSLContext context) {
+            this.enabled = true;
             this.sslContext = context;
             return this;
         }
@@ -102,6 +171,155 @@ public final class TlsConfig {
             this.enabledTlsProtocols.clear();
             this.enabledTlsProtocols.addAll(protocols);
             return this;
+        }
+
+        /**
+         * Configure private key to use for SSL context.
+         *
+         * @param privateKeyConfig the required private key configuration parameter
+         * @return this builder
+         */
+        public Builder privateKey(KeyConfig privateKeyConfig) {
+            // setting private key, need to reset ssl context
+            this.enabled = true;
+            this.sslContext = null;
+            this.privateKeyConfig = Objects.requireNonNull(privateKeyConfig);
+            return this;
+        }
+
+        /**
+         * Set the trust key configuration to be used to validate certificates.
+         *
+         * @param trustConfig the trust configuration
+         * @return this builder
+         */
+        public Builder trust(KeyConfig trustConfig) {
+            // setting explicit trust, need to reset ssl context
+            this.enabled = true;
+            this.sslContext = null;
+            this.trustConfig = Objects.requireNonNull(trustConfig);
+            return this;
+        }
+
+        /**
+         * Set the size of the cache used for storing SSL session objects. {@code 0} to use the
+         * default value.
+         *
+         * @param sessionCacheSize the session cache size
+         * @return this builder
+         */
+        public Builder sessionCacheSize(long sessionCacheSize) {
+            this.sessionCacheSize = sessionCacheSize;
+            return this;
+        }
+
+        /**
+         * Set the timeout for the cached SSL session objects, in seconds. {@code 0} to use the
+         * default value.
+         *
+         * @param sessionTimeout the session timeout
+         * @return this builder
+         */
+        public Builder sessionTimeoutSeconds(long sessionTimeout) {
+            this.sessionTimeoutSeconds = sessionTimeout;
+            return this;
+        }
+
+        /**
+         * Set the timeout for the cached SSL session objects. {@code 0} to use the
+         * default value.
+         *
+         * @param timeout the session timeout amount
+         * @param unit the session timeout time unit
+         * @return this builder
+         */
+        public Builder sessionTimeout(long timeout, TimeUnit unit) {
+            this.sessionTimeoutSeconds = unit.toSeconds(timeout);
+            return this;
+        }
+
+        /**
+         * Whether the TLS config should be enabled or not.
+         *
+         * @param enabled configure to {@code false} to disable SSL context (and SSL support on the server)
+         * @return this builder
+         */
+        public Builder enabled(boolean enabled) {
+            this.enabled = enabled;
+            this.explicitEnabled = enabled;
+            return this;
+        }
+
+        private SSLContext newSSLContext() {
+            try {
+                if (null == privateKeyConfig) {
+                    throw new IllegalStateException("Private key must be configured when SSL is enabled.");
+                }
+                KeyManagerFactory kmf = buildKmf(this.privateKeyConfig);
+                TrustManagerFactory tmf = buildTmf(this.trustConfig);
+
+                // Initialize the SSLContext to work with our key managers.
+                SSLContext ctx = SSLContext.getInstance(PROTOCOL);
+                ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+
+                SSLSessionContext sessCtx = ctx.getServerSessionContext();
+                if (sessionCacheSize > 0) {
+                    sessCtx.setSessionCacheSize((int) Math.min(sessionCacheSize, Integer.MAX_VALUE));
+                }
+                if (this.sessionTimeoutSeconds > 0) {
+                    sessCtx.setSessionTimeout((int) Math.min(sessionTimeoutSeconds, Integer.MAX_VALUE));
+                }
+                return ctx;
+            } catch (IOException | GeneralSecurityException e) {
+                throw new IllegalStateException("Failed to build server SSL Context!", e);
+            }
+        }
+
+        private static KeyManagerFactory buildKmf(KeyConfig privateKeyConfig) throws IOException, GeneralSecurityException {
+            String algorithm = Security.getProperty("ssl.KeyManagerFactory.algorithm");
+            if (algorithm == null) {
+                algorithm = "SunX509";
+            }
+
+            byte[] passwordBytes = new byte[64];
+            RANDOM.nextBytes(passwordBytes);
+            char[] password = Base64.getEncoder().encodeToString(passwordBytes).toCharArray();
+
+            KeyStore ks = KeyStore.getInstance("JKS");
+            ks.load(null, null);
+            ks.setKeyEntry("key",
+                           privateKeyConfig.privateKey().orElseThrow(() -> new RuntimeException("Private key not available")),
+                           password,
+                           privateKeyConfig.certChain().toArray(new Certificate[0]));
+
+            KeyManagerFactory kmf = KeyManagerFactory.getInstance(algorithm);
+            kmf.init(ks, password);
+
+            return kmf;
+        }
+
+        private static TrustManagerFactory buildTmf(KeyConfig trustConfig)
+                throws IOException, GeneralSecurityException {
+            List<X509Certificate> certs;
+
+            if (trustConfig == null) {
+                certs = List.of();
+            } else {
+                certs = trustConfig.certs();
+            }
+
+            KeyStore ks = KeyStore.getInstance("JKS");
+            ks.load(null, null);
+
+            int i = 1;
+            for (X509Certificate cert : certs) {
+                ks.setCertificateEntry(String.valueOf(i), cert);
+                i++;
+            }
+
+            TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            tmf.init(ks);
+            return tmf;
         }
     }
 }

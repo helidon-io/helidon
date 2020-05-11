@@ -23,7 +23,6 @@ import java.util.logging.LogManager;
 import io.helidon.config.Config;
 import io.helidon.health.HealthSupport;
 import io.helidon.health.checks.HealthChecks;
-import io.helidon.media.common.MediaContext;
 import io.helidon.media.jsonp.common.JsonpSupport;
 import io.helidon.metrics.MetricsSupport;
 import io.helidon.webserver.Routing;
@@ -64,9 +63,7 @@ public final class Main {
 
         WebServer server = WebServer.builder(createRouting(config))
                 .config(config.get("server"))
-                .mediaContext(MediaContext.builder()
-                                      .addMediaSupport(JsonpSupport.create())
-                                      .get())
+                .addMediaSupport(JsonpSupport.create())
                 .build();
 
         // Try to start the server. If successful, print some info and arrange to

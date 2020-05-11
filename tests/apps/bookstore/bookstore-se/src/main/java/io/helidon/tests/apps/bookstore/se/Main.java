@@ -31,8 +31,7 @@ import io.helidon.metrics.MetricsSupport;
 import io.helidon.webserver.ExperimentalConfiguration;
 import io.helidon.webserver.Http2Configuration;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.SSLContextBuilder;
-import io.helidon.webserver.ServerConfiguration;
+import io.helidon.webserver.TlsConfig;
 import io.helidon.webserver.WebServer;
 
 /**
@@ -91,23 +90,24 @@ public final class Main {
         Config config = Config.create();
 
         // Build server config based on params
-        ServerConfiguration.Builder configBuilder = ServerConfiguration.builder(config.get("server"));
+        WebServer.Builder wsBuilder = WebServer.builder(createRouting(config))
+                .config(config.get("server"));
+
         if (ssl) {
-            configBuilder.ssl(
-                    SSLContextBuilder.create(
-                            KeyConfig.keystoreBuilder()
-                                    .keystore(Resource.create("certificate.p12"))
-                                    .keystorePassphrase("helidon".toCharArray())
-                                    .build())
-                            .build());
+            wsBuilder.tls(TlsConfig.builder()
+                                  .privateKey(KeyConfig.keystoreBuilder()
+                                                      .keystore(Resource.create("certificate.p12"))
+                                                      .keystorePassphrase("helidon".toCharArray())
+                                                      .build())
+                                  .build());
         }
         if (http2) {
-            configBuilder.experimental(
+            wsBuilder.experimental(
                     ExperimentalConfiguration.builder()
                             .http2(Http2Configuration.builder().enable(true).build()).build());
         }
 
-        WebServer server = WebServer.create(configBuilder.build(), createRouting(config));
+        WebServer server = wsBuilder.build();
 
         // Start the server and print some info.
         server.start().thenAccept(ws -> {
@@ -117,7 +117,7 @@ public final class Main {
 
         // Server threads are not daemon. NO need to block. Just react.
         server.whenShutdown().thenRun(()
-                -> System.out.println("WEB server is DOWN. Good bye!"));
+                                              -> System.out.println("WEB server is DOWN. Good bye!"));
 
         return server;
     }
@@ -137,17 +137,17 @@ public final class Main {
 
         Routing.Builder builder = Routing.builder();
         switch (jsonLibrary) {
-            case JSONP:
-                builder.register(JsonSupport.create());
-                break;
-            case JSONB:
-                builder.register(JsonBindingSupport.create());
-                break;
-            case JACKSON:
-                builder.register(JacksonSupport.create());
-                break;
-            default:
-                throw new RuntimeException("Unknown JSON library " + jsonLibrary);
+        case JSONP:
+            builder.register(JsonSupport.create());
+            break;
+        case JSONB:
+            builder.register(JsonBindingSupport.create());
+            break;
+        case JACKSON:
+            builder.register(JacksonSupport.create());
+            break;
+        default:
+            throw new RuntimeException("Unknown JSON library " + jsonLibrary);
         }
 
         return builder.register(health)                   // Health at "/health"

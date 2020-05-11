@@ -512,5 +512,15 @@ public interface WebServer {
             configurationBuilder.tls(tlsConfig);
             return this;
         }
+
+        /**
+         * Configure experimental features.
+         * @param experimental experimental configuration
+         * @return an updated builder
+         */
+        public Builder experimental(ExperimentalConfiguration experimental) {
+            configurationBuilder.experimental(experimental);
+            return this;
+        }
     }
 }
