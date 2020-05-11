@@ -18,7 +18,6 @@ package io.helidon.webserver.examples.staticcontent;
 
 import io.helidon.common.http.Http;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.StaticContentSupport;
 import io.helidon.webserver.WebServer;
 
@@ -57,10 +56,9 @@ public class Main {
      * @param args command line arguments.
      */
     public static void main(String[] args) {
-        ServerConfiguration config = ServerConfiguration.builder()
+        WebServer server = WebServer.builder(createRouting())
                 .port(8080)
                 .build();
-        WebServer server = WebServer.create(config, createRouting());
 
         // Start the server and print some info.
         server.start().thenAccept(ws -> {

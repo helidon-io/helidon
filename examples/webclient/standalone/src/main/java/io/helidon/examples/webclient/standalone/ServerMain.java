@@ -18,10 +18,9 @@ package io.helidon.examples.webclient.standalone;
 import java.util.concurrent.CompletionStage;
 
 import io.helidon.config.Config;
-import io.helidon.media.jsonp.server.JsonSupport;
+import io.helidon.media.jsonp.common.JsonpSupport;
 import io.helidon.metrics.MetricsSupport;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 
 /**
@@ -64,16 +63,10 @@ public final class ServerMain {
         // By default this will pick up application.yaml from the classpath
         Config config = Config.create();
 
-        // Get webserver config from the "server" section of application.yaml
-        ServerConfiguration serverConfig =
-                ServerConfiguration.create(config.get("server"));
-
-        return startIt(config, serverConfig);
-    }
-
-    private static CompletionStage<WebServer> startIt(Config config, ServerConfiguration serverConfig) {
-
-        WebServer server = WebServer.create(serverConfig, createRouting(config));
+        WebServer server = WebServer.builder(createRouting(config))
+                .config(config.get("server"))
+                .addMediaSupport(JsonpSupport.create())
+                .build();
 
         // Try to start the server. If successful, print some info and arrange to
         // print a message at shutdown. If unsuccessful, print the exception.
@@ -103,7 +96,6 @@ public final class ServerMain {
         MetricsSupport metrics = MetricsSupport.create();
         GreetService greetService = new GreetService(config);
         return Routing.builder()
-                .register(JsonSupport.create())
                 .register(metrics)
                 .register("/greet", greetService)
                 .build();

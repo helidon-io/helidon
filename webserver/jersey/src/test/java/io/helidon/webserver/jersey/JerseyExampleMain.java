@@ -26,7 +26,6 @@ import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
 
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.testsupport.LoggingTestUtils;
 
@@ -93,34 +92,36 @@ public final class JerseyExampleMain {
             return webServer;
         }
 
-        ServerConfiguration.Builder builder = ServerConfiguration.builder()
-                                                                 .bindAddress(InetAddress.getLoopbackAddress());
-        if (!testing) {
-            // in case we're running as main an not in test, run on a fixed port
-            builder.port(8080);
-        }
-
-        webServer = WebServer.create(builder.build(),
-                                     Routing.builder()
-                                            .register("/jersey",
-                                                      JerseySupport.builder()
-                                                                   .register(JerseyExampleResource.class))
-                                            .any("/jersey/second", (req, res) -> {
-                                                req.content()
-                                                   .as(String.class)
-                                                   .thenAccept(s -> {
-                                                       res.send("second-content: " + s)
-                                                          .exceptionally(throwable -> {
-                                                              throwable.printStackTrace();
-                                                              fail("Should not fail: " + throwable.getMessage());
-                                                              return null;
-                                                          });
-                                                   })
-                                                   .exceptionally(throwable -> {
-                                                       req.next(throwable);
-                                                       return null;
-                                                   });
-                                            }));
+        webServer = WebServer.builder()
+                .routing(Routing.builder()
+                                 .register("/jersey",
+                                           JerseySupport.builder()
+                                                   .register(JerseyExampleResource.class))
+                                 .any("/jersey/second", (req, res) -> {
+                                     req.content()
+                                             .as(String.class)
+                                             .thenAccept(s -> {
+                                                 res.send("second-content: " + s)
+                                                         .exceptionally(throwable -> {
+                                                             throwable.printStackTrace();
+                                                             fail("Should not fail: " + throwable.getMessage());
+                                                             return null;
+                                                         });
+                                             })
+                                             .exceptionally(throwable -> {
+                                                 req.next(throwable);
+                                                 return null;
+                                             });
+                                 }))
+                .bindAddress(InetAddress.getLoopbackAddress())
+                .update(it -> {
+                    if (!testing) {
+                        // in case we're running as main an not in test, run on a fixed port
+                        it.port(8080);
+                    }
+                })
+                .build();
+                                     ;
 
         webServer.start().toCompletableFuture().get(10, TimeUnit.SECONDS);
 

@@ -20,12 +20,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
 
 import javax.json.JsonObject;
 
 import io.helidon.common.http.Headers;
-import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
 import io.helidon.media.jsonp.common.JsonpSupport;
@@ -53,11 +51,16 @@ public class MainTest {
     private static WebServer webServer;
     private static WebClient webClient;
 
-    private static final Logger LOGGER = Logger.getLogger(MainTest.class.getPackageName());
-
     @BeforeAll
     public static void start() throws Exception {
-        webServer = Main.startServer();
+        // the port is only available if the server started already!
+        // so we need to wait
+        webServer = Main.startServer()
+                        .start()
+                        .toCompletableFuture()
+                        .get();
+
+
         webClient = WebClient.builder()
                         .baseUri("http://localhost:" + webServer.port())
                         .addMediaSupport(JsonpSupport.create())
@@ -86,7 +89,7 @@ public class MainTest {
     @Order(1) // Make sure this runs before the greeting message changes so responses are deterministic.
     @Test
     public void testHelloWorld() throws Exception {
-        
+
         WebClientResponse r = getResponse("/greet");
 
         assertEquals(200, r.status().code(), "HTTP response1");

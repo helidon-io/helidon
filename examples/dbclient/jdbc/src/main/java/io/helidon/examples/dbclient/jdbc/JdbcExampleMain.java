@@ -24,12 +24,11 @@ import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.health.DbClientHealthCheck;
 import io.helidon.dbclient.webserver.jsonp.DbResultSupport;
 import io.helidon.health.HealthSupport;
-import io.helidon.media.jsonb.server.JsonBindingSupport;
-import io.helidon.media.jsonp.server.JsonSupport;
+import io.helidon.media.jsonb.common.JsonbSupport;
+import io.helidon.media.jsonp.common.JsonpSupport;
 import io.helidon.metrics.MetricsSupport;
 import io.helidon.tracing.TracerBuilder;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 
 /**
@@ -68,16 +67,18 @@ public final class JdbcExampleMain {
         // By default this will pick up application.yaml from the classpath
         Config config = Config.create();
 
-        // Get webserver config from the "server" section of application.yaml
-        ServerConfiguration serverConfig =
-                ServerConfiguration.builder(config.get("server"))
-                        .tracer(TracerBuilder.create(config.get("tracing")).build())
-                        .build();
-
         // Prepare routing for the server
         Routing routing = createRouting(config);
 
-        WebServer server = WebServer.create(serverConfig, routing);
+        WebServer server = WebServer.builder()
+                .routing(createRouting(config))
+                // Get webserver config from the "server" section of application.yaml
+                .config(config.get("server"))
+                .tracer(TracerBuilder.create(config.get("tracing")))
+                .addMediaSupport(JsonpSupport.create())
+                .addMediaSupport(JsonbSupport.create())
+                .addMediaSupport(DbResultSupport.create())
+                .build();
 
         // Start the server and print some info.
         server.start().thenAccept(ws -> {
@@ -110,9 +111,6 @@ public final class JdbcExampleMain {
                 .build();
 
         return Routing.builder()
-                .register(JsonSupport.create())
-                .register(JsonBindingSupport.create())
-                .register(DbResultSupport.create())
                 .register(health)                   // Health at "/health"
                 .register(MetricsSupport.create())  // Metrics at "/metrics"
                 .register("/db", new PokemonService(dbClient))

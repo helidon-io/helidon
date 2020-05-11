@@ -24,8 +24,8 @@ import java.util.concurrent.TimeoutException;
 import javax.websocket.server.ServerEndpointConfig;
 
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
+
 import org.junit.jupiter.api.AfterAll;
 
 /**
@@ -51,8 +51,9 @@ public class TyrusSupportBaseTest {
             return webServer;
         }
 
-        ServerConfiguration.Builder builder =
-                ServerConfiguration.builder().bindAddress(InetAddress.getLoopbackAddress());
+        WebServer.Builder builder = WebServer.builder()
+                .bindAddress(InetAddress.getLoopbackAddress());
+
 
         if (!testing) {
             // in case we're running as main an not in test, run on a fixed port
@@ -71,12 +72,14 @@ public class TyrusSupportBaseTest {
             }
         }
 
-        webServer = WebServer.create(
-                builder.build(),
-                Routing.builder().register(
-                        "/tyrus", tyrusSupportBuilder.build()));
+        webServer = builder
+                .routing(Routing.builder().register(
+                        "/tyrus", tyrusSupportBuilder.build()))
+                .build();
 
-        webServer.start().toCompletableFuture().get(10, TimeUnit.SECONDS);
+        webServer.start()
+                .toCompletableFuture()
+                .get(10, TimeUnit.SECONDS);
 
         if (!testing) {
             System.out.println("WebServer Tyrus application started.");

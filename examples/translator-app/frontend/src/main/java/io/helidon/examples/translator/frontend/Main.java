@@ -24,7 +24,6 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.tracing.TracerBuilder;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 
 /**
@@ -48,23 +47,24 @@ public class Main {
                 .sources(ConfigSources.environmentVariables())
                 .build();
 
-        WebServer webServer = WebServer.create(
-                               ServerConfiguration.builder()
-                        .port(8080)
-                        .tracer(TracerBuilder.create(config.get("tracing"))
-                                .serviceName("helidon-webserver-translator-frontend")
-                                .registerGlobal(false)),
+        WebServer webServer = WebServer.builder(
                 Routing.builder()
                         .register(new TranslatorFrontendService(
                                 config.get("backend.host").asString().orElse("localhost"),
-                                9080)));
+                                9080)))
+                .port(8080)
+                .tracer(TracerBuilder.create(config.get("tracing"))
+                                .serviceName("helidon-webserver-translator-frontend")
+                                .registerGlobal(false)
+                                .build())
+                .build();
 
         return webServer.start()
                 .thenApply(ws -> {
                     System.out.println(
                             "WEB server is up! http://localhost:" + ws.port());
                     ws.whenShutdown().thenRun(()
-                            -> System.out.println("WEB server is DOWN. Good bye!"));
+                                                      -> System.out.println("WEB server is DOWN. Good bye!"));
                     return ws;
                 }).exceptionally(t -> {
                     System.err.println("Startup failed: " + t.getMessage());

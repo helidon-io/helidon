@@ -25,11 +25,10 @@ import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.spi.ConfigSource;
-import io.helidon.webserver.cors.CorsTestServices.CORSTestService;
 import io.helidon.webclient.WebClient;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
+import io.helidon.webserver.cors.CorsTestServices.CORSTestService;
 
 import static io.helidon.webserver.cors.CorsTestServices.SERVICE_3;
 
@@ -46,10 +45,14 @@ public class TestUtil {
     private static WebServer startServer(int port, Routing.Builder routingBuilder) throws InterruptedException,
             ExecutionException, TimeoutException {
         Config config = Config.create();
-        ServerConfiguration serverConfig = ServerConfiguration.builder(config.get("server"))
+
+        return WebServer.builder(routingBuilder)
+                .config(config.get("server"))
                 .port(port)
-                .build();
-        return WebServer.create(serverConfig, routingBuilder).start().toCompletableFuture().get(10, TimeUnit.SECONDS);
+                .build()
+                .start()
+                .toCompletableFuture()
+                .get(10, TimeUnit.SECONDS);
     }
 
     static Routing.Builder prepRouting() {
@@ -84,7 +87,7 @@ public class TestUtil {
             throw new IllegalArgumentException("Expected config 'cors-setup' from default app config not found");
         }
 
-        Routing.Builder builder = Routing.builder()
+        return Routing.builder()
                 .register(GREETING_PATH,
                           CorsSupport.createMapped(corsMappedSetupConfig),
                           new GreetService())
@@ -100,8 +103,6 @@ public class TestUtil {
                                 .allowMethods("GET")
                                 .build(),
                         (req, resp) -> resp.status(Http.Status.OK_200).send());
-
-        return builder;
     }
 
     static Config minimalConfig(Supplier<? extends ConfigSource> configSource) {        Config.Builder configBuilder = Config.builder()
@@ -109,10 +110,6 @@ public class TestUtil {
                 .disableSystemPropertiesSource();
         configBuilder.sources(configSource);
         return configBuilder.build();
-    }
-
-    private static Config minimalConfig() {
-        return minimalConfig(null);
     }
 
     static WebClient startupClient(WebServer server) {

@@ -21,7 +21,6 @@ import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.Builder;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 
 /**
@@ -37,9 +36,9 @@ public final class GoogleUtil {
     }
 
     static WebServer startIt(int port, Builder<? extends Routing> routing) {
-        WebServer server = WebServer.create(ServerConfiguration.builder()
-                                                    .port(port),
-                                            routing);
+        WebServer server = WebServer.builder(routing)
+                .port(port)
+                .build();
 
         long t = System.nanoTime();
 

@@ -35,8 +35,8 @@ class TestWebServer implements WebServer {
 
     private final CompletableFuture<WebServer> startFuture = new CompletableFuture<>();
     private final CompletableFuture<WebServer> shutdownFuture = new CompletableFuture<>();
-    private final ServerConfiguration configuration = ServerConfiguration.builder().build();
     private final ContextualRegistry context = ContextualRegistry.create();
+    private final ServerConfiguration configuration = ServerConfiguration.builder().build();
     private final MediaContext mediaContext;
 
     TestWebServer() {

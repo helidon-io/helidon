@@ -23,7 +23,6 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.tracing.TracerBuilder;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 
 /**
@@ -49,36 +48,37 @@ public final class Main {
         // configure logging in order to not have the standard JVM defaults
         LogManager.getLogManager().readConfiguration(Main.class.getResourceAsStream("/logging.properties"));
 
-        Config config  = Config.builder()
+        Config config = Config.builder()
                 .sources(ConfigSources.environmentVariables())
                 .build();
 
-        WebServer webServer = WebServer.create(
-                ServerConfiguration.builder()
-                        .port(8080)
-                        .tracer(TracerBuilder.create(config.get("tracing"))
-                                .serviceName("demo-first")
-                                .registerGlobal(true)),
+        WebServer webServer = WebServer.builder(
                 Routing.builder()
                         .any((req, res) -> {
-                           System.out.println("Received another request.");
-                           req.next();
-                       })
-                       .get("/test", (req, res) -> res.send("Hello World!"))
-                       .post("/hello", (req, res) -> {
-                           req.content()
-                              .as(String.class)
-                              .thenAccept(s -> res.send("Hello: " + s))
-                              .exceptionally(t -> {
-                                  req.next(t);
-                                  return null;
-                              });
-                       }));
+                            System.out.println("Received another request.");
+                            req.next();
+                        })
+                        .get("/test", (req, res) -> res.send("Hello World!"))
+                        .post("/hello", (req, res) -> {
+                            req.content()
+                                    .as(String.class)
+                                    .thenAccept(s -> res.send("Hello: " + s))
+                                    .exceptionally(t -> {
+                                        req.next(t);
+                                        return null;
+                                    });
+                        }))
+                .port(8080)
+                .tracer(TracerBuilder.create(config.get("tracing"))
+                                .serviceName("demo-first")
+                                .registerGlobal(true)
+                                .build())
+                .build();
 
         webServer.start()
-                 .whenComplete((server, throwable) -> {
-                     System.out.println("Started at http://localhost:" + server.port());
-                 });
+                .whenComplete((server, throwable) -> {
+                    System.out.println("Started at http://localhost:" + server.port());
+                });
     }
 
 }

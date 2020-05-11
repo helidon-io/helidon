@@ -27,7 +27,6 @@ import io.helidon.grpc.server.GrpcServer;
 import io.helidon.grpc.server.GrpcServerConfiguration;
 import io.helidon.metrics.MetricsSupport;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 
 /**
@@ -88,9 +87,7 @@ public class Server {
                 .register(MetricsSupport.create())
                 .build();
 
-        ServerConfiguration webServerConfig = ServerConfiguration.builder(config.get("webserver")).build();
-
-        WebServer.create(webServerConfig, routing)
+        WebServer.create(routing, config.get("webserver"))
                 .start()
                 .thenAccept(s -> {
                     System.out.println("HTTP server is UP! http://localhost:" + s.port());

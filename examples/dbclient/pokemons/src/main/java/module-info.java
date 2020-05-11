@@ -25,8 +25,8 @@ module io.helidon.examples.dbclient.pokemons.jdbc {
     requires io.helidon.dbclient.health;
     requires io.helidon.health;
     requires io.helidon.dbclient.webserver.jsonp;
-    requires io.helidon.media.jsonb.server;
-    requires io.helidon.media.jsonp.server;
+    requires io.helidon.media.jsonb.common;
+    requires io.helidon.media.jsonp.common;
     requires io.helidon.metrics;
     requires io.helidon.tracing;
     requires io.helidon.dbclient;

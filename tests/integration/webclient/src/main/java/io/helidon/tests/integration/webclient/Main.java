@@ -19,10 +19,9 @@ package io.helidon.tests.integration.webclient;
 import java.util.concurrent.CompletionStage;
 
 import io.helidon.config.Config;
-import io.helidon.media.jsonp.server.JsonSupport;
+import io.helidon.media.jsonp.common.JsonpSupport;
 import io.helidon.security.integration.webserver.WebSecurity;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 
 import io.opentracing.Tracer;
@@ -49,12 +48,10 @@ public final class Main {
         Config config = Config.create();
 
         // Get webserver config from the "server" section of application.yaml
-        ServerConfiguration serverConfig =
-                ServerConfiguration.builder(config.get("server"))
-                        .tracer(tracer)
-                        .build();
+        WebServer.Builder builder = WebServer.builder()
+                .tracer(tracer);
 
-        return startIt(config, serverConfig);
+        return startIt(config, builder);
     }
 
     /**
@@ -67,14 +64,17 @@ public final class Main {
         Config config = Config.create();
 
         // Get webserver config from the "server" section of application.yaml
-        ServerConfiguration serverConfig =
-                ServerConfiguration.create(config.get("server"));
 
-        return startIt(config, serverConfig);
+        WebServer.Builder builder = WebServer.builder();
+
+        return startIt(config, builder);
     }
 
-    private static CompletionStage<WebServer> startIt(Config config, ServerConfiguration serverConfig) {
-        WebServer server = WebServer.create(serverConfig, createRouting(config));
+    private static CompletionStage<WebServer> startIt(Config config, WebServer.Builder serverBuilder) {
+        serverBuilder.config(config.get("server"));
+        WebServer server = serverBuilder.routing(createRouting(config))
+                .addMediaSupport(JsonpSupport.create())
+                .build();
 
         // Try to start the server. If successful, print some info and arrange to
         // print a message at shutdown. If unsuccessful, print the exception.
@@ -106,7 +106,6 @@ public final class Main {
     private static Routing createRouting(Config config) {
         GreetService greetService = new GreetService(config);
         return Routing.builder()
-                .register(JsonSupport.create())
                 .register(WebSecurity.create(config.get("security")))
                 .register("/greet", greetService)
                 .build();

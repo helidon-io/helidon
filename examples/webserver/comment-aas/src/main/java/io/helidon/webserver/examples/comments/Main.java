@@ -23,7 +23,6 @@ import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.webserver.HttpException;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 
 /**
@@ -49,9 +48,9 @@ public final class Main {
         Config config = Config.create();
 
         boolean acceptAnonymousUsers = config.get("anonymous-enabled").asBoolean().orElse(false);
-        ServerConfiguration serverConfig = config.get("webserver").as(ServerConfiguration::create).get();
 
-        WebServer server = WebServer.create(serverConfig, createRouting(acceptAnonymousUsers));
+        WebServer server = WebServer.create(createRouting(acceptAnonymousUsers),
+                                            config.get("webserver"));
 
         // Start the server and print some info.
         server.start().thenAccept((ws) -> {

@@ -18,8 +18,6 @@ package io.helidon.webserver;
 
 import java.util.concurrent.TimeUnit;
 
-import javax.net.ssl.SSLContext;
-
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.KeyConfig;
 import io.helidon.webclient.Ssl;
@@ -49,25 +47,23 @@ public class Pkcs12StoreSslTest {
 
     @Test
     public void testPkcs12() throws Exception {
-        SSLContext sslContext = SSLContextBuilder.create(KeyConfig.keystoreBuilder()
-                                                                  .keystore(Resource.create("ssl/certificate.p12"))
-                                                                  .keystorePassphrase(new char[] {'h', 'e', 'l', 'i', 'd', 'o', 'n'})
-                                                                  .build())
-                                                 .build();
-
         WebServer otherWebServer =
-                WebServer.create(ServerConfiguration.builder()
-                                                    .ssl(sslContext),
-                                 Routing.builder()
-                                        .any((req, res) -> res.send("It works!"))
-                                        .build())
-                         .start()
-                         .toCompletableFuture()
-                         .get(10, TimeUnit.SECONDS);
+                WebServer.builder(Routing.builder()
+                                          .any((req, res) -> res.send("It works!"))
+                                          .build())
+                        .tls(TlsConfig.builder()
+                                     .privateKey(KeyConfig.keystoreBuilder()
+                                                         .keystore(Resource.create("ssl/certificate.p12"))
+                                                         .keystorePassphrase(new char[] {'h', 'e', 'l', 'i', 'd', 'o', 'n'})
+                                                         .build()))
+                        .build()
+                        .start()
+                        .toCompletableFuture()
+                        .get(10, TimeUnit.SECONDS);
 
         otherWebServer.start()
-                      .toCompletableFuture()
-                      .join();
+                .toCompletableFuture()
+                .join();
         try {
             client.get()
                     .uri("https://localhost:" + otherWebServer.port())
@@ -77,8 +73,8 @@ public class Pkcs12StoreSslTest {
                     .get();
         } finally {
             otherWebServer.shutdown()
-                          .toCompletableFuture()
-                          .join();
+                    .toCompletableFuture()
+                    .join();
         }
 
     }

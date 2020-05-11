@@ -23,12 +23,11 @@ import io.helidon.config.Config;
 import io.helidon.config.FileSystemWatcher;
 import io.helidon.health.HealthSupport;
 import io.helidon.health.checks.HealthChecks;
-import io.helidon.media.jsonp.server.JsonSupport;
+import io.helidon.media.jsonp.common.JsonpSupport;
 import io.helidon.metrics.MetricsSupport;
 import io.helidon.security.integration.webserver.WebSecurity;
 import io.helidon.tracing.TracerBuilder;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.StaticContentSupport;
 import io.helidon.webserver.WebServer;
 
@@ -71,12 +70,12 @@ public final class Se1Main {
         Config config = buildConfig();
 
         // Get webserver config from the "server" section of application.yaml
-        ServerConfiguration serverConfig =
-                ServerConfiguration.builder(config.get("server"))
-                        .tracer(TracerBuilder.create(config.get("tracing")).buildAndRegister())
-                        .build();
-
-        WebServer server = WebServer.create(serverConfig, createRouting(config));
+        WebServer server = WebServer.builder()
+                .routing(createRouting(config))
+                .config(config.get("server"))
+                .tracer(TracerBuilder.create(config.get("tracing")).build())
+                .addMediaSupport(JsonpSupport.create())
+                .build();
 
         // Try to start the server. If successful, print some info and arrange to
         // print a message at shutdown. If unsuccessful, print the exception.
@@ -131,7 +130,6 @@ public final class Se1Main {
                 .register("/static/path", StaticContentSupport.create(Paths.get("web")))
                 .register("/static/classpath", StaticContentSupport.create("web"))
                 .register("/static/jar", StaticContentSupport.create("web-jar"))
-                .register(JsonSupport.create())
                 .register(WebSecurity.create(config.get("security")))
                 .register(health)                   // Health at "/health"
                 .register(metrics)                  // Metrics at "/metrics"

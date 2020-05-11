@@ -37,7 +37,7 @@ public class BookService implements Service {
     private static final BookStore BOOK_STORE = new BookStore();
     private static final String ISBN_PARAM = "isbn";
 
-    private Main.JsonLibrary jsonLibrary;
+    private final Main.JsonLibrary jsonLibrary;
 
     BookService(Config config) {
         jsonLibrary = Main.getJsonLibrary(config);

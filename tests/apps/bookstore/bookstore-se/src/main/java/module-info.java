@@ -21,14 +21,15 @@ module io.helidon.tests.apps.bookstore.se {
     requires java.logging;
     requires java.json;
 
-    requires io.helidon.bundles.webserver;
+    requires io.helidon.webserver;
     requires io.helidon.config.yaml;
     requires io.helidon.config;
     requires io.helidon.health;
     requires io.helidon.health.checks;
     requires io.helidon.metrics;
-    requires io.helidon.media.jsonb.server;
-    requires io.helidon.media.jackson.server;
+    requires io.helidon.media.jsonp.common;
+    requires io.helidon.media.jsonb.common;
+    requires io.helidon.media.jackson.common;
     requires io.helidon.tests.apps.bookstore.common;
 
     exports io.helidon.tests.apps.bookstore.se;
