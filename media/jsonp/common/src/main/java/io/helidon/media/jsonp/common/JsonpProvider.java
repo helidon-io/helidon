@@ -33,7 +33,7 @@ public class JsonpProvider implements MediaSupportProvider {
     }
 
     @Override
-    public String type() {
+    public String configKey() {
         return JSON_P;
     }
 }

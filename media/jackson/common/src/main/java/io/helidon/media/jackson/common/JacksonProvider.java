@@ -33,7 +33,7 @@ public class JacksonProvider implements MediaSupportProvider {
     }
 
     @Override
-    public String type() {
+    public String configKey() {
         return JACKSON;
     }
 }

@@ -30,8 +30,16 @@ public interface MessageBodyOperator<T extends MessageBodyContext> {
      *
      * @param type the requested type
      * @param context the context providing the headers abstraction
-     * @return {@code true} if the operator can convert the specified type in
-     * the given context, {@code false} otherwise
+     * @return {@link PredicateResult} result
      */
-    boolean accept(GenericType<?> type, T context);
+    PredicateResult accept(GenericType<?> type, T context);
+
+    /**
+     * TODO javadoc
+     */
+    enum PredicateResult {
+        NOT_SUPPORTED,
+        ASSIGNABLE,
+        EXACT
+    }
 }

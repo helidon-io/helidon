@@ -15,9 +15,16 @@
  */
 package io.helidon.media.common;
 
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Objects;
+import java.util.ServiceLoader;
+import java.util.stream.Collectors;
 
+import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
+import io.helidon.media.common.spi.MediaSupportProvider;
 
 /**
  * Media support.
@@ -93,10 +100,23 @@ public final class MediaContext {
     public static class Builder implements io.helidon.common.Builder<MediaContext>,
                                            MediaContextBuilder<Builder> {
 
+        private final static int DEFAULTS_PRIORITY = 100;
+        private final static int BUILDER_PRIORITY = 200;
+        private final static int LOADER_PRIORITY = 300;
+
+        private final HelidonServiceLoader.Builder<MediaSupportProvider> services = HelidonServiceLoader
+                .builder(ServiceLoader.load(MediaSupportProvider.class));
+
+        private final List<MessageBodyReader<?>> builderReaders = new ArrayList<>();
+        private final List<MessageBodyStreamReader<?>> builderStreamReaders = new ArrayList<>();
+        private final List<MessageBodyWriter<?>> builderWriters = new ArrayList<>();
+        private final List<MessageBodyStreamWriter<?>> builderStreamWriter = new ArrayList<>();
+        private final List<MediaSupport> mediaSupports = new ArrayList<>();
         private final MessageBodyReaderContext readerContext;
         private final MessageBodyWriterContext writerContext;
         private boolean registerDefaults = true;
         private boolean includeStackTraces = false;
+        private Config config = Config.empty();
 
         private Builder() {
             this.readerContext = MessageBodyReaderContext.create();
@@ -126,6 +146,7 @@ public final class MediaContext {
         public Builder config(Config config) {
             config.get("server-errors-include-stack-traces").asBoolean().ifPresent(this::includeStackTraces);
             config.get("register-defaults").asBoolean().ifPresent(this::registerDefaults);
+            this.config = config;
             return this;
         }
 
@@ -133,6 +154,11 @@ public final class MediaContext {
         public Builder addMediaSupport(MediaSupport mediaSupport) {
             Objects.requireNonNull(mediaSupport);
             mediaSupport.register(readerContext, writerContext);
+            return this;
+        }
+
+        public Builder addMediaSupport(MediaSupport mediaSupport, int priority) {
+            services.addService((config) -> mediaSupport, priority);
             return this;
         }
 
@@ -207,8 +233,31 @@ public final class MediaContext {
         @Override
         public MediaContext build() {
             if (registerDefaults) {
-                addMediaSupport(DefaultMediaSupport.create(includeStackTraces));
+                addMediaSupport(DefaultMediaSupport.create(includeStackTraces), DEFAULTS_PRIORITY);
             }
+            services.useSystemServiceLoader(true)
+                    .defaultPriority(LOADER_PRIORITY)
+                    .addService(config -> new MediaSupport() {
+                        @Override
+                        public void register(MessageBodyReaderContext readerContext, MessageBodyWriterContext writerContext) {
+                            builderReaders.forEach(readerContext::registerReader);
+                            builderWriters.forEach(writerContext::registerWriter);
+                        }
+                    }, BUILDER_PRIORITY)
+                    .addService(config -> new MediaSupport() {
+                        @Override
+                        public void register(MessageBodyReaderContext readerContext, MessageBodyWriterContext writerContext) {
+                            mediaSupports.forEach(it -> it.register(readerContext, writerContext));
+                        }
+                    })
+                    .build()
+                    .asList()
+                    .stream()
+                    .map(it -> it.create(config.get(it.configKey())))
+                    .collect(Collectors.toCollection(LinkedList::new))
+                    .descendingIterator()
+                    .forEachRemaining(mediaService -> mediaService.register(readerContext, writerContext));
+
             return new MediaContext(readerContext, writerContext);
         }
     }
