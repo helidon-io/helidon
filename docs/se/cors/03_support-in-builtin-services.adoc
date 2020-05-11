@@ -16,7 +16,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= CORS in Helidon Built-in Services
+= CORS in Helidon SE Built-in Services
 :toc:
 :toc-placement: preamble
 :pagename: cors-built-in-service-support
@@ -32,9 +32,9 @@
 :javadoc-base-url-webserver: {javadoc-base-url}io.helidon.webserver/io/helidon/webserver
 :cors-se-intro: 01_introduction.adoc
 :cors-config-table-src: {cors-se-intro}
-:health-page: ../health/01_health.adoc # se/health/01_health.adoc
-:metrics-page: ../metrics/01_metrics.adoc
-:openapi-page: ../openapi/01_openapi.adoc
+:health-page: se/health/01_health.adoc
+:metrics-page: se/metrics/01_metrics.adoc
+:openapi-page: se/openapi/01_openapi.adoc
 
 Several built-in Helidon services -- health, metrics, and OpenAPI -- automatically support cross-origin resource
 sharing and you can control how they do so.
