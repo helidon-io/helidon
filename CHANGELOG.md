@@ -7,11 +7,23 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [Unreleased]
+
+### Notes
+
+This is the fourth milestone release of Helidon 2.0. 
+
+### Notable New Features
+
+### Changes
+
+### Backward incompatible changes
+
 ## [2.0.0-M3]
 
 ### Notes
 
-This is the second milestone release of Helidon 2.0. It contains significant new features,
+This is the third milestone release of Helidon 2.0. It contains significant new features,
 enhancements and fixes. It also contains backward incompatible changes (see section below).
 This milestone release is provided for customers that want early access to Helidon 2.0. It
 should be considered unstable and is not intended for production use. APIs and features might
