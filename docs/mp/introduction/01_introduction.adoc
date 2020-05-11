@@ -67,8 +67,8 @@ derived from a Java EE application server. That means your cloud native
 application is compact and efficient without unnecessary overhead or bloat.
 
 === GraalVM Native Image Support for Helidon MP
-Helidon now includes support for GraalVM to enable the conversion of Helidon MP applications to native executable code via the native-image utility.
-GraalVM native-image support is now available for both Helidon MP and Helidon SE. 
+GraalVM native-image support is now available for both Helidon MP and Helidon SE. Helidon MP includes support for GraalVM to enable the conversion of Helidon MP applications to native executable code via the native-image utility.
+ 
 
 //add link to GraalVM MP topic
 <<link to new GraalVM MP topic>>
