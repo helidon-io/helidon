@@ -26,8 +26,9 @@ import javax.enterprise.context.ApplicationScoped;
 
 import io.helidon.microprofile.messaging.AssertableTestBean;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
@@ -74,9 +75,9 @@ public class ProcessorMsg2ComplStageNoneAckBean implements AssertableTestBean {
 
     @Override
     public void assertValid() {
-        assertFalse(ackFuture.isDone());
-        assertFalse(completedBeforeProcessor.get());
-        assertEquals(1, RESULT_DATA.size());
-        RESULT_DATA.forEach(s -> assertEquals(TEST_DATA, s));
+        assertThat(ackFuture.isDone(), is(true));
+        assertThat(completedBeforeProcessor.get(), is(true));
+        assertThat(RESULT_DATA.size(), equalTo(1));
+        RESULT_DATA.forEach(s -> assertThat(s, equalTo(TEST_DATA)));
     }
 }

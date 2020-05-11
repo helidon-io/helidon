@@ -22,7 +22,8 @@ import java.util.Map;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 
 import org.junit.jupiter.api.Test;
 
@@ -52,8 +53,8 @@ class AdHocConfigBuilderTest {
                 .put(TEST_KEY, TEST_TOPIC_CUSTOM)
                 .build();
 
-        assertEquals(TEST_TOPIC_CUSTOM, c.getValue(TEST_KEY, String.class));
-        assertEquals(AdHocConfigBuilderTest.class.getName(), c.getValue("key.serializer", String.class));
+        assertThat(c.getValue(TEST_KEY, String.class), equalTo(TEST_TOPIC_CUSTOM));
+        assertThat(c.getValue("key.serializer", String.class), equalTo(AdHocConfigBuilderTest.class.getName()));
     }
 
     @Test
@@ -72,7 +73,7 @@ class AdHocConfigBuilderTest {
                 .put(TEST_KEY, TEST_TOPIC_CUSTOM)
                 .build();
 
-        assertEquals(TEST_TOPIC_CUSTOM, c.getValue(TEST_KEY, String.class));
+        assertThat(c.getValue(TEST_KEY, String.class), equalTo(TEST_TOPIC_CUSTOM));
     }
 
     @Test
@@ -100,7 +101,7 @@ class AdHocConfigBuilderTest {
                 .putAll(config2.get("mp.messaging.connector." + TEST_CONNECTOR))
                 .build();
 
-        assertEquals(ADDITION_ATTR_1_VALUE, c.getValue(ADDITION_ATTR_1, String.class));
-        assertEquals(ADDITION_ATTR_2_VALUE, c.getValue(ADDITION_ATTR_2, String.class));
+        assertThat(c.getValue(ADDITION_ATTR_1, String.class), equalTo(ADDITION_ATTR_1_VALUE));
+        assertThat(c.getValue(ADDITION_ATTR_2, String.class), equalTo(ADDITION_ATTR_2_VALUE));
     }
 }

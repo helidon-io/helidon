@@ -35,13 +35,14 @@ import javax.enterprise.inject.spi.CDI;
 import io.helidon.config.mp.MpConfigSources;
 import io.helidon.microprofile.server.ServerCdiExtension;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 public abstract class AbstractCDITest {
     protected SeContainer cdiContainer;
@@ -79,9 +80,10 @@ public abstract class AbstractCDITest {
 
     protected void assertAllReceived(CountableTestBean bean) {
         try {
-            assertTrue(bean.getTestLatch().await(2, TimeUnit.SECONDS)
-                    , "All messages not delivered in time, number of unreceived messages: "
-                            + bean.getTestLatch().getCount());
+            assertThat("All messages not delivered in time, number of unreceived messages: "
+                            + bean.getTestLatch().getCount(),
+                    bean.getTestLatch().await(2, TimeUnit.SECONDS),
+                    is(true));
         } catch (InterruptedException e) {
             fail(e);
         }
@@ -92,14 +94,14 @@ public abstract class AbstractCDITest {
     }
 
     private static SeContainer startCdiContainer(Map<String, String> p, Set<Class<?>> beanClasses) {
-        p = new HashMap<>(p);
-        p.put("mp.initializer.allow", "true");
         Config config = ConfigProviderResolver.instance().getBuilder()
-                .withSources(MpConfigSources.create(p))
+                .withSources(MpConfigSources.create(p),
+                        MpConfigSources.create(Map.of("mp.initializer.allow", "true")))
                 .build();
 
         ConfigProviderResolver.instance()
                 .registerConfig(config, Thread.currentThread().getContextClassLoader());
+
         final SeContainerInitializer initializer = SeContainerInitializer.newInstance();
         initializer.addBeanClasses(beanClasses.toArray(new Class<?>[0]));
         return initializer.initialize();
@@ -121,8 +123,8 @@ public abstract class AbstractCDITest {
     }
 
     protected static final class CdiTestCase {
-        private String name;
-        private Class<?>[] clazzes;
+        private final String name;
+        private final Class<?>[] clazzes;
 
         private CdiTestCase(String name, Class<?>... clazzes) {
             this.name = name;
