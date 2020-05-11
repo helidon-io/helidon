@@ -40,11 +40,7 @@ import io.opentracing.util.GlobalTracer;
 
 /**
  * {@link WebServer} configuration.
- *
- * @deprecated since 2.0.0 - please use methods directly on {@link io.helidon.webserver.WebServer.Builder}, that fully
- *  replaces this class
  */
-@Deprecated
 public interface ServerConfiguration extends SocketConfiguration {
 
     /**
@@ -235,7 +231,10 @@ public interface ServerConfiguration extends SocketConfiguration {
      * Creates new instance of a {@link Builder server configuration builder}.
      *
      * @return a new builder instance
+     *
+     * @deprecated since 2.0.0 - please use {@link io.helidon.webserver.WebServer#builder()} instead
      */
+    @Deprecated
     static Builder builder() {
         return new Builder();
     }
@@ -245,7 +244,11 @@ public interface ServerConfiguration extends SocketConfiguration {
      *
      * @param config the externalized configuration
      * @return a new builder instance
+     * @deprecated since 2.0.0 - please use {@link io.helidon.webserver.WebServer#builder()}, then
+     * {@link WebServer.Builder#config(io.helidon.config.Config)}, or
+     * {@link io.helidon.webserver.WebServer#create(Routing, io.helidon.config.Config)}
      */
+    @Deprecated
     static Builder builder(Config config) {
         return new Builder().config(config);
     }

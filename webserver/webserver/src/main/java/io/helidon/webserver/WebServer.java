@@ -296,7 +296,7 @@ public interface WebServer {
     /**
      * Creates a fluent API builder of the {@link io.helidon.webserver.WebServer}.
      * Before calling the {@link io.helidon.webserver.WebServer.Builder#build()} method, you should
-     * configure the default routing.
+     * configure the default routing. If none is configured, all requests will end in {@code 404}.
      *
      * @return a new builder
      */
@@ -307,8 +307,9 @@ public interface WebServer {
     /**
      * Creates a builder of the {@link WebServer}.
      *
-     * @param routing the routing; must not be {@code null}
+     * @param routing the routing to use for the default port; must not be {@code null}
      * @return the builder
+     * @see #builder()
      */
     static Builder builder(Routing routing) {
         return builder().routing(routing);
@@ -689,6 +690,32 @@ public interface WebServer {
          */
         public Builder context(Context context) {
             configurationBuilder.context(context);
+            return this;
+        }
+
+        /**
+         * Sets a count of threads in pool used to tryProcess HTTP requests.
+         * Default value is {@code CPU_COUNT * 2}.
+         * <p>
+         * Configuration key: {@code workers}
+         *
+         * @param workers a workers count
+         * @return an updated builder
+         */
+        public Builder workersCount(int workers) {
+            configurationBuilder.workersCount(workers);
+            return this;
+        }
+
+        /**
+         * Set to {@code true} to print detailed feature information on startup.
+         *
+         * @param shouldPrint whether to print details or not
+         * @return updated builder instance
+         * @see io.helidon.common.HelidonFeatures
+         */
+        public Builder printFeatureDetails(boolean shouldPrint) {
+            configurationBuilder.printFeatureDetails(shouldPrint);
             return this;
         }
 
