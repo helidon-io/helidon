@@ -232,7 +232,7 @@ public final class DbResultSupport implements MediaSupport {
         }
     }
 
-    private static class DbResultWriter implements MessageBodyWriter<DbResult>{
+    private static class DbResultWriter implements MessageBodyWriter<DbResult> {
         @Override
         public Flow.Publisher<DataChunk> write(Single<DbResult> single,
                                                GenericType<? extends DbResult> type,
