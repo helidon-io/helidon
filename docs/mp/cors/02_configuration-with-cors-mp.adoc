@@ -23,6 +23,7 @@
 :description: Helidon MP CORS Configuration
 :keywords: helidon, java, cors, mp, microprofile, configuration
 :javadoc-base-url-api: {javadoc-base-url}io.helidon.microprofile.cors/io/helidon/microprofile/cors
+:javadoc-base-url-webserver: {javadoc-base-url}io.helidon.webserver/io/helidon/webserver
 :helidon-tag: https://github.com/oracle/helidon/tree/{helidon-version}
 :quickstart-example: {helidon-tag}/examples/quickstarts/helidon-quickstart-mp
 :cors-spec: https://www.w3.org/TR/cors/
@@ -42,8 +43,6 @@ The support in Helidon MP for CORS configuration works with the following format
 
 [[config-key-table]]
 include::{cors-config-table-src}[tag=cors-config-table]
-
-If the cross-origin configuration is disabled (`enabled` = false), then the Helidon CORS implementation ignores the cross-origin configuration entry.
 
 Although there are two types of CORS cross-origin configuration, for Helidon MP use
 the mapped format.
