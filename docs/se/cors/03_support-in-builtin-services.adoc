@@ -44,8 +44,8 @@ sharing and you can control how they do so.
 
 // tag::understanding-cors-support-in-services[]
 == Understanding CORS Support in Helidon Services
-Helidon lets you easily include link:{health-page}[health], link:{metrics-page}[metrics], and
-link:{openapi-page}[OpenAPI] services in your Helidon application.
+Helidon lets you easily include <<{health-page},health>>, <<{metrics-page},metrics>>, and
+<<{openapi-page},OpenAPI>> services in your Helidon application.
 These services add endpoints to your application so that clients can retrieve information about it.
 As with the application endpoints you write, these endpoints represent resources that can be shared across origins.
 

@@ -26,6 +26,8 @@
 :cors-config-table-src: {cors-se-intro}
 :mapped-config-top-key: my-cors
 :cors-config-table-exclude-methods:
+:helidon-tag: https://github.com/oracle/helidon/tree/{helidon-version}
+:helidon-se-cors-example: {helidon-tag}/examples/cors
 
 Your application can use configuration in setting up CORS behavior.
 
@@ -73,8 +75,7 @@ configuration format illustrates this.
 <2> Permits sharing of resources at the top-level path with all origins (the default) for the indicated HTTP methods.
 CORS would be denied to `PATCH` HTTP requests.
 
-Path expressions can be any expression accepted by the
-link:{javadoc-base-url-webserver}/PathMatcher.html[`PathMatcher`] class.
+Path expressions can be any expression accepted by the link:{javadoc-base-url-webserver}/PathMatcher.html[`PathMatcher`] class.
 
 Arrange the entries in the order that you want Helidon to check them. Usually this is from most specific to most general.
 Helidon CORS support searches the cross-origin entries in the order you define them until it finds an entry that
