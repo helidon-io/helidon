@@ -23,7 +23,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
 
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -64,7 +63,7 @@ class MessageUtilsTest {
     private static void assertExpectedType(Object value, Class<?> type) throws ExecutionException, InterruptedException {
         Object unwrapped = MessageUtils.unwrap(value, type);
         assertThat( String.format("Expected value of type %s got %s instead", type.getSimpleName(), value.getClass().getSimpleName()),
-                type.isAssignableFrom(unwrapped.getClass()), is(true));
+                type.isAssignableFrom(unwrapped.getClass()));
     }
 
     private static class Tuple {

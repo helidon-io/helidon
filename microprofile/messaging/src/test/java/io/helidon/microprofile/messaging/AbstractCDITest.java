@@ -36,7 +36,6 @@ import io.helidon.config.mp.MpConfigSources;
 import io.helidon.microprofile.server.ServerCdiExtension;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import org.eclipse.microprofile.config.Config;
@@ -82,8 +81,7 @@ public abstract class AbstractCDITest {
         try {
             assertThat("All messages not delivered in time, number of unreceived messages: "
                             + bean.getTestLatch().getCount(),
-                    bean.getTestLatch().await(2, TimeUnit.SECONDS),
-                    is(true));
+                    bean.getTestLatch().await(2, TimeUnit.SECONDS));
         } catch (InterruptedException e) {
             fail(e);
         }

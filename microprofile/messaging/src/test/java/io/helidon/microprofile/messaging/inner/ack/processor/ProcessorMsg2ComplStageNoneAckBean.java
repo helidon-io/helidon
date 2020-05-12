@@ -28,7 +28,7 @@ import io.helidon.microprofile.messaging.AssertableTestBean;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.hasSize;
 
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
@@ -75,9 +75,9 @@ public class ProcessorMsg2ComplStageNoneAckBean implements AssertableTestBean {
 
     @Override
     public void assertValid() {
-        assertThat(ackFuture.isDone(), is(true));
-        assertThat(completedBeforeProcessor.get(), is(true));
-        assertThat(RESULT_DATA.size(), equalTo(1));
+        assertThat("Not acked!", ackFuture.isDone());
+        assertThat("Not acked before processing!", completedBeforeProcessor.get());
+        assertThat(RESULT_DATA, hasSize(1));
         RESULT_DATA.forEach(s -> assertThat(s, equalTo(TEST_DATA)));
     }
 }
