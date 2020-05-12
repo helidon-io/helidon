@@ -16,15 +16,6 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Maven Guide
-
-// :description: Maven Guide
-// :keywords: helidon, guide, maven
-// :helidon-uc-flavor: MP-or-SE
-// :helidon-lc-flavor: mp-or-se
-
-This guide describes Helidon's support for Maven projects.
-
 == Introduction
 
 Helidon supports Maven by providing the following:

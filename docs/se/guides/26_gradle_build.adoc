@@ -22,4 +22,6 @@
 :helidon-uc-flavor: SE
 :helidon-lc-flavor: se
 
+This guide describes Helidon's support for Gradle projects.
+
 include::../../common/guides/gradle_build.adoc[]

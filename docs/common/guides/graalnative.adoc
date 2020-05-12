@@ -16,15 +16,6 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= GraalVM Native Images
-
-//:description: Helidon Native Images
-//:keywords: helidon, guide, graalvm
-//:docker-multi-stage-url: https://docs.docker.com/develop/develop-images/multistage-build/
-// :helidon-uc-flavor: MP-or-SE
-// :helidon-lc-flavor: mp-or-se
-
-This guide describes how to build a GraalVM native image for a Helidon SE application.
 
 == Introduction
 
