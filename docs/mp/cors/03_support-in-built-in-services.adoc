@@ -1,0 +1,77 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2020 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= CORS in Helidon MP Built-in Services
+:toc:
+:toc-placement: preamble
+:pagename: cors-built-in-service-support
+:description: Helidon MP CORS Support in Built-in Services
+:keywords: helidon, java, cors, mp, services
+:helidon-tag: https://github.com/oracle/helidon/tree/{helidon-version}
+:quickstart-example: {helidon-tag}/examples/quickstarts/helidon-quickstart-mp
+:javadoc-base-url-api: {javadoc-base-url}io.helidon.webserver.cors/io/helidon/webserver/cors
+:javadoc-base-url-webserver: {javadoc-base-url}io.helidon.webserver/io/helidon/webserver
+:cors-se-intro: 01_introduction.adoc
+:cors-config-table-src: {cors-se-intro}
+:health-page: mp/health/01_introduction.adoc
+:metrics-page: mp/metrics/01_introduction.adoc
+:openapi-page: mp/openapi/01_openapi.adoc
+:cors-config-table-exclude-methods:
+:cors-services-is-se!:
+:helidon-variant: MP
+:se-built-in-services-page: ../../se/cors/03_support-in-builtin-services.adoc
+:cors-mp-intro-page: 01_introduction.adoc
+:cors-dependency-src: ../../mp/cors/{cors-mp-intro-page}
+
+Several built-in Helidon services -- health, metrics, and OpenAPI -- automatically support cross-origin resource
+sharing and you can control how they do so.
+
+include::{se-built-in-services-page}[tag=understanding-cors-support-in-services]
+
+include::{se-built-in-services-page}[tag=getting-started]
+
+include::{se-built-in-services-page}[tags=configuring-cors-for-builtin-services;!se-config-example;!se-code-changes-for-builtin-services-config]
+
+The following example restricts sharing of
+
+* the `/health` resource, provided by the health built-in service, to only the origin `http://there.com`, and
+* the `/metrics` resource, provided by the metrics built-in service, to only the origin `http://foo.com`.
+
+[source,hocon]
+----
+...
+health:
+  cors:
+    allow-origins: [http://there.com]
+metrics:
+  cors:
+    allow-origins: [http://foo.com]
+...
+----
+
+include::{se-built-in-services-page}[tag=accessing-shared-resources-intro]
+[source,bash]
+----
+mvn package
+java -jar target/helidon-quickstart-mp.jar
+...
+2020.05.12 05:44:08 INFO io.helidon.microprofile.server.ServerCdiExtension Thread[main,5,main]: Server started on http://localhost:8080 (and all other host addresses) in 5280 milliseconds (since JVM startup).
+...
+----
+
+include::{se-built-in-services-page}[tag=accessing-shared-resources-main]

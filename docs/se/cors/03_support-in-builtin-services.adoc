@@ -32,13 +32,17 @@
 :javadoc-base-url-webserver: {javadoc-base-url}io.helidon.webserver/io/helidon/webserver
 :cors-se-intro: 01_introduction.adoc
 :cors-config-table-src: {cors-se-intro}
+:cors-dependency-src: {cors-se-intro}
 :health-page: se/health/01_health.adoc
 :metrics-page: se/metrics/01_metrics.adoc
 :openapi-page: se/openapi/01_openapi.adoc
+:cors-services-is-se:
+:helidon-variant: SE
 
 Several built-in Helidon services -- health, metrics, and OpenAPI -- automatically support cross-origin resource
 sharing and you can control how they do so.
 
+// tag::understanding-cors-support-in-services[]
 == Understanding CORS Support in Helidon Services
 Helidon lets you easily include link:{health-page}[health], link:{metrics-page}[metrics], and
 link:{openapi-page}[OpenAPI] services in your Helidon application.
@@ -46,8 +50,9 @@ These services add endpoints to your application so that clients can retrieve in
 As with the application endpoints you write, these endpoints represent resources that can be shared across origins.
 
 For example, several websites related to OpenAPI run a web app in your browser.
-You tell the browser app the URL for your application, and the browser app uses the URL to retrieve the OpenAPI document
-which describes your application's endpoints.
+You tell the browser app the URL for your application.
+The browser app uses the URL to retrieve, from your application itself, the OpenAPI document
+which describes the application's endpoints.
 The browser app then displays a U/I you use to "drive" your application: you provide input, have the web app
 send requests to your application endpoints, and view the responses.
 This is exactly the situation CORS addresses: an app in the browser from one origin -- the U/I downloaded from the
@@ -57,22 +62,41 @@ service automatically adds to your application.
 Integrating CORS support into these built-in services allows such third-party web sites and their browser apps -- or
 more generally, apps from any other origin -- to work with your Helidon application.
 
-Because all three of these built-in Helidon services rely only on `GET` endpoints, by default the
-integrated CORS support in all thress services permits
+Because all three of these built-in Helidon services serve only `GET` endpoints, by default the
+integrated CORS support in all three services permits
 any origin to share their resources using `GET`, `HEAD`, and `OPTIONS` HTTP requests. You can customize the CORS set-up
-for these built-in services independently from each other, using either the Helidon API, configuration or both.
+for these built-in services independently from each other using
+ifdef::cors-services-is-se[ either the Helidon API, configuration, or both.]
+ifndef::cors-services-is-se[ configuration.]
 
 include::{cors-config-table-src}[tag=cors-config-table]
+// end::understanding-cors-support-in-services[]
 
+// tag::getting-started[]
 == Getting Started
 To use built-in services with CORS support and customize the CORS behavior, you need to:
 
 . Add the built-in service or services to your application. The health, metrics, and OpenAPI services automatically
 include default CORS support.
-. Use the Helidon API or configuration to customize the CORS behavior as needed.
+. {blank}
++
+--
+Add a dependency on the Helidon {helidon-variant} CORS artifact to your `pom.xml`.
+
+Even if your own endpoints do not use CORS with your own endpoints, you need to add the CORS dependency
+if you want the built-in services to support CORS.
+
+include::{cors-dependency-src}[tag=add-cors-dependency]
+--
+. Use
+ifdef::cors-services-is-se[the Helidon API or]
+configuration to customize the CORS behavior as needed.
 
 The documentation for the individual services describes how to add each service to your application, including
-adding a maven dependency and including the service in your application's routing rules. In your
+adding a maven
+ifdef::cors-services-is-se[dependency and including the service in your application's routing rules.]
+ifndef::cors-services-is-se[dependency.]
+In your
 application's configuration file, the configuration for each service appears under its own key.
 |====
 | Helidon Service Documentation | Configuration Key
@@ -82,8 +106,9 @@ application's configuration file, the configuration for each service appears und
 | <<{openapi-page}, OpenAPI>> | `openapi`
 |====
 
-The link:{quickstart-example}[Helidon SE QuickStart example] uses these services, so use that as a template for your
+The link:{quickstart-example}[Helidon {helidon-variant} QuickStart example] uses these services, so use that as a template for your
 own app or use the example project itself to experiment with customizing the CORS behavior in the built-in services.
+// end::getting-started[]
 
 == Controlling CORS for Built-in Services using the API
 Although services such as health, metrics, and OpenAPI are built-in to Helidon, to use them your application must create
@@ -126,12 +151,19 @@ private static Routing createRouting(Config config) {
 <2> Use the `CrossOriginConfig` instance in constructing the `MetricsSupport` service.
 <3> Use the `MetricsSupport` object in creating the routing rules.
 
+// tag::configuring-cors-for-builtin-services[]
 == Configuring CORS for Built-in Services
-You can also use configuration to control whether and how each of the built-in services works with CORS.
+You can
+ifdef::cors-services-is-se[also ]
+use configuration to control whether and how each of the built-in services works with CORS.
 
+ifdef::cors-services-is-se[]
 Your application can pass configuration to the builder for each built-in service.
-For the health, metrics, and OpenAPI services, that configuration can include a section for CORS.
+endif::[]
+For the health, metrics, and OpenAPI services, your configuration can include a section for CORS.
 
+// Tag the following example so we can exclude it from MP which supplies its own complete example.
+// tag::se-config-example[]
 The following example restricts sharing of the
 `/health` resource, provided by the health built-in service, to only the origin `http://there.com`.
 [source,hocon]
@@ -142,6 +174,9 @@ health:
     allow-origins: [http://there.com]
 ...
 ----
+// end::se-config-example[]
+
+// tag::se-code-changes-for-builtin-services-config[]
 Modify your application to load the `health` config node and use it constructing the `HealthSupport` service.
 The following code shows this change made in the the QuickStart SE example.
 [source,java]
@@ -152,25 +187,28 @@ HealthSupport health = HealthSupport.builder()
         .build();
 ----
 <1> Use the `health` config section (if present) to configure the health service.
+// end::se-code-changes-for-builtin-services-config[]
 
 You have full control over the CORS configuration for a built-in Helidon service. Use a basic CORS config section
 as described in the <<se/cors/02_configuration.adoc,CORS configuration>> documentation.
 
 Remember that if you set configuration in a file that you include as part of your application JAR file, you need to
 rebuild and restart your application for any changes to take effect.
+// end::configuring-cors-for-builtin-services[]
 
+// tag::accessing-shared-resources-intro[]
 == Accessing the Shared Resources
 === Build and Run the Application
 Build and run the QuickStart application is usual.
+// end::accessing-shared-resources-intro[]
 [source,bash]
 ----
 mvn package
 java -jar target/helidon-quickstart-se.jar
-
 ...
 WEB server is up! http://localhost:8080/greet
 ----
-
+// tag::accessing-shared-resources-main[]
 === Retrieve Metrics
 The metrics service rejects attempts to access metrics on behalf of a disallowed origin.
 [source,bash]
@@ -229,4 +267,4 @@ content-length: 461
 
 {"outcome":"UP",...}
 ----
-
+// end::accessing-shared-resources-main[]

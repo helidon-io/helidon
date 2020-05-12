@@ -36,12 +36,15 @@ You add CORS support to your application by modifying your JAX-RS resource class
 
 . Decide what type of resource sharing each endpoint in your application should allow. +
 
-. Add a dependency on the Helidon MP CORS component. +
+. {blank}
 +
+--
+Add a dependency on the Helidon MP CORS component.
+
+// tag::add-cors-dependency[]
 The <<about/04_managing-dependencies.adoc, Managing Dependencies>> page describes how you
-should declare dependency management for Helidon applications. For CORS support, you must include
+should declare dependency management for Helidon applications. For CORS support in Helidon MP, you must include
 the following dependency in your project:
-+
 [source,xml,subs="attributes+"]
 ----
 <dependency>
@@ -49,6 +52,8 @@ the following dependency in your project:
     <artifactId>helidon-microprofile-cors</artifactId>
 </dependency>
 ----
+// end::add-cors-dependency[]
+--
 . Edit each resource class in your application. +
  For each subpath in the resource that should support CORS:
 .. If you do not already have an `@OPTIONS` method for the subpath, create one.
