@@ -7,11 +7,28 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
-## [Unreleased] 
+## [Unreleased]
 
 ### Notes
 
-This is the third milestone release of Helidon 2.0. 
+This is the fourth milestone release of Helidon 2.0. 
+
+### Notable New Features
+
+### Changes
+
+### Backward incompatible changes
+
+## [2.0.0-M3]
+
+### Notes
+
+This is the third milestone release of Helidon 2.0. It contains significant new features,
+enhancements and fixes. It also contains backward incompatible changes (see section below).
+This milestone release is provided for customers that want early access to Helidon 2.0. It
+should be considered unstable and is not intended for production use. APIs and features might
+not be fully tested and are subject to change. Documentation is incomplete. Those looking
+for a stable release should use a 1.4 release.
 
 ### Notable New Features
 
@@ -567,6 +584,7 @@ If there is no authorization provider configured, ABAC provider will be configur
       otherwise they are ignored
 
 
-[Unreleased]: https://github.com/oracle/helidon/compare/2.0.0-M2...HEAD
+[Unreleased]: https://github.com/oracle/helidon/compare/2.0.0-M3...HEAD
+[2.0.0-M3]: https://github.com/oracle/helidon/compare/2.0.0-M2...2.0.0-M3
 [2.0.0-M2]: https://github.com/oracle/helidon/compare/2.0.0-M1...2.0.0-M2
 [2.0.0-M1]: https://github.com/oracle/helidon/compare/1.4.0...2.0.0-M1

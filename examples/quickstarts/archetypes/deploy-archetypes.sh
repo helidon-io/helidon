@@ -1,6 +1,6 @@
 #!/bin/bash -e
 #
-# Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ else
 fi
 
 readonly MAVEN_DEPLOY_ARGS="org.apache.maven.plugins:maven-deploy-plugin:2.8.2:deploy -DaltDeploymentRepository=ossrh::default::${MAVEN_REPO_URL}"
-readonly MAVEN_ARGS="-B clean verify -DskipTests gpg:sign -Dgpg.passphase=${GPG_PASSPHRASE} ${MAVEN_DEPLOY_ARGS}"
+readonly MAVEN_ARGS="${MAVEN_ARGS} clean verify -DskipTests gpg:sign ${MAVEN_DEPLOY_ARGS}"
 
 ${MY_DIR}/create-archetypes.sh \
     --version="${MVN_VERSION}" \

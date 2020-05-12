@@ -156,10 +156,13 @@ full(){
     quick
     cd ${SCRATCH}
 
-    echo "===== Checking out tags/${VERSION} ====="
     if [[ "${VERSION}" =~ .*SNAPSHOT ]]; then
         echo "WARNING! SNAPSHOT version. Skipping tag checkout"
     else
+        echo "===== Cloning Workspace ${GIT_URL} ====="
+        git clone ${GIT_URL}
+        cd ${SCRATCH}/helidon
+        echo "===== Checking out tags/${VERSION} ====="
         git checkout tags/${VERSION}
     fi
 
@@ -183,10 +186,6 @@ full(){
         done
     fi
 
-    echo "===== Building examples ====="
-    cd ${SCRATCH}/helidon/examples
-    mvn ${MAVEN_ARGS} clean install ${STAGED_PROFILE}
-    cd ${SCRATCH}
 }
 
 waituntilready() {
