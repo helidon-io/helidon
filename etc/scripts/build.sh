@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 #
 # Copyright (c) 2018, 2020 Oracle and/or its affiliates.
 #
@@ -43,7 +43,8 @@ mvn ${MAVEN_ARGS} --version
 
 mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml \
     clean install -e \
-    -Pexamples,integrations,archetypes,spotbugs,javadoc,docs,sources,tck,tests,pipeline
+    -Dmaven.test.failure.ignore=true \
+    -Pexamples,archetypes,spotbugs,javadoc,docs,sources,tck,tests,pipeline
 
 examples/quickstarts/archetypes/test-archetypes.sh
 
