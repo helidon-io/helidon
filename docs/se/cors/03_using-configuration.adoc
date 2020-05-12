@@ -23,7 +23,8 @@
 :description: Helidon CORS Configuration
 :keywords: helidon, java, cors, configuration
 :cors-se-intro: 01_introduction.adoc
-:cors-config-table-src: {cors-se-intro}
+:cors-se-api-doc: 02_using-the-api.adoc
+:cors-config-table-src: {cors-se-api-doc}
 :mapped-config-top-key: my-cors
 :cors-config-table-exclude-methods:
 :helidon-tag: https://github.com/oracle/helidon/tree/{helidon-version}
@@ -120,4 +121,6 @@ CorsSupport corsSupport = builder.build(); // <4>
 As each request arrives, Helidon checks it against the cross-origin config instances in the order that your application added them to the `CorsSupport.Builder`. The `my-cors` mapped configuration acts as an override because the application added it to the builder first.
 
 == Next Steps
-See the Helidon CORS support in action by building and running the link:{helidon-se-cors-example}[CORS example].
+* See the Helidon CORS support in action by building and running the link:{helidon-se-cors-example}[CORS example].
+* Learn how to combine the API and configuration to streamline your application code and add
+a valuable feature, all described in the <<se/cors/03_using-configuration.adoc,Using Configuration>> documentation.
