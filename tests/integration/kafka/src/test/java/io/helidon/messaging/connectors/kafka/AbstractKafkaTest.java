@@ -39,6 +39,7 @@ public abstract class AbstractKafkaTest {
     public static final String TEST_TOPIC_8 = "graph-done-8";
     public static final String TEST_TOPIC_10 = "graph-done-10";
     public static final String TEST_TOPIC_13 = "graph-done-13";
+    public static final String UNEXISTING_TOPIC = "unexistingTopic2";
     protected final String KAFKA_SERVER = kafkaResource.getKafkaConnectString();
 
 

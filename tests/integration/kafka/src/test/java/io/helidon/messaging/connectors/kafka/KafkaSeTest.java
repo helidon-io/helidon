@@ -18,6 +18,7 @@
 package io.helidon.messaging.connectors.kafka;
 
 import java.util.HashSet;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
@@ -38,6 +39,7 @@ import org.apache.kafka.common.serialization.IntegerDeserializer;
 import org.apache.kafka.common.serialization.IntegerSerializer;
 import org.apache.kafka.common.serialization.LongDeserializer;
 import org.apache.kafka.common.serialization.LongSerializer;
+import org.apache.kafka.common.serialization.StringDeserializer;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.junit.jupiter.api.BeforeAll;
@@ -93,6 +95,53 @@ public class KafkaSeTest extends AbstractKafkaTest {
             });
             assertThat(countDownLatch.await(20, TimeUnit.SECONDS), is(true));
             assertThat(result, equalTo(IntStream.range(0, 100).boxed().collect(Collectors.toSet())));
+        } finally {
+            messaging.stop();
+        }
+    }
+
+    @Test
+    void consumeKafka() throws InterruptedException {
+        Map<String, String> testData = IntStream.rangeClosed(0, 10)
+                .boxed()
+                .collect(Collectors.toMap(String::valueOf, String::valueOf));
+
+        CountDownLatch countDownLatch = new CountDownLatch(testData.size());
+        HashSet<String> result = new HashSet<>();
+
+        Channel<ConsumerRecord<String, String>> fromKafka = Channel.<ConsumerRecord<String, String>>builder()
+                .name("from-kafka")
+                .publisherConfig(KafkaConnector.configBuilder()
+                        .bootstrapServers(KAFKA_SERVER)
+                        .groupId("test-group")
+                        .topic(TEST_SE_TOPIC_1)
+                        .autoOffsetReset(KafkaConfigBuilder.AutoOffsetReset.EARLIEST)
+                        .enableAutoCommit(false)
+                        .keyDeserializer(StringDeserializer.class)
+                        .valueDeserializer(StringDeserializer.class)
+                        .build()
+                )
+                .build();
+
+        KafkaConnector kafkaConnector = KafkaConnector.create(Config.empty());
+
+        Messaging messaging = Messaging.builder()
+                .connector(kafkaConnector)
+                .listener(fromKafka, consumerRecord -> {
+                            countDownLatch.countDown();
+                            System.out.println("Kafka says: " + consumerRecord);
+                            result.add(consumerRecord.value());
+                        })
+                .build();
+
+        try {
+            messaging.start();
+            Map<byte[], byte[]> rawTestData = testData.entrySet().stream()
+                    .collect(Collectors.toMap(e -> e.getKey().getBytes(), e -> e.getValue().getBytes()));
+            kafkaResource.getKafkaTestUtils().produceRecords(rawTestData, TEST_SE_TOPIC_1, 1);
+
+            assertThat(countDownLatch.await(20, TimeUnit.SECONDS), is(true));
+            assertThat(result, equalTo(new HashSet<>(testData.values())));
         } finally {
             messaging.stop();
         }
