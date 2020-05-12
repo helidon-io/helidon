@@ -1,0 +1,26 @@
+[
+    {
+        "name": "org.hibernate.dialect.H2Dialect",
+        "allDeclaredConstructors": true,
+        "allDeclaredMethods": true,
+        "allPublicMethods": true
+    },
+    {
+        "name": "org.h2.engine.Constants",
+        "allDeclaredConstructors": true,
+        "allDeclaredMethods": true,
+        "allDeclaredFields": true
+    },
+    {
+        "name": "org.hibernate.persister.collection.OneToManyPersister",
+        "allDeclaredConstructors": true,
+        "allDeclaredMethods": true,
+        "allDeclaredFields": true
+    },
+    {
+        "name": "org.hibernate.persister.collection.BasicCollectionPersister",
+        "allDeclaredConstructors": true,
+        "allDeclaredMethods": true,
+        "allDeclaredFields": true
+    }
+]
