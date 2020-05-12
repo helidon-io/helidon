@@ -43,8 +43,6 @@ The support in Helidon MP for CORS configuration works with the following format
 [[config-key-table]]
 include::{cors-config-table-src}[tag=cors-config-table]
 
-If the cross-origin configuration is disabled (`enabled` = false), then the Helidon CORS implementation ignores the cross-origin configuration entry.
-
 Although there are two types of CORS cross-origin configuration, for Helidon MP use
 the mapped format.
 
