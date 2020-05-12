@@ -32,7 +32,13 @@ link:{cors-spec}[Cross-origin resource sharing] (CORS) support in Helidon MP pro
 mechanism that allows a Helidon MP application to control how other web applications can access its resources, even if that web application is not served from the same domain.
 
 == Getting Started
+[NOTE]
+====
+Several Helidon built-in services -- health, metrics, and OpenAPI -- include automatic CORS support as described
+<<mp/cors/03_support-in-builtin-services.adoc,separately>>.
+====
 You add CORS support to your application by modifying your JAX-RS resource classes.
+
 
 . Decide what type of resource sharing each endpoint in your application should allow. +
 
