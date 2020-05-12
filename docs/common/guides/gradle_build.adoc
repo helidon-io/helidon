@@ -16,15 +16,6 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Gradle Guide
-
-// :description: Gradle Guide
-// :keywords: helidon, guide, gradle
-// :helidon-uc-flavor: MP-or-SE
-// :helidon-lc-flavor: mp-or-se
-
-This guide describes Helidon's support for Gradle projects.
-
 == Introduction
 
 While most of Helidon's examples use Maven, you can also use Helidon
