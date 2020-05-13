@@ -70,7 +70,7 @@ public interface MultiPart<T extends BodyPart> {
      * @param name control name
      * @return {@code List<BodyPart>}, never {@code null}
      */
-    default List<? extends BodyPart> fields(String name) {
+    default List<T> fields(String name) {
         if (name == null) {
             return Collections.emptyList();
         }
