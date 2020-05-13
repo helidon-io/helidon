@@ -53,18 +53,19 @@ Before you begin you must:
 
 The <<about/04_managing-dependencies.adoc, Managing Dependencies>> page describes how you
 should declare dependency management for Helidon applications. For the DB Client you must include the following dependencies in your project:
+
 ----
 <dependencies>
      <dependency>
-         <groupId>io.helidon.dbclient</groupId><1>
+         <groupId>io.helidon.dbclient</groupId> <1>
          <artifactId>helidon-dbclient</artifactId>
      </dependency>
      <dependency>
-         <groupId>io.helidon.dbclient</groupId><2>
+         <groupId>io.helidon.dbclient</groupId> <2>
          <artifactId>helidon-dbclient-jdbc</artifactId>
      </dependency>
      <dependency>
-         <groupId>com.h2.database</groupId><3>
+         <groupId>com.h2.database</groupId> <3>
          <artifactId>h2</artifactId>
          <version>1.4.200</version>
     </dependency>    
@@ -72,6 +73,7 @@ should declare dependency management for Helidon applications. For the DB Client
 </dependencies>
      
 ----
+
 
 <1>  Add the Helidon DB Client
 
@@ -83,22 +85,25 @@ The DB Client must be configured before you begin. In the example below we'll us
 
 
 ----
+
 db:
-  source: "jdbc"<1>
+  source: "jdbc" <1>
   connection:
-    url: "jdbc:mysql://127.0.0.1:3306/pokemon?useSSL=false"<2>
+    url: "jdbc:mysql://127.0.0.1:3306/pokemon?useSSL=false" <2>
     username: "user"
     password: "password"
     poolName: "mysql"
-  statements:<3>
+  statements: <3>
     ping: "DO 0"
     select-all-pokemons: "SELECT id, name FROM Pokemons"
+    
 ----
 <1> Source: JDBC or MongoDB
 
 <2> Connection: database connection parameters
 
 <3> Statements: named statements when used
+
 
 == Using DB Client API Methods
 
