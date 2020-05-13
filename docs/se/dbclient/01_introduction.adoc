@@ -17,8 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = About Helidon DB Client
-:toc:
-:toc-placement: preamble
+
 :description: Helidon DB Client
 :keywords: helidon, se, database, dbclient
 
@@ -29,19 +28,19 @@ The Helidon SE DB Client provides a unified, reactive API for working with datab
 
 The DB Client simplfies how you work with databases by allowing the use of blocking JDBC drivers in your reactive application by wrapping a blocking driver in an executor service. Specifically, the Heldion DB Client provides the following:
 
-=== Unified API for data access and query +
+* Unified API for data access and query +
 The API was implemented as a layer above JDBC or MongoDB Reactive Streams Java Driver, so any relational databases with JDBC driver or MongoDB are supported.
 
-=== Reactive database access with non-reactive drivers +
+* Reactive database access with non-reactive drivers +
 Most JDBC drivers are blocking. Using them in a reactive application is problematic. Helidon DB Client allows the use of blocking JDBC drivers in your reactive application by wrapping a blocking driver in an executor service.
 
-=== System Monitoring +
+* Observability +
 The API offers support for health checks, metrics and tracing.
 
-=== Backpressure Management +
+* Backpressure Management +
 Helidon DB Client performs database operations only when it’s requested by the consumer. This is propagated all the way to the TCP layer.
 
-=== Improved portability between relational database drivers +
+* Improved portability between database drivers +
 The DB Client works with native database statements that can be used inline in the code or defined as named statements in database configuration. +
 By moving the native query code to configuration files, the Helidon DB Client allows you to switch to another database by changing the configuration files, not the code.
 
@@ -68,7 +67,10 @@ should declare dependency management for Helidon applications. For the DB Client
          <groupId>com.h2.database</groupId><3>
          <artifactId>h2</artifactId>
          <version>1.4.200</version>
-     </dependency>
+    </dependency>    
+     ...
+</dependencies>
+     
 ----
 
 <1>  Add the Helidon DB Client
