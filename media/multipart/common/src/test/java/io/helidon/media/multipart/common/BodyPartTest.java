@@ -23,6 +23,7 @@ import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.Flow.Subscription;
 
 import io.helidon.common.http.DataChunk;
+import io.helidon.common.reactive.Multi;
 import io.helidon.media.common.MediaSupport;
 import io.helidon.media.common.MessageBodyReadableContent;
 import io.helidon.media.common.ContentReaders;
@@ -97,7 +98,7 @@ public class BodyPartTest {
     @Test
     public void testBadBufferedPart() {
         ReadableBodyPart bodyPart = ReadableBodyPart.builder()
-                .content(readableContent(new UncompletablePublisher("abc".getBytes(), "def".getBytes())))
+                .content(readableContent(Multi.never()))
                 .buffered()
                 .build();
         assertThat(bodyPart.isBuffered(), is(equalTo(true)));
@@ -144,41 +145,5 @@ public class BodyPartTest {
 
     static MessageBodyReadableContent readableContent(Publisher<DataChunk> chunks) {
         return MessageBodyReadableContent.create(chunks, MEDIA_CONTEXT.readerContext());
-    }
-
-    /**
-     * A publisher that never invokes {@link Subscriber#onComplete()}.
-     */
-    static class UncompletablePublisher implements Publisher<DataChunk> {
-
-        private final Publisher<DataChunk> delegate;
-
-        UncompletablePublisher(byte[]... chunksData) {
-            delegate = chunksPublisher(chunksData);
-        }
-
-        @Override
-        public void subscribe(Subscriber<? super DataChunk> subscriber) {
-            delegate.subscribe(new Subscriber<DataChunk>() {
-                @Override
-                public void onSubscribe(Subscription subscription) {
-                    subscriber.onSubscribe(subscription);
-                }
-
-                @Override
-                public void onNext(DataChunk item) {
-                    subscriber.onNext(item);
-                }
-
-                @Override
-                public void onError(Throwable error) {
-                    subscriber.onError(error);
-                }
-
-                @Override
-                public void onComplete() {
-                }
-            });
-        }
     }
 }
