@@ -16,6 +16,8 @@
 package io.helidon.media.jackson.common;
 
 import java.io.IOException;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.Objects;
 import java.util.concurrent.Flow.Publisher;
 
@@ -28,6 +30,8 @@ import io.helidon.media.common.MessageBodyReader;
 import io.helidon.media.common.MessageBodyReaderContext;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.type.TypeFactory;
 
 /**
  * Message body reader supporting object binding with Jackson.
@@ -80,7 +84,15 @@ public final class JacksonBodyReader implements MessageBodyReader<Object> {
         @SuppressWarnings("unchecked")
         public T map(byte[] bytes) {
             try {
-                return objectMapper.readValue(bytes, (Class<T>) type.rawType());
+                Type t = this.type.type();
+                if (t instanceof ParameterizedType) {
+                    TypeFactory typeFactory = objectMapper.getTypeFactory();
+                    ParameterizedType pt = (ParameterizedType) t;
+                    JavaType javaType = typeFactory.constructType(pt);
+                    return objectMapper.readValue(bytes, javaType);
+                } else {
+                    return objectMapper.readValue(bytes, (Class<T>) this.type.rawType());
+                }
             } catch (final IOException wrapMe) {
                 throw new JacksonRuntimeException(wrapMe.getMessage(), wrapMe);
             }
