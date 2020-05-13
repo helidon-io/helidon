@@ -44,7 +44,7 @@ public final class FileUploadService implements Service {
     private void raw(ServerRequest req, ServerResponse res) {
         req.content().as(String.class).thenAccept(str -> {
             System.out.println(str);
-            res.send();
+            res.send("OK");
         });
     }
 
@@ -57,11 +57,11 @@ public final class FileUploadService implements Service {
      */
     private void buffered(ServerRequest req, ServerResponse res) {
         req.content().as(ReadableMultiPart.class).thenAccept(multiPart -> {
-            for (ReadableBodyPart part : multiPart.bodyParts()) {
+            for (ReadableBodyPart part : multiPart.fields("file[]")) {
                 System.out.println("Headers: " + part.headers().toMap());
                 System.out.println("Content: " + part.as(String.class));
             }
-            res.send();
+            res.send("OK");
         });
     }
 
@@ -74,12 +74,16 @@ public final class FileUploadService implements Service {
      */
     private void stream(ServerRequest req, ServerResponse res) {
         req.content().asStream(ReadableBodyPart.class).subscribe((part) -> {
-            System.out.println("Headers: " + part.headers().toMap());
-            System.out.println("Content: " + part.as(String.class));
+            if ("file[]".equals(part.name())) {
+                System.out.println("Headers: " + part.headers().toMap());
+                part.content().as(String.class).thenAccept((str) -> {
+                    System.out.println("Content: " + str);
+                });
+            }
         }, (error) -> {
             res.send(error);
         }, () -> {
-            res.send();
+            res.send("OK");
         });
     }
 }
