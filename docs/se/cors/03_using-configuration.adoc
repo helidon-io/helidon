@@ -34,7 +34,7 @@ Your application can use configuration in setting up CORS behavior.
 
 == Understanding CORS Configuration Formats [[cors-configuration-formats]]
 The support in Helidon for CORS configuration works with two closely-related formats. Each corresponds to a class
-in the Helidon CORS library which holds CORS information.
+in the Helidon CORS library.
 
 [[basic-cross-origin-config]]
 === Basic Cross-Origin Configuration
@@ -43,7 +43,7 @@ Cross-origin configuration is the basic building block of CORS information.
 [[config-key-table]]
 include::{cors-config-table-src}[tag=cors-config-table]
 
-The following example, when loaded and used by the application, limits cross-origin resource sharing for `PUT` and
+The following example configuration, when loaded and used by the application, limits cross-origin resource sharing for `PUT` and
 `DELETE` operations to only `foo.com` and `there.com`:
 
 [source,hocon]
@@ -74,7 +74,7 @@ configuration format illustrates this.
 ----
 <1> Sets restrictions on CORS for the `/greeting` path.
 <2> Permits sharing of resources at the top-level path with all origins (the default) for the indicated HTTP methods.
-CORS would be denied to `PATCH` HTTP requests.
+Cross-origin sharing via `PATCH` HTTP requests would be denied.
 
 Path expressions can be any expression accepted by the link:{javadoc-base-url-webserver}/PathMatcher.html[`PathMatcher`] class.
 
@@ -118,9 +118,15 @@ CorsSupport corsSupport = builder.build(); // <4>
 <3> Provide default CORS handling for requests that do not match earlier entries.
 <4> Obtain the finished `CorsSupport` instance, suitable for use in creating the application's routing.
 
-As each request arrives, Helidon checks it against the cross-origin config instances in the order that your application added them to the `CorsSupport.Builder`. The `my-cors` mapped configuration acts as an override because the application added it to the builder first.
+As each request arrives, Helidon checks it against the cross-origin config instances in the order that your application
+added them to the `CorsSupport.Builder`.
+The `my-cors` mapped configuration acts as an override because the application added it to the builder first.
+If the `my-cors` config key does not appear in the configuration, then the code skips creating a `CrossOriginConfig`
+instance based on that configuration, and no overriding occurs. The CORS behavior
+that is established by the other `CrossOriginConfig` instance based on the `restrictive-cors` config (if present)
+prevails.
 
 == Next Steps
 * See the Helidon CORS support in action by building and running the link:{helidon-se-cors-example}[CORS example].
-* Learn how to combine the API and configuration to streamline your application code and add
-a valuable feature, all described in the <<se/cors/03_using-configuration.adoc,Using Configuration>> documentation.
+* Learn how to use these same techniques to control the behavior of the CORS-enabled built-in services,
+described in the <<04_support-in-builtin-services.adoc, Built-in Services>> documentation.

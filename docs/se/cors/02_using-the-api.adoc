@@ -40,8 +40,8 @@ quickly and clearly.
 To add CORS support to your Helidion SE application, you must:
 
 . Determine the type of cross origin sharing you want to allow for each endpoint in your application.
-. Add the CORS dependencies to the Maven `pom.xml` file.
-. Add the CORS support in your application.
+. Add the CORS dependency to the Maven `pom.xml` file.
+. Modify how your application constructs routing rules so they include CORS.
 
 // tag::add-cors-dependency[]
 The <<about/04_managing-dependencies.adoc, Managing Dependencies>> page describes how you
@@ -58,17 +58,20 @@ the following dependency in your project:
 
 == Adding CORS Support in Your Helidon SE Application [[adding-cors-support]]
 Because Helidon SE does not use annotation processing to identify endpoints, you need to
-provide the CORS information for your application another way.
+provide the CORS information for your application another way:
+by including CORS into the routing you construct for your application.
 
-The high-level process for adding CORS support in your Helidon SE application is:
+For each distinct resource or subresource your application exposes:
 
-. Create a link:{javadoc-base-url-api}/CrossOriginConfig.html[`CrossOriginConfig`] instance for each type of resource sharing that you decided your application should provide.
-The `CrossOriginConfig` Java class represents the details for a particular type of sharing.
+. Create a link:{javadoc-base-url-api}/CorsSupport.html[`CorsSupport`] instance corresponding to the resource.
+. For each different type of sharing you want to provide for that resource:
+.. Create a link:{javadoc-base-url-api}/CrossOriginConfig.html[`CrossOriginConfig`] instance.
+The `CrossOriginConfig` Java class represents the details for a particular type of sharing:
+which origins are allowed to share via which HTTP methods, etc.
+.. Add the `CrossOriginConfig` to the `CorsSupport` instance.
+. Use the resource's `CorsSupport` object in setting up the routing rules for that resource.
 
-. Create a link:{javadoc-base-url-api}/CorsSupport.html[`CorsSupport`] instance that includes the `CrossOriginConfig` instances from the previous step.
-.  Use that `CorsSupport` instance to set up the routing rules.
-
-Each of these classes has an associated builder.
+Each of these classes has an associated builder you use in constructing instances of the class.
 // tag::cors-config-table[]
 The table below describes
 ifndef::cors-config-table-exclude-methods[the methods on the `CrossOriginConfig.Builder` class and ]
@@ -110,12 +113,12 @@ ifndef::cors-config-table-exclude-methods[|`enabled`]
 If the cross-origin configuration is disabled (`enabled` = false), then the Helidon CORS implementation ignores the cross-origin configuration entry.
 // end::cors-config-table[]
 
-== Sample Routing Setup Using the CrossOriginConfig API
+== Sample Routing Setup Using the `CrossOriginConfig` API
 
-In the link:{quickstart-example}[Helidon SE Quickstart application] you can change the greeting by sending a PUT request to the `/greet/greeting` resource.
+The link:{quickstart-example}[Helidon SE Quickstart application] lets you change the greeting by sending a `PUT` request to the `/greet/greeting` resource.
 
-In this example, we use the low-level `CrossOriginConfig` API and the `CorsSupport` API to influence the <<se/webserver/03_routing.adoc,routing>>,
-thereby restricting how that resource is shared.
+In this example based on the QuickStart greeting app, we use the low-level `CrossOriginConfig` API and the `CorsSupport` API to influence the <<se/webserver/03_routing.adoc,routing>>,
+thereby determining how that resource is shared.
 
 To understand how to use configuration instead of the low-level API, see <<se/cors/02_configuration.adoc, Using Configuration for CORS>>.
 
@@ -156,8 +159,13 @@ CORS.
 <5> Add a `CrossOriginSupport` instance that permits all sharing (the default).
 <6> Register the new `CorsSupport` instance with -- but in front of -- the service which implements the business logic.
 
-The few additional lines identified above allow the application to participate in CORS.
+The order of steps 2 and 5 above is important. When processing an incoming request, the Helidon CORS implementation
+scans the `CrossOriginConfig` instances in the order they were added to the `CorsSupport` object, stopping as soon as
+it finds a `CrossOriginConfig` instance for which `allowMethods` matches the HTTP method of the
+request. As you construct a `CorsSupport` object, make sure to add the `CrossOriginConfig` objects
+from most specific to least specific.
 
+The few additional lines described above allow the greeting application to participate in CORS.
 
 == Next Steps
 See the Helidon CORS support in action by building and running the link:{helidon-se-cors-example}[CORS example].
