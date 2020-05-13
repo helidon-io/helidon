@@ -31,8 +31,8 @@ import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import org.eclipse.microprofile.reactive.messaging.Incoming;
@@ -268,8 +268,8 @@ class MethodSignatureResolverTest {
     @MethodSource("locateTestMethods")
     void signatureResolving(MethodTestCase testCase) {
         Optional<MethodSignatureType> signatureType = MethodSignatureResolver.create(testCase.m).resolve();
-        assertTrue(signatureType.isPresent());
-        assertEquals(testCase.expectedType, signatureType.get());
+        assertThat("Resolved signature type is empty", signatureType.isPresent());
+        assertThat(signatureType.get(), is(testCase.expectedType));
     }
 
     @Test

@@ -37,7 +37,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.platform.commons.util.ClassFilter;
 import org.junit.platform.commons.util.ReflectionUtils;
 
-public class InnerChannelTest extends AbstractCDITest {
+public class ChannelTest extends AbstractCDITest {
 
     @Override
     public void setUp() {
@@ -47,7 +47,7 @@ public class InnerChannelTest extends AbstractCDITest {
     static Stream<CdiTestCase> testCaseSource() {
         return ReflectionUtils
                 .findAllClassesInPackage(
-                        InnerChannelTest.class.getPackage().getName(),
+                        ChannelTest.class.getPackage().getName(),
                         ClassFilter.of(c -> Objects.nonNull(c.getAnnotation(ApplicationScoped.class))))
                 .stream()
                 .map(CdiTestCase::from);

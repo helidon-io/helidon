@@ -19,12 +19,13 @@ package io.helidon.microprofile.messaging;
 
 import java.util.Map;
 
-import org.junit.jupiter.api.Test;
-
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+
+import org.junit.jupiter.api.Test;
 
 public class ConnectorConfigTest {
     private static final String TEST_CHANNEL_VALUE = "test-channel-value";
@@ -63,6 +64,7 @@ public class ConnectorConfigTest {
         };
 
         org.eclipse.microprofile.config.Config connectorConfig = connector.getConnectorConfig(TEST_CHANNEL_NAME);
-        assertEquals(TEST_CHANNEL_VALUE, connectorConfig.getValue(TEST_KEY, String.class));
+        assertThat(connectorConfig.getValue(TEST_KEY, String.class),
+                is(TEST_CHANNEL_VALUE));
     }
 }
