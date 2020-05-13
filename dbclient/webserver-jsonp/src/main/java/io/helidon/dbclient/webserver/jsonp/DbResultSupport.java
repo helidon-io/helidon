@@ -19,7 +19,9 @@ package io.helidon.dbclient.webserver.jsonp;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow;
 import java.util.logging.Logger;
@@ -30,16 +32,16 @@ import javax.json.JsonObject;
 import javax.json.JsonWriter;
 import javax.json.JsonWriterFactory;
 
+import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
+import io.helidon.common.reactive.Single;
 import io.helidon.dbclient.DbResult;
 import io.helidon.dbclient.DbRow;
 import io.helidon.dbclient.DbRows;
 import io.helidon.media.common.ContentWriters;
-import io.helidon.webserver.Handler;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerRequest;
-import io.helidon.webserver.ServerResponse;
-import io.helidon.webserver.Service;
+import io.helidon.media.common.MediaSupport;
+import io.helidon.media.common.MessageBodyWriter;
+import io.helidon.media.common.MessageBodyWriterContext;
 
 /**
  * Support to write {@link io.helidon.dbclient.DbRows} directly to webserver.
@@ -49,7 +51,7 @@ import io.helidon.webserver.Service;
  *      WebServer - the update to WebServer is in progress. This module will be removed.
  */
 @Deprecated
-public final class DbResultSupport implements Service, Handler {
+public final class DbResultSupport implements MediaSupport {
 
     private static final Logger LOGGER = Logger.getLogger(DbResultSupport.class.getName());
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
@@ -58,6 +60,9 @@ public final class DbResultSupport implements Service, Handler {
     private static final byte[] ARRAY_JSON_END_BYTES = "]".getBytes(StandardCharsets.UTF_8);
     private static final byte[] ARRAY_JSON_BEGIN_BYTES = "[".getBytes(StandardCharsets.UTF_8);
     private static final byte[] COMMA_BYTES = ",".getBytes(StandardCharsets.UTF_8);
+
+    private static final MessageBodyWriter<DbRows<DbRow>> ROWS_WRITER = new DbRowsWriter();
+    private static final MessageBodyWriter<DbResult> RESULT_WRITER = new DbResultWriter();
 
     private DbResultSupport() {
     }
@@ -71,22 +76,15 @@ public final class DbResultSupport implements Service, Handler {
     }
 
     @Override
-    public void accept(ServerRequest serverRequest, ServerResponse serverResponse) {
-        serverResponse.registerWriter(DbRows.class, DbResultSupport::writer);
-        serverResponse.registerWriter(DbResult.class, DbResultWriter::new);
-        serverRequest.next();
+    public Collection<MessageBodyWriter<?>> writers() {
+        return List.of(ROWS_WRITER, RESULT_WRITER);
     }
 
-    @Override
-    public void update(Routing.Rules rules) {
-        rules.any(this);
-    }
-
-    private static final class DbResultWriter implements Flow.Publisher<DataChunk> {
+    private static final class DbResultDataChunkWriter implements Flow.Publisher<DataChunk> {
         private final CompletableFuture<Long> dml = new CompletableFuture<>();
         private final CompletableFuture<DbRows<DbRow>> query = new CompletableFuture<>();
 
-        private DbResultWriter(DbResult dbResult) {
+        private DbResultDataChunkWriter(DbResult dbResult) {
             dbResult
                     .whenDml(count -> {
                         dml.complete(count);
@@ -102,7 +100,7 @@ public final class DbResultSupport implements Service, Handler {
         public void subscribe(Flow.Subscriber<? super DataChunk> subscriber) {
             query.thenAccept(rs -> {
                 if (null != rs) {
-                    writer(rs).subscribe(subscriber);
+                    dbRowsWriter(rs).subscribe(subscriber);
                 }
             });
             dml.thenAccept(count -> {
@@ -216,8 +214,35 @@ public final class DbResultSupport implements Service, Handler {
 
     // server send streaming
     // json streaming & data type
-    private static Flow.Publisher<DataChunk> writer(DbRows<DbRow> dbRows) {
+    private static Flow.Publisher<DataChunk> dbRowsWriter(DbRows<DbRow> dbRows) {
         return new DataChunkPublisher(dbRows);
     }
 
+    private static class DbRowsWriter implements MessageBodyWriter<DbRows<DbRow>> {
+        @Override
+        public Flow.Publisher<DataChunk> write(Single<DbRows<DbRow>> single,
+                                               GenericType<? extends DbRows<DbRow>> type,
+                                               MessageBodyWriterContext context) {
+            return single.flatMap(DbResultSupport::dbRowsWriter);
+        }
+
+        @Override
+        public boolean accept(GenericType<?> type, MessageBodyWriterContext context) {
+            return DbRows.class.isAssignableFrom(type.rawType());
+        }
+    }
+
+    private static class DbResultWriter implements MessageBodyWriter<DbResult> {
+        @Override
+        public Flow.Publisher<DataChunk> write(Single<DbResult> single,
+                                               GenericType<? extends DbResult> type,
+                                               MessageBodyWriterContext context) {
+            return single.flatMap(DbResultDataChunkWriter::new);
+        }
+
+        @Override
+        public boolean accept(GenericType<?> type, MessageBodyWriterContext context) {
+            return DbResult.class.isAssignableFrom(type.rawType());
+        }
+    }
 }

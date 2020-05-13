@@ -24,10 +24,9 @@ import java.util.logging.Logger;
 import io.helidon.config.Config;
 import io.helidon.health.HealthSupport;
 import io.helidon.health.checks.HealthChecks;
-import io.helidon.media.jsonp.server.JsonSupport;
+import io.helidon.media.jsonp.common.JsonpSupport;
 import io.helidon.metrics.MetricsSupport;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.cors.CorsSupport;
 import io.helidon.webserver.cors.CrossOriginConfig;
@@ -69,10 +68,10 @@ public final class Main {
         Config config = Config.create();
 
         // Get webserver config from the "server" section of application.yaml
-        ServerConfiguration serverConfig =
-                ServerConfiguration.create(config.get("server"));
-
-        WebServer server = WebServer.create(serverConfig, createRouting(config));
+        WebServer server = WebServer.builder(createRouting(config))
+                .config(config.get("server"))
+                .addMediaSupport(JsonpSupport.create())
+                .build();
 
         // Try to start the server. If successful, print some info and arrange to
         // print a message at shutdown. If unsuccessful, print the exception.
@@ -110,7 +109,6 @@ public final class Main {
 
         // Note: Add the CORS routing *before* registering the GreetService routing.
         return Routing.builder()
-                .register(JsonSupport.create())
                 .register(health)                   // Health at "/health"
                 .register(metrics)                 // Metrics at "/metrics"
                 .register("/greet", corsSupportForGreeting(config), greetService)

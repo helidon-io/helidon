@@ -16,15 +16,12 @@ import io.helidon.health.HealthSupport;
 import io.helidon.health.checks.HealthChecks;
 #end
 #if( $jsonSupport.matches("y|yes|true") )
-import io.helidon.media.jsonp.server.JsonSupport;
+import io.helidon.media.jsonp.common.JsonpSupport;
 #end
 #if( $metricsSupport.matches("y|yes|true") )
 import io.helidon.metrics.MetricsSupport;
 #end
 import io.helidon.webserver.Routing;
-#if( $applicationYaml.matches("y|yes|true") )
-import io.helidon.webserver.ServerConfiguration;
-#end
 import io.helidon.webserver.WebServer;
 
 /**
@@ -60,15 +57,20 @@ public final class Main {
 #if( $applicationYaml.matches("y|yes|true") )
         // By default this will pick up application.yaml from the classpath
         Config config = Config.create();
-
-        // Get webserver config from the "server" section of application.yaml
-        ServerConfiguration serverConfig =
-                ServerConfiguration.create(config.get("server"));
-
-        WebServer server = WebServer.create(serverConfig, createRouting(config));
-#else
-        WebServer server = WebServer.create(createRouting());
 #end
+
+        WebServer server = WebServer.builder()
+#if( $applicationYaml.matches("y|yes|true") )
+            .routing(createRouting(config))
+            .config(config.get("server"))
+#else
+            .routing(createRouting())
+#end
+#if( $jsonSupport.matches("y|yes|true") )
+            .addMediaSupport(JsonpSupport.create())
+#end
+            .build();
+
         // Try to start the server. If successful, print some info and arrange to
         // print a message at shutdown. If unsuccessful, print the exception.
         server.start()
@@ -112,9 +114,6 @@ public final class Main {
 #end
 
         return Routing.builder()
-#if( $jsonSupport.matches("y|yes|true") )
-                .register(JsonSupport.create())
-#end
 #if( $healthSupport.matches("y|yes|true") )
                 .register(health)                   // Health at "/health"
 #end

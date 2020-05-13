@@ -40,10 +40,7 @@ public class FormParamsSupportTest {
 
     @BeforeAll
     public static void startup() throws InterruptedException, ExecutionException, TimeoutException {
-        testServer = WebServer.create(ServerConfiguration.builder()
-                        .port(0)
-                        .build(),
-                    Routing.builder()
+        testServer = WebServer.create(Routing.builder()
                         .register(FormParamsSupport.create())
                         .put("/params", (req, resp) -> {
                             req.content().as(FormParams.class).thenAccept(fp ->

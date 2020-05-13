@@ -42,7 +42,6 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.yaml.YamlConfigParser;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 
 import org.yaml.snakeyaml.Yaml;
@@ -327,12 +326,11 @@ public class TestUtil {
             int port,
             OpenAPISupport.Builder... openAPIBuilders) throws
             InterruptedException, ExecutionException, TimeoutException {
-        WebServer result = WebServer.create(ServerConfiguration.builder()
-                        .port(port)
-                        .build(),
-                Routing.builder()
+        WebServer result = WebServer.builder(Routing.builder()
                         .register(openAPIBuilders)
                         .build())
+                .port(port)
+                .build()
                 .start()
                 .toCompletableFuture()
                 .get(10, TimeUnit.SECONDS);

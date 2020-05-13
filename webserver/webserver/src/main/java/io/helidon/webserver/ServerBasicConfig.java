@@ -19,6 +19,7 @@ package io.helidon.webserver;
 import java.net.InetAddress;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -136,35 +137,21 @@ class ServerBasicConfig implements ServerConfiguration {
 
         /**
          * Creates new instance.
-         *
-         * @param port              a server port - ff port is {@code 0} or less then any available ephemeral port will be used
-         * @param bindAddress       an address to bind the server or {@code null} for all local addresses
-         * @param sslContext        the ssl context to associate with this socket configuration
-         * @param backlog           a maximum length of the queue of incoming connections
-         * @param timeoutMillis     a socket timeout in milliseconds or {@code 0} for infinite
-         * @param receiveBufferSize proposed TCP receive window size in bytes
          */
-        SocketConfig(int port,
-                     InetAddress bindAddress,
-                     SSLContext sslContext,
-                     Set<String> sslProtocols,
-                     int backlog,
-                     int timeoutMillis,
-                     int receiveBufferSize) {
-            this.port = port <= 0 ? 0 : port;
-            this.bindAddress = bindAddress;
-            this.backlog = backlog <= 0 ? DEFAULT_BACKLOG_SIZE : backlog;
-            this.timeoutMillis = timeoutMillis <= 0 ? 0 : timeoutMillis;
-            this.receiveBufferSize = receiveBufferSize <= 0 ? 0 : receiveBufferSize;
-            this.sslContext = sslContext;
-            this.enabledSslProtocols = sslProtocols;
-        }
-
-        /**
-         * Creates default values instance.
-         */
-        SocketConfig() {
-            this(0, null, null, null, 0, 0, 0);
+        SocketConfig(SocketConfiguration.Builder builder) {
+            this.port = Math.max(builder.port(), 0);
+            this.bindAddress = builder.bindAddress().orElse(null);
+            this.backlog = builder.backlog() < 0 ? DEFAULT_BACKLOG_SIZE : builder.backlog();
+            this.timeoutMillis = Math.max(builder.timeoutMillis(), 0);
+            this.receiveBufferSize = Math.max(builder.receiveBufferSize(), 0);
+            TlsConfig tlsConfig = builder.tlsConfig();
+            if (tlsConfig.enabled()) {
+                this.sslContext = tlsConfig.sslContext();
+                this.enabledSslProtocols = new HashSet<>(tlsConfig.enabledTlsProtocols());
+            } else {
+                this.sslContext = null;
+                this.enabledSslProtocols = Set.of();
+            }
         }
 
         @Override

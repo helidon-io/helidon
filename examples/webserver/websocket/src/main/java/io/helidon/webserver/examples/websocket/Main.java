@@ -24,7 +24,6 @@ import javax.websocket.Encoder;
 import javax.websocket.server.ServerEndpointConfig;
 
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.tyrus.TyrusSupport;
 
@@ -57,10 +56,9 @@ public class Main {
     }
 
     static WebServer startWebServer() {
-        ServerConfiguration config = ServerConfiguration.builder()
+        WebServer server = WebServer.builder(createRouting())
                 .port(8080)
                 .build();
-        WebServer server = WebServer.create(config, createRouting());
 
         // Start webserver
         CompletableFuture<Void> started = new CompletableFuture<>();
