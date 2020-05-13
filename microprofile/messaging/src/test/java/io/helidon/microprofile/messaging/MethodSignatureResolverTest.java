@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import org.eclipse.microprofile.reactive.messaging.Incoming;
@@ -269,7 +269,7 @@ class MethodSignatureResolverTest {
     void signatureResolving(MethodTestCase testCase) {
         Optional<MethodSignatureType> signatureType = MethodSignatureResolver.create(testCase.m).resolve();
         assertThat("Resolved signature type is empty", signatureType.isPresent());
-        assertThat(signatureType.get(), equalTo(testCase.expectedType));
+        assertThat(signatureType.get(), is(testCase.expectedType));
     }
 
     @Test

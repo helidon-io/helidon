@@ -25,7 +25,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -72,7 +72,7 @@ public class CompletableQueueTest {
 
         order.forEach(i -> futures.get(i).complete(i));
 
-        assertThat(resultList, equalTo(IntStream
+        assertThat(resultList, is(IntStream
                 .range(0, arg.length())
                 .boxed()
                 .collect(Collectors.toList())));

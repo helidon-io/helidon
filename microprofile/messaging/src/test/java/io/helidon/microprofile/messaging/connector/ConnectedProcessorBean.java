@@ -28,7 +28,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.isIn;
 
 /**
  * This test is modified version of official tck test in version 1.0
@@ -51,7 +51,7 @@ public class ConnectedProcessorBean {
 
     @Incoming("inner-channel")
     public void receive(String msg) {
-        assertThat(PROCESSED_DATA.contains(msg), is(true));
+        assertThat(msg, isIn(PROCESSED_DATA));
         LATCH.countDown();
     }
 

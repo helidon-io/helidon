@@ -19,7 +19,6 @@ package io.helidon.microprofile.messaging;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -56,14 +55,17 @@ class MessageUtilsTest {
 
     @ParameterizedTest
     @MethodSource("testSource")
-    void wrapperTest(Tuple tuple) throws ExecutionException, InterruptedException {
+    void wrapperTest(Tuple tuple) {
         assertExpectedType(tuple.value, tuple.type);
     }
 
-    private static void assertExpectedType(Object value, Class<?> type) throws ExecutionException, InterruptedException {
+    private static void assertExpectedType(Object value, Class<?> type) {
         Object unwrapped = MessageUtils.unwrap(value, type);
-        assertThat( String.format("Expected value of type %s got %s instead", type.getSimpleName(), value.getClass().getSimpleName()),
-                type.isAssignableFrom(unwrapped.getClass()));
+        assertThat(
+                String.format("Expected value of type %s got %s instead",
+                        type.getSimpleName(),
+                        value.getClass().getSimpleName()
+                ), type.isAssignableFrom(unwrapped.getClass()));
     }
 
     private static class Tuple {

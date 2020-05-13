@@ -23,7 +23,7 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 
 import org.junit.jupiter.api.Test;
 
@@ -64,6 +64,7 @@ public class ConnectorConfigTest {
         };
 
         org.eclipse.microprofile.config.Config connectorConfig = connector.getConnectorConfig(TEST_CHANNEL_NAME);
-        assertThat(connectorConfig.getValue(TEST_KEY, String.class), equalTo(TEST_CHANNEL_VALUE));
+        assertThat(connectorConfig.getValue(TEST_KEY, String.class),
+                is(TEST_CHANNEL_VALUE));
     }
 }

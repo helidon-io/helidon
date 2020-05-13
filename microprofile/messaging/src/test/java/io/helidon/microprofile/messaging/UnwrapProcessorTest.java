@@ -67,7 +67,9 @@ public class UnwrapProcessorTest {
             Assertions.assertTrue(MessageUtils.isMessageType(method));
             assertThat(unwrappedValue, instanceOf(Message.class));
         } else {
-            assertThat(MessageUtils.isMessageType(method), not(true));
+            assertThat("Expected method param to be a Message type.",
+                    MessageUtils.isMessageType(method),
+                    not(true));
             assertThat(unwrappedValue, not(instanceOf(Message.class)));
         }
     }
