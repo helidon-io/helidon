@@ -26,7 +26,7 @@ import java.util.function.BiFunction;
  * the result as a Single.
  * @param <T> the element type of the source and result
  */
-final class MultiReduce<T> implements Single<T> {
+final class MultiReduce<T> extends CompletionSingle<T> {
 
     private final Multi<T> source;
 

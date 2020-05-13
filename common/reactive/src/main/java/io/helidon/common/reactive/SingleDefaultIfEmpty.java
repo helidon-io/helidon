@@ -23,7 +23,7 @@ import java.util.concurrent.Flow;
  * Signal an item if the source is empty.
  * @param <T> the element type
  */
-final class SingleDefaultIfEmpty<T> implements Single<T> {
+final class SingleDefaultIfEmpty<T> extends CompletionSingle<T> {
 
     private final Single<T> source;
 

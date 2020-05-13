@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Flow;
@@ -150,6 +151,18 @@ public interface Multi<T> extends Subscribable<T> {
             return (Multi<T>) source;
         }
         return new MultiFromPublisher<>(source);
+    }
+
+    /**
+     * Create a {@link Multi} instance wrapped around the given {@link Single}.
+     *
+     * @param <T>    item type
+     * @param single source {@link Single} publisher
+     * @return Multi
+     * @throws NullPointerException if source is {@code null}
+     */
+    static <T> Multi<T> from(Single<T> single) {
+        return from((Publisher<T>) single);
     }
 
     /**
@@ -842,10 +855,23 @@ public interface Multi<T> extends Subscribable<T> {
      * Terminal stage, invokes provided consumer for every item in the stream.
      *
      * @param consumer consumer to be invoked for each item
+     * @return Single completed when the stream terminates
      */
-    default void forEach(Consumer<? super T> consumer) {
-        FunctionalSubscriber<T> subscriber = new FunctionalSubscriber<>(consumer, null, null, null);
+    default Single<Void> forEach(Consumer<? super T> consumer) {
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        Single<Void> single = Single.from(future, true);
+        FunctionalSubscriber<T> subscriber = new FunctionalSubscriber<>(consumer,
+                future::completeExceptionally,
+                () -> future.complete(null),
+                subscription -> {
+                    subscription.request(Long.MAX_VALUE);
+                    single.onCancel(subscription::cancel);
+                }
+        );
+
         this.subscribe(subscriber);
+
+        return single;
     }
 
 }

@@ -27,6 +27,7 @@ import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
@@ -42,7 +43,7 @@ import io.helidon.common.mapper.Mapper;
  * @param <T> item type
  * @see Multi
  */
-public interface Single<T> extends Subscribable<T> {
+public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitable<T> {
 
     // --------------------------------------------------------------------------------------------------------
     // Factory (source-like) methods
@@ -128,6 +129,18 @@ public interface Single<T> extends Subscribable<T> {
             return (Single<T>) source;
         }
         return new SingleFromPublisher<>(source);
+    }
+
+    /**
+     * Create a {@link Single} instance that publishes the first and only item received from the given {@link Single}.
+     *
+     * @param <T>    item type
+     * @param single source {@link Single} publisher
+     * @return Single
+     * @throws NullPointerException if source is {@code null}
+     */
+    static <T> Single<T> from(Single<T> single) {
+        return from((Publisher<T>) single);
     }
 
     /**
@@ -541,7 +554,7 @@ public interface Single<T> extends Subscribable<T> {
      */
     default CompletionStage<T> toStage() {
         try {
-            SingleToFuture<T> subscriber = new SingleToFuture<>();
+            SingleToFuture<T> subscriber = new SingleToFuture<>(false);
             this.subscribe(subscriber);
             return subscriber;
         } catch (Throwable ex) {
@@ -550,4 +563,139 @@ public interface Single<T> extends Subscribable<T> {
             return future;
         }
     }
+
+    /**
+     * Cancel upstream.
+     *
+     * @return new {@link Single} for eventually received single value.
+     */
+    default Single<T> cancel() {
+        CompletableFuture<T> future = new CompletableFuture<>();
+        FunctionalSubscriber<T> subscriber = new FunctionalSubscriber<>(future::complete,
+                future::completeExceptionally,
+                () -> future.complete(null),
+                Flow.Subscription::cancel
+        );
+        this.subscribe(subscriber);
+        return Single.from(future);
+    }
+
+    @Override
+    <U> CompletionAwaitable<U> thenApply(Function<? super T, ? extends U> fn);
+
+    @Override
+    <U> CompletionAwaitable<U> thenApplyAsync(Function<? super T, ? extends U> fn);
+
+    @Override
+    <U> CompletionAwaitable<U> thenApplyAsync(Function<? super T, ? extends U> fn, Executor executor);
+
+    @Override
+    CompletionAwaitable<Void> thenAccept(Consumer<? super T> action);
+
+    @Override
+    CompletionAwaitable<Void> thenAcceptAsync(Consumer<? super T> action);
+
+    @Override
+    CompletionAwaitable<Void> thenAcceptAsync(Consumer<? super T> action, Executor executor);
+
+    @Override
+    CompletionAwaitable<Void> thenRun(Runnable action);
+
+    @Override
+    CompletionAwaitable<Void> thenRunAsync(Runnable action);
+
+    @Override
+    CompletionAwaitable<Void> thenRunAsync(Runnable action, Executor executor);
+
+    @Override
+    <U, V> CompletionAwaitable<V> thenCombine(CompletionStage<? extends U> other,
+                                              BiFunction<? super T, ? super U, ? extends V> fn);
+
+    @Override
+    <U, V> CompletionAwaitable<V> thenCombineAsync(CompletionStage<? extends U> other,
+                                                   BiFunction<? super T, ? super U, ? extends V> fn);
+
+    @Override
+    <U, V> CompletionAwaitable<V> thenCombineAsync(CompletionStage<? extends U> other,
+                                                   BiFunction<? super T, ? super U, ? extends V> fn, Executor executor);
+
+    @Override
+    <U> CompletionAwaitable<Void> thenAcceptBoth(CompletionStage<? extends U> other,
+                                                 BiConsumer<? super T, ? super U> action);
+
+    @Override
+    <U> CompletionAwaitable<Void> thenAcceptBothAsync(CompletionStage<? extends U> other,
+                                                      BiConsumer<? super T, ? super U> action);
+
+    @Override
+    <U> CompletionAwaitable<Void> thenAcceptBothAsync(CompletionStage<? extends U> other,
+                                                      BiConsumer<? super T, ? super U> action, Executor executor);
+
+    @Override
+    CompletionAwaitable<Void> runAfterBoth(CompletionStage<?> other, Runnable action);
+
+    @Override
+    CompletionAwaitable<Void> runAfterBothAsync(CompletionStage<?> other, Runnable action);
+
+    @Override
+    CompletionAwaitable<Void> runAfterBothAsync(CompletionStage<?> other, Runnable action, Executor executor);
+
+    @Override
+    <U> CompletionAwaitable<U> applyToEither(CompletionStage<? extends T> other, Function<? super T, U> fn);
+
+    @Override
+    <U> CompletionAwaitable<U> applyToEitherAsync(CompletionStage<? extends T> other, Function<? super T, U> fn);
+
+    @Override
+    <U> CompletionAwaitable<U> applyToEitherAsync(CompletionStage<? extends T> other, Function<? super T, U> fn,
+                                                  Executor executor);
+
+    @Override
+    CompletionAwaitable<Void> acceptEither(CompletionStage<? extends T> other, Consumer<? super T> action);
+
+    @Override
+    CompletionAwaitable<Void> acceptEitherAsync(CompletionStage<? extends T> other, Consumer<? super T> action);
+
+    @Override
+    CompletionAwaitable<Void> acceptEitherAsync(CompletionStage<? extends T> other, Consumer<? super T> action,
+                                                Executor executor);
+
+    @Override
+    CompletionAwaitable<Void> runAfterEither(CompletionStage<?> other, Runnable action);
+
+    @Override
+    CompletionAwaitable<Void> runAfterEitherAsync(CompletionStage<?> other, Runnable action);
+
+    @Override
+    CompletionAwaitable<Void> runAfterEitherAsync(CompletionStage<?> other, Runnable action, Executor executor);
+
+    @Override
+    <U> CompletionAwaitable<U> thenCompose(Function<? super T, ? extends CompletionStage<U>> fn);
+
+    @Override
+    <U> CompletionAwaitable<U> thenComposeAsync(Function<? super T, ? extends CompletionStage<U>> fn);
+
+    @Override
+    <U> CompletionAwaitable<U> thenComposeAsync(Function<? super T, ? extends CompletionStage<U>> fn, Executor executor);
+
+    @Override
+    <U> CompletionAwaitable<U> handle(BiFunction<? super T, Throwable, ? extends U> fn);
+
+    @Override
+    <U> CompletionAwaitable<U> handleAsync(BiFunction<? super T, Throwable, ? extends U> fn);
+
+    @Override
+    <U> CompletionAwaitable<U> handleAsync(BiFunction<? super T, Throwable, ? extends U> fn, Executor executor);
+
+    @Override
+    CompletionAwaitable<T> whenComplete(BiConsumer<? super T, ? super Throwable> action);
+
+    @Override
+    CompletionAwaitable<T> whenCompleteAsync(BiConsumer<? super T, ? super Throwable> action);
+
+    @Override
+    CompletionAwaitable<T> whenCompleteAsync(BiConsumer<? super T, ? super Throwable> action, Executor executor);
+
+    @Override
+    CompletionAwaitable<T> exceptionally(Function<Throwable, ? extends T> fn);
 }

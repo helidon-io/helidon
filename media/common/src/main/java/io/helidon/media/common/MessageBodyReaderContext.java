@@ -31,6 +31,7 @@ import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.http.ReadOnlyParameters;
+import io.helidon.common.reactive.CompletionSingle;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
 
@@ -396,7 +397,7 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
      * Single from future.
      * @param <T> item type
      */
-    private static final class SingleFromCompletionStage<T> implements Single<T> {
+    private static final class SingleFromCompletionStage<T> extends CompletionSingle<T> {
 
         private final CompletionStage<? extends T> future;
         private Subscriber<? super T> subscriber;
