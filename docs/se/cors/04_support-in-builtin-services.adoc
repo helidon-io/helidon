@@ -16,7 +16,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= CORS in Helidon SE Built-in Services
+= CORS in Built-in Services
 :toc:
 :toc-placement: preamble
 :pagename: cors-built-in-service-support
@@ -70,7 +70,6 @@ for these built-in services independently from each other using
 ifdef::cors-services-is-se[ either the Helidon API, configuration, or both.]
 ifndef::cors-services-is-se[ configuration.]
 
-include::{cors-config-table-src}[tag=cors-config-table]
 // end::understanding-cors-support-in-services[]
 
 // tag::getting-started[]
@@ -191,7 +190,7 @@ HealthSupport health = HealthSupport.builder()
 // end::se-code-changes-for-builtin-services-config[]
 
 You have full control over the CORS configuration for a built-in Helidon service. Use a basic CORS config section
-as described in the <<se/cors/02_configuration.adoc,CORS configuration>> documentation.
+as described in the <<se/cors/03_using-configuration.adoc,CORS configuration>> documentation.
 
 Remember that if you set configuration in a file that you include as part of your application JAR file, you need to
 rebuild and restart your application for any changes to take effect.
