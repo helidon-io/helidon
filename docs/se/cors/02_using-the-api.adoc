@@ -35,18 +35,37 @@
 The Helidon SE CORS API lets your application set up the CORS behavior for your application's resources
 quickly and clearly.
 
+== Understanding the Helidon CORS API
+You use two classes from the Helidon SE CORS API in your application:
+
+*  `CorsSupport` - Represents information about resource sharing for a single resource.
+Typically, you create one `CorsSupport` instance for each distinct resource in your application
+(such as the `/greet` resource in the QuickStart greeting application) that should participate in CORS.
+
+* `CrossOriginConfig` - Represents the details for a particular type of sharing, such as which origins are
+allowed to have access using which HTTP methods, etc.
+Create one instance of `CrossOriginConfig` for each different type of sharing you need.
+
+You associate one or more `CrossOriginConfig` objects with each `CorsSupport` object,
+which defines all the CORS behavior for one resource.
+You use the `CorsSupport` object when you construct the routing rules for the service.
+When your application is running and requests arrive, the Helidon CORS implementation enforces
+the CORS behavior represented by the `CorsSupport` object before routing the request to your
+endpoint code for the resource.
+
 == Getting Started
 
-To add CORS support to your Helidion SE application, you must:
+To add CORS support to your Helidion SE application:
 
-. Determine the type of cross origin sharing you want to allow for each endpoint in your application.
+. Determine the type of cross origin sharing you want to allow for each endpoint in your
+application.
 . Add the CORS dependency to the Maven `pom.xml` file.
-. Modify how your application constructs routing rules so they include CORS.
-
++
 // tag::add-cors-dependency[]
 The <<about/04_managing-dependencies.adoc, Managing Dependencies>> page describes how you
 should declare dependency management for Helidon applications. For CORS support in Helidon SE, you must include
 the following dependency in your project:
++
 [source,xml,subs="attributes+"]
 ----
 <dependency>
@@ -55,6 +74,7 @@ the following dependency in your project:
 </dependency>
 ----
 // end::add-cors-dependency[]
+. Modify how your application constructs routing rules so they include CORS.
 
 == Adding CORS Support in Your Helidon SE Application [[adding-cors-support]]
 Because Helidon SE does not use annotation processing to identify endpoints, you need to
