@@ -115,12 +115,13 @@ If the cross-origin configuration is disabled (`enabled` = false), then the Heli
 
 == Sample Routing Setup Using the `CrossOriginConfig` API
 
-The link:{quickstart-example}[Helidon SE Quickstart application] lets you change the greeting by sending a `PUT` request to the `/greet/greeting` resource.
+The link:{quickstart-example}[Helidon SE Quickstart application] lets you change the greeting by sending a `PUT`
+request to the `/greet/greeting` resource.
 
-In this example based on the QuickStart greeting app, we use the low-level `CrossOriginConfig` API and the `CorsSupport` API to influence the <<se/webserver/03_routing.adoc,routing>>,
-thereby determining how that resource is shared.
-
-To understand how to use configuration instead of the low-level API, see <<se/cors/03_using-configuration.adoc, Using Configuration for CORS>>.
+In this example based on the QuickStart greeting app, we use the low-level `CrossOriginConfig` API and
+the `CorsSupport` API to influence the <<se/webserver/03_routing.adoc,routing>>,
+thereby determining how that resource is shared. (To learn how to use configuration instead of the low-level API,
+see <<se/cors/03_using-configuration.adoc, Using Configuration for CORS>>.)
 
 The following code shows how to prepare your application's routing to support metrics and health support as well as
 CORS.
