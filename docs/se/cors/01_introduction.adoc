@@ -63,11 +63,12 @@ each request to the code that should respond.
 You do this for both your own endpoints as well as those from built-in services.
 
 To add CORS behavior to endpoints, you make minimal changes in how you set up the routing for those endpoints.
-Using a simple API, provided by the Helidon SE CORS module,
+Using a simple API provided by the Helidon SE CORS module,
 you define the CORS behavior you want and then include that behavior as you build the routing rules for the services
 in your application.
 
-The <<se/cors/02_using-the-api.adoc,Using the API>> section explores in detail how to incorporate
+The <<se/cors/02_using-the-api.adoc,Using the Helidon SE CORS API>>
+section explores in detail how to incorporate
 CORS into the routing for the endpoints in your application.
 
 == Adding Configuration
@@ -78,18 +79,19 @@ procedural Java code into declarative configuration.
 Incorporating configuration in this way also lets you add a powerful feature
 to your app, whereby those who deploy your application can override the CORS behavior which the application
 code sets up.
-Deployers can modify the configuration to alter the CORS behavior of your the endpoints in your application
+Deployers modify the configuration to alter the CORS behavior of your the endpoints in your application
 without requiring any changes to the application code.
 
-The <<se/cors/03_using-configuration.adoc,Using Configuration>> section explains how to use configuration
+The <<se/cors/03_using-configuration.adoc,Using Configuration for CORS>>
+section explains how to use configuration
 with the Helidon CORS API.
 
 == Controlling CORS for Built-in Services
 The health, metrics, and OpenAPI built-in services have integrated CORS support.
 If you include these services in your application's routing rules and do nothing else, then
-those services will share their resources across all origins.
+those services will share their resources across all origins. For many situations this is what you want.
 
-These services have the override feature described above.
+To handle other cases, your application can add the override behavior described above for any of the built-in services.
 By writing your application to use configuration as it prepares the routing for those
 services, you let your users
 control the CORS behavior of the built-in services through configuration.
@@ -97,6 +99,7 @@ control the CORS behavior of the built-in services through configuration.
 You can take advantage of this feature of the built-in services even if you do not add CORS behavior
 to your own endpoints.
 
-The <<se/cors/04_support-in-builtin-services.adoc,Using Built-in Services>> section describes how your application can
+The <<se/cors/04_support-in-builtin-services.adoc, CORS in Built-in Services>>
+section describes how your application can
 use configuration in defining the routing for built-in services, and it shows how to implement this override feature.
 
