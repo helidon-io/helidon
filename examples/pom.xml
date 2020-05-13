@@ -43,6 +43,7 @@
         <module>health</module>
         <module>quickstarts</module>
         <module>microprofile</module>
+        <module>media</module>
         <module>openapi</module>
         <module>security</module>
         <module>todo-app</module>
