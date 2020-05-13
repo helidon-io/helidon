@@ -34,18 +34,19 @@
 :cors-config-table-exclude-methods:
 :cors-services-is-se!:
 :helidon-variant: MP
-:se-built-in-services-page: ../../se/cors/03_support-in-builtin-services.adoc
+:cors-se-include: ../../se/cors
+:se-built-in-services-page-include: {cors-se-include}/04_support-in-builtin-services.adoc
 :cors-mp-intro-page: 01_introduction.adoc
 :cors-dependency-src: ../../mp/cors/{cors-mp-intro-page}
 
 Several built-in Helidon services -- health, metrics, and OpenAPI -- automatically support cross-origin resource
 sharing and you can control how they do so.
 
-include::{se-built-in-services-page}[tag=understanding-cors-support-in-services]
+include::{se-built-in-services-page-include}[tag=understanding-cors-support-in-services]
 
-include::{se-built-in-services-page}[tag=getting-started]
+include::{se-built-in-services-page-include}[tag=getting-started]
 
-include::{se-built-in-services-page}[tags=configuring-cors-for-builtin-services;!se-config-example;!se-code-changes-for-builtin-services-config]
+include::{se-built-in-services-page-include}[tags=configuring-cors-for-builtin-services;!se-config-example;!se-code-changes-for-builtin-services-config]
 
 The following example restricts sharing of
 
@@ -64,7 +65,7 @@ metrics:
 ...
 ----
 
-include::{se-built-in-services-page}[tag=accessing-shared-resources-intro]
+include::{se-built-in-services-page-include}[tag=accessing-shared-resources-intro]
 [source,bash]
 ----
 mvn package
@@ -74,4 +75,4 @@ java -jar target/helidon-quickstart-mp.jar
 ...
 ----
 
-include::{se-built-in-services-page}[tag=accessing-shared-resources-main]
+include::{se-built-in-services-page-include}[tag=accessing-shared-resources-main]

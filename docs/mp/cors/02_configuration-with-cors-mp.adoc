@@ -30,8 +30,9 @@
 :helidon-mp-cors-example: {helidon-tag}/examples/microprofile/cors
 :cors-se: ../../se/cors
 :cors-se-intro: {cors-se}/01_introduction.adoc
-:cors-se-config: {cors-se}/02_configuration.adoc
-:cors-config-table-src: {cors-se-intro}
+:cors-se-api: {cors-se}/02_using-the-api.adoc
+:cors-se-config: {cors-se}/03_using-configuration.adoc
+:cors-config-table-src: {cors-se-api}
 :cors-mapped-config-src: {cors-se-config}
 :mapped-config-top-key: cors
 :cors-config-table-exclude-methods:

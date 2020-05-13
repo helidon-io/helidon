@@ -31,8 +31,9 @@
 :javadoc-base-url-api: {javadoc-base-url}io.helidon.webserver.cors/io/helidon/webserver/cors
 :javadoc-base-url-webserver: {javadoc-base-url}io.helidon.webserver/io/helidon/webserver
 :cors-se-intro: 01_introduction.adoc
-:cors-config-table-src: {cors-se-intro}
-:cors-dependency-src: {cors-se-intro}
+:cors-se-api-doc: 02_using-the-api.adoc
+:cors-config-table-src: {cors-se-api-doc}
+:cors-dependency-src: {cors-se-api-doc}
 :health-page: se/health/01_health.adoc
 :metrics-page: se/metrics/01_metrics.adoc
 :openapi-page: se/openapi/01_openapi.adoc
