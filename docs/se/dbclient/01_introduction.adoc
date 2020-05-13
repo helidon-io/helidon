@@ -57,15 +57,17 @@ should declare dependency management for Helidon applications. For the DB Client
 ----
 <dependencies>
      <dependency>
-         <groupId>io.helidon.dbclient</groupId> <1>
-         <artifactId>helidon-dbclient</artifactId>
+         <groupId>io.helidon.dbclient</groupId> // <1>
+                  <artifactId>helidon-dbclient</artifactId>
      </dependency>
      <dependency>
-         <groupId>io.helidon.dbclient</groupId> <2>
+         <groupId>io.helidon.dbclient</groupId> // <2>
+         
          <artifactId>helidon-dbclient-jdbc</artifactId>
      </dependency>
      <dependency>
-         <groupId>com.h2.database</groupId> <3>
+         <groupId>com.h2.database</groupId> // <3>
+         
          <artifactId>h2</artifactId>
          <version>1.4.200</version>
     </dependency>    
@@ -87,13 +89,13 @@ The DB Client must be configured before you begin. In the example below we'll us
 ----
 
 db:
-  source: "jdbc" <1>
+  source: "jdbc" // <1>
   connection:
-    url: "jdbc:mysql://127.0.0.1:3306/pokemon?useSSL=false" <2>
+    url: "jdbc:mysql://127.0.0.1:3306/pokemon?useSSL=false" // <2>
     username: "user"
     password: "password"
     poolName: "mysql"
-  statements: <3>
+  statements: // <3>
     ping: "DO 0"
     select-all-pokemons: "SELECT id, name FROM Pokemons"
     
