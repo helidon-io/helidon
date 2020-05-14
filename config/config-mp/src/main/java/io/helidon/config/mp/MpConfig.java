@@ -52,10 +52,8 @@ public final class MpConfig {
         io.helidon.config.Config.Builder builder = io.helidon.config.Config.builder()
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
-                .disableMapperServices()
                 .disableCaching()
-                .disableParserServices()
-                .disableFilterServices();
+                .disableParserServices();
 
         if (mpConfig instanceof MpConfigImpl) {
             ((MpConfigImpl) mpConfig).converters()
