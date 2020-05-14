@@ -75,7 +75,7 @@ should declare dependency management for Helidon applications. For the DB Client
 
 ----
 
-<1>  Add the Helidon DB Client
+<1> Add the Helidon DB Client
 <2> Specify JDBC or MongoDB
 <3> Add the database details
 
