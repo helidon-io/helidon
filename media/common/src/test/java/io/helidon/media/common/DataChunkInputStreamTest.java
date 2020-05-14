@@ -34,6 +34,8 @@ import io.helidon.common.reactive.OriginThreadPublisher;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -41,6 +43,17 @@ import static org.junit.jupiter.api.Assertions.fail;
  * Tests {@link DataChunkInputStream}.
  */
 public class DataChunkInputStreamTest {
+
+    @Test
+    public void emptyChunk() throws IOException {
+        InputStream is = new DataChunkInputStream(Multi.just(DataChunk.create("test".getBytes()), DataChunk.create(new byte[0])));
+        int c;
+        StringBuilder sb = new StringBuilder();
+        while ((c = is.read()) != -1) {
+            sb.append((char) c);
+        }
+        assertThat(sb.toString(), is("test"));
+    }
 
     @Test
     public void differentThreads() throws Exception {

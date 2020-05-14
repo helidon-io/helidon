@@ -140,7 +140,7 @@ public class DataChunkInputStream extends InputStream {
                 subscription.request(1);
             }
 
-            return len;
+            return len == 0 ? -1 : len;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IOException(e);
