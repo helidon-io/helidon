@@ -42,11 +42,6 @@ public final class MultiPartBodyReader implements MessageBodyReader<MultiPart> {
     private static final BytesToChunks BYTES_TO_CHUNKS = new BytesToChunks();
 
     /**
-     * Collector singleton to collect body parts from a publisher as a list.
-     */
-    private static final PartsCollector COLLECTOR = new PartsCollector();
-
-    /**
      * Private to enforce the use of {@link #create()}.
      */
     private MultiPartBodyReader() {
@@ -72,7 +67,7 @@ public final class MultiPartBodyReader implements MessageBodyReader<MultiPart> {
         }
         MultiPartDecoder decoder = MultiPartDecoder.create(boundary, context);
         publisher.subscribe(decoder);
-        return (Single<U>) Multi.from(decoder).collect(COLLECTOR);
+        return (Single<U>) Multi.from(decoder).collect(new PartsCollector());
     }
 
     /**
@@ -86,8 +81,7 @@ public final class MultiPartBodyReader implements MessageBodyReader<MultiPart> {
     /**
      * A collector that accumulates and buffers body parts.
      */
-    private static final class PartsCollector
-            implements Collector<ReadableBodyPart, ReadableMultiPart> {
+    private static final class PartsCollector implements Collector<ReadableBodyPart, ReadableMultiPart> {
 
         private final LinkedList<ReadableBodyPart> bodyParts;
 
@@ -101,8 +95,8 @@ public final class MultiPartBodyReader implements MessageBodyReader<MultiPart> {
             MessageBodyReadableContent content = bodyPart.content();
 
             // buffer the data
-            Publisher<DataChunk> bufferedData = ContentReaders
-                    .readBytes(content)
+            // TODO support disk buffering with threshold
+            Publisher<DataChunk> bufferedData = Single.from(ContentReaders.readBytes(content).toStage())
                     .flatMap(BYTES_TO_CHUNKS);
 
             // create a content copy with the buffered data
