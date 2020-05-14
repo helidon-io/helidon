@@ -77,11 +77,11 @@ the following dependency in your project:
 </dependency>
 ----
 // end::add-cors-dependency[]
-. Modify how your application constructs routing rules so they include CORS.
+. Modify how your application constructs routing rules so they include CORS. See <<adding-cors-support, Adding CORS Support in Your Helidon SE Application>>
 
 == Adding CORS Support in Your Helidon SE Application [[adding-cors-support]]
 Because Helidon SE does not use annotation processing to identify endpoints, you need to
-provide the CORS information for your application another way:
+provide the CORS information for your application another way -
 by including CORS into the routing you construct for your application.
 
 For each distinct resource or subresource your application exposes:
@@ -139,7 +139,7 @@ ifndef::cors-config-table-exclude-methods[|`allowOrigins`]
 |`allow-origins`|`["*"]`|`Access-Control-Allow-Origins`
 
 ifndef::cors-config-table-exclude-methods[|`exposeHeaders`]
-|`expose-headers`|`none`|`Access-COntrol-Expose-Headers`
+|`expose-headers`|`none`|`Access-Control-Expose-Headers`
 
 ifndef::cors-config-table-exclude-methods[|`maxAgeSeconds`]
 |`max-age`|`3600`|`Access-Control-Max-Age`
@@ -207,7 +207,7 @@ from most specific to least specific.
 The few additional lines described above allow the greeting application to participate in CORS.
 
 == Next Steps
-Learn how to combine the API with configuration in adding CORS to your application in the
-<<se/cors/03_using-configuration.adoc,Using Configuration for CORS>> section.
+* To learn how to combine the API with configuration in adding CORS to your application, see
+<<se/cors/03_using-configuration.adoc,Using Configuration for CORS>>.
 
-See the Helidon CORS support in action by building and running the link:{helidon-se-cors-example}[CORS example].
+* See the Helidon CORS support in action by building and running the link:{helidon-se-cors-example}[CORS example].
