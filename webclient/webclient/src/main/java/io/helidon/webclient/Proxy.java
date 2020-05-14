@@ -564,11 +564,34 @@ public class Proxy {
         }
     }
 
+    /**
+     * Type of the proxy.
+     */
     public enum ProxyType {
+
+        /**
+         * No proxy.
+         */
         NONE,
+
+        /**
+         * Proxy obtained from system.
+         */
         SYSTEM,
+
+        /**
+         * HTTP proxy.
+         */
         HTTP,
+
+        /**
+         * SOCKS V4 proxy.
+         */
         SOCKS_4,
+
+        /**
+         * SOCKS V5 proxy.
+         */
         SOCKS_5
     }
 
