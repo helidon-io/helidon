@@ -16,7 +16,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Using Configuration for CORS
+= Using Configuration with CORS MP
 :toc:
 :toc-placement: preamble
 :pagename: cors-mp-configuration
@@ -35,17 +35,28 @@
 :cors-config-table-src: {cors-se-api}
 :cors-mapped-config-src: {cors-se-config}
 :mapped-config-top-key: cors
-:cors-config-table-exclude-methods:
 
-You and your users can override the annotated CORS set-up using MicroProfile configuration.
+Your application code establishes the CORS behavior of your endpoints using the `@CrossOrigin` annotation.
+You and your users can override that behavior, as well as the CORS behavior of the built-in services,
+using MicroProfile configuration.
 
-== Understanding the CORS Configuration Format [[cors-configuration-formats]]
-The support in Helidon MP for CORS configuration works with the following format.
+== Using Configuration with Helidon MP CORS
+CORS for Helidon MP lets you and your users override the CORS behavior you establish for your endpoints
+using the `@CrossOrigin` annotation in your application as well as the default CORS behavior of the built-in
+Helidon services.
+
+You need to understand how to specify the overriding values for the CORS attributes in configuration
+and then how to associate those values with the endpoint you want them to affect.
+
+== Specifying Override Values in Configuration [[cors-configuration-formats]]
+You can specify in configuration the same CORS-related attributes you can with the `@CrossOrigin` annotation.
 
 [[config-key-table]]
+:config-table-methods-column-explainer: the annotation parameters
+:config-table-methods-column-header: Annotation Parameter
 include::{cors-config-table-src}[tag=cors-config-table]
 
-Although there are two types of CORS cross-origin configuration, for Helidon MP use
+There are two formats of CORS cross-origin configuration: basic and mapped. For Helidon MP you use
 the mapped format.
 
 include::{cors-mapped-config-src}[tag=mapped-config]

@@ -1,0 +1,76 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2020 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Why `@OPTIONS`?
+:toc:
+:toc-placement: preamble
+:pagename: using-cors-in-mp-why-options
+:description: Exploration of why Helidon MP associates the `@CrossOrigin` annotation with `@OPTIONS` methods.
+:keywords: helidon, java, cors, mp, microprofile, jax-rs cross-origin resource sharing
+
+There are some good reasons why it is `@OPTIONS` methods that you decorate with the Helidon MP
+`@CrossOrigin` annotation. Take an informal look at the rationale for this choice.
+
+== The Resource
+At the heart of cross-origin resource sharing is the _resource_ itself.
+CORS lets you control how a given resource should be shared among various origins.
+All the attributes of CORS -- whether authentication should be used, what headers can be passed through on
+CORS-controlled requests, etc. -- pertain to a given resource.
+
+In Helidon MP, the parameters defined on the `@CrossOrigin` annotation map directly to those
+CORS sharing attributes.
+It would be natural, then, to use `@CrossOrigin` to annotate the single Java element in the application that represents
+a resource.
+
+== Methods, Resources, and Subresources in JAX-RS Resource Classes
+Unfortunately, there is no single Java element that is sure to correspond one-to-one with a JAX-RS resource,
+for two reasons.
+
+. JAX-RS allows a resource class to define one or more subresources, denoted by the `@Path` annotation
+on methods. So a resource class does not necessarily represent only a single resource.
+. A JAX-RS resource class can contain multiple endpoints for the same resource.
+A common example is two methods, annotated with `@GET` and `@PUT` respectively, that have the same path.
+
+Although no single endpoint method by itself fully represents the resource, at
+least each endpoint method maps to exactly one resource.
+So we could annotate any one of those endpoint methods with `@CrossOrigin` and unambiguously link
+the CORS behavior that the annotation defines to the resource.
+
+But which endpoint method, and why?
+
+== `OPTIONS` in CORS, `@OPTIONS` in JAX-RS, and Technical Reality
+The `OPTIONS` HTTP method plays an important role in CORS.
+While the CORS protocol _applies_ to all HTTP methods, it _relies on_ `OPTIONS` -- with suitable headers --
+to represent CORS pre-flight requests.
+From that point of view, the `OPTIONS` HTTP method has a more prominent place in CORS than the other methods.
+
+In a JAX-RS resource class, the `@OPTIONS` annotation denotes which endpoint method should receive incoming `OPTIONS`
+HTTP requests for a resource.
+Therefore, we could view a Java method annotated with `@OPTIONS` as somewhat distinguished in the same way that
+we think of the `OPTIONS` HTTP method as distinguished within the CORS protocol.
+
+Furthermore, there is this technical detail:
+Helidon MP uses a JAX-RS filter internally to gather information about each `@CrossOrigin` annotation.
+Some JAX-RS implementations do not provide the filter with what it needs to find and introspect the `@CrossOrigin`
+annotation unless the application itself implements the `@OPTIONS` endpoint for the resource.
+
+== The Bottom Line
+If you want a resource to participate in CORS, Helidon MP needs you to implement the `@OPTIONS` endpoint method for the
+resource, even if the method does nothing.
+Given that you have to write that method, and given that any endpoint method uniquely identifies its resource,
+the `@OPTIONS` method is a reasonable place to ask you to annotate with `@CrossOrigin`.

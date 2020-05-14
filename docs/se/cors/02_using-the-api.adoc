@@ -31,6 +31,9 @@
 :javadoc-base-url-api: {javadoc-base-url}io.helidon.webserver.cors/io/helidon/webserver/cors
 :javadoc-base-url-webserver: {javadoc-base-url}io.helidon.webserver/io/helidon/webserver
 :helidon-variant: SE
+:config-table-methods-column-explainer-default: the methods on the `CrossOriginConfig.Builder` class
+:config-table-methods-column-explainer: {config-table-methods-column-explainer-default}
+:config-table-methods-column-header: Method
 
 The Helidon SE CORS API lets your application set up the CORS behavior for your application's resources
 quickly and clearly.
@@ -92,9 +95,24 @@ which origins are allowed to share via which HTTP methods, etc.
 . Use the resource's `CorsSupport` object in setting up the routing rules for that resource.
 
 Each of these classes has an associated builder you use in constructing instances of the class.
+
+// The following table and the lead-in to it are parameterized.
+//
+// To exclude the first column of the table -- the method or annotation parameter list -- and
+// the text that describes it, define the cors-config-table-exclude-methods attribute in the including file.
+// The value does not matter.
+//
+// To customize the text that explains the first column, set config-table-methods-column-explainer
+// to the text you want inserted.
+//
+// To customize the column heading for the first column, set config-table-methods-column-header to
+// the header you want used.
+//
 // tag::cors-config-table[]
 The table below describes
-ifndef::cors-config-table-exclude-methods[the methods on the `CrossOriginConfig.Builder` class and ]
+ifndef::cors-config-table-exclude-methods[]
+{config-table-methods-column-explainer} and
+endif::[]
 the configuration keys that map to the headers defined in the CORS protocol.
 
 ifndef::cors-config-table-exclude-methods[]
@@ -105,7 +123,7 @@ ifdef::cors-config-table-exclude-methods[]
 endif::[]
 
 |====================
-ifndef::cors-config-table-exclude-methods[| Methods ]
+ifndef::cors-config-table-exclude-methods[| {config-table-methods-column-header} ]
 | Configuration Key | Default | CORS Header Name
 
 ifndef::cors-config-table-exclude-methods[|`allowCredentials`]

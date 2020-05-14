@@ -236,8 +236,11 @@ backend:
                 type: "icon"
                 value: "share"
               items:
-                - includes:
+                - excludes:
+                    - "mp/cors/hide*.adoc"
+                  includes:
                     - "mp/cors/*.adoc"
+
             - title: "gRPC server"
               pathprefix: "/mp/grpc"
               glyph:

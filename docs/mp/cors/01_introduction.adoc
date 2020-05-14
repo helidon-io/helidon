@@ -16,97 +16,67 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= About CORS in Helidon MP
+= Introduction to CORS in Helidon MP
 :toc:
 :toc-placement: preamble
-:pagename: cors-mp-introduction
-:description: Helidon MP CORS Support
-:keywords: helidon, java, cors, mp, microprofile
+:pagename: intro-cors-in-mp
+:description: Introduction to CORS in Helidon MP
+:keywords: helidon, java, cors, mp, microprofile, cross-origin resource sharing
 :javadoc-base-url-api: {javadoc-base-url}io.helidon.microprofile.cors/io/helidon/microprofile/cors
 :helidon-tag: https://github.com/oracle/helidon/tree/{helidon-version}
 :quickstart-example: {helidon-tag}/examples/quickstarts/helidon-quickstart-mp
 :cors-spec: https://www.w3.org/TR/cors/
 :helidon-mp-cors-example: {helidon-tag}/examples/microprofile/cors
-
-link:{cors-spec}[Cross-origin resource sharing] (CORS) support in Helidon MP provides a flexible
-mechanism that allows a Helidon MP application to control how other web applications can access its resources, even if that web application is not served from the same domain.
-
-== Getting Started
-[NOTE]
-====
-Several Helidon built-in services -- health, metrics, and OpenAPI -- include automatic CORS support as described
-<<mp/cors/03_support-in-builtin-services.adoc,separately>>.
-====
-You add CORS support to your application by modifying your JAX-RS resource classes.
+:se-pages-prefix-inc: ../../se/cors
+:se-intro-page-inc: {se-pages-prefix-inc}/01_introduction.adoc
+:mp-pages-ref-prefix: mp/cors
+:mp-using-cors-ref: {mp-pages-ref-prefix}/02_using-cors.adoc
+:mp-cors-config-ref: {mp-pages-ref-prefix}/03_configuration-with-cors-mp.adoc
+:mp-cors-builtin-services-ref: {mp-pages-ref-prefix}/04_support-in-builtin-services.adoc
 
 
-. Decide what type of resource sharing each endpoint in your application should allow. +
+Cross-origin resource sharing (CORS) support in Helidon SE provides a flexible mechanism that
+allows a Helidon SE application to control how other web applications can access its resources,
+even if that web application is not served from the same domain.
 
-. {blank}
-+
---
-Add a dependency on the Helidon MP CORS component.
+== Overview
+include::{se-intro-page-inc}[tag=cors-intro]
 
-// tag::add-cors-dependency[]
-The <<about/04_managing-dependencies.adoc, Managing Dependencies>> page describes how you
-should declare dependency management for Helidon applications. For CORS support in Helidon MP, you must include
-the following dependency in your project:
-[source,xml,subs="attributes+"]
-----
-<dependency>
-    <groupId>io.helidon.microprofile</groupId>
-    <artifactId>helidon-microprofile-cors</artifactId>
-</dependency>
-----
-// end::add-cors-dependency[]
---
-. Edit each resource class in your application. +
- For each subpath in the resource that should support CORS:
-.. If you do not already have an `@OPTIONS` method for the subpath, create one.
-.. To each `@OPTIONS` method add a `@CrossOrigin` annotation which specifies the CORS behavior
-you want for that path.
+To introduce CORS into your Helidon MP application, do any or all of the following (summarized below):
 
-== Understanding the `@CrossOrigin` Annotation
-Using the link:{javadoc-base-url-api}/CrossOrigin.html[`@CrossOrigin`] annotation is the preferred way to configure CORS in Helidon MP.
-The following is an example of this annotation:
+* Modify your code using the Helidon MP CORS API.
+* Use configuration to override the CORS settings established in your application code.
+* Include into your application any of the built-in Helidon services automatically support CORS.
 
-[source,java]
-----
-@CrossOrigin(value = {"http://foo.bar", "http://bar.foo"},
-             allowHeaders = {"X-foo", "X-bar"},
-             allowMethods = {HttpMethod.DELETE, HttpMethod.PUT})
-----
 
-This annotation allows the resource associated with it to be shared with the origins `http://foo.bar` and `http://bar.foo`
-using `DELETE` or `PUT` and that requests can include the non-standard headers `X-foo` and `X-bar`.
+== Using the Helidon MP CORS API
+To enable CORS behavior for a resource in your Helidon MP application, you make minimal changes to the
+JAX-RS resource class that implements your resource.
+By simply adding the Helidon MP `@CrossOrigin` annotation to a particular method in your resource class,
+you allow Helidon MP to enforce the CORS protocol for all of that resource's endpoints.
 
-== Revising Your Application
+To find out more about CORS-enabling your resources, see <<{mp-using-cors-ref}, Using CORS in Helidon MP>>.
 
-In the link:{quickstart-example}[Helidon MP Quickstart application] you can change the greeting by sending a PUT
-request to the `/greet/greeting` resource.
-The example below extends the Helidon MP QuickStart application (the greeting app) to:
+== Adding Configuration
+When you annotate your resource method, you set the parameters on the `@CrossOrigin` annotation
+to provide the CORS behavior you designed for that resource.
+The Helidon MP CORS implementation automatically provides an override feature.
+You or a deployer or a user of your application can change the CORS behavior for any resource
+by modifying the application's MicroProfile configuration file, adding configuration that specifies alternate
+CORS behavior without requiring any changes to the application code.
 
-* Permit unrestricted sharing of the resource that returns greetings, and
-* Restrict sharing of the resource that
-updates the greeting so that only the origins `http://foo.com` and `http://there.com` can change the greeting.
+To learn about using configuration to override CORS settings for your application endpoints, see
+<<{mp-cors-config-ref},Using Configuration with CORS MP>>.
 
-[source,java]
-----
-@OPTIONS
-@CrossOrigin() // <1>
-public void options() {}
+== Controlling CORS for Built-in Services
+The health, metrics, and OpenAPI built-in services have integrated CORS support.
+If you add dependencies on these services to your project and also add a dependency on
+the Helidon MP CORS module, then the built-in services automatically participate in CORS.
+You do not need to enable your own endpoints for CORS if you just want the built-in services to
+work with CORS.
 
-@OPTIONS
-@Path("/greeting")
-@CrossOrigin(allowMethods = {"PUT"}, allowOrigins = {"http://foo.com", "http://there.com"}) // <2>
-public void optionsForGreeting() {}
-----
-<1> Uses the default cross-origin sharing, which permits sharing via all HTTP methods to all origins.
-<2> Specifies sharing only via the `PUT` HTTP method and only to the two listed origins.
+You and your users can use configuration to override the default CORS behavior of the built-in services.
 
-== Next steps
-
-* Learn how to use configuration. You and your users can use MicroProfile configuration to override the CORS behavior set in
-the application code.
-
-* See the Helidon CORS support in action by building and running the link:{helidon-mp-cors-example}[CORS example].
+See
+<<{mp-cors-builtin-services-ref},CORS in Helidon MP Built-in Services>>
+to understand the details of enabling and turning on CORS support for the built-in services.
