@@ -21,15 +21,10 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon.apptypes</groupId>
-        <artifactId>helidon-apptypes-project</artifactId>
+        <groupId>io.helidon.archetypes</groupId>
+        <artifactId>helidon-archetypes-mp</artifactId>
         <version>2.0.0-SNAPSHOT</version>
     </parent>
-    <artifactId>helidon-apptypes-mp</artifactId>
-    <name>Helidon Template Application Types for MP</name>
-    <packaging>pom</packaging>
-
-    <modules>
-        <module>basic</module>
-    </modules>
+    <artifactId>helidon-archetypes-mp-basic</artifactId>
+    <name>Helidon Template Application MP basic</name>
 </project>
