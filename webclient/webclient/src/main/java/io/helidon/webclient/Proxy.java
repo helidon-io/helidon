@@ -564,7 +564,7 @@ public class Proxy {
         }
     }
 
-    enum ProxyType {
+    public enum ProxyType {
         NONE,
         SYSTEM,
         HTTP,
