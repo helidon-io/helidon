@@ -148,7 +148,7 @@ public final class FileService implements Service {
         }
     }
 
-    private static interface IOSupplier<T> {
+    private interface IOSupplier<T> {
         T get() throws IOException;
     }
 }
