@@ -16,6 +16,7 @@
 package io.helidon.examples.media.multipart;
 
 import io.helidon.common.http.Http;
+import io.helidon.media.jsonp.common.JsonpSupport;
 import io.helidon.media.multipart.common.MultiPartSupport;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerConfiguration;
@@ -23,8 +24,7 @@ import io.helidon.webserver.StaticContentSupport;
 import io.helidon.webserver.WebServer;
 
 /**
- * This application serves a simple HTML with a file-upload form that posts to
- * an endpoint that accepts handles multipart requests.
+ * This application provides a simple file upload service with a UI to exercise multipart.
  */
 public final class Main {
 
@@ -39,8 +39,6 @@ public final class Main {
     static Routing createRouting() {
         return Routing.builder()
                 .any("/", (req, res) -> {
-                    // showing the capability to run on any path, and
-                    // redirecting from root
                     res.status(Http.Status.MOVED_PERMANENTLY_301);
                     res.headers().put(Http.Header.LOCATION, "/ui");
                     res.send();
@@ -48,12 +46,12 @@ public final class Main {
                 .register("/ui", StaticContentSupport.builder("WEB")
                         .welcomeFileName("index.html")
                         .build())
-                .register("/upload", new FileUploadService())
+                .register("/api", new FileService())
                 .build();
     }
 
     /**
-     * A java main class.
+     * Executes the example.
      *
      * @param args command line arguments.
      */
@@ -65,6 +63,7 @@ public final class Main {
         WebServer server = WebServer.builder(createRouting())
                 .config(config)
                 .addMediaSupport(MultiPartSupport.create())
+                .addMediaSupport(JsonpSupport.create())
                 .build();
 
         // Start the server and print some info.

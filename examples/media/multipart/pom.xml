@@ -48,6 +48,14 @@
             <groupId>io.helidon.media.multipart</groupId>
             <artifactId>helidon-media-multipart-common</artifactId>
         </dependency>
+        <dependency>
+            <artifactId>helidon-media-jsonp-common</artifactId>
+            <groupId>io.helidon.media.jsonp</groupId>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish</groupId>
+            <artifactId>jakarta.json</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
