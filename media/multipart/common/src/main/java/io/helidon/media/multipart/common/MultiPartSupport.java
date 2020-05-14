@@ -15,13 +15,14 @@
  */
 package io.helidon.media.multipart.common;
 
+import java.util.Collection;
+import java.util.List;
+
 import io.helidon.media.common.MediaSupport;
 import io.helidon.media.common.MessageBodyReader;
 import io.helidon.media.common.MessageBodyStreamReader;
 import io.helidon.media.common.MessageBodyStreamWriter;
 import io.helidon.media.common.MessageBodyWriter;
-import java.util.Collection;
-import java.util.List;
 
 /**
  * Multipart media support.

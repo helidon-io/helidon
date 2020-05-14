@@ -15,10 +15,11 @@
  */
 package io.helidon.media.multipart.common;
 
+import java.util.concurrent.Flow.Publisher;
+
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.MediaType;
-import java.util.concurrent.Flow.Publisher;
 import io.helidon.media.common.MessageBodyStreamWriter;
 import io.helidon.media.common.MessageBodyWriterContext;
 
