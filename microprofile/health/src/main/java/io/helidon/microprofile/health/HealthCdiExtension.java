@@ -91,7 +91,7 @@ public class HealthCdiExtension implements Extension {
 
     void registerHealth(@Observes @Initialized(ApplicationScoped.class) Object adv, BeanManager bm) {
         org.eclipse.microprofile.config.Config config = ConfigProvider.getConfig();
-        Config helidonConfig = MpConfig.toHelidonConfig(config);
+        Config helidonConfig = MpConfig.toHelidonConfig(config).get("health");
 
         if (!config.getOptionalValue("health.enabled", Boolean.class).orElse(true)) {
             LOGGER.finest("Health support is disabled in configuration");
