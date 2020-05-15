@@ -350,7 +350,7 @@ public class CrossOriginConfig {
 
         @Override
         public String toString() {
-            return String.format("Builder{pathPExpr=%s, enabled=%b, origins=%s, allowHeaders=%s, exposeHeaders=%s, "
+            return String.format("Builder{pathExpr=%s, enabled=%b, origins=%s, allowHeaders=%s, exposeHeaders=%s, "
                     + "allowMethods=%s, allowCredentials=%b, maxAgeSeconds=%d", pathExpr, enabled, Arrays.toString(origins),
                     Arrays.toString(allowHeaders), Arrays.toString(exposeHeaders), Arrays.toString(allowMethods),
                     allowCredentials, maxAgeSeconds);
