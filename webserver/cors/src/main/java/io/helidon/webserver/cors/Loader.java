@@ -36,7 +36,7 @@ class Loader {
                     .ifPresent(builder::enabled);
             config.get("path-expr")
                     .asString()
-                    .ifPresent(builder::pathPrefix);
+                    .ifPresent(builder::pathExpr);
             config.get("allow-origins")
                     .asList(String.class)
                     .ifPresent(
@@ -91,14 +91,14 @@ class Loader {
                  * process of matching request paths against paths in the mapped CORS instance will use any more specific path
                  * expressions before the wildcard.
                  */
-                if (basicBuilder.pathPrefix().equals(PATHLESS_KEY)) {
+                if (basicBuilder.pathExpr().equals(PATHLESS_KEY)) {
                     allPathsBuilder = basicBuilder;
                 } else {
-                    builder.put(basicBuilder.pathPrefix(), basicBuilder);
+                    builder.put(basicBuilder.pathExpr(), basicBuilder);
                 }
             } while (true);
             if (allPathsBuilder != null) {
-                builder.put(allPathsBuilder.pathPrefix(), allPathsBuilder);
+                builder.put(allPathsBuilder.pathExpr(), allPathsBuilder);
             }
             return builder;
         }
