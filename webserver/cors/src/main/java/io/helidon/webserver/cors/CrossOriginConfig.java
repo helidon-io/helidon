@@ -95,7 +95,7 @@ public class CrossOriginConfig {
      */
     public static final long DEFAULT_AGE = 3600;
 
-    private final String pathPrefix;
+    private final String pathPattern;
     private final boolean enabled;
     private final String[] allowOrigins;
     private final String[] allowHeaders;
@@ -105,7 +105,7 @@ public class CrossOriginConfig {
     private final long maxAgeSeconds;
 
     private CrossOriginConfig(Builder builder) {
-        this.pathPrefix = builder.pathPrefix;
+        this.pathPattern = builder.pathPattern;
         this.enabled = builder.enabled;
         this.allowOrigins = builder.origins;
         this.allowHeaders = builder.allowHeaders;
@@ -144,7 +144,7 @@ public class CrossOriginConfig {
      */
     public static Builder builder(CrossOriginConfig original) {
         return new Builder()
-                .pathPrefix(original.pathPrefix)
+                .pathPattern(original.pathPattern)
                 .enabled(original.enabled)
                 .allowCredentials(original.allowCredentials)
                 .allowHeaders(original.allowHeaders)
@@ -173,10 +173,10 @@ public class CrossOriginConfig {
     }
 
     /**
-     * @return the configured path prefix; defaults to a "match-everything" pattern
+     * @return the configured path expression; defaults to a "match-everything" pattern
      */
-    public String pathPrefix() {
-        return pathPrefix;
+    public String pathPattern() {
+        return pathPattern;
     }
 
     /**
@@ -245,8 +245,8 @@ public class CrossOriginConfig {
 
     @Override
     public String toString() {
-        return String.format("CrossOriginConfig{pathPrefix=%s, enabled=%b, origins=%s, allowHeaders=%s, exposeHeaders=%s, "
-                + "allowMethods=%s, allowCredentials=%b, maxAgeSeconds=%d", pathPrefix, enabled,
+        return String.format("CrossOriginConfig{pathPattern=%s, enabled=%b, origins=%s, allowHeaders=%s, exposeHeaders=%s, "
+                + "allowMethods=%s, allowCredentials=%b, maxAgeSeconds=%d", pathPattern, enabled,
                 Arrays.toString(allowOrigins),
                 Arrays.toString(allowHeaders), Arrays.toString(exposeHeaders), Arrays.toString(allowMethods),
                 allowCredentials, maxAgeSeconds);
@@ -263,7 +263,7 @@ public class CrossOriginConfig {
 
         static final String[] ALLOW_ALL = {"*"};
 
-        private String pathPrefix = PATHLESS_KEY; // not typically used except when inside a MappedCrossOriginConfig
+        private String pathPattern = PATHLESS_KEY; // not typically used except when inside a MappedCrossOriginConfig
         private boolean enabled = true;
         private String[] origins = ALLOW_ALL;
         private String[] allowHeaders = ALLOW_ALL;
@@ -278,16 +278,16 @@ public class CrossOriginConfig {
         /**
          * Updates the path prefix for this cross-origin config.
          *
-         * @param pathPrefix new path prefix
+         * @param pathPattern new path prefix
          * @return updated builder
          */
-        public Builder pathPrefix(String pathPrefix) {
-            this.pathPrefix = pathPrefix;
+        public Builder pathPattern(String pathPattern) {
+            this.pathPattern = pathPattern;
             return this;
         }
 
-        String pathPrefix() {
-            return pathPrefix;
+        String pathPattern() {
+            return pathPattern;
         }
 
         @Override
@@ -350,8 +350,8 @@ public class CrossOriginConfig {
 
         @Override
         public String toString() {
-            return String.format("Builder{pathPrefix=%s, enabled=%b, origins=%s, allowHeaders=%s, exposeHeaders=%s, "
-                    + "allowMethods=%s, allowCredentials=%b, maxAgeSeconds=%d", pathPrefix, enabled, Arrays.toString(origins),
+            return String.format("Builder{pathPattern=%s, enabled=%b, origins=%s, allowHeaders=%s, exposeHeaders=%s, "
+                    + "allowMethods=%s, allowCredentials=%b, maxAgeSeconds=%d", pathPattern, enabled, Arrays.toString(origins),
                     Arrays.toString(allowHeaders), Arrays.toString(exposeHeaders), Arrays.toString(allowMethods),
                     allowCredentials, maxAgeSeconds);
         }
