@@ -639,6 +639,28 @@ public interface Multi<T> extends Subscribable<T> {
     }
 
     /**
+     * Resume stream from single item if onComplete signal is intercepted. Effectively do an {@code append} to the stream.
+     *
+     * @param item one item to resume stream with
+     * @return Multi
+     */
+    default Multi<T> onCompleteResume(T item) {
+        Objects.requireNonNull(item, "item is null");
+        return onCompleteResumeWith(Multi.singleton(item));
+    }
+
+    /**
+     * Resume stream from supplied publisher if onComplete signal is intercepted.
+     *
+     * @param publisher new stream publisher
+     * @return Multi
+     */
+    default Multi<T> onCompleteResumeWith(Flow.Publisher<? extends T> publisher) {
+        Objects.requireNonNull(publisher, "publisher is null");
+        return new MultiOnCompleteResumeWith<>(this, publisher);
+    }
+
+    /**
      * Executes given {@link java.lang.Runnable} when any of signals onComplete, onCancel or onError is received.
      *
      * @param onTerminate {@link java.lang.Runnable} to be executed.

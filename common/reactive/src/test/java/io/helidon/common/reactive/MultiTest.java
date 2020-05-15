@@ -381,6 +381,36 @@ public class MultiTest {
     }
 
     @Test
+    void testOnCompleteResume() {
+        List<Integer> result = Multi.just(1, 2, 3)
+                .onCompleteResume(4)
+                .collectList()
+                .await(100, TimeUnit.MILLISECONDS);
+
+        assertThat(result, is(equalTo(List.of(1, 2, 3, 4))));
+    }
+
+    @Test
+    void testOnCompleteResumeWith() {
+        List<Integer> result = Multi.just(1, 2, 3)
+                .onCompleteResumeWith(Multi.just(4, 5, 6))
+                .collectList()
+                .await(100, TimeUnit.MILLISECONDS);
+
+        assertThat(result, is(equalTo(List.of(1, 2, 3, 4, 5, 6))));
+    }
+
+    @Test
+    void testOnCompleteResumeWithFirst() {
+        Integer result = Multi.<Integer>empty()
+                .onCompleteResume(1)
+                .first()
+                .await(100, TimeUnit.MILLISECONDS);
+
+        assertThat(result, is(equalTo(1)));
+    }
+
+    @Test
     void testFlatMap() throws ExecutionException, InterruptedException {
         final List<String> TEST_DATA = Arrays.asList("abc", "xyz");
         final List<String> EXPECTED = Arrays.asList("a", "b", "c", "x", "y", "z");
