@@ -430,7 +430,7 @@ public final class Mp1Main {
 
         JsonArray checks = health.getJsonArray("checks");
         if (checks.size() != 1) {
-            collector.fatal("There should be a readiness healtcheck provided by this app");
+            collector.fatal("There should be a readiness health check provided by this app");
         } else {
             JsonObject check = checks.getJsonObject(0);
             if (!"mp1-ready".equals(check.getString("name"))) {
