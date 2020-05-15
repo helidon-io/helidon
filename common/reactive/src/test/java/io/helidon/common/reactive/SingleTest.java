@@ -15,7 +15,7 @@
  */
 package io.helidon.common.reactive;
 
-import java.util.concurrent.CompletableFuture;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.Flow.Subscription;
@@ -409,6 +409,36 @@ public class SingleTest {
         assertThat(subscriber.isComplete(), is(equalTo(false)));
         assertThat(subscriber.getLastError(), is(instanceOf(IllegalStateException.class)));
         assertThat(subscriber.getItems(), is(empty()));
+    }
+
+    @Test
+    void testOnCompleteResume() {
+        List<Integer> result = Single.just(1)
+                .onCompleteResume(4)
+                .collectList()
+                .await(100, TimeUnit.MILLISECONDS);
+
+        assertThat(result, is(equalTo(List.of(1, 4))));
+    }
+
+    @Test
+    void testOnCompleteResumeWith() {
+        List<Integer> result = Single.just(1)
+                .onCompleteResumeWith(Multi.just(4, 5, 6))
+                .collectList()
+                .await(100, TimeUnit.MILLISECONDS);
+
+        assertThat(result, is(equalTo(List.of(1, 4, 5, 6))));
+    }
+
+    @Test
+    void testOnCompleteResumeWithFirst() {
+        Integer result = Single.<Integer>empty()
+                .onCompleteResume(1)
+                .first()
+                .await(100, TimeUnit.MILLISECONDS);
+
+        assertThat(result, is(equalTo(1)));
     }
 
     private static class SingleTestSubscriber<T> extends TestSubscriber<T> {

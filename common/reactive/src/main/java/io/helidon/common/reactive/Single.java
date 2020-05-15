@@ -356,8 +356,39 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
      * @param onError supplier of new stream publisher
      * @return Single
      */
-    default Single<T> onErrorResumeWith(Function<? super Throwable, ? extends Single<? extends T>> onError) {
+    default Single<T> onErrorResumeWithSingle(Function<? super Throwable, ? extends Single<? extends T>> onError) {
         return new SingleOnErrorResumeWith<>(this, onError);
+    }
+
+    /**
+     * Resume stream from supplied publisher if onError signal is intercepted.
+     *
+     * @param onError supplier of new stream publisher
+     * @return Single
+     */
+    default Multi<T> onErrorResumeWith(Function<? super Throwable, ? extends Flow.Publisher<? extends T>> onError) {
+        return new MultiOnErrorResumeWith<>(Multi.from(this), onError);
+    }
+
+    /**
+     * Resume stream from single item if onComplete signal is intercepted. Effectively do an {@code append} to the stream.
+     *
+     * @param item one item to resume stream with
+     * @return Multi
+     */
+    default Multi<T> onCompleteResume(T item) {
+        Objects.requireNonNull(item, "item is null");
+        return onCompleteResumeWith(Multi.singleton(item));
+    }
+
+    /**
+     * Resume stream from supplied publisher if onComplete signal is intercepted.
+     *
+     * @param publisher new stream publisher
+     * @return Multi
+     */
+    default Multi<T> onCompleteResumeWith(Flow.Publisher<? extends T> publisher) {
+        return new MultiOnCompleteResumeWith<>(Multi.from(this), publisher);
     }
 
     /**

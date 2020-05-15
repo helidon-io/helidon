@@ -16,6 +16,7 @@
 package io.helidon.common.reactive;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -60,6 +61,28 @@ public interface Multi<T> extends Subscribable<T> {
      */
     static <T> Multi<T> concat(Flow.Publisher<T> firstMulti, Flow.Publisher<T> secondMulti) {
         return ConcatPublisher.create(firstMulti, secondMulti);
+    }
+
+    /**
+     * Concat streams to one.
+     *
+     * @param firstMulti  first stream
+     * @param secondMulti second stream
+     * @param publishers  more publishers to concat
+     * @param <T>         item type
+     * @return Multi
+     */
+    @SafeVarargs
+    @SuppressWarnings("varargs")
+    static <T> Multi<T> concat(Flow.Publisher<T> firstMulti, Flow.Publisher<T> secondMulti, Flow.Publisher<T>... publishers) {
+        if (publishers.length == 0) {
+            return concat(firstMulti, secondMulti);
+        } else if (publishers.length == 1) {
+            return concat(concat(firstMulti, secondMulti), publishers[0]);
+        } else {
+            return concat(concat(firstMulti, secondMulti), publishers[0],
+                    Arrays.copyOfRange(publishers, 1, publishers.length));
+        }
     }
 
     /**
@@ -636,6 +659,28 @@ public interface Multi<T> extends Subscribable<T> {
      */
     default Multi<T> onErrorResumeWith(Function<? super Throwable, ? extends Flow.Publisher<? extends T>> onError) {
         return new MultiOnErrorResumeWith<>(this, onError);
+    }
+
+    /**
+     * Resume stream from single item if onComplete signal is intercepted. Effectively do an {@code append} to the stream.
+     *
+     * @param item one item to resume stream with
+     * @return Multi
+     */
+    default Multi<T> onCompleteResume(T item) {
+        Objects.requireNonNull(item, "item is null");
+        return onCompleteResumeWith(Multi.singleton(item));
+    }
+
+    /**
+     * Resume stream from supplied publisher if onComplete signal is intercepted.
+     *
+     * @param publisher new stream publisher
+     * @return Multi
+     */
+    default Multi<T> onCompleteResumeWith(Flow.Publisher<? extends T> publisher) {
+        Objects.requireNonNull(publisher, "publisher is null");
+        return new MultiOnCompleteResumeWith<>(this, publisher);
     }
 
     /**
