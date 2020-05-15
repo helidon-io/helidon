@@ -602,12 +602,6 @@
                 <artifactId>helidon-dbclient-tracing</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
-            <dependency>
-                <groupId>io.helidon.dbclient</groupId>
-                <artifactId>helidon-dbclient-webserver-jsonp</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-
             <!-- db client examples -->
             <dependency>
                 <groupId>io.helidon.examples.dbclient</groupId>

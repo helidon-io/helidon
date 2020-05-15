@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import io.helidon.dbclient.health.DbClientHealthCheck;
 import io.helidon.dbclient.metrics.DbCounter;
 import io.helidon.dbclient.metrics.DbTimer;
 import io.helidon.dbclient.tracing.DbClientTracing;
-import io.helidon.dbclient.webserver.jsonp.DbResultSupport;
 import io.helidon.health.HealthSupport;
 import io.helidon.media.jsonb.common.JsonbSupport;
 import io.helidon.media.jsonp.common.JsonpSupport;
@@ -75,7 +74,6 @@ public final class MongoDbExampleMain {
                 .config(config.get("server"))
                 .tracer(TracerBuilder.create("mongo-db").build())
                 .addMediaSupport(JsonpSupport.create())
-                .addMediaSupport(DbResultSupport.create())
                 .addMediaSupport(JsonbSupport.create())
                 .build();
 

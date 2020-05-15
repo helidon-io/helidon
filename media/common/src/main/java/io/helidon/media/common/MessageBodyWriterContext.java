@@ -303,7 +303,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
                 writer = (MessageBodyWriter<T>) writers.select(type, this);
             }
             if (writer == null) {
-                return writerNotFound(type.getTypeName());
+                throw new IllegalStateException("No writer found for type: " + type);
             }
             return applyFilters(writer.write(content, type, this));
         } catch (Throwable ex) {
@@ -337,7 +337,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
                 writer = (MessageBodyWriter<T>) writers.get(writerType, null);
             }
             if (writer == null) {
-                return writerNotFound(writerType.getTypeName());
+                throw new IllegalStateException("No writer found for type: " + type);
             }
             return applyFilters(writer.write(content, type, this));
         } catch (Throwable ex) {
@@ -368,7 +368,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
                 writer = (MessageBodyStreamWriter<T>) swriters.select(type, this);
             }
             if (writer == null) {
-                return writerNotFound(type.getTypeName());
+                throw new IllegalStateException("No stream writer found for type: " + type);
             }
             return applyFilters(writer.write(content, type, this));
         } catch (Throwable ex) {
@@ -402,7 +402,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
                 writer = (MessageBodyStreamWriter<T>) swriters.get(writerType, null);
             }
             if (writer == null) {
-                return writerNotFound(writerType.getTypeName());
+                throw new IllegalStateException("No stream writer found for type: " + type);
             }
             return applyFilters(writer.write(content, type, this));
         } catch (Throwable ex) {
@@ -550,17 +550,6 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
         charsetCache = DEFAULT_CHARSET;
         charsetCached = true;
         return charsetCache;
-    }
-
-    /**
-     * Create a single that will emit a reader not found error to its subscriber.
-     *
-     * @param <T> publisher item type
-     * @param type reader type that is not found
-     * @return single
-     */
-    private static <T> Single<T> writerNotFound(String type) {
-        return Single.<T>error(new IllegalStateException("No writer found for type: " + type));
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.health.DbClientHealthCheck;
-import io.helidon.dbclient.webserver.jsonp.DbResultSupport;
 import io.helidon.health.HealthSupport;
 import io.helidon.media.jsonb.common.JsonbSupport;
 import io.helidon.media.jsonp.common.JsonpSupport;
@@ -89,21 +88,18 @@ public final class PokemonMain {
 
         WebServer server = WebServer.builder(routing)
                 .addMediaSupport(JsonpSupport.create())
-                .addMediaSupport(DbResultSupport.create())
                 .addMediaSupport(JsonbSupport.create())
                 .config(config.get("server"))
                 .tracer(TracerBuilder.create(config.get("tracing")).build())
                 .build();
 
         // Start the server and print some info.
-        server.start().thenAccept(ws -> {
-            System.out.println(
-                    "WEB server is up! http://localhost:" + ws.port() + "/");
-        });
+        server.start()
+                .thenAccept(ws -> System.out.println("WEB server is up! http://localhost:" + ws.port() + "/"));
 
         // Server threads are not daemon. NO need to block. Just react.
-        server.whenShutdown().thenRun(()
-                                              -> System.out.println("WEB server is DOWN. Good bye!"));
+        server.whenShutdown()
+                .thenRun(() -> System.out.println("WEB server is DOWN. Good bye!"));
 
         return server;
     }

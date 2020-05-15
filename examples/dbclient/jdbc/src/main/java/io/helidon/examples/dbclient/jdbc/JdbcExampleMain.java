@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import java.util.logging.LogManager;
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.health.DbClientHealthCheck;
-import io.helidon.dbclient.webserver.jsonp.DbResultSupport;
 import io.helidon.health.HealthSupport;
 import io.helidon.media.jsonb.common.JsonbSupport;
 import io.helidon.media.jsonp.common.JsonpSupport;
@@ -68,8 +67,6 @@ public final class JdbcExampleMain {
         Config config = Config.create();
 
         // Prepare routing for the server
-        Routing routing = createRouting(config);
-
         WebServer server = WebServer.builder()
                 .routing(createRouting(config))
                 // Get webserver config from the "server" section of application.yaml
@@ -77,7 +74,6 @@ public final class JdbcExampleMain {
                 .tracer(TracerBuilder.create(config.get("tracing")))
                 .addMediaSupport(JsonpSupport.create())
                 .addMediaSupport(JsonbSupport.create())
-                .addMediaSupport(DbResultSupport.create())
                 .build();
 
         // Start the server and print some info.
@@ -87,8 +83,7 @@ public final class JdbcExampleMain {
         });
 
         // Server threads are not daemon. NO need to block. Just react.
-        server.whenShutdown().thenRun(()
-                                              -> System.out.println("WEB server is DOWN. Good bye!"));
+        server.whenShutdown().thenRun(() -> System.out.println("WEB server is DOWN. Good bye!"));
 
         return server;
     }
