@@ -20,8 +20,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
+import io.helidon.common.GenericType;
+import io.helidon.config.spi.ConfigMapper;
+import io.helidon.config.spi.ConfigMapperProvider;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.config.spi.ConfigSource;
@@ -147,6 +153,25 @@ public class MpConfigTest {
         }));
     }
 
+    /**
+     * Ensure mapping services are still enabled when converting configuration from MP to SE.
+     *
+     * @see "https://github.com/oracle/helidon/issues/1802"
+     */
+    @Test
+    public void testMpToHelidonConfigMappingServicesNotDisabled() {
+        var mutable = new MutableConfigSource();
+
+        Config config = ConfigProviderResolver.instance().getBuilder()
+                .withSources(mutable)
+                .build();
+
+        TestMapperProvider.reset(); // reset count so we can properly assert the converted config creates the mappers
+
+        MpConfig.toHelidonConfig(config);
+        assertThat(TestMapperProvider.getCreationCount(), is(1));
+    }
+
     private static class MutableConfigSource implements ConfigSource {
         private final AtomicReference<String> value = new AtomicReference<>("initial");
 
@@ -205,6 +230,42 @@ public class MpConfigTest {
         @Override
         public int hashCode() {
             return Objects.hash(flavor, size);
+        }
+    }
+
+    public static final class TestMapperProvider implements ConfigMapperProvider {
+        private static final AtomicInteger counter = new AtomicInteger();
+
+        public TestMapperProvider() {
+            counter.incrementAndGet();
+        }
+
+        @Override
+        public Map<Class<?>, Function<io.helidon.config.Config, ?>> mappers() {
+            return null;
+        }
+
+        @Override
+        public Map<GenericType<?>, BiFunction<io.helidon.config.Config, ConfigMapper, ?>> genericTypeMappers() {
+            return null;
+        }
+
+        @Override
+        public <T> Optional<Function<io.helidon.config.Config, T>> mapper(final Class<T> type) {
+            return Optional.empty();
+        }
+
+        @Override
+        public <T> Optional<BiFunction<io.helidon.config.Config, ConfigMapper, T>> mapper(final GenericType<T> type) {
+            return Optional.empty();
+        }
+
+        public static int getCreationCount() {
+            return counter.get();
+        }
+
+        public static void reset() {
+            counter.set(0);
         }
     }
 }
