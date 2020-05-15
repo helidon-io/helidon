@@ -118,6 +118,8 @@ Each of these classes has an associated builder you use in constructing instance
 // the header you want used.
 //
 // tag::cors-config-table[]
+// The following subs is needed to force the backtick in the explainer attribute value to work as we want.
+[subs="attributes,quotes"]
 The table below describes
 ifndef::cors-config-table-exclude-methods[]
 {config-table-methods-column-explainer} and

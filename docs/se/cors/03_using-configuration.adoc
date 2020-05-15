@@ -128,7 +128,7 @@ in the application code.
 To use basic or mapped CORS configuration, you add logic to your application to load sections of configuration
 using the keys for those sections, and 
 use the loaded config to build `CrossOriginConfig` instances. (See
-<<se/cors/02_using-the-api.adoc#intro-quick-start-code-example, `Sample Routing Setup Using the CrossOriginConfig API>>.)
+<<se/cors/02_using-the-api.adoc#intro-quick-start-code-example, Sample Routing Setup Using the CrossOriginConfig API>>.)
 
 You can create
 a `CrossOriginConfig` instance directly from a config node, as shown in this example.
