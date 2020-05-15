@@ -34,7 +34,7 @@ class Loader {
             config.get("enabled")
                     .asBoolean()
                     .ifPresent(builder::enabled);
-            config.get("path-prefix")
+            config.get("path-expr")
                     .asString()
                     .ifPresent(builder::pathPrefix);
             config.get("allow-origins")

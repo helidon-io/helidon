@@ -30,10 +30,10 @@
  *   cors:
  *     enabled: true # this is the default
  *     paths:
- *       - path-prefix: /cors1
+ *       - path-expr: /cors1
  *         allow-origins: ["*"]
  *         allow-methods: ["*"]
- *       - path-prefix: /cors2
+ *       - path-expr: /cors2
  *         allow-origins: ["http://foo.bar", "http://bar.foo"]
  *         allow-methods: ["DELETE", "PUT"]
  *         allow-headers: ["X-bar", "X-foo"]
