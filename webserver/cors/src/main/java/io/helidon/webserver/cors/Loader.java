@@ -34,9 +34,9 @@ class Loader {
             config.get("enabled")
                     .asBoolean()
                     .ifPresent(builder::enabled);
-            config.get("path-expr")
+            config.get("path-pattern")
                     .asString()
-                    .ifPresent(builder::pathExpr);
+                    .ifPresent(builder::pathPattern);
             config.get("allow-origins")
                     .asList(String.class)
                     .ifPresent(
@@ -91,14 +91,14 @@ class Loader {
                  * process of matching request paths against paths in the mapped CORS instance will use any more specific path
                  * expressions before the wildcard.
                  */
-                if (basicBuilder.pathExpr().equals(PATHLESS_KEY)) {
+                if (basicBuilder.pathPattern().equals(PATHLESS_KEY)) {
                     allPathsBuilder = basicBuilder;
                 } else {
-                    builder.put(basicBuilder.pathExpr(), basicBuilder);
+                    builder.put(basicBuilder.pathPattern(), basicBuilder);
                 }
             } while (true);
             if (allPathsBuilder != null) {
-                builder.put(allPathsBuilder.pathExpr(), allPathsBuilder);
+                builder.put(allPathsBuilder.pathPattern(), allPathsBuilder);
             }
             return builder;
         }
