@@ -19,6 +19,7 @@ import java.nio.ByteBuffer;
 import java.util.List;
 
 import io.helidon.common.http.Utils;
+import io.helidon.media.multipart.common.VirtualBuffer.BufferEntry;
 
 import org.junit.jupiter.api.Test;
 
@@ -103,9 +104,9 @@ public class VirtualBufferTest {
     public void singleBufferSliceTest() {
         VirtualBuffer buf = new VirtualBuffer();
         buf.offer(ByteBuffer.wrap("xxxfoo".getBytes()), 0);
-        List<ByteBuffer> slices = buf.slice(3, 6);
+        List<BufferEntry> slices = buf.slice(3, 6);
         assertThat(slices.size(), is(equalTo(1)));
-        ByteBuffer bb = slices.get(0);
+        ByteBuffer bb = slices.get(0).buffer();
         assertThat(new String(Utils.toByteArray(bb)), is(equalTo("foo")));
     }
 
@@ -113,9 +114,9 @@ public class VirtualBufferTest {
     public void singleBufferWithOffsetSliceTest() {
         VirtualBuffer buf = new VirtualBuffer();
         buf.offer(ByteBuffer.wrap("xxxfoo".getBytes()), 3);
-        List<ByteBuffer> slices = buf.slice(0, 3);
+        List<BufferEntry> slices = buf.slice(0, 3);
         assertThat(slices.size(), is(equalTo(1)));
-        ByteBuffer bb = slices.get(0);
+        ByteBuffer bb = slices.get(0).buffer();
         assertThat(new String(Utils.toByteArray(bb)), is(equalTo("foo")));
     }
 
@@ -124,9 +125,9 @@ public class VirtualBufferTest {
         VirtualBuffer buf = new VirtualBuffer();
         buf.offer(ByteBuffer.wrap("xxx".getBytes()), 0);
         buf.offer(ByteBuffer.wrap("foo".getBytes()), 0);
-        List<ByteBuffer> slices = buf.slice(3, 6);
+        List<BufferEntry> slices = buf.slice(3, 6);
         assertThat(slices.size(), is(equalTo(1)));
-        ByteBuffer bb = slices.get(0);
+        ByteBuffer bb = slices.get(0).buffer();
         assertThat(new String(Utils.toByteArray(bb)), is(equalTo("foo")));
     }
 
@@ -137,16 +138,16 @@ public class VirtualBufferTest {
         byte[] bytes2 = "obarxxx".getBytes();
         buf.offer(ByteBuffer.wrap(bytes1), 0);
         buf.offer(ByteBuffer.wrap(bytes2), 3);
-        List<ByteBuffer> slices1 = buf.slice(0, 3);
+        List<BufferEntry> slices1 = buf.slice(0, 3);
         assertThat(slices1.size(), is(equalTo(2)));
-        ByteBuffer bb1 = slices1.get(0);
-        ByteBuffer bb2 = slices1.get(1);
+        ByteBuffer bb1 = slices1.get(0).buffer();
+        ByteBuffer bb2 = slices1.get(1).buffer();
         assertThat(new String(Utils.toByteArray(bb1)), is(equalTo("fo")));
         assertThat(new String(Utils.toByteArray(bb2)), is(equalTo("o")));
 
-        List<ByteBuffer> slices2 = buf.slice(3, 6);
+        List<BufferEntry> slices2 = buf.slice(3, 6);
         assertThat(slices2.size(), is(equalTo(1)));
-        ByteBuffer barSlice = slices2.get(0);
+        ByteBuffer barSlice = slices2.get(0).buffer();
         int barSlicePos = barSlice.position();
         assertThat(new String(Utils.toByteArray(barSlice)), is(equalTo("bar")));
 
@@ -167,17 +168,17 @@ public class VirtualBufferTest {
                 + "body 1.aaaa\n").getBytes()), 0);
         assertThat(buf.length(),  is(equalTo(42)));
         assertThat(new String(buf.getBytes(11, 17)), is(equalTo("Content-Id: part1")));
-        List<ByteBuffer> slices1 = buf.slice(30, 31);
+        List<BufferEntry> slices1 = buf.slice(30, 31);
         assertThat(slices1.size(), is(equalTo(1)));
-        ByteBuffer bb1 = slices1.get(0);
+        ByteBuffer bb1 = slices1.get(0).buffer();
         assertThat(new String(Utils.toByteArray(bb1)), is(equalTo("b")));
 
         buf.offer(ByteBuffer.wrap("body 1.bbbb\n".getBytes()), 31);
         assertThat(buf.length(), is(equalTo(23)));
-        List<ByteBuffer> slices2 = buf.slice(0, 12);
+        List<BufferEntry> slices2 = buf.slice(0, 12);
         assertThat(slices2.size(), is(equalTo(2)));
-        ByteBuffer bb2 = slices2.get(0);
-        ByteBuffer bb3 = slices2.get(1);
+        ByteBuffer bb2 = slices2.get(0).buffer();
+        ByteBuffer bb3 = slices2.get(1).buffer();
         assertThat(new String(Utils.toByteArray(bb2)), is(equalTo("ody 1.aaaa\n")));
         assertThat(new String(Utils.toByteArray(bb3)), is(equalTo("b")));
 
@@ -189,25 +190,25 @@ public class VirtualBufferTest {
         assertThat(buf.length(),  is(equalTo(68)));
         assertThat(buf.buffersCount(), is(equalTo(2)));
         assertThat(new String(buf.getBytes(34, 17)), is(equalTo("Content-Id: part2")));
-        List<ByteBuffer> slices3 = buf.slice(0, 22);
+        List<BufferEntry> slices3 = buf.slice(0, 22);
         assertThat(slices3.size(), is(equalTo(2)));
-        ByteBuffer bb4 = slices3.get(0);
-        ByteBuffer bb5 = slices3.get(1);
+        ByteBuffer bb4 = slices3.get(0).buffer();
+        ByteBuffer bb5 = slices3.get(1).buffer();
         assertThat(new String(Utils.toByteArray(bb4)), is(equalTo("ody 1.bbbb\n")));
         assertThat(new String(Utils.toByteArray(bb5)), is(equalTo("body 1.cccc")));
-        List<ByteBuffer> slices4 = buf.slice(53, 57);
+        List<BufferEntry> slices4 = buf.slice(53, 57);
         assertThat(slices4.size(), is(equalTo(1)));
-        ByteBuffer bb6 = slices4.get(0);
+        ByteBuffer bb6 = slices4.get(0).buffer();
         assertThat(new String(Utils.toByteArray(bb6)), is(equalTo("This")));
 
         buf.offer(ByteBuffer.wrap((" body.\n"
                 + "--boundary--").getBytes()), 33);
         assertThat(buf.length(), is(equalTo(54)));
         assertThat(buf.buffersCount(), is(equalTo(2)));
-        List<ByteBuffer> slices5 = buf.slice(24, 41);
+        List<BufferEntry> slices5 = buf.slice(24, 41);
         assertThat(slices5.size(), is(equalTo(2)));
-        ByteBuffer bb7 = slices5.get(0);
-        ByteBuffer bb8 = slices5.get(1);
+        ByteBuffer bb7 = slices5.get(0).buffer();
+        ByteBuffer bb8 = slices5.get(1).buffer();
         assertThat(new String(Utils.toByteArray(bb7)), is(equalTo(" is the 2nd")));
         assertThat(new String(Utils.toByteArray(bb8)), is(equalTo(" body.")));
     }

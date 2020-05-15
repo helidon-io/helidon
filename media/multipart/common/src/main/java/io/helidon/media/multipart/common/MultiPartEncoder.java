@@ -26,6 +26,7 @@ import java.util.concurrent.Flow.Subscription;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.reactive.OriginThreadPublisher;
+import io.helidon.common.reactive.SubscriptionHelper;
 import io.helidon.media.common.MessageBodyWriterContext;
 
 /**
@@ -35,7 +36,7 @@ import io.helidon.media.common.MessageBodyWriterContext;
  */
 public final class MultiPartEncoder implements Processor<WriteableBodyPart, DataChunk> {
 
-    private Subscription partsSubscription;
+    private Subscription upstream;
     private BodyPartContentSubscriber contentSubscriber;
 
     /**
@@ -89,10 +90,8 @@ public final class MultiPartEncoder implements Processor<WriteableBodyPart, Data
 
     @Override
     public void onSubscribe(Subscription subscription) {
-        if (partsSubscription != null) {
-            throw new IllegalStateException("Input subscription already set");
-        }
-        partsSubscription = subscription;
+        SubscriptionHelper.validate(upstream, subscription);
+        this.upstream = subscription;
     }
 
     @Override
@@ -139,7 +138,7 @@ public final class MultiPartEncoder implements Processor<WriteableBodyPart, Data
      */
     void onPartComplete() {
         if (complete) {
-            downstream.submit(DataChunk.create(ByteBuffer.wrap(MIMEParser.getBytes("--" + boundary + "--"))));
+            downstream.submit(DataChunk.create(ByteBuffer.wrap(MimeParser.getBytes("--" + boundary + "--"))));
             downstream.complete();
         } else {
             downstream.requestNext();
@@ -158,7 +157,7 @@ public final class MultiPartEncoder implements Processor<WriteableBodyPart, Data
         void requestNext() {
             long n = tryAcquire();
             if (n > 0){
-                partsSubscription.request(1);
+                upstream.request(1);
                 if (contentSubscriber != null) {
                     contentSubscriber.request(n);
                 }
@@ -168,7 +167,7 @@ public final class MultiPartEncoder implements Processor<WriteableBodyPart, Data
         @Override
         protected void hookOnRequested(long n, long result) {
             if (tryAcquire() > 0) {
-                partsSubscription.request(1);
+                upstream.request(1);
                 if (contentSubscriber != null) {
                     contentSubscriber.request(n);
                 }

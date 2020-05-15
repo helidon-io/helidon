@@ -17,10 +17,8 @@ package io.helidon.media.multipart.common;
 
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.Arrays;
 import java.util.LinkedList;
-import java.util.List;
 
 /**
  * A virtual buffer to work against multiple consecutive {@link ByteBuffer}.
@@ -30,24 +28,44 @@ import java.util.List;
  * Data can be consumed using {@link #slice(int, int)}.
  * </p>
  * <p>
- * Buffers are accumulated in a {@link LinkedList} using
- * {@link #offer(ByteBuffer, int)}, the buffers before the specified offset are
- * automatically removed from the list.
+ * Buffers are accumulated using {@link #offer(ByteBuffer, int)}, the buffers before the specified offset are
+ * automatically removed discarded.
  * </p>
  */
 final class VirtualBuffer {
 
-    private final LinkedList<ByteBuffer> buffers;
-    private int offset;
-    private int length;
+    private static final int DEFAULT_CAPACITY = 8;
+
+    private ByteBuffer[] buffers;
+    private int[] bufferIds;
+    private int count;
+    private int startIndex;
+    private int endIndex;
+    private int voffset;
+    private int vlength;
+    private int nextId;
 
     /**
      * Create a new virtual buffer.
+     * @param capacity the buffer size
+     */
+    private VirtualBuffer(int initialCapacity) {
+        bufferIds = new int[initialCapacity];
+        buffers = new ByteBuffer[initialCapacity];
+        voffset = 0;
+        vlength = 0;
+        nextId = 0;
+        count = 0;
+        startIndex = 0;
+        endIndex = 0;
+    }
+
+    /**
+     * Create a new virtual buffer.
+     * @param capacity the buffer size
      */
     VirtualBuffer() {
-        offset = 0;
-        length = 0;
-        buffers = new LinkedList<>();
+        this(DEFAULT_CAPACITY);
     }
 
     /**
@@ -55,7 +73,7 @@ final class VirtualBuffer {
      * @return buffer length
      */
     int length() {
-        return length;
+        return vlength;
     }
 
     /**
@@ -63,7 +81,21 @@ final class VirtualBuffer {
      * @return buffer count
      */
     int buffersCount() {
-        return buffers.size();
+        return count;
+    }
+
+    /**
+     * Remove all the underlying {@link ByteBuffer}.
+     */
+    void clear() {
+        Arrays.fill(buffers, null);
+        Arrays.fill(bufferIds, 0);
+        voffset = 0;
+        vlength = 0;
+        nextId = 0;
+        count = 0;
+        startIndex = 0;
+        endIndex = 0;
     }
 
     /**
@@ -74,30 +106,44 @@ final class VirtualBuffer {
      * @throws IllegalStateException if buffer corresponding to the new offset
      * position cannot be found
      * @throws IllegalArgumentException if offset is negative
+     * @return buffer id
      */
-    void offer(ByteBuffer buffer, int newOffset) {
+    int offer(ByteBuffer buffer, int newOffset) {
         if (newOffset < 0) {
             throw new IllegalArgumentException("Negative offset: " + newOffset);
         }
-        buffers.offer(buffer.asReadOnlyBuffer());
-        length = length + buffer.limit() - newOffset;
-        Iterator<ByteBuffer> it = buffers.iterator();
+        if (buffers.length == count) {
+            doubleCapacity();
+        }
+        buffers[endIndex] = buffer.asReadOnlyBuffer();
+        bufferIds[endIndex] = ++nextId;
+        if (nextId == Integer.MAX_VALUE) {
+            nextId = 0;
+        }
+        count++;
+        endIndex = nextBufferIndex(endIndex);
+        vlength = vlength + buffer.limit() - newOffset;
         int pos = 0; // absolute position for current buffer start
-        int off = offset + newOffset; // new absolute offset with current buffers
+        int off = voffset + newOffset; // new absolute offset with current buffers
         boolean found = false;
-        while (it.hasNext() && pos <= off) {
-            int nextPosition = pos + it.next().limit();
+        for (int i = startIndex ; isBufferIndex(i) && pos <= off ; i = nextBufferIndex(i)) {
+            int nextPosition = pos + buffers[i].limit();
             if (nextPosition >= off) {
-                offset = off - pos;
+                voffset = off - pos;
                 found = true;
                 break;
             }
             pos = nextPosition;
-            it.remove();
+            // remove
+            buffers[i] = null;
+            bufferIds[i] = 0;
+            count--;
+            startIndex = nextBufferIndex(startIndex);
         }
         if (!found) {
             throw new IllegalStateException("Unable to find new absolute position for offset: " + newOffset);
         }
+        return nextId;
     }
 
     /**
@@ -109,12 +155,13 @@ final class VirtualBuffer {
      * and length parameters do not hold
      */
     byte getByte(int index) {
-        if (index < 0 || index >= length) {
+        if (index < 0 || index >= vlength) {
             throw new IndexOutOfBoundsException("Invalid index: " + index);
         }
         int pos = 0; // absolute position for current buffer start
-        int off = offset + index; // actual offset
-        for (ByteBuffer buffer : buffers) {
+        int off = voffset + index; // actual offset
+        for (int i = startIndex ; isBufferIndex(i) ; i = nextBufferIndex(i)) {
+            ByteBuffer buffer = buffers[i];
             int nextPos = pos + buffer.limit();
             if (nextPos > off) {
                 return buffer.get(off - pos);
@@ -141,22 +188,23 @@ final class VirtualBuffer {
         checkBounds(begin, begin + len - 1);
         byte[] dst = new byte[len];
         int pos = 0; // absolute position for current buffer start
-        int count = 0; // written bytes count
-        int off = offset + begin; // actual offset
-        for (ByteBuffer buffer : buffers) {
+        int nbytes = 0; // written bytes count
+        int off = voffset + begin; // actual offset
+        for (int i = startIndex ; isBufferIndex(i) ; i = nextBufferIndex(i)) {
+            ByteBuffer buffer = buffers[i];
             int nextPos = pos + buffer.limit();
             int index;
-            while (count < len) {
-                index = off + count;
+            while (nbytes < len) {
+                index = off + nbytes;
                 if (index >= nextPos) {
                     break;
                 }
-                dst[count] = buffer.get(index - pos);
-                count++;
+                dst[nbytes] = buffer.get(index - pos);
+                nbytes++;
             }
             pos = nextPos;
         }
-        if (count < len - 1) {
+        if (nbytes < len - 1) {
             throw new BufferUnderflowException();
         }
         return dst;
@@ -167,18 +215,19 @@ final class VirtualBuffer {
      *
      * @param begin begin index
      * @param end end index
-     * @return ByteBuffer
+     * @return read only byte buffers for the slice mapped to their original buffer ids
      * @throws IndexOutOfBoundsException - If the preconditions on the offset
      * and length parameters do not hold
      */
-    List<ByteBuffer> slice(int begin, int end) {
+    LinkedList<BufferEntry> slice(int begin, int end) {
         checkBounds(begin, end);
-        List<ByteBuffer> slices = new ArrayList<>();
+        LinkedList<BufferEntry> slices = new LinkedList<>();
         int len = end - begin;
         int pos = 0; // absolute position for current buffer start
-        int count = 0; // sliced bytes count
-        int off = offset + begin; // actual offset
-        for (ByteBuffer buffer : buffers) {
+        int nslices = 0; // sliced bytes count
+        int off = voffset + begin; // actual offset
+        for (int i = startIndex ; isBufferIndex(i) ; i = nextBufferIndex(i)) {
+            ByteBuffer buffer = buffers[i];
             int limit = buffer.limit();
             int nextPos = pos + limit;
             if (off < nextPos) {
@@ -186,18 +235,91 @@ final class VirtualBuffer {
                 ByteBuffer slice = buffer.asReadOnlyBuffer();
                 int index = off < pos ? 0 : off - pos;
                 slice.position(index);
-                slices.add(slice);
+                slices.add(new BufferEntry(slice, bufferIds[i]));
                 if (off + len <= nextPos) {
                     // last slice
-                    slice.limit(index + len - count);
+                    slice.limit(index + len - nslices);
                     return slices;
                 } else {
-                    count += (limit - index);
+                    nslices += (limit - index);
                 }
             }
             pos = nextPos;
         }
         throw new BufferUnderflowException();
+    }
+
+    /**
+     * A virtual buffer entry.
+     */
+    static final class BufferEntry {
+
+        private final ByteBuffer buffer;
+        private final int id;
+
+        private BufferEntry(ByteBuffer buffer, int id) {
+            this.buffer = buffer;
+            this.id = id;
+        }
+
+        /**
+         * Get the byte buffer.
+         * @return ByteBuffer
+         */
+        ByteBuffer buffer() {
+            return buffer;
+        }
+
+        /**
+         * Get the mapped id.
+         * @return id
+         */
+        int id() {
+            return id;
+        }
+    }
+
+    /**
+     * Double the size of the underlying arrays.
+     */
+    private void doubleCapacity() {
+        ByteBuffer[] newBuffers = new ByteBuffer[buffers.length * 2];
+        int[] newIds = new int[buffers.length * 2];
+        int count1 = count - (startIndex + 1);
+        int count2 = count - count1;
+        System.arraycopy(buffers, startIndex, newBuffers, 0, count1);
+        System.arraycopy(buffers, 0, newBuffers, count1, count2);
+        System.arraycopy(bufferIds, startIndex, newIds, 0, count1);
+        System.arraycopy(bufferIds, 0, newIds, count1, count2);
+        buffers = newBuffers;
+        bufferIds = newIds;
+        startIndex = 0;
+        endIndex = count - 1;
+    }
+
+    /**
+     * Test if the given index is a valid buffer index.
+     * @param index index to test
+     * @return {@code true} if a valid index
+     */
+    private boolean isBufferIndex(int index) {
+        if (endIndex > startIndex) {
+            return index < endIndex && index >= startIndex;
+        }
+        return index < endIndex || index >= startIndex;
+    }
+
+    /**
+     * Compute the next buffer index.
+     * @param index current index
+     * @return next circular index
+     */
+    private int nextBufferIndex(int index) {
+        if (index + 1 == buffers.length) {
+            return 0;
+        } else {
+            return index + 1;
+        }
     }
 
     /**
@@ -210,17 +332,10 @@ final class VirtualBuffer {
      * and length parameters do not hold
      */
     private void checkBounds(int begin, int end) {
-        if (!(begin >= 0 && begin < length)
-                || !(end > 0 && end <= length)
+        if (!(begin >= 0 && begin < vlength)
+                || !(end > 0 && end <= vlength)
                 || begin > end) {
             throw new IndexOutOfBoundsException("Invalid range, begin=" + begin + ", end=" + end);
         }
-    }
-
-    /**
-     * Remove all the underlying {@link ByteBuffer}.
-     */
-    void close() {
-        buffers.clear();
     }
 }

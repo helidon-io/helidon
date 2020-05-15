@@ -15,6 +15,7 @@
  */
 package io.helidon.media.multipart.common;
 
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.concurrent.CompletableFuture;
@@ -153,7 +154,7 @@ public class MultiPartDecoderTest {
             });
         };
         BodyPartSubscriber testSubscriber = new BodyPartSubscriber(SUBSCRIBER_TYPE.INFINITE, consumer);
-        partsPublisher(boundary, chunk1, chunk2).subscribe(testSubscriber);
+        partsPublisher(boundary, List.of(chunk1, chunk2)).subscribe(testSubscriber);
         waitOnLatch(latch);
         assertThat(testSubscriber.error, is(nullValue()));
         assertThat(testSubscriber.complete, is(equalTo(true)));
@@ -185,7 +186,7 @@ public class MultiPartDecoderTest {
             });
         };
         BodyPartSubscriber testSubscriber = new BodyPartSubscriber(SUBSCRIBER_TYPE.INFINITE, consumer);
-        partsPublisher(boundary, chunk1, chunk2, chunk3, chunk4, chunk5).subscribe(testSubscriber);
+        partsPublisher(boundary, List.of(chunk1, chunk2, chunk3, chunk4, chunk5)).subscribe(testSubscriber);
         waitOnLatch(latch);
         assertThat(testSubscriber.error, is(nullValue()));
         assertThat(testSubscriber.complete, is(equalTo(true)));
@@ -279,7 +280,7 @@ public class MultiPartDecoderTest {
         partsPublisher(boundary, chunk1).subscribe(testSubscriber);
         assertThat(testSubscriber.complete, is(equalTo(false)));
         assertThat(testSubscriber.error, is(notNullValue()));
-        assertThat(testSubscriber.error.getClass(), is(equalTo(MIMEParser.ParsingException.class)));
+        assertThat(testSubscriber.error.getClass(), is(equalTo(MimeParser.ParsingException.class)));
         assertThat(testSubscriber.error.getMessage(), is(equalTo("No closing MIME boundary")));
     }
 
@@ -338,7 +339,7 @@ public class MultiPartDecoderTest {
             }
         };
         BodyPartSubscriber testSubscriber = new BodyPartSubscriber(SUBSCRIBER_TYPE.ONE_BY_ONE, consumer);
-        partsPublisher(boundary, chunk1, chunk2, chunk3, chunk4).subscribe(testSubscriber);
+        partsPublisher(boundary, List.of(chunk1, chunk2, chunk3, chunk4)).subscribe(testSubscriber);
         waitOnLatch(latch);
         assertThat(testSubscriber.error, is(nullValue()));
         assertThat(testSubscriber.complete, is(equalTo(true)));
@@ -388,7 +389,7 @@ public class MultiPartDecoderTest {
             });
         };
         BodyPartSubscriber testSubscriber = new BodyPartSubscriber(SUBSCRIBER_TYPE.ONE_BY_ONE, consumer);
-        partsPublisher(boundary, chunk1, chunk2, chunk3, chunk4).subscribe(testSubscriber);
+        partsPublisher(boundary, List.of(chunk1, chunk2, chunk3, chunk4)).subscribe(testSubscriber);
         waitOnLatchNegative(latch, "the 2nd part should not be processed");
         assertThat(latch.getCount(), is(equalTo(1L)));
         assertThat(testSubscriber.error, is(nullValue()));
@@ -419,7 +420,7 @@ public class MultiPartDecoderTest {
             chunksPublisher("bar".getBytes()).subscribe(decoder);
             fail("exception should be thrown");
         } catch(IllegalStateException ex) {
-            assertThat(ex.getMessage(), is(equalTo("Input subscription already set")));
+            assertThat(ex.getMessage(), is(equalTo("Flow.Subscription already set.")));
         }
     }
 
@@ -483,15 +484,24 @@ public class MultiPartDecoderTest {
     }
 
     /**
-     * Create the parts publisher for the specified boundary and request
-     * chunks.
+     * Create the parts publisher for the specified boundary and request chunk.
      * @param boundary multipart boundary string
-     * @param chunks request chunks
+     * @param data data for the chunk
      * @return publisher of body parts
      */
-    static Publisher<? extends BodyPart> partsPublisher(String boundary, byte[]... chunks) {
+    static Publisher<? extends BodyPart> partsPublisher(String boundary, byte[] data) {
+        return partsPublisher(boundary, List.of(data));
+    }
+
+    /**
+     * Create the parts publisher for the specified boundary and request chunks.
+     * @param boundary multipart boundary string
+     * @param data data for the chunks
+     * @return publisher of body parts
+     */
+    static Publisher<? extends BodyPart> partsPublisher(String boundary, List<byte[]> data) {
         MultiPartDecoder decoder = MultiPartDecoder.create(boundary, MEDIA_CONTEXT.readerContext());
-        chunksPublisher(chunks).subscribe(decoder);
+        chunksPublisher(data).subscribe(decoder);
         return decoder;
     }
 
@@ -529,16 +539,31 @@ public class MultiPartDecoderTest {
     }
 
     /**
-     * A subscriber of data chunk that accumulates bytes to a single String.
+     * Build a publisher of {@link DataChunk} from a single {@code byte[]}.
+     * @param bytes data for the chunk to create
+     * @return publisher
      */
-    static Publisher<DataChunk> chunksPublisher(byte[]... bytes) {
-        DataChunk[] chunks = new DataChunk[bytes.length];
-        for (int i=0 ; i < bytes.length ; i++) {
-            chunks[i] = DataChunk.create(bytes[i]);
+    static Publisher<DataChunk> chunksPublisher(byte[] bytes) {
+        return chunksPublisher(List.of(bytes));
+    }
+
+    /**
+     * Build a publisher of {@link DataChunk} from a list of {@code byte[]}.
+     * @param data data for the chunks to create
+     * @return publisher
+     */
+    static Publisher<DataChunk> chunksPublisher(List<byte[]> data) {
+        DataChunk[] chunks = new DataChunk[data.size()];
+        int i = 0;
+        for (byte[] bytes : data) {
+            chunks[i++] = DataChunk.create(bytes);
         }
         return Multi.just(chunks);
     }
 
+    /**
+     * A subscriber of data chunk that accumulates bytes to a single String.
+     */
     static final class DataChunkSubscriber implements Subscriber<DataChunk> {
 
         private final StringBuilder sb = new StringBuilder();

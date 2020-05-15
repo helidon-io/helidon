@@ -57,14 +57,9 @@ public final class MultiPartBodyReader implements MessageBodyReader<MultiPart> {
     public <U extends MultiPart> Single<U> read(Publisher<DataChunk> publisher,
             GenericType<U> type, MessageBodyReaderContext context) {
 
-        String boundary = null;
-        MediaType contentType = context.contentType().orElse(null);
-        if (contentType != null) {
-            boundary = contentType.parameters().get("boundary");
-        }
-        if (boundary == null) {
-            throw new IllegalStateException("boundary header is missing");
-        }
+        String boundary = context.contentType()
+                .map((ct) -> ct.parameters().get("boundary"))
+                .orElseThrow(() -> new IllegalStateException("boundary header is missing"));
         MultiPartDecoder decoder = MultiPartDecoder.create(boundary, context);
         publisher.subscribe(decoder);
         return (Single<U>) Multi.from(decoder).collect(new PartsCollector());

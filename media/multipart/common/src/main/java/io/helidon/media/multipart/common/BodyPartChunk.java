@@ -16,26 +16,21 @@
 package io.helidon.media.multipart.common;
 
 import java.nio.ByteBuffer;
-import java.util.Objects;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.common.http.DataChunk;
 
 /**
- * Data chunk with data referencing slices of a parent chunk.
+ * Body part data chunk.
+ * If the parent is non {@code null}, it will be released upon invocation of {@link #release()}.
  */
 final class BodyPartChunk implements DataChunk {
 
-    private final Parent parent;
+    private final DataChunk parent;
     private final ByteBuffer data;
-    private final AtomicBoolean released;
 
-    BodyPartChunk(Parent parent, ByteBuffer data) {
-        this.parent = Objects.requireNonNull(parent, "parent cannot be null!");
-        parent.refCount.incrementAndGet();
+    BodyPartChunk(ByteBuffer data, DataChunk parent) {
+        this.parent = parent;
         this.data = data;
-        this.released = new AtomicBoolean(false);
     }
 
     @Override
@@ -45,26 +40,8 @@ final class BodyPartChunk implements DataChunk {
 
     @Override
     public void release() {
-        if (released.compareAndSet(false, true)) {
-            if (parent.refCount.decrementAndGet() <= 0) {
-                parent.delegate.release();
-            }
-        }
-    }
-
-    /**
-     * Parent chunk holder with a reference count so that it can be released
-     * when all the sub-chunks are released since they share the same underlying
-     * buffer.
-     */
-    static final class Parent {
-
-        private final DataChunk delegate;
-        private final AtomicInteger refCount;
-
-        Parent(DataChunk delegate) {
-            this.delegate = delegate;
-            refCount = new AtomicInteger(0);
+        if (parent != null) {
+            parent.release();
         }
     }
 }

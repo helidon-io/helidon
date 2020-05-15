@@ -106,7 +106,7 @@ public class MultiPartEncoderTest {
             Multi.just(EMPTY_PARTS).subscribe(encoder);
             fail("exception should be thrown");
         } catch(IllegalStateException ex) {
-            assertThat(ex.getMessage(), is(equalTo("Input subscription already set")));
+            assertThat(ex.getMessage(), is(equalTo("Flow.Subscription already set.")));
         }
     }
 

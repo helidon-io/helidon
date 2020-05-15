@@ -21,6 +21,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import javax.json.Json;
 import javax.json.JsonArrayBuilder;
@@ -55,7 +56,7 @@ public final class FileService implements Service {
      */
     FileService() {
         jsonFactory = Json.createBuilderFactory(Map.of());
-        storage = wrap(() -> Files.createTempDirectory("fileupload"));
+        storage = createStorage();
         System.out.println("Storage: " + storage);
     }
 
@@ -68,11 +69,7 @@ public final class FileService implements Service {
 
     private void list(ServerRequest req, ServerResponse res) {
         JsonArrayBuilder arrayBuilder = jsonFactory.createArrayBuilder();
-        wrap(() -> Files.walk(storage))
-                .filter(Files::isRegularFile)
-                .map(storage::relativize)
-                .map(Path::toString)
-                .forEach(arrayBuilder::add);
+        listFiles(storage).forEach(arrayBuilder::add);
         res.send(jsonFactory.createObjectBuilder().add("files", arrayBuilder).build());
     }
 
@@ -110,9 +107,7 @@ public final class FileService implements Service {
     private void bufferedUpload(ServerRequest req, ServerResponse res) {
         req.content().as(ReadableMultiPart.class).thenAccept(multiPart -> {
             for (ReadableBodyPart part : multiPart.fields("file[]")) {
-                part.headers().contentDisposition().filename().map(storage::resolve).ifPresent((file) -> {
-                    wrap(() -> Files.write(file, part.as(byte[].class), StandardOpenOption.CREATE_NEW));
-                });
+                writeBytes(storage, part.filename(), part.as(byte[].class));
             }
             res.status(Http.Status.MOVED_PERMANENTLY_301);
             res.headers().put(Http.Header.LOCATION, "/ui");
@@ -123,12 +118,10 @@ public final class FileService implements Service {
     private void streamUpload(ServerRequest req, ServerResponse res) {
         req.content().asStream(ReadableBodyPart.class).subscribe((part) -> {
             // onNext
-            part.headers().contentDisposition().filename().map(storage::resolve).ifPresent((file) -> {
-                final ByteChannel channel = wrap(() -> Files.newByteChannel(file, StandardOpenOption.CREATE_NEW));
-                Multi.from(part.content())
-                        .map(DataChunk::data)
-                        .forEach((buffer) -> wrap(() -> channel.write(buffer)));
-            });
+            if ("file[]".equals(part.name())) {
+                final ByteChannel channel = newByteChannel(storage, part.filename());
+                Multi.from(part.content()).forEach(chunk -> writeChunk(channel, chunk));
+            }
         }, (error) -> {
             // onError
             res.send(error);
@@ -140,15 +133,54 @@ public final class FileService implements Service {
         });
     }
 
-    private static <T> T wrap(IOSupplier<T> supplier) {
+    private static Path createStorage() {
         try {
-            return supplier.get();
+            return Files.createTempDirectory("fileupload");
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
     }
 
-    private interface IOSupplier<T> {
-        T get() throws IOException;
+    private static Stream<String> listFiles(Path storage) {
+        try {
+            return Files.walk(storage)
+                    .filter(Files::isRegularFile)
+                    .map(storage::relativize)
+                    .map(Path::toString);
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private static void writeBytes(Path storage, String fname, byte[] bytes) {
+        try {
+            Files.write(storage.resolve(fname), bytes,
+                    StandardOpenOption.CREATE,
+                    StandardOpenOption.WRITE,
+                    StandardOpenOption.TRUNCATE_EXISTING);
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private static void writeChunk(ByteChannel channel, DataChunk chunk) {
+        try {
+            channel.write(chunk.data());
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        } finally {
+            chunk.release();
+        }
+    }
+
+    private static ByteChannel newByteChannel(Path storage, String fname) {
+        try {
+            return Files.newByteChannel(storage.resolve(fname),
+                    StandardOpenOption.CREATE,
+                    StandardOpenOption.WRITE,
+                    StandardOpenOption.TRUNCATE_EXISTING);
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
     }
 }
