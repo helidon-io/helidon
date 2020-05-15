@@ -27,7 +27,6 @@ public class BeanClass {
     @Produces
     @RequestScoped
     public BeanType produceBeanType(@ConfigProperty(name = "app.message") String message) {
-        System.out.println("Producing in request scoped.");
         return new BeanType(message);
     }
 

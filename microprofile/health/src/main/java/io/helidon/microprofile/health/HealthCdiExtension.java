@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
+import io.helidon.config.mp.MpConfig;
 import io.helidon.health.HealthSupport;
 import io.helidon.health.common.BuiltInHealthCheck;
 import io.helidon.microprofile.server.RoutingBuilders;
@@ -89,22 +90,22 @@ public class HealthCdiExtension implements Extension {
     }
 
     void registerHealth(@Observes @Initialized(ApplicationScoped.class) Object adv, BeanManager bm) {
-        Config config = ((Config) ConfigProvider.getConfig()).get("health");
+        org.eclipse.microprofile.config.Config config = ConfigProvider.getConfig();
+        Config helidonConfig = MpConfig.toHelidonConfig(config);
 
-        if (!config.get("enabled").asBoolean().orElse(true)) {
+        if (!config.getOptionalValue("health.enabled", Boolean.class).orElse(true)) {
             LOGGER.finest("Health support is disabled in configuration");
             return;
         }
 
         HealthSupport.Builder builder = HealthSupport.builder()
-                .config(config);
+                .config(helidonConfig);
 
         CDI<Object> cdi = CDI.current();
 
         // Collect built-in checks if disabled, otherwise set list to empty for filtering
-        Optional<Boolean> disableDefaults = config.get("mp.health.disable-default-procedures")
-                .asBoolean()
-                .asOptional();
+        Optional<Boolean> disableDefaults = config.getOptionalValue("mp.health.disable-default-procedures",
+                                                                    Boolean.class);
 
         List<HealthCheck> builtInHealthChecks = disableDefaults.map(
                 b -> b ? cdi.select(HealthCheck.class, BUILT_IN_HEALTH_CHECK_LITERAL)
@@ -134,7 +135,7 @@ public class HealthCdiExtension implements Extension {
                     healthCheckProvider.readinessChecks().forEach(builder::addReadiness);
                 });
 
-        RoutingBuilders.create(config)
+        RoutingBuilders.create(helidonConfig)
                 .routingBuilder()
                 .register(builder.build());
     }

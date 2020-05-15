@@ -38,6 +38,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSessionContext;
 import javax.net.ssl.TrustManagerFactory;
 
+import io.helidon.common.LazyValue;
 import io.helidon.common.pki.KeyConfig;
 import io.helidon.config.Config;
 import io.helidon.config.DeprecatedConfig;
@@ -48,7 +49,9 @@ import io.helidon.config.DeprecatedConfig;
  */
 public final class TlsConfig {
     private static final String PROTOCOL = "TLS";
-    private static final Random RANDOM = new SecureRandom();
+    // secure random cannot be stored in native image, it must
+    // be initialized at runtime
+    private static final LazyValue<Random> RANDOM = LazyValue.create(SecureRandom::new);
 
     private final Set<String> enabledTlsProtocols;
     private final SSLContext sslContext;
@@ -311,7 +314,7 @@ public final class TlsConfig {
             }
 
             byte[] passwordBytes = new byte[64];
-            RANDOM.nextBytes(passwordBytes);
+            RANDOM.get().nextBytes(passwordBytes);
             char[] password = Base64.getEncoder().encodeToString(passwordBytes).toCharArray();
 
             KeyStore ks = KeyStore.getInstance("JKS");
