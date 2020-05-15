@@ -24,7 +24,7 @@
 :keywords: helidon, java, cors, mp, services
 :helidon-tag: https://github.com/oracle/helidon/tree/{helidon-version}
 :quickstart-example: {helidon-tag}/examples/quickstarts/helidon-quickstart-mp
-:javadoc-base-url-api: {javadoc-base-url}io.helidon.webserver.cors/io/helidon/webserver/cors
+:javadoc-base-url-api: {javadoc-base-url}io.helidon.microprofile.cors/io/helidon/microprofile/cors
 :javadoc-base-url-webserver: {javadoc-base-url}io.helidon.webserver/io/helidon/webserver
 :cors-se-intro: 01_introduction.adoc
 :cors-config-table-src: {cors-se-intro}
@@ -38,20 +38,27 @@
 :se-built-in-services-page-include: {cors-se-include}/04_support-in-builtin-services.adoc
 :cors-mp-intro-page: 01_introduction.adoc
 :cors-dependency-src: ../../mp/cors/{cors-mp-intro-page}
+:cors-se-api-doc: ../../se/cors/02_using-the-api.adoc
+// Following is resolved in an SE file, so the relative path must lead to the MP file.
+:cors-mp-using-cors-page-inc: ../../mp/cors/02_using-cors.adoc
+:actual-cors-dependency-src: {cors-mp-using-cors-page-inc}
+:se-cors-home-inc: ../../se/cors
+:se-cors-dependency-page: 02_using-the-api.adoc
+:dependency-inc: {se-cors-home-inc}/{se-cors-dependency-page}
 
 Several built-in Helidon services -- health, metrics, and OpenAPI -- automatically support cross-origin resource
 sharing and you can control how they do so.
 
 include::{se-built-in-services-page-include}[tag=understanding-cors-support-in-services]
 
-include::{se-built-in-services-page-include}[tag=getting-started]
+include::{se-built-in-services-page-include}[tag=builtin-getting-started]
 
 include::{se-built-in-services-page-include}[tags=configuring-cors-for-builtin-services;!se-config-example;!se-code-changes-for-builtin-services-config]
 
 The following example restricts sharing of
 
-* the `/health` resource, provided by the health built-in service, to only the origin `http://there.com`, and
-* the `/metrics` resource, provided by the metrics built-in service, to only the origin `http://foo.com`.
+* the `/health` resource, provided by the health built-in service, to only the origin `\http://there.com`, and
+* the `/metrics` resource, provided by the metrics built-in service, to only the origin `\http://foo.com`.
 
 [source,hocon]
 ----

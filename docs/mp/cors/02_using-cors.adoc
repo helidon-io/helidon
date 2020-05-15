@@ -27,6 +27,10 @@
 :quickstart-example: {helidon-tag}/examples/quickstarts/helidon-quickstart-mp
 :cors-spec: https://www.w3.org/TR/cors/
 :helidon-mp-cors-example: {helidon-tag}/examples/microprofile/cors
+:se-cors-home-inc: ../../se/cors
+:se-cors-dependency-page: 02_using-the-api.adoc
+:dependency-inc: {se-cors-home-inc}/{se-cors-dependency-page}
+:helidon-variant: MP
 
 link:{cors-spec}[Cross-origin resource sharing] (CORS) support in Helidon MP provides a flexible
 mechanism that allows a Helidon MP application to control how other web applications can access its resources, even if that web application is not served from the same domain.
@@ -45,22 +49,17 @@ enforce cross-orgin sharing behavior for the resource identified by that method'
 For an informal look at the reasons for applying the `@CrossOrigin` annotation to the `@OPTIONS` method, instead of another
 method, see <<mp/cors/hide_why-options.adoc, Why `@OPTIONS`?>>.
 
-[[getting-started]]
 == Getting Started
 You add CORS support to your application by modifying your JAX-RS resource classes.
 
-
-. Decide what type of resource sharing each endpoint in your application should allow. +
-
+. Decide what type of resource sharing each endpoint in your application should allow.
 . {blank}
 +
 --
 Add a dependency on the Helidon MP CORS component.
 
-// tag::add-cors-dependency[]
-The <<about/04_managing-dependencies.adoc, Managing Dependencies>> page describes how you
-should declare dependency management for Helidon applications. For CORS support in Helidon MP, you must include
-the following dependency in your project:
+include::{dependency-inc}[tag=add-cors-dependency]
+// tag::actual-cors-dependency[]
 [source,xml,subs="attributes+"]
 ----
 <dependency>
@@ -68,7 +67,7 @@ the following dependency in your project:
     <artifactId>helidon-microprofile-cors</artifactId>
 </dependency>
 ----
-// end::add-cors-dependency[]
+// end::actual-cors-dependency[]
 --
 . Edit each resource class in your application. +
  For each path or subpath in the resource that should support CORS:
@@ -87,7 +86,7 @@ The following is an example of this annotation:
              allowMethods = {HttpMethod.DELETE, HttpMethod.PUT})
 ----
 
-This annotation allows the resource associated with it to be shared with the origins `http://foo.bar` and `http://bar.foo`
+This annotation allows the resource associated with it to be shared with the origins `\http://foo.bar` and `\http://bar.foo`
 using `DELETE` or `PUT` and that requests can include the non-standard headers `X-foo` and `X-bar`.
 
 == Revising Your Application
@@ -98,7 +97,7 @@ The example below extends the Helidon MP QuickStart application (the greeting ap
 
 * Permit unrestricted sharing of the resource that returns greetings, and
 * Restrict sharing of the resource that
-updates the greeting so that only the origins `http://foo.com` and `http://there.com` can change the greeting.
+updates the greeting so that only the origins `\http://foo.com` and `\http://there.com` can change the greeting.
 
 [source,java]
 ----

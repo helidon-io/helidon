@@ -64,11 +64,19 @@ To add CORS support to your Helidion SE application:
 application.
 . Add the CORS dependency to the Maven `pom.xml` file.
 +
+--
+// The add-cors-dependency tag's contents is reused from other SE and MP pages.
+// The actual dependency is different for SE and MP, so we tag it separately from the intro text so the
+// MP pages can reuse this intro text but use their own "actual" dependency. We could have parameterized
+// the groupID and artifactID but this approach allows the actual dependencies themselves to be
+// in the source literally rather than parameterized.
 // tag::add-cors-dependency[]
 The <<about/04_managing-dependencies.adoc, Managing Dependencies>> page describes how you
-should declare dependency management for Helidon applications. For CORS support in Helidon SE, you must include
+should declare dependency management for Helidon applications.
+For CORS support in Helidon {helidon-variant}, you must include
 the following dependency in your project:
-+
+// end::add-cors-dependency[]
+// tag::actual-cors-dependency[]
 [source,xml,subs="attributes+"]
 ----
 <dependency>
@@ -76,7 +84,8 @@ the following dependency in your project:
     <artifactId>helidon-webserver-cors</artifactId>
 </dependency>
 ----
-// end::add-cors-dependency[]
+// end::actual-cors-dependency[]
+--
 . Modify how your application constructs routing rules so they include CORS. See <<adding-cors-support, Adding CORS Support in Your Helidon SE Application>>
 
 == Adding CORS Support in Your Helidon SE Application [[adding-cors-support]]

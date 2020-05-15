@@ -34,6 +34,7 @@
 :cors-se-api-doc: 02_using-the-api.adoc
 :cors-config-table-src: {cors-se-api-doc}
 :cors-dependency-src: {cors-se-api-doc}
+:actual-cors-dependency-src: {cors-se-api-doc}
 :health-page: se/health/01_health.adoc
 :metrics-page: se/metrics/01_metrics.adoc
 :openapi-page: se/openapi/01_openapi.adoc
@@ -73,7 +74,7 @@ ifndef::cors-services-is-se[ configuration.]
 
 // end::understanding-cors-support-in-services[]
 
-// tag::getting-started[]
+// tag::builtin-getting-started[]
 == Getting Started
 To use built-in services with CORS support and customize the
 CORS behavior:
@@ -85,10 +86,11 @@ include default CORS support.
 --
 Add a dependency on the Helidon {helidon-variant} CORS artifact to your `pom.xml`.
 
-Even if your own endpoints do not use CORS with your own endpoints, you need to add the CORS dependency
+Even if your own endpoints do not use CORS, you need to add the CORS dependency
 if you want the built-in services to support CORS.
 
 include::{cors-dependency-src}[tag=add-cors-dependency]
+include::{actual-cors-dependency-src}[tag=actual-cors-dependency]
 --
 . Use
 ifdef::cors-services-is-se[the Helidon API or]
@@ -113,7 +115,7 @@ The link:{quickstart-example}[Helidon {helidon-variant} QuickStart example]
 uses these services, so you can use that as a template for your
 own application, or use the example project itself to experiment with customizing the CORS
 behavior in the built-in services.
-// end::getting-started[]
+// end::builtin-getting-started[]
 
 == Controlling CORS for Built-in Services using the API
 Although services such as health, metrics, and OpenAPI are built-in to Helidon, to use them your application must create
@@ -129,7 +131,7 @@ service type has a `Builder` class. To control the CORS behavior of a built-in s
 . Use the service instance in preparing the routing rules.
 
 The following excerpt shows changes to the link:{quickstart-example}[Helidon SE QuickStart example] which limit
-sharing of the `/metrics` endpoint to `http://foo.com`.
+sharing of the `/metrics` endpoint to `\http://foo.com`.
 [source,java]
 ----
 private static Routing createRouting(Config config) {
@@ -152,7 +154,7 @@ private static Routing createRouting(Config config) {
                 .build();
     }
 ----
-<1> Create the `CrossOriginConfig` for metrics, limiting sharing to `http://foo.com`.
+<1> Create the `CrossOriginConfig` for metrics, limiting sharing to `\http://foo.com`.
 <2> Use the `CrossOriginConfig` instance in constructing the `MetricsSupport` service.
 <3> Use the `MetricsSupport` object in creating the routing rules.
 
@@ -170,7 +172,7 @@ For the health, metrics, and OpenAPI services, your configuration can include a 
 // Tag the following example so we can exclude it from MP which supplies its own complete example.
 // tag::se-config-example[]
 The following example restricts sharing of the
-`/health` resource, provided by the health built-in service, to only the origin `http://there.com`.
+`/health` resource, provided by the health built-in service, to only the origin `\http://there.com`.
 [source,hocon]
 ----
 ...
@@ -257,7 +259,7 @@ transfer-encoding: chunked
 connection: keep-alive
 ----
 
-It response successfully only to cross-origin requests from `http://there.com`.
+It response successfully only to cross-origin requests from `\http://there.com`.
 
 [source,bash]
 ----
