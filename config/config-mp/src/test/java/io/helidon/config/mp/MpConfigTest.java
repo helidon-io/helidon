@@ -28,6 +28,7 @@ import java.util.function.Function;
 import io.helidon.common.GenericType;
 import io.helidon.config.spi.ConfigMapper;
 import io.helidon.config.spi.ConfigMapperProvider;
+
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.config.spi.ConfigSource;
@@ -47,6 +48,7 @@ import static org.hamcrest.Matchers.hasSize;
  */
 public class MpConfigTest {
     private static Config config;
+    private static io.helidon.config.Config emptyConfig;
 
     @BeforeAll
     static void initClass() {
@@ -62,6 +64,10 @@ public class MpConfigTest {
                              MpConfigSources.create(Map.of("app.storageEnabled", "true",
                                                            ConfigSource.CONFIG_ORDINAL, "1000")))
                 .build();
+
+        // we need to ensure empty config is initialized before running other tests,
+        // as this messes up the mapping service counter
+        emptyConfig = io.helidon.config.Config.empty();
     }
 
     @Test
