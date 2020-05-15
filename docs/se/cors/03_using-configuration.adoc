@@ -26,7 +26,6 @@
 :cors-se-api-doc: 02_using-the-api.adoc
 :cors-config-table-src: {cors-se-api-doc}
 :mapped-config-top-key: my-cors
-:cors-config-table-exclude-methods:
 :helidon-tag: https://github.com/oracle/helidon/tree/{helidon-version}
 :helidon-se-cors-example: {helidon-tag}/examples/cors
 
@@ -45,13 +44,24 @@ services without requiring the code to change.
 Support in Helidon for CORS configuration uses two closely-related cross-origin configuration formats: basic and mapped.
 Each format corresponds to a class
 in the Helidon CORS library.
+link:{javadoc-base-url-api}/CrossOriginConfig.html[`CrossOriginConfig`]
+corresponds to the basic format, and
+link:{javadoc-base-url-api}/MappedCrossOriginConfig.html[`MappedCrossOriginConfig`] is associated with
+the mapped format.
 
 [[basic-cross-origin-config]]
 === Basic Cross-Origin Configuration
-Cross-origin configuration is the basic building block of CORS information. When using basic cross-origin configuration,
-...
+In configuration, Helidon represents CORS information as a section containing
+
+* a config key which uniquely identifies the basic CORS config section, and
+* one or more key/value pairs, each of which assigns one characteristic of CORS behavior.
+The table below lists the config keys for the CORS characteristics.
+
+You can choose the key for a config section however you want.
+As with any configuration, your Helidon SE application code uses that key to retrieve the desired config section.
 
 [[config-key-table]]
+:cors-config-table-exclude-methods:
 include::{cors-config-table-src}[tag=cors-config-table]
 
 The following example of basic cross-origin configuration, when loaded and used by the application, limits cross-origin resource sharing for `PUT` and
@@ -68,30 +78,45 @@ restrictive-cors:
 // tag::mapped-config[]
 
 === Mapped Cross-Origin Configuration
-In some cases, you or your users might want to configure CORS behavior based on URL path matching. The following example of the  _mapped_
-configuration format illustrates this.
+In some cases, you or your users might want to configure CORS behavior based on URL path matching.
+The mapped CORS config format contains
+
+* a config key which identifies the mapped CORS config section,
+* an optional `enabled` setting which defaults to `true` and applies to the whole mapped CORS config section, and
+* an optional `paths` subsection containing zero or more entries, each of which contains
+** a basic CORS config section, and
+** a `path-pattern` path pattern that maps that basic CORS config section to the resource(s) it affects.
+
+The following example of the mapped configuration format illustrates this.
 
 [source,hocon,subs="attributes+"]
 ----
 ...
-{mapped-config-top-key}:
-  paths:
-    - path-prefix: /greeting <1>
-      allow-origins: ["http://foo.com", "http://there.com", "http://other.com"]
+{mapped-config-top-key}: <1>
+  paths: <2>
+    - path-pattern: /greeting <3>
+      allow-origins: ["http://foo.com", "http://there.com", "http://other.com"] <4>
       allow-methods: ["PUT", "DELETE"]
-    - path-prefix: / <2>
-      allow-methods: ["GET", "HEAD", "OPTIONS", "POST"]
+    - path-pattern: / <5>
+      allow-methods: ["GET", "HEAD", "OPTIONS", "POST"] <6>
 ...
 ----
-<1> Sets restrictions on CORS for the `/greeting` path.
-<2> Permits sharing of resources at the top-level path with all origins (the default) for the indicated HTTP methods.
-Cross-origin sharing via `PATCH` HTTP requests would be denied.
+<1> Assigns a unique identifier for this mapped CORS config section.
+<2> Collects the sequence of entries, each of which maps a basic CORS config to a path pattern.
+<3> Marks the beginning of an entry (the `-` character) and maps the associated basic CORS config
+to the `/greeting` subresource (the `path-pattern` key and value).
+<4> Begins the basic CORS config section for `/greeting`; it
+restricts sharing via `PUT` and `DELETE` to the listed origins.
+<5> Marks the beginning of the next entry (the `-` character) and maps the associated basic CORS config to
+the top-level resource in the app (the `path-pattern` key and value).
+<6> Begins the basic CORS config section for `/`; it permits sharing of resources at the top-level path with all origins
+for the indicated HTTP methods.
 
-Path expressions can be any expression accepted by the link:{javadoc-base-url-webserver}/PathMatcher.html[`PathMatcher`] class.
+Path patterns can be any expression accepted by the link:{javadoc-base-url-webserver}/PathMatcher.html[`PathMatcher`] class.
 
 Be sure to arrange the entries in the order that you want Helidon to check them, typically from most specific to most general.
 Helidon CORS support searches the cross-origin entries in the order you define them until it finds an entry that
-matches an incoming request's path expression and HTTP method.
+matches an incoming request's path pattern and HTTP method.
 // end::mapped-config[]
 
 
@@ -100,7 +125,8 @@ in the application code.
 
 [[using-config-from-app]]
 == Using CORS Configuration in the Application
-To use basic or mapped CORS configuration, you add logic to your application to load sections of configuration and
+To use basic or mapped CORS configuration, you add logic to your application to load sections of configuration
+using the keys for those sections, and 
 use the loaded config to build `CrossOriginConfig` instances. (See
 <<se/cors/02_using-the-api.adoc#intro-quick-start-code-example, `Sample Routing Setup Using the CrossOriginConfig API>>.)
 

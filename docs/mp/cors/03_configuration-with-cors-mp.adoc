@@ -67,10 +67,10 @@ must be `cors`.
 
 [source,properties]
 ----
-cors.paths.0.path-prefix = /greeting
+cors.paths.0.path-pattern = /greeting
 cors.paths.0.allow-origins = http://foo.com, http://there.com, http://other.com
 cors.paths.0.allow-methods = PUT, DELETE
-cors.paths.1.path-prefix = /
+cors.paths.1.path-pattern = /
 cors.paths.1.allow-methods = GET, HEAD, OPTIONS, POST
 ----
 
