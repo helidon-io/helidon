@@ -126,7 +126,7 @@ final class VirtualBuffer {
         int pos = 0; // absolute position for current buffer start
         int off = voffset + newOffset; // new absolute offset with current buffers
         boolean found = false;
-        for (int i = startIndex ; isBufferIndex(i) && pos <= off ; i = nextBufferIndex(i)) {
+        for (int i = startIndex; isBufferIndex(i) && pos <= off; i = nextBufferIndex(i)) {
             int nextPosition = pos + buffers[i].limit();
             if (nextPosition >= off) {
                 voffset = off - pos;
@@ -160,7 +160,7 @@ final class VirtualBuffer {
         }
         int pos = 0; // absolute position for current buffer start
         int off = voffset + index; // actual offset
-        for (int i = startIndex ; isBufferIndex(i) ; i = nextBufferIndex(i)) {
+        for (int i = startIndex; isBufferIndex(i); i = nextBufferIndex(i)) {
             ByteBuffer buffer = buffers[i];
             int nextPos = pos + buffer.limit();
             if (nextPos > off) {
@@ -190,7 +190,7 @@ final class VirtualBuffer {
         int pos = 0; // absolute position for current buffer start
         int nbytes = 0; // written bytes count
         int off = voffset + begin; // actual offset
-        for (int i = startIndex ; isBufferIndex(i) ; i = nextBufferIndex(i)) {
+        for (int i = startIndex; isBufferIndex(i); i = nextBufferIndex(i)) {
             ByteBuffer buffer = buffers[i];
             int nextPos = pos + buffer.limit();
             int index;
@@ -226,7 +226,7 @@ final class VirtualBuffer {
         int pos = 0; // absolute position for current buffer start
         int nslices = 0; // sliced bytes count
         int off = voffset + begin; // actual offset
-        for (int i = startIndex ; isBufferIndex(i) ; i = nextBufferIndex(i)) {
+        for (int i = startIndex; isBufferIndex(i); i = nextBufferIndex(i)) {
             ByteBuffer buffer = buffers[i];
             int limit = buffer.limit();
             int nextPos = pos + limit;
