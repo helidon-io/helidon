@@ -35,7 +35,7 @@ public class ReadinessHealthcheck implements HealthCheck {
 
     @Override
     public HealthCheckResponse call() {
-        return HealthCheckResponse.named("message")
+        return HealthCheckResponse.named("mp1-ready")
                 .state(true)
                 .withData("app.message", message)
                 .build();

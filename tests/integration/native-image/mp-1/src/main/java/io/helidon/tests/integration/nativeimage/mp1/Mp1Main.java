@@ -23,8 +23,10 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -115,11 +117,11 @@ public final class Mp1Main {
                 .forEach(names::add);
         names.sort(String::compareTo);
 
-        System.out.println("All configuration options:");
-        names.forEach(it -> {
-            config.getOptionalValue(it, String.class)
-                    .ifPresent(value -> System.out.println(it + "=" + value));
-        });
+        //        System.out.println("All configuration options:");
+        //        names.forEach(it -> {
+        //            config.getOptionalValue(it, String.class)
+        //                    .ifPresent(value -> System.out.println(it + "=" + value));
+        //        });
 
         server.stop();
 
@@ -427,8 +429,13 @@ public final class Mp1Main {
                 .get(JsonObject.class);
 
         JsonArray checks = health.getJsonArray("checks");
-        if (checks.size() < 1) {
-            collector.fatal("There should be at least one readiness healtcheck provided by this app");
+        if (checks.size() != 1) {
+            collector.fatal("There should be a readiness health check provided by this app");
+        } else {
+            JsonObject check = checks.getJsonObject(0);
+            if (!"mp1-ready".equals(check.getString("name"))) {
+                collector.fatal("The readiness health check should be named \"mp1-ready\", but is " + check.getString("name"));
+            }
         }
 
         try {
@@ -439,11 +446,46 @@ public final class Mp1Main {
             checks = health.getJsonArray("checks");
             if (checks.size() < 1) {
                 collector.fatal("There should be at least one liveness healtcheck provided by this app");
+            } else {
+                Map<String, JsonObject> checkMap = new HashMap<>();
+                checks.forEach(it -> {
+                    JsonObject healthCheck = (JsonObject) it;
+                    checkMap.put(healthCheck.getString("name"), healthCheck);
+                });
+                // now the check map contains all healthchecks we have
+                // validate our own
+                JsonObject healthCheck = healthExistsAndUp(collector, checkMap, "mp1-live");
+                if (null != healthCheck) {
+                    String message = healthCheck.getJsonObject("data").getString("app.message");
+                    if (!"Properties message".equals(message)) {
+                        collector.fatal("Message health check should return injected app.message from properties, but got "
+                                                + message);
+                    }
+                }
+
+                healthExistsAndUp(collector, checkMap, "deadlock");
+                healthExistsAndUp(collector, checkMap, "diskSpace");
+                healthExistsAndUp(collector, checkMap, "heapMemory");
             }
         } catch (ServiceUnavailableException e) {
             collector.fatal(e, "Failed to invoke health endpoint. Exception: " + e.getClass().getName()
                     + ", message: " + e.getMessage() + ", " + e.getResponse().readEntity(String.class));
         }
+    }
+
+    private static JsonObject healthExistsAndUp(Errors.Collector collector,
+                                                Map<String, JsonObject> checkMap,
+                                                String name) {
+        JsonObject healthCheck = checkMap.get(name);
+        if (null == healthCheck) {
+            collector.fatal("\"" + name + "\" health check is not available");
+        } else {
+            String status = healthCheck.getString("state");
+            if (!"UP".equals(status)) {
+                collector.fatal("Health check \"" + name + "\" should be up, but is " + status);
+            }
+        }
+        return healthCheck;
     }
 
     private static void validateMetrics(Errors.Collector collector, WebTarget target) {
