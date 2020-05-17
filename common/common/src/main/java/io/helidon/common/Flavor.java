@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,13 @@
  * limitations under the License.
  */
 
-/**
- * Basic security provider, supporting "basic" and "digest" authentication schemes with role support.
- */
-@Features({
-    @Feature("Security/Providers/Basic-Auth"),
-    @Feature("Security/Providers/Digest-Auth")
-})
-@Flavor({MP, SE})
-package io.helidon.security.providers.httpauth;
+package io.helidon.common;
 
-import io.helidon.common.Feature;
-import io.helidon.common.Features;
-import io.helidon.common.Flavor;
-
-import static io.helidon.common.HelidonFlavor.MP;
-import static io.helidon.common.HelidonFlavor.SE;
+public @interface Flavor {
+    /**
+     * Helidon flavors this feature can be used in.
+     *
+     * @return flavors supported
+     */
+    HelidonFlavor[] value();
+}

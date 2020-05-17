@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-/**
- * SPI for Helidon common module.
- *
- * @see io.helidon.common.spi.HelidonFeatureProvider
- */
-package io.helidon.common.spi;
+package io.helidon.common;
+
+public @interface Features {
+    Feature[] value();
+}

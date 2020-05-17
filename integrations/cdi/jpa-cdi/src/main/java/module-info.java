@@ -37,5 +37,7 @@ module io.helidon.integrations.cdi.jpa {
     requires io.helidon.integrations.cdi.referencecountedcontext;
     requires io.helidon.integrations.cdi.delegates;
 
+    requires static io.helidon.common;
+
     exports io.helidon.integrations.cdi.jpa;
 }

@@ -24,4 +24,11 @@
  *
  * @see io.helidon.integrations.cdi.jpa.PersistenceUnitInfoBean
  */
+@Feature(value = "CDI/JPA", nativeDescription = "JPA Supports a limited set of use cases, please see http://...")
+@Flavor(MP)
 package io.helidon.integrations.cdi.jpa;
+
+import io.helidon.common.Feature;
+import io.helidon.common.Flavor;
+
+import static io.helidon.common.HelidonFlavor.MP;

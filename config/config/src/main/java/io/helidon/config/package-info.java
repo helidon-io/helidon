@@ -132,4 +132,11 @@
  *
  * @see io.helidon.config.spi Configuration SPI
  */
+@Flavor(SE)
+@Feature("Config")
 package io.helidon.config;
+
+import io.helidon.common.Feature;
+import io.helidon.common.Flavor;
+
+import static io.helidon.common.HelidonFlavor.SE;

@@ -126,6 +126,13 @@
             <artifactId>helidon-integrations-cdi-reference-counted-context</artifactId>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <!-- used ONLY for annotations -->
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-service-loader</artifactId>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
     </dependencies>
 
     <build>
