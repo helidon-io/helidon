@@ -28,6 +28,7 @@ import java.util.function.Predicate;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
+import io.helidon.common.http.HashParameters;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.http.Parameters;
@@ -197,7 +198,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      * @return MessageBodyWriterContext
      */
     public static MessageBodyWriterContext create() {
-        return new MessageBodyWriterContext(ReadOnlyParameters.empty());
+        return new MessageBodyWriterContext(HashParameters.create());
     }
 
     @Override
@@ -296,6 +297,14 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
             if (byte[].class.equals(type.rawType())) {
                 return applyFilters(((Single<byte[]>) content).flatMap(BYTES_MAPPER));
             }
+
+            // Flow.Publisher - can only be supported by streaming media
+            if (Publisher.class.isAssignableFrom(type.rawType())) {
+                throw new IllegalStateException("This method does not support marshalling of Flow.Publisher. Please use "
+                                                        + "a method that accepts Flow.Publisher and type for stream marshalling"
+                                                        + ".");
+            }
+
             MessageBodyWriter<T> writer;
             if (fallback != null) {
                 writer = (MessageBodyWriter<T>) writers.select(type, this, fallback.writers);
@@ -604,7 +613,9 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
         }
 
         @Override
-        public Publisher<DataChunk> write(Single<T> single, GenericType<? extends T> type, MessageBodyWriterContext context) {
+        public Publisher<DataChunk> write(Single<? extends T> single,
+                                          GenericType<? extends T> type,
+                                          MessageBodyWriterContext context) {
             return single.flatMap(function);
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,8 +41,9 @@ public final class CharSequenceBodyWriter implements MessageBodyWriter<CharSeque
     }
 
     @Override
-    public Publisher<DataChunk> write(Single<CharSequence> content, GenericType<? extends CharSequence> type,
-            MessageBodyWriterContext context) {
+    public Publisher<DataChunk> write(Single<? extends CharSequence> content,
+                                      GenericType<? extends CharSequence> type,
+                                      MessageBodyWriterContext context) {
 
         context.contentType(MediaType.TEXT_PLAIN);
         return content.flatMap(new CharSequenceToChunks(context.charset()));

@@ -17,7 +17,6 @@ package io.helidon.media.jsonb.common;
 
 import java.nio.charset.Charset;
 import java.util.Objects;
-import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Publisher;
 
 import javax.json.bind.Jsonb;
@@ -49,18 +48,11 @@ public class JsonbBodyWriter implements MessageBodyWriter<Object> {
     public boolean accept(GenericType<?> type,
             MessageBodyWriterContext context) {
 
-        // We are excluding the following types from support:
-        // 1. any char sequence
-        // 2. Flow.Publisher - that can only be supported by streaming media
-        if (Flow.Publisher.class.isAssignableFrom(type.rawType())) {
-            return false;
-        }
-
         return !CharSequence.class.isAssignableFrom(type.rawType());
     }
 
     @Override
-    public Publisher<DataChunk> write(Single<Object> content,  GenericType<? extends Object> type,
+    public Publisher<DataChunk> write(Single<? extends Object> content,  GenericType<? extends Object> type,
             MessageBodyWriterContext context) {
 
         MediaType contentType = context.findAccepted(MediaType.JSON_PREDICATE, MediaType.APPLICATION_JSON);

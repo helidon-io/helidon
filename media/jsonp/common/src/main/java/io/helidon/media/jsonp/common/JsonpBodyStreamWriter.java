@@ -51,9 +51,9 @@ public class JsonpBodyStreamWriter implements MessageBodyStreamWriter<JsonStruct
     }
 
     @Override
-    public Publisher<DataChunk> write(Publisher<JsonStructure> publisher,
-                                      GenericType<? extends JsonStructure> type,
-                                      MessageBodyWriterContext context) {
+    public Multi<DataChunk> write(Publisher<? extends JsonStructure> publisher,
+                                  GenericType<? extends JsonStructure> type,
+                                  MessageBodyWriterContext context) {
 
         MediaType contentType = context.findAccepted(MediaType.JSON_PREDICATE, MediaType.APPLICATION_JSON);
         context.contentType(contentType);
@@ -64,25 +64,18 @@ public class JsonpBodyStreamWriter implements MessageBodyStreamWriter<JsonStruct
         JsonStructureToChunks jsonToChunks = new JsonStructureToChunks(jsonWriterFactory,
                                                                        context.charset());
 
-        // we also do not have an append operator
-        Multi<DataChunk> stream = Multi.concat(
-                Single.just(DataChunk.create(ARRAY_JSON_BEGIN_BYTES)),
-                Multi.from(publisher)
-                        .map(jsonToChunks)
-                        .flatMap(it -> {
-                            if (first.getAndSet(false)) {
-                                // first record, do not prepend a comma
-                                return Single.just(it);
-                            } else {
-                                // any subsequent record starts with a comma
-                                return Multi.just(DataChunk.create(COMMA_BYTES), it);
-                            }
-                        }));
-
-        // append ] at the end of the stream
-        stream = Multi.concat(stream,
-                              Single.just(DataChunk.create(ARRAY_JSON_END_BYTES)));
-
-        return stream;
+        return Single.just(DataChunk.create(ARRAY_JSON_BEGIN_BYTES))
+                .onCompleteResumeWith(Multi.from(publisher)
+                                              .map(jsonToChunks)
+                                              .flatMap(it -> {
+                                                  if (first.getAndSet(false)) {
+                                                      // first record, do not prepend a comma
+                                                      return Single.just(it);
+                                                  } else {
+                                                      // any subsequent record starts with a comma
+                                                      return Multi.just(DataChunk.create(COMMA_BYTES), it);
+                                                  }
+                                              }))
+                .onCompleteResume(DataChunk.create(ARRAY_JSON_END_BYTES));
     }
 }

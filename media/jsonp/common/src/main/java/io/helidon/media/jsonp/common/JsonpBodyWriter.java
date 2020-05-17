@@ -48,7 +48,8 @@ public class JsonpBodyWriter implements MessageBodyWriter<JsonStructure> {
     }
 
     @Override
-    public Publisher<DataChunk> write(Single<JsonStructure> content, GenericType<? extends JsonStructure> type,
+    public Publisher<DataChunk> write(Single<? extends JsonStructure> content,
+                                      GenericType<? extends JsonStructure> type,
                                       MessageBodyWriterContext context) {
 
         MediaType contentType = context.findAccepted(MediaType.JSON_PREDICATE, MediaType.APPLICATION_JSON);
