@@ -15,6 +15,7 @@
  */
 package io.helidon.microprofile.server;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -103,20 +104,8 @@ public class JaxRsCdiExtension implements Extension {
         }
         if (applications.isEmpty() && applicationMetas.isEmpty()) {
             // create a synthetic application from all resource classes
-            // the classes set must be created before the lambda, as resources are cleared later on
             if (!resources.isEmpty()) {
-                Set<Class<?>> classes = new HashSet<>(resources);
-                applicationMetas.add(JaxRsApplication.builder()
-                                             .synthetic(true)
-                                             .applicationClass(Application.class)
-                                             .config(ResourceConfig.forApplication(new Application() {
-                                                 @Override
-                                                 public Set<Class<?>> getClasses() {
-                                                     return classes;
-                                                 }
-                                             }))
-                                             .appName("SyntheticApplication")
-                                             .build());
+                addSyntheticApp(resources);
             }
         }
 
@@ -243,16 +232,23 @@ public class JaxRsCdiExtension implements Extension {
      */
     public void addSyntheticApplication(List<Class<?>> resourceClasses) throws IllegalStateException {
         mutateApps();
+        addSyntheticApp(resourceClasses);
+    }
+
+    // set-up synthetic application from resource classes
+    private void addSyntheticApp(Collection<Class<?>> resourceClasses) {
+        // the classes set must be created before the lambda, as the incoming collection may be mutable
+        Set<Class<?>> classes = new HashSet<>(resourceClasses);
         this.applicationMetas.add(JaxRsApplication.builder()
                                           .synthetic(true)
                                           .applicationClass(Application.class)
                                           .config(ResourceConfig.forApplication(new Application() {
                                               @Override
                                               public Set<Class<?>> getClasses() {
-                                                  return new LinkedHashSet<>(resourceClasses);
+                                                  return classes;
                                               }
                                           }))
-                                          .appName("SyntheticApplication")
+                                          .appName("HelidonMP")
                                           .build());
     }
 
