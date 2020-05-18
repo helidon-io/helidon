@@ -220,7 +220,7 @@ public class StaticContentHandlerTest {
     }
 
     @Test
-    public void cpHandleSpaces() throws Exception {
+    public void classpathHandleSpaces() throws Exception {
         ServerRequest request = mockRequestWithPath("foo/I have spaces.txt");
         ServerResponse response = mock(ServerResponse.class);
         TestClassPathContentHandler handler = new TestClassPathContentHandler("/root", true);
