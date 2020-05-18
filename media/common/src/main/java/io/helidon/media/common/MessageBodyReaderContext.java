@@ -22,6 +22,7 @@ import java.nio.charset.UnsupportedCharsetException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.Flow.Subscription;
@@ -153,6 +154,13 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
         if (payload == null) {
             return Single.<T>empty();
         }
+
+        // Flow.Publisher - can only be supported by streaming media
+        if (Flow.Publisher.class.isAssignableFrom(type.rawType())) {
+            throw new IllegalStateException("This method does not support unmarshalling of Flow.Publisher. Please use "
+                                                    + "a stream unmarshalling method.");
+        }
+
         try {
             Publisher<DataChunk> filteredPayload = applyFilters(payload, type);
             if (byte[].class.equals(type.rawType())) {
@@ -185,6 +193,13 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
         if (payload == null) {
             return Single.<T>empty();
         }
+
+        // Flow.Publisher - can only be supported by streaming media
+        if (Flow.Publisher.class.isAssignableFrom(type.rawType())) {
+            throw new IllegalStateException("This method does not support unmarshalling of Flow.Publisher. Please use "
+                                                    + "a stream unmarshalling method.");
+        }
+
         try {
             Publisher<DataChunk> filteredPayload = applyFilters(payload, type);
             MessageBodyReader<T> reader = (MessageBodyReader<T>) readers.get(readerType);

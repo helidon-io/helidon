@@ -28,6 +28,7 @@ import org.mockito.Mockito;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -92,7 +93,12 @@ public class RoutingTest {
         assertThat(checker.handlersInvoked(), is("anyPath1,anyPath2,getAdminUser"));
 
         checker.reset();
-        routing.route(mockRequest("/admin", Http.Method.POST), mockResponse());
+
+        IllegalStateException e = assertThrows(IllegalStateException.class, () -> routing.route(mockRequest("/admin", Http.Method.POST),
+                                                                      mockResponse()));
+
+        assertThat(e.getMessage(), is("Transformation failed!"));
+
         assertThat(checker.handlersInvoked(), is("anyPath1,anyPath2,anyAdmin,postAdminAudit"));
     }
 
