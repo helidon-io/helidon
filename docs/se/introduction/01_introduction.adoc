@@ -62,7 +62,7 @@ Heldion supports both a base set and a Helidon-specific set of metrics that expo
 The new Helidon SE DB Client for Helidon 2.0 provides a unified, reactive API for working with databases in non-blocking way. 
 <<se/dbclient/01_introduction.adoc, Learn more>>.
 
-=== Security +
+==== Security +
 The security modules modules support authentication, authorization, outbound security and audits for your applications.
 <<se/security/01_introduction.adoc, Learn more>>.
 
