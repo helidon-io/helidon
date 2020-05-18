@@ -48,7 +48,7 @@ public abstract class CompletionSingle<T> extends CompletionAwaitable<T> impleme
     @Override
     public Single<T> onCancel(final Runnable onCancel) {
         cancelFuture.thenRun(onCancel);
-        return this;
+        return Single.super.onCancel(onCancel);
     }
 
     @Override
