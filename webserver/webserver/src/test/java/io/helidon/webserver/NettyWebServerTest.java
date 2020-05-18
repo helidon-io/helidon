@@ -61,21 +61,14 @@ public class NettyWebServerTest {
      *     seq 1000 | head -c 1000 | curl -X PUT -Ssf http://localhost:8080 --data-binary @- http://localhost:8080 --data ahoj
      * </code></pre>
      * <p>
-     * To show how the request body is handled in chunks, do<ol>
-     * <li>Add
-     * {@code Thread.sleap(1000) to {@link BaseSubscriber#hookOnNext(Object)}}
-     * bellow</li>
-     * <li>And then disable request chunks by enabling
-     * {@link io.netty.handler.codec.http.HttpObjectAggregator} in
-     * {@link HttpInitializer#initChannel(io.netty.channel.socket.SocketChannel)}</li>
-     * </ol>
      *
      * @throws InterruptedException if the main thread is interrupted
      */
     static void main(String[] args) throws InterruptedException {
-        WebServer webServer = WebServer.create(
-                configuration(8080, InetAddress.getLoopbackAddress()),
-                routing((breq, bres) -> {
+        WebServer webServer = WebServer.builder()
+                .port(8080)
+                .bindAddress(InetAddress.getLoopbackAddress())
+                .routing(routing((breq, bres) -> {
                     long id = new SecureRandom().nextLong();
                     System.out.println("Received request .. ID: " + id);
 
@@ -111,7 +104,8 @@ public class NettyWebServerTest {
                         bres.writeStatusAndHeaders(Http.Status.CREATED_201,
                                 Collections.emptyMap());
                     });
-                }));
+                }))
+                .build();
 
         webServer.start();
         Thread.currentThread().join();
@@ -119,13 +113,6 @@ public class NettyWebServerTest {
 
     private static Routing routing(BiConsumer<BareRequest, BareResponse> allHandler) {
         return allHandler::accept;
-    }
-
-    private static ServerConfiguration configuration(int port, InetAddress inetAddress) {
-        return ServerConfiguration.builder()
-                                  .port(port)
-                                  .bindAddress(inetAddress)
-                                  .build();
     }
 
     @Test
@@ -158,7 +145,7 @@ public class NettyWebServerTest {
             assertThat(webServer.port(), greaterThan(0));
             assertThat(webServer.configuration().sockets().entrySet(), IsCollectionWithSize.hasSize(1));
             assertThat(webServer.configuration().sockets()
-                    .get(ServerConfiguration.DEFAULT_SOCKET_NAME).port(), Is.is(webServer.configuration().port()));
+                    .get(WebServer.DEFAULT_SOCKET_NAME).port(), Is.is(webServer.configuration().port()));
         } finally {
             webServer.shutdown()
                      .toCompletableFuture()
@@ -168,12 +155,13 @@ public class NettyWebServerTest {
 
     @Test
     public void testMultiplePortsSuccessStart() throws Exception {
-        WebServer webServer = WebServer.create(ServerConfiguration.builder()
-                .addSocket("1", (SocketConfiguration) null)
-                .addSocket("2", (SocketConfiguration) null)
-                .addSocket("3", (SocketConfiguration) null)
-                .addSocket("4", (SocketConfiguration) null),
-                Routing.builder());
+        SocketConfiguration emptySocket = SocketConfiguration.DEFAULT;
+        WebServer webServer = WebServer.builder()
+                .addSocket("1", emptySocket)
+                .addSocket("2", emptySocket)
+                .addSocket("3", emptySocket)
+                .addSocket("4", emptySocket)
+                .build();
 
         webServer.start()
                 .toCompletableFuture()
@@ -202,11 +190,10 @@ public class NettyWebServerTest {
     @Test
     public void testMultiplePortsAllTheSame() throws Exception {
         int samePort = 9999;
-        WebServer webServer = WebServer.create(
-                ServerConfiguration.builder()
-                        .port(samePort)
-                        .addSocket("third", SocketConfiguration.builder().port(samePort)),
-                Routing.builder());
+        WebServer webServer = WebServer.builder()
+                .port(samePort)
+                .addSocket("third", SocketConfiguration.builder().port(samePort))
+                .build();
 
         assertStartFailure(webServer);
     }
@@ -214,16 +201,17 @@ public class NettyWebServerTest {
     @Test
     public void testManyPortsButTwoTheSame() throws Exception {
         int samePort = 9999;
-        WebServer webServer = WebServer.create(
-                ServerConfiguration.builder()
-                        .port(samePort)
-                        .addSocket("1", (SocketConfiguration) null)
-                        .addSocket("2", SocketConfiguration.builder().port(samePort))
-                        .addSocket("3", (SocketConfiguration) null)
-                        .addSocket("4", (SocketConfiguration) null)
-                        .addSocket("5", (SocketConfiguration) null)
-                        .addSocket("6", (SocketConfiguration) null),
-                Routing.builder());
+        SocketConfiguration empty = SocketConfiguration.DEFAULT;
+
+        WebServer webServer = WebServer.builder()
+                .port(samePort)
+                .addSocket("1", empty)
+                .addSocket("2", SocketConfiguration.builder().port(samePort))
+                .addSocket("3", empty)
+                .addSocket("4", empty)
+                .addSocket("5", empty)
+                .addSocket("6", empty)
+                .build();
 
         assertStartFailure(webServer);
     }
@@ -256,9 +244,8 @@ public class NettyWebServerTest {
     @Test
     public void unpairedRoutingCausesAFailure() throws Exception {
         try {
-            WebServer webServer = WebServer.builder(Routing.builder())
-                    .config(ServerConfiguration.builder()
-                            .addSocket("matched", SocketConfiguration.builder()))
+            WebServer webServer = WebServer.builder()
+                    .addSocket("matched", SocketConfiguration.builder())
                     .addNamedRouting("unmatched-first", Routing.builder())
                     .addNamedRouting("matched", Routing.builder())
                     .addNamedRouting("unmatched-second", Routing.builder())
@@ -272,13 +259,21 @@ public class NettyWebServerTest {
     }
 
     @Test
-    public void additionalPairedRoutingsDoWork() throws Exception {
-        WebServer webServer = WebServer.builder(Routing.builder())
-                .config(ServerConfiguration.builder()
-                        .addSocket("matched", SocketConfiguration.builder()))
+    public void additionalPairedRoutingsDoWork() {
+        WebServer webServer = WebServer.builder()
+                .addSocket("matched", SocketConfiguration.builder())
                 .addNamedRouting("matched", Routing.builder())
                 .build();
 
-        assertThat(webServer.configuration().socket("matched"), notNullValue());
+        assertThat(webServer.configuration().namedSocket("matched"), notNullValue());
+    }
+
+    @Test
+    public void additionalCoupledPairedRoutingsDoWork() {
+        WebServer webServer = WebServer.builder()
+                .addSocket("matched", SocketConfiguration.builder().build(), Routing.builder().build())
+                .build();
+
+        assertThat(webServer.configuration().namedSocket("matched"), notNullValue());
     }
 }

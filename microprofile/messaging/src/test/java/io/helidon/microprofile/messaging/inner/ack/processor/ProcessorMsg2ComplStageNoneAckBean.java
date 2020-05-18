@@ -17,6 +17,7 @@
 
 package io.helidon.microprofile.messaging.inner.ack.processor;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -26,8 +27,8 @@ import javax.enterprise.context.ApplicationScoped;
 
 import io.helidon.microprofile.messaging.AssertableTestBean;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
@@ -74,9 +75,8 @@ public class ProcessorMsg2ComplStageNoneAckBean implements AssertableTestBean {
 
     @Override
     public void assertValid() {
-        assertFalse(ackFuture.isDone());
-        assertFalse(completedBeforeProcessor.get());
-        assertEquals(1, RESULT_DATA.size());
-        RESULT_DATA.forEach(s -> assertEquals(TEST_DATA, s));
+        assertThat("Not acked!", ackFuture.isDone());
+        assertThat("Not acked before processing!", completedBeforeProcessor.get());
+        assertThat(RESULT_DATA, is(List.of(TEST_DATA)));
     }
 }

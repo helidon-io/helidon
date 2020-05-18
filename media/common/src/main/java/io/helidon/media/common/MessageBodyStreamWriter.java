@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,5 +35,5 @@ public interface MessageBodyStreamWriter<T> extends MessageBodyOperator<MessageB
      * @param context writer context
      * @return HTTP payload publisher
      */
-    Publisher<DataChunk> write(Publisher<T> publisher, GenericType<? extends T> type, MessageBodyWriterContext context);
+    Publisher<DataChunk> write(Publisher<? extends T> publisher, GenericType<? extends T> type, MessageBodyWriterContext context);
 }

@@ -302,7 +302,7 @@ class KafkaCdiExtensionTest {
     @Test
     void incomingKafkaOk() {
         LOGGER.fine(() -> "==========> test incomingKafkaOk()");
-        List<String> testData = IntStream.range(0, 999).mapToObj(i -> "test" + i).collect(Collectors.toList());
+        List<String> testData = IntStream.range(0, 99).mapToObj(i -> "test" + i).collect(Collectors.toList());
         AbstractSampleBean kafkaConsumingBean = cdiContainer.select(AbstractSampleBean.Channel1.class).get();
         produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_1, testData);
     }
@@ -312,7 +312,7 @@ class KafkaCdiExtensionTest {
         LOGGER.fine(() -> "==========> test processor()");
         // This test pushes in topic 2, it is processed and 
         // pushed in topic 7, and finally check the results coming from topic 7.
-        List<String> testData = IntStream.range(0, 999).mapToObj(i -> Integer.toString(i)).collect(Collectors.toList());
+        List<String> testData = IntStream.range(0, 99).mapToObj(i -> Integer.toString(i)).collect(Collectors.toList());
         List<String> expected = testData.stream().map(i -> "Processed" + i).collect(Collectors.toList());
         AbstractSampleBean kafkaConsumingBean = cdiContainer.select(AbstractSampleBean.ChannelProcessor.class).get();
         produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_2, expected);
@@ -358,7 +358,7 @@ class KafkaCdiExtensionTest {
         LOGGER.fine(() -> "==========> test someEventsNoAckWithOnePartition()");
         List<String> uncommit = new ArrayList<>();
         // Push some messages that will ACK
-        List<String> testData = IntStream.range(0, 100).mapToObj(i -> Integer.toString(i)).collect(Collectors.toList());
+        List<String> testData = IntStream.range(0, 20).mapToObj(i -> Integer.toString(i)).collect(Collectors.toList());
         AbstractSampleBean.Channel6 kafkaConsumingBean = cdiContainer.select(AbstractSampleBean.Channel6.class).get();
         produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_6, testData);
         // Next message will not ACK
@@ -368,7 +368,7 @@ class KafkaCdiExtensionTest {
         produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_6, testData);
         // As this topic only have one partition, next messages will not ACK because previous message wasn't
         kafkaConsumingBean.restart();
-        testData = IntStream.range(100, 200).mapToObj(i -> Integer.toString(i)).collect(Collectors.toList());
+        testData = IntStream.range(100, 120).mapToObj(i -> Integer.toString(i)).collect(Collectors.toList());
         uncommit.addAll(testData);
         produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_6, testData);
         // Restart, so we receive uncommitted messages again
@@ -391,7 +391,7 @@ class KafkaCdiExtensionTest {
         produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_8, testData);
         kafkaConsumingBean.restart();
         // Now sends new messages. Some of them will be lucky and will not go to the partition with no ACK
-        testData = IntStream.range(2000, 2100).mapToObj(i -> Integer.toString(i)).collect(Collectors.toList());
+        testData = IntStream.range(2000, 2020).mapToObj(i -> Integer.toString(i)).collect(Collectors.toList());
         produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_8, testData);
         int uncommited = kafkaConsumingBean.uncommitted();
         // At least one message was not committed
@@ -410,6 +410,7 @@ class KafkaCdiExtensionTest {
 
     @Test
     void wakeupCanBeInvokedWhenKafkaConsumerClosed() {
+        LOGGER.fine(() -> "==========> test wakeupCanBeInvokedWhenKafkaConsumerClosed()");
         KafkaConnector kafkaConnector = getInstance(KafkaConnector.class, KAFKA_CONNECTOR_LITERAL).get();
         KafkaPublisher<?, ?> any = kafkaConnector.resources().poll();
         // Wake up and closes the KafkaConsumer

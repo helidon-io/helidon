@@ -29,7 +29,7 @@ module io.helidon.microprofile.messaging {
     requires io.helidon.microprofile.config;
     requires io.helidon.microprofile.server;
     requires io.helidon.microprofile.reactive;
-    requires org.reactivestreams;
+    requires transitive org.reactivestreams;
     requires transitive microprofile.reactive.messaging.api;
     requires transitive microprofile.reactive.streams.operators.api;
 

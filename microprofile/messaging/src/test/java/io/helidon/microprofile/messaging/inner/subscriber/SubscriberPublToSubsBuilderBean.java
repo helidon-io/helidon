@@ -23,8 +23,8 @@ import javax.enterprise.context.ApplicationScoped;
 
 import io.helidon.microprofile.messaging.AssertableTestBean;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
@@ -57,7 +57,6 @@ public class SubscriberPublToSubsBuilderBean implements AssertableTestBean {
 
     @Override
     public void assertValid() {
-        assertTrue(resultData.containsAll(TEST_DATA));
-        assertEquals(TEST_DATA.size(), resultData.size());
+        assertThat(resultData, containsInAnyOrder(TEST_DATA));
     }
 }

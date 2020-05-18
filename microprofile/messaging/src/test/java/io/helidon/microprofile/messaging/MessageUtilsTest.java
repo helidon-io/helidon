@@ -19,16 +19,13 @@ package io.helidon.microprofile.messaging;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-
-import io.helidon.microprofile.messaging.MessageUtils;
 
 class MessageUtilsTest {
 
@@ -58,19 +55,22 @@ class MessageUtilsTest {
 
     @ParameterizedTest
     @MethodSource("testSource")
-    void wrapperTest(Tuple tuple) throws ExecutionException, InterruptedException {
+    void wrapperTest(Tuple tuple) {
         assertExpectedType(tuple.value, tuple.type);
     }
 
-    private static void assertExpectedType(Object value, Class<?> type) throws ExecutionException, InterruptedException {
+    private static void assertExpectedType(Object value, Class<?> type) {
         Object unwrapped = MessageUtils.unwrap(value, type);
-        assertTrue(type.isAssignableFrom(unwrapped.getClass()),
-                String.format("Expected value of type %s got %s instead", type.getSimpleName(), value.getClass().getSimpleName()));
+        assertThat(
+                String.format("Expected value of type %s got %s instead",
+                        type.getSimpleName(),
+                        value.getClass().getSimpleName()
+                ), type.isAssignableFrom(unwrapped.getClass()));
     }
 
     private static class Tuple {
-        private Object value;
-        private Class<?> type;
+        private final Object value;
+        private final Class<?> type;
 
         private Tuple(Object value, Class<?> clazz) {
             this.value = value;

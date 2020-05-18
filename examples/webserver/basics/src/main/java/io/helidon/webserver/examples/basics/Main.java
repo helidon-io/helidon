@@ -76,8 +76,8 @@ public class Main {
     }
 
     /**
-     * {@link Routing} instance together with optional {@link io.helidon.webserver.ServerConfiguration configuration} parameter
-     * can be used to create {@link WebServer} instance.It provides a simple, non-blocking life-cycle API returning
+     * {@link Routing} instance can be used to create {@link WebServer} instance.
+     * It provides a simple, non-blocking life-cycle API returning
      * {@link java.util.concurrent.CompletionStage CompletionStages} to provide reactive access.
      *
      * @param routing the routing to drive by WebServer instance
@@ -100,7 +100,7 @@ public class Main {
     }
 
     /**
-     * {@link Routing} instance together with optional {@link io.helidon.webserver.ServerConfiguration configuration} parameter
+     * {@link Routing}
      * can be used to create {@link WebServer} instance.It provides a simple, non-blocking life-cycle API returning
      * {@link java.util.concurrent.CompletionStage CompletionStages} to provide reactive access.
      *

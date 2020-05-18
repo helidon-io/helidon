@@ -26,7 +26,7 @@ import java.util.function.Supplier;
  * @param <T> the element type of the upstream
  * @param <U> the collection type
  */
-final class MultiCollectPublisher<T, U> implements Single<U> {
+final class MultiCollectPublisher<T, U> extends CompletionSingle<U> {
 
     private final Multi<T> source;
 

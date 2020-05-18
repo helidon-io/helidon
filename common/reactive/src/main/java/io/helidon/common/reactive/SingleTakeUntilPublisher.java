@@ -25,7 +25,7 @@ import java.util.concurrent.Flow;
  * @param <T> the upstream and output value type
  * @param <U> the other sequence indicating when the main sequence should stop
  */
-final class SingleTakeUntilPublisher<T, U> implements Single<T> {
+final class SingleTakeUntilPublisher<T, U> extends CompletionSingle<T> {
 
     private final Single<T> source;
 

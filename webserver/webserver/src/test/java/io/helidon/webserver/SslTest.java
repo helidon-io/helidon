@@ -19,11 +19,7 @@ package io.helidon.webserver;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-import javax.net.ssl.SSLContext;
-
-import io.helidon.common.Builder;
 import io.helidon.common.configurable.Resource;
-import io.helidon.common.http.Http;
 import io.helidon.common.pki.KeyConfig;
 import io.helidon.webclient.Ssl;
 import io.helidon.webclient.WebClient;
@@ -54,20 +50,20 @@ public class SslTest {
      * @throws Exception in case of an error
      */
     private static void startServer(int port) throws Exception {
-        Builder<SSLContext> nettyContext = SSLContextBuilder.create(KeyConfig.pemBuilder()
-                                                                             .key(Resource.create("ssl/key.pkcs8.pem"))
-                                                                             .certChain(Resource.create("ssl/certificate.pem"))
-                                                                             .build());
-
-        webServer = WebServer.create(
-                ServerConfiguration.builder()
-                                   .ssl(nettyContext)
-                                   .port(port),
+        webServer = WebServer.builder(
                 Routing.builder()
-                       .any((req, res) -> res.send("It works!")))
-                             .start()
-                             .toCompletableFuture()
-                             .get(10, TimeUnit.SECONDS);
+                        .any((req, res) -> res.send("It works!")))
+
+                .port(port)
+                .tls(TlsConfig.builder()
+                             .privateKey(KeyConfig.pemBuilder()
+                                                 .key(Resource.create("ssl/key.pkcs8.pem"))
+                                                 .certChain(Resource.create("ssl/certificate.pem"))
+                                                 .build()))
+                .build()
+                .start()
+                .toCompletableFuture()
+                .get(10, TimeUnit.SECONDS);
 
         LOGGER.info("Started secured server at: https://localhost:" + webServer.port());
     }
@@ -120,7 +116,7 @@ public class SslTest {
     }
 
     @BeforeAll
-    public static void createClientAcceptingAllCertificates() throws Exception {
+    public static void createClientAcceptingAllCertificates() {
         client = WebClient.builder()
                 .ssl(Ssl.builder()
                              .trustAll(true)
@@ -132,8 +128,8 @@ public class SslTest {
     public static void close() throws Exception {
         if (webServer != null) {
             webServer.shutdown()
-                     .toCompletableFuture()
-                     .get(10, TimeUnit.SECONDS);
+                    .toCompletableFuture()
+                    .get(10, TimeUnit.SECONDS);
         }
     }
 }

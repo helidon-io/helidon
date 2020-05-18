@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,8 @@ import java.util.function.Supplier;
 import io.helidon.common.http.Http;
 
 /**
- * Routing represents composition of HTTP request-response handlers with routing rules. It is together with
- * {@link ServerConfiguration.Builder} a cornerstone of the {@link WebServer}.
+ * Routing represents composition of HTTP request-response handlers with routing rules.
+ * It is a cornerstone of the {@link WebServer}.
  *
  * @see WebServer
  */
@@ -54,7 +54,10 @@ public interface Routing {
      * @param configuration a web server configuration
      * @return new {@link WebServer} instance
      * @throws IllegalStateException if none SPI implementation found
+     *
+     * @deprecated since 2.0.0 please use {@link WebServer#builder(Routing)} instead
      */
+    @Deprecated
     default WebServer createServer(ServerConfiguration configuration) {
         return WebServer.create(configuration, this);
     }
@@ -64,7 +67,10 @@ public interface Routing {
      *
      * @return new {@link WebServer} instance
      * @throws IllegalStateException if none SPI implementation found
+     *
+     * @deprecated since 2.0.0 please use {@link WebServer#builder(Routing)} instead
      */
+    @Deprecated
     default WebServer createServer() {
         return WebServer.create(this);
     }
@@ -653,7 +659,11 @@ public interface Routing {
          * @param configuration a web server configuration
          * @return new {@link WebServer} instance
          * @throws IllegalStateException if none SPI implementation found
+         *
+         * @deprecated since 2.0.0, please use {@link io.helidon.webserver.WebServer.Builder#build()} to create
+         * a new server, configuring routing using {@link io.helidon.webserver.WebServer.Builder#routing(Routing)}.
          */
+        @Deprecated
         public WebServer createServer(ServerConfiguration configuration) {
             return WebServer.create(configuration, this.build());
         }
@@ -664,7 +674,11 @@ public interface Routing {
          * @param configurationBuilder a web server configuration builder
          * @return new {@link WebServer} instance
          * @throws IllegalStateException if none SPI implementation found
+         *
+         * @deprecated since 2.0.0, please use {@link io.helidon.webserver.WebServer.Builder#build()} to create
+         * a new server, configuring routing using {@link io.helidon.webserver.WebServer.Builder#routing(Routing)}.
          */
+        @Deprecated
         public WebServer createServer(ServerConfiguration.Builder configurationBuilder) {
             return WebServer.create(configurationBuilder.build(), this.build());
         }
@@ -674,10 +688,12 @@ public interface Routing {
          *
          * @return new {@link WebServer} instance
          * @throws IllegalStateException if none SPI implementation found
+         *
+         * @deprecated since 2.0.0, please use {@link io.helidon.webserver.WebServer#create(Routing)}.
          */
+        @Deprecated
         public WebServer createServer() {
             return WebServer.create(this.build());
         }
-
     }
 }

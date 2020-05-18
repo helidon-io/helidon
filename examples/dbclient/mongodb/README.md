@@ -38,7 +38,7 @@ The query operation adds database trace.
 `curl` commands:
 
 - `curl http://localhost:8079/db` - list all Pokemon in the database
-- `curl -i -X POST -d '{"name":"Squirtle","type":"water"}' http://localhost:8079/db` - add a new pokemon
+- `curl -i -X PUT -d '{"name":"Squirtle","type":"water"}' http://localhost:8079/db` - add a new pokemon
 - `curl http://localhost:8079/db/Squirtle` - get a single pokemon
 - `curl -i -X DELETE http://localhost:8079/db/Squirtle` - delete a single pokemon
 - `curl -i -X DELETE http://localhost:8079/db` - delete all pokemon

@@ -23,6 +23,7 @@ import java.util.logging.Logger;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
+import io.helidon.common.NativeImageHelper;
 import io.helidon.health.common.BuiltInHealthCheck;
 
 import org.eclipse.microprofile.health.HealthCheck;
@@ -40,16 +41,20 @@ import org.eclipse.microprofile.health.Liveness;
 @BuiltInHealthCheck
 public final class DeadlockHealthCheck implements HealthCheck {
     private static final Logger LOGGER = Logger.getLogger(DeadlockHealthCheck.class.getName());
+    private static final String NAME = "deadlock";
 
     /**
      * Used for detecting deadlocks. Injected in the constructor.
      */
     private final ThreadMXBean threadBean;
+    private final boolean disabled;
 
     @Inject
         // this will be ignored if not within CDI
     DeadlockHealthCheck(ThreadMXBean threadBean) {
         this.threadBean = threadBean;
+        // in Graal native image, we cannot use this check, as it would always fail
+        this.disabled = NativeImageHelper.isNativeImage();
     }
 
     /**
@@ -65,6 +70,16 @@ public final class DeadlockHealthCheck implements HealthCheck {
 
     @Override
     public HealthCheckResponse call() {
+        if (disabled) {
+            LOGGER.log(Level.FINEST, "Running in graal native image, this health-check always returns up.");
+            return HealthCheckResponse.builder()
+                    .name(NAME)
+                    .withData("enabled", "false")
+                    .withData("description", "in native image")
+                    .up()
+                    .build();
+        }
+
         boolean noDeadLock = false;
         try {
             // Thanks to https://stackoverflow.com/questions/1102359/programmatic-deadlock-detection-in-java#1102410
@@ -73,7 +88,7 @@ public final class DeadlockHealthCheck implements HealthCheck {
             // ThreadBean does not work - probably in native image
             LOGGER.log(Level.FINEST, "Failed to find deadlocks in ThreadMXBean, ignoring this healthcheck", e);
         }
-        return HealthCheckResponse.named("deadlock")
+        return HealthCheckResponse.named(NAME)
                 .state(noDeadLock)
                 .build();
     }

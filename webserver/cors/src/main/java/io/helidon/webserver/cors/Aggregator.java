@@ -151,14 +151,14 @@ class Aggregator {
         }
 
         /**
-         * Adds cross origin information associated with a given pathExpr.
+         * Adds cross origin information associated with a given pathPattern.
          *
-         * @param pathExpr the pathExpr to which the cross origin information applies
+         * @param pathPattern the pathPattern to which the cross origin information applies
          * @param crossOrigin the cross origin information
          * @return updated builder
          */
-        Builder addCrossOrigin(String pathExpr, CrossOriginConfig crossOrigin) {
-            crossOriginConfigMatchables.add(new FixedCrossOriginConfigMatchable(pathExpr, crossOrigin));
+        Builder addCrossOrigin(String pathPattern, CrossOriginConfig crossOrigin) {
+            crossOriginConfigMatchables.add(new FixedCrossOriginConfigMatchable(pathPattern, crossOrigin));
             return this;
         }
 
@@ -262,7 +262,7 @@ class Aggregator {
      * Given a map from path expressions to matchables, finds the first map entry with a path matcher that accepts the provided
      * path and is enabled.
      *
-     * @param matchables map from pathExpressions to matchables
+     * @param matchables map from pathPatterns to matchables
      * @param normalizedPath unnormalized path (from the request) to be matched
      * @return Optional of the CrossOriginConfig
      */
@@ -297,8 +297,8 @@ class Aggregator {
     private abstract static class CrossOriginConfigMatchable {
         private final PathMatcher matcher;
 
-        CrossOriginConfigMatchable(String pathExpr) {
-            this.matcher = PathMatcher.create(pathExpr);
+        CrossOriginConfigMatchable(String pathPattern) {
+            this.matcher = PathMatcher.create(pathPattern);
         }
 
         boolean matches(String path, String method) {
@@ -318,8 +318,8 @@ class Aggregator {
     private static class FixedCrossOriginConfigMatchable extends CrossOriginConfigMatchable {
         private final CrossOriginConfig crossOriginConfig;
 
-        FixedCrossOriginConfigMatchable(String pathExpr, CrossOriginConfig crossOriginConfig) {
-            super(pathExpr);
+        FixedCrossOriginConfigMatchable(String pathPattern, CrossOriginConfig crossOriginConfig) {
+            super(pathPattern);
             this.crossOriginConfig = crossOriginConfig;
         }
 
@@ -343,8 +343,8 @@ class Aggregator {
         private final CrossOriginConfig.Builder builder;
         private CrossOriginConfig config = null;
 
-        BuildableCrossOriginConfigMatchable(String pathExpr, CrossOriginConfig.Builder builder) {
-            super(pathExpr);
+        BuildableCrossOriginConfigMatchable(String pathPattern, CrossOriginConfig.Builder builder) {
+            super(pathPattern);
             this.builder = builder;
         }
 
