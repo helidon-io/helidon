@@ -22,13 +22,51 @@
 :toc-placement: preamble
 :spec-name: MicroProfile Config
 :description: {spec-name} support in Helidon MP
-:keywords: helidon, mp, microprofile, config
+:keywords: helidon, mp, microprofile, config, encryption, reference
 
 
 
 == About {spec-name}
 Helidon MP Config is an implementation of https://github.com/eclipse/microprofile-config/[Eclipse MicroProfile Config] that now includes Helidon-specific meta-configuration and APIs. You can configure your applications using MicroProfile's config properties file and APIs and extend the configuration system with Helidon-specific meta-configuration and APIs. You can also write and register custom ConfigSources.
 
+=== Helidon MicroProfile Config Features
+
+Helidon MicroProfile Config offers the following features:
+
+* *References* +
+You can use dollar, curly brackets, and reference to another key in a value to provide references and contruct the value when you use meta-configuration file for MP configuration. You can either reference the whole value or reference the value and add prefix or suffix, and the referenced value is replaced with the property.
+
+[source=java]
+.Example
+----
+
+providers:
+    - abac:
+      # Adds ABAC Provider - it does not require any configuration
+    - oidc:
+        client-id: "${ALIAS=security.properties.idcs-client-id}"
+        client-secret: "${ALIAS=security.properties.idcs-client-secret}"
+        identity-uri: "${ALIAS=security.properties.idcs-uri}"
+        # A prefix used for custom scopes
+        scope-audience: "http://localhost:7987/test-application"
+        proxy-host: "${ALIAS=security.properties.proxy-host}"
+        frontend-uri: "${ALIAS=security.properties.frontend-uri}"
+    - idcs-role-mapper:
+        multitenant: false
+        oidc-config:
+          # Repeat the IDCS configuration, as in this case. IDCS serves both as open ID connect authenticator and as a role mapper. Use of minimal configuration here.
+          client-id: "${ALIAS=security.properties.idcs-client-id}"
+          client-secret: "${ALIAS=security.properties.idcs-client-secret}"
+          identity-uri: "${ALIAS=security.properties.idcs-uri}"
+----
+
+
+* *Encryption* +
+You can encrypt configuration values in MicroProfile Config. The config encryption filter is enabled by default. For more information, see <<about/02_configuration-secrets.adoc,Configuration Secrets>>.
+
+//Please provide an example of configuration
+[source=java]
+.Example
 
 
 == Guides
@@ -59,48 +97,21 @@ server.port=8080
 server.host=0.0.0.0
 ----
 
-=== Using MicroProfile Config APIs 
+=== Using MicroProfile Config API
 
-The MicroProfile Config API can be used by applications as a single API that can retrieve configuration information from different sources.
-
-The example below shows how the MicroProfile API  `ConfigProviderResolver.getBuilder())` can be used to access String values of configured properties and register user-provided ConfigSources (with `ConfigBuilder`).
-
+You can use the default MicroProfile configuration by injecting configuration properties or use `ConfigProvider.getConfig()`.
 
 ----
-// MP API to obtain provider resolver
-ConfigProviderResolver configProvider = ConfigProviderResolver.instance();
-configProvider.registerConfig(configProvider.getBuilder() <1>
-                                    .addDefaultSources() <2>
-                                    .withSources(new MyConfigSource()) <3>
-                                    .withConverters(new MyConverter()) <4>
-                                    .build(), <5>            
-Thread.currentThread().getContextClassLoader()) <6>
+   org.eclipse.microprofile.config.Config config = ConfigProvider.getConfig();
 ----
 
-<1> Creates a new MP config builder.
-<2> Adds the defaults config sources: environment variables, system properties and META-INF/microprofile-config.properties.
-<3> Adds a custom MP source
-<4> Adds a custom MP converter
-<5> Builds a new MP config
-<6> Returns the context ClassLoader for this thread.
+=== Using Helidon Meta Configuration
 
-
-=== Using Helidon MicroProfile
-
-You can use Helidon MicroProfile to create a configuration from a classpath Config Source. You undertake a class and get a configuration key from it.
-
-[source, java]
-----
-Config config = Config.create(classpath(resource:  "application.conf"));
-----
-
-=== Using Helidon Meta-Configuration
-
-Instead of directly specifying the configuration sources in your code, you can use meta-configuration in a file that declares the configuration sources and their attributes. This requires using the `Config.loadSourcesFrom` method rather than a `Config.Builder` object. The contents of the meta-configuration file need to be in JSON, YAML, or HOCON format. The meta-config allows configuration of config sources and other configuration options, including retry policies and polling strategies.
+The meta configuration uses underlying implementation of Helidon config. In this case, you can either inject configuration properties or use `ConfigProvider.getConfig()`.
+Instead of directly specifying the configuration sources in your code, you can use meta configuration in a file that declares the configuration sources and their attributes. The contents of the meta-configuration file need to be in JSON, YAML, or HOCON format.
+The meta-config allows configuration of config sources and other configuration options, including retry policies and polling strategies.
 
 Example of a YAML meta configuration file: 
-
-//get description from Tomas//
 
 ----
 sources:
@@ -113,7 +124,7 @@ sources:
   - type: "classpath"
     properties:
       optional: true
-      resource: application:yaml <4> 
+      resource: application.yaml <4> 
     type: "classpath"
     properties:
       resource: "META-INF/microprofile-config.properties" <5>
@@ -128,20 +139,25 @@ sources:
 
 === Using Helidon Config APIs
 
-You can use Helidon's APIs such as `Config.builder())` to create a configuration and then register the configuration either through the Helidon MP server builder (`io.helidon.microprofile.server.Server.builder())`, or through MicroProfile APIs. 
+You can use the `MpConfigSources.create(helidonConfig)` to create a config source from Helidon config and then use it to create a MicroProfile instance.
 
- 
 ----
-
-io.helidon.config.Config helidonConfig = io.helidon.config.Config.create(); <1>
+ConfigBuilder metaConfig(io.helidon.config.Config metaConfig) {
+        io.helidon.config.Config helidonConfig = io.helidon.config.Config.builder()
+                .config(metaConfig)
+                .build();
+        this.sources.add(new OrdinalSource(MpConfigSources.create(helidonConfig))); <1>
+        return this;
+    }
 
 ConfigProviderResolver.instance()
-        .registerConfig((org.eclipse.microprofile.config.Config) helidonConfig, <2>
-        Thread.currentThread().getContextClassLoader());
+                    .getBuilder()
+                    .withSources(MpConfigSources.create(config)) <2>
+                    .build();
 ----
 
-<1> Creates a custom instance of Helidon Config.
-<2> Registers the instance with MP Config.
+<1> Creates a config source from Helidon config.
+<5> Creates a MicroProfile config instance.
 
 For more information on using Helidon Config APIs, see the Helidon SE Configuration documentation.
 

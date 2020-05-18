@@ -17,9 +17,9 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Microprofile Config Sources
-:pagename: MicrpProfileSources
+:pagename: MicroProfileSources
 :description: MicroProfile Config Sources
-:keywords: helidon, mp, ordinal, 
+:keywords: helidon, mp, ordinal, mpconfig, yamlmpconfig
 
 
 A Config Source provides configuration values from different sources such as property files and user classes that are registered by the application.
@@ -33,34 +33,6 @@ The default MicroProfile Config Sources are:
 * /META-INF/microprofile-config.properties (ordinal=100)
 
 Each Config Source has a ordinal that determines the priority of the Config Source. A Config Source with higher ordinal has high priority as compared to the Config Source with lower ordinal. The values taken from the high-priority Configsource overrides the values from low-priority Config Source. This helps to customize the configuration of Config Sources using external Config Source if an external Config Source has higher ordinal values than the built-in Config Sources of the application.
-
-
-=== Config Sources Categorization
-
-The Config Sources are categorized based on how their functionality can be implemented on the config system.
-
-. Eagerness of loading data:
-
-.. Eager Config Sources - The Config Source either loads all data or loads each key separately from the Config Source. The eager Config sources are:
-
-* ParsableSource - An eager source that can read all data from the underlying origin as a stream, which can be parsed based on its content type.
-
-* NodeConfigSource - An eager source that can read all data from the underlying origin as a configuration node.
-
-.. LazyConfigSource - A source that provides value for a single node.
-
-[start=2]
-. Mutability of data:
-
-.. Immutable - The default Config Sources that do not support changes.
-
-.. Mutable - The Config Sources that provide capability to change. The mutable Config Sources are:
- 
-* PollableSource - A source that generates a "stamp" of data that is used to check any changes in the underlying data.
-
-* Watchablesource - A source based on data that has a specific change watcher which notifies the config framework of changes without the need for regular polling.
-
-* EventConfigSource - A source that can directly notify the changes.
 
 
 == Creating Custom Config Sources
@@ -79,7 +51,7 @@ You need to use the following methods and implement the interface `org.eclipse.m
 [source,java]
 ----
 public class CustomConfigSource implements ConfigSource {
-			String NAME = "Gh1468ConfigSource";
+			String NAME = "MyConfigSource";
 			PRIORITY = 200; // Default for MP is 100
 			Map<String, String> PROPERTIES = mapOf("app.greeting", "Hi");
 
@@ -115,7 +87,7 @@ public class CustomConfigSource implements ConfigSource {
 
 == Creating MicroProfile Config Sources for Manual Setup of Config
 
-You can use the following methods to create MicroProfile Config Sources to manually set up the Config from `org.eclipse.microprofile.config.spi.ConfigProviderResolver#getBuilder()`:
+You can use the following methods to create MicroProfile Config Sources to manually set up the Config from `org.eclipse.microprofile.config.spi.ConfigProviderResolver#getBuilder()` on `io.helidon.config.mp.MpConfigSources` class:
 
 |===
 |Method |Description
@@ -133,98 +105,51 @@ To create an in-memory source from map with custom name, use `create(String, jav
 |`create(java.util.Properties)}`   |Creates an in-memory source from properties. +
 To create an in-memory source from properties with custom name, use `create(String, java.util.Properties)}`.
 
-
 |===
 
-===  Config Source Creation based on System Properties
-
-The Config Source queries the properties each time `org.eclipse.microprofile.config.spi.ConfigSource#getValue(String)` is called.
+=== Example
 
 [source,java]
+.Create MicroProfile Config Source based on Environment Variables and Custom Map
 ----
-ConfigSource systemProperties() {
-        return new MpSystemPropertiesSource();
+org.eclipse.microprofile.config.Config mpConfig = ConfigProviderResolver.instance()
+        .getBuilder() <1>
+        .withSources(MpConfigSources.environmentVariables()) <2>
+        .withSources(MpConfigSources.create(Map.of("key","value"))) <3>
+        .build(); <4>
 ----
-
-=== Config Source Creation based on Environment Variables
-
-The Config Source replaces the properties with environment variables as defined in MicroProfile Config specification.
-
-[source,java]
-----
-ConfigSource environmentVariables() { <1>
-        return new MpEnvironmentVariablesSource();
-----
-
-=== Config Source Creation based on a File on the File System
-
-The Config Source reads the file just once when the source is created and any other changes to the file are ignored.
-
-[source,java]
-----
-ConfigSource create(Path path) { <1>
-        return create(path.toString(), path);
-----
-
-<1> Creates path of the properties file on the file system.
-
-=== Config Source Creation based on a URL
-
-The Config Source reads the URL just once when the source is created and any other changes to the resource are ignored.
-
-[source,java]
-----
-ConfigSource create(URL url) { <1>
-        String name = url.toString();
-----
-
-<1> Creates URL of the properties file.
-
-=== In-Memory Config Source Creation From Map
-
-The config source queries the map each time `org.eclipse.microprofile.config.spi.ConfigSource#getValue(String)` is called.
-
-[source,java]
-----
-
-ConfigSource create(Map<String, String> theMap) { <1>
-        return create("Map", theMap); 
-----
-
-<1> Creates map that serves as configuration data.
-
-=== In-Memory Config Source Creation From Properties
-
-The Config Source queries the properties each time `org.eclipse.microprofile.config.spi.ConfigSource#getValue(String)` is called.
-
-[source,java]
-----
-ConfigSource create(Properties properties) { <1>
-        return create("Properties", properties);
-----
-
-<1> Creates properties that serves as configuration data.
+<1> Creates MicroProfile Config Source builder.
+<2> Adds environment variables.
+<3> Adds custom map.
+<4> Builds the MicroProfile Config Source.
 
 
-== Creating MicroProfile Config Sources from Helidon SE Config
+== Creating MicroProfile Config Source from Helidon SE Config Source
 
-This method supports Helidon SE features in Helidon MP. The Config Source is immutable regardless of configured polling strategy or change watchers.
+You can create MicroProfile Config Source from Helidon SE Config Source to use Helidon SE features in Helidon MP. The Config Source is immutable regardless of configured polling strategy or change watchers.
 
-[source,java]
-----
-ConfigSource create(io.helidon.config.spi.ConfigSource helidonConfigSource) {
-        return MpHelidonSource.create(helidonConfigSource);
-----
 
-== Creating MicroProfile Config Sources from Helidon SE Config Instance
+// Please provide example
 
-This method supports advanced Helidon SE features in Helidon MP. The Config Source is mutable if the config uses either polling strategy and change watchers or polling strategy or change watchers.
+
+== Creating MicroProfile Config Source from Helidon SE Config Instance
+
+You can create MicroProfile Config Source from Helidon SE Config to use advanced Helidon SE features in Helidon MP. The Config Source is mutable if the config uses either polling strategy and change watchers or polling strategy or change watchers.
 The latest config version is queried each time  `org.eclipse.microprofile.config.spi.ConfigSource#getValue(String)` is called.
 
-[source,java]
-----
-ConfigSource create(Config config) {
-        return new MpHelidonConfigSource(config);
-----
+//Please provide example
 
+== Create Yaml MicroProfile Config Source Programatically
+
+You can create Yaml Microprofile Config Source from a path or a URL. When you create a MicroProfile instance from the builder, the `YamlMPConfigSource` allows you to edit the list of config sources and creates a custom YAML.
+
+
+=== Example
+
+[source,java]
+.Create YamlMPConfigSource from a path 
+----
+public static ConfigSource create(Path path)
+        return create(path.toUri.toURL()); 
+----
 
