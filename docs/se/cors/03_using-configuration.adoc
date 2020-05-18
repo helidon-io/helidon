@@ -29,18 +29,15 @@
 :helidon-tag: https://github.com/oracle/helidon/tree/{helidon-version}
 :helidon-se-cors-example: {helidon-tag}/examples/cors
 
-Your application can use configuration in setting up CORS behavior.
-
-== Understanding Configuration and CORS
-The topic <<se/cors/02_using-the-api.adoc,Using the Helidon SE CORS API>> describes the changes
-you need to make to your application to incorporate CORS functionality. By using configuration in combination
-with the API, you can reduce the amount of change needed in your application.
-Loading the CORS information for different types of resource sharing from declarative configuration,
+The Helidon CORS API provides everything that you need to add CORS support to your resources, but you can use the API in combination with
+configuration. Loading the CORS information for different types of resource sharing from declarative configuration,
 instead of hard-coding it in your procedural Java code,
 not only simplifies the code but also gives your users a way to override the CORS behavior of your
-services without requiring the code to change.
+services without requiring the code to change. Deployers can modify the configuration to alter the CORS behavior of the endpoints in your application
+without requiring any changes to the application code.
 
-== About the CORS Configuration Formats [[cors-configuration-formats]]
+
+== Understanding the CORS Configuration Formats [[cors-configuration-formats]]
 Support in Helidon for CORS configuration uses two closely-related cross-origin configuration formats: basic and mapped.
 Each format corresponds to a class
 in the Helidon CORS library.
@@ -119,14 +116,14 @@ Helidon CORS support searches the cross-origin entries in the order you define t
 matches an incoming request's path pattern and HTTP method.
 // end::mapped-config[]
 
-
 You can use mapped configuration to your advantage if you want to allow your users to override the CORS behavior set up
 in the application code.
 
 [[using-config-from-app]]
 == Using CORS Configuration in the Application
-To use basic or mapped CORS configuration, you add logic to your application to load sections of configuration
-using the keys for those sections, and 
+The topic <<se/cors/02_using-the-api.adoc,Using the Helidon SE CORS API>> describes the changes
+you need to make to your application to incorporate CORS functionality. To integrate basic or mapped CORS configuration, you add logic to your application to load sections of configuration
+using the keys for those sections, and
 use the loaded config to build `CrossOriginConfig` instances. (See
 <<se/cors/02_using-the-api.adoc#intro-quick-start-code-example, Sample Routing Setup Using the CrossOriginConfig API>>.)
 
@@ -161,6 +158,9 @@ If the `my-cors` config key does not appear in the configuration, then the code 
 instance based on that configuration, and no overriding occurs. The CORS behavior
 that is established by the other `CrossOriginConfig` instance based on the `restrictive-cors` config (if present)
 prevails.
+
+NOTE: Remember that if you set configuration in a file that you include as part of your application JAR file, you need to
+rebuild and restart your application for any changes to take effect.
 
 == Next Steps
 

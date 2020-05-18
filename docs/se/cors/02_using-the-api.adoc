@@ -35,11 +35,17 @@
 :config-table-methods-column-explainer: {config-table-methods-column-explainer-default}
 :config-table-methods-column-header: Method
 
-The Helidon SE CORS API lets your application set up the CORS behavior for your application's resources
-quickly and clearly.
+Every Helidon SE application explicitly creates routing rules that govern how Helidon delivers each incoming
+ request to the code that needs to respond.
+These routing rules apply to your own endpoints, as well as those from built-in services.
+
+To add CORS behavior to endpoints, you need to make only minimal changes to set up the routing for those endpoints.
+Using a simple API provided by the Helidon SE CORS module,
+you define the CORS behavior you want and then include that behavior as you build the routing rules for the services
+in your application.
 
 == Understanding the Helidon CORS API
-You use two classes from the Helidon SE CORS API in your application:
+The Helidon SE CORS API provides two key classes that you use in your application:
 
 *  `CorsSupport` - Represents information about resource sharing for a single resource.
 Typically, you create one `CorsSupport` instance for each distinct resource in your application
@@ -62,7 +68,7 @@ To add CORS support to your Helidion SE application:
 
 . Determine the type of cross origin sharing you want to allow for each endpoint in your
 application.
-. Add the CORS dependency to the Maven `pom.xml` file.
+. Add a dependency on the Helidon {helidon-variant} CORS artifact to your Maven `pom.xml` file.
 +
 --
 // The add-cors-dependency tag's contents is reused from other SE and MP pages.
@@ -86,7 +92,7 @@ the following dependency in your project:
 ----
 // end::actual-cors-dependency[]
 --
-. Modify how your application constructs routing rules so they include CORS. See <<adding-cors-support, Adding CORS Support in Your Helidon SE Application>>
+. Modify how your application constructs routing rules so they include CORS as described in the following sections.
 
 == Adding CORS Support in Your Helidon SE Application [[adding-cors-support]]
 Because Helidon SE does not use annotation processing to identify endpoints, you need to

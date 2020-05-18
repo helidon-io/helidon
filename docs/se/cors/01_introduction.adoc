@@ -45,6 +45,7 @@ own endpoints to your application - health, metrics, and OpenAPI - that have int
 By adding very little code to your application, you control how all the resources in
 your application -- the ones you write and the ones provided by the Helidon built-in services -- can be shared across origins.
 
+== Before You Begin
 Before you revise your application to add CORS support, you need to decide what type of cross-origin sharing you want
 to allow for each resource your application exposes.
 For example, suppose for a given resource you want to allow unrestricted sharing for GET, HEAD, and POST requests
@@ -55,47 +56,11 @@ simple requests and stricter for others.
 
 Once you know the type of sharing you want to allow for each of your resources -- including any from built-in
 services -- you can change your application accordingly.
+
+== Next Steps
+For details about changing your application to include CORS support, see:
+
+* <<se/cors/02_using-the-api.adoc,Using the Helidon SE CORS API>>
+* <<se/cors/03_using-configuration.adoc,Using Configuration for CORS>>
+* <<se/cors/04_support-in-builtin-services.adoc, Using CORS in Built-in Services>>
 // end::cors-intro[]
-
-== Using the Helidon CORS API
-Every Helidon SE application explicitly creates routing rules that govern how Helidon delivers each incoming
- request to the code that needs to respond.
-These routing rules apply to your own endpoints, as well as those from built-in services.
-
-To add CORS behavior to endpoints, you need to make only minimal changes to set up the routing for those endpoints.
-Using a simple API provided by the Helidon SE CORS module,
-you define the CORS behavior you want and then include that behavior as you build the routing rules for the services
-in your application.
-
-See <<se/cors/02_using-the-api.adoc,Using the Helidon SE CORS API>>.
-
-== Adding Configuration
-The Helidon CORS API provides everything that you need to add CORS support to your resources, but you can use the API in combination with
-configuration. Doing so simplifies your application code by moving some of the CORS-related routing set-up out of
-procedural Java code into declarative configuration.
-
-Incorporating configuration with the API also lets you add a powerful override feature to your
-application that allows those who deploy your application to override the CORS behavior that
-the application code sets up.
-Deployers can modify the configuration to alter the CORS behavior of the endpoints in your application
-without requiring any changes to the application code.
-
-See <<se/cors/03_using-configuration.adoc,Using Configuration for CORS>>.
-
-
-== Controlling CORS for Built-in Services
-The health, metrics, and OpenAPI built-in services have integrated CORS support.
-If you include these services in your application's routing rules and do nothing else, then
-those services share their resources across all origins.
-For many situations, this is the desired behavior.
-
-To handle other cases, your application can add the override behavior for
-any of the built-in services.
-By writing your application to use configuration as it prepares the routing for those
-services, you let your users
-override the CORS behavior of the built-in services through configuration.
-
-You can use this override feature to control the CORS behavior of the built-in services even if you do not add CORS behavior
-to your own endpoints.
-
-See <<se/cors/04_support-in-builtin-services.adoc, Using CORS in Built-in Services>>.
