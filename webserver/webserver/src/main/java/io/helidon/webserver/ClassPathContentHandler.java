@@ -92,7 +92,9 @@ class ClassPathContentHandler extends StaticContentHandler {
         LOGGER.finest(() -> "Requested class path resource: " + resource);
 
         // this MUST be done, so we do not escape the bounds of configured directory
-        String requestedResource = URI.create(resource).normalize().toString();
+        // We use multi-arg constructor so it performs url encoding
+        URI myuri = new URI(null, null, resource, null);
+        String requestedResource = myuri.normalize().getPath();
 
         if (!requestedResource.equals(root) && !requestedResource.startsWith(rootWithTrailingSlash)) {
             return false;
