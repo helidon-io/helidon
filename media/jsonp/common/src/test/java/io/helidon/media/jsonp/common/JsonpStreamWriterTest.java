@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import javax.json.JsonStructure;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
+import io.helidon.common.http.HashParameters;
 import io.helidon.common.reactive.Multi;
 import io.helidon.media.common.MessageBodyWriterContext;
 
@@ -48,7 +49,7 @@ public class JsonpStreamWriterTest {
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Map.of());
     private static final JsonReaderFactory JSON_PARSER = Json.createReaderFactory(Map.of());
 
-    private static final MessageBodyWriterContext CONTEXT = MessageBodyWriterContext.create();
+    private static final MessageBodyWriterContext CONTEXT = MessageBodyWriterContext.create(HashParameters.create());
     private static final JsonpBodyStreamWriter WRITER = JsonpSupport.create().newStreamWriter();
     private static final GenericType<JsonObject> JSON_OBJECT = GenericType.create(JsonObject.class);
     private static final GenericType<JsonArray> JSON_ARRAY = GenericType.create(JsonArray.class);
