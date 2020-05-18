@@ -24,7 +24,6 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
  * The message is returned as a JSON object.
  */
 @Path("/greet")
-@RequestScoped
 public class GreetResource {
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
@@ -40,7 +39,6 @@ public class GreetResource {
      *
      * @return {@link JsonObject}
      */
-    @SuppressWarnings("checkstyle:designforextension")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public JsonObject getDefaultMessage() {
