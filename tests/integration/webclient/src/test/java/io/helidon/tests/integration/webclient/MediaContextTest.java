@@ -30,7 +30,6 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -106,7 +105,7 @@ public class MediaContextTest extends TestParent {
                 .thenAccept(it -> fail("No writer for String should be registered!"))
                 .exceptionally(ex -> {
                     assertThat(ex.getCause().getMessage(),
-                               startsWith("No writer found for type: class org.glassfish.json.JsonObject"));
+                               is("Transformation failed!"));
                     return null;
                 })
                 .toCompletableFuture()

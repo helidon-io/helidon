@@ -21,10 +21,10 @@ import org.eclipse.microprofile.reactive.messaging.Incoming;
 
 import javax.enterprise.context.ApplicationScoped;
 
-import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasItemInArray;
 
 /**
  * This test is modified version of official tck test in version 1.0
@@ -37,7 +37,7 @@ public class ConnectedBean {
 
     @Incoming("iterable-channel-in")
     public void receiveMethod(String msg) {
-        assertTrue(Arrays.asList(IterableConnector.TEST_DATA).contains(msg));
+        assertThat(IterableConnector.TEST_DATA, hasItemInArray(msg));
         LATCH.countDown();
     }
 }

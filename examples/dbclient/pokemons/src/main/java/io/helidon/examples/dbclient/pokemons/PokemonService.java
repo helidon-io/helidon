@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,12 @@ import java.util.concurrent.CompletionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.json.JsonObject;
+
 import io.helidon.common.http.Http;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbRow;
+import io.helidon.dbclient.DbRows;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
@@ -92,7 +95,9 @@ public class PokemonService implements Service {
      */
     private void listTypes(ServerRequest request, ServerResponse response) {
         dbClient.execute(exec -> exec.namedQuery("select-all-types"))
-                .thenAccept(response::send)
+                .thenApply(it -> it.map(JsonObject.class))
+                .thenApply(DbRows::publisher)
+                .thenAccept(it -> response.send(it, JsonObject.class))
                 .exceptionally(throwable -> sendError(throwable, response));
     }
 
@@ -106,7 +111,9 @@ public class PokemonService implements Service {
      */
     private void listPokemons(ServerRequest request, ServerResponse response) {
         dbClient.execute(exec -> exec.namedQuery("select-all-pokemons"))
-                .thenAccept(response::send)
+                .thenApply(it -> it.map(JsonObject.class))
+                .thenApply(DbRows::publisher)
+                .thenAccept(it -> response.send(it, JsonObject.class))
                 .exceptionally(throwable -> sendError(throwable, response));
     }
 

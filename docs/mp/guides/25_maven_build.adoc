@@ -22,4 +22,6 @@
 :helidon-uc-flavor: MP
 :helidon-lc-flavor: mp
 
+This guide describes Helidon's support for Maven projects.
+
 include::../../common/guides/maven_build.adoc[]

@@ -16,17 +16,6 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Custom Runtime Images with `jlink`
-
-// :description: Helidon Custom Runtime Images
-// :keywords: helidon, guide, jlink, image
-// :helidon-uc-flavor: MP-or-SE
-// :helidon-lc-flavor: mp-or-se
-// :docker-multi-stage-url: https://docs.docker.com/develop/develop-images/multistage-build/
-
-This guide describes how to build a custom runtime image for your Helidon application
-using Helidon's support for the JDK's `jlink` tool.
-
 == Introduction
 
 JDK 9 introduced the https://docs.oracle.com/en/java/javase/11/tools/jlink.html[`jlink`]

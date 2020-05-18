@@ -33,6 +33,7 @@ module io.helidon.microprofile.health {
     requires java.json;
     requires microprofile.config.api;
     requires microprofile.health.api;
+    requires io.helidon.config.mp;
 
     exports io.helidon.microprofile.health;
 

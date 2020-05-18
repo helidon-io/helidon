@@ -16,9 +16,11 @@
 package io.helidon.common.reactive;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Flow;
@@ -59,6 +61,28 @@ public interface Multi<T> extends Subscribable<T> {
      */
     static <T> Multi<T> concat(Flow.Publisher<T> firstMulti, Flow.Publisher<T> secondMulti) {
         return ConcatPublisher.create(firstMulti, secondMulti);
+    }
+
+    /**
+     * Concat streams to one.
+     *
+     * @param firstMulti  first stream
+     * @param secondMulti second stream
+     * @param publishers  more publishers to concat
+     * @param <T>         item type
+     * @return Multi
+     */
+    @SafeVarargs
+    @SuppressWarnings("varargs")
+    static <T> Multi<T> concat(Flow.Publisher<T> firstMulti, Flow.Publisher<T> secondMulti, Flow.Publisher<T>... publishers) {
+        if (publishers.length == 0) {
+            return concat(firstMulti, secondMulti);
+        } else if (publishers.length == 1) {
+            return concat(concat(firstMulti, secondMulti), publishers[0]);
+        } else {
+            return concat(concat(firstMulti, secondMulti), publishers[0],
+                    Arrays.copyOfRange(publishers, 1, publishers.length));
+        }
     }
 
     /**
@@ -150,6 +174,18 @@ public interface Multi<T> extends Subscribable<T> {
             return (Multi<T>) source;
         }
         return new MultiFromPublisher<>(source);
+    }
+
+    /**
+     * Create a {@link Multi} instance wrapped around the given {@link Single}.
+     *
+     * @param <T>    item type
+     * @param single source {@link Single} publisher
+     * @return Multi
+     * @throws NullPointerException if source is {@code null}
+     */
+    static <T> Multi<T> from(Single<T> single) {
+        return from((Publisher<T>) single);
     }
 
     /**
@@ -626,6 +662,28 @@ public interface Multi<T> extends Subscribable<T> {
     }
 
     /**
+     * Resume stream from single item if onComplete signal is intercepted. Effectively do an {@code append} to the stream.
+     *
+     * @param item one item to resume stream with
+     * @return Multi
+     */
+    default Multi<T> onCompleteResume(T item) {
+        Objects.requireNonNull(item, "item is null");
+        return onCompleteResumeWith(Multi.singleton(item));
+    }
+
+    /**
+     * Resume stream from supplied publisher if onComplete signal is intercepted.
+     *
+     * @param publisher new stream publisher
+     * @return Multi
+     */
+    default Multi<T> onCompleteResumeWith(Flow.Publisher<? extends T> publisher) {
+        Objects.requireNonNull(publisher, "publisher is null");
+        return new MultiOnCompleteResumeWith<>(this, publisher);
+    }
+
+    /**
      * Executes given {@link java.lang.Runnable} when any of signals onComplete, onCancel or onError is received.
      *
      * @param onTerminate {@link java.lang.Runnable} to be executed.
@@ -842,10 +900,23 @@ public interface Multi<T> extends Subscribable<T> {
      * Terminal stage, invokes provided consumer for every item in the stream.
      *
      * @param consumer consumer to be invoked for each item
+     * @return Single completed when the stream terminates
      */
-    default void forEach(Consumer<? super T> consumer) {
-        FunctionalSubscriber<T> subscriber = new FunctionalSubscriber<>(consumer, null, null, null);
+    default Single<Void> forEach(Consumer<? super T> consumer) {
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        Single<Void> single = Single.from(future, true);
+        FunctionalSubscriber<T> subscriber = new FunctionalSubscriber<>(consumer,
+                future::completeExceptionally,
+                () -> future.complete(null),
+                subscription -> {
+                    subscription.request(Long.MAX_VALUE);
+                    single.onCancel(subscription::cancel);
+                }
+        );
+
         this.subscribe(subscriber);
+
+        return single;
     }
 
 }

@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Signal 0L and complete after the specified time.
  */
-final class SingleTimer implements Single<Long> {
+final class SingleTimer extends CompletionSingle<Long> {
 
     private final long time;
 

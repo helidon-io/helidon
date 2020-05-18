@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,14 +26,12 @@ import io.helidon.dbclient.health.DbClientHealthCheck;
 import io.helidon.dbclient.metrics.DbCounter;
 import io.helidon.dbclient.metrics.DbTimer;
 import io.helidon.dbclient.tracing.DbClientTracing;
-import io.helidon.dbclient.webserver.jsonp.DbResultSupport;
 import io.helidon.health.HealthSupport;
-import io.helidon.media.jsonb.server.JsonBindingSupport;
-import io.helidon.media.jsonp.server.JsonSupport;
+import io.helidon.media.jsonb.common.JsonbSupport;
+import io.helidon.media.jsonp.common.JsonpSupport;
 import io.helidon.metrics.MetricsSupport;
 import io.helidon.tracing.TracerBuilder;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 
 /**
@@ -72,13 +70,12 @@ public final class MongoDbExampleMain {
         // By default this will pick up application.yaml from the classpath
         Config config = Config.create();
 
-        // Get webserver config from the "server" section of application.yaml
-        ServerConfiguration serverConfig =
-                ServerConfiguration.builder(config.get("server"))
-                        .tracer(TracerBuilder.create("mongo-db").build())
-                        .build();
-
-        WebServer server = WebServer.create(serverConfig, createRouting(config));
+        WebServer server = WebServer.builder(createRouting(config))
+                .config(config.get("server"))
+                .tracer(TracerBuilder.create("mongo-db").build())
+                .addMediaSupport(JsonpSupport.create())
+                .addMediaSupport(JsonbSupport.create())
+                .build();
 
         // Start the server and print some info.
         server.start().thenAccept(ws -> {
@@ -115,9 +112,6 @@ public final class MongoDbExampleMain {
                 .build();
 
         return Routing.builder()
-                .register("/db", JsonSupport.create())
-                .register("/db", JsonBindingSupport.create())
-                .register("/db", DbResultSupport.create())
                 .register(health)                   // Health at "/health"
                 .register(MetricsSupport.create())  // Metrics at "/metrics"
                 .register("/db", new PokemonService(dbClient))

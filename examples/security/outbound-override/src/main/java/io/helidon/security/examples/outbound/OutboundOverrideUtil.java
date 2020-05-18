@@ -25,7 +25,6 @@ import io.helidon.security.SecurityContext;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientRequestBuilder;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.WebServer;
@@ -63,7 +62,7 @@ public final class OutboundOverrideUtil {
 
     static CompletionStage<Void> startServer(Routing routing, int port, Consumer<WebServer> callback) {
         return WebServer.builder(routing)
-                .config(ServerConfiguration.builder().port(port))
+                .port(port)
                 .build()
                 .start()
                 .thenAccept(callback);

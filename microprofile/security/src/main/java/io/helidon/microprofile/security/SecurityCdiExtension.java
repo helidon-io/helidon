@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,18 +77,18 @@ public class SecurityCdiExtension implements Extension {
 
         if (securityBuilder.noProvider(AuthenticationProvider.class)) {
             LOGGER.info(
-                    "Security extension for microprofile is enabled, yet security configuration for authentication provider "
-                            + "is missing from config (requires providers configuration at key security.providers). "
-                            + "Security will not have any valid authentication provider");
+                    "Authentication provider is missing from security configuration, but security extension for microprofile "
+                    + "is enabled (requires providers configuration at key security.providers). "
+                    + "Security will not have any valid authentication provider");
 
             securityBuilder.addAuthenticationProvider(this::failingAtnProvider);
         }
 
         if (securityBuilder.noProvider(AuthorizationProvider.class)) {
             LOGGER.info(
-                    "Security extension for microprofile is enabled, yet security configuration for authorization provider "
-                            + "is missing from config (requires providers configuration at key security.providers). "
-                            + "ABAC provider is configured for authorization.");
+                    "Authorization provider is missing from security configuration, but security extension for microprofile "
+                    + "is enabled (requires providers configuration at key security.providers). "
+                    + "ABAC provider is configured for authorization.");
             securityBuilder.addAuthorizationProvider(AbacProvider.create());
         }
 

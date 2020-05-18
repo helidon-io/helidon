@@ -43,6 +43,7 @@ mvn ${MAVEN_ARGS} --version
 
 mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml \
     clean install -e \
+    -Dmaven.test.failure.ignore=true \
     -Pexamples,archetypes,spotbugs,javadoc,sources,tck,tests,pipeline
 
 examples/quickstarts/archetypes/test-archetypes.sh
