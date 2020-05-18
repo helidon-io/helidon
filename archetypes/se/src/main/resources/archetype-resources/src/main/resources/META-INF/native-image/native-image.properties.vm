@@ -1,1 +1,0 @@
-Args=-H:ReflectionConfigurationResources=${.}/helidon-example-reflection-config.json
