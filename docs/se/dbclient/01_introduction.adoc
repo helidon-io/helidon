@@ -48,7 +48,7 @@ By moving the native query code to configuration files, the Helidon DB Client al
 
 Before you begin you must:
 
-1. Add the DB Client dependencies to the Maven `pom.xml` file
+1. Add the DB Client dependencies to the Maven `pom.xml` file.
 2. Use Helidon Config to configure the client.
 
 The <<about/04_managing-dependencies.adoc, Managing Dependencies>> page describes how you
