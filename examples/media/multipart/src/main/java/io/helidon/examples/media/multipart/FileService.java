@@ -116,21 +116,18 @@ public final class FileService implements Service {
     }
 
     private void streamUpload(ServerRequest req, ServerResponse res) {
-        req.content().asStream(ReadableBodyPart.class).subscribe((part) -> {
-            // onNext
-            if ("file[]".equals(part.name())) {
-                final ByteChannel channel = newByteChannel(storage, part.filename());
-                Multi.from(part.content()).forEach(chunk -> writeChunk(channel, chunk));
-            }
-        }, (error) -> {
-            // onError
-            res.send(error);
-        }, () -> {
-            // onComplete
-            res.status(Http.Status.MOVED_PERMANENTLY_301);
-            res.headers().put(Http.Header.LOCATION, "/ui");
-            res.send();
-        });
+        req.content().asStream(ReadableBodyPart.class)
+                .onError(res::send)
+                .onComplete(() -> {
+                    res.status(Http.Status.MOVED_PERMANENTLY_301);
+                    res.headers().put(Http.Header.LOCATION, "/ui");
+                    res.send();
+                }).forEach((part) -> {
+                    if ("file[]".equals(part.name())) {
+                        final ByteChannel channel = newByteChannel(storage, part.filename());
+                        Multi.from(part.content()).forEach(chunk -> writeChunk(channel, chunk));
+                    }
+                });
     }
 
     private static Path createStorage() {

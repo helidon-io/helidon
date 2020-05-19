@@ -208,13 +208,8 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.media.multipart</groupId>
-                <artifactId>helidon-media-multipart-common</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.media.multipart</groupId>
-                <artifactId>helidon-media-multipart-server</artifactId>
+                <groupId>io.helidon.media</groupId>
+                <artifactId>helidon-media-multipart</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <!-- config -->

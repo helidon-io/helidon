@@ -45,8 +45,8 @@
             <artifactId>helidon-webserver</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.media.multipart</groupId>
-            <artifactId>helidon-media-multipart-common</artifactId>
+            <groupId>io.helidon.media</groupId>
+            <artifactId>helidon-media-multipart</artifactId>
         </dependency>
         <dependency>
             <artifactId>helidon-media-jsonp-common</artifactId>

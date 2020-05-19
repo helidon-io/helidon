@@ -24,12 +24,40 @@
         <artifactId>helidon-media-project</artifactId>
         <version>2.0.0-SNAPSHOT</version>
     </parent>
-    <packaging>pom</packaging>
-    <groupId>io.helidon.media.multipart</groupId>
-    <artifactId>helidon-media-multipart-project</artifactId>
+    <artifactId>helidon-media-multipart</artifactId>
     <name>Helidon Media MultiPart</name>
 
-    <modules>
-        <module>common</module>
-    </modules>
+    <description>
+        Multipart Support
+    </description>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.helidon.media</groupId>
+            <artifactId>helidon-media-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-http</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-reactive</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 </project>
