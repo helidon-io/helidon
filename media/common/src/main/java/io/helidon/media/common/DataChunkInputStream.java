@@ -165,9 +165,14 @@ public class DataChunkInputStream extends InputStream {
         @Override
         public void onNext(DataChunk item) {
             LOGGER.finest(() -> "Processing chunk: " + item.id());
-            CompletableFuture<DataChunk> prev = next;
-            next = new CompletableFuture<>();
-            prev.complete(item);
+            if (item.data().remaining() > 0) {
+                CompletableFuture<DataChunk> prev = next;
+                next = new CompletableFuture<>();
+                prev.complete(item);
+            } else {
+                releaseChunk(item, null);
+                subscription.request(1);
+            }
         }
 
         @Override

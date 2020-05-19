@@ -185,9 +185,17 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
             return true;
         }
         return headers.contentType().isEmpty()
-                && (
-                headers.first(Http.Header.CONTENT_LENGTH).isEmpty()
-                        || headers.first(Http.Header.CONTENT_LENGTH).get().equals("0"));
+                && noContentLength(headers)
+                && notChunked(headers);
+    }
+
+    private boolean noContentLength(WebClientResponseHeaders headers) {
+        return headers.first(Http.Header.CONTENT_LENGTH).isEmpty()
+                        || headers.first(Http.Header.CONTENT_LENGTH).get().equals("0");
+    }
+
+    private boolean notChunked(WebClientResponseHeaders headers) {
+        return headers.first(Http.Header.TRANSFER_ENCODING).isEmpty();
     }
 
     @Override
