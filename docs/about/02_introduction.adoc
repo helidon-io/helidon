@@ -20,11 +20,11 @@
 :pagename: Helidon-introduction
 :description: about Helidon
 :keywords: helidon, java, microservices, microprofile
-:h1Prefix: MP & SE
+
 
 Helidon is a collection of Java libraries for writing microservices that run on a fast web core powered by Netty. Its available in two frameworks: Helidon SE and Helidon MP.
 
-== Helidon: A Collection of Java Libraries 
+== A Collection of Java Libraries 
 
 Helidon provides an open source, lightweight, fast, reactive, cloud native framework for developing Java microservices. Helidon implements and supports MicroProfile, a baseline platform definition that leverages Java EE and Jakarta EE technologies for microservices and delivers application portability across multiple runtimes. 
 
@@ -50,7 +50,7 @@ SE is designed to be a microframework that supports the reactive programming mod
 
 The table below shows to primary differences between Helidon SE and Helidon MP.
 
-[%header,cols="3,3"] 
+[cols="3,3"] 
 |====================
 | *Helidon SE* |  *Helidon MP*
 |Helidon SE gives you full transparency and puts you in control.|Helidon MP is built on top of the Helidon libraries and provides platform definition that is familiar to enterprise Java developers. 
@@ -64,16 +64,14 @@ The table below shows to primary differences between Helidon SE and Helidon MP.
 The Helidon 2.0 release contains significant new features, enhancements and fixes. It also contains backward incompatible changes as described below:
 
 * GraalVM native-image support in Helidon MP +
-Helidon SE already supports GraalVM, but in 2.0 GraalVM native image support will also be available in Helidon MP. +
-<<guides/36_graalnative.adoc,GraalVM Native Images>>
+Helidon SE already supports GraalVM, but in 2.0 GraalVM native image support will also be available in Helidon MP. <<guides/36_graalnative.adoc,GraalVM Native Images Guide>>
 
 * Helidon command line tool +
-One of the new features in Helidon 2.0 is the addition of a Command Line Interface or CLI. The Helidon CLI enables developers to get started with Helidon with minimal effort: you can create a new application, build it, run it, and more, by writing some simple commands. +
+One of the new features in Helidon 2.0 is the addition of a Command Line Interface or CLI. The Helidon CLI enables developers to get started with Helidon with minimal effort: you can create a new application, build it, run it, and more, by writing some simple commands. <<se/cli/01_introduction.adoc, Learn more>>.
 
 
-* New database client for Helidon SE +
-This will include support for the MongoDB reactive driver and brings Health Checks, Metrics, and Tracing support to every Helidon API. +
-<<se/dbclient/01_introduction.adoc,DB Client for Helidon SE>>
+* New DB client for Helidon SE +
+This will include support for the MongoDB reactive driver and brings Health Checks, Metrics, and Tracing support to every Helidon API. <<se/dbclient/01_introduction.adoc,Learn more>>.
 
 
 * Extending MicroProfile Reactive Messaging and Reactive Operators Support +
@@ -81,17 +79,17 @@ MP Reactive Operators will be included in both frameworks, while MP Reactive Mes
 <<mp/reactivemessaging/01_introduction.adoc, Reactive Messaging>> and <<mp/reactivestreams/01_introduction.adoc, Reactive Streams>>.
 
 * Helidon Web Client +
-The new reactive web client can integrate with other Helidon SE APIs. +
-<<se/webclient/01_introduction.adoc, Web Client>>.
+The new reactive web client can integrate with other Helidon SE APIs. 
+<<se/webclient/01_introduction.adoc, Learn more>>.
 
 
 * Additional Websocket support +
-Based upon the Tyrus implementation, Helidon receives WebSocket API support. +
-<<se/websocket/01_overview.adoc, Websocket SE>>.
+Based upon the Tyrus implementation, Helidon receives WebSocket API support. 
+<<se/websocket/01_overview.adoc, Learn more>>.
 
 
 * Support for Java 11 APIs +
-Helidon will require Java 11 or newer. +
+Helidon will require Java 11 or newer. 
 <<about/03_prerequisites.adoc, Prerequisites for Helidon 2.0>>.
 
 
@@ -103,7 +101,9 @@ http://url[Cross-Origin Resource Sharing (CORS) in Helidon]
 * Backward incompatible changes +
 View the https://github.com/oracle/helidon/blob/2.0.0-M1/CHANGELOG.md#backward-incompatible-changes[changelog] for information about potential breaking changes, including package name changes.
 
+== Next Steps
 
+<<guides/01_overview.adoc#_getting_started,Helidon Quickstart Examples>>
 
 
 
