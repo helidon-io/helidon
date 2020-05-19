@@ -16,16 +16,16 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Helidon SE Porting Guide
-:description: Helidon Porting Guide
-:keywords: helidon, porting, incompatibilities
+= Helidon SE Migration Guide
+:description: Helidon Migration Guide
+:keywords: helidon, porting, migration, incompatibilities
 :helidon-uc-flavor: SE
 :helidon-lc-flavor: se
 
 In Helidon 2 we have made some changes to APIs and runtime behavior. This guide
-will help you port a Helidon SE 1.x application to 2.x.
+will help you migrate a Helidon SE 1.x application to 2.x.
 
-include::../../common/guides/porting.adoc[]
+include::../../common/guides/migration.adoc[]
 
 == Configuration
 
