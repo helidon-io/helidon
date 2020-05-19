@@ -15,17 +15,21 @@
  */
 package io.helidon.media.multipart.common;
 
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Processor;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.Flow.Subscription;
+import java.util.function.Function;
 
 import io.helidon.common.http.DataChunk;
-import io.helidon.common.reactive.OriginThreadPublisher;
+import io.helidon.common.reactive.EmittingPublisher;
+import io.helidon.common.reactive.Multi;
+import io.helidon.common.reactive.Single;
 import io.helidon.common.reactive.SubscriptionHelper;
 import io.helidon.media.common.MessageBodyWriterContext;
 
@@ -34,68 +38,63 @@ import io.helidon.media.common.MessageBodyWriterContext;
  * payload. This processor is a single use publisher that supports a single
  * subscriber, it is not resumable.
  */
-public final class MultiPartEncoder implements Processor<WriteableBodyPart, DataChunk> {
+public class MultiPartEncoder implements Processor<WriteableBodyPart, DataChunk> {
 
-    private Subscription upstream;
-    private BodyPartContentSubscriber contentSubscriber;
-
-    /**
-     * The writer context.
-     */
     private final MessageBodyWriterContext context;
-
-    /**
-     * The boundary used for the generated multi-part message.
-     */
     private final String boundary;
+    private Subscriber<? super DataChunk> subscriber;
+    private Subscription subscription;
+    private final CompletableFuture<EmittingPublisher<Flow.Publisher<DataChunk>>> emitterFuture = new CompletableFuture<>();
+    private EmittingPublisher<Flow.Publisher<DataChunk>> emitter;
 
-    /**
-     * Complete flag.
-     */
-    private volatile boolean complete;
-
-    /**
-     * The downstream publisher.
-     */
-    private final MultiPartChunksPublisher downstream;
-
-    /**
-     * Create a new multipart encoder.
-     * @param boundary boundary string
-     * @param context writer context
-     */
-    private MultiPartEncoder(String boundary, MessageBodyWriterContext context) {
+    public MultiPartEncoder(String boundary, MessageBodyWriterContext context) {
         Objects.requireNonNull(boundary, "boundary cannot be null!");
         Objects.requireNonNull(context, "context cannot be null!");
         this.context = context;
         this.boundary = boundary;
-        this.downstream = new MultiPartChunksPublisher();
-        this.complete = false;
     }
 
-    /**
-     * Create a new encoder instance.
-     * @param boundary multipart boundary delimiter
-     * @param context writer context
-     * @return MultiPartEncoder
-     */
     public static MultiPartEncoder create(String boundary, MessageBodyWriterContext context) {
         return new MultiPartEncoder(boundary, context);
     }
 
     @Override
-    public void subscribe(Subscriber<? super DataChunk> subscriber) {
-        downstream.subscribe(subscriber);
+    public void subscribe(final Subscriber<? super DataChunk> subscriber) {
+        Objects.requireNonNull(subscriber);
+        if(this.subscriber != null){
+            subscriber.onSubscribe(SubscriptionHelper.CANCELED);
+            subscriber.onError(new IllegalStateException("Only one Subscriber allowed"));
+            return;
+        }
+        this.subscriber = subscriber;
+        deferredInit();
     }
 
     @Override
-    public void onSubscribe(Subscription subscription) {
-        SubscriptionHelper.validate(upstream, subscription);
-        this.upstream = subscription;
+    public void onSubscribe(final Subscription subscription) {
+        SubscriptionHelper.validate(this.subscription, subscription);
+        this.subscription = subscription;
+        deferredInit();
+    }
+
+    private void deferredInit() {
+        if (subscription != null && subscriber != null) {
+            emitter = EmittingPublisher.create();
+            // relay request to upstream, already reduced by flatmap
+            emitter.onRequest(subscription::request);
+            Multi.from(emitter)
+                    .flatMap(Function.identity())
+                    .subscribe(subscriber);
+            emitterFuture.complete(emitter);
+        }
     }
 
     @Override
-    public void onNext(WriteableBodyPart bodyPart) {
+    public void onNext(final WriteableBodyPart bodyPart) {
+        emitter.emit(createBodyPartPublisher(bodyPart));
+    }
+
+    private Flow.Publisher<DataChunk> createBodyPartPublisher(final WriteableBodyPart bodyPart) {
         Map<String, List<String>> headers = bodyPart.headers().toMap();
         StringBuilder sb = new StringBuilder();
 
@@ -116,103 +115,27 @@ public final class MultiPartEncoder implements Processor<WriteableBodyPart, Data
 
         // end of headers empty line
         sb.append("\r\n");
-        downstream.submit(sb.toString());
-        contentSubscriber = new BodyPartContentSubscriber();
-        bodyPart.content()
-                .toPublisher(context)
-                .subscribe(contentSubscriber);
+        return Multi.concat(Multi.concat(
+                // Part prefix
+                Single.just(DataChunk.create(sb.toString().getBytes(StandardCharsets.UTF_8))),
+                // Part body
+                bodyPart.content().toPublisher(context)),
+                // Part postfix
+                Single.just(DataChunk.create("\n".getBytes(StandardCharsets.UTF_8))));
     }
 
     @Override
-    public void onError(Throwable error) {
-        downstream.error(error);
+    public void onError(final Throwable throwable) {
+        Objects.requireNonNull(throwable);
+        emitterFuture.whenComplete((e, t) -> e.fail(throwable));
     }
 
     @Override
     public void onComplete() {
-        complete = true;
+        emitterFuture.whenComplete((e, t) -> {
+            e.emit(Single.just(DataChunk.create("--boundary--".getBytes(StandardCharsets.UTF_8))));
+            e.complete();
+        });
     }
 
-    /**
-     * Complete this publisher or request the next part.
-     */
-    void onPartComplete() {
-        if (complete) {
-            downstream.submit(DataChunk.create(ByteBuffer.wrap(MimeParser.getBytes("--" + boundary + "--"))));
-            downstream.complete();
-        } else {
-            downstream.requestNext();
-        }
-    }
-
-    /**
-     * Publisher of encoded chunks.
-     */
-    private final class MultiPartChunksPublisher extends OriginThreadPublisher<DataChunk, DataChunk> {
-
-        void submit(String data) {
-            downstream.submit(DataChunk.create(data.getBytes(StandardCharsets.UTF_8)));
-        }
-
-        void requestNext() {
-            long n = tryAcquire();
-            if (n > 0){
-                upstream.request(1);
-                if (contentSubscriber != null) {
-                    contentSubscriber.request(n);
-                }
-            }
-        }
-
-        @Override
-        protected void hookOnRequested(long n, long result) {
-            if (tryAcquire() > 0) {
-                upstream.request(1);
-                if (contentSubscriber != null) {
-                    contentSubscriber.request(n);
-                }
-            }
-        }
-
-        @Override
-        protected DataChunk wrap(DataChunk data) {
-            return data;
-        }
-    }
-
-    /**
-     * Subscriber of part content.
-     */
-    private final class BodyPartContentSubscriber implements Subscriber<DataChunk> {
-
-        private Subscription subscription;
-
-        @Override
-        public void onSubscribe(Subscription subscription) {
-            this.subscription = subscription;
-        }
-
-        @Override
-        public void onNext(DataChunk item) {
-            // TODO encode with a charset ?
-            downstream.submit(item);
-        }
-
-        @Override
-        public void onError(Throwable error) {
-            downstream.error(error);
-        }
-
-        @Override
-        public void onComplete() {
-            downstream.submit("\n");
-            onPartComplete();
-        }
-
-        void request(long n) {
-            if (subscription != null) {
-                subscription.request(n);
-            }
-        }
-    }
 }

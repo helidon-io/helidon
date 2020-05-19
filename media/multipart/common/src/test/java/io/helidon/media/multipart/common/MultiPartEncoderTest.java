@@ -19,8 +19,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.LongStream;
 
 import io.helidon.common.http.MediaType;
 import io.helidon.common.http.DataChunk;
@@ -99,7 +102,69 @@ public class MultiPartEncoderTest {
     }
 
     @Test
-    public void testSubcribingMoreThanOnce() {
+    public void testReqests() throws Exception {
+        AtomicInteger nexts = new AtomicInteger(0);
+        AtomicInteger requested = new AtomicInteger(0);
+        AtomicInteger receivedFromUpstream = new AtomicInteger(0);
+
+        MultiPartEncoder enc = MultiPartEncoder.create("boundary", MEDIA_CONTEXT.writerContext());
+        Multi.from(LongStream.range(1, 500)
+                .mapToObj(i ->
+                        WriteableBodyPart.builder()
+                                .entity("part" + i)
+                                .build()
+                ))
+                .peek(i -> receivedFromUpstream.incrementAndGet())
+                .subscribe(enc);
+        var subs = new Subscriber<DataChunk>() {
+
+            private Flow.Subscription subscription;
+
+            @Override
+            public void onSubscribe(final Flow.Subscription subscription) {
+                this.subscription = subscription;
+                //req(129);
+//                req(555);
+                req(3);
+                //req(1241);
+//                req(Long.MAX_VALUE);
+            }
+
+            @Override
+            public void onNext(final DataChunk item) {
+                nexts.incrementAndGet();
+//                System.out.println(nexts.incrementAndGet() + " Down. next");
+//                System.out.println();
+//                req(20);
+            }
+
+            void req(long l) {
+//                System.out.println("requesting " + l);
+                requested.addAndGet((int)l);
+                subscription.request(l);
+            }
+
+            @Override
+            public void onError(final Throwable throwable) {
+                throw new RuntimeException(throwable);
+            }
+
+            @Override
+            public void onComplete() {
+                System.out.println("completed");
+            }
+        };
+
+        enc.subscribe(subs);
+
+        System.out.println();
+        System.out.println("Requested   -> "+requested);
+        System.out.println("Intercepted -> "+nexts);
+        System.out.println("Ups. sent   -> "+receivedFromUpstream);
+    }
+
+    @Test
+    public void testSubscribingMoreThanOnce() {
         MultiPartEncoder encoder = MultiPartEncoder.create("boundary", MEDIA_CONTEXT.writerContext());
         Multi.just(EMPTY_PARTS).subscribe(encoder);
         try {
