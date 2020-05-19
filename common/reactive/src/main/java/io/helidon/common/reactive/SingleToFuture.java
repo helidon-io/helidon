@@ -62,7 +62,6 @@ final class SingleToFuture<T> extends CompletableFuture<T> implements Subscriber
         Subscription s = ref.getAndSet(null);
         if (s != null) {
             super.complete(item);
-            s.cancel();
         }
     }
 
