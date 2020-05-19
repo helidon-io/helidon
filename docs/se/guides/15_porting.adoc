@@ -1,0 +1,122 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2020 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Helidon SE Porting Guide
+:description: Helidon Porting Guide
+:keywords: helidon, porting, incompatibilities
+:helidon-uc-flavor: SE
+:helidon-lc-flavor: se
+
+In Helidon 2 we have made some changes to APIs and runtime behavior. This guide
+will help you port a Helidon SE 1.x application to 2.x.
+
+include::../../common/guides/porting.adoc[]
+
+== Configuration
+
+1. File watching is now done through a `ChangeWatcher` - use of `PollingStrategies.watch()` needs to be refactored to
+   `FileSystemWatcher.create()` and the method to configure it on config source builder has changed to
+   `changeWatcher(ChangeWatcher)`.
+2. Methods on `ConfigSources` now return specific builders (they use to return `AbstractParsableConfigSource.Builder`
+   with a complex type declaration). If you store such a builder in a variable, either change it to the correct type,
+   or use `var`
+3. Some APIs were cleaned up to be aligned with the development guidelines of Helidon. When using Git config source,
+   or etcd config source, the factory methods moved to the config source itself, and the builder now accepts all
+   configuration options through methods
+4. The API of config source builders has been cleaned, so now only methods that are relevant to a specific config
+   source type can be invoked on such a builder. Previously you could configure a polling strategy on a source that
+   did not support polling
+5. There is a small change in behavior of Helidon Config vs. MicroProfile config:
+   The MP TCK require that system properties are fully mutable (e.g. as soon as the property is changed, it
+   must be used), so MP Config methods work in this manner (with a certain performance overhead).
+   Helidon Config treats System properties as a mutable config source, with a (optional) time based polling strategy. So
+   the change is reflected as well, though not immediately (this is only relevant if you use change notifications).
+6. `CompositeConfigSource` has been removed from `Config`. If you need to configure `MerginStrategy`, you can do it now on
+    `Config` `Builder`
+
+== Resource class when loaded from Config
+
+The configuration approach to `Resource` class was using prefixes which was not aligned with our approach to configuration.
+All usages were refactored as follows:
+
+1. The `Resource` class expects a config node `resource` that will be used to read it
+2. The feature set remains unchanged - we support path, classpath, url, content as plain text, and content as base64
+3. Classes using resources are changed as well, such as `KeyConfig` - see details below
+
+== Media Support
+
+In Helidon 1.x support for JSON and other media types was configured when constructing
+`webserver.Routing` using the `register` method. In Helidon 2 Media Support has been
+refactored so that it can be shared between the Helidon `WebServer` and `WebClient`.
+You now specify media support as part of the WebServer build:
+
+```java
+WebServer.builder()
+    .addMediaSupport(JsonpSupport.create()) //registers reader and writer for Json-P
+    .build()
+```
+
+This replaces `Routing.builder().register(JsonSupport.create())...`
+
+The new JSON MediaSupport classes are:
+
+* `JsonpSupport`
+* `JsonbSupport`
+* `JacksonSupport`
+
+
+== Reactive
+
+XXX Were these just between milestone builds? And therefore does not need to be in
+porting guide? Is there something else we need to document?
+
+=== Removal of processor-like operators
+The formerly public `Flow.Processor` implementations performing common operations have been removed.
+Users should use the respective operators from `Single` and `Multi` instead:
+
+```java
+// before
+Flow.Publisher<Integer> source = ...
+MappingProcessor<Integer, String> mapper = new MappingProcessor<>(Integer::toString);
+source.subscribe(mapper);
+mapper.subscribe(subscriber);
+
+// after
+Flow.Publisher<Integer> source = ...
+Multi.from(source)
+     .map(Integer::toString)
+     .subscribe(subscriber)
+```
+
+=== Removal of Flows
+
+The class was providing basic `Flow.Publisher` implementations. Users should pick one of the static methods of
+`Single` or `Multi` instead, which provide the additional benefits of having fluent operators available to them for
+assembling reactive flows conveniently:
+```java
+// before
+Flow.Publisher<Integer> just = Flows.singletonPublisher(1);
+Flow.Publisher<Object> empty = Flows.emptyPublisher();
+
+// after
+Multi<Integer> just1 = Multi.singleton(1);
+Single<Integer> just2 = Single.just(1);
+
+Multi<Object> empty1 = Multi.empty();
+Single<Object> empty2 = Single.empty();
+

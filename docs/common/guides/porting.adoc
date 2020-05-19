@@ -1,0 +1,117 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2020 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+
+== Java 8 Runtime
+
+Java 8 is no longer supported. Java 11 or newer is required.
+
+== Common Utilities
+
+Since Helidon 2.x now requires Java 11 the helper classes that were provided for Java 8
+support have been removed. Specifically:
+
+- Removed `io.helidon.reactive.Flow`, use `java.util.concurrent.Flow`
+- Removed `io.helidon.common.CollectionsHelper`, use factory methods of `Set`, `Map` and `List`
+- Removed `io.helidon.common.OptionalHelper`, use methods of `java.util.Optional`
+- Removed `io.helidon.common.StackWalker`, use `java.lang.StackWalker`
+- Removed `io.helidon.common.InputStreamHelper`, use `java.io.InputStream` methods
+- Removed dependency on Project Reactor
+
+== Tracing
+
+We have upgraded to OpenTracing version 0.33.0 that is not backward compatible. OpenTracing
+introduced the following breaking changes:
+
+1. `TextMapExtractAdapter` and `TextMapInjectAdapter` are now `TextMapAdapter`
+2. module name changed from `opentracing.api` to `io.opentracing.api` (same for `noop` and `util`)
+3. `SpanBuilder` no longer has `startActive` method. Use `Tracer.activateSpan(Span)` instead.
+4. `ScopeManager.activate(Span, boolean)` is replaced by `ScopeManager.activate(Span)` - second parameter is now always
+            `false`
+5. `Scope ScopeManager.active()` is removed - replaced by `Span Tracer.activeSpan()`
+
+If you use the `TracerBuilder` abstraction in Helidon and have no custom Spans, there is no
+change required
+
+== Security: OIDC
+
+When the OIDC provider is configured to use cookie (default configuration) to carry authentication information,
+the cookie `Same-Site` is now set to `Lax` (used to be `Strict`). This is to prevent infinite redirects, as
+browsers would refuse to set the cookie on redirected requests (due to this setting).
+Only in the case of the frontend host and identity host match, we leave `Strict` as the default
+
+== Security: OidcConfig
+
+Configuration has been updated to use the new `Resource` approach:
+
+1. `oidc-metadata.resource` is the new key for loading `oidc-metadata` from local resource
+2. `sign-jwk.resource` is the new key for loading signing JWK resource
+
+== Security: JwtProvider and JwtAuthProvider
+
+Configuration has been updated to use the new `Resource` approach:
+
+1. `jwk.resource` is the new key for loading JWK for verifying signatures
+2. `jwt.resource` is also used for outbound as key for loading JWK for signing tokens
+
+==  SSL Key Configuration
+
+The configuration has been updated to have a nicer tree structure:
+
+Example of a public key from keystore:
+```yaml
+ssl:
+  keystore:
+    cert.alias: "service_cert"
+    resource.path: "src/test/resources/keystore/keystore.p12"
+    type: "PKCS12"
+    passphrase: "password"
+```
+
+Example of a private key from keystore:
+```yaml
+ssl:
+  keystore:
+    key:
+      alias: "myPrivateKey"
+      passphrase: "password"
+    resource.path: "src/test/resources/keystore/keystore.p12"
+    type: "PKCS12"
+    passphrase: "password"
+```
+
+Example of a pem resource with private key and certificate chain:
+```yaml
+ssl:
+  pem:
+    key:
+      passphrase: "password"
+      resource.resource-path: "keystore/id_rsa.p8"
+    cert-chain:
+      resource.resource-path: "keystore/public_key_cert.pem"
+```
+
+
+== GrpcTlsDescriptor
+
+Configuration has been updated to use the new `Resource` approach:
+
+1. `tls-cert.resource` is the new key for certificate
+2. `tls-key.resource` is the new key for private key
+3. `tl-ca-cert` is the the new key for certificate
+
