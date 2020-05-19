@@ -74,7 +74,7 @@ public final class MongoDbRows<T> {
         this.parent = parent;
     }
 
-    public Flow.Publisher<T> publisher() {
+    Flow.Publisher<T> publisher() {
         checkResult();
 
         return toPublisher();

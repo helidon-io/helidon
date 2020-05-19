@@ -114,9 +114,7 @@ class JdbcDbClient implements DbClient {
             });
 
             return (T) multi;
-        }
-
-        if (result instanceof Single) {
+        } else if (result instanceof Single) {
             Single<U> single = (Single<U>) result;
 
             CompletionAwaitable<U> future = single.thenCompose(it -> execute.doCommit()
@@ -125,9 +123,11 @@ class JdbcDbClient implements DbClient {
             future = future.exceptionally(RollbackHandler.create(execute, Level.WARNING));
 
             return (T) Single.from(future);
+        } else {
+            execute.doRollback();
+            throw new IllegalStateException("You must return a Single or Multi instance to inTransaction, yet "
+                                                    + "you provided: " + result.getClass().getName());
         }
-
-        return result;
     }
 
     /**

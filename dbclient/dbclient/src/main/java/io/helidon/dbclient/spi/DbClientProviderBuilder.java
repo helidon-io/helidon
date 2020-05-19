@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -138,9 +138,6 @@ public interface DbClientProviderBuilder<T extends DbClientProviderBuilder<T>> e
      *     <li>{@link io.helidon.dbclient.DbStatementType#DML} - used only when the statement is created as a DML statement
      *          such as when using {@link io.helidon.dbclient.DbExecute#createDmlStatement(String)}
      *          (this interceptor would not be enabled for inserts, updates, deletes)</li>
-     *     <li>{@link io.helidon.dbclient.DbStatementType#UNKNOWN} - used only when the statement is created as a general statement
-     *          such as when using {@link io.helidon.dbclient.DbExecute#createStatement(String)}
-     *          (this interceptor would not be enabled for any other statements)</li>
      * </ul>
      *
      * @param interceptor interceptor instance

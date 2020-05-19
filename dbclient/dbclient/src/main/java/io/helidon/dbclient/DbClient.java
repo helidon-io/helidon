@@ -41,7 +41,9 @@ public interface DbClient {
     /**
      * Execute database statements in transaction.
      *
-     * @param <T>      statement execution result type
+     * @param <T>      statement execution result type, MUST be either a {@link io.helidon.common.reactive.Multi}
+     *                 or a {@link io.helidon.common.reactive.Single}, as returned by all APIs of DbClient.
+     * @param <U>      the type provided by the result type
      * @param executor database statement executor, see {@link DbExecute}
      * @return statement execution result
      */
@@ -52,6 +54,7 @@ public interface DbClient {
      *
      * @param <T>      statement execution result type, MUST be either a {@link io.helidon.common.reactive.Multi}
      *                 or a {@link io.helidon.common.reactive.Single}, as returned by all APIs of DbClient
+     * @param <U>      the type provided by the result type
      * @param executor database statement executor, see {@link DbExecute}
      * @return statement execution result
      */
