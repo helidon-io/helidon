@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.logging.Logger;
 
+import io.helidon.common.reactive.Multi;
+import io.helidon.common.reactive.Single;
 import io.helidon.dbclient.DbInterceptorContext;
 import io.helidon.dbclient.DbRow;
-import io.helidon.dbclient.DbRows;
 import io.helidon.dbclient.DbStatementType;
 
 import com.mongodb.reactivestreams.client.FindPublisher;
@@ -43,12 +44,10 @@ final class MongoDbQueryExecutor {
         throw new UnsupportedOperationException("Utility class MongoDbQueryExecutor instances are not allowed!");
     }
 
-    static CompletionStage<DbRows<DbRow>> executeQuery(
-            MongoDbStatement dbStatement,
-            CompletionStage<DbInterceptorContext> dbContextFuture,
-            CompletableFuture<Void> statementFuture,
-            CompletableFuture<Long> queryFuture
-    ) {
+    static Multi<DbRow> executeQuery(MongoDbStatement dbStatement,
+                                     CompletionStage<DbInterceptorContext> dbContextFuture,
+                                     CompletableFuture<Void> statementFuture,
+                                     CompletableFuture<Long> queryFuture) {
 
         dbContextFuture.exceptionally(throwable -> {
             statementFuture.completeExceptionally(throwable);
@@ -56,48 +55,62 @@ final class MongoDbQueryExecutor {
             return null;
         });
 
-        CompletionStage<MongoDbStatement.MongoStatement> mongoStmtFuture = dbContextFuture.thenApply(dbContext -> {
-            MongoDbStatement.MongoStatement stmt
-                    = new MongoDbStatement.MongoStatement(DbStatementType.QUERY, READER_FACTORY, dbStatement.build());
-            if (stmt.getOperation() == MongoDbStatement.MongoOperation.QUERY) {
-                return stmt;
-            } else {
-                throw new UnsupportedOperationException(
-                        String.format("Operation %s is not supported", stmt.getOperation().toString()));
+        String statement = dbStatement.build();
+        MongoDbStatement.MongoStatement stmt;
+        try {
+            stmt = new MongoDbStatement.MongoStatement(DbStatementType.QUERY, READER_FACTORY, statement);
+        } catch (IllegalStateException e) {
+            // maybe this is a command?
+            try {
+                stmt = new MongoDbStatement.MongoStatement(DbStatementType.COMMAND, READER_FACTORY, statement);
+            } catch (IllegalStateException ignored) {
+                // we want to report the original exception
+                throw e;
             }
-        });
+        }
 
-        return executeQueryInMongoDB(dbStatement, mongoStmtFuture, statementFuture, queryFuture);
+        if (stmt.getOperation() != MongoDbStatement.MongoOperation.QUERY) {
+            if (stmt.getOperation() == MongoDbStatement.MongoOperation.COMMAND) {
+                return MongoDbCommandExecutor.executeCommand(dbStatement,
+                                                             dbContextFuture,
+                                                             statementFuture,
+                                                             queryFuture);
+            } else {
+                return Multi.error(new UnsupportedOperationException(
+                        String.format("Operation %s is not supported by query", stmt.getOperation().toString())));
+            }
+        }
+        // we reach here only for query statements
+
+        // final variable required for lambda
+        MongoDbStatement.MongoStatement usedStatement = stmt;
+        return Single.from(dbContextFuture)
+                .flatMap(it -> callStatement(dbStatement, usedStatement, statementFuture, queryFuture));
     }
 
-    private static CompletionStage<DbRows<DbRow>> executeQueryInMongoDB(
-            MongoDbStatement dbStatement,
-            CompletionStage<MongoDbStatement.MongoStatement> stmtFuture,
-            CompletableFuture<Void> statementFuture,
-            CompletableFuture<Long> queryFuture
-    ) {
+    private static Multi<DbRow> callStatement(MongoDbStatement dbStatement,
+                                              MongoDbStatement.MongoStatement mongoStmt,
+                                              CompletableFuture<Void> statementFuture,
+                                              CompletableFuture<Long> queryFuture) {
 
-        return stmtFuture.thenApply(mongoStmt -> {
-            final MongoCollection<Document> mc = dbStatement.db()
-                    .getCollection(mongoStmt.getCollection());
-            final Document query = mongoStmt.getQuery();
-            final Document projection = mongoStmt.getProjection();
-            LOGGER.fine(() -> String.format(
-                    "Query: %s, Projection: %s", query.toString(), (projection != null ? projection : "N/A")));
-            FindPublisher<Document> publisher = dbStatement.noTx()
-                     ? mc.find(query)
-                     : mc.find(dbStatement.txManager().tx(), query);
-            if (projection != null) {
-                publisher = publisher.projection(projection);
-            }
-            return publisher;
-        }).thenApply(mongoPublisher -> {
-            return new MongoDbRows<>(
-                    mongoPublisher,
-                    dbStatement,
-                    DbRow.class,
-                    statementFuture,
-                    queryFuture);
-        });
+        final MongoCollection<Document> mc = dbStatement.db()
+                .getCollection(mongoStmt.getCollection());
+        final Document query = mongoStmt.getQuery();
+        final Document projection = mongoStmt.getProjection();
+        LOGGER.fine(() -> String.format(
+                "Query: %s, Projection: %s", query.toString(), (projection != null ? projection : "N/A")));
+        FindPublisher<Document> publisher = dbStatement.noTx()
+                ? mc.find(query)
+                : mc.find(dbStatement.txManager().tx(), query);
+        if (projection != null) {
+            publisher = publisher.projection(projection);
+        }
+
+        return Multi.from(new MongoDbRows<>(publisher,
+                                            dbStatement,
+                                            DbRow.class,
+                                            statementFuture,
+                                            queryFuture)
+                                  .publisher());
     }
 }

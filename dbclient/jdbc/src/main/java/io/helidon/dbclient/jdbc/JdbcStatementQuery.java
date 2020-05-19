@@ -22,7 +22,6 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
@@ -42,18 +41,17 @@ import io.helidon.common.GenericType;
 import io.helidon.common.mapper.MapperException;
 import io.helidon.common.mapper.MapperManager;
 import io.helidon.common.reactive.Multi;
-import io.helidon.dbclient.DbClientException;
+import io.helidon.common.reactive.Single;
 import io.helidon.dbclient.DbColumn;
 import io.helidon.dbclient.DbInterceptorContext;
 import io.helidon.dbclient.DbMapperManager;
 import io.helidon.dbclient.DbRow;
-import io.helidon.dbclient.DbRows;
 import io.helidon.dbclient.DbStatementQuery;
 
 /**
  * Implementation of query.
  */
-class JdbcStatementQuery extends JdbcStatement<DbStatementQuery, DbRows<DbRow>> implements DbStatementQuery {
+class JdbcStatementQuery extends JdbcStatement<DbStatementQuery, Multi<DbRow>> implements DbStatementQuery {
 
     /** Local logger instance. */
     private static final Logger LOGGER = Logger.getLogger(JdbcStatementQuery.class.getName());
@@ -64,55 +62,79 @@ class JdbcStatementQuery extends JdbcStatement<DbStatementQuery, DbRows<DbRow>> 
     }
 
     @Override
-    protected CompletionStage<DbRows<DbRow>> doExecute(CompletionStage<DbInterceptorContext> dbContextFuture,
-                                                       CompletableFuture<Void> statementFuture,
-                                                       CompletableFuture<Long> queryFuture) {
+    protected Multi<DbRow> doExecute(CompletionStage<DbInterceptorContext> dbContextFuture,
+                                     CompletableFuture<Void> statementFuture,
+                                     CompletableFuture<Long> queryFuture) {
 
         executeContext().addFuture(queryFuture);
 
-        CompletionStage<DbRows<DbRow>> result = dbContextFuture.thenCompose(interceptorContext -> {
-            return connection().thenApply(conn -> {
-                PreparedStatement statement = super.build(conn, interceptorContext);
-                try {
-                    ResultSet rs = statement.executeQuery();
-                    // at this moment we have a DbRows
-                    statementFuture.complete(null);
-                    return processResultSet(executorService(),
-                                            dbMapperManager(),
-                                            mapperManager(),
-                                            queryFuture,
-                                            rs);
-                } catch (SQLException e) {
-                    LOGGER.log(Level.FINEST,
-                            String.format("Failed to execute query %s: %s", statement.toString(), e.getMessage()),
-                            e);
-                    throw new DbClientException("Failed to execute query", e);
-                }
-            });
-        });
-
-        result.exceptionally(throwable -> {
-            statementFuture.completeExceptionally(throwable);
-            return null;
-        });
-
-        return result;
+        return Single.from(dbContextFuture)
+                .flatMap(dbContext -> doExecute(dbContext, statementFuture, queryFuture));
     }
 
-    static DbRows<DbRow> processResultSet(
+    private Multi<DbRow> doExecute(DbInterceptorContext dbContext,
+                                   CompletableFuture<Void> statementFuture,
+                                   CompletableFuture<Long> queryFuture) {
+
+        return Single.from(connection())
+                .flatMap(connection -> doExecute(dbContext, connection, statementFuture, queryFuture));
+    }
+
+    private Multi<DbRow> doExecute(DbInterceptorContext dbContext,
+                                   Connection connection,
+                                   CompletableFuture<Void> statementFuture,
+                                   CompletableFuture<Long> queryFuture) {
+
+        // all below must run in an executor service, as it is blocking
+        CompletableFuture<Multi<DbRow>> result = new CompletableFuture<>();
+
+        executorService().submit(() -> {
+            PreparedStatement statement;
+            try {
+                // first try block is to create a statement
+                statement = super.build(connection, dbContext);
+            } catch (Exception e) {
+                result.completeExceptionally(e);
+                statementFuture.completeExceptionally(e);
+                queryFuture.completeExceptionally(e);
+                return;
+            }
+
+            try {
+                ResultSet rs = statement.executeQuery();
+                // at this moment we have a DbRows
+                statementFuture.complete(null);
+                result.complete(processResultSet(executorService(),
+                                                 dbMapperManager(),
+                                                 mapperManager(),
+                                                 queryFuture,
+                                                 rs));
+            } catch (Throwable e) {
+                LOGGER.log(Level.FINEST,
+                           String.format("Failed to execute query %s: %s", statement.toString(), e.getMessage()),
+                           e);
+                result.completeExceptionally(e);
+                statementFuture.completeExceptionally(e);
+            }
+        });
+
+        return Single.from(result).flatMap(Function.identity());
+
+    }
+
+    static Multi<DbRow> processResultSet(
             ExecutorService executorService,
             DbMapperManager dbMapperManager,
             MapperManager mapperManager,
             CompletableFuture<Long> queryFuture,
             ResultSet resultSet) {
 
-        return new JdbcDbRows<>(
-                                resultSet,
-                                executorService,
-                                dbMapperManager,
-                                mapperManager,
-                                queryFuture,
-                                DbRow.class);
+        return Multi.from(new JdbcDbRows(resultSet,
+                                         executorService,
+                                         dbMapperManager,
+                                         mapperManager,
+                                         queryFuture)
+                                  .publisher());
     }
 
     static Map<Long, DbColumn> createMetadata(ResultSet rs) throws SQLException {
@@ -171,156 +193,39 @@ class JdbcStatementQuery extends JdbcStatement<DbStatementQuery, DbRows<DbRow>> 
         return statementName();
     }
 
-    private static final class JdbcDbRows<T> implements DbRows<T> {
+    private static final class JdbcDbRows {
         private final AtomicBoolean resultRequested = new AtomicBoolean();
         private final ExecutorService executorService;
         private final DbMapperManager dbMapperManager;
         private final MapperManager mapperManager;
         private final CompletableFuture<Long> queryFuture;
         private final ResultSet resultSet;
-        private final JdbcDbRows<?> parent;
-        private final GenericType<T> currentType;
-        private final Function<?, T> resultMapper;
 
         private JdbcDbRows(ResultSet resultSet,
                            ExecutorService executorService,
                            DbMapperManager dbMapperManager,
                            MapperManager mapperManager,
-                           CompletableFuture<Long> queryFuture,
-                           Class<T> initialType) {
-
-            this(resultSet,
-                 executorService,
-                 dbMapperManager,
-                 mapperManager,
-                 queryFuture,
-                 GenericType.create(initialType),
-                 Function.identity(),
-                 null);
-        }
-
-        private JdbcDbRows(ResultSet resultSet,
-                           ExecutorService executorService,
-                           DbMapperManager dbMapperManager,
-                           MapperManager mapperManager,
-                           CompletableFuture<Long> queryFuture,
-                           GenericType<T> nextType,
-                           Function<?, T> resultMapper,
-                           JdbcDbRows<?> parent) {
+                           CompletableFuture<Long> queryFuture) {
 
             this.executorService = executorService;
             this.dbMapperManager = dbMapperManager;
             this.mapperManager = mapperManager;
             this.queryFuture = queryFuture;
             this.resultSet = resultSet;
-            this.currentType = nextType;
-            this.resultMapper = resultMapper;
-            this.parent = parent;
         }
 
-        @Override
-        public <U> DbRows<U> map(Function<T, U> mapper) {
-            return new JdbcDbRows<>(resultSet,
-                                    executorService,
-                                    dbMapperManager,
-                                    mapperManager,
-                                    queryFuture,
-                                    null,
-                                    mapper,
-                                    this);
-        }
-
-        @Override
-        public <U> DbRows<U> map(Class<U> type) {
-            return map(GenericType.create(type));
-        }
-
-        @Override
-        @SuppressWarnings("unchecked")
-        public <U> DbRows<U> map(GenericType<U> type) {
-            GenericType<T> currentType = this.currentType;
-
-            Function<T, U> theMapper;
-
-            if (null == currentType) {
-                theMapper = value -> mapperManager.map(value,
-                                                       GenericType.<T>create(value.getClass()),
-                                                       type);
-            } else if (currentType.equals(DbMapperManager.TYPE_DB_ROW)) {
-                // maybe we want the same type
-                if (type.equals(DbMapperManager.TYPE_DB_ROW)) {
-                    return (DbRows<U>) this;
-                }
-                // try to find mapper in db mapper manager
-                theMapper = value -> {
-                    //first try db mapper
-                    try {
-                        return dbMapperManager.read((DbRow) value, type);
-                    } catch (MapperException originalException) {
-                        // not found in db mappers, use generic mappers
-                        try {
-                            return mapperManager.map((DbRow) value,
-                                                     DbMapperManager.TYPE_DB_ROW,
-                                                     type);
-                        } catch (MapperException ignored) {
-                            throw originalException;
-                        }
-                    }
-                };
-            } else {
-                // one type to another
-                theMapper = value -> mapperManager.map(value,
-                                                       currentType,
-                                                       type);
-            }
-            return new JdbcDbRows<>(resultSet,
-                                    executorService,
-                                    dbMapperManager,
-                                    mapperManager,
-                                    queryFuture,
-                                    type,
-                                    theMapper,
-                                    this);
-        }
-
-        @Override
-        public Flow.Publisher<T> publisher() {
+        Flow.Publisher<DbRow> publisher() {
             checkResult();
             return toPublisher();
         }
 
-        @Override
-        public CompletionStage<List<T>> collect() {
-            checkResult();
-            return toFuture();
-        }
-
         @SuppressWarnings("unchecked")
-        private Flow.Publisher<T> toPublisher() {
-            if (null == parent) {
-                // this is DbRow type
-                return (Flow.Publisher<T>) new RowPublisher(executorService,
-                                                            resultSet,
-                                                            queryFuture,
-                                                            dbMapperManager,
-                                                            mapperManager);
-            }
-
-            Function<Object, T> mappingFunction = (Function<Object, T>) resultMapper;
-            Multi<Object> parentMulti = (Multi<Object>) parent.multi();
-
-            return parentMulti.map(mappingFunction::apply);
-        }
-
-        private Multi<T> multi() {
-            return Multi.from(publisher());
-        }
-
-        private CompletionStage<List<T>> toFuture() {
-
-            return Multi.from(toPublisher())
-                    .collectList()
-                    .toStage();
+        private Flow.Publisher<DbRow> toPublisher() {
+            return new RowPublisher(executorService,
+                                    resultSet,
+                                    queryFuture,
+                                    dbMapperManager,
+                                    mapperManager);
         }
 
         private void checkResult() {
@@ -330,7 +235,6 @@ class JdbcStatementQuery extends JdbcStatement<DbStatementQuery, DbRows<DbRow>> 
             resultRequested.set(true);
         }
     }
-
 
     private static final class RowPublisher implements Flow.Publisher<DbRow> {
         private final ExecutorService executorService;

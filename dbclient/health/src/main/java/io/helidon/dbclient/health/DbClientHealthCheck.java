@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package io.helidon.dbclient.health;
 
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
@@ -67,29 +67,16 @@ public final class DbClientHealthCheck implements HealthCheck {
         HealthCheckResponseBuilder builder = HealthCheckResponse.builder()
                 .name(name);
 
-        AtomicReference<Throwable> throwable = new AtomicReference<>();
         try {
-            dbClient.ping().toCompletableFuture()
-                    .exceptionally(theThrowable -> {
-                        throwable.set(theThrowable);
-                        return null;
-                    })
-                    .get();
+            dbClient.ping().await(10, TimeUnit.SECONDS);
+            builder.up();
         } catch (Throwable e) {
             builder.down();
-            throwable.set(e);
+            builder.withData("ErrorMessage", e.getMessage());
+            builder.withData("ErrorClass", e.getClass().getName());
+            e.printStackTrace();
         }
 
-        Throwable thrown = throwable.get();
-
-        if (null == thrown) {
-            builder.up();
-        } else {
-            thrown = thrown.getCause();
-            builder.down();
-            builder.withData("ErrorMessage", thrown.getMessage());
-            builder.withData("ErrorClass", thrown.getClass().getName());
-        }
         return builder.build();
     }
 

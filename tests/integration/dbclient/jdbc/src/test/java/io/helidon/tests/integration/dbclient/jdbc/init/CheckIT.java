@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -115,8 +115,6 @@ public class CheckIT {
 
     /**
      * Wait for database server to start.
-     *
-     * @param dbClient Helidon database client
      */
     private static void waitForStart() {
         ConnectionCheck check = new ConnectionCheck();
@@ -132,7 +130,6 @@ public class CheckIT {
      */
     @BeforeAll
     public static void setup() {
-        LOGGER.info(() -> String.format("Initializing Integration Tests"));
         waitForStart();
     }
 

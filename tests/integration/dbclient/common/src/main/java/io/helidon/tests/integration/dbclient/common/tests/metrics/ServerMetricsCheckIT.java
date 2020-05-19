@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,10 +33,10 @@ import javax.json.JsonStructure;
 import javax.json.JsonValue;
 import javax.json.stream.JsonParsingException;
 
+import io.helidon.common.reactive.Multi;
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbRow;
-import io.helidon.dbclient.DbRows;
 import io.helidon.dbclient.DbStatementType;
 import io.helidon.dbclient.metrics.DbCounter;
 import io.helidon.dbclient.metrics.DbTimer;
@@ -44,7 +44,6 @@ import io.helidon.metrics.MetricsSupport;
 import io.helidon.tests.integration.dbclient.common.AbstractIT;
 import io.helidon.tests.integration.dbclient.common.AbstractIT.Pokemon;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 
 import org.junit.jupiter.api.AfterAll;
@@ -54,9 +53,10 @@ import org.junit.jupiter.api.Test;
 import static io.helidon.tests.integration.dbclient.common.AbstractIT.CONFIG;
 import static io.helidon.tests.integration.dbclient.common.AbstractIT.LAST_POKEMON_ID;
 import static io.helidon.tests.integration.dbclient.common.AbstractIT.TYPES;
-
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -104,12 +104,11 @@ public class ServerMetricsCheckIT {
     @BeforeAll
     public static void startup() throws InterruptedException, ExecutionException {
         DB_CLIENT = initDbClient();
-        final ServerConfiguration serverConfig = ServerConfiguration.builder(CONFIG.get("server"))
-                .build();
-        final WebServer server = WebServer.create(serverConfig, createRouting());
+        final WebServer server = WebServer.create(createRouting(), CONFIG.get("server"));
         final CompletionStage<WebServer> serverFuture = server.start();
         serverFuture.thenAccept(srv -> {
-            LOGGER.info(() -> String.format("WEB server is running at http://%s:%d", srv.configuration().bindAddress(), srv.port()));
+            LOGGER.info(() -> String
+                    .format("WEB server is running at http://%s:%d", srv.configuration().bindAddress(), srv.port()));
             URL = String.format("http://localhost:%d", srv.port());
         });
         SERVER = serverFuture.toCompletableFuture().get();
@@ -154,18 +153,12 @@ public class ServerMetricsCheckIT {
     @Test
     public void testHttpMetrics() throws IOException, InterruptedException, ExecutionException {
         // Call select-pokemons to trigger it
-        DbRows<DbRow> rows;
-        try {
-            rows = DB_CLIENT.execute(exec -> exec
-                    .namedQuery("select-pokemons")
-            ).toCompletableFuture().get();
-        } catch (Throwable t) {
-            t.printStackTrace();
-            throw t;
-        }
-        List<DbRow> pokemonList = rows.collect().toCompletableFuture().get();
+        Multi<DbRow> rows = DB_CLIENT.execute(exec -> exec
+                .namedQuery("select-pokemons"));
+
+        List<DbRow> pokemonList = rows.collectList().await();
         // Call insert-pokemon to trigger it
-        Pokemon pokemon = new Pokemon(BASE_ID+1, "Lickitung", TYPES.get(1));
+        Pokemon pokemon = new Pokemon(BASE_ID + 1, "Lickitung", TYPES.get(1));
         Long result = DB_CLIENT.execute(exec -> exec
                 .namedInsert("insert-pokemon", pokemon.getId(), pokemon.getName())
         ).toCompletableFuture().get();
