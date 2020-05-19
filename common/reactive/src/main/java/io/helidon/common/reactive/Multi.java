@@ -73,7 +73,9 @@ public interface Multi<T> extends Subscribable<T> {
      */
     @SafeVarargs
     @SuppressWarnings({"varargs", "unchecked"})
-    static <T> Multi<T> concat(Flow.Publisher<T> firstPublisher, Flow.Publisher<T> secondPublisher, Flow.Publisher<T>... morePublishers) {
+    static <T> Multi<T> concat(Flow.Publisher<T> firstPublisher,
+                               Flow.Publisher<T> secondPublisher,
+                               Flow.Publisher<T>... morePublishers) {
         Flow.Publisher<T>[] prefixed = new Flow.Publisher[2 + morePublishers.length];
         prefixed[0] = firstPublisher;
         prefixed[1] = secondPublisher;
