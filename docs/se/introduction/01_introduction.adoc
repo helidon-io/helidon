@@ -36,7 +36,7 @@ The REST framework for Helidon SE is the Helidon WebServer. It's built on top
 of Netty and uses a straight forward request routing API and supports a
 number of additional Helidon features:
 
-[cols="4,6"]
+[cols="3,6"]
 |====================
 | Reactive Web Server |  WebServer provides an asynchonous and reactive API for creating web applications. The API is inspired by popular NodeJS and Java frameworks.
 <<se/webserver/01_introduction.adoc, Learn more>>.
@@ -65,7 +65,7 @@ It is not derived from a Java EE
 application server. That means your cloud native application is compact
 and efficient without unnecessary overhead or bloat.
 |JSON-P and JSON-B  |  Helidon supports both JSON processing (JSON P) and JSON building (JSON B) APIs.
-| 
+
 |====================
 
 == Next Steps
