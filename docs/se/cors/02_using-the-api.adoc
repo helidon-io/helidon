@@ -68,9 +68,12 @@ To add CORS support to your Helidion SE application:
 
 . Determine the type of cross origin sharing you want to allow for each endpoint in your
 application.
-. Add a dependency on the Helidon {helidon-variant} CORS artifact to your Maven `pom.xml` file.
+. {blank}
 +
 --
+Add a dependency on the Helidon {helidon-variant} CORS artifact to your Maven `pom.xml` file.
+
+
 // The add-cors-dependency tag's contents is reused from other SE and MP pages.
 // The actual dependency is different for SE and MP, so we tag it separately from the intro text so the
 // MP pages can reuse this intro text but use their own "actual" dependency. We could have parameterized
@@ -218,8 +221,7 @@ CORS.
 The order of steps 2 and 5 above is important. When processing an incoming request, the Helidon CORS implementation
 scans the `CrossOriginConfig` instances in the order they were added to the `CorsSupport` object, stopping as soon as
 it finds a `CrossOriginConfig` instance for which `allowMethods` matches the HTTP method of the
-request. As you construct a `CorsSupport` object, make sure to add the `CrossOriginConfig` objects
-from most specific to least specific.
+request.
 
 The few additional lines described above allow the greeting application to participate in CORS.
 

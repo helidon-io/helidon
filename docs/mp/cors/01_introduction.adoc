@@ -16,7 +16,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Introduction to CORS in Helidon MP
+= About CORS in Helidon MP
 :toc:
 :toc-placement: preamble
 :pagename: intro-cors-in-mp
@@ -34,49 +34,18 @@
 :mp-cors-config-ref: {mp-pages-ref-prefix}/03_configuration-with-cors-mp.adoc
 :mp-cors-builtin-services-ref: {mp-pages-ref-prefix}/04_support-in-builtin-services.adoc
 
-
-Cross-origin resource sharing (CORS) support in Helidon SE provides a flexible mechanism that
-allows a Helidon SE application to control how other web applications can access its resources,
+link:{cors-spec}[Cross-origin resource sharing] (CORS) support in Helidon MP provides a flexible
+mechanism that allows a Helidon MP application to control how other web applications can access its resources,
 even if that web application is not served from the same domain.
+
 
 == Overview
 include::{se-intro-page-inc}[tag=cors-intro]
 
-To introduce CORS into your Helidon MP application, do any or all of the following (summarized below):
+== Next Steps
+To introduce CORS into your Helidon MP application, do any or all of the following:
 
-* Modify your code using the Helidon MP CORS API.
-* Use configuration to override the CORS settings established in your application code.
-* Include into your application any of the built-in Helidon services automatically support CORS.
-
-
-== Using the Helidon MP CORS API
-To enable CORS behavior for a resource in your Helidon MP application, you make minimal changes to the
-JAX-RS resource class that implements your resource.
-By simply adding the Helidon MP `@CrossOrigin` annotation to a particular method in your resource class,
-you allow Helidon MP to enforce the CORS protocol for all of that resource's endpoints.
-
-To find out more about CORS-enabling your resources, see <<{mp-using-cors-ref}, Using CORS in Helidon MP>>.
-
-== Adding Configuration
-When you annotate your resource method, you set the parameters on the `@CrossOrigin` annotation
-to provide the CORS behavior you designed for that resource.
-The Helidon MP CORS implementation automatically provides an override feature.
-You or a deployer or a user of your application can change the CORS behavior for any resource
-by modifying the application's MicroProfile configuration file, adding configuration that specifies alternate
-CORS behavior without requiring any changes to the application code.
-
-To learn about using configuration to override CORS settings for your application endpoints, see
-<<{mp-cors-config-ref},Using Configuration with CORS MP>>.
-
-== Controlling CORS for Built-in Services
-The health, metrics, and OpenAPI built-in services have integrated CORS support.
-If you add dependencies on these services to your project and also add a dependency on
-the Helidon MP CORS module, then the built-in services automatically participate in CORS.
-You do not need to enable your own endpoints for CORS if you just want the built-in services to
-work with CORS.
-
-You and your users can use configuration to override the default CORS behavior of the built-in services.
-
-See
-<<{mp-cors-builtin-services-ref},CORS in Helidon MP Built-in Services>>
-to understand the details of enabling and turning on CORS support for the built-in services.
+* Modify your code using the Helidon MP CORS API. <<{mp-using-cors-ref}, Learn more.>>
+* Use configuration to override the CORS settings established in your application code. <<{mp-cors-config-ref},Learn more.>>
+* Include into your application any of the built-in Helidon services that automatically
+support CORS. <<{mp-cors-builtin-services-ref},Learn more.>>

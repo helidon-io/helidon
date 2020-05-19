@@ -16,7 +16,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Using Configuration with CORS MP
+= Using Configuration with CORS in Helidon MP
 :toc:
 :toc-placement: preamble
 :pagename: cors-mp-configuration
@@ -41,11 +41,11 @@ You and your users can override that behavior, as well as the CORS behavior of t
 using MicroProfile configuration.
 
 == Using Configuration with Helidon MP CORS
-CORS for Helidon MP lets you and your users override the CORS behavior you establish for your endpoints
-using the `@CrossOrigin` annotation in your application as well as the default CORS behavior of the built-in
-Helidon services.
+When you annotate your resource method, you set the parameters on the `@CrossOrigin` annotation
+to provide the CORS behavior you designed for that resource.
 
-You need to understand how to specify the overriding values for the CORS attributes in configuration
+To use CORS in your Helidon MP application, you need to understand how to specify the overriding
+values for the CORS attributes in configuration
 and then how to associate those values with the endpoint you want them to affect.
 
 == Specifying Override Values in Configuration [[cors-configuration-formats]]

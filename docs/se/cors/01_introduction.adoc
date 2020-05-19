@@ -56,6 +56,7 @@ simple requests and stricter for others.
 
 Once you know the type of sharing you want to allow for each of your resources -- including any from built-in
 services -- you can change your application accordingly.
+// end::cors-intro[]
 
 == Next Steps
 For details about changing your application to include CORS support, see:
@@ -63,4 +64,3 @@ For details about changing your application to include CORS support, see:
 * <<se/cors/02_using-the-api.adoc,Using the Helidon SE CORS API>>
 * <<se/cors/03_using-configuration.adoc,Using Configuration for CORS>>
 * <<se/cors/04_support-in-builtin-services.adoc, Using CORS in Built-in Services>>
-// end::cors-intro[]
