@@ -61,31 +61,32 @@ The table below shows to primary differences between Helidon SE and Helidon MP.
 |====================
 
 == What's New in Helidon 2.0
-The Helidon 2.0 release contains significant new features, enhancements and fixes. It also contains backward incompatible changes as described below:
+The Helidon 2.0 release contains significant new features, enhancements and fixes.
 
-* GraalVM native-image support in Helidon MP +
+TIP: For a complete list of Helidon 2.0 fixes and enhancements, see <<link to changelog>>
+
+* GraalVM Native-image Support in Helidon MP +
 Helidon SE already supports GraalVM, but in 2.0 GraalVM native image support will also be available in Helidon MP. <<guides/36_graalnative.adoc,GraalVM Native Images Guide>>
 
-* Helidon command line tool +
-One of the new features in Helidon 2.0 is the addition of a Command Line Interface or CLI. The Helidon CLI enables developers to get started with Helidon with minimal effort: you can create a new application, build it, run it, and more, by writing some simple commands. <<se/cli/01_introduction.adoc, Learn more>>.
+* Helidon Command Line Tool +
+One of the new features in Helidon 2.0 is the addition of a command line interface. The Helidon CLI enables developers to get started with Helidon with minimal effort: you can create a new application, build it, run it, and more, by writing some simple commands. <<se/cli/01_introduction.adoc, Helidon CLI>>.
 
 
-* New DB client for Helidon SE +
-This will include support for the MongoDB reactive driver and brings Health Checks, Metrics, and Tracing support to every Helidon API. <<se/dbclient/01_introduction.adoc,Learn more>>.
+* DB Client for Helidon SE +
+The new database client for Helidon SE will include support for the MongoDB reactive driver and brings Health Checks, Metrics, and Tracing support to every Helidon API. <<se/dbclient/01_introduction.adoc, DB Client>>.
 
 
 * Extending MicroProfile Reactive Messaging and Reactive Operators Support +
-MP Reactive Operators will be included in both frameworks, while MP Reactive Messaging will only be included in Helidon MP. +
-<<mp/reactivemessaging/01_introduction.adoc, Reactive Messaging>> and <<mp/reactivestreams/01_introduction.adoc, Reactive Streams>>.
+MP Reactive Operators will be included in both frameworks, while MP Reactive Messaging will only be included in Helidon MP. <<mp/reactivemessaging/01_introduction.adoc, Reactive Messaging>> and <<mp/reactivestreams/01_introduction.adoc, Reactive Streams>>.
 
 * Helidon Web Client +
 The new reactive web client can integrate with other Helidon SE APIs. 
-<<se/webclient/01_introduction.adoc, Learn more>>.
+<<se/webclient/01_introduction.adoc, Web Client>>.
 
 
-* Additional Websocket support +
+* Additional Websocket Support +
 Based upon the Tyrus implementation, Helidon receives WebSocket API support. 
-<<se/websocket/01_overview.adoc, Learn more>>.
+<<se/websocket/01_overview.adoc, Websocket>>.
 
 
 * Support for Java 11 APIs +
@@ -94,8 +95,7 @@ Helidon will require Java 11 or newer.
 
 
 * CORS support for MP and SE +
-Although it is possible for any Helidon application to implement its own support for CORS, there are common tasks (such as processing preflight requests) that can be provided in a Helidon module. +
-http://url[Cross-Origin Resource Sharing (CORS) in Helidon]
+Although it is possible for any Helidon application to implement its own support for CORS, there are common tasks (such as processing preflight requests) that can be provided in a Helidon module. http://url[Cross-Origin Resource Sharing (CORS) in Helidon]
 
 
 * Backward incompatible changes +
