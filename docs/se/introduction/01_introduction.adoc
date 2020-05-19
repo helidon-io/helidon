@@ -36,7 +36,9 @@ The REST framework for Helidon SE is the Helidon WebServer. It's built on top
 of Netty and uses a straight forward request routing API and supports a
 number of additional Helidon features:
 
-image::images/SE_components.png[SE Components]
+image::SE_components.png[SE Components]
+
+== SE Component Overview
 
 * Reactive Web Server +
 WebServer provides an asynchonous and reactive API for creating web applications. The API is inspired by popular NodeJS and Java frameworks.
