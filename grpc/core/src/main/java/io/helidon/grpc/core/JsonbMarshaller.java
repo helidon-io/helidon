@@ -20,7 +20,6 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
-import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Named;
 import javax.json.bind.Jsonb;
 import javax.json.bind.JsonbBuilder;
@@ -64,7 +63,6 @@ public class JsonbMarshaller<T>
      * instances of {@link JsonbMarshaller}.
      */
     @Named("jsonb")
-    @ApplicationScoped
     public static class Supplier implements MarshallerSupplier {
         @Override
         public <T> MethodDescriptor.Marshaller<T> get(Class<T> clazz) {
