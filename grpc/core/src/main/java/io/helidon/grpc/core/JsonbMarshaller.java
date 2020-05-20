@@ -44,7 +44,7 @@ public class JsonbMarshaller<T>
      *
      * @param clazz  the type of object to marshall
      */
-    public JsonbMarshaller(Class<T> clazz) {
+    JsonbMarshaller(Class<T> clazz) {
         this.clazz = clazz;
     }
 
