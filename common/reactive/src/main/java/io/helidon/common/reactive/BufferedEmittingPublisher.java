@@ -203,10 +203,27 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
         }
     }
 
+    private int unboundedFastPath(T item) {
+        if (buffer.isEmpty()) {
+            //Buffer drained, its ok to skip it
+            emitter.emit(item);
+            // ignore emit result, demand is unbounded
+            return 0;
+        } else {
+            //drain the buffer
+            buffer.add(item);
+            state.get().drain(this);
+            return buffer.size();
+        }
+    }
+
     private enum State {
         READY_TO_EMIT {
             @Override
             <T> int emit(BufferedEmittingPublisher<T> publisher, T item) {
+                if (publisher.isUnbounded()) {
+                    return publisher.unboundedFastPath(item);
+                }
                 publisher.buffer.add(item);
                 publisher.state.get().drain(publisher);
                 return publisher.buffer.size();

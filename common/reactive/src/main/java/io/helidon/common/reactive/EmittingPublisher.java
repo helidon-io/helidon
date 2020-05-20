@@ -219,7 +219,7 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
         READY_TO_EMIT {
             @Override
             <T> boolean emit(EmittingPublisher<T> publisher, T item) {
-                if (publisher.requested.getAndUpdate(r -> r > 0 ? r - 1 : 0) < 1) {
+                if (publisher.requested.getAndUpdate(r -> r > 0 ? r != Long.MAX_VALUE ? r - 1 : Long.MAX_VALUE : 0) < 1) {
                     return false;
                 }
                 try {
