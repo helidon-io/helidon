@@ -34,7 +34,6 @@ import io.helidon.media.jsonp.common.JsonpSupport;
 import io.helidon.metrics.MetricsSupport;
 import io.helidon.webclient.WebClient;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 
 import io.grpc.Channel;
@@ -170,10 +169,8 @@ public class MetricsIT {
                 .register(MetricsSupport.create())
                 .build();
 
-        // Run the web server on port 0 so that it picks a free ephemeral port
-        ServerConfiguration webServerConfig = ServerConfiguration.builder().port(0).build();
-
-        webServer = WebServer.create(webServerConfig, routing)
+        // Web server picks a free ephemeral port by default
+        webServer = WebServer.create(routing)
                      .start()
                      .toCompletableFuture()
                      .get(10, TimeUnit.SECONDS);

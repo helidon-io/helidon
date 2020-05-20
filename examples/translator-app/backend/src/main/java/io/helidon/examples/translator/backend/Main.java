@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.tracing.TracerBuilder;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 
 /**
@@ -48,20 +47,21 @@ public class Main {
                 .sources(ConfigSources.environmentVariables())
                 .build();
 
-        WebServer webServer = WebServer.create(
-                ServerConfiguration.builder()
-                        .port(9080)
-                        .tracer(TracerBuilder.create(config.get("tracing"))
-                                .serviceName("helidon-webserver-translator-backend")),
+        WebServer webServer = WebServer.builder(
                 Routing.builder()
-                        .register(new TranslatorBackendService()));
+                        .register(new TranslatorBackendService()))
+                .port(9080)
+                .tracer(TracerBuilder.create(config.get("tracing"))
+                                .serviceName("helidon-webserver-translator-backend")
+                                .build())
+                .build();
 
         return webServer.start()
                 .thenApply(ws -> {
                     System.out.println(
                             "WEB server is up! http://localhost:" + ws.port());
                     ws.whenShutdown().thenRun(()
-                            -> System.out.println("WEB server is DOWN. Good bye!"));
+                                                      -> System.out.println("WEB server is DOWN. Good bye!"));
                     return ws;
                 }).exceptionally(t -> {
                     System.err.println("Startup failed: " + t.getMessage());

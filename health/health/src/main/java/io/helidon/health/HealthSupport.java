@@ -20,7 +20,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -260,9 +259,9 @@ public final class HealthSupport implements Service {
      * Fluent API builder for {@link io.helidon.health.HealthSupport}.
      */
     public static final class Builder implements io.helidon.common.Builder<HealthSupport> {
-        private final Set<HealthCheck> allChecks = new LinkedHashSet<>();
-        private final Set<HealthCheck> livenessChecks = new LinkedHashSet<>();
-        private final Set<HealthCheck> readinessChecks = new LinkedHashSet<>();
+        private final List<HealthCheck> allChecks = new LinkedList<>();
+        private final List<HealthCheck> livenessChecks = new LinkedList<>();
+        private final List<HealthCheck> readinessChecks = new LinkedList<>();
 
         private final Set<Class<?>> excludedClasses = new HashSet<>();
         private final Set<String> includedHealthChecks = new HashSet<>();

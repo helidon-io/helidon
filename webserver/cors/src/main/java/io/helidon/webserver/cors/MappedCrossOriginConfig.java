@@ -138,11 +138,11 @@ public class MappedCrossOriginConfig implements Iterable<Map.Entry<String, Cross
     /**
      * Finds the {@code CrossOriginConfig} associated with the given path expression, if any.
      *
-     * @param pathExpr path expression to match on
+     * @param pathPattern path expression to match on
      * @return {@code Optional} of the corresponding basic cross-origin information
      */
-    public CrossOriginConfig get(String pathExpr) {
-        Buildable b = buildables.get(pathExpr);
+    public CrossOriginConfig get(String pathPattern) {
+        Buildable b = buildables.get(pathPattern);
         return b == null ? null : b.get();
     }
 

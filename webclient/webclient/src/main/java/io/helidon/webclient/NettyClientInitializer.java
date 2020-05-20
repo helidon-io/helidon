@@ -31,6 +31,7 @@ import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.handler.proxy.ProxyHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.util.concurrent.FutureListener;
@@ -76,7 +77,11 @@ class NettyClientInitializer extends ChannelInitializer<SocketChannel> {
         // proxy configuration
         configuration.proxy()
                 .flatMap(proxy -> proxy.handler(address))
-                .ifPresent(pipeline::addLast);
+                .ifPresent(it -> {
+                    ProxyHandler proxyHandler = (ProxyHandler) it;
+                    proxyHandler.setConnectTimeoutMillis(configuration.connectTimeout().toMillis());
+                    pipeline.addLast(proxyHandler);
+                });
 
         // SSL configuration
         if (address.toString().startsWith("https")) {

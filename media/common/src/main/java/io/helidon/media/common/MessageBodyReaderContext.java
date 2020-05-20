@@ -22,6 +22,7 @@ import java.nio.charset.UnsupportedCharsetException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.Flow.Subscription;
@@ -31,6 +32,7 @@ import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.http.ReadOnlyParameters;
+import io.helidon.common.reactive.CompletionSingle;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
 
@@ -152,6 +154,13 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
         if (payload == null) {
             return Single.<T>empty();
         }
+
+        // Flow.Publisher - can only be supported by streaming media
+        if (Flow.Publisher.class.isAssignableFrom(type.rawType())) {
+            throw new IllegalStateException("This method does not support unmarshalling of Flow.Publisher. Please use "
+                                                    + "a stream unmarshalling method.");
+        }
+
         try {
             Publisher<DataChunk> filteredPayload = applyFilters(payload, type);
             if (byte[].class.equals(type.rawType())) {
@@ -184,6 +193,13 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
         if (payload == null) {
             return Single.<T>empty();
         }
+
+        // Flow.Publisher - can only be supported by streaming media
+        if (Flow.Publisher.class.isAssignableFrom(type.rawType())) {
+            throw new IllegalStateException("This method does not support unmarshalling of Flow.Publisher. Please use "
+                                                    + "a stream unmarshalling method.");
+        }
+
         try {
             Publisher<DataChunk> filteredPayload = applyFilters(payload, type);
             MessageBodyReader<T> reader = (MessageBodyReader<T>) readers.get(readerType);
@@ -396,7 +412,7 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
      * Single from future.
      * @param <T> item type
      */
-    private static final class SingleFromCompletionStage<T> implements Single<T> {
+    private static final class SingleFromCompletionStage<T> extends CompletionSingle<T> {
 
         private final CompletionStage<? extends T> future;
         private Subscriber<? super T> subscriber;

@@ -23,4 +23,7 @@
 :helidon-lc-flavor: mp
 :docker-multi-stage-url: https://docs.docker.com/develop/develop-images/multistage-build/
 
+This guide describes how to build a GraalVM native image for a Helidon MP application.
+
+
 include::../../common/guides/graalnative.adoc[]

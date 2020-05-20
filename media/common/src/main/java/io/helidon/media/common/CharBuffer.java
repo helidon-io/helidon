@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,7 +66,7 @@ public class CharBuffer extends Writer {
      * @param charset The character set.
      * @return The encoded content.
      */
-    ByteBuffer encode(Charset charset) {
+    public ByteBuffer encode(Charset charset) {
         final ByteBuffer result = charset.encode(java.nio.CharBuffer.wrap(buffer, 0, count));
         POOL.release(buffer);
         buffer = null;

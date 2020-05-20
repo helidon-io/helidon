@@ -18,7 +18,6 @@ package io.helidon.examples.health.basics;
 import io.helidon.health.HealthSupport;
 import io.helidon.health.checks.HealthChecks;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 
 import org.eclipse.microprofile.health.HealthCheck;
@@ -51,10 +50,7 @@ public final class Main {
                 .get("/hello", (req, res) -> res.send("Hello World!"))
                 .build();
 
-        ServerConfiguration serverConfig = ServerConfiguration.builder()
-                .build();
-
-        WebServer ws = WebServer.create(serverConfig, routing);
+        WebServer ws = WebServer.create(routing);
 
         ws.start()
                 .thenApply(webServer -> {

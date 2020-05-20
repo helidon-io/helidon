@@ -138,6 +138,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         this.followRedirects = configuration.followRedirects();
         this.readTimeout = configuration.readTimout();
         this.connectTimeout = configuration.connectTimeout();
+        this.proxy = configuration.proxy().orElse(Proxy.noProxy());
     }
 
     public static WebClientRequestBuilder create(LazyValue<NioEventLoopGroup> eventGroup,
@@ -445,6 +446,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
                     .readTimeout(readTimeout)
                     .services(services)
                     .context(context)
+                    .proxy(proxy)
                     .build();
             WebClientRequestImpl clientRequest = new WebClientRequestImpl(this);
 

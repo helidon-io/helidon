@@ -16,6 +16,7 @@
 package io.helidon.common.reactive;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -29,8 +30,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-
-import io.helidon.common.mapper.Mapper;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.hasItems;
@@ -381,6 +380,36 @@ public class MultiTest {
     }
 
     @Test
+    void testOnCompleteResume() {
+        List<Integer> result = Multi.just(1, 2, 3)
+                .onCompleteResume(4)
+                .collectList()
+                .await(100, TimeUnit.MILLISECONDS);
+
+        assertThat(result, is(equalTo(List.of(1, 2, 3, 4))));
+    }
+
+    @Test
+    void testOnCompleteResumeWith() {
+        List<Integer> result = Multi.just(1, 2, 3)
+                .onCompleteResumeWith(Multi.just(4, 5, 6))
+                .collectList()
+                .await(100, TimeUnit.MILLISECONDS);
+
+        assertThat(result, is(equalTo(List.of(1, 2, 3, 4, 5, 6))));
+    }
+
+    @Test
+    void testOnCompleteResumeWithFirst() {
+        Integer result = Multi.<Integer>empty()
+                .onCompleteResume(1)
+                .first()
+                .await(100, TimeUnit.MILLISECONDS);
+
+        assertThat(result, is(equalTo(1)));
+    }
+
+    @Test
     void testFlatMap() throws ExecutionException, InterruptedException {
         final List<String> TEST_DATA = Arrays.asList("abc", "xyz");
         final List<String> EXPECTED = Arrays.asList("a", "b", "c", "x", "y", "z");
@@ -474,6 +503,95 @@ public class MultiTest {
                 .get();
 
         assertThat(result, is(equalTo(EXPECTED)));
+    }
+
+    @Test
+    void testConcatVarargs() {
+        final List<Integer> TEST_DATA_1 = Arrays.asList(1, 2, 3);
+        final List<Integer> TEST_DATA_2 = Arrays.asList(11, 12, 13);
+        final List<Integer> TEST_DATA_3 = Arrays.asList(21, 22, 23);
+        final List<Integer> TEST_DATA_4 = Arrays.asList(31, 32, 33);
+        final List<Integer> TEST_DATA_5 = Arrays.asList(41, 42, 43);
+        final List<Integer> TEST_DATA_6 = Arrays.asList(51, 52, 53);
+
+        final Function<List<List<Integer>>, List<Integer>> flatMap = lists -> lists.stream()
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
+
+        assertThat(Multi
+                .concat(Multi.from(TEST_DATA_1),
+                        Multi.just(TEST_DATA_2)
+                )
+                .collectList()
+                .await(), is(equalTo(flatMap.apply(List.of(
+                TEST_DATA_1,
+                TEST_DATA_2
+        )))));
+
+
+        assertThat(Multi
+                .concatArray(Multi.from(TEST_DATA_1),
+                        Multi.just(TEST_DATA_2),
+                        Multi.just(TEST_DATA_3)
+                )
+                .collectList()
+                .await(), is(equalTo(flatMap.apply(List.of(
+                TEST_DATA_1,
+                TEST_DATA_2,
+                TEST_DATA_3
+        )))));
+
+        assertThat(Multi
+                .concatArray(Multi.from(TEST_DATA_1),
+                        Multi.just(TEST_DATA_2),
+                        Multi.just(TEST_DATA_3),
+                        Multi.just(TEST_DATA_4)
+                )
+                .collectList()
+                .await(), is(equalTo(flatMap.apply(List.of(
+                TEST_DATA_1,
+                TEST_DATA_2,
+                TEST_DATA_3,
+                TEST_DATA_4
+        )))));
+
+
+        assertThat(Multi
+                        .concatArray(Multi.from(TEST_DATA_1),
+                                Multi.just(TEST_DATA_2),
+                                Multi.just(TEST_DATA_3),
+                                Multi.just(TEST_DATA_4),
+                                Multi.just(TEST_DATA_5)
+                        )
+                        .collectList()
+                        .await(),
+                is(equalTo(flatMap.apply(List.of(
+                        TEST_DATA_1,
+                        TEST_DATA_2,
+                        TEST_DATA_3,
+                        TEST_DATA_4,
+                        TEST_DATA_5
+                )))));
+
+
+        assertThat(Multi
+                        .concatArray(Multi.from(TEST_DATA_1),
+                                Multi.just(TEST_DATA_2),
+                                Multi.just(TEST_DATA_3),
+                                Multi.just(TEST_DATA_4),
+                                Multi.just(TEST_DATA_5),
+                                Multi.just(TEST_DATA_6)
+                        )
+                        .collectList()
+                        .await(),
+                is(equalTo(flatMap.apply(List.of(
+                        TEST_DATA_1,
+                        TEST_DATA_2,
+                        TEST_DATA_3,
+                        TEST_DATA_4,
+                        TEST_DATA_5,
+                        TEST_DATA_6
+                )))));
     }
 
     @Test

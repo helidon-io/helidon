@@ -15,7 +15,7 @@
 #
 cors-2-setup:
   paths:
-    - path-prefix: /cors2
+    - path-pattern: /cors2
       allow-origins: ["http://otherfoo.bar", "http://otherbar.foo"]
       allow-methods: ["DELETE", "PUT"]
       allow-headers: ["X-otherBar", "X-otherFoo"]

@@ -29,8 +29,7 @@ import javax.json.JsonObjectBuilder;
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
-import io.helidon.media.common.MediaSupport;
-import io.helidon.media.jsonp.common.JsonProcessing;
+import io.helidon.media.jsonp.common.JsonpSupport;
 import io.helidon.microprofile.server.Server;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientRequestBuilder;
@@ -58,7 +57,7 @@ public class TestCORS {
     private static final String JSON_NEW_GREETING_LABEL = "greeting";
 
     private static final JsonBuilderFactory JSON_BF = Json.createBuilderFactory(Collections.emptyMap());
-    private static final JsonProcessing JSON_PROCESSING = JsonProcessing.create();
+    private static final JsonpSupport JSONP_SUPPORT = JsonpSupport.create();
 
     private static WebClient client;
     private static Server server;
@@ -74,11 +73,7 @@ public class TestCORS {
             .start();
         client = WebClient.builder()
                     .baseUri("http://localhost:" + server.port())
-                    .mediaSupport(MediaSupport.builder()
-                        .registerDefaults()
-                        .registerReader(JSON_PROCESSING.newReader())
-                        .registerWriter(JSON_PROCESSING.newWriter())
-                        .build())
+                    .addMediaSupport(JSONP_SUPPORT)
                     .build();
     }
 
@@ -195,7 +190,7 @@ public class TestCORS {
         Optional<String> allowOrigin = headers.value(CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN);
         assertThat("Expected CORS header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN + " presence check",
                 allowOrigin.isPresent(), is(true));
-        assertThat(allowOrigin.get(), is("http://other.com"));
+        assertThat(allowOrigin.get(), is("*"));
     }
 
     @Order(100) // After all other tests so we can rely on deterministic greetings.

@@ -32,6 +32,9 @@ module helidon.tests.nimage.mp {
     requires microprofile.metrics.api;
     requires java.json.bind;
     requires microprofile.config.api;
+    // this is required, as otherwise the beans from this module
+    // never reach health check CDI extension
+    requires io.helidon.health.checks;
 
     exports io.helidon.tests.integration.nativeimage.mp1;
 

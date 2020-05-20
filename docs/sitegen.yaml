@@ -45,6 +45,7 @@ pages:
         - "**/*.adoc"
       excludes:
         - "se/grpc/09_marshalling.adoc"
+        - "common/**"
 backend:
     name: "vuetify"
     homePage: "about/01_overview.adoc"
@@ -96,7 +97,7 @@ backend:
               pathprefix: "/se/cors"
               glyph:
                 type: "icon"
-                value: "swap_horiz"
+                value: "share"
               items:
                 - includes:
                     - "se/cors/*.adoc"
@@ -230,6 +231,14 @@ backend:
               items:
                 - includes:
                     - "mp/extensions/*.adoc"
+            - title: "CORS"
+              pathprefix: "/mp/cors"
+              glyph:
+                type: "icon"
+                value: "share"
+              items:
+                - includes:
+                    - "mp/cors/*.adoc"
             - title: "gRPC server"
               pathprefix: "/mp/grpc"
               glyph:

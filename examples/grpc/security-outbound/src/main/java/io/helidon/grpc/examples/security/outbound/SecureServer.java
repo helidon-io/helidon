@@ -41,7 +41,6 @@ import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
@@ -127,7 +126,7 @@ public class SecureServer {
                                  .register(new RestService())
                                  .build();
 
-        WebServer webServer = WebServer.create(ServerConfiguration.create(config), routing);
+        WebServer webServer = WebServer.create(routing, config);
 
         webServer.start()
                 .thenAccept(s -> {

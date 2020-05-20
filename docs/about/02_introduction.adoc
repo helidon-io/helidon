@@ -22,6 +22,7 @@
 :keywords: helidon, java, microservices, microprofile
 
 
+
 Helidon is a collection of Java libraries for writing microservices that run on a fast web core powered by Netty. Its available in two frameworks: Helidon SE and Helidon MP.
 
 == A Collection of Java Libraries 
@@ -53,6 +54,7 @@ The table below shows to primary differences between Helidon SE and Helidon MP.
 [cols="3,3"] 
 |====================
 | *Helidon SE* |  *Helidon MP*
+
 |Helidon SE gives you full transparency and puts you in control.|Helidon MP is built on top of the Helidon libraries and provides platform definition that is familiar to enterprise Java developers. 
 |Microframework model with a very small footprint and limited functionality (~7 MB) | https://projects.eclipse.org/proposals/eclipse-microprofile[Eclipse MicroProfile] implementation; slightly larger footprint than SE (~13 MB) 
 |Functional style is reactive non-blocking   |Declarative style with dependency injection
@@ -104,6 +106,7 @@ View the https://github.com/oracle/helidon/blob/2.0.0-M1/CHANGELOG.md#backward-i
 == Next Steps
 
 <<guides/01_overview.adoc#_getting_started,Helidon Quickstart Examples>>
+
 
 
 

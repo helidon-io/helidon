@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,10 +22,9 @@ module io.helidon.examples.dbclient.mongodb {
 
     requires io.helidon.config;
     requires io.helidon.dbclient.health;
-    requires io.helidon.dbclient.webserver.jsonp;
     requires io.helidon.health;
-    requires io.helidon.media.jsonb.server;
-    requires io.helidon.media.jsonp.server;
+    requires io.helidon.media.jsonb.common;
+    requires io.helidon.media.jsonp.common;
     requires io.helidon.metrics;
     requires io.helidon.tracing;
 

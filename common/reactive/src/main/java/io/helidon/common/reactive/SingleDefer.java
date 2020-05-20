@@ -25,7 +25,7 @@ import java.util.function.Supplier;
  * Create a Single for each incoming subscriber via a supplier callback.
  * @param <T> the element type of the sequence
  */
-final class SingleDefer<T> implements Single<T> {
+final class SingleDefer<T> extends CompletionSingle<T> {
 
     private final Supplier<? extends Single<? extends T>> supplier;
 
