@@ -37,8 +37,8 @@
 :helidon-variant: MP
 :cors-se-include: ../../se/cors
 :se-built-in-services-page-include: {cors-se-include}/04_support-in-builtin-services.adoc
-:cors-mp-intro-page: 01_introduction.adoc
-:cors-dependency-src: ../../mp/cors/{cors-mp-intro-page}
+:cors-se-using-page: 02_using-the-api.adoc
+:cors-dependency-src: ../../se/cors/{cors-se-using-page}
 :cors-se-api-doc: ../../se/cors/02_using-the-api.adoc
 // Following is resolved in an SE file, so the relative path must lead to the MP file.
 :cors-mp-using-cors-page-inc: ../../mp/cors/02_using-cors.adoc
