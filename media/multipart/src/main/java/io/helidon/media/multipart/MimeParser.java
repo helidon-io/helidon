@@ -882,7 +882,7 @@ final class MimeParser {
      * @param str string to convert
      * @return byte[]
      */
-    static byte[] getBytes(String str) {
+    private static byte[] getBytes(String str) {
         char[] chars = str.toCharArray();
         int size = chars.length;
         byte[] bytes = new byte[size];

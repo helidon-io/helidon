@@ -29,7 +29,7 @@
     </parent>
     <groupId>io.helidon.examples.media</groupId>
     <artifactId>helidon-examples-media-multipart</artifactId>
-    <name>Helidon Media Examples Multipart</name>
+    <name>Helidon Examples Media Support Multipart</name>
 
     <description>
         Example of a form based file upload.

@@ -19,11 +19,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow.Processor;
+import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.Flow.Subscription;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Flow.Publisher;
 import java.util.function.Function;
 
 import io.helidon.common.http.DataChunk;
@@ -36,9 +36,7 @@ import io.helidon.media.common.MessageBodyWriterContext;
 /**
  * Reactive processor that encodes a stream of {@link BodyPart} into an HTTP payload.
  */
-public final class MultiPartEncoder implements Processor<WriteableBodyPart, DataChunk> {
-
-    private Subscription upstream;
+public class MultiPartEncoder implements Processor<WriteableBodyPart, DataChunk> {
 
     /**
      * The writer context.
@@ -46,29 +44,48 @@ public final class MultiPartEncoder implements Processor<WriteableBodyPart, Data
     private final MessageBodyWriterContext context;
 
     /**
-     * The boundary used for the generated multi-part message.
+     * The actual boundary to use.
      */
     private final String boundary;
 
-    private Subscriber<? super DataChunk> subscriber;
-    private final CompletableFuture<EmittingPublisher<Publisher<DataChunk>>> emitterFuture = new CompletableFuture<>();
+    /**
+     * Emitter future to handle deferred initialization of the processor.
+     */
+    private final CompletableFuture<EmittingPublisher<Publisher<DataChunk>>> emitterFuture;
+
+    /**
+     * The underlying publisher.
+     */
     private EmittingPublisher<Publisher<DataChunk>> emitter;
 
     /**
-     * Create a new multipart encoder.
-     * @param boundary boundary string
+     * The downstream subscriber.
+     */
+    private Subscriber<? super DataChunk> downstream;
+
+    /**
+     * The upstream subscription.
+     */
+    private Subscription upstream;
+
+    /**
+     * Create a multipart encoder.
+     *
+     * @param boundary boundary delimiter
      * @param context writer context
      */
-    private MultiPartEncoder(String boundary, MessageBodyWriterContext context) {
+    MultiPartEncoder(String boundary, MessageBodyWriterContext context) {
         Objects.requireNonNull(boundary, "boundary cannot be null!");
         Objects.requireNonNull(context, "context cannot be null!");
         this.context = context;
         this.boundary = boundary;
+        emitterFuture = new CompletableFuture<>();
     }
 
     /**
-     * Create a new encoder instance.
-     * @param boundary multipart boundary delimiter
+     * Create a multipart encoder.
+     *
+     * @param boundary boundary delimiter
      * @param context writer context
      * @return MultiPartEncoder
      */
@@ -77,44 +94,61 @@ public final class MultiPartEncoder implements Processor<WriteableBodyPart, Data
     }
 
     @Override
-    public void subscribe(Subscriber<? super DataChunk> subscriber) {
+    public void subscribe(final Subscriber<? super DataChunk> subscriber) {
         Objects.requireNonNull(subscriber);
-        this.subscriber = subscriber;
+        if(this.downstream != null){
+            subscriber.onSubscribe(SubscriptionHelper.CANCELED);
+            subscriber.onError(new IllegalStateException("Only one Subscriber allowed"));
+            return;
+        }
+        this.downstream = subscriber;
         deferredInit();
     }
 
     @Override
-    public void onSubscribe(Subscription subscription) {
-        SubscriptionHelper.validate(upstream, subscription);
+    public void onSubscribe(final Subscription subscription) {
+        SubscriptionHelper.validate(this.upstream, subscription);
         this.upstream = subscription;
         deferredInit();
     }
 
     private void deferredInit() {
-        if (upstream != null && subscriber != null) {
+        if (upstream != null && downstream != null) {
             emitter = EmittingPublisher.create();
             // relay request to upstream, already reduced by flatmap
-            emitter.onRequest(upstream::request);
+            emitter.onRequest(this::onRequested);
+            emitter.onCancel(this::onCancel);
             Multi.from(emitter)
                     .flatMap(Function.identity())
-                    .subscribe(subscriber);
+                    .subscribe(downstream);
             emitterFuture.complete(emitter);
+        }
+    }
+    /**
+     * Invoked when items are requested from the upstream.
+     * @param n number of requested items
+     */
+    private void onRequested(long n) {
+        if (!emitter.isCancelled() && !emitter.isCompleted()) {
+            upstream.request(n);
         }
     }
 
     @Override
-    public void onNext(WriteableBodyPart bodyPart) {
+    public void onNext(final WriteableBodyPart bodyPart) {
         emitter.emit(createBodyPartPublisher(bodyPart));
     }
 
-    private Publisher<DataChunk> createBodyPartPublisher(final WriteableBodyPart bodyPart) {
-        Map<String, List<String>> headers = bodyPart.headers().toMap();
-        StringBuilder sb = new StringBuilder();
+    private void onCancel() {
+        this.downstream = null;
+    }
 
+    private Publisher<DataChunk> createBodyPartPublisher(final WriteableBodyPart bodyPart) {
         // start boundary
-        sb.append("--").append(boundary).append("\r\n");
+        StringBuilder sb = new StringBuilder("--").append(boundary).append("\r\n");
 
         // headers lines
+        Map<String, List<String>> headers = bodyPart.headers().toMap();
         for (Map.Entry<String, List<String>> headerEntry : headers.entrySet()) {
             String headerName = headerEntry.getKey();
             for (String headerValue : headerEntry.getValue()) {
@@ -127,27 +161,25 @@ public final class MultiPartEncoder implements Processor<WriteableBodyPart, Data
 
         // end of headers empty line
         sb.append("\r\n");
-        return Multi.concat(
-            // Part prefix
-            Single.just(DataChunk.create(sb.toString().getBytes(StandardCharsets.UTF_8))),
-            // Part body
-            bodyPart.content().toPublisher(context),
-            // Part postfix
-            Single.just(DataChunk.create("\n".getBytes(StandardCharsets.UTF_8))));
+        return Multi.concat(Multi.concat(
+                // Part prefix
+                Single.just(DataChunk.create(sb.toString().getBytes(StandardCharsets.UTF_8))),
+                // Part body
+                bodyPart.content().toPublisher(context)),
+                // Part postfix
+                Single.just(DataChunk.create("\n".getBytes(StandardCharsets.UTF_8))));
     }
 
     @Override
-    public void onError(Throwable error) {
-        if (upstream != SubscriptionHelper.CANCELED) {
-            upstream = SubscriptionHelper.CANCELED;
-            emitterFuture.whenComplete((e, t) -> e.fail(error));
-        }
+    public void onError(final Throwable throwable) {
+        Objects.requireNonNull(throwable);
+        emitterFuture.whenComplete((e, t) -> e.fail(throwable));
     }
 
     @Override
     public void onComplete() {
-       emitterFuture.whenComplete((e, t) -> {
-            e.emit(Single.just(DataChunk.create(MimeParser.getBytes("--" + boundary + "--"))));
+        emitterFuture.whenComplete((e, t) -> {
+            e.emit(Single.just(DataChunk.create(("--" + boundary + "--").getBytes(StandardCharsets.UTF_8))));
             e.complete();
         });
     }

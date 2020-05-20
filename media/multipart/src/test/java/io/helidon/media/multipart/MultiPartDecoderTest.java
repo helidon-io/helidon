@@ -16,8 +16,6 @@
 package io.helidon.media.multipart;
 
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
@@ -30,8 +28,6 @@ import java.util.function.Consumer;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.reactive.Multi;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.hasItems;
@@ -46,18 +42,6 @@ import static org.junit.jupiter.api.Assertions.fail;
  * Tests {@link MultiPartDecoder}.
  */
 public class MultiPartDecoderTest {
-
-    private static final Logger LOGGER = Logger.getLogger(MultiPartDecoder.class.getName());
-
-    @BeforeAll
-    public static void before() {
-        LOGGER.setLevel(Level.ALL);
-    }
-
-    @AfterAll
-    public static void after() {
-        LOGGER.setLevel(Level.INFO);
-    }
 
     @Test
     public void testOnePartInOneChunk() {
@@ -262,9 +246,6 @@ public class MultiPartDecoderTest {
         BodyPartSubscriber testSubscriber = new BodyPartSubscriber(SUBSCRIBER_TYPE.CANCEL_AFTER_ONE, consumer);
         partsPublisher(boundary, chunk1).subscribe(testSubscriber);
         waitOnLatch(latch);
-        // TODO remove these assertions
-        assertThat(testSubscriber.error, is(nullValue()));
-        assertThat(testSubscriber.complete, is(equalTo(false)));
     }
 
     @Test

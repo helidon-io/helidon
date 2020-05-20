@@ -22,7 +22,6 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.Flow;
-import java.util.concurrent.Flow.Subscription;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.LongStream;
 
@@ -34,6 +33,7 @@ import io.helidon.media.multipart.MultiPartDecoderTest.DataChunkSubscriber;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.media.multipart.BodyPartTest.MEDIA_CONTEXT;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
@@ -44,8 +44,6 @@ import static org.junit.jupiter.api.Assertions.fail;
  * Test {@link MultiPartEncoder}.
  */
 public class MultiPartEncoderTest {
-
-    private static final List<WriteableBodyPart> EMPTY_PARTS = List.of();
 
     // TODO test throttling
 
@@ -102,11 +100,65 @@ public class MultiPartEncoderTest {
     }
 
     @Test
-    public void testSubcribingMoreThanOnce() {
-        MultiPartEncoder encoder = MultiPartEncoder.create("boundary", BodyPartTest.MEDIA_CONTEXT.writerContext());
-        Multi.just(EMPTY_PARTS).subscribe(encoder);
+    public void testRequests() throws Exception {
+        AtomicInteger nextCounter = new AtomicInteger(0);
+        AtomicInteger requested = new AtomicInteger(0);
+        AtomicInteger receivedFromUpstream = new AtomicInteger(0);
+
+        MultiPartEncoder enc = MultiPartEncoder.create("boundary", MEDIA_CONTEXT.writerContext());
+        Multi.from(LongStream.range(1, 500)
+                .mapToObj(i ->
+                        WriteableBodyPart.builder()
+                                .entity("part" + i)
+                                .build()
+                ))
+                .peek(i -> receivedFromUpstream.incrementAndGet())
+                .subscribe(enc);
+        Subscriber<DataChunk> subscriber = new Subscriber<DataChunk>() {
+
+            private Flow.Subscription subscription;
+
+            @Override
+            public void onSubscribe(final Flow.Subscription subscription) {
+                this.subscription = subscription;
+                request(3);
+            }
+
+            @Override
+            public void onNext(final DataChunk item) {
+                nextCounter.incrementAndGet();
+            }
+
+            void request(long l) {
+                requested.addAndGet((int)l);
+                subscription.request(l);
+            }
+
+            @Override
+            public void onError(final Throwable throwable) {
+                throw new RuntimeException(throwable);
+            }
+
+            @Override
+            public void onComplete() {
+                System.out.println("completed");
+            }
+        };
+
+        enc.subscribe(subscriber);
+
+        System.out.println();
+        System.out.println("Requested   -> "+requested);
+        System.out.println("Intercepted -> "+nextCounter);
+        System.out.println("Ups. sent   -> "+receivedFromUpstream);
+    }
+
+    @Test
+    public void testSubscribingMoreThanOnce() {
+        MultiPartEncoder encoder = MultiPartEncoder.create("boundary", MEDIA_CONTEXT.writerContext());
+        Multi.<WriteableBodyPart>just(List.of()).subscribe(encoder);
         try {
-            Multi.just(EMPTY_PARTS).subscribe(encoder);
+            Multi.<WriteableBodyPart>just(List.of()).subscribe(encoder);
             fail("exception should be thrown");
         } catch(IllegalStateException ex) {
             assertThat(ex.getMessage(), is(equalTo("Flow.Subscription already set.")));
@@ -115,7 +167,7 @@ public class MultiPartEncoderTest {
 
     @Test
     public void testUpstreamError() {
-        MultiPartEncoder decoder = MultiPartEncoder.create("boundary", BodyPartTest.MEDIA_CONTEXT.writerContext());
+        MultiPartEncoder decoder = MultiPartEncoder.create("boundary", MEDIA_CONTEXT.writerContext());
         Multi.<WriteableBodyPart>error(new IllegalStateException("oops")).subscribe(decoder);
         DataChunkSubscriber subscriber = new DataChunkSubscriber();
         decoder.subscribe(subscriber);
@@ -132,7 +184,7 @@ public class MultiPartEncoderTest {
 
     @Test
     public void testPartContentPublisherError() {
-        MultiPartEncoder encoder = MultiPartEncoder.create("boundary", BodyPartTest.MEDIA_CONTEXT.writerContext());
+        MultiPartEncoder encoder = MultiPartEncoder.create("boundary", MEDIA_CONTEXT.writerContext());
         DataChunkSubscriber subscriber = new DataChunkSubscriber();
         encoder.subscribe(subscriber);
         Multi.just(WriteableBodyPart.builder()
@@ -150,60 +202,8 @@ public class MultiPartEncoderTest {
         }
     }
 
-    @Test
-    public void testRequests() throws Exception {
-        AtomicInteger nexts = new AtomicInteger(0);
-        AtomicInteger requested = new AtomicInteger(0);
-        AtomicInteger receivedFromUpstream = new AtomicInteger(0);
-        MultiPartEncoder enc = MultiPartEncoder.create("boundary", BodyPartTest.MEDIA_CONTEXT.writerContext());
-        Multi.from(LongStream.range(1, 500)
-                .mapToObj(i
-                        -> WriteableBodyPart.builder()
-                        .entity("part" + i)
-                        .build()
-                ))
-                .peek(i -> receivedFromUpstream.incrementAndGet())
-                .subscribe(enc);
-
-        Subscriber<DataChunk> subs = new Subscriber<DataChunk>() {
-            private Subscription subscription;
-
-            @Override
-            public void onSubscribe(final Flow.Subscription subscription) {
-                this.subscription = subscription;
-                req(555);
-                req(3);
-                req(Long.MAX_VALUE);
-            }
-
-            @Override
-            public void onNext(final DataChunk item) {
-                nexts.incrementAndGet();
-                req(20);
-            }
-
-            void req(long l) {
-                requested.addAndGet((int) l);
-                subscription.request(l);
-            }
-
-            @Override
-            public void onError(final Throwable throwable) {
-                throw new RuntimeException(throwable);
-            }
-
-            @Override
-            public void onComplete() {
-                System.out.println("completed");
-            }
-        };
-
-        // TODO make some assertions
-        enc.subscribe(subs);
-    }
-
     private static String encodeParts(String boundary, WriteableBodyPart... parts) throws Exception {
-        MultiPartEncoder encoder = MultiPartEncoder.create(boundary, BodyPartTest.MEDIA_CONTEXT.writerContext());
+        MultiPartEncoder encoder = MultiPartEncoder.create(boundary, MEDIA_CONTEXT.writerContext());
         Multi.just(parts).subscribe(encoder);
         return ContentReaders.readString(encoder, StandardCharsets.UTF_8).get(10, TimeUnit.SECONDS);
     }

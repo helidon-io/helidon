@@ -28,7 +28,7 @@
     </parent>
     <groupId>io.helidon.examples.media</groupId>
     <artifactId>helidon-examples-media-project</artifactId>
-    <name>Helidon Media Examples</name>
+    <name>Helidon Examples Media Support</name>
     <packaging>pom</packaging>
 
     <description>
