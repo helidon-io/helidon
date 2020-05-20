@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+import io.helidon.grpc.core.JavaMarshaller;
+import io.helidon.grpc.core.JsonbMarshaller;
+import io.helidon.grpc.core.MarshallerSupplier;
 
 /**
  * gRPC Core Module.
@@ -37,8 +41,15 @@ module io.helidon.grpc.core {
     requires transitive com.google.protobuf;
 
     requires java.annotation;
+    requires static java.json.bind;
     requires java.logging;
     requires java.naming;
 
     requires javax.inject;
+
+    provides MarshallerSupplier with
+            MarshallerSupplier.DefaultMarshallerSupplier,
+            MarshallerSupplier.ProtoMarshallerSupplier,
+            JavaMarshaller.Supplier,
+            JsonbMarshaller.Supplier;
 }
