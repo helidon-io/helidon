@@ -92,7 +92,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
             return;
         }
 
-        if (requestContext.publisher().tryAcquire() > 0) {
+        if (requestContext.publisher().hasRequests()) {
             ctx.channel().read();
         }
     }
@@ -138,7 +138,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                             if (queue.release()) {
                                 queues.remove(queue);
                             }
-                            publisherRef.drain();
+                            publisherRef.clearBuffer(DataChunk::release);
 
                             // Enable auto-read only after response has been completed
                             // to avoid a race condition with the next response
@@ -193,7 +193,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                     LOGGER.finer(() -> "Closing connection because request payload was not consumed; method: " + method);
                     ctx.close();
                 } else {
-                    requestContext.publisher().submit(content);
+                    requestContext.publisher().emit(content);
                 }
             }
 
@@ -216,7 +216,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
             }
             // Simply forward raw bytebuf to Tyrus for processing
             LOGGER.finest(() -> "Received ByteBuf of WebSockets connection" + msg);
-            requestContext.publisher().submit((ByteBuf) msg);
+            requestContext.publisher().emit((ByteBuf) msg);
         }
     }
 
@@ -265,7 +265,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         if (requestContext != null) {
-            requestContext.publisher().error(cause);
+            requestContext.publisher().fail(cause);
         }
         ctx.close();
     }

@@ -21,6 +21,7 @@ import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 /**
  * Emitting publisher for manual publishing with built-in buffer.
@@ -65,7 +66,6 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
     }
 
     /**
-     * Hook invoked after calls to {@link java.util.concurrent.Flow.Subscription#request(long)}.
      * Callback executed when request signal from downstream arrive.
      * <ul>
      * <li>param n the requested count.</li>
@@ -124,6 +124,17 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
     public void completeNow() {
         if (state.compareAndSet(State.READY_TO_EMIT, State.COMPLETED)) {
             emitter.complete();
+        }
+    }
+
+    /**
+     * Clear whole buffer, invoke consumer for each item.
+     *
+     * @param consumer to be invoked for each item
+     */
+    public void clearBuffer(Consumer<T> consumer) {
+        while (!buffer.isEmpty()) {
+            consumer.accept(buffer.poll());
         }
     }
 
