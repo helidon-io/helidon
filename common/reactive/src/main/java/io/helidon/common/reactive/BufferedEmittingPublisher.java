@@ -107,7 +107,7 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
 
     /**
      * Drain the buffer up to actual demand and then complete.
-     * {@link BufferedEmittingPublisher#emit(T)} throws {@link IllegalStateException} after calling complete.
+     * {@link BufferedEmittingPublisher#emit(Object)} throws {@link IllegalStateException} after calling complete.
      */
     public void complete() {
         if (state.compareAndSet(State.READY_TO_EMIT, State.COMPLETING)) {
@@ -119,7 +119,7 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
     /**
      * Send onComplete signal downstream immediately, regardless of the buffer content.
      * Nothing else can be sent downstream after calling completeNow.
-     * {@link BufferedEmittingPublisher#emit(T)} throws {@link IllegalStateException} after calling completeNow.
+     * {@link BufferedEmittingPublisher#emit(Object)} throws {@link IllegalStateException} after calling completeNow.
      */
     public void completeNow() {
         if (state.compareAndSet(State.READY_TO_EMIT, State.COMPLETED)) {
