@@ -123,6 +123,9 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
                             if (backPressureBuffer.isEmpty()) {
                                 try {
                                     kafkaConsumer.poll(Duration.ofMillis(pollTimeout)).forEach(backPressureBuffer::add);
+                                    if (!backPressureBuffer.isEmpty()) {
+                                        LOGGER.fine(() -> String.format("Poll from consumer: %s", backPressureBuffer));
+                                    }
                                 } catch (WakeupException e) {
                                     LOGGER.fine(() -> "It was requested to stop polling from channel");
                                 }
@@ -130,6 +133,7 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
                                 long totalToEmit = requests.get();
                                 // Avoid index out bound exceptions
                                 long eventsToEmit = Math.min(totalToEmit, backPressureBuffer.size());
+                                LOGGER.fine(() -> String.format("%s messages to emit", eventsToEmit));
                                 for (long i = 0; i < eventsToEmit; i++) {
                                     ConsumerRecord<K, V> cr = backPressureBuffer.poll();
                                     CompletableFuture<Void> kafkaCommit = new CompletableFuture<>();
@@ -229,6 +233,7 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
             try {
                 taskLock.lock();
                 cleanResourcesIfTerminated(true);
+                LOGGER.fine(() -> String.format("Buffered events that were not processed %s", backPressureBuffer));
                 emitter.complete();
             } catch (RuntimeException e) {
                 emitter.fail(e);

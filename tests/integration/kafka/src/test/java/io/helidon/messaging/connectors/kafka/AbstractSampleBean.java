@@ -180,6 +180,7 @@ abstract class AbstractSampleBean {
                     .to(new Subscriber<Message<ConsumerRecord<Long, String>>>() {
                         @Override
                         public void onSubscribe(Subscription subscription) {
+                            LOGGER.fine(() -> "onSubscribe()");
                             subscription.request(3);
                         }
                         @Override
