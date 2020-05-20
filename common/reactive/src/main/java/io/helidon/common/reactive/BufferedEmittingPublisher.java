@@ -94,7 +94,7 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
     /**
      * Send onError signal downstream, regardless of the buffer content.
      * Nothing else can be sent downstream after calling fail.
-     * {@link BufferedEmittingPublisher#emit(T)} throws {@link IllegalStateException} after calling fail.
+     * {@link BufferedEmittingPublisher#emit(Object)} throws {@link IllegalStateException} after calling fail.
      *
      * @param throwable Throwable to be sent downstream as onError signal.
      */
