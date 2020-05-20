@@ -27,7 +27,7 @@ import org.testng.annotations.Test;
 public class EmittingPublisherTckTest extends FlowPublisherVerification<Integer> {
 
     public EmittingPublisherTckTest() {
-        super(new TestEnvironment(20));
+        super(new TestEnvironment(200));
     }
 
     @Override
@@ -49,6 +49,6 @@ public class EmittingPublisherTckTest extends FlowPublisherVerification<Integer>
 
     @Override
     public long maxElementsFromPublisher() {
-        return 1000;
+        return 500;
     }
 }

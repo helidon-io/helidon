@@ -21,17 +21,32 @@ import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+/**
+ * Emitting publisher for manual publishing with built-in buffer.
+ *
+ * <p>
+ * <strong>This publisher allows only a single subscriber</strong>.
+ * </p>
+ *
+ * @param <T> type of emitted item
+ */
 public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
 
     private final AtomicReference<State> state = new AtomicReference<>(State.READY_TO_EMIT);
-    ConcurrentLinkedQueue<T> buffer = new ConcurrentLinkedQueue<>();
-    EmittingPublisher<T> emitter = new EmittingPublisher<>();
-    AtomicBoolean draining = new AtomicBoolean(false);
-    AtomicReference<Throwable> error = new AtomicReference<>();
+    private final ConcurrentLinkedQueue<T> buffer = new ConcurrentLinkedQueue<>();
+    private final EmittingPublisher<T> emitter = new EmittingPublisher<>();
+    private final AtomicBoolean draining = new AtomicBoolean(false);
+    private final AtomicReference<Throwable> error = new AtomicReference<>();
 
-    private BufferedEmittingPublisher() {
+    protected BufferedEmittingPublisher() {
     }
 
+    /**
+     * Create new {@link BufferedEmittingPublisher}.
+     *
+     * @param <T> type of emitted item
+     * @return new instance of BufferedEmittingPublisher
+     */
     public static <T> BufferedEmittingPublisher<T> create() {
         return new BufferedEmittingPublisher<T>();
     }
@@ -44,19 +59,35 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
         emitter.subscribe(subscriber);
     }
 
+    /**
+     * Emit item to the stream, if there is no immediate demand from downstream,
+     * buffer item for sending when demand is signaled.
+     *
+     * @param item to be emitted
+     * @return estimated size of the buffer
+     * @throws IllegalStateException if cancelled, completed of failed
+     */
     public int emit(final T item) {
         return state.get().emit(this, item);
     }
 
+    /**
+     * Send onError signal downstream, regardless of the buffer content.
+     * Nothing else can be sent downstream after calling fail.
+     * {@link BufferedEmittingPublisher#emit(T)} throws {@link IllegalStateException} after calling fail.
+     *
+     * @param throwable Throwable to be sent downstream as onError signal.
+     */
     public void fail(Throwable throwable) {
+        error.set(throwable);
         if (state.compareAndSet(State.READY_TO_EMIT, State.FAILED)) {
-            error.set(throwable);
-            state.get().drain(this);
+            emitter.fail(error.get());
         }
     }
 
     /**
      * Drain the buffer up to actual demand and then complete.
+     * {@link BufferedEmittingPublisher#emit(T)} throws {@link IllegalStateException} after calling complete.
      */
     public void complete() {
         if (state.compareAndSet(State.READY_TO_EMIT, State.COMPLETING)) {
@@ -65,6 +96,11 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
         }
     }
 
+    /**
+     * Send onComplete signal downstream immediately, regardless of the buffer content.
+     * Nothing else can be sent downstream after calling completeNow.
+     * {@link BufferedEmittingPublisher#emit(T)} throws {@link IllegalStateException} after calling completeNow.
+     */
     public void completeNow() {
         if (state.compareAndSet(State.READY_TO_EMIT, State.COMPLETED)) {
             emitter.complete();
@@ -89,7 +125,7 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
         }
     }
 
-    enum State {
+    private enum State {
         READY_TO_EMIT {
             @Override
             <T> int emit(BufferedEmittingPublisher<T> publisher, T item) {

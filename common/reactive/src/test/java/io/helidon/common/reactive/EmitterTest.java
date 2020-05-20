@@ -29,7 +29,36 @@ import static org.hamcrest.Matchers.is;
 public class EmitterTest {
 
     @Test
-    void testBackPressure() {
+    void testBackPressureWithCompleteNow() {
+        BufferedEmittingPublisher<Integer> emitter = BufferedEmittingPublisher.create();
+
+        TestSubscriber<Integer> subscriber = new TestSubscriber<>();
+        emitter.subscribe(subscriber);
+
+        assertBufferSize(emitter.emit(0), 1);
+        assertBufferSize(emitter.emit(1), 2);
+        assertBufferSize(emitter.emit(2), 3);
+        assertBufferSize(emitter.emit(3), 4);
+
+        subscriber
+                .assertEmpty()
+                .request(1)
+                .assertItemCount(1)
+                .request(2)
+                .assertItemCount(3)
+                .assertNotTerminated();
+
+        assertBufferSize(emitter.emit(4), 2);
+
+        emitter.completeNow();
+
+        subscriber.requestMax()
+                .assertValues(0, 1, 2)
+                .assertComplete();
+    }
+
+    @Test
+    void testBackPressureWithLazyComplete() {
         BufferedEmittingPublisher<Integer> emitter = BufferedEmittingPublisher.create();
 
         List<Integer> data = IntStream.range(0, 10)
@@ -65,5 +94,9 @@ public class EmitterTest {
         subscriber
                 .assertValues(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)
                 .assertComplete();
+    }
+
+    private void assertBufferSize(int result, int expected) {
+        assertThat("Wrong buffer size!", result, is(equalTo(expected)));
     }
 }

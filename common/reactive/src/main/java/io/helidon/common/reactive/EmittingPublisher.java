@@ -39,9 +39,9 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
     private final AtomicLong requested = new AtomicLong();
     private final AtomicBoolean terminated = new AtomicBoolean();
     private final AtomicBoolean subscribed = new AtomicBoolean();
-    private LongConsumer requestCallback = LambdaHelper::NOOP_LONG_CONSUMER;
-    private Runnable onSubscribeCallback = LambdaHelper::NOOP_RUNNABLE;
-    private Runnable cancelCallback = LambdaHelper::NOOP_RUNNABLE;
+    private LongConsumer requestCallback = it -> {};
+    private Runnable onSubscribeCallback = () -> {};
+    private Runnable cancelCallback = () -> {};
 
     EmittingPublisher() {
     }
@@ -72,7 +72,7 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
         subscriber.onSubscribe(new Flow.Subscription() {
             @Override
             public void request(final long n) {
-                if(state.get() == State.CANCELLED){
+                if (state.get() == State.CANCELLED) {
                     return;
                 }
                 if (n < 1) {
@@ -145,13 +145,19 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
 
     /**
      * Executed when request signal from downstream arrive.
+     * If the callback is already registered, old one is removed.
+     *
+     * @param onSubscribeCallback to be executed
      */
-    public void onSubscribe(Runnable onSubscribeCallback) {
+    void onSubscribe(Runnable onSubscribeCallback) {
         this.onSubscribeCallback = onSubscribeCallback;
     }
 
     /**
      * Executed when cancel signal from downstream arrive.
+     * If the callback is already registered, old one is removed.
+     *
+     * @param cancelCallback to be executed
      */
     public void onCancel(Runnable cancelCallback) {
         this.cancelCallback = cancelCallback;
@@ -159,6 +165,9 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
 
     /**
      * Executed when request signal from downstream arrive.
+     * If the callback is already registered, old one is removed.
+     *
+     * @param requestCallback to be executed
      */
     public void onRequest(LongConsumer requestCallback) {
         this.requestCallback = requestCallback;
