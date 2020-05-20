@@ -96,7 +96,7 @@ public class MultiPartEncoder implements Processor<WriteableBodyPart, DataChunk>
     @Override
     public void subscribe(final Subscriber<? super DataChunk> subscriber) {
         Objects.requireNonNull(subscriber);
-        if(this.downstream != null){
+        if (this.downstream != null) {
             subscriber.onSubscribe(SubscriptionHelper.CANCELED);
             subscriber.onError(new IllegalStateException("Only one Subscriber allowed"));
             return;

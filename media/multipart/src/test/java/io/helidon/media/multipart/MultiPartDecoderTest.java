@@ -540,7 +540,7 @@ public class MultiPartDecoderTest {
     /**
      * A subscriber of data chunk that accumulates bytes to a single String.
      */
-    static final class DataChunkSubscriber implements Subscriber<DataChunk> {
+    static class DataChunkSubscriber implements Subscriber<DataChunk> {
 
         private final StringBuilder sb = new StringBuilder();
         private final CompletableFuture<String> future = new CompletableFuture<>();

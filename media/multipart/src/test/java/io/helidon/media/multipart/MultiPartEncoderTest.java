@@ -17,11 +17,8 @@ package io.helidon.media.multipart;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
+import java.util.concurrent.*;
 import java.util.concurrent.Flow.Subscriber;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.LongStream;
 
@@ -34,6 +31,7 @@ import io.helidon.media.multipart.MultiPartDecoderTest.DataChunkSubscriber;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.media.multipart.BodyPartTest.MEDIA_CONTEXT;
+import static io.helidon.media.multipart.MultiPartDecoderTest.waitOnLatch;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
@@ -101,10 +99,6 @@ public class MultiPartEncoderTest {
 
     @Test
     public void testRequests() throws Exception {
-        AtomicInteger nextCounter = new AtomicInteger(0);
-        AtomicInteger requested = new AtomicInteger(0);
-        AtomicInteger receivedFromUpstream = new AtomicInteger(0);
-
         MultiPartEncoder enc = MultiPartEncoder.create("boundary", MEDIA_CONTEXT.writerContext());
         Multi.from(LongStream.range(1, 500)
                 .mapToObj(i ->
@@ -112,45 +106,31 @@ public class MultiPartEncoderTest {
                                 .entity("part" + i)
                                 .build()
                 ))
-                .peek(i -> receivedFromUpstream.incrementAndGet())
                 .subscribe(enc);
+        final CountDownLatch latch = new CountDownLatch(3);
         Subscriber<DataChunk> subscriber = new Subscriber<DataChunk>() {
-
-            private Flow.Subscription subscription;
 
             @Override
             public void onSubscribe(final Flow.Subscription subscription) {
-                this.subscription = subscription;
-                request(3);
+                subscription.request(3L);
             }
 
             @Override
             public void onNext(final DataChunk item) {
-                nextCounter.incrementAndGet();
-            }
-
-            void request(long l) {
-                requested.addAndGet((int)l);
-                subscription.request(l);
-            }
-
-            @Override
-            public void onError(final Throwable throwable) {
-                throw new RuntimeException(throwable);
+                latch.countDown();
             }
 
             @Override
             public void onComplete() {
-                System.out.println("completed");
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
             }
         };
 
         enc.subscribe(subscriber);
-
-        System.out.println();
-        System.out.println("Requested   -> "+requested);
-        System.out.println("Intercepted -> "+nextCounter);
-        System.out.println("Ups. sent   -> "+receivedFromUpstream);
+        waitOnLatch(latch);
     }
 
     @Test

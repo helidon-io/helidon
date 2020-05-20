@@ -140,7 +140,7 @@ public final class MultiPartDecoder implements Processor<DataChunk, ReadableBody
     @Override
     public void subscribe(Subscriber<? super ReadableBodyPart> subscriber) {
         Objects.requireNonNull(subscriber);
-        if(this.downstream != null){
+        if (this.downstream != null) {
             subscriber.onSubscribe(SubscriptionHelper.CANCELED);
             subscriber.onError(new IllegalStateException("Only one Subscriber allowed"));
             return;
