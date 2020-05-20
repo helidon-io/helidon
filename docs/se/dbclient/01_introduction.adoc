@@ -20,6 +20,7 @@
 
 :description: Helidon DB Client
 :keywords: helidon, se, database, dbclient
+:h1Prefix: SE
 
 
 The Helidon SE DB Client provides a unified, reactive API for working with databases in non-blocking way. 
@@ -28,32 +29,37 @@ The Helidon SE DB Client provides a unified, reactive API for working with datab
 
 The DB Client simplfies how you work with databases by allowing the use of blocking JDBC drivers in your reactive application by wrapping a blocking driver in an executor service. Specifically, the Heldion DB Client provides the following:
 
-* Unified API for data access and query +
+* Unified API for data access and query 
++
 The API was implemented as a layer above JDBC or MongoDB Reactive Streams Java Driver, so any relational databases with JDBC driver or MongoDB are supported.
 
-* Reactive database access with non-reactive drivers +
+* Reactive database access with non-reactive drivers 
++
 Most JDBC drivers are blocking. Using them in a reactive application is problematic. Helidon DB Client allows the use of blocking JDBC drivers in your reactive application by wrapping a blocking driver in an executor service.
 
 * Observability +
++
 The API offers support for health checks, metrics and tracing.
 
-* Backpressure Management +
+* Backpressure Management
++
 Helidon DB Client performs database operations only when it’s requested by the consumer. This is propagated all the way to the TCP layer.
 
-* Improved portability between database drivers +
+* Improved portability between database drivers 
++
 The DB Client works with native database statements that can be used inline in the code or defined as named statements in database configuration. +
 By moving the native query code to configuration files, the Helidon DB Client allows you to switch to another database by changing the configuration files, not the code.
 
 == Getting Started
 
-Before you begin you must:
+Before you begin you must add the DB Client dependencies and configure the client.
 
-1. Add the DB Client dependencies to the Maven `pom.xml` file.
-2. Use Helidon Config to configure the client.
-
+. Add the DB Client dependencies to the Maven `pom.xml` file. 
++
 The <<about/04_managing-dependencies.adoc, Managing Dependencies>> page describes how you
 should declare dependency management for Helidon applications. For the DB Client you must include the following dependencies in your project:
 
++
 [source,java]
 ----
 <dependencies>
@@ -75,12 +81,18 @@ should declare dependency management for Helidon applications. For the DB Client
 
 ----
 
++ 
+
 <1> Add the Helidon DB Client
 <2> Specify JDBC or MongoDB
 <3> Add the database details
 
+. Use Helidon Config to configure the client. 
++ 
+
 The DB Client must be configured before you begin. In the example below we'll use Helidon Config to set up your JDBC-based client:
 
++
 [source,java]
 ----
 
@@ -97,6 +109,7 @@ db:
     
 ----
 
++
 <1> Source: JDBC or MongoDB
 <2> Connection: database connection parameters
 <3> Statements: named statements when used
