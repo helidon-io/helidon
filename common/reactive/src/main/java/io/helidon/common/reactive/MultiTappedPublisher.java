@@ -320,39 +320,4 @@ final class MultiTappedPublisher<T> implements Multi<T> {
             return newChain;
         }
     }
-
-    /**
-     * Holds a list of {@link Runnable}s to flatten out a call chain of them.
-     */
-    static final class RunnableChain extends ArrayList<Runnable> implements Runnable {
-        @Override
-        public void run() {
-            for (Runnable inner : this) {
-                inner.run();
-            }
-        }
-
-        public RunnableChain combineWith(Runnable another) {
-            RunnableChain newChain = new RunnableChain();
-            newChain.addAll(this);
-            newChain.add(another);
-            return newChain;
-        }
-
-        public static Runnable combine(Runnable current, Runnable another) {
-            if (current == null) {
-                return another;
-            }
-            if (another == null) {
-                return current;
-            }
-            if (current instanceof RunnableChain) {
-                return ((RunnableChain) current).combineWith(another);
-            }
-            RunnableChain newChain = new RunnableChain();
-            newChain.add(current);
-            newChain.add(another);
-            return newChain;
-        }
-    }
 }

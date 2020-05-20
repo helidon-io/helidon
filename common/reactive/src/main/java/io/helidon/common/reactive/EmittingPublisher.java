@@ -22,7 +22,7 @@ import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.LongConsumer;
+import java.util.function.BiConsumer;
 
 /**
  * Emitting publisher for manual publishing.
@@ -39,7 +39,7 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
     private final AtomicLong requested = new AtomicLong();
     private final AtomicBoolean terminated = new AtomicBoolean();
     private final AtomicBoolean subscribed = new AtomicBoolean();
-    private LongConsumer requestCallback = it -> {};
+    private BiConsumer<Long, Long> requestCallback = (n, r) -> {};
     private Runnable onSubscribeCallback = () -> {};
     private Runnable cancelCallback = () -> {};
 
@@ -81,7 +81,7 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
                 }
                 requested.updateAndGet(r -> Long.MAX_VALUE - r > n ? n + r : Long.MAX_VALUE);
                 state.compareAndSet(State.NOT_REQUESTED_YET, State.READY_TO_EMIT);
-                requestCallback.accept(n);
+                requestCallback.accept(n, requested.get());
             }
 
             @Override
@@ -102,11 +102,15 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
      * @param throwable Sent as {@code onError} signal
      */
     public void fail(Throwable throwable) {
-        if (!terminated.getAndSet(true) && subscriber != null) {
+        if (subscriber != null && !terminated.getAndSet(true)) {
             cancelCallback.run();
             state.compareAndSet(State.NOT_REQUESTED_YET, State.CANCELLED);
             state.compareAndSet(State.READY_TO_EMIT, State.CANCELLED);
-            this.subscriber.onError(throwable);
+            try {
+                this.subscriber.onError(throwable);
+            } catch (Throwable t) {
+                throw new IllegalStateException("On error threw an exception!", t);
+            }
         }
     }
 
@@ -144,13 +148,33 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
     }
 
     /**
+     * Check if demand is higher than 0.
+     * Returned value should be used
+     * as informative and can change rapidly.
+     *
+     * @return true if so
+     */
+    public boolean hasRequests() {
+        return this.requested.get() > 0;
+    }
+
+    /**
+     * Check if downstream requested unbounded.
+     *
+     * @return true if so
+     */
+    public boolean isUnbounded() {
+        return this.requested.get() == Long.MAX_VALUE;
+    }
+
+    /**
      * Executed when request signal from downstream arrive.
      * If the callback is already registered, old one is removed.
      *
      * @param onSubscribeCallback to be executed
      */
     void onSubscribe(Runnable onSubscribeCallback) {
-        this.onSubscribeCallback = onSubscribeCallback;
+        this.onSubscribeCallback = RunnableChain.combine(this.onSubscribeCallback, onSubscribeCallback);
     }
 
     /**
@@ -160,7 +184,7 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
      * @param cancelCallback to be executed
      */
     public void onCancel(Runnable cancelCallback) {
-        this.cancelCallback = cancelCallback;
+        this.cancelCallback = RunnableChain.combine(this.cancelCallback, cancelCallback);
     }
 
     /**
@@ -169,8 +193,8 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
      *
      * @param requestCallback to be executed
      */
-    public void onRequest(LongConsumer requestCallback) {
-        this.requestCallback = requestCallback;
+    public void onRequest(BiConsumer<Long, Long> requestCallback) {
+        this.requestCallback = BiConsumerChain.combine(this.requestCallback, requestCallback);
     }
 
     private enum State {
@@ -192,7 +216,7 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
                 } catch (NullPointerException npe) {
                     throw npe;
                 } catch (Throwable t) {
-                    publisher.fail(t);
+                    publisher.fail(new IllegalStateException(t));
                     return false;
                 }
             }

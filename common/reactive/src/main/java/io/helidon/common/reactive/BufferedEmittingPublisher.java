@@ -20,6 +20,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
 
 /**
  * Emitting publisher for manual publishing with built-in buffer.
@@ -37,6 +38,7 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
     private final EmittingPublisher<T> emitter = new EmittingPublisher<>();
     private final AtomicBoolean draining = new AtomicBoolean(false);
     private final AtomicReference<Throwable> error = new AtomicReference<>();
+    private BiConsumer<Long, Long> requestCallback = (n, r) -> {};
 
     protected BufferedEmittingPublisher() {
     }
@@ -54,9 +56,27 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
     @Override
     public void subscribe(final Flow.Subscriber<? super T> subscriber) {
         emitter.onSubscribe(() -> state.get().drain(this));
-        emitter.onRequest(n -> state.get().drain(this));
+        emitter.onRequest((n, cnt) -> {
+            requestCallback.accept(n, cnt);
+            state.get().drain(this);
+        });
         emitter.onCancel(() -> state.compareAndSet(State.READY_TO_EMIT, State.CANCELLED));
         emitter.subscribe(subscriber);
+    }
+
+    /**
+     * Hook invoked after calls to {@link java.util.concurrent.Flow.Subscription#request(long)}.
+     * Callback executed when request signal from downstream arrive.
+     * <ul>
+     * <li>param n the requested count.</li>
+     * <li>param result the current total cumulative requested count; ranges between [0, {@link Long#MAX_VALUE}] where the max
+     * indicates that this publisher is unbounded.</li>
+     * </ul>
+     *
+     * @param requestCallback to be executed
+     */
+    public void onRequest(BiConsumer<Long, Long> requestCallback) {
+        this.requestCallback = BiConsumerChain.combine(this.requestCallback, requestCallback);
     }
 
     /**
@@ -105,6 +125,53 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
         if (state.compareAndSet(State.READY_TO_EMIT, State.COMPLETED)) {
             emitter.complete();
         }
+    }
+
+    /**
+     * Check if downstream requested unbounded.
+     *
+     * @return true if so
+     */
+    public boolean isUnbounded() {
+        return this.emitter.isUnbounded();
+    }
+
+    /**
+     * Check if demand is higher than 0.
+     * Returned value should be used
+     * as informative and can change rapidly.
+     *
+     * @return true if so
+     */
+    public boolean hasRequests() {
+        return this.emitter.hasRequests();
+    }
+
+    /**
+     * Check if publisher is in terminal state COMPLETED.
+     *
+     * @return true if so
+     */
+    public boolean isCompleted() {
+        return this.state.get() == State.COMPLETED;
+    }
+
+    /**
+     * Check if publisher is in terminal state CANCELLED.
+     *
+     * @return true if so
+     */
+    public boolean isCancelled() {
+        return this.state.get() == State.CANCELLED;
+    }
+
+    /**
+     * Estimated size of the buffer.
+     *
+     * @return estimated size of the buffer
+     */
+    public int bufferSize() {
+        return buffer.size();
     }
 
     private void drainBuffer() {

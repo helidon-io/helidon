@@ -24,7 +24,6 @@ import java.util.function.LongConsumer;
 
 import io.helidon.common.reactive.MultiTappedPublisher.ConsumerChain;
 import io.helidon.common.reactive.MultiTappedPublisher.MultiTappedSubscriber;
-import io.helidon.common.reactive.MultiTappedPublisher.RunnableChain;
 
 /**
  * Intercept the calls to the various Flow interface methods and calls the appropriate
