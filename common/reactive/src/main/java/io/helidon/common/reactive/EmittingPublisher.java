@@ -18,6 +18,7 @@
 package io.helidon.common.reactive;
 
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -37,8 +38,8 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
     private Flow.Subscriber<? super T> subscriber;
     private final AtomicReference<State> state = new AtomicReference<>(State.NOT_REQUESTED_YET);
     private final AtomicLong requested = new AtomicLong();
-    private final AtomicBoolean terminated = new AtomicBoolean();
     private final AtomicBoolean subscribed = new AtomicBoolean();
+    private final CompletableFuture<Void> deferredComplete = new CompletableFuture<>();
     private BiConsumer<Long, Long> requestCallback = (n, r) -> {};
     private Runnable onSubscribeCallback = () -> {};
     private Runnable cancelCallback = () -> {};
@@ -86,13 +87,15 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
 
             @Override
             public void cancel() {
-                cancelCallback.run();
-                state.compareAndSet(State.NOT_REQUESTED_YET, State.CANCELLED);
-                state.compareAndSet(State.READY_TO_EMIT, State.CANCELLED);
-                EmittingPublisher.this.subscriber = null;
+                if (state.compareAndSet(State.NOT_REQUESTED_YET, State.CANCELLED)
+                        || state.compareAndSet(State.READY_TO_EMIT, State.CANCELLED)) {
+                    cancelCallback.run();
+                    EmittingPublisher.this.subscriber = null;
+                }
             }
 
         });
+        deferredComplete.complete(null);
     }
 
     /**
@@ -102,15 +105,10 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
      * @param throwable Sent as {@code onError} signal
      */
     public void fail(Throwable throwable) {
-        if (subscriber != null && !terminated.getAndSet(true)) {
-            cancelCallback.run();
-            state.compareAndSet(State.NOT_REQUESTED_YET, State.CANCELLED);
-            state.compareAndSet(State.READY_TO_EMIT, State.CANCELLED);
-            try {
-                this.subscriber.onError(throwable);
-            } catch (Throwable t) {
-                throw new IllegalStateException("On error threw an exception!", t);
-            }
+        if (deferredComplete.isDone()) {
+            signalOnError(throwable);
+        } else {
+            deferredComplete.thenRun(() -> signalOnError(throwable));
         }
     }
 
@@ -119,9 +117,23 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
      * Signal {@code onComplete} is sent only once, any other call to this method is no-op.
      */
     public void complete() {
-        if (!terminated.getAndSet(true) && subscriber != null) {
-            state.compareAndSet(State.NOT_REQUESTED_YET, State.COMPLETED);
-            state.compareAndSet(State.READY_TO_EMIT, State.COMPLETED);
+        deferredComplete.thenRun(this::signalOnComplete);
+    }
+
+    private void signalOnError(Throwable throwable) {
+        if (state.compareAndSet(State.NOT_REQUESTED_YET, State.CANCELLED)
+                || state.compareAndSet(State.READY_TO_EMIT, State.CANCELLED)) {
+            try {
+                this.subscriber.onError(throwable);
+            } catch (Throwable t) {
+                throw new IllegalStateException("On error threw an exception!", t);
+            }
+        }
+    }
+
+    private void signalOnComplete() {
+        if (state.compareAndSet(State.NOT_REQUESTED_YET, State.COMPLETED)
+                || state.compareAndSet(State.READY_TO_EMIT, State.COMPLETED)) {
             this.subscriber.onComplete();
         }
     }
