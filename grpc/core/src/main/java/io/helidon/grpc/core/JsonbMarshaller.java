@@ -16,8 +16,6 @@
 
 package io.helidon.grpc.core;
 
-import io.grpc.MethodDescriptor;
-
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -26,6 +24,8 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Named;
 import javax.json.bind.Jsonb;
 import javax.json.bind.JsonbBuilder;
+
+import io.grpc.MethodDescriptor;
 
 /**
  * An implementation of a gRPC {@link MethodDescriptor.Marshaller} that
