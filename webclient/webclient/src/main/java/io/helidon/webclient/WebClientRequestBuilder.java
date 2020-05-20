@@ -31,6 +31,7 @@ import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpRequest;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.http.Parameters;
+import io.helidon.common.reactive.Single;
 import io.helidon.media.common.MessageBodyReaderContext;
 import io.helidon.media.common.MessageBodyWriterContext;
 import io.helidon.webclient.spi.WebClientService;
@@ -257,7 +258,7 @@ public interface WebClientRequestBuilder {
      * @param <T>          response type
      * @return request completion stage
      */
-    <T> CompletionStage<T> request(Class<T> responseType);
+    <T> Single<T> request(Class<T> responseType);
 
     /**
      * Performs prepared request and transforms response to requested type.
@@ -268,7 +269,7 @@ public interface WebClientRequestBuilder {
      * @param <T>          response type
      * @return request completion stage
      */
-    <T> CompletionStage<T> request(GenericType<T> responseType);
+    <T> Single<T> request(GenericType<T> responseType);
 
     /**
      * Performs prepared request without expecting to receive any specific type.
@@ -277,7 +278,7 @@ public interface WebClientRequestBuilder {
      *
      * @return request completion stage
      */
-    CompletionStage<WebClientResponse> request();
+    Single<WebClientResponse> request();
 
     /**
      * Performs prepared request.
@@ -287,7 +288,7 @@ public interface WebClientRequestBuilder {
      *
      * @return request completion stage
      */
-    CompletionStage<WebClientResponse> submit();
+    Single<WebClientResponse> submit();
 
     /**
      * Performs prepared request and submitting request entity using {@link Flow.Publisher}.
@@ -300,7 +301,7 @@ public interface WebClientRequestBuilder {
      * @param <T>           response type
      * @return request completion stage
      */
-    <T> CompletionStage<T> submit(Flow.Publisher<DataChunk> requestEntity, Class<T> responseType);
+    <T> Single<T> submit(Flow.Publisher<DataChunk> requestEntity, Class<T> responseType);
 
     /**
      * Performs prepared request and submitting request entity.
@@ -313,7 +314,7 @@ public interface WebClientRequestBuilder {
      * @param <T>           response type
      * @return request completion stage
      */
-    <T> CompletionStage<T> submit(Object requestEntity, Class<T> responseType);
+    <T> Single<T> submit(Object requestEntity, Class<T> responseType);
 
     /**
      * Performs prepared request and submitting request entity using {@link Flow.Publisher}.
@@ -324,7 +325,7 @@ public interface WebClientRequestBuilder {
      * @param requestEntity request entity
      * @return request completion stage
      */
-    CompletionStage<WebClientResponse> submit(Flow.Publisher<DataChunk> requestEntity);
+    Single<WebClientResponse> submit(Flow.Publisher<DataChunk> requestEntity);
 
     /**
      * Performs prepared request and submitting request entity.
@@ -335,7 +336,7 @@ public interface WebClientRequestBuilder {
      * @param requestEntity request entity
      * @return request completion stage
      */
-    CompletionStage<WebClientResponse> submit(Object requestEntity);
+    Single<WebClientResponse> submit(Object requestEntity);
 
     /**
      * Request to a server. Contains all information about used request headers, configuration etc.

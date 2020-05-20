@@ -18,11 +18,10 @@ package io.helidon.webclient.tracing;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
+import io.helidon.common.reactive.Single;
 import io.helidon.webclient.WebClientServiceRequest;
 import io.helidon.webclient.spi.WebClientService;
 
@@ -58,7 +57,7 @@ public final class WebClientTracing implements WebClientService {
     }
 
     @Override
-    public CompletionStage<WebClientServiceRequest> request(WebClientServiceRequest request) {
+    public Single<WebClientServiceRequest> request(WebClientServiceRequest request) {
         String method = request.method().name().toUpperCase();
         Optional<Tracer> optionalTracer = request.context().get(Tracer.class);
         Tracer tracer = optionalTracer.orElseGet(GlobalTracer::get);
@@ -96,6 +95,6 @@ public final class WebClientTracing implements WebClientService {
             span.finish();
         });
 
-        return CompletableFuture.completedFuture(request);
+        return Single.just(request);
     }
 }

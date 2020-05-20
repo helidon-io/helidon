@@ -17,11 +17,10 @@ package io.helidon.webclient.metrics;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
+import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.webclient.WebClientException;
 import io.helidon.webclient.WebClientRequestBuilder;
@@ -111,18 +110,18 @@ public class WebClientMetrics implements WebClientService {
     }
 
     @Override
-    public CompletionStage<WebClientServiceRequest> request(WebClientServiceRequest request) {
+    public Single<WebClientServiceRequest> request(WebClientServiceRequest request) {
         metrics.forEach(clientMetric -> clientMetric.request(request));
 
-        return CompletableFuture.completedFuture(request);
+        return Single.just(request);
     }
 
     @Override
-    public CompletionStage<WebClientServiceResponse> response(WebClientRequestBuilder.ClientRequest request,
+    public Single<WebClientServiceResponse> response(WebClientRequestBuilder.ClientRequest request,
                                                               WebClientServiceResponse response) {
         metrics.forEach(clientMetric -> clientMetric.response(request, response));
 
-        return CompletableFuture.completedFuture(response);
+        return Single.just(response);
     }
 
     private static final class Builder implements io.helidon.common.Builder<WebClientMetrics> {
