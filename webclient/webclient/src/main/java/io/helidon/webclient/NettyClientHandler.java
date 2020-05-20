@@ -261,6 +261,10 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
 
 
         public int emit(final ByteBuf buf) {
+            if(super.isCompleted()){
+                //Seems like old OTP ignored complete and subsequent items were sent even after
+                return 0;
+            }
             buf.retain();
             return super.emit(DataChunk.create(false,
                     buf.nioBuffer().asReadOnlyBuffer(),
