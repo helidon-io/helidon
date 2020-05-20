@@ -30,6 +30,6 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>basic</module>
+        <module>bare</module>
     </modules>
 </project>
