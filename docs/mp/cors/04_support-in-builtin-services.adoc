@@ -19,6 +19,7 @@
 = Using CORS in Helidon MP Built-in Services
 :toc:
 :toc-placement: preamble
+:h1Prefix: MP
 :pagename: cors-built-in-service-support
 :description: Helidon MP CORS Support in Built-in Services
 :keywords: helidon, java, cors, mp, services
@@ -46,12 +47,10 @@
 :se-cors-dependency-page: 02_using-the-api.adoc
 :dependency-inc: {se-cors-home-inc}/{se-cors-dependency-page}
 
-Several built-in Helidon services -- health, metrics, and OpenAPI -- automatically support cross-origin resource
-sharing and you can control how they do so.
+Several built-in Helidon services -- health, metrics, and OpenAPI -- have integrated CORS support.
 If you add dependencies on these services to your project and also add a dependency on
 the Helidon MP CORS module, then the built-in services automatically participate in CORS.
-You do not need to enable your own endpoints for CORS if you just want the built-in services to
-work with CORS. You and your users can use configuration to override the default CORS behavior of the built-in services.
+If desired, you can use configuration to override the default behavior.
 
 include::{se-built-in-services-page-include}[tag=understanding-cors-support-in-services]
 

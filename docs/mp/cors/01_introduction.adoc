@@ -19,6 +19,7 @@
 = About CORS in Helidon MP
 :toc:
 :toc-placement: preamble
+:h1Prefix: MP
 :pagename: intro-cors-in-mp
 :description: Introduction to CORS in Helidon MP
 :keywords: helidon, java, cors, mp, microprofile, cross-origin resource sharing
@@ -33,6 +34,7 @@
 :mp-using-cors-ref: {mp-pages-ref-prefix}/02_using-cors.adoc
 :mp-cors-config-ref: {mp-pages-ref-prefix}/03_configuration-with-cors-mp.adoc
 :mp-cors-builtin-services-ref: {mp-pages-ref-prefix}/04_support-in-builtin-services.adoc
+:helidon-variant: MP
 
 link:{cors-spec}[Cross-origin resource sharing] (CORS) support in Helidon MP provides a flexible
 mechanism that allows a Helidon MP application to control how other web applications can access its resources,
@@ -47,5 +49,5 @@ To introduce CORS into your Helidon MP application, do any or all of the followi
 
 * Modify your code using the Helidon MP CORS API. <<{mp-using-cors-ref}, Learn more.>>
 * Use configuration to override the CORS settings established in your application code. <<{mp-cors-config-ref},Learn more.>>
-* Include into your application any of the built-in Helidon services that automatically
+* Update your application to include any of the built-in Helidon services that automatically
 support CORS. <<{mp-cors-builtin-services-ref},Learn more.>>

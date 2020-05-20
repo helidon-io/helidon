@@ -19,6 +19,7 @@
 = Using CORS in Built-in Services
 :toc:
 :toc-placement: preamble
+:h1Prefix: SE
 :pagename: cors-built-in-service-support
 :description: Helidon SE CORS Support in Built-in Services
 :keywords: helidon, java, cors, se, services
@@ -43,14 +44,8 @@
 
 Several built-in Helidon services -- health, metrics, and OpenAPI -- have integrated CORS support.
 If you include these services in your application's routing rules and do nothing else, then
-those services share their resources across all origins.
-
-If desired, your application can add the override behavior for
-any of the built-in services.
-By writing your application to use configuration as it prepares the routing for those
-services, you let your users
-override the CORS behavior of the built-in services through configuration. You can use this override feature to control the CORS behavior of the built-in services even if you do not add CORS behavior
-to your own endpoints.
+those services share their resources across all origins. If desired, you can use configuration to override
+the default behavior.
 
 
 // tag::understanding-cors-support-in-services[]
@@ -80,6 +75,8 @@ any origin to share their resources using `GET`, `HEAD`, and `OPTIONS` HTTP requ
 for these built-in services independently from each other using
 ifdef::cors-services-is-se[ either the Helidon API, configuration, or both.]
 ifndef::cors-services-is-se[ configuration.]
+You can use this override feature to control the CORS behavior of the built-in services even if you do not add CORS behavior
+to your own endpoints.
 
 
 
@@ -135,9 +132,13 @@ Recall that each
 service type has a `Builder` class. To control the CORS behavior of a built-in service using the API, follow these steps:
 
 . Create a `Builder` for the type of service of interest.
+
 . Build an instance of `CrossOriginConfig` with the settings you want.
+
 . Invoke the `builder.crossOriginConfig` method, passing that `CrossOriginConfig` instance.
+
 . Invoke the builder's `build` method to initialize the service instance.
+
 . Use the service instance in preparing the routing rules.
 
 The following excerpt shows changes to the link:{quickstart-example}[Helidon SE QuickStart example] which limit

@@ -19,6 +19,7 @@
 = Using the Helidon SE CORS API
 :toc:
 :toc-placement: preamble
+:h1Prefix: SE
 :pagename: cors-introduction
 :description: Using the Helidon SE CORS API
 :keywords: helidon, java, cors, se, api
@@ -31,20 +32,19 @@
 :javadoc-base-url-api: {javadoc-base-url}io.helidon.webserver.cors/io/helidon/webserver/cors
 :javadoc-base-url-webserver: {javadoc-base-url}io.helidon.webserver/io/helidon/webserver
 :helidon-variant: SE
-:config-table-methods-column-explainer-default: the methods on the `CrossOriginConfig.Builder` class
-:config-table-methods-column-explainer: {config-table-methods-column-explainer-default}
 :config-table-methods-column-header: Method
 
 Every Helidon SE application explicitly creates routing rules that govern how Helidon delivers each incoming
- request to the code that needs to respond.
-These routing rules apply to your own endpoints, as well as those from built-in services.
-
-To add CORS behavior to endpoints, you need to make only minimal changes to set up the routing for those endpoints.
-Using a simple API provided by the Helidon SE CORS module,
-you define the CORS behavior you want and then include that behavior as you build the routing rules for the services
-in your application.
+ request to the code that needs to respond. The Helidon CORS SE API provides a simple way to include CORS into
+ the routing rules that you construct for your application.
 
 == Understanding the Helidon CORS API
+
+To add CORS behavior to endpoints, you need to make only minimal changes to set up the routing for those endpoints.
+Using the Helidon SE CORS API,
+you define the CORS behavior that you want and then include that behavior as you build the routing rules for the services
+in your application.
+
 The Helidon SE CORS API provides two key classes that you use in your application:
 
 *  `CorsSupport` - Represents information about resource sharing for a single resource.
@@ -105,14 +105,22 @@ by including CORS into the routing you construct for your application.
 For each distinct resource or subresource your application exposes:
 
 . Create a link:{javadoc-base-url-api}/CorsSupport.html[`CorsSupport`] instance corresponding to the resource.
+
 . For each different type of sharing you want to provide for that resource:
+
 .. Create a link:{javadoc-base-url-api}/CrossOriginConfig.html[`CrossOriginConfig`] instance.
 The `CrossOriginConfig` Java class represents the details for a particular type of sharing:
 which origins are allowed to share via which HTTP methods, etc.
+
 .. Add the `CrossOriginConfig` to the `CorsSupport` instance for this resource.
+
 . Use the resource's `CorsSupport` object in setting up the routing rules for that resource.
 
-Each of these classes has an associated builder you use in constructing instances of the class.
+Each of these classes has an associated builder that you use in constructing instances of the class.
+
+The table below describes the methods on the `CrossOriginConfig.Builder` class
+ and
+the configuration keys that map to the headers defined in the CORS protocol.
 
 // The following table and the lead-in to it are parameterized.
 //
@@ -129,11 +137,7 @@ Each of these classes has an associated builder you use in constructing instance
 // tag::cors-config-table[]
 // The following subs is needed to force the backtick in the explainer attribute value to work as we want.
 [subs="attributes,quotes"]
-The table below describes
-ifndef::cors-config-table-exclude-methods[]
-{config-table-methods-column-explainer} and
-endif::[]
-the configuration keys that map to the headers defined in the CORS protocol.
+
 
 ifndef::cors-config-table-exclude-methods[]
 [width="100%",options="header",cols="4*"]
@@ -178,8 +182,8 @@ request to the `/greet/greeting` resource.
 
 In this example based on the QuickStart greeting app, we use the low-level `CrossOriginConfig` API and
 the `CorsSupport` API to influence the <<se/webserver/03_routing.adoc,routing>>,
-thereby determining how that resource is shared. (To learn how to use configuration instead of the low-level API,
-see <<se/cors/03_using-configuration.adoc, Using Configuration for CORS>>.)
+thereby determining how that resource is shared. (If desired, you can use configuration instead of the low-level API.
+<<se/cors/03_using-configuration.adoc, Learn more.>>)
 
 The following code shows how to prepare your application's routing to support metrics and health support as well as
 CORS.
@@ -226,7 +230,7 @@ request.
 The few additional lines described above allow the greeting application to participate in CORS.
 
 == Next Steps
-* To learn how to combine the API with configuration in adding CORS to your application, see
-<<se/cors/03_using-configuration.adoc,Using Configuration for CORS>>.
+* Use configuration in combination with the API to add CORS to your application.
+<<se/cors/03_using-configuration.adoc,Learn more.>>
 
 * See the Helidon CORS support in action by building and running the link:{helidon-se-cors-example}[CORS example].

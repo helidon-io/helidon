@@ -19,6 +19,7 @@
 = Using Configuration with CORS in Helidon MP
 :toc:
 :toc-placement: preamble
+:h1Prefix: MP
 :pagename: cors-mp-configuration
 :description: Helidon MP CORS Configuration
 :keywords: helidon, java, cors, mp, microprofile, configuration

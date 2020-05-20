@@ -19,6 +19,7 @@
 = About CORS in Helidon SE
 :toc:
 :toc-placement: preamble
+:h1Prefix: SE
 :pagename: cors-introduction
 :description: Helidon SE CORS Support
 :keywords: helidon, java, cors, se
@@ -59,8 +60,10 @@ services -- you can change your application accordingly.
 // end::cors-intro[]
 
 == Next Steps
-For details about changing your application to include CORS support, see:
 
-* <<se/cors/02_using-the-api.adoc,Using the Helidon SE CORS API>>
-* <<se/cors/03_using-configuration.adoc,Using Configuration for CORS>>
-* <<se/cors/04_support-in-builtin-services.adoc, Using CORS in Built-in Services>>
+To introduce CORS into your Helidon SE application, do any or all of the following:
+
+* Modify your code using the Helidon SE CORS API. <<se/cors/02_using-the-api.adoc,Learn more.>>
+* Use configuration in combination with the Helidon SE CORS API to add CORS to your application. <<se/cors/03_using-configuration.adoc,Learn more.>>
+* Update your application to include any of the built-in Helidon services that automatically
+support CORS. <<se/cors/04_support-in-builtin-services.adoc, Learn more.>>
