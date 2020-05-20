@@ -63,7 +63,7 @@ The table below shows to primary differences between Helidon SE and Helidon MP.
 == What's New in Helidon 2.0
 The Helidon 2.0 release contains significant new features, enhancements and fixes.
 
-TIP: For a complete list of Helidon 2.0 fixes and enhancements, see <<link to changelog>>
+TIP: For a complete list of fixes and enhancements, see the Helidon 2.0  https://github.com/oracle/helidon/blob/2.0.0/CHANGELOG.md[changelog].
 
 * *GraalVM Native-image Support in Helidon MP* +
 Helidon SE already supports GraalVM, but in 2.0 GraalVM native image support will also be available in Helidon MP. <<guides/36_graalnative.adoc,GraalVM Native Images Guide>> +
