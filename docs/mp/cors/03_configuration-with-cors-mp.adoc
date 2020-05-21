@@ -35,34 +35,34 @@
 :cors-se-config: {cors-se}/03_using-configuration.adoc
 :cors-config-table-src: {cors-se-api}
 :cors-mapped-config-src: {cors-se-config}
+:mp-pages-ref-prefix: mp/cors
+:mp-cors-builtin-services-ref: {mp-pages-ref-prefix}/04_support-in-builtin-services.adoc
 :mapped-config-top-key: cors
 
 Your application code establishes the CORS behavior of your endpoints using the `@CrossOrigin` annotation.
 You and your users can override that behavior, as well as the CORS behavior of the built-in services,
 using MicroProfile configuration.
 
-== Using Configuration with Helidon MP CORS
-When you annotate your resource method, you set the parameters on the `@CrossOrigin` annotation
-to provide the CORS behavior you designed for that resource.
 
-To use CORS in your Helidon MP application, you need to understand how to specify the overriding
-values for the CORS attributes in configuration
-and then how to associate those values with the endpoint you want them to affect.
+== Understanding the Mapped Cross-Origin Configuration Format
+
+There are two formats of CORS cross-origin configuration: basic and mapped. For Helidon MP, you use
+the mapped format.
+
+include::{cors-mapped-config-src}[tag=mapped-config]
 
 == Specifying Override Values in Configuration [[cors-configuration-formats]]
-You can specify in configuration the same CORS-related attributes you can with the `@CrossOrigin` annotation.
+In configuration, you can specify the same CORS-related attributes that you specify using the `@CrossOrigin` annotation.
 
 [[config-key-table]]
 :config-table-methods-column-explainer: the annotation parameters
 :config-table-methods-column-header: Annotation Parameter
 include::{cors-config-table-src}[tag=cors-config-table]
 
-There are two formats of CORS cross-origin configuration: basic and mapped. For Helidon MP you use
-the mapped format.
 
-include::{cors-mapped-config-src}[tag=mapped-config]
-
-The following example shows how you can express similar configuration using properties-file syntax
+The following example shows how you can express configuration similar to that shown
+previously using the mapped cross-origin configuration format.
+Here, the example uses properties-file syntax
 in your applications's `META-INF/microprofile-config.properties` file. Note that the top-level config key
 must be `cors`.
 
@@ -75,6 +75,11 @@ cors.paths.1.path-pattern = /
 cors.paths.1.allow-methods = GET, HEAD, OPTIONS, POST
 ----
 
-== Next Steps
+NOTE: Remember that if you set configuration in a file that you include as part of your application JAR file, then you need to
+rebuild and restart your application for any changes to take effect.
 
-See the Helidon CORS support in action by building and running the link:{helidon-mp-cors-example}[CORS example].
+== Next Steps
+* Use these same configuration techniques to control the behavior of the CORS-enabled
+built-in services. <<{mp-cors-builtin-services-ref},Learn more.>>
+
+* See the Helidon CORS support in action by building and running the link:{helidon-mp-cors-example}[CORS example].

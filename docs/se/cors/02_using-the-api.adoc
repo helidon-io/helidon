@@ -38,7 +38,7 @@ Every Helidon SE application explicitly creates routing rules that govern how He
  request to the code that needs to respond. The Helidon CORS SE API provides a simple way to include CORS into
  the routing rules that you construct for your application.
 
-== Understanding the Helidon CORS API
+== Understanding the Helidon SE CORS API
 
 To add CORS behavior to endpoints, you need to make only minimal changes to set up the routing for those endpoints.
 Using the Helidon SE CORS API,
@@ -64,7 +64,7 @@ endpoint code for the resource.
 
 == Getting Started
 
-To add CORS support to your Helidion SE application:
+To add CORS support to your Helidon SE application:
 
 . Determine the type of cross origin sharing you want to allow for each endpoint in your
 application.
@@ -108,8 +108,8 @@ For each distinct resource or subresource your application exposes:
 
 . For each different type of sharing you want to provide for that resource:
 
-.. Create a link:{javadoc-base-url-api}/CrossOriginConfig.html[`CrossOriginConfig`] instance.
-The `CrossOriginConfig` Java class represents the details for a particular type of sharing:
+.. Create a link:{javadoc-base-url-api}/CrossOriginConfig.html[`CrossOriginConfig`] instance. +
+The `CrossOriginConfig` Java class represents the details for a particular type of sharing, such as
 which origins are allowed to share via which HTTP methods, etc.
 
 .. Add the `CrossOriginConfig` to the `CorsSupport` instance for this resource.
@@ -175,17 +175,18 @@ ifndef::cors-config-table-exclude-methods[|`enabled`]
 If the cross-origin configuration is disabled (`enabled` = false), then the Helidon CORS implementation ignores the cross-origin configuration entry.
 // end::cors-config-table[]
 
+[[se-api-routing-example]]
 == Sample Routing Setup Using the `CrossOriginConfig` API
 
 The link:{quickstart-example}[Helidon SE Quickstart application] lets you change the greeting by sending a `PUT`
 request to the `/greet/greeting` resource.
 
-In this example based on the QuickStart greeting app, we use the low-level `CrossOriginConfig` API and
+This example, based on the QuickStart greeting app, uses the low-level `CrossOriginConfig` API and
 the `CorsSupport` API to influence the <<se/webserver/03_routing.adoc,routing>>,
 thereby determining how that resource is shared. (If desired, you can use configuration instead of the low-level API.
 <<se/cors/03_using-configuration.adoc, Learn more.>>)
 
-The following code shows how to prepare your application's routing to support metrics and health support as well as
+The following code shows how to prepare your application's routing to support metrics and health support, as well as
 CORS.
 
 [[intro-quick-start-code-example]]

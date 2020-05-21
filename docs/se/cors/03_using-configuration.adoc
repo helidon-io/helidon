@@ -68,11 +68,11 @@ restrictive-cors:
   allow-methods: ["PUT", "DELETE"]
 ...
 ----
-// tag::mapped-config[]
+
 
 === Mapped Cross-Origin Configuration
 In some cases, you or your users might want to configure CORS behavior based on URL path matching.
-
+// tag::mapped-config[]
 Helidon represents mapped CORS information as a section, identified by a configuration
 key of your choosing, that contains:
 
@@ -84,7 +84,10 @@ key of your choosing, that contains:
 
 ** a `path-pattern` path pattern that maps that basic CORS config section to the resource(s) it affects.
 
-The following example of the mapped configuration format illustrates this.
+You can use mapped configuration to your advantage if you want to allow your users to override the CORS behavior set up
+in the application code.
+
+The following example illustrates the mapped cross-origin configuration format.
 
 [source,hocon,subs="attributes+"]
 ----
@@ -111,45 +114,56 @@ for the indicated HTTP methods.
 
 Path patterns can be any expression accepted by the link:{javadoc-base-url-webserver}/PathMatcher.html[`PathMatcher`] class.
 
-Be sure to arrange the entries in the order that you want Helidon to check them, typically from most specific to most general.
+NOTE: Be sure to arrange the entries in the order that you want Helidon to check them, typically from most specific to most general.
 Helidon CORS support searches the cross-origin entries in the order you define them until it finds an entry that
 matches an incoming request's path pattern and HTTP method.
 // end::mapped-config[]
 
-You can use mapped configuration to your advantage if you want to allow your users to override the CORS behavior set up
-in the application code.
 
 [[using-config-from-app]]
 == Using CORS Configuration in the Application
-<<se/cors/02_using-the-api.adoc,Using the Helidon SE CORS API>> describes the changes
-you need to make to your application to incorporate CORS functionality. To integrate basic or mapped CORS configuration, you add logic to your application to load sections of configuration
-using the keys for those sections, and
-use the loaded config to build `CrossOriginConfig` instances. (See
-<<se/cors/02_using-the-api.adoc#intro-quick-start-code-example, Sample Routing Setup Using the CrossOriginConfig API>>.)
+You use configuration in combination with the Helidon CORS SE API
+to add CORS support to your resources. The example in <<se/cors/02_using-the-api.adoc#se-api-routing-example,Sample Routing Setup Using the `CrossOriginConfig` API>>
+uses the low-level Helidon CORS SE API to create
+a `CorsSupport` instance that is then used to create the routing rules. As an alternative to using the low-level API, this example uses config to create the
+`CorsSupport` instance instead.
 
-You can create
-a `CrossOriginConfig` instance directly from a config node, as shown in this example.
 
 [source,java]
 ----
-CorsSupport.Builder builder = CorsSupport.builder();
+    private static Routing createRouting(Config config) {
 
-Config config = Config.create(); // Created from the current config sources
+        MetricsSupport metrics = MetricsSupport.create();
+        GreetService greetService = new GreetService(config);
+        HealthSupport health = HealthSupport.builder()
+                .addLiveness(HealthChecks.healthChecks())   // Adds a convenient set of checks
+                .build();
+        CorsSupport.Builder builder = CorsSupport.builder();
 
-config.get("my-cors") // <1>
-    .ifExists(builder::mappedConfig);
+        Config config = Config.create(); // Created from the current config sources
+        config.get("my-cors") // <1>
+                .ifExists(builder::mappedConfig);
+        config.get("restrictive-cors") // <2>
+                .ifExists(builder::config);
+        builder.addCrossOriginConfig(CrossOriginConfig.create()); // <3>
 
-config.get("restrictive-cors") // <2>
-    .ifExists(builder::config);
+        CorsSupport corsSupport = builder.build(); // <4>
 
-builder.addCrossOriginConfig(CrossOriginConfig.create()); // <3>
-
-CorsSupport corsSupport = builder.build(); // <4>
+        // Note: Add the CORS routing *before* registering the GreetService routing.
+        return Routing.builder()
+                .register(JsonSupport.create())
+                .register(health)                   // Health at "/health"
+                .register(metrics)                 // Metrics at "/metrics"
+                .register("/greet", corsSupport, greetService) // <5>
+                .build();
+    }
 ----
 <1> If `my-cors` exists in the configuration, use it to add mapped CORS config to the `CorsSupport` builder.
 <2> If `restrictive-cors` exists in the configuration, use it to add basic (not mapped) config to the builder.
 <3> Provide default CORS handling for requests that do not match earlier entries.
-<4> Obtain the finished `CorsSupport` instance, suitable for use in creating the application's routing.
+<4> Obtain the finished `CorsSupport` instance.
+<5> Use `corsSupport` in constructing the routing rules.
+
 
 As each request arrives, Helidon checks it against the cross-origin config instances in the order that your application
 added them to the `CorsSupport.Builder`.

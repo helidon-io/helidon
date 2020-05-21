@@ -19,6 +19,7 @@
 = Why `@OPTIONS`?
 :toc:
 :toc-placement: preamble
+:h1Prefix: MP
 :pagename: using-cors-in-mp-why-options
 :description: Exploration of why Helidon MP associates the `@CrossOrigin` annotation with `@OPTIONS` methods.
 :keywords: helidon, java, cors, mp, microprofile, jax-rs cross-origin resource sharing
@@ -30,7 +31,7 @@ There are some good reasons why it is `@OPTIONS` methods that you decorate with 
 At the heart of cross-origin resource sharing is the _resource_ itself.
 CORS lets you control how a given resource should be shared among various origins.
 All the attributes of CORS -- whether authentication should be used, what headers can be passed through on
-CORS-controlled requests, etc. -- pertain to a given resource.
+CORS-controlled requests, and so on -- pertain to a given resource.
 
 In Helidon MP, the parameters defined on the `@CrossOrigin` annotation map directly to those
 CORS sharing attributes.
