@@ -15,26 +15,32 @@
  */
 package io.helidon.media.multipart;
 
+import java.util.Objects;
+import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Publisher;
 
+import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
-import io.helidon.media.common.MessageBodyWriteableContent;
+import io.helidon.common.http.Parameters;
+import io.helidon.common.reactive.Single;
+import io.helidon.common.reactive.SubscriptionHelper;
+import io.helidon.media.common.MessageBodyWriterContext;
 
 /**
  * Writeable body part entity.
  */
 public final class WriteableBodyPart implements BodyPart {
 
-    private final MessageBodyWriteableContent content;
+    private final WriteableBodyPartContent content;
     private final WriteableBodyPartHeaders headers;
 
-    private WriteableBodyPart(MessageBodyWriteableContent content, WriteableBodyPartHeaders headers) {
+    private WriteableBodyPart(WriteableBodyPartContent content, WriteableBodyPartHeaders headers) {
         this.content = content;
         this.headers = headers;
     }
 
     @Override
-    public MessageBodyWriteableContent content() {
+    public WriteableBodyPartContent content() {
         return content;
     }
 
@@ -66,34 +72,46 @@ public final class WriteableBodyPart implements BodyPart {
      */
     public static final class Builder implements io.helidon.common.Builder<WriteableBodyPart> {
 
-        private WriteableBodyPartHeaders headers;
-        private Object entity;
-        private Publisher<DataChunk> publisher;
+        private static final WriteableBodyPartContent EMPTY_BODY_CONTENT = new RawBodyPartContent(Single.empty());
 
-        /**
-         * Private constructor to force the use of
-         * {@link WriteableBodyPart#builder() }.
-         */
+        private WriteableBodyPartHeaders headers;
+        private WriteableBodyPartContent content;
+
         private Builder() {
+            headers = WriteableBodyPartHeaders.create();
+            content = EMPTY_BODY_CONTENT;
         }
 
         /**
-         * Create a new out-bound body part backed by the specified entity.
+         * Create a new body part backed by the specified entity.
          * @param entity entity for the body part content
          * @return this builder instance
          */
         public Builder entity(Object entity) {
-            this.entity = entity;
+            content = new EntityBodyPartContent(entity, headers);
             return this;
         }
 
         /**
-         * Create a new out-bound body part backed by the specified publisher.
+         * Create a new body part backed by the specified entity stream.
+         * @param <T> stream item type
+         * @param stream stream of entities for the body part content
+         * @param type actual representation of the entity type
+         * @return this builder instance
+         */
+        public <T> Builder entityStream(Publisher<T> stream, Class<T> type) {
+            Objects.requireNonNull(type, "type cannot be null!");
+            content = new EntityStreamBodyPartContent<>(stream, GenericType.create(type), headers);
+            return this;
+        }
+
+        /**
+         * Create a new body part backed by the specified publisher.
          * @param publisher publisher for the part content
          * @return this builder instance
          */
         public Builder publisher(Publisher<DataChunk> publisher) {
-            this.publisher = publisher;
+            content = new RawBodyPartContent(publisher);
             return this;
         }
 
@@ -109,18 +127,86 @@ public final class WriteableBodyPart implements BodyPart {
 
         @Override
         public WriteableBodyPart build() {
-            if (headers == null) {
-                headers = WriteableBodyPartHeaders.create();
-            }
-            MessageBodyWriteableContent content;
-            if (entity != null) {
-                content = MessageBodyWriteableContent.create(entity, headers);
-            } else if (publisher != null) {
-                content = MessageBodyWriteableContent.create(publisher, headers);
-            } else {
-                throw new IllegalStateException("Cannot create writeable content");
-            }
             return new WriteableBodyPart(content, headers);
+        }
+    }
+
+    private static final class RawBodyPartContent implements WriteableBodyPartContent {
+
+        private final Publisher<DataChunk> publisher;
+
+        RawBodyPartContent(Publisher<DataChunk> publisher) {
+            this.publisher = Objects.requireNonNull(publisher, "entity cannot be null!");
+        }
+
+        @Override
+        public WriteableBodyPartContent init(MessageBodyWriterContext context) {
+            return this;
+        }
+
+        @Override
+        public void subscribe(Flow.Subscriber<? super DataChunk> subscriber) {
+            publisher.subscribe(subscriber);
+        }
+    }
+
+    private static final class EntityBodyPartContent implements WriteableBodyPartContent {
+
+        private final Object entity;
+        private final GenericType<Object> type;
+        private final Parameters headers;
+        private Publisher<DataChunk> publisher;
+
+        EntityBodyPartContent(Object entity, Parameters headers) {
+            this.entity = Objects.requireNonNull(entity, "entity cannot be null!");
+            this.headers = Objects.requireNonNull(headers, "headers cannot be null");
+            type = GenericType.<Object>create(entity.getClass());
+        }
+
+        @Override
+        public WriteableBodyPartContent init(MessageBodyWriterContext context) {
+            publisher = MessageBodyWriterContext.create(context, headers).marshall(Single.just(entity), type);
+            return this;
+        }
+
+        @Override
+        public void subscribe(Flow.Subscriber<? super DataChunk> subscriber) {
+            if (publisher == null) {
+                subscriber.onSubscribe(SubscriptionHelper.CANCELED);
+                subscriber.onError(new IllegalStateException("Not ready yet"));
+                return;
+            }
+            publisher.subscribe(subscriber);
+        }
+    }
+
+    private static final class EntityStreamBodyPartContent<T> implements WriteableBodyPartContent {
+
+        private final Publisher<T> stream;
+        private final GenericType<T> type;
+        private final Parameters headers;
+        private Publisher<DataChunk> publisher;
+
+        EntityStreamBodyPartContent(Publisher<T> stream, GenericType<T> type, Parameters headers) {
+            this.stream = Objects.requireNonNull(stream, "entity cannot be null!");
+            this.type = Objects.requireNonNull(type, "type cannot be null!");
+            this.headers = Objects.requireNonNull(headers, "headers cannot be null");
+        }
+
+        @Override
+        public WriteableBodyPartContent init(MessageBodyWriterContext context) {
+            publisher = MessageBodyWriterContext.create(headers).marshallStream(stream, type);
+            return this;
+        }
+
+        @Override
+        public void subscribe(Flow.Subscriber<? super DataChunk> subscriber) {
+            if (publisher == null) {
+                subscriber.onSubscribe(SubscriptionHelper.CANCELED);
+                subscriber.onError(new IllegalStateException("Not ready yet"));
+                return;
+            }
+            publisher.subscribe(subscriber);
         }
     }
 }

@@ -334,7 +334,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     public <T> CompletionStage<T> submit(Object requestEntity, Class<T> responseType) {
         GenericType<T> responseGenericType = GenericType.create(responseType);
         Flow.Publisher<DataChunk> dataChunkPublisher = writerContext.marshall(
-                Single.just(requestEntity), GenericType.create(requestEntity), null);
+                Single.just(requestEntity), GenericType.create(requestEntity));
         return Contexts.runInContext(context, () -> invokeWithEntity(dataChunkPublisher, responseGenericType));
     }
 
@@ -346,7 +346,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     @Override
     public CompletionStage<WebClientResponse> submit(Object requestEntity) {
         Flow.Publisher<DataChunk> dataChunkPublisher = writerContext.marshall(
-                Single.just(requestEntity), GenericType.create(requestEntity), null);
+                Single.just(requestEntity), GenericType.create(requestEntity));
         return submit(dataChunkPublisher);
     }
 

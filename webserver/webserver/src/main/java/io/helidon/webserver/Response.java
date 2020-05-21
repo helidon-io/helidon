@@ -172,7 +172,7 @@ abstract class Response implements ServerResponse {
         try {
             sendLockSupport.execute(() -> {
                 Publisher<DataChunk> sendPublisher = writerContext.marshall(
-                        Single.just(content), GenericType.create(content), null);
+                        Single.just(content), GenericType.create(content));
                 sendLockSupport.contentSend = true;
                 sendPublisher.subscribe(bareResponse);
             }, content == null);

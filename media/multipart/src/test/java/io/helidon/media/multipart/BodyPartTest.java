@@ -68,7 +68,7 @@ public class BodyPartTest {
         Publisher<DataChunk> publisher = WriteableBodyPart
                 .create("body part data")
                 .content()
-                .toPublisher(MEDIA_CONTEXT.writerContext());
+                .init(MEDIA_CONTEXT.writerContext());
         String result = ContentReaders.readString(publisher, DEFAULT_CHARSET).get();
         assertThat(result, is(equalTo("body part data")));
     }
