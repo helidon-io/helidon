@@ -24,7 +24,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
- * Emitting publisher for manual publishing with built-in buffer.
+ * Emitting publisher for manual publishing with built-in buffer for handling backpressure.
  *
  * <p>
  * <strong>This publisher allows only a single subscriber</strong>.
@@ -38,6 +38,7 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
     private final ConcurrentLinkedQueue<T> buffer = new ConcurrentLinkedQueue<>();
     private final EmittingPublisher<T> emitter = new EmittingPublisher<>();
     private final AtomicBoolean draining = new AtomicBoolean(false);
+    private final AtomicBoolean emitting = new AtomicBoolean(false);
     private final AtomicReference<Throwable> error = new AtomicReference<>();
     private BiConsumer<Long, Long> requestCallback = (n, r) -> {};
     private Consumer<T> emitCallback = (i) -> {};
@@ -73,9 +74,9 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
     /**
      * Callback executed when request signal from downstream arrive.
      * <ul>
-     * <li>param n the requested count.</li>
-     * <li>param result the current total cumulative requested count; ranges between [0, {@link Long#MAX_VALUE}] where the max
-     * indicates that this publisher is unbounded.</li>
+     * <li><b>param</b> {@code n} the requested count.</li>
+     * <li><b>param</b> {@code result} the current total cumulative requested count, ranges between [0, {@link Long#MAX_VALUE}]
+     * where the max indicates that this publisher is unbounded.</li>
      * </ul>
      *
      * @param requestCallback to be executed
@@ -108,7 +109,7 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
      * buffer item for sending when demand is signaled.
      *
      * @param item to be emitted
-     * @return estimated size of the buffer
+     * @return actual size of the buffer, value should be used as informative and can change asynchronously
      * @throws IllegalStateException if cancelled, completed of failed
      */
     public int emit(final T item) {
@@ -116,7 +117,7 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
     }
 
     /**
-     * Send onError signal downstream, regardless of the buffer content.
+     * Send {@code onError} signal downstream, regardless of the buffer content.
      * Nothing else can be sent downstream after calling fail.
      * {@link BufferedEmittingPublisher#emit(Object)} throws {@link IllegalStateException} after calling fail.
      *
@@ -125,12 +126,13 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
     public void fail(Throwable throwable) {
         error.set(throwable);
         if (state.compareAndSet(State.READY_TO_EMIT, State.FAILED)) {
-            emitter.fail(error.get());
+            emitter.fail(throwable);
         }
     }
 
     /**
-     * Drain the buffer up to actual demand and then complete.
+     * Drain the buffer, in case of not sufficient demands wait for more requests,
+     * then send {@code onComplete} signal to downstream.
      * {@link BufferedEmittingPublisher#emit(Object)} throws {@link IllegalStateException} after calling complete.
      */
     public void complete() {
@@ -141,8 +143,8 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
     }
 
     /**
-     * Send onComplete signal downstream immediately, regardless of the buffer content.
-     * Nothing else can be sent downstream after calling completeNow.
+     * Send {@code onComplete} signal downstream immediately, regardless of the buffer content.
+     * Nothing else can be sent downstream after calling {@link BufferedEmittingPublisher#completeNow()}.
      * {@link BufferedEmittingPublisher#emit(Object)} throws {@link IllegalStateException} after calling completeNow.
      */
     public void completeNow() {
@@ -152,7 +154,7 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
     }
 
     /**
-     * Clear whole buffer, invoke consumer for each item.
+     * Clear whole buffer, invoke consumer for each item before discarding it.
      *
      * @param consumer to be invoked for each item
      */
@@ -163,7 +165,7 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
     }
 
     /**
-     * Check if downstream requested unbounded.
+     * Check if downstream requested unbounded number of items eg. {@code Long.MAX_VALUE}.
      *
      * @return true if so
      */
@@ -173,17 +175,19 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
 
     /**
      * Check if demand is higher than 0.
-     * Returned value should be used
-     * as informative and can change rapidly.
+     * Returned value should be used as informative and can change asynchronously.
      *
-     * @return true if so
+     * @return true if demand is higher than 0
      */
     public boolean hasRequests() {
         return this.emitter.hasRequests();
     }
 
     /**
-     * Check if publisher is in terminal state COMPLETED.
+     * Check if publisher sent {@code onComplete} signal downstream.
+     * Returns {@code true} right after calling {@link BufferedEmittingPublisher#completeNow()}
+     * but after calling {@link BufferedEmittingPublisher#complete()} returns
+     * {@code false} until whole buffer has been drained.
      *
      * @return true if so
      */
@@ -202,6 +206,7 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
 
     /**
      * Estimated size of the buffer.
+     * Returned value should be used as informative and can change asynchronously.
      *
      * @return estimated size of the buffer
      */
@@ -222,24 +227,34 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
             }
             if (buffer.isEmpty()
                     && state.compareAndSet(State.COMPLETING, State.COMPLETED)) {
-                //Buffer drained, time to for lazy complete
+                //Buffer drained, time for complete
                 emitter.complete();
             }
             draining.set(false);
         }
     }
 
-    private int unboundedFastPath(T item) {
-        if (buffer.isEmpty()) {
-            //Buffer drained, its ok to skip it
-            emitter.emit(item);
-            // ignore emit result, demand is unbounded
-            return 0;
-        } else {
-            //drain the buffer
-            buffer.add(item);
-            state.get().drain(this);
-            return buffer.size();
+    private int emitOrBuffer(T item) {
+        for (;;) {
+            try {
+                if (emitting.getAndSet(true)) {
+                    // race against parallel emits
+                    // only those can add to buffer
+                    continue;
+                }
+                if (buffer.isEmpty() && emitter.emit(item)) {
+                    // Buffer drained, emit successful
+                    // saved time by skipping buffer
+                    return 0;
+                } else {
+                    //safe slower path thru buffer
+                    buffer.add(item);
+                    state.get().drain(this);
+                    return buffer.size();
+                }
+            } finally {
+                emitting.set(false);
+            }
         }
     }
 
@@ -247,12 +262,7 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
         READY_TO_EMIT {
             @Override
             <T> int emit(BufferedEmittingPublisher<T> publisher, T item) {
-                if (publisher.isUnbounded()) {
-                    return publisher.unboundedFastPath(item);
-                }
-                publisher.buffer.add(item);
-                publisher.state.get().drain(publisher);
-                return publisher.buffer.size();
+                return publisher.emitOrBuffer(item);
             }
 
             @Override
@@ -274,7 +284,7 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
         FAILED {
             @Override
             <T> int emit(BufferedEmittingPublisher<T> publisher, T item) {
-                throw new IllegalStateException("Emitter is failed!");
+                throw new IllegalStateException("Emitter is in failed state!");
             }
 
             @Override

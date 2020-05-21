@@ -26,7 +26,13 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 
 /**
- * Emitting publisher for manual publishing.
+ * Emitting publisher for manual publishing on the same thread.
+ * {@link EmittingPublisher} doesn't have any buffering capability and propagates backpressure
+ * directly by returning {@code false} from {@link EmittingPublisher#emit(Object)} in case there
+ * is no demand, or {@code cancel} signal has been received.
+ * <p>
+ *     For publishing with buffering in case of backpressure use {@link BufferedEmittingPublisher}.
+ * </p>
  *
  * <p>
  * <strong>This publisher allows only a single subscriber</strong>.
@@ -38,7 +44,8 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
     private Flow.Subscriber<? super T> subscriber;
     private final AtomicReference<State> state = new AtomicReference<>(State.NOT_REQUESTED_YET);
     private final AtomicLong requested = new AtomicLong();
-    private final AtomicBoolean subscribed = new AtomicBoolean();
+    private final AtomicBoolean emitting = new AtomicBoolean(false);
+    private final AtomicBoolean subscribed = new AtomicBoolean(false);
     private final CompletableFuture<Void> deferredComplete = new CompletableFuture<>();
     private BiConsumer<Long, Long> requestCallback = (n, r) -> {};
     private Runnable onSubscribeCallback = () -> {};
@@ -121,12 +128,20 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
     }
 
     private void signalOnError(Throwable throwable) {
-        if (state.compareAndSet(State.NOT_REQUESTED_YET, State.CANCELLED)
-                || state.compareAndSet(State.READY_TO_EMIT, State.CANCELLED)) {
-            try {
-                this.subscriber.onError(throwable);
-            } catch (Throwable t) {
-                throw new IllegalStateException("On error threw an exception!", t);
+        if (state.compareAndSet(State.NOT_REQUESTED_YET, State.FAILED)
+                || state.compareAndSet(State.READY_TO_EMIT, State.FAILED)) {
+            for (;;) {
+                try {
+                    if (emitting.getAndSet(true)) {
+                        continue;
+                    }
+                    this.subscriber.onError(throwable);
+                    return;
+                } catch (Throwable t) {
+                    throw new IllegalStateException("On error threw an exception!", t);
+                } finally {
+                    emitting.set(false);
+                }
             }
         }
     }
@@ -134,25 +149,36 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
     private void signalOnComplete() {
         if (state.compareAndSet(State.NOT_REQUESTED_YET, State.COMPLETED)
                 || state.compareAndSet(State.READY_TO_EMIT, State.COMPLETED)) {
-            this.subscriber.onComplete();
-            EmittingPublisher.this.subscriber = null;
+            for (;;) {
+                try {
+                    if (emitting.getAndSet(true)) {
+                        continue;
+                    }
+                    this.subscriber.onComplete();
+                    EmittingPublisher.this.subscriber = null;
+                    return;
+                } finally {
+                    emitting.set(false);
+                }
+            }
         }
     }
 
     /**
-     * Emit one item to the stream, if there is enough requested, item is signaled to downstream as {@code onNext}
-     * and method returns true. If there is requested less than 1, nothing is sent and method returns false.
+     * Emit one item to the stream, if there is enough requested and publisher is not cancelled,
+     * item is signaled to downstream as {@code onNext} and method returns true.
+     * If there is requested less than 1, nothing is sent and method returns false.
      *
      * @param item to be sent downstream
-     * @return true if item successfully sent
-     * @throws IllegalStateException if publisher is cancelled
+     * @return true if item successfully sent, false if canceled on no demand
+     * @throws IllegalStateException if publisher is completed
      */
     public boolean emit(T item) {
         return this.state.get().emit(this, item);
     }
 
     /**
-     * Check if publisher is in terminal state COMPLETED.
+     * Check if publisher has been completed.
      *
      * @return true if so
      */
@@ -161,7 +187,7 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
     }
 
     /**
-     * Check if publisher is in terminal state CANCELLED.
+     * Check if publisher has been cancelled.
      *
      * @return true if so
      */
@@ -170,9 +196,17 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
     }
 
     /**
-     * Check if demand is higher than 0.
-     * Returned value should be used
-     * as informative and can change rapidly.
+     * Check if publisher has been failed.
+     *
+     * @return true if so
+     */
+    public boolean isFailed() {
+        return this.state.get() == State.FAILED;
+    }
+
+    /**
+     * Check if demand is higher than 0. Returned value should be used
+     * as informative and can change asynchronously.
      *
      * @return true if so
      */
@@ -181,7 +215,7 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
     }
 
     /**
-     * Check if downstream requested unbounded.
+     * Check if downstream requested unbounded number of items, eg. there is no backpressure.
      *
      * @return true if so
      */
@@ -191,7 +225,6 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
 
     /**
      * Executed when request signal from downstream arrive.
-     * If the callback is already registered, old one is removed.
      *
      * @param onSubscribeCallback to be executed
      */
@@ -201,7 +234,6 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
 
     /**
      * Executed when cancel signal from downstream arrive.
-     * If the callback is already registered, old one is removed.
      *
      * @param cancelCallback to be executed
      */
@@ -210,13 +242,55 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
     }
 
     /**
-     * Executed when request signal from downstream arrive.
-     * If the callback is already registered, old one is removed.
+     * Callback executed when request signal from downstream arrive.
+     * <ul>
+     * <li><b>param</b> {@code n} the requested count.</li>
+     * <li><b>param</b> {@code result} the current total cumulative requested count, ranges between [0, {@link Long#MAX_VALUE}]
+     * where the max indicates that this publisher is unbounded.</li>
+     * </ul>
      *
      * @param requestCallback to be executed
      */
     public void onRequest(BiConsumer<Long, Long> requestCallback) {
         this.requestCallback = BiConsumerChain.combine(this.requestCallback, requestCallback);
+    }
+
+    private boolean boundedEmit(T item){
+        for (;;) {
+            try {
+                if (emitting.getAndSet(true)) {
+                    // race against parallel emits
+                    // only those can decrement counter
+                    continue;
+                }
+                if (requested.getAndUpdate(r -> r > 0 ? r != Long.MAX_VALUE ? r - 1 : Long.MAX_VALUE : 0) < 1) {
+                    // there is a chance racing request will increment counter between this check and onNext
+                    // lets delegate that to emit caller
+                    return false;
+                }
+                subscriber.onNext(item);
+                return true;
+            } catch (NullPointerException npe) {
+                throw npe;
+            } catch (Throwable t) {
+                fail(new IllegalStateException(t));
+                return false;
+            } finally {
+                emitting.set(false);
+            }
+        }
+    }
+
+    private boolean unboundedEmit(T item) {
+        try {
+            subscriber.onNext(item);
+            return true;
+        } catch (NullPointerException npe) {
+            throw npe;
+        } catch (Throwable t) {
+            fail(new IllegalStateException(t));
+            return false;
+        }
     }
 
     private enum State {
@@ -229,24 +303,23 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
         READY_TO_EMIT {
             @Override
             <T> boolean emit(EmittingPublisher<T> publisher, T item) {
-                if (publisher.requested.getAndUpdate(r -> r > 0 ? r != Long.MAX_VALUE ? r - 1 : Long.MAX_VALUE : 0) < 1) {
-                    return false;
-                }
-                try {
-                    publisher.subscriber.onNext(item);
-                    return true;
-                } catch (NullPointerException npe) {
-                    throw npe;
-                } catch (Throwable t) {
-                    publisher.fail(new IllegalStateException(t));
-                    return false;
+                if (publisher.isUnbounded()) {
+                    return publisher.unboundedEmit(item);
+                } else {
+                    return publisher.boundedEmit(item);
                 }
             }
         },
         CANCELLED {
             @Override
             <T> boolean emit(EmittingPublisher<T> publisher, T item) {
-                throw new IllegalStateException("Emitter is cancelled!");
+                return false;
+            }
+        },
+        FAILED {
+            @Override
+            <T> boolean emit(EmittingPublisher<T> publisher, T item) {
+                return false;
             }
         },
         COMPLETED {

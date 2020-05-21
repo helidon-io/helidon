@@ -77,7 +77,7 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
     private final PartitionsAssignedLatch partitionsAssignedLatch = new PartitionsAssignedLatch();
     private final ScheduledExecutorService scheduler;
     private final AtomicLong requests = new AtomicLong();
-    private final EmittingPublisher<KafkaMessage<K, V>> emitter;
+    private final EmittingPublisher<KafkaMessage<K, V>> emitter = EmittingPublisher.create();
     private final List<String> topics;
     private final long periodExecutions;
     private final long pollTimeout;
@@ -100,8 +100,7 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
         this.ackTimeout = ackTimeout;
         this.limitNoAck = limitNoAck;
         this.consumerSupplier = consumerSupplier;
-        emitter = EmittingPublisher.create();
-        emitter.onRequest((n, t) -> requests.updateAndGet(r -> Long.MAX_VALUE - r > n ? n + r : Long.MAX_VALUE));
+        this.emitter.onRequest((n, demand) -> requests.updateAndGet(r -> Long.MAX_VALUE - r > n ? n + r : Long.MAX_VALUE));
     }
 
     /**
@@ -120,7 +119,7 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
                 try {
                     // Need to lock to avoid onClose() is executed meanwhile task is running
                     taskLock.lock();
-                    if (!scheduler.isShutdown() && !(emitter.isCompleted() || emitter.isCancelled())) {
+                    if (!scheduler.isShutdown() && !(emitter.isCompleted() || emitter.isFailed())) {
                         int currentNoAck = currentNoAck();
                         if (currentNoAck < limitNoAck) {
                             if (backPressureBuffer.isEmpty()) {
@@ -154,7 +153,7 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
                                             currentNoAck, limitNoAck));
                         }
                     }
-                    cleanResourcesIfTerminated(emitter.isCompleted() || emitter.isCancelled());
+                    cleanResourcesIfTerminated(emitter.isCompleted() || emitter.isFailed());
                     if (!stopped && !autoCommit) {
                         processACK();
                     }

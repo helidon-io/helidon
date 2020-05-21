@@ -30,14 +30,14 @@ class BiConsumerChain<T, S>
         }
     }
 
-    public BiConsumerChain<T, S> combineWith(BiConsumer<? super T, ? super S> another) {
+    BiConsumerChain<T, S> combineWith(BiConsumer<? super T, ? super S> another) {
         BiConsumerChain<T, S> newChain = new BiConsumerChain<>();
         newChain.addAll(this);
         newChain.add(another);
         return newChain;
     }
 
-    public static <T, S> BiConsumer<T, S> combine(
+    static <T, S> BiConsumer<T, S> combine(
             BiConsumer<T, S> current,
             BiConsumer<T, S> another) {
         if (current == null) {
