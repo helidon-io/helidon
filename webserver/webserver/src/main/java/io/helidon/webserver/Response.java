@@ -208,7 +208,7 @@ abstract class Response implements ServerResponse {
         try {
             sendLockSupport.execute(() -> {
                 GenericType<T> type = GenericType.create(itemClass);
-                Publisher<DataChunk> sendPublisher = writerContext.marshallStream(content, type, null);
+                Publisher<DataChunk> sendPublisher = writerContext.marshallStream(content, type);
                 sendLockSupport.contentSend = true;
                 sendPublisher.subscribe(bareResponse);
             }, content == null);
