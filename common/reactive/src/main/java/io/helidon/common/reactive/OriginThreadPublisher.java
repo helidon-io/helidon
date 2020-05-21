@@ -43,9 +43,12 @@ import java.util.logging.Logger;
  * <strong>This publisher allows only a single subscriber</strong>.
  * </p>
  *
+ * @deprecated Use {@link BufferedEmittingPublisher} or {@link EmittingPublisher} instead.
+ *
  * @param <T> type of published items
  * @param <U> type of submitted items
  */
+@Deprecated
 public abstract class OriginThreadPublisher<T, U> implements Publisher<T> {
 
     private static final Logger LOGGER = Logger.getLogger(OriginThreadPublisher.class.getName());

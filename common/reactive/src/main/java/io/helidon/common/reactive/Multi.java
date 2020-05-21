@@ -16,7 +16,6 @@
 package io.helidon.common.reactive;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -64,25 +63,21 @@ public interface Multi<T> extends Subscribable<T> {
     }
 
     /**
-     * Concat streams to one.
-     *
-     * @param firstMulti  first stream
-     * @param secondMulti second stream
+     * Concatenates an array of source {@link Flow.Publisher}s by relaying items
+     * in order, non-overlappingly, one after the other finishes.
      * @param publishers  more publishers to concat
      * @param <T>         item type
      * @return Multi
      */
     @SafeVarargs
     @SuppressWarnings("varargs")
-    static <T> Multi<T> concat(Flow.Publisher<T> firstMulti, Flow.Publisher<T> secondMulti, Flow.Publisher<T>... publishers) {
+    static <T> Multi<T> concatArray(Flow.Publisher<T>... publishers) {
         if (publishers.length == 0) {
-            return concat(firstMulti, secondMulti);
+            return empty();
         } else if (publishers.length == 1) {
-            return concat(concat(firstMulti, secondMulti), publishers[0]);
-        } else {
-            return concat(concat(firstMulti, secondMulti), publishers[0],
-                    Arrays.copyOfRange(publishers, 1, publishers.length));
+            return Multi.from(publishers[0]);
         }
+        return new MultiConcatArray<>(publishers);
     }
 
     /**

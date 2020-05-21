@@ -28,7 +28,6 @@ import java.util.function.Predicate;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
-import io.helidon.common.http.HashParameters;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.http.Parameters;
@@ -198,7 +197,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      * @return MessageBodyWriterContext
      */
     public static MessageBodyWriterContext create() {
-        return new MessageBodyWriterContext(HashParameters.create());
+        return new MessageBodyWriterContext(ReadOnlyParameters.empty());
     }
 
     @Override

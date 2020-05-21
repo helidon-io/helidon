@@ -28,6 +28,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
@@ -49,6 +51,7 @@ import com.salesforce.kafka.test.junit5.SharedKafkaTestResource;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.serialization.LongDeserializer;
 import org.apache.kafka.common.serialization.LongSerializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -98,6 +101,7 @@ class KafkaCdiExtensionTest {
     public static final String TEST_TOPIC_8 = "graph-done-8";
     public static final String TEST_TOPIC_10 = "graph-done-10";
     public static final String TEST_TOPIC_13 = "graph-done-13";
+    public static final String UNEXISTING_TOPIC = "unexistingTopic2";
     private final String KAFKA_SERVER = kafkaResource.getKafkaConnectString();
 
     protected Map<String, String> cdiConfig() {
@@ -211,11 +215,12 @@ class KafkaCdiExtensionTest {
         p.putAll(Map.of(
                 "mp.messaging.outgoing.test-channel-12.connector", KafkaConnector.CONNECTOR_NAME,
                 "mp.messaging.outgoing.test-channel-12.bootstrap.servers", KAFKA_SERVER,
-                "mp.messaging.outgoing.test-channel-12.topic", "unexistingTopic",
+                "mp.messaging.outgoing.test-channel-12.topic", UNEXISTING_TOPIC,
                 "mp.messaging.outgoing.test-channel-12.max.block.ms", "1000",
                 "mp.messaging.outgoing.test-channel-12.backpressure.size", "1",
                 "mp.messaging.outgoing.test-channel-12.batch.size", "1",
-                "mp.messaging.outgoing.test-channel-12.acks", "all",
+                "mp.messaging.outgoing.test-channel-12.acks", "1",
+                "mp.messaging.outgoing.test-channel-12.retries", "0",
                 "mp.messaging.outgoing.test-channel-12.key.serializer", LongSerializer.class.getName(),
                 "mp.messaging.outgoing.test-channel-12.value.serializer", StringSerializer.class.getName())
         );
@@ -351,6 +356,7 @@ class KafkaCdiExtensionTest {
         kafkaConsumingBean.restart();
         testData = Arrays.asList("not a number");
         produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_5, Arrays.asList("error"));
+        kafkaResource.getKafkaTestUtils().consumeAllRecordsFromTopic(TEST_TOPIC_5);
     }
 
     @Test
@@ -380,6 +386,7 @@ class KafkaCdiExtensionTest {
         kafkaConsumingBean = cdiContainer.select(AbstractSampleBean.Channel6.class).get();
         // We should find the new message and all the previous not ACK
         produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_6, uncommit);
+        kafkaResource.getKafkaTestUtils().consumeAllRecordsFromTopic(TEST_TOPIC_6);
     }
 
     @Test
@@ -406,6 +413,7 @@ class KafkaCdiExtensionTest {
         kafkaConsumingBean = cdiContainer.select(AbstractSampleBean.Channel8.class).get();
         produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_8, Collections.emptyList(), uncommited + 1);
         assertEquals(uncommited + 1, kafkaConsumingBean.consumed().size());
+        kafkaResource.getKafkaTestUtils().consumeAllRecordsFromTopic(TEST_TOPIC_8);
     }
 
     @Test
@@ -429,6 +437,7 @@ class KafkaCdiExtensionTest {
         // As the channel is cancelled, we cannot wait till something happens. We need to explicitly wait some time.
         Thread.sleep(1000);
         assertEquals(Collections.emptyList(), kafkaConsumingBean.consumed());
+        kafkaResource.getKafkaTestUtils().consumeAllRecordsFromTopic(TEST_TOPIC_10);
     }
 
     @Test
@@ -444,6 +453,10 @@ class KafkaCdiExtensionTest {
         // As the channel is cancelled, we cannot wait till something happens. We need to explicitly wait some time.
         Thread.sleep(1000);
         assertEquals(Collections.emptyList(), kafkaConsumingBean.consumed());
+        kafkaResource.getKafkaTestUtils().consumeAllRecordsFromTopic(TEST_TOPIC_13);
+        // We create the topic, otherwise the kafka-producer-network-thread gets
+        // 'Error while fetching metadata with correlation id' many times
+        kafkaResource.getKafkaTestUtils().createTopic(UNEXISTING_TOPIC, 4, (short) 1);
     }
 
     private void produceAndCheck(AbstractSampleBean kafkaConsumingBean, List<String> testData, String topic,
@@ -462,7 +475,15 @@ class KafkaCdiExtensionTest {
         try (Producer<Object, String> producer = new KafkaProducer<>(config)) {
             LOGGER.fine(() -> "Producing " + testData.size() + " events");
             //Send all test messages(async send means order is not guaranteed) and in parallel
-            testData.parallelStream().map(s -> new ProducerRecord<>(topic, s)).forEach(msg -> producer.send(msg));
+            List<Future<RecordMetadata>> sent = testData.parallelStream()
+                    .map(s -> producer.send(new ProducerRecord<>(topic, s))).collect(Collectors.toList());
+            sent.stream().forEach(future -> {
+                try {
+                    future.get(30, TimeUnit.SECONDS);
+                } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                    fail("Some of next messages were not sent in time: " + testData, e);
+                }
+            });
         }
         if (requested > 0) {
             // Wait till records are delivered

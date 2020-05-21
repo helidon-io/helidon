@@ -530,7 +530,7 @@ public class MultiTest {
 
 
         assertThat(Multi
-                .concat(Multi.from(TEST_DATA_1),
+                .concatArray(Multi.from(TEST_DATA_1),
                         Multi.just(TEST_DATA_2),
                         Multi.just(TEST_DATA_3)
                 )
@@ -542,7 +542,7 @@ public class MultiTest {
         )))));
 
         assertThat(Multi
-                .concat(Multi.from(TEST_DATA_1),
+                .concatArray(Multi.from(TEST_DATA_1),
                         Multi.just(TEST_DATA_2),
                         Multi.just(TEST_DATA_3),
                         Multi.just(TEST_DATA_4)
@@ -557,7 +557,7 @@ public class MultiTest {
 
 
         assertThat(Multi
-                        .concat(Multi.from(TEST_DATA_1),
+                        .concatArray(Multi.from(TEST_DATA_1),
                                 Multi.just(TEST_DATA_2),
                                 Multi.just(TEST_DATA_3),
                                 Multi.just(TEST_DATA_4),
@@ -575,7 +575,7 @@ public class MultiTest {
 
 
         assertThat(Multi
-                        .concat(Multi.from(TEST_DATA_1),
+                        .concatArray(Multi.from(TEST_DATA_1),
                                 Multi.just(TEST_DATA_2),
                                 Multi.just(TEST_DATA_3),
                                 Multi.just(TEST_DATA_4),
