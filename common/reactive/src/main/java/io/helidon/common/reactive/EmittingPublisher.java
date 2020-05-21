@@ -135,6 +135,7 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
         if (state.compareAndSet(State.NOT_REQUESTED_YET, State.COMPLETED)
                 || state.compareAndSet(State.READY_TO_EMIT, State.COMPLETED)) {
             this.subscriber.onComplete();
+            EmittingPublisher.this.subscriber = null;
         }
     }
 
@@ -157,6 +158,15 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
      */
     public boolean isCompleted() {
         return this.state.get() == State.COMPLETED;
+    }
+
+    /**
+     * Check if publisher is in terminal state CANCELLED.
+     *
+     * @return true if so
+     */
+    public boolean isCancelled() {
+        return this.state.get() == State.CANCELLED;
     }
 
     /**

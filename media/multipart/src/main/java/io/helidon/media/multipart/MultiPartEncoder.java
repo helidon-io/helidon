@@ -27,7 +27,7 @@ import java.util.concurrent.Flow.Subscription;
 import java.util.function.Function;
 
 import io.helidon.common.http.DataChunk;
-import io.helidon.common.reactive.EmittingPublisher;
+import io.helidon.common.reactive.BufferedEmittingPublisher;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
 import io.helidon.common.reactive.SubscriptionHelper;
@@ -51,12 +51,12 @@ public class MultiPartEncoder implements Processor<WriteableBodyPart, DataChunk>
     /**
      * Emitter future to handle deferred initialization of the processor.
      */
-    private final CompletableFuture<EmittingPublisher<Publisher<DataChunk>>> emitterFuture;
+    private final CompletableFuture<BufferedEmittingPublisher<Publisher<DataChunk>>> initFuture;
 
     /**
      * The underlying publisher.
      */
-    private EmittingPublisher<Publisher<DataChunk>> emitter;
+    private BufferedEmittingPublisher<Publisher<DataChunk>> emitter;
 
     /**
      * The downstream subscriber.
@@ -79,7 +79,7 @@ public class MultiPartEncoder implements Processor<WriteableBodyPart, DataChunk>
         Objects.requireNonNull(context, "context cannot be null!");
         this.context = context;
         this.boundary = boundary;
-        emitterFuture = new CompletableFuture<>();
+        initFuture = new CompletableFuture<BufferedEmittingPublisher<Publisher<DataChunk>>>();
     }
 
     /**
@@ -94,9 +94,9 @@ public class MultiPartEncoder implements Processor<WriteableBodyPart, DataChunk>
     }
 
     @Override
-    public void subscribe(final Subscriber<? super DataChunk> subscriber) {
+    public void subscribe(Subscriber<? super DataChunk> subscriber) {
         Objects.requireNonNull(subscriber);
-        if (this.downstream != null) {
+        if (this.emitter != null || this.downstream != null) {
             subscriber.onSubscribe(SubscriptionHelper.CANCELED);
             subscriber.onError(new IllegalStateException("Only one Subscriber allowed"));
             return;
@@ -114,15 +114,15 @@ public class MultiPartEncoder implements Processor<WriteableBodyPart, DataChunk>
 
     private void deferredInit() {
         if (upstream != null && downstream != null) {
-            emitter = EmittingPublisher.create();
+            emitter = BufferedEmittingPublisher.create();
             // relay request to upstream, already reduced by flatmap
-            emitter.onRequest(upstream::request);
-            emitter.onCancel(this::onCancel);
+            emitter.onRequest((r, t) -> upstream.request(r));
             Multi.from(emitter)
                     .flatMap(Function.identity())
                     .onCompleteResume(DataChunk.create(("--" + boundary + "--").getBytes(StandardCharsets.UTF_8)))
                     .subscribe(downstream);
-            emitterFuture.complete(emitter);
+            initFuture.complete(emitter);
+            downstream = null;
         }
     }
 
@@ -131,8 +131,15 @@ public class MultiPartEncoder implements Processor<WriteableBodyPart, DataChunk>
         emitter.emit(createBodyPartPublisher(bodyPart));
     }
 
-    private void onCancel() {
-        this.downstream = null;
+    @Override
+    public void onError(final Throwable throwable) {
+        Objects.requireNonNull(throwable);
+        initFuture.whenComplete((e, t) -> e.fail(throwable));
+    }
+
+    @Override
+    public void onComplete() {
+        initFuture.whenComplete((e, t) -> e.complete());
     }
 
     private Publisher<DataChunk> createBodyPartPublisher(final WriteableBodyPart bodyPart) {
@@ -160,16 +167,5 @@ public class MultiPartEncoder implements Processor<WriteableBodyPart, DataChunk>
                 bodyPart.content().toPublisher(context)),
                 // Part postfix
                 Single.just(DataChunk.create("\n".getBytes(StandardCharsets.UTF_8))));
-    }
-
-    @Override
-    public void onError(final Throwable throwable) {
-        Objects.requireNonNull(throwable);
-        emitterFuture.whenComplete((e, t) -> e.fail(throwable));
-    }
-
-    @Override
-    public void onComplete() {
-        emitterFuture.whenComplete((e, t) -> e.complete());
     }
 }

@@ -53,6 +53,11 @@ public class MultiPartEncoderTckTest extends FlowPublisherVerification<DataChunk
         return null;
     }
 
+    @Override
+    public void required_spec313_cancelMustMakeThePublisherEventuallyDropAllReferencesToTheSubscriber() throws Throwable {
+        super.required_spec313_cancelMustMakeThePublisherEventuallyDropAllReferencesToTheSubscriber();
+    }
+
     @Test(enabled = false)
     @Override
     public void required_createPublisher3MustProduceAStreamOfExactly3Elements() throws Throwable {

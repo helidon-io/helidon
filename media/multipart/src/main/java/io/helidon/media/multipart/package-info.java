@@ -15,6 +15,6 @@
  */
 
 /**
- * Helidon Media MultiPart Common.
+ * Helidon Media MultiPart.
  */
 package io.helidon.media.multipart;

@@ -266,67 +266,6 @@ public class MultiPartDecoderTest {
     }
 
     @Test
-    public void testCanceledPartSubscription() {
-        String boundary = "boundary";
-        final byte[] chunk1 = ("--" + boundary + "\n"
-                + "Content-Id: part1\n"
-                + "\n"
-                + "body 1.aaaa\n").getBytes();
-        final byte[] chunk2 = "body 1.bbbb\n".getBytes();
-        final byte[] chunk3 = ("body 1.cccc\n"
-                + "--" + boundary + "\n"
-                + "Content-Id: part2\n"
-                + "\n"
-                + "This is the 2nd").getBytes();
-        final byte[] chunk4 = ("body.\n"
-                + "--" + boundary + "--").getBytes();
-
-        final CountDownLatch latch = new CountDownLatch(4);
-        Consumer<BodyPart> consumer = (part) -> {
-            latch.countDown();
-            if (latch.getCount() == 3) {
-                assertThat(part.headers().values("Content-Id"), hasItems("part1"));
-                part.content().subscribe(new Subscriber<DataChunk>() {
-                    Subscription subscription;
-
-                    @Override
-                    public void onSubscribe(Subscription subscription) {
-                        this.subscription = subscription;
-                        subscription.request(Long.MAX_VALUE);
-                    }
-
-                    @Override
-                    public void onNext(DataChunk item) {
-                        latch.countDown();
-                        subscription.cancel();
-                    }
-
-                    @Override
-                    public void onError(Throwable throwable) {
-                    }
-
-                    @Override
-                    public void onComplete() {
-                    }
-                });
-            } else {
-                assertThat(part.headers().values("Content-Id"), hasItems("part2"));
-                DataChunkSubscriber subscriber = new DataChunkSubscriber();
-                part.content().subscribe(subscriber);
-                subscriber.content().thenAccept(body -> {
-                    latch.countDown();
-                    assertThat(body, is(equalTo("This is the 2nd body.")));
-                });
-            }
-        };
-        BodyPartSubscriber testSubscriber = new BodyPartSubscriber(SUBSCRIBER_TYPE.ONE_BY_ONE, consumer);
-        partsPublisher(boundary, List.of(chunk1, chunk2, chunk3, chunk4)).subscribe(testSubscriber);
-        waitOnLatch(latch);
-        assertThat(testSubscriber.error, is(nullValue()));
-        assertThat(testSubscriber.complete, is(equalTo(true)));
-    }
-
-    @Test
     public void testPartContentSubscriberThrottling() {
         String boundary = "boundary";
         final byte[] chunk1 = ("--" + boundary + "\n"

@@ -21,18 +21,13 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Queue;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow.Processor;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.Flow.Subscription;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
 
 import io.helidon.common.http.DataChunk;
-import io.helidon.common.reactive.EmittingPublisher;
-import io.helidon.common.reactive.RequestedCounter;
+import io.helidon.common.reactive.BufferedEmittingPublisher;
 import io.helidon.common.reactive.SubscriptionHelper;
 import io.helidon.media.common.MessageBodyReadableContent;
 import io.helidon.media.common.MessageBodyReaderContext;
@@ -46,7 +41,7 @@ public class MultiPartDecoder implements Processor<DataChunk, ReadableBodyPart> 
     /**
      * Future to handle deferred initialization of the processor.
      */
-    private final CompletableFuture<EmittingPublisher<ReadableBodyPart>> initFuture;
+    private final CompletableFuture<BufferedEmittingPublisher<ReadableBodyPart>> initFuture;
 
     /**
      * The upstream subscription.
@@ -61,7 +56,7 @@ public class MultiPartDecoder implements Processor<DataChunk, ReadableBodyPart> 
     /**
      * The underlying publisher.
      */
-    private final BufferedEmittingPublisher<ReadableBodyPart> partsPublisher;
+    private BufferedEmittingPublisher<ReadableBodyPart> emitter;
 
     /**
      * The builder for the current {@link BodyPart}.
@@ -115,8 +110,6 @@ public class MultiPartDecoder implements Processor<DataChunk, ReadableBodyPart> 
         this.context = context;
         parserEventProcessor = new ParserEventProcessor();
         parser = new MimeParser(boundary, parserEventProcessor);
-        partsPublisher = new BufferedEmittingPublisher<>(this::onPartRequest);
-        partsPublisher.onCancel(this::onPartSubscriptionCancel);
         initFuture = new CompletableFuture<>();
         bodyParts = new LinkedList<>();
         chunksByIds = new HashMap<>();
@@ -136,7 +129,7 @@ public class MultiPartDecoder implements Processor<DataChunk, ReadableBodyPart> 
     @Override
     public void subscribe(Subscriber<? super ReadableBodyPart> subscriber) {
         Objects.requireNonNull(subscriber);
-        if (this.downstream != null) {
+        if (emitter != null || downstream != null) {
             subscriber.onSubscribe(SubscriptionHelper.CANCELED);
             subscriber.onError(new IllegalStateException("Only one Subscriber allowed"));
             return;
@@ -159,35 +152,35 @@ public class MultiPartDecoder implements Processor<DataChunk, ReadableBodyPart> 
             chunksByIds.put(id, chunk);
             parser.parse();
         } catch (MimeParser.ParsingException ex) {
-            partsPublisher.fail(ex);
+            emitter.fail(ex);
             chunk.release();
             releaseChunks();
         }
 
         // submit parsed parts
         while (!bodyParts.isEmpty()) {
-            ReadableBodyPart bodyPart = bodyParts.poll();
-            if (partsPublisher.emit(bodyPart)) {
-                drainPart(bodyPart);
+            if (emitter.isCancelled()) {
+                return;
             }
+            emitter.emit(bodyParts.poll());
         }
 
         // complete the parts publisher
         if (parserEventProcessor.isCompleted()) {
-            partsPublisher.complete();
+            emitter.complete();
             // parts are delivered sequentially
             // we potentially drop the last part if not requested
-            partsPublisher.clear(this::drainPart);
+            emitter.clearBuffer(this::drainPart);
             releaseChunks();
         }
 
-        // request more data if not stuck at content
+        // request more data to detect the next part
+        // if not in the middle of a part content
         // or if the part content subscriber needs more
         if (upstream != SubscriptionHelper.CANCELED
-                && !partsPublisher.isCancelled()
-                && partsPublisher.requiresMoreItems()
+                && emitter.hasRequests()
                 && parserEventProcessor.isDataRequired()
-                && (!parserEventProcessor.isContentDataRequired() || bodyPartPublisher.requiresMoreItems())) {
+                && (!parserEventProcessor.isContentDataRequired() || bodyPartPublisher.hasRequests())) {
 
             upstream.request(1);
         }
@@ -207,7 +200,7 @@ public class MultiPartDecoder implements Processor<DataChunk, ReadableBodyPart> 
                 try {
                     parser.close();
                 } catch (MimeParser.ParsingException ex) {
-                    partsPublisher.fail(ex);
+                    emitter.fail(ex);
                     releaseChunks();
                 }
             }
@@ -216,21 +209,27 @@ public class MultiPartDecoder implements Processor<DataChunk, ReadableBodyPart> 
 
     private void deferredInit() {
         if (upstream != null && downstream != null) {
-            partsPublisher.subscribe(downstream);
-            initFuture.complete(partsPublisher);
+            emitter = BufferedEmittingPublisher.create();
+            emitter.onRequest(this::onPartRequest);
+            emitter.onEmit(this::drainPart);
+            emitter.onCancel(this::onPartCancel);
+            emitter.subscribe(downstream);
+            initFuture.complete(emitter);
+            downstream = null;
         }
     }
 
-    private void onPartSubscriptionCancel() {
-        this.downstream = null;
-    }
-
-    private void onPartRequest() {
+    private void onPartRequest(long requested, long total) {
         // require more raw chunks to decode if the decoding has not
         // yet started or if more data is required to make progress
         if (!parserEventProcessor.isStarted() || parserEventProcessor.isDataRequired()) {
             upstream.request(1);
         }
+    }
+
+    private void onPartCancel() {
+        emitter.clearBuffer(this::drainPart);
+        releaseChunks();
     }
 
     private void releaseChunks() {
@@ -304,7 +303,7 @@ public class MultiPartDecoder implements Processor<DataChunk, ReadableBodyPart> 
             MimeParser.EventType eventType = event.type();
             switch (eventType) {
                 case START_PART:
-                    bodyPartPublisher = new BufferedEmittingPublisher<>();
+                    bodyPartPublisher = BufferedEmittingPublisher.create();
                     bodyPartHeaderBuilder = ReadableBodyPartHeaders.builder();
                     bodyPartBuilder = ReadableBodyPart.builder();
                     break;
@@ -367,102 +366,6 @@ public class MultiPartDecoder implements Processor<DataChunk, ReadableBodyPart> 
          */
         boolean isContentDataRequired() {
             return isDataRequired() && lastEvent.asDataRequiredEvent().isContent();
-        }
-    }
-
-    /**
-     * Buffered emitter publisher.
-     * Note that this is a temporary implementation before a proper one is added to common/reactive.
-     */
-    static class BufferedEmittingPublisher<T> extends EmittingPublisher<T> {
-
-        private final Queue<T> queue;
-        private final RequestedCounter requestCounter;
-        private final AtomicBoolean once = new AtomicBoolean(false);
-        private final Runnable requestsCallback;
-        private boolean draining;
-        private boolean completed;
-
-        BufferedEmittingPublisher(Runnable requestsCallback) {
-            super();
-            this.requestsCallback = requestsCallback;
-            onRequest(this::onRequested);
-            queue = new ArrayBlockingQueue<>(256);
-            requestCounter = new RequestedCounter(/* strict mode */ true);
-        }
-
-        BufferedEmittingPublisher() {
-            this(() -> {});
-        }
-
-        @Override
-        public void subscribe(Subscriber<? super T> subscriber) {
-            if (!once.compareAndSet(false, true)) {
-                subscriber.onError(new IllegalStateException("Only single subscriber is allowed!"));
-            } else {
-                super.subscribe(subscriber);
-            }
-        }
-
-        @Override
-        public boolean emit(T item) {
-            if (!queue.offer(item)) {
-                fail(new IllegalStateException("Unable to add an element to the body part publisher cache."));
-                return false;
-            }
-            return drainQueue();
-        }
-
-        @Override
-        public void complete() {
-            completed = true;
-            if (queue.isEmpty()) {
-                super.complete();
-            }
-        }
-
-        void clear(Consumer<T> consumer) {
-            while (!queue.isEmpty()) {
-                consumer.accept(queue.poll());
-            }
-        }
-
-        boolean requiresMoreItems() {
-            return requestCounter.get() - queue.size() > 0;
-        }
-
-        void onRequested(long n) {
-            requestCounter.increment(n, this::fail);
-            drainQueue();
-            requestsCallback.run();
-        }
-
-        private boolean drainQueue() {
-            if (draining || requestCounter.get() == 0L) {
-                return false;
-            }
-            try {
-                draining = true;
-                requestCounter.lock();
-                while (!queue.isEmpty() && requestCounter.tryDecrement()) {
-                    T value = queue.poll();
-                    try {
-                        if (!super.emit(value) || isCancelled()) {
-                            return false;
-                        }
-                    } catch (Throwable ex) {
-                        fail(ex);
-                        return false;
-                    }
-                }
-                if (completed && queue.isEmpty()) {
-                    super.complete();
-                }
-                return true;
-            } finally {
-                draining = false;
-                requestCounter.unlock();
-            }
         }
     }
 }

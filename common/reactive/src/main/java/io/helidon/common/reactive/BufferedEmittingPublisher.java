@@ -40,6 +40,8 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
     private final AtomicBoolean draining = new AtomicBoolean(false);
     private final AtomicReference<Throwable> error = new AtomicReference<>();
     private BiConsumer<Long, Long> requestCallback = (n, r) -> {};
+    private Consumer<T> emitCallback = (i) -> {};
+    private Runnable cancelCallback = () -> {};
 
     protected BufferedEmittingPublisher() {
     }
@@ -61,7 +63,10 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
             requestCallback.accept(n, cnt);
             state.get().drain(this);
         });
-        emitter.onCancel(() -> state.compareAndSet(State.READY_TO_EMIT, State.CANCELLED));
+        emitter.onCancel(() -> {
+            cancelCallback.run();
+            state.compareAndSet(State.READY_TO_EMIT, State.CANCELLED);
+        });
         emitter.subscribe(subscriber);
     }
 
@@ -77,6 +82,25 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
      */
     public void onRequest(BiConsumer<Long, Long> requestCallback) {
         this.requestCallback = BiConsumerChain.combine(this.requestCallback, requestCallback);
+    }
+
+    /**
+     * Executed when cancel signal from downstream arrive.
+     * If the callback is already registered, old one is removed.
+     *
+     * @param cancelCallback to be executed
+     */
+    public void onCancel(Runnable cancelCallback) {
+        this.cancelCallback = RunnableChain.combine(this.cancelCallback, cancelCallback);
+    }
+
+    /**
+     * Callback executed when each item is successfully emitted.
+     *
+     * @param emitCallback to be executed
+     */
+    public void onEmit(Consumer<T> emitCallback) {
+        this.emitCallback = ConsumerChain.combine(this.emitCallback, emitCallback);;
     }
 
     /**
@@ -188,7 +212,9 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
     private void drainBuffer() {
         if (!draining.getAndSet(true)) {
             while (!buffer.isEmpty()) {
-                if (emitter.emit(buffer.peek())) {
+                T item = buffer.peek();
+                if (emitter.emit(item)) {
+                    emitCallback.accept(item);
                     buffer.poll();
                 } else {
                     break;
