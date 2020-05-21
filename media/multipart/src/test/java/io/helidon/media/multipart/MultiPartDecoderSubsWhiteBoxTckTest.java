@@ -18,40 +18,43 @@ package io.helidon.media.multipart;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow;
-import java.util.function.Consumer;
 
+import io.helidon.common.http.DataChunk;
 import io.helidon.common.reactive.Multi;
-
-import org.reactivestreams.tck.SubscriberWhiteboxVerification;
+import org.reactivestreams.FlowAdapters;
+import org.reactivestreams.Publisher;
 import org.reactivestreams.tck.TestEnvironment;
 import org.reactivestreams.tck.flow.FlowSubscriberWhiteboxVerification;
 import org.testng.annotations.Test;
 
+
 import static io.helidon.media.multipart.BodyPartTest.MEDIA_CONTEXT;
 
-public class EncoderSubsWhiteBoxTckTest extends FlowSubscriberWhiteboxVerification<WriteableBodyPart> {
+public class MultiPartDecoderSubsWhiteBoxTckTest extends FlowSubscriberWhiteboxVerification<DataChunk> {
 
-    protected EncoderSubsWhiteBoxTckTest() {
+    protected MultiPartDecoderSubsWhiteBoxTckTest() {
         super(new TestEnvironment(200));
     }
 
     @Override
-    public WriteableBodyPart createElement(final int element) {
-        return WriteableBodyPart.builder()
-                .entity("part" + element)
-                .build();
+    public Publisher<DataChunk> createHelperPublisher(long l) {
+        return FlowAdapters.toPublisher(MultiPartDecoderTckTest.upstream(l));
     }
 
     @Override
-    protected Flow.Subscriber<WriteableBodyPart> createFlowSubscriber(final WhiteboxSubscriberProbe<WriteableBodyPart> probe) {
-        Consumer<Flow.Subscription> run = s -> s.request(Long.MAX_VALUE);
+    public DataChunk createElement(final int element) {
+        return null;
+    }
+
+    @Override
+    protected Flow.Subscriber<DataChunk> createFlowSubscriber(final WhiteboxSubscriberProbe<DataChunk> probe) {
         CompletableFuture<Void> future = new CompletableFuture<>();
-        MultiPartEncoder encoder = new MultiPartEncoder("boundary", MEDIA_CONTEXT.writerContext()){
+        MultiPartDecoder decoder = new MultiPartDecoder("boundary", MEDIA_CONTEXT.readerContext()){
             @Override
             public void onSubscribe(final Flow.Subscription subscription) {
                 super.onSubscribe(subscription);
                 future.complete(null);
-                probe.registerOnSubscribe(new SubscriberWhiteboxVerification.SubscriberPuppet(){
+                probe.registerOnSubscribe(new SubscriberPuppet(){
                     @Override
                     public void triggerRequest(final long elements) {
                         subscription.request(elements);
@@ -65,9 +68,9 @@ public class EncoderSubsWhiteBoxTckTest extends FlowSubscriberWhiteboxVerificati
             }
 
             @Override
-            public void onNext(final WriteableBodyPart bodyPart) {
-                super.onNext(bodyPart);
-                probe.registerOnNext(bodyPart);
+            public void onNext(final DataChunk chunk) {
+                super.onNext(chunk);
+                probe.registerOnNext(chunk);
             }
 
             @Override
@@ -83,19 +86,13 @@ public class EncoderSubsWhiteBoxTckTest extends FlowSubscriberWhiteboxVerificati
             }
         };
 
-        Multi.from(encoder).forEach(ch->{});
-        return encoder;
-    }
-
-    @Test(enabled = false)
-    @Override
-    public void required_spec203_mustNotCallMethodsOnSubscriptionOrPublisherInOnComplete() throws Throwable {
-        // TODO check with daniel
+        Multi.from(decoder).forEach(part -> {});
+        return decoder;
     }
 
     @Test(enabled = false)
     @Override
     public void required_spec205_mustCallSubscriptionCancelIfItAlreadyHasAnSubscriptionAndReceivesAnotherOnSubscribeSignal() throws Throwable {
-        // TODO check with daniel
+        // not compliant
     }
 }

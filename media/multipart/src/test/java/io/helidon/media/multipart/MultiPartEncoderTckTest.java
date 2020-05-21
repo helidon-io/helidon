@@ -30,9 +30,9 @@ import org.testng.annotations.Test;
 
 import static io.helidon.media.multipart.BodyPartTest.MEDIA_CONTEXT;
 
-public class EncoderTckTest extends FlowPublisherVerification<DataChunk> {
+public class MultiPartEncoderTckTest extends FlowPublisherVerification<DataChunk> {
 
-    public EncoderTckTest() {
+    public MultiPartEncoderTckTest() {
         super(new TestEnvironment(200));
     }
 
@@ -51,13 +51,6 @@ public class EncoderTckTest extends FlowPublisherVerification<DataChunk> {
     @Override
     public Flow.Publisher<DataChunk> createFailedFlowPublisher() {
         return null;
-    }
-
-    @Test(enabled = false)
-    @Override
-    public void required_spec313_cancelMustMakeThePublisherEventuallyDropAllReferencesToTheSubscriber() throws Throwable {
-        // disabled as somehow this test claims the subscriber reference exists but it does not
-        // TODO check with daniel
     }
 
     @Test(enabled = false)

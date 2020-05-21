@@ -16,9 +16,7 @@
 
 package io.helidon.media.multipart;
 
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow;
-import java.util.function.Consumer;
 
 import io.helidon.common.reactive.Multi;
 
@@ -28,18 +26,16 @@ import org.testng.annotations.Test;
 
 import static io.helidon.media.multipart.BodyPartTest.MEDIA_CONTEXT;
 
-public class EncoderSubsBlackBoxTckTest extends FlowSubscriberBlackboxVerification<WriteableBodyPart> {
+public class MultiPartEncoderSubsBlackBoxTckTest extends FlowSubscriberBlackboxVerification<WriteableBodyPart> {
 
-    protected EncoderSubsBlackBoxTckTest() {
+    protected MultiPartEncoderSubsBlackBoxTckTest() {
         super(new TestEnvironment(200));
     }
 
     @Override
     public Flow.Subscriber<WriteableBodyPart> createFlowSubscriber() {
-        Consumer<Flow.Subscription> run = s -> s.request(Long.MAX_VALUE);
-        CompletableFuture<Void> future = new CompletableFuture<>();
         MultiPartEncoder encoder = MultiPartEncoder.create("boundary", MEDIA_CONTEXT.writerContext());
-        Multi.from(encoder).forEach(ch->{});
+        Multi.from(encoder).forEach(ch -> {});
         return encoder;
     }
 
@@ -53,12 +49,6 @@ public class EncoderSubsBlackBoxTckTest extends FlowSubscriberBlackboxVerificati
     @Test(enabled = false)
     @Override
     public void required_spec205_blackbox_mustCallSubscriptionCancelIfItAlreadyHasAnSubscriptionAndReceivesAnotherOnSubscribeSignal() throws Exception {
-        // TODO check with daniel
-    }
-
-    @Test(enabled = false)
-    @Override
-    public void required_spec203_blackbox_mustNotCallMethodsOnSubscriptionOrPublisherInOnComplete() throws Throwable {
-        // TODO check with daniel
+        // not compliant
     }
 }

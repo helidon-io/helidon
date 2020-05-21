@@ -116,21 +116,13 @@ public class MultiPartEncoder implements Processor<WriteableBodyPart, DataChunk>
         if (upstream != null && downstream != null) {
             emitter = EmittingPublisher.create();
             // relay request to upstream, already reduced by flatmap
-            emitter.onRequest(this::onRequested);
+            emitter.onRequest(upstream::request);
             emitter.onCancel(this::onCancel);
             Multi.from(emitter)
                     .flatMap(Function.identity())
+                    .onCompleteResume(DataChunk.create(("--" + boundary + "--").getBytes(StandardCharsets.UTF_8)))
                     .subscribe(downstream);
             emitterFuture.complete(emitter);
-        }
-    }
-    /**
-     * Invoked when items are requested from the upstream.
-     * @param n number of requested items
-     */
-    private void onRequested(long n) {
-        if (!emitter.isCancelled() && !emitter.isCompleted()) {
-            upstream.request(n);
         }
     }
 
@@ -178,9 +170,6 @@ public class MultiPartEncoder implements Processor<WriteableBodyPart, DataChunk>
 
     @Override
     public void onComplete() {
-        emitterFuture.whenComplete((e, t) -> {
-            e.emit(Single.just(DataChunk.create(("--" + boundary + "--").getBytes(StandardCharsets.UTF_8))));
-            e.complete();
-        });
+        emitterFuture.whenComplete((e, t) -> e.complete());
     }
 }

@@ -74,6 +74,7 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
                 state.compareAndSet(State.NOT_REQUESTED_YET, State.CANCELLED);
                 state.compareAndSet(State.READY_TO_EMIT, State.CANCELLED);
                 cancelCallback.run();
+                EmittingPublisher.this.subscriber = null;
             }
 
         });
