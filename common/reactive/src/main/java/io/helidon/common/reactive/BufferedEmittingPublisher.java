@@ -203,6 +203,18 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
         }
     }
 
+    private int raceAgainstCounter(T item) {
+        if (buffer.isEmpty() && emitter.emit(item)) {
+            // Buffer drained, its ok to try skip
+            return 0;
+        } else {
+            //safe path thru buffer
+            buffer.add(item);
+            state.get().drain(this);
+            return buffer.size();
+        }
+    }
+
     private int unboundedFastPath(T item) {
         if (buffer.isEmpty()) {
             //Buffer drained, its ok to skip it
@@ -224,9 +236,7 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
                 if (publisher.isUnbounded()) {
                     return publisher.unboundedFastPath(item);
                 }
-                publisher.buffer.add(item);
-                publisher.state.get().drain(publisher);
-                return publisher.buffer.size();
+                return publisher.raceAgainstCounter(item);
             }
 
             @Override

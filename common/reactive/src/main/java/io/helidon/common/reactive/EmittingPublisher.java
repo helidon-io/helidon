@@ -38,7 +38,8 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
     private Flow.Subscriber<? super T> subscriber;
     private final AtomicReference<State> state = new AtomicReference<>(State.NOT_REQUESTED_YET);
     private final AtomicLong requested = new AtomicLong();
-    private final AtomicBoolean subscribed = new AtomicBoolean();
+    private final AtomicBoolean emitting = new AtomicBoolean(false);
+    private final AtomicBoolean subscribed = new AtomicBoolean(false);
     private final CompletableFuture<Void> deferredComplete = new CompletableFuture<>();
     private BiConsumer<Long, Long> requestCallback = (n, r) -> {};
     private Runnable onSubscribeCallback = () -> {};
@@ -209,6 +210,44 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
         this.requestCallback = BiConsumerChain.combine(this.requestCallback, requestCallback);
     }
 
+    private boolean boundedEmit(T item){
+        for (;;) {
+            try {
+                if (emitting.getAndSet(true)) {
+                    // race against parallel emits
+                    // only those can decrement counter
+                    continue;
+                }
+                if (requested.getAndUpdate(r -> r > 0 ? r != Long.MAX_VALUE ? r - 1 : Long.MAX_VALUE : 0) < 1) {
+                    // there is a chance racing request will increment counter between this check and onNext
+                    // lets delegate that to emit caller
+                    return false;
+                }
+                subscriber.onNext(item);
+                return true;
+            } catch (NullPointerException npe) {
+                throw npe;
+            } catch (Throwable t) {
+                fail(new IllegalStateException(t));
+                return false;
+            } finally {
+                emitting.set(false);
+            }
+        }
+    }
+
+    private boolean unboundedEmit(T item) {
+        try {
+            subscriber.onNext(item);
+            return true;
+        } catch (NullPointerException npe) {
+            throw npe;
+        } catch (Throwable t) {
+            fail(new IllegalStateException(t));
+            return false;
+        }
+    }
+
     private enum State {
         NOT_REQUESTED_YET {
             @Override
@@ -219,24 +258,17 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
         READY_TO_EMIT {
             @Override
             <T> boolean emit(EmittingPublisher<T> publisher, T item) {
-                if (publisher.requested.getAndUpdate(r -> r > 0 ? r != Long.MAX_VALUE ? r - 1 : Long.MAX_VALUE : 0) < 1) {
-                    return false;
-                }
-                try {
-                    publisher.subscriber.onNext(item);
-                    return true;
-                } catch (NullPointerException npe) {
-                    throw npe;
-                } catch (Throwable t) {
-                    publisher.fail(new IllegalStateException(t));
-                    return false;
+                if (publisher.isUnbounded()) {
+                    return publisher.unboundedEmit(item);
+                } else {
+                    return publisher.boundedEmit(item);
                 }
             }
         },
         CANCELLED {
             @Override
             <T> boolean emit(EmittingPublisher<T> publisher, T item) {
-                throw new IllegalStateException("Emitter is cancelled!");
+                return false;
             }
         },
         COMPLETED {
