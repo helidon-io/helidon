@@ -180,7 +180,7 @@ abstract class AbstractSampleBean {
                     .to(new Subscriber<Message<ConsumerRecord<Long, String>>>() {
                         @Override
                         public void onSubscribe(Subscription subscription) {
-                            LOGGER.fine(() -> "onSubscribe()");
+                            LOGGER.fine(() -> "channel5 onSubscribe()");
                             subscription.request(3);
                         }
                         @Override
@@ -229,27 +229,35 @@ abstract class AbstractSampleBean {
     @ApplicationScoped
     public static class Channel8 extends AbstractSampleBean {
         static final String NO_ACK = "noAck";
+        static final int LIMIT = 10;
+
         private final AtomicInteger partitionIdOfNoAck = new AtomicInteger(-1);
         private final AtomicInteger uncommitted = new AtomicInteger();
+        // Limit is for one scenario that Kafka rebalances and sends again same data in different partition
+        private final AtomicInteger limit = new AtomicInteger();
 
         @Incoming("test-channel-8")
         @Acknowledgment(Acknowledgment.Strategy.MANUAL)
         public CompletionStage<String> channel6(Message<ConsumerRecord<Long, String>> msg) {
-            LOGGER.fine(() -> String.format("Received %s", msg.getPayload().value()));
             ConsumerRecord<Long, String> record = msg.unwrap(ConsumerRecord.class);
             consumed().add(record.value());
             // Certain messages are not ACK. We can check later that they will be sent again.
-            if (!NO_ACK.equals(msg.getPayload().value())) {
-                LOGGER.fine(() -> "ACK sent");
-                msg.ack().whenComplete((a, b) -> countDown("channel8()"));
-            } else {
+            if (NO_ACK.equals(msg.getPayload().value())) {
+                LOGGER.fine(() -> String.format("NO_ACK. Received %s", msg.getPayload().value()));
                 partitionIdOfNoAck.set(record.partition());
-                LOGGER.fine(() -> "ACK is not sent");
-            }
-            if (record.partition() == partitionIdOfNoAck.get()) {
-                LOGGER.fine(() -> record.value() + " will not be committed to Kafka");
                 uncommitted.getAndIncrement();
-                countDown("channel8()");
+                countDown("no_ack channel8()");
+            } else {
+                if (limit.getAndIncrement() == LIMIT) {
+                    throw new IllegalStateException("Avoid the Kafka rebalance fix");
+                }else if (record.partition() == partitionIdOfNoAck.get()) {
+                    LOGGER.fine(() -> String.format("NO_ACK. Received %s", msg.getPayload().value()));
+                    uncommitted.getAndIncrement();
+                    countDown("no_ack channel8()");
+                } else {
+                    LOGGER.fine(() -> String.format("ACK. Received %s", msg.getPayload().value()));
+                    msg.ack().whenComplete((a, b) -> countDown("ack channel8()"));
+                }
             }
             return CompletableFuture.completedFuture(null);
         }

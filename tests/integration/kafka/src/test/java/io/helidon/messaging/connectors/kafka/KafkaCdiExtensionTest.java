@@ -18,12 +18,14 @@
 package io.helidon.messaging.connectors.kafka;
 
 import java.lang.annotation.Annotation;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -36,6 +38,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 
 import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.se.SeContainer;
@@ -48,6 +51,8 @@ import io.helidon.config.mp.MpConfigSources;
 import io.helidon.microprofile.messaging.MessagingCdiExtension;
 
 import com.salesforce.kafka.test.junit5.SharedKafkaTestResource;
+import org.apache.kafka.clients.consumer.Consumer;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -58,9 +63,8 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.reactive.messaging.spi.Connector;
-import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -73,9 +77,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 class KafkaCdiExtensionTest {
 
     private static final Logger LOGGER = Logger.getLogger(KafkaCdiExtensionTest.class.getName());
-    protected SeContainer cdiContainer;
-
-    protected static final Connector KAFKA_CONNECTOR_LITERAL = new Connector() {
+    private static final Connector KAFKA_CONNECTOR_LITERAL = new Connector() {
 
         @Override
         public Class<? extends Annotation> annotationType() {
@@ -91,20 +93,24 @@ class KafkaCdiExtensionTest {
     @RegisterExtension
     public static final SharedKafkaTestResource kafkaResource = new SharedKafkaTestResource()
         .withBrokers(4).withBrokerProperty("auto.create.topics.enable", Boolean.toString(false));
-    public static final String TEST_TOPIC_1 = "graph-done-1";
-    public static final String TEST_TOPIC_2 = "graph-done-2";
-    public static final String TEST_TOPIC_3 = "graph-done-3";
-    public static final String TEST_TOPIC_4 = "graph-done-4";
-    public static final String TEST_TOPIC_5 = "graph-done-5";
-    public static final String TEST_TOPIC_6 = "graph-done-6";
-    public static final String TEST_TOPIC_7 = "graph-done-7";
-    public static final String TEST_TOPIC_8 = "graph-done-8";
-    public static final String TEST_TOPIC_10 = "graph-done-10";
-    public static final String TEST_TOPIC_13 = "graph-done-13";
-    public static final String UNEXISTING_TOPIC = "unexistingTopic2";
-    private final String KAFKA_SERVER = kafkaResource.getKafkaConnectString();
+    private static final String TEST_TOPIC_1 = "graph-done-1";
+    private static final String TEST_TOPIC_2 = "graph-done-2";
+    private static final String TEST_TOPIC_3 = "graph-done-3";
+    private static final String TEST_TOPIC_4 = "graph-done-4";
+    private static final String TEST_TOPIC_5 = "graph-done-5";
+    private static final String TEST_TOPIC_6 = "graph-done-6";
+    private static final String TEST_TOPIC_7 = "graph-done-7";
+    private static final String TEST_TOPIC_8 = "graph-done-8";
+    private static final String TEST_TOPIC_10 = "graph-done-10";
+    private static final String TEST_TOPIC_13 = "graph-done-13";
+    private static final String UNEXISTING_TOPIC = "unexistingTopic2";
+    private static final String GROUP_1 = "group1";
+    private static final String GROUP_2 = "group2";
 
-    protected Map<String, String> cdiConfig() {
+    private static String KAFKA_SERVER;
+    private static SeContainer cdiContainer;
+
+    private static Map<String, String> cdiConfig() {
         Map<String, String> p = new HashMap<>();
         p.putAll(Map.of(
                 "mp.messaging.incoming.test-channel-1.enable.auto.commit", Boolean.toString(true),
@@ -166,7 +172,7 @@ class KafkaCdiExtensionTest {
                 "mp.messaging.incoming.test-channel-6.connector", KafkaConnector.CONNECTOR_NAME,
                 "mp.messaging.incoming.test-channel-6.bootstrap.servers", KAFKA_SERVER,
                 "mp.messaging.incoming.test-channel-6.topic", TEST_TOPIC_6,
-                "mp.messaging.incoming.test-channel-6.group.id", "sameGroup",
+                "mp.messaging.incoming.test-channel-6.group.id", GROUP_1,
                 "mp.messaging.incoming.test-channel-6.key.deserializer", LongDeserializer.class.getName(),
                 "mp.messaging.incoming.test-channel-6.value.deserializer", StringDeserializer.class.getName()));
         p.putAll(Map.of(
@@ -183,7 +189,7 @@ class KafkaCdiExtensionTest {
                 "mp.messaging.incoming.test-channel-8.connector", KafkaConnector.CONNECTOR_NAME,
                 "mp.messaging.incoming.test-channel-8.bootstrap.servers", KAFKA_SERVER,
                 "mp.messaging.incoming.test-channel-8.topic", TEST_TOPIC_8,
-                "mp.messaging.incoming.test-channel-8.group.id", "sameGroup",
+                "mp.messaging.incoming.test-channel-8.group.id", GROUP_2,
                 "mp.messaging.incoming.test-channel-8.key.deserializer", LongDeserializer.class.getName(),
                 "mp.messaging.incoming.test-channel-8.value.deserializer", StringDeserializer.class.getName()));
         p.putAll(Map.of(
@@ -200,7 +206,7 @@ class KafkaCdiExtensionTest {
                 "mp.messaging.incoming.test-channel-10.connector", KafkaConnector.CONNECTOR_NAME,
                 "mp.messaging.incoming.test-channel-10.bootstrap.servers", KAFKA_SERVER,
                 "mp.messaging.incoming.test-channel-10.topic", TEST_TOPIC_10,
-                "mp.messaging.incoming.test-channel-10.group.id", "sameGroup",
+                "mp.messaging.incoming.test-channel-10.group.id", UUID.randomUUID().toString(),
                 "mp.messaging.incoming.test-channel-10.key.deserializer", LongDeserializer.class.getName(),
                 "mp.messaging.incoming.test-channel-10.value.deserializer", StringDeserializer.class.getName()));
         p.putAll(Map.of(
@@ -209,7 +215,7 @@ class KafkaCdiExtensionTest {
                 "mp.messaging.incoming.test-channel-11.connector", KafkaConnector.CONNECTOR_NAME,
                 "mp.messaging.incoming.test-channel-11.bootstrap.servers", "unexsitingserver:7777",
                 "mp.messaging.incoming.test-channel-11.topic", "any",
-                "mp.messaging.incoming.test-channel-11.group.id", "sameGroup",
+                "mp.messaging.incoming.test-channel-11.group.id", UUID.randomUUID().toString(),
                 "mp.messaging.incoming.test-channel-11.key.deserializer", LongDeserializer.class.getName(),
                 "mp.messaging.incoming.test-channel-11.value.deserializer", StringDeserializer.class.getName()));
         p.putAll(Map.of(
@@ -248,10 +254,21 @@ class KafkaCdiExtensionTest {
         kafkaResource.getKafkaTestUtils().createTopic(TEST_TOPIC_8, 2, (short) 1);
         kafkaResource.getKafkaTestUtils().createTopic(TEST_TOPIC_10, 1, (short) 1);
         kafkaResource.getKafkaTestUtils().createTopic(TEST_TOPIC_13, 1, (short) 1);
+        KAFKA_SERVER = kafkaResource.getKafkaConnectString();
+        cdiContainerUp();
     }
 
-    @BeforeEach
-    void setUp() {
+    @AfterAll
+    static void cdiContainerDown() {
+        KafkaConnector factory = getInstance(KafkaConnector.class, KAFKA_CONNECTOR_LITERAL).get();
+        Collection<KafkaPublisher<?, ?>> resources = factory.resources();
+        assertFalse(resources.isEmpty());
+        cdiContainer.close();
+        assertTrue(resources.isEmpty());
+        LOGGER.info("Container destroyed");
+    }
+
+    private static void cdiContainerUp() {
         Set<Class<?>> classes = new HashSet<>();
         classes.add(KafkaConnector.class);
         classes.add(AbstractSampleBean.Channel1.class);
@@ -269,7 +286,7 @@ class KafkaCdiExtensionTest {
         Map<String, String> p = new HashMap<>(cdiConfig());
         cdiContainer = startCdiContainer(p, classes);
         assertTrue(cdiContainer.isRunning());
-        
+        List<String> topicsInKafka = new ArrayList<>(kafkaResource.getKafkaTestUtils().getTopicNames());
         //Wait till consumers are ready
         getInstance(KafkaConnector.class, KAFKA_CONNECTOR_LITERAL).stream()
         .flatMap(factory -> factory.resources().stream()).forEach(c -> {
@@ -279,18 +296,10 @@ class KafkaCdiExtensionTest {
             } catch (InterruptedException | TimeoutException e) {
                 fail(e);
             }
+            topicsInKafka.removeAll(c.topics());
         });
+        assertEquals(Collections.emptyList(), topicsInKafka);
         LOGGER.info("Container setup");
-    }
-
-    @AfterEach
-    void tearDown() {
-        KafkaConnector factory = getInstance(KafkaConnector.class, KAFKA_CONNECTOR_LITERAL).get();
-        Collection<KafkaPublisher<?, ?>> resources = factory.resources();
-        assertFalse(resources.isEmpty());
-        cdiContainer.close();
-        assertTrue(resources.isEmpty());
-        LOGGER.info("Container destroyed");
     }
 
     @Test
@@ -377,43 +386,33 @@ class KafkaCdiExtensionTest {
         testData = IntStream.range(100, 120).mapToObj(i -> Integer.toString(i)).collect(Collectors.toList());
         uncommit.addAll(testData);
         produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_6, testData);
-        // Restart, so we receive uncommitted messages again
-        LOGGER.fine(() -> "Restarting");
-        tearDown();
-        setUp();
-        testData = Arrays.asList("new message");
-        uncommit.addAll(testData);
-        kafkaConsumingBean = cdiContainer.select(AbstractSampleBean.Channel6.class).get();
-        // We should find the new message and all the previous not ACK
-        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_6, uncommit);
-        kafkaResource.getKafkaTestUtils().consumeAllRecordsFromTopic(TEST_TOPIC_6);
+        // We receive uncommitted messages again
+        List<String> events = readTopic(TEST_TOPIC_6, uncommit.size(), GROUP_1);
+        Collections.sort(events);
+        Collections.sort(uncommit);
+        assertEquals(uncommit, events);
     }
 
     @Test
     void someEventsNoAckWithDifferentPartitions() {
         LOGGER.fine(() -> "==========> test someEventsNoAckWithDifferentPartitions()");
+        final long FROM = 2000;
+        final long TO = FROM + AbstractSampleBean.Channel8.LIMIT;
         // Send the message that will not ACK. This will make in one partition to not commit any new message
         List<String> testData = Arrays.asList(AbstractSampleBean.Channel8.NO_ACK);
         AbstractSampleBean.Channel8 kafkaConsumingBean = cdiContainer.select(AbstractSampleBean.Channel8.class).get();
         produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_8, testData);
         kafkaConsumingBean.restart();
         // Now sends new messages. Some of them will be lucky and will not go to the partition with no ACK
-        testData = IntStream.range(2000, 2020).mapToObj(i -> Integer.toString(i)).collect(Collectors.toList());
+        testData = LongStream.range(FROM, TO)
+                .mapToObj(i -> Long.toString(i)).collect(Collectors.toList());
         produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_8, testData);
         int uncommited = kafkaConsumingBean.uncommitted();
         // At least one message was not committed
         assertTrue(uncommited > 0);
         LOGGER.fine(() -> "Uncommitted messages : " + uncommited);
-        // Restart, so we receive uncommitted messages
-        LOGGER.fine(() -> "Restarting");
-        tearDown();
-        setUp();
-        // Uncommitted messages will be delivered again, plus a new one
-        testData = Arrays.asList("new message");
-        kafkaConsumingBean = cdiContainer.select(AbstractSampleBean.Channel8.class).get();
-        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_8, Collections.emptyList(), uncommited + 1);
-        assertEquals(uncommited + 1, kafkaConsumingBean.consumed().size());
-        kafkaResource.getKafkaTestUtils().consumeAllRecordsFromTopic(TEST_TOPIC_8);
+        List<String> messages = readTopic(TEST_TOPIC_8, uncommited, GROUP_2);
+        assertEquals(uncommited, messages.size(), "Received messages are " + messages);
     }
 
     @Test
@@ -454,9 +453,6 @@ class KafkaCdiExtensionTest {
         Thread.sleep(1000);
         assertEquals(Collections.emptyList(), kafkaConsumingBean.consumed());
         kafkaResource.getKafkaTestUtils().consumeAllRecordsFromTopic(TEST_TOPIC_13);
-        // We create the topic, otherwise the kafka-producer-network-thread gets
-        // 'Error while fetching metadata with correlation id' many times
-        kafkaResource.getKafkaTestUtils().createTopic(UNEXISTING_TOPIC, 4, (short) 1);
     }
 
     private void produceAndCheck(AbstractSampleBean kafkaConsumingBean, List<String> testData, String topic,
@@ -498,11 +494,31 @@ class KafkaCdiExtensionTest {
         }
     }
 
-    private <T> Instance<T> getInstance(Class<T> beanType, Annotation annotation){
+    private List<String> readTopic(String topic, int expected, String group){
+        final long timeout = 30000;
+        List<String> events = new LinkedList<>();
+        Map<String, Object> config = new HashMap<>();
+        config.put("enable.auto.commit", Boolean.toString(true));
+        config.put("auto.offset.reset", "earliest");
+        config.put("bootstrap.servers", KAFKA_SERVER);
+        config.put("group.id", group);
+        config.put("key.deserializer", LongDeserializer.class.getName());
+        config.put("value.deserializer", StringDeserializer.class.getName());
+        try (Consumer<Object, String> consumer = new KafkaConsumer<>(config)) {
+            consumer.subscribe(Arrays.asList(topic));
+            long current = System.currentTimeMillis();
+            while (events.size() < expected && System.currentTimeMillis() - current < timeout) {
+                consumer.poll(Duration.ofSeconds(5)).forEach(c -> events.add(c.value()));
+            }
+        }
+        return events;
+    }
+
+    private static <T> Instance<T> getInstance(Class<T> beanType, Annotation annotation){
         return cdiContainer.select(beanType, annotation);
     }
 
-    private SeContainer startCdiContainer(Map<String, String> p, Set<Class<?>> beanClasses) {
+    private static SeContainer startCdiContainer(Map<String, String> p, Set<Class<?>> beanClasses) {
         p.put("mp.initializer.allow", "true");
         org.eclipse.microprofile.config.Config config = ConfigProviderResolver.instance()
                 .getBuilder()
