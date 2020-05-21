@@ -100,7 +100,7 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
      * @param emitCallback to be executed
      */
     public void onEmit(Consumer<T> emitCallback) {
-        this.emitCallback = ConsumerChain.combine(this.emitCallback, emitCallback);;
+        this.emitCallback = ConsumerChain.combine(this.emitCallback, emitCallback);
     }
 
     /**
