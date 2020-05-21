@@ -134,11 +134,15 @@ class ServerBasicConfig implements ServerConfiguration {
         private final int receiveBufferSize;
         private final SSLContext sslContext;
         private final Set<String> enabledSslProtocols;
+        private final String name;
+        private final boolean enabled;
 
         /**
          * Creates new instance.
          */
         SocketConfig(SocketConfiguration.Builder builder) {
+            this.name = builder.name();
+            this.enabled = builder.enabled();
             this.port = Math.max(builder.port(), 0);
             this.bindAddress = builder.bindAddress().orElse(null);
             this.backlog = builder.backlog() < 0 ? DEFAULT_BACKLOG_SIZE : builder.backlog();
@@ -187,6 +191,16 @@ class ServerBasicConfig implements ServerConfiguration {
         @Override
         public Set<String> enabledSslProtocols() {
             return enabledSslProtocols;
+        }
+
+        @Override
+        public String name() {
+            return name;
+        }
+
+        @Override
+        public boolean enabled() {
+            return enabled;
         }
     }
 }
