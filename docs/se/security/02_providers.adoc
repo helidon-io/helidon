@@ -47,6 +47,7 @@ of the JWT subject claim.
 For outbound, we support either token propagation (e.g. the token from request is propagated further) or
 support for generating a brand new token based on configuration of this provider.
 
+[cols="2,2,5"]
 |===
 |Property |Value
 
@@ -73,6 +74,8 @@ This provider is:
 
 ==== Configuration Based Approach
 All configuration options:
+
+[cols="2,2,5"]
 
 |===
 |key |default value |description
@@ -158,7 +161,7 @@ See https://tools.ietf.org/html/rfc7617[https://tools.ietf.org/html/rfc7617].
 These authentication schemes
 should be _obsolete_, though they provide a very easy way to test a protected resource.
 Note that basic authentication sends username and password unencrypted over the network!
-
+[cols="3,3"]
 |===
 |Property |Value
 
@@ -185,6 +188,8 @@ This provider is:
 
 ==== Configuration Based Approach
 All configuration options:
+
+[cols="2,2,5"]
 
 |===
 |key |default value |description
@@ -246,6 +251,7 @@ These authentication schemes
 should be _obsolete_, though they provide a very easy way to test a protected resource.
 Note that basic authentication sends username and password unencrypted over the network!
 
+[cols="2,2"]
 |===
 |Property |Value
 
@@ -272,6 +278,8 @@ This provider is:
 ==== Configuration based approach
 
 All configuration options:
+
+[cols="2,2,5"]
 
 |===
 |key |default value |description
@@ -320,6 +328,7 @@ asserts it as current subject's principal.
 This can be used when we use perimether authentication (e.g. there is a gateway that takes
 care of authentication and propagates the user in a header).
 
+[cols="2,2"]
 |===
 |Property |Value
 
@@ -346,6 +355,8 @@ This provider is:
 
 ==== Configuration Based Approach
 All configuration options:
+
+[cols="2,2,5"]
 
 |===
 |key |default value |description
