@@ -38,64 +38,17 @@ import io.helidon.media.multipart.VirtualBuffer.BufferEntry;
  */
 public class MultiPartDecoder implements Processor<DataChunk, ReadableBodyPart> {
 
-    /**
-     * Future to handle deferred initialization of the processor.
-     */
-    private final CompletableFuture<BufferedEmittingPublisher<ReadableBodyPart>> initFuture;
-
-    /**
-     * The upstream subscription.
-     */
     private Subscription upstream;
-
-    /**
-     * The downstream subscriber.
-     */
     private Subscriber<? super ReadableBodyPart> downstream;
-
-    /**
-     * The underlying publisher.
-     */
     private BufferedEmittingPublisher<ReadableBodyPart> emitter;
-
-    /**
-     * The builder for the current {@link BodyPart}.
-     */
     private ReadableBodyPart.Builder bodyPartBuilder;
-
-    /**
-     * The builder for the current {@link ReadableBodyPartHeaders}.
-     */
     private ReadableBodyPartHeaders.Builder bodyPartHeaderBuilder;
-
-    /**
-     * The bodyParts processed during each {@code onNext}.
-     */
-    private final LinkedList<ReadableBodyPart> bodyParts;
-
-    /**
-     * The publisher for the current part.
-     */
     private BufferedEmittingPublisher<DataChunk> bodyPartPublisher;
-
-    /**
-     * The original chunks by ids.
-     */
+    private final CompletableFuture<BufferedEmittingPublisher<ReadableBodyPart>> initFuture;
+    private final LinkedList<ReadableBodyPart> bodyParts;
     private final HashMap<Integer, DataChunk> chunksByIds;
-
-    /**
-     * The MIME parser.
-     */
     private final MimeParser parser;
-
-    /**
-     * The parser event processor.
-     */
     private final ParserEventProcessor parserEventProcessor;
-
-    /**
-     * The reader context.
-     */
     private final MessageBodyReaderContext context;
 
     /**

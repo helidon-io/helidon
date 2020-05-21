@@ -26,10 +26,6 @@ public final class WriteableMultiPart implements MultiPart<WriteableBodyPart> {
 
     private final List<WriteableBodyPart> parts;
 
-    /**
-     * Private to enforce the use of {@link #create(java.util.Collection)}
-     * or {@link #builder()}.
-     */
     private WriteableMultiPart(List<WriteableBodyPart> parts) {
         this.parts = parts;
     }

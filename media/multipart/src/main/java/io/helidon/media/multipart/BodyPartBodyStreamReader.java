@@ -28,9 +28,6 @@ import io.helidon.media.common.MessageBodyStreamReader;
  */
 public final class BodyPartBodyStreamReader implements MessageBodyStreamReader<ReadableBodyPart> {
 
-    /**
-     * Private to enforce the use of {@link #create()}.
-     */
     private BodyPartBodyStreamReader() {
     }
 

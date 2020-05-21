@@ -30,9 +30,6 @@ public final class BodyPartBodyStreamWriter implements MessageBodyStreamWriter<W
 
     private final String boundary;
 
-    /**
-     * Private to enforce the use of {@link #create(java.lang.String).
-     */
     private BodyPartBodyStreamWriter(String boundary) {
         this.boundary = boundary;
     }

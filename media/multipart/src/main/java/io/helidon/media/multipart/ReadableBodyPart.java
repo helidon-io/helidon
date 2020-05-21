@@ -30,9 +30,6 @@ public final class ReadableBodyPart implements BodyPart {
     private final ReadableBodyPartHeaders headers;
     private final boolean buffered;
 
-    /**
-     * Private to enforce the use of {@link #builder()}.
-     */
     private ReadableBodyPart(MessageBodyReadableContent content, ReadableBodyPartHeaders headers, boolean buffered) {
         this.content = content;
         this.headers = headers;

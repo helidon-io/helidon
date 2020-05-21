@@ -28,12 +28,7 @@ public final class WriteableBodyPart implements BodyPart {
     private final MessageBodyWriteableContent content;
     private final WriteableBodyPartHeaders headers;
 
-    /**
-     * Private to enforce the use of {@link #builder()} or
-     * {@link #create(java.lang.Object)}.
-     */
     private WriteableBodyPart(MessageBodyWriteableContent content, WriteableBodyPartHeaders headers) {
-
         this.content = content;
         this.headers = headers;
     }

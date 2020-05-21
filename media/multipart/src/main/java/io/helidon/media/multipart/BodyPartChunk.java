@@ -28,6 +28,11 @@ final class BodyPartChunk implements DataChunk {
     private final DataChunk parent;
     private final ByteBuffer data;
 
+    /**
+     * Create a new body part chunk instance.
+     * @param data underlying byte buffer
+     * @param parent parent chunk to release on release of this chunk, may be {@code null}
+     */
     BodyPartChunk(ByteBuffer data, DataChunk parent) {
         this.parent = parent;
         this.data = data;

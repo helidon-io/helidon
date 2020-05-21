@@ -29,11 +29,6 @@ import io.helidon.common.http.MediaType;
  */
 public final class WriteableBodyPartHeaders extends HashParameters implements BodyPartHeaders {
 
-    /**
-     * Create a new instance.
-     *
-     * @param params headers map
-     */
     private WriteableBodyPartHeaders(Map<String, List<String>> params) {
         super(params);
     }

@@ -29,7 +29,7 @@ import java.util.LinkedList;
  * </p>
  * <p>
  * Buffers are accumulated using {@link #offer(ByteBuffer, int)}, the buffers before the specified offset are
- * automatically removed discarded.
+ * automatically discarded.
  * </p>
  */
 final class VirtualBuffer {
@@ -47,7 +47,7 @@ final class VirtualBuffer {
 
     /**
      * Create a new virtual buffer.
-     * @param capacity the buffer size
+     * @param capacity initial capacity
      */
     private VirtualBuffer(int initialCapacity) {
         bufferIds = new int[initialCapacity];
@@ -62,7 +62,6 @@ final class VirtualBuffer {
 
     /**
      * Create a new virtual buffer.
-     * @param capacity the buffer size
      */
     VirtualBuffer() {
         this(DEFAULT_CAPACITY);

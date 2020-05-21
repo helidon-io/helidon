@@ -36,15 +36,8 @@ public final class MultiPartBodyWriter implements MessageBodyWriter<WriteableMul
      */
     public static final String DEFAULT_BOUNDARY = "[^._.^]==>boundary<==[^._.^]";
 
-    /**
-     * The actual boundary string.
-     */
     private final String boundary;
 
-    /**
-     * Private to enforce the use of {@link #create(java.lang.String)}.
-     * @param boundary the multipart boundary delimiter
-     */
     private MultiPartBodyWriter(String boundary) {
         this.boundary = boundary;
     }

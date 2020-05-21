@@ -306,14 +306,7 @@ final class MimeParser {
         }
     }
 
-    /**
-     * Logger.
-     */
     private static final Logger LOGGER = Logger.getLogger(MimeParser.class.getName());
-
-    /**
-     * Encoding used to parse the header.
-     */
     private static final Charset HEADER_ENCODING = Charset.forName("ISO8859-1");
 
     /**
@@ -330,29 +323,10 @@ final class MimeParser {
         DATA_REQUIRED
     }
 
-    /**
-     * Singleton for {@link StartMessageEvent}.
-     */
     private static final StartMessageEvent START_MESSAGE_EVENT = new StartMessageEvent();
-
-    /**
-     * Singleton for {@link StartPartEvent}.
-     */
     private static final StartPartEvent START_PART_EVENT = new StartPartEvent();
-
-    /**
-     * Singleton for {@link EndHeadersEvent}.
-     */
     private static final EndHeadersEvent END_HEADERS_EVENT = new EndHeadersEvent();
-
-    /**
-     * Singleton for {@link EndPartEvent}.
-     */
     private static final EndPartEvent END_PART_EVENT = new EndPartEvent();
-
-    /**
-     * Singleton for {@link EndMessageEvent}.
-     */
     private static final EndMessageEvent END_MESSAGE_EVENT = new EndMessageEvent();
 
     /**
@@ -425,7 +399,7 @@ final class MimeParser {
     /**
      * Parses the MIME content.
      */
-  MimeParser(String boundary, EventProcessor eventListener) {
+    MimeParser(String boundary, EventProcessor eventListener) {
         bndbytes = getBytes("--" + boundary);
         listener = eventListener;
         bl = bndbytes.length;

@@ -40,9 +40,6 @@ public final class MultiPartBodyReader implements MessageBodyReader<MultiPart> {
      */
     private static final BytesToChunks BYTES_TO_CHUNKS = new BytesToChunks();
 
-    /**
-     * Private to enforce the use of {@link #create()}.
-     */
     private MultiPartBodyReader() {
     }
 

@@ -34,9 +34,6 @@ public final class MultiPartSupport implements MediaSupport {
     private final Collection<MessageBodyStreamReader<?>> streamReaders;
     private final Collection<MessageBodyStreamWriter<?>> streamWriters;
 
-    /**
-     * Forces the use of {@link #create()}.
-     */
     private MultiPartSupport(){
         readers = List.of(MultiPartBodyReader.create());
         writers = List.of(MultiPartBodyWriter.create());

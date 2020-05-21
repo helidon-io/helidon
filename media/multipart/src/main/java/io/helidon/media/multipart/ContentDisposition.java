@@ -50,53 +50,21 @@ import io.helidon.common.http.Tokenizer;
  */
 public final class ContentDisposition {
 
-    /**
-     * Matcher for type and parameters.
-     */
     private static final CharMatcher TOKEN_MATCHER = CharMatcher.ascii()
             .and(CharMatcher.javaIsoControl().negate())
             .and(CharMatcher.isNot(' '))
             .and(CharMatcher.noneOf("()<>@,;:\\\"/[]?="));
 
-    /**
-     * Matcher for linear white space.
-     */
     private static final CharMatcher LINEAR_WHITE_SPACE = CharMatcher.anyOf(" \t\r\n");
 
-    /**
-     * Matcher for quoted text.
-     */
     private static final CharMatcher QUOTED_TEXT_MATCHER = CharMatcher.ascii()
             .and(CharMatcher.noneOf("\"\\\r"));
 
-    /**
-     * Constant for the name parameter.
-     */
     private static final String NAME_PARAMETER = "name";
-
-    /**
-     * Constant for the filename parameter.
-     */
     private static final String FILENAME_PARAMETER = "filename";
-
-    /**
-     * Constant for the creation date parameter.
-     */
     private static final String CREATION_DATE_PARAMETER = "creation-date";
-
-    /**
-     * Constant for the modification date parameter.
-     */
     private static final String MODIFICATION_DATE_PARAMETER = "modification-date";
-
-    /**
-     * Constant for the read date parameter.
-     */
     private static final String READ_DATE_PARAMETER = "read-date";
-
-    /**
-     * Constant for the size parameter.
-     */
     private static final String SIZE_PARAMETER = "size";
 
     /**
@@ -104,14 +72,7 @@ public final class ContentDisposition {
      */
     static final ContentDisposition EMPTY = new ContentDisposition("", Collections.emptyMap());
 
-    /**
-     * The content disposition type.
-     */
     private final String type;
-
-    /**
-     * The content disposition parameters.
-     */
     private final Map<String, String> parameters;
 
     /**

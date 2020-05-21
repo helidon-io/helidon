@@ -38,34 +38,11 @@ import io.helidon.media.common.MessageBodyWriterContext;
  */
 public class MultiPartEncoder implements Processor<WriteableBodyPart, DataChunk> {
 
-    /**
-     * The writer context.
-     */
     private final MessageBodyWriterContext context;
-
-    /**
-     * The actual boundary to use.
-     */
     private final String boundary;
-
-    /**
-     * Emitter future to handle deferred initialization of the processor.
-     */
     private final CompletableFuture<BufferedEmittingPublisher<Publisher<DataChunk>>> initFuture;
-
-    /**
-     * The underlying publisher.
-     */
     private BufferedEmittingPublisher<Publisher<DataChunk>> emitter;
-
-    /**
-     * The downstream subscriber.
-     */
     private Subscriber<? super DataChunk> downstream;
-
-    /**
-     * The upstream subscription.
-     */
     private Subscription upstream;
 
     /**
