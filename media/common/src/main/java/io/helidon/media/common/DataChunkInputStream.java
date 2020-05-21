@@ -63,8 +63,9 @@ public class DataChunkInputStream extends InputStream {
     }
 
     /**
-     * Stores publisher for later subscription and sets if executing thread should be validated
-     * if it equals to the thread which created this instance.
+     * Stores publisher for later subscription and sets if executing thread should be validated.
+     * If validation is enabled, it asserts if the execution thread is the same as the thread which created this instance and
+     * throws an {@link IllegalStateException} if it does.
      *
      * @param originalPublisher The original publisher.
      * @param validate          executing thread validation
