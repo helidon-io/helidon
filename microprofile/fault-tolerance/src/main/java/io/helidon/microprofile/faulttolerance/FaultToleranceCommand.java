@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -450,17 +450,17 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
 
     /**
      * <p>After a timeout expires, Hystrix can report an {@link ExecutionException}
-     * while a thread is still running and cannot be interrupted (e.g. busy
-     * loop). Hystrix makes this possible by using another thread to monitor
+     * when a thread has been interrupted but it is still running (e.g. while in a
+     * busy loop). Hystrix makes this possible by using another thread to monitor
      * the command's thread.</p>
      *
      * <p>According to the FT spec, the thread may continue to run, so here
      * we give it a chance to do that before completing the execution of the
      * command. For more information see TCK test {@code
-     * TimeoutUninterruptableTest::timeoutTest}.</p>
+     * TimeoutUninterruptableTest::testTimeout}.</p>
      */
     private void waitForThreadToComplete() {
-        if (!introspector.isAsynchronous() && runThread != null) {
+        if (!introspector.isAsynchronous() && runThread != null && runThread.isInterrupted()) {
             try {
                 int waitTime = 250;
                 while (runThread.getState() == Thread.State.RUNNABLE && waitTime <= threadWaitingPeriod) {
