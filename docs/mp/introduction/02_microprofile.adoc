@@ -16,10 +16,12 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Getting Started with Helidon MicroProfile
+= Helidon MicroProfile
 :description: getting started with Helidon Microprofile
 :keywords: helidon, microprofile, micro-profile
 :h1Prefix: MP
+
+Complete these tasks to get started with your MicroProfile application.
 
 == Getting Started with Helidon MicroProfile
 
@@ -29,7 +31,6 @@ as is done in the
 <<guides/03_quickstart-mp.adoc, Helidon MP Quickstart example>>
 or use its built-in `main` as shown below.
 
-Complete these tasks to get started with your MicroProfile application.
 
 === Maven Coordinates
 
