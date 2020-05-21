@@ -29,14 +29,14 @@ class RunnableChain extends ArrayList<Runnable> implements Runnable {
         }
     }
 
-    public RunnableChain combineWith(Runnable another) {
+    RunnableChain combineWith(Runnable another) {
         RunnableChain newChain = new RunnableChain();
         newChain.addAll(this);
         newChain.add(another);
         return newChain;
     }
 
-    public static Runnable combine(Runnable current, Runnable another) {
+    static Runnable combine(Runnable current, Runnable another) {
         if (current == null) {
             return another;
         }
