@@ -252,7 +252,7 @@ Execution of a query statement will always return `CompletionStage<DbRows<DbRow>
 
 == Next Steps
 
-Now that you understand how to build and execute statements, try it for yourself. The following sample projects will give you hands-on experience with the Heldion DB Client: https://github.com/oracle/helidon/tree/master/examples/dbclient[DB Client Examples].
+Now that you understand how to build and execute statements, try it for yourself. https://github.com/oracle/helidon/tree/master/examples/dbclient[DB Client Examples].
 
 
 
