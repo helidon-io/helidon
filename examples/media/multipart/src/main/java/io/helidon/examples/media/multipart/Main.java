@@ -17,7 +17,7 @@ package io.helidon.examples.media.multipart;
 
 import io.helidon.common.http.Http;
 import io.helidon.media.jsonp.common.JsonpSupport;
-import io.helidon.media.multipart.common.MultiPartSupport;
+import io.helidon.media.multipart.MultiPartSupport;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.StaticContentSupport;
