@@ -306,32 +306,32 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     }
 
     @Override
-    public <T> CompletionStage<T> request(Class<T> responseType) {
+    public <T> Single<T> request(Class<T> responseType) {
         return request(GenericType.create(responseType));
     }
 
     @Override
-    public <T> CompletionStage<T> request(GenericType<T> responseType) {
+    public <T> Single<T> request(GenericType<T> responseType) {
         return Contexts.runInContext(context, () -> invokeWithEntity(Single.empty(), responseType));
     }
 
     @Override
-    public CompletionStage<WebClientResponse> request() {
+    public Single<WebClientResponse> request() {
         return Contexts.runInContext(context, () -> invoke(Single.empty()));
     }
 
     @Override
-    public CompletionStage<WebClientResponse> submit() {
+    public Single<WebClientResponse> submit() {
         return request();
     }
 
     @Override
-    public <T> CompletionStage<T> submit(Flow.Publisher<DataChunk> requestEntity, Class<T> responseType) {
+    public <T> Single<T> submit(Flow.Publisher<DataChunk> requestEntity, Class<T> responseType) {
         return Contexts.runInContext(context, () -> invokeWithEntity(requestEntity, GenericType.create(responseType)));
     }
 
     @Override
-    public <T> CompletionStage<T> submit(Object requestEntity, Class<T> responseType) {
+    public <T> Single<T> submit(Object requestEntity, Class<T> responseType) {
         GenericType<T> responseGenericType = GenericType.create(responseType);
         Flow.Publisher<DataChunk> dataChunkPublisher = writerContext.marshall(
                 Single.just(requestEntity), GenericType.create(requestEntity), null);
@@ -339,12 +339,12 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     }
 
     @Override
-    public CompletionStage<WebClientResponse> submit(Flow.Publisher<DataChunk> requestEntity) {
+    public Single<WebClientResponse> submit(Flow.Publisher<DataChunk> requestEntity) {
         return Contexts.runInContext(context, () -> invoke(requestEntity));
     }
 
     @Override
-    public CompletionStage<WebClientResponse> submit(Object requestEntity) {
+    public Single<WebClientResponse> submit(Object requestEntity) {
         Flow.Publisher<DataChunk> dataChunkPublisher = writerContext.marshall(
                 Single.just(requestEntity), GenericType.create(requestEntity), null);
         return submit(dataChunkPublisher);
@@ -408,28 +408,31 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         return context;
     }
 
-    private <T> CompletionStage<T> invokeWithEntity(Flow.Publisher<DataChunk> requestEntity, GenericType<T> responseType) {
+    private <T> Single<T> invokeWithEntity(Flow.Publisher<DataChunk> requestEntity, GenericType<T> responseType) {
         return invoke(requestEntity)
-                .thenApply(this::getContentFromClientResponse)
-                .thenCompose(content -> content.as(responseType));
+                .map(this::getContentFromClientResponse)
+                .flatMapSingle(content -> Single.from(content.as(responseType)));
     }
 
-    private CompletionStage<WebClientResponse> invoke(Flow.Publisher<DataChunk> requestEntity) {
+    private Single<WebClientResponse> invoke(Flow.Publisher<DataChunk> requestEntity) {
         this.uri = prepareFinalURI();
         CompletableFuture<WebClientServiceRequest> sent = new CompletableFuture<>();
         CompletableFuture<WebClientServiceResponse> responseReceived = new CompletableFuture<>();
         CompletableFuture<WebClientServiceResponse> complete = new CompletableFuture<>();
+        Single<WebClientServiceRequest> singleSent = Single.from(sent);
+        Single<WebClientServiceResponse> singleResponseReceived = Single.from(responseReceived);
+        Single<WebClientServiceResponse> singleComplete = Single.from(complete);
         WebClientServiceRequest completedRequest = new WebClientServiceRequestImpl(this,
-                                                                                   sent,
-                                                                                   responseReceived,
-                                                                                   complete);
+                                                                                   singleSent,
+                                                                                   singleResponseReceived,
+                                                                                   singleComplete);
         CompletionStage<WebClientServiceRequest> rcs = CompletableFuture.completedFuture(completedRequest);
 
         for (WebClientService service : services) {
             rcs = rcs.thenCompose(service::request);
         }
 
-        return rcs.thenCompose(serviceRequest -> {
+        return Single.from(rcs.thenCompose(serviceRequest -> {
             HttpHeaders headers = toNettyHttpHeaders();
             DefaultHttpRequest request = new DefaultHttpRequest(toNettyHttpVersion(httpVersion),
                                                                 toNettyMethod(method),
@@ -477,8 +480,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
                 }
             });
             return result;
-        });
-
+        }));
     }
 
     private MessageBodyReadableContent getContentFromClientResponse(WebClientResponse response) {
