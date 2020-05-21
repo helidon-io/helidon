@@ -17,21 +17,24 @@
 
 package io.helidon.messaging.connectors.kafka;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
-import io.helidon.messaging.connectors.kafka.EmittingPublisher;
+import io.helidon.common.reactive.EmittingPublisher;
 import io.helidon.microprofile.reactive.HelidonReactiveStreamsEngine;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.eclipse.microprofile.reactive.streams.operators.spi.ReactiveStreamsEngine;
 import org.junit.jupiter.api.Test;
+import org.reactivestreams.FlowAdapters;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
@@ -45,10 +48,11 @@ public class EmittingPublisherTest {
     void happyPathWithLongMaxReq() {
         List<String> result = new ArrayList<>();
 
-        EmittingPublisher<String> emitter = new EmittingPublisher<>(n -> LOGGER.fine(() -> Long.toString(n)));
+        EmittingPublisher<String> emitter = EmittingPublisher.create();
+        emitter.onRequest((n, d) -> LOGGER.fine(() -> Long.toString(n)));
 
         ReactiveStreams
-                .fromPublisher(emitter)
+                .fromPublisher(FlowAdapters.toPublisher(emitter))
                 .forEach(result::add)
                 .run(ENGINE);
 
@@ -59,17 +63,20 @@ public class EmittingPublisherTest {
 
     @Test
     void notReady() {
-        assertFalse(new EmittingPublisher<>(n -> LOGGER.fine(() -> Long.toString(n))).emit(""));
+        EmittingPublisher<String> emitter = EmittingPublisher.create();
+        emitter.onRequest((n, d) -> LOGGER.fine(() -> Long.toString(n)));
+        assertFalse(emitter.emit(""));
     }
 
     @Test
     void emitOnCancelled() {
-        List<String> forbiddenSigs = new ArrayList<>();
+        List<String> forbiddenSigns = new ArrayList<>();
 
-        EmittingPublisher<String> emitter = new EmittingPublisher<>(n -> LOGGER.fine(() -> Long.toString(n)));
+        EmittingPublisher<String> emitter = EmittingPublisher.create();
+        emitter.onRequest((n, d) -> LOGGER.fine(() -> Long.toString(n)));
 
         ReactiveStreams
-                .fromPublisher(emitter)
+                .fromPublisher(FlowAdapters.toPublisher(emitter))
                 .buildRs(ENGINE).subscribe(new Subscriber<>() {
             @Override
             public void onSubscribe(final Subscription s) {
@@ -78,33 +85,34 @@ public class EmittingPublisherTest {
 
             @Override
             public void onNext(final String s) {
-                forbiddenSigs.add("onNext");
+                forbiddenSigns.add("onNext");
             }
 
             @Override
             public void onError(final Throwable t) {
-                forbiddenSigs.add("onError");
+                forbiddenSigns.add("onError");
             }
 
             @Override
             public void onComplete() {
-                forbiddenSigs.add("onComplete");
+                forbiddenSigns.add("onComplete");
             }
         });
 
         assertTrue(emitter.isCancelled());
         assertFalse(emitter.emit("should false"));
-        assertEquals(List.of(), forbiddenSigs);
+        assertEquals(List.of(), forbiddenSigns);
     }
 
     @Test
     void emitOnCompleted() {
         List<String> forbiddenSigs = new ArrayList<>();
         AtomicBoolean onCompleteCalled = new AtomicBoolean();
-        EmittingPublisher<String> emitter = new EmittingPublisher<>(n -> LOGGER.fine(() -> Long.toString(n)));
-        emitter.subscribe(new Subscriber<>() {
+        EmittingPublisher<String> emitter = EmittingPublisher.create();
+        emitter.onRequest((n, d) -> LOGGER.fine(() -> Long.toString(n)));
+        emitter.subscribe(new Flow.Subscriber<>() {
             @Override
-            public void onSubscribe(final Subscription s) {
+            public void onSubscribe(final Flow.Subscription s) {
                 s.request(Long.MAX_VALUE);
             }
 
@@ -126,7 +134,7 @@ public class EmittingPublisherTest {
         emitter.complete();
         assertTrue(onCompleteCalled.get());
         assertTrue(emitter.isCompleted());
-        assertFalse(emitter.emit("should false"));
+        assertThrows(IllegalStateException.class, () -> emitter.emit("should false"));
         assertEquals(List.of(), forbiddenSigs);
     }
 }

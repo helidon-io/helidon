@@ -128,12 +128,20 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
     }
 
     private void signalOnError(Throwable throwable) {
-        if (state.compareAndSet(State.NOT_REQUESTED_YET, State.CANCELLED)
-                || state.compareAndSet(State.READY_TO_EMIT, State.CANCELLED)) {
-            try {
-                this.subscriber.onError(throwable);
-            } catch (Throwable t) {
-                throw new IllegalStateException("On error threw an exception!", t);
+        if (state.compareAndSet(State.NOT_REQUESTED_YET, State.FAILED)
+                || state.compareAndSet(State.READY_TO_EMIT, State.FAILED)) {
+            for (;;) {
+                try {
+                    if (emitting.getAndSet(true)) {
+                        continue;
+                    }
+                    this.subscriber.onError(throwable);
+                    return;
+                } catch (Throwable t) {
+                    throw new IllegalStateException("On error threw an exception!", t);
+                } finally {
+                    emitting.set(false);
+                }
             }
         }
     }
@@ -141,7 +149,17 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
     private void signalOnComplete() {
         if (state.compareAndSet(State.NOT_REQUESTED_YET, State.COMPLETED)
                 || state.compareAndSet(State.READY_TO_EMIT, State.COMPLETED)) {
-            this.subscriber.onComplete();
+            for (;;) {
+                try {
+                    if (emitting.getAndSet(true)) {
+                        continue;
+                    }
+                    this.subscriber.onComplete();
+                    return;
+                } finally {
+                    emitting.set(false);
+                }
+            }
         }
     }
 
@@ -165,6 +183,24 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
      */
     public boolean isCompleted() {
         return this.state.get() == State.COMPLETED;
+    }
+
+    /**
+     * Check if publisher has been cancelled.
+     *
+     * @return true if so
+     */
+    public boolean isCancelled() {
+        return this.state.get() == State.CANCELLED;
+    }
+
+    /**
+     * Check if publisher has been failed.
+     *
+     * @return true if so
+     */
+    public boolean isFailed() {
+        return this.state.get() == State.FAILED;
     }
 
     /**
@@ -274,6 +310,12 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
             }
         },
         CANCELLED {
+            @Override
+            <T> boolean emit(EmittingPublisher<T> publisher, T item) {
+                return false;
+            }
+        },
+        FAILED {
             @Override
             <T> boolean emit(EmittingPublisher<T> publisher, T item) {
                 return false;
