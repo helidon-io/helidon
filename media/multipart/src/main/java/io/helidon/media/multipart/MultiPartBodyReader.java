@@ -35,9 +35,6 @@ import io.helidon.media.common.MessageBodyReaderContext;
  */
 public final class MultiPartBodyReader implements MessageBodyReader<MultiPart> {
 
-    /**
-     * Bytes to chunk mapper singleton.
-     */
     private static final BytesToChunks BYTES_TO_CHUNKS = new BytesToChunks();
 
     private MultiPartBodyReader() {
