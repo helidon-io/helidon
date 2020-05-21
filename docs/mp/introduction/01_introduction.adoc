@@ -94,6 +94,7 @@ Helidon has added additional APIs to the core set of Microprofile APIs giving yo
 
 
 == Next Steps
+Learn about the steps needed to get started with Helidon MP <<mp/introduction/02_microprofile.adoc, Getting Started>>.
 
 For more information about the Helidon MicroProfile APIs see  https://github.com/oracle/helidon/wiki/Supported-APIs[the Helidon API Wiki page].
 
