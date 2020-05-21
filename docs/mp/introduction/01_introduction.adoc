@@ -16,7 +16,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Helidon MP 
+= Helidon MP Introduction
 :description: about Helidon MP
 :keywords: helidon, java, microservices, microprofile
 :h1Prefix:MP
@@ -33,18 +33,22 @@ MicroProfile has its roots in Java EE, the MicroProfile
 APIs follow a familiar, declarative approach with heavy use of annotations.
 This makes it a good choice for Java EE developers. 
 
+Helidon has added additional APIs to the core set of Microprofile APIs giving you all the capabilities you need for writing modern cloud native applications.
 
-[cols="2,6"]
+[cols="2,5"]
 |=======
 |CDI Extensions
 |In addition to MicroProfile support, Helidon MP provides CDI extensions to address areas not covered by MicroProfile.<<mp/extensions/01_overview.adoc,Learn more>>.
 
-|MP Configuration
-|The Config component provides a Java API to load and process configuration properties in key/value form into a Config object which the application can use to retrieve config data.
+|Configuration
+|The MP Config component provides a Java API to load and process configuration properties in key/value form into a Config object which the application can use to retrieve config data.
 <<mp/config/introduction.adoc, Learn more>>. 
 
 |  CORS Support
 |  Although it is possible for any Helidon application to implement its own support for CORS, there are common tasks (such as processing preflight requests) that can be provided in a Helidon module. <<mp/cors/01_introduction.adoc, Learn more>>. 
+
+|GraalVM Native Image Support for Helidon MP
+|GraalVM native-image support is now available for both Helidon MP and Helidon SE. Helidon MP includes support for GraalVM to enable the conversion of Helidon MP applications to native executable code via the native-image utility.<<mp/guides/36_graalnative.adoc, Learn more>>.
 
 | gRPC 
 |  Helidon gRPC Server provides a framework for creating gRPC (general-purpose Remote Procedure Calls) applications.
@@ -80,7 +84,7 @@ This makes it a good choice for Java EE developers.
 |With Helidon MP 2.0 you can now formalize manipulation with reactive streams and reactive messaging. Reactive messaging heavily depends on standardized operators so together they provide great portability between existing implementations. <<mp/reactivemessaging/01_introduction.adoc, Learn more about Reactive Messaging>> and <<mp/reactivestreams/01_introduction.adoc, Reactive Streams>>.
 
 |Security 
-|The security modules modules support authentication, authorization, outbound security and audits for your applications.
+|The MP security modules support authentication, authorization, outbound security and audits for your applications.
 <<mp/security/01_introduction.adoc, Learn more>>.
 
 
@@ -88,39 +92,10 @@ This makes it a good choice for Java EE developers.
 
 //need JPA and JWT Auth info, fault tolerance
 
-=== MicroProfile APIs
-
-
-MicroProfile starts with a core set of Java EE APIs, such as Config, Metrics and Fault Tolerance. Helidon then defines a number
-of new APIs to add capabilities you need for writing modern cloud native
-applications. 
-
-
-For more information see <<mp/guides/01_overview.adoc,guides>>.
-
-For more information about the Helidon MicroProfile APIs see  https://github.com/oracle/helidon/wiki/Supported-APIs[the Helidon API Wiki page].
-
-
-
-=== No Application Server
-
-Helidon is a collection of libraries that runs on top of Netty. It is not
-derived from a Java EE application server. That means your cloud native
-application is compact and efficient without unnecessary overhead or bloat.
-
-=== GraalVM Native Image Support for Helidon MP
-GraalVM native-image support is now available for both Helidon MP and Helidon SE. Helidon MP includes support for GraalVM to enable the conversion of Helidon MP applications to native executable code via the native-image utility.
- 
-
-//add link to GraalVM MP topic
-<<link to new GraalVM MP topic>>
-
-=== MicroProfile Reactive Messaging and Reactive Streams Operators
-Asynchronous messaging is a commonly used form of communication in the world of microservices and the Reactive Messaging for MicroProfile specification is a logical response to formalizing the ways we connect things together. And the best way to communicate asychronously is through Reactive Streams. With the release of the MicroProfile Reactive Streams Operators specification we can now formalize manipulation with reactive streams. Reactive messaging heavily depends on standardized operators so together they provide great portability between existing implementations.
-
-<<link to MP Messaging/Streams topic>>
 
 == Next Steps
+
+For more information about the Helidon MicroProfile APIs see  https://github.com/oracle/helidon/wiki/Supported-APIs[the Helidon API Wiki page].
 
 Try the <<mp/guides/03_quickstart.adoc,Helidon MP quickstart>> to get your
 first Helidon MP application up and running in minutes.
