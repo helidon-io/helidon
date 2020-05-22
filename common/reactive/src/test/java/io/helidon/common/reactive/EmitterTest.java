@@ -18,6 +18,7 @@ package io.helidon.common.reactive;
 
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
@@ -28,7 +29,6 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.provider.ValueSource;
 
 public class EmitterTest {
 
@@ -59,6 +59,45 @@ public class EmitterTest {
         subscriber.requestMax()
                 .assertValues(0, 1, 2)
                 .assertComplete();
+    }
+
+    @Test
+    void testOnEmitCallback() {
+        List<Integer> intercepted = new ArrayList<>();
+
+        List<Integer> data = IntStream.range(0, 10)
+                .boxed()
+                .collect(Collectors.toList());
+
+        BufferedEmittingPublisher<Integer> emitter = BufferedEmittingPublisher.create();
+        emitter.onEmit(intercepted::add);
+
+        TestSubscriber<Integer> subscriber = new TestSubscriber<>();
+        emitter.subscribe(subscriber);
+
+        assertThat("onEmit callback executed before first emit", intercepted.size(), is(0));
+
+        data.forEach(emitter::emit);
+
+        assertThat("onEmit callback executed before first request", intercepted.size(), is(0));
+
+        subscriber.request1()
+                .assertValues(0);
+
+        assertThat("onEmit callback should have been executed exactly once", intercepted.size(), is(1));
+
+        List<Integer> firstSixItems = data.stream().limit(6).collect(Collectors.toList());
+
+        subscriber.request(5)
+                .assertValues(firstSixItems.toArray(Integer[]::new));
+
+        assertThat("onEmit callback should have been executed exactly 6 times", intercepted, is(firstSixItems));
+
+        subscriber.requestMax()
+                .assertValues(data.toArray(Integer[]::new));
+
+        assertThat("onEmit callback should have been executed exactly 10 times", intercepted, is(data));
+
     }
 
     @Test

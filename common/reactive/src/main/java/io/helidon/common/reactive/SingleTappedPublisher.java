@@ -22,7 +22,6 @@ import java.util.concurrent.Flow;
 import java.util.function.Consumer;
 import java.util.function.LongConsumer;
 
-import io.helidon.common.reactive.MultiTappedPublisher.ConsumerChain;
 import io.helidon.common.reactive.MultiTappedPublisher.MultiTappedSubscriber;
 
 /**

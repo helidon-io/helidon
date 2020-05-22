@@ -47,7 +47,7 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
     private final AtomicBoolean emitting = new AtomicBoolean(false);
     private final AtomicBoolean subscribed = new AtomicBoolean(false);
     private final CompletableFuture<Void> deferredComplete = new CompletableFuture<>();
-    private BiConsumer<Long, Long> requestCallback = (n, r) -> {};
+    private BiConsumer<Long, Long> requestCallback = null;
     private Runnable onSubscribeCallback = () -> {};
     private Runnable cancelCallback = () -> {};
 
@@ -89,7 +89,9 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
                 }
                 requested.updateAndGet(r -> Long.MAX_VALUE - r > n ? n + r : Long.MAX_VALUE);
                 state.compareAndSet(State.NOT_REQUESTED_YET, State.READY_TO_EMIT);
-                requestCallback.accept(n, requested.get());
+                if (requestCallback != null) {
+                    requestCallback.accept(n, requested.get());
+                }
             }
 
             @Override
@@ -263,7 +265,11 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
      * @param requestCallback to be executed
      */
     public void onRequest(BiConsumer<Long, Long> requestCallback) {
-        this.requestCallback = BiConsumerChain.combine(this.requestCallback, requestCallback);
+        if (this.requestCallback == null) {
+            this.requestCallback = requestCallback;
+        } else {
+            this.requestCallback = BiConsumerChain.combine(this.requestCallback, requestCallback);
+        }
     }
 
     private boolean boundedEmit(T item){

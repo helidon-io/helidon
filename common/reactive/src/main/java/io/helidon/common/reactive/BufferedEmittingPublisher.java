@@ -40,7 +40,8 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
     private final AtomicBoolean draining = new AtomicBoolean(false);
     private final AtomicBoolean emitting = new AtomicBoolean(false);
     private final AtomicReference<Throwable> error = new AtomicReference<>();
-    private BiConsumer<Long, Long> requestCallback = (n, r) -> {};
+    private BiConsumer<Long, Long> requestCallback = null;
+    private Consumer<? super T> onEmitCallback = null;
 
     protected BufferedEmittingPublisher() {
     }
@@ -59,7 +60,9 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
     public void subscribe(final Flow.Subscriber<? super T> subscriber) {
         emitter.onSubscribe(() -> state.get().drain(this));
         emitter.onRequest((n, cnt) -> {
-            requestCallback.accept(n, cnt);
+            if (requestCallback != null) {
+                requestCallback.accept(n, cnt);
+            }
             state.get().drain(this);
         });
         emitter.onCancel(() -> state.compareAndSet(State.READY_TO_EMIT, State.CANCELLED));
@@ -77,7 +80,27 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
      * @param requestCallback to be executed
      */
     public void onRequest(BiConsumer<Long, Long> requestCallback) {
-        this.requestCallback = BiConsumerChain.combine(this.requestCallback, requestCallback);
+        if (this.requestCallback == null) {
+            this.requestCallback = requestCallback;
+        } else {
+            this.requestCallback = BiConsumerChain.combine(this.requestCallback, requestCallback);
+        }
+    }
+
+    /**
+     * Callback executed right after {@code onNext} is actually sent.
+     * <ul>
+     * <li><b>param</b> {@code i} sent item</li>
+     * </ul>
+     *
+     * @param onEmitCallback to be executed
+     */
+    public void onEmit(Consumer<T> onEmitCallback) {
+        if (this.onEmitCallback == null) {
+            this.onEmitCallback = onEmitCallback;
+        } else {
+            this.onEmitCallback = ConsumerChain.combine(this.onEmitCallback, onEmitCallback);
+        }
     }
 
     /**
@@ -194,7 +217,11 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
         if (!draining.getAndSet(true)) {
             while (!buffer.isEmpty()) {
                 if (emitter.emit(buffer.peek())) {
-                    buffer.poll();
+                    if (onEmitCallback != null) {
+                        onEmitCallback.accept(buffer.poll());
+                    } else {
+                        buffer.poll();
+                    }
                 } else {
                     break;
                 }
@@ -219,6 +246,9 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
                 if (buffer.isEmpty() && emitter.emit(item)) {
                     // Buffer drained, emit successful
                     // saved time by skipping buffer
+                    if (onEmitCallback != null) {
+                        onEmitCallback.accept(item);
+                    }
                     return 0;
                 } else {
                     //safe slower path thru buffer
