@@ -31,7 +31,11 @@ import io.helidon.webserver.WebServer;
 /**
  * Main class of TLS example.
  */
-public class Main {
+public final class Main {
+    // utility class
+    private Main() {
+    }
+
     /**
      * Start the example.
      * This will start two Helidon WebServers, both protected by TLS - one configured from config, one using a builder.
