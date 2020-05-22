@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -171,13 +171,13 @@ public class AnnotatedMethodTest {
         assertThat(annotations.length, is(3));
         assertThat(annotatedMethod.getAnnotation(Inject.class), is(notNullValue()));
         assertThat(annotatedMethod.getAnnotation(Named.class), is(notNullValue()));
-        assertThat(annotatedMethod.getAnnotation(RpcMethod.class), is(notNullValue()));
+        assertThat(annotatedMethod.getAnnotation(GrpcMethod.class), is(notNullValue()));
     }
 
-    @RpcService
+    @GrpcService
     public static class GrandParent {
 
-        @RpcMethod(type = MethodDescriptor.MethodType.UNARY)
+        @GrpcMethod(type = MethodDescriptor.MethodType.UNARY)
         @Inject
         public void one() {
         }
@@ -185,7 +185,7 @@ public class AnnotatedMethodTest {
         public void two() {
         }
 
-        @RpcMethod(type = MethodDescriptor.MethodType.UNARY)
+        @GrpcMethod(type = MethodDescriptor.MethodType.UNARY)
         public void three() {
         }
     }
@@ -203,12 +203,12 @@ public class AnnotatedMethodTest {
         public void two() {
         }
 
-        @RpcMethod(type = MethodDescriptor.MethodType.UNARY)
+        @GrpcMethod(type = MethodDescriptor.MethodType.UNARY)
         @Override
         public void three() {
         }
 
-        @RpcMethod(type = MethodDescriptor.MethodType.UNARY)
+        @GrpcMethod(type = MethodDescriptor.MethodType.UNARY)
         public void four() {
         }
 
@@ -240,26 +240,26 @@ public class AnnotatedMethodTest {
     }
 
     public interface InterfaceOne {
-        @RpcMethod(type = MethodDescriptor.MethodType.UNARY)
+        @GrpcMethod(type = MethodDescriptor.MethodType.UNARY)
         void three();
 
-        @RpcMethod(type = MethodDescriptor.MethodType.UNARY)
+        @GrpcMethod(type = MethodDescriptor.MethodType.UNARY)
         void six();
     }
 
     public interface InterfaceTwo {
-        @RpcMethod(type = MethodDescriptor.MethodType.UNARY)
+        @GrpcMethod(type = MethodDescriptor.MethodType.UNARY)
         void three();
     }
 
     public interface InterfaceThree
             extends InterfaceOne {
-        @RpcMethod(type = MethodDescriptor.MethodType.UNARY)
+        @GrpcMethod(type = MethodDescriptor.MethodType.UNARY)
         void six();
     }
 
     public interface InterfaceFour {
-        @RpcMethod(type = MethodDescriptor.MethodType.UNARY)
+        @GrpcMethod(type = MethodDescriptor.MethodType.UNARY)
         void seven();
     }
 

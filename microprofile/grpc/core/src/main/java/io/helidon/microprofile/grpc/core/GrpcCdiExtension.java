@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,24 +29,24 @@ public class GrpcCdiExtension implements Extension {
 
     /**
      * Determine whether a discovered bean has a superclass or implements an
-     * interface that is annotated with {@link RpcService} and if so then also
+     * interface that is annotated with {@link GrpcService} and if so then also
      * annotate the bean with the same annotation.
      * <p>
      * This is required so that we can support the use-case where an interface has been
-     * annotated with {@link RpcService} but the implementation class has not but the
+     * annotated with {@link GrpcService} but the implementation class has not but the
      * implementation class is annotated with a bean discovering annotation such as
      * {@link javax.enterprise.context.ApplicationScoped}. We need to make sure that the
-     * gRPC server can locate beans so we add the {@link RpcService} from the interface to
+     * gRPC server can locate beans so we add the {@link GrpcService} from the interface to
      * the bean.
      *
      * @param event the {@link ProcessAnnotatedType} event
      */
-    public void beforeBean(@Observes @WithAnnotations(RpcService.class) ProcessAnnotatedType<?> event) {
+    public void beforeBean(@Observes @WithAnnotations(GrpcService.class) ProcessAnnotatedType<?> event) {
         AnnotatedType<?> type = event.getAnnotatedType();
         Class<?> javaClass = type.getJavaClass();
-        Class<?> annotatedClass = ModelHelper.getAnnotatedResourceClass(javaClass, RpcService.class);
-        if (annotatedClass != javaClass && annotatedClass.isAnnotationPresent(RpcService.class)) {
-            event.configureAnnotatedType().add(annotatedClass.getAnnotation(RpcService.class));
+        Class<?> annotatedClass = ModelHelper.getAnnotatedResourceClass(javaClass, GrpcService.class);
+        if (annotatedClass != javaClass && annotatedClass.isAnnotationPresent(GrpcService.class)) {
+            event.configureAnnotatedType().add(annotatedClass.getAnnotation(GrpcService.class));
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,8 +29,8 @@ import javax.enterprise.inject.spi.configurator.AnnotatedMethodConfigurator;
 import javax.interceptor.Interceptor;
 
 import io.helidon.microprofile.grpc.core.AnnotatedMethod;
-import io.helidon.microprofile.grpc.core.RpcMethod;
-import io.helidon.microprofile.grpc.core.RpcService;
+import io.helidon.microprofile.grpc.core.GrpcMethod;
+import io.helidon.microprofile.grpc.core.GrpcService;
 
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Metered;
@@ -63,7 +63,7 @@ public class GrpcMetricsCdiExtension
      * @param pat  the {@link ProcessAnnotatedType} to observer
      */
     private void registerMetrics(@Observes
-                                 @WithAnnotations({Counted.class, Timed.class, Metered.class, RpcService.class})
+                                 @WithAnnotations({Counted.class, Timed.class, Metered.class, GrpcService.class})
                                  @Priority(Interceptor.Priority.APPLICATION)
                                  ProcessAnnotatedType<?> pat) {
 
@@ -77,7 +77,7 @@ public class GrpcMetricsCdiExtension
 
     /**
      * Determine whether a method is annotated with both a metrics annotation
-     * and an annotation of type {@link RpcMethod}.
+     * and an annotation of type {@link io.helidon.microprofile.grpc.core.GrpcMethod}.
      *
      * @param configurator  the {@link AnnotatedMethodConfigurator} representing
      *                      the annotated method
@@ -86,7 +86,7 @@ public class GrpcMetricsCdiExtension
      */
     private boolean isRpcMethod(AnnotatedMethodConfigurator<?> configurator, Class<? extends Annotation> type) {
         AnnotatedMethod method = AnnotatedMethod.create(configurator.getAnnotated().getJavaMember());
-        RpcMethod rpcMethod = method.firstAnnotationOrMetaAnnotation(RpcMethod.class);
+        GrpcMethod rpcMethod = method.firstAnnotationOrMetaAnnotation(GrpcMethod.class);
         if (rpcMethod != null) {
             Annotation annotation = method.firstAnnotationOrMetaAnnotation(type);
             return annotation != null;

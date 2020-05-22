@@ -24,7 +24,7 @@ import io.helidon.grpc.server.GrpcService;
 import io.helidon.grpc.server.MethodDescriptor;
 import io.helidon.grpc.server.ServiceDescriptor;
 import io.helidon.metrics.RegistryFactory;
-import io.helidon.microprofile.grpc.core.RpcService;
+import io.helidon.microprofile.grpc.core.GrpcService;
 import io.helidon.microprofile.grpc.core.Unary;
 
 import io.grpc.ServerInterceptor;
@@ -222,7 +222,7 @@ public class MetricsConfigurerTest {
     }
 
 
-    @RpcService
+    @GrpcService
     public static class ServiceOne
             implements GrpcService {
         @Override
@@ -248,7 +248,7 @@ public class MetricsConfigurerTest {
         }
     }
 
-    @RpcService
+    @GrpcService
     @SuppressWarnings("CdiManagedBeanInconsistencyInspection")
     public interface ServiceTwo {
 

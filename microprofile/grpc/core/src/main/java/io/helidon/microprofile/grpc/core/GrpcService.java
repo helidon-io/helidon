@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ import javax.inject.Qualifier;
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
 @Documented
-public @interface RpcService {
+public @interface GrpcService {
     /**
      * Obtain the service name.
      *
@@ -50,10 +50,10 @@ public @interface RpcService {
     int version() default 0;
 
     /**
-     * An {@link AnnotationLiteral} for the {@link RpcService} annotation.
+     * An {@link AnnotationLiteral} for the {@link GrpcService} annotation.
      */
     class Literal
-            extends AnnotationLiteral<RpcService> implements RpcService {
+            extends AnnotationLiteral<GrpcService> implements GrpcService {
 
         /**
          * The singleton instance of {@link Literal}.

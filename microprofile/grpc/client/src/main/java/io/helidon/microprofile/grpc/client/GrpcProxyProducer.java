@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,8 @@ class GrpcProxyProducer {
 
     /**
      * A CDI producer method that produces a client proxy for a gRPC service that
-     * will connect to the server using the default {@link Channel}.
+     * will connect to the server using the channel specified via {@link GrpcChannel}
+     * annotation on the proxy interface, or the default {@link Channel}.
      * <p>
      * This is not a real producer method but is used as a stub by the gRPC client
      * CDI extension to create real producers as injection points are discovered.
@@ -51,7 +52,10 @@ class GrpcProxyProducer {
     @GrpcServiceProxy
     static Object proxyUsingDefaultChannel(InjectionPoint injectionPoint, ChannelProducer producer) {
         Class<?> type = ModelHelper.getGenericType(injectionPoint.getType());
-        Channel channel = producer.findChannel(GrpcChannelsProvider.DEFAULT_CHANNEL_NAME);
+        String channelName = type.isAnnotationPresent(GrpcChannel.class)
+                ? type.getAnnotation(GrpcChannel.class).name()
+                : GrpcChannelsProvider.DEFAULT_CHANNEL_NAME;
+        Channel channel = producer.findChannel(channelName);
         GrpcClientProxyBuilder<?> builder = GrpcClientProxyBuilder.create(channel, type);
         return builder.build();
     }
@@ -67,7 +71,7 @@ class GrpcProxyProducer {
      * @return a gRPC client proxy
      */
     @GrpcServiceProxy
-    @GrpcChannel(name = "default")
+    @GrpcChannel(name = GrpcChannelsProvider.DEFAULT_CHANNEL_NAME)
     static Object proxyUsingNamedChannel(InjectionPoint injectionPoint, ChannelProducer producer) {
         Class<?> type = ModelHelper.getGenericType(injectionPoint.getType());
         GrpcChannel channelName = injectionPoint.getAnnotated().getAnnotation(GrpcChannel.class);

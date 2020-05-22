@@ -61,7 +61,7 @@ For example, suppose we have a simple server side service that has a unary metho
 .Simple gRPC Service
 ----
 @ApplicationScoped
-@io.helidon.microprofile.grpc.core.RpcService
+@io.helidon.microprofile.grpc.core.GrpcService
 public class StringService {
 
     @io.helidon.microprofile.grpc.core.Unary
@@ -81,7 +81,7 @@ To write a client for the StringService all that is required is an interface.
 .Simple gRPC Service
 ----
 @ApplicationScoped
-@io.helidon.microprofile.grpc.core.RpcService
+@io.helidon.microprofile.grpc.core.GrpcService
 public class StringService {
 
     @io.helidon.microprofile.grpc.core.Unary
@@ -100,7 +100,7 @@ unary method signature:
 .Simple gRPC Service
 ----
 @ApplicationScoped
-@io.helidon.microprofile.grpc.core.RpcService
+@io.helidon.microprofile.grpc.core.GrpcService
 public class StringService {
 
     @io.helidon.microprofile.grpc.core.Unary
@@ -114,7 +114,7 @@ We could also have made the client asynchronous by using one of the async method
 .Simple gRPC Service
 ----
 @ApplicationScoped
-@io.helidon.microprofile.grpc.core.RpcService
+@io.helidon.microprofile.grpc.core.GrpcService
 public class StringService {
 
     @io.helidon.microprofile.grpc.core.Unary

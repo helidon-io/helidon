@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ public interface AnnotatedServiceConfigurer {
     /**
      * Apply modifications to a {@link ServiceDescriptor.Builder}.
      * @param serviceClass the annotated gRPC service class
-     * @param annotatedClass the  class with the {@link io.helidon.microprofile.grpc.core.RpcService} annotation
+     * @param annotatedClass the  class with the {@link io.helidon.microprofile.grpc.core.GrpcService} annotation
      * @param builder      the builder to modify
      */
     void accept(Class<?> serviceClass, Class<?> annotatedClass, ServiceDescriptor.Builder builder);

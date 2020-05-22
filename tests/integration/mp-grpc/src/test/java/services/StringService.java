@@ -25,7 +25,7 @@ import io.helidon.grpc.examples.common.Strings.StringMessage;
 import io.helidon.grpc.server.CollectingObserver;
 import io.helidon.microprofile.grpc.core.Bidirectional;
 import io.helidon.microprofile.grpc.core.ClientStreaming;
-import io.helidon.microprofile.grpc.core.RpcService;
+import io.helidon.microprofile.grpc.core.GrpcService;
 import io.helidon.microprofile.grpc.core.ServerStreaming;
 import io.helidon.microprofile.grpc.core.Unary;
 
@@ -40,7 +40,7 @@ import static io.helidon.grpc.core.ResponseHelper.stream;
 /**
  * An implementation of the StringService with metrics annotated methods.
  */
-@RpcService
+@GrpcService
 @ApplicationScoped
 public class StringService {
 

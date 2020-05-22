@@ -20,7 +20,7 @@ import javax.enterprise.context.ApplicationScoped;
 
 import io.helidon.grpc.server.test.Echo.EchoRequest;
 import io.helidon.grpc.server.test.Echo.EchoResponse;
-import io.helidon.microprofile.grpc.core.RpcService;
+import io.helidon.microprofile.grpc.core.GrpcService;
 import io.helidon.microprofile.grpc.core.Unary;
 
 import io.grpc.stub.StreamObserver;
@@ -31,7 +31,7 @@ import static io.helidon.grpc.core.ResponseHelper.complete;
 /**
  * A simple test gRPC echo service.
  */
-@RpcService
+@GrpcService
 @ApplicationScoped
 public class EchoService {
 

@@ -42,9 +42,8 @@ import io.helidon.config.Config;
 import io.helidon.grpc.server.GrpcRouting;
 import io.helidon.grpc.server.GrpcServer;
 import io.helidon.grpc.server.GrpcServerConfiguration;
-import io.helidon.grpc.server.GrpcService;
+import io.helidon.microprofile.grpc.core.GrpcService;
 import io.helidon.microprofile.grpc.core.InProcessGrpcChannel;
-import io.helidon.microprofile.grpc.core.RpcService;
 import io.helidon.microprofile.grpc.server.spi.GrpcMpContext;
 import io.helidon.microprofile.grpc.server.spi.GrpcMpExtension;
 
@@ -161,7 +160,7 @@ public class GrpcServerCdiExtension
         Instance<Object> instance = beanManager.createInstance();
         GrpcRouting.Builder builder = GrpcRouting.builder();
 
-        // discover @RpcService annotated beans
+        // discover @GrpcService annotated beans
         // we use the bean manager to do this as we need the actual bean class
         beanManager.getBeans(Object.class, Any.Literal.INSTANCE)
                 .stream()
@@ -174,12 +173,12 @@ public class GrpcServerCdiExtension
                 });
 
         // discover beans of type GrpcService
-        beanManager.getBeans(GrpcService.class)
+        beanManager.getBeans(io.helidon.grpc.server.GrpcService.class)
                 .forEach(bean -> {
                     Class<?> beanClass = bean.getBeanClass();
                     Annotation[] qualifiers = bean.getQualifiers().toArray(new Annotation[0]);
                     Object service = instance.select(beanClass, qualifiers).get();
-                    builder.register((GrpcService) service);
+                    builder.register((io.helidon.grpc.server.GrpcService) service);
                 });
 
         // discover beans of type BindableService
@@ -197,7 +196,7 @@ public class GrpcServerCdiExtension
     private boolean hasRpcServiceQualifier(Bean<?> bean) {
         return bean.getQualifiers()
                 .stream()
-                .anyMatch(q -> RpcService.class.isAssignableFrom(q.annotationType()));
+                .anyMatch(q -> GrpcService.class.isAssignableFrom(q.annotationType()));
     }
 
     /**
