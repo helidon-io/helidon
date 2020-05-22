@@ -48,9 +48,7 @@
 :dependency-inc: {se-cors-home-inc}/{se-cors-dependency-page}
 
 Several built-in Helidon services -- health, metrics, and OpenAPI -- have integrated CORS support.
-If you add dependencies on these services to your project and also add a dependency on
-the Helidon MP CORS module, then the built-in services automatically participate in CORS.
-If desired, you can use configuration to override the default behavior.
+You can include these services in your application and control their CORS behavior.
 
 include::{se-built-in-services-page-include}[tag=understanding-cors-support-in-services]
 

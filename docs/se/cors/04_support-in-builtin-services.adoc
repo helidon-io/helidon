@@ -43,9 +43,7 @@
 :helidon-variant: SE
 
 Several built-in Helidon services -- health, metrics, and OpenAPI -- have integrated CORS support.
-If you include these services in your application's routing rules and do nothing else, then
-those services share their resources across all origins. If desired, you can use configuration to override
-the default behavior.
+You can include these services in your application and control their CORS behavior.
 
 
 // tag::understanding-cors-support-in-services[]
@@ -124,8 +122,8 @@ own application, or use the example project itself to experiment with customizin
 behavior in the built-in services.
 // end::builtin-getting-started[]
 
-== Controlling CORS for Built-in Services using the API
-Although services such as health, metrics, and OpenAPI are built-in to Helidon, to use them your application must create
+== Controlling CORS for Built-in Services Using the API
+Although services such as health, metrics, and OpenAPI are built into Helidon, to use them your application must create
 instances of the services and then use those instances in building your application's routing rules.
 
 Recall that each

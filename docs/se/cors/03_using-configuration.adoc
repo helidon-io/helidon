@@ -29,8 +29,9 @@
 :mapped-config-top-key: my-cors
 :helidon-tag: https://github.com/oracle/helidon/tree/{helidon-version}
 :helidon-se-cors-example: {helidon-tag}/examples/cors
+:mapped-config-id-callout: Assigns a unique identifier for this mapped CORS config section.
 
-Use configuration in combination with the Helidon CORS SE API to add CORS support to your resources.
+You can use configuration in combination with the Helidon CORS SE API to add CORS support to your resources.
 Loading the CORS information for different types of resource sharing from declarative configuration,
 instead of hard-coding it in your procedural Java code,
 not only simplifies the code but also gives your users a way to override the CORS behavior of your
@@ -102,7 +103,9 @@ The following example illustrates the mapped cross-origin configuration format.
       allow-methods: ["GET", "HEAD", "OPTIONS", "POST"] <6>
 ...
 ----
-<1> Assigns a unique identifier for this mapped CORS config section.
+// The following subs is needed to force the backtick in the explainer attribute value to work as we want.
+[subs=“attributes,quotes”]
+<1> {mapped-config-id-callout}
 <2> Collects the sequence of entries, each of which maps a basic CORS config to a path pattern.
 <3> Marks the beginning of an entry (the `-` character) and maps the associated basic CORS config
 to the `/greeting` subresource (the `path-pattern` key and value).
@@ -115,7 +118,7 @@ for the indicated HTTP methods.
 
 Path patterns can be any expression accepted by the link:{javadoc-base-url-webserver}/PathMatcher.html[`PathMatcher`] class.
 
-NOTE: Be sure to arrange the entries in the order that you want Helidon to check them, typically from most specific to most general.
+NOTE: Be sure to arrange the entries in the order that you want Helidon to check them.
 Helidon CORS support searches the cross-origin entries in the order you define them until it finds an entry that
 matches an incoming request's path pattern and HTTP method.
 // end::mapped-config[]
@@ -126,8 +129,9 @@ matches an incoming request's path pattern and HTTP method.
 You use configuration in combination with the Helidon CORS SE API
 to add CORS support to your resources. The example in <<se/cors/02_using-the-api.adoc#se-api-routing-example,Sample Routing Setup Using the `CrossOriginConfig` API>>
 uses the low-level Helidon CORS SE API to create
-a `CorsSupport` instance that is then used to create the routing rules. As an alternative to using the low-level API, this example uses config to create the
-`CorsSupport` instance instead.
+a `CrossOriginConfig` instance that is then used as part of a `CorsSupport` instance to create the routing rules.
+As an alternative to using the low-level API, this example uses config to create the
+`CrossOriginConfig` instance instead.
 
 
 [source,java]
@@ -169,6 +173,7 @@ a `CorsSupport` instance that is then used to create the routing rules. As an al
 As each request arrives, Helidon checks it against the cross-origin config instances in the order that your application
 added them to the `CorsSupport.Builder`.
 The `my-cors` mapped configuration acts as an override because the application added it to the builder first.
+
 If the `my-cors` config key does not appear in the configuration, then the code skips creating a `CrossOriginConfig`
 instance based on that configuration, and no overriding occurs. The CORS behavior
 that is established by the other `CrossOriginConfig` instance based on the `restrictive-cors` config (if present)

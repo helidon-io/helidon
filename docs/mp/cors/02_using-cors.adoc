@@ -41,7 +41,7 @@ Simply add the Helidon MP `@CrossOrigin` annotation to a particular method in yo
 allow Helidon MP to enforce the CORS protocol for all of that resource's endpoints.
 
 == Understanding the `@CrossOrigin` Annotation
-The preferred way to configure CORS in Helidon MP is to use the link:{javadoc-base-url-api}/CrossOrigin.html[`@CrossOrigin`] annotation.
+You set up CORS in Helidon MP using the link:{javadoc-base-url-api}/CrossOrigin.html[`@CrossOrigin`] annotation.
 
 The following example of the `@CrossOrigin` annotation allows the resource associated with it to be shared with the origins `\http://foo.bar` and `\http://bar.foo`
 using `DELETE` or `PUT`, and that requests can include the non-standard headers `X-foo` and `X-bar`.

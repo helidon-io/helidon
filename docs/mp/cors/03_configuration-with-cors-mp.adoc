@@ -38,6 +38,7 @@
 :mp-pages-ref-prefix: mp/cors
 :mp-cors-builtin-services-ref: {mp-pages-ref-prefix}/04_support-in-builtin-services.adoc
 :mapped-config-top-key: cors
+:mapped-config-id-callout: The unique identifier for this mapped CORS config section must be `cors`.
 
 Your application code establishes the CORS behavior of your endpoints using the `@CrossOrigin` annotation.
 You and your users can override that behavior, as well as the CORS behavior of the built-in services,

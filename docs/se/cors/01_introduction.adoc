@@ -34,7 +34,8 @@
 :helidon-variant: SE
 
 link:{cors-spec}[Cross-origin resource sharing] (CORS) support in Helidon SE provides a flexible
-mechanism that allows a Helidon SE application to control how other web applications can access its resources, even if that web application is not served from the same domain.
+mechanism that allows a Helidon SE application to control how another web application can access its resources,
+even if that web application is served from a different domain.
 
 == Overview
 // tag::cors-intro[]
@@ -52,7 +53,7 @@ to allow for each resource your application exposes.
 For example, suppose for a given resource you want to allow unrestricted sharing for GET, HEAD, and POST requests
 (what CORS refers to as "simple" requests), but permit other types of requests only from the two
 origins `foo.com` and `there.com`.
-Your application would implement two types of CORS sharing: relaxed for the
+Your application would implement two types of CORS sharing: more relaxed for the
 simple requests and stricter for others.
 
 Once you know the type of sharing you want to allow for each of your resources -- including any from built-in
