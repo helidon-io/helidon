@@ -16,15 +16,19 @@
 
 package io.helidon.common.reactive;
 
-import org.junit.jupiter.api.Test;
-
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
 import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.provider.ValueSource;
 
 public class EmitterTest {
 
@@ -55,6 +59,50 @@ public class EmitterTest {
         subscriber.requestMax()
                 .assertValues(0, 1, 2)
                 .assertComplete();
+    }
+
+    @Test
+    void testCancelledEmitterReleaseSubscriberReference() throws InterruptedException {
+        assertThat("Subscriber reference should be released after cancel!",
+                checkReleasedSubscriber((e, s) -> {
+                    s.cancel();
+                }));
+        assertThat("Subscriber reference should be released after cancel followed by complete!",
+                checkReleasedSubscriber((e, s) -> {
+                    s.cancel();
+                    e.complete();
+                }));
+        assertThat("Subscriber reference should be released after complete followed by cancel!",
+                checkReleasedSubscriber((e, s) -> {
+                    e.complete();
+                    s.cancel();
+                }));
+        assertThat("Subscriber reference should be released after fail followed by cancel!",
+                checkReleasedSubscriber((e, s) -> {
+                    e.fail(new RuntimeException("BOOM!"));
+                    s.cancel();
+                }));
+        assertThat("Subscriber reference should be released after complete followed by fail!",
+                checkReleasedSubscriber((e, s) -> {
+                    s.cancel();
+                    e.fail(new RuntimeException("BOOM!"));
+                }));
+    }
+
+    private boolean checkReleasedSubscriber(
+            BiConsumer<BufferedEmittingPublisher<Integer>, TestSubscriber<Integer>> biConsumer)
+            throws InterruptedException {
+        BufferedEmittingPublisher<Integer> emitter = BufferedEmittingPublisher.create();
+        TestSubscriber<Integer> subscriber = new TestSubscriber<>();
+        final ReferenceQueue<TestSubscriber<Integer>> queue = new ReferenceQueue<>();
+        WeakReference<TestSubscriber<Integer>> ref = new WeakReference<>(subscriber, queue);
+        emitter.subscribe(subscriber);
+        biConsumer.accept(emitter, subscriber);
+        subscriber = null;
+        System.gc();
+
+        return ref.equals(queue.remove(100));
+
     }
 
     @Test

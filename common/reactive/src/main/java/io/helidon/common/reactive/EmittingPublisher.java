@@ -41,7 +41,7 @@ import java.util.function.BiConsumer;
  * @param <T> type of emitted item
  */
 public class EmittingPublisher<T> implements Flow.Publisher<T> {
-    private Flow.Subscriber<? super T> subscriber;
+    private volatile Flow.Subscriber<? super T> subscriber;
     private final AtomicReference<State> state = new AtomicReference<>(State.NOT_REQUESTED_YET);
     private final AtomicLong requested = new AtomicLong();
     private final AtomicBoolean emitting = new AtomicBoolean(false);
@@ -80,7 +80,7 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
         subscriber.onSubscribe(new Flow.Subscription() {
             @Override
             public void request(final long n) {
-                if (state.get() == State.CANCELLED) {
+                if (state.get().isTerminated()) {
                     return;
                 }
                 if (n < 1) {
@@ -135,7 +135,13 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
                     if (emitting.getAndSet(true)) {
                         continue;
                     }
-                    this.subscriber.onError(throwable);
+                    Flow.Subscriber<? super T> subscriber = this.subscriber;
+                    if (subscriber == null) {
+                        // cancel released the reference already
+                        return;
+                    }
+                    EmittingPublisher.this.subscriber = null;
+                    subscriber.onError(throwable);
                     return;
                 } catch (Throwable t) {
                     throw new IllegalStateException("On error threw an exception!", t);
@@ -154,7 +160,13 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
                     if (emitting.getAndSet(true)) {
                         continue;
                     }
-                    this.subscriber.onComplete();
+                    Flow.Subscriber<? super T> subscriber = this.subscriber;
+                    if (subscriber == null) {
+                        // cancel released the reference already
+                        return;
+                    }
+                    EmittingPublisher.this.subscriber = null;
+                    subscriber.onComplete();
                     return;
                 } finally {
                     emitting.set(false);
@@ -262,6 +274,11 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
                     // only those can decrement counter
                     continue;
                 }
+                Flow.Subscriber<? super T> subscriber = this.subscriber;
+                if (subscriber == null) {
+                    // cancel released the reference
+                    return false;
+                }
                 if (requested.getAndUpdate(r -> r > 0 ? r != Long.MAX_VALUE ? r - 1 : Long.MAX_VALUE : 0) < 1) {
                     // there is a chance racing request will increment counter between this check and onNext
                     // lets delegate that to emit caller
@@ -298,6 +315,11 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
             <T> boolean emit(EmittingPublisher<T> publisher, T item) {
                 return false;
             }
+
+            @Override
+            boolean isTerminated() {
+                return false;
+            }
         },
         READY_TO_EMIT {
             @Override
@@ -308,11 +330,21 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
                     return publisher.boundedEmit(item);
                 }
             }
+
+            @Override
+            boolean isTerminated() {
+                return false;
+            }
         },
         CANCELLED {
             @Override
             <T> boolean emit(EmittingPublisher<T> publisher, T item) {
                 return false;
+            }
+
+            @Override
+            boolean isTerminated() {
+                return true;
             }
         },
         FAILED {
@@ -320,15 +352,26 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
             <T> boolean emit(EmittingPublisher<T> publisher, T item) {
                 return false;
             }
+
+            @Override
+            boolean isTerminated() {
+                return true;
+            }
         },
         COMPLETED {
             @Override
             <T> boolean emit(EmittingPublisher<T> publisher, T item) {
                 throw new IllegalStateException("Emitter is completed!");
             }
+
+            @Override
+            boolean isTerminated() {
+                return true;
+            }
         };
 
         abstract <T> boolean emit(EmittingPublisher<T> publisher, T item);
+        abstract boolean isTerminated();
 
     }
 }
