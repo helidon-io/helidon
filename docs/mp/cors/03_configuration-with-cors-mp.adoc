@@ -50,7 +50,15 @@ using MicroProfile configuration.
 There are two formats of CORS cross-origin configuration: basic and mapped. For Helidon MP, you use
 the mapped format.
 
-include::{cors-mapped-config-src}[tag=mapped-config]
+// We want to use
+// include::{cors-mapped-config-src}[tag=mapped-config]
+// and assign an attribute for the callout 1 text. But because the MP value uses backticks for monospaced
+// text, we'd have to be a little clever in the original callout. And that cleverness works when
+// the document is rendered in our editors, and even when using asciidoctor to HTML, but not
+// to our site.
+include::{cors-mapped-config-src}[tag=mapped-config-prefix]
+<1> The unique identifier for this mapped CORS config section must be `cors`.
+include::{cors-mapped-config-src}[tag=mapped-config-suffix]
 
 == Specifying Override Values in Configuration [[cors-configuration-formats]]
 In configuration, you can specify the same CORS-related attributes that you specify using the `@CrossOrigin` annotation.

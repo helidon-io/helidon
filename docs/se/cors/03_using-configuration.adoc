@@ -75,6 +75,7 @@ restrictive-cors:
 === Mapped Cross-Origin Configuration
 In some cases, you or your users might want to configure CORS behavior based on URL path matching.
 // tag::mapped-config[]
+// tag::mapped-config-prefix[]
 Helidon represents mapped CORS information as a section, identified by a configuration
 key of your choosing, that contains:
 
@@ -103,9 +104,24 @@ The following example illustrates the mapped cross-origin configuration format.
       allow-methods: ["GET", "HEAD", "OPTIONS", "POST"] <6>
 ...
 ----
-// The following subs is needed to force the backtick in the explainer attribute value to work as we want.
-[subs=“attributes,quotes”]
+// We want to use the following to insert the SE or MP callout 1 text; we need to use the blank, plus,
+// and subs because the MP attribute value contains backticks, and this is the only way we've found
+// to for the substitution in the callout to work the way we want. And this works when
+// rendered in our editing tools and via the asciidoctor command to HTML but not on our built site.
+//
+// <1> {blank}
+// +
+// [subs=attributes+]
+// {mapped-config-id-callout}
+//
+// So instead we have the prefix and suffix tags and the including document provides its own callout 1.
+// If at some point the rendering for our site handles this, we can just remove the tag and end
+// for the prefix and suffix and just have the including file include the mapped-config instead of
+// include the prefix, then provide its own callout 1, then include the suffix.
+//
+// end::mapped-config-prefix[]
 <1> {mapped-config-id-callout}
+// tag::mapped-config-suffix[]
 <2> Collects the sequence of entries, each of which maps a basic CORS config to a path pattern.
 <3> Marks the beginning of an entry (the `-` character) and maps the associated basic CORS config
 to the `/greeting` subresource (the `path-pattern` key and value).
@@ -121,6 +137,7 @@ Path patterns can be any expression accepted by the link:{javadoc-base-url-webse
 NOTE: Be sure to arrange the entries in the order that you want Helidon to check them.
 Helidon CORS support searches the cross-origin entries in the order you define them until it finds an entry that
 matches an incoming request's path pattern and HTTP method.
+// end::mapped-config-suffix[]
 // end::mapped-config[]
 
 
