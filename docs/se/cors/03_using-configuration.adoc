@@ -55,6 +55,7 @@ The table below lists the configuration keys that identify the CORS characterist
 
 [[config-key-table]]
 :cors-config-table-exclude-methods:
+:!cors-config-table-exclude-keys:
 include::{cors-config-table-src}[tag=cors-config-table]
 
 The following example of basic cross-origin configuration, when loaded and used by the application, limits cross-origin resource sharing for `PUT` and

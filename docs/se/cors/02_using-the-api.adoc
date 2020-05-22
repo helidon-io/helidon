@@ -33,6 +33,7 @@
 :javadoc-base-url-webserver: {javadoc-base-url}io.helidon.webserver/io/helidon/webserver
 :helidon-variant: SE
 :config-table-methods-column-header: Method
+:cors-config-table-exclude-keys:
 
 Every Helidon SE application explicitly creates routing rules that govern how Helidon delivers each incoming
  request to the code that needs to respond. The Helidon CORS SE API provides a simple way to include CORS into
@@ -119,14 +120,16 @@ which origins are allowed to share via which HTTP methods, etc.
 Each of these classes has an associated builder that you use in constructing instances of the class.
 
 The table below describes the methods on the `CrossOriginConfig.Builder` class
- and
-the configuration keys that map to the headers defined in the CORS protocol.
+that map to the headers defined in the CORS protocol.
 
-// The following table and the lead-in to it are parameterized.
+// The following table is parameterized.
 //
 // To exclude the first column of the table -- the method or annotation parameter list -- and
 // the text that describes it, define the cors-config-table-exclude-methods attribute in the including file.
 // The value does not matter.
+//
+// To exclude the second column -- the config keys -- and the text that describes it, define
+// cors-config-table-exclude-keys in the including file. The value does not matter.
 //
 // To customize the text that explains the first column, set config-table-methods-column-explainer
 // to the text you want inserted.
@@ -135,41 +138,49 @@ the configuration keys that map to the headers defined in the CORS protocol.
 // the header you want used.
 //
 // tag::cors-config-table[]
-// The following subs is needed to force the backtick in the explainer attribute value to work as we want.
-[subs="attributes,quotes"]
 
-
-ifndef::cors-config-table-exclude-methods[]
+ifndef::cors-config-table-exclude-methods+cors-config-table-exclude-keys[]
 [width="100%",options="header",cols="4*"]
 endif::[]
 ifdef::cors-config-table-exclude-methods[]
 [width="100%",options="header",cols="3*"]
 endif::[]
+ifdef::cors-config-table-exclude-keys[]
+[width="100%",options="header",cols="3*"]
+endif::[]
 
 |====================
 ifndef::cors-config-table-exclude-methods[| {config-table-methods-column-header} ]
-| Configuration Key | Default | CORS Header Name
+ifndef::cors-config-table-exclude-keys[| Configuration Key]
+| Default | CORS Header Name
 
 ifndef::cors-config-table-exclude-methods[|`allowCredentials`]
-|`allow-credentials`|`false`|`Access-Control-Allow-Credentials`
+ifndef::cors-config-table-exclude-keys[|`allow-credentials`]
+|`false`|`Access-Control-Allow-Credentials`
 
 ifndef::cors-config-table-exclude-methods[|`allowHeaders`]
-|`allow-headers`|`["*"]`|`Access-Control-Allow-Headers`
+ifndef::cors-config-table-exclude-keys[|`allow-headers`]
+|`["*"]`|`Access-Control-Allow-Headers`
 
 ifndef::cors-config-table-exclude-methods[|`allowMethods`]
-|`allow-methods`|`["*"]`|`Access-Control-Allow-Methods`
+ifndef::cors-config-table-exclude-keys[|`allow-methods`]
+|`["*"]`|`Access-Control-Allow-Methods`
 
 ifndef::cors-config-table-exclude-methods[|`allowOrigins`]
-|`allow-origins`|`["*"]`|`Access-Control-Allow-Origins`
+ifndef::cors-config-table-exclude-keys[|`allow-origins`]
+|`["*"]`|`Access-Control-Allow-Origins`
 
 ifndef::cors-config-table-exclude-methods[|`exposeHeaders`]
-|`expose-headers`|`none`|`Access-Control-Expose-Headers`
+ifndef::cors-config-table-exclude-keys[|`expose-headers`]
+|`none`|`Access-Control-Expose-Headers`
 
 ifndef::cors-config-table-exclude-methods[|`maxAgeSeconds`]
-|`max-age`|`3600`|`Access-Control-Max-Age`
+ifndef::cors-config-table-exclude-keys[|`max-age`]
+|`3600`|`Access-Control-Max-Age`
 
 ifndef::cors-config-table-exclude-methods[|`enabled`]
-|`enabled`|`true`|n/a|
+ifndef::cors-config-table-exclude-keys[|`enabled`]
+|`true`|n/a|
 |====================
 
 If the cross-origin configuration is disabled (`enabled` = false), then the Helidon CORS implementation ignores the cross-origin configuration entry.
@@ -203,27 +214,29 @@ CORS.
                 .addCrossOriginConfig(CrossOriginConfig.builder() // <2>
                             .allowOrigins("http://foo.com", "http://there.com") // <3>
                             .allowMethods("PUT", "DELETE") // <4>
-                            .build())
-                .addCrossOriginConfig(CrossOriginConfig.create()) // <5>
-                .build();
+                            .build()) // <5>
+                .addCrossOriginConfig(CrossOriginConfig.create()) // <6>
+                .build(); // <7>
 
         // Note: Add the CORS routing *before* registering the GreetService routing.
         return Routing.builder()
                 .register(JsonSupport.create())
                 .register(health)                   // Health at "/health"
                 .register(metrics)                 // Metrics at "/metrics"
-                .register("/greet", corsSupport, greetService) // <6>
+                .register("/greet", corsSupport, greetService) // <8>
                 .build();
     }
 ----
-<1> Create a `CorsSupport` instance using its builder.
+<1> Create a `CorsSupport.Builder` instance.
 <2> Add a `CrossOriginSupport` instance (using _its_ builder) to constrain resource sharing.
 <3> List the origins (sites) allowed to share resources from this app.
 <4> List the HTTP methods the constraint applies to.
-<5> Add a `CrossOriginSupport` instance that permits all sharing (the default).
-<6> Register the new `CorsSupport` instance with -- but in front of -- the service which implements the business logic.
+<5> Build the `CrossOriginSupport` instance.
+<6> Add a `CrossOriginSupport` instance that permits all sharing (the default).
+<7> Build the `CorsSupport` instance.
+<8> Register the new `CorsSupport` instance with -- but in front of -- the service which implements the business logic.
 
-The order of steps 2 and 5 above is important. When processing an incoming request, the Helidon CORS implementation
+The order of steps 2 and 6 above is important. When processing an incoming request, the Helidon CORS implementation
 scans the `CrossOriginConfig` instances in the order they were added to the `CorsSupport` object, stopping as soon as
 it finds a `CrossOriginConfig` instance for which `allowMethods` matches the HTTP method of the
 request.
