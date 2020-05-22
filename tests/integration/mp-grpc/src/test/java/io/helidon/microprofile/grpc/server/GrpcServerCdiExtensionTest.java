@@ -28,7 +28,7 @@ import io.helidon.grpc.server.GrpcServer;
 import io.helidon.grpc.server.GrpcService;
 import io.helidon.grpc.server.ServiceDescriptor;
 import io.helidon.microprofile.grpc.core.InProcessGrpcChannel;
-import io.helidon.microprofile.grpc.core.GrpcService;
+import io.helidon.microprofile.grpc.core.Grpc;
 import io.helidon.microprofile.grpc.core.Unary;
 import io.helidon.microprofile.grpc.server.spi.GrpcMpContext;
 import io.helidon.microprofile.grpc.server.spi.GrpcMpExtension;
@@ -182,7 +182,7 @@ public class GrpcServerCdiExtensionTest {
      * Annotated gRPC service bean that should be discovered and deployed.
      */
     @ApplicationScoped
-    @GrpcService
+    @Grpc
     public static class UnaryService {
         @Unary
         public TestResponse requestResponse(TestRequest request) {
@@ -208,7 +208,7 @@ public class GrpcServerCdiExtensionTest {
      * A POJO protocol buffer generated service implementation
      * manually deployed by {@link ExtensionTwo}.
      */
-    @GrpcService
+    @Grpc
     public static class TestService
             implements GrpcService {
 

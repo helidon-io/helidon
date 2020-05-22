@@ -21,9 +21,9 @@ import javax.inject.Singleton;
 import io.helidon.grpc.client.ClientMethodDescriptor;
 import io.helidon.grpc.client.ClientServiceDescriptor;
 import io.helidon.grpc.core.JavaMarshaller;
+import io.helidon.microprofile.grpc.core.Grpc;
 import io.helidon.microprofile.grpc.core.GrpcMarshaller;
 import io.helidon.microprofile.grpc.core.GrpcMethod;
-import io.helidon.microprofile.grpc.core.GrpcService;
 
 import io.grpc.stub.StreamObserver;
 import org.junit.jupiter.api.Test;
@@ -176,7 +176,7 @@ public class GrpcClientBuilderTest {
         assertThat(grpcDescriptor.getResponseMarshaller(), is(instanceOf(JavaMarshaller.class)));
     }
 
-    @GrpcService(name = "ServiceOne/foo")
+    @Grpc(name = "ServiceOne/foo")
     public static class ServiceOne {
         @GrpcMethod(type = io.grpc.MethodDescriptor.MethodType.UNARY)
         public void unary(String param, StreamObserver<String> observer) {
@@ -197,7 +197,7 @@ public class GrpcClientBuilderTest {
         }
     }
 
-    @GrpcService
+    @Grpc
     public static class ServiceTwo {
         @GrpcMethod(name = "One", type = io.grpc.MethodDescriptor.MethodType.UNARY)
         public void unary(String param, StreamObserver<String> observer) {
@@ -218,7 +218,7 @@ public class GrpcClientBuilderTest {
         }
     }
 
-    @GrpcService
+    @Grpc
     @GrpcMarshaller("stub")
     public static class ServiceThree {
         @GrpcMethod(type = io.grpc.MethodDescriptor.MethodType.UNARY)
@@ -226,7 +226,7 @@ public class GrpcClientBuilderTest {
         }
     }
 
-    @GrpcService
+    @Grpc
     @GrpcMarshaller("stub")
     public static class ServiceFour {
         @GrpcMethod(type = io.grpc.MethodDescriptor.MethodType.UNARY)
@@ -235,7 +235,7 @@ public class GrpcClientBuilderTest {
         }
     }
 
-    @GrpcService
+    @Grpc
     @Singleton
     public static class ServiceFive {
         @GrpcMethod(type = io.grpc.MethodDescriptor.MethodType.UNARY)

@@ -26,7 +26,7 @@ import javax.enterprise.inject.se.SeContainerInitializer;
 import javax.inject.Inject;
 
 import io.helidon.microprofile.grpc.client.GrpcChannel;
-import io.helidon.microprofile.grpc.client.GrpcServiceProxy;
+import io.helidon.microprofile.grpc.client.GrpcProxy;
 
 import io.grpc.stub.StreamObserver;
 
@@ -46,7 +46,7 @@ public class Client {
      * This proxy will connect to the service using the default {@link io.grpc.Channel}.
      */
     @Inject
-    @GrpcServiceProxy
+    @GrpcProxy
     @GrpcChannel(name = "test-server")
     private StringService stringService;
 

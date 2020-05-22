@@ -30,31 +30,31 @@ public class ModelHelperTest {
 
     @Test
     public void shouldGetAnnotatedSuperClass() {
-        Class<?> cls = ModelHelper.getAnnotatedResourceClass(ChildOne.class, GrpcService.class);
+        Class<?> cls = ModelHelper.getAnnotatedResourceClass(ChildOne.class, Grpc.class);
         assertThat(cls, equalTo(Parent.class));
     }
 
     @Test
     public void shouldGetSelfIfAnnotated() {
-        Class<?> cls = ModelHelper.getAnnotatedResourceClass(Parent.class, GrpcService.class);
+        Class<?> cls = ModelHelper.getAnnotatedResourceClass(Parent.class, Grpc.class);
         assertThat(cls, equalTo(Parent.class));
     }
 
     @Test
     public void shouldGetSelfIfNothingAnnotated() {
-        Class<?> cls = ModelHelper.getAnnotatedResourceClass(NoAnnotated.class, GrpcService.class);
+        Class<?> cls = ModelHelper.getAnnotatedResourceClass(NoAnnotated.class, Grpc.class);
         assertThat(cls, equalTo(NoAnnotated.class));
     }
 
     @Test
     public void shouldGetAnnotatedSuperClassBeforeInterface() {
-        Class<?> cls = ModelHelper.getAnnotatedResourceClass(ChildTwo.class, GrpcService.class);
+        Class<?> cls = ModelHelper.getAnnotatedResourceClass(ChildTwo.class, Grpc.class);
         assertThat(cls, equalTo(Parent.class));
     }
 
     @Test
     public void shouldGetAnnotatedInterface() {
-        Class<?> cls = ModelHelper.getAnnotatedResourceClass(ChildThree.class, GrpcService.class);
+        Class<?> cls = ModelHelper.getAnnotatedResourceClass(ChildThree.class, Grpc.class);
         assertThat(cls, equalTo(IFaceOne.class));
     }
 
@@ -80,11 +80,11 @@ public class ModelHelperTest {
     public void explicitDefaultMarshaller() {
     }
 
-    @GrpcService
+    @Grpc
     public static class GrandParent {
     }
 
-    @GrpcService
+    @Grpc
     public static class Parent
             extends GrandParent {
     }
@@ -93,7 +93,7 @@ public class ModelHelperTest {
             extends Parent {
     }
 
-    @GrpcService
+    @Grpc
     public interface IFaceOne {
     }
 

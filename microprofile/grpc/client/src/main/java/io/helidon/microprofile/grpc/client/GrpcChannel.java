@@ -39,12 +39,12 @@ import javax.inject.Qualifier;
  * </pre>
  *
  * This annotation can also be specified at the injection point for a client proxy,
- * in combination with the {@link GrpcServiceProxy @GrpcServiceProxy} annotation:
+ * in combination with the {@link GrpcProxy @GrpcProxy} annotation:
  *
  * <pre>
  *     &#064;Inject
  *     &#064;GrpcChannel(name = "foo")
- *     &#064;GrpcServiceProxy
+ *     &#064;GrpcProxy
  *     private FooServiceClient client;
  * </pre>
  *
@@ -52,7 +52,7 @@ import javax.inject.Qualifier;
  * be specified on the client interface instead:
  *
  * <pre>
- *     &#064;GrpcService(name = "FooService")
+ *     &#064;Grpc(name = "FooService")
  *     &#064;GrpcChannel(name = "foo")
  *     public interface FooServiceClient {
  *         ...

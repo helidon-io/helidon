@@ -49,7 +49,7 @@ class GrpcProxyProducer {
      * @param injectionPoint the injection point where the client proxy is to be injected
      * @return a gRPC client proxy
      */
-    @GrpcServiceProxy
+    @GrpcProxy
     static Object proxyUsingDefaultChannel(InjectionPoint injectionPoint, ChannelProducer producer) {
         Class<?> type = ModelHelper.getGenericType(injectionPoint.getType());
         String channelName = type.isAnnotationPresent(GrpcChannel.class)
@@ -70,7 +70,7 @@ class GrpcProxyProducer {
      * @param injectionPoint the injection point where the client proxy is to be injected
      * @return a gRPC client proxy
      */
-    @GrpcServiceProxy
+    @GrpcProxy
     @GrpcChannel(name = GrpcChannelsProvider.DEFAULT_CHANNEL_NAME)
     static Object proxyUsingNamedChannel(InjectionPoint injectionPoint, ChannelProducer producer) {
         Class<?> type = ModelHelper.getGenericType(injectionPoint.getType());
@@ -90,7 +90,7 @@ class GrpcProxyProducer {
      * @param injectionPoint the injection point where the client proxy is to be injected
      * @return a gRPC client proxy
      */
-    @GrpcServiceProxy
+    @GrpcProxy
     @InProcessGrpcChannel
     static Object proxyUsingInProcessChannel(InjectionPoint injectionPoint, BeanManager beanManager) {
         Class<?> type = ModelHelper.getGenericType(injectionPoint.getType());

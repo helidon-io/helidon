@@ -57,7 +57,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * Functional test of gRPC MP metrics.
  * <p>
  * The {@link services.EchoService} and {@link services.StringService }beans should be discovered and deployed
- * automatically as they are annotated with both the {@link io.helidon.microprofile.grpc.core.GrpcService} annotation
+ * automatically as they are annotated with both the {@link io.helidon.microprofile.grpc.core.Grpc} annotation
  * and the {@link javax.enterprise.context.ApplicationScoped} annotation. Their methods are annotated with various
  * microprofile metrics annotations so they should automatically generate the correct metrics.
  */

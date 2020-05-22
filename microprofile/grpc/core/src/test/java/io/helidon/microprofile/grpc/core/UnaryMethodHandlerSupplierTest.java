@@ -767,7 +767,7 @@ public class UnaryMethodHandlerSupplierTest {
     /**
      * The unary methods service implementation.
      */
-    @GrpcService
+    @Grpc
     @SuppressWarnings("CdiManagedBeanInconsistencyInspection")
     public interface UnaryService {
         @Unary

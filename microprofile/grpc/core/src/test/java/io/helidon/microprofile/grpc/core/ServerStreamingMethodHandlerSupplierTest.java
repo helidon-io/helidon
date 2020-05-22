@@ -397,7 +397,7 @@ public class ServerStreamingMethodHandlerSupplierTest {
     /**
      * The unary methods service implementation.
      */
-    @GrpcService
+    @Grpc
     public interface Service {
         @ServerStreaming
         void serverStreaming(String request, StreamObserver<Long> observer);

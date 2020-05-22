@@ -54,7 +54,7 @@ public class GrpcClientProxyBuilder<T>
      * {@link #create(String, Class)} instead.
      * <p>
      * The class passed to this method should be properly annotated with
-     * {@link io.helidon.microprofile.grpc.core.GrpcService} and
+     * {@link io.helidon.microprofile.grpc.core.Grpc} and
      * {@link io.helidon.microprofile.grpc.core.GrpcMethod} annotations
      * so that the proxy can properly route calls to the server.
      *
@@ -72,7 +72,7 @@ public class GrpcClientProxyBuilder<T>
      * for a given gRPC service interface using in-process channel.
      * <p>
      * The class passed to this method should be properly annotated with
-     * {@link io.helidon.microprofile.grpc.core.GrpcService} and
+     * {@link io.helidon.microprofile.grpc.core.Grpc} and
      * {@link io.helidon.microprofile.grpc.core.GrpcMethod} annotations
      * so that the proxy can properly route calls to the server.
      *
@@ -91,7 +91,7 @@ public class GrpcClientProxyBuilder<T>
      * for a given gRPC service interface.
      * <p>
      * The class passed to this method should be properly annotated with
-     * {@link io.helidon.microprofile.grpc.core.GrpcService} and
+     * {@link io.helidon.microprofile.grpc.core.Grpc} and
      * {@link io.helidon.microprofile.grpc.core.GrpcMethod} annotations
      * so that the proxy can properly route calls to the server.
      *

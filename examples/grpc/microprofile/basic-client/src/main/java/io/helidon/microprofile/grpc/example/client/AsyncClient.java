@@ -24,7 +24,7 @@ import javax.enterprise.inject.se.SeContainerInitializer;
 import javax.inject.Inject;
 
 import io.helidon.microprofile.grpc.client.GrpcChannel;
-import io.helidon.microprofile.grpc.client.GrpcServiceProxy;
+import io.helidon.microprofile.grpc.client.GrpcProxy;
 
 /**
  * A client to the {@link io.helidon.microprofile.grpc.example.client.AsyncStringService}.
@@ -42,7 +42,7 @@ public class AsyncClient {
      * This proxy will connect to the service using the default {@link io.grpc.Channel}.
      */
     @Inject
-    @GrpcServiceProxy
+    @GrpcProxy
     @GrpcChannel(name = "test-server")
     private AsyncStringService stringService;
 

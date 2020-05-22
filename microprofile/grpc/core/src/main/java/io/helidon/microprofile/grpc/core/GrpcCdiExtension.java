@@ -29,24 +29,24 @@ public class GrpcCdiExtension implements Extension {
 
     /**
      * Determine whether a discovered bean has a superclass or implements an
-     * interface that is annotated with {@link GrpcService} and if so then also
+     * interface that is annotated with {@link Grpc} and if so then also
      * annotate the bean with the same annotation.
      * <p>
      * This is required so that we can support the use-case where an interface has been
-     * annotated with {@link GrpcService} but the implementation class has not but the
+     * annotated with {@link Grpc} but the implementation class has not but the
      * implementation class is annotated with a bean discovering annotation such as
      * {@link javax.enterprise.context.ApplicationScoped}. We need to make sure that the
-     * gRPC server can locate beans so we add the {@link GrpcService} from the interface to
+     * gRPC server can locate beans so we add the {@link Grpc} from the interface to
      * the bean.
      *
      * @param event the {@link ProcessAnnotatedType} event
      */
-    public void beforeBean(@Observes @WithAnnotations(GrpcService.class) ProcessAnnotatedType<?> event) {
+    public void beforeBean(@Observes @WithAnnotations(Grpc.class) ProcessAnnotatedType<?> event) {
         AnnotatedType<?> type = event.getAnnotatedType();
         Class<?> javaClass = type.getJavaClass();
-        Class<?> annotatedClass = ModelHelper.getAnnotatedResourceClass(javaClass, GrpcService.class);
-        if (annotatedClass != javaClass && annotatedClass.isAnnotationPresent(GrpcService.class)) {
-            event.configureAnnotatedType().add(annotatedClass.getAnnotation(GrpcService.class));
+        Class<?> annotatedClass = ModelHelper.getAnnotatedResourceClass(javaClass, Grpc.class);
+        if (annotatedClass != javaClass && annotatedClass.isAnnotationPresent(Grpc.class)) {
+            event.configureAnnotatedType().add(annotatedClass.getAnnotation(Grpc.class));
         }
     }
 }

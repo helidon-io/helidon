@@ -174,7 +174,7 @@ public class AnnotatedMethodTest {
         assertThat(annotatedMethod.getAnnotation(GrpcMethod.class), is(notNullValue()));
     }
 
-    @GrpcService
+    @Grpc
     public static class GrandParent {
 
         @GrpcMethod(type = MethodDescriptor.MethodType.UNARY)

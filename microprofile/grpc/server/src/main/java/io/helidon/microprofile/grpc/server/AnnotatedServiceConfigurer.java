@@ -33,7 +33,7 @@ public interface AnnotatedServiceConfigurer {
     /**
      * Apply modifications to a {@link ServiceDescriptor.Builder}.
      * @param serviceClass the annotated gRPC service class
-     * @param annotatedClass the  class with the {@link io.helidon.microprofile.grpc.core.GrpcService} annotation
+     * @param annotatedClass the  class with the {@link io.helidon.microprofile.grpc.core.Grpc} annotation
      * @param builder      the builder to modify
      */
     void accept(Class<?> serviceClass, Class<?> annotatedClass, ServiceDescriptor.Builder builder);

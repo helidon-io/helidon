@@ -54,7 +54,7 @@ For example:
 .Simple gRPC Service
 ----
 @ApplicationScoped
-@io.helidon.microprofile.grpc.core.GrpcService
+@io.helidon.microprofile.grpc.core.Grpc
 public class StringService {
 
     @io.helidon.microprofile.grpc.core.Unary
@@ -65,7 +65,7 @@ public class StringService {
 ----
 
 The code above is a simple service with a single unary method that just converts a String to uppercase.
-The important parts in the example are the `@ApplicationScoped`, `@GrpcService` and `@Unary` annotations; these,
+The important parts in the example are the `@ApplicationScoped`, `@Grpc` and `@Unary` annotations; these,
 along with other annotations discussed later, allow the gRPC MP APIs to discover, configure and deploy the service.
 
 Of course Helidon gRPC MP does not preclude you from using the Protobuf files approach, traditional gRPC Java services
@@ -77,7 +77,7 @@ annotations.
 [source,java]
 ----
 @ApplicationScoped                                <1>
-@io.helidon.microprofile.grpc.core.GrpcService     <2>
+@io.helidon.microprofile.grpc.core.Grpc     <2>
 public class StringService {
 ----
 
@@ -92,7 +92,7 @@ above the service name will be `StringService`. This can be change by supplying 
 [source,java]
 ----
 @ApplicationScoped
-@io.helidon.microprofile.grpc.core.GrpcService(name="Strings") <1>
+@io.helidon.microprofile.grpc.core.Grpc(name="Strings") <1>
 public class StringService {
 ----
 <1> in the example above the name of the deployed service will be `Strings`.

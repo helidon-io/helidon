@@ -58,7 +58,7 @@ public abstract class AbstractServiceBuilder {
      */
     protected AbstractServiceBuilder(Class<?> serviceClass, Supplier<?> instance) {
         this.serviceClass = Objects.requireNonNull(serviceClass);
-        this.annotatedServiceClass = ModelHelper.getAnnotatedResourceClass(serviceClass, GrpcService.class);
+        this.annotatedServiceClass = ModelHelper.getAnnotatedResourceClass(serviceClass, Grpc.class);
         this.instance = Objects.requireNonNull(instance);
         this.handlerSuppliers = loadHandlerSuppliers();
     }
@@ -69,7 +69,7 @@ public abstract class AbstractServiceBuilder {
      * @return  {@code true} if this modeller contains an annotated service
      */
     public boolean isAnnotatedService() {
-        return annotatedServiceClass.isAnnotationPresent(GrpcService.class);
+        return annotatedServiceClass.isAnnotationPresent(Grpc.class);
     }
 
     /**
@@ -169,7 +169,7 @@ public abstract class AbstractServiceBuilder {
     /**
      * Determine the name of the gRPC service.
      * <p>
-     * If the class is annotated with {@link GrpcService}
+     * If the class is annotated with {@link Grpc}
      * then the name value from the annotation is used as the service name. If the annotation
      * has no name value or the annotation is not present the simple name of the class is used.
      *
@@ -177,7 +177,7 @@ public abstract class AbstractServiceBuilder {
      * @return the name of the gRPC service
      */
     protected String determineServiceName(Class<?> annotatedClass) {
-        GrpcService serviceAnnotation = annotatedClass.getAnnotation(GrpcService.class);
+        Grpc serviceAnnotation = annotatedClass.getAnnotation(Grpc.class);
         String name = null;
 
         if (serviceAnnotation != null) {

@@ -29,8 +29,8 @@ import javax.enterprise.inject.spi.configurator.AnnotatedMethodConfigurator;
 import javax.interceptor.Interceptor;
 
 import io.helidon.microprofile.grpc.core.AnnotatedMethod;
+import io.helidon.microprofile.grpc.core.Grpc;
 import io.helidon.microprofile.grpc.core.GrpcMethod;
-import io.helidon.microprofile.grpc.core.GrpcService;
 
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Metered;
@@ -63,7 +63,7 @@ public class GrpcMetricsCdiExtension
      * @param pat  the {@link ProcessAnnotatedType} to observer
      */
     private void registerMetrics(@Observes
-                                 @WithAnnotations({Counted.class, Timed.class, Metered.class, GrpcService.class})
+                                 @WithAnnotations({Counted.class, Timed.class, Metered.class, Grpc.class})
                                  @Priority(Interceptor.Priority.APPLICATION)
                                  ProcessAnnotatedType<?> pat) {
 
