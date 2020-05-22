@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import java.util.concurrent.Flow.Subscription;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -39,6 +38,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -65,7 +65,7 @@ public class OriginThreadPublisherTest {
 
     @Test
     public void sanityPublisherCheck() throws Exception {
-        OriginThreadPublisher<Long, Long> publisher = new OriginThreadPublisher<Long, Long>(){};
+        BufferedEmittingPublisher<Long> publisher = new BufferedEmittingPublisher<Long>(){};
         CountDownLatch finishedLatch = new CountDownLatch(1);
         publisher.subscribe(new Flow.Subscriber<Long>(){
             Subscription subscription;
@@ -105,7 +105,7 @@ public class OriginThreadPublisherTest {
                     Thread.currentThread().interrupt();
                     throw new IllegalStateException("Interrupted", e);
                 }
-                publisher.submit(seq.incrementAndGet());
+                publisher.emit(seq.incrementAndGet());
             }
             finishedLatch.countDown();
         });
@@ -121,8 +121,7 @@ public class OriginThreadPublisherTest {
 
     @Test
     public void testDoubleSubscribe() {
-        UnboundedSemaphore semaphore = UnboundedSemaphore.create();
-        OriginThreadPublisher<Long, Long> publisher = new OriginThreadPublisher<Long, Long>(semaphore){};
+        BufferedEmittingPublisher<Long> publisher = new BufferedEmittingPublisher<Long>(){};
         TestSubscriber<Long> subscriber1 = new TestSubscriber<>();
         TestSubscriber<Long> subscriber2 = new TestSubscriber<>();
         publisher.subscribe(subscriber1);
@@ -134,7 +133,7 @@ public class OriginThreadPublisherTest {
 
     @Test
     public void testNegativeSubscription() {
-        OriginThreadPublisher<Long, Long> publisher = new OriginThreadPublisher<Long, Long>(){};
+        BufferedEmittingPublisher<Long> publisher = new BufferedEmittingPublisher<Long>(){};
         TestSubscriber<Long> subscriber = new TestSubscriber<Long>() {
             @Override
             public void onSubscribe(Subscription subscription) {
@@ -149,10 +148,10 @@ public class OriginThreadPublisherTest {
 
     @Test
     public void testError() {
-        OriginThreadPublisher<Long, Long> publisher = new OriginThreadPublisher<Long, Long>(){};
+        BufferedEmittingPublisher<Long> publisher = new BufferedEmittingPublisher<Long>(){};
         TestSubscriber<Long> subscriber = new TestSubscriber<>();
         publisher.subscribe(subscriber);
-        publisher.error(new IllegalStateException("foo!"));
+        publisher.fail(new IllegalStateException("foo!"));
         assertThat(subscriber.isComplete(), is(equalTo(false)));
         assertThat(subscriber.getLastError(), is(not(nullValue())));
         assertThat(subscriber.getLastError(), is(instanceOf(IllegalStateException.class)));
@@ -160,9 +159,9 @@ public class OriginThreadPublisherTest {
 
     @Test
     public void testErrorBeforeSubscribe() {
-        OriginThreadPublisher<Long, Long> publisher = new OriginThreadPublisher<Long, Long>(){};
+        BufferedEmittingPublisher<Long> publisher = new BufferedEmittingPublisher<Long>(){};
         TestSubscriber<Long> subscriber = new TestSubscriber<>();
-        publisher.error(new IllegalStateException("foo!"));
+        publisher.fail(new IllegalStateException("foo!"));
         publisher.subscribe(subscriber);
         subscriber.request1();
         assertThat(subscriber.isComplete(), is(equalTo(false)));
@@ -172,7 +171,7 @@ public class OriginThreadPublisherTest {
 
     @Test
     public void testErrorBadOnError() {
-        OriginThreadPublisher<Long, Long> publisher = new OriginThreadPublisher<Long, Long>(){};
+        BufferedEmittingPublisher<Long> publisher = new BufferedEmittingPublisher<Long>(){};
         TestSubscriber<Long> subscriber = new TestSubscriber<Long>() {
             @Override
             public void onError(Throwable throwable) {
@@ -181,7 +180,7 @@ public class OriginThreadPublisherTest {
         };
         publisher.subscribe(subscriber);
         try {
-            publisher.error(new IllegalStateException("foo!"));
+            publisher.fail(new IllegalStateException("foo!"));
             fail("an exception should have been thrown");
         } catch(IllegalStateException ex) {
             assertThat(ex.getCause(), is(not(nullValue())));
@@ -191,7 +190,7 @@ public class OriginThreadPublisherTest {
 
     @Test
     public void testComplete() {
-        OriginThreadPublisher<Long, Long> publisher = new OriginThreadPublisher<Long, Long>(){};
+        BufferedEmittingPublisher<Long> publisher = new BufferedEmittingPublisher<Long>(){};
         TestSubscriber<Long> subscriber = new TestSubscriber<>();
         publisher.subscribe(subscriber);
         publisher.complete();
@@ -202,7 +201,7 @@ public class OriginThreadPublisherTest {
 
     @Test
     public void testSubmitBadOnNext() {
-        OriginThreadPublisher<Long, Long> publisher = new OriginThreadPublisher<Long, Long>(){};
+        BufferedEmittingPublisher<Long> publisher = new BufferedEmittingPublisher<Long>(){};
         TestSubscriber<Long> subscriber = new TestSubscriber<Long>() {
             @Override
             public void onNext(Long item) {
@@ -211,7 +210,7 @@ public class OriginThreadPublisherTest {
         };
         publisher.subscribe(subscriber);
         subscriber.request1();
-        publisher.submit(15L);
+        publisher.emit(15L);
         assertThat(subscriber.isComplete(), is(equalTo(false)));
         assertThat(subscriber.getLastError(), is(not(nullValue())));
         assertThat(subscriber.getLastError(), is(instanceOf(IllegalStateException.class)));
@@ -220,34 +219,19 @@ public class OriginThreadPublisherTest {
 
     @Test
     public void testRequiresMoreItems() {
-        OriginThreadPublisher<Long, Long> publisher = new OriginThreadPublisher<Long, Long>(){};
+        BufferedEmittingPublisher<Long> publisher = new BufferedEmittingPublisher<Long>(){};
         TestSubscriber<Long> subscriber = new TestSubscriber<>();
         publisher.subscribe(subscriber);
         subscriber.request1();
         assertThat(subscriber.isComplete(), is(equalTo(false)));
-        assertThat(publisher.requiresMoreItems(), is(equalTo(true)));
-    }
-
-    @Test
-    public void testTryAcquire() {
-        OriginThreadPublisher<Long, Long> publisher = new OriginThreadPublisher<Long, Long>(){};
-        TestSubscriber<Long> subscriber = new TestSubscriber<>();
-        publisher.subscribe(subscriber);
-        subscriber.request1();
-        assertThat(publisher.tryAcquire(), is(equalTo(1L)));
-        publisher.submit(15L);
-        assertThat(publisher.tryAcquire(), is(equalTo(0L)));
+        assertThat(publisher.hasRequests(), is(equalTo(true)));
     }
 
     @Test
     public void testHookOnRequested() {
         final AtomicLong requested = new AtomicLong();
-        OriginThreadPublisher<Long, Long> publisher = new OriginThreadPublisher<Long, Long>(){
-            @Override
-            protected void hookOnRequested(long n, long result) {
-                requested.set(n);
-            }
-        };
+        BufferedEmittingPublisher<Long> publisher = new BufferedEmittingPublisher<Long>(){};
+        publisher.onRequest((n, demand) -> requested.set(n));
         TestSubscriber<Long> subscriber = new TestSubscriber<Long>() {
             @Override
             public void onSubscribe(Subscription subscription) {
@@ -260,13 +244,7 @@ public class OriginThreadPublisherTest {
 
     @Test
     public void testHookOnCancel() {
-        final AtomicBoolean canceled = new AtomicBoolean();
-        OriginThreadPublisher<Long, Long> publisher = new OriginThreadPublisher<Long, Long>(){
-            @Override
-            protected void hookOnCancel() {
-                canceled.set(true);
-            }
-        };
+        BufferedEmittingPublisher<Long> publisher = new BufferedEmittingPublisher<Long>();
         TestSubscriber<Long> subscriber = new TestSubscriber<Long>() {
             @Override
             public void onSubscribe(Subscription subscription) {
@@ -274,6 +252,6 @@ public class OriginThreadPublisherTest {
             }
         };
         publisher.subscribe(subscriber);
-        assertThat(canceled.get(), is(equalTo(true)));
+        assertThrows(IllegalStateException.class, () -> publisher.emit(0L));
     }
 }

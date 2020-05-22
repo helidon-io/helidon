@@ -27,7 +27,7 @@ import java.util.logging.Logger;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
-import io.helidon.common.reactive.OriginThreadPublisher;
+import io.helidon.common.reactive.BufferedEmittingPublisher;
 import io.helidon.webclient.spi.WebClientService;
 
 import io.netty.buffer.ByteBuf;
@@ -85,7 +85,7 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
     @Override
     public void channelReadComplete(ChannelHandlerContext ctx) {
         ctx.flush();
-        if (publisher != null && publisher.tryAcquire() > 0) {
+        if (publisher != null && publisher.hasRequests()) {
             ctx.channel().read();
         }
     }
@@ -169,7 +169,7 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
         // never "else-if" - msg may be an instance of more than one type, we must process all of them
         if (msg instanceof HttpContent) {
             HttpContent content = (HttpContent) msg;
-            publisher.submit(content.content());
+            publisher.emit(content.content());
         }
 
         if (msg instanceof LastHttpContent) {
@@ -202,7 +202,7 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         if (responseFuture.isDone()) {
             // we failed during entity processing
-            publisher.error(cause);
+            publisher.fail(cause);
         } else {
             // we failed before getting response
             responseFuture.completeExceptionally(cause);
@@ -235,52 +235,42 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
         };
     }
 
-    private static final class HttpResponsePublisher extends OriginThreadPublisher<DataChunk, ByteBuf> {
+    private static final class HttpResponsePublisher extends BufferedEmittingPublisher<DataChunk> {
 
         private final ReentrantReadWriteLock.WriteLock lock = new ReentrantReadWriteLock().writeLock();
-        private final ChannelHandlerContext ctx;
 
         HttpResponsePublisher(ChannelHandlerContext ctx) {
-            this.ctx = ctx;
-        }
-
-        @Override
-        protected void hookOnRequested(long n, long result) {
-            if (result == Long.MAX_VALUE) {
-                ctx.channel().config().setAutoRead(true);
-            } else {
-                ctx.channel().config().setAutoRead(false);
-            }
-
-            try {
-                lock.lock();
-                if (super.tryAcquire() > 0) {
-                    ctx.channel().read();
+            super.onRequest((n, cnt) -> {
+                if (super.isUnbounded()) {
+                    ctx.channel().config().setAutoRead(true);
+                } else {
+                    ctx.channel().config().setAutoRead(false);
                 }
-            } finally {
-                lock.unlock();
-            }
+
+                try {
+                    lock.lock();
+                    if (super.hasRequests()) {
+                        ctx.channel().read();
+                    }
+                } finally {
+                    lock.unlock();
+                }
+            });
         }
 
-        @Override
-        public long tryAcquire() {
-            try {
-                lock.lock();
-                return super.tryAcquire();
-            } finally {
-                lock.unlock();
-            }
-        }
 
-        @Override
-        protected DataChunk wrap(ByteBuf buf) {
+
+        public int emit(final ByteBuf buf) {
+            if (super.isCompleted()) {
+                //Seems like old OTP ignored complete and subsequent items were sent even after
+                return 0;
+            }
             buf.retain();
-            return DataChunk.create(false,
-                                    buf.nioBuffer().asReadOnlyBuffer(),
-                                    buf::release,
-                                    true);
+            return super.emit(DataChunk.create(false,
+                    buf.nioBuffer().asReadOnlyBuffer(),
+                    buf::release,
+                    true));
         }
-
     }
 
     final class ResponseCloser {
