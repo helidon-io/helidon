@@ -51,30 +51,30 @@ You need to use the following methods and implement the interface `org.eclipse.m
 [source,java]
 ----
 public class CustomConfigSource implements ConfigSource {
-			String NAME = "MyConfigSource";
-			PRIORITY = 200; // Default for MP is 100
-			Map<String, String> PROPERTIES = mapOf("app.greeting", "Hi");
+        private static final String NAME = "MyConfigSource";
+        private static final int PRIORITY = 200; // Default for MP is 100
+        private static final Map<String, String> PROPERTIES = mapOf("app.greeting", "Hi");
 
 
-	@Override
-	public String getName() { 
+	    @Override
+	    public String getName() { 
 		return NAME; <1>
-	}
+	    }
 
-	@Override
-	public Map<String, String> getProperties() { 
-		return PROPERTIES; <2>
-	}
+	    @Override
+	    public Map<String, String> getProperties() { 
+		    return PROPERTIES; <2>
+	    }
 
-	@Override
-	public String getValue(String key) {
-		return PROPERTIES.get(key); <3>
-	}
+	    @Override
+	    public String getValue(String key) {
+		    return PROPERTIES.get(key); <3>
+	    }
 
-	@Override
-	public int getOrdinal() {
-		return PRIORITY; <4>
-	}
+	    @Override
+	    public int getOrdinal() {
+		    return PRIORITY; <4>
+	    }
 
 }
 ----
@@ -92,18 +92,18 @@ You can use the following methods to create MicroProfile Config Sources to manua
 |===
 |Method |Description
 
-|`systemProperties()}`   |System properties config source.
+|`systemProperties()`   |System properties config source.
 
-|`environmentVariables()}`   |Environment variables config source.
+|`environmentVariables()`   |Environment variables config source.
 
-|`create(java.nio.file.Path)}`   |Loads a properties file from file system. +
-To load the properties file from file system with custom name, use `create(String, java.nio.file.Path)}`.
+|`create(java.nio.file.Path)`   |Loads a properties file from file system. +
+To load the properties file from file system with custom name, use `create(String, java.nio.file.Path)`.
 
-|`create(java.util.Map)}`   |Creates an in-memory source from map. +
-To create an in-memory source from map with custom name, use `create(String, java.util.Map)}`.
+|`create(java.util.Map)`   |Creates an in-memory source from map. +
+To create an in-memory source from map with custom name, use `create(String, java.util.Map)`.
 
-|`create(java.util.Properties)}`   |Creates an in-memory source from properties. +
-To create an in-memory source from properties with custom name, use `create(String, java.util.Properties)}`.
+|`create(java.util.Properties)`   |Creates an in-memory source from properties. +
+To create an in-memory source from properties with custom name, use `create(String, java.util.Properties)`.
 
 |===
 
@@ -126,22 +126,34 @@ org.eclipse.microprofile.config.Config mpConfig = ConfigProviderResolver.instanc
 
 == Creating MicroProfile Config Source from Helidon SE Config Source
 
-You can create MicroProfile Config Source from Helidon SE Config Source to use Helidon SE features in Helidon MP. The Config Source is immutable regardless of configured polling strategy or change watchers.
+To use the Helidon SE features in Helidon MP, create MicroProfile Config Source from Helidon SE Config Source. The Config Source is immutable regardless of configured polling strategy or change watchers.
 
-
-// Please provide example
-
+----
+Config config = ConfigProviderResolver.instance()
+                .getBuilder()
+                .withSources(MpConfigSources.create(helidonConfigSource) <1>
+                .build();
+----
+<1> Creates a MicroProfile config instance using Helidon Config Source.
 
 == Creating MicroProfile Config Source from Helidon SE Config Instance
 
-You can create MicroProfile Config Source from Helidon SE Config to use advanced Helidon SE features in Helidon MP. The Config Source is mutable if the config uses either polling strategy and change watchers or polling strategy or change watchers.
+To use advanced Helidon SE features in Helidon MP, create MicroProfile Config Source from Helidon SE Config. The Config Source is mutable if the config uses either polling strategy and change watchers, or polling strategy or change watchers.
 The latest config version is queried each time  `org.eclipse.microprofile.config.spi.ConfigSource#getValue(String)` is called.
 
-//Please provide example
+----
+Config config = ConfigProviderResolver.instance()
+                .getBuilder()
+                .withSources(MpConfigSources.create(helidonConfig)) <1>
+                .build();
+----
+
+<1> Creates a MicroProfile config instance using Helidon Config.
+
 
 == Create Yaml MicroProfile Config Source Programatically
 
-You can create Yaml Microprofile Config Source from a path or a URL. When you create a MicroProfile instance from the builder, the `YamlMPConfigSource` allows you to edit the list of config sources and creates a custom YAML.
+You can create Yaml Microprofile Config Source from a path or a URL. When you create a MicroProfile instance from the builder, the `YamlMpConfigSource` allows you to create a custom Config Source and register it with the builder.
 
 
 === Example
@@ -149,7 +161,8 @@ You can create Yaml Microprofile Config Source from a path or a URL. When you cr
 [source,java]
 .Create YamlMPConfigSource from a path 
 ----
-public static ConfigSource create(Path path)
-        return create(path.toUri.toURL()); 
+ConfigProviderResolver.instance().newBuilder()
+        .withSources(YamlMpConfigSource.create(path))
+        .build()
 ----
 
