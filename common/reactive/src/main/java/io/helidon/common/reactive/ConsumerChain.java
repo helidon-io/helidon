@@ -12,6 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package io.helidon.common.reactive;
@@ -19,9 +20,12 @@ package io.helidon.common.reactive;
 import java.util.ArrayList;
 import java.util.function.Consumer;
 
-class ConsumerChain<T>
-        extends ArrayList<Consumer<? super T>>
-        implements Consumer<T> {
+/**
+ * Holds a list of {@link java.util.function.Consumer}s to flatten out a call chain of them.
+ *
+ * @param <T> the element type to accept
+ */
+class ConsumerChain<T> extends ArrayList<Consumer<? super T>> implements Consumer<T> {
 
     @Override
     public void accept(T t) {
@@ -30,16 +34,15 @@ class ConsumerChain<T>
         }
     }
 
-    public ConsumerChain<T> combineWith(Consumer<? super T> another) {
+    ConsumerChain<T> combineWith(Consumer<? super T> another) {
         ConsumerChain<T> newChain = new ConsumerChain<>();
         newChain.addAll(this);
         newChain.add(another);
         return newChain;
     }
 
-    public static <T> Consumer<T> combine(
-            Consumer<T> current,
-            Consumer<T> another) {
+    @SuppressWarnings("unchecked")
+    static <T> Consumer<? super T> combine(Consumer<? super T> current, Consumer<? super T> another) {
         if (current == null) {
             return another;
         }

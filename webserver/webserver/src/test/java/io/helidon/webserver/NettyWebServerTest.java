@@ -39,6 +39,7 @@ import org.hamcrest.collection.IsCollectionWithSize;
 import org.hamcrest.core.Is;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.config.testing.OptionalMatcher.present;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -92,8 +93,8 @@ public class NettyWebServerTest {
                         });
                     }, (Throwable ex) -> {
                         LOGGER.log(Level.WARNING,
-                                "An error occurred during the flow consumption!",
-                                ex);
+                                   "An error occurred during the flow consumption!",
+                                   ex);
                     }, () -> {
                         System.out.println("Final execution");
                         responsePublisher.close();
@@ -102,7 +103,7 @@ public class NettyWebServerTest {
                         subscription.set(s);
                         s.request(1);
                         bres.writeStatusAndHeaders(Http.Status.CREATED_201,
-                                Collections.emptyMap());
+                                                   Collections.emptyMap());
                     });
                 }))
                 .build();
@@ -119,7 +120,7 @@ public class NettyWebServerTest {
     public void testShutdown() throws Exception {
         WebServer webServer = WebServer.create(
                 routing((bareRequest, bareResponse) -> {
-        }));
+                }));
 
         long startNanos = System.nanoTime();
         webServer.start().toCompletableFuture().get(10, TimeUnit.SECONDS);
@@ -128,9 +129,9 @@ public class NettyWebServerTest {
         long endNanos = System.nanoTime();
 
         System.out.println("Start took: " + TimeUnit.MILLISECONDS.convert(shutdownStartNanos - startNanos,
-                TimeUnit.NANOSECONDS) + " ms.");
+                                                                          TimeUnit.NANOSECONDS) + " ms.");
         System.out.println("Shutdown took: " + TimeUnit.MILLISECONDS.convert(endNanos - shutdownStartNanos,
-                TimeUnit.NANOSECONDS) + " ms.");
+                                                                             TimeUnit.NANOSECONDS) + " ms.");
     }
 
     @Test
@@ -138,29 +139,28 @@ public class NettyWebServerTest {
         WebServer webServer = WebServer.create(Routing.builder());
 
         webServer.start()
-                 .toCompletableFuture()
-                 .join();
+                .toCompletableFuture()
+                .join();
 
         try {
             assertThat(webServer.port(), greaterThan(0));
             assertThat(webServer.configuration().sockets().entrySet(), IsCollectionWithSize.hasSize(1));
             assertThat(webServer.configuration().sockets()
-                    .get(WebServer.DEFAULT_SOCKET_NAME).port(), Is.is(webServer.configuration().port()));
+                               .get(WebServer.DEFAULT_SOCKET_NAME).port(), Is.is(webServer.configuration().port()));
         } finally {
             webServer.shutdown()
-                     .toCompletableFuture()
-                     .join();
+                    .toCompletableFuture()
+                    .join();
         }
     }
 
     @Test
     public void testMultiplePortsSuccessStart() throws Exception {
-        SocketConfiguration emptySocket = SocketConfiguration.DEFAULT;
         WebServer webServer = WebServer.builder()
-                .addSocket("1", emptySocket)
-                .addSocket("2", emptySocket)
-                .addSocket("3", emptySocket)
-                .addSocket("4", emptySocket)
+                .addSocket(SocketConfiguration.create("1"))
+                .addSocket(SocketConfiguration.create("2"))
+                .addSocket(SocketConfiguration.create("3"))
+                .addSocket(SocketConfiguration.create("4"))
                 .build();
 
         webServer.start()
@@ -171,15 +171,15 @@ public class NettyWebServerTest {
             assertThat(webServer.port(), greaterThan(0));
             assertThat(webServer.port("1"), allOf(greaterThan(0), not(webServer.port())));
             assertThat(webServer.port("2"),
-                    allOf(greaterThan(0), not(webServer.port()), not(webServer.port("1"))));
+                       allOf(greaterThan(0), not(webServer.port()), not(webServer.port("1"))));
             assertThat(webServer.port("3"),
-                    allOf(greaterThan(0), not(webServer.port()), not(webServer.port("1")), not(webServer.port("2"))));
+                       allOf(greaterThan(0), not(webServer.port()), not(webServer.port("1")), not(webServer.port("2"))));
             assertThat(webServer.port("4"),
-                    allOf(greaterThan(0),
-                            not(webServer.port()),
-                            not(webServer.port("1")),
-                            not(webServer.port("2")),
-                            not(webServer.port("3"))));
+                       allOf(greaterThan(0),
+                             not(webServer.port()),
+                             not(webServer.port("1")),
+                             not(webServer.port("2")),
+                             not(webServer.port("3"))));
         } finally {
             webServer.shutdown()
                     .toCompletableFuture()
@@ -192,7 +192,7 @@ public class NettyWebServerTest {
         int samePort = 9999;
         WebServer webServer = WebServer.builder()
                 .port(samePort)
-                .addSocket("third", SocketConfiguration.builder().port(samePort))
+                .addSocket(SocketConfiguration.builder().port(samePort).name("third"))
                 .build();
 
         assertStartFailure(webServer);
@@ -201,16 +201,16 @@ public class NettyWebServerTest {
     @Test
     public void testManyPortsButTwoTheSame() throws Exception {
         int samePort = 9999;
-        SocketConfiguration empty = SocketConfiguration.DEFAULT;
-
         WebServer webServer = WebServer.builder()
                 .port(samePort)
-                .addSocket("1", empty)
-                .addSocket("2", SocketConfiguration.builder().port(samePort))
-                .addSocket("3", empty)
-                .addSocket("4", empty)
-                .addSocket("5", empty)
-                .addSocket("6", empty)
+                .addSocket(SocketConfiguration.create("1"))
+                .addSocket(SocketConfiguration.builder()
+                        .name("2")
+                        .port(samePort))
+                .addSocket(SocketConfiguration.create("3"))
+                .addSocket(SocketConfiguration.create("4"))
+                .addSocket(SocketConfiguration.create("5"))
+                .addSocket(SocketConfiguration.create("6"))
                 .build();
 
         assertStartFailure(webServer);
@@ -229,8 +229,8 @@ public class NettyWebServerTest {
             assertThat(e.getMessage(), containsString("WebServer was unable to start"));
             CompletableFuture<WebServer> shutdownFuture = webServer.whenShutdown().toCompletableFuture();
             assertThat("Shutdown future not as expected: " + shutdownFuture,
-                    shutdownFuture.isDone() && !shutdownFuture.isCompletedExceptionally(),
-                    is(true));
+                       shutdownFuture.isDone() && !shutdownFuture.isCompletedExceptionally(),
+                       is(true));
 
         } catch (Exception e) {
             fail("No other exception expected!", e);
@@ -245,7 +245,7 @@ public class NettyWebServerTest {
     public void unpairedRoutingCausesAFailure() throws Exception {
         try {
             WebServer webServer = WebServer.builder()
-                    .addSocket("matched", SocketConfiguration.builder())
+                    .addSocket(SocketConfiguration.create("matched"))
                     .addNamedRouting("unmatched-first", Routing.builder())
                     .addNamedRouting("matched", Routing.builder())
                     .addNamedRouting("unmatched-second", Routing.builder())
@@ -261,7 +261,7 @@ public class NettyWebServerTest {
     @Test
     public void additionalPairedRoutingsDoWork() {
         WebServer webServer = WebServer.builder()
-                .addSocket("matched", SocketConfiguration.builder())
+                .addSocket(SocketConfiguration.create("matched"))
                 .addNamedRouting("matched", Routing.builder())
                 .build();
 
@@ -271,9 +271,12 @@ public class NettyWebServerTest {
     @Test
     public void additionalCoupledPairedRoutingsDoWork() {
         WebServer webServer = WebServer.builder()
-                .addSocket("matched", SocketConfiguration.builder().build(), Routing.builder().build())
+                .addSocket(SocketConfiguration.builder()
+                                   .name("matched")
+                                   .build(),
+                           Routing.builder().build())
                 .build();
 
-        assertThat(webServer.configuration().namedSocket("matched"), notNullValue());
+        assertThat(webServer.configuration().namedSocket("matched"), present());
     }
 }

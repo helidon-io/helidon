@@ -22,9 +22,9 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>io.helidon.archetypes</groupId>
-        <artifactId>helidon-archetypes-se</artifactId>
+        <artifactId>helidon-archetypes-mp</artifactId>
         <version>2.0.0-SNAPSHOT</version>
     </parent>
-    <artifactId>helidon-archetypes-se-basic</artifactId>
-    <name>Helidon Template Application SE basic</name>
+    <artifactId>helidon-archetypes-mp-bare</artifactId>
+    <name>Helidon Template Application MP bare</name>
 </project>

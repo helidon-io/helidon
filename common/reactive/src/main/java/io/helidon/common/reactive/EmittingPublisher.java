@@ -41,13 +41,13 @@ import java.util.function.BiConsumer;
  * @param <T> type of emitted item
  */
 public class EmittingPublisher<T> implements Flow.Publisher<T> {
-    private Flow.Subscriber<? super T> subscriber;
+    private volatile Flow.Subscriber<? super T> subscriber;
     private final AtomicReference<State> state = new AtomicReference<>(State.NOT_REQUESTED_YET);
     private final AtomicLong requested = new AtomicLong();
     private final AtomicBoolean emitting = new AtomicBoolean(false);
     private final AtomicBoolean subscribed = new AtomicBoolean(false);
     private final CompletableFuture<Void> deferredComplete = new CompletableFuture<>();
-    private BiConsumer<Long, Long> requestCallback = (n, r) -> {};
+    private BiConsumer<Long, Long> requestCallback = null;
     private Runnable onSubscribeCallback = () -> {};
     private Runnable cancelCallback = () -> {};
 
@@ -80,7 +80,7 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
         subscriber.onSubscribe(new Flow.Subscription() {
             @Override
             public void request(final long n) {
-                if (state.get() == State.CANCELLED) {
+                if (state.get().isTerminated()) {
                     return;
                 }
                 if (n < 1) {
@@ -89,7 +89,9 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
                 }
                 requested.updateAndGet(r -> Long.MAX_VALUE - r > n ? n + r : Long.MAX_VALUE);
                 state.compareAndSet(State.NOT_REQUESTED_YET, State.READY_TO_EMIT);
-                requestCallback.accept(n, requested.get());
+                if (requestCallback != null) {
+                    requestCallback.accept(n, requested.get());
+                }
             }
 
             @Override
@@ -135,7 +137,13 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
                     if (emitting.getAndSet(true)) {
                         continue;
                     }
-                    this.subscriber.onError(throwable);
+                    Flow.Subscriber<? super T> subscriber = this.subscriber;
+                    if (subscriber == null) {
+                        // cancel released the reference already
+                        return;
+                    }
+                    EmittingPublisher.this.subscriber = null;
+                    subscriber.onError(throwable);
                     return;
                 } catch (Throwable t) {
                     throw new IllegalStateException("On error threw an exception!", t);
@@ -154,8 +162,13 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
                     if (emitting.getAndSet(true)) {
                         continue;
                     }
-                    this.subscriber.onComplete();
+                    Flow.Subscriber<? super T> subscriber = this.subscriber;
+                    if (subscriber == null) {
+                        // cancel released the reference already
+                        return;
+                    }
                     EmittingPublisher.this.subscriber = null;
+                    subscriber.onComplete();
                     return;
                 } finally {
                     emitting.set(false);
@@ -252,7 +265,11 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
      * @param requestCallback to be executed
      */
     public void onRequest(BiConsumer<Long, Long> requestCallback) {
-        this.requestCallback = BiConsumerChain.combine(this.requestCallback, requestCallback);
+        if (this.requestCallback == null) {
+            this.requestCallback = requestCallback;
+        } else {
+            this.requestCallback = BiConsumerChain.combine(this.requestCallback, requestCallback);
+        }
     }
 
     private boolean boundedEmit(T item){
@@ -262,6 +279,11 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
                     // race against parallel emits
                     // only those can decrement counter
                     continue;
+                }
+                Flow.Subscriber<? super T> subscriber = this.subscriber;
+                if (subscriber == null) {
+                    // cancel released the reference
+                    return false;
                 }
                 if (requested.getAndUpdate(r -> r > 0 ? r != Long.MAX_VALUE ? r - 1 : Long.MAX_VALUE : 0) < 1) {
                     // there is a chance racing request will increment counter between this check and onNext
@@ -299,6 +321,11 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
             <T> boolean emit(EmittingPublisher<T> publisher, T item) {
                 return false;
             }
+
+            @Override
+            boolean isTerminated() {
+                return false;
+            }
         },
         READY_TO_EMIT {
             @Override
@@ -309,11 +336,21 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
                     return publisher.boundedEmit(item);
                 }
             }
+
+            @Override
+            boolean isTerminated() {
+                return false;
+            }
         },
         CANCELLED {
             @Override
             <T> boolean emit(EmittingPublisher<T> publisher, T item) {
                 return false;
+            }
+
+            @Override
+            boolean isTerminated() {
+                return true;
             }
         },
         FAILED {
@@ -321,15 +358,26 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
             <T> boolean emit(EmittingPublisher<T> publisher, T item) {
                 return false;
             }
+
+            @Override
+            boolean isTerminated() {
+                return true;
+            }
         },
         COMPLETED {
             @Override
             <T> boolean emit(EmittingPublisher<T> publisher, T item) {
                 throw new IllegalStateException("Emitter is completed!");
             }
+
+            @Override
+            boolean isTerminated() {
+                return true;
+            }
         };
 
         abstract <T> boolean emit(EmittingPublisher<T> publisher, T item);
+        abstract boolean isTerminated();
 
     }
 }

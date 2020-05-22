@@ -145,7 +145,7 @@ public class MultiPortTest {
 
                         .build())
                 .tls(tlsConfig)
-                .addSocket("plain", SocketConfiguration.builder())
+                .addSocket(SocketConfiguration.create("plain"))
                 .addNamedRouting("plain",
                                  Routing.builder()
                                          .get("/overridden", (req, res) -> res.send("Overridden 8080"))
@@ -174,8 +174,9 @@ public class MultiPortTest {
                         .get("/overridden", (req, res) -> res.send("Overridden BOTH"))
                         .get("/", commonHandler)
                         .get("/variable", (req, res) -> res.send("Variable BOTH")))
-                .addSocket("secured", SocketConfiguration.builder()
-                        .tls(tlsConfig))
+                .addSocket(SocketConfiguration.builder()
+                                   .name("secured")
+                                   .tls(tlsConfig))
                 .build();
 
         webServer.start()
@@ -197,7 +198,7 @@ public class MultiPortTest {
         webServer = WebServer.builder(Routing.builder()
                                               .get("/foo", commonHandler))
                 .tls(tlsConfig)
-                .addSocket("redirect", SocketConfiguration.builder())
+                .addSocket(SocketConfiguration.create("redirect"))
                 .addNamedRouting("redirect",
                                  Routing.builder()
                                          .any((req, res) -> {

@@ -40,9 +40,8 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
     private final AtomicBoolean draining = new AtomicBoolean(false);
     private final AtomicBoolean emitting = new AtomicBoolean(false);
     private final AtomicReference<Throwable> error = new AtomicReference<>();
-    private BiConsumer<Long, Long> requestCallback = (n, r) -> {};
-    private Consumer<T> emitCallback = (i) -> {};
-    private Runnable cancelCallback = () -> {};
+    private BiConsumer<Long, Long> requestCallback = null;
+    private Consumer<? super T> onEmitCallback = null;
 
     protected BufferedEmittingPublisher() {
     }
@@ -61,13 +60,12 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
     public void subscribe(final Flow.Subscriber<? super T> subscriber) {
         emitter.onSubscribe(() -> state.get().drain(this));
         emitter.onRequest((n, cnt) -> {
-            requestCallback.accept(n, cnt);
+            if (requestCallback != null) {
+                requestCallback.accept(n, cnt);
+            }
             state.get().drain(this);
         });
-        emitter.onCancel(() -> {
-            cancelCallback.run();
-            state.compareAndSet(State.READY_TO_EMIT, State.CANCELLED);
-        });
+        emitter.onCancel(() -> state.compareAndSet(State.READY_TO_EMIT, State.CANCELLED));
         emitter.subscribe(subscriber);
     }
 
@@ -82,26 +80,27 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
      * @param requestCallback to be executed
      */
     public void onRequest(BiConsumer<Long, Long> requestCallback) {
-        this.requestCallback = BiConsumerChain.combine(this.requestCallback, requestCallback);
+        if (this.requestCallback == null) {
+            this.requestCallback = requestCallback;
+        } else {
+            this.requestCallback = BiConsumerChain.combine(this.requestCallback, requestCallback);
+        }
     }
 
     /**
-     * Executed when cancel signal from downstream arrive.
-     * If the callback is already registered, old one is removed.
+     * Callback executed right after {@code onNext} is actually sent.
+     * <ul>
+     * <li><b>param</b> {@code i} sent item</li>
+     * </ul>
      *
-     * @param cancelCallback to be executed
+     * @param onEmitCallback to be executed
      */
-    public void onCancel(Runnable cancelCallback) {
-        this.cancelCallback = RunnableChain.combine(this.cancelCallback, cancelCallback);
-    }
-
-    /**
-     * Callback executed when each item is successfully emitted.
-     *
-     * @param emitCallback to be executed
-     */
-    public void onEmit(Consumer<T> emitCallback) {
-        this.emitCallback = ConsumerChain.combine(this.emitCallback, emitCallback);
+    public void onEmit(Consumer<T> onEmitCallback) {
+        if (this.onEmitCallback == null) {
+            this.onEmitCallback = onEmitCallback;
+        } else {
+            this.onEmitCallback = ConsumerChain.combine(this.onEmitCallback, onEmitCallback);
+        }
     }
 
     /**
@@ -217,10 +216,12 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
     private void drainBuffer() {
         if (!draining.getAndSet(true)) {
             while (!buffer.isEmpty()) {
-                T item = buffer.peek();
-                if (emitter.emit(item)) {
-                    emitCallback.accept(item);
-                    buffer.poll();
+                if (emitter.emit(buffer.peek())) {
+                    if (onEmitCallback != null) {
+                        onEmitCallback.accept(buffer.poll());
+                    } else {
+                        buffer.poll();
+                    }
                 } else {
                     break;
                 }
@@ -245,6 +246,9 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
                 if (buffer.isEmpty() && emitter.emit(item)) {
                     // Buffer drained, emit successful
                     // saved time by skipping buffer
+                    if (onEmitCallback != null) {
+                        onEmitCallback.accept(item);
+                    }
                     return 0;
                 } else {
                     //safe slower path thru buffer

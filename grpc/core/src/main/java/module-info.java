@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+import io.helidon.grpc.core.JavaMarshaller;
+import io.helidon.grpc.core.JsonbMarshaller;
+import io.helidon.grpc.core.MarshallerSupplier;
+
 /**
  * gRPC Core Module.
  */
@@ -37,8 +41,15 @@ module io.helidon.grpc.core {
     requires transitive com.google.protobuf;
 
     requires java.annotation;
+    requires static java.json.bind;
     requires java.logging;
     requires java.naming;
 
     requires jakarta.inject.api;
+
+    provides MarshallerSupplier with
+            MarshallerSupplier.DefaultMarshallerSupplier,
+            MarshallerSupplier.ProtoMarshallerSupplier,
+            JavaMarshaller.Supplier,
+            JsonbMarshaller.Supplier;
 }
