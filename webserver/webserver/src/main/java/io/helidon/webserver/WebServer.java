@@ -609,9 +609,27 @@ public interface WebServer {
          * @param name                the name of the additional server socket configuration
          * @param socketConfiguration the additional named server socket configuration, never null
          * @return an updated builder
+         * @deprecated since 2.0.0, please use {@link #addSocket(SocketConfiguration)} instead, name
+         * is now part of socket configuration
          */
+        @Deprecated
         public Builder addSocket(String name, SocketConfiguration socketConfiguration) {
             configurationBuilder.addSocket(name, Objects.requireNonNull(socketConfiguration));
+            return this;
+        }
+
+        /**
+         * Adds an additional named server socket configuration. As a result, the server will listen
+         * on multiple ports.
+         * <p>
+         * An additional named server socket may have a dedicated {@link Routing} configured
+         * through {@link io.helidon.webserver.WebServer.Builder#addNamedRouting(String, Routing)}.
+         *
+         * @param config the additional named server socket configuration, never null
+         * @return an updated builder
+         */
+        public Builder addSocket(SocketConfiguration config) {
+            configurationBuilder.addSocket(config.name(), config);
             return this;
         }
 
@@ -626,26 +644,47 @@ public interface WebServer {
          * @param socketConfigurationBuilder the additional named server socket configuration builder; will be built as
          *                                   a first step of this method execution
          * @return an updated builder
+         * @deprecated since 2.0.0, please use {@link #addSocket(Supplier)} instead, name
+         *          is now part of socket configuration
          */
+        @Deprecated
         public Builder addSocket(String name, Supplier<SocketConfiguration> socketConfigurationBuilder) {
             configurationBuilder.addSocket(name, socketConfigurationBuilder);
             return this;
         }
 
         /**
+         * Adds an additional named server socket configuration builder. As a result, the server will listen
+         * on multiple ports.
+         * <p>
+         * An additional named server socket may have a dedicated {@link Routing} configured
+         * through {@link io.helidon.webserver.WebServer.Builder#addNamedRouting(String, Routing)}.
+         *
+         * @param socketConfigurationBuilder the additional named server socket configuration builder; will be built as
+         *                                   a first step of this method execution
+         * @return an updated builder
+         */
+        public Builder addSocket(Supplier<SocketConfiguration> socketConfigurationBuilder) {
+            SocketConfiguration socketConfiguration = socketConfigurationBuilder.get();
+
+            configurationBuilder.addSocket(socketConfiguration.name(), socketConfiguration);
+            return this;
+        }
+
+        /**
          * Add a named socket and routing.
          *
-         * @param name name of the socket
-         * @param socketConfiguration configuration of the socket
+         * @param socketConfiguration named configuration of the socket
          * @param routing routing to use for this socket
          *
          * @return an updated builder
          */
-        public Builder addSocket(String name, SocketConfiguration socketConfiguration, Routing routing) {
-            addSocket(name, socketConfiguration);
-            addNamedRouting(name, routing);
+        public Builder addSocket(SocketConfiguration socketConfiguration, Routing routing) {
+            addSocket(socketConfiguration);
+            addNamedRouting(socketConfiguration.name(), routing);
             return this;
         }
+
 
         /**
          * Sets an <a href="http://opentracing.io">opentracing.io</a>

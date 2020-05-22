@@ -119,6 +119,12 @@ class NettyWebServer implements WebServer {
         for (Map.Entry<String, SocketConfiguration> entry : sockets) {
             String name = entry.getKey();
             SocketConfiguration soConfig = entry.getValue();
+
+            if (!soConfig.enabled()) {
+                LOGGER.info("Channel '" + name + "' is disabled.");
+                continue;
+            }
+
             ServerBootstrap bootstrap = new ServerBootstrap();
             // Transform java SSLContext into Netty SslContext
             JdkSslContext sslContext = null;

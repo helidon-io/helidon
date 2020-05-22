@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
+import java.util.logging.Logger;
 
 import javax.net.ssl.SSLContext;
 
@@ -536,7 +537,8 @@ public interface ServerConfiguration extends SocketConfiguration {
             if (config == null) {
                 return this;
             }
-            configureSocket(config, defaultSocketBuilder);
+
+            defaultSocketBuilder.config(config);
 
             DeprecatedConfig.get(config, "worker-count", "workers")
                     .asInt()
@@ -547,9 +549,36 @@ public interface ServerConfiguration extends SocketConfiguration {
             // sockets
             Config socketsConfig = config.get("sockets");
             if (socketsConfig.exists()) {
-                for (Config socketConfig : socketsConfig.asNodeList().orElse(List.of())) {
-                    String socketName = socketConfig.name();
-                    sockets.put(socketName, configureSocket(socketConfig, SocketConfiguration.builder()).build());
+                List<Config> socketConfigs = socketsConfig.asNodeList().orElse(List.of());
+                for (Config socketConfig : socketConfigs) {
+                    // the whole section checking the socket name can be removed
+                    // when we remove deprecated methods with socket name on server builder
+                    String socketName;
+
+                    String nodeName = socketConfig.name();
+                    Optional<String> maybeSocketName = socketConfig.get("name").asString().asOptional();
+
+                    socketName = maybeSocketName.orElse(nodeName);
+
+                    // log warning for deprecated config
+                    try {
+                        Integer.parseInt(nodeName);
+                        if (socketName.equals(nodeName) && maybeSocketName.isEmpty()) {
+                            throw new ConfigException("Cannot find \"name\" key for socket configuration " + socketConfig.key());
+                        }
+                    } catch (NumberFormatException e) {
+                        // this is old approach
+                        Logger.getLogger(SocketConfigurationBuilder.class.getName())
+                                .warning("Socket configuration at " + socketConfig.key() + " is deprecated. Please use an array "
+                                                 + "with \"name\" key to define the socket name.");
+                    }
+
+                    SocketConfiguration socket = SocketConfiguration.builder()
+                            .name(socketName)
+                            .config(socketConfig)
+                            .build();
+
+                    sockets.put(socket.name(), socket);
                 }
             }
 
@@ -568,42 +597,6 @@ public interface ServerConfiguration extends SocketConfiguration {
             }
 
             return this;
-        }
-
-        private SocketConfiguration.Builder configureSocket(Config config, SocketConfiguration.Builder soConfigBuilder) {
-
-            config.get("port").asInt().ifPresent(soConfigBuilder::port);
-            config.get("bind-address")
-                    .asString()
-                    .map(this::string2InetAddress)
-                    .ifPresent(soConfigBuilder::bindAddress);
-            config.get("backlog").asInt().ifPresent(soConfigBuilder::backlog);
-            DeprecatedConfig.get(config, "timeout-millis", "timeout")
-                    .asInt()
-                    .ifPresent(soConfigBuilder::timeoutMillis);
-            DeprecatedConfig.get(config, "receive-buffer-size", "receive-buffer")
-                    .asInt()
-                    .ifPresent(soConfigBuilder::receiveBufferSize);
-
-            Optional<List<String>> enabledProtocols = DeprecatedConfig.get(config, "ssl.protocols", "ssl-protocols")
-                    .asList(String.class)
-                    .asOptional();
-
-            // ssl
-            Config sslConfig = config.get("ssl");
-            if (sslConfig.exists()) {
-                try {
-                    TlsConfig.Builder builder = TlsConfig.builder();
-                    enabledProtocols.ifPresent(builder::enabledProtocols);
-                    builder.config(sslConfig);
-
-                    soConfigBuilder.tls(builder.build());
-                } catch (IllegalStateException e) {
-                    throw new ConfigException("Cannot load SSL configuration.", e);
-                }
-            }
-
-            return soConfigBuilder;
         }
 
         /**
