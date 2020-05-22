@@ -19,8 +19,10 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -41,6 +43,10 @@ final class MetaConfigFinder {
     private static final List<String> CONFIG_SUFFIXES = List.of("yaml", "conf", "json", "properties");
     private static final String META_CONFIG_PREFIX = "meta-config.";
     private static final String CONFIG_PREFIX = "application.";
+    // set of files/classpath resources that were found yet we have no parser configured for them
+    // limit logging to once per file
+    private static final Set<String> FILES_LOGGED = new HashSet<>();
+    private static final Set<String> CLASSPATH_LOGGED = new HashSet<>();
 
     private MetaConfigFinder() {
     }
@@ -85,9 +91,12 @@ final class MetaConfigFinder {
                                                      String type) {
         Optional<ConfigSource> source;
 
+        Set<String> invalidSuffixes = new HashSet<>(CONFIG_SUFFIXES);
         List<String> validSuffixes = CONFIG_SUFFIXES.stream()
                 .filter(suffix -> supportedMediaType.apply(MediaTypes.detectExtensionType(suffix).orElse("unknown/unknown")))
                 .collect(Collectors.toList());
+
+        validSuffixes.forEach(invalidSuffixes::remove);
 
         //  look into the file system - in current user directory
         source = validSuffixes.stream()
@@ -101,11 +110,39 @@ final class MetaConfigFinder {
         }
 
         // and finally try to find meta configuration on classpath
-        return validSuffixes.stream()
+        source = validSuffixes.stream()
                 .map(suf -> configPrefix + suf)
                 .map(resource -> MetaConfigFinder.findClasspath(cl, resource, type))
                 .flatMap(Optional::stream)
                 .findFirst();
+
+        if (source.isPresent()) {
+            return source;
+        }
+
+        // now let's see if we have one of the invalid suffixes available
+        invalidSuffixes.stream()
+                .map(suf -> configPrefix + suf)
+                .forEach(it -> {
+                    Optional<ConfigSource> found = findFile(it, type);
+                    if (found.isPresent()) {
+                        if (FILES_LOGGED.add(it)) {
+                            LOGGER.warning("Configuration file "
+                                                   + it
+                                                   + " is on file system, yet there is no parser configured for it");
+                        }
+                    }
+                    found = MetaConfigFinder.findClasspath(cl, it, type);
+                    if (found.isPresent()) {
+                        if (CLASSPATH_LOGGED.add(it)) {
+                            LOGGER.warning("Configuration file "
+                                                   + it
+                                                   + " is on classpath, yet there is no parser configured for it");
+                        }
+                    }
+                });
+
+        return Optional.empty();
     }
 
     private static Optional<ConfigSource> findFile(String name, String type) {
