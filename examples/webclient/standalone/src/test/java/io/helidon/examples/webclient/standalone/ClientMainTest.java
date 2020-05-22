@@ -19,14 +19,12 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 
 import io.helidon.common.http.Http;
+import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
-import io.helidon.media.common.MediaSupport;
-import io.helidon.media.jsonp.common.JsonProcessing;
+import io.helidon.media.jsonp.common.JsonpSupport;
 import io.helidon.metrics.RegistryFactory;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientServiceRequest;
@@ -40,7 +38,6 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.iterableWithSize;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -50,7 +47,6 @@ public class ClientMainTest {
 
     private static final MetricRegistry METRIC_REGISTRY = RegistryFactory.getInstance()
             .getRegistry(MetricRegistry.Type.APPLICATION);
-    private static final JsonProcessing JSON_PROCESSING = JsonProcessing.create();
 
     private WebClient webClient;
     private Path testFile;
@@ -74,11 +70,7 @@ public class ClientMainTest {
         WebClient.Builder builder = WebClient.builder()
                 .baseUri("http://localhost:" + port + "/greet")
                 .config(config.get("client"))
-                .mediaSupport(MediaSupport.builder()
-                                      .registerDefaults()
-                                      .registerReader(JSON_PROCESSING.newReader())
-                                      .registerWriter(JSON_PROCESSING.newWriter())
-                                      .build());
+                .addMediaSupport(JsonpSupport.create());
         for (WebClientService service : services) {
             builder.register(service);
         }
@@ -137,7 +129,7 @@ public class ClientMainTest {
         private boolean redirect = false;
 
         @Override
-        public CompletionStage<WebClientServiceRequest> request(WebClientServiceRequest request) {
+        public Single<WebClientServiceRequest> request(WebClientServiceRequest request) {
             request.whenComplete()
                     .thenAccept(response -> {
                         if (response.status() == Http.Status.MOVED_PERMANENTLY_301 && redirect) {
@@ -146,7 +138,7 @@ public class ClientMainTest {
                             fail("There was status 200 without status 301 before it.");
                         }
                     });
-            return CompletableFuture.completedFuture(request);
+            return Single.just(request);
         }
     }
 

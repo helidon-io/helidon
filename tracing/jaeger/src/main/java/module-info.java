@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,9 @@ module io.helidon.tracing.jaeger {
     requires jaeger.client;
     requires jaeger.core;
     requires io.opentracing.noop;
+    // need to explicitly require transitive dependency, as jaeger is not a module
+    requires com.google.gson;
+
 
     exports io.helidon.tracing.jaeger;
 

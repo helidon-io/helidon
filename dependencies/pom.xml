@@ -36,44 +36,50 @@
         <!--
         Changing these versions requires approval for a new third party dependency!
         -->
-        <version.lib.activation-api>1.2.0</version.lib.activation-api>
-        <version.lib.annotation-api>1.3.1</version.lib.annotation-api>
+        <version.lib.activation-api>1.2.2</version.lib.activation-api>
+        <version.lib.animal-sniffer>1.18</version.lib.animal-sniffer>
+        <version.lib.annotation-api>1.3.5</version.lib.annotation-api>
         <version.lib.apache-httpclient>4.5.10</version.lib.apache-httpclient>
         <version.lib.brave-opentracing>0.35.0</version.lib.brave-opentracing>
-        <version.lib.cdi-api>2.0</version.lib.cdi-api>
+        <version.lib.cdi-api>2.0.2</version.lib.cdi-api>
+        <version.lib.commons-logging>1.2</version.lib.commons-logging>
         <version.lib.dropwizard.metrics>4.1.2</version.lib.dropwizard.metrics>
         <version.lib.eclipselink>2.7.4</version.lib.eclipselink>
-        <version.lib.el-api>3.0.0</version.lib.el-api>
-        <version.lib.el-impl>3.0.0</version.lib.el-impl>
+        <version.lib.el-api>3.0.3</version.lib.el-api>
+        <version.lib.el-impl>3.0.2</version.lib.el-impl>
         <version.lib.etcd4j>2.17.0</version.lib.etcd4j>
         <version.lib.failsafe>2.3.1</version.lib.failsafe>
         <version.lib.google-api-client>1.30.5</version.lib.google-api-client>
+        <version.lib.google-error-prone>2.3.3</version.lib.google-error-prone>
         <version.lib.graalvm>19.2.0</version.lib.graalvm>
-        <version.lib.grpc>1.25.0</version.lib.grpc>
+        <version.lib.grpc>1.27.1</version.lib.grpc>
         <version.lib.guava>28.1-jre</version.lib.guava>
         <version.lib.h2>1.4.199</version.lib.h2>
         <version.lib.hamcrest>1.3</version.lib.hamcrest>
         <version.lib.hibernate>5.4.4.Final</version.lib.hibernate>
         <version.lib.hikaricp>3.4.1</version.lib.hikaricp>
         <version.lib.hystrix>1.5.18</version.lib.hystrix>
-        <version.lib.inject>1</version.lib.inject>
-        <version.lib.interceptor-api>1.2.2</version.lib.interceptor-api>
+        <version.lib.inject>1.0</version.lib.inject>
+        <version.lib.interceptor-api>1.2.5</version.lib.interceptor-api>
         <version.lib.jackson>2.10.0</version.lib.jackson>
         <version.lib.jaegertracing>1.1.0</version.lib.jaegertracing>
-        <version.lib.jakarta-persistence-api>2.2.2</version.lib.jakarta-persistence-api>
         <version.lib.jandex>2.1.1.Final</version.lib.jandex>
-        <version.lib.jaxb-api>2.3.0</version.lib.jaxb-api>
+        <version.lib.jaxb-api>2.3.3</version.lib.jaxb-api>
         <version.lib.jaxb-core>2.3.0.1</version.lib.jaxb-core>
         <version.lib.jaxb-impl>2.3.2</version.lib.jaxb-impl>
-        <version.lib.jaxrs-api>2.1</version.lib.jaxrs-api>
-        <version.lib.jboss-transaction-spi>7.6.0.Final</version.lib.jboss-transaction-spi>
+        <version.lib.jaxrs-api>2.1.6</version.lib.jaxrs-api>
+        <version.lib.jboss.classfilewriter>1.2.4.Final</version.lib.jboss.classfilewriter>
+        <version.lib.jboss.logging>3.2.1.Final</version.lib.jboss.logging>
+        <version.lib.jboss.transaction-spi>7.6.0.Final</version.lib.jboss.transaction-spi>
+        <version.lib.jboss.transaction-api>1.0.0.Final</version.lib.jboss.transaction-api>
         <version.lib.jedis>3.1.0</version.lib.jedis>
         <version.lib.jersey>2.30.1</version.lib.jersey>
         <version.lib.jsonb-api>1.0.2</version.lib.jsonb-api>
-        <version.lib.jsonp-api>1.1.2</version.lib.jsonp-api>
-        <version.lib.jsonp-impl>1.1.2</version.lib.jsonp-impl>
-        <version.lib.junit>5.1.0</version.lib.junit>
-        <version.lib.microprofile-config>1.3</version.lib.microprofile-config>
+        <version.lib.jsonp-api>1.1.6</version.lib.jsonp-api>
+        <version.lib.jsonp-impl>1.1.6</version.lib.jsonp-impl>
+        <version.lib.junit>5.6.2</version.lib.junit>
+        <version.lib.maven-wagon>2.10</version.lib.maven-wagon>
+        <version.lib.microprofile-config>1.4</version.lib.microprofile-config>
         <version.lib.microprofile-health>2.1</version.lib.microprofile-health>
         <version.lib.microprofile-jwt>1.1.1</version.lib.microprofile-jwt>
         <version.lib.microprofile-metrics-api>2.2</version.lib.microprofile-metrics-api>
@@ -90,24 +96,30 @@
         <version.lib.narayana>5.9.3.Final</version.lib.narayana>
         <version.lib.netty>4.1.45.Final</version.lib.netty>
         <version.lib.oci-java-sdk-objectstorage>1.10.0</version.lib.oci-java-sdk-objectstorage>
-        <version.lib.ojdbc8>19.3.0.0</version.lib.ojdbc8>
+        <version.lib.ojdbc8>19.6.0.0</version.lib.ojdbc8>
         <version.lib.opentracing>0.33.0</version.lib.opentracing>
         <version.lib.opentracing.grpc>0.2.1</version.lib.opentracing.grpc>
-        <version.lib.persistence-api>2.2</version.lib.persistence-api>
+        <version.lib.opentracing.tracerresolver>0.1.8</version.lib.opentracing.tracerresolver>
+        <version.lib.persistence-api>2.2.3</version.lib.persistence-api>
         <version.lib.prometheus>0.6.0</version.lib.prometheus>
         <version.lib.reactivestreams>1.0.3</version.lib.reactivestreams>
         <version.lib.slf4j>1.7.26</version.lib.slf4j>
         <version.lib.smallrye-openapi>1.2.0</version.lib.smallrye-openapi>
         <version.lib.snakeyaml>1.24</version.lib.snakeyaml>
-        <version.lib.transaction-api>1.3</version.lib.transaction-api>
+        <version.lib.transaction-api>1.3.3</version.lib.transaction-api>
         <version.lib.typesafe-config>1.4.0</version.lib.typesafe-config>
         <version.lib.tyrus>1.15</version.lib.tyrus>
-        <version.lib.ucp>19.3.0.0</version.lib.ucp>
-        <version.lib.validation-api>2.0.1.Final</version.lib.validation-api>
+        <version.lib.ucp>${version.lib.ojdbc8}</version.lib.ucp>
+        <version.lib.validation-api>2.0.2</version.lib.validation-api>
         <version.lib.websockets-api>1.1.2</version.lib.websockets-api>
-        <version.lib.weld>3.1.1.Final</version.lib.weld>
+        <version.lib.weld>3.1.3.Final</version.lib.weld>
+        <version.lib.weld-api>3.1.SP2</version.lib.weld-api>
         <version.lib.yasson>1.0.6</version.lib.yasson>
-        <version.lib.zipkin>2.12.0</version.lib.zipkin>
+        <version.lib.zipkin>2.12.5</version.lib.zipkin>
+        <version.lib.zipkin.sender-urlconnection>2.12.0</version.lib.zipkin.sender-urlconnection>
+        <version.lib.kafka>2.3.1</version.lib.kafka>
+        <version.lib.kafka-junit5>3.2.1</version.lib.kafka-junit5>
+        <version.lib.reactive-streams-tck>1.0.3</version.lib.reactive-streams-tck>
     </properties>
 
     <dependencyManagement>
@@ -144,11 +156,23 @@
                 <groupId>io.jaegertracing</groupId>
                 <artifactId>jaeger-client</artifactId>
                 <version>${version.lib.jaegertracing}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>javax.annotation</groupId>
+                        <artifactId>javax.annotation-api</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>io.opentracing</groupId>
                 <artifactId>opentracing-util</artifactId>
                 <version>${version.lib.opentracing}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>javax.annotation</groupId>
+                        <artifactId>javax.annotation-api</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>io.opentracing</groupId>
@@ -161,8 +185,13 @@
                 <version>${version.lib.opentracing}</version>
             </dependency>
             <dependency>
-                <groupId>javax.xml.bind</groupId>
-                <artifactId>jaxb-api</artifactId>
+                <groupId>io.opentracing.contrib</groupId>
+                <artifactId>opentracing-tracerresolver</artifactId>
+                <version>${version.lib.opentracing.tracerresolver}</version>
+            </dependency>
+            <dependency>
+                <groupId>jakarta.xml.bind</groupId>
+                <artifactId>jakarta.xml.bind-api</artifactId>
                 <version>${version.lib.jaxb-api}</version>
             </dependency>
             <dependency>
@@ -176,38 +205,38 @@
                 <version>${version.lib.jaxb-impl}</version>
             </dependency>
             <dependency>
-                <groupId>javax.ws.rs</groupId>
-                <artifactId>javax.ws.rs-api</artifactId>
+                <groupId>jakarta.ws.rs</groupId>
+                <artifactId>jakarta.ws.rs-api</artifactId>
                 <version>${version.lib.jaxrs-api}</version>
             </dependency>
             <dependency>
-                <groupId>javax.enterprise</groupId>
-                <artifactId>cdi-api</artifactId>
+                <groupId>jakarta.enterprise</groupId>
+                <artifactId>jakarta.enterprise.cdi-api</artifactId>
                 <version>${version.lib.cdi-api}</version>
             </dependency>
             <dependency>
-                <groupId>javax.el</groupId>
-                <artifactId>javax.el-api</artifactId>
+                <groupId>jakarta.el</groupId>
+                <artifactId>jakarta.el-api</artifactId>
                 <version>${version.lib.el-api}</version>
             </dependency>
             <dependency>
-                <groupId>javax.annotation</groupId>
-                <artifactId>javax.annotation-api</artifactId>
+                <groupId>jakarta.annotation</groupId>
+                <artifactId>jakarta.annotation-api</artifactId>
                 <version>${version.lib.annotation-api}</version>
             </dependency>
             <dependency>
-                <groupId>javax.interceptor</groupId>
-                <artifactId>javax.interceptor-api</artifactId>
+                <groupId>jakarta.interceptor</groupId>
+                <artifactId>jakarta.interceptor-api</artifactId>
                 <version>${version.lib.interceptor-api}</version>
             </dependency>
             <dependency>
-                <groupId>javax.inject</groupId>
-                <artifactId>javax.inject</artifactId>
+                <groupId>jakarta.inject</groupId>
+                <artifactId>jakarta.inject-api</artifactId>
                 <version>${version.lib.inject}</version>
             </dependency>
             <dependency>
-                <groupId>javax.json</groupId>
-                <artifactId>javax.json-api</artifactId>
+                <groupId>jakarta.json</groupId>
+                <artifactId>jakarta.json-api</artifactId>
                 <version>${version.lib.jsonp-api}</version>
             </dependency>
             <dependency>
@@ -216,14 +245,19 @@
                 <version>${version.lib.jsonb-api}</version>
             </dependency>
             <dependency>
+                <groupId>jakarta.activation</groupId>
+                <artifactId>jakarta.activation-api</artifactId>
+                <version>${version.lib.activation-api}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.glassfish</groupId>
-                <artifactId>javax.json</artifactId>
+                <artifactId>jakarta.json</artifactId>
                 <version>${version.lib.jsonp-impl}</version>
             </dependency>
             <dependency>
                 <!-- contains the API as well -->
                 <groupId>org.glassfish</groupId>
-                <artifactId>javax.el</artifactId>
+                <artifactId>jakarta.el</artifactId>
                 <version>${version.lib.el-impl}</version>
             </dependency>
             <dependency>
@@ -265,6 +299,13 @@
                 <groupId>org.eclipse</groupId>
                 <artifactId>yasson</artifactId>
                 <version>${version.lib.yasson}</version>
+                <exclusions>
+                    <exclusion>
+                        <!-- we must only have implementation on classpath, not API - module conflict -->
+                        <groupId>jakarta.json</groupId>
+                        <artifactId>jakarta.json-api</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <!-- Config related -->
@@ -289,8 +330,14 @@
                 <version>${version.lib.grpc}</version>
                 <exclusions>
                     <exclusion>
+                        <!-- Used for compilation of "their" sources -->
                         <groupId>com.google.code.findbugs</groupId>
                         <artifactId>jsr305</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <!-- Used for compilation of "their" sources -->
+                        <groupId>com.google.errorprone</groupId>
+                        <artifactId>error_prone_annotations</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -298,6 +345,28 @@
                 <groupId>io.grpc</groupId>
                 <artifactId>grpc-api</artifactId>
                 <version>${version.lib.grpc}</version>
+                <exclusions>
+                    <exclusion>
+                        <!-- Used for compilation of "their" sources -->
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>animal-sniffer-annotations</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <!-- Used for compilation of "their" sources -->
+                        <groupId>com.google.errorprone</groupId>
+                        <artifactId>error_prone_annotations</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <!-- Used for compilation of "their" sources -->
+                        <groupId>com.google.code.findbugs</groupId>
+                        <artifactId>jsr305</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <!-- Used for compilation of "their" sources -->
+                        <groupId>com.google.j2objc</groupId>
+                        <artifactId>j2objc-annotations</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>io.grpc</groupId>
@@ -325,17 +394,18 @@
                 <version>${version.lib.grpc}</version>
             </dependency>
             <dependency>
+                <!-- required for dependency convergence, used from guava and perfmark-api -->
+                <groupId>com.google.errorprone</groupId>
+                <artifactId>error_prone_annotations</artifactId>
+                <version>${version.lib.google-error-prone}</version>
+            </dependency>
+            <dependency>
               <groupId>io.opentracing.contrib</groupId>
               <artifactId>opentracing-grpc</artifactId>
               <version>${version.lib.opentracing.grpc}</version>
             </dependency>
 
             <!-- Webserver related -->
-            <dependency>
-                <groupId>io.zipkin.reporter2</groupId>
-                <artifactId>zipkin-sender-urlconnection</artifactId>
-                <version>${version.lib.zipkin}</version>
-            </dependency>
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
@@ -347,9 +417,34 @@
                 <version>${version.lib.prometheus}</version>
             </dependency>
             <dependency>
+                <groupId>io.zipkin.zipkin2</groupId>
+                <artifactId>zipkin</artifactId>
+                <version>${version.lib.zipkin}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.zipkin.reporter2</groupId>
+                <artifactId>zipkin-sender-urlconnection</artifactId>
+                <version>${version.lib.zipkin.sender-urlconnection}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.opentracing.brave</groupId>
                 <artifactId>brave-opentracing</artifactId>
                 <version>${version.lib.brave-opentracing}</version>
+                <exclusions>
+                    <exclusion>
+                        <!-- failure in dependency convergence -->
+                        <groupId>io.zipkin.reporter2</groupId>
+                        <artifactId>zipkin-reporter</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>io.zipkin.brave</groupId>
+                        <artifactId>brave-tests</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>io.zipkin.zipkin2</groupId>
+                        <artifactId>zipkin</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.reactivestreams</groupId>
@@ -441,6 +536,10 @@
                         <groupId>org.osgi</groupId>
                         <artifactId>org.osgi.annotation.versioning</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>javax.inject</groupId>
+                        <artifactId>javax.inject</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
@@ -485,6 +584,10 @@
                         <groupId>org.osgi</groupId>
                         <artifactId>org.osgi.annotation.versioning</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>javax.inject</groupId>
+                        <artifactId>javax.inject</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
@@ -495,6 +598,39 @@
                     <exclusion>
                         <groupId>org.osgi</groupId>
                         <artifactId>org.osgi.annotation.versioning</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.microprofile.metrics</groupId>
+                <artifactId>microprofile-metrics-api</artifactId>
+                <version>${version.lib.microprofile-metrics-api}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.osgi</groupId>
+                        <artifactId>org.osgi.annotation.versioning</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.microprofile.metrics</groupId>
+                <artifactId>microprofile-metrics-rest-tck</artifactId>
+                <version>${version.lib.microprofile-metrics-api}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.jboss.arquillian.junit</groupId>
+                        <artifactId>arquillian-junit-container</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.microprofile.metrics</groupId>
+                <artifactId>microprofile-metrics-api-tck</artifactId>
+                <version>${version.lib.microprofile-metrics-api}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.jboss.arquillian.junit</groupId>
+                        <artifactId>arquillian-junit-container</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -555,21 +691,16 @@
             <dependency>
                 <groupId>jakarta.persistence</groupId>
                 <artifactId>jakarta.persistence-api</artifactId>
-                <version>${version.lib.jakarta-persistence-api}</version>
-            </dependency>
-            <dependency>
-                <groupId>javax.persistence</groupId>
-                <artifactId>javax.persistence-api</artifactId>
                 <version>${version.lib.persistence-api}</version>
             </dependency>
             <dependency>
-                <groupId>javax.transaction</groupId>
-                <artifactId>javax.transaction-api</artifactId>
+                <groupId>jakarta.transaction</groupId>
+                <artifactId>jakarta.transaction-api</artifactId>
                 <version>${version.lib.transaction-api}</version>
             </dependency>
             <dependency>
-                <groupId>javax.validation</groupId>
-                <artifactId>validation-api</artifactId>
+                <groupId>jakarta.validation</groupId>
+                <artifactId>jakarta.validation-api</artifactId>
                 <version>${version.lib.validation-api}</version>
             </dependency>
             <dependency>
@@ -578,12 +709,12 @@
                 <version>${version.lib.h2}</version>
             </dependency>
             <dependency>
-                <groupId>com.oracle.ojdbc</groupId>
+                <groupId>com.oracle.database.jdbc</groupId>
                 <artifactId>ojdbc8</artifactId>
                 <version>${version.lib.ojdbc8}</version>
             </dependency>
             <dependency>
-                <groupId>com.oracle.ojdbc</groupId>
+                <groupId>com.oracle.database.jdbc</groupId>
                 <artifactId>ucp</artifactId>
                 <version>${version.lib.ucp}</version>
             </dependency>
@@ -600,7 +731,7 @@
                 <exclusions>
                     <exclusion>
                         <groupId>org.glassfish.hk2.external</groupId>
-                        <artifactId>javax.inject</artifactId>
+                        <artifactId>jakarta.inject</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -629,6 +760,20 @@
                 <groupId>org.hibernate</groupId>
                 <artifactId>hibernate-core</artifactId>
                 <version>${version.lib.hibernate}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>javax.persistence</groupId>
+                        <artifactId>javax.persistence-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>javax.activation</groupId>
+                        <artifactId>javax.activation-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>javax.xml.bind</groupId>
+                        <artifactId>jaxb-api</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.jboss.narayana.jta</groupId>
@@ -646,15 +791,85 @@
                 </exclusions>
             </dependency>
             <dependency>
+                <groupId>org.jboss.weld</groupId>
+                <artifactId>weld-api</artifactId>
+                <version>${version.lib.weld-api}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.weld</groupId>
+                <artifactId>weld-core-impl</artifactId>
+                <version>${version.lib.weld}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.weld</groupId>
+                <artifactId>weld-spi</artifactId>
+                <version>${version.lib.weld-api}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.weld.module</groupId>
+                <artifactId>weld-jta</artifactId>
+                <version>${version.lib.weld}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>javax.injects</groupId>
+                        <artifactId>javax.inject</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.jboss.weld</groupId>
+                        <artifactId>weld-core-impl</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
                 <groupId>org.jboss</groupId>
                 <artifactId>jboss-transaction-spi</artifactId>
-                <version>${version.lib.jboss-transaction-spi}</version>
+                <version>${version.lib.jboss.transaction-spi}</version>
                 <exclusions>
                   <exclusion>
                       <groupId>org.jboss.spec.javax.resource</groupId>
                       <artifactId>jboss-connector-api_1.7_spec</artifactId>
                   </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.spec.javax.transaction</groupId>
+                <artifactId>jboss-transaction-api_1.2_spec</artifactId>
+                <version>${version.lib.jboss.transaction-api}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.weld.environment</groupId>
+                <artifactId>weld-environment-common</artifactId>
+                <version>${version.lib.weld}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.weld.probe</groupId>
+                <artifactId>weld-probe-core</artifactId>
+                <version>${version.lib.weld}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.classfilewriter</groupId>
+                <artifactId>jboss-classfilewriter</artifactId>
+                <version>${version.lib.jboss.classfilewriter}</version>
+            </dependency>
+            <dependency>
+                <!-- if needed (as excluded from weld) -->
+                <groupId>org.codehaus.groovy</groupId>
+                <artifactId>groovy-all</artifactId>
+                <version>${version.lib.groovy-all}</version>
+            </dependency>
+            <dependency>
+                <!-- required for dependency convergence, transitive dependency of both
+                commons-configuration (through hystrix-core)
+                org.apache.httpcomponents:httpclient (through health-tck)
+                -->
+                <groupId>commons-logging</groupId>
+                <artifactId>commons-logging</artifactId>
+                <version>${version.lib.commons-logging}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.logging</groupId>
+                <artifactId>jboss-logging</artifactId>
+                <version>${version.lib.jboss.logging}</version>
             </dependency>
             <dependency>
                 <groupId>org.graalvm.sdk</groupId>
@@ -666,7 +881,17 @@
                 <artifactId>svm</artifactId>
                 <version>${version.lib.graalvm}</version>
             </dependency>
-
+            <!-- Kafka support -->
+            <dependency>
+                <groupId>org.apache.kafka</groupId>
+                <artifactId>kafka-clients</artifactId>
+                <version>${version.lib.kafka}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.kafka</groupId>
+                <artifactId>kafka_2.11</artifactId>
+                <version>${version.lib.kafka}</version>
+            </dependency>
             <!-- Testing libraries -->
             <dependency>
                 <groupId>org.mockito</groupId>
@@ -699,9 +924,81 @@
                 <version>${version.lib.hamcrest}</version>
             </dependency>
             <dependency>
-                <groupId>javax.activation</groupId>
-                <artifactId>javax.activation-api</artifactId>
-                <version>${version.lib.activation-api}</version>
+                <groupId>org.glassfish.jersey.media</groupId>
+                <artifactId>jersey-media-json-binding</artifactId>
+                <version>${version.lib.jersey}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.glassfish.hk2.external</groupId>
+                        <artifactId>jakarta.inject</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>jakarta.json</groupId>
+                        <artifactId>jakarta.json-api</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jersey.ext.microprofile</groupId>
+                <artifactId>jersey-mp-rest-client</artifactId>
+                <version>${version.lib.jersey}</version>
+                <exclusions>
+                    <!-- most of these libraries are either bad (javax*), or we need additional exclusions on them -->
+                    <exclusion>
+                        <groupId>org.glassfish.jersey.core</groupId>
+                        <artifactId>jersey-server</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.glassfish.jersey.core</groupId>
+                        <artifactId>jersey-client</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.glassfish.jersey.inject</groupId>
+                        <artifactId>jersey-hk2</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.glassfish.jersey.media</groupId>
+                        <artifactId>jersey-media-json-binding</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.glassfish.jersey.ext.cdi</groupId>
+                        <artifactId>jersey-cdi1x</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.glassfish</groupId>
+                        <artifactId>jsonp-jaxrs</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.eclipse.microprofile.config</groupId>
+                        <artifactId>microprofile-config-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>javax.enterprise</groupId>
+                        <artifactId>cdi-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>javax.el</groupId>
+                        <artifactId>javax.el-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>javax.interceptor</groupId>
+                        <artifactId>javax.interceptor-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>jakarta.json</groupId>
+                        <artifactId>jakarta.json-api</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>com.salesforce.kafka.test</groupId>
+                <artifactId>kafka-junit5</artifactId>
+                <version>${version.lib.kafka-junit5}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.reactivestreams</groupId>
+                <artifactId>reactive-streams-tck</artifactId>
+                <version>${version.lib.reactive-streams-tck}</version>
             </dependency>
             <!-- imported boms -->
             <dependency>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -248,7 +248,8 @@ public interface DataChunk {
      */
     default DataChunk duplicate() {
         byte[] bytes = new byte[data().limit()];
-        DataChunk dup = DataChunk.create(data().get(bytes));
+        data().get(bytes);
+        DataChunk dup = DataChunk.create(bytes);
         dup.data().position(0);
         return dup;
     }

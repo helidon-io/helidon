@@ -107,11 +107,6 @@ public class ObjectNodeBuilderImpl extends AbstractNodeBuilderImpl<String, Objec
     }
 
     @Override
-    protected String typeDescription() {
-        return "an OBJECT node";
-    }
-
-    @Override
     protected String id(MergingKey key) {
         return key.first();
     }

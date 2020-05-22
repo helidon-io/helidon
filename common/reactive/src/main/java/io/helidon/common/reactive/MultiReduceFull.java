@@ -27,7 +27,7 @@ import java.util.function.Supplier;
  * @param <T> the source value type
  * @param <R> the accumulator and result type
  */
-final class MultiReduceFull<T, R> implements Single<R> {
+final class MultiReduceFull<T, R> extends CompletionSingle<R> {
 
     private final Multi<T> source;
 

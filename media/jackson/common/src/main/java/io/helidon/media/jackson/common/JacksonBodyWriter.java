@@ -51,12 +51,12 @@ public final class JacksonBodyWriter implements MessageBodyWriter<Object> {
     }
 
     @Override
-    public Publisher<DataChunk> write(Single<Object> content, GenericType<? extends Object> type,
+    public Publisher<DataChunk> write(Single<? extends Object> content, GenericType<? extends Object> type,
             MessageBodyWriterContext context) {
 
         MediaType contentType = context.findAccepted(MediaType.JSON_PREDICATE, MediaType.APPLICATION_JSON);
         context.contentType(contentType);
-        return content.mapMany(new ObjectToChunks(objectMapper, context.charset()));
+        return content.flatMap(new ObjectToChunks(objectMapper, context.charset()));
     }
 
     /**

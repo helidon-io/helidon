@@ -53,13 +53,14 @@ public class EncodingTest {
      * @throws Exception in case of an error
      */
     private static void startServer(int port) throws Exception {
-        webServer = WebServer.create(
-                ServerConfiguration.builder().port(port).build(),
-                Routing.builder()
-                        .get("/foo", (req, res) -> res.send("It works!"))
-                        .get("/foo/{bar}", (req, res) -> res.send(req.path().param("bar")))
-                        .any(Handler.create(String.class, (req, res, entity) -> res.send("Oops " + entity)))
-                        .build())
+        webServer = WebServer.builder()
+                .port(port)
+                .routing(Routing.builder()
+                                 .get("/foo", (req, res) -> res.send("It works!"))
+                                 .get("/foo/{bar}", (req, res) -> res.send(req.path().param("bar")))
+                                 .any(Handler.create(String.class, (req, res, entity) -> res.send("Oops " + entity)))
+                                 .build())
+                .build()
                 .start()
                 .toCompletableFuture()
                 .get(10, TimeUnit.SECONDS);

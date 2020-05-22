@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,8 @@ package io.helidon.grpc.examples.security.outbound;
 import java.util.Optional;
 import java.util.logging.LogManager;
 
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.core.Response;
-
+import io.helidon.common.context.Context;
+import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.grpc.core.GrpcHelper;
 import io.helidon.grpc.examples.common.Greet;
@@ -38,11 +36,11 @@ import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.integration.grpc.GrpcClientSecurity;
 import io.helidon.security.integration.grpc.GrpcSecurity;
-import io.helidon.security.integration.jersey.client.ClientSecurity;
 import io.helidon.security.integration.webserver.WebSecurity;
 import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
+import io.helidon.webclient.WebClient;
+import io.helidon.webclient.WebClientResponse;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
@@ -128,7 +126,7 @@ public class SecureServer {
                                  .register(new RestService())
                                  .build();
 
-        WebServer webServer = WebServer.create(ServerConfiguration.create(config), routing);
+        WebServer webServer = WebServer.create(routing, config);
 
         webServer.start()
                 .thenAccept(s -> {
@@ -157,13 +155,12 @@ public class SecureServer {
         private String greeting = "hello";
 
         /**
-         * The JAX-RS client to use to make ReST calls.
+         * The Helidon WebClient to use to make ReST calls.
          */
-        private Client client;
+        private WebClient client;
 
         private GreetService() {
-            client = ClientBuilder.newBuilder()
-                                    .build();
+            client = WebClient.create();
         }
 
         @Override
@@ -185,26 +182,22 @@ public class SecureServer {
 
             // Obtain the security context from the current gRPC context
             SecurityContext securityContext = GrpcSecurity.SECURITY_CONTEXT.get();
+            Context context = Context.builder().id("example").build();
+            context.register(securityContext);
 
             // Use the current credentials call the "lower" ReST endpoint which will call
             // the "Lower" method on the secure gRPC StringService.
-            Response response = client.target("http://127.0.0.1:" + webServer.port())
-                                      .path("lower")
-                                      .queryParam("value", name)
-                                      .request()
-                                      .property(ClientSecurity.PROPERTY_CONTEXT, securityContext)
-                                      .get();
-
-            int status = response.getStatus();
-
-            if (status == 200) {
-                // Send the response to the caller of the current greeting and lower case name
-                String nameLower = response.readEntity(String.class);
-                String msg = String.format("%s %s!", greeting, nameLower);
-                complete(observer, Greet.GreetResponse.newBuilder().setMessage(msg).build());
-            } else {
-                completeWithError(response, observer);
-            }
+            client.get()
+                    .uri("http://localhost:" + webServer.port())
+                    .path("lower")
+                    .queryParam("value", name)
+                    .context(context)
+                    .request()
+                    .thenAccept(it -> handleResponse(it, observer))
+                    .exceptionally(throwable -> {
+                        observer.onError(throwable);
+                        return null;
+                    });
         }
 
         /**
@@ -220,34 +213,48 @@ public class SecureServer {
 
             // Obtain the security context from the current gRPC context
             SecurityContext securityContext = GrpcSecurity.SECURITY_CONTEXT.get();
+            Context context = Context.builder().id("example").build();
+            context.register(securityContext);
 
             // Use the admin user's credentials call the "upper" ReST endpoint which will call
             // the "Upper" method on the secure gRPC StringService.
-            Response response = client.target("http://127.0.0.1:" + webServer.port())
-                                      .path("upper")
-                                      .queryParam("value", name)
-                                      .request()
-                                      .property(ClientSecurity.PROPERTY_CONTEXT, securityContext)
-                                      .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER, "Ted")
-                                      .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD, "secret")
-                                      .get();
+            client.get()
+                    .uri("http://127.0.0.1:" + webServer.port())
+                    .path("upper")
+                    .queryParam("value", name)
+                    .context(context)
+                    .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER, "Ted")
+                    .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD, "secret")
+                    .request()
+                    .thenAccept(it -> handleResponse(it, observer))
+                    .exceptionally(throwable -> {
+                        observer.onError(throwable);
+                        return null;
+                    });
+        }
 
-            if (response.getStatus() == 200) {
-                greeting = response.readEntity(String.class);
-                complete(observer, Greet.SetGreetingResponse.newBuilder().setGreeting(greeting).build());
+        private void handleResponse(WebClientResponse response, StreamObserver observer) {
+            if (response.status() == Http.Status.OK_200) {
+                // Send the response to the caller of the current greeting and lower case name
+                response.content()
+                        .as(String.class)
+                        .thenAccept(str -> complete(observer,
+                                                    Greet.SetGreetingResponse.newBuilder().setGreeting(str).build()));
             } else {
                 completeWithError(response, observer);
             }
         }
 
-        private void completeWithError(Response response, StreamObserver observer) {
-            int status = response.getStatus();
+        private void completeWithError(WebClientResponse response, StreamObserver observer) {
+            Http.ResponseStatus status = response.status();
 
-            if (status == Response.Status.UNAUTHORIZED.getStatusCode()
-                       || status == Response.Status.FORBIDDEN.getStatusCode()){
+            if (status == Http.Status.UNAUTHORIZED_401
+                       || status == Http.Status.FORBIDDEN_403){
                 observer.onError(Status.PERMISSION_DENIED.asRuntimeException());
             } else {
-                observer.onError(Status.INTERNAL.withDescription(response.readEntity(String.class)).asRuntimeException());
+                response.content()
+                        .as(String.class)
+                        .thenAccept(str -> observer.onError(Status.INTERNAL.withDescription(str).asRuntimeException()));
             }
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package io.helidon.examples.health.basics;
 import io.helidon.health.HealthSupport;
 import io.helidon.health.checks.HealthChecks;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 
 import org.eclipse.microprofile.health.HealthCheck;
@@ -39,8 +38,8 @@ public final class Main {
      */
     public static void main(String[] args) {
         HealthSupport health = HealthSupport.builder()
-                .add(HealthChecks.healthChecks())
-                .add((HealthCheck) () -> HealthCheckResponse.named("exampleHealthCheck")
+                .addLiveness(HealthChecks.healthChecks())
+                .addReadiness((HealthCheck) () -> HealthCheckResponse.named("exampleHealthCheck")
                         .up()
                         .withData("time", System.currentTimeMillis())
                         .build())
@@ -51,10 +50,7 @@ public final class Main {
                 .get("/hello", (req, res) -> res.send("Hello World!"))
                 .build();
 
-        ServerConfiguration serverConfig = ServerConfiguration.builder()
-                .build();
-
-        WebServer ws = WebServer.create(serverConfig, routing);
+        WebServer ws = WebServer.create(routing);
 
         ws.start()
                 .thenApply(webServer -> {

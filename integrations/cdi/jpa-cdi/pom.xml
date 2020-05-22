@@ -77,8 +77,8 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.microprofile.config</groupId>
-            <artifactId>helidon-microprofile-config</artifactId>
+            <groupId>io.helidon.microprofile.cdi</groupId>
+            <artifactId>helidon-microprofile-cdi</artifactId>
             <scope>test</scope>
         </dependency>
 
@@ -96,19 +96,23 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>javax.annotation</groupId>
-            <artifactId>javax.annotation-api</artifactId>
+            <groupId>jakarta.annotation</groupId>
+            <artifactId>jakarta.annotation-api</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>javax.enterprise</groupId>
-            <artifactId>cdi-api</artifactId>
+            <groupId>jakarta.enterprise</groupId>
+            <artifactId>jakarta.enterprise.cdi-api</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>javax.transaction</groupId>
-            <artifactId>javax.transaction-api</artifactId>
+            <groupId>jakarta.transaction</groupId>
+            <artifactId>jakarta.transaction-api</artifactId>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.activation</groupId>
+            <artifactId>jakarta.activation-api</artifactId>
         </dependency>
 
         <!-- Compile-scoped dependencies. -->
@@ -122,12 +126,6 @@
             <artifactId>helidon-integrations-cdi-reference-counted-context</artifactId>
             <scope>compile</scope>
         </dependency>
-        <dependency>
-            <groupId>io.helidon.microprofile.cdi</groupId>
-            <artifactId>helidon-microprofile-cdi</artifactId>
-            <scope>compile</scope>
-        </dependency>
-
     </dependencies>
 
     <build>
@@ -158,16 +156,6 @@
                 </plugin>
             </plugins>
         </pluginManagement>
-
-        <!--
-            Please note that the ordering of the following plugins
-            below is significant:
-
-            * maven-resources-plugin
-            * eclipselink-maven-plugin
-            * hibernate-enhance-maven-plugin
-            * maven-surefire-plugin
-        -->
 
         <plugins>
             <plugin>
@@ -209,6 +197,7 @@
                     </execution>
                 </executions>
             </plugin>
+            <!--
             <plugin>
               <groupId>org.apache.maven.plugins</groupId>
               <artifactId>maven-resources-plugin</artifactId>
@@ -249,6 +238,8 @@
                 </execution>
               </executions>
             </plugin>
+            -->
+            <!--
             <plugin>
                 <groupId>com.ethlo.persistence.tools</groupId>
                 <artifactId>eclipselink-maven-plugin</artifactId>
@@ -285,6 +276,8 @@
                     </execution>
                 </executions>
             </plugin>
+            -->
+            <!--
             <plugin>
                 <groupId>org.hibernate.orm.tooling</groupId>
                 <artifactId>hibernate-enhance-maven-plugin</artifactId>
@@ -307,6 +300,7 @@
                     </execution>
                 </executions>
             </plugin>
+            -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
@@ -357,6 +351,129 @@
 
     <profiles>
         <profile>
+            <id>static-jpa</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+                <property>
+                  <name>maven.test.skip</name>
+                  <value>!true</value>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+
+                    <!--
+                        Please note that the ordering of the following
+                        plugins below is significant:
+
+                        * maven-resources-plugin
+                        * eclipselink-maven-plugin
+                        * hibernate-enhance-maven-plugin
+                        * maven-surefire-plugin
+                    -->
+
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <executions>
+                          <execution>
+                            <id>Copy test classes to Eclipselink weaving area</id>
+                            <goals>
+                              <goal>copy-resources</goal>
+                            </goals>
+                            <phase>process-test-classes</phase>
+                            <configuration>
+                              <resources>
+                                <resource>
+                                  <directory>${project.build.testOutputDirectory}</directory>
+                                  <filtering>false</filtering>
+                                </resource>
+                              </resources>
+                              <outputDirectory>${project.build.directory}/eclipselink/test-classes</outputDirectory>
+                              <overwrite>true</overwrite>
+                            </configuration>
+                          </execution>
+                          <execution>
+                            <id>Copy test classes to Hibernate weaving area</id>
+                            <goals>
+                              <goal>copy-resources</goal>
+                            </goals>
+                            <phase>process-test-classes</phase>
+                            <configuration>
+                              <resources>
+                                <resource>
+                                  <directory>${project.build.testOutputDirectory}</directory>
+                                  <filtering>false</filtering>
+                                </resource>
+                              </resources>
+                              <outputDirectory>${project.build.directory}/hibernate/test-classes</outputDirectory>
+                              <overwrite>true</overwrite>
+                            </configuration>
+                          </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>com.ethlo.persistence.tools</groupId>
+                        <artifactId>eclipselink-maven-plugin</artifactId>
+                        <dependencies>
+                            <dependency>
+                                <groupId>org.junit.jupiter</groupId>
+                                <artifactId>junit-jupiter-api</artifactId>
+                                <version>${version.lib.junit}</version>
+                            </dependency>
+                        </dependencies>
+                        <executions>
+                            <execution>
+                                <id>Statically weave JPA entities for Eclipselink</id>
+                                <phase>process-test-classes</phase>
+                                <goals>
+                                    <goal>weave</goal>
+                                </goals>
+                                <configuration>
+                                    <source>${project.build.directory}/eclipselink/test-classes</source>
+                                    <target>${project.build.directory}/eclipselink/test-classes</target>
+                                    <persistenceInfoLocation>${project.build.directory}/eclipselink/test-classes</persistenceInfoLocation>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>modelgen</id>
+                                <phase>generate-test-sources</phase>
+                                <goals>
+                                    <goal>modelgen</goal>
+                                </goals>
+                                <configuration>
+                                    <source>${project.build.testSourceDirectory}</source>
+                                    <generatedSourcesDirectory>${project.build.directory}/generated-test-sources/apt</generatedSourcesDirectory>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.hibernate.orm.tooling</groupId>
+                        <artifactId>hibernate-enhance-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>Statically enhance JPA entities for Hibernate</id>
+                                <phase>process-test-classes</phase>
+                                <goals>
+                                    <goal>enhance</goal>
+                                </goals>
+                                <configuration>
+                                    <base>${project.build.directory}/hibernate/test-classes</base>
+                                    <dir>${project.build.directory}/hibernate/test-classes</dir>
+                                    <failOnError>true</failOnError>
+                                    <enableAssociationManagement>true</enableAssociationManagement>
+                                    <enableDirtyTracking>true</enableDirtyTracking>
+                                    <enableExtendedEnhancement>true</enableExtendedEnhancement>
+                                    <enableLazyInitialization>true</enableLazyInitialization>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
             <id>sources</id>
             <build>
                 <plugins>
@@ -382,13 +499,13 @@
             </activation>
             <dependencies>
                 <dependency>
-                    <groupId>javax.xml.bind</groupId>
-                    <artifactId>jaxb-api</artifactId>
+                    <groupId>jakarta.xml.bind</groupId>
+                    <artifactId>jakarta.xml.bind-api</artifactId>
                     <scope>compile</scope>
                 </dependency>
                 <dependency>
-                    <groupId>javax.activation</groupId>
-                    <artifactId>javax.activation-api</artifactId>
+                    <groupId>jakarta.activation</groupId>
+                    <artifactId>jakarta.activation-api</artifactId>
                     <scope>compile</scope>
                 </dependency>
                 <dependency>

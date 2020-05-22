@@ -21,7 +21,6 @@ checks to make sure the value is the expected `hello`.
 
 ## Build and run
 
-With JDK8+
 ```bash
 mvn package
 export ENVIRONMENT_NAME=test

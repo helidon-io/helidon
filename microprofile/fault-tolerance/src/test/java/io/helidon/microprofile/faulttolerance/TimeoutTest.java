@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,13 @@
 package io.helidon.microprofile.faulttolerance;
 
 import org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException;
+
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.lessThan;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -29,11 +32,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class TimeoutTest extends FaultToleranceTest {
 
     @Test
-    public void testForceTimeout() throws Exception {
+    public void testForceTimeout() {
         TimeoutBean bean = newBean(TimeoutBean.class);
-        assertThrows(TimeoutException.class, () -> {
-            bean.forceTimeout();
-        });
+        assertThrows(TimeoutException.class, bean::forceTimeout);
     }
 
     @Test
@@ -58,5 +59,27 @@ public class TimeoutTest extends FaultToleranceTest {
     public void testTimeoutWithRetriesAndFallback() throws Exception {
         TimeoutBean bean = newBean(TimeoutBean.class);
         assertThat(bean.timeoutWithRetriesAndFallback(), is("fallback"));
+    }
+
+    @Test
+    public void testForceTimeoutSleep() {
+        TimeoutNoRetryBean bean = newBean(TimeoutNoRetryBean.class);
+        long start = System.currentTimeMillis();
+        try {
+            bean.forceTimeoutSleep();       // can interrupt
+        } catch (InterruptedException | TimeoutException e) {
+            assertThat(System.currentTimeMillis() - start, is(lessThan(2000L)));
+        }
+     }
+
+    @Test
+    public void testForceTimeoutLoop() {
+        TimeoutNoRetryBean bean = newBean(TimeoutNoRetryBean.class);
+        long start = System.currentTimeMillis();
+        try {
+            bean.forceTimeoutLoop();        // cannot interrupt
+        } catch (TimeoutException e) {
+            assertThat(System.currentTimeMillis() - start, is(greaterThan(2000L)));
+        }
     }
 }

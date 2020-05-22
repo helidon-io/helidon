@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.Builder;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 
 /**
@@ -37,9 +36,9 @@ public final class GoogleUtil {
     }
 
     static WebServer startIt(int port, Builder<? extends Routing> routing) {
-        WebServer server = WebServer.create(ServerConfiguration.builder()
-                                                    .port(port),
-                                            routing);
+        WebServer server = WebServer.builder(routing)
+                .port(port)
+                .build();
 
         long t = System.nanoTime();
 

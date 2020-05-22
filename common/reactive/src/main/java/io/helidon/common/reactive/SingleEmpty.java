@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import java.util.concurrent.Flow;
  * invoking {@link java.util.concurrent.Flow.Subscriber#onComplete() } during
  * {@link java.util.concurrent.Flow.Publisher#subscribe(java.util.concurrent.Flow.Subscriber)}.
  */
-final class SingleEmpty implements Single<Object> {
+final class SingleEmpty extends CompletionSingle<Object> {
 
     /**
      * Singleton instance.

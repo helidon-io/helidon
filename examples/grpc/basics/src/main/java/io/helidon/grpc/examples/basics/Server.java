@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ import io.helidon.grpc.server.GrpcServerConfiguration;
 import io.helidon.health.HealthSupport;
 import io.helidon.health.checks.HealthChecks;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 
 /**
@@ -75,8 +74,8 @@ public class Server {
 
         // add support for standard and gRPC health checks
         HealthSupport health = HealthSupport.builder()
-                .add(HealthChecks.healthChecks())
-                .add(grpcServer.healthChecks())
+                .addLiveness(HealthChecks.healthChecks())
+                .addLiveness(grpcServer.healthChecks())
                 .build();
 
         // start web server with health endpoint
@@ -84,9 +83,7 @@ public class Server {
                 .register(health)
                 .build();
 
-        ServerConfiguration webServerConfig = ServerConfiguration.builder(config.get("webserver")).build();
-
-        WebServer.create(webServerConfig, routing)
+        WebServer.create(routing, config.get("webserver"))
                 .start()
                 .thenAccept(s -> {
                     System.out.println("HTTP server is UP! http://localhost:" + s.port());

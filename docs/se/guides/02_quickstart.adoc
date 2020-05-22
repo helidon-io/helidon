@@ -181,3 +181,11 @@ After you're done, cleanup.
 ----
 kubectl delete -f app.yaml
 ----
+
+== Building Native and Custom Runtime Images
+
+Helidon also includes support for GraalVM Native Images and Java Custom
+Runtime Images. For more information see:
+
+* <<se/guides/36_graalnative.adoc,GraalVM Native Images>>
+* <<se/guides/37_jlink_image.adoc,Custom Runtime Images using `jlink`>>

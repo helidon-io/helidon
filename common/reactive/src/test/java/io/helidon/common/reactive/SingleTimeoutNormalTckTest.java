@@ -33,7 +33,7 @@ public class SingleTimeoutNormalTckTest extends FlowPublisherVerification<Long> 
     private static ScheduledExecutorService executor;
 
     public SingleTimeoutNormalTckTest() {
-        super(new TestEnvironment(50));
+        super(new TestEnvironment(200));
     }
 
     @Override

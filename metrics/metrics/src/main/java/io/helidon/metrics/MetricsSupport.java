@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,6 +55,8 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
+import io.helidon.webserver.cors.CorsEnabledServiceHelper;
+import io.helidon.webserver.cors.CrossOriginConfig;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Meter;
@@ -63,6 +65,8 @@ import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
+
+import static io.helidon.webserver.cors.CorsEnabledServiceHelper.CORS_CONFIG_KEY;
 
 /**
  * Support for metrics for Helidon Web Server.
@@ -98,19 +102,22 @@ public final class MetricsSupport implements Service {
 
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
     private static final String DEFAULT_CONTEXT = "/metrics";
+    private static final String FEATURE_NAME = "Metrics";
 
     static {
-        HelidonFeatures.register(HelidonFlavor.SE, "Metrics");
+        HelidonFeatures.register(HelidonFlavor.SE, FEATURE_NAME);
     }
 
     private final String context;
     private final RegistryFactory rf;
+    private final CorsEnabledServiceHelper corsEnabledServiceHelper;
 
     private static final Logger LOGGER = Logger.getLogger(MetricsSupport.class.getName());
 
     private MetricsSupport(Builder builder) {
         this.rf = builder.registryFactory.get();
         this.context = builder.context;
+        corsEnabledServiceHelper = CorsEnabledServiceHelper.create(FEATURE_NAME, builder.crossOriginConfig);
     }
 
     /**
@@ -381,6 +388,10 @@ public final class MetricsSupport implements Service {
         Registry base = rf.getARegistry(MetricRegistry.Type.BASE);
         Registry vendor = rf.getARegistry(MetricRegistry.Type.VENDOR);
         Registry app = rf.getARegistry(MetricRegistry.Type.APPLICATION);
+
+        // CORS first
+        rules.any(context, corsEnabledServiceHelper.processor());
+
         // register the metric registry and factory to be available to all
         rules.any(new MetricsContextHandler(app, rf));
 
@@ -473,7 +484,7 @@ public final class MetricsSupport implements Service {
                 .ifPresentOrElse(entry -> {
                     if (req.headers().isAccepted(MediaType.APPLICATION_JSON)) {
                         JsonObjectBuilder builder = JSON.createObjectBuilder();
-                        entry.getKey().jsonMeta(builder, entry.getValue());
+                        HelidonMetric.class.cast(entry.getKey()).jsonMeta(builder, entry.getValue());
                         res.send(builder.build());
                     } else {
                         res.status(Http.Status.NOT_ACCEPTABLE_406);
@@ -493,6 +504,7 @@ public final class MetricsSupport implements Service {
         private Supplier<RegistryFactory> registryFactory;
         private String context = DEFAULT_CONTEXT;
         private Config config = Config.empty();
+        private CrossOriginConfig crossOriginConfig = null;
 
         private Builder() {
 
@@ -519,6 +531,9 @@ public final class MetricsSupport implements Service {
             config.get("web-context").asString().ifPresent(this::context);
             // backward compatibility
             config.get("context").asString().ifPresent(this::context);
+            config.get(CORS_CONFIG_KEY)
+                    .as(CrossOriginConfig::create)
+                    .ifPresent(this::crossOriginConfig);
 
             if (!config.get(BaseRegistry.BASE_ENABLED_KEY).asBoolean().orElse(true)) {
                 LOGGER.finest("Metrics support for base metrics is disabled in configuration");
@@ -572,6 +587,18 @@ public final class MetricsSupport implements Service {
             } else {
                 this.context = "/" + path;
             }
+            return this;
+        }
+
+        /**
+         * Set the CORS config from the specified {@code CrossOriginConfig} object.
+         *
+         * @param crossOriginConfig {@code CrossOriginConfig} containing CORS set-up
+         * @return updated builder instance
+         */
+        public Builder crossOriginConfig(CrossOriginConfig crossOriginConfig) {
+            Objects.requireNonNull(crossOriginConfig, "CrossOriginConfig must be non-null");
+            this.crossOriginConfig = crossOriginConfig;
             return this;
         }
     }

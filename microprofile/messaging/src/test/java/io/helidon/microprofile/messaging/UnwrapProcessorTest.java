@@ -22,10 +22,9 @@ import java.lang.reflect.Method;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
-
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.not;
 
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
@@ -66,10 +65,12 @@ public class UnwrapProcessorTest {
         Object unwrappedValue = unwrapProcessor.unwrap(Message.of("test"));
         if (method.getName().endsWith("Message")) {
             Assertions.assertTrue(MessageUtils.isMessageType(method));
-            assertTrue(unwrappedValue instanceof Message);
+            assertThat(unwrappedValue, instanceOf(Message.class));
         } else {
-            assertFalse(MessageUtils.isMessageType(method));
-            assertFalse(unwrappedValue instanceof Message);
+            assertThat("Expected method param to be a Message type.",
+                    MessageUtils.isMessageType(method),
+                    not(true));
+            assertThat(unwrappedValue, not(instanceOf(Message.class)));
         }
     }
 }

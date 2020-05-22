@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,37 +18,24 @@ package io.helidon.webserver;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.security.KeyStore;
-import java.security.Security;
-import java.security.cert.Certificate;
-import java.security.cert.X509Certificate;
-import java.util.Base64;
-import java.util.List;
-import java.util.Objects;
-import java.util.Random;
 
-import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSessionContext;
-import javax.net.ssl.TrustManagerFactory;
 
 import io.helidon.common.Builder;
 import io.helidon.common.pki.KeyConfig;
 import io.helidon.config.Config;
 
-
 /**
  * Builder for configuring a new SslContext for creation.
+ *
+ * @deprecated since 2.0.0, please use {@link TlsConfig#builder()} instead,
+ *  then configure it with {@link io.helidon.webserver.WebServer.Builder#tls(TlsConfig)}
+ *  or {@link io.helidon.webserver.SocketConfiguration.SocketConfigurationBuilder#tls(TlsConfig)}
  */
+@Deprecated
 public final class SSLContextBuilder implements Builder<SSLContext> {
 
-    private static final String PROTOCOL = "TLS";
-    private static final Random RANDOM = new Random();
-
-    private KeyConfig privateKeyConfig;
-    private KeyConfig trustConfig;
-    private long sessionCacheSize;
-    private long sessionTimeout;
+    private final TlsConfig.Builder tlsConfig = TlsConfig.builder();
 
     private SSLContextBuilder() {
     }
@@ -58,7 +45,12 @@ public final class SSLContextBuilder implements Builder<SSLContext> {
      *
      * @param privateKeyConfig the required private key configuration parameter
      * @return this builder
+     *
+     * @deprecated since 2.0.0, please use {@link TlsConfig#builder()} instead,
+     *  then configure it with {@link io.helidon.webserver.WebServer.Builder#tls(TlsConfig)}
+     *  or {@link io.helidon.webserver.SocketConfiguration.SocketConfigurationBuilder#tls(TlsConfig)}
      */
+    @Deprecated
     public static SSLContextBuilder create(KeyConfig privateKeyConfig) {
         return new SSLContextBuilder().privateKeyConfig(privateKeyConfig);
     }
@@ -70,17 +62,22 @@ public final class SSLContextBuilder implements Builder<SSLContext> {
      * @return a built {@link SSLContext}
      * @throws IllegalStateException in case of a problem; will wrap either an instance of {@link IOException} or
      *                               a {@link GeneralSecurityException}
+     *
+     * @deprecated since 2.0.0, please use {@link TlsConfig#builder()} instead,
+     *  then configure it with {@link io.helidon.webserver.WebServer.Builder#tls(TlsConfig)}
+     *  or {@link io.helidon.webserver.SocketConfiguration.SocketConfigurationBuilder#tls(TlsConfig)}
      */
+    @Deprecated
     public static SSLContext create(Config sslConfig) {
         return new SSLContextBuilder().privateKeyConfig(KeyConfig.create(sslConfig.get("private-key")))
-                                      .sessionCacheSize(sslConfig.get("session-cache-size").asInt().orElse(0))
-                                      .sessionTimeout(sslConfig.get("session-timeout").asInt().orElse(0))
-                                      .trustConfig(KeyConfig.create(sslConfig.get("trust")))
-                                      .build();
+                .sessionCacheSize(sslConfig.get("session-cache-size").asInt().orElse(0))
+                .sessionTimeout(sslConfig.get("session-timeout").asInt().orElse(0))
+                .trustConfig(KeyConfig.create(sslConfig.get("trust")))
+                .build();
     }
 
     private SSLContextBuilder privateKeyConfig(KeyConfig privateKeyConfig) {
-        this.privateKeyConfig = privateKeyConfig;
+        tlsConfig.privateKey(privateKeyConfig);
         return this;
     }
 
@@ -89,9 +86,14 @@ public final class SSLContextBuilder implements Builder<SSLContext> {
      *
      * @param trustConfig the trust configuration
      * @return an updated builder
+     *
+     * @deprecated since 2.0.0, please use {@link TlsConfig#builder()} instead,
+     *  then configure it with {@link io.helidon.webserver.WebServer.Builder#tls(TlsConfig)}
+     *  or {@link io.helidon.webserver.SocketConfiguration.SocketConfigurationBuilder#tls(TlsConfig)}
      */
+    @Deprecated
     public SSLContextBuilder trustConfig(KeyConfig trustConfig) {
-        this.trustConfig = trustConfig;
+        tlsConfig.trust(trustConfig);
         return this;
     }
 
@@ -101,9 +103,14 @@ public final class SSLContextBuilder implements Builder<SSLContext> {
      *
      * @param sessionCacheSize the session cache size
      * @return an updated builder
+     *
+     * @deprecated since 2.0.0, please use {@link TlsConfig#builder()} instead,
+     *  then configure it with {@link io.helidon.webserver.WebServer.Builder#tls(TlsConfig)}
+     *  or {@link io.helidon.webserver.SocketConfiguration.SocketConfigurationBuilder#tls(TlsConfig)}
      */
+    @Deprecated
     public SSLContextBuilder sessionCacheSize(long sessionCacheSize) {
-        this.sessionCacheSize = sessionCacheSize;
+        tlsConfig.sessionCacheSize(sessionCacheSize);
         return this;
     }
 
@@ -113,9 +120,14 @@ public final class SSLContextBuilder implements Builder<SSLContext> {
      *
      * @param sessionTimeout the session timeout
      * @return an updated builder
+     *
+     * @deprecated since 2.0.0, please use {@link TlsConfig#builder()} instead,
+     *  then configure it with {@link io.helidon.webserver.WebServer.Builder#tls(TlsConfig)}
+     *  or {@link io.helidon.webserver.SocketConfiguration.SocketConfigurationBuilder#tls(TlsConfig)}
      */
+    @Deprecated
     public SSLContextBuilder sessionTimeout(long sessionTimeout) {
-        this.sessionTimeout = sessionTimeout;
+        tlsConfig.sessionTimeoutSeconds(sessionTimeout);
         return this;
     }
 
@@ -125,84 +137,16 @@ public final class SSLContextBuilder implements Builder<SSLContext> {
      * @return the SSL Context built instance
      * @throws IllegalStateException in case of a problem; will wrap either an instance of {@link IOException} or
      *                               a {@link GeneralSecurityException}
+     *
+     * @deprecated since 2.0.0, please use {@link TlsConfig#builder()} instead,
+     *  then configure it with {@link io.helidon.webserver.WebServer.Builder#tls(TlsConfig)}
+     *  or {@link io.helidon.webserver.SocketConfiguration.SocketConfigurationBuilder#tls(TlsConfig)}
      */
+    @Deprecated
     public SSLContext build() {
-        Objects.requireNonNull(privateKeyConfig, "The private key config must be set!");
+        tlsConfig.enabled(true);
 
-        try {
-            return newSSLContext(privateKeyConfig, trustConfig, sessionCacheSize, sessionTimeout);
-        } catch (IOException | GeneralSecurityException e) {
-            throw new IllegalStateException("Building of the SSLContext of unsuccessful!", e);
-        }
+        return tlsConfig.build()
+                .sslContext();
     }
-
-    private static SSLContext newSSLContext(KeyConfig privateKeyConfig,
-                                            KeyConfig trustConfig,
-                                            long sessionCacheSize,
-                                            long sessionTimeout)
-            throws IOException, GeneralSecurityException {
-        KeyManagerFactory kmf = buildKmf(privateKeyConfig);
-        TrustManagerFactory tmf = buildTmf(trustConfig);
-
-        // Initialize the SSLContext to work with our key managers.
-        SSLContext ctx = SSLContext.getInstance(PROTOCOL);
-        ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
-
-        SSLSessionContext sessCtx = ctx.getServerSessionContext();
-        if (sessionCacheSize > 0) {
-            sessCtx.setSessionCacheSize((int) Math.min(sessionCacheSize, Integer.MAX_VALUE));
-        }
-        if (sessionTimeout > 0) {
-            sessCtx.setSessionTimeout((int) Math.min(sessionTimeout, Integer.MAX_VALUE));
-        }
-        return ctx;
-    }
-
-    private static KeyManagerFactory buildKmf(KeyConfig privateKeyConfig) throws IOException, GeneralSecurityException {
-        String algorithm = Security.getProperty("ssl.KeyManagerFactory.algorithm");
-        if (algorithm == null) {
-            algorithm = "SunX509";
-        }
-
-        byte[] passwordBytes = new byte[64];
-        RANDOM.nextBytes(passwordBytes);
-        char[] password = Base64.getEncoder().encodeToString(passwordBytes).toCharArray();
-
-        KeyStore ks = KeyStore.getInstance("JKS");
-        ks.load(null, null);
-        ks.setKeyEntry("key",
-                       privateKeyConfig.privateKey().orElseThrow(() -> new RuntimeException("Private key not available")),
-                       password,
-                       privateKeyConfig.certChain().toArray(new Certificate[0]));
-
-        KeyManagerFactory kmf = KeyManagerFactory.getInstance(algorithm);
-        kmf.init(ks, password);
-
-        return kmf;
-    }
-
-    private static TrustManagerFactory buildTmf(KeyConfig trustConfig)
-            throws IOException, GeneralSecurityException {
-        List<X509Certificate> certs;
-
-        if (trustConfig == null) {
-            certs = List.of();
-        } else {
-            certs = trustConfig.certs();
-        }
-
-        KeyStore ks = KeyStore.getInstance("JKS");
-        ks.load(null, null);
-
-        int i = 1;
-        for (X509Certificate cert : certs) {
-            ks.setCertificateEntry(String.valueOf(i), cert);
-            i++;
-        }
-
-        TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-        tmf.init(ks);
-        return tmf;
-    }
-
 }

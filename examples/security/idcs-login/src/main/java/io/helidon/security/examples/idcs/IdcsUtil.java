@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,12 @@
 
 package io.helidon.security.examples.idcs;
 
-import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 
 /**
@@ -39,13 +37,10 @@ public class IdcsUtil {
     }
 
     static WebServer startIt(Supplier<? extends Routing> routing) throws UnknownHostException {
-        WebServer server = WebServer.create(ServerConfiguration.builder()
-                                                    .port(PORT)
-                                                    .bindAddress(InetAddress.getByName("localhost")),
-                                            routing);
-
-
-        return server;
+        return WebServer.builder(routing)
+                .port(PORT)
+                .bindAddress("localhost")
+                .build();
     }
 
     static WebServer start(WebServer webServer) {

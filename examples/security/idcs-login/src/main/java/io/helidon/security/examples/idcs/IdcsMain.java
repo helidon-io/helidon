@@ -28,7 +28,6 @@ import io.helidon.security.Subject;
 import io.helidon.security.integration.webserver.WebSecurity;
 import io.helidon.security.providers.oidc.OidcSupport;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 
 import static io.helidon.config.ConfigSources.classpath;
@@ -75,8 +74,7 @@ public final class IdcsMain {
                             .orElse("Security context is null"));
                 });
 
-        theServer = WebServer.create(ServerConfiguration.create(config.get("server")),
-                                     routing);
+        theServer = WebServer.create(routing, config.get("server"));
 
         IdcsUtil.start(theServer);
     }

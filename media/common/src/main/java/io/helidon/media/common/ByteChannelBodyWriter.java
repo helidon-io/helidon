@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,11 +49,12 @@ public final class ByteChannelBodyWriter implements MessageBodyWriter<ReadableBy
     }
 
     @Override
-    public Publisher<DataChunk> write(Single<ReadableByteChannel> content, GenericType<? extends ReadableByteChannel> type,
-            MessageBodyWriterContext context) {
+    public Publisher<DataChunk> write(Single<? extends ReadableByteChannel> content,
+                                      GenericType<? extends ReadableByteChannel> type,
+                                      MessageBodyWriterContext context) {
 
         context.contentType(MediaType.APPLICATION_OCTET_STREAM);
-        return content.mapMany(mapper);
+        return content.flatMap(mapper);
     }
 
     /**

@@ -22,8 +22,8 @@
  * io.helidon.integrations.datasource.cdi.AbstractDataSourceExtension
  */
 module io.helidon.integrations.datasource.cdi {
-    requires cdi.api;
-    requires javax.inject;
+    requires jakarta.enterprise.cdi.api;
+    requires jakarta.inject.api;
     requires java.sql;
     requires microprofile.config.api;
 

@@ -17,6 +17,7 @@ package io.helidon.media.jackson.server;
 
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
+import io.helidon.media.common.MediaSupport;
 import io.helidon.media.jackson.common.JacksonBodyReader;
 import io.helidon.media.jackson.common.JacksonBodyWriter;
 import io.helidon.webserver.Handler;
@@ -24,6 +25,7 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
+import io.helidon.webserver.WebServer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
@@ -34,7 +36,10 @@ import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 /**
  * A {@link Service} and a {@link Handler} that provides Jackson
  * support to Helidon.
+ *
+ * @deprecated use {@link io.helidon.media.jackson.common.JacksonSupport} with {@link WebServer.Builder#addMediaSupport(MediaSupport)}
  */
+@Deprecated
 public final class JacksonSupport implements Service, Handler {
 
     static {

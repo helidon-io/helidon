@@ -17,6 +17,7 @@ package io.helidon.common.reactive;
 
 import java.util.Objects;
 import java.util.concurrent.Flow;
+import java.util.function.Function;
 
 import io.helidon.common.mapper.Mapper;
 
@@ -29,9 +30,9 @@ final class MultiMapperPublisher<T, R> implements Multi<R> {
 
     private final Flow.Publisher<T> source;
 
-    private final Mapper<? super T, ? extends R> mapper;
+    private final Function<? super T, ? extends R> mapper;
 
-    MultiMapperPublisher(Flow.Publisher<T> source, Mapper<? super T, ? extends R> mapper) {
+    MultiMapperPublisher(Flow.Publisher<T> source, Function<? super T, ? extends R> mapper) {
         this.source = source;
         this.mapper = mapper;
     }
@@ -45,11 +46,11 @@ final class MultiMapperPublisher<T, R> implements Multi<R> {
 
         private final Flow.Subscriber<? super R> downstream;
 
-        private final Mapper<? super T, ? extends R> mapper;
+        private final Function<? super T, ? extends R> mapper;
 
         private Flow.Subscription upstream;
 
-        MapperSubscriber(Flow.Subscriber<? super R> downstream, Mapper<? super T, ? extends R> mapper) {
+        MapperSubscriber(Flow.Subscriber<? super R> downstream, Function<? super T, ? extends R> mapper) {
             this.downstream = downstream;
             this.mapper = mapper;
         }
@@ -69,7 +70,7 @@ final class MultiMapperPublisher<T, R> implements Multi<R> {
                 R result;
 
                 try {
-                    result = Objects.requireNonNull(mapper.map(item), "The mapper returned a null value.");
+                    result = Objects.requireNonNull(mapper.apply(item), "The mapper returned a null value.");
                 } catch (Throwable ex) {
                     s.cancel();
                     onError(ex);

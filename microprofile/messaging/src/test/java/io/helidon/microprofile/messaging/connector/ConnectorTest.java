@@ -23,8 +23,8 @@ import javax.enterprise.inject.spi.DeploymentException;
 
 import io.helidon.microprofile.messaging.AbstractCDITest;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
@@ -41,7 +41,7 @@ public class ConnectorTest extends AbstractCDITest {
                 Map.of("mp.messaging.incoming.iterable-channel-in.connector", "iterable-connector"),
                 IterableConnector.class,
                 ConnectedBean.class);
-        assertTrue(ConnectedBean.LATCH.await(2, TimeUnit.SECONDS));
+        assertThat("Not connected in time.", ConnectedBean.LATCH.await(2, TimeUnit.SECONDS));
     }
 
     @Test
@@ -50,7 +50,7 @@ public class ConnectorTest extends AbstractCDITest {
                 Map.of("mp.messaging.incoming.iterable-channel-in.connector", "iterable-connector"),
                 IterableConnector.class,
                 ConnectedProcessorBean.class);
-        assertTrue(ConnectedProcessorBean.LATCH.await(2, TimeUnit.SECONDS));
+        assertThat("Not connected in time.", ConnectedProcessorBean.LATCH.await(2, TimeUnit.SECONDS));
     }
 
     @Test
@@ -59,7 +59,7 @@ public class ConnectorTest extends AbstractCDITest {
                 "mp.messaging.incoming.iterable-channel-in.connector", "iterable-connector",
                 "mp.messaging.outgoing.iterable-channel-out.connector", "iterable-connector");
         cdiContainer = startCdiContainer(p, IterableConnector.class, ConnectedOnlyProcessorBean.class);
-        assertTrue(IterableConnector.LATCH.await(2, TimeUnit.SECONDS));
+        assertThat("Not connected in time.", IterableConnector.LATCH.await(2, TimeUnit.SECONDS));
     }
 
     @Test

@@ -1,0 +1,177 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2020 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+== Introduction
+
+JDK 9 introduced the https://docs.oracle.com/en/java/javase/11/tools/jlink.html[`jlink`]
+command that supports assembling a set of modules and their dependencies into a custom
+runtime image. The `helidon-maven-plugin` has support for easily creating a custom runtime image for your
+Helidon application resulting in a smaller, better performing runtime.
+
+In this guide you will learn how to build a custom runtime image locally on your machine,
+as well as how to build it in a Docker image.
+
+== What You Need
+
+|===
+|About 10 minutes
+| <<about/03_prerequisites.adoc,Helidon Prerequisites>>
+|===
+
+== Verify Java 11 or Newer
+
+[source,bash]
+----
+$JAVA_HOME/bin/java --version
+----
+
+== Generate The Project
+
+Generate the project using the Helidon {helidon-uc-flavor} Quickstart Maven archetype.
+
+[source,bash,subs="attributes+"]
+----
+mvn archetype:generate -DinteractiveMode=false \
+    -DarchetypeGroupId=io.helidon.archetypes \
+    -DarchetypeArtifactId=helidon-quickstart-{helidon-lc-flavor} \
+    -DarchetypeVersion={helidon-version} \
+    -DgroupId=io.helidon.examples \
+    -DartifactId=helidon-quickstart-{helidon-lc-flavor} \
+    -Dpackage=io.helidon.examples.quickstart.{helidon-lc-flavor}
+----
+
+The archetype generates a Maven project in your current directory
+(for example, `helidon-quickstart-{helidon-lc-flavor}`). Change into this directory and build.
+
+[source,bash,subs="attributes+"]
+----
+cd helidon-quickstart-{helidon-lc-flavor}
+mvn package
+----
+
+At this point you can run the application using the JVM:
+
+[source,bash,subs="attributes+"]
+----
+java -jar target/helidon-quickstart-{helidon-lc-flavor}.jar
+----
+
+In another shell test an endpoint:
+
+[source,bash]
+----
+curl -X GET http://localhost:8080/greet
+----
+
+The application should respond with `{"message":"Hello World!"}`
+
+Now stop the running application (by pressing Ctrl+C).
+
+For more information about the Quickstart application and other enpoints it supports see the
+<<{helidon-lc-flavor}/guides/02_quickstart.adoc,Helidon {helidon-uc-flavor} quickstart Guide>>.
+
+== Building a Custom Runtime Image
+
+You can build a custom runtime image in 2 different ways:
+
+* Locally, on your desktop
+* Using Docker
+
+=== Local build
+
+Build the custom runtime image using the jlink image profile:
+
+[source,bash]
+----
+mvn package -Pjlink-image
+----
+
+[TIP]
+This uses the `helidon-maven-plugin` to perform the custom image generation.
+
+After the build completes it will report some statistics about the build including
+the reduction in image size.
+
+The `target/helidon-quickstart-{helidon-lc-flavor}` directory is a self contained
+custom image of your application. It contains your application, its runtime
+dependencies and the JDK modules it depends on. You can start your application
+using the provide
+`start` script:
+
+[source,bash,subs="attributes+"]
+----
+./target/helidon-quickstart-{helidon-lc-flavor}/bin/start
+----
+
+=== Class Data Sharing (CDS) Archive
+
+Aslo included in the custom image is a Class Data Sharing (CDS) archive that
+improves your application's startup performance and in-memory footprint.
+You can learn more about Class Data Sharing in the
+https://docs.oracle.com/en/java/javase/11/vm/class-data-sharing.html[JDK documentation].
+
+The CDS archive increases your image size to get these performance optimizations.
+It can be of significant size (tens of MB). The size of the CDS archive is
+reported at the end of the build output.
+
+If you'd rather have a smaller image size (with a slightly increased startup time) you
+can skip the creation of the CDS archive by executing your build like this:
+
+[source,bash]
+----
+mvn package -Pjlink-image -Djlink.image.addClassDataSharingArchive=false
+----
+
+For more information on available configuration options see the
+https://github.com/oracle/helidon-build-tools/tree/master/helidon-maven-plugin[`helidon-maven-plugin` documentation].
+
+=== Multi-stage Docker build
+
+To build a Docker image with a custom Java runtime image use the jlink
+Dockerfile included with the quickstart.
+
+[source,bash,subs="attributes+"]
+----
+docker build -t helidon-quickstart-{helidon-lc-flavor}-jlink -f Dockerfile.jlink .
+----
+
+[TIP]
+This does a full build inside the Docker container. The first
+time you run it, it will take a while because it is downloading all
+of the Maven dependencies and caching them in a Docker layer.
+Subsequent builds will be much faster as long as you don't change
+the `pom.xml` file. If the pom is modified then the dependencies
+will be re-downloaded.
+
+Start the application:
+
+[source,bash,subs="attributes+"]
+----
+docker run --rm -p 8080:8080 helidon-quickstart-{helidon-lc-flavor}-jlink:latest
+----
+
+You can exercise the application's endpoints as before.
+
+== When should you use a Custom Runtime Image?
+
+Custom runtime images are ideal for use when you want all of the runtime performance of
+the JDK JVM in a reasonably compact form.
+
+For cases where absolute minimal startup time and image size are required, then
+consider using <<{helidon-lc-flavor}/guides/36_graalnative.adoc,GraalVM Native Images>>.
+

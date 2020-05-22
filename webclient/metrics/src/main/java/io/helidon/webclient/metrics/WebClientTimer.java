@@ -15,11 +15,10 @@
  */
 package io.helidon.webclient.metrics;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.http.Http;
+import io.helidon.common.reactive.Single;
 import io.helidon.webclient.WebClientServiceRequest;
 
 import org.eclipse.microprofile.metrics.Metadata;
@@ -41,7 +40,7 @@ class WebClientTimer extends WebClientMetric {
     }
 
     @Override
-    public CompletionStage<WebClientServiceRequest> request(WebClientServiceRequest request) {
+    public Single<WebClientServiceRequest> request(WebClientServiceRequest request) {
         long start = System.nanoTime();
         Http.RequestMethod method = request.method();
 
@@ -64,7 +63,7 @@ class WebClientTimer extends WebClientMetric {
                     return null;
                 });
 
-        return CompletableFuture.completedFuture(request);
+        return Single.just(request);
     }
 
     private void updateTimer(Metadata metadata, long start) {

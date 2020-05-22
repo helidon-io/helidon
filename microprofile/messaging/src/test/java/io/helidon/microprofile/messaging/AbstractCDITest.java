@@ -16,8 +16,6 @@
 
 package io.helidon.microprofile.messaging;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.util.Arrays;
 import java.util.Collections;
@@ -28,38 +26,24 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import java.util.logging.LogManager;
 import java.util.stream.Stream;
 
 import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.se.SeContainerInitializer;
 import javax.enterprise.inject.spi.CDI;
 
-import io.helidon.config.Config;
-import io.helidon.config.ConfigSources;
-import io.helidon.microprofile.server.Server;
+import io.helidon.config.mp.MpConfigSources;
 import io.helidon.microprofile.server.ServerCdiExtension;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
 public abstract class AbstractCDITest {
-
-    static Server singleServerReference;
-
-    static {
-        try (InputStream is = AbstractCDITest.class.getResourceAsStream("/logging.properties")) {
-            LogManager.getLogManager().readConfiguration(is);
-        } catch (IOException e) {
-            fail(e);
-        }
-    }
-
     protected SeContainer cdiContainer;
 
     protected Map<String, String> cdiConfig() {
@@ -81,7 +65,6 @@ public abstract class AbstractCDITest {
     @AfterEach
     public void tearDown() {
         try {
-            singleServerReference.stop();
             cdiContainer.close();
         } catch (Throwable t) {
             //emergency cleanup see #1446
@@ -96,9 +79,9 @@ public abstract class AbstractCDITest {
 
     protected void assertAllReceived(CountableTestBean bean) {
         try {
-            assertTrue(bean.getTestLatch().await(2, TimeUnit.SECONDS)
-                    , "All messages not delivered in time, number of unreceived messages: "
-                            + bean.getTestLatch().getCount());
+            assertThat("All messages not delivered in time, number of unreceived messages: "
+                            + bean.getTestLatch().getCount(),
+                    bean.getTestLatch().await(2, TimeUnit.SECONDS));
         } catch (InterruptedException e) {
             fail(e);
         }
@@ -109,20 +92,15 @@ public abstract class AbstractCDITest {
     }
 
     private static SeContainer startCdiContainer(Map<String, String> p, Set<Class<?>> beanClasses) {
-        p = new HashMap<>(p);
-        p.put("mp.initializer.allow", "true");
-        Config config = Config.builder()
-                .sources(ConfigSources.create(p))
+        Config config = ConfigProviderResolver.instance().getBuilder()
+                .withSources(MpConfigSources.create(p),
+                        MpConfigSources.create(Map.of("mp.initializer.allow", "true")))
                 .build();
 
-        final Server.Builder builder = Server.builder();
-        assertNotNull(builder);
-        builder.config(config);
-        singleServerReference = builder.build();
         ConfigProviderResolver.instance()
-                .registerConfig((org.eclipse.microprofile.config.Config) config, Thread.currentThread().getContextClassLoader());
+                .registerConfig(config, Thread.currentThread().getContextClassLoader());
+
         final SeContainerInitializer initializer = SeContainerInitializer.newInstance();
-        assertNotNull(initializer);
         initializer.addBeanClasses(beanClasses.toArray(new Class<?>[0]));
         return initializer.initialize();
     }
@@ -143,8 +121,8 @@ public abstract class AbstractCDITest {
     }
 
     protected static final class CdiTestCase {
-        private String name;
-        private Class<?>[] clazzes;
+        private final String name;
+        private final Class<?>[] clazzes;
 
         private CdiTestCase(String name, Class<?>... clazzes) {
             this.name = name;

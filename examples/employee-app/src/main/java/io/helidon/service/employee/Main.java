@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import io.helidon.health.checks.HealthChecks;
 import io.helidon.media.jsonb.server.JsonBindingSupport;
 import io.helidon.metrics.MetricsSupport;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.StaticContentSupport;
 import io.helidon.webserver.WebServer;
 
@@ -66,16 +65,14 @@ public final class Main {
         Config config = Config.create();
 
         // Get webserver config from the "server" section of application.yaml
-        ServerConfiguration serverConfig = ServerConfiguration.create(config.get("server"));
-
-        WebServer server = WebServer.create(serverConfig, createRouting(config));
+        WebServer server = WebServer.create(createRouting(config), config.get("server"));
 
         // Try to start the server. If successful, print some info and arrange to
         // print a message at shutdown. If unsuccessful, print the exception.
         server.start().thenAccept(ws -> {
             System.out.println("WEB server is up!");
             System.out.println("Web client at: http://localhost:" + ws.port()
-                + "/public/index.html");
+                                       + "/public/index.html");
             ws.whenShutdown().thenRun(() -> System.out.println("WEB server is DOWN. Good bye!"));
         }).exceptionally(t -> {
             System.err.println("Startup failed: " + t.getMessage());
@@ -97,14 +94,17 @@ public final class Main {
 
         MetricsSupport metrics = MetricsSupport.create();
         EmployeeService employeeService = new EmployeeService(config);
-        HealthSupport health = HealthSupport.builder().add(HealthChecks.healthChecks())
+        HealthSupport health = HealthSupport.builder().addLiveness(HealthChecks.healthChecks())
                 .build(); // Adds a convenient set of checks
 
-        return Routing.builder().register(JsonBindingSupport.create())
+        return Routing.builder()
+                .register("/public", StaticContentSupport.builder("public")
+                        .welcomeFileName("index.html"))
+                .register(JsonBindingSupport.create())
                 .register(health) // Health at "/health"
                 .register(metrics) // Metrics at "/metrics"
                 .register("/employees", employeeService)
-                .register("/public", StaticContentSupport.builder("public").welcomeFileName("index.html")).build();
+                .build();
     }
 
 }

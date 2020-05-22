@@ -15,4 +15,7 @@ Requires at least GraalVM 20.0.0
 
 This test validates that Quickstart can run on native image with minimal number of changes - eventually with no changes.
 
-
+To run this test using module path:
+```shell script
+java --module-path target/libs:target/helidon-tests-native-image-mp-3.jar --add-modules helidon.tests.nimage.quickstartmp -m io.helidon.microprofile.cdi/io.helidon.microprofile.cdi.Main
+```

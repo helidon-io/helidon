@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,6 @@ import javax.ws.rs.core.Response;
 import io.helidon.tracing.jersey.client.ClientTracingFilter;
 import io.helidon.tracing.zipkin.ZipkinTracer;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 
 import brave.Tracing;
@@ -79,15 +78,11 @@ public class OpentraceableClientE2ETest {
     }
 
     private static WebServer startWebServer() throws InterruptedException, ExecutionException, TimeoutException {
-        Tracer tracer = tracer("test-server");
-        return WebServer.create(ServerConfiguration.builder()
-                                                   .tracer(tracer)
-                                                   .build(),
-                                Routing.builder()
-                                       .any((req, res) -> {
-                                            res.send("OK");
-                                       })
-                                       .build())
+        return WebServer.builder()
+                        .routing(Routing.builder()
+                                 .any((req, res) -> res.send("OK")))
+                        .tracer(tracer("test-server"))
+                        .build()
                         .start()
                         .toCompletableFuture()
                         .get(10, TimeUnit.SECONDS);

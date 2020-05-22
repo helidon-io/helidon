@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package io.helidon.webserver.examples.staticcontent;
 
 import io.helidon.common.http.Http;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.StaticContentSupport;
 import io.helidon.webserver.WebServer;
 
@@ -57,10 +56,9 @@ public class Main {
      * @param args command line arguments.
      */
     public static void main(String[] args) {
-        ServerConfiguration config = ServerConfiguration.builder()
+        WebServer server = WebServer.builder(createRouting())
                 .port(8080)
                 .build();
-        WebServer server = WebServer.create(config, createRouting());
 
         // Start the server and print some info.
         server.start().thenAccept(ws -> {

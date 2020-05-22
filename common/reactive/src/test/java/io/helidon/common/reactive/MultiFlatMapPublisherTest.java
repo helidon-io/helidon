@@ -16,10 +16,12 @@
  */
 package io.helidon.common.reactive;
 
+import org.testng.annotations.Ignore;
 import org.testng.annotations.Test;
 
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -281,5 +283,102 @@ public class MultiFlatMapPublisherTest {
         .assertValuesOnly(1)
         .request(1)
         .assertResult(1, 2);
+    }
+
+    static final int UPSTREAM_ITEM_COUNT = 100;
+    static final int ASYNC_MULTIPLY = 10;
+    static final int ASYNC_DELAY_MILLIS = 20;
+    static final int EXPECTED_EMISSION_COUNT = 1000;
+    static final int MAX_CONCURRENCY = 128;
+    static final int PREFETCH = 128;
+    static final List<Integer> TEST_DATA = IntStream.rangeClosed(1, UPSTREAM_ITEM_COUNT)
+            .boxed()
+            .collect(Collectors.toList());
+
+    @Test
+    @Ignore // takes too long on its own, only for checking out possible bugs
+    public void multiLoop() throws Throwable {
+        for (int i = 0; i < 1000; i++) {
+            if (i % 10 == 0) {
+                System.out.println("multiLoop: " + i);
+            }
+            multi();
+        }
+    }
+
+    @Test
+    public void multi() throws ExecutionException, InterruptedException {
+        assertEquals(EXPECTED_EMISSION_COUNT, Multi.from(TEST_DATA)
+                .flatMap(MultiFlatMapPublisherTest::asyncFlowPublisher, MAX_CONCURRENCY, false, PREFETCH)
+                .distinct()
+                .collectList()
+                .toStage()
+                .toCompletableFuture()
+                .get()
+                .size());
+    }
+
+    private static Flow.Publisher<? extends String> asyncFlowPublisher(Integer i) {
+        SubmissionPublisher<String> pub = new SubmissionPublisher<>();
+        new Thread(() -> {
+            for (int o = 0; o < ASYNC_MULTIPLY; o++) {
+                sleep(ASYNC_DELAY_MILLIS);
+                pub.submit(i + "#" + o);
+            }
+            pub.close();
+        }).start();
+        return pub;
+    }
+
+    private static void sleep(long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Test
+    public void innerSourceOrderPreserved() {
+        ExecutorService executor1 = Executors.newSingleThreadExecutor();
+        ExecutorService executor2 = Executors.newSingleThreadExecutor();
+        try {
+            for (int p = 1; p < 256; p *= 2) {
+                for (int i = 0; i < 1000; i++) {
+                    TestSubscriber<Integer> ts = new TestSubscriber<>(Long.MAX_VALUE);
+
+                    Multi.just(
+                            Multi.range(1, 100).observeOn(executor1),
+                            Multi.range(200, 100).observeOn(executor2)
+                    )
+                            .flatMap(v -> v, 3, false, p)
+                            .subscribe(ts);
+
+                    ts.awaitDone(5, TimeUnit.SECONDS)
+                            .assertItemCount(200)
+                            .assertComplete();
+
+                    int last1 = 0;
+                    int last2 = 199;
+                    for (Integer v : ts.getItems()) {
+                        if (v < 200) {
+                            if (last1 + 1 != v) {
+                                fail("Out of order items: " + last1 + " -> " + v + " (p: " + p + ")");
+                            }
+                            last1 = v;
+                        } else {
+                            if (last2 + 1 != v) {
+                                fail("Out of order items: " + last2 + " -> " + v + " (p: " + p + ")");
+                            }
+                            last2 = v;
+                        }
+                    }
+                }
+            }
+        } finally {
+            executor1.shutdown();
+            executor2.shutdown();
+        }
     }
 }

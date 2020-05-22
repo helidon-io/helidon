@@ -18,10 +18,6 @@ package io.helidon.config;
 
 import java.util.AbstractMap;
 import java.util.Map;
-import java.util.concurrent.Flow;
-import java.util.function.Function;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -37,26 +33,18 @@ public final class ConfigHelper {
     }
 
     /**
-     * Creates a {@link ConfigHelper#subscriber(Function) Flow.Subscriber} that
-     * will delegate {@link Flow.Subscriber#onNext(Object)} to the specified
-     * {@code onNextFunction} function.
-     * <p>
-     * The new subscriber's
-     * {@link Flow.Subscriber#onSubscribe(Flow.Subscription)} method
-     * automatically invokes {@link Flow.Subscription#request(long)} to request
-     * all events that are available in the subscription.
-     * <p>
-     * The caller-provided {@code onNextFunction} should return {@code false} in
-     * order to {@link Flow.Subscription#cancel() cancel} current subscription.
+     * Create a map of keys to string values from an object node.
      *
-     * @param onNextFunction function to be invoked during {@code onNext}
-     * processing
-     * @param <T> the type of the items provided by the subscription
-     * @return {@code Subscriber} that delegates its {@code onNext} to the
-     * caller-provided function
+     * @param objectNode node to flatten
+     * @return a map of all nodes
      */
-    public static <T> Flow.Subscriber<T> subscriber(Function<T, Boolean> onNextFunction) {
-        return new OnNextFunctionSubscriber<>(onNextFunction);
+    public static Map<String, String> flattenNodes(ConfigNode.ObjectNode objectNode) {
+        return ConfigHelper.flattenNodes(ConfigKeyImpl.of(), objectNode)
+                .filter(e -> e.getValue() instanceof ValueNodeImpl)
+                .collect(Collectors.toMap(
+                        e -> e.getKey().toString(),
+                        e -> Config.Key.escapeName(((ValueNodeImpl) e.getValue()).get())
+                ));
     }
 
     static Map<ConfigKeyImpl, ConfigNode> createFullKeyToNodeMap(ConfigNode.ObjectNode objectNode) {
@@ -89,55 +77,4 @@ public final class ConfigHelper {
             throw new IllegalArgumentException("Invalid node type.");
         }
     }
-
-    /**
-     * Implementation of {@link ConfigHelper#subscriber(Function)}.
-     *
-     * @param <T> the subscribed item type
-     * @see ConfigHelper#subscriber(Function)
-     */
-    private static class OnNextFunctionSubscriber<T> implements Flow.Subscriber<T> {
-        private final Function<T, Boolean> onNextFunction;
-        private final Logger logger;
-        private Flow.Subscription subscription;
-
-        private OnNextFunctionSubscriber(Function<T, Boolean> onNextFunction) {
-            this.onNextFunction = onNextFunction;
-            this.logger = Logger.getLogger(OnNextFunctionSubscriber.class.getName() + "."
-                                                   + Integer.toHexString(System.identityHashCode(onNextFunction)));
-        }
-
-        @Override
-        public void onSubscribe(Flow.Subscription subscription) {
-            logger.finest(() -> "onSubscribe: " + subscription);
-
-            this.subscription = subscription;
-            subscription.request(Long.MAX_VALUE);
-        }
-
-        @Override
-        public void onNext(T item) {
-            boolean cancel = !onNextFunction.apply(item);
-
-            logger.finest(() -> "onNext: " + item + " => " + (cancel ? "CANCEL" : "FOLLOW"));
-
-            if (cancel) {
-                subscription.cancel();
-            }
-        }
-
-        @Override
-        public void onError(Throwable throwable) {
-            logger.log(Level.WARNING,
-                       throwable,
-                       () -> "Config Changes support failed. " + throwable.getLocalizedMessage());
-        }
-
-        @Override
-        public void onComplete() {
-            logger.config("Config Changes support finished. There will no other Config reload.");
-        }
-
-    }
-
 }

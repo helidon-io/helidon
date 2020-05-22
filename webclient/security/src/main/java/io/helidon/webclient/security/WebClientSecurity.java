@@ -19,13 +19,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.logging.Logger;
 
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
 import io.helidon.common.context.Context;
+import io.helidon.common.reactive.Single;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.OutboundSecurityClientBuilder;
 import io.helidon.security.OutboundSecurityResponse;
@@ -80,14 +79,14 @@ public class WebClientSecurity implements WebClientService {
     }
 
     @Override
-    public CompletionStage<WebClientServiceRequest> request(WebClientServiceRequest request) {
+    public Single<WebClientServiceRequest> request(WebClientServiceRequest request) {
         Context requestContext = request.context();
         // context either from request or create a new one
         Optional<SecurityContext> maybeContext = requestContext.get(SecurityContext.class);
 
         if (null == security) {
             if (maybeContext.isEmpty()) {
-                return CompletableFuture.completedFuture(request);
+                return Single.just(request);
             }
         }
 
@@ -98,7 +97,7 @@ public class WebClientSecurity implements WebClientService {
                 .asChildOf(context.tracingSpan())
                 .start();
 
-        String explicitProvider = request.properties().first(PROVIDER_NAME).orElse(null);
+        String explicitProvider = request.properties().get(PROVIDER_NAME);
 
         OutboundSecurityClientBuilder clientBuilder;
 
@@ -110,10 +109,11 @@ public class WebClientSecurity implements WebClientService {
                     .headers(request.headers().toMap());
 
             EndpointConfig.Builder outboundEp = context.endpointConfig().derive();
-            Map<String, List<String>> propMap = request.properties().toMap();
+            Map<String, String> propMap = request.properties();
 
             for (String name : propMap.keySet()) {
-                request.properties().first(name).ifPresent(property -> outboundEp.addAtribute(name, property));
+                Optional.ofNullable(request.properties().get(name))
+                        .ifPresent(property -> outboundEp.addAtribute(name, property));
             }
 
             clientBuilder = context.outboundClientBuilder()
@@ -127,8 +127,8 @@ public class WebClientSecurity implements WebClientService {
             throw e;
         }
 
-        return clientBuilder.submit()
-                .thenApply(providerResponse -> processResponse(request, span, providerResponse));
+        return Single.from(clientBuilder.submit()
+                .thenApply(providerResponse -> processResponse(request, span, providerResponse)));
     }
 
     private WebClientServiceRequest processResponse(WebClientServiceRequest request,

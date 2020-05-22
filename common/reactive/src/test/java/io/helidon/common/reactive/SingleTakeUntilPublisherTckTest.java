@@ -26,7 +26,7 @@ import java.util.concurrent.Flow;
 public class SingleTakeUntilPublisherTckTest extends FlowPublisherVerification<Integer> {
 
     public SingleTakeUntilPublisherTckTest() {
-        super(new TestEnvironment(50));
+        super(new TestEnvironment(200));
     }
 
     @Override

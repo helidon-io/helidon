@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,10 +41,6 @@ import io.opentracing.Span;
 import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
 
-import static io.helidon.media.common.MessageBodyContext.EventType.AFTER_ONCOMPLETE;
-import static io.helidon.media.common.MessageBodyContext.EventType.AFTER_ONERROR;
-import static io.helidon.media.common.MessageBodyContext.EventType.BEFORE_ONSUBSCRIBE;
-
 /**
  * The basic implementation of {@link ServerResponse}.
  */
@@ -76,7 +72,7 @@ abstract class Response implements ServerResponse {
         this.completionStage = bareResponse.whenCompleted().thenApply(a -> this);
         this.sendLockSupport = new SendLockSupport();
         this.eventListener = new MessageBodyEventListener();
-        this.writerContext = MessageBodyWriterContext.create(webServer.mediaSupport(), eventListener, headers, acceptedTypes);
+        this.writerContext = MessageBodyWriterContext.create(webServer.writerContext(), eventListener, headers, acceptedTypes);
     }
 
     /**
@@ -112,7 +108,8 @@ abstract class Response implements ServerResponse {
 
     @Override
     public Http.ResponseStatus status() {
-        return headers.httpStatus();
+        Http.ResponseStatus status = headers.httpStatus();
+        return (null == status) ? Http.Status.OK_200 : status;
     }
 
     @Override
@@ -159,7 +156,7 @@ abstract class Response implements ServerResponse {
 
     @Override
     public Void send(Throwable content) {
-        if (status() == null) {
+        if (headers.httpStatus() == null) {
             if (content instanceof HttpException) {
                 status(((HttpException) content).status());
             } else {

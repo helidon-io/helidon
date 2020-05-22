@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,11 +45,11 @@ public class ThrowableBodyWriter implements MessageBodyWriter<Throwable> {
     }
 
     @Override
-    public Publisher<DataChunk> write(Single<Throwable> content,
+    public Publisher<DataChunk> write(Single<? extends Throwable> content,
                                       GenericType<? extends Throwable> type,
                                       MessageBodyWriterContext context) {
         context.contentType(MediaType.TEXT_PLAIN);
-        return content.mapMany(new ThrowableToChunks(context.charset()));
+        return content.flatMap(new ThrowableToChunks(context.charset()));
     }
 
     /**

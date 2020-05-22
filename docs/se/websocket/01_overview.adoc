@@ -19,11 +19,11 @@
 = WebSocket Introduction
 :pagename: websocket-introduction
 :description: Helidon WebSocket Introduction
-:keywords: helidon, webserver, websocket
+:keywords: helidon, webserver, websocket, se
 
 Helidon integrates with Tyrus [1] to provide support for the Jakarta WebSocket API [2].
 The WebSocket API enables Java applications to participate in WebSocket interactions
-as servers as well as clients. The server API supports two flavors: annotated and
+as both servers and clients. The server API supports two flavors: annotated and
 programmatic endpoints.
 
 Annotated endpoints, as suggested by their name, use Java annotations to provide
@@ -31,29 +31,20 @@ the necessary meta-data to define WebSocket handlers; programmatic endpoints
 implement API interfaces and are annotation free. Annotated endpoints tend to be
 more flexible since they allow different method signatures depending on the
 application needs, whereas programmatic endpoints must implement an interface
-and are, therefore, bounded to its definition. This will become more clear as
-we dive into some examples in the next few sections.
+and are, therefore, bounded to its definition.
 
-Helidon has support for WebSockets both in SE and in MP. Helidon SE support
-is based on the `TyrusSupport` class which is akin to `JerseySupport`.
-Helidon MP support is centered around annotations and bean discovery using
-CDI.
+Helidon SE support is based on the `TyrusSupport` class which is
+akin to `JerseySupport`, and enables Helidon application to
+defined both annotated and programmatic WebSocket endpoints.
 
-As stated above, the Jakarta WebSocket API supports both annotated and
-programmatic endpoints. Even though most Helidon MP applications rely
-on the use of annotations, and conversely Helidon SE applications do
-not, it is worth mentioning that annotated and programmatic endpoints
-are supported in both SE and MP.
+== Helidon SE Example
 
-== Running Example
-
-In the next few sections we shall show the implementation of a simple application
+This section describes the implementation of a simple application
 that uses a REST resource to push messages into a shared queue and a
-WebSocket endpoint to download all messages, one at a time, over a connection.
-This example will show how REST and WebSocket connections can
+programmatic WebSocket endpoint to download messages from the queue,
+one at a time, over a connection.
+The example will show how REST and WebSocket connections can
 be seamlessly combined into a Helidon application.
-
-== Helidon SE
 
 The complete Helidon SE example is available here [3]. Let us start by
 looking at `MessageQueueService`:
@@ -77,10 +68,10 @@ public class MessageQueueService implements Service {
 ----
 
 This class exposes a REST resource where messages can be posted. Upon
-receiving a message, it simply pushes it onto a shared queue and
+receiving a message, it simply pushes it into a shared queue and
 returns 204 (No Content).
 
-Messages pushed onto the queue can be obtained by opening a WebSocket
+Messages pushed into the queue can be obtained by opening a WebSocket
 connection served by `MessageBoardEndpoint`:
 
 [source,java]
@@ -145,120 +136,6 @@ pool are intended to be _non-blocking_, thus it is recommended for any blocking 
 long-running operation triggered by an endpoint method to be executed using a separate
 thread pool. See the documentation for `io.helidon.common.configurable.ThreadPoolSupplier`.
 
-
-== Helidon MP
-
-The equivalent Helidon MP application shown here takes full advantage of
-CDI and class scanning and does not require startup code to initialize
-the routes given that the necessary information is available from the
-code annotations.
-
-The REST endpoint is implemented as a JAX-RS resource, and the shared
-queue (in application scope) is directly injected:
-
-[source,java]
-----
-@Path("rest")
-public class MessageQueueResource {
-
-    @Inject
-    private MessageQueue messageQueue;
-
-    @POST
-    @Path("board")
-    @Consumes("text/plain")
-    public void push(String s) {
-        messageQueue.push(s);
-    }
-}
-----
-
-In this case, we opt for the use of an annotated WebSocket endpoint decorated
-by `@ServerEndpoint` that provides all the meta-data which in the SE example
-was part of `ServerEndpointConfig`.
-
-[source,java]
-----
-@ServerEndpoint(
-        value = "/board",
-        encoders = { UppercaseEncoder.class })
-public class MessageBoardEndpoint {
-
-    @Inject
-    private MessageQueue messageQueue;
-
-    @OnMessage
-    public void onMessage(Session session, String message) {
-        if (message.equals("SEND")) {
-            while (!messageQueue.isEmpty()) {
-                session.getBasicRemote().sendObject(messageQueue.pop());
-            }
-        }
-    }
-}
-----
-
-Since `MessageBoardEndpoint` is just a POJO, it uses additional
-annotations for event handlers such as `@OnMessage`. One advantage of
-this approach, much like in the JAX-RS API, is that method
-signatures are not fixed. In the snipped above, the parameters
-(which could be specified in any order!) include the WebSocket
-session and the message received that triggered the call.
-
-So what else is needed to run this Helidon MP app? Nothing else
-other than the supporting classes `MessageQueue` and `UppercaseEncoder`.
-Helidon MP declares both `@Path` and `@ServerEndpoint` as
-bean defining annotation, so all that is needed is for CDI
-discovery to be enabled.
-
-By default, all JAX-RS resources will be placed under the
-application path `"/"` and all WebSocket endpoints under
-`"/websocket"` for separation. These values can be overridden
-by providing subclasses/implementations for `jakarta.ws.rs.Application`
-and `jakarta.websocket.server.ServerApplicationConfig`, respectively.
-JAX-RS uses `@ApplicationPath` on application subclasses to provide
-this root path, but since there is no equivalent in the WebSocket
-API, Helidon MP uses its own annotation `@RoutingPath`
-on `jakarta.websocket.server.ServerApplicationConfig` implementations.
-
-For instance, if in our example we include the following class:
-
-[source,java]
-----
-@ApplicationScoped
-@RoutingPath("/web")
-public class MessageBoardApplication implements ServerApplicationConfig {
-    @Override
-    public Set<ServerEndpointConfig> getEndpointConfigs(
-            Set<Class<? extends Endpoint>> endpoints) {
-        assert endpoints.isEmpty();
-        return Collections.emptySet();      // No programmatic endpoints
-    }
-
-    @Override
-    public Set<Class<?>> getAnnotatedEndpointClasses(Set<Class<?>> endpoints) {
-        return endpoints;       // Returned scanned endpoints
-    }
-}
-----
-
-the root path for WebSocket endpoints will be  `"/web"` instead of the default
-`"/websocket"`. Note that `@RoutingPath` is _not_ a bean defining annotation,
-thus the use of `@ApplicationScoped` --which, as before, requires CDI
-bean discovery mode to be `annotated`. In addition to `@RoutingPath`, these
-classes can be annotated with `@RoutingName` to associate an endpoint
-with a Helidon named socket. Please refer to the Javadoc for that annotation
-for additional information.
-
-Unlike Helidon SE, all endpoint methods in Helidon MP are executed in
-a separate thread pool, independently of Netty. Therefore, there is no
-need to create additional threads for blocking or long-running operations
-as these will not affect Netty's ability to process networking data.
-
-For more information on the MP version of this example, the reader is
-referred to [4].
-
 - [1] https://projects.eclipse.org/projects/ee4j.tyrus
 - [2] https://projects.eclipse.org/projects/ee4j.websocket
-- [3] https://github.com/oracle/helidon/tree/websockets20/examples/webserver/websocket
-- [4] https://github.com/oracle/helidon/tree/websockets20/examples/microprofile/websocket
+- [3] https://github.com/oracle/helidon/tree/master/examples/webserver/websocket

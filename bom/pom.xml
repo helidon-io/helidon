@@ -68,6 +68,11 @@
                 <artifactId>helidon-webserver-tyrus</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.webserver</groupId>
+                <artifactId>helidon-webserver-cors</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
             <!-- Helidon Jersey -->
             <dependency>
                 <groupId>io.helidon.jersey</groupId>
@@ -161,6 +166,11 @@
                 <artifactId>helidon-microprofile-grpc-client</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.microprofile</groupId>
+                <artifactId>helidon-microprofile-cors</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
             <!-- media -->
             <dependency>
                 <groupId>io.helidon.media</groupId>
@@ -236,6 +246,11 @@
             <dependency>
                 <groupId>io.helidon.config</groupId>
                 <artifactId>helidon-config-object-mapping</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.config</groupId>
+                <artifactId>helidon-config-mp</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <!-- security -->
@@ -415,6 +430,13 @@
                 <groupId>io.helidon.microprofile.weld</groupId>
                 <artifactId>weld-se-core</artifactId>
                 <version>${helidon.version}</version>
+                <exclusions>
+                    <!-- need to exclude javax APIs - we have moved to Jakarta -->
+                    <exclusion>
+                        <groupId>javax.enterprise</groupId>
+                        <artifactId>cdi-api</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>io.helidon.microprofile.cdi</groupId>
@@ -580,12 +602,6 @@
                 <artifactId>helidon-dbclient-tracing</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
-            <dependency>
-                <groupId>io.helidon.dbclient</groupId>
-                <artifactId>helidon-dbclient-webserver-jsonp</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-
             <!-- db client examples -->
             <dependency>
                 <groupId>io.helidon.examples.dbclient</groupId>
@@ -616,6 +632,12 @@
                 <!-- to add Jaeger support -->
                 <groupId>io.helidon.tracing</groupId>
                 <artifactId>helidon-tracing-jaeger</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <!-- to add TracerResolver support -->
+                <groupId>io.helidon.tracing</groupId>
+                <artifactId>helidon-tracing-tracer-resolver</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
@@ -793,6 +815,18 @@
             <dependency>
                 <groupId>io.helidon.microprofile.openapi</groupId>
                 <artifactId>helidon-microprofile-openapi</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <!-- CORS support -->
+            <dependency>
+                <groupId>io.helidon.webserver.cors</groupId>
+                <artifactId>helidon-cors</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <!-- Messaging -->
+            <dependency>
+                <groupId>io.helidon.messaging.connectors.kafka</groupId>
+                <artifactId>helidon-messaging-connectors-kafka</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
         </dependencies>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,14 +18,10 @@ package io.helidon.webserver;
 
 import java.util.concurrent.TimeUnit;
 
-import javax.net.ssl.SSLContext;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.Response;
-
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.KeyConfig;
+import io.helidon.webclient.Ssl;
+import io.helidon.webclient.WebClient;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -38,49 +34,47 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 public class Pkcs12StoreSslTest {
 
-    private static Client client;
+    private static WebClient client;
 
     @BeforeAll
-    public static void createClientAcceptingAllCertificates() throws Exception {
-        SSLContext sc = SslTest.clientSslContextTrustAll();
-
-        client = ClientBuilder.newBuilder()
-                              .sslContext(sc)
-                              .hostnameVerifier((s, sslSession) -> true)
-                              .build();
+    public static void createClientAcceptingAllCertificates() {
+        client = WebClient.builder()
+                .ssl(Ssl.builder()
+                             .trustAll(true)
+                             .build())
+                .build();
     }
 
     @Test
     public void testPkcs12() throws Exception {
-        SSLContext sslContext = SSLContextBuilder.create(KeyConfig.keystoreBuilder()
-                                                                  .keystore(Resource.create("ssl/certificate.p12"))
-                                                                  .keystorePassphrase(new char[] {'h', 'e', 'l', 'i', 'd', 'o', 'n'})
-                                                                  .build())
-                                                 .build();
-
         WebServer otherWebServer =
-                WebServer.create(ServerConfiguration.builder()
-                                                    .ssl(sslContext),
-                                 Routing.builder()
-                                        .any((req, res) -> res.send("It works!"))
-                                        .build())
-                         .start()
-                         .toCompletableFuture()
-                         .get(10, TimeUnit.SECONDS);
+                WebServer.builder(Routing.builder()
+                                          .any((req, res) -> res.send("It works!"))
+                                          .build())
+                        .tls(TlsConfig.builder()
+                                     .privateKey(KeyConfig.keystoreBuilder()
+                                                         .keystore(Resource.create("ssl/certificate.p12"))
+                                                         .keystorePassphrase(new char[] {'h', 'e', 'l', 'i', 'd', 'o', 'n'})
+                                                         .build()))
+                        .build()
+                        .start()
+                        .toCompletableFuture()
+                        .get(10, TimeUnit.SECONDS);
 
         otherWebServer.start()
-                      .toCompletableFuture()
-                      .join();
+                .toCompletableFuture()
+                .join();
         try {
-            WebTarget target = client.target("https://localhost:" + otherWebServer.port());
-            Response response = target.request().get();
-            assertThat("Unexpected content; returned status code: " + response.getStatus(),
-                       response.readEntity(String.class),
-                       is("It works!"));
+            client.get()
+                    .uri("https://localhost:" + otherWebServer.port())
+                    .request(String.class)
+                    .thenAccept(it -> assertThat(it, is("It works!")))
+                    .toCompletableFuture()
+                    .get();
         } finally {
             otherWebServer.shutdown()
-                          .toCompletableFuture()
-                          .join();
+                    .toCompletableFuture()
+                    .join();
         }
 
     }

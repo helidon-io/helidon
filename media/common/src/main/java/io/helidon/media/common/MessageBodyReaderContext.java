@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.nio.charset.UnsupportedCharsetException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.Flow.Subscription;
@@ -31,6 +32,7 @@ import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.http.ReadOnlyParameters;
+import io.helidon.common.reactive.CompletionSingle;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
 
@@ -81,6 +83,14 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
         this.contentType = Optional.empty();
         this.readers = new MessageBodyOperators<>();
         this.sreaders = new MessageBodyOperators<>();
+    }
+
+    private MessageBodyReaderContext(MessageBodyReaderContext parent) {
+        super(parent);
+        this.headers = parent.headers;
+        this.contentType = parent.contentType;
+        this.readers = new MessageBodyOperators<>(parent.readers);
+        this.sreaders = new MessageBodyOperators<>(parent.sreaders);
     }
 
     /**
@@ -144,6 +154,13 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
         if (payload == null) {
             return Single.<T>empty();
         }
+
+        // Flow.Publisher - can only be supported by streaming media
+        if (Flow.Publisher.class.isAssignableFrom(type.rawType())) {
+            throw new IllegalStateException("This method does not support unmarshalling of Flow.Publisher. Please use "
+                                                    + "a stream unmarshalling method.");
+        }
+
         try {
             Publisher<DataChunk> filteredPayload = applyFilters(payload, type);
             if (byte[].class.equals(type.rawType())) {
@@ -176,6 +193,13 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
         if (payload == null) {
             return Single.<T>empty();
         }
+
+        // Flow.Publisher - can only be supported by streaming media
+        if (Flow.Publisher.class.isAssignableFrom(type.rawType())) {
+            throw new IllegalStateException("This method does not support unmarshalling of Flow.Publisher. Please use "
+                                                    + "a stream unmarshalling method.");
+        }
+
         try {
             Publisher<DataChunk> filteredPayload = applyFilters(payload, type);
             MessageBodyReader<T> reader = (MessageBodyReader<T>) readers.get(readerType);
@@ -274,26 +298,36 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
     }
 
     /**
-     * Create a new empty writer context backed by the specified headers.
+     * Creates a new parented reader context.
      *
-     * @param mediaSupport mediaSupport instance used to derived the parent
+     * @param parent parent reader context
+     * @return new instance of MessageBodyReaderContext
+     */
+    public static MessageBodyReaderContext create(MessageBodyReaderContext parent) {
+        return new MessageBodyReaderContext(parent);
+    }
+
+    /**
+     * Create a new empty reader context backed by the specified headers.
+     *
+     * @param mediaContext mediaSupport instance used to derived the parent
      * context, may be {@code null}
      * @param eventListener subscription event listener, may be {@code null}
      * @param headers backing headers, must not be {@code null}
      * @param contentType content type, must not be {@code null}
      * @return MessageBodyReaderContext
      */
-    public static MessageBodyReaderContext create(MediaSupport mediaSupport, EventListener eventListener,
-            ReadOnlyParameters headers, Optional<MediaType> contentType) {
+    public static MessageBodyReaderContext create(MediaContext mediaContext, EventListener eventListener,
+                                                  ReadOnlyParameters headers, Optional<MediaType> contentType) {
 
-        if (mediaSupport == null) {
+        if (mediaContext == null) {
             return new MessageBodyReaderContext(null, eventListener, headers, contentType);
         }
-        return new MessageBodyReaderContext(mediaSupport.readerContext(), eventListener, headers, contentType);
+        return new MessageBodyReaderContext(mediaContext.readerContext(), eventListener, headers, contentType);
     }
 
     /**
-     * Create a new empty writer context backed by the specified headers.
+     * Create a new empty reader context backed by the specified headers.
      *
      * @param parent parent context, must not be {@code null}
      * @param eventListener subscription event listener, may be {@code null}
@@ -378,7 +412,7 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
      * Single from future.
      * @param <T> item type
      */
-    private static final class SingleFromCompletionStage<T> implements Single<T> {
+    private static final class SingleFromCompletionStage<T> extends CompletionSingle<T> {
 
         private final CompletionStage<? extends T> future;
         private Subscriber<? super T> subscriber;

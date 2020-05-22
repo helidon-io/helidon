@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,8 +48,10 @@ public final class PathBodyWriter implements MessageBodyWriter<Path> {
     }
 
     @Override
-    public Publisher<DataChunk> write(Single<Path> content, GenericType<? extends Path> type, MessageBodyWriterContext context) {
-        return content.mapMany(new PathToChunks(DEFAULT_RETRY_SCHEMA, context));
+    public Publisher<DataChunk> write(Single<? extends Path> content,
+                                      GenericType<? extends Path> type,
+                                      MessageBodyWriterContext context) {
+        return content.flatMap(new PathToChunks(DEFAULT_RETRY_SCHEMA, context));
     }
 
     /**

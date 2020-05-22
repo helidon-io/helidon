@@ -15,6 +15,7 @@
  */
 package io.helidon.common.reactive;
 
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.Flow.Subscription;
@@ -289,7 +290,7 @@ public class SingleTest {
 
     @Test
     public void testBadSingleToFuture() throws InterruptedException, TimeoutException {
-        Single<String> single = new Single<String>() {
+        Single<String> single = new CompletionSingle<String>() {
             @Override
             public void subscribe(Subscriber<? super String> subscriber) {
                 throw new IllegalStateException("foo!");
@@ -313,7 +314,7 @@ public class SingleTest {
 
     @Test
     public void testToFutureDoubleOnError() throws InterruptedException, TimeoutException {
-        Single<String> single = new Single<String>() {
+        Single<String> single = new CompletionSingle<String>() {
             @Override
             public void subscribe(Subscriber<? super String> subscriber) {
                 subscriber.onSubscribe(new Subscription() {
@@ -338,7 +339,7 @@ public class SingleTest {
 
     @Test
     public void testToFutureDoubleOnNext() throws InterruptedException, ExecutionException {
-        Single<String> single = new Single<String>() {
+        Single<String> single = new CompletionSingle<String>() {
             @Override
             public void subscribe(Subscriber<? super String> subscriber) {
                 subscriber.onSubscribe(new Subscription() {
@@ -386,7 +387,7 @@ public class SingleTest {
     public void testToFutureDoubleOnSubscribe() throws InterruptedException, ExecutionException {
         TestSubscription subscription1 = new TestSubscription();
         TestSubscription subscription2 = new TestSubscription();
-        Single<String> single = new Single<String>() {
+        Single<String> single = new CompletionSingle<String>() {
             @Override
             public void subscribe(Subscriber<? super String> subscriber) {
                 subscriber.onSubscribe(subscription1);
@@ -408,6 +409,36 @@ public class SingleTest {
         assertThat(subscriber.isComplete(), is(equalTo(false)));
         assertThat(subscriber.getLastError(), is(instanceOf(IllegalStateException.class)));
         assertThat(subscriber.getItems(), is(empty()));
+    }
+
+    @Test
+    void testOnCompleteResume() {
+        List<Integer> result = Single.just(1)
+                .onCompleteResume(4)
+                .collectList()
+                .await(100, TimeUnit.MILLISECONDS);
+
+        assertThat(result, is(equalTo(List.of(1, 4))));
+    }
+
+    @Test
+    void testOnCompleteResumeWith() {
+        List<Integer> result = Single.just(1)
+                .onCompleteResumeWith(Multi.just(4, 5, 6))
+                .collectList()
+                .await(100, TimeUnit.MILLISECONDS);
+
+        assertThat(result, is(equalTo(List.of(1, 4, 5, 6))));
+    }
+
+    @Test
+    void testOnCompleteResumeWithFirst() {
+        Integer result = Single.<Integer>empty()
+                .onCompleteResume(1)
+                .first()
+                .await(100, TimeUnit.MILLISECONDS);
+
+        assertThat(result, is(equalTo(1)));
     }
 
     private static class SingleTestSubscriber<T> extends TestSubscriber<T> {

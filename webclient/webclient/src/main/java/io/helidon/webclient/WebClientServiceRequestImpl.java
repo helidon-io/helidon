@@ -16,13 +16,13 @@
 package io.helidon.webclient;
 
 import java.net.URI;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
+import java.util.HashMap;
+import java.util.Map;
 
 import io.helidon.common.context.Context;
-import io.helidon.common.http.HashParameters;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Parameters;
+import io.helidon.common.reactive.Single;
 
 /**
  * Implementation of the {@link WebClientServiceRequest} interface.
@@ -38,15 +38,15 @@ class WebClientServiceRequestImpl implements WebClientServiceRequest {
     private final Parameters queryParams;
     private final Path path;
     private final String fragment;
-    private final HashParameters parameters;
-    private final CompletionStage<WebClientServiceRequest> sent;
-    private final CompletableFuture<WebClientServiceResponse> responseReceived;
-    private final CompletableFuture<WebClientServiceResponse> complete;
+    private final Map<String, String> parameters;
+    private final Single<WebClientServiceRequest> sent;
+    private final Single<WebClientServiceResponse> responseReceived;
+    private final Single<WebClientServiceResponse> complete;
 
     WebClientServiceRequestImpl(WebClientRequestBuilderImpl requestBuilder,
-                                CompletionStage<WebClientServiceRequest> sent,
-                                CompletableFuture<WebClientServiceResponse> responseReceived,
-                                CompletableFuture<WebClientServiceResponse> complete) {
+                                Single<WebClientServiceRequest> sent,
+                                Single<WebClientServiceResponse> responseReceived,
+                                Single<WebClientServiceResponse> complete) {
         this.headers = requestBuilder.headers();
         this.context = requestBuilder.context();
         this.method = requestBuilder.method();
@@ -57,7 +57,7 @@ class WebClientServiceRequestImpl implements WebClientServiceRequest {
         this.queryParams = queryParams();
         this.path = requestBuilder.path();
         this.fragment = requestBuilder.fragment();
-        this.parameters = HashParameters.create(requestBuilder.properties());
+        this.parameters = new HashMap<>(requestBuilder.properties());
         this.sent = sent;
         this.complete = complete;
     }
@@ -73,22 +73,22 @@ class WebClientServiceRequestImpl implements WebClientServiceRequest {
     }
 
     @Override
-    public CompletionStage<WebClientServiceRequest> whenSent() {
+    public Single<WebClientServiceRequest> whenSent() {
         return sent;
     }
 
     @Override
-    public CompletionStage<WebClientServiceResponse> whenResponseReceived() {
+    public Single<WebClientServiceResponse> whenResponseReceived() {
         return responseReceived;
     }
 
     @Override
-    public CompletionStage<WebClientServiceResponse> whenComplete() {
+    public Single<WebClientServiceResponse> whenComplete() {
         return complete;
     }
 
     @Override
-    public Parameters properties() {
+    public Map<String, String> properties() {
         return parameters;
     }
 

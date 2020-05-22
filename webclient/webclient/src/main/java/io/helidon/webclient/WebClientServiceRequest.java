@@ -15,11 +15,11 @@
  */
 package io.helidon.webclient;
 
-import java.util.concurrent.CompletionStage;
+import java.util.Map;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.http.HttpRequest;
-import io.helidon.common.http.Parameters;
+import io.helidon.common.reactive.Single;
 import io.helidon.webclient.spi.WebClientService;
 
 /**
@@ -45,28 +45,28 @@ public interface WebClientServiceRequest extends HttpRequest {
      *
      * @return completion stage that finishes when we fully send request (including entity) to server
      */
-    CompletionStage<WebClientServiceRequest> whenSent();
+    Single<WebClientServiceRequest> whenSent();
 
     /**
      * Completes when the response headers has been received, but entity has not been processed yet.
      *
      * @return completion stage that finishes when we received headers
      */
-    CompletionStage<WebClientServiceResponse> whenResponseReceived();
+    Single<WebClientServiceResponse> whenResponseReceived();
 
     /**
      * Completes when the full processing of this request is done (e.g. we have received a full response).
      *
      * @return completion stage that finishes when we receive and fully read response from the server
      */
-    CompletionStage<WebClientServiceResponse> whenComplete();
+    Single<WebClientServiceResponse> whenComplete();
 
     /**
      * Properties configured by user when creating this client request.
      *
      * @return properties that were configured
-     * @see WebClientRequestBuilder#property(String, String...)
+     * @see WebClientRequestBuilder#property(String, String)
      */
-    Parameters properties();
+    Map<String, String> properties();
 
 }

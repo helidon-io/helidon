@@ -32,7 +32,6 @@ import io.helidon.security.Security;
 import io.helidon.security.integration.webserver.WebSecurity;
 import io.helidon.tracing.TracerBuilder;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.StaticContentSupport;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.accesslog.AccessLogSupport;
@@ -89,30 +88,17 @@ public final class Main {
         BackendServiceClient bsc = new BackendServiceClient(client, config);
 
         // create a web server
-        WebServer server = createRouting(
-                Security.create(config.get("security")),
-                config,
-                bsc)
-                .createServer(createConfiguration(config));
+        WebServer server = WebServer.builder(createRouting(
+                    Security.create(config.get("security")),
+                    config,
+                    bsc))
+                .config(config.get("webserver"))
+                .tracer(registerTracer(config))
+                .build();
 
         // start the web server
         server.start()
                 .whenComplete(Main::started);
-    }
-
-    /**
-     * Create a {@code ServerConfiguration} instance using the given
-     * {@code Config}.
-     * @param config the configuration root
-     * @return the created {@code ServerConfiguration}
-     */
-    private static ServerConfiguration createConfiguration(
-            final Config config) {
-
-        return ServerConfiguration.builder()
-                .config(config.get("webserver"))
-                .tracer(registerTracer(config))
-                .build();
     }
 
     /**

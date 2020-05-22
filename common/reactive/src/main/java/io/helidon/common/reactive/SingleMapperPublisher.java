@@ -16,6 +16,7 @@
 package io.helidon.common.reactive;
 
 import java.util.concurrent.Flow;
+import java.util.function.Function;
 
 import io.helidon.common.mapper.Mapper;
 
@@ -24,13 +25,13 @@ import io.helidon.common.mapper.Mapper;
  * @param <T> the upstream value type
  * @param <R> the result value type
  */
-final class SingleMapperPublisher<T, R> implements Single<R> {
+final class SingleMapperPublisher<T, R> extends CompletionSingle<R> {
 
     private final Flow.Publisher<T> source;
 
-    private final Mapper<? super T, ? extends R> mapper;
+    private final Function<? super T, ? extends R> mapper;
 
-    SingleMapperPublisher(Flow.Publisher<T> source, Mapper<? super T, ? extends R> mapper) {
+    SingleMapperPublisher(Flow.Publisher<T> source, Function<? super T, ? extends R> mapper) {
         this.source = source;
         this.mapper = mapper;
     }

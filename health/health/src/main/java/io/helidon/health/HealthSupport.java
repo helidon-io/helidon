@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
@@ -45,10 +45,14 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
+import io.helidon.webserver.cors.CorsEnabledServiceHelper;
+import io.helidon.webserver.cors.CrossOriginConfig;
 
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.HealthCheckResponse.State;
+
+import static io.helidon.webserver.cors.CorsEnabledServiceHelper.CORS_CONFIG_KEY;
 
 /**
  * Health check support for integration with webserver, to expose the health endpoint.
@@ -59,12 +63,14 @@ public final class HealthSupport implements Service {
      */
     public static final String DEFAULT_WEB_CONTEXT = "/health";
 
+    private static final String FEATURE_NAME = "Health";
+
     private static final Logger LOGGER = Logger.getLogger(HealthSupport.class.getName());
 
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
     static {
-        HelidonFeatures.register(HelidonFlavor.SE, "Health");
+        HelidonFeatures.register(HelidonFlavor.SE, FEATURE_NAME);
     }
 
     private final boolean enabled;
@@ -76,11 +82,13 @@ public final class HealthSupport implements Service {
     private final Set<String> includedHealthChecks;
     private final Set<String> excludedHealthChecks;
     private final boolean backwardCompatible;
+    private final CorsEnabledServiceHelper corsEnabledServiceHelper;
 
     private HealthSupport(Builder builder) {
         this.enabled = builder.enabled;
         this.webContext = builder.webContext;
         this.backwardCompatible = builder.backwardCompatible;
+        corsEnabledServiceHelper = CorsEnabledServiceHelper.create(FEATURE_NAME, builder.crossOriginConfig);
 
         if (enabled) {
             builder.allChecks
@@ -116,6 +124,7 @@ public final class HealthSupport implements Service {
             return;
         }
         rules.get(webContext + "[/{*}]", JsonSupport.create())
+                .any(webContext, corsEnabledServiceHelper.processor())
                 .get(webContext, this::callAll)
                 .get(webContext + "/live", this::callLiveness)
                 .get(webContext + "/ready", this::callReadiness);
@@ -250,9 +259,9 @@ public final class HealthSupport implements Service {
      * Fluent API builder for {@link io.helidon.health.HealthSupport}.
      */
     public static final class Builder implements io.helidon.common.Builder<HealthSupport> {
-        private final Set<HealthCheck> allChecks = new LinkedHashSet<>();
-        private final Set<HealthCheck> livenessChecks = new LinkedHashSet<>();
-        private final Set<HealthCheck> readinessChecks = new LinkedHashSet<>();
+        private final List<HealthCheck> allChecks = new LinkedList<>();
+        private final List<HealthCheck> livenessChecks = new LinkedList<>();
+        private final List<HealthCheck> readinessChecks = new LinkedList<>();
 
         private final Set<Class<?>> excludedClasses = new HashSet<>();
         private final Set<String> includedHealthChecks = new HashSet<>();
@@ -260,6 +269,7 @@ public final class HealthSupport implements Service {
         private String webContext = DEFAULT_WEB_CONTEXT;
         private boolean enabled = true;
         private boolean backwardCompatible = true;
+        private CrossOriginConfig crossOriginConfig;
 
         private Builder() {
         }
@@ -389,6 +399,9 @@ public final class HealthSupport implements Service {
                 list.forEach(this::addExcludedClass);
             });
             config.get("backward-compatible").asBoolean().ifPresent(this::backwardCompatible);
+            config.get(CORS_CONFIG_KEY)
+                    .as(CrossOriginConfig::create)
+                    .ifPresent(this::crossOriginConfig);
             return this;
         }
 
@@ -454,6 +467,18 @@ public final class HealthSupport implements Service {
          */
         public Builder backwardCompatible(boolean enabled) {
             this.backwardCompatible = enabled;
+            return this;
+        }
+
+        /**
+         * Set the CORS config from the specified {@code CrossOriginConfig} object.
+         *
+         * @param crossOriginConfig {@code CrossOriginConfig} containing CORS set-up
+         * @return updated builder instance
+         */
+        public Builder crossOriginConfig(CrossOriginConfig crossOriginConfig) {
+            Objects.requireNonNull(crossOriginConfig, "CrossOriginConfig must be non-null");
+            this.crossOriginConfig = crossOriginConfig;
             return this;
         }
     }

@@ -7,14 +7,33 @@ This project implements an employee directory REST service using Helidon SE.
 
 By default the service uses a ArrayList backend with sample data. You can connect
  the backend application to an Oracle database by changing the values in the
- `resources/DbCreds.properties` file.
+ `resources/application.yaml` file.
+
+The service uses Helidon DB Client that provides reactive and non-blocking access to a database.
 
 ## Build and run
 
-With JDK8+
 ```bash
 mvn package
 java -jar target/employee-app.jar
+```
+
+## Create script
+If you do not have the employee table in your database, you can create it and required resources as follows:
+                
+```sql
+CREATE TABLE EMPLOYEE (ID NUMBER(6), 
+    FIRSTNAME VARCHAR2(20), 
+    LASTNAME VARCHAR2(25), 
+    EMAIL VARCHAR2(30), 
+    PHONE VARCHAR2(30),
+    BIRTHDATE VARCHAR2(15),
+    TITLE VARCHAR2(20),
+    DEPARTMENT VARCHAR2(20));
+
+ALTER TABLE EMPLOYEE ADD (CONSTRAINT emp_id_pk PRIMARY KEY (ID));
+
+CREATE SEQUENCE EMPLOYEE_SEQ INCREMENT BY 1 NOCACHE NOCYCLE;
 ```
 
 ## Exercise the application

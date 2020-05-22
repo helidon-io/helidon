@@ -1,7 +1,0 @@
-tracing:
-  service: "TCK"
-  components:
-    web-server:
-      enabled: false
-    security:
-      enabled: false
