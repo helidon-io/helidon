@@ -179,7 +179,7 @@ public class GrpcServerCdiExtension
                     Class<?> beanClass = bean.getBeanClass();
                     Annotation[] qualifiers = bean.getQualifiers().toArray(new Annotation[0]);
                     Object service = instance.select(beanClass, qualifiers).get();
-                    builder.register((io.helidon.grpc.server.GrpcService) service);
+                    builder.register((GrpcService) service);
                 });
 
         // discover beans of type BindableService
