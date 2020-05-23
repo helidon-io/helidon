@@ -82,11 +82,11 @@ public class StringService {
 ----
 
 <1> The `ApplicationScoped` annotation is what makes the service implementation a CDI bean and hence discoverable.
-<2> The `GrpcService` annotation is what defines the class as a gRPC service so that when the bean is iscovered it is
+<2> The `Grpc` annotation is what defines the class as a gRPC service so that when the bean is discovered it is
 then deployed by the gRPC MP server.
 
 === Service Name
-By default when a class is annotated with `GrpcService` the class name will be used as the gRPC service name. So in the example
+By default when a class is annotated with `Grpc` the class name will be used as the gRPC service name. So in the example
 above the service name will be `StringService`. This can be change by supplying a name to the annotation.
 
 [source,java]

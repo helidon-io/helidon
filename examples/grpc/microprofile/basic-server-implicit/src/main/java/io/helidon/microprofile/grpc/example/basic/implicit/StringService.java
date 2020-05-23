@@ -33,7 +33,7 @@ import io.grpc.stub.StreamObserver;
 /**
  * The gRPC StringService implementation.
  * <p>
- * This class is a gRPC service annotated with {@link GrpcService} and {@link ApplicationScoped}
+ * This class is a gRPC service annotated with {@link Grpc} and {@link ApplicationScoped}
  * so that it will be discovered and deployed using CDI when the MP gRPC server starts.
  */
 @Grpc
