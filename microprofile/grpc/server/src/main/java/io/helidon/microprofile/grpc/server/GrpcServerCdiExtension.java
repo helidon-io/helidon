@@ -42,6 +42,7 @@ import io.helidon.config.Config;
 import io.helidon.grpc.server.GrpcRouting;
 import io.helidon.grpc.server.GrpcServer;
 import io.helidon.grpc.server.GrpcServerConfiguration;
+import io.helidon.grpc.server.GrpcService;
 import io.helidon.microprofile.grpc.core.Grpc;
 import io.helidon.microprofile.grpc.core.InProcessGrpcChannel;
 import io.helidon.microprofile.grpc.server.spi.GrpcMpContext;
@@ -173,7 +174,7 @@ public class GrpcServerCdiExtension
                 });
 
         // discover beans of type GrpcService
-        beanManager.getBeans(io.helidon.grpc.server.GrpcService.class)
+        beanManager.getBeans(GrpcService.class)
                 .forEach(bean -> {
                     Class<?> beanClass = bean.getBeanClass();
                     Annotation[] qualifiers = bean.getQualifiers().toArray(new Annotation[0]);
