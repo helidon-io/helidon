@@ -165,7 +165,7 @@ public class GrpcServerCdiExtension
         // we use the bean manager to do this as we need the actual bean class
         beanManager.getBeans(Object.class, Any.Literal.INSTANCE)
                 .stream()
-                .filter(this::hasRpcServiceQualifier)
+                .filter(this::hasGrpcQualifier)
                 .forEach(bean -> {
                     Class<?> beanClass = bean.getBeanClass();
                     Annotation[] qualifiers = bean.getQualifiers().toArray(new Annotation[0]);
@@ -194,7 +194,7 @@ public class GrpcServerCdiExtension
         return builder;
     }
 
-    private boolean hasRpcServiceQualifier(Bean<?> bean) {
+    private boolean hasGrpcQualifier(Bean<?> bean) {
         return bean.getQualifiers()
                 .stream()
                 .anyMatch(q -> Grpc.class.isAssignableFrom(q.annotationType()));
