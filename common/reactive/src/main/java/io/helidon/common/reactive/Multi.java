@@ -904,8 +904,8 @@ public interface Multi<T> extends Subscribable<T> {
                 future::completeExceptionally,
                 () -> future.complete(null),
                 subscription -> {
-                    subscription.request(Long.MAX_VALUE);
                     single.onCancel(subscription::cancel);
+                    subscription.request(Long.MAX_VALUE);
                 }
         );
 
