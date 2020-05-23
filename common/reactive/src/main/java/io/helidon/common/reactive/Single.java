@@ -557,22 +557,20 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
     }
 
     /**
-     * Exposes this {@link Single} instance as a {@link CompletionStage} with {@code Optional<T>} return type
+     * Exposes this {@link Single} instance as a {@link Single} with {@code Optional<T>} return type
      * of the asynchronous operation.
-     * Note that if this {@link Single} completes without a value, the resulting {@link CompletionStage} will be completed
-     * exceptionally with an {@link IllegalStateException}
+     * If this {@link Single} completes without a value, the resulting {@link Single} completes with an
+     * empty {@link Optional}.
      *
      * @return CompletionStage
      */
-    default CompletionStage<Optional<T>> toOptionalStage() {
+    default Single<Optional<T>> toOptionalSingle() {
         try {
             SingleToOptionalFuture<T> subscriber = new SingleToOptionalFuture<>();
             this.subscribe(subscriber);
-            return subscriber;
+            return Single.from(subscriber);
         } catch (Throwable ex) {
-            CompletableFuture<Optional<T>> future = new CompletableFuture<>();
-            future.completeExceptionally(ex);
-            return future;
+            return Single.error(ex);
         }
     }
 

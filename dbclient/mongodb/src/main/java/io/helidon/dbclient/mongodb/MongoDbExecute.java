@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ import io.helidon.common.mapper.MapperManager;
 import io.helidon.dbclient.DbExecute;
 import io.helidon.dbclient.DbMapperManager;
 import io.helidon.dbclient.DbStatementDml;
-import io.helidon.dbclient.DbStatementGeneric;
 import io.helidon.dbclient.DbStatementGet;
 import io.helidon.dbclient.DbStatementQuery;
 import io.helidon.dbclient.DbStatementType;
@@ -90,11 +89,4 @@ public class MongoDbExecute extends AbstractDbExecute implements DbExecute {
         return new MongoDbStatementDml(DbStatementType.DELETE, db, statementName, statement, dbMapperManager, mapperManager,
                                        interceptors);
     }
-
-    @Override
-    public DbStatementGeneric createNamedStatement(String statementName, String statement) {
-        return new MongoDbStatementGeneric(DbStatementType.UNKNOWN, db, statementName, statement, dbMapperManager,
-                mapperManager, interceptors);
-    }
-
  }

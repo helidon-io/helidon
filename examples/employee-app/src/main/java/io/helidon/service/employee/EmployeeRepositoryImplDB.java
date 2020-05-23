@@ -19,10 +19,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 
+import io.helidon.common.reactive.Multi;
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbRow;
-import io.helidon.dbclient.DbRows;
 import io.helidon.dbclient.jdbc.JdbcDbClientProviderBuilder;
 
 /**
@@ -53,7 +53,7 @@ final class EmployeeRepositoryImplDB implements EmployeeRepository {
             sqle.printStackTrace();
         }
 
-        // now we create the reactive DB Client - explicitly cast to JDBC, so we can
+        // now we create the reactive DB Client - explicitly use JDBC, so we can
         // configure JDBC specific configuration
         dbClient = JdbcDbClientProviderBuilder.create()
                 .url(url + dbHostURL)
@@ -121,7 +121,7 @@ final class EmployeeRepositoryImplDB implements EmployeeRepository {
         String queryStr = "SELECT * FROM EMPLOYEE WHERE ID =?";
 
         return dbClient.execute(exec -> exec.get(queryStr, id))
-                .thenApply(optionalRow -> optionalRow.map(dbRow -> dbRow.as(Employee.class)));
+                .map(optionalRow -> optionalRow.map(dbRow -> dbRow.as(Employee.class)));
     }
 
     @Override
@@ -141,10 +141,9 @@ final class EmployeeRepositoryImplDB implements EmployeeRepository {
                 .execute());
     }
 
-    private static CompletionStage<List<Employee>> toEmployeeList(CompletionStage<DbRows<DbRow>> resultSet) {
-        return resultSet
-                .thenApply(rows -> rows.map(EmployeeDbMapper::read))
-                .thenCompose(DbRows::collect);
+    private static CompletionStage<List<Employee>> toEmployeeList(Multi<DbRow> resultSet) {
+        return resultSet.map(EmployeeDbMapper::read)
+                .collectList();
     }
 
     private static final class EmployeeDbMapper {

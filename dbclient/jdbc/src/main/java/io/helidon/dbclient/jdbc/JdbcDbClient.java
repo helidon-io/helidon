@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,12 +27,15 @@ import java.util.logging.Logger;
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
 import io.helidon.common.mapper.MapperManager;
+import io.helidon.common.reactive.CompletionAwaitable;
+import io.helidon.common.reactive.Multi;
+import io.helidon.common.reactive.Single;
+import io.helidon.common.reactive.Subscribable;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbClientException;
 import io.helidon.dbclient.DbExecute;
 import io.helidon.dbclient.DbMapperManager;
 import io.helidon.dbclient.DbStatementDml;
-import io.helidon.dbclient.DbStatementGeneric;
 import io.helidon.dbclient.DbStatementGet;
 import io.helidon.dbclient.DbStatementQuery;
 import io.helidon.dbclient.DbStatementType;
@@ -70,7 +73,7 @@ class JdbcDbClient implements DbClient {
 
     @Override
     @SuppressWarnings("unchecked")
-    public <T> CompletionStage<T> inTransaction(Function<DbTransaction, CompletionStage<T>> executor) {
+    public <U, T extends Subscribable<U>> T inTransaction(Function<DbTransaction, T> executor) {
 
         JdbcTxExecute execute = new JdbcTxExecute(
                 statements,
@@ -79,19 +82,52 @@ class JdbcDbClient implements DbClient {
                 connectionPool,
                 dbMapperManager,
                 mapperManager);
-        CompletionStage<T> stage = executor.apply(execute)
-                .thenApply(it -> {
-                    execute.context().whenComplete()
-                            .thenAccept(nothing -> {
-                                LOGGER.finest(() -> "Transaction commit");
-                                execute.doCommit().exceptionally(RollbackHandler.create(execute, Level.WARNING));
-                            }).exceptionally(RollbackHandler.create(execute, Level.WARNING));
-                    return it;
-                });
 
-        stage.exceptionally(RollbackHandler.create(execute, Level.FINEST));
+        T result = executor.apply(execute);
 
-        return stage;
+        if (result instanceof Multi) {
+            Multi<U> multi = (Multi<U>) result;
+
+            CompletableFuture<Multi<U>> commitFuture = new CompletableFuture<>();
+            multi = multi.onComplete(() -> {
+                // if result completes without an exception, we attempt a commit
+                execute.doCommit()
+                        .thenAccept(it -> commitFuture.complete(Multi.empty()))
+                        .exceptionally(it -> {
+                            commitFuture.complete(Multi.error(it));
+                            return null;
+                        });
+            });
+
+            /*
+                This does the following:
+                - when the db statement finishes, we get a result from the commitFuture
+                - we then want to amend the multi with the result of commit (only interested in error)
+                - so here we resume with the commit future that provides us with either empty multi, or error multi
+                - the flatMap just returns the multi result of the completion stage
+            */
+            multi = multi.onCompleteResumeWith(Single.from(commitFuture).flatMap(Function.identity()));
+
+            // if result completes with an exception, or commit failed, we attempt a rollback
+            multi = multi.onError(throwable -> {
+                RollbackHandler.create(execute, Level.WARNING).apply(throwable);
+            });
+
+            return (T) multi;
+        } else if (result instanceof Single) {
+            Single<U> single = (Single<U>) result;
+
+            CompletionAwaitable<U> future = single.thenCompose(it -> execute.doCommit()
+                    .thenApply(conn -> it));
+
+            future = future.exceptionally(RollbackHandler.create(execute, Level.WARNING));
+
+            return (T) Single.from(future);
+        } else {
+            execute.doRollback();
+            throw new IllegalStateException("You must return a Single or Multi instance to inTransaction, yet "
+                                                    + "you provided: " + result.getClass().getName());
+        }
     }
 
     /**
@@ -104,8 +140,8 @@ class JdbcDbClient implements DbClient {
         private final JdbcTxExecute execute;
         private final Level level;
 
-        private static RollbackHandler create(final JdbcTxExecute execute, final Level level) {
-            return new RollbackHandler(execute, level);
+        private static <T> RollbackHandler<T> create(final JdbcTxExecute execute, final Level level) {
+            return new RollbackHandler<>(execute, level);
         }
 
         private RollbackHandler(final JdbcTxExecute execute, final Level level) {
@@ -116,12 +152,12 @@ class JdbcDbClient implements DbClient {
         @Override
         public T apply(Throwable t) {
             LOGGER.log(level,
-                    String.format("Transaction rollback: %s", t.getMessage()),
-                    t);
+                       String.format("Transaction rollback: %s", t.getMessage()),
+                       t);
             execute.doRollback().exceptionally(t2 -> {
                 LOGGER.log(level,
-                        String.format("Transaction rollback failed: %s", t2.getMessage()),
-                        t2);
+                           String.format("Transaction rollback failed: %s", t2.getMessage()),
+                           t2);
                 return null;
             });
             return null;
@@ -129,8 +165,10 @@ class JdbcDbClient implements DbClient {
 
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public <T extends CompletionStage<?>> T execute(Function<DbExecute, T> executor) {
+    public <U, T extends Subscribable<U>> T execute(Function<DbExecute, T> executor) {
+
         JdbcExecute execute = new JdbcExecute(statements,
                                               executorService,
                                               interceptors,
@@ -138,40 +176,43 @@ class JdbcDbClient implements DbClient {
                                               dbMapperManager,
                                               mapperManager);
 
-        T resultFuture = executor.apply(execute);
+        Subscribable<U> result;
 
-        resultFuture.thenApply(it -> {
+        try {
+            result = executor.apply(execute);
+        } catch (RuntimeException e) {
+            execute.close();
+            throw e;
+        }
+
+        result = result.onComplete(() -> {
             execute.context().whenComplete()
                     .thenAccept(nothing -> {
                         LOGGER.finest(() -> "Execution finished, closing connection");
                         execute.close();
                     }).exceptionally(throwable -> {
                 LOGGER.log(Level.WARNING,
-                        String.format("Execution failed: %s", throwable.getMessage()),
-                        throwable);
+                           String.format("Execution failed: %s", throwable.getMessage()),
+                           throwable);
                 execute.close();
                 return null;
             });
-            return it;
         });
 
-        resultFuture.exceptionally(throwable -> {
+        result = result.onError(throwable -> {
             LOGGER.log(Level.FINEST,
-                        String.format("Execution failed: %s", throwable.getMessage()),
-                        throwable);
+                       String.format("Execution failed: %s", throwable.getMessage()),
+                       throwable);
             execute.close();
-            return null;
         });
 
-        return resultFuture;
+        return (T) result;
     }
 
     @Override
-    public CompletionStage<Void> ping() {
+    public Single<Void> ping() {
         return execute(exec -> exec.namedUpdate("ping"))
-                // need to get from Long to Void
-                .thenRun(() -> {
-                });
+                .flatMapSingle(it -> Single.empty());
     }
 
     @Override
@@ -220,7 +261,7 @@ class JdbcDbClient implements DbClient {
             setRollbackOnly = true;
         }
 
-        private CompletionStage<Connection> doRollback() {
+        private CompletionStage<Void> doRollback() {
             return context().connection()
                     .thenApply(conn -> {
                         try {
@@ -230,11 +271,11 @@ class JdbcDbClient implements DbClient {
                             throw new DbClientException("Failed to rollback a transaction, or close a connection", e);
                         }
 
-                        return conn;
+                        return null;
                     });
         }
 
-        private CompletionStage<Connection> doCommit() {
+        private CompletionStage<Void> doCommit() {
             if (setRollbackOnly) {
                 return doRollback();
             }
@@ -246,7 +287,7 @@ class JdbcDbClient implements DbClient {
                         } catch (SQLException e) {
                             throw new DbClientException("Failed to commit a transaction, or close a connection", e);
                         }
-                        return conn;
+                        return null;
                     });
         }
     }
@@ -328,12 +369,6 @@ class JdbcDbClient implements DbClient {
         public DbStatementDml createNamedDelete(String statementName, String statement) {
             return new JdbcStatementDml(context,
                                         JdbcStatementContext.create(DbStatementType.DELETE, statementName, statement));
-        }
-
-        @Override
-        public DbStatementGeneric createNamedStatement(String statementName, String statement) {
-            return new JdbcStatementGeneric(context,
-                                            JdbcStatementContext.create(DbStatementType.UNKNOWN, statementName, statement));
         }
 
         JdbcExecuteContext context() {

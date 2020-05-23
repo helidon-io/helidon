@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import java.util.logging.Logger;
 import io.helidon.common.mapper.MapperManager;
 import io.helidon.dbclient.DbMapperManager;
 import io.helidon.dbclient.DbStatementDml;
-import io.helidon.dbclient.DbStatementGeneric;
 import io.helidon.dbclient.DbStatementGet;
 import io.helidon.dbclient.DbStatementQuery;
 import io.helidon.dbclient.DbStatements;
@@ -230,11 +229,6 @@ public class MongoDbTransaction extends MongoDbExecute implements DbTransaction 
     @Override
     public DbStatementDml createNamedDelete(String statementName, String statement) {
         return ((MongoDbStatementDml) super.createNamedDelete(statementName, statement)).inTransaction(txManager);
-    }
-
-    @Override
-    public DbStatementGeneric createNamedStatement(String statementName, String statement) {
-        return ((MongoDbStatementGeneric) super.createNamedStatement(statementName, statement)).inTransaction(txManager);
     }
 
     @Override

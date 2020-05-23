@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,9 +27,6 @@ import io.helidon.tests.integration.dbclient.common.AbstractIT;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.tests.integration.dbclient.common.AbstractIT.DB_CLIENT;
-import static io.helidon.tests.integration.dbclient.common.AbstractIT.LAST_POKEMON_ID;
-import static io.helidon.tests.integration.dbclient.common.AbstractIT.TYPES;
 import static io.helidon.tests.integration.dbclient.common.utils.Utils.verifyInsertPokemon;
 import static io.helidon.tests.integration.dbclient.common.utils.Utils.verifyUpdatePokemon;
 
@@ -47,22 +44,20 @@ public class DmlStatementIT extends AbstractIT {
     /** Map of pokemons for DbStatementDml methods tests. */
     private static final Map<Integer, Pokemon> POKEMONS = new HashMap<>();
 
-    private static void addPokemon(Pokemon pokemon) throws ExecutionException, InterruptedException {
+    private static void addPokemon(Pokemon pokemon) {
         POKEMONS.put(pokemon.getId(), pokemon);
         Long result = DB_CLIENT.execute(exec -> exec
-                .namedInsert("insert-pokemon", pokemon.getId(), pokemon.getName())
-        ).toCompletableFuture().get();
+                .namedInsert("insert-pokemon", pokemon.getId(), pokemon.getName()))
+                .await();
         verifyInsertPokemon(result, pokemon);
     }
 
     /**
      * Initialize DbStatementDml methods tests.
      *
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
     @BeforeAll
-    public static void setup() throws ExecutionException, InterruptedException {
+    public static void setup() {
         try {
             addPokemon(new Pokemon(BASE_ID + 0, "Shinx", TYPES.get(13)));               // BASE_ID+0
             addPokemon(new Pokemon(BASE_ID + 1, "Luxio", TYPES.get(13)));               // BASE_ID+1

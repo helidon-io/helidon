@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,14 @@ package io.helidon.dbclient;
 import java.util.Arrays;
 import java.util.List;
 import java.util.ServiceLoader;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
 import io.helidon.common.mapper.MapperManager;
+import io.helidon.common.reactive.Single;
+import io.helidon.common.reactive.Subscribable;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
@@ -40,27 +41,31 @@ public interface DbClient {
     /**
      * Execute database statements in transaction.
      *
-     * @param <T>      statement execution result type
+     * @param <T>      statement execution result type, MUST be either a {@link io.helidon.common.reactive.Multi}
+     *                 or a {@link io.helidon.common.reactive.Single}, as returned by all APIs of DbClient.
+     * @param <U>      the type provided by the result type
      * @param executor database statement executor, see {@link DbExecute}
      * @return statement execution result
      */
-    <T> CompletionStage<T> inTransaction(Function<DbTransaction, CompletionStage<T>> executor);
+    <U, T extends Subscribable<U>> T inTransaction(Function<DbTransaction, T> executor);
 
     /**
      * Execute database statement.
      *
-     * @param <T>      statement execution result type
+     * @param <T>      statement execution result type, MUST be either a {@link io.helidon.common.reactive.Multi}
+     *                 or a {@link io.helidon.common.reactive.Single}, as returned by all APIs of DbClient
+     * @param <U>      the type provided by the result type
      * @param executor database statement executor, see {@link DbExecute}
      * @return statement execution result
      */
-    <T extends CompletionStage<?>> T execute(Function<DbExecute, T> executor);
+    <U, T extends Subscribable<U>> T execute(Function<DbExecute, T> executor);
 
     /**
      * Pings the database, completes when DB is up and ready, completes exceptionally if not.
      *
      * @return stage that completes when the ping finished
      */
-    CompletionStage<Void> ping();
+    Single<Void> ping();
 
     /**
      * Type of this database provider (such as jdbc:mysql, mongoDB etc.).
@@ -90,7 +95,8 @@ public interface DbClient {
         DbClientProvider theSource = DbClientProviderLoader.first();
         if (null == theSource) {
             throw new DbClientException(
-                    "No DbSource defined on classpath/module path. An implementation of io.helidon.dbclient.spi.DbSource is required "
+                    "No DbSource defined on classpath/module path. An implementation of io.helidon.dbclient.spi.DbSource is "
+                            + "required "
                             + "to access a DB");
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,31 +17,25 @@ package io.helidon.tests.integration.dbclient.common.tests.interceptor;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ExecutionException;
-import java.util.logging.Logger;
 
+import io.helidon.common.reactive.Multi;
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbInterceptor;
 import io.helidon.dbclient.DbInterceptorContext;
 import io.helidon.dbclient.DbRow;
-import io.helidon.dbclient.DbRows;
 import io.helidon.tests.integration.dbclient.common.AbstractIT;
 
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.tests.integration.dbclient.common.AbstractIT.POKEMONS;
-
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.equalTo;
 
 /**
  * Verify interceptors handling.
  */
 public class InterceptorIT {
-
-    /** Local logger instance. */
-    private static final Logger LOGGER = Logger.getLogger(InterceptorIT.class.getName());
 
     private static final class TestInterceptor implements DbInterceptor {
 
@@ -78,17 +72,16 @@ public class InterceptorIT {
     /**
      * Check that statement interceptor was called before statement execution.
      *
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
-    public void testStatementInterceptor() throws ExecutionException, InterruptedException {
+    public void testStatementInterceptor() {
         TestInterceptor interceptor = new TestInterceptor();
         DbClient dbClient = initDbClient(interceptor);
-        DbRows<DbRow> rows = dbClient.execute(exec -> exec
+        Multi<DbRow> rows = dbClient.execute(exec -> exec
                 .createNamedQuery("select-pokemon-named-arg")
-                .addParam("name", POKEMONS.get(6).getName()).execute()
-        ).toCompletableFuture().get();
+                .addParam("name", POKEMONS.get(6).getName())
+                .execute());
+
         assertThat(interceptor.called(), equalTo(true));
     }
 

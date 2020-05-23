@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package io.helidon.dbclient.mongodb;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Logger;
 
 import javax.json.Json;
 import javax.json.JsonReaderFactory;
@@ -41,9 +40,6 @@ import org.bson.Document;
  * @param <R> Statement execution result type
  */
 abstract class MongoDbStatement<S extends DbStatement<S, R>, R> extends AbstractStatement<S, R> {
-
-    /** Local logger instance. */
-    private static final Logger LOGGER = Logger.getLogger(MongoDbStatement.class.getName());
 
     /**
      * Empty JSON object.
@@ -261,11 +257,6 @@ abstract class MongoDbStatement<S extends DbStatement<S, R>, R> extends Abstract
                     validateOperation(dbStatementType, operation, MongoOperation.INSERT,
                                       MongoOperation.UPDATE, MongoOperation.DELETE);
                     break;
-                case UNKNOWN:
-                    validateOperation(dbStatementType, operation, MongoOperation.QUERY,
-                                      MongoOperation.INSERT, MongoOperation.UPDATE,
-                                      MongoOperation.DELETE, MongoOperation.COMMAND);
-                    break;
                 case COMMAND:
                     validateOperation(dbStatementType, operation, MongoOperation.COMMAND);
                     break;
@@ -295,7 +286,6 @@ abstract class MongoDbStatement<S extends DbStatement<S, R>, R> extends Abstract
                     operation = MongoOperation.COMMAND;
                     break;
                 case DML:
-                case UNKNOWN:
                 default:
                     throw new IllegalStateException(
                             "Operation type is not defined in statement, and cannot be inferred from statement type: "

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.logging.Logger;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
@@ -38,9 +37,6 @@ import io.helidon.dbclient.DbStatementType;
  * @param <R> the result type of the statement as returned by {@link #execute()}
  */
 public abstract class AbstractStatement<S extends DbStatement<S, R>, R> implements DbStatement<S, R> {
-
-    /** Local logger instance. */
-    private static final Logger LOGGER = Logger.getLogger(AbstractStatement.class.getName());
 
     private ParamType paramType = ParamType.UNKNOWN;
     private StatementParameters parameters;
@@ -76,7 +72,7 @@ public abstract class AbstractStatement<S extends DbStatement<S, R>, R> implemen
     }
 
     @Override
-    public CompletionStage<R> execute() {
+    public R execute() {
         CompletableFuture<Long> queryFuture = new CompletableFuture<>();
         CompletableFuture<Void> statementFuture = new CompletableFuture<>();
         DbInterceptorContext dbContext = DbInterceptorContext.create(dbType())
@@ -124,9 +120,9 @@ public abstract class AbstractStatement<S extends DbStatement<S, R>, R> implemen
      *                      otherwise complete same as statementFuture
      * @return result of this db statement.
      */
-    protected abstract CompletionStage<R> doExecute(CompletionStage<DbInterceptorContext> dbContext,
-                                                    CompletableFuture<Void> statementFuture,
-                                                    CompletableFuture<Long> queryFuture);
+    protected abstract R doExecute(CompletionStage<DbInterceptorContext> dbContext,
+                                   CompletableFuture<Void> statementFuture,
+                                   CompletableFuture<Long> queryFuture);
 
     /**
      * Type of this database to use in interceptor context.

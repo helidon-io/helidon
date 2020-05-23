@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import java.util.Base64;
 
 import io.helidon.dbclient.DbExecute;
 import io.helidon.dbclient.DbStatementDml;
-import io.helidon.dbclient.DbStatementGeneric;
 import io.helidon.dbclient.DbStatementGet;
 import io.helidon.dbclient.DbStatementQuery;
 import io.helidon.dbclient.DbStatementType;
@@ -112,16 +111,6 @@ public abstract class AbstractDbExecute implements DbExecute {
     @Override
     public DbStatementDml createDmlStatement(String statement) {
         return createNamedDmlStatement(generateName(DbStatementType.DML, statement), statement);
-    }
-
-    @Override
-    public DbStatementGeneric createNamedStatement(String statementName) {
-        return createNamedStatement(statementName, statementText(statementName));
-    }
-
-    @Override
-    public DbStatementGeneric createStatement(String statement) {
-        return createNamedStatement(generateName(DbStatementType.UNKNOWN, statement), statement);
     }
 
     /**
