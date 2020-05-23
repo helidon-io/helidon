@@ -31,7 +31,7 @@ import io.grpc.inprocess.InProcessChannelBuilder;
  *
  * @param <T> the type of the interface to be proxied
  */
-public class GrpcClientProxyBuilder<T>
+public class GrpcProxyBuilder<T>
         implements Builder<T> {
 
     private static final Map<Class<?>, ClientServiceDescriptor> DESCRIPTORS = new ConcurrentHashMap<>();
@@ -40,13 +40,13 @@ public class GrpcClientProxyBuilder<T>
 
     private final Class<T> type;
 
-    private GrpcClientProxyBuilder(GrpcServiceClient client, Class<T> type) {
+    private GrpcProxyBuilder(GrpcServiceClient client, Class<T> type) {
         this.client = client;
         this.type = type;
     }
 
     /**
-     * Create a GrpcClientProxyBuilder that can build gRPC dynamic proxies
+     * Create a {@code GrpcProxyBuilder} that can build gRPC dynamic proxies
      * for a given gRPC service interface using in-process channel.
      * <p>
      * This method will attempt to create in-process channel for the default
@@ -60,15 +60,15 @@ public class GrpcClientProxyBuilder<T>
      *
      * @param type  the service type
      * @param <T>   the service type
-     * @return a {@link GrpcClientProxyBuilder} that can build dynamic proxies
+     * @return a {@link GrpcProxyBuilder} that can build dynamic proxies
      *         for the gRPC service
      */
-    public static <T> GrpcClientProxyBuilder<T> create(Class<T> type) {
+    public static <T> GrpcProxyBuilder<T> create(Class<T> type) {
         return create("grpc.server", type);
     }
 
     /**
-     * Create a GrpcClientProxyBuilder that can build gRPC dynamic proxies
+     * Create a {@code GrpcProxyBuilder} that can build gRPC dynamic proxies
      * for a given gRPC service interface using in-process channel.
      * <p>
      * The class passed to this method should be properly annotated with
@@ -79,15 +79,15 @@ public class GrpcClientProxyBuilder<T>
      * @param serverName  the name of the gRPC server proxy should connect to
      * @param type        the service type
      * @param <T>         the service type
-     * @return a {@link GrpcClientProxyBuilder} that can build dynamic proxies
+     * @return a {@link GrpcProxyBuilder} that can build dynamic proxies
      *         for the gRPC service
      */
-    public static <T> GrpcClientProxyBuilder<T> create(String serverName, Class<T> type) {
+    public static <T> GrpcProxyBuilder<T> create(String serverName, Class<T> type) {
         return create(InProcessChannelBuilder.forName(serverName).usePlaintext().build(), type);
     }
 
     /**
-     * Create a GrpcClientProxyBuilder that can build gRPC dynamic proxies
+     * Create a {@code GrpcProxyBuilder} that can build gRPC dynamic proxies
      * for a given gRPC service interface.
      * <p>
      * The class passed to this method should be properly annotated with
@@ -98,12 +98,12 @@ public class GrpcClientProxyBuilder<T>
      * @param channel  the {@link Channel} to connect to the server
      * @param type     the service type
      * @param <T>      the service type
-     * @return a {@link GrpcClientProxyBuilder} that can build dynamic proxies
+     * @return a {@link GrpcProxyBuilder} that can build dynamic proxies
      *         for the gRPC service
      */
-    public static <T> GrpcClientProxyBuilder<T> create(Channel channel, Class<T> type) {
-        ClientServiceDescriptor descriptor = DESCRIPTORS.computeIfAbsent(type, GrpcClientProxyBuilder::createDescriptor);
-        return new GrpcClientProxyBuilder<>(GrpcServiceClient.builder(channel, descriptor).build(), type);
+    public static <T> GrpcProxyBuilder<T> create(Channel channel, Class<T> type) {
+        ClientServiceDescriptor descriptor = DESCRIPTORS.computeIfAbsent(type, GrpcProxyBuilder::createDescriptor);
+        return new GrpcProxyBuilder<>(GrpcServiceClient.builder(channel, descriptor).build(), type);
     }
 
     /**
