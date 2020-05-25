@@ -120,7 +120,7 @@ public class DbStatementContext {
      *
      * @param <T> type of the builder extending this builder
      */
-    public static abstract class BuilderBase<T extends BuilderBase<T>> {
+    public abstract static class BuilderBase<T extends BuilderBase<T>> {
         @SuppressWarnings("unchecked") private final T me = (T) this;
         private DbClientContext clientContext;
         private DbStatementType statementType;

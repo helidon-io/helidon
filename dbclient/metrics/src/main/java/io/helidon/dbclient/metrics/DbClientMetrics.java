@@ -19,14 +19,14 @@ package io.helidon.dbclient.metrics;
 /**
  * Utility class to obtain various types of metrics to register
  * with {@link io.helidon.dbclient.DbClient.Builder#addService(io.helidon.dbclient.DbClientService)}.
- * Metrics can be limited to a set of statement types or statement names, and also configured to 
+ * Metrics can be limited to a set of statement types or statement names, and also configured to
  * meter success, failure or both.
- * 
+ *
  * @see io.helidon.dbclient.metrics.DbClientMetricBuilder#statementTypes(io.helidon.dbclient.DbStatementType...)
- * @see io.helidon.dbclient.metrics.DbClientMetricBuilder#statementNames(String...) 
+ * @see io.helidon.dbclient.metrics.DbClientMetricBuilder#statementNames(String...)
  * @see io.helidon.dbclient.metrics.DbClientMetricBuilder#statementPredicate(java.util.function.Predicate)
- * @see io.helidon.dbclient.metrics.DbClientMetricBuilder#success(boolean) 
- * @see io.helidon.dbclient.metrics.DbClientMetricBuilder#errors(boolean) 
+ * @see io.helidon.dbclient.metrics.DbClientMetricBuilder#success(boolean)
+ * @see io.helidon.dbclient.metrics.DbClientMetricBuilder#errors(boolean)
  */
 public class DbClientMetrics {
     private DbClientMetrics() {

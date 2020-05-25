@@ -69,7 +69,7 @@ public abstract class DbClientServiceBase implements DbClientService {
      *
      * @param <B> type of the builder extending this class
      */
-    public static abstract class DbClientServiceBuilderBase<B extends DbClientServiceBuilderBase<B>> {
+    public abstract static class DbClientServiceBuilderBase<B extends DbClientServiceBuilderBase<B>> {
         private static final Predicate<DbClientServiceContext> YES = it -> true;
         private static final Predicate<DbClientServiceContext> NO = it -> false;
 
@@ -119,6 +119,7 @@ public abstract class DbClientServiceBase implements DbClientService {
          *  <td>{@code true}</td>
          *  <td>Whether this client service is enabled. See {@link #enabled(boolean)}</td>
          * </tr>
+         * </table>
          *
          * @param config configuration on the node of this service
          * @return updated builder instance
