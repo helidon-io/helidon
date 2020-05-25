@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.ServiceLoader;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import io.helidon.common.HelidonFeatures;
@@ -159,7 +160,7 @@ public interface WebClient {
          * @param service client service instance
          * @return updated builder instance
          */
-        public Builder register(WebClientService service) {
+        public Builder addService(WebClientService service) {
             services.addService(new WebClientServiceProvider() {
                 @Override
                 public String configKey() {
@@ -173,6 +174,17 @@ public interface WebClient {
             });
             return this;
         }
+
+        /**
+         * Register new instance of {@link WebClientService}.
+         *
+         * @param serviceSupplier client service instance
+         * @return updated builder instance
+         */
+        public Builder addService(Supplier<? extends WebClientService> serviceSupplier) {
+            return addService(serviceSupplier.get());
+        }
+
 
         /**
          * Exclude specific {@link WebClientServiceProvider} provider from being loaded.

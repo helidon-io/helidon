@@ -13,11 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.dbclient.metrics;
+
+import io.helidon.common.Builder;
+import io.helidon.dbclient.DbClientService;
+
 /**
- * Service provider interface for Helidon DB.
- * The main entry point for driver implementor is {@link io.helidon.dbclient.spi.DbClientProvider}.
- *
- * @see io.helidon.dbclient.spi.DbClientServiceProvider
- * @see io.helidon.dbclient.spi.DbMapperProvider
+ * DB Client metric builder.
  */
-package io.helidon.dbclient.spi;
+public abstract class DbClientMetricBuilder extends DbClientMetricBuilderBase<DbClientMetricBuilder>
+        implements Builder<DbClientService> {
+}

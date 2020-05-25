@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.dbclient.tracing;
+package io.helidon.dbclient.metrics;
 
 import java.util.Collection;
 import java.util.LinkedList;
@@ -21,37 +21,48 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import io.helidon.config.Config;
+import io.helidon.dbclient.DbClientException;
 import io.helidon.dbclient.DbClientService;
 import io.helidon.dbclient.spi.DbClientServiceProvider;
 
 /**
- * Provider of tracing interceptors.
+ * Java service loader service for DB metrics.
  */
-public class DbClientTracingProvider implements DbClientServiceProvider {
-    private static final Logger LOGGER = Logger.getLogger(DbClientTracingProvider.class.getName());
+public class DbClientMetricsProvider implements DbClientServiceProvider {
+    private static final Logger LOGGER = Logger.getLogger(DbClientMetricsProvider.class.getName());
 
     @Override
     public String configKey() {
-        return "tracing";
+        return "metrics";
     }
 
     @Override
     public Collection<DbClientService> create(Config config) {
-        List<Config> tracingConfigs = config.asNodeList().orElseGet(List::of);
+        List<Config> metricConfigs = config.asNodeList().orElseGet(List::of);
         List<DbClientService> result = new LinkedList<>();
 
-        for (Config tracingConfig : tracingConfigs) {
-            result.add(fromConfig(tracingConfig));
+        for (Config metricConfig : metricConfigs) {
+            result.add(fromConfig(metricConfig));
         }
 
         if (result.isEmpty()) {
-            LOGGER.info("DB Client tracing is enabled, yet none is configured in config.");
+            LOGGER.info("DB Client metrics are enabled, yet none are configured in config.");
         }
 
         return result;
     }
 
     private DbClientService fromConfig(Config config) {
-        return DbClientTracing.create(config);
+        String type = config.get("type").asString().orElse("COUNTER");
+        switch (type) {
+        case "COUNTER":
+            return DbClientMetrics.counter().config(config).build();
+        case "METER":
+            return DbClientMetrics.meter().config(config).build();
+        case "TIMER":
+            return DbClientMetrics.timer().config(config).build();
+        default:
+            throw new DbClientException("Metrics type " + type + " is not supported through service loader");
+        }
     }
 }

@@ -16,14 +16,14 @@
 
 package io.helidon.dbclient.metrics;
 
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 
-import io.helidon.dbclient.DbInterceptor;
-import io.helidon.dbclient.DbInterceptorContext;
+import io.helidon.common.reactive.Single;
+import io.helidon.dbclient.DbClientServiceContext;
 import io.helidon.dbclient.DbStatementType;
+import io.helidon.dbclient.common.DbClientServiceBase;
 import io.helidon.metrics.RegistryFactory;
 
 import org.eclipse.microprofile.metrics.Metadata;
@@ -35,7 +35,7 @@ import org.eclipse.microprofile.metrics.MetricType;
 /**
  * Common ancestor for Helidon DB metrics.
  */
-abstract class DbMetric<T extends Metric> implements DbInterceptor {
+abstract class DbClientMetric<T extends Metric> extends DbClientServiceBase {
     private final Metadata meta;
     private final String description;
     private final BiFunction<String, DbStatementType, String> nameFunction;
@@ -44,17 +44,19 @@ abstract class DbMetric<T extends Metric> implements DbInterceptor {
     private final boolean measureErrors;
     private final boolean measureSuccess;
 
-    protected DbMetric(DbMetricBuilder<?> builder) {
-        BiFunction<String, DbStatementType, String> namedFunction = builder.nameFormat();
+    protected DbClientMetric(DbClientMetricBuilderBase<?> builder) {
+        super(builder);
+
+        BiFunction<String, DbStatementType, String> nameFunction = builder.nameFormat();
         this.meta = builder.meta();
 
-        if (null == namedFunction) {
-            namedFunction = (name, statement) -> defaultNamePrefix() + name;
+        if (null == nameFunction) {
+            nameFunction = (name, statement) -> defaultNamePrefix() + name;
         }
-        this.nameFunction = namedFunction;
+        this.nameFunction = nameFunction;
         this.registry = RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.APPLICATION);
-        this.measureErrors = builder.measureErrors();
-        this.measureSuccess = builder.measureSuccess();
+        this.measureErrors = builder.errors();
+        this.measureSuccess = builder.success();
         String tmpDescription;
         if (builder.description() == null) {
             tmpDescription = ((null == meta) ? null : meta.getDescription().orElse(null));
@@ -67,9 +69,9 @@ abstract class DbMetric<T extends Metric> implements DbInterceptor {
     protected abstract String defaultNamePrefix();
 
     @Override
-    public CompletableFuture<DbInterceptorContext> statement(DbInterceptorContext interceptorContext) {
-        DbStatementType dbStatementType = interceptorContext.statementType();
-        String statementName = interceptorContext.statementName();
+    protected Single<DbClientServiceContext> apply(DbClientServiceContext context) {
+        DbStatementType dbStatementType = context.statementType();
+        String statementName = context.statementName();
 
         T metric = cache.computeIfAbsent(statementName, s -> {
             String name = nameFunction.apply(statementName, dbStatementType);
@@ -82,9 +84,9 @@ abstract class DbMetric<T extends Metric> implements DbInterceptor {
             return metric(registry, builder.build());
         });
 
-        executeMetric(metric, interceptorContext.statementFuture());
+        executeMetric(metric, context.statementFuture());
 
-        return CompletableFuture.completedFuture(interceptorContext);
+        return Single.just(context);
     }
 
     protected boolean measureErrors() {

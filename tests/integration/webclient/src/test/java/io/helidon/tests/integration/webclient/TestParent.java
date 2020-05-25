@@ -85,7 +85,7 @@ class TestParent {
                 .context(context)
                 .addMediaSupport(JsonpSupport.create());
 
-        Stream.of(clientServices).forEach(builder::register);
+        Stream.of(clientServices).forEach(builder::addService);
         return builder.build();
     }
 

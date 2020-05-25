@@ -14,4 +14,4 @@
 # limitations under the License.
 #
 
-io.helidon.dbclient.metrics.DbMetricsProvider
+io.helidon.dbclient.metrics.DbClientMetricsProvider

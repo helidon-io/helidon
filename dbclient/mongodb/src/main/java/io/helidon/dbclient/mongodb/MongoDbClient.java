@@ -20,15 +20,12 @@ import java.util.function.Function;
 
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
-import io.helidon.common.mapper.MapperManager;
 import io.helidon.common.reactive.Single;
 import io.helidon.common.reactive.Subscribable;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbExecute;
-import io.helidon.dbclient.DbMapperManager;
-import io.helidon.dbclient.DbStatements;
 import io.helidon.dbclient.DbTransaction;
-import io.helidon.dbclient.common.InterceptorSupport;
+import io.helidon.dbclient.common.DbClientContext;
 
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
@@ -48,13 +45,10 @@ public class MongoDbClient implements DbClient {
     }
 
     private final MongoDbClientConfig config;
-    private final DbStatements statements;
     private final MongoClient client;
     private final MongoDatabase db;
-    private final MapperManager mapperManager;
-    private final DbMapperManager dbMapperManager;
     private final ConnectionString connectionString;
-    private final InterceptorSupport interceptors;
+    private final DbClientContext clientContext;
 
     /**
      * Creates an instance of MongoDB driver handler.
@@ -62,14 +56,17 @@ public class MongoDbClient implements DbClient {
      * @param builder builder for mongoDB database
      */
     MongoDbClient(MongoDbClientProviderBuilder builder) {
+        this.clientContext = DbClientContext.builder()
+                .dbMapperManager(builder.dbMapperManager())
+                .mapperManager(builder.mapperManager())
+                .clientServices(builder.clientServices())
+                .statements(builder.statements())
+                .build();
+
         this.config = builder.dbConfig();
         this.connectionString = new ConnectionString(config.url());
-        this.statements = builder.statements();
-        this.mapperManager = builder.mapperManager();
-        this.dbMapperManager = builder.dbMapperManager();
         this.client = initMongoClient();
         this.db = initMongoDatabase();
-        this.interceptors = builder.interceptors();
     }
 
     private static final class MongoSessionSubscriber implements org.reactivestreams.Subscriber<ClientSession> {
@@ -116,7 +113,7 @@ public class MongoDbClient implements DbClient {
         //        client.startSession().subscribe(new MongoSessionSubscriber(txFuture));
         //        return txFuture.thenCompose(tx -> {
         //            MongoDbTransaction mongoTx = new MongoDbTransaction(
-        //                    db, tx, statements, dbMapperManager, mapperManager, interceptors);
+        //                    db, tx, statements, dbMapperManager, mapperManager, services);
         //            CompletionStage<T> future = executor.apply(mongoTx);
         //            // FIXME: Commit and rollback return Publisher so another future must be introduced here
         //            // to cover commit or rollback. This future may be passed using allRegistered call
@@ -128,7 +125,7 @@ public class MongoDbClient implements DbClient {
 
     @Override
     public <U, T extends Subscribable<U>> T execute(Function<DbExecute, T> executor) {
-        return executor.apply(new MongoDbExecute(db, statements, dbMapperManager, mapperManager, interceptors));
+        return executor.apply(new MongoDbExecute(db, clientContext));
     }
 
     @Override

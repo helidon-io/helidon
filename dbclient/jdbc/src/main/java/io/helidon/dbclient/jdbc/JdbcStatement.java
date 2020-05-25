@@ -30,9 +30,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.dbclient.DbClientException;
-import io.helidon.dbclient.DbInterceptorContext;
+import io.helidon.dbclient.DbClientServiceContext;
 import io.helidon.dbclient.DbStatement;
 import io.helidon.dbclient.common.AbstractStatement;
+import io.helidon.dbclient.common.DbStatementContext;
 
 /**
  * Common JDBC statement builder.
@@ -50,13 +51,8 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
     private final CompletionStage<Connection> connection;
     private final JdbcExecuteContext executeContext;
 
-    JdbcStatement(JdbcExecuteContext executeContext, JdbcStatementContext statementContext) {
-        super(statementContext.statementType(),
-              statementContext.statementName(),
-              statementContext.statement(),
-              executeContext.dbMapperManager(),
-              executeContext.mapperManager(),
-              executeContext.interceptors());
+    JdbcStatement(JdbcExecuteContext executeContext, DbStatementContext statementContext) {
+        super(statementContext);
 
         this.executeContext = executeContext;
         this.dbType = executeContext.dbType();
@@ -64,7 +60,7 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
         this.executorService = executeContext.executorService();
     }
 
-    PreparedStatement build(Connection conn, DbInterceptorContext dbContext) {
+    PreparedStatement build(Connection conn, DbClientServiceContext dbContext) {
         LOGGER.fine(() -> String.format("Building SQL statement: %s", dbContext.statement()));
         String statement = dbContext.statement();
         String statementName = dbContext.statementName();
@@ -83,7 +79,7 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
     }
 
     /**
-     * Switch to {@link #build(java.sql.Connection, io.helidon.dbclient.DbInterceptorContext)} and use interceptors.
+     * Switch to {@link #build(java.sql.Connection, io.helidon.dbclient.DbClientServiceContext)} and use services.
      *
      * @param connection connection to use
      * @return prepared statement

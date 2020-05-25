@@ -21,65 +21,35 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 
-import io.helidon.common.mapper.MapperManager;
-import io.helidon.dbclient.DbMapperManager;
-import io.helidon.dbclient.common.InterceptorSupport;
+import io.helidon.dbclient.common.DbClientContext;
 
 /**
  * Stuff needed by each and every statement.
  */
-final class JdbcExecuteContext {
+final class JdbcExecuteContext extends DbClientContext {
 
+    private final ConcurrentHashMap.KeySetView<CompletableFuture<Long>, Boolean> futures = ConcurrentHashMap.newKeySet();
     private final ExecutorService executorService;
-    private final InterceptorSupport interceptors;
-    private final DbMapperManager dbMapperManager;
-    private final MapperManager mapperManager;
     private final String dbType;
     private final CompletionStage<Connection> connection;
-    private final ConcurrentHashMap.KeySetView<CompletableFuture<Long>, Boolean> futures = ConcurrentHashMap.newKeySet();
 
-    private JdbcExecuteContext(ExecutorService executorService,
-                               InterceptorSupport interceptors,
-                               DbMapperManager dbMapperManager,
-                               MapperManager mapperManager,
-                               String dbType,
-                               CompletionStage<Connection> connection) {
-        this.executorService = executorService;
-        this.interceptors = interceptors;
-        this.dbMapperManager = dbMapperManager;
-        this.mapperManager = mapperManager;
-        this.dbType = dbType;
-        this.connection = connection;
+    private JdbcExecuteContext(Builder builder) {
+        super(builder);
+        this.executorService = builder.executorService;
+        this.dbType = builder.dbType;
+        this.connection = builder.connection;
     }
 
-    static JdbcExecuteContext create(ExecutorService executorService,
-                                     InterceptorSupport interceptors,
-                                     String dbType,
-                                     CompletionStage<Connection> connection,
-                                     DbMapperManager dbMapperManager,
-                                     MapperManager mapperManager) {
-        return new JdbcExecuteContext(executorService,
-                                      interceptors,
-                                      dbMapperManager,
-                                      mapperManager,
-                                      dbType,
-                                      connection);
+    /**
+     * Builder to create new instances.
+     * @return a new builder instance
+     */
+    static Builder jdbcBuilder() {
+        return new Builder();
     }
 
     ExecutorService executorService() {
         return executorService;
-    }
-
-    InterceptorSupport interceptors() {
-        return interceptors;
-    }
-
-    DbMapperManager dbMapperManager() {
-        return dbMapperManager;
-    }
-
-    MapperManager mapperManager() {
-        return mapperManager;
     }
 
     String dbType() {
@@ -94,7 +64,7 @@ final class JdbcExecuteContext {
         this.futures.add(queryFuture);
     }
 
-    public CompletionStage<Void> whenComplete() {
+    CompletionStage<Void> whenComplete() {
         CompletionStage<?> overallStage = CompletableFuture.completedFuture(null);
 
         for (CompletableFuture<Long> future : futures) {
@@ -105,4 +75,29 @@ final class JdbcExecuteContext {
         });
     }
 
+    static class Builder extends BuilderBase<Builder> implements io.helidon.common.Builder<JdbcExecuteContext> {
+        private ExecutorService executorService;
+        private String dbType;
+        private CompletionStage<Connection> connection;
+
+        @Override
+        public JdbcExecuteContext build() {
+            return new JdbcExecuteContext(this);
+        }
+
+        Builder executorService(ExecutorService executorService) {
+            this.executorService = executorService;
+            return this;
+        }
+
+        Builder dbType(String dbType) {
+            this.dbType = dbType;
+            return this;
+        }
+
+        Builder connection(CompletionStage<Connection> connection) {
+            this.connection = connection;
+            return this;
+        }
+    }
 }

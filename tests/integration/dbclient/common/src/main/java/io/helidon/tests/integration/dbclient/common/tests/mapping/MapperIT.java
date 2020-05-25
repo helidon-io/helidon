@@ -48,7 +48,7 @@ public class MapperIT extends AbstractIT  {
         POKEMONS.put(pokemon.getId(), pokemon);
         Long result = DB_CLIENT.execute(exec -> exec
                 .namedInsert("insert-pokemon", pokemon.getId(), pokemon.getName())
-        ).toCompletableFuture().get();
+        ).await();
         verifyInsertPokemon(result, pokemon);
     }
 
@@ -86,7 +86,7 @@ public class MapperIT extends AbstractIT  {
                 .createNamedInsert("insert-pokemon-order-arg-rev")
                 .indexedParam(pokemon)
                 .execute()
-                ).toCompletableFuture().get();
+                ).await();
         verifyInsertPokemon(result, pokemon);
     }
 
@@ -103,7 +103,7 @@ public class MapperIT extends AbstractIT  {
                 .createNamedInsert("insert-pokemon-named-arg")
                 .namedParam(pokemon)
                 .execute()
-                ).toCompletableFuture().get();
+                ).await();
         verifyInsertPokemon(result, pokemon);
     }
 
@@ -120,7 +120,7 @@ public class MapperIT extends AbstractIT  {
                 .createNamedUpdate("update-pokemon-order-arg")
                 .indexedParam(pokemon)
                 .execute()
-                ).toCompletableFuture().get();
+                ).await();
         verifyUpdatePokemon(result, pokemon);
     }
 
@@ -137,7 +137,7 @@ public class MapperIT extends AbstractIT  {
                 .createNamedUpdate("update-pokemon-named-arg")
                 .namedParam(pokemon)
                 .execute()
-                ).toCompletableFuture().get();
+                ).await();
         verifyUpdatePokemon(result, pokemon);
     }
 
@@ -154,7 +154,7 @@ public class MapperIT extends AbstractIT  {
                 .createNamedDelete("delete-pokemon-full-order-arg")
                 .indexedParam(pokemon)
                 .execute()
-                ).toCompletableFuture().get();
+                ).await();
         verifyDeletePokemon(result, pokemon);
     }
 
@@ -171,7 +171,7 @@ public class MapperIT extends AbstractIT  {
                 .createNamedDelete("delete-pokemon-full-named-arg")
                 .namedParam(pokemon)
                 .execute()
-                ).toCompletableFuture().get();
+                ).await();
         verifyDeletePokemon(result, pokemon);
     }
 

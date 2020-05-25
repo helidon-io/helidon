@@ -22,14 +22,11 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
 
-import io.helidon.common.mapper.MapperManager;
-import io.helidon.dbclient.DbMapperManager;
 import io.helidon.dbclient.DbStatementDml;
 import io.helidon.dbclient.DbStatementGet;
 import io.helidon.dbclient.DbStatementQuery;
-import io.helidon.dbclient.DbStatements;
 import io.helidon.dbclient.DbTransaction;
-import io.helidon.dbclient.common.InterceptorSupport;
+import io.helidon.dbclient.common.DbClientContext;
 
 import com.mongodb.reactivestreams.client.ClientSession;
 import com.mongodb.reactivestreams.client.MongoDatabase;
@@ -184,22 +181,14 @@ public class MongoDbTransaction extends MongoDbExecute implements DbTransaction 
      *
      * @param db MongoDB database
      * @param tx MongoDB client session (transaction handler)
-     * @param statements configured statements to be used by database provider
-     * @param dbMapperManager mapper manager of all configured DB mappers
-     * @param mapperManager mapper manager of all configured mappers
-     * @param interceptors interceptors to be executed
+     * @param clientContext client context
      */
-    MongoDbTransaction(
-            MongoDatabase db,
-            ClientSession tx,
-            DbStatements statements,
-            DbMapperManager dbMapperManager,
-            MapperManager mapperManager,
-            InterceptorSupport interceptors
-    ) {
-        super(db, statements, dbMapperManager, mapperManager, interceptors);
+    MongoDbTransaction(MongoDatabase db,
+                       ClientSession tx,
+                       DbClientContext clientContext) {
+        super(db, clientContext);
         this.txManager = new TransactionManager(tx);
-   }
+    }
 
     @Override
     public DbStatementQuery createNamedQuery(String statementName, String statement) {
@@ -233,7 +222,7 @@ public class MongoDbTransaction extends MongoDbExecute implements DbTransaction 
 
     @Override
     public void rollback() {
-         this.txManager.rollbackOnly();
+        this.txManager.rollbackOnly();
     }
 
     TransactionManager txManager() {

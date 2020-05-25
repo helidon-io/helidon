@@ -17,63 +17,39 @@ package io.helidon.dbclient.metrics;
 
 import java.util.concurrent.CompletionStage;
 
-import io.helidon.config.Config;
-
-import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 
 /**
- * Counter metric for Helidon DB. This class implements the {@link io.helidon.dbclient.DbInterceptor} and
+ * Meter for Helidon DB. This class implements the {@link io.helidon.dbclient.DbClientService} and
  * can be configured either through a {@link io.helidon.dbclient.DbClient.Builder} or through configuration.
  */
-public final class DbCounter extends DbMetric<Counter> {
-    private DbCounter(Builder builder) {
+final class DbClientMeter extends DbClientMetric<Meter> {
+    private DbClientMeter(Builder builder) {
         super(builder);
     }
 
     /**
-     * Create a counter from configuration.
-     *
-     * @param config configuration to read
-     * @return a new counter
-     * @see io.helidon.dbclient.metrics.DbMetricBuilder#config(io.helidon.config.Config)
-     */
-    public static DbCounter create(Config config) {
-        return builder().config(config).build();
-    }
-
-    /**
-     * Create a new counter using default configuration.
-     * <p>By default the name format is {@code db.counter.statement-name}, where {@code statement-name}
-     * is provided at runtime.
-     *
-     * @return a new counter
-     */
-    public static DbCounter create() {
-        return builder().build();
-    }
-
-    /**
-     * Create a new fluent API builder to create a new counter metric.
+     * Create a new fluent API builder to create a new meter metric.
      * @return a new builder instance
      */
-    public static Builder builder() {
+    static Builder builder() {
         return new Builder();
     }
 
     @Override
-    protected void executeMetric(Counter metric, CompletionStage<Void> aFuture) {
+    protected void executeMetric(Meter metric, CompletionStage<Void> aFuture) {
         aFuture
                 .thenAccept(nothing -> {
                     if (measureSuccess()) {
-                        metric.inc();
+                        metric.mark();
                     }
                 })
                 .exceptionally(throwable -> {
                     if (measureErrors()) {
-                        metric.inc();
+                        metric.mark();
                     }
                     return null;
                 });
@@ -85,22 +61,22 @@ public final class DbCounter extends DbMetric<Counter> {
     }
 
     @Override
-    protected Counter metric(MetricRegistry registry, Metadata meta) {
-        return registry.counter(meta);
+    protected Meter metric(MetricRegistry registry, Metadata meta) {
+        return registry.meter(meta);
     }
 
     @Override
     protected String defaultNamePrefix() {
-        return "db.counter.";
+        return "db.meter.";
     }
 
     /**
-     * Fluent API builder for {@link io.helidon.dbclient.metrics.DbCounter}.
+     * Fluent API builder for {@link DbClientMeter}.
      */
-    public static class Builder extends DbMetricBuilder<Builder> implements io.helidon.common.Builder<DbCounter> {
+    static class Builder extends DbClientMetricBuilder {
         @Override
-        public DbCounter build() {
-            return new DbCounter(this);
+        public DbClientMeter build() {
+            return new DbClientMeter(this);
         }
     }
 }

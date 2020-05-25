@@ -22,7 +22,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.common.context.Context;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
@@ -33,7 +32,6 @@ import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
 import io.helidon.webclient.security.WebClientSecurity;
-import io.helidon.webclient.security.WebClientSecurityProvider;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 
@@ -64,7 +62,7 @@ public class WebSecurityBuilderGateDefaultsTest {
                 .build();
 
         securitySetup = WebClient.builder()
-                .register(WebClientSecurity.create(clientSecurity))
+                .addService(WebClientSecurity.create(clientSecurity))
                 .build();
 
 

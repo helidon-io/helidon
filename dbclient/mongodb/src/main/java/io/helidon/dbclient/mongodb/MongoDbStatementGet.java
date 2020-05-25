@@ -19,13 +19,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import io.helidon.common.mapper.MapperManager;
 import io.helidon.common.reactive.Single;
-import io.helidon.dbclient.DbMapperManager;
 import io.helidon.dbclient.DbRow;
 import io.helidon.dbclient.DbStatementGet;
-import io.helidon.dbclient.DbStatementType;
-import io.helidon.dbclient.common.InterceptorSupport;
+import io.helidon.dbclient.common.DbStatementContext;
 import io.helidon.dbclient.mongodb.MongoDbTransaction.TransactionManager;
 
 import com.mongodb.reactivestreams.client.MongoDatabase;
@@ -37,19 +34,8 @@ public class MongoDbStatementGet implements DbStatementGet {
 
     private final MongoDbStatementQuery theQuery;
 
-    MongoDbStatementGet(MongoDatabase db,
-                        String statementName,
-                        String statement,
-                        DbMapperManager dbMapperManager,
-                        MapperManager mapperManager,
-                        InterceptorSupport interceptors) {
-        this.theQuery = new MongoDbStatementQuery(DbStatementType.GET,
-                                                  db,
-                                                  statementName,
-                                                  statement,
-                                                  dbMapperManager,
-                                                  mapperManager,
-                                                  interceptors);
+    MongoDbStatementGet(MongoDatabase db, DbStatementContext statementContext) {
+        this.theQuery = new MongoDbStatementQuery(db, statementContext);
     }
 
     @Override
