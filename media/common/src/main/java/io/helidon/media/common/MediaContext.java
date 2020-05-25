@@ -278,7 +278,7 @@ public final class MediaContext {
             servicesConfig.forEach((key, values) -> values.remove(SERVICE_NAME));
             if (filterServices) {
                 this.services.useSystemServiceLoader(false);
-                filterClassPath();
+                filterServices();
             } else {
                 this.services.useSystemServiceLoader(discoverServices);
             }
@@ -313,7 +313,7 @@ public final class MediaContext {
             return new MediaContext(readerContext, writerContext);
         }
 
-        private void filterClassPath() {
+        private void filterServices() {
             HelidonServiceLoader.builder(ServiceLoader.load(MediaSupportProvider.class))
                     .defaultPriority(LOADER_PRIORITY)
                     .build()
