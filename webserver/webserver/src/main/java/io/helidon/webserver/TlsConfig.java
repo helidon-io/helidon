@@ -32,6 +32,7 @@ import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -220,6 +221,16 @@ public final class TlsConfig {
         }
 
         /**
+         * Configure private key to use for SSL context.
+         *
+         * @param privateKeyConfigBuilder the required private key configuration parameter
+         * @return this builder
+         */
+        public Builder privateKey(Supplier<KeyConfig> privateKeyConfigBuilder) {
+            return privateKey(privateKeyConfigBuilder.get());
+        }
+
+        /**
          * Set the trust key configuration to be used to validate certificates.
          *
          * @param trustConfig the trust configuration
@@ -231,6 +242,16 @@ public final class TlsConfig {
             this.sslContext = null;
             this.trustConfig = Objects.requireNonNull(trustConfig);
             return this;
+        }
+
+        /**
+         * Set the trust key configuration to be used to validate certificates.
+         *
+         * @param trustConfigBuilder the trust configuration builder
+         * @return this builder
+         */
+        public Builder trust(Supplier<KeyConfig> trustConfigBuilder) {
+            return trust(trustConfigBuilder.get());
         }
 
         /**
