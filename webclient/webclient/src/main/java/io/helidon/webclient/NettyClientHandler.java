@@ -166,6 +166,10 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
             });
         }
 
+        if (responseCloser.isClosed()) {
+            return;
+        }
+
         // never "else-if" - msg may be an instance of more than one type, we must process all of them
         if (msg instanceof HttpContent) {
             HttpContent content = (HttpContent) msg;
@@ -173,9 +177,7 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
         }
 
         if (msg instanceof LastHttpContent) {
-            if (!responseCloser.isClosed()) {
-                responseCloser.close();
-            }
+            responseCloser.close();
         }
     }
 
@@ -261,10 +263,6 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
 
 
         public int emit(final ByteBuf buf) {
-            if (super.isCompleted()) {
-                //Seems like old OTP ignored complete and subsequent items were sent even after
-                return 0;
-            }
             buf.retain();
             return super.emit(DataChunk.create(false,
                     buf.nioBuffer().asReadOnlyBuffer(),
