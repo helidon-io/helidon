@@ -400,11 +400,13 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
         }
 
         @Override
-        public boolean accept(GenericType<?> type, MessageBodyReaderContext context) {
+        public PredicateResult accept(GenericType<?> type, MessageBodyReaderContext context) {
             if (predicate != null) {
-                return predicate.test(type.rawType());
+                return predicate.test(type.rawType())
+                        ? PredicateResult.SUPPORTED
+                        : PredicateResult.NOT_SUPPORTED;
             }
-            return clazz.isAssignableFrom(type.rawType());
+            return PredicateResult.supports(clazz, type);
         }
     }
 

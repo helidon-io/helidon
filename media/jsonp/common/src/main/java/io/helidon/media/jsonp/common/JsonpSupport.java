@@ -24,6 +24,8 @@ import javax.json.Json;
 import javax.json.JsonReaderFactory;
 import javax.json.JsonWriterFactory;
 
+import io.helidon.common.HelidonFeatures;
+import io.helidon.common.HelidonFlavor;
 import io.helidon.media.common.MediaSupport;
 import io.helidon.media.common.MessageBodyReader;
 import io.helidon.media.common.MessageBodyStreamWriter;
@@ -35,6 +37,10 @@ import io.helidon.media.common.MessageBodyWriter;
  * For usage examples navigate to {@link MediaSupport}
  */
 public final class JsonpSupport implements MediaSupport {
+
+    static {
+        HelidonFeatures.register(HelidonFlavor.SE, "Media", "JSON-P");
+    }
 
     private final JsonReaderFactory jsonReaderFactory;
     private final JsonWriterFactory jsonWriterFactory;

@@ -47,8 +47,8 @@ public final class JsonpBodyReader implements MessageBodyReader<JsonStructure> {
     }
 
     @Override
-    public boolean accept(GenericType<?> type, MessageBodyReaderContext context) {
-        return JsonStructure.class.isAssignableFrom(type.rawType());
+    public PredicateResult accept(GenericType<?> type, MessageBodyReaderContext context) {
+        return PredicateResult.supports(JsonStructure.class, type);
     }
 
     @Override

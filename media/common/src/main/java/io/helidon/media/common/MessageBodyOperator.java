@@ -35,11 +35,37 @@ public interface MessageBodyOperator<T extends MessageBodyContext> {
     PredicateResult accept(GenericType<?> type, T context);
 
     /**
-     * TODO javadoc
+     * Status whether requested class type is supported by the operator.
      */
     enum PredicateResult {
+
+        /**
+         * Requested type not supported.
+         */
         NOT_SUPPORTED,
-        ASSIGNABLE,
-        EXACT
+
+        /**
+         * Requested type is compatible with this operator, but it is not exact match.
+         */
+        COMPATIBLE,
+
+        /**
+         * Requested type is supported by that specific operator.
+         */
+        SUPPORTED;
+
+        /**
+         * Whether handled class is supported.
+         * Method {@link Class#isAssignableFrom(Class)} is invoked to verify if class under expected parameter is
+         * supported by by the class under actual parameter.
+         *
+         * @param expected expected type
+         * @param actual actual type
+         * @return if supported or not
+         */
+        public static PredicateResult supports(Class<?> expected, GenericType<?> actual) {
+            return expected.isAssignableFrom(actual.rawType()) ? SUPPORTED : NOT_SUPPORTED;
+        }
+
     }
 }

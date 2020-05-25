@@ -38,7 +38,7 @@ import io.helidon.media.common.MessageBodyWriter;
 public final class JsonbSupport implements MediaSupport {
 
     static {
-        HelidonFeatures.register(HelidonFlavor.SE, "WebServer", "JSON-B");
+        HelidonFeatures.register(HelidonFlavor.SE, "Media", "JSON-B");
     }
 
     private static final Jsonb JSON_B = JsonbBuilder.create();

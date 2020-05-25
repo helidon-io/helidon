@@ -16,14 +16,17 @@
 package io.helidon.media.common;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.stream.Collectors;
 
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
 import io.helidon.media.common.spi.MediaSupportProvider;
 
 /**
@@ -100,6 +103,10 @@ public final class MediaContext {
     public static class Builder implements io.helidon.common.Builder<MediaContext>,
                                            MediaContextBuilder<Builder> {
 
+        private final static String SERVICE_NAME = "name";
+        private final static String DEFAULTS_NAME = "defaults";
+        private final static String DEFAULTS_INCLUDE_STACK_TRACES = "include-stack-traces";
+
         private final static int DEFAULTS_PRIORITY = 100;
         private final static int BUILDER_PRIORITY = 200;
         private final static int LOADER_PRIORITY = 300;
@@ -112,10 +119,12 @@ public final class MediaContext {
         private final List<MessageBodyWriter<?>> builderWriters = new ArrayList<>();
         private final List<MessageBodyStreamWriter<?>> builderStreamWriter = new ArrayList<>();
         private final List<MediaSupport> mediaSupports = new ArrayList<>();
+        private final Map<String, Map<String, String>> servicesConfig = new HashMap<>();
         private final MessageBodyReaderContext readerContext;
         private final MessageBodyWriterContext writerContext;
         private boolean registerDefaults = true;
-        private boolean includeStackTraces = false;
+        private boolean discoverServices = false;
+        private boolean filterServices = false;
         private Config config = Config.empty();
 
         private Builder() {
@@ -132,20 +141,42 @@ public final class MediaContext {
          *     <th>description</th>
          * </tr>
          * <tr>
-         *     <td>server-errors-include-stack-traces</td>
-         *     <td>Whether stack traces should be included in the response (server only)</td>
-         * </tr>
-         * <tr>
          *     <td>register-defaults</td>
          *     <td>Whether to register default reader and writers</td>
          * </tr>
+         * <tr>
+         *     <td>discover-services</td>
+         *     <td>Whether to discover services via service loader</td>
+         * </tr>
+         * <tr>
+         *     <td>filter-services</td>
+         *     <td>Whether to filter discovered services by service names in services section</td>
+         * </tr>
+         * <tr>
+         *     <td>services</td>
+         *     <td></td>
+         * </tr>
          * </table>
+         *
          * @param config a {@link Config}
          * @return this {@link Builder}
          */
         public Builder config(Config config) {
-            config.get("server-errors-include-stack-traces").asBoolean().ifPresent(this::includeStackTraces);
             config.get("register-defaults").asBoolean().ifPresent(this::registerDefaults);
+            config.get("discover-services").asBoolean().ifPresent(this::discoverServices);
+            config.get("filter-services").asBoolean().ifPresent(this::filterServices);
+            config.get("services")
+                    .asNodeList()
+                    .ifPresent(it -> it.forEach(serviceConfig -> {
+                        String name = serviceConfig.get(SERVICE_NAME).asString().get();
+                        servicesConfig.merge(name,
+                                             serviceConfig.detach().asMap().orElseGet(Map::of),
+                                             (first, second) -> {
+                                                 HashMap<String, String> result = new HashMap<>(first);
+                                                 result.putAll(second);
+                                                 return result;
+                                             });
+                    }));
             this.config = config;
             return this;
         }
@@ -153,56 +184,37 @@ public final class MediaContext {
         @Override
         public Builder addMediaSupport(MediaSupport mediaSupport) {
             Objects.requireNonNull(mediaSupport);
-            mediaSupport.register(readerContext, writerContext);
+            mediaSupports.add(mediaSupport);
             return this;
         }
 
         public Builder addMediaSupport(MediaSupport mediaSupport, int priority) {
+            Objects.requireNonNull(mediaSupport);
             services.addService((config) -> mediaSupport, priority);
             return this;
         }
 
         @Override
         public Builder addReader(MessageBodyReader<?> reader) {
-            readerContext.registerReader(reader);
+            builderReaders.add(reader);
             return this;
         }
 
         @Override
         public Builder addStreamReader(MessageBodyStreamReader<?> streamReader) {
-            readerContext.registerReader(streamReader);
+            builderStreamReaders.add(streamReader);
             return this;
         }
 
         @Override
         public Builder addWriter(MessageBodyWriter<?> writer) {
-            writerContext.registerWriter(writer);
+            builderWriters.add(writer);
             return this;
         }
 
         @Override
         public Builder addStreamWriter(MessageBodyStreamWriter<?> streamWriter) {
-            writerContext.registerWriter(streamWriter);
-            return this;
-        }
-
-        /**
-         * Register a new stream reader.
-         * @param reader reader to register
-         * @return this builder instance
-         */
-        public Builder registerStreamReader(MessageBodyStreamReader<?> reader) {
-            readerContext.registerReader(reader);
-            return this;
-        }
-
-        /**
-         * Register a new stream writer.
-         * @param writer writer to register
-         * @return this builder instance
-         */
-        public Builder registerStreamWriter(MessageBodyStreamWriter<?> writer) {
-            writerContext.registerWriter(writer);
+            builderStreamWriter.add(streamWriter);
             return this;
         }
 
@@ -226,22 +238,55 @@ public final class MediaContext {
          * @return this builder instance
          */
         public Builder includeStackTraces(boolean includeStackTraces) {
-            this.includeStackTraces = includeStackTraces;
+            servicesConfig.computeIfAbsent(DEFAULTS_NAME, k -> new HashMap<>())
+                    .put(DEFAULTS_INCLUDE_STACK_TRACES, Boolean.toString(includeStackTraces));
+            return this;
+        }
+
+        /**
+         * Whether system loader should be used to load {@link MediaSupportProvider} from classpath.
+         *
+         * @param discoverServices use system loader
+         * @return this builder instance
+         */
+        public Builder discoverServices(boolean discoverServices) {
+            this.discoverServices = discoverServices;
+            return this;
+        }
+
+        /**
+         * Whether services loaded by system loader should be filtered.
+         * All of the services which should pass the filter, have to be present under {@code services} section of configuration.
+         *
+         * @param filterServices filter services
+         * @return this builder instance
+         */
+        public Builder filterServices(boolean filterServices) {
+            this.filterServices = filterServices;
             return this;
         }
 
         @Override
         public MediaContext build() {
-            if (registerDefaults) {
-                addMediaSupport(DefaultMediaSupport.create(includeStackTraces), DEFAULTS_PRIORITY);
+            //Remove all service names from the obtained service configurations
+            servicesConfig.forEach((key, values) -> values.remove(SERVICE_NAME));
+            if (filterServices) {
+                this.services.useSystemServiceLoader(false);
+                filterClassPath();
+            } else {
+                this.services.useSystemServiceLoader(discoverServices);
             }
-            services.useSystemServiceLoader(true)
-                    .defaultPriority(LOADER_PRIORITY)
+            if (registerDefaults) {
+                this.services.addService(new DefaultsProvider(), DEFAULTS_PRIORITY);
+            }
+            this.services.defaultPriority(LOADER_PRIORITY)
                     .addService(config -> new MediaSupport() {
                         @Override
                         public void register(MessageBodyReaderContext readerContext, MessageBodyWriterContext writerContext) {
                             builderReaders.forEach(readerContext::registerReader);
+                            builderStreamReaders.forEach(readerContext::registerReader);
                             builderWriters.forEach(writerContext::registerWriter);
+                            builderStreamWriter.forEach(writerContext::registerWriter);
                         }
                     }, BUILDER_PRIORITY)
                     .addService(config -> new MediaSupport() {
@@ -249,16 +294,42 @@ public final class MediaContext {
                         public void register(MessageBodyReaderContext readerContext, MessageBodyWriterContext writerContext) {
                             mediaSupports.forEach(it -> it.register(readerContext, writerContext));
                         }
-                    })
+                    }, BUILDER_PRIORITY)
                     .build()
                     .asList()
                     .stream()
-                    .map(it -> it.create(config.get(it.configKey())))
+                    .map(it -> it.create(Config.just(ConfigSources.create(servicesConfig.getOrDefault(it.configKey(),
+                                                                                                        new HashMap<>())))))
                     .collect(Collectors.toCollection(LinkedList::new))
                     .descendingIterator()
                     .forEachRemaining(mediaService -> mediaService.register(readerContext, writerContext));
 
             return new MediaContext(readerContext, writerContext);
+        }
+
+        private void filterClassPath() {
+            Config servicesConfig = config.get("services");
+            HelidonServiceLoader.builder(ServiceLoader.load(MediaSupportProvider.class))
+                    .defaultPriority(LOADER_PRIORITY)
+                    .build()
+                    .asList()
+                    .stream()
+                    .filter(provider -> servicesConfig.get(provider.configKey()).exists())
+                    .forEach(services::addService);
+        }
+    }
+
+    private static final class DefaultsProvider implements MediaSupportProvider {
+
+        @Override
+        public String configKey() {
+            return Builder.DEFAULTS_NAME;
+        }
+
+        @Override
+        public MediaSupport create(Config config) {
+            boolean includeStackTraces = config.get(Builder.DEFAULTS_INCLUDE_STACK_TRACES).asBoolean().orElse(false);
+            return DefaultMediaSupport.create(includeStackTraces);
         }
     }
 

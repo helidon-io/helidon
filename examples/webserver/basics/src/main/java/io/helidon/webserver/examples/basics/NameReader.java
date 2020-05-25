@@ -15,7 +15,9 @@
  */
 package io.helidon.webserver.examples.basics;
 
+import java.util.Optional;
 import java.util.concurrent.Flow;
+import java.util.function.Supplier;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
@@ -41,11 +43,20 @@ public class NameReader implements MessageBodyReader<Name> {
     }
 
     @Override
-    public boolean accept(GenericType<?> type, MessageBodyReaderContext context) {
-        return context.contentType()
+    public PredicateResult accept(GenericType<?> type, MessageBodyReaderContext context) {
+        return accept(() -> context.contentType()
                 .map(ct -> MediaType.parse("application/name").equals(ct))
-                .map(acceptable -> acceptable && Name.class.isAssignableFrom(type.rawType()))
-                .orElse(false);
+                .map(ct -> {
+                    if (ct) {
+                        return PredicateResult.supports(Name.class, type);
+                    }
+                    return PredicateResult.NOT_SUPPORTED;
+                }));
+    }
+
+
+    public static PredicateResult accept(Supplier<Optional<PredicateResult>> supplier) {
+        return supplier.get().orElse(PredicateResult.NOT_SUPPORTED);
     }
 }
 

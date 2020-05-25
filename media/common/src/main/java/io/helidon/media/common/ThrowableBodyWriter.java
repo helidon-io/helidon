@@ -40,8 +40,8 @@ public class ThrowableBodyWriter implements MessageBodyWriter<Throwable> {
     }
 
     @Override
-    public boolean accept(GenericType<?> type, MessageBodyWriterContext context) {
-        return Throwable.class.isAssignableFrom(type.rawType());
+    public PredicateResult accept(GenericType<?> type, MessageBodyWriterContext context) {
+        return PredicateResult.supports(Throwable.class, type);
     }
 
     @Override

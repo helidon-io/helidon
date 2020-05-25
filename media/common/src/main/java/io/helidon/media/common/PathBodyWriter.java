@@ -37,14 +37,14 @@ import static io.helidon.media.common.ByteChannelBodyWriter.DEFAULT_RETRY_SCHEMA
 public final class PathBodyWriter implements MessageBodyWriter<Path> {
 
     /**
-     * Enforces the use of {@link #get()}.
+     * Enforces the use of {@link #create()}.
      */
     private PathBodyWriter() {
     }
 
     @Override
-    public boolean accept(GenericType<?> type, MessageBodyWriterContext context) {
-        return Path.class.isAssignableFrom(type.rawType());
+    public PredicateResult accept(GenericType<?> type, MessageBodyWriterContext context) {
+        return PredicateResult.supports(Path.class, type);
     }
 
     @Override
