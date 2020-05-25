@@ -108,7 +108,6 @@ class KafkaMpTest extends AbstractKafkaTest{
     private static final String GROUP_1 = "group1";
     private static final String GROUP_2 = "group2";
 
-    private static String KAFKA_SERVER;
     private static SeContainer cdiContainer;
 
     private static Map<String, String> cdiConfig() {
@@ -243,8 +242,6 @@ class KafkaMpTest extends AbstractKafkaTest{
         return p;
     }
 
-    @BeforeEach
-    void setUp() {
     @BeforeAll
     static void prepareTopics() {
         kafkaResource.getKafkaTestUtils().createTopic(TEST_TOPIC_1, 4, (short) 1);

@@ -23,37 +23,17 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 public abstract class AbstractKafkaTest {
 
+    static String KAFKA_SERVER;
+
     @RegisterExtension
     public static final SharedKafkaTestResource kafkaResource = new SharedKafkaTestResource()
             .withBrokers(4)
             .withBrokerProperty("replication.factor", "2")
             .withBrokerProperty("min.insync.replicas", "1")
             .withBrokerProperty("auto.create.topics.enable", Boolean.toString(false));
-    public static final String TEST_TOPIC_1 = "graph-done-1";
-    public static final String TEST_TOPIC_2 = "graph-done-2";
-    public static final String TEST_TOPIC_3 = "graph-done-3";
-    public static final String TEST_TOPIC_4 = "graph-done-4";
-    public static final String TEST_TOPIC_5 = "graph-done-5";
-    public static final String TEST_TOPIC_6 = "graph-done-6";
-    public static final String TEST_TOPIC_7 = "graph-done-7";
-    public static final String TEST_TOPIC_8 = "graph-done-8";
-    public static final String TEST_TOPIC_10 = "graph-done-10";
-    public static final String TEST_TOPIC_13 = "graph-done-13";
-    public static final String UNEXISTING_TOPIC = "unexistingTopic2";
-    protected final String KAFKA_SERVER = kafkaResource.getKafkaConnectString();
-
 
     @BeforeAll
     static void prepareTopics() {
-        kafkaResource.getKafkaTestUtils().createTopic(TEST_TOPIC_1, 4, (short) 2);
-        kafkaResource.getKafkaTestUtils().createTopic(TEST_TOPIC_2, 4, (short) 2);
-        kafkaResource.getKafkaTestUtils().createTopic(TEST_TOPIC_3, 4, (short) 2);
-        kafkaResource.getKafkaTestUtils().createTopic(TEST_TOPIC_4, 4, (short) 2);
-        kafkaResource.getKafkaTestUtils().createTopic(TEST_TOPIC_5, 4, (short) 2);
-        kafkaResource.getKafkaTestUtils().createTopic(TEST_TOPIC_6, 1, (short) 2);
-        kafkaResource.getKafkaTestUtils().createTopic(TEST_TOPIC_7, 4, (short) 2);
-        kafkaResource.getKafkaTestUtils().createTopic(TEST_TOPIC_8, 2, (short) 2);
-        kafkaResource.getKafkaTestUtils().createTopic(TEST_TOPIC_10, 1, (short) 2);
-        kafkaResource.getKafkaTestUtils().createTopic(TEST_TOPIC_13, 1, (short) 2);
+        KAFKA_SERVER = kafkaResource.getKafkaConnectString();
     }
 }

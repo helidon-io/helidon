@@ -31,6 +31,7 @@ import io.helidon.messaging.Channel;
 import io.helidon.messaging.Messaging;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
@@ -46,7 +47,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 public class KafkaSeTest extends AbstractKafkaTest {
-    private static final Logger LOGGER = Logger.getLogger(KafkaMpTest.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(KafkaSeTest.class.getName());
     private static final String TEST_SE_TOPIC_1 = "special-se-topic-1";
     private static final String TEST_SE_TOPIC_2 = "special-se-topic-2";
 
@@ -55,6 +56,7 @@ public class KafkaSeTest extends AbstractKafkaTest {
     static void prepareTopics() {
         kafkaResource.getKafkaTestUtils().createTopic(TEST_SE_TOPIC_1, 4, (short) 2);
         kafkaResource.getKafkaTestUtils().createTopic(TEST_SE_TOPIC_2, 4, (short) 2);
+        KAFKA_SERVER = kafkaResource.getKafkaConnectString();
     }
 
     @Test
@@ -129,7 +131,7 @@ public class KafkaSeTest extends AbstractKafkaTest {
                 .connector(kafkaConnector)
                 .listener(fromKafka, consumerRecord -> {
                             countDownLatch.countDown();
-                            System.out.println("Kafka says: " + consumerRecord);
+                            LOGGER.info("Kafka says: " + consumerRecord);
                             result.add(consumerRecord.value());
                         })
                 .build();
@@ -141,7 +143,7 @@ public class KafkaSeTest extends AbstractKafkaTest {
             kafkaResource.getKafkaTestUtils().produceRecords(rawTestData, TEST_SE_TOPIC_1, 1);
 
             assertThat(countDownLatch.await(20, TimeUnit.SECONDS), is(true));
-            assertThat(result, equalTo(new HashSet<>(testData.values())));
+            assertThat(result, containsInAnyOrder(testData.values().toArray()));
         } finally {
             messaging.stop();
         }
@@ -192,7 +194,7 @@ public class KafkaSeTest extends AbstractKafkaTest {
                         .filter(i -> i < 10)
                         .forEach(payload -> {
                             countDownLatch.countDown();
-                            System.out.println("Kafka says: " + payload);
+                            LOGGER.info("Kafka says: " + payload);
                             result.add(payload);
                         }))
                 .build();
@@ -200,7 +202,7 @@ public class KafkaSeTest extends AbstractKafkaTest {
         try {
             messaging.start();
             assertThat(countDownLatch.await(20, TimeUnit.SECONDS), is(true));
-            assertThat(result, equalTo(IntStream.range(0, 10).boxed().collect(Collectors.toSet())));
+            assertThat(result, containsInAnyOrder(IntStream.range(0, 10).boxed().toArray()));
         } finally {
             messaging.stop();
         }
