@@ -49,21 +49,21 @@ public class JacksonProvider implements MediaSupportProvider {
         return JacksonSupport.create(objectMapper);
     }
 
-    private void configureJackson(ObjectMapper objectMapper, Config property) {
+    private void configureJackson(ObjectMapper objectMapper, Config config) {
         Stream.of(DeserializationFeature.values())
-                .forEach(df -> property.get(configName(df.name())).asBoolean()
+                .forEach(df -> config.get(configName(df.name())).asBoolean()
                         .ifPresent(val -> objectMapper.configure(df, val)));
         Stream.of(SerializationFeature.values())
-                .forEach(sf -> property.get(configName(sf.name())).asBoolean()
+                .forEach(sf -> config.get(configName(sf.name())).asBoolean()
                         .ifPresent(val -> objectMapper.configure(sf, val)));
         Stream.of(JsonParser.Feature.values())
-                .forEach(jp -> property.get(configName(jp.name())).asBoolean()
+                .forEach(jp -> config.get(configName(jp.name())).asBoolean()
                         .ifPresent(val -> objectMapper.configure(jp, val)));
         Stream.of(MapperFeature.values())
-                .forEach(mf -> property.get(configName(mf.name())).asBoolean()
+                .forEach(mf -> config.get(configName(mf.name())).asBoolean()
                         .ifPresent(val -> objectMapper.configure(mf, val)));
         Stream.of(JsonGenerator.Feature.values())
-                .forEach(jgf -> property.get(configName(jgf.name())).asBoolean()
+                .forEach(jgf -> config.get(configName(jgf.name())).asBoolean()
                         .ifPresent(val -> objectMapper.configure(jgf, val)));
     }
 
