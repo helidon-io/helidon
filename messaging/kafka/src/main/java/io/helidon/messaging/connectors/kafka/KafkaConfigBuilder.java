@@ -67,13 +67,13 @@ public final class KafkaConfigBuilder extends ConnectorConfigBuilder {
     }
 
     /**
-     * Name of the topic to consume from.
+     * Names of the topics to consume from.
      *
-     * @param topic topic name
+     * @param topics topic name
      * @return this builder
      */
-    public KafkaConfigBuilder topic(String topic) {
-        super.put("topic", topic);
+    public KafkaConfigBuilder topic(String... topics) {
+        super.put("topic", String.join(",", topics));
         return this;
     }
 
