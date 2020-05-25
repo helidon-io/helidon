@@ -125,7 +125,6 @@ public final class MediaContext {
         private boolean registerDefaults = true;
         private boolean discoverServices = false;
         private boolean filterServices = false;
-        private Config config = Config.empty();
 
         private Builder() {
             this.readerContext = MessageBodyReaderContext.create();
@@ -154,7 +153,8 @@ public final class MediaContext {
          * </tr>
          * <tr>
          *     <td>services</td>
-         *     <td></td>
+         *     <td>Configuration section for each service. Each entry has to have "name" parameter.
+         *     It is also used for filtering of loaded services.</td>
          * </tr>
          * </table>
          *
@@ -177,7 +177,6 @@ public final class MediaContext {
                                                  return result;
                                              });
                     }));
-            this.config = config;
             return this;
         }
 
@@ -315,13 +314,12 @@ public final class MediaContext {
         }
 
         private void filterClassPath() {
-            Config servicesConfig = config.get("services");
             HelidonServiceLoader.builder(ServiceLoader.load(MediaSupportProvider.class))
                     .defaultPriority(LOADER_PRIORITY)
                     .build()
                     .asList()
                     .stream()
-                    .filter(provider -> servicesConfig.get(provider.configKey()).exists())
+                    .filter(provider -> servicesConfig.containsKey(provider.configKey()))
                     .forEach(services::addService);
         }
     }
