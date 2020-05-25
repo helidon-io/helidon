@@ -250,7 +250,7 @@ public final class MediaContext {
         }
 
         /**
-         * Whether system loader should be used to load {@link MediaSupportProvider} from Java Service Loader.
+         * Whether Java Service Loader should be used to load {@link MediaSupportProvider}.
          *
          * @param discoverServices use Java Service Loader
          * @return this builder instance
