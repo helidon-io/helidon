@@ -54,8 +54,7 @@ public class NameReader implements MessageBodyReader<Name> {
                 }));
     }
 
-
-    public static PredicateResult accept(Supplier<Optional<PredicateResult>> supplier) {
+    private PredicateResult accept(Supplier<Optional<PredicateResult>> supplier) {
         return supplier.get().orElse(PredicateResult.NOT_SUPPORTED);
     }
 }

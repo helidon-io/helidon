@@ -103,13 +103,13 @@ public final class MediaContext {
     public static class Builder implements io.helidon.common.Builder<MediaContext>,
                                            MediaContextBuilder<Builder> {
 
-        private final static String SERVICE_NAME = "name";
-        private final static String DEFAULTS_NAME = "defaults";
-        private final static String DEFAULTS_INCLUDE_STACK_TRACES = "include-stack-traces";
+        private static final String SERVICE_NAME = "name";
+        private static final String DEFAULTS_NAME = "defaults";
+        private static final String DEFAULTS_INCLUDE_STACK_TRACES = "include-stack-traces";
 
-        private final static int DEFAULTS_PRIORITY = 100;
-        private final static int BUILDER_PRIORITY = 200;
-        private final static int LOADER_PRIORITY = 300;
+        private static final int DEFAULTS_PRIORITY = 100;
+        private static final int BUILDER_PRIORITY = 200;
+        private static final int LOADER_PRIORITY = 300;
 
         private final HelidonServiceLoader.Builder<MediaSupportProvider> services = HelidonServiceLoader
                 .builder(ServiceLoader.load(MediaSupportProvider.class));
@@ -188,6 +188,13 @@ public final class MediaContext {
             return this;
         }
 
+        /**
+         * Adds new instance of {@link MediaSupport} with specific priority.
+         *
+         * @param mediaSupport media support
+         * @param priority priority
+         * @return updated instance of the builder
+         */
         public Builder addMediaSupport(MediaSupport mediaSupport, int priority) {
             Objects.requireNonNull(mediaSupport);
             services.addService((config) -> mediaSupport, priority);
