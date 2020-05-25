@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -165,7 +166,7 @@ public class KafkaSeTest extends AbstractKafkaTest {
         expected.addAll(testData2);
 
         CountDownLatch countDownLatch = new CountDownLatch(expected.size());
-        HashSet<String> result = new HashSet<>();
+        CopyOnWriteArraySet<String> result = new CopyOnWriteArraySet<>();
 
         Channel<ConsumerRecord<String, String>> fromKafka = Channel.<ConsumerRecord<String, String>>builder()
                 .name("from-kafka")
@@ -186,9 +187,9 @@ public class KafkaSeTest extends AbstractKafkaTest {
         Messaging messaging = Messaging.builder()
                 .connector(kafkaConnector)
                 .listener(fromKafka, consumerRecord -> {
-                    countDownLatch.countDown();
-                    LOGGER.info("Kafka says: value="+consumerRecord.value() + " " + consumerRecord);
+                    LOGGER.info("Kafka says: value=" + consumerRecord.value() + " " + consumerRecord);
                     result.add(consumerRecord.value());
+                    countDownLatch.countDown();
                 })
                 .build();
 
@@ -204,8 +205,10 @@ public class KafkaSeTest extends AbstractKafkaTest {
             kafkaResource.getKafkaTestUtils().produceRecords(rawTestData1, TEST_SE_TOPIC_3, 1);
             kafkaResource.getKafkaTestUtils().produceRecords(rawTestData2, TEST_SE_TOPIC_4, 1);
 
+
             assertThat(countDownLatch.await(20, TimeUnit.SECONDS), is(true));
-            assertThat(result, containsInAnyOrder(expected.toArray()));
+            assertThat(result, containsInAnyOrder(expected.toArray(String[]::new)));
+
         } finally {
             messaging.stop();
         }
@@ -255,9 +258,9 @@ public class KafkaSeTest extends AbstractKafkaTest {
                         .map(ConsumerRecord::value)
                         .filter(i -> i < 10)
                         .forEach(payload -> {
-                            countDownLatch.countDown();
                             LOGGER.info("Kafka says: " + payload);
                             result.add(payload);
+                            countDownLatch.countDown();
                         }))
                 .build();
 
