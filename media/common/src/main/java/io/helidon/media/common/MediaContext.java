@@ -250,9 +250,9 @@ public final class MediaContext {
         }
 
         /**
-         * Whether system loader should be used to load {@link MediaSupportProvider} from classpath.
+         * Whether system loader should be used to load {@link MediaSupportProvider} from Java Service Loader.
          *
-         * @param discoverServices use system loader
+         * @param discoverServices use Java Service Loader
          * @return this builder instance
          */
         public Builder discoverServices(boolean discoverServices) {
@@ -261,7 +261,7 @@ public final class MediaContext {
         }
 
         /**
-         * Whether services loaded by system loader should be filtered.
+         * Whether services loaded by Java Service Loader should be filtered.
          * All of the services which should pass the filter, have to be present under {@code services} section of configuration.
          *
          * @param filterServices filter services
