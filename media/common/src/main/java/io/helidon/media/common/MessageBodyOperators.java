@@ -200,13 +200,10 @@ final class MessageBodyOperators<T extends MessageBodyOperator<?>> implements It
             if (iterator.hasNext()) {
                 return true;
             }
-            hasNext.set(false);
-            if (parent != null) {
-                return parent.hasNext();
-            }
             if (locked.compareAndSet(true, false)) {
                 readLock.unlock();
             }
+            hasNext.set(false);
             return false;
         }
 
