@@ -548,6 +548,7 @@ class WebClientConfiguration {
         public B config(Config config) {
             this.config = config;
             // now for other options
+            config.get("uri").asString().ifPresent(baseUri -> uri(URI.create(baseUri)));
             config.get("connect-timeout-millis").asLong().ifPresent(timeout -> connectTimeout(Duration.ofMillis(timeout)));
             config.get("read-timeout-millis").asLong().ifPresent(timeout -> readTimeout(Duration.ofMillis(timeout)));
             config.get("follow-redirects").asBoolean().ifPresent(this::followRedirects);
