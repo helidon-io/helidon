@@ -22,7 +22,7 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
-public class MultiLoggingPublisher<T> implements Multi<T> {
+class MultiLoggingPublisher<T> implements Multi<T> {
 
     private static final Logger LOGGER = Logger.getLogger(MultiLoggingPublisher.class.getName());
 
@@ -41,10 +41,16 @@ public class MultiLoggingPublisher<T> implements Multi<T> {
                 .limit(3)
                 .skip(2)
                 .map(String::valueOf)
-                .map(s -> s.split("/")[1])
+                .map(this::parseStackFrame)
                 .findFirst()).get();
     }
 
+    private String parseStackFrame(String stackFrameAsString){
+        if (stackFrameAsString.contains("/")){
+           return stackFrameAsString.split("/")[1];
+        }
+        return stackFrameAsString;
+    }
 
     private static void loggr(String caller, String msg) {
         LogRecord record = new LogRecord(Level.INFO, msg);

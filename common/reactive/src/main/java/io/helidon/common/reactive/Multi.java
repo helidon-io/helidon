@@ -826,6 +826,17 @@ public interface Multi<T> extends Subscribable<T> {
                 null, null, null, null);
     }
 
+    /**
+     * Log all signals {@code onSubscribe}, {@code onNext},
+     * {@code onError}, {@code onComplete}, {@code cancel} and {@code request}
+     * coming to and from preceding operator.
+     * <p>
+     * <b>Be aware this operator should be used only for debugging purposes,
+     * stream performance can have negative impact if used in production.</b>
+     * </p>
+     *
+     * @return Multi
+     */
     default Multi<T> log() {
         return new MultiLoggingPublisher<>(this);
     }
