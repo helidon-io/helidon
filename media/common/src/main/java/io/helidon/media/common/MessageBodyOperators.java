@@ -92,27 +92,13 @@ final class MessageBodyOperators<T extends MessageBodyOperator<?>> implements It
     }
 
     /**
-     * Select an operator using {@link Operator#accept}.
+     * Select an operator using {@link MessageBodyOperator#accept}.
      * @param type the type representation
      * @param context the message body context
-     * @return operator found, or {@code null} or no operator was found
-     */
-    <U extends MessageBodyOperator<V>, V extends MessageBodyContext> T select(GenericType<?> type, V context) {
-        return select(type, context, /* fallback */ null);
-    }
-
-    /**
-     * Select an operator using {@link Operator#accept}.
-     * @param type the type representation
-     * @param context the message body context
-     * @param fallback a fallback registry to use if the operator is not
-     * found in this registry hierarchy
      * @return operator, or {@code null} or no operator was found
      */
     @SuppressWarnings("unchecked")
-    <U extends MessageBodyOperator<V>, V extends MessageBodyContext> T select(GenericType<?> type, V context,
-            MessageBodyOperators<T> fallback) {
-
+    <U extends MessageBodyOperator<V>, V extends MessageBodyContext> T select(GenericType<?> type, V context) {
         Objects.requireNonNull(type, "type is null!");
         Objects.requireNonNull(context, "context is null!");
         try {
@@ -126,10 +112,7 @@ final class MessageBodyOperators<T extends MessageBodyOperator<?>> implements It
             lock.readLock().unlock();
         }
         if (parent != null) {
-            return parent.select(type, context, fallback);
-        }
-        if (fallback != null) {
-            return fallback.select(type, context, fallback);
+            return parent.select(type, context);
         }
         return null;
     }
@@ -137,20 +120,10 @@ final class MessageBodyOperators<T extends MessageBodyOperator<?>> implements It
     /**
      * Select an operator by it class.
      * @param operatorClass required operator class
-     * @return operator, or {@code null} or no operator was found
-     */
-    T get(Class<? extends MessageBodyOperator> operatorClass) {
-        return get(operatorClass, null);
-    }
-
-    /**
-     * Select an operator by it class.
-     * @param operatorClass required operator class
-     * @param fallback a fallback registry to use if the operator is not
      * found in this registry hierarchy
      * @return operator, or {@code null} or no operator was found
      */
-    T get(Class<? extends MessageBodyOperator> operatorClass, MessageBodyOperators<T> fallback) {
+    T get(Class<? extends MessageBodyOperator> operatorClass) {
         Objects.requireNonNull(operatorClass, "operatorClass is null!");
         try {
             lock.readLock().lock();
@@ -163,10 +136,7 @@ final class MessageBodyOperators<T extends MessageBodyOperator<?>> implements It
             lock.readLock().unlock();
         }
         if (parent != null) {
-            return parent.get(operatorClass, fallback);
-        }
-        if (fallback != null) {
-            return fallback.get(operatorClass, fallback);
+            return parent.get(operatorClass);
         }
         return null;
     }
