@@ -826,6 +826,10 @@ public interface Multi<T> extends Subscribable<T> {
                 null, null, null, null);
     }
 
+    default Multi<T> log() {
+        return new MultiLoggingPublisher<>(this);
+    }
+
     /**
      * Combine subsequent items via a callback function and emit
      * the final value result as a Single.

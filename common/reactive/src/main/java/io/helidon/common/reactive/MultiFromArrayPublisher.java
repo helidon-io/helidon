@@ -22,12 +22,17 @@ import java.util.concurrent.atomic.AtomicLong;
  * Emits the elements of a non-empty array to the downstream on demand.
  * @param <T> the element type of the array
  */
-final class MultiFromArrayPublisher<T> implements Multi<T> {
+final class MultiFromArrayPublisher<T> implements Multi<T>, OperatorWithDescription {
 
     private final T[] items;
 
     MultiFromArrayPublisher(T[] items) {
         this.items = items;
+    }
+
+    @Override
+    public String getDescription() {
+        return "Multi.just(...)";
     }
 
     @Override

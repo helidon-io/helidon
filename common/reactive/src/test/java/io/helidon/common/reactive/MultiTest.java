@@ -50,6 +50,17 @@ import org.junit.jupiter.api.Test;
 public class MultiTest {
 
     @Test
+    void testLog() {
+        Multi.just("a","b","c")
+                .map(String::toUpperCase)
+                .log()
+                .forEach(s -> {
+                    System.out.println("For each says: " + s);
+                });
+        //TODO: assert output
+    }
+
+    @Test
     public void testJust() {
         MultiTestSubscriber<String> subscriber = new MultiTestSubscriber<>();
         Multi.<String>just("foo", "bar").subscribe(subscriber);
