@@ -106,8 +106,7 @@ public interface WebServer {
      *
      * @return a server context
      */
-    @SuppressWarnings("deprecation")
-    io.helidon.common.http.ContextualRegistry context();
+    Context context();
 
     /**
      * Get the parent {@link MessageBodyReaderContext} context.

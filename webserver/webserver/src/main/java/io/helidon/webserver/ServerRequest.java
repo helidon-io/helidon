@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.webserver;
 
+import io.helidon.common.context.Context;
 import io.helidon.common.http.HttpRequest;
 import io.helidon.media.common.MessageBodyReadableContent;
 
@@ -60,8 +61,7 @@ public interface ServerRequest extends HttpRequest {
      *
      * @return a request context
      */
-    @SuppressWarnings("deprecation")
-    io.helidon.common.http.ContextualRegistry context();
+    Context context();
 
     /**
      * Returns the Internet Protocol (IP) address of the interface on which the request was received.

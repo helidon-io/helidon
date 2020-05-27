@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import java.util.Set;
 import javax.net.ssl.SSLContext;
 
 import io.helidon.common.context.Context;
-import io.helidon.common.http.ContextualRegistry;
 
 import io.opentracing.Tracer;
 
@@ -39,7 +38,7 @@ class ServerBasicConfig implements ServerConfiguration {
     private final Tracer tracer;
     private final Map<String, SocketConfiguration> socketConfigs;
     private final ExperimentalConfiguration experimental;
-    private final ContextualRegistry context;
+    private final Context context;
     private final boolean printFeatureDetails;
 
     /**
@@ -56,7 +55,7 @@ class ServerBasicConfig implements ServerConfiguration {
         this.printFeatureDetails = builder.printFeatureDetails();
 
         HashMap<String, SocketConfiguration> map = new HashMap<>(builder.sockets());
-        map.put(ServerConfiguration.DEFAULT_SOCKET_NAME, this.socketConfig);
+        map.put(WebServer.DEFAULT_SOCKET_NAME, this.socketConfig);
         this.socketConfigs = Collections.unmodifiableMap(map);
     }
 

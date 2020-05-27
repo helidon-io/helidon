@@ -16,7 +16,6 @@
 
 package io.helidon.webserver.examples.tutorial.user;
 
-import io.helidon.common.http.ContextualRegistry;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
@@ -24,7 +23,7 @@ import io.helidon.webserver.ServerResponse;
 
 /**
  * If used as a {@link Routing Routing} {@link Handler} then assign valid {@link User} instance on the request
- * {@link ContextualRegistry context}.
+ * {@link io.helidon.common.context.Context context}.
  */
 public class UserFilter implements Handler {
 
