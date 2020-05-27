@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,7 +78,7 @@ public class SingleSubscriberHolder<T> {
      * {@code completionHandler} is invoked using the value of the registered subscriber as an input parameter.
      * This means that the supplied completion handler is guaranteed to be invoked at most once.
      *
-     * @param completionHandler completion handler to be invoked to tryProcess any completion logic on a registered subscriber,
+     * @param completionHandler completion handler to be invoked to process any completion logic on a registered subscriber,
      *                          provided there is a registered subscriber and it has not been previously passed to a completion
      *                          handler (e.g. in a previous invocation of this method).
      */

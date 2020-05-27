@@ -733,7 +733,7 @@ public interface WebServer {
         }
 
         /**
-         * Sets a count of threads in pool used to tryProcess HTTP requests.
+         * Sets a count of threads in pool used to process HTTP requests.
          * Default value is {@code CPU_COUNT * 2}.
          * <p>
          * Configuration key: {@code workers}
