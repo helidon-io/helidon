@@ -95,6 +95,16 @@ public final class Channel<PAYLOAD> {
     }
 
     /**
+     * Create new empty channel with random name.
+     *
+     * @param <PAYLOAD> message payload type
+     * @return new channel
+     */
+    public static <PAYLOAD> Channel<PAYLOAD> create() {
+        return Channel.<PAYLOAD>builder().build();
+    }
+
+    /**
      * New builder for configuring new channel.
      *
      * @param <PAYLOAD> message payload type

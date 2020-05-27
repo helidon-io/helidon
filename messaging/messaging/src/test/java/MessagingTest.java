@@ -226,7 +226,10 @@ public class MessagingTest {
 
     @Test
     void incomingFromConnector() {
-        LatchedTestData<String> testData = new LatchedTestData<>(TestConnector.TEST_DATA);
+        LatchedTestData<CharSequence> testData =
+                new LatchedTestData<>(TestConnector.TEST_DATA.stream()
+                        .map(s -> (CharSequence)s)
+                        .collect(Collectors.toList()));
 
         Channel<String> channel = Channel.create("from-test-connector");
 

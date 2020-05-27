@@ -21,6 +21,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -50,5 +51,14 @@ public class LatchedTestData<E> extends CountDownLatch {
 
     void assertEquals() {
         assertEquals(this.expected);
+    }
+
+    void assertEqualsAnyOrder() {
+        try {
+            this.await(200, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            fail(e);
+        }
+        assertThat(result, containsInAnyOrder(expected.toArray()));
     }
 }

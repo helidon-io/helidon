@@ -46,8 +46,10 @@ public interface Messaging {
 
     /**
      * Connect all channels and start streaming.
+     *
+     * @return started messaging
      */
-    void start();
+    Messaging start();
 
     /**
      * Invoke stop method in all connectors implementing it. Stopped messaging cannot be started again.
@@ -127,7 +129,7 @@ public interface Messaging {
          * @return this builder
          */
         public <PAYLOAD> Builder publisher(Channel<PAYLOAD> channel,
-                                           PublisherBuilder<Message<PAYLOAD>> publisherBuilder) {
+                                           PublisherBuilder<? extends Message<? extends PAYLOAD>> publisherBuilder) {
             return this.publisher(channel, publisherBuilder.buildRs());
         }
 
@@ -142,8 +144,8 @@ public interface Messaging {
          * @return this builder
          */
         public <PAYLOAD> Builder publisher(Channel<PAYLOAD> channel,
-                                           Publisher<PAYLOAD> publisher,
-                                           Function<PAYLOAD, Message<PAYLOAD>> wrapper) {
+                                           Publisher<? extends PAYLOAD> publisher,
+                                           Function<? super PAYLOAD, ? extends Message<? extends PAYLOAD>> wrapper) {
             if (wrapper == null) {
                 wrapper = Message::of;
             }
@@ -161,8 +163,8 @@ public interface Messaging {
          * @return this builder
          */
         public <PAYLOAD> Builder publisher(Channel<PAYLOAD> channel,
-                                           Flow.Publisher<PAYLOAD> publisher,
-                                           Function<PAYLOAD, Message<PAYLOAD>> wrapper) {
+                                           Flow.Publisher<? extends PAYLOAD> publisher,
+                                           Function<? super PAYLOAD, ? extends Message<? extends PAYLOAD>> wrapper) {
             if (wrapper == null) {
                 wrapper = Message::of;
             }
@@ -178,7 +180,7 @@ public interface Messaging {
          * @return this builder
          */
         public <PAYLOAD> Builder publisher(Channel<PAYLOAD> channel,
-                                           Flow.Publisher<Message<PAYLOAD>> publisher) {
+                                           Flow.Publisher<? extends Message<? extends PAYLOAD>> publisher) {
             return publisher(channel, FlowAdapters.toPublisher(publisher));
         }
 
@@ -191,7 +193,7 @@ public interface Messaging {
          * @return this builder
          */
         public <PAYLOAD> Builder publisher(Channel<PAYLOAD> channel,
-                                           Publisher<Message<PAYLOAD>> publisher) {
+                                           Publisher<? extends Message<? extends PAYLOAD>> publisher) {
             this.messaging.registerChannel(channel);
             channel.setPublisher(publisher);
             return this;
@@ -209,7 +211,8 @@ public interface Messaging {
          * @param <PAYLOAD> message payload type
          * @return this builder
          */
-        public <PAYLOAD> Builder listener(Channel<PAYLOAD> channel, Consumer<PAYLOAD> consumer) {
+        public <PAYLOAD> Builder listener(Channel<PAYLOAD> channel,
+                                          Consumer<? super PAYLOAD> consumer) {
             this.messaging.registerChannel(channel);
             channel.setSubscriber(Builder.<PAYLOAD>unwrapProcessorBuilder()
                     .forEach(consumer)
@@ -225,7 +228,8 @@ public interface Messaging {
          * @param <PAYLOAD>  message payload type
          * @return this builder
          */
-        public <PAYLOAD> Builder subscriber(Channel<PAYLOAD> channel, Flow.Subscriber<Message<PAYLOAD>> subscriber) {
+        public <PAYLOAD> Builder subscriber(Channel<PAYLOAD> channel,
+                                            Flow.Subscriber<? extends Message<? extends PAYLOAD>> subscriber) {
             this.subscriber(channel, FlowAdapters.toSubscriber(subscriber));
             return this;
         }
@@ -238,15 +242,27 @@ public interface Messaging {
          * @param <PAYLOAD> message payload type
          * @return this builder
          */
-        public <PAYLOAD> Builder subscriber(Channel<PAYLOAD> channel, Consumer<Multi<Message<PAYLOAD>>> consumer) {
-            Processor<Message<PAYLOAD>, Message<PAYLOAD>> processor = ReactiveStreams.<Message<PAYLOAD>>builder().buildRs();
+        public <PAYLOAD> Builder subscriber(Channel<PAYLOAD> channel,
+                                            Consumer<Multi<? extends Message<? extends PAYLOAD>>> consumer) {
+            Processor<? extends Message<? extends PAYLOAD>, ? extends Message<? extends PAYLOAD>> processor =
+                    ReactiveStreams.<Message<? extends PAYLOAD>>builder().buildRs();
             consumer.accept(Multi.from(FlowAdapters.toFlowPublisher(processor)));
             this.subscriber(channel, processor);
             return this;
         }
 
-        public <PAYLOAD, RESULT> Builder subscriber(Channel<PAYLOAD> channel,
-                                                    SubscriberBuilder<Message<PAYLOAD>, RESULT> subscriberBuilder) {
+        /**
+         * Register {@link SubscriberBuilder} to be used for creating {@link Subscriber} for supplied {@link Channel}.
+         *
+         * @param channel           to use subscriber in
+         * @param subscriberBuilder to subscribe to supplied channel
+         * @param <PAYLOAD>         message payload type
+         * @param <RESULT>          result type
+         * @return this builder
+         */
+        public <PAYLOAD, RESULT> Builder subscriber(
+                Channel<PAYLOAD> channel,
+                SubscriberBuilder<? extends Message<? extends PAYLOAD>, RESULT> subscriberBuilder) {
             this.subscriber(channel, subscriberBuilder.build());
             return this;
         }
@@ -260,10 +276,9 @@ public interface Messaging {
          * @return this builder
          */
         public <PAYLOAD> Builder subscriber(Channel<PAYLOAD> channel,
-                                            Subscriber<Message<PAYLOAD>> subscriber) {
+                                            Subscriber<? extends Message<? extends PAYLOAD>> subscriber) {
             this.messaging.registerChannel(channel);
-            ((Channel<PAYLOAD>) channel)
-                    .setSubscriber(subscriber);
+            channel.setSubscriber(subscriber);
             return this;
         }
 
@@ -278,8 +293,11 @@ public interface Messaging {
          * @param <RESULT>  message payload type of out channel
          * @return this builder
          */
-        public <PAYLOAD, RESULT> Builder processor(Channel<PAYLOAD> in, Channel<RESULT> out,
-                                                   Processor<Message<PAYLOAD>, Message<RESULT>> processor) {
+        public <PAYLOAD, RESULT> Builder processor(
+                Channel<PAYLOAD> in,
+                Channel<RESULT> out,
+                Processor<? extends Message<? extends PAYLOAD>, ? extends Message<? extends RESULT>> processor) {
+
             this.messaging.registerChannel(in);
             this.messaging.registerChannel(out);
             in.setSubscriber(processor);
@@ -298,11 +316,11 @@ public interface Messaging {
          * @param <RESULT>         message payload type of out channel
          * @return this builder
          */
-        public <PAYLOAD, RESULT> Builder processor(Channel<PAYLOAD> in, Channel<RESULT> out,
-                                                   ProcessorBuilder<Message<PAYLOAD>, Message<RESULT>> processorBuilder) {
+        public <PAYLOAD, RESULT> Builder processor(
+                Channel<PAYLOAD> in, Channel<RESULT> out,
+                ProcessorBuilder<? extends Message<? extends PAYLOAD>, ? extends Message<? extends RESULT>> processorBuilder) {
 
-            Processor<Message<PAYLOAD>, Message<RESULT>> processor = processorBuilder.buildRs();
-            return processor(in, out, processor);
+            return processor(in, out, processorBuilder.buildRs());
         }
 
         /**
@@ -316,9 +334,9 @@ public interface Messaging {
          * @return this builder
          */
         public <PAYLOAD, RESULT> Builder processor(Channel<PAYLOAD> in, Channel<RESULT> out,
-                                                   Function<PAYLOAD, RESULT> messageFunction) {
+                                                   Function<? super PAYLOAD, ? extends RESULT> messageFunction) {
 
-            Processor<Message<PAYLOAD>, Message<RESULT>> processor =
+            Processor<? extends Message<? extends PAYLOAD>, ? extends Message<? extends RESULT>> processor =
                     Builder.<PAYLOAD>unwrapProcessorBuilder()
                             .map(messageFunction)
                             .via(Builder.<RESULT>wrapProcessorBuilder())
@@ -336,13 +354,14 @@ public interface Messaging {
             return messaging;
         }
 
-        private static <PAYLOAD> ProcessorBuilder<PAYLOAD, Message<PAYLOAD>> wrapProcessorBuilder() {
+        private static <PAYLOAD> ProcessorBuilder<? super PAYLOAD, Message<? extends PAYLOAD>> wrapProcessorBuilder() {
             return ReactiveStreams.<PAYLOAD>builder()
-                    .<Message<PAYLOAD>>map(Message::of);
+                    .map(Message::of);
         }
 
-        private static <PAYLOAD> ProcessorBuilder<Message<PAYLOAD>, PAYLOAD> unwrapProcessorBuilder() {
-            return ReactiveStreams.<Message<PAYLOAD>>builder()
+        private static <PAYLOAD> ProcessorBuilder<? extends Message<? extends PAYLOAD>, ? extends PAYLOAD>
+        unwrapProcessorBuilder() {
+            return ReactiveStreams.<Message<? extends PAYLOAD>>builder()
                     .peek(Message::ack)
                     .<PAYLOAD>map(Message::getPayload);
         }

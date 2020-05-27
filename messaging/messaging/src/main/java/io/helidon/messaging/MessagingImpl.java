@@ -47,7 +47,8 @@ class MessagingImpl implements Messaging {
     MessagingImpl() {
     }
 
-    public void start() {
+    @Override
+    public Messaging start() {
         state.start(this);
         threadPoolSupplier = ThreadPoolSupplier.builder()
                 .threadNamePrefix("helidon-messaging-")
@@ -55,8 +56,10 @@ class MessagingImpl implements Messaging {
         emitters.forEach(emitter -> emitter.init(threadPoolSupplier.get(), Flow.defaultBufferSize()));
         channelMap.values().forEach(this::findConnectors);
         channelMap.values().forEach(Channel::connect);
+        return this;
     }
 
+    @Override
     public void stop() {
         state.stop(this);
         Multi.concat(
