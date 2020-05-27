@@ -37,6 +37,7 @@ import java.util.logging.Logger;
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
 import io.helidon.common.context.Context;
+import io.helidon.common.reactive.Single;
 import io.helidon.media.common.MessageBodyReaderContext;
 import io.helidon.media.common.MessageBodyWriterContext;
 
@@ -193,7 +194,7 @@ class NettyWebServer implements WebServer {
     }
 
     @Override
-    public synchronized CompletionStage<WebServer> start() {
+    public synchronized Single<WebServer> start() {
         if (!started) {
 
             channelsUpFuture.thenAccept(this::started)
@@ -293,7 +294,7 @@ class NettyWebServer implements WebServer {
             started = true;
             LOGGER.fine(() -> "All channels startup routine initiated: " + bootstrapsSize);
         }
-        return startFuture;
+        return Single.from(startFuture);
     }
 
     private void started(WebServer server) {
@@ -371,7 +372,7 @@ class NettyWebServer implements WebServer {
     }
 
     @Override
-    public CompletionStage<WebServer> shutdown() {
+    public Single<WebServer> shutdown() {
         if (!startFuture.isDone()) {
             startFuture.cancel(true);
         }
@@ -381,12 +382,12 @@ class NettyWebServer implements WebServer {
         for (Channel channel : channels.values()) {
             channel.close();
         }
-        return shutdownFuture;
+        return Single.from(shutdownFuture);
     }
 
     @Override
-    public CompletionStage<WebServer> whenShutdown() {
-        return shutdownFuture;
+    public Single<WebServer> whenShutdown() {
+        return Single.from(shutdownFuture);
     }
 
     @Override

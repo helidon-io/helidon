@@ -20,7 +20,6 @@ import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -30,6 +29,7 @@ import java.util.stream.Collectors;
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
 import io.helidon.common.context.Context;
+import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.media.common.MediaContext;
 import io.helidon.media.common.MediaContextBuilder;
@@ -72,26 +72,26 @@ public interface WebServer {
     /**
      * Starts the server. Has no effect if server is running.
      *
-     * @return a completion stage of starting tryProcess
+     * @return a single to react on startup process
      */
-    CompletionStage<WebServer> start();
+    Single<WebServer> start();
 
     /**
      * Completion stage is completed when server is shut down.
      *
      * @return a completion stage of the server
      */
-    CompletionStage<WebServer> whenShutdown();
+    Single<WebServer> whenShutdown();
 
     /**
-     * Attempt to gracefully shutdown server. It is possible to use returned {@link CompletionStage} to react.
+     * Attempt to gracefully shutdown server. It is possible to use returned {@link io.helidon.common.reactive.Single} to react.
      * <p>
      * RequestMethod can be called periodically.
      *
-     * @return to react on finished shutdown tryProcess
+     * @return a single to react on finished shutdown process
      * @see #start()
      */
-    CompletionStage<WebServer> shutdown();
+    Single<WebServer> shutdown();
 
     /**
      * Returns {@code true} if the server is currently running. Running server in stopping phase returns {@code true} until it
