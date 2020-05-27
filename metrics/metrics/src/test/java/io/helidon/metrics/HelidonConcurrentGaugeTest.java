@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,11 +63,13 @@ public class HelidonConcurrentGaugeTest {
 
     @BeforeAll
     static void initClass() {
-        meta = new HelidonMetadata("aConcurrentGauge",
-                "aConcurrentGauge",
-                "aConcurrentGauge",
-                MetricType.CONCURRENT_GAUGE,
-                MetricUnits.NONE);
+        meta = Metadata.builder()
+                .withName("aConcurrentGauge")
+                .withDisplayName("aConcurrentGauge")
+                .withDescription("aConcurrentGauge")
+                .withType(MetricType.CONCURRENT_GAUGE)
+                .withUnit(MetricUnits.NONE)
+                .build();
         System.out.println("Minimum required seconds within minute is " + MIN_REQUIRED_SECONDS
                 + ", so SECONDS_THRESHOLD is " + SECONDS_THRESHOLD);
     }

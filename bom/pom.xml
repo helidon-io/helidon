@@ -555,11 +555,6 @@
                 <artifactId>helidon-common-context</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
-            <dependency>
-                <groupId>io.helidon.common</groupId>
-                <artifactId>helidon-common-metrics</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
 
             <!-- db client -->
             <dependency>

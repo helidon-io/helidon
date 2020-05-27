@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package io.helidon.microprofile.metrics;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 
-import io.helidon.metrics.HelidonMetadata;
 import io.helidon.metrics.RegistryFactory;
 import io.helidon.microprofile.server.Server;
 
@@ -68,11 +67,13 @@ public class MetricsMpServiceTest {
     }
 
     protected static void registerCounter(String name) {
-        Metadata meta = new HelidonMetadata(name,
-                                     name,
-                                     name,
-                                     MetricType.COUNTER,
-                                     MetricUnits.NONE);
+        Metadata meta = Metadata.builder()
+                        .withName(name)
+                        .withDisplayName(name)
+                        .withDescription(name)
+                        .withType(MetricType.COUNTER)
+                        .withUnit(MetricUnits.NONE)
+                        .build();
         registry.counter(meta);
     }
 

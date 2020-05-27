@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,8 +60,14 @@ public class RegistryTest {
 
     @Test
     void testSameNameDifferentTagsDifferentTypes() {
-        Metadata metadata1 = new HelidonMetadata("counter2", MetricType.COUNTER);
-        Metadata metadata2 = new HelidonMetadata("counter2", MetricType.TIMER);
+        Metadata metadata1 = Metadata.builder()
+                    .withName("counter2")
+                    .withType(MetricType.COUNTER)
+                    .build();
+        Metadata metadata2 = Metadata.builder()
+                    .withName("counter2")
+                    .withType(MetricType.TIMER)
+                    .build();
         registry.counter(metadata1, tag1);
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> registry.timer(metadata2, tag2));
@@ -70,10 +76,22 @@ public class RegistryTest {
 
     @Test
     void testIncompatibleReuseNoTags() {
-        Metadata metadata1 = new HelidonMetadata("counter3", "display name",
-                "description", MetricType.COUNTER, MetricUnits.NONE, true);
-        Metadata metadata2 = new HelidonMetadata("counter3", "display name",
-                "description", MetricType.COUNTER, MetricUnits.NONE, false);
+        Metadata metadata1 = Metadata.builder()
+                    .withName("counter3")
+                    .withDisplayName("display name")
+                    .withDescription("description")
+                    .withType(MetricType.COUNTER)
+                    .withUnit(MetricUnits.NONE)
+                    .reusable(true)
+                    .build();
+        Metadata metadata2 = Metadata.builder()
+                    .withName("counter3")
+                    .withDisplayName("display name")
+                    .withDescription("description")
+                    .withType(MetricType.COUNTER)
+                    .withUnit(MetricUnits.NONE)
+                    .reusable(false)
+                    .build();
 
         registry.counter(metadata1);
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
@@ -83,10 +101,22 @@ public class RegistryTest {
 
     @Test
     void testIncompatibleReuseWithTags() {
-        Metadata metadata1 = new HelidonMetadata("counter4", "display name",
-                "description", MetricType.COUNTER, MetricUnits.NONE, true);
-        Metadata metadata2 = new HelidonMetadata("counter4", "display name",
-                "description", MetricType.COUNTER, MetricUnits.NONE, false);
+        Metadata metadata1 = Metadata.builder()
+				.withName("counter4")
+				.withDisplayName("display name")
+				.withDescription("description")
+				.withType(MetricType.COUNTER)
+				.withUnit(MetricUnits.NONE)
+				.reusable(true)
+				.build();
+        Metadata metadata2 = Metadata.builder()
+				.withName("counter4")
+				.withDisplayName("display name")
+				.withDescription("description")
+				.withType(MetricType.COUNTER)
+				.withUnit(MetricUnits.NONE)
+				.reusable(false)
+				.build();
 
         registry.counter(metadata1, tag1);
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
@@ -96,10 +126,22 @@ public class RegistryTest {
 
     @Test
     void testSameIDSameReuseDifferentOtherMetadata() {
-        Metadata metadata1 = new HelidonMetadata("counter5", "display name",
-                "description", MetricType.COUNTER, MetricUnits.NONE, true);
-        Metadata metadata2 = new HelidonMetadata("counter5", "OTHER display name",
-                "description", MetricType.COUNTER, MetricUnits.NONE, true);
+        Metadata metadata1 = Metadata.builder()
+				.withName("counter5")
+				.withDisplayName("display name")
+				.withDescription("description")
+				.withType(MetricType.COUNTER)
+				.withUnit(MetricUnits.NONE)
+				.reusable(true)
+				.build();
+        Metadata metadata2 = Metadata.builder()
+				.withName("counter5")
+				.withDisplayName("OTHER display name")
+				.withDescription("description")
+				.withType(MetricType.COUNTER)
+				.withUnit(MetricUnits.NONE)
+				.reusable(true)
+				.build();
 
         registry.counter(metadata1, tag1);
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,

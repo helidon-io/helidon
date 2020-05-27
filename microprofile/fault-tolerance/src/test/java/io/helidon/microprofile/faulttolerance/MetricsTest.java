@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,9 @@ package io.helidon.microprofile.faulttolerance;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 
-import io.helidon.common.metrics.InternalBridge;
-import io.helidon.common.metrics.InternalBridge.Metadata.MetadataBuilder;
-import io.helidon.common.metrics.InternalBridge.MetricRegistry;
-
 import org.eclipse.microprofile.faulttolerance.exceptions.CircuitBreakerOpenException;
+import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.junit.jupiter.api.Test;
@@ -81,7 +79,7 @@ public class MetricsTest extends FaultToleranceTest {
     @Test
     public void testInjectCounterProgrammatically() {
         MetricRegistry metricRegistry = getMetricRegistry();
-        metricRegistry.counter(newMetadataBuilder()
+        metricRegistry.counter(Metadata.builder()
                 .withName("dcounter")
                 .withType(MetricType.COUNTER)
                 .withUnit(MetricUnits.NONE)
@@ -369,9 +367,5 @@ public class MetricsTest extends FaultToleranceTest {
         assertThat(getHistogram(bean, "concurrentAsync",
                                   BULKHEAD_EXECUTION_DURATION, long.class).getCount(),
                    is((long)BulkheadBean.MAX_CONCURRENT_CALLS));
-    }
-
-    private static MetadataBuilder newMetadataBuilder() {
-        return  InternalBridge.newMetadataBuilder();
     }
 }

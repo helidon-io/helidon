@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ import org.eclipse.microprofile.metrics.MetricRegistry.Type;
  */
 // this class is not immutable, as we may need to update registries with configuration post creation
 // see Github issue #360
-public final class RegistryFactory implements io.helidon.common.metrics.InternalBridge.MetricRegistry.RegistryFactory {
+public final class RegistryFactory {
     private static final RegistryFactory INSTANCE = create();
 
     private final EnumMap<Type, Registry> registries = new EnumMap<>(Type.class);
@@ -154,11 +154,6 @@ public final class RegistryFactory implements io.helidon.common.metrics.Internal
             ensureBase();
         }
         return publicRegistries.get(type);
-    }
-
-    @Override
-    public io.helidon.common.metrics.InternalBridge.MetricRegistry getBridgeRegistry(Type type) {
-        return io.helidon.common.metrics.InternalBridge.MetricRegistry.class.cast(getRegistry(type));
     }
 
     private void update(Config config) {
