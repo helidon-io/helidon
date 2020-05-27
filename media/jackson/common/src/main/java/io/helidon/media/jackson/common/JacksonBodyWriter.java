@@ -45,9 +45,11 @@ public final class JacksonBodyWriter implements MessageBodyWriter<Object> {
     }
 
     @Override
-    public boolean accept(GenericType<?> type, MessageBodyWriterContext context) {
+    public PredicateResult accept(GenericType<?> type, MessageBodyWriterContext context) {
         return !CharSequence.class.isAssignableFrom(type.rawType())
-                && objectMapper.canSerialize(type.rawType());
+                && objectMapper.canSerialize(type.rawType())
+                ? PredicateResult.COMPATIBLE
+                : PredicateResult.NOT_SUPPORTED;
     }
 
     @Override

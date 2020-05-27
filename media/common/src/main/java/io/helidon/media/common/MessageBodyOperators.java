@@ -103,10 +103,18 @@ final class MessageBodyOperators<T extends MessageBodyOperator<?>> implements It
         Objects.requireNonNull(context, "context is null!");
         try {
             lock.readLock().lock();
+            T assignableOperator = null;
+
             for (T operator : operators) {
-                if (((U) operator).accept(type, context)) {
+                MessageBodyOperator.PredicateResult accept = ((U) operator).accept(type, context);
+                if (accept == MessageBodyOperator.PredicateResult.COMPATIBLE && assignableOperator == null) {
+                    assignableOperator = operator;
+                } else if (accept == MessageBodyOperator.PredicateResult.SUPPORTED) {
                     return operator;
                 }
+            }
+            if (assignableOperator != null) {
+                return assignableOperator;
             }
         } finally {
             lock.readLock().unlock();

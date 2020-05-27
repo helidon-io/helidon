@@ -45,10 +45,12 @@ public class JsonbBodyWriter implements MessageBodyWriter<Object> {
     }
 
     @Override
-    public boolean accept(GenericType<?> type,
-            MessageBodyWriterContext context) {
+    public PredicateResult accept(GenericType<?> type,
+                                  MessageBodyWriterContext context) {
 
-        return !CharSequence.class.isAssignableFrom(type.rawType());
+        return !CharSequence.class.isAssignableFrom(type.rawType())
+                ? PredicateResult.COMPATIBLE
+                : PredicateResult.NOT_SUPPORTED;
     }
 
     @Override

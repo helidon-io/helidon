@@ -611,6 +611,7 @@ class WebClientConfiguration {
                     .as(Proxy.builder()::config)
                     .map(Proxy.Builder::build)
                     .ifPresent(this::proxy);
+            config.get("media-support").as(MediaContext::create).ifPresent(this::mediaContext);
             return me;
         }
 

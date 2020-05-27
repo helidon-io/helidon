@@ -46,10 +46,12 @@ public final class JacksonBodyReader implements MessageBodyReader<Object> {
     }
 
     @Override
-    public boolean accept(GenericType<?> type, MessageBodyReaderContext context) {
+    public PredicateResult accept(GenericType<?> type, MessageBodyReaderContext context) {
         Class<?> clazz = type.rawType();
         return !CharSequence.class.isAssignableFrom(clazz)
-                && objectMapper.canDeserialize(objectMapper.constructType(clazz));
+                && objectMapper.canDeserialize(objectMapper.constructType(clazz))
+                ? PredicateResult.COMPATIBLE
+                : PredicateResult.NOT_SUPPORTED;
     }
 
     @Override

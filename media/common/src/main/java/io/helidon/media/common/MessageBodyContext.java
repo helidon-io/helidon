@@ -449,7 +449,7 @@ public abstract class MessageBodyContext implements MessageBodyFilters {
     }
 
     /**
-     * {@link Operator} adapter for {@link Filter}.
+     * {@link MessageBodyOperator} adapter for {@link MessageBodyFilter}.
      */
     private static final class FilterOperator implements MessageBodyOperator<MessageBodyContext>, MessageBodyFilter {
 
@@ -460,8 +460,10 @@ public abstract class MessageBodyContext implements MessageBodyFilters {
         }
 
         @Override
-        public boolean accept(GenericType<?> type, MessageBodyContext context) {
-            return this.getClass().equals(type.rawType());
+        public PredicateResult accept(GenericType<?> type, MessageBodyContext context) {
+            return this.getClass().equals(type.rawType())
+                    ? PredicateResult.SUPPORTED
+                    : PredicateResult.NOT_SUPPORTED;
         }
 
         @Override

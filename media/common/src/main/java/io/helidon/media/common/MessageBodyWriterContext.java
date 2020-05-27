@@ -569,22 +569,22 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
 
         @Override
         @SuppressWarnings("unchecked")
-        public boolean accept(GenericType<?> type, MessageBodyWriterContext context) {
+        public PredicateResult accept(GenericType<?> type, MessageBodyWriterContext context) {
             if (this.type != null) {
                 if (!this.type.isAssignableFrom(type.rawType())) {
-                    return false;
+                    return PredicateResult.NOT_SUPPORTED;
                 }
             } else {
                 if (!predicate.test((Object) type.rawType())) {
-                    return false;
+                    return PredicateResult.NOT_SUPPORTED;
                 }
             }
             MediaType ct = context.contentType().orElse(null);
             if (!(contentType != null && ct != null && !ct.test(contentType))) {
                 context.contentType(contentType);
-                return true;
+                return PredicateResult.SUPPORTED;
             }
-            return false;
+            return PredicateResult.NOT_SUPPORTED;
         }
 
         @Override

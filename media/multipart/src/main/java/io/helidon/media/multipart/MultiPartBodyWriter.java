@@ -43,8 +43,8 @@ public final class MultiPartBodyWriter implements MessageBodyWriter<WriteableMul
     }
 
     @Override
-    public boolean accept(GenericType<?> type, MessageBodyWriterContext context) {
-        return WriteableMultiPart.class.isAssignableFrom(type.rawType());
+    public PredicateResult accept(GenericType<?> type, MessageBodyWriterContext context) {
+        return PredicateResult.supports(WriteableMultiPart.class, type);
     }
 
     @Override

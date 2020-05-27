@@ -34,8 +34,8 @@ public class InputStreamBodyReader implements MessageBodyReader<InputStream> {
     }
 
     @Override
-    public boolean accept(GenericType<?> type, MessageBodyReaderContext context) {
-        return InputStream.class.isAssignableFrom(type.rawType());
+    public PredicateResult accept(GenericType<?> type, MessageBodyReaderContext context) {
+        return PredicateResult.supports(InputStream.class, type);
     }
 
     @Override

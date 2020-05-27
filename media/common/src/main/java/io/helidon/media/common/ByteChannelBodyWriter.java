@@ -44,8 +44,8 @@ public final class ByteChannelBodyWriter implements MessageBodyWriter<ReadableBy
     }
 
     @Override
-    public boolean accept(GenericType<?> type, MessageBodyWriterContext context) {
-        return ReadableByteChannel.class.isAssignableFrom(type.rawType());
+    public PredicateResult accept(GenericType<?> type, MessageBodyWriterContext context) {
+        return PredicateResult.supports(ReadableByteChannel.class, type);
     }
 
     @Override

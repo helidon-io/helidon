@@ -41,8 +41,8 @@ public final class MultiPartBodyReader implements MessageBodyReader<MultiPart> {
     }
 
     @Override
-    public boolean accept(GenericType<?> type, MessageBodyReaderContext ctx) {
-        return MultiPart.class.isAssignableFrom(type.rawType());
+    public PredicateResult accept(GenericType<?> type, MessageBodyReaderContext ctx) {
+        return PredicateResult.supports(MultiPart.class, type);
     }
 
     @Override
@@ -106,7 +106,7 @@ public final class MultiPartBodyReader implements MessageBodyReader<MultiPart> {
     }
 
     /**
-     * Implementation of {@link MultiMapper} that converts {@code byte[]} to a
+     * Implementation of {@link Mapper} that converts {@code byte[]} to a
      * publisher of {@link DataChunk} by copying the bytes.
      */
     private static final class BytesToChunks implements Mapper<byte[], Publisher<DataChunk>> {
