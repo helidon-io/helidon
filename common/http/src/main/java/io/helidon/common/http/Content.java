@@ -16,10 +16,11 @@
 
 package io.helidon.common.http;
 
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
 import java.util.function.Function;
 import java.util.function.Predicate;
+
+import io.helidon.common.reactive.Single;
 
 /**
  * Represents an HTTP entity as a {@link Flow.Publisher publisher} of {@link DataChunk chunks} with specific
@@ -37,7 +38,7 @@ import java.util.function.Predicate;
  * {@link #registerFilter(Function)} method. It can be used to wrap or replace previously registered (or default) publisher.
  *
  * <h3>Entity Readers</h3>
- * It is possible to register function to convert publisher to {@link CompletionStage} of a single entity using
+ * It is possible to register function to convert publisher to {@link io.helidon.common.reactive.Single} of a single entity using
  * {@link #registerReader(Class, Reader)} or {@link #registerReader(Predicate, Reader)} methods. It
  * is then possible to use {@link #as(Class)} method to obtain such entity.
  * @deprecated use {@code io.helidon.media.common.MessageBodyReadableContent} instead
@@ -127,9 +128,9 @@ public interface Content extends Flow.Publisher<DataChunk> {
      * (see {@link #registerReader(Predicate, Reader)}). If no such reader is found, the
      * resulting completion stage ends exceptionally.
      *
-     * @param type the requested type class
      * @param <T>  the requested type
+     * @param type the requested type class
      * @return a completion stage of the requested type
      */
-    <T> CompletionStage<T> as(Class<T> type);
+    <T> Single<T> as(Class<T> type);
 }

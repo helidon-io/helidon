@@ -23,7 +23,6 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalLong;
-import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
 
 import io.helidon.common.http.AlreadyCompletedException;
@@ -31,6 +30,7 @@ import io.helidon.common.http.Headers;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.http.Parameters;
 import io.helidon.common.http.SetCookie;
+import io.helidon.common.reactive.Single;
 
 /**
  * Extends {@link Parameters} interface by adding HTTP response headers oriented constants and convenient methods.
@@ -216,17 +216,28 @@ public interface ResponseHeaders extends Headers {
      * Returns a completion stage which is completed when all headers are send to the client.
      *
      * @return a completion stage of the headers.
+     * @deprecated since 2.0.0, please use {@link #whenSent()}
      */
-    CompletionStage<ResponseHeaders> whenSend();
+    @Deprecated
+    default Single<ResponseHeaders> whenSend() {
+        return whenSent();
+    }
+
+    /**
+     * Returns a {@link io.helidon.common.reactive.Single} which is completed when all headers are sent to the client.
+     *
+     * @return a single of the headers
+     */
+    Single<ResponseHeaders> whenSent();
 
     /**
      * Send headers and status code to the client. This instance become immutable after that
      * (all muting methods throws {@link IllegalStateException}).
      * <p>
-     * It is non-blocking method returning a {@link CompletionStage}.
+     * It is non-blocking method returning a {@link io.helidon.common.reactive.Single}.
      *
      * @return a completion stage of sending process.
      */
-    CompletionStage<ResponseHeaders> send();
+    Single<ResponseHeaders> send();
 
 }

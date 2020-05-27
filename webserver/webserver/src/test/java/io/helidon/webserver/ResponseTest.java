@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Publisher;
@@ -283,13 +282,13 @@ public class ResponseTest {
         }
 
         @Override
-        public CompletionStage<BareResponse> whenCompleted() {
-            return closeFuture;
+        public Single<BareResponse> whenCompleted() {
+            return Single.from(closeFuture);
         }
 
         @Override
-        public CompletionStage<BareResponse> whenHeadersCompleted() {
-            return closeFuture;
+        public Single<BareResponse> whenHeadersCompleted() {
+            return Single.from(closeFuture);
         }
 
         @Override

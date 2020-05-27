@@ -43,7 +43,8 @@ public abstract class CompletionSingle<T> extends CompletionAwaitable<T> impleme
 
     protected CompletableFuture<T> toNullableStage() {
         SingleToFuture<T> subscriber = new SingleToFuture<>(true);
-        addSubscribeTrigger(() -> this.subscribe(subscriber));
+        //addSubscribeTrigger(() -> this.subscribe(subscriber));
+        this.subscribe(subscriber);
         return subscriber;
     }
 
