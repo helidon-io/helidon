@@ -27,4 +27,5 @@
     </parent>
     <artifactId>helidon-archetypes-se-bare</artifactId>
     <name>Helidon Template Application SE bare</name>
+    <packaging>helidon-archetype</packaging>
 </project>

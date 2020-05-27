@@ -1,8 +1,0 @@
-pom.xml.mustache
-src/main/java/__pkg__/GreetResource.java.mustache
-src/main/java/__pkg__/package-info.java.mustache
-src/main/resources/META-INF/beans.xml
-src/main/resources/META-INF/microprofile-config.properties
-src/main/resources/logging.properties
-src/main/resources/native-image/reflect-config.json
-src/test/java/__pkg__/MainTest.java.mustache

@@ -26,5 +26,6 @@
         <version>2.0.0-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-archetypes-mp-bare</artifactId>
+    <packaging>helidon-archetype</packaging>
     <name>Helidon Template Application MP bare</name>
 </project>
