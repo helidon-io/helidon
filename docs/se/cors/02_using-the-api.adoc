@@ -34,6 +34,7 @@
 :helidon-variant: SE
 :config-table-methods-column-header: Method
 :cors-config-table-exclude-keys:
+:common-page-prefix-inc: ../../shared/cors/common_shared.adoc
 
 Every Helidon SE application explicitly creates routing rules that govern how Helidon delivers each incoming
  request to the code that needs to respond. The Helidon CORS SE API provides a simple way to include CORS into
@@ -73,18 +74,8 @@ application.
 --
 Add a dependency on the Helidon {helidon-variant} CORS artifact to your Maven `pom.xml` file.
 
+include::{common-page-prefix-inc}[tag=add-cors-dependency]
 
-// The add-cors-dependency tag's contents is reused from other SE and MP pages.
-// The actual dependency is different for SE and MP, so we tag it separately from the intro text so the
-// MP pages can reuse this intro text but use their own "actual" dependency. We could have parameterized
-// the groupID and artifactID but this approach allows the actual dependencies themselves to be
-// in the source literally rather than parameterized.
-// tag::add-cors-dependency[]
-The <<about/04_managing-dependencies.adoc, Managing Dependencies>> page describes how you
-should declare dependency management for Helidon applications.
-For CORS support in Helidon {helidon-variant}, you must include
-the following dependency in your project:
-// end::add-cors-dependency[]
 // tag::actual-cors-dependency[]
 [source,xml,subs="attributes+"]
 ----
@@ -121,69 +112,7 @@ Each of these classes has an associated builder that you use in constructing ins
 The table below describes the methods on the `CrossOriginConfig.Builder` class
 that map to the headers defined in the CORS protocol.
 
-// The following table is parameterized.
-//
-// To exclude the first column of the table -- the method or annotation parameter list -- and
-// the text that describes it, define the cors-config-table-exclude-methods attribute in the including file.
-// The value does not matter.
-//
-// To exclude the second column -- the config keys -- and the text that describes it, define
-// cors-config-table-exclude-keys in the including file. The value does not matter.
-//
-// To customize the text that explains the first column, set config-table-methods-column-explainer
-// to the text you want inserted.
-//
-// To customize the column heading for the first column, set config-table-methods-column-header to
-// the header you want used.
-//
-// tag::cors-config-table[]
-
-ifndef::cors-config-table-exclude-methods+cors-config-table-exclude-keys[]
-[width="100%",options="header",cols="4*"]
-endif::[]
-ifdef::cors-config-table-exclude-methods[]
-[width="100%",options="header",cols="3*"]
-endif::[]
-ifdef::cors-config-table-exclude-keys[]
-[width="100%",options="header",cols="3*"]
-endif::[]
-
-|====================
-ifndef::cors-config-table-exclude-methods[| {config-table-methods-column-header} ]
-ifndef::cors-config-table-exclude-keys[| Configuration Key]
-| Default | CORS Header Name
-
-ifndef::cors-config-table-exclude-methods[|`allowCredentials`]
-ifndef::cors-config-table-exclude-keys[|`allow-credentials`]
-|`false`|`Access-Control-Allow-Credentials`
-
-ifndef::cors-config-table-exclude-methods[|`allowHeaders`]
-ifndef::cors-config-table-exclude-keys[|`allow-headers`]
-|`["*"]`|`Access-Control-Allow-Headers`
-
-ifndef::cors-config-table-exclude-methods[|`allowMethods`]
-ifndef::cors-config-table-exclude-keys[|`allow-methods`]
-|`["*"]`|`Access-Control-Allow-Methods`
-
-ifndef::cors-config-table-exclude-methods[|`allowOrigins`]
-ifndef::cors-config-table-exclude-keys[|`allow-origins`]
-|`["*"]`|`Access-Control-Allow-Origins`
-
-ifndef::cors-config-table-exclude-methods[|`exposeHeaders`]
-ifndef::cors-config-table-exclude-keys[|`expose-headers`]
-|`none`|`Access-Control-Expose-Headers`
-
-ifndef::cors-config-table-exclude-methods[|`maxAgeSeconds`]
-ifndef::cors-config-table-exclude-keys[|`max-age`]
-|`3600`|`Access-Control-Max-Age`
-
-ifndef::cors-config-table-exclude-methods[|`enabled`]
-ifndef::cors-config-table-exclude-keys[|`enabled`]
-|`true`|n/a|
-|====================
-
-If the cross-origin configuration is disabled (`enabled` = false), then the Helidon CORS implementation ignores the cross-origin configuration entry.
-// end::cors-config-table[]
+include::{common-page-prefix-inc}[tag=cors-config-table]
 
 [[se-api-routing-example]]
 == Sample Routing Setup Using the `CrossOriginConfig` API

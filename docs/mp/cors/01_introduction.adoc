@@ -28,6 +28,7 @@
 :quickstart-example: {helidon-tag}/examples/quickstarts/helidon-quickstart-mp
 :cors-spec: https://www.w3.org/TR/cors/
 :helidon-mp-cors-example: {helidon-tag}/examples/microprofile/cors
+:common-page-prefix-inc: ../../shared/cors/common_shared.adoc
 :se-pages-prefix-inc: ../../se/cors
 :se-intro-page-inc: {se-pages-prefix-inc}/01_introduction.adoc
 :mp-pages-ref-prefix: mp/cors
@@ -42,7 +43,7 @@ even if that web application is served from a different domain.
 
 
 == Overview
-include::{se-intro-page-inc}[tag=cors-intro]
+include::{common-page-prefix-inc}[tag=cors-intro]
 
 == Next Steps
 To introduce CORS into your Helidon MP application, do any or all of the following:

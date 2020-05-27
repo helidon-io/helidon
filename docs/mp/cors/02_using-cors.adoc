@@ -28,12 +28,10 @@
 :quickstart-example: {helidon-tag}/examples/quickstarts/helidon-quickstart-mp
 :cors-spec: https://www.w3.org/TR/cors/
 :helidon-mp-cors-example: {helidon-tag}/examples/microprofile/cors
-:se-cors-home-inc: ../../se/cors
-:se-cors-dependency-page: 02_using-the-api.adoc
 :mp-pages-ref-prefix: mp/cors
 :mp-cors-config-ref: {mp-pages-ref-prefix}/03_configuration-with-cors-mp.adoc
-:dependency-inc: {se-cors-home-inc}/{se-cors-dependency-page}
 :helidon-variant: MP
+:common-page-prefix-inc: ../../shared/cors/common_shared.adoc
 
 To enable CORS behavior for a resource in your Helidon MP application, you need to make only minimal changes to the
 JAX-RS resource class that implements your resource.
@@ -66,7 +64,7 @@ To add CORS support to your Helidon MP application:
 --
 Add a dependency on the Helidon {helidon-variant} CORS artifact to your Maven `pom.xml` file.
 
-include::{dependency-inc}[tag=add-cors-dependency]
+include::{common-page-prefix-inc}[tag=add-cors-dependency]
 // tag::actual-cors-dependency[]
 [source,xml,subs="attributes+"]
 ----

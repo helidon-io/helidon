@@ -42,19 +42,22 @@
 :cors-se-api-doc: ../../se/cors/02_using-the-api.adoc
 // Following is resolved in an SE file, so the relative path must lead to the MP file.
 :cors-mp-using-cors-page-inc: ../../mp/cors/02_using-cors.adoc
+:mp-pages-ref-prefix: mp/cors
+:mp-cors-config-ref: {mp-pages-ref-prefix}/03_configuration-with-cors-mp.adoc
 :actual-cors-dependency-src: {cors-mp-using-cors-page-inc}
 :se-cors-home-inc: ../../se/cors
 :se-cors-dependency-page: 02_using-the-api.adoc
 :dependency-inc: {se-cors-home-inc}/{se-cors-dependency-page}
+:common-page-prefix-inc: ../../shared/cors/common_shared.adoc
 
 Several built-in Helidon services -- health, metrics, and OpenAPI -- have integrated CORS support.
 You can include these services in your application and control their CORS behavior.
 
-include::{se-built-in-services-page-include}[tag=understanding-cors-support-in-services]
+include::{common-page-prefix-inc}[tag=understanding-cors-support-in-services]
 
-include::{se-built-in-services-page-include}[tag=builtin-getting-started]
+include::{common-page-prefix-inc}[tag=builtin-getting-started]
 
-include::{se-built-in-services-page-include}[tags=configuring-cors-for-builtin-services;!se-config-example;!se-code-changes-for-builtin-services-config]
+include::{common-page-prefix-inc}[tags=configuring-cors-for-builtin-services;!se-config-example;!se-code-changes-for-builtin-services-config]
 
 The following example restricts sharing of
 
@@ -73,7 +76,7 @@ metrics:
 ...
 ----
 
-include::{se-built-in-services-page-include}[tag=accessing-shared-resources-intro]
+include::{common-page-prefix-inc}[tag=accessing-shared-resources-intro]
 [source,bash]
 ----
 mvn package
@@ -83,4 +86,4 @@ java -jar target/helidon-quickstart-mp.jar
 ...
 ----
 
-include::{se-built-in-services-page-include}[tag=accessing-shared-resources-main]
+include::{common-page-prefix-inc}[tag=accessing-shared-resources-main]

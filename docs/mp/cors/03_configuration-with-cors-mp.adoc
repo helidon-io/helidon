@@ -39,16 +39,23 @@
 :mp-cors-builtin-services-ref: {mp-pages-ref-prefix}/04_support-in-builtin-services.adoc
 :mapped-config-top-key: cors
 :mapped-config-id-callout: The unique identifier for this mapped CORS config section must be `cors`.
+:common-page-prefix-inc: ../../shared/cors/common_shared.adoc
+:config-table-methods-column-explainer: the annotation parameters
+:config-table-methods-column-header: Annotation Parameter
+:basic-table-intro: The table below lists the annotation parameters and the configuration keys that identify the CORS characteristics.
 
 Your application code establishes the CORS behavior of your endpoints using the `@CrossOrigin` annotation.
 You and your users can override that behavior, as well as the CORS behavior of the built-in services,
 using MicroProfile configuration.
 
+include::{common-page-prefix-inc}[tag=cors-configuration-formats-intro]
 
-== Understanding the Mapped Cross-Origin Configuration Format
+include::{common-page-prefix-inc}[tag=basic-cross-origin-config]
 
-There are two formats of CORS cross-origin configuration: basic and mapped. For Helidon MP, you use
-the mapped format.
+=== Understanding the Mapped Cross-Origin Configuration Format
+
+In Helidon MP, you use
+the mapped cross-origin configuration format.
 
 // We want to use
 // include::{cors-mapped-config-src}[tag=mapped-config]
@@ -56,18 +63,12 @@ the mapped format.
 // text, we'd have to be a little clever in the original callout. And that cleverness works when
 // the document is rendered in our editors, and even when using asciidoctor to HTML, but not
 // to our site.
-include::{cors-mapped-config-src}[tag=mapped-config-prefix]
-<1> The unique identifier for this mapped CORS config section must be `cors`.
-include::{cors-mapped-config-src}[tag=mapped-config-suffix]
+include::{common-page-prefix-inc}[tag=mapped-config-prefix]
+<1> {mapped-config-id-callout}
+include::{common-page-prefix-inc}[tag=mapped-config-suffix]
 
-== Specifying Override Values in Configuration [[cors-configuration-formats]]
+== Specifying Override Values in Configuration 
 In configuration, you can specify the same CORS-related attributes that you specify using the `@CrossOrigin` annotation.
-
-[[config-key-table]]
-:config-table-methods-column-explainer: the annotation parameters
-:config-table-methods-column-header: Annotation Parameter
-include::{cors-config-table-src}[tag=cors-config-table]
-
 
 The following example shows how you can express configuration similar to that shown
 previously using the mapped cross-origin configuration format.

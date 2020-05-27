@@ -32,33 +32,17 @@
 :javadoc-base-url-api: {javadoc-base-url}io.helidon.webserver.cors/io/helidon/webserver/cors
 :javadoc-base-url-webserver: {javadoc-base-url}io.helidon.webserver/io/helidon/webserver
 :helidon-variant: SE
+:common-page-prefix-inc: ../../shared/cors/common_shared.adoc
+
 
 link:{cors-spec}[Cross-origin resource sharing] (CORS) support in Helidon SE provides a flexible
 mechanism that allows a Helidon SE application to control how another web application can access its resources,
 even if that web application is served from a different domain.
 
 == Overview
-// tag::cors-intro[]
-The CORS protocol helps developers control if and how REST resources served by their applications can be shared across origins.
-Helidon {helidon-variant} includes an implementation of CORS that you can use to add CORS behavior
-to the services you develop. You can define your application's CORS behavior programmatically using the Helidon CORS API alone, or
-together with configuration. Helidon also provides three built-in services that add their
-own endpoints to your application - health, metrics, and OpenAPI - that have integrated CORS support.
-By adding very little code to your application, you control how all the resources in
-your application -- the ones you write and the ones provided by the Helidon built-in services -- can be shared across origins.
+include::{common-page-prefix-inc}[tag=cors-intro]
 
-== Before You Begin
-Before you revise your application to add CORS support, you need to decide what type of cross-origin sharing you want
-to allow for each resource your application exposes.
-For example, suppose for a given resource you want to allow unrestricted sharing for GET, HEAD, and POST requests
-(what CORS refers to as "simple" requests), but permit other types of requests only from the two
-origins `foo.com` and `there.com`.
-Your application would implement two types of CORS sharing: more relaxed for the
-simple requests and stricter for others.
 
-Once you know the type of sharing you want to allow for each of your resources -- including any from built-in
-services -- you can change your application accordingly.
-// end::cors-intro[]
 
 == Next Steps
 
