@@ -26,7 +26,7 @@ import io.helidon.common.http.DataChunk;
 final class BodyPartChunk implements DataChunk {
 
     private final DataChunk parent;
-    private final ByteBuffer data;
+    private final ByteBuffer[] data;
 
     /**
      * Create a new body part chunk instance.
@@ -35,11 +35,11 @@ final class BodyPartChunk implements DataChunk {
      */
     BodyPartChunk(ByteBuffer data, DataChunk parent) {
         this.parent = parent;
-        this.data = data;
+        this.data = new ByteBuffer[] {data};
     }
 
     @Override
-    public ByteBuffer data() {
+    public ByteBuffer[] data() {
         return data;
     }
 

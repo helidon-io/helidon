@@ -140,16 +140,19 @@ public class DataChunkInputStream extends InputStream {
                 }
                 // If there is anything to read, then read as much as fits into buf
                 int rem = currentBuffers[i].remaining();
-                if (rem == 0) {
-                    continue;
-                }
                 int currentLen = len;
                 if (currentLen > rem) {
                     currentLen = rem;
                 }
-                currentBuffers[i].get(buf, off, currentLen);
-                off += currentLen;
-                count += currentLen;
+                if (currentLen > 0) {
+                    currentBuffers[i].get(buf, off, currentLen);
+                    off += currentLen;
+                    count += currentLen;
+                    len -= currentLen;
+                }
+                if (rem > currentLen) {
+                    break;
+                }
 
                 // Chunk is consumed entirely - release the chunk, and prefetch a new chunk; do not
                 // wait for it to arrive - the next read may have to wait less.
