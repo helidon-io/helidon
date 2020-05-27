@@ -94,7 +94,7 @@ public class KafkaConnector implements IncomingConnectorFactory, OutgoingConnect
                 .config(MpConfig.toHelidonConfig(config))
                 .scheduler(scheduler)
                 .build();
-
+        LOGGER.fine(() -> String.format("Resource %s added", publisher));
         resources.add(publisher);
         return ReactiveStreams.fromPublisher(publisher);
     }
@@ -131,7 +131,7 @@ public class KafkaConnector implements IncomingConnectorFactory, OutgoingConnect
             }
         }
         if (failed.isEmpty()) {
-            LOGGER.fine("KafkaConnectorFactory terminated successfuly");
+            LOGGER.fine("KafkaConnector terminated successfuly");
         } else {
             // Inform about the errors
             failed.forEach(e -> LOGGER.log(Level.SEVERE, "An error happened closing resource", e));

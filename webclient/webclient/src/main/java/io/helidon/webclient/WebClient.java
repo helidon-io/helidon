@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.ServiceLoader;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -56,6 +57,16 @@ public interface WebClient {
      */
     static WebClient create() {
         return builder().build();
+    }
+
+    /**
+     * Create a new WebClient based on {@link Config}.
+     *
+     * @param config client config
+     * @return client
+     */
+    static WebClient create(Config config) {
+        return builder().config(config).build();
     }
 
     /**
@@ -272,10 +283,38 @@ public interface WebClient {
          *
          * @param amount amount of time
          * @param unit   time unit
+         * @deprecated see {@link WebClient.Builder#connectTimeout(long, TimeUnit)}
          * @return updated builder instance
          */
+        @Deprecated
         public Builder connectTimeout(long amount, TemporalUnit unit) {
             configuration.connectTimeout(Duration.of(amount, unit));
+            return this;
+        }
+
+        /**
+         * Sets new connection timeout.
+         *
+         * @param amount amount of time
+         * @param unit   time unit
+         * @return updated builder instance
+         */
+        public Builder connectTimeout(long amount, TimeUnit unit) {
+            configuration.connectTimeout(Duration.of(amount, unit.toChronoUnit()));
+            return this;
+        }
+
+        /**
+         * Sets new read timeout.
+         *
+         * @param amount amount of time
+         * @param unit   time unit
+         * @deprecated see {@link WebClient.Builder#readTimeout(long, TimeUnit)}
+         * @return updated builder instance
+         */
+        @Deprecated
+        public Builder readTimeout(long amount, TemporalUnit unit) {
+            configuration.readTimeout(Duration.of(amount, unit));
             return this;
         }
 
@@ -286,8 +325,8 @@ public interface WebClient {
          * @param unit   time unit
          * @return updated builder instance
          */
-        public Builder readTimeout(long amount, TemporalUnit unit) {
-            configuration.readTimeout(Duration.of(amount, unit));
+        public Builder readTimeout(long amount, TimeUnit unit) {
+            configuration.readTimeout(Duration.of(amount, unit.toChronoUnit()));
             return this;
         }
 

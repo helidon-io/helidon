@@ -25,12 +25,6 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -41,27 +35,18 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
-/**
- * The OriginThreadPublisherTest.
- */
-public class OriginThreadPublisherTest {
+import org.junit.jupiter.api.Test;
 
-    private static final Logger OTP_LOGGER = Logger.getLogger(OriginThreadPublisher.class.getName());
+/**
+ * The BufferedEmittingPublisherTest.
+ */
+public class BufferedEmittingPublisherTest {
+
     private static final double OTHER_THREAD_EXECUTION_RATIO = 0.8;
     private static final int BOUND = 5;
     private static final int ITERATION_COUNT = 1000;
     private final AtomicLong seq = new AtomicLong(0);
     private final AtomicLong check = new AtomicLong(0);
-
-    @BeforeAll
-    public static void init() {
-        OTP_LOGGER.setLevel(Level.ALL);
-    }
-
-    @AfterAll
-    public static void cleanup() {
-        OTP_LOGGER.setLevel(Level.WARNING);
-    }
 
     @Test
     public void sanityPublisherCheck() throws Exception {

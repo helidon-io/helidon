@@ -35,6 +35,7 @@ import java.util.StringTokenizer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
@@ -270,8 +271,20 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     }
 
     @Override
+    public WebClientRequestBuilder connectTimeout(long amount, TimeUnit unit) {
+        this.connectTimeout = Duration.of(amount, unit.toChronoUnit());
+        return this;
+    }
+
+    @Override
     public WebClientRequestBuilder readTimeout(long amount, TemporalUnit unit) {
         this.readTimeout = Duration.of(amount, unit);
+        return this;
+    }
+
+    @Override
+    public WebClientRequestBuilder readTimeout(long amount, TimeUnit unit) {
+        this.readTimeout = Duration.of(amount,  unit.toChronoUnit());
         return this;
     }
 
@@ -334,7 +347,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     public <T> Single<T> submit(Object requestEntity, Class<T> responseType) {
         GenericType<T> responseGenericType = GenericType.create(responseType);
         Flow.Publisher<DataChunk> dataChunkPublisher = writerContext.marshall(
-                Single.just(requestEntity), GenericType.create(requestEntity), null);
+                Single.just(requestEntity), GenericType.create(requestEntity));
         return Contexts.runInContext(context, () -> invokeWithEntity(dataChunkPublisher, responseGenericType));
     }
 
@@ -346,7 +359,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     @Override
     public Single<WebClientResponse> submit(Object requestEntity) {
         Flow.Publisher<DataChunk> dataChunkPublisher = writerContext.marshall(
-                Single.just(requestEntity), GenericType.create(requestEntity), null);
+                Single.just(requestEntity), GenericType.create(requestEntity));
         return submit(dataChunkPublisher);
     }
 

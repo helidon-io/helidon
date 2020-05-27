@@ -35,13 +35,15 @@ public abstract class CompletionSingle<T> extends CompletionAwaitable<T> impleme
     }
 
     private CompletableFuture<T> getLazyStage() {
-        stageReference.compareAndSet(null, this.toNullableStage());
+        if (stageReference.get() == null) {
+            stageReference.set(toNullableStage());
+        }
         return stageReference.get();
     }
 
-    private CompletableFuture<T> toNullableStage() {
+    protected CompletableFuture<T> toNullableStage() {
         SingleToFuture<T> subscriber = new SingleToFuture<>(true);
-        this.subscribe(subscriber);
+        addSubscribeTrigger(() -> this.subscribe(subscriber));
         return subscriber;
     }
 

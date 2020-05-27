@@ -28,7 +28,7 @@ import io.helidon.common.reactive.Single;
 public class InputStreamBodyReader implements MessageBodyReader<InputStream> {
 
     /**
-     * Enforce the use of {@link #get() }.
+     * Enforce the use of {@link #create()}.
      */
     private InputStreamBodyReader() {
     }
@@ -43,7 +43,7 @@ public class InputStreamBodyReader implements MessageBodyReader<InputStream> {
     public <U extends InputStream> Single<U> read(Publisher<DataChunk> publisher, GenericType<U> type,
             MessageBodyReaderContext context) {
 
-        return (Single<U>) Single.just(new DataChunkInputStream(publisher));
+        return (Single<U>) Single.just(new DataChunkInputStream(publisher, true));
     }
 
     /**

@@ -207,6 +207,11 @@
                 <artifactId>helidon-media-jsonp-server</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.media</groupId>
+                <artifactId>helidon-media-multipart</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
             <!-- config -->
             <dependency>
                 <groupId>io.helidon.config</groupId>
