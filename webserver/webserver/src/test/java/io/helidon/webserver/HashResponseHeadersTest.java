@@ -29,6 +29,7 @@ import io.helidon.common.http.AlreadyCompletedException;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.http.SetCookie;
+import io.helidon.common.reactive.Single;
 
 import org.hamcrest.collection.IsIterableContainingInOrder;
 import org.junit.jupiter.api.Test;
@@ -182,8 +183,8 @@ public class HashResponseHeadersTest {
         CompletableFuture<BareResponse> headersFuture = new CompletableFuture<>();
         CompletableFuture<BareResponse> future = new CompletableFuture<>();
         BareResponse result = mock(BareResponse.class);
-        when(result.whenHeadersCompleted()).thenReturn(headersFuture);
-        when(result.whenCompleted()).thenReturn(future);
+        when(result.whenHeadersCompleted()).thenReturn(Single.from(headersFuture));
+        when(result.whenCompleted()).thenReturn(Single.from(future));
         doAnswer(invocationOnMock -> {
             headersFuture.complete(result);
             return null;

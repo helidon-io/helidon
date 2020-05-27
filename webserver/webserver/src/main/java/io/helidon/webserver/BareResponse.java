@@ -19,11 +19,11 @@ package io.helidon.webserver;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
+import io.helidon.common.reactive.Single;
 
 /**
  * Bare (minimal) representation of HTTP Response. Used by {@link WebServer WebServer} implementations to invoke
@@ -43,20 +43,20 @@ public interface BareResponse extends Flow.Subscriber<DataChunk> {
             throws SocketClosedException, NullPointerException;
 
     /**
-     * Returns a {@link CompletionStage} of headers part of this response. The stage is completed when all headers are sent to
+     * Returns a {@link Single} of headers part of this response. The stage is completed when all headers are sent to
      * the client.
      *
      * @return a completion stage of the response.
      */
-    CompletionStage<BareResponse> whenHeadersCompleted();
+    Single<BareResponse> whenHeadersCompleted();
 
     /**
-     * Returns a {@link CompletionStage} of this response. The stage is completed when all response data are sent or response
+     * Returns a {@link Single} of this response. The stage is completed when all response data are sent or response
      * channel is finished.
      *
      * @return a completion stage of the response.
      */
-    CompletionStage<BareResponse> whenCompleted();
+    Single<BareResponse> whenCompleted();
 
     /**
      * Each response is subscribed up to a single publisher and AFTER {@link #writeStatusAndHeaders(Http.ResponseStatus, Map)}

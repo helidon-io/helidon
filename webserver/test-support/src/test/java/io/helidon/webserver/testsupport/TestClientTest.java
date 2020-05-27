@@ -369,7 +369,7 @@ public class TestClientTest {
                 })
                 .error(Throwable.class, (req, res, ex) -> {
                     sb.append("throwableHandler");
-                    if (!res.headers().whenSend().toCompletableFuture().isDone()) {
+                    if (!res.headers().whenSent().toCompletableFuture().isDone()) {
                         fail("Headers weren't send as expected!");
                     }
                     req.next();

@@ -387,6 +387,7 @@ class NettyWebServer implements WebServer {
 
     @Override
     public Single<WebServer> whenShutdown() {
+        // we need to return a new single each time
         return Single.from(shutdownFuture);
     }
 

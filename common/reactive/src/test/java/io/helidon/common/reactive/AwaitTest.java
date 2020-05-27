@@ -29,17 +29,16 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import org.junit.jupiter.api.Test;
+
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.emptyCollectionOf;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
 import static org.testng.Assert.assertThrows;
-
-import org.junit.jupiter.api.Test;
 
 public class AwaitTest {
 
@@ -53,17 +52,20 @@ public class AwaitTest {
 
         Single<String> future =
                 Single.just("1")
-                .peek(peekFuture::complete);
+                        .peek(it -> System.out.println("peekaboo"))
+                        .peek(peekFuture::complete);
         future.thenAccept(whenCompleteFuture::complete);
 
-        assertThat("Peek needs to be invoked at await!", peekFuture.isDone(), is(not(true)));
-        assertThat("WhenComplete needs to be invoked at await!", whenCompleteFuture.isDone(), is(not(true)));
+        assertThat("Peek needs to be invoked at first CompletionStage method!", peekFuture.isDone(), is(true));
+        assertThat("WhenComplete needs to be invoked at first CompletionStage method!", whenCompleteFuture.isDone(), is(true));
 
+        future.toCompletableFuture();
+        future.toCompletableFuture();
         future.await();
 
-        assertThat("Peek needs to be invoked at await!", peekFuture.isDone(), is(true));
+        //        assertThat("Peek needs to be invoked at await!", peekFuture.isDone(), is(true));
         assertThat(peekFuture.get(), is(equalTo("1")));
-        assertThat("WhenComplete needs to be invoked at await!", whenCompleteFuture.isDone(), is(true));
+        //assertThat("WhenComplete needs to be invoked at await!", whenCompleteFuture.isDone(), is(true));
         assertThat(whenCompleteFuture.get(), is(equalTo("1")));
     }
 
@@ -76,51 +78,49 @@ public class AwaitTest {
                 .peek(peekFuture::complete)
                 .whenComplete((s, throwable) -> whenCompleteFuture.complete(s));
 
-        assertThat("Peek needs to be invoked at await!", peekFuture.isDone(), is(not(true)));
-        assertThat("WhenComplete needs to be invoked at await!", whenCompleteFuture.isDone(), is(not(true)));
+        assertThat("Peek needs to be invoked!", peekFuture.isDone(), is(true));
+        assertThat(peekFuture.get(), is(equalTo("1")));
+        assertThat("WhenComplete needs to be invoked!", whenCompleteFuture.isDone(), is(true));
+        assertThat(whenCompleteFuture.get(), is(equalTo("1")));
 
         awaitable.await(100, TimeUnit.MILLISECONDS);
 
-        assertThat("Peek needs to be invoked at await!", peekFuture.isDone(), is(true));
-        assertThat(peekFuture.get(), is(equalTo("1")));
-        assertThat("WhenComplete needs to be invoked at await!", whenCompleteFuture.isDone(), is(true));
-        assertThat(whenCompleteFuture.get(), is(equalTo("1")));
-    }
 
+    }
 
     @Test
     void lazyCSConversionCallbackOrderSingle() {
         List<Integer> result = new ArrayList<>();
-        AtomicInteger cnt = new AtomicInteger(0);
-        Runnable registerCall = () -> result.add(cnt.incrementAndGet());
+        Consumer<Integer> registerCall = result::add;
 
         CompletionAwaitable<String> awaitable = Single.just("2")
                 .flatMapSingle(Single::just)
-                .peek(s -> registerCall.run())
+                .peek(s -> registerCall.accept(1))
                 .map(s -> {
-                    registerCall.run();
+                    registerCall.accept(2);
                     return s;
                 })
                 .flatMapSingle(Single::just)
-                .peek(s -> registerCall.run())
+                .peek(s -> registerCall.accept(3))
                 .flatMapSingle(Single::just)
                 .map(s -> {
-                    registerCall.run();
+                    registerCall.accept(4);
                     return s;
                 })
                 .flatMapSingle(Single::just)
-                .whenComplete((s, throwable) -> registerCall.run())
+                .whenComplete((s, throwable) -> registerCall.accept(5))
                 .thenApply(s -> {
-                    registerCall.run();
+                    registerCall.accept(6);
                     return s;
                 })
-                .whenComplete((s, throwable) -> registerCall.run());
+                .whenComplete((s, throwable) -> registerCall.accept(7));
 
-        assertThat(result, emptyCollectionOf(Integer.class));
         awaitable.await(SAFE_WAIT_MILLIS, TimeUnit.MILLISECONDS);
-        assertThat(result, equalTo(IntStream.rangeClosed(1, cnt.get()).boxed().collect(Collectors.toList())));
-    }
 
+        List<Integer> expected = IntStream.rangeClosed(1, 7).boxed().collect(Collectors.toList());
+
+        assertThat(result, equalTo(expected));
+    }
 
     @Test
     void lazyCSConversionCallbackOrderMulti() {
@@ -128,7 +128,7 @@ public class AwaitTest {
         AtomicInteger cnt = new AtomicInteger(0);
         Runnable registerCall = () -> result.add(cnt.incrementAndGet());
 
-        CompletionAwaitable<Void> awaitable = Multi.just(1L, 2L,3L )
+        CompletionAwaitable<Void> awaitable = Multi.just(1L, 2L, 3L)
                 .flatMap(Single::just)
                 .peek(s -> registerCall.run())
                 .map(s -> {
