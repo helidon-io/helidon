@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -360,8 +360,8 @@ public final class Http {
 
         /**
          * The GET method means retrieve whatever information (in the form of an entity) is identified by the Request-URI.
-         * If the Request-URI refers to a data-producing tryProcess, it is the produced data which shall be returned as the entity
-         * in the response and not the source text of the tryProcess, unless that text happens to be the output of the tryProcess.
+         * If the Request-URI refers to a data-producing process, it is the produced data which shall be returned as the entity
+         * in the response and not the source text of the process, unless that text happens to be the output of the tryProcess.
          */
         GET,
 

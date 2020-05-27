@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -225,7 +225,7 @@ public interface ResponseHeaders extends Headers {
      * <p>
      * It is non-blocking method returning a {@link CompletionStage}.
      *
-     * @return a completion stage of sending tryProcess.
+     * @return a completion stage of sending process.
      */
     CompletionStage<ResponseHeaders> send();
 

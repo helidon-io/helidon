@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -129,7 +129,7 @@ public interface ServerResponse extends MessageBodyFilters, MessageBodyWriters {
      * <h3>Blocking</h3>
      * The method blocks only during marshalling. It means until {@code registered writer} produce a {@code Publisher} and
      * subscribe HTTP IO implementation on it. If the thread is used for publishing is up to HTTP IO and generated Publisher
-     * implementations. Use returned {@link CompletionStage} to monitor and react on finished sending tryProcess.
+     * implementations. Use returned {@link CompletionStage} to monitor and react on finished sending process.
      *
      * @param content a response content to send
      * @param <T>     a type of the content
@@ -158,7 +158,7 @@ public interface ServerResponse extends MessageBodyFilters, MessageBodyWriters {
      * <h3>Blocking</h3>
      * The method blocks only during marshalling. It means until {@code registered writer} produce a {@code Publisher} and
      * subscribe HTTP IO implementation on it. If the thread is used for publishing is up to HTTP IO and generated Publisher
-     * implementations. Use returned {@link CompletionStage} to monitor and react on finished sending tryProcess.
+     * implementations. Use returned {@link CompletionStage} to monitor and react on finished sending process.
      *
      * @param content a response content publisher
      * @return a completion stage of the response - completed when response is transferred
