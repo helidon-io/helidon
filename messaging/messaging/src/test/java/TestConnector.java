@@ -87,12 +87,12 @@ public class TestConnector implements IncomingConnectorFactory, OutgoingConnecto
 
     public static class ConfigBuilder extends ConnectorConfigBuilder {
         public ConfigBuilder url(String url) {
-            super.put("url", url);
+            super.property("url", url);
             return this;
         }
 
         public ConfigBuilder port(int port) {
-            super.put("port", String.valueOf(port));
+            super.property("port", String.valueOf(port));
             return this;
         }
     }

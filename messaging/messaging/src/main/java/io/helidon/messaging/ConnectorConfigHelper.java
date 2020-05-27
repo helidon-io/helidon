@@ -69,7 +69,7 @@ final class ConnectorConfigHelper {
 
         Config channelsConfig = (Config) ConnectorConfigBuilder
                 .create(incomingChannelConfig)
-                .putAll(outgoingChannelConfig)
+                .config(outgoingChannelConfig)
                 .build();
 
         Config channelConfig = channelsConfig
@@ -98,8 +98,8 @@ final class ConnectorConfigHelper {
                 .withSources(
                         MpConfigSources.create(ConnectorConfigBuilder
                                 .create(connectorConfig)
-                                .put(ConnectorFactory.CHANNEL_NAME_ATTRIBUTE, channelName)
-                                .putAll(channelConfig)
+                                .property(ConnectorFactory.CHANNEL_NAME_ATTRIBUTE, channelName)
+                                .config(channelConfig)
                                 .build()))
                 .build();
     }

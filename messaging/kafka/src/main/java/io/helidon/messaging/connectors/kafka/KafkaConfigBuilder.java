@@ -29,7 +29,7 @@ public final class KafkaConfigBuilder extends ConnectorConfigBuilder {
 
     KafkaConfigBuilder() {
         super();
-        super.put(ConnectorFactory.CONNECTOR_ATTRIBUTE, KafkaConnector.CONNECTOR_NAME);
+        super.property(ConnectorFactory.CONNECTOR_ATTRIBUTE, KafkaConnector.CONNECTOR_NAME);
     }
 
     /**
@@ -39,8 +39,8 @@ public final class KafkaConfigBuilder extends ConnectorConfigBuilder {
      * @param value property value
      * @return this builder
      */
-    public KafkaConfigBuilder put(String key, String value) {
-        super.put(key, value);
+    public KafkaConfigBuilder property(String key, String value) {
+        super.property(key, value);
         return this;
     }
 
@@ -62,7 +62,7 @@ public final class KafkaConfigBuilder extends ConnectorConfigBuilder {
      * @return this builder
      */
     public KafkaConfigBuilder bootstrapServers(String servers) {
-        super.put("bootstrap.servers", servers);
+        super.property("bootstrap.servers", servers);
         return this;
     }
 
@@ -73,7 +73,7 @@ public final class KafkaConfigBuilder extends ConnectorConfigBuilder {
      * @return this builder
      */
     public KafkaConfigBuilder topic(String... topics) {
-        super.put("topic", String.join(",", topics));
+        super.property("topic", String.join(",", topics));
         return this;
     }
 
@@ -89,7 +89,7 @@ public final class KafkaConfigBuilder extends ConnectorConfigBuilder {
      * @return this builder
      */
     public KafkaConfigBuilder groupId(String groupId) {
-        super.put("group.id", groupId);
+        super.property("group.id", groupId);
         return this;
     }
 
@@ -105,7 +105,7 @@ public final class KafkaConfigBuilder extends ConnectorConfigBuilder {
      * @return this builder
      */
     public KafkaConfigBuilder enableAutoCommit(boolean enableAutoCommit) {
-        super.put("enable.auto.commit", String.valueOf(enableAutoCommit));
+        super.property("enable.auto.commit", String.valueOf(enableAutoCommit));
         return this;
     }
 
@@ -116,7 +116,7 @@ public final class KafkaConfigBuilder extends ConnectorConfigBuilder {
      * @return this builder
      */
     public KafkaConfigBuilder keySerializer(Class<? extends Serializer<?>> keySerializer) {
-        super.put("key.serializer", keySerializer.getName());
+        super.property("key.serializer", keySerializer.getName());
         return this;
     }
 
@@ -127,7 +127,7 @@ public final class KafkaConfigBuilder extends ConnectorConfigBuilder {
      * @return this builder
      */
     public KafkaConfigBuilder keyDeserializer(Class<? extends Deserializer<?>> keyDeserializer) {
-        super.put("key.deserializer", keyDeserializer.getName());
+        super.property("key.deserializer", keyDeserializer.getName());
         return this;
     }
 
@@ -138,7 +138,7 @@ public final class KafkaConfigBuilder extends ConnectorConfigBuilder {
      * @return this builder
      */
     public KafkaConfigBuilder valueSerializer(Class<? extends Serializer<?>> valueSerializer) {
-        super.put("value.serializer", valueSerializer.getName());
+        super.property("value.serializer", valueSerializer.getName());
         return this;
     }
 
@@ -149,7 +149,7 @@ public final class KafkaConfigBuilder extends ConnectorConfigBuilder {
      * @return this builder
      */
     public KafkaConfigBuilder valueDeserializer(Class<? extends Deserializer<?>> valueDeserializer) {
-        super.put("value.deserializer", valueDeserializer.getName());
+        super.property("value.deserializer", valueDeserializer.getName());
         return this;
     }
 
@@ -160,7 +160,7 @@ public final class KafkaConfigBuilder extends ConnectorConfigBuilder {
      * @return this builder
      */
     public KafkaConfigBuilder pollTimeout(long pollTimeout) {
-        super.put("poll.timeout", String.valueOf(pollTimeout));
+        super.property("poll.timeout", String.valueOf(pollTimeout));
         return this;
     }
 
@@ -171,7 +171,7 @@ public final class KafkaConfigBuilder extends ConnectorConfigBuilder {
      * @return this builder
      */
     public KafkaConfigBuilder periodExecutions(long periodExecutions) {
-        super.put("period.executions", String.valueOf(periodExecutions));
+        super.property("period.executions", String.valueOf(periodExecutions));
         return this;
     }
 
@@ -195,7 +195,7 @@ public final class KafkaConfigBuilder extends ConnectorConfigBuilder {
      * @return this builder
      */
     public KafkaConfigBuilder autoOffsetReset(AutoOffsetReset autoOffsetReset) {
-        super.put("auto.offset.reset", autoOffsetReset.name().toLowerCase());
+        super.property("auto.offset.reset", autoOffsetReset.name().toLowerCase());
         return this;
     }
 
@@ -236,7 +236,7 @@ public final class KafkaConfigBuilder extends ConnectorConfigBuilder {
      * @return this builder
      */
     public KafkaConfigBuilder batchSize(int batchSize) {
-        super.put("batch.size", String.valueOf(batchSize));
+        super.property("batch.size", String.valueOf(batchSize));
         return this;
     }
 
@@ -272,7 +272,7 @@ public final class KafkaConfigBuilder extends ConnectorConfigBuilder {
      * @return this builder
      */
     public KafkaConfigBuilder acks(String acks) {
-        super.put("acks", acks);
+        super.property("acks", acks);
         return this;
     }
 
@@ -294,7 +294,7 @@ public final class KafkaConfigBuilder extends ConnectorConfigBuilder {
      * @return this builder
      */
     public KafkaConfigBuilder bufferMemory(long bufferMemory) {
-        super.put("buffer.memory", String.valueOf(bufferMemory));
+        super.property("buffer.memory", String.valueOf(bufferMemory));
         return this;
     }
 
@@ -313,7 +313,7 @@ public final class KafkaConfigBuilder extends ConnectorConfigBuilder {
      * @return this builder
      */
     public KafkaConfigBuilder compressionType(String compressionType) {
-        super.put("compression.type", compressionType);
+        super.property("compression.type", compressionType);
         return this;
     }
 
@@ -339,7 +339,7 @@ public final class KafkaConfigBuilder extends ConnectorConfigBuilder {
      * @return this builder
      */
     public KafkaConfigBuilder retries(int retries) {
-        super.put("retries", String.valueOf(retries));
+        super.property("retries", String.valueOf(retries));
         return this;
     }
 }

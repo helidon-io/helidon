@@ -35,16 +35,16 @@ public abstract class ConnectorConfigBuilder implements Builder<Config> {
 
     static ConnectorConfigBuilder create(Config config) {
         ConnectorConfigBuilder result = new ConnectorConfigBuilder(){};
-        result.putAll(config);
+        result.config(config);
         return result;
     }
 
-    protected ConnectorConfigBuilder put(String key, String value) {
+    protected ConnectorConfigBuilder property(String key, String value) {
         configuration.put(key, value);
         return this;
     }
 
-    ConnectorConfigBuilder putAll(Config configToPut) {
+    ConnectorConfigBuilder config(Config configToPut) {
         configuration.putAll(configToPut.detach().asMap().orElse(Map.of()));
         return this;
     }

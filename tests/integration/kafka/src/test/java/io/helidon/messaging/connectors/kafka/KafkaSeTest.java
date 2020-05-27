@@ -77,7 +77,7 @@ public class KafkaSeTest extends AbstractKafkaTest {
                         .groupId("test-group")
                         .topic(TEST_SE_TOPIC_2)
                         .acks("all")
-                        .put("retries", "2")
+                        .property("retries", "2")
                         .keySerializer(LongSerializer.class)
                         .valueSerializer(IntegerSerializer.class)
                         .build()
