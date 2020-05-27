@@ -35,6 +35,7 @@ import java.util.StringTokenizer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
@@ -270,8 +271,20 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     }
 
     @Override
+    public WebClientRequestBuilder connectTimeout(long amount, TimeUnit unit) {
+        this.connectTimeout = Duration.of(amount, unit.toChronoUnit());
+        return this;
+    }
+
+    @Override
     public WebClientRequestBuilder readTimeout(long amount, TemporalUnit unit) {
         this.readTimeout = Duration.of(amount, unit);
+        return this;
+    }
+
+    @Override
+    public WebClientRequestBuilder readTimeout(long amount, TimeUnit unit) {
+        this.readTimeout = Duration.of(amount,  unit.toChronoUnit());
         return this;
     }
 
