@@ -22,6 +22,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Flow;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.common.configurable.ThreadPoolSupplier;
 import io.helidon.common.reactive.Multi;
@@ -36,6 +37,8 @@ import org.eclipse.microprofile.reactive.messaging.spi.OutgoingConnectorFactory;
 
 class MessagingImpl implements Messaging {
 
+    private static final AtomicInteger INSTANCE_COUNTER = new AtomicInteger();
+    private final int instanceNumber;
     private final Set<Emitter<?>> emitters = new HashSet<>();
     private final Map<String, Channel<?>> channelMap = new HashMap<>();
     private final Map<String, IncomingConnectorFactory> incomingConnectors = new HashMap<>();
@@ -45,15 +48,18 @@ class MessagingImpl implements Messaging {
     private ThreadPoolSupplier threadPoolSupplier;
 
     MessagingImpl() {
+        this.instanceNumber = INSTANCE_COUNTER.incrementAndGet();
     }
 
     @Override
     public Messaging start() {
         state.start(this);
-        threadPoolSupplier = ThreadPoolSupplier.builder()
-                .threadNamePrefix("helidon-messaging-")
-                .build();
-        emitters.forEach(emitter -> emitter.init(threadPoolSupplier.get(), Flow.defaultBufferSize()));
+        if (!emitters.isEmpty()) {
+            threadPoolSupplier = ThreadPoolSupplier.builder()
+                    .threadNamePrefix("helidon-messaging-" + instanceNumber + "-")
+                    .build();
+            emitters.forEach(emitter -> emitter.init(threadPoolSupplier.get(), Flow.defaultBufferSize()));
+        }
         channelMap.values().forEach(this::findConnectors);
         channelMap.values().forEach(Channel::connect);
         return this;
@@ -69,8 +75,10 @@ class MessagingImpl implements Messaging {
                 .filter(Stoppable.class::isInstance)
                 .map(Stoppable.class::cast)
                 .forEach(Stoppable::stop);
-        emitters.forEach(Emitter::complete);
-        threadPoolSupplier.get().shutdown();
+        if (!emitters.isEmpty()) {
+            emitters.forEach(Emitter::complete);
+            threadPoolSupplier.get().shutdown();
+        }
     }
 
     void setConfig(final Config config) {

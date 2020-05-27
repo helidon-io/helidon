@@ -15,70 +15,60 @@
  *
  */
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CountDownLatch;
+package io.helidon.messaging;
 
-import io.helidon.messaging.ConnectorConfigBuilder;
-import io.helidon.messaging.Stoppable;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
+
+import io.helidon.config.mp.MpConfig;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.messaging.spi.Connector;
+import org.eclipse.microprofile.reactive.messaging.spi.ConnectorFactory;
 import org.eclipse.microprofile.reactive.messaging.spi.IncomingConnectorFactory;
 import org.eclipse.microprofile.reactive.messaging.spi.OutgoingConnectorFactory;
 import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.eclipse.microprofile.reactive.streams.operators.SubscriberBuilder;
 
-@Connector(TestConnector.CONNECTOR_NAME)
-public class TestConnector implements IncomingConnectorFactory, OutgoingConnectorFactory, Stoppable {
+@Connector(TestConfigurableConnector.CONNECTOR_NAME)
+public class TestConfigurableConnector implements IncomingConnectorFactory, OutgoingConnectorFactory {
 
-    public static final String CONNECTOR_NAME = "test-connector";
-    public static final String TEST_PAYLOAD = "test-payload";
-    public static final int TEST_STREAM_SIZE = 5;
-    public static final List<String> TEST_DATA = List.of(TEST_PAYLOAD, TEST_PAYLOAD, TEST_PAYLOAD, TEST_PAYLOAD, TEST_PAYLOAD);
-    public static CountDownLatch latch = new CountDownLatch(TEST_DATA.size());
-    public CompletableFuture<Void> stoppedFuture = new CompletableFuture<>();
-    public static List<String> receivedData = new ArrayList<>();
+    public static final String CONNECTOR_NAME = "test-configurable-connector";
 
-    private TestConnector() {
-
+    private TestConfigurableConnector() {
     }
 
-    public static TestConnector create() {
-        return new TestConnector();
+    public static TestConfigurableConnector create() {
+        return new TestConfigurableConnector();
     }
 
     @Override
     public PublisherBuilder<? extends Message<?>> getPublisherBuilder(final Config config) {
-        Optional<String> customPayload = config.getOptionalValue(TEST_PAYLOAD, String.class);
-        if (customPayload.isPresent()) {
-            return ReactiveStreams.generate(customPayload::get).limit(TEST_STREAM_SIZE).map(Message::of);
-        }
-        return ReactiveStreams.fromIterable(TEST_DATA).map(Message::of);
+        io.helidon.config.Config helidonConfig = MpConfig.toHelidonConfig(config);
+        printConfig(helidonConfig);
+        return ReactiveStreams.fromIterable(config.getPropertyNames())
+                .map(n -> n + "=" + config.getValue(n, String.class))
+                .map(Message::of);
     }
 
     @Override
     public SubscriberBuilder<? extends Message<?>, Void> getSubscriberBuilder(final Config config) {
-        return ReactiveStreams.<Message<String>>builder()
+        io.helidon.config.Config helidonConfig = MpConfig.toHelidonConfig(config);
+        printConfig(helidonConfig);
+        return ReactiveStreams.<Message<CompletableFuture<Map<String, String>>>>builder()
                 .map(Message::getPayload)
-                .forEach(o -> {
-                    receivedData.add(o);
-                    latch.countDown();
-                });
+                .forEach(f -> f.complete(helidonConfig
+                        .traverse()
+                        .map(c -> Map.entry(c.key().name(), c.asString().get()))
+                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)))
+                );
     }
 
-    static void reset() {
-        TestConnector.receivedData.clear();
-        TestConnector.latch = new CountDownLatch(TestConnector.TEST_DATA.size());
-    }
-
-    @Override
-    public void stop() {
-        stoppedFuture.complete(null);
+    private static void printConfig(io.helidon.config.Config c) {
+        c.asMap().orElse(Map.of()).forEach((key, value) -> System.out.println(key + ": " + value));
     }
 
     public static ConfigBuilder configBuilder() {
@@ -86,6 +76,12 @@ public class TestConnector implements IncomingConnectorFactory, OutgoingConnecto
     }
 
     public static class ConfigBuilder extends ConnectorConfigBuilder {
+
+        protected ConfigBuilder() {
+            super();
+            super.property(ConnectorFactory.CONNECTOR_ATTRIBUTE, CONNECTOR_NAME);
+        }
+
         public ConfigBuilder url(String url) {
             super.property("url", url);
             return this;

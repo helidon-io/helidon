@@ -52,6 +52,7 @@ import org.reactivestreams.Subscriber;
  */
 public final class Emitter<PAYLOAD> implements Publisher<Message<PAYLOAD>> {
 
+    static final String EMITTER_CONTEXT_PREFIX = "emitter-message";
     private SubmissionPublisher<Message<PAYLOAD>> submissionPublisher;
     private final Set<Channel<PAYLOAD>> channels = new HashSet<>();
 
@@ -115,7 +116,7 @@ public final class Emitter<PAYLOAD> implements Publisher<Message<PAYLOAD>> {
 
     @Override
     public void subscribe(final Subscriber<? super Message<PAYLOAD>> s) {
-        submissionPublisher.subscribe(FlowAdapters.toFlowSubscriber(ContextSubscriber.create("emitter-message", s)));
+        submissionPublisher.subscribe(FlowAdapters.toFlowSubscriber(ContextSubscriber.create(EMITTER_CONTEXT_PREFIX, s)));
     }
 
     Set<Channel<PAYLOAD>> channels() {

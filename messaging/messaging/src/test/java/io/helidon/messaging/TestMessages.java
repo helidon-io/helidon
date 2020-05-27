@@ -15,6 +15,8 @@
  *
  */
 
+package io.helidon.messaging;
+
 import java.util.LinkedList;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;

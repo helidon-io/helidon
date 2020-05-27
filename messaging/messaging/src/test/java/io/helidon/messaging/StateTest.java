@@ -15,8 +15,7 @@
  *
  */
 
-import io.helidon.messaging.Messaging;
-import io.helidon.messaging.MessagingException;
+package io.helidon.messaging;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 

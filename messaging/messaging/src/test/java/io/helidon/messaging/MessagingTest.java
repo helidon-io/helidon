@@ -15,6 +15,8 @@
  *
  */
 
+package io.helidon.messaging;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -29,8 +31,6 @@ import java.util.stream.Collectors;
 import io.helidon.common.reactive.Multi;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.messaging.Channel;
-import io.helidon.messaging.Messaging;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -228,7 +228,7 @@ public class MessagingTest {
     void incomingFromConnector() {
         LatchedTestData<CharSequence> testData =
                 new LatchedTestData<>(TestConnector.TEST_DATA.stream()
-                        .map(s -> (CharSequence)s)
+                        .map(s -> (CharSequence) s)
                         .collect(Collectors.toList()));
 
         Channel<String> channel = Channel.create("from-test-connector");

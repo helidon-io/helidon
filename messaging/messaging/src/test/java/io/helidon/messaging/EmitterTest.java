@@ -15,12 +15,19 @@
  *
  */
 
+package io.helidon.messaging;
+
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.messaging.Channel;
-import io.helidon.messaging.Emitter;
-import io.helidon.messaging.Messaging;
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.everyItem;
+import static org.hamcrest.Matchers.startsWith;
 
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.junit.jupiter.api.Test;
@@ -50,6 +57,46 @@ public class EmitterTest {
 
         testData.await(200, TimeUnit.MILLISECONDS);
         messaging.stop();
+
+        testData.assertEquals();
+    }
+
+
+    @Test
+    void emitWithContext() throws InterruptedException {
+        LatchedTestData<String> testData = new LatchedTestData<>(List.of("test1", "test2", "test3", "test4"));
+
+        Channel<String> channel1 = Channel.create();
+        Channel<String> channel2 = Channel.create();
+
+        Emitter<String> emitter = Emitter.create(channel1);
+
+        LinkedList<String> contextIdList = new LinkedList<>();
+
+        Messaging messaging = Messaging.builder()
+                .emitter(emitter)
+                .processor(channel1, channel2, s -> {
+                    Contexts.context()
+                            .map(Context::id)
+                            .ifPresent(contextIdList::add);
+                    return s;
+                })
+                .listener(channel2, testData::add)
+                .build();
+
+        messaging.start();
+
+        emitter.send(Message.of("test1"));
+        emitter.send("test2");
+        emitter.send(Message.of("test3"));
+        emitter.send("test4");
+
+        testData.await(200, TimeUnit.MILLISECONDS);
+        messaging.stop();
+
+        String[] expected = contextIdList.stream().distinct().toArray(String[]::new);
+        assertThat("Contexts should be unique for every message", contextIdList, contains(expected));
+        assertThat(contextIdList, everyItem(startsWith(Emitter.EMITTER_CONTEXT_PREFIX)));
 
         testData.assertEquals();
     }

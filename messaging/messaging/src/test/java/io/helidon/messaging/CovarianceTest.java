@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
+package io.helidon.messaging;
+
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import io.helidon.common.reactive.Multi;
-import io.helidon.messaging.Channel;
-import io.helidon.messaging.Messaging;
 
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
