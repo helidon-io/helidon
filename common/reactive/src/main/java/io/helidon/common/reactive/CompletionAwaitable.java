@@ -21,7 +21,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -39,7 +38,6 @@ public class CompletionAwaitable<T> implements CompletionStage<T>, Awaitable<T> 
 
     private Supplier<CompletionStage<T>> originalStage;
     private LinkedList<Runnable> subscribeTrigger = new LinkedList<>();
-    private AtomicReference<CompletableFuture<T>> myFuture = new AtomicReference<>();
 
     CompletionAwaitable(Supplier<CompletionStage<T>> originalStage, CompletionAwaitable<?> parent) {
         this.originalStage = originalStage;
