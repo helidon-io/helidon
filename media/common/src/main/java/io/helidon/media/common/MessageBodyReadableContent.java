@@ -24,6 +24,7 @@ import java.util.function.Predicate;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
+import io.helidon.common.reactive.Multi;
 
 /**
  * Readable {@link MessageBodyContent}.
@@ -136,7 +137,7 @@ public final class MessageBodyReadableContent
      * @param <T> the requested type
      * @return a stream of entities
      */
-    public <T> Publisher<T> asStream(Class<T> type) {
+    public <T> Multi<T> asStream(Class<T> type) {
         return asStream(GenericType.create(type));
     }
 
@@ -148,8 +149,8 @@ public final class MessageBodyReadableContent
      * @param <T> the requested type
      * @return a stream of entities
      */
-    public <T> Publisher<T> asStream(GenericType<T> type) {
-        return context.unmarshallStream(publisher, type);
+    public <T> Multi<T> asStream(GenericType<T> type) {
+        return Multi.from(context.unmarshallStream(publisher, type));
     }
 
     /**

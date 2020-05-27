@@ -110,7 +110,12 @@ public final class Utils {
         }
     }
 
-    static byte[] toByteArray(ByteBuffer byteBuffer) {
+    /**
+     * Convert the given byte buffer to a byte array.
+     * @param byteBuffer byte buffer
+     * @return byte array
+     */
+    public static byte[] toByteArray(ByteBuffer byteBuffer) {
         byte[] buff = new byte[byteBuffer.remaining()];
         return toByteArray(byteBuffer, buff, 0);
     }
