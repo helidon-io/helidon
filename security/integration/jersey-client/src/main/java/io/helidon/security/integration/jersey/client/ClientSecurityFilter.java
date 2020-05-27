@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,6 @@ import javax.ws.rs.RuntimeType;
 import javax.ws.rs.client.ClientRequestContext;
 import javax.ws.rs.client.ClientRequestFilter;
 import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.ext.Provider;
 
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.context.Contexts;
@@ -48,7 +47,6 @@ import io.helidon.security.integration.common.SecurityTracing;
  * Only works as part of integration with Security component.
  * This class is public to allow unit testing from providers (without invoking an HTTP request)
  */
-@Provider
 @ConstrainedTo(RuntimeType.CLIENT)
 @Priority(Priorities.AUTHENTICATION)
 public class ClientSecurityFilter implements ClientRequestFilter {
