@@ -72,7 +72,7 @@ public class ClientMainTest {
                 .config(config.get("client"))
                 .addMediaSupport(JsonpSupport.create());
         for (WebClientService service : services) {
-            builder.register(service);
+            builder.addService(service);
         }
         webClient = builder.build();
     }

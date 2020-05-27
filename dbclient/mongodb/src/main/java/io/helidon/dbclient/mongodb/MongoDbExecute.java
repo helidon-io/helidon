@@ -15,16 +15,14 @@
  */
 package io.helidon.dbclient.mongodb;
 
-import io.helidon.common.mapper.MapperManager;
 import io.helidon.dbclient.DbExecute;
-import io.helidon.dbclient.DbMapperManager;
 import io.helidon.dbclient.DbStatementDml;
 import io.helidon.dbclient.DbStatementGet;
 import io.helidon.dbclient.DbStatementQuery;
 import io.helidon.dbclient.DbStatementType;
-import io.helidon.dbclient.DbStatements;
 import io.helidon.dbclient.common.AbstractDbExecute;
-import io.helidon.dbclient.common.InterceptorSupport;
+import io.helidon.dbclient.common.DbClientContext;
+import io.helidon.dbclient.common.DbStatementContext;
 
 import com.mongodb.reactivestreams.client.MongoDatabase;
 
@@ -33,60 +31,67 @@ import com.mongodb.reactivestreams.client.MongoDatabase;
  */
 public class MongoDbExecute extends AbstractDbExecute implements DbExecute {
 
-    private final DbMapperManager dbMapperManager;
-    private final MapperManager mapperManager;
-    private final InterceptorSupport interceptors;
     private final MongoDatabase db;
+    private final DbClientContext clientContext;
 
     MongoDbExecute(MongoDatabase db,
-                   DbStatements statements,
-                   DbMapperManager dbMapperManager,
-                   MapperManager mapperManager,
-                   InterceptorSupport interceptors) {
-        super(statements);
+                   DbClientContext clientContext) {
+        super(clientContext.statements());
         this.db = db;
-        this.dbMapperManager = dbMapperManager;
-        this.mapperManager = mapperManager;
-        this.interceptors = interceptors;
+        this.clientContext = clientContext;
     }
 
     @Override
     public DbStatementQuery createNamedQuery(String statementName, String statement) {
-        return new MongoDbStatementQuery(DbStatementType.QUERY,
-                                         db,
-                                         statementName,
-                                         statement,
-                                         dbMapperManager,
-                                         mapperManager,
-                                         interceptors);
+        return new MongoDbStatementQuery(db,
+                                         DbStatementContext.create(clientContext,
+                                                                   DbStatementType.QUERY,
+                                                                   statementName,
+                                                                   statement));
     }
 
     @Override
     public DbStatementGet createNamedGet(String statementName, String statement) {
-        return new MongoDbStatementGet(db, statementName, statement, dbMapperManager, mapperManager, interceptors);
+        return new MongoDbStatementGet(db,
+                                       DbStatementContext.create(clientContext,
+                                                                 DbStatementType.GET,
+                                                                 statementName,
+                                                                 statement));
     }
 
     @Override
     public DbStatementDml createNamedDmlStatement(String statementName, String statement) {
-        return new MongoDbStatementDml(DbStatementType.DML, db, statementName, statement, dbMapperManager, mapperManager,
-                                       interceptors);
+        return new MongoDbStatementDml(db,
+                                       DbStatementContext.create(clientContext,
+                                                                 DbStatementType.DML,
+                                                                 statementName,
+                                                                 statement));
     }
 
     @Override
     public DbStatementDml createNamedInsert(String statementName, String statement) {
-        return new MongoDbStatementDml(DbStatementType.INSERT, db, statementName, statement, dbMapperManager, mapperManager,
-                                       interceptors);
+        return new MongoDbStatementDml(db,
+                                       DbStatementContext.create(clientContext,
+                                                                 DbStatementType.INSERT,
+                                                                 statementName,
+                                                                 statement));
     }
 
     @Override
     public DbStatementDml createNamedUpdate(String statementName, String statement) {
-        return new MongoDbStatementDml(DbStatementType.UPDATE, db, statementName, statement, dbMapperManager, mapperManager,
-                                       interceptors);
+        return new MongoDbStatementDml(db,
+                                       DbStatementContext.create(clientContext,
+                                                                 DbStatementType.UPDATE,
+                                                                 statementName,
+                                                                 statement));
     }
 
     @Override
     public DbStatementDml createNamedDelete(String statementName, String statement) {
-        return new MongoDbStatementDml(DbStatementType.DELETE, db, statementName, statement, dbMapperManager, mapperManager,
-                                       interceptors);
+        return new MongoDbStatementDml(db,
+                                       DbStatementContext.create(clientContext,
+                                                                 DbStatementType.DELETE,
+                                                                 statementName,
+                                                                 statement));
     }
- }
+}

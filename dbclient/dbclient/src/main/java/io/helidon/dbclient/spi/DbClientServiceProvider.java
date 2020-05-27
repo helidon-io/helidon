@@ -15,13 +15,15 @@
  */
 package io.helidon.dbclient.spi;
 
+import java.util.Collection;
+
 import io.helidon.config.Config;
-import io.helidon.dbclient.DbInterceptor;
+import io.helidon.dbclient.DbClientService;
 
 /**
- * Java service loader service to configure interceptors.
+ * Java service loader service to configure client services.
  */
-public interface DbInterceptorProvider {
+public interface DbClientServiceProvider {
 
     /**
      * The configuration key expected in config.
@@ -45,6 +47,6 @@ public interface DbInterceptorProvider {
      * @param config configuration node with additional properties that are (maybe) configured for this interceptor
      * @return an interceptor to handle DB statements
      */
-    DbInterceptor create(Config config);
+    Collection<DbClientService> create(Config config);
 
 }

@@ -21,6 +21,7 @@ import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbStatementType;
+import io.helidon.dbclient.common.DbClientServiceBase;
 
 import org.eclipse.microprofile.metrics.Metadata;
 
@@ -28,7 +29,9 @@ import org.eclipse.microprofile.metrics.Metadata;
  * A metric builder used as a base for Helidon DB metrics.
  * @param <T> type of the builder extending this class
  */
-public abstract class DbMetricBuilder<T extends DbMetricBuilder<T>> {
+abstract class DbClientMetricBuilderBase<T extends DbClientMetricBuilderBase<T>>
+        extends DbClientServiceBase.DbClientServiceBuilderBase<T> {
+
     static {
         HelidonFeatures.register(HelidonFlavor.SE, "DbClient", "Metrics");
     }
@@ -63,15 +66,15 @@ public abstract class DbMetricBuilder<T extends DbMetricBuilder<T>> {
 
     /**
      * Configure a name format.
-     * <p>The format can use up to two parameters - first is the statement name, second the {@link io.helidon.dbclient.DbStatementType}
-     *  as a string.
+     * <p>The format can use up to two parameters - first is the {@link io.helidon.dbclient.DbStatementType}
+     *  as a string, second is the statement name.
      *
      * @param format format string expecting zero to two parameters that can be processed by
      *          {@link String#format(String, Object...)}
      * @return updated builder instance
      */
     public T nameFormat(String format) {
-        return nameFormat((name, queryType) -> String.format(format, name, queryType.toString()));
+        return nameFormat((name, queryType) -> String.format(format, queryType.toString(), name));
     }
 
     /**
@@ -89,22 +92,22 @@ public abstract class DbMetricBuilder<T extends DbMetricBuilder<T>> {
     /**
      * Whether to measure failed statements.
      *
-     * @param shouldWe set to {@code false} if errors should be ignored
+     * @param measureErrors set to {@code false} if errors should be ignored
      * @return updated builder instance
      */
-    public T measureErrors(boolean shouldWe) {
-        this.measureErrors = shouldWe;
+    public T errors(boolean measureErrors) {
+        this.measureErrors = measureErrors;
         return me();
     }
 
     /**
      * Whether to measure successful statements.
      *
-     * @param shouldWe set to {@code false} if successes should be ignored
+     * @param measureSuccess set to {@code false} if successes should be ignored
      * @return updated builder instance
      */
-    public T measureSuccess(boolean shouldWe) {
-        this.measureSuccess = shouldWe;
+    public T success(boolean measureSuccess) {
+        this.measureSuccess = measureSuccess;
         return me();
     }
 
@@ -156,8 +159,9 @@ public abstract class DbMetricBuilder<T extends DbMetricBuilder<T>> {
      * @return updated builder instance
      */
     public T config(Config config) {
-        config.get("errors").asBoolean().ifPresent(this::measureErrors);
-        config.get("success").asBoolean().ifPresent(this::measureSuccess);
+        super.config(config);
+        config.get("errors").asBoolean().ifPresent(this::errors);
+        config.get("success").asBoolean().ifPresent(this::success);
         config.get("name-format").asString().ifPresent(this::nameFormat);
         config.get("description").asString().ifPresent(this::description);
         return me();
@@ -180,11 +184,11 @@ public abstract class DbMetricBuilder<T extends DbMetricBuilder<T>> {
         return nameFormat;
     }
 
-    boolean measureErrors() {
+    boolean errors() {
         return measureErrors;
     }
 
-    boolean measureSuccess() {
+    boolean success() {
         return measureSuccess;
     }
 }

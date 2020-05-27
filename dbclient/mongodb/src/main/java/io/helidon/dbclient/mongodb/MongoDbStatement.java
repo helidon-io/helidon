@@ -22,12 +22,10 @@ import java.util.Map;
 import javax.json.Json;
 import javax.json.JsonReaderFactory;
 
-import io.helidon.common.mapper.MapperManager;
-import io.helidon.dbclient.DbMapperManager;
 import io.helidon.dbclient.DbStatement;
 import io.helidon.dbclient.DbStatementType;
 import io.helidon.dbclient.common.AbstractStatement;
-import io.helidon.dbclient.common.InterceptorSupport;
+import io.helidon.dbclient.common.DbStatementContext;
 import io.helidon.dbclient.mongodb.MongoDbTransaction.TransactionManager;
 
 import com.mongodb.reactivestreams.client.MongoDatabase;
@@ -79,28 +77,11 @@ abstract class MongoDbStatement<S extends DbStatement<S, R>, R> extends Abstract
     /**
      * Creates an instance of MongoDB statement builder.
      *
-     * @param dbStatementType type of this statement
-     * @param db              mongo database handler
-     * @param statementName   name of this statement
-     * @param statement       text of this statement
-     * @param dbMapperManager db mapper manager to use when mapping types to parameters
-     * @param mapperManager   mapper manager to use when mapping results
-     * @param interceptors    interceptors to be executed
+     * @param db                 mongo database handler
+     * @param statementContext   configuration of statement
      */
-    MongoDbStatement(DbStatementType dbStatementType,
-                     MongoDatabase db,
-                     String statementName,
-                     String statement,
-                     DbMapperManager dbMapperManager,
-                     MapperManager mapperManager,
-                     InterceptorSupport interceptors) {
-
-        super(dbStatementType,
-              statementName,
-              statement,
-              dbMapperManager,
-              mapperManager,
-              interceptors);
+    MongoDbStatement(MongoDatabase db, DbStatementContext statementContext) {
+        super(statementContext);
 
         this.db = db;
         this.txManager = null;
@@ -154,26 +135,6 @@ abstract class MongoDbStatement<S extends DbStatement<S, R>, R> extends Abstract
 
     TransactionManager txManager() {
         return txManager;
-    }
-
-    /**
-     * Db mapper manager.
-     *
-     * @return mapper manager for DB types
-     */
-    @Override
-    protected DbMapperManager dbMapperManager() {
-        return super.dbMapperManager();
-    }
-
-    /**
-     * Mapper manager.
-     *
-     * @return generic mapper manager
-     */
-    @Override
-    protected MapperManager mapperManager() {
-        return super.mapperManager();
     }
 
     @Override

@@ -16,15 +16,12 @@
 package io.helidon.dbclient.mongodb;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 
-import io.helidon.common.mapper.MapperManager;
 import io.helidon.common.reactive.Single;
-import io.helidon.dbclient.DbInterceptorContext;
-import io.helidon.dbclient.DbMapperManager;
+import io.helidon.dbclient.DbClientServiceContext;
 import io.helidon.dbclient.DbStatementDml;
 import io.helidon.dbclient.DbStatementType;
-import io.helidon.dbclient.common.InterceptorSupport;
+import io.helidon.dbclient.common.DbStatementContext;
 
 import com.mongodb.reactivestreams.client.MongoDatabase;
 
@@ -36,23 +33,9 @@ public class MongoDbStatementDml extends MongoDbStatement<DbStatementDml, Single
     private DbStatementType dbStatementType;
     private MongoStatement statement;
 
-    MongoDbStatementDml(
-            DbStatementType dbStatementType,
-            MongoDatabase db,
-            String statementName,
-            String statement,
-            DbMapperManager dbMapperManager,
-            MapperManager mapperManager,
-            InterceptorSupport interceptors
-    ) {
-        super(dbStatementType,
-              db,
-              statementName,
-              statement,
-              dbMapperManager,
-              mapperManager,
-              interceptors);
-        this.dbStatementType = dbStatementType;
+    MongoDbStatementDml(MongoDatabase db, DbStatementContext statementContext) {
+        super(db, statementContext);
+        this.dbStatementType = statementContext.statementType();
     }
 
     @Override
@@ -76,16 +59,15 @@ public class MongoDbStatementDml extends MongoDbStatement<DbStatementDml, Single
     }
 
     @Override
-    protected Single<Long> doExecute(
-            CompletionStage<DbInterceptorContext> dbContextFuture,
-            CompletableFuture<Void> statementFuture,
-            CompletableFuture<Long> queryFuture
-    ) {
+    protected Single<Long> doExecute(Single<DbClientServiceContext> dbContext,
+                                     CompletableFuture<Void> statementFuture,
+                                     CompletableFuture<Long> queryFuture) {
+
         return Single.from(MongoDbDMLExecutor.executeDml(
                 this,
                 dbStatementType,
                 statement,
-                dbContextFuture,
+                dbContext,
                 statementFuture,
                 queryFuture));
     }

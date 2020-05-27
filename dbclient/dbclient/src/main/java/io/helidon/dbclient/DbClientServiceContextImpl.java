@@ -23,9 +23,9 @@ import java.util.concurrent.CompletionStage;
 import io.helidon.common.context.Context;
 
 /**
- * Interceptor is a mutable object that is sent to {@link io.helidon.dbclient.DbInterceptor}.
+ * Client service context is a mutable object that is sent to {@link DbClientService}.
  */
-class DbInterceptorContextImpl implements DbInterceptorContext {
+class DbClientServiceContextImpl implements DbClientServiceContext {
     private final String dbType;
     private DbStatementType dbStatementType;
     private Context context;
@@ -37,7 +37,7 @@ class DbInterceptorContextImpl implements DbInterceptorContext {
     private Map<String, Object> namedParams;
     private boolean indexed;
 
-    DbInterceptorContextImpl(String dbType) {
+    DbClientServiceContextImpl(String dbType) {
         this.dbType = dbType;
     }
 
@@ -93,19 +93,19 @@ class DbInterceptorContextImpl implements DbInterceptorContext {
     }
 
     @Override
-    public DbInterceptorContext context(Context context) {
+    public DbClientServiceContext context(Context context) {
         this.context = context;
         return this;
     }
 
     @Override
-    public DbInterceptorContext statementName(String newName) {
+    public DbClientServiceContext statementName(String newName) {
         this.statementName = newName;
         return this;
     }
 
     @Override
-    public DbInterceptorContext statementFuture(CompletionStage<Void> statementFuture) {
+    public DbClientServiceContext statementFuture(CompletionStage<Void> statementFuture) {
         this.statementFuture = statementFuture;
         return this;
     }
@@ -116,13 +116,13 @@ class DbInterceptorContextImpl implements DbInterceptorContext {
     }
 
     @Override
-    public DbInterceptorContext resultFuture(CompletionStage<Long> resultFuture) {
+    public DbClientServiceContext resultFuture(CompletionStage<Long> resultFuture) {
         this.queryFuture = resultFuture;
         return this;
     }
 
     @Override
-    public DbInterceptorContext statement(String statement, List<Object> indexedParams) {
+    public DbClientServiceContext statement(String statement, List<Object> indexedParams) {
         this.statement = statement;
         this.indexedParams = indexedParams;
         this.indexed = true;
@@ -130,7 +130,7 @@ class DbInterceptorContextImpl implements DbInterceptorContext {
     }
 
     @Override
-    public DbInterceptorContext statement(String statement, Map<String, Object> namedParams) {
+    public DbClientServiceContext statement(String statement, Map<String, Object> namedParams) {
         this.statement = statement;
         this.namedParams = namedParams;
         this.indexed = false;
@@ -138,7 +138,7 @@ class DbInterceptorContextImpl implements DbInterceptorContext {
     }
 
     @Override
-    public DbInterceptorContext parameters(List<Object> indexedParameters) {
+    public DbClientServiceContext parameters(List<Object> indexedParameters) {
         if (indexed) {
             this.indexedParams = indexedParameters;
         } else {
@@ -149,7 +149,7 @@ class DbInterceptorContextImpl implements DbInterceptorContext {
     }
 
     @Override
-    public DbInterceptorContext parameters(Map<String, Object> namedParameters) {
+    public DbClientServiceContext parameters(Map<String, Object> namedParameters) {
         if (indexed) {
             throw new IllegalStateException("Cannot configure named parameters for a statement that expects indexed "
                                                     + "parameters");
@@ -165,7 +165,7 @@ class DbInterceptorContextImpl implements DbInterceptorContext {
     }
 
     @Override
-    public DbInterceptorContext statementType(DbStatementType type) {
+    public DbClientServiceContext statementType(DbStatementType type) {
         this.dbStatementType = type;
         return this;
     }

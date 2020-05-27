@@ -18,50 +18,26 @@ package io.helidon.dbclient.metrics;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.config.Config;
-
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.Timer;
 
 /**
- * Timer metric for Helidon DB. This class implements the {@link io.helidon.dbclient.DbInterceptor} and
+ * Timer metric for Helidon DB. This class implements the {@link io.helidon.dbclient.DbClientService} and
  * can be configured either through a {@link io.helidon.dbclient.DbClient.Builder} or through configuration.
  */
-public final class DbTimer extends DbMetric<Timer> {
+final class DbClientTimer extends DbClientMetric<Timer> {
 
-    private DbTimer(Builder builder) {
+    private DbClientTimer(Builder builder) {
         super(builder);
-    }
-
-    /**
-     * Create a timer from configuration.
-     *
-     * @param config configuration to read
-     * @return a new timer
-     * @see io.helidon.dbclient.metrics.DbMetricBuilder#config(io.helidon.config.Config)
-     */
-    public static DbTimer create(Config config) {
-        return builder().config(config).build();
-    }
-
-    /**
-     * Create a new timer using default configuration.
-     * <p>By default the name format is {@code db.timer.statement-name}, where {@code statement-name}
-     * is provided at runtime.
-     *
-     * @return a new timer
-     */
-    public static DbTimer create() {
-        return builder().build();
     }
 
     /**
      * Create a new fluent API builder to create a new timer metric.
      * @return a new builder instance
      */
-    public static Builder builder() {
+    static Builder builder() {
         return new Builder();
     }
 
@@ -104,12 +80,12 @@ public final class DbTimer extends DbMetric<Timer> {
     }
 
     /**
-     * Fluent API builder for {@link io.helidon.dbclient.metrics.DbTimer}.
+     * Fluent API builder for {@link DbClientTimer}.
      */
-    public static class Builder extends DbMetricBuilder<Builder> implements io.helidon.common.Builder<DbTimer> {
+    static class Builder extends DbClientMetricBuilder {
         @Override
-        public DbTimer build() {
-            return new DbTimer(this);
+        public DbClientTimer build() {
+            return new DbClientTimer(this);
         }
     }
 }

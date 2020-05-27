@@ -25,18 +25,18 @@ import io.helidon.common.context.Context;
 /**
  * Interceptor context to get (and possibly manipulate) database operations.
  * <p>
- * This is a mutable object - acts as a builder during the invocation of {@link io.helidon.dbclient.DbInterceptor}.
+ * This is a mutable object - acts as a builder during the invocation of {@link DbClientService}.
  * The interceptors are executed sequentially, so there is no need for synchronization.
  */
-public interface DbInterceptorContext {
+public interface DbClientServiceContext {
     /**
      * Create a new interceptor context for a database provider.
      *
      * @param dbType a short name of the db type (such as jdbc:mysql)
      * @return a new interceptor context ready to be configured
      */
-    static DbInterceptorContext create(String dbType) {
-        return new DbInterceptorContextImpl(dbType);
+    static DbClientServiceContext create(String dbType) {
+        return new DbClientServiceContextImpl(dbType);
     }
 
     /**
@@ -123,7 +123,7 @@ public interface DbInterceptorContext {
      * @param context context to use
      * @return updated interceptor context
      */
-    DbInterceptorContext context(Context context);
+    DbClientServiceContext context(Context context);
 
     /**
      * Set a new statement name to be used.
@@ -131,7 +131,7 @@ public interface DbInterceptorContext {
      * @param newName statement name to use
      * @return updated interceptor context
      */
-    DbInterceptorContext statementName(String newName);
+    DbClientServiceContext statementName(String newName);
 
     /**
      * Set a new future to mark completion of the statement.
@@ -139,7 +139,7 @@ public interface DbInterceptorContext {
      * @param statementFuture future
      * @return updated interceptor context
      */
-    DbInterceptorContext statementFuture(CompletionStage<Void> statementFuture);
+    DbClientServiceContext statementFuture(CompletionStage<Void> statementFuture);
 
     /**
      * Set a new future to mark completion of the result (e.g. query or number of modified records).
@@ -147,7 +147,7 @@ public interface DbInterceptorContext {
      * @param queryFuture future
      * @return updated interceptor context
      */
-    DbInterceptorContext resultFuture(CompletionStage<Long> queryFuture);
+    DbClientServiceContext resultFuture(CompletionStage<Long> queryFuture);
 
     /**
      * Set a new statement with indexed parameters to be used.
@@ -156,7 +156,7 @@ public interface DbInterceptorContext {
      * @param indexedParams indexed parameters
      * @return updated interceptor context
      */
-    DbInterceptorContext statement(String statement, List<Object> indexedParams);
+    DbClientServiceContext statement(String statement, List<Object> indexedParams);
 
     /**
      * Set a new statement with named parameters to be used.
@@ -165,7 +165,7 @@ public interface DbInterceptorContext {
      * @param namedParams named parameters
      * @return updated interceptor context
      */
-    DbInterceptorContext statement(String statement, Map<String, Object> namedParams);
+    DbClientServiceContext statement(String statement, Map<String, Object> namedParams);
 
     /**
      * Set new indexed parameters to be used.
@@ -174,7 +174,7 @@ public interface DbInterceptorContext {
      * @return updated interceptor context
      * @throws IllegalArgumentException in case the statement is using named parameters
      */
-    DbInterceptorContext parameters(List<Object> indexedParameters);
+    DbClientServiceContext parameters(List<Object> indexedParameters);
 
     /**
      * Set new named parameters to be used.
@@ -183,7 +183,7 @@ public interface DbInterceptorContext {
      * @return updated interceptor context
      * @throws IllegalArgumentException in case the statement is using indexed parameters
      */
-    DbInterceptorContext parameters(Map<String, Object> namedParameters);
+    DbClientServiceContext parameters(Map<String, Object> namedParameters);
 
     /**
      * Set the type of the statement.
@@ -191,5 +191,5 @@ public interface DbInterceptorContext {
      * @param type statement type
      * @return updated interceptor context
      */
-    DbInterceptorContext statementType(DbStatementType type);
+    DbClientServiceContext statementType(DbStatementType type);
 }

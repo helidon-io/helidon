@@ -47,5 +47,9 @@
             <groupId>io.opentracing</groupId>
             <artifactId>opentracing-util</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.dbclient</groupId>
+            <artifactId>helidon-dbclient-common</artifactId>
+        </dependency>
     </dependencies>
 </project>
