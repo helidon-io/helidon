@@ -46,7 +46,7 @@ public final class UpperXFilter implements Function<Publisher<DataChunk>, Publis
             try {
                 ByteBuffer[] originalData = responseChunk.data();
                 ByteBuffer[] processedData = new ByteBuffer[originalData.length];
-                for (int i=0 ; i < originalData.length ; i++) {
+                for (int i = 0; i < originalData.length; i++) {
                     // Naive but works for demo
                     byte[] buff = new byte[originalData[i].remaining()];
                     originalData[i].get(buff);
