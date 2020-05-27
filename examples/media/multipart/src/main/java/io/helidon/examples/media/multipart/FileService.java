@@ -16,6 +16,7 @@
 package io.helidon.examples.media.multipart;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.channels.ByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -162,7 +163,9 @@ public final class FileService implements Service {
 
     private static void writeChunk(ByteChannel channel, DataChunk chunk) {
         try {
-            channel.write(chunk.data());
+            for (ByteBuffer byteBuffer : chunk.data()) {
+                channel.write(byteBuffer);
+            }
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         } finally {
