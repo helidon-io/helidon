@@ -42,28 +42,24 @@ class WebServerBinder extends AbstractBinder {
     @Override
     protected void configure() {
         bindFactory(WebServerRequestReferencingFactory.class).to(ServerRequest.class)
-                                                             .proxy(false)
-                                                             .in(RequestScoped.class);
+                .proxy(false)
+                .in(RequestScoped.class);
         bindFactory(ReferencingFactory.<ServerRequest>referenceFactory()).to(new GenericType<Ref<ServerRequest>>() { })
-                                                                         .in(RequestScoped.class);
+                .in(RequestScoped.class);
 
         bindFactory(WebServerResponseReferencingFactory.class).to(ServerResponse.class)
-                                                              .proxy(true).proxyForSameScope(false)
-                                                              .in(RequestScoped.class);
+                .proxy(true).proxyForSameScope(false)
+                .in(RequestScoped.class);
         bindFactory(ReferencingFactory.<ServerResponse>referenceFactory()).to(new GenericType<Ref<ServerResponse>>() { })
-                                                                          .in(RequestScoped.class);
-
-        bindFactory(SpanReferencingFactory.class).to(Span.class)
-                                                 .proxy(false)
-                                                 .in(RequestScoped.class).named(JerseySupport.REQUEST_SPAN_QUALIFIER);
+                .in(RequestScoped.class);
         bindFactory(SpanContextReferencingFactory.class).to(SpanContext.class)
-                                                        .proxy(false)
-                                                        .in(RequestScoped.class).named(JerseySupport.REQUEST_SPAN_CONTEXT);
+                .proxy(false)
+                .in(RequestScoped.class).named(JerseySupport.REQUEST_SPAN_CONTEXT);
 
         bindFactory(ReferencingFactory.<Span>referenceFactory()).to(new GenericType<Ref<Span>>() { })
-                                                                .in(RequestScoped.class);
+                .in(RequestScoped.class);
         bindFactory(ReferencingFactory.<SpanContext>referenceFactory()).to(new GenericType<Ref<SpanContext>>() { })
-                                                                       .in(RequestScoped.class);
+                .in(RequestScoped.class);
     }
 
     private static class WebServerRequestReferencingFactory extends ReferencingFactory<ServerRequest> {
@@ -78,15 +74,6 @@ class WebServerBinder extends AbstractBinder {
 
         @Inject
         WebServerResponseReferencingFactory(final Provider<Ref<ServerResponse>> referenceFactory) {
-            super(referenceFactory);
-        }
-    }
-
-    @Deprecated
-    private static class SpanReferencingFactory extends ReferencingFactory<Span> {
-
-        @Inject
-        SpanReferencingFactory(final Provider<Ref<Span>> referenceFactory) {
             super(referenceFactory);
         }
     }
