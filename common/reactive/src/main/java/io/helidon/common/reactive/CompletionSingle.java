@@ -18,7 +18,8 @@
 package io.helidon.common.reactive;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicReference;
+
+import io.helidon.common.LazyValue;
 
 /**
  * Single as CompletionStage.
@@ -27,23 +28,15 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public abstract class CompletionSingle<T> extends CompletionAwaitable<T> implements Single<T> {
 
-    private final AtomicReference<CompletableFuture<T>> stageReference = new AtomicReference<>();
     private final CompletableFuture<Void> cancelFuture = new CompletableFuture<>();
 
     protected CompletionSingle() {
-        setOriginalStage(this::getLazyStage);
-    }
-
-    private CompletableFuture<T> getLazyStage() {
-        if (stageReference.get() == null) {
-            stageReference.set(toNullableStage());
-        }
-        return stageReference.get();
+        LazyValue<CompletableFuture<T>> lazyStage = LazyValue.create(this::toNullableStage);
+        setOriginalStage(lazyStage::get);
     }
 
     protected CompletableFuture<T> toNullableStage() {
         SingleToFuture<T> subscriber = new SingleToFuture<>(true);
-        //addSubscribeTrigger(() -> this.subscribe(subscriber));
         this.subscribe(subscriber);
         return subscriber;
     }

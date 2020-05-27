@@ -16,11 +16,9 @@
 
 package io.helidon.common.reactive;
 
-import java.util.LinkedList;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -34,14 +32,10 @@ import java.util.function.Supplier;
  */
 public class CompletionAwaitable<T> implements CompletionStage<T>, Awaitable<T> {
 
-    private final AtomicBoolean triggeredSubscription = new AtomicBoolean();
-
     private Supplier<CompletionStage<T>> originalStage;
-    private LinkedList<Runnable> subscribeTrigger = new LinkedList<>();
 
     CompletionAwaitable(Supplier<CompletionStage<T>> originalStage, CompletionAwaitable<?> parent) {
         this.originalStage = originalStage;
-        this.subscribeTrigger = parent.subscribeTrigger;
     }
 
     CompletionAwaitable() {
@@ -49,10 +43,6 @@ public class CompletionAwaitable<T> implements CompletionStage<T>, Awaitable<T> 
 
     void setOriginalStage(final Supplier<CompletionStage<T>> originalStage) {
         this.originalStage = originalStage;
-    }
-
-    void addSubscribeTrigger(final Runnable runnable) {
-        this.subscribeTrigger.addLast(runnable);
     }
 
     @Override
@@ -306,14 +296,6 @@ public class CompletionAwaitable<T> implements CompletionStage<T>, Awaitable<T> 
 
     @Override
     public CompletableFuture<T> toCompletableFuture() {
-        CompletableFuture<T> future = originalStage.get().toCompletableFuture();
-        triggerSubscription();
-        return future;
-    }
-
-    private void triggerSubscription() {
-        if (triggeredSubscription.compareAndSet(false, true)) {
-            subscribeTrigger.forEach(Runnable::run);
-        }
+        return originalStage.get().toCompletableFuture();
     }
 }
