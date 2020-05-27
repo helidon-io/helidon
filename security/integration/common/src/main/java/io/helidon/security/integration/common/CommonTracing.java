@@ -107,21 +107,6 @@ abstract class CommonTracing {
     }
 
     /**
-     * Find closes parent span.
-     *
-     * @return span context if found
-     * @deprecated will be removed once security context works
-     *  with {@link io.opentracing.SpanContext}. Needed for
-     *  backward compatibility
-     */
-    @Deprecated
-    public Optional<Span> findParentSpan() {
-        Optional<Span> closest = closestSecuritySpan();
-
-        return closest.or(() -> parentSpan);
-    }
-
-    /**
      * Log response status.
      * This is to be used by authorization, authentication and outbound
      * security.

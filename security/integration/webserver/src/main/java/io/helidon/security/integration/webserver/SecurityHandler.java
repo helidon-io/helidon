@@ -56,7 +56,6 @@ import io.helidon.webserver.ResponseHeaders;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 
-import io.opentracing.Span;
 import io.opentracing.SpanContext;
 
 import static io.helidon.security.AuditEvent.AuditParam.plain;
@@ -442,8 +441,7 @@ public final class SecurityHandler implements Handler {
 
         SecurityClientBuilder<AuthenticationResponse> clientBuilder = securityContext.atnClientBuilder();
         configureSecurityRequest(clientBuilder,
-                                 atnTracing.findParent().orElse(null),
-                                 atnTracing.findParentSpan().orElse(null));
+                                 atnTracing.findParent().orElse(null));
 
         clientBuilder.explicitProvider(explicitAuthenticator.orElse(null)).submit().thenAccept(response -> {
             switch (response.status()) {
@@ -556,12 +554,10 @@ public final class SecurityHandler implements Handler {
     }
 
     private void configureSecurityRequest(SecurityRequestBuilder<? extends SecurityRequestBuilder<?>> request,
-                                          SpanContext parentSpanContext,
-                                          Span parentSpan) {
+                                          SpanContext parentSpanContext) {
 
         request.optional(authenticationOptional.orElse(false))
-                .tracingSpan(parentSpanContext)
-                .tracingSpan(parentSpan);
+                .tracingSpan(parentSpanContext);
     }
 
     @SuppressWarnings("ThrowableNotThrown")
@@ -603,8 +599,7 @@ public final class SecurityHandler implements Handler {
 
         client = context.atzClientBuilder();
         configureSecurityRequest(client,
-                                 atzTracing.findParent().orElse(null),
-                                 atzTracing.findParentSpan().orElse(null));
+                                 atzTracing.findParent().orElse(null));
 
         client.explicitProvider(explicitAuthorizer.orElse(null)).submit().thenAccept(response -> {
             atzTracing.logStatus(response.status());

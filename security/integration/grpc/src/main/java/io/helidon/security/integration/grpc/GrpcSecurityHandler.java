@@ -60,7 +60,6 @@ import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
 import io.grpc.Status;
-import io.opentracing.Span;
 import io.opentracing.SpanContext;
 
 import static io.helidon.security.AuditEvent.AuditParam.plain;
@@ -457,8 +456,7 @@ public class GrpcSecurityHandler
         SecurityClientBuilder<AuthenticationResponse> clientBuilder = securityContext.atnClientBuilder();
 
         configureSecurityRequest(clientBuilder,
-                                 atnTracing.findParent().orElse(null),
-                                 atnTracing.findParentSpan().orElse(null));
+                                 atnTracing.findParent().orElse(null));
 
         clientBuilder.explicitProvider(explicitAuthenticator.orElse(null)).submit().thenAccept(response -> {
             switch (response.status()) {
@@ -534,12 +532,10 @@ public class GrpcSecurityHandler
     }
 
     private void configureSecurityRequest(SecurityRequestBuilder<? extends SecurityRequestBuilder<?>> request,
-                                          SpanContext parentSpanContext,
-                                          Span parentSpan) {
+                                          SpanContext parentSpanContext) {
 
         request.optional(authenticationOptional.orElse(false))
-                .tracingSpan(parentSpanContext)
-                .tracingSpan(parentSpan);
+                .tracingSpan(parentSpanContext);
     }
 
     private CompletionStage<AtxResult> processAuthorization(
@@ -577,8 +573,7 @@ public class GrpcSecurityHandler
 
         client = context.atzClientBuilder();
         configureSecurityRequest(client,
-                                 atzTracing.findParent().orElse(null),
-                                 atzTracing.findParentSpan().orElse(null));
+                                 atzTracing.findParent().orElse(null));
 
         client.explicitProvider(explicitAuthorizer.orElse(null)).submit().thenAccept(response -> {
             atzTracing.logStatus(response.status());

@@ -139,9 +139,7 @@ abstract class SecurityFilterCommon {
                 SecurityClientBuilder<AuthenticationResponse> clientBuilder = securityContext
                         .atnClientBuilder()
                         .optional(methodSecurity.authenticationOptional())
-                        .tracingSpan(atnTracing.findParent().orElse(null))
-                        // backward compatibility - remove in 2.0
-                        .tracingSpan(atnTracing.findParentSpan().orElse(null));
+                        .tracingSpan(atnTracing.findParent().orElse(null));
 
                 clientBuilder.explicitProvider(methodSecurity.getAuthenticator());
                 processAuthentication(context, clientBuilder, methodSecurity, atnTracing);
@@ -254,8 +252,6 @@ abstract class SecurityFilterCommon {
             // access
             if (context.getMethodSecurity().requiresAuthorization()) {
                 SecurityClientBuilder<AuthorizationResponse> clientBuilder = securityContext.atzClientBuilder()
-                        // TODO remove in 2.0 - backward compatibility until then
-                        .tracingSpan(atzTracing.findParentSpan().orElse(null))
                         .tracingSpan(atzTracing.findParent().orElse(null))
                         .explicitProvider(context.getMethodSecurity().getAuthorizer());
 
