@@ -41,7 +41,7 @@ include::../../common/guides/migration.adoc[]
 4. The API of config source builders has been cleaned, so now only methods that are relevant to a specific config
    source type can be invoked on such a builder. Previously you could configure a polling strategy on a source that
    did not support polling
-5. There is a small change in behavior of Helidon Config vs. MicroProfile config:
+5. There is a small change in behavior of Helidon Config vs. MicroProfile Config:
    The MP TCK require that system properties are fully mutable (e.g. as soon as the property is changed, it
    must be used), so MP Config methods work in this manner (with a certain performance overhead).
    Helidon Config treats System properties as a mutable config source, with a (optional) time based polling strategy. So
@@ -82,41 +82,68 @@ The new JSON MediaSupport classes are:
 
 == Reactive
 
-XXX Were these just between milestone builds? And therefore does not need to be in
-porting guide? Is there something else we need to document?
+|===
+|Removed | Replacement
 
-=== Removal of processor-like operators
-The formerly public `Flow.Processor` implementations performing common operations have been removed.
-Users should use the respective operators from `Single` and `Multi` instead:
+|`io.helidon.common.reactive.ReactiveStreamsAdapter`|`org.reactivestreams.FlowAdapters`
+|===
 
-```java
-// before
-Flow.Publisher<Integer> source = ...
-MappingProcessor<Integer, String> mapper = new MappingProcessor<>(Integer::toString);
-source.subscribe(mapper);
-mapper.subscribe(subscriber);
+== Security: OidcConfig
 
-// after
-Flow.Publisher<Integer> source = ...
-Multi.from(source)
-     .map(Integer::toString)
-     .subscribe(subscriber)
+Configuration has been updated to use the new `Resource` approach:
+
+1. `oidc-metadata.resource` is the new key for loading `oidc-metadata` from local resource
+2. `sign-jwk.resource` is the new key for loading signing JWK resource
+
+== Security: JwtProvider and JwtAuthProvider
+
+Configuration has been updated to use the new `Resource` approach:
+
+1. `jwk.resource` is the new key for loading JWK for verifying signatures
+2. `jwt.resource` is also used for outbound as key for loading JWK for signing tokens
+
+==  SSL Key Configuration
+
+The configuration has been updated to have a nicer tree structure:
+
+Example of a public key from keystore:
+```yaml
+ssl:
+  keystore:
+    cert.alias: "service_cert"
+    resource.path: "src/test/resources/keystore/keystore.p12"
+    type: "PKCS12"
+    passphrase: "password"
 ```
 
-=== Removal of Flows
+Example of a private key from keystore:
+```yaml
+ssl:
+  keystore:
+    key:
+      alias: "myPrivateKey"
+      passphrase: "password"
+    resource.path: "src/test/resources/keystore/keystore.p12"
+    type: "PKCS12"
+    passphrase: "password"
+```
 
-The class was providing basic `Flow.Publisher` implementations. Users should pick one of the static methods of
-`Single` or `Multi` instead, which provide the additional benefits of having fluent operators available to them for
-assembling reactive flows conveniently:
-```java
-// before
-Flow.Publisher<Integer> just = Flows.singletonPublisher(1);
-Flow.Publisher<Object> empty = Flows.emptyPublisher();
+Example of a pem resource with private key and certificate chain:
+```yaml
+ssl:
+  pem:
+    key:
+      passphrase: "password"
+      resource.resource-path: "keystore/id_rsa.p8"
+    cert-chain:
+      resource.resource-path: "keystore/public_key_cert.pem"
+```
 
-// after
-Multi<Integer> just1 = Multi.singleton(1);
-Single<Integer> just2 = Single.just(1);
 
-Multi<Object> empty1 = Multi.empty();
-Single<Object> empty2 = Single.empty();
+== GrpcTlsDescriptor
 
+Configuration has been updated to use the new `Resource` approach:
+
+1. `tls-cert.resource` is the new key for certificate
+2. `tls-key.resource` is the new key for private key
+3. `tl-ca-cert` is the the new key for certificate
