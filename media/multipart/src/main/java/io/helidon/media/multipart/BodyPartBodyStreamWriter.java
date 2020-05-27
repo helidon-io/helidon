@@ -35,8 +35,8 @@ public final class BodyPartBodyStreamWriter implements MessageBodyStreamWriter<W
     }
 
     @Override
-    public boolean accept(GenericType<?> type, MessageBodyWriterContext context) {
-        return WriteableBodyPart.class.isAssignableFrom(type.rawType());
+    public PredicateResult accept(GenericType<?> type, MessageBodyWriterContext context) {
+        return PredicateResult.supports(WriteableBodyPart.class, type);
     }
 
     @Override
