@@ -95,7 +95,9 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
      * @param <T> the element type of the stage and result
      * @return Single
      * @see #from(CompletionStage, boolean)
+     * @deprecated use {@link #create(java.util.concurrent.CompletionStage)} instead
      */
+    @Deprecated
     static <T> Single<T> from(CompletionStage<T> completionStage) {
         return from(completionStage, false);
     }
@@ -107,7 +109,9 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
      *                       if false, the resulting sequence fails with {@link NullPointerException}
      * @param <T> the element type of the stage and result
      * @return Single
+     * @deprecated use {@link #create(java.util.concurrent.CompletionStage, boolean)} instead
      */
+    @Deprecated
     static <T> Single<T> from(CompletionStage<T> completionStage, boolean nullMeansEmpty) {
         Objects.requireNonNull(completionStage, "completionStage is null");
         return new SingleFromCompletionStage<>(completionStage, nullMeansEmpty);
@@ -122,7 +126,9 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
      * @param source source publisher
      * @return Single
      * @throws NullPointerException if source is {@code null}
+     * @deprecated use {@link #create(java.util.concurrent.Flow.Publisher)} instead
      */
+    @Deprecated
     static <T> Single<T> from(Publisher<T> source) {
         Objects.requireNonNull(source, "source is null!");
         if (source instanceof Single) {
@@ -138,9 +144,69 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
      * @param single source {@link Single} publisher
      * @return Single
      * @throws NullPointerException if source is {@code null}
+     * @deprecated use {@link #create(io.helidon.common.reactive.Single)} instead
      */
+    @Deprecated
     static <T> Single<T> from(Single<T> single) {
-        return from((Publisher<T>) single);
+        return create((Publisher<T>) single);
+    }
+
+   /**
+     * Wrap a CompletionStage into a Multi and signal its outcome non-blockingly.
+     * <p>
+     *     A null result from the CompletionStage will yield a
+     *     {@link NullPointerException} signal.
+     * </p>
+     * @param completionStage the CompletionStage to
+     * @param <T> the element type of the stage and result
+     * @return Single
+     * @see #create(CompletionStage, boolean)
+     */
+    static <T> Single<T> create(CompletionStage<T> completionStage) {
+        return create(completionStage, false);
+    }
+
+    /**
+     * Wrap a CompletionStage into a Multi and signal its outcome non-blockingly.
+     * @param completionStage the CompletionStage to
+     * @param nullMeansEmpty if true, a null result is interpreted to be an empty sequence
+     *                       if false, the resulting sequence fails with {@link NullPointerException}
+     * @param <T> the element type of the stage and result
+     * @return Single
+     */
+    static <T> Single<T> create(CompletionStage<T> completionStage, boolean nullMeansEmpty) {
+        Objects.requireNonNull(completionStage, "completionStage is null");
+        return new SingleFromCompletionStage<>(completionStage, nullMeansEmpty);
+    }
+
+    /**
+     * Create a {@link Single} instance that publishes the first and only item received from the given publisher. Note that if the
+     * publisher publishes more than one item, the resulting {@link Single} will hold an error. Use {@link Multi#first()} instead
+     * in order to get the first item of a publisher that may publish more than one item.
+     *
+     * @param <T>    item type
+     * @param source source publisher
+     * @return Single
+     * @throws NullPointerException if source is {@code null}
+     */
+    static <T> Single<T> create(Publisher<T> source) {
+        Objects.requireNonNull(source, "source is null!");
+        if (source instanceof Single) {
+            return (Single<T>) source;
+        }
+        return new SingleFromPublisher<>(source);
+    }
+
+    /**
+     * Create a {@link Single} instance that publishes the first and only item received from the given {@link Single}.
+     *
+     * @param <T>    item type
+     * @param single source {@link Single} publisher
+     * @return Single
+     * @throws NullPointerException if source is {@code null}
+     */
+    static <T> Single<T> create(Single<T> single) {
+        return create((Publisher<T>) single);
     }
 
     /**
