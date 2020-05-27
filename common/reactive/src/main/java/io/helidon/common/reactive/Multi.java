@@ -931,7 +931,6 @@ public interface Multi<T> extends Subscribable<T> {
         );
 
         this.subscribe(subscriber);
-
         return single;
     }
 
