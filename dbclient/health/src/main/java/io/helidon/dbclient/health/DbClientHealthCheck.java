@@ -46,7 +46,8 @@ public final class DbClientHealthCheck implements HealthCheck {
      *
      * @param dbClient A database that implements {@link io.helidon.dbclient.DbClient#ping()}
      * @return health check that can be used with
-     * {@link io.helidon.health.HealthSupport.Builder#add(org.eclipse.microprofile.health.HealthCheck...)}
+     * {@link io.helidon.health.HealthSupport.Builder#addReadiness(org.eclipse.microprofile.health.HealthCheck...)}
+     * or {@link io.helidon.health.HealthSupport.Builder#addLiveness(org.eclipse.microprofile.health.HealthCheck...)}
      */
     public static DbClientHealthCheck create(DbClient dbClient) {
         return builder(dbClient).build();

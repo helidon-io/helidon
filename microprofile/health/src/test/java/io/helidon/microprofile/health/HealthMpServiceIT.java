@@ -184,7 +184,7 @@ public class HealthMpServiceIT {
     public static class HealthCheckProviderOne
             implements HealthCheckProvider {
         @Override
-        public List<HealthCheck> healthChecks() {
+        public List<HealthCheck> livenessChecks() {
             return Arrays.asList(
                     new HealthCheckStub("Three"),
                     new HealthCheckStub("Four"));
@@ -199,7 +199,7 @@ public class HealthMpServiceIT {
     public static class HealthCheckProviderTwo
             implements HealthCheckProvider {
         @Override
-        public List<HealthCheck> healthChecks() {
+        public List<HealthCheck> livenessChecks() {
             return Arrays.asList(
                     new HealthCheckStub("Five"),
                     new HealthCheckStub("Six"));

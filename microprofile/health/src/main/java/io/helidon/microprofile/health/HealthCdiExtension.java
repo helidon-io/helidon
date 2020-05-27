@@ -26,7 +26,6 @@ import java.util.stream.Collectors;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
-import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.BeforeBeanDiscovery;
 import javax.enterprise.inject.spi.CDI;
 import javax.enterprise.inject.spi.Extension;
@@ -50,6 +49,8 @@ import org.eclipse.microprofile.health.Readiness;
  * Health extension.
  */
 public class HealthCdiExtension implements Extension {
+    // must be used until removed from MP specification
+    @SuppressWarnings("deprecation")
     private static final Health HEALTH_LITERAL = new Health() {
         @Override
         public Class<? extends Annotation> annotationType() {
@@ -89,7 +90,7 @@ public class HealthCdiExtension implements Extension {
                 .add(ApplicationScoped.Literal.INSTANCE);
     }
 
-    void registerHealth(@Observes @Initialized(ApplicationScoped.class) Object adv, BeanManager bm) {
+    void registerHealth(@Observes @Initialized(ApplicationScoped.class) Object adv) {
         org.eclipse.microprofile.config.Config config = ConfigProvider.getConfig();
         Config helidonConfig = MpConfig.toHelidonConfig(config).get("health");
 
@@ -113,6 +114,8 @@ public class HealthCdiExtension implements Extension {
                         .collect(Collectors.toList()) : Collections.<HealthCheck>emptyList())
                 .orElse(Collections.emptyList());
 
+        // we must use builder.add(HealthCheck) as long as HEALTH_LITERAL can be used
+        //noinspection deprecation
         cdi.select(HealthCheck.class, HEALTH_LITERAL)
                 .stream()
                 .filter(hc -> !builtInHealthChecks.contains(hc))
@@ -130,7 +133,6 @@ public class HealthCdiExtension implements Extension {
 
         HelidonServiceLoader.create(ServiceLoader.load(HealthCheckProvider.class))
                 .forEach(healthCheckProvider -> {
-                    builder.add(healthCheckProvider.healthChecks());
                     healthCheckProvider.livenessChecks().forEach(builder::addLiveness);
                     healthCheckProvider.readinessChecks().forEach(builder::addReadiness);
                 });
