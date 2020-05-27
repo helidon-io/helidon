@@ -288,12 +288,13 @@ public class TestClient {
             if (data == null) {
                 return;
             }
-            ByteBuffer bb = data.data();
             try {
                 synchronized (baos) {
-                    byte[] buff = new byte[bb.remaining()];
-                    bb.get(buff);
-                    baos.write(buff);
+                    for (ByteBuffer byteBuffer : data.data()) {
+                        byte[] buff = new byte[byteBuffer.remaining()];
+                        byteBuffer.get(buff);
+                        baos.write(buff);
+                    }
                 }
             } catch (IOException e) {
                 onError(new IllegalStateException("Cannot write data into the ByteArrayOutputStream!", e));

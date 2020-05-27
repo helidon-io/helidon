@@ -106,7 +106,7 @@ class RequestContentSubscriber implements Flow.Subscriber<DataChunk> {
             LOGGER.finest(() -> "Message body contains only one data chunk. Setting chunked encoding to false.");
             HttpUtil.setTransferEncodingChunked(request, false);
             if (firstDataChunk != null) {
-                HttpUtil.setContentLength(request, firstDataChunk.data().remaining());
+                HttpUtil.setContentLength(request, firstDataChunk.remaining());
             }
             channel.writeAndFlush(request);
             if (firstDataChunk != null) {

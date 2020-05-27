@@ -132,32 +132,38 @@ public class DataChunkInputStream extends InputStream {
                 return -1;
             }
 
-            ByteBuffer currentBuffer = chunk.data();
+            ByteBuffer[] currentBuffers = chunk.data();
+            int count = 0;
+            for (int i = 0; i < currentBuffers.length; i++) {
+                if (i == 0 && currentBuffers[i].position() == 0) {
+                    LOGGER.finest(() -> "Reading chunk ID: " + chunk.id());
+                }
+                // If there is anything to read, then read as much as fits into buf
+                int rem = currentBuffers[i].remaining();
+                if (rem == 0) {
+                    continue;
+                }
+                int currentLen = len;
+                if (currentLen > rem) {
+                    currentLen = rem;
+                }
+                currentBuffers[i].get(buf, off, currentLen);
+                off += currentLen;
+                count += currentLen;
 
-            if (currentBuffer.position() == 0) {
-                LOGGER.finest(() -> "Reading chunk ID: " + chunk.id());
+                // Chunk is consumed entirely - release the chunk, and prefetch a new chunk; do not
+                // wait for it to arrive - the next read may have to wait less.
+                //
+                // Assert: it is safe to request new chunks eagerly - there is no mechanism
+                // to push back unconsumed data, so we can assume we own all the chunks,
+                // consumed and unconsumed.
+                if (i == currentBuffers.length - 1 && currentLen == rem) {
+                    releaseChunk(chunk, null);
+                    current = next;
+                    subscription.request(1);
+                }
             }
-
-            // If there is anything to read, then read as much as fits into buf
-            int rem = currentBuffer.remaining();
-            if (len > rem) {
-                len = rem;
-            }
-            currentBuffer.get(buf, off, len);
-
-            // Chunk is consumed entirely - release the chunk, and prefetch a new chunk; do not
-            // wait for it to arrive - the next read may have to wait less.
-            //
-            // Assert: it is safe to request new chunks eagerly - there is no mechanism
-            // to push back unconsumed data, so we can assume we own all the chunks,
-            // consumed and unconsumed.
-            if (len == rem) {
-                releaseChunk(chunk, null);
-                current = next;
-                subscription.request(1);
-            }
-
-            return len;
+            return count;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IOException(e);
@@ -193,7 +199,7 @@ public class DataChunkInputStream extends InputStream {
         @Override
         public void onNext(DataChunk item) {
             LOGGER.finest(() -> "Processing chunk: " + item.id());
-            if (item.data().remaining() > 0) {
+            if (item.remaining() > 0) {
                 CompletableFuture<DataChunk> prev = next;
                 next = new CompletableFuture<>();
                 prev.complete(item);

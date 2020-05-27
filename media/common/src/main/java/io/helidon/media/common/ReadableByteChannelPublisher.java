@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -117,7 +117,7 @@ public class ReadableByteChannelPublisher implements Flow.Publisher<DataChunk> {
             curentChunk = null;
         }
 
-        ByteBuffer bb = chunk.data();
+        ByteBuffer bb = chunk.data()[0];
         int count = 0;
         while (bb.remaining() > 0) {
             count = channel.read(bb);

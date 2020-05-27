@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ class DataChunkTest {
         assertThat(chunk.flush(), is(false));
         assertThat(chunk.id(), not(0L));
         assertThat(chunk.isReleased(), is(false));
-        assertThat(chunk.data().array(), is(bytes));
+        assertThat(chunk.data()[0].array(), is(bytes));
     }
 
     @Test
@@ -48,12 +48,12 @@ class DataChunkTest {
         byte[] bytes = "urzatron".getBytes(StandardCharsets.UTF_8);
         AtomicBoolean ab = new AtomicBoolean(false);
 
-        DataChunk chunk = DataChunk.create(true, ByteBuffer.wrap(bytes), () -> ab.set(true));
+        DataChunk chunk = DataChunk.create(true, () -> ab.set(true), ByteBuffer.wrap(bytes));
 
         assertThat(chunk.bytes(), is(bytes));
         assertThat(chunk.flush(), is(true));
         assertThat(chunk.id(), not(0L));
-        assertThat(chunk.data().array(), is(bytes));
+        assertThat(chunk.data()[0].array(), is(bytes));
         assertThat(chunk.isReleased(), is(false));
         assertThat(ab.get(), is(false));
         chunk.release();
@@ -69,7 +69,7 @@ class DataChunkTest {
         assertThat(chunk.bytes(), is(bytes));
         assertThat(chunk.flush(), is(true));
         assertThat(chunk.id(), not(0L));
-        assertThat(chunk.data().array(), is(bytes));
+        assertThat(chunk.data()[0].array(), is(bytes));
         assertThat(chunk.isReleased(), is(false));
         chunk.release();
         assertThat(chunk.isReleased(), is(true));

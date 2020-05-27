@@ -129,7 +129,7 @@ public class TyrusWriterPublisher extends Writer implements Flow.Publisher<DataC
     }
 
     private void writeNext(ByteBuffer byteBuffer, CompletionHandler<ByteBuffer> handler) {
-        DataChunk dataChunk = DataChunk.create(true, byteBuffer, true);
+        DataChunk dataChunk = DataChunk.create(true, true, byteBuffer);
         if (handler != null) {
             dataChunk.writeFuture(fromCompletionHandler(handler));
         }
@@ -147,7 +147,7 @@ public class TyrusWriterPublisher extends Writer implements Flow.Publisher<DataC
         CompletableFuture<DataChunk> future = new CompletableFuture<>();
         future.whenComplete((chunk, throwable) -> {
             if (throwable == null) {
-                handler.completed(chunk.data());
+                handler.completed(chunk.data()[0]);
             } else {
                 handler.failed(throwable);
             }

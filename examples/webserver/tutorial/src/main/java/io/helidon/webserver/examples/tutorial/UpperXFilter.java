@@ -44,17 +44,20 @@ public final class UpperXFilter implements Function<Publisher<DataChunk>, Publis
                 return null;
             }
             try {
-                ByteBuffer bb = responseChunk.data();
-                // Naive but works for demo
-                byte[] buff = new byte[bb.remaining()];
-                bb.get(buff);
-                for (int i = 0; i < buff.length; i++) {
-                    if (buff[i] == LOWER_X) {
-                        buff[i] = UPPER_X;
+                ByteBuffer[] originalData = responseChunk.data();
+                ByteBuffer[] processedData = new ByteBuffer[originalData.length];
+                for (int i=0 ; i < originalData.length ; i++) {
+                    // Naive but works for demo
+                    byte[] buff = new byte[originalData[i].remaining()];
+                    originalData[i].get(buff);
+                    for (int j = 0; j < buff.length; j++) {
+                        if (buff[j] == LOWER_X) {
+                            buff[j] = UPPER_X;
+                        }
                     }
+                    processedData[i] = ByteBuffer.wrap(buff);
                 }
-                return DataChunk.create(responseChunk.flush(),
-                        ByteBuffer.wrap(buff));
+                return DataChunk.create(responseChunk.flush(), processedData);
             } finally {
                 responseChunk.release();
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -114,7 +114,7 @@ public final class SizeLogEntry extends AbstractLogEntry {
 
         @Override
         public void onNext(DataChunk item) {
-            sizeAdder.add(item.data().remaining());
+            sizeAdder.add(item.remaining());
             subscriber.onNext(item);
         }
 
