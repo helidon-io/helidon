@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.StringTokenizer;
 
 import io.helidon.common.GenericType;
@@ -197,8 +198,8 @@ abstract class Request implements ServerRequest {
 
         private Span createReadSpan(GenericType<?> type) {
             // only create this span if we have a parent span
-            SpanContext parentSpan = spanContext();
-            if (null == parentSpan) {
+            Optional<SpanContext> parentSpan = spanContext();
+            if (parentSpan.isEmpty()) {
                 return null;
             }
 
@@ -212,7 +213,7 @@ abstract class Request implements ServerRequest {
             if (spanConfig.enabled()) {
                 // only create a real span if enabled
                 Tracer.SpanBuilder spanBuilder = tracer().buildSpan(spanName);
-                spanBuilder.asChildOf(parentSpan);
+                spanBuilder.asChildOf(parentSpan.get());
 
                 if (type != null) {
                     spanBuilder.withTag("requested.type", type.getTypeName());

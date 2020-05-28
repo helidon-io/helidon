@@ -274,8 +274,8 @@ public class JerseySupport implements Service {
                                 requestContext.setRequestScopedInitializer(injectionManager -> {
                                     injectionManager.<Ref<ServerRequest>>getInstance(REQUEST_TYPE).set(req);
                                     injectionManager.<Ref<ServerResponse>>getInstance(RESPONSE_TYPE).set(res);
-                                    injectionManager.<Ref<Span>>getInstance(SPAN_TYPE).set(req.span());
-                                    injectionManager.<Ref<SpanContext>>getInstance(SPAN_CONTEXT_TYPE).set(req.spanContext());
+                                    injectionManager.<Ref<SpanContext>>getInstance(SPAN_CONTEXT_TYPE)
+                                            .set(req.spanContext().orElse(null));
                                 });
 
                                 appHandler.handle(requestContext);

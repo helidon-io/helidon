@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -351,11 +351,14 @@ public final class WebSecurity implements Service {
             EndpointConfig ec = EndpointConfig.builder()
                     .build();
 
-            SecurityContext context = security.contextBuilder(String.valueOf(SECURITY_COUNTER.incrementAndGet()))
-                    .tracingSpan(req.spanContext())
+            SecurityContext.Builder contextBuilder = security.contextBuilder(String.valueOf(SECURITY_COUNTER.incrementAndGet()))
                     .env(env)
-                    .endpointConfig(ec)
-                    .build();
+                    .endpointConfig(ec);
+
+            // only register if exists
+            req.spanContext().ifPresent(contextBuilder::tracingSpan);
+
+            SecurityContext context = contextBuilder.build();
 
             req.context().register(context);
             req.context().register(defaultHandler);
