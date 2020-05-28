@@ -18,7 +18,6 @@ package io.helidon.metrics;
 
 import java.util.EnumMap;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Supplier;
 
 import io.helidon.config.Config;
 
@@ -83,34 +82,6 @@ public final class RegistryFactory {
      */
     public static RegistryFactory create(Config config) {
         return new RegistryFactory(config);
-    }
-
-
-
-    /**
-     * Get a supplier for registry factory. The supplier will return the singleton isntance
-     * that is created.
-     *
-     * @return supplier of registry factory (to bind as late as possible)
-     * @deprecated use {@link io.helidon.metrics.RegistryFactory#getInstance() RegistryFactory::getInstance} instead.
-     */
-    @Deprecated
-    public static Supplier<RegistryFactory> getRegistryFactory() {
-        return RegistryFactory::getInstance;
-    }
-
-    /**
-     * Create a registry factory for systems without CDI.
-     *
-     * @param config configuration to load the factory config from
-     * @return a new registry factory to obtain application registry (and other registries)
-     * @deprecated use {@link #create()} or {@link #create(io.helidon.config.Config)} instead when a new
-     * registry factory instance is needed. Use {@link #getInstance()} or {@link #getInstance(io.helidon.config.Config)}
-     * to retrieve the shared (singleton) instance.
-     */
-    @Deprecated
-    public static RegistryFactory createSeFactory(Config config) {
-        return create(config);
     }
 
     /**
