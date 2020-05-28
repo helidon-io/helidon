@@ -31,6 +31,7 @@ import javax.inject.Inject;
 import io.helidon.common.configurable.ScheduledThreadPoolSupplier;
 import io.helidon.config.Config;
 import io.helidon.config.mp.MpConfig;
+import io.helidon.messaging.Stoppable;
 
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.messaging.spi.Connector;
@@ -45,7 +46,7 @@ import org.eclipse.microprofile.reactive.streams.operators.SubscriberBuilder;
  */
 @ApplicationScoped
 @Connector(KafkaConnector.CONNECTOR_NAME)
-public class KafkaConnector implements IncomingConnectorFactory, OutgoingConnectorFactory {
+public class KafkaConnector implements IncomingConnectorFactory, OutgoingConnectorFactory, Stoppable {
 
     private static final Logger LOGGER = Logger.getLogger(KafkaConnector.class.getName());
     /**
@@ -82,9 +83,10 @@ public class KafkaConnector implements IncomingConnectorFactory, OutgoingConnect
 
     /**
      * Gets the open resources for testing verification purposes.
+     *
      * @return the opened resources
      */
-    Queue<KafkaPublisher<?, ?>> resources(){
+    Queue<KafkaPublisher<?, ?>> resources() {
         return resources;
     }
 
@@ -106,11 +108,21 @@ public class KafkaConnector implements IncomingConnectorFactory, OutgoingConnect
 
     /**
      * Creates a new instance of KafkaConnector with the required configuration.
+     *
      * @param config Helidon {@link io.helidon.config.Config config}
      * @return the new instance
      */
     public static KafkaConnector create(Config config) {
         return new KafkaConnector(config);
+    }
+
+    /**
+     * Creates a new instance of KafkaConnector with empty configuration.
+     *
+     * @return the new instance
+     */
+    public static KafkaConnector create() {
+        return new KafkaConnector(Config.empty());
     }
 
     /**
@@ -137,4 +149,14 @@ public class KafkaConnector implements IncomingConnectorFactory, OutgoingConnect
             failed.forEach(e -> LOGGER.log(Level.SEVERE, "An error happened closing resource", e));
         }
     }
+
+    /**
+     * Custom config builder for Kafka connector.
+     *
+     * @return new Kafka specific config builder
+     */
+    public static KafkaConfigBuilder configBuilder() {
+        return new KafkaConfigBuilder();
+    }
 }
+

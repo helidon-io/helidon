@@ -825,8 +825,13 @@
             </dependency>
             <!-- Messaging -->
             <dependency>
-                <groupId>io.helidon.messaging.connectors.kafka</groupId>
-                <artifactId>helidon-messaging-connectors-kafka</artifactId>
+                <groupId>io.helidon.messaging</groupId>
+                <artifactId>helidon-messaging</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.messaging.kafka</groupId>
+                <artifactId>helidon-messaging-kafka</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
         </dependencies>

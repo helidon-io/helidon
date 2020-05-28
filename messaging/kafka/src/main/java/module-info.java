@@ -26,7 +26,9 @@ module io.helidon.messaging.connectors.kafka {
     requires transitive microprofile.reactive.messaging.api;
     requires transitive microprofile.reactive.streams.operators.api;
     requires io.helidon.common.context;
+    requires io.helidon.common.reactive;
     requires io.helidon.common.configurable;
+    requires io.helidon.messaging;
     requires microprofile.config.api;
 
     exports io.helidon.messaging.connectors.kafka;

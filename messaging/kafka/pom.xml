@@ -23,26 +23,20 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>io.helidon.messaging.connectors</groupId>
-        <artifactId>helidon-messaging-connectors</artifactId>
+        <groupId>io.helidon.messaging</groupId>
+        <artifactId>helidon-messaging-project</artifactId>
         <version>2.0.0-SNAPSHOT</version>
     </parent>
 
-    <groupId>io.helidon.messaging.connectors.kafka</groupId>
-    <artifactId>helidon-messaging-connectors-kafka</artifactId>
+    <groupId>io.helidon.messaging.kafka</groupId>
+    <artifactId>helidon-messaging-kafka</artifactId>
     <packaging>jar</packaging>
-    <name>Helidon Messaging Connectors Kafka</name>
+    <name>Helidon Messaging Kafka Connector</name>
 
     <dependencies>
          <dependency>
             <groupId>org.eclipse.microprofile.reactive.messaging</groupId>
             <artifactId>microprofile-reactive-messaging-api</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>jakarta.enterprise</groupId>
-                    <artifactId>jakarta.enterprise.cdi-api</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
@@ -59,6 +53,10 @@
         <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-configurable</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.messaging</groupId>
+            <artifactId>helidon-messaging</artifactId>
         </dependency>
         <dependency>
             <groupId>jakarta.enterprise</groupId>
