@@ -379,13 +379,13 @@ class BareResponseImpl implements BareResponse {
     @Override
     public Single<BareResponse> whenCompleted() {
         // need to return a new single each time
-        return Single.from(responseFuture);
+        return Single.create(responseFuture);
     }
 
     @Override
     public Single<BareResponse> whenHeadersCompleted() {
         // need to return a new single each time
-        return Single.from(headersFuture);
+        return Single.create(headersFuture);
     }
 
     @Override

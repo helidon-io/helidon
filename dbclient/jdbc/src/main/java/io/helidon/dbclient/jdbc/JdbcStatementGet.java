@@ -78,7 +78,7 @@ class JdbcStatementGet implements DbStatementGet {
 
     @Override
     public Single<Optional<DbRow>> execute() {
-        return Single.from(query.execute())
+        return Single.create(query.execute())
                 .toOptionalSingle();
     }
 }

@@ -76,7 +76,7 @@ public class MongoDbStatementGet implements DbStatementGet {
 
     @Override
     public Single<Optional<DbRow>> execute() {
-        return Single.from(theQuery.execute())
+        return Single.create(theQuery.execute())
                 .toOptionalSingle();
     }
 

@@ -53,7 +53,7 @@ public final class ContentReaders {
      * @return Single
      */
     public static Single<byte[]> readBytes(Publisher<DataChunk> chunks) {
-        return Multi.from(chunks).collect(new BytesCollector());
+        return Multi.create(chunks).collect(new BytesCollector());
     }
 
     /**

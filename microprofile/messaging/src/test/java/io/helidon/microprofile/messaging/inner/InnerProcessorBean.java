@@ -61,7 +61,7 @@ public class InnerProcessorBean implements CountableTestBean {
 
     @Outgoing("inner-processor")
     public Publisher<String> produceMessage() {
-        return FlowAdapters.toPublisher(Multi.from(() -> TEST_DATA.stream().iterator()));
+        return FlowAdapters.toPublisher(Multi.create(() -> TEST_DATA.stream().iterator()));
     }
 
     @Incoming("inner-processor")

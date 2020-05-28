@@ -150,7 +150,7 @@ public final class MessageBodyReadableContent
      * @return a stream of entities
      */
     public <T> Multi<T> asStream(GenericType<T> type) {
-        return Multi.from(context.unmarshallStream(publisher, type));
+        return Multi.create(context.unmarshallStream(publisher, type));
     }
 
     /**

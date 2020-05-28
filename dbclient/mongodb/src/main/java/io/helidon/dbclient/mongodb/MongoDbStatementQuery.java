@@ -76,7 +76,7 @@ class MongoDbStatementQuery extends MongoDbStatement<DbStatementQuery, Multi<DbR
 
         // final variable required for lambda
         MongoDbStatement.MongoStatement usedStatement = stmt;
-        return Single.from(dbContextFuture)
+        return Single.create(dbContextFuture)
                 .flatMap(it -> callStatement(usedStatement, statementFuture, queryFuture));
     }
 
@@ -111,7 +111,7 @@ class MongoDbStatementQuery extends MongoDbStatement<DbStatementQuery, Multi<DbR
             publisher = publisher.projection(projection);
         }
 
-        return Multi.from(new MongoDbRows<>(clientContext(),
+        return Multi.create(new MongoDbRows<>(clientContext(),
                                             publisher,
                                             this,
                                             DbRow.class,

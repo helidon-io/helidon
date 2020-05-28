@@ -42,7 +42,7 @@ public class ServerRequestReaderTest {
 
     @Test
     public void test1() throws Exception {
-        Reader<B> reader = (publisher, clazz) -> Multi.from(publisher)
+        Reader<B> reader = (publisher, clazz) -> Multi.create(publisher)
                 .collectList()
                 .toStage()
                 .thenApply(byteBuffers -> new B());

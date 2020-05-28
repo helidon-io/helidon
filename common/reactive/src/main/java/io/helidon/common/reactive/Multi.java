@@ -96,7 +96,7 @@ public interface Multi<T> extends Subscribable<T> {
         if (publishers.length == 0) {
             return empty();
         } else if (publishers.length == 1) {
-            return Multi.from(publishers[0]);
+            return Multi.create(publishers[0]);
         }
         return new MultiConcatArray<>(publishers);
     }
@@ -146,7 +146,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @param completionStage the CompletionStage to
      * @param <T> the element type of the stage and result
      * @return Multi
-     * @see #from(CompletionStage, boolean)
+     * @see #create(CompletionStage, boolean)
      * @deprecated use {@link #create(java.util.concurrent.CompletionStage)} instead
      */
     @Deprecated
@@ -220,10 +220,10 @@ public interface Multi<T> extends Subscribable<T> {
      *     The operator calls {@link Stream#close()} when the stream finishes,
      *     fails or the flow gets canceled. To avoid closing the stream automatically,
      *     it is recommended to turn the {@link Stream} into an {@link Iterable}
-     *     via {@link Stream#iterator()} and use {@link #from(Iterable)}:
+     *     via {@link Stream#iterator()} and use {@link #create(Iterable)}:
      *     <pre>{@code
      *     Stream<T> stream = ...
-     *     Multi<T> multi = Multi.from(stream::iterator);
+     *     Multi<T> multi = Multi.create(stream::iterator);
      *     }</pre>
      *
      * @param <T>      item type
@@ -1020,7 +1020,7 @@ public interface Multi<T> extends Subscribable<T> {
      */
     default Single<Void> forEach(Consumer<? super T> consumer) {
         CompletableFuture<Void> future = new CompletableFuture<>();
-        Single<Void> single = Single.from(future, true);
+        Single<Void> single = Single.create(future, true);
         FunctionalSubscriber<T> subscriber = new FunctionalSubscriber<>(consumer,
                 future::completeExceptionally,
                 () -> future.complete(null),

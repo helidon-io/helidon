@@ -62,18 +62,18 @@ class TestWebServer implements WebServer {
             throw new IllegalStateException("Cannot start over!");
         }
         startFuture.complete(this);
-        return Single.from(startFuture);
+        return Single.create(startFuture);
     }
 
     @Override
     public Single<WebServer> shutdown() {
         shutdownFuture.complete(this);
-        return Single.from(shutdownFuture);
+        return Single.create(shutdownFuture);
     }
 
     @Override
     public Single<WebServer> whenShutdown() {
-        return Single.from(shutdownFuture);
+        return Single.create(shutdownFuture);
     }
 
     @Override

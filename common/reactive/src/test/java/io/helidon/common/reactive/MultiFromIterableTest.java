@@ -30,7 +30,7 @@ public class MultiFromIterableTest {
     public void emptyIterable() {
         TestSubscriber<Object> ts = new TestSubscriber<>();
 
-        Multi.from(Collections.emptyList())
+        Multi.create(Collections.emptyList())
         .subscribe(ts);
 
         assertThat(ts.getItems().isEmpty(), is(true));
@@ -42,7 +42,7 @@ public class MultiFromIterableTest {
     public void singletonIterableUnboundedRequest() {
         TestSubscriber<Integer> ts = new TestSubscriber<>();
 
-        Multi.from(Collections.singleton(1))
+        Multi.create(Collections.singleton(1))
                 .subscribe(ts);
 
         assertThat(ts.getItems().isEmpty(), is(true));
@@ -61,7 +61,7 @@ public class MultiFromIterableTest {
     public void limit() {
         TestSubscriber<Integer> ts = new TestSubscriber<>();
 
-        Multi.from(Collections.singleton(1))
+        Multi.create(Collections.singleton(1))
                 .limit(1)
                 .subscribe(ts);
 
@@ -75,7 +75,7 @@ public class MultiFromIterableTest {
     public void singletonIterableBoundedRequest() {
         TestSubscriber<Integer> ts = new TestSubscriber<>();
 
-        Multi.from(Collections.singleton(1))
+        Multi.create(Collections.singleton(1))
                 .subscribe(ts);
 
         assertThat(ts.getItems().isEmpty(), is(true));
@@ -94,7 +94,7 @@ public class MultiFromIterableTest {
     public void iteratorNull() {
         TestSubscriber<Integer> ts = new TestSubscriber<>();
 
-        Multi.from(Collections.singleton((Integer)null))
+        Multi.create(Collections.singleton((Integer)null))
                 .subscribe(ts);
 
         ts.request1();
@@ -108,7 +108,7 @@ public class MultiFromIterableTest {
     public void iteratorNextCrash() {
         TestSubscriber<Integer> ts = new TestSubscriber<>();
 
-        Multi.from(() -> new Iterator<Integer>() {
+        Multi.create(() -> new Iterator<Integer>() {
 
             @Override
             public boolean hasNext() {
@@ -133,7 +133,7 @@ public class MultiFromIterableTest {
     public void iteratorNextCancel() {
         TestSubscriber<Integer> ts = new TestSubscriber<>();
 
-        Multi.from(() -> new Iterator<Integer>() {
+        Multi.create(() -> new Iterator<Integer>() {
 
             @Override
             public boolean hasNext() {
@@ -159,7 +159,7 @@ public class MultiFromIterableTest {
     public void iteratorHasNextCrash2ndCall() {
         TestSubscriber<Integer> ts = new TestSubscriber<>();
 
-        Multi.from(() -> new Iterator<Integer>() {
+        Multi.create(() -> new Iterator<Integer>() {
             int calls;
             @Override
             public boolean hasNext() {
@@ -188,7 +188,7 @@ public class MultiFromIterableTest {
     public void iteratorHasNextCancel2ndCall() {
         TestSubscriber<Integer> ts = new TestSubscriber<>();
 
-        Multi.from(() -> new Iterator<Integer>() {
+        Multi.create(() -> new Iterator<Integer>() {
             int calls;
             @Override
             public boolean hasNext() {
@@ -223,7 +223,7 @@ public class MultiFromIterableTest {
             }
         };
 
-        Multi.from(Collections.singleton(1))
+        Multi.create(Collections.singleton(1))
                 .subscribe(ts);
 
         ts.requestMax();

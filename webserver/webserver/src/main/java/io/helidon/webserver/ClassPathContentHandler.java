@@ -196,7 +196,7 @@ class ClassPathContentHandler extends StaticContentHandler {
 
         InputStream in = url.openStream();
         InputStreamPublisher byteBufPublisher = new InputStreamPublisher(in, 2048);
-        response.send(Multi.from(byteBufPublisher)
+        response.send(Multi.create(byteBufPublisher)
                               .map(DataChunk::create));
     }
 

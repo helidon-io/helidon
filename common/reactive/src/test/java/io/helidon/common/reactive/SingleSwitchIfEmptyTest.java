@@ -102,7 +102,7 @@ public class SingleSwitchIfEmptyTest {
         SubmissionPublisher<Integer> sp = new SubmissionPublisher<>(Runnable::run, 128);
         TestSubscriber<Integer> ts = new TestSubscriber<>(Long.MAX_VALUE);
 
-        Single.from(sp)
+        Single.create(sp)
                 .switchIfEmpty(Single.just(2))
                 .subscribe(ts);
 
@@ -121,7 +121,7 @@ public class SingleSwitchIfEmptyTest {
         TestSubscriber<Integer> ts = new TestSubscriber<>(Long.MAX_VALUE);
 
         Single.<Integer>empty()
-                .switchIfEmpty(Single.from(sp))
+                .switchIfEmpty(Single.create(sp))
                 .subscribe(ts);
 
         assertTrue(sp.hasSubscribers());

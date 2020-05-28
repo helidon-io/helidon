@@ -91,7 +91,7 @@ public class KafkaSeTest extends AbstractKafkaTest {
         Messaging messaging = Messaging.builder()
                 .connector(kafkaConnector)
                 .publisher(toKafka,
-                        Multi.from(IntStream.rangeClosed(0, 100).boxed())
+                        Multi.create(IntStream.rangeClosed(0, 100).boxed())
                                 .map(Message::of)
                 )
                 .build();
@@ -249,7 +249,7 @@ public class KafkaSeTest extends AbstractKafkaTest {
         Messaging messaging = Messaging.builder()
                 .connector(kafkaConnector)
                 .publisher(toKafka,
-                        Multi.from(IntStream.rangeClosed(0, 100).boxed())
+                        Multi.create(IntStream.rangeClosed(0, 100).boxed())
                                 .map(Message::of)
                 )
                 .subscriber(fromKafka, ReactiveStreams.<Message<ConsumerRecord<Long, Integer>>>builder()

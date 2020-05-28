@@ -33,14 +33,14 @@ public class MultiFromStreamTckTest extends FlowPublisherVerification<Integer> {
 
     @Override
     public Flow.Publisher<Integer> createFlowPublisher(long l) {
-        return Multi.from(IntStream.range(0, (int)l).boxed());
+        return Multi.create(IntStream.range(0, (int)l).boxed());
     }
 
     @Override
     public Flow.Publisher<Integer> createFailedFlowPublisher() {
         Stream<Integer> stream = IntStream.range(0, 10).boxed();
         stream.iterator();
-        return Multi.from(stream);
+        return Multi.create(stream);
     }
 
     @Override

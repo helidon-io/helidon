@@ -79,7 +79,7 @@ public final class MongoDbRows<T> {
         Flow.Publisher<?> parentPublisher = parent.publisher();
         Function<Object, T> mappingFunction = (Function<Object, T>) resultMapper;
         // otherwise we must apply mapping
-        return Multi.from(parentPublisher).map(mappingFunction::apply);
+        return Multi.create(parentPublisher).map(mappingFunction::apply);
     }
 
     private Flow.Publisher<DbRow> toDbPublisher() {

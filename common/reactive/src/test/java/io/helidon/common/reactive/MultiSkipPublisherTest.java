@@ -45,7 +45,7 @@ public class MultiSkipPublisherTest {
     public void errorAfterSkip() {
         TestSubscriber<Object> ts = new TestSubscriber<>();
 
-        Multi.from(() -> new Iterator<Object>() {
+        Multi.create(() -> new Iterator<Object>() {
 
             int count;
 

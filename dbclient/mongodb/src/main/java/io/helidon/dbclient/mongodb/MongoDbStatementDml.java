@@ -63,7 +63,7 @@ public class MongoDbStatementDml extends MongoDbStatement<DbStatementDml, Single
                                      CompletableFuture<Void> statementFuture,
                                      CompletableFuture<Long> queryFuture) {
 
-        return Single.from(MongoDbDMLExecutor.executeDml(
+        return Single.create(MongoDbDMLExecutor.executeDml(
                 this,
                 dbStatementType,
                 statement,

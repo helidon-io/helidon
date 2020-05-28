@@ -39,7 +39,7 @@ public final class UpperXFilter implements Function<Publisher<DataChunk>, Publis
 
     @Override
     public Publisher<DataChunk> apply(Publisher<DataChunk> publisher) {
-        return Multi.from(publisher).map(responseChunk -> {
+        return Multi.create(publisher).map(responseChunk -> {
             if (responseChunk == null) {
                 return null;
             }

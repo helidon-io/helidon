@@ -39,7 +39,7 @@ public class MultiFlatMapIterableTest {
         TestSubscriber<Integer> ts = new TestSubscriber<>(Long.MAX_VALUE);
         int rest = 1_000_000 / count;
 
-        Multi.from(range(count))
+        Multi.create(range(count))
                 .flatMapIterable(v -> range(rest))
                 .subscribe(ts);
 

@@ -31,7 +31,7 @@ public class MultiDistinctPublisherModuloTckTest extends FlowPublisherVerificati
     
     @Override
     public Flow.Publisher<Integer> createFlowPublisher(long l) {
-        return Multi.from(() -> IntStream.range(0, 2 * (int)l).map(v -> v & ~1).boxed().iterator())
+        return Multi.create(() -> IntStream.range(0, 2 * (int)l).map(v -> v & ~1).boxed().iterator())
                 .distinct();
     }
 

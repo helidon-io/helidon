@@ -213,7 +213,7 @@ public class SingleTest {
     @Test
     public void testFromPublisher() {
         SingleTestSubscriber<String> subscriber = new SingleTestSubscriber<>();
-        Single.from(new TestPublisher<>("foo")).subscribe(subscriber);
+        Single.create(new TestPublisher<>("foo")).subscribe(subscriber);
         assertThat(subscriber.isComplete(), is(equalTo(true)));
         assertThat(subscriber.getLastError(), is(nullValue()));
         assertThat(subscriber.getItems(), hasItems("foo"));
@@ -222,7 +222,7 @@ public class SingleTest {
     @Test
     public void testFromPublisherMoreThanOne() {
         SingleTestSubscriber<String> subscriber = new SingleTestSubscriber<>();
-        Single.from(new TestPublisher<>("foo", "bar")).subscribe(subscriber);
+        Single.create(new TestPublisher<>("foo", "bar")).subscribe(subscriber);
         assertThat(subscriber.isComplete(), is(equalTo(false)));
         assertThat(subscriber.getLastError(), is(instanceOf(IllegalStateException.class)));
         assertThat(subscriber.getItems(), is(empty()));
@@ -231,7 +231,7 @@ public class SingleTest {
     @Test
     public void testFromSingle() {
         Single<String> single = Single.just("foo");
-        assertThat(Single.from(single), is(equalTo(single)));
+        assertThat(Single.create(single), is(equalTo(single)));
     }
 
     @Test

@@ -78,7 +78,7 @@ final class MongoDbCommandExecutor {
                                                         CompletableFuture<Void> statementFuture,
                                                         CompletableFuture<Long> commandFuture) {
 
-        return Single.from(stmtFuture)
+        return Single.create(stmtFuture)
                 .flatMap(mongoStmt -> callStatement(dbStatement, mongoStmt, statementFuture, commandFuture));
     }
 

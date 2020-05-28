@@ -273,7 +273,7 @@ abstract class Response implements ServerResponse {
 
     @Override
     public Single<ServerResponse> whenSent() {
-        return Single.from(completionStage);
+        return Single.create(completionStage);
     }
 
     @Override

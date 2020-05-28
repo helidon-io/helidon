@@ -322,7 +322,7 @@ class HashResponseHeaders extends HashParameters implements ResponseHeaders {
 
     @Override
     public Single<ResponseHeaders> whenSent() {
-        return Single.from(completionStage);
+        return Single.create(completionStage);
     }
 
     @Override

@@ -392,7 +392,7 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
         public <U extends T> Single<U> read(Publisher<DataChunk> publisher, GenericType<U> type,
                 MessageBodyReaderContext context) {
 
-            return Single.from(reader.applyAndCast(publisher, (Class<U>) type.rawType()));
+            return Single.create(reader.applyAndCast(publisher, (Class<U>) type.rawType()));
         }
 
         @Override

@@ -268,12 +268,12 @@ public class TestClient {
 
         @Override
         public Single<BareResponse> whenHeadersCompleted() {
-            return Single.from(headersCompletionStage);
+            return Single.create(headersCompletionStage);
         }
 
         @Override
         public Single<BareResponse> whenCompleted() {
-            return Single.from(completionStage);
+            return Single.create(completionStage);
         }
 
         @Override

@@ -94,12 +94,12 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
      * @param completionStage the CompletionStage to
      * @param <T> the element type of the stage and result
      * @return Single
-     * @see #from(CompletionStage, boolean)
+     * @see #create(CompletionStage, boolean)
      * @deprecated use {@link #create(java.util.concurrent.CompletionStage)} instead
      */
     @Deprecated
     static <T> Single<T> from(CompletionStage<T> completionStage) {
-        return from(completionStage, false);
+        return create(completionStage, false);
     }
 
     /**
@@ -433,7 +433,7 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
      * @return Single
      */
     default Multi<T> onErrorResumeWith(Function<? super Throwable, ? extends Flow.Publisher<? extends T>> onError) {
-        return new MultiOnErrorResumeWith<>(Multi.from(this), onError);
+        return new MultiOnErrorResumeWith<>(Multi.create(this), onError);
     }
 
     /**
@@ -454,7 +454,7 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
      * @return Multi
      */
     default Multi<T> onCompleteResumeWith(Flow.Publisher<? extends T> publisher) {
-        return new MultiOnCompleteResumeWith<>(Multi.from(this), publisher);
+        return new MultiOnCompleteResumeWith<>(Multi.create(this), publisher);
     }
 
     /**
@@ -634,7 +634,7 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
         try {
             SingleToOptionalFuture<T> subscriber = new SingleToOptionalFuture<>();
             this.subscribe(subscriber);
-            return Single.from(subscriber);
+            return Single.create(subscriber);
         } catch (Throwable ex) {
             return Single.error(ex);
         }
@@ -672,7 +672,7 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
                 Flow.Subscription::cancel
         );
         this.subscribe(subscriber);
-        return Single.from(future);
+        return Single.create(future);
     }
 
     @Override
