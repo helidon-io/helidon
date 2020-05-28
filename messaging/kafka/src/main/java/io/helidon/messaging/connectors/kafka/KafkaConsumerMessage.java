@@ -16,6 +16,7 @@
 
 package io.helidon.messaging.connectors.kafka;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -47,6 +48,7 @@ class KafkaConsumerMessage<K, V> implements KafkaMessage<K, V> {
      *                             the commit in Kafka. Applies only if autoCommit is false.
      */
     KafkaConsumerMessage(ConsumerRecord<K, V> consumerRecord, CompletableFuture<Void> kafkaCommit, long millisWaitingTimeout) {
+        Objects.requireNonNull(consumerRecord);
         this.consumerRecord = consumerRecord;
         this.kafkaCommit = kafkaCommit;
         this.millisWaitingTimeout = millisWaitingTimeout;
@@ -74,7 +76,7 @@ class KafkaConsumerMessage<K, V> implements KafkaMessage<K, V> {
 
     @Override
     public Optional<ConsumerRecord<K, V>> getConsumerRecord() {
-        return Optional.ofNullable(this.consumerRecord);
+        return Optional.of(this.consumerRecord);
     }
 
     @Override
@@ -99,7 +101,10 @@ class KafkaConsumerMessage<K, V> implements KafkaMessage<K, V> {
         if (consumerRecord.getClass().isAssignableFrom(unwrapType)) {
             return (C) consumerRecord;
         } else {
-            throw new IllegalArgumentException("Can't unwrap to " + unwrapType.getName());
+            throw new IllegalArgumentException("Can't unwrap "
+                    + consumerRecord.getClass().getName()
+                    + " to "
+                    + unwrapType.getName());
         }
     }
 
@@ -109,7 +114,7 @@ class KafkaConsumerMessage<K, V> implements KafkaMessage<K, V> {
 
     @Override
     public String toString() {
-        return "KafkaMessage [consumerRecord=" + consumerRecord + ", ack=" + ack + "]";
+        return "KafkaConsumerMessage [consumerRecord=" + consumerRecord + ", ack=" + ack + "]";
     }
 
     CompletableFuture<Void> kafkaCommit() {
