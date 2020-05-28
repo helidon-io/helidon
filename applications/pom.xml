@@ -47,7 +47,7 @@
         <version.plugin.dependency>3.0.0</version.plugin.dependency>
         <version.plugin.exec>1.6.0</version.plugin.exec>
         <version.plugin.failsafe>2.19.1</version.plugin.failsafe>
-        <version.plugin.helidon>2.0.0-M2</version.plugin.helidon>
+        <version.plugin.helidon>2.0.0-M3</version.plugin.helidon>
         <version.plugin.jar>3.0.2</version.plugin.jar>
         <version.plugin.os>1.5.0.Final</version.plugin.os>
         <version.plugin.protobuf>0.5.1</version.plugin.protobuf>
@@ -63,6 +63,11 @@
                 <groupId>kr.motd.maven</groupId>
                 <artifactId>os-maven-plugin</artifactId>
                 <version>${version.plugin.os}</version>
+            </extension>
+            <extension>
+                <groupId>io.helidon.build-tools</groupId>
+                <artifactId>helidon-maven-plugin</artifactId>
+                <version>${version.plugin.helidon}</version>
             </extension>
         </extensions>
         <pluginManagement>
