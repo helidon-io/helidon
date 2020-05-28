@@ -34,11 +34,9 @@
 :basic-table-intro: The table below lists the configuration keys that identify the CORS characteristics.
 :helidon-variant: SE
 
-You can use configuration in combination with the Helidon CORS SE API to add CORS support to your resources.
-Loading the CORS information for different types of resource sharing from declarative configuration,
-instead of hard-coding it in your procedural Java code,
-not only simplifies the code but also gives your users a way to override the CORS behavior of your
-services without requiring the code to change.
+You can use configuration in combination with the Helidon CORS SE API to add CORS support to your resources by
+replacing some Java code with declarative configuration. This also gives your users a way to override the
+CORS behavior of your services without requiring the code to change.  
 
 include::{common-page-prefix-inc}[tag=cors-configuration-formats-intro]
 

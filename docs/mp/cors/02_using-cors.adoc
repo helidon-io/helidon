@@ -33,10 +33,8 @@
 :helidon-variant: MP
 :common-page-prefix-inc: ../../shared/cors/common_shared.adoc
 
-To enable CORS behavior for a resource in your Helidon MP application, you need to make only minimal changes to the
-JAX-RS resource class that implements your resource.
-Simply add the Helidon MP `@CrossOrigin` annotation to a particular method in your resource class to
-allow Helidon MP to enforce the CORS protocol for all of that resource's endpoints.
+To enable CORS behavior for a resource in your Helidon MP application, you simply add the Helidon MP `@CrossOrigin`
+annotation to a particular method in your resource class.
 
 == Understanding the `@CrossOrigin` Annotation
 You set up CORS in Helidon MP using the link:{javadoc-base-url-api}/CrossOrigin.html[`@CrossOrigin`] annotation.
