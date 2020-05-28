@@ -183,4 +183,13 @@
             </plugins>
         </pluginManagement>
     </build>
+    <profiles>
+        <profile>
+            <activation>
+                <property>
+                    <name>foo</name>
+                </property>
+            </activation>
+        </profile>
+    </profiles>
 </project>
