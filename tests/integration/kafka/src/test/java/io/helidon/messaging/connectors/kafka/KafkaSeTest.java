@@ -21,7 +21,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -100,8 +99,8 @@ public class KafkaSeTest extends AbstractKafkaTest {
             messaging.start();
             IntegerDeserializer deserializer = new IntegerDeserializer();
             kafkaResource.getKafkaTestUtils().consumeAllRecordsFromTopic(TEST_SE_TOPIC_2).forEach(consumerRecord -> {
-                countDownLatch.countDown();
                 result.add(deserializer.deserialize(TEST_SE_TOPIC_2, consumerRecord.value()));
+                countDownLatch.countDown();
             });
             assertThat(countDownLatch.await(20, TimeUnit.SECONDS), is(true));
             assertThat(result, equalTo(IntStream.range(0, 100).boxed().collect(Collectors.toSet())));
@@ -119,7 +118,7 @@ public class KafkaSeTest extends AbstractKafkaTest {
         CountDownLatch countDownLatch = new CountDownLatch(testData.size());
         HashSet<String> result = new HashSet<>();
 
-        Channel<ConsumerRecord<String, String>> fromKafka = Channel.<ConsumerRecord<String, String>>builder()
+        Channel<String> fromKafka = Channel.<String>builder()
                 .name("from-kafka")
                 .publisherConfig(KafkaConnector.configBuilder()
                         .bootstrapServers(KAFKA_SERVER)
@@ -133,14 +132,14 @@ public class KafkaSeTest extends AbstractKafkaTest {
                 )
                 .build();
 
-        KafkaConnector kafkaConnector = KafkaConnector.create(Config.empty());
+        KafkaConnector kafkaConnector = KafkaConnector.create();
 
         Messaging messaging = Messaging.builder()
                 .connector(kafkaConnector)
-                .listener(fromKafka, consumerRecord -> {
+                .listener(fromKafka, payload -> {
+                    LOGGER.info("Kafka says: " + payload);
+                    result.add(payload);
                     countDownLatch.countDown();
-                    LOGGER.info("Kafka says: " + consumerRecord);
-                    result.add(consumerRecord.value());
                 })
                 .build();
 
@@ -166,9 +165,9 @@ public class KafkaSeTest extends AbstractKafkaTest {
         expected.addAll(testData2);
 
         CountDownLatch countDownLatch = new CountDownLatch(expected.size());
-        CopyOnWriteArraySet<String> result = new CopyOnWriteArraySet<>();
+        HashSet<String> result = new HashSet<>();
 
-        Channel<ConsumerRecord<String, String>> fromKafka = Channel.<ConsumerRecord<String, String>>builder()
+        Channel<String> fromKafka = Channel.<String>builder()
                 .name("from-kafka")
                 .publisherConfig(KafkaConnector.configBuilder()
                         .bootstrapServers(KAFKA_SERVER)
@@ -182,13 +181,13 @@ public class KafkaSeTest extends AbstractKafkaTest {
                 )
                 .build();
 
-        KafkaConnector kafkaConnector = KafkaConnector.create(Config.empty());
+        KafkaConnector kafkaConnector = KafkaConnector.create();
 
         Messaging messaging = Messaging.builder()
                 .connector(kafkaConnector)
-                .listener(fromKafka, consumerRecord -> {
-                    LOGGER.info("Kafka says: value=" + consumerRecord.value() + " " + consumerRecord);
-                    result.add(consumerRecord.value());
+                .listener(fromKafka, payload -> {
+                    LOGGER.info("Kafka says: value="+payload);
+                    result.add(payload);
                     countDownLatch.countDown();
                 })
                 .build();
@@ -205,10 +204,8 @@ public class KafkaSeTest extends AbstractKafkaTest {
             kafkaResource.getKafkaTestUtils().produceRecords(rawTestData1, TEST_SE_TOPIC_3, 1);
             kafkaResource.getKafkaTestUtils().produceRecords(rawTestData2, TEST_SE_TOPIC_4, 1);
 
-
             assertThat(countDownLatch.await(20, TimeUnit.SECONDS), is(true));
-            assertThat(result, containsInAnyOrder(expected.toArray(String[]::new)));
-
+            assertThat(result, containsInAnyOrder(expected.toArray()));
         } finally {
             messaging.stop();
         }
@@ -230,7 +227,7 @@ public class KafkaSeTest extends AbstractKafkaTest {
                         .build()
                 ).build();
 
-        Channel<ConsumerRecord<Long, Integer>> fromKafka = Channel.<ConsumerRecord<Long, Integer>>builder()
+        Channel<Integer> fromKafka = Channel.<Integer>builder()
                 .name("from-kafka")
                 .publisherConfig(KafkaConnector.configBuilder()
                         .bootstrapServers(KAFKA_SERVER)
@@ -244,7 +241,7 @@ public class KafkaSeTest extends AbstractKafkaTest {
                 )
                 .build();
 
-        KafkaConnector kafkaConnector = KafkaConnector.create(Config.empty());
+        KafkaConnector kafkaConnector = KafkaConnector.create();
 
         Messaging messaging = Messaging.builder()
                 .connector(kafkaConnector)
@@ -252,10 +249,9 @@ public class KafkaSeTest extends AbstractKafkaTest {
                         Multi.from(IntStream.rangeClosed(0, 100).boxed())
                                 .map(Message::of)
                 )
-                .subscriber(fromKafka, ReactiveStreams.<Message<ConsumerRecord<Long, Integer>>>builder()
+                .subscriber(fromKafka, ReactiveStreams.<Message<Integer>>builder()
                         .peek(Message::ack)
                         .map(Message::getPayload)
-                        .map(ConsumerRecord::value)
                         .filter(i -> i < 10)
                         .forEach(payload -> {
                             LOGGER.info("Kafka says: " + payload);

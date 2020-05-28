@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c)  2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,73 +16,121 @@
 
 package io.helidon.messaging.connectors.kafka;
 
-import java.util.concurrent.CompletableFuture;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.common.header.Headers;
 import org.eclipse.microprofile.reactive.messaging.Message;
 
 /**
- * Kafka specific MP messaging message.
+ * Kafka specific Micro Profile Reactive Messaging Message.
  *
- * @param <K> kafka record key type
- * @param <V> kafka record value type
+ * @param <K> the type of Kafka record key
+ * @param <V> the type of Kafka record value
  */
-class KafkaMessage<K, V> implements Message<ConsumerRecord<K, V>> {
-
-    private final ConsumerRecord<K, V> consumerRecord;
-    private final CompletableFuture<Void> kafkaCommit;
-    private final long millisWaitingTimeout;
-    private final AtomicBoolean ack = new AtomicBoolean();
+public interface KafkaMessage<K, V> extends Message<V> {
 
     /**
-     * Kafka specific MP messaging message.
+     * Name of the topic from which was this message received.
      *
-     * @param consumerRecord obtained from Kafka topic
-     * @param kafkaCommit it will complete when Kafka commit is done.
-     * @param millisWaitingTimeout this is the time in milliseconds that the ack will be waiting
-     *        the commit in Kafka. Applies only if autoCommit is false.
+     * @return topic name
      */
-    KafkaMessage(ConsumerRecord<K, V> consumerRecord, CompletableFuture<Void> kafkaCommit, long millisWaitingTimeout) {
-        this.consumerRecord = consumerRecord;
-        this.kafkaCommit = kafkaCommit;
-        this.millisWaitingTimeout = millisWaitingTimeout;
+    Optional<String> getTopic();
+
+    /**
+     * Number of partition from which was this message received.
+     *
+     * @return partition number
+     */
+    Optional<Integer> getPartition();
+
+    /**
+     * Offset of the record in partition from which was this message received.
+     *
+     * @return offset number
+     */
+    Optional<Long> getOffset();
+
+    /**
+     * Returns {@link org.apache.kafka.clients.consumer.ConsumerRecord} if message was received from Kafka,
+     * otherwise return {@code Optional.empty()}.
+     *
+     * @return {@link org.apache.kafka.clients.consumer.ConsumerRecord} or {@code Optional.empty()}
+     */
+    Optional<ConsumerRecord<K, V>> getConsumerRecord();
+
+    /**
+     * Key or {@code Optional.empty()} if non is specified.
+     *
+     * @return Key or {@code Optional.empty()}
+     */
+    Optional<K> getKey();
+
+    /**
+     * Returns {@link org.apache.kafka.common.header.Headers} received from Kafka with record
+     * or empty headers if message was not created by Kafka connector.
+     *
+     * @return {@link org.apache.kafka.common.header.Headers} received from Kafka
+     * or empty headers if message was not created by Kafka connector
+     */
+    Headers getHeaders();
+
+    /**
+     * Create a message with the given payload and ack function.
+     *
+     * @param key     Kafka record key
+     * @param payload Kafka record value
+     * @param ack     The ack function, this will be invoked when the returned messages {@link #ack()} method is invoked
+     * @param <K>     the type of Kafka record key
+     * @param <V>     the type of Kafka record value
+     * @return A message with the given payload and ack function
+     */
+    static <K, V> Message<V> of(K key, V payload, Supplier<CompletionStage<Void>> ack) {
+        Objects.requireNonNull(payload);
+        return new KafkaProducerMessage<>(key, payload, ack);
     }
 
-    @Override
-    public ConsumerRecord<K, V> getPayload() {
-        return consumerRecord;
+    /**
+     * Create a message with the given payload and ack function.
+     *
+     * @param payload Kafka record value
+     * @param ack     The ack function, this will be invoked when the returned messages {@link #ack()} method is invoked
+     * @param <K>     the type of Kafka record key
+     * @param <V>     the type of Kafka record value
+     * @return A message with the given payload and ack function
+     */
+    static <K, V> Message<V> of(V payload, Supplier<CompletionStage<Void>> ack) {
+        Objects.requireNonNull(payload);
+        return new KafkaProducerMessage<>(null, payload, ack);
     }
 
-    @Override
-    public CompletionStage<Void> ack() {
-        ack.getAndSet(true);
-        return kafkaCommit.orTimeout(millisWaitingTimeout, TimeUnit.MILLISECONDS);
+    /**
+     * Create a message with the given payload and ack function.
+     *
+     * @param key     Kafka record key
+     * @param payload Kafka record value
+     * @param <K>     the type of Kafka record key
+     * @param <V>     the type of Kafka record value
+     * @return A message with the given payload and ack function
+     */
+    static <K, V> Message<V> of(K key, V payload) {
+        Objects.requireNonNull(payload);
+        return new KafkaProducerMessage<>(key, payload, null);
     }
 
-    @Override
-    @SuppressWarnings("unchecked")
-    public <C> C unwrap(Class<C> unwrapType) {
-        if (consumerRecord.getClass().isAssignableFrom(unwrapType)) {
-            return (C) consumerRecord;
-        } else {
-            throw new IllegalArgumentException("Can't unwrap to " + unwrapType.getName());
-        }
+    /**
+     * Create a message with the given payload and ack function.
+     *
+     * @param payload Kafka record value
+     * @param <K>     the type of Kafka record key
+     * @param <V>     the type of Kafka record value
+     * @return A message with the given payload and ack function
+     */
+    static <K, V> Message<V> of(V payload) {
+        Objects.requireNonNull(payload);
+        return new KafkaProducerMessage<>(null, payload, null);
     }
-
-    boolean isAck() {
-        return ack.get();
-    }
-
-    @Override
-    public String toString() {
-        return "KafkaMessage [consumerRecord=" + consumerRecord + ", ack=" + ack + "]";
-    }
-
-    CompletableFuture<Void> kafkaCommit(){
-        return kafkaCommit;
-    }
-
 }

@@ -88,10 +88,10 @@ abstract class AbstractSampleBean {
 
         @Incoming("test-channel-1")
         @Acknowledgment(Acknowledgment.Strategy.MANUAL)
-        public CompletionStage<String> channel1(Message<ConsumerRecord<Long, String>> msg)
+        public CompletionStage<String> channel1(KafkaMessage<Long, String> msg)
                 throws InterruptedException, ExecutionException {
-            LOGGER.fine(() -> String.format("Received %s", msg.getPayload().value()));
-            consumed().add(msg.getPayload().value());
+            LOGGER.fine(() -> String.format("Received %s", msg.getPayload()));
+            consumed().add(msg.getPayload());
             msg.ack();
             countDown("channel1()");
             return CompletableFuture.completedFuture(null);
@@ -104,18 +104,18 @@ abstract class AbstractSampleBean {
         @Incoming("test-channel-2")
         @Outgoing("test-channel-3")
         @Acknowledgment(Acknowledgment.Strategy.MANUAL)
-        public Message<String> channel2ToChannel3(Message<ConsumerRecord<Long, String>> msg)
+        public Message<String> channel2ToChannel3(KafkaMessage<Long, String> msg)
                 throws InterruptedException, ExecutionException {
             msg.ack();
-            return Message.of("Processed" + msg.getPayload().value());
+            return Message.of("Processed" + msg.getPayload());
         }
 
         @Incoming("test-channel-7")
         @Acknowledgment(Acknowledgment.Strategy.MANUAL)
-        public CompletionStage<String> channel7(Message<ConsumerRecord<Long, String>> msg)
+        public CompletionStage<String> channel7(KafkaMessage<Long, String> msg)
                 throws InterruptedException, ExecutionException {
-            LOGGER.fine(() -> String.format("Received %s", msg.getPayload().value()));
-            consumed().add(msg.getPayload().value());
+            LOGGER.fine(() -> String.format("Received %s", msg.getPayload()));
+            consumed().add(msg.getPayload());
             msg.ack().whenComplete((a, b) -> countDown("channel7()"));
             return CompletableFuture.completedFuture(null);
         }
@@ -125,10 +125,10 @@ abstract class AbstractSampleBean {
     public static class ChannelError extends AbstractSampleBean {
         @Incoming("test-channel-error")
         @Acknowledgment(Acknowledgment.Strategy.MANUAL)
-        public CompletionStage<String> error(Message<ConsumerRecord<Long, String>> msg) {
+        public CompletionStage<String> error(KafkaMessage<Long,  String> msg) {
             try {
-                LOGGER.fine(() -> String.format("Received possible error %s", msg.getPayload().value()));
-                consumed().add(Integer.toString(Integer.parseInt(msg.getPayload().value())));
+                LOGGER.fine(() -> String.format("Received possible error %s", msg.getPayload()));
+                consumed().add(Integer.toString(Integer.parseInt(msg.getPayload())));
             } finally {
                 msg.ack().whenComplete((a, b) -> countDown("error()"));
             }
@@ -140,18 +140,18 @@ abstract class AbstractSampleBean {
     public static class Channel4 extends AbstractSampleBean {
 
         @Incoming("test-channel-4")
-        public SubscriberBuilder<Message<ConsumerRecord<Long, String>>, Void> channel4() {
+        public SubscriberBuilder<KafkaMessage<Long,  String>, Void> channel4() {
             LOGGER.fine(() -> "In channel4");
-            return ReactiveStreams.<Message<ConsumerRecord<Long, String>>>builder()
-                    .to(new Subscriber<Message<ConsumerRecord<Long, String>>>() {
+            return ReactiveStreams.<KafkaMessage<Long,  String>>builder()
+                    .to(new Subscriber<KafkaMessage<Long,  String>>() {
                         @Override
                         public void onSubscribe(Subscription subscription) {
                             subscription.request(3);
                         }
                         @Override
-                        public void onNext(Message<ConsumerRecord<Long, String>> msg) {
-                            consumed().add(Integer.toString(Integer.parseInt(msg.getPayload().value())));
-                            LOGGER.fine(() -> "Added " + msg.getPayload().value());
+                        public void onNext(KafkaMessage<Long,  String> msg) {
+                            consumed().add(Integer.toString(Integer.parseInt(msg.getPayload())));
+                            LOGGER.fine(() -> "Added " + msg.getPayload());
                             msg.ack();
                             countDown("onNext()");
                         }
@@ -174,19 +174,19 @@ abstract class AbstractSampleBean {
     public static class Channel5 extends AbstractSampleBean {
 
         @Incoming("test-channel-5")
-        public SubscriberBuilder<Message<ConsumerRecord<Long, String>>, Void> channel5() {
+        public SubscriberBuilder<KafkaMessage<Long,  String>, Void> channel5() {
             LOGGER.fine(() -> "In channel5");
-            return ReactiveStreams.<Message<ConsumerRecord<Long, String>>>builder()
-                    .to(new Subscriber<Message<ConsumerRecord<Long, String>>>() {
+            return ReactiveStreams.<KafkaMessage<Long,  String>>builder()
+                    .to(new Subscriber<KafkaMessage<Long,  String>>() {
                         @Override
                         public void onSubscribe(Subscription subscription) {
                             LOGGER.fine(() -> "channel5 onSubscribe()");
                             subscription.request(3);
                         }
                         @Override
-                        public void onNext(Message<ConsumerRecord<Long, String>> msg) {
-                            consumed().add(Integer.toString(Integer.parseInt(msg.getPayload().value())));
-                            LOGGER.fine(() -> "Added " + msg.getPayload().value());
+                        public void onNext(KafkaMessage<Long,  String> msg) {
+                            consumed().add(Integer.toString(Integer.parseInt(msg.getPayload())));
+                            LOGGER.fine(() -> "Added " + msg.getPayload());
                             msg.ack();
                             countDown("onNext()");
                         }
@@ -211,11 +211,11 @@ abstract class AbstractSampleBean {
 
         @Incoming("test-channel-6")
         @Acknowledgment(Acknowledgment.Strategy.MANUAL)
-        public CompletionStage<String> channel6(Message<ConsumerRecord<Long, String>> msg) {
-            LOGGER.fine(() -> String.format("Received %s", msg.getPayload().value()));
-            consumed().add(msg.getPayload().value());
+        public CompletionStage<String> channel6(KafkaMessage<Long,  String> msg) {
+            LOGGER.fine(() -> String.format("Received %s", msg.getPayload()));
+            consumed().add(msg.getPayload());
             // Certain messages are not ACK. We can check later that they will be sent again.
-            if (!NO_ACK.equals(msg.getPayload().value())) {
+            if (!NO_ACK.equals(msg.getPayload())) {
                 LOGGER.fine(() -> "ACK sent");
                 msg.ack();
             } else {
@@ -238,12 +238,12 @@ abstract class AbstractSampleBean {
 
         @Incoming("test-channel-8")
         @Acknowledgment(Acknowledgment.Strategy.MANUAL)
-        public CompletionStage<String> channel6(Message<ConsumerRecord<Long, String>> msg) {
+        public CompletionStage<String> channel6(KafkaMessage<Long,  String> msg) {
             ConsumerRecord<Long, String> record = msg.unwrap(ConsumerRecord.class);
             consumed().add(record.value());
             // Certain messages are not ACK. We can check later that they will be sent again.
-            if (NO_ACK.equals(msg.getPayload().value())) {
-                LOGGER.fine(() -> String.format("NO_ACK. Received %s", msg.getPayload().value()));
+            if (NO_ACK.equals(msg.getPayload())) {
+                LOGGER.fine(() -> String.format("NO_ACK. Received %s", msg.getPayload()));
                 partitionIdOfNoAck.set(record.partition());
                 uncommitted.getAndIncrement();
                 countDown("no_ack channel8()");
@@ -251,11 +251,11 @@ abstract class AbstractSampleBean {
                 if (limit.getAndIncrement() == LIMIT) {
                     throw new IllegalStateException("Avoid the Kafka rebalance fix");
                 }else if (record.partition() == partitionIdOfNoAck.get()) {
-                    LOGGER.fine(() -> String.format("NO_ACK. Received %s", msg.getPayload().value()));
+                    LOGGER.fine(() -> String.format("NO_ACK. Received %s", msg.getPayload()));
                     uncommitted.getAndIncrement();
                     countDown("no_ack channel8()");
                 } else {
-                    LOGGER.fine(() -> String.format("ACK. Received %s", msg.getPayload().value()));
+                    LOGGER.fine(() -> String.format("ACK. Received %s", msg.getPayload()));
                     msg.ack().whenComplete((a, b) -> countDown("ack channel8()"));
                 }
             }
@@ -273,13 +273,13 @@ abstract class AbstractSampleBean {
         @Incoming("test-channel-10")
         @Outgoing("test-channel-9")
         @Acknowledgment(Acknowledgment.Strategy.MANUAL)
-        public Message<String> channel10ToChannel9(Message<ConsumerRecord<Long, String>> msg) {
+        public Message<String> channel10ToChannel9(KafkaMessage<Long,  String> msg) {
             msg.ack().whenComplete((a, b) -> {
-                consumed().add(msg.getPayload().value());
-                LOGGER.fine(() -> "Added " + msg.getPayload().value());
+                consumed().add(msg.getPayload());
+                LOGGER.fine(() -> "Added " + msg.getPayload());
                 countDown("channel10ToChannel9()");
             });
-            return Message.of(msg.getPayload().value());
+            return Message.of(msg.getPayload());
         }
     }
 
@@ -288,7 +288,7 @@ abstract class AbstractSampleBean {
 
         @Incoming("test-channel-11")
         @Acknowledgment(Acknowledgment.Strategy.MANUAL)
-        public CompletionStage<String> channel1(Message<ConsumerRecord<Long, String>> msg) {
+        public CompletionStage<String> channel1(KafkaMessage<Long,  String> msg) {
             // Unreachable because the Kafka connection is invalid
             return CompletableFuture.completedFuture(null);
         }
@@ -300,13 +300,13 @@ abstract class AbstractSampleBean {
         @Incoming("test-channel-13")
         @Outgoing("test-channel-12")
         @Acknowledgment(Acknowledgment.Strategy.MANUAL)
-        public Message<String> channel13ToChannel12(Message<ConsumerRecord<Long, String>> msg) {
+        public Message<String> channel13ToChannel12(KafkaMessage<Long,  String> msg) {
             msg.ack().whenComplete((a, b) -> {
-                consumed().add(msg.getPayload().value());
-                LOGGER.fine(() -> "Added " + msg.getPayload().value());
+                consumed().add(msg.getPayload());
+                LOGGER.fine(() -> "Added " + msg.getPayload());
                 countDown("channel13ToChannel12()");
             });
-            return Message.of(msg.getPayload().value());
+            return Message.of(msg.getPayload());
         }
     }
 }
