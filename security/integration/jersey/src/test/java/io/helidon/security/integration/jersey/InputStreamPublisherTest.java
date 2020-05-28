@@ -25,6 +25,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Flow;
 import java.util.concurrent.TimeUnit;
 
+import io.helidon.common.reactive.IoMulti;
 import io.helidon.common.reactive.Multi;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -39,8 +40,10 @@ public class InputStreamPublisherTest {
     @Test
     public void testSingle() throws InterruptedException {
         String teststring = "My text to publish with publisher";
-        Multi<ByteBuffer> p = Multi.from(new ByteArrayInputStream(teststring.getBytes(StandardCharsets.UTF_8)))
-                .withByteBufferSize(1024);
+
+        Multi<ByteBuffer> p = IoMulti.builder(new ByteArrayInputStream(teststring.getBytes(StandardCharsets.UTF_8)))
+                .byteBufferSize(1024)
+                .build();
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         CountDownLatch cdl = new CountDownLatch(1);
@@ -83,8 +86,9 @@ public class InputStreamPublisherTest {
     @Test
     public void testMultiple() throws InterruptedException {
         String teststring = "My text to publish with publisher";
-        Multi<ByteBuffer> p = Multi.from(new ByteArrayInputStream(teststring.getBytes(StandardCharsets.UTF_8)))
-                .withByteBufferSize(1);
+        Multi<ByteBuffer> p = IoMulti.builder(new ByteArrayInputStream(teststring.getBytes(StandardCharsets.UTF_8)))
+                .byteBufferSize(1)
+                .build();
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         CountDownLatch cdl = new CountDownLatch(1);
@@ -134,8 +138,9 @@ public class InputStreamPublisherTest {
         }
         teststring = expectedResult.toString();
 
-        Multi<ByteBuffer> p = Multi.from(new ByteArrayInputStream(teststring.getBytes(StandardCharsets.UTF_8)))
-                .withByteBufferSize(2);
+        Multi<ByteBuffer> p = IoMulti.builder(new ByteArrayInputStream(teststring.getBytes(StandardCharsets.UTF_8)))
+                .byteBufferSize(2)
+                .build();
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         CountDownLatch cdl = new CountDownLatch(1);

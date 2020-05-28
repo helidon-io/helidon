@@ -59,7 +59,7 @@ public class MultiFromInputStreamTest {
 
         InputStream is = new ByteArrayInputStream(initialArray);
 
-        List<Byte> result = Multi.from(is)
+        List<Byte> result = IoMulti.create(is)
                 .flatMapIterable((ByteBuffer b) -> {
                     List<Byte> list = new LinkedList<>();
                     while (b.remaining() > 0) {
@@ -75,15 +75,18 @@ public class MultiFromInputStreamTest {
     @RepeatedTest(value = 20, name = "buffer size {currentRepetition}")
     void longStringTrustedStream(RepetitionInfo repetitionInfo) {
         var bufferSize = repetitionInfo.getCurrentRepetition();
-        longString(is -> Multi.from(is)
-                .withByteBufferSize(bufferSize));
+        longString(is -> IoMulti.builder(is)
+                .byteBufferSize(bufferSize)
+                .build());
     }
 
     @RepeatedTest(value = 20, name = "buffer size {currentRepetition}")
     void longStringNotTrustedStream(RepetitionInfo repetitionInfo) {
         var bufferSize = repetitionInfo.getCurrentRepetition();
-        longString(is -> Multi.from(is, executorService)
-                .withByteBufferSize(bufferSize));
+        longString(is -> IoMulti.builder(is)
+                .executor(executorService)
+                .byteBufferSize(bufferSize)
+                .build());
     }
 
     private void longString(Function<InputStream, Multi<ByteBuffer>> pubCreator) {

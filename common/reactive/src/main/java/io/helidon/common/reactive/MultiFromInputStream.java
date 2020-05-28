@@ -24,7 +24,7 @@ import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.IntSupplier;
 
-class MultiFromInputStream implements MultiByteBuffer {
+class MultiFromInputStream implements Multi<ByteBuffer> {
 
     private final InputStream inputStream;
     private IntSupplier bufferSizeSupplier;

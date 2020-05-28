@@ -15,8 +15,6 @@
  */
 package io.helidon.common.reactive;
 
-import java.io.InputStream;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -24,7 +22,6 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.Flow.Subscriber;
@@ -231,38 +228,6 @@ public interface Multi<T> extends Subscribable<T> {
     static <T> Multi<T> from(Stream<T> stream) {
         Objects.requireNonNull(stream, "stream is null");
         return new MultiFromStream<>(stream);
-    }
-
-    /**
-     * Create a {@link Multi} instance that publishes {@link ByteBuffer}s from the given {@link InputStream}.
-     * <p>
-     * If {@link InputStream} can be trusted not to block on read operations, use faster
-     * {@link Multi#from(java.io.InputStream)}.
-     *
-     * @param inputStream the Stream to publish
-     * @param executor executor to use for waiting at {@link InputStream}'s blocking reads
-     * @return Multi
-     * @throws NullPointerException if {@code stream} is {@code null}
-     */
-    static MultiByteBuffer from(InputStream inputStream, ExecutorService executor) {
-        Objects.requireNonNull(inputStream, "stream is null");
-        Objects.requireNonNull(executor, "executor is null");
-        return new MultiFromBlockingInputStream(inputStream, 4, executor);
-    }
-
-    /**
-     * Create a {@link Multi} instance that publishes {@link ByteBuffer}s from the given {@link InputStream}.
-     * <p>
-     * {@link InputStream} is trusted not to block on read operations, in case it can't be assured use
-     * {@link Multi#from(java.io.InputStream, java.util.concurrent.ExecutorService)}.
-     *
-     * @param inputStream the Stream to publish
-     * @return Multi
-     * @throws NullPointerException if {@code stream} is {@code null}
-     */
-    static MultiByteBuffer from(InputStream inputStream) {
-        Objects.requireNonNull(inputStream, "stream is null");
-        return new MultiFromInputStream(inputStream, 4);
     }
 
     /**
