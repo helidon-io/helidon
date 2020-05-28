@@ -463,18 +463,6 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
         return result;
     }
 
-    @Override
-    public Tracer buildAndRegister() {
-        if (global) {
-            return build();
-        }
-
-        Tracer result = build();
-        GlobalTracer.register(result);
-
-        return result;
-    }
-
     Configuration jaegerConfig() {
         /*
          * Preload from environment, then override configured values
