@@ -15,12 +15,17 @@
  */
 package io.helidon.common.reactive;
 
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.Flow.Subscription;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.junit.jupiter.api.Test;
 
@@ -38,6 +43,8 @@ import static org.junit.jupiter.api.Assertions.fail;
  * {@link Single} test.
  */
 public class SingleTest {
+
+    static final String TEST_PAYLOAD = "test-payload";
 
     @Test
     public void testJust() {
@@ -289,7 +296,7 @@ public class SingleTest {
 
     @Test
     public void testBadSingleToFuture() throws InterruptedException, TimeoutException {
-        Single<String> single = new Single<String>() {
+        Single<String> single = new CompletionSingle<String>() {
             @Override
             public void subscribe(Subscriber<? super String> subscriber) {
                 throw new IllegalStateException("foo!");
@@ -313,7 +320,7 @@ public class SingleTest {
 
     @Test
     public void testToFutureDoubleOnError() throws InterruptedException, TimeoutException {
-        Single<String> single = new Single<String>() {
+        Single<String> single = new CompletionSingle<String>() {
             @Override
             public void subscribe(Subscriber<? super String> subscriber) {
                 subscriber.onSubscribe(new Subscription() {
@@ -338,7 +345,7 @@ public class SingleTest {
 
     @Test
     public void testToFutureDoubleOnNext() throws InterruptedException, ExecutionException {
-        Single<String> single = new Single<String>() {
+        Single<String> single = new CompletionSingle<String>() {
             @Override
             public void subscribe(Subscriber<? super String> subscriber) {
                 subscriber.onSubscribe(new Subscription() {
@@ -386,7 +393,7 @@ public class SingleTest {
     public void testToFutureDoubleOnSubscribe() throws InterruptedException, ExecutionException {
         TestSubscription subscription1 = new TestSubscription();
         TestSubscription subscription2 = new TestSubscription();
-        Single<String> single = new Single<String>() {
+        Single<String> single = new CompletionSingle<String>() {
             @Override
             public void subscribe(Subscriber<? super String> subscriber) {
                 subscriber.onSubscribe(subscription1);
@@ -408,6 +415,78 @@ public class SingleTest {
         assertThat(subscriber.isComplete(), is(equalTo(false)));
         assertThat(subscriber.getLastError(), is(instanceOf(IllegalStateException.class)));
         assertThat(subscriber.getItems(), is(empty()));
+    }
+
+    @Test
+    void testOnCompleteResume() {
+        List<Integer> result = Single.just(1)
+                .onCompleteResume(4)
+                .collectList()
+                .await(100, TimeUnit.MILLISECONDS);
+
+        assertThat(result, is(equalTo(List.of(1, 4))));
+    }
+
+    @Test
+    void testOnCompleteResumeWith() {
+        List<Integer> result = Single.just(1)
+                .onCompleteResumeWith(Multi.just(4, 5, 6))
+                .collectList()
+                .await(100, TimeUnit.MILLISECONDS);
+
+        assertThat(result, is(equalTo(List.of(1, 4, 5, 6))));
+    }
+
+    @Test
+    void testOnCompleteResumeWithFirst() {
+        Integer result = Single.<Integer>empty()
+                .onCompleteResume(1)
+                .first()
+                .await(100, TimeUnit.MILLISECONDS);
+
+        assertThat(result, is(equalTo(1)));
+    }
+
+    @Test
+    void testSingleOnComplete() throws InterruptedException, ExecutionException, TimeoutException {
+        CompletableFuture<Void> onCompleteFuture = new CompletableFuture<>();
+
+        assertThat(Single.just(TEST_PAYLOAD)
+                .onComplete(() -> onCompleteFuture.complete(null))
+                .await(100, TimeUnit.MILLISECONDS), is(equalTo(TEST_PAYLOAD)));
+        onCompleteFuture.get(100, TimeUnit.MILLISECONDS);
+    }
+
+    @Test
+    void testSingleOnCancel() throws InterruptedException {
+        CountDownLatch onCancelCnt = new CountDownLatch(5);
+        CountDownLatch onCompleteCnt = new CountDownLatch(2);
+        CountDownLatch onErrCnt = new CountDownLatch(1);
+        Single.just(TEST_PAYLOAD)
+                .onComplete(onCompleteCnt::countDown)
+                .map(String::toUpperCase)
+                .onCancel(onCancelCnt::countDown)
+                .onCancel(onCancelCnt::countDown)
+                .map(String::toUpperCase)
+                .onCancel(onCancelCnt::countDown)
+                .map(String::toLowerCase)
+                .onCancel(onCancelCnt::countDown)
+                .onCancel(onCancelCnt::countDown)
+                .onError(throwable -> onErrCnt.countDown())
+                .onComplete(onCompleteCnt::countDown)
+                .cancel();
+
+        onCancelCnt.await(100, TimeUnit.MILLISECONDS);
+        assertThat("At least one test onCancel callback was not called",
+                onCancelCnt.getCount(), is(equalTo(0L)));
+
+        onCompleteCnt.await(5, TimeUnit.MILLISECONDS);
+        assertThat("OnError callback was not expected",
+                onCompleteCnt.getCount(), is(equalTo(2L)));
+
+        onErrCnt.await(5, TimeUnit.MILLISECONDS);
+        assertThat("",
+                onErrCnt.getCount(), is(equalTo(1L)));
     }
 
     private static class SingleTestSubscriber<T> extends TestSubscriber<T> {

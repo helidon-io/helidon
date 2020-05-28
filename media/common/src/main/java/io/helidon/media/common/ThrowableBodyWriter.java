@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,12 +40,12 @@ public class ThrowableBodyWriter implements MessageBodyWriter<Throwable> {
     }
 
     @Override
-    public boolean accept(GenericType<?> type, MessageBodyWriterContext context) {
-        return Throwable.class.isAssignableFrom(type.rawType());
+    public PredicateResult accept(GenericType<?> type, MessageBodyWriterContext context) {
+        return PredicateResult.supports(Throwable.class, type);
     }
 
     @Override
-    public Publisher<DataChunk> write(Single<Throwable> content,
+    public Publisher<DataChunk> write(Single<? extends Throwable> content,
                                       GenericType<? extends Throwable> type,
                                       MessageBodyWriterContext context) {
         context.contentType(MediaType.TEXT_PLAIN);

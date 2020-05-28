@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,19 +17,19 @@ package io.helidon.tests.integration.dbclient.mongodb.destroy;
 
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
+import io.helidon.common.reactive.Multi;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbRow;
-import io.helidon.dbclient.DbRows;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.tests.integration.dbclient.common.AbstractIT.DB_CLIENT;
-
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.empty;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -50,11 +50,10 @@ public class DestroyIT {
     private static void deleteSchema(DbClient dbClient) throws ExecutionException, InterruptedException {
         dbClient.execute(exec -> exec
                 .namedDelete("delete-poketypes")
-                .thenCompose(result -> exec.namedDelete("delete-pokemons"))
-                .thenCompose(result -> exec.namedDelete("delete-types"))
-        ).toCompletableFuture().get();
+                .flatMapSingle(result -> exec.namedDelete("delete-pokemons"))
+                .flatMapSingle(result -> exec.namedDelete("delete-types"))
+        ).await(10, TimeUnit.SECONDS);
     }
-
 
     /**
      * Destroy database after tests.
@@ -70,43 +69,31 @@ public class DestroyIT {
 
     /**
      * Verify that table Types does not exist.
-     *
-     * @throws ExecutionException when database query failed
      */
     @Test
     public void testTypesDeleted() throws InterruptedException {
-        try {
-            DbRows<DbRow> rows = DB_CLIENT.execute(exec -> exec
-                .namedQuery("select-types")
-            ).toCompletableFuture().get();
-            if (rows != null) {
-                List<DbRow> rowsList = rows.collect().toCompletableFuture().get();
-                LOGGER.warning(() -> String.format("Rows count: %d", rowsList.size()));
-                assertThat(rowsList, empty());
-            }
-        } catch (ExecutionException ex) {
-            LOGGER.info(() -> String.format("Caught expected exception: %s", ex.getMessage()));
+        Multi<DbRow> rows = DB_CLIENT.execute(exec -> exec
+                .namedQuery("select-types"));
+
+        if (rows != null) {
+            List<DbRow> rowsList = rows.collectList().await();
+            LOGGER.warning(() -> String.format("Rows count: %d", rowsList.size()));
+            assertThat(rowsList, empty());
         }
     }
 
     /**
      * Verify that table Pokemons does not exist.
-     *
-     * @throws ExecutionException when database query failed
      */
     @Test
     public void testPokemonsDeleted() throws InterruptedException {
-        try {
-            DbRows<DbRow> rows = DB_CLIENT.execute(exec -> exec
-                .namedQuery("select-pokemons")
-            ).toCompletableFuture().get();
-            if (rows != null) {
-                List<DbRow> rowsList = rows.collect().toCompletableFuture().get();
-                LOGGER.warning(() -> String.format("Rows count: %d", rowsList.size()));
-                assertThat(rowsList, empty());
-            }
-        } catch (ExecutionException ex) {
-            LOGGER.info(() -> String.format("Caught expected exception: %s", ex.getMessage()));
+        Multi<DbRow> rows = DB_CLIENT.execute(exec -> exec
+                .namedQuery("select-pokemons"));
+
+        if (rows != null) {
+            List<DbRow> rowsList = rows.collectList().await();
+            LOGGER.warning(() -> String.format("Rows count: %d", rowsList.size()));
+            assertThat(rowsList, empty());
         }
     }
 
@@ -117,18 +104,13 @@ public class DestroyIT {
      */
     @Test
     public void testPokemonTypesDeleted() throws InterruptedException {
-        try {
-            DbRows<DbRow> rows = DB_CLIENT.execute(exec -> exec
-                .namedQuery("select-poketypes-all")
-            ).toCompletableFuture().get();
-            if (rows != null) {
-                List<DbRow> rowsList = rows.collect().toCompletableFuture().get();
-                LOGGER.warning(() -> String.format("Rows count: %d", rowsList.size()));
-                assertThat(rowsList, empty());
-            }
-        } catch (ExecutionException ex) {
-            LOGGER.info(() -> String.format("Caught expected exception: %s", ex.getMessage()));
+        Multi<DbRow> rows = DB_CLIENT.execute(exec -> exec
+                .namedQuery("select-poketypes-all"));
+
+        if (rows != null) {
+            List<DbRow> rowsList = rows.collectList().await();
+            LOGGER.warning(() -> String.format("Rows count: %d", rowsList.size()));
+            assertThat(rowsList, empty());
         }
     }
-
 }

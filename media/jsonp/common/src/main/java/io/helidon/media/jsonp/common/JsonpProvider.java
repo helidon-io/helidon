@@ -29,11 +29,11 @@ public class JsonpProvider implements MediaSupportProvider {
 
     @Override
     public MediaSupport create(Config config) {
-        return JsonpSupport.create();
+        return JsonpSupport.create(config.asMap().get());
     }
 
     @Override
-    public String type() {
+    public String configKey() {
         return JSON_P;
     }
 }

@@ -39,5 +39,9 @@
             <groupId>io.helidon.metrics</groupId>
             <artifactId>helidon-metrics</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.dbclient</groupId>
+            <artifactId>helidon-dbclient-common</artifactId>
+        </dependency>
     </dependencies>
 </project>

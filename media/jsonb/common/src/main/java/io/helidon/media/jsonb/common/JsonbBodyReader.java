@@ -45,8 +45,10 @@ public class JsonbBodyReader implements MessageBodyReader<Object> {
     }
 
     @Override
-    public boolean accept(GenericType<?> type, MessageBodyReaderContext context) {
-        return !CharSequence.class.isAssignableFrom(type.rawType());
+    public PredicateResult accept(GenericType<?> type, MessageBodyReaderContext context) {
+        return !CharSequence.class.isAssignableFrom(type.rawType())
+                ? PredicateResult.COMPATIBLE
+                : PredicateResult.NOT_SUPPORTED;
     }
 
     @Override

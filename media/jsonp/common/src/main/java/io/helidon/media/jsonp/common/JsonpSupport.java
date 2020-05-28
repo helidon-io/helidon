@@ -24,8 +24,11 @@ import javax.json.Json;
 import javax.json.JsonReaderFactory;
 import javax.json.JsonWriterFactory;
 
+import io.helidon.common.HelidonFeatures;
+import io.helidon.common.HelidonFlavor;
 import io.helidon.media.common.MediaSupport;
 import io.helidon.media.common.MessageBodyReader;
+import io.helidon.media.common.MessageBodyStreamWriter;
 import io.helidon.media.common.MessageBodyWriter;
 
 /**
@@ -34,6 +37,10 @@ import io.helidon.media.common.MessageBodyWriter;
  * For usage examples navigate to {@link MediaSupport}
  */
 public final class JsonpSupport implements MediaSupport {
+
+    static {
+        HelidonFeatures.register(HelidonFlavor.SE, "Media", "JSON-P");
+    }
 
     private final JsonReaderFactory jsonReaderFactory;
     private final JsonWriterFactory jsonWriterFactory;
@@ -61,6 +68,19 @@ public final class JsonpSupport implements MediaSupport {
         return new JsonpBodyWriter(jsonWriterFactory);
     }
 
+    /**
+     * Create a new JSON-P stream writer.
+     * <p>
+     * This stream writer supports {@link java.util.concurrent.Flow.Publisher publishers}
+     * of {@link javax.json.JsonStructure} (such as {@link javax.json.JsonObject})
+     * , writing them as an array of JSONs.
+     *
+     * @return JSON processing stream writer.
+     */
+    public JsonpBodyStreamWriter newStreamWriter() {
+        return new JsonpBodyStreamWriter(jsonWriterFactory);
+    }
+
     @Override
     public Collection<MessageBodyReader<?>> readers() {
         return List.of(newReader());
@@ -69,6 +89,11 @@ public final class JsonpSupport implements MediaSupport {
     @Override
     public Collection<MessageBodyWriter<?>> writers() {
         return List.of(newWriter());
+    }
+
+    @Override
+    public Collection<MessageBodyStreamWriter<?>> streamWriters() {
+        return List.of(newStreamWriter());
     }
 
     /**

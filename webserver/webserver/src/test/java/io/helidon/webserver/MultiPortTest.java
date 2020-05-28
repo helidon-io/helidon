@@ -16,10 +16,6 @@
 
 package io.helidon.webserver;
 
-import java.util.logging.Logger;
-
-import javax.net.ssl.SSLContext;
-
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.http.Http;
 import io.helidon.common.pki.KeyConfig;
@@ -45,15 +41,13 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 public class MultiPortTest {
 
-    private static final Logger LOGGER = Logger.getLogger(MultiPortTest.class.getName());
-
     private static WebClient webClient;
     private Handler commonHandler;
-    private SSLContext ssl;
     private WebServer webServer;
+    private TlsConfig tlsConfig;
 
     @BeforeAll
-    public static void createClientAcceptingAllCertificates() throws Exception {
+    public static void createClientAcceptingAllCertificates() {
         webClient = WebClient.builder()
                 .followRedirects(true)
                 .ssl(Ssl.builder().trustAll(true).build())
@@ -73,11 +67,12 @@ public class MultiPortTest {
             }
         };
 
-        ssl = SSLContextBuilder.create(KeyConfig.keystoreBuilder()
-                                                 .keystore(Resource.create("ssl/certificate.p12"))
-                                                 .keystorePassphrase(new char[] {'h', 'e', 'l', 'i', 'd', 'o', 'n'})
-                                                 .build())
-                               .build();
+        tlsConfig = TlsConfig.builder()
+                .privateKey(KeyConfig.keystoreBuilder()
+                                    .keystore(Resource.create("ssl/certificate.p12"))
+                                    .keystorePassphrase("helidon".toCharArray())
+                                    .build())
+                .build();
     }
 
     @AfterEach
@@ -105,18 +100,16 @@ public class MultiPortTest {
     public void programmaticNoCompound() throws Exception {
 
         WebServer webServer8080 = WebServer.create(
-                ServerConfiguration.builder()
-                                   .build(),
                 Routing.builder()
-                       .get("/", commonHandler)
-                       .get("/variable", (req, res) -> res.send("Variable 8080")));
+                        .get("/", commonHandler)
+                        .get("/variable", (req, res) -> res.send("Variable 8080")));
 
-        WebServer webServer8443 = WebServer.create(
-                ServerConfiguration.builder()
-                                   .ssl(ssl),
+        WebServer webServer8443 = WebServer.builder(
                 Routing.builder()
-                       .get("/", commonHandler)
-                       .get("/variable", (req, res) -> res.send("Variable 8443")));
+                        .get("/", commonHandler)
+                        .get("/variable", (req, res) -> res.send("Variable 8443")))
+                .tls(tlsConfig)
+                .build();
 
         try {
             webServer8080.start().toCompletableFuture().join();
@@ -146,24 +139,23 @@ public class MultiPortTest {
         // start all of the servers
         webServer = WebServer.builder(
                 Routing.builder()
-                       .get("/overridden", (req, res) -> res.send("Overridden 8443"))
-                       .get("/", commonHandler)
-                       .get("/variable", (req, res) -> res.send("Variable 8443"))
+                        .get("/overridden", (req, res) -> res.send("Overridden 8443"))
+                        .get("/", commonHandler)
+                        .get("/variable", (req, res) -> res.send("Variable 8443"))
 
-                       .build())
-                             .config(ServerConfiguration.builder()
-                                                               .ssl(ssl)
-                                                               .addSocket("plain", SocketConfiguration.builder()))
-                             .addNamedRouting("plain",
-                                              Routing.builder()
-                                                     .get("/overridden", (req, res) -> res.send("Overridden 8080"))
-                                                     .get("/", commonHandler)
-                                                     .get("/variable", (req, res) -> res.send("Variable 8080")))
-                             .build();
+                        .build())
+                .tls(tlsConfig)
+                .addSocket(SocketConfiguration.create("plain"))
+                .addNamedRouting("plain",
+                                 Routing.builder()
+                                         .get("/overridden", (req, res) -> res.send("Overridden 8080"))
+                                         .get("/", commonHandler)
+                                         .get("/variable", (req, res) -> res.send("Variable 8080")))
+                .build();
 
         webServer.start()
-                 .toCompletableFuture()
-                 .join();
+                .toCompletableFuture()
+                .join();
 
         assertResponse("https", webServer.port(), "/", is("Root! 1"));
         assertResponse("http", webServer.port("plain"), "/", is("Root! 2"));
@@ -177,19 +169,19 @@ public class MultiPortTest {
     @Test
     public void compositeSingleRoutingWebServer() throws Exception {
         // start all of the servers
-        webServer = WebServer.create(
-                ServerConfiguration.builder()
-                                   .addSocket("secured",
-                                              SocketConfiguration.builder()
-                                                                 .ssl(ssl)),
+        webServer = WebServer.builder(
                 Routing.builder()
-                       .get("/overridden", (req, res) -> res.send("Overridden BOTH"))
-                       .get("/", commonHandler)
-                       .get("/variable", (req, res) -> res.send("Variable BOTH")));
+                        .get("/overridden", (req, res) -> res.send("Overridden BOTH"))
+                        .get("/", commonHandler)
+                        .get("/variable", (req, res) -> res.send("Variable BOTH")))
+                .addSocket(SocketConfiguration.builder()
+                                   .name("secured")
+                                   .tls(tlsConfig))
+                .build();
 
         webServer.start()
-                 .toCompletableFuture()
-                 .join();
+                .toCompletableFuture()
+                .join();
 
         assertResponse("https", webServer.port("secured"), "/", is("Root! 1"));
         assertResponse("http", webServer.port(), "/", is("Root! 2"));
@@ -204,30 +196,28 @@ public class MultiPortTest {
     public void compositeRedirectWebServer() throws Exception {
         // start all of the servers
         webServer = WebServer.builder(Routing.builder()
-                                             .get("/foo", commonHandler))
-                             .config(
-                                     ServerConfiguration.builder()
-                                                        .ssl(ssl)
-                                                        .addSocket("redirect", SocketConfiguration.builder()))
-                             .addNamedRouting("redirect",
-                                              Routing.builder()
-                                                     .any((req, res) -> {
-                                                         res.status(Http.Status.MOVED_PERMANENTLY_301)
-                                                            .headers()
-                                                            .add(Http.Header.LOCATION,
-                                                                 String.format("https://%s:%d%s",
-                                                                               req.headers()
-                                                                                  .first(Http.Header.HOST)
-                                                                                  .map(s -> s.contains(":") ? s
-                                                                                          .subSequence(0, s.indexOf(":")) : s)
-                                                                                  .orElseThrow(() -> new IllegalStateException(
-                                                                                          "Header 'Host' not found!")),
-                                                                               req.webServer().port(),
-                                                                               req.path()));
-                                                         res.send();
-                                                     })
-                                             )
-                             .build();
+                                              .get("/foo", commonHandler))
+                .tls(tlsConfig)
+                .addSocket(SocketConfiguration.create("redirect"))
+                .addNamedRouting("redirect",
+                                 Routing.builder()
+                                         .any((req, res) -> {
+                                             res.status(Http.Status.MOVED_PERMANENTLY_301)
+                                                     .headers()
+                                                     .add(Http.Header.LOCATION,
+                                                          String.format("https://%s:%d%s",
+                                                                        req.headers()
+                                                                                .first(Http.Header.HOST)
+                                                                                .map(s -> s.contains(":") ? s
+                                                                                        .subSequence(0, s.indexOf(":")) : s)
+                                                                                .orElseThrow(() -> new IllegalStateException(
+                                                                                        "Header 'Host' not found!")),
+                                                                        req.webServer().port(),
+                                                                        req.path()));
+                                             res.send();
+                                         })
+                )
+                .build();
 
         webServer
                 .start()
@@ -238,15 +228,19 @@ public class MultiPortTest {
                 .ssl(Ssl.builder().trustAll(true).build())
                 .build();
 
-//        Response response = client.target("http://localhost:" + webServer.port("redirect")).path("/foo").request().get();
-//        assertThat("Unexpected response: " + response, response.getHeaderString("Location"),
-//                   AllOf.allOf(StringContains.containsString("https://localhost:"), StringContains.containsString("/foo")));
-//        assertThat("Unexpected response: " + response, response.getStatus(), is(Http.Status.MOVED_PERMANENTLY_301.code()));
-//
-//        assertResponse("https", webServer.port(), "/foo", is("Root! 1"));
-//
-//        Response responseRedirected = client.target(response.getHeaderString("Location")).request().get();
-//        assertThat("Unexpected response: " + responseRedirected, responseRedirected.readEntity(String.class), is("Root! 2"));
+        //        Response response = client.target("http://localhost:" + webServer.port("redirect")).path("/foo").request()
+        //        .get();
+        //        assertThat("Unexpected response: " + response, response.getHeaderString("Location"),
+        //                   AllOf.allOf(StringContains.containsString("https://localhost:"), StringContains.containsString
+        //                   ("/foo")));
+        //        assertThat("Unexpected response: " + response, response.getStatus(), is(Http.Status.MOVED_PERMANENTLY_301
+        //        .code()));
+        //
+        //        assertResponse("https", webServer.port(), "/foo", is("Root! 1"));
+        //
+        //        Response responseRedirected = client.target(response.getHeaderString("Location")).request().get();
+        //        assertThat("Unexpected response: " + responseRedirected, responseRedirected.readEntity(String.class), is
+        //        ("Root! 2"));
         assertResponse("https", webServer.port(), "/foo", is("Root! 1"));
         webClient.get()
                 .uri("http://localhost:" + webServer.port("redirect"))
@@ -271,17 +265,18 @@ public class MultiPortTest {
     @Test
     public void compositeFromConfig() throws Exception {
         Config config = Config.create(ConfigSources.classpath("multiport/application.yaml"));
-        webServer = WebServer.builder(Routing.builder()
-                                             .get("/", (req, res) -> res.send("Plain!")))
-                             .config(ServerConfiguration.create(config.get("webserver")))
-                             .addNamedRouting("secured",
-                                              Routing.builder()
-                                                     .get("/", (req, res) -> res.send("Secured!")))
-                             .build();
+        webServer = WebServer.builder()
+                .routing(Routing.builder()
+                                 .get("/", (req, res) -> res.send("Plain!")))
+                .config(config.get("webserver"))
+                .addNamedRouting("secured",
+                                 Routing.builder()
+                                         .get("/", (req, res) -> res.send("Secured!")))
+                .build();
 
         webServer.start()
-                 .toCompletableFuture()
-                 .join();
+                .toCompletableFuture()
+                .join();
 
         assertResponse("http", webServer.port(), "/", is("Plain!"));
         assertResponse("https", webServer.port("secured"), "/", is("Secured!"));

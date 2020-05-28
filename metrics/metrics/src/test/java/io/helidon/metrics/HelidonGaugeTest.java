@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,11 +45,13 @@ public class HelidonGaugeTest {
 
     @BeforeAll
     static void initClass() {
-        meta = new HelidonMetadata("aGauge",
-                "aGauge",
-                "aGauge",
-                MetricType.GAUGE,
-                MetricUnits.NONE);
+        meta = Metadata.builder()
+                .withName("aGauge")
+                .withDisplayName("aGauge")
+                .withDescription("aGauge")
+                .withType(MetricType.GAUGE)
+                .withUnit(MetricUnits.NONE)
+                .build();
     }
 
     @Test

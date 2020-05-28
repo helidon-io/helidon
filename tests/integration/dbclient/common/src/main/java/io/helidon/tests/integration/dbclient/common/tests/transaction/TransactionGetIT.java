@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,10 +23,6 @@ import io.helidon.tests.integration.dbclient.common.AbstractIT;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.tests.integration.dbclient.common.AbstractIT.DB_CLIENT;
-import static io.helidon.tests.integration.dbclient.common.AbstractIT.POKEMONS;
-import static io.helidon.tests.integration.dbclient.common.AbstractIT.SELECT_POKEMON_NAMED_ARG;
-import static io.helidon.tests.integration.dbclient.common.AbstractIT.SELECT_POKEMON_ORDER_ARG;
 import static io.helidon.tests.integration.dbclient.common.utils.Utils.verifyPokemon;
 
 /**
@@ -52,88 +48,86 @@ public class TransactionGetIT extends AbstractIT {
     /**
      * Verify {@code createNamedGet(String)} API method with named parameters.
      *
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
-    public void testCreateNamedGetStrNamedArgs() throws ExecutionException, InterruptedException {
+    public void testCreateNamedGetStrNamedArgs() {
         Optional<DbRow> maybeRow = DB_CLIENT.inTransaction(tx -> tx
                 .createNamedGet("select-pokemon-named-arg")
-                .addParam("name", POKEMONS.get(2).getName()).execute()
-        ).toCompletableFuture().get();
+                .addParam("name", POKEMONS.get(2).getName())
+                .execute())
+                .await();
+
         verifyPokemon(maybeRow, POKEMONS.get(2));
     }
 
     /**
      * Verify {@code createNamedGet(String)} API method with ordered parameters.
      *
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
-    public void testCreateNamedGetStrOrderArgs() throws ExecutionException, InterruptedException {
+    public void testCreateNamedGetStrOrderArgs() {
         Optional<DbRow> maybeRow = DB_CLIENT.inTransaction(tx -> tx
                 .createNamedGet("select-pokemon-order-arg")
-                .addParam(POKEMONS.get(3).getName()).execute()
-        ).toCompletableFuture().get();
+                .addParam(POKEMONS.get(3).getName())
+                .execute())
+                .await();
+
         verifyPokemon(maybeRow, POKEMONS.get(3));
     }
 
     /**
      * Verify {@code createGet(String)} API method with named parameters.
      *
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
-    public void testCreateGetNamedArgs() throws ExecutionException, InterruptedException {
+    public void testCreateGetNamedArgs() {
         Optional<DbRow> maybeRow = DB_CLIENT.inTransaction(tx -> tx
                 .createGet(SELECT_POKEMON_NAMED_ARG)
-                .addParam("name", POKEMONS.get(4).getName()).execute()
-        ).toCompletableFuture().get();
+                .addParam("name", POKEMONS.get(4).getName())
+                .execute())
+                .await();
+
         verifyPokemon(maybeRow, POKEMONS.get(4));
     }
 
     /**
      * Verify {@code createGet(String)} API method with ordered parameters.
      *
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
-    public void testCreateGetOrderArgs() throws ExecutionException, InterruptedException {
+    public void testCreateGetOrderArgs() {
         Optional<DbRow> maybeRow = DB_CLIENT.inTransaction(tx -> tx
                 .createGet(SELECT_POKEMON_ORDER_ARG)
-                .addParam(POKEMONS.get(5).getName()).execute()
-        ).toCompletableFuture().get();
+                .addParam(POKEMONS.get(5).getName())
+                .execute())
+                .await();
+
         verifyPokemon(maybeRow, POKEMONS.get(5));
     }
 
     /**
      * Verify {@code namedGet(String)} API method with ordered parameters passed directly to the {@code query} method.
      *
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
-    public void testNamedGetStrOrderArgs() throws ExecutionException, InterruptedException {
+    public void testNamedGetStrOrderArgs() {
         Optional<DbRow> maybeRow = DB_CLIENT.inTransaction(tx -> tx
-                .namedGet("select-pokemon-order-arg", POKEMONS.get(6).getName())
-        ).toCompletableFuture().get();
+                .namedGet("select-pokemon-order-arg", POKEMONS.get(6).getName()))
+                .await();
+
         verifyPokemon(maybeRow, POKEMONS.get(6));
     }
 
     /**
      * Verify {@code get(String)} API method with ordered parameters passed directly to the {@code query} method.
      *
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
-    public void testGetStrOrderArgs() throws ExecutionException, InterruptedException {
+    public void testGetStrOrderArgs() {
         Optional<DbRow> maybeRow = DB_CLIENT.inTransaction(tx -> tx
-                .get(SELECT_POKEMON_ORDER_ARG, POKEMONS.get(7).getName())
-        ).toCompletableFuture().get();
+                .get(SELECT_POKEMON_ORDER_ARG, POKEMONS.get(7).getName()))
+                .await();
+
         verifyPokemon(maybeRow, POKEMONS.get(7));
     }
 

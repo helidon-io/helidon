@@ -17,7 +17,6 @@
 
 package io.helidon.common.reactive;
 
-import java.util.ArrayList;
 import java.util.Objects;
 import java.util.concurrent.Flow;
 import java.util.function.Consumer;
@@ -279,80 +278,6 @@ final class MultiTappedPublisher<T> implements Multi<T> {
                     //  Subscriber
                 }
             }
-        }
-    }
-
-
-    /**
-     * Holds a list of {@link Consumer}s to flatten out a call chain of them.
-     * @param <T> the element type to accept
-     */
-    static final class ConsumerChain<T> extends ArrayList<Consumer<? super T>> implements Consumer<T> {
-
-        @Override
-        public void accept(T t) {
-            for (Consumer<? super T> inner : this) {
-                inner.accept(t);
-            }
-        }
-
-        public ConsumerChain<T> combineWith(Consumer<? super T> another) {
-            ConsumerChain<T> newChain = new ConsumerChain<>();
-            newChain.addAll(this);
-            newChain.add(another);
-            return newChain;
-        }
-
-        @SuppressWarnings("unchecked")
-        public static <T> Consumer<? super T> combine(Consumer<? super T> current, Consumer<? super T> another) {
-            if (current == null) {
-                return another;
-            }
-            if (another == null) {
-                return current;
-            }
-            if (current instanceof ConsumerChain) {
-                return ((ConsumerChain<T>) current).combineWith(another);
-            }
-            ConsumerChain<T> newChain = new ConsumerChain<>();
-            newChain.add(current);
-            newChain.add(another);
-            return newChain;
-        }
-    }
-
-    /**
-     * Holds a list of {@link Runnable}s to flatten out a call chain of them.
-     */
-    static final class RunnableChain extends ArrayList<Runnable> implements Runnable {
-        @Override
-        public void run() {
-            for (Runnable inner : this) {
-                inner.run();
-            }
-        }
-
-        public RunnableChain combineWith(Runnable another) {
-            RunnableChain newChain = new RunnableChain();
-            newChain.addAll(this);
-            newChain.add(another);
-            return newChain;
-        }
-
-        public static Runnable combine(Runnable current, Runnable another) {
-            if (current == null) {
-                return another;
-            }
-            if (another == null) {
-                return current;
-            }
-            if (current instanceof RunnableChain) {
-                return ((RunnableChain) current).combineWith(another);
-            }
-            RunnableChain newChain = new RunnableChain();
-            newChain.add(current);
-            newChain.add(another);
-            return newChain;
         }
     }
 }

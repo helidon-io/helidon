@@ -57,9 +57,9 @@ public class PlainTest {
      * @throws Exception in case of an error
      */
     private static void startServer(int port) throws Exception {
-        webServer = WebServer.create(
-                ServerConfiguration.builder().port(port).build(),
-                Routing.builder().any((req, res) -> {
+        webServer = WebServer.builder()
+                .port(port)
+                .routing(Routing.builder().any((req, res) -> {
                             res.headers().add(Http.Header.TRANSFER_ENCODING, "chunked");
                             req.next();
                        })
@@ -85,9 +85,10 @@ public class PlainTest {
                             res.send("It works! Payload: " + entity);
                        }))
                        .build())
-                             .start()
-                             .toCompletableFuture()
-                             .get(10, TimeUnit.SECONDS);
+                .build()
+                .start()
+                .toCompletableFuture()
+                .get(10, TimeUnit.SECONDS);
 
         LOGGER.info("Started server at: https://localhost:" + webServer.port());
     }

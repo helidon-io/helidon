@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,18 +38,20 @@ import static io.helidon.media.common.ByteChannelBodyWriter.DEFAULT_RETRY_SCHEMA
 public final class FileBodyWriter implements MessageBodyWriter<File> {
 
     /**
-     * Enforces the use of {@link #get()}.
+     * Enforces the use of {@link #create()}.
      */
     private FileBodyWriter() {
     }
 
     @Override
-    public boolean accept(GenericType<?> type, MessageBodyWriterContext context) {
-        return File.class.isAssignableFrom(type.rawType());
+    public PredicateResult accept(GenericType<?> type, MessageBodyWriterContext context) {
+        return PredicateResult.supports(File.class, type);
     }
 
     @Override
-    public Publisher<DataChunk> write(Single<File> content, GenericType<? extends File> type, MessageBodyWriterContext context) {
+    public Publisher<DataChunk> write(Single<? extends File> content,
+                                      GenericType<? extends File> type,
+                                      MessageBodyWriterContext context) {
         return content.flatMap(new FileToChunks(DEFAULT_RETRY_SCHEMA, context));
     }
 
@@ -62,7 +64,7 @@ public final class FileBodyWriter implements MessageBodyWriter<File> {
     }
 
     /**
-     * Implementation of {@link MultiMapper} that converts {@link File} to a
+     * Implementation of {@link Mapper} that converts {@link File} to a
      * publisher of {@link DataChunk}.
      */
     private static final class FileToChunks implements Mapper<File, Publisher<DataChunk>> {

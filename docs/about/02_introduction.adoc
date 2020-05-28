@@ -16,23 +16,22 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Introduction
+= About Helidon
 :description: about Helidon
 :keywords: helidon, java, microservices, microprofile
 
 == A collection of Java libraries
 
-Helidon is a collection of Java libraries for writing microservices.
+Helidon provides an open source, lightweight, fast, reactive, cloud native framework for developing Java microservices. Helidon implements and supports MicroProfile, a baseline platform definition that leverages Java EE and Jakarta EE technologies for microservices and delivers application portability across multiple runtimes. 
 
-There's no need for any specific tooling or deployment model. Simply use your
- favorite tools !
 
-NOTE: Your microservice is a plain Java application. You do not need an
+
+NOTE: Helidon is a collection of Java libraries for writing microservices that run on a fast web core powered by Netty. Your microservices can be plain Java applications. You do not need an
  application server.
-
+ 
 == Cloud-native Java
 
-Helidon libraries interoperate with popular tools from the cloud-native space:
+Helidon libraries interoperate with popular tools from the cloud-native space, so there's no need for any specific tooling or deployment model. Helidon can be used with:
 
 * https://www.docker.com/[Docker]
 * https://kubernetes.io/[Kubernetes]
@@ -43,24 +42,68 @@ Helidon libraries interoperate with popular tools from the cloud-native space:
 TIP: The <<guides/01_overview.adoc#_getting_started,Helidon Quickstart Examples>>
  contain support for Docker and Kubernetes.
 
-== Helidon SE
 
-Helidon SE is the functional programming style provided by all Helidon
- libraries.
+== Understanding the Helidon Frameworks
+Helidon supports two programming models for writing microservices: *Helidon SE* and *Helidon MP*. 
 
-NOTE: Helidon SE gives you full transparency and puts you in control. There is
- no magic!
+SE is designed to be a microframework that supports the reactive programming model while Helidon MP is an Eclipse MicroProfile runtime that allows the Jakarta EE community to run microservices in a portable way. The table below shows to primary differences between Helidon SE and Helidon MP.
 
-<<se/introduction/01_introduction.adoc, About Helidon SE>>
+[width="100%",options="header"]
+|====================
+| Helidon SE |  Helidon MP
+|Helidon SE gives you full transparency and puts you in control.|Helidon MP is built on top of the Helidon libraries and provides platform definition that is familiar to enterprise Java developers. 
+|Microframework model with a very small footprint and limited functionality (~7 MB) | https://projects.eclipse.org/proposals/eclipse-microprofile[Eclipse MicroProfile] implementation; slightly larger footprint than SE (~13 MB) 
+|Functional style is reactive non-blocking   |Declarative style with dependency injection
+|Transparent "no magic" development experience; pure java application development with no annotations and no dependency injections  |Jakarta EE microprofile development experience; all Jakarta components (CDI, JAX-RS, JSON-P/B)
+|Learn more about http://url[Helidon SE]. | Learn more about http://url[Helidon MP].
+|====================
 
-== Helidon MP
+== What's New in Helidon 2.0
+The Helidon 2.0 release contains significant new features, enhancements and fixes. It also contains backward incompatible changes as described below:
 
-Helidon MP is our MicroProfile implementation.
+* *GraalVM native-image support in Helidon MP* +
+Helidon SE already supports GraalVM, but in 2.0 GraalVM native image support will also be available in Helidon MP. +
+<<guides/36_graalnative.adoc,GraalVM Native Images>>
 
-https://microprofile.io[MicroProfile] is a platform definition that is familiar
- to enterprise Java developers. It provides a declarative programming style that
- is portable. It includes popular Java APIs such as `JAX-RS` and `CDI`.
+* *Helidon command line tool* +
+The new CLI will support live reloading. +
+<<need link>>
 
-NOTE: Helidon MP is built on top of the Helidon libraries.
+* *New database client for Helidon SE* +
+This will include support for the MongoDB reactive driver and brings Health Checks, Metrics, and Tracing support to every Helidon API. +
+<<se/dbclient/01_introduction.adoc,DB Client for Helidon SE>>
 
-<<mp/introduction/01_introduction.adoc, About Helidon MP>>
+
+* *Extending MicroProfile Reactive Messaging and Reactive Operators Support* +
+MP Reactive Operators will be included in both frameworks, while MP Reactive Messaging will only be included in Helidon MP. +
+<<need link>>
+
+* *Helidon Web Client* +
+The new reactive web client can integrate with other Helidon SE APIs. +
+<<need link>>
+
+
+* *Additional Websocket support* +
+Based upon the Tyrus implementation, Helidon receives WebSocket API support. +
+http://url[need link]
+
+
+
+* *Support for Java 11 APIs* +
+Helidon will require Java 11 or newer. +
+<<need link to suuported versions>>
+
+
+* *CORS support for MP and SE* +
+Although it is possible for any Helidon application to implement its own support for CORS, there are common tasks (such as processing preflight requests) that can be provided in a Helidon module. +
+http://url[Cross-Origin Resource Sharing (CORS) in Helidon]
+
+
+
+* **Backward incompatible changes** +
+View the https://github.com/oracle/helidon/blob/2.0.0-M1/CHANGELOG.md#backward-incompatible-changes[changelog] for information about potential breaking changes, including package name changes.
+
+
+
+
+

@@ -19,11 +19,11 @@ package io.helidon.webserver;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.CompletionStage;
 import java.util.function.BiConsumer;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
+import io.helidon.common.reactive.Single;
 
 /**
  * The {@link ServerRequest} and {@link ServerResponse} handler.
@@ -77,7 +77,7 @@ public interface Handler extends BiConsumer<ServerRequest, ServerResponse> {
         Objects.requireNonNull(entityType, "Parameter 'publisherType' is null!");
         Objects.requireNonNull(entityHandler, "Parameter 'entityHandler' is null!");
         return (req, res) -> {
-            CompletionStage<? extends T> cs;
+            Single<? extends T> cs;
             Optional<Context> context = Contexts.context();
             try {
                 cs = req.content().as(entityType);

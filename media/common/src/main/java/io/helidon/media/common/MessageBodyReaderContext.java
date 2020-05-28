@@ -21,10 +21,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Publisher;
-import java.util.concurrent.Flow.Subscriber;
-import java.util.concurrent.Flow.Subscription;
 import java.util.function.Predicate;
 
 import io.helidon.common.GenericType;
@@ -152,6 +150,13 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
         if (payload == null) {
             return Single.<T>empty();
         }
+
+        // Flow.Publisher - can only be supported by streaming media
+        if (Flow.Publisher.class.isAssignableFrom(type.rawType())) {
+            throw new IllegalStateException("This method does not support unmarshalling of Flow.Publisher. Please use "
+                                                    + "a stream unmarshalling method.");
+        }
+
         try {
             Publisher<DataChunk> filteredPayload = applyFilters(payload, type);
             if (byte[].class.equals(type.rawType())) {
@@ -184,6 +189,13 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
         if (payload == null) {
             return Single.<T>empty();
         }
+
+        // Flow.Publisher - can only be supported by streaming media
+        if (Flow.Publisher.class.isAssignableFrom(type.rawType())) {
+            throw new IllegalStateException("This method does not support unmarshalling of Flow.Publisher. Please use "
+                                                    + "a stream unmarshalling method.");
+        }
+
         try {
             Publisher<DataChunk> filteredPayload = applyFilters(payload, type);
             MessageBodyReader<T> reader = (MessageBodyReader<T>) readers.get(readerType);
@@ -380,62 +392,17 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
         public <U extends T> Single<U> read(Publisher<DataChunk> publisher, GenericType<U> type,
                 MessageBodyReaderContext context) {
 
-            return new SingleFromCompletionStage(reader.applyAndCast(publisher, (Class<U>) type.rawType()));
+            return Single.from(reader.applyAndCast(publisher, (Class<U>) type.rawType()));
         }
 
         @Override
-        public boolean accept(GenericType<?> type, MessageBodyReaderContext context) {
+        public PredicateResult accept(GenericType<?> type, MessageBodyReaderContext context) {
             if (predicate != null) {
-                return predicate.test(type.rawType());
+                return predicate.test(type.rawType())
+                        ? PredicateResult.SUPPORTED
+                        : PredicateResult.NOT_SUPPORTED;
             }
-            return clazz.isAssignableFrom(type.rawType());
-        }
-    }
-
-    /**
-     * Single from future.
-     * @param <T> item type
-     */
-    private static final class SingleFromCompletionStage<T> implements Single<T> {
-
-        private final CompletionStage<? extends T> future;
-        private Subscriber<? super T> subscriber;
-        private volatile boolean requested;
-
-        SingleFromCompletionStage(CompletionStage<? extends T> future) {
-            this.future = Objects.requireNonNull(future, "future");
-        }
-
-        private void submit(T item) {
-            subscriber.onNext(item);
-            subscriber.onComplete();
-        }
-
-        private <U extends T> U raiseError(Throwable error) {
-            subscriber.onError(error);
-            return null;
-        }
-
-        @Override
-        public void subscribe(Subscriber<? super T> subscriber) {
-            if (this.subscriber != null) {
-                throw new IllegalStateException("Already subscribed to");
-            }
-            this.subscriber = subscriber;
-            subscriber.onSubscribe(new Subscription() {
-                @Override
-                public void request(long n) {
-                    if (n > 0 && !requested) {
-                        future.exceptionally(SingleFromCompletionStage.this::raiseError);
-                        future.thenAccept(SingleFromCompletionStage.this::submit);
-                        requested = true;
-                    }
-                }
-
-                @Override
-                public void cancel() {
-                }
-            });
+            return PredicateResult.supports(clazz, type);
         }
     }
 }

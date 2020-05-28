@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,14 +45,16 @@ public class JsonbBodyWriter implements MessageBodyWriter<Object> {
     }
 
     @Override
-    public boolean accept(GenericType<?> type,
-            MessageBodyWriterContext context) {
+    public PredicateResult accept(GenericType<?> type,
+                                  MessageBodyWriterContext context) {
 
-        return !CharSequence.class.isAssignableFrom(type.rawType());
+        return !CharSequence.class.isAssignableFrom(type.rawType())
+                ? PredicateResult.COMPATIBLE
+                : PredicateResult.NOT_SUPPORTED;
     }
 
     @Override
-    public Publisher<DataChunk> write(Single<Object> content,  GenericType<? extends Object> type,
+    public Publisher<DataChunk> write(Single<? extends Object> content,  GenericType<? extends Object> type,
             MessageBodyWriterContext context) {
 
         MediaType contentType = context.findAccepted(MediaType.JSON_PREDICATE, MediaType.APPLICATION_JSON);

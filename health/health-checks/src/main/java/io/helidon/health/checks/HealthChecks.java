@@ -18,6 +18,7 @@ package io.helidon.health.checks;
 import java.lang.management.ManagementFactory;
 
 import io.helidon.common.HelidonFeatures;
+import io.helidon.common.NativeImageHelper;
 
 import org.eclipse.microprofile.health.HealthCheck;
 
@@ -27,8 +28,6 @@ import org.eclipse.microprofile.health.HealthCheck;
  * @see #healthChecks()
  */
 public final class HealthChecks {
-    private static final boolean IS_GRAAL_VM = Boolean.getBoolean("com.oracle.graalvm.isaot");
-
     static {
         HelidonFeatures.register("Health", "Built-ins");
     }
@@ -75,7 +74,7 @@ public final class HealthChecks {
      * @see io.helidon.health.HealthSupport.Builder#addLiveness(org.eclipse.microprofile.health.HealthCheck...)
      */
     public static HealthCheck[] healthChecks() {
-        if (IS_GRAAL_VM) {
+        if (NativeImageHelper.isNativeImage()) {
             return new HealthCheck[] {
                     //diskSpaceCheck(), // - bug
                     heapMemoryCheck()

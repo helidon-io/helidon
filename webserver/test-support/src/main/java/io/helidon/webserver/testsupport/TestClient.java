@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Flow;
 import java.util.concurrent.TimeUnit;
@@ -268,13 +267,13 @@ public class TestClient {
         }
 
         @Override
-        public CompletionStage<BareResponse> whenHeadersCompleted() {
-            return headersCompletionStage;
+        public Single<BareResponse> whenHeadersCompleted() {
+            return Single.from(headersCompletionStage);
         }
 
         @Override
-        public CompletionStage<BareResponse> whenCompleted() {
-            return completionStage;
+        public Single<BareResponse> whenCompleted() {
+            return Single.from(completionStage);
         }
 
         @Override

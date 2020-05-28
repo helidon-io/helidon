@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * Helper enum with a singleton cancellation indicator and utility methods to perform
  * atomic actions on {@link Flow.Subscription}s.
  */
-enum SubscriptionHelper implements Flow.Subscription {
+public enum SubscriptionHelper implements Flow.Subscription {
     /**
      * The singleton instance indicating a canceled subscription.
      */

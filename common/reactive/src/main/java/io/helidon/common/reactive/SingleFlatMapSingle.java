@@ -27,7 +27,7 @@ import java.util.function.Function;
  * @param <T> the upstream value type
  * @param <R> the result value type
  */
-final class SingleFlatMapSingle<T, R> implements Single<R> {
+final class SingleFlatMapSingle<T, R> extends CompletionSingle<R> {
 
     private final Single<T> source;
 

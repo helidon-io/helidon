@@ -37,6 +37,8 @@ import io.helidon.common.http.DataChunk;
 public class DataChunkInputStream extends InputStream {
     private static final Logger LOGGER = Logger.getLogger(DataChunkInputStream.class.getName());
 
+    private final String originalThreadID;
+    private final boolean validate;
     private final Flow.Publisher<DataChunk> originalPublisher;
     private CompletableFuture<DataChunk> current = new CompletableFuture<>();
     private CompletableFuture<DataChunk> next = current;
@@ -52,12 +54,26 @@ public class DataChunkInputStream extends InputStream {
     private final AtomicBoolean subscribed = new AtomicBoolean(false);
 
     /**
-     * Stores publisher for later subscription.
+     * Stores publisher for later subscription. Disables executing thread validation.
      *
      * @param originalPublisher The original publisher.
      */
     public DataChunkInputStream(Flow.Publisher<DataChunk> originalPublisher) {
+        this(originalPublisher, false);
+    }
+
+    /**
+     * Stores publisher for later subscription and sets if executing thread should be validated.
+     * If validation is enabled, it asserts if the execution thread is the same as the thread which created this instance and
+     * throws an {@link IllegalStateException} if it does.
+     *
+     * @param originalPublisher The original publisher.
+     * @param validate          executing thread validation
+     */
+    public DataChunkInputStream(Flow.Publisher<DataChunk> originalPublisher, boolean validate) {
         this.originalPublisher = originalPublisher;
+        this.originalThreadID = getCurrentThreadIdent();
+        this.validate = validate;
     }
 
     /**
@@ -101,6 +117,7 @@ public class DataChunkInputStream extends InputStream {
 
     @Override
     public int read(byte[] buf, int off, int len) throws IOException {
+        validate();
         if (subscribed.compareAndSet(false, true)) {
             originalPublisher.subscribe(new DataChunkSubscriber());       // subscribe for first time
         }
@@ -149,6 +166,17 @@ public class DataChunkInputStream extends InputStream {
         }
     }
 
+    private String getCurrentThreadIdent() {
+        Thread thread = Thread.currentThread();
+        return thread.getName() + ":" + thread.getId();
+    }
+
+    private void validate() {
+        if (validate && originalThreadID.equals(getCurrentThreadIdent())) {
+            throw new IllegalStateException("DataChunkInputStream needs to be handled in separate thread to prevent deadlock.");
+        }
+    }
+
     // -- DataChunkSubscriber -------------------------------------------------
     //
     // Following methods are executed by Netty IO threads (except first chunk)
@@ -165,9 +193,14 @@ public class DataChunkInputStream extends InputStream {
         @Override
         public void onNext(DataChunk item) {
             LOGGER.finest(() -> "Processing chunk: " + item.id());
-            CompletableFuture<DataChunk> prev = next;
-            next = new CompletableFuture<>();
-            prev.complete(item);
+            if (item.data().remaining() > 0) {
+                CompletableFuture<DataChunk> prev = next;
+                next = new CompletableFuture<>();
+                prev.complete(item);
+            } else {
+                releaseChunk(item, null);
+                subscription.request(1);
+            }
         }
 
         @Override

@@ -32,5 +32,5 @@ module io.helidon.dbclient {
 
     uses io.helidon.dbclient.spi.DbClientProvider;
     uses io.helidon.dbclient.spi.DbMapperProvider;
-    uses io.helidon.dbclient.spi.DbInterceptorProvider;
+    uses io.helidon.dbclient.spi.DbClientServiceProvider;
 }

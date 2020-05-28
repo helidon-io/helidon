@@ -21,7 +21,6 @@ module io.helidon.metrics {
     requires java.logging;
 
     requires io.helidon.common;
-    requires io.helidon.common.metrics;
     requires io.helidon.webserver.cors;
 
     requires transitive microprofile.metrics.api;
@@ -31,9 +30,6 @@ module io.helidon.metrics {
     requires java.json;
     requires io.helidon.config.mp;
     requires microprofile.config.api;
-
-    provides io.helidon.common.metrics.InternalBridge
-            with io.helidon.metrics.InternalBridgeImpl;
 
     exports io.helidon.metrics;
 }

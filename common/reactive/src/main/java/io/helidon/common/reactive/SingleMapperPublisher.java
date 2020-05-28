@@ -25,7 +25,7 @@ import io.helidon.common.mapper.Mapper;
  * @param <T> the upstream value type
  * @param <R> the result value type
  */
-final class SingleMapperPublisher<T, R> implements Single<R> {
+final class SingleMapperPublisher<T, R> extends CompletionSingle<R> {
 
     private final Flow.Publisher<T> source;
 

@@ -16,19 +16,18 @@
 
 package io.helidon.webserver;
 
-import java.util.function.Function;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.time.Duration;
-import java.time.temporal.ChronoUnit;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Publisher;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.function.Function;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
@@ -49,7 +48,7 @@ import static org.hamcrest.beans.HasPropertyWithValue.hasProperty;
 import static org.hamcrest.core.AllOf.allOf;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.StringContains.containsString;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -131,7 +130,7 @@ public class ResponseTest {
     private static <T> void marshall(Response rsp, Single<T> entity, Class<T> clazz)
             throws InterruptedException, ExecutionException, TimeoutException {
 
-        Multi.from(rsp.writerContext().marshall(entity, GenericType.create(clazz), null))
+        Multi.from(rsp.writerContext().marshall(entity, GenericType.create(clazz)))
                 .collectList()
                 .get(10, TimeUnit.SECONDS);
     }
@@ -141,20 +140,15 @@ public class ResponseTest {
         StringBuilder sb = new StringBuilder();
         Response response = new ResponseImpl(new NoOpBareResponse(null));
         marshall(response, "foo".getBytes()); // default
-        try {
-            marshall(response, "foo");
-            fail("Should not be called");
-        } catch(ExecutionException e) {
-            assertThat(e.getCause(), allOf(instanceOf(IllegalStateException.class),
+
+        IllegalStateException e = assertThrows(IllegalStateException.class, () -> marshall(response, "foo"));
+        assertThat(e.getCause(), allOf(instanceOf(IllegalStateException.class),
+                                       hasProperty("message", containsString("No writer found for type"))));
+
+        e = assertThrows(IllegalStateException.class, () -> marshall(response, Duration.of(1, ChronoUnit.MINUTES)));
+        assertThat(e.getCause(), allOf(instanceOf(IllegalStateException.class),
                     hasProperty("message", containsString("No writer found for type"))));
-        }
-        try {
-            marshall(response, Duration.of(1, ChronoUnit.MINUTES));
-            fail("Should not be called");
-        } catch(ExecutionException e) {
-            assertThat(e.getCause(), allOf(instanceOf(IllegalStateException.class),
-                    hasProperty("message", containsString("No writer found for type"))));
-        }
+
         response.registerWriter(CharSequence.class, o -> {
             sb.append("1");
             return Single.empty();
@@ -288,13 +282,13 @@ public class ResponseTest {
         }
 
         @Override
-        public CompletionStage<BareResponse> whenCompleted() {
-            return closeFuture;
+        public Single<BareResponse> whenCompleted() {
+            return Single.from(closeFuture);
         }
 
         @Override
-        public CompletionStage<BareResponse> whenHeadersCompleted() {
-            return closeFuture;
+        public Single<BareResponse> whenHeadersCompleted() {
+            return Single.from(closeFuture);
         }
 
         @Override

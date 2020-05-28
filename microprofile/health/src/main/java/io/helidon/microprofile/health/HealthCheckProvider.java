@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,15 +29,6 @@ import org.eclipse.microprofile.health.HealthCheck;
  * {@link HealthCheck} instances are added to the health endpoint.
  */
 public interface HealthCheckProvider {
-    /**
-     * Return the provided {@link org.eclipse.microprofile.health.HealthCheck}s.
-     *
-     * @return the {@link org.eclipse.microprofile.health.HealthCheck}s
-     * @deprecated in the new versions of MP Health, we use either {@link #readinessChecks()} or {@link #livenessChecks()}
-     */
-    @Deprecated
-    List<HealthCheck> healthChecks();
-
     /**
      * Return the provided readiness {@link org.eclipse.microprofile.health.HealthCheck}s.
      *

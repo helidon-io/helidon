@@ -15,6 +15,7 @@
  */
 package io.helidon.microprofile.server;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -40,6 +41,7 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
+import javax.ws.rs.ext.Provider;
 
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
@@ -65,6 +67,7 @@ public class JaxRsCdiExtension implements Extension {
 
     private final Set<Class<? extends Application>> applications = new LinkedHashSet<>();
     private final Set<Class<?>> resources = new HashSet<>();
+    private final Set<Class<?>> providers = new HashSet<>();
     private final AtomicBoolean setInStone = new AtomicBoolean(false);
 
     private void collectApplications(@Observes ProcessAnnotatedType<? extends Application> applicationType) {
@@ -79,6 +82,18 @@ public class JaxRsCdiExtension implements Extension {
         }
         LOGGER.finest(() -> "Discovered resource class " + resourceClass.getName());
         resources.add(resourceClass);
+    }
+
+    private void collectProviderClasses(@Observes @WithAnnotations(Provider.class) ProcessAnnotatedType<?> providerType) {
+        Class<?> providerClass = providerType.getAnnotatedType().getJavaClass();
+        if (providerClass.isInterface()) {
+            // we are only interested in classes
+            LOGGER.finest(() -> "Discovered @Provider interface " + providerClass
+                    .getName() + ", ignored as we only support classes");
+            return;
+        }
+        LOGGER.finest(() -> "Discovered @Provider class " + providerClass.getName());
+        providers.add(providerClass);
     }
 
     // once application scoped starts, we do not allow modification of applications
@@ -101,22 +116,16 @@ public class JaxRsCdiExtension implements Extension {
             throw new IllegalStateException("Applications are not yet fixed. This method is only available in "
                                                     + "@Initialized(ApplicationScoped.class) event, before server is started");
         }
+
+        // set of resource and provider classes that were discovered
+        Set<Class<?>> allClasses = new HashSet<>();
+        allClasses.addAll(resources);
+        allClasses.addAll(providers);
+
         if (applications.isEmpty() && applicationMetas.isEmpty()) {
             // create a synthetic application from all resource classes
-            // the classes set must be created before the lambda, as resources are cleared later on
             if (!resources.isEmpty()) {
-                Set<Class<?>> classes = new HashSet<>(resources);
-                applicationMetas.add(JaxRsApplication.builder()
-                                             .synthetic(true)
-                                             .applicationClass(Application.class)
-                                             .config(ResourceConfig.forApplication(new Application() {
-                                                 @Override
-                                                 public Set<Class<?>> getClasses() {
-                                                     return classes;
-                                                 }
-                                             }))
-                                             .appName("SyntheticApplication")
-                                             .build());
+                addSyntheticApp(allClasses);
             }
         }
 
@@ -125,7 +134,7 @@ public class JaxRsCdiExtension implements Extension {
                                         .stream()
                                         .map(appClass -> JaxRsApplication.builder()
                                                 .applicationClass(appClass)
-                                                .config(ResourceConfig.forApplicationClass(appClass, resources))
+                                                .config(ResourceConfig.forApplicationClass(appClass, allClasses))
                                                 .build())
                                         .collect(Collectors.toList()));
 
@@ -243,16 +252,23 @@ public class JaxRsCdiExtension implements Extension {
      */
     public void addSyntheticApplication(List<Class<?>> resourceClasses) throws IllegalStateException {
         mutateApps();
+        addSyntheticApp(resourceClasses);
+    }
+
+    // set-up synthetic application from resource classes
+    private void addSyntheticApp(Collection<Class<?>> resourceClasses) {
+        // the classes set must be created before the lambda, as the incoming collection may be mutable
+        Set<Class<?>> classes = Set.copyOf(resourceClasses);
         this.applicationMetas.add(JaxRsApplication.builder()
                                           .synthetic(true)
                                           .applicationClass(Application.class)
                                           .config(ResourceConfig.forApplication(new Application() {
                                               @Override
                                               public Set<Class<?>> getClasses() {
-                                                  return new LinkedHashSet<>(resourceClasses);
+                                                  return classes;
                                               }
                                           }))
-                                          .appName("SyntheticApplication")
+                                          .appName("HelidonMP")
                                           .build());
     }
 

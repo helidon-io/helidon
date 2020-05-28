@@ -16,6 +16,10 @@
 
 package io.helidon.media.jsonb.common;
 
+import javax.json.bind.Jsonb;
+import javax.json.bind.JsonbBuilder;
+import javax.json.bind.JsonbConfig;
+
 import io.helidon.config.Config;
 import io.helidon.media.common.MediaSupport;
 import io.helidon.media.common.spi.MediaSupportProvider;
@@ -29,11 +33,14 @@ public class JsonbProvider implements MediaSupportProvider {
 
     @Override
     public MediaSupport create(Config config) {
-        return JsonbSupport.create();
+        JsonbConfig jsonbConfig = new JsonbConfig();
+        config.asMap().ifPresent(map -> map.forEach(jsonbConfig::setProperty));
+        Jsonb jsonb = JsonbBuilder.create(jsonbConfig);
+        return JsonbSupport.create(jsonb);
     }
 
     @Override
-    public String type() {
+    public String configKey() {
         return JSON_B;
     }
 }

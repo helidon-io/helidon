@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,6 @@ import io.helidon.microprofile.server.RoutingName;
 import io.helidon.microprofile.server.RoutingPath;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.tyrus.TyrusSupport;
 
 import static javax.interceptor.Interceptor.Priority.PLATFORM_AFTER;
@@ -64,7 +63,7 @@ public class WebSocketCdiExtension implements Extension {
 
     private ServerCdiExtension serverCdiExtension;
 
-    private WebSocketApplication.Builder appBuilder = WebSocketApplication.builder();
+    private final WebSocketApplication.Builder appBuilder = WebSocketApplication.builder();
 
     private void prepareRuntime(@Observes @RuntimeStart Config config) {
         this.config = config;
@@ -73,7 +72,7 @@ public class WebSocketCdiExtension implements Extension {
     private void startServer(@Observes @Priority(PLATFORM_AFTER + 99) @Initialized(ApplicationScoped.class) Object event,
                              BeanManager beanManager) {
         serverCdiExtension = beanManager.getExtension(ServerCdiExtension.class);
-        registerWebSockets(beanManager, serverCdiExtension.serverConfigBuilder().build());
+        registerWebSockets();
     }
 
     /**
@@ -125,7 +124,7 @@ public class WebSocketCdiExtension implements Extension {
         return appBuilder.build();
     }
 
-    private void registerWebSockets(BeanManager beanManager, ServerConfiguration serverConfig) {
+    private void registerWebSockets() {
         try {
             WebSocketApplication app = toWebSocketApplication();
 
@@ -167,7 +166,7 @@ public class WebSocketCdiExtension implements Extension {
                 endpointConfigs.forEach(builder::register);
 
                 // Create routing builder
-                routing = serverCdiExtension.routingBuilder(namedRouting, routingNameRequired, serverConfig, c.getName());
+                routing = serverCdiExtension.routingBuilder(namedRouting, routingNameRequired, c.getName());
             } else {
                 // Direct registration without calling application class
                 app.annotatedEndpoints().forEach(builder::register);

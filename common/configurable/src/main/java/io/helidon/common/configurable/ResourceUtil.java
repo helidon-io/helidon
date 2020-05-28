@@ -156,8 +156,10 @@ final class ResourceUtil {
     static void logPrefixed(Config config, String prefix, String type) {
         String key = config.key().toString();
         if (LOGGED_RESOURCES.add(key + "." + prefix)) {
-            LOGGER.warning("Configuration for resource on key '" + key + "." + prefix + "-" + type + "' uses old prefixed"
-                                   + " approach. Please remove the prefix and use '" + key + ".resource." + type + "'");
+            LOGGER.warning("Configuration for resource on key '"
+                                   + key + "." + prefix + "-" + type
+                                   + "' uses old prefixed approach. Please remove the prefix and use '"
+                                   + key + "." + prefix + ".resource." + type + "'");
         }
     }
 }

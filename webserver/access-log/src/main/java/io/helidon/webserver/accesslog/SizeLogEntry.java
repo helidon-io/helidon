@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package io.helidon.webserver.accesslog;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.LongAdder;
 
-import io.helidon.common.http.ContextualRegistry;
+import io.helidon.common.context.Context;
 import io.helidon.common.http.DataChunk;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
@@ -52,7 +52,7 @@ public final class SizeLogEntry extends AbstractLogEntry {
 
     @Override
     public void accept(ServerRequest req, ServerResponse res) {
-        ContextualRegistry context = req.context();
+        Context context = req.context();
         res.registerFilter(originalPublisher -> new ByteCountingPublisher(originalPublisher, context));
     }
 
@@ -84,9 +84,9 @@ public final class SizeLogEntry extends AbstractLogEntry {
 
     private static final class ByteCountingPublisher implements Flow.Publisher<DataChunk> {
         private final Flow.Publisher<DataChunk> originalPublisher;
-        private final ContextualRegistry context;
+        private final Context context;
 
-        private ByteCountingPublisher(Flow.Publisher<DataChunk> originalPublisher, ContextualRegistry context) {
+        private ByteCountingPublisher(Flow.Publisher<DataChunk> originalPublisher, Context context) {
             this.originalPublisher = originalPublisher;
             this.context = context;
         }
@@ -99,10 +99,10 @@ public final class SizeLogEntry extends AbstractLogEntry {
 
     private static final class ByteCountingSubscriber implements Flow.Subscriber<DataChunk> {
         private final Flow.Subscriber<? super DataChunk> subscriber;
-        private final ContextualRegistry context;
+        private final Context context;
         private final LongAdder sizeAdder = new LongAdder();
 
-        private ByteCountingSubscriber(Flow.Subscriber<? super DataChunk> subscriber, ContextualRegistry context) {
+        private ByteCountingSubscriber(Flow.Subscriber<? super DataChunk> subscriber, Context context) {
             this.subscriber = subscriber;
             this.context = context;
         }

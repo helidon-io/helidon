@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,9 +53,9 @@ public class TransferEncodingTest {
      * @throws Exception in case of an error
      */
     private static void startServer(int port) throws Exception {
-        webServer = WebServer.create(
-                ServerConfiguration.builder().port(port).build(),
-                Routing.builder()
+        webServer = WebServer.builder()
+                .port(port)
+                .routing(Routing.builder()
                         .get("/length", (req, res) -> {
                             String payload = "It works!";
                             res.headers().add("content-length", String.valueOf(payload.length()));
@@ -71,6 +71,7 @@ public class TransferEncodingTest {
                             res.send(payload);
                         })
                         .build())
+                .build()
                 .start()
                 .toCompletableFuture()
                 .get(10, TimeUnit.SECONDS);

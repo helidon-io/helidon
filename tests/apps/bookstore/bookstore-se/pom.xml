@@ -35,8 +35,8 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.bundles</groupId>
-            <artifactId>helidon-bundles-webserver</artifactId>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
@@ -55,12 +55,16 @@
             <artifactId>helidon-metrics</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.media.jsonp</groupId>
+            <artifactId>helidon-media-jsonp-common</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.media.jsonb</groupId>
-            <artifactId>helidon-media-jsonb-server</artifactId>
+            <artifactId>helidon-media-jsonb-common</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.media.jackson</groupId>
-            <artifactId>helidon-media-jackson-server</artifactId>
+            <artifactId>helidon-media-jackson-common</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.tests.apps.bookstore.common</groupId>

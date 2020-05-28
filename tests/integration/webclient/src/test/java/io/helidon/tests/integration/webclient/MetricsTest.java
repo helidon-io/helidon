@@ -15,9 +15,8 @@
  */
 package io.helidon.tests.integration.webclient;
 
-import java.util.concurrent.CompletableFuture;
-
 import io.helidon.common.http.Http;
+import io.helidon.common.reactive.Single;
 import io.helidon.metrics.RegistryFactory;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
@@ -161,7 +160,7 @@ public class MetricsTest extends TestParent {
                         assertThat(progressGet.getCount(), is(1L));
                         assertThat(progressPut.getCount(), is(0L));
                     });
-            return CompletableFuture.completedFuture(request);
+            return Single.just(request);
         };
 
         WebClient webClient = createNewClient(inProgressAll, inProgressPut, inProgressGet, clientService);

@@ -27,14 +27,14 @@ import io.helidon.common.reactive.Single;
 public final class StringBodyReader implements MessageBodyReader<String> {
 
     /**
-     * Private to enforce the use of {@link #get()}.
+     * Private to enforce the use of {@link #create()}.
      */
     private StringBodyReader() {
     }
 
     @Override
-    public boolean accept(GenericType<?> type, MessageBodyReaderContext context) {
-        return String.class.isAssignableFrom(type.rawType());
+    public PredicateResult accept(GenericType<?> type, MessageBodyReaderContext context) {
+        return PredicateResult.supports(String.class, type);
     }
 
     @Override

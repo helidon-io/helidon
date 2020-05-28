@@ -41,10 +41,6 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common-metrics</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.metrics</groupId>
             <artifactId>helidon-metrics</artifactId>
             <scope>provided</scope>

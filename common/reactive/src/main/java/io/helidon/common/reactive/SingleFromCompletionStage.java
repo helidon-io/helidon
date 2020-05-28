@@ -15,6 +15,7 @@
  */
 package io.helidon.common.reactive;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
 
@@ -22,7 +23,7 @@ import java.util.concurrent.Flow;
  * Signal the outcome of the give CompletionStage.
  * @param <T> the element type of the source and result
  */
-final class SingleFromCompletionStage<T> implements Single<T> {
+final class SingleFromCompletionStage<T> extends CompletionSingle<T> {
 
     private final CompletionStage<T> source;
 
@@ -36,5 +37,12 @@ final class SingleFromCompletionStage<T> implements Single<T> {
     @Override
     public void subscribe(Flow.Subscriber<? super T> subscriber) {
         MultiFromCompletionStage.subscribe(subscriber, source, nullMeansEmpty);
+    }
+
+    @Override
+    protected CompletableFuture<T> toNullableStage() {
+        SingleToFuture<T> subscriber = new SingleToFuture<>(true);
+        this.subscribe(subscriber);
+        return subscriber;
     }
 }

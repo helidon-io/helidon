@@ -45,6 +45,7 @@ pages:
         - "**/*.adoc"
       excludes:
         - "se/grpc/09_marshalling.adoc"
+        - "common/**"
 backend:
     name: "vuetify"
     homePage: "about/01_overview.adoc"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,11 @@ package io.helidon.dbclient.jdbc;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CompletionStage;
 
 import io.helidon.common.reactive.Single;
 import io.helidon.dbclient.DbRow;
 import io.helidon.dbclient.DbStatementGet;
+import io.helidon.dbclient.common.DbStatementContext;
 
 /**
  * A JDBC get implementation.
@@ -34,7 +34,7 @@ class JdbcStatementGet implements DbStatementGet {
     private final JdbcStatementQuery query;
 
     JdbcStatementGet(JdbcExecuteContext executeContext,
-                     JdbcStatementContext statementContext) {
+                     DbStatementContext statementContext) {
 
         this.query = new JdbcStatementQuery(executeContext,
                                             statementContext);
@@ -77,10 +77,8 @@ class JdbcStatementGet implements DbStatementGet {
     }
 
     @Override
-    public CompletionStage<Optional<DbRow>> execute() {
-        return query.execute()
-                .thenApply(dbRows -> Single.from(dbRows.publisher()))
-                .thenCompose(Single::toOptionalStage);
+    public Single<Optional<DbRow>> execute() {
+        return Single.from(query.execute())
+                .toOptionalSingle();
     }
-
 }

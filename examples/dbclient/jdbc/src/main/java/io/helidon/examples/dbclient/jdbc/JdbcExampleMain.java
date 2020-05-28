@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,14 +22,12 @@ import java.util.logging.LogManager;
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.health.DbClientHealthCheck;
-import io.helidon.dbclient.webserver.jsonp.DbResultSupport;
 import io.helidon.health.HealthSupport;
-import io.helidon.media.jsonb.server.JsonBindingSupport;
-import io.helidon.media.jsonp.server.JsonSupport;
+import io.helidon.media.jsonb.common.JsonbSupport;
+import io.helidon.media.jsonp.common.JsonpSupport;
 import io.helidon.metrics.MetricsSupport;
 import io.helidon.tracing.TracerBuilder;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 
 /**
@@ -68,16 +66,15 @@ public final class JdbcExampleMain {
         // By default this will pick up application.yaml from the classpath
         Config config = Config.create();
 
-        // Get webserver config from the "server" section of application.yaml
-        ServerConfiguration serverConfig =
-                ServerConfiguration.builder(config.get("server"))
-                        .tracer(TracerBuilder.create(config.get("tracing")).build())
-                        .build();
-
         // Prepare routing for the server
-        Routing routing = createRouting(config);
-
-        WebServer server = WebServer.create(serverConfig, routing);
+        WebServer server = WebServer.builder()
+                .routing(createRouting(config))
+                // Get webserver config from the "server" section of application.yaml
+                .config(config.get("server"))
+                .tracer(TracerBuilder.create(config.get("tracing")))
+                .addMediaSupport(JsonpSupport.create())
+                .addMediaSupport(JsonbSupport.create())
+                .build();
 
         // Start the server and print some info.
         server.start().thenAccept(ws -> {
@@ -86,8 +83,7 @@ public final class JdbcExampleMain {
         });
 
         // Server threads are not daemon. NO need to block. Just react.
-        server.whenShutdown().thenRun(()
-                                              -> System.out.println("WEB server is DOWN. Good bye!"));
+        server.whenShutdown().thenRun(() -> System.out.println("WEB server is DOWN. Good bye!"));
 
         return server;
     }
@@ -101,7 +97,7 @@ public final class JdbcExampleMain {
     private static Routing createRouting(Config config) {
         Config dbConfig = config.get("db");
 
-        // Interceptors are added through a service loader - see mongoDB example for explicit interceptors
+        // Client services are added through a service loader - see mongoDB example for explicit services
         DbClient dbClient = DbClient.builder(dbConfig)
                 .build();
 
@@ -110,9 +106,6 @@ public final class JdbcExampleMain {
                 .build();
 
         return Routing.builder()
-                .register(JsonSupport.create())
-                .register(JsonBindingSupport.create())
-                .register(DbResultSupport.create())
                 .register(health)                   // Health at "/health"
                 .register(MetricsSupport.create())  // Metrics at "/metrics"
                 .register("/db", new PokemonService(dbClient))

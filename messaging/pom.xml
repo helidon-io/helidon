@@ -26,12 +26,14 @@
         <artifactId>helidon-project</artifactId>
         <version>2.0.0-SNAPSHOT</version>
     </parent>
-    <packaging>pom</packaging>
     <groupId>io.helidon.messaging</groupId>
     <artifactId>helidon-messaging-project</artifactId>
-    <name>Helidon Messaging</name>
+    <name>Helidon Messaging Project</name>
+
+    <packaging>pom</packaging>
 
     <modules>
-        <module>connectors</module>
+        <module>messaging</module>
+        <module>kafka</module>
     </modules>
 </project>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package io.helidon.grpc.metrics;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -25,12 +24,11 @@ import java.util.concurrent.TimeUnit;
 import javax.annotation.Priority;
 
 import io.helidon.common.HelidonFeatures;
-import io.helidon.common.metrics.InternalBridge;
-import io.helidon.common.metrics.InternalBridge.Metadata.MetadataBuilder;
 import io.helidon.grpc.core.GrpcHelper;
 import io.helidon.grpc.core.InterceptorPriorities;
 import io.helidon.grpc.server.MethodDescriptor;
 import io.helidon.grpc.server.ServiceDescriptor;
+import io.helidon.metrics.RegistryFactory;
 
 import io.grpc.Context;
 import io.grpc.ForwardingServerCall;
@@ -41,9 +39,11 @@ import io.grpc.ServerInterceptor;
 import io.grpc.Status;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Histogram;
+import org.eclipse.microprofile.metrics.MetadataBuilder;
 import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
+import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
 
 /**
@@ -61,14 +61,14 @@ public class GrpcMetrics
     /**
      * The registry of vendor metrics.
      */
-    private static final io.helidon.common.metrics.InternalBridge.MetricRegistry VENDOR_REGISTRY =
-            InternalBridge.INSTANCE.getRegistryFactory().getBridgeRegistry(MetricRegistry.Type.VENDOR);
+    private static final MetricRegistry VENDOR_REGISTRY =
+            RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.VENDOR);
 
     /**
      * The registry of application metrics.
      */
-    private static final io.helidon.common.metrics.InternalBridge.MetricRegistry APP_REGISTRY =
-            InternalBridge.INSTANCE.getRegistryFactory().getBridgeRegistry(MetricRegistry.Type.APPLICATION);
+    private static final MetricRegistry APP_REGISTRY =
+            RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.APPLICATION);
 
     /**
      * The context key name to use to obtain rules to use when applying metrics.
@@ -443,6 +443,9 @@ public class GrpcMetrics
      */
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     static class MetricsRules {
+
+        private static final Tag[] EMPTY_TAGS = new Tag[0];
+
         /**
          * The metric type.
          */
@@ -518,17 +521,18 @@ public class GrpcMetrics
          * @param method the method name
          * @return  the metrics metadata
          */
-        io.helidon.common.metrics.InternalBridge.Metadata metadata(ServiceDescriptor service, String method) {
+        org.eclipse.microprofile.metrics.Metadata metadata(ServiceDescriptor service, String method) {
             String name = nameFunction.orElse(this::defaultName).createName(service, method, type);
-            MetadataBuilder builder = InternalBridge.newMetadataBuilder().withName(name).withType(type);
+            MetadataBuilder builder = org.eclipse.microprofile.metrics.Metadata.builder()
+                    .withName(name)
+                    .withType(type)
+                    .reusable(this.reusable);
 
             this.description.ifPresent(builder::withDescription);
             this.units.ifPresent(builder::withUnit);
 
             String displayName = this.displayName;
             builder.withDisplayName(displayName == null ? name : displayName);
-
-            builder = this.reusable ? builder.reusable() : builder.notReusable();
 
             return builder.build();
         }
@@ -573,8 +577,12 @@ public class GrpcMetrics
             return rules;
         }
 
-        private Map<String, String> toTags() {
-            return tags.isPresent() ? tags.get() : Collections.emptyMap();
+        private Tag[] toTags() {
+            return tags.isPresent()
+                    ? tags.get().entrySet().stream()
+                        .map(entry -> new Tag(entry.getKey(), entry.getValue()))
+                        .toArray(Tag[]::new)
+                    : EMPTY_TAGS;
         }
     }
 }

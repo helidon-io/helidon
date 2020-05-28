@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,23 +23,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
+import java.util.logging.Logger;
 
 import javax.net.ssl.SSLContext;
 
 import io.helidon.common.context.Context;
-import io.helidon.common.http.ContextualRegistry;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
+import io.helidon.config.DeprecatedConfig;
 
 import io.opentracing.Tracer;
 import io.opentracing.util.GlobalTracer;
 
 /**
- * Immutable {@link WebServer} configuration.
- * <p>
- * Use {@link #builder()} to compose new instance.
+ * {@link WebServer} configuration.
  */
 public interface ServerConfiguration extends SocketConfiguration {
 
@@ -47,9 +47,12 @@ public interface ServerConfiguration extends SocketConfiguration {
      * The default server socket configuration name. All the default server socket
      * configuration (e.g., {@link #port()} or {@link #backlog()}) is accessible through
      * {@link #socket(String)} or {@link #sockets()} with this
-     * {@link #DEFAULT_SOCKET_NAME default socket name}.
+     * {@link io.helidon.webserver.WebServer#DEFAULT_SOCKET_NAME default socket name}.
+     *
+     * @deprecated since 2.0.0, please use {@link WebServer#DEFAULT_SOCKET_NAME}
      */
-    String DEFAULT_SOCKET_NAME = "@default";
+    @Deprecated
+    String DEFAULT_SOCKET_NAME = WebServer.DEFAULT_SOCKET_NAME;
 
     /**
      * Returns the count of threads in the pool used to process HTTP requests.
@@ -144,9 +147,25 @@ public interface ServerConfiguration extends SocketConfiguration {
      * @param name the name of the additional server socket
      * @return an additional named server socket configuration or {@code null} if there is no such
      * named server socket
+     * @deprecated since 2.0.0, please use {@link #namedSocket(String)} instead
      */
+    @Deprecated
     default SocketConfiguration socket(String name) {
-        return Optional.ofNullable(sockets()).map(map -> map.get(name)).orElse(null);
+        return namedSocket(name).orElse(null);
+    }
+
+    /**
+     * A socket configuration of an additional named server socket.
+     * <p>
+     * An additional named server socket may have a dedicated {@link Routing} configured
+     * through {@link io.helidon.webserver.WebServer.Builder#addNamedRouting(String, Routing)}.
+     *
+     * @param name the name of the additional server socket
+     * @return an additional named server socket configuration or {@code empty} if there is no such
+     * named server socket configured
+     */
+    default Optional<SocketConfiguration> namedSocket(String name) {
+        return Optional.ofNullable(sockets().get(name));
     }
 
     /**
@@ -157,7 +176,7 @@ public interface ServerConfiguration extends SocketConfiguration {
      * An additional named server socket may have a dedicated {@link Routing} configured
      * through {@link io.helidon.webserver.WebServer.Builder#addNamedRouting(String, Routing)}.
      *
-     * @return a map of all the configured server sockets
+     * @return a map of all the configured server sockets, never null
      */
     Map<String, SocketConfiguration> sockets();
 
@@ -212,7 +231,10 @@ public interface ServerConfiguration extends SocketConfiguration {
      * Creates new instance of a {@link Builder server configuration builder}.
      *
      * @return a new builder instance
+     *
+     * @deprecated since 2.0.0 - please use {@link io.helidon.webserver.WebServer#builder()} instead
      */
+    @Deprecated
     static Builder builder() {
         return new Builder();
     }
@@ -222,22 +244,31 @@ public interface ServerConfiguration extends SocketConfiguration {
      *
      * @param config the externalized configuration
      * @return a new builder instance
+     * @deprecated since 2.0.0 - please use {@link io.helidon.webserver.WebServer#builder()}, then
+     * {@link WebServer.Builder#config(io.helidon.config.Config)}, or
+     * {@link io.helidon.webserver.WebServer#create(Routing, io.helidon.config.Config)}
      */
+    @Deprecated
     static Builder builder(Config config) {
         return new Builder().config(config);
     }
 
     /**
      * A {@link ServerConfiguration} builder.
+     *
+     * @deprecated since 2.0.0 - use {@link io.helidon.webserver.WebServer.Builder} instead
      */
-    final class Builder implements io.helidon.common.Builder<ServerConfiguration> {
+    @Deprecated
+    final class Builder implements SocketConfiguration.SocketConfigurationBuilder<Builder>,
+                                   io.helidon.common.Builder<ServerConfiguration> {
+
         private static final AtomicInteger WEBSERVER_COUNTER = new AtomicInteger(1);
         private final SocketConfiguration.Builder defaultSocketBuilder = SocketConfiguration.builder();
         private final Map<String, SocketConfiguration> sockets = new HashMap<>();
         private int workers;
         private Tracer tracer;
         private ExperimentalConfiguration experimental;
-        private ContextualRegistry context;
+        private Context context;
         private boolean printFeatureDetails;
 
         private Builder() {
@@ -342,7 +373,10 @@ public interface ServerConfiguration extends SocketConfiguration {
          * @param port        the port to bind; if {@code 0} or less, any available ephemeral port will be used
          * @param bindAddress the address to bind; if {@code null}, all local addresses will be bound
          * @return an updated builder
+         *
+         * @deprecated since 2.0.0, please use {@link #addSocket(String, SocketConfiguration)} instead
          */
+        @Deprecated
         public Builder addSocket(String name, int port, InetAddress bindAddress) {
             Objects.requireNonNull(name, "Parameter 'name' must not be null!");
             return addSocket(name, SocketConfiguration.builder()
@@ -363,7 +397,7 @@ public interface ServerConfiguration extends SocketConfiguration {
          */
         public Builder addSocket(String name, SocketConfiguration socketConfiguration) {
             Objects.requireNonNull(name, "Parameter 'name' must not be null!");
-            this.sockets.put(name, socketConfiguration != null ? socketConfiguration : SocketConfiguration.DEFAULT);
+            this.sockets.put(name, socketConfiguration);
             return this;
         }
 
@@ -386,7 +420,7 @@ public interface ServerConfiguration extends SocketConfiguration {
         }
 
         /**
-         * Sets a count of threads in pool used to tryProcess HTTP requests.
+         * Sets a count of threads in pool used to process HTTP requests.
          * Default value is {@code CPU_COUNT * 2}.
          * <p>
          * Configuration key: {@code workers}
@@ -426,7 +460,7 @@ public interface ServerConfiguration extends SocketConfiguration {
          * default protocols
          * @return an updated builder
          */
-        public Builder enabledSSlProtocols(String... protocols){
+        public Builder enabledSSlProtocols(String... protocols) {
             this.defaultSocketBuilder.enabledSSlProtocols(protocols);
             return this;
         }
@@ -437,7 +471,7 @@ public interface ServerConfiguration extends SocketConfiguration {
          *  the default protocols
          * @return an updated builder
          */
-        public Builder enabledSSlProtocols(List<String> protocols){
+        public Builder enabledSSlProtocols(List<String> protocols) {
             this.defaultSocketBuilder.enabledSSlProtocols(protocols);
             return this;
         }
@@ -470,11 +504,7 @@ public interface ServerConfiguration extends SocketConfiguration {
          * @return an updated builder
          */
         public Builder context(Context context) {
-            // backward compatibility only - in 2.0 we should use the context given to us
-            this.context = ContextualRegistry.builder()
-                    .id(context.id() + ":web-" + WEBSERVER_COUNTER.getAndIncrement())
-                    .parent(context)
-                    .build();
+            this.context = context;
 
             return this;
         }
@@ -502,17 +532,48 @@ public interface ServerConfiguration extends SocketConfiguration {
             if (config == null) {
                 return this;
             }
-            configureSocket(config, defaultSocketBuilder);
 
-            config.get("workers").asInt().ifPresent(this::workersCount);
+            defaultSocketBuilder.config(config);
+
+            DeprecatedConfig.get(config, "worker-count", "workers")
+                    .asInt()
+                    .ifPresent(this::workersCount);
+
             config.get("features.print-details").asBoolean().ifPresent(this::printFeatureDetails);
 
             // sockets
             Config socketsConfig = config.get("sockets");
             if (socketsConfig.exists()) {
-                for (Config socketConfig : socketsConfig.asNodeList().orElse(List.of())) {
-                    String socketName = socketConfig.name();
-                    sockets.put(socketName, configureSocket(socketConfig, SocketConfiguration.builder()).build());
+                List<Config> socketConfigs = socketsConfig.asNodeList().orElse(List.of());
+                for (Config socketConfig : socketConfigs) {
+                    // the whole section checking the socket name can be removed
+                    // when we remove deprecated methods with socket name on server builder
+                    String socketName;
+
+                    String nodeName = socketConfig.name();
+                    Optional<String> maybeSocketName = socketConfig.get("name").asString().asOptional();
+
+                    socketName = maybeSocketName.orElse(nodeName);
+
+                    // log warning for deprecated config
+                    try {
+                        Integer.parseInt(nodeName);
+                        if (socketName.equals(nodeName) && maybeSocketName.isEmpty()) {
+                            throw new ConfigException("Cannot find \"name\" key for socket configuration " + socketConfig.key());
+                        }
+                    } catch (NumberFormatException e) {
+                        // this is old approach
+                        Logger.getLogger(SocketConfigurationBuilder.class.getName())
+                                .warning("Socket configuration at " + socketConfig.key() + " is deprecated. Please use an array "
+                                                 + "with \"name\" key to define the socket name.");
+                    }
+
+                    SocketConfiguration socket = SocketConfiguration.builder()
+                            .name(socketName)
+                            .config(socketConfig)
+                            .build();
+
+                    sockets.put(socket.name(), socket);
                 }
             }
 
@@ -533,31 +594,6 @@ public interface ServerConfiguration extends SocketConfiguration {
             return this;
         }
 
-        private SocketConfiguration.Builder configureSocket(Config config, SocketConfiguration.Builder soConfigBuilder) {
-
-            config.get("port").asInt().ifPresent(soConfigBuilder::port);
-            config.get("bind-address")
-                    .asString()
-                    .map(this::string2InetAddress)
-                    .ifPresent(soConfigBuilder::bindAddress);
-            config.get("backlog").asInt().ifPresent(soConfigBuilder::backlog);
-            config.get("timeout").asInt().ifPresent(soConfigBuilder::timeoutMillis);
-            config.get("receive-buffer").asInt().ifPresent(soConfigBuilder::receiveBufferSize);
-            config.get("ssl-protocols").asList(String.class).ifPresent(soConfigBuilder::enabledSSlProtocols);
-
-            // ssl
-            Config sslConfig = config.get("ssl");
-            if (sslConfig.exists()) {
-                try {
-                    soConfigBuilder.ssl(SSLContextBuilder.create(sslConfig));
-                } catch (IllegalStateException e) {
-                    throw new ConfigException("Cannot load SSL configuration.", e);
-                }
-            }
-
-            return soConfigBuilder;
-        }
-
         /**
          * Builds a new configuration instance.
          *
@@ -569,7 +605,7 @@ public interface ServerConfiguration extends SocketConfiguration {
                 // I do not expect "unlimited" number of webservers
                 // in case somebody spins a huge number up, the counter will cycle to negative numbers once
                 // Integer.MAX_VALUE is reached.
-                context = ContextualRegistry.builder()
+                context = Context.builder()
                         .id("web-" + WEBSERVER_COUNTER.getAndIncrement())
                         .build();
             }
@@ -615,12 +651,24 @@ public interface ServerConfiguration extends SocketConfiguration {
             return experimental;
         }
 
-        ContextualRegistry context() {
+        Context context() {
             return context;
         }
 
         boolean printFeatureDetails() {
             return printFeatureDetails;
+        }
+
+        @Override
+        public Builder timeout(long amount, TimeUnit unit) {
+            this.defaultSocketBuilder.timeout(amount, unit);
+            return this;
+        }
+
+        @Override
+        public Builder tls(TlsConfig tlsConfig) {
+            this.defaultSocketBuilder.tls(tlsConfig);
+            return this;
         }
     }
 }

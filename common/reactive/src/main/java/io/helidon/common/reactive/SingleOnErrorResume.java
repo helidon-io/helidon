@@ -24,7 +24,7 @@ import java.util.function.Function;
  * If the upstream fails, generate a fallback success item via a function.
  * @param <T> the element type of the sequence
  */
-final class SingleOnErrorResume<T> implements Single<T> {
+final class SingleOnErrorResume<T> extends CompletionSingle<T> {
 
     private final Single<T> source;
 

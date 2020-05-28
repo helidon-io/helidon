@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicReference;
 class SingleToOptionalFuture<T> extends CompletableFuture<Optional<T>> implements Subscriber<T> {
 
     private final AtomicReference<Subscription> ref = new AtomicReference<>();
+    private final AtomicReference<T> item = new AtomicReference<>();
 
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
@@ -55,9 +56,10 @@ class SingleToOptionalFuture<T> extends CompletableFuture<Optional<T>> implement
 
     @Override
     public void onNext(T item) {
-        Subscription s = ref.getAndSet(null);
-        if (s != null) {
-            super.complete(Optional.ofNullable(item));
+        // we expect exactly one item
+        if (!this.item.compareAndSet(null, item)) {
+            super.completeExceptionally(new IllegalStateException("Received more than one value for a single."));
+            Subscription s = ref.getAndSet(null);
             s.cancel();
         }
     }
@@ -72,7 +74,7 @@ class SingleToOptionalFuture<T> extends CompletableFuture<Optional<T>> implement
     @Override
     public void onComplete() {
         if (ref.getAndSet(null) != null) {
-            super.complete(Optional.empty());
+            super.complete(Optional.ofNullable(item.get()));
         }
     }
 

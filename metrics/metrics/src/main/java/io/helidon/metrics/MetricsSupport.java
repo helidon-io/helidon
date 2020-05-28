@@ -59,6 +59,7 @@ import io.helidon.webserver.cors.CorsEnabledServiceHelper;
 import io.helidon.webserver.cors.CrossOriginConfig;
 
 import org.eclipse.microprofile.metrics.Counter;
+import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricID;
@@ -342,29 +343,37 @@ public final class MetricsSupport implements Service {
          * tags.
          */
         Registry vendor = rf.getARegistry(MetricRegistry.Type.VENDOR);
-        Counter totalCount = vendor.counter(new HelidonMetadata(metricPrefix + "count",
-                "Total number of HTTP requests",
-                "Each request (regardless of HTTP method) will increase this counter",
-                MetricType.COUNTER,
-                MetricUnits.NONE));
+        Counter totalCount = vendor.counter(Metadata.builder()
+                .withName(metricPrefix + "count")
+                .withDisplayName("Total number of HTTP requests")
+                .withDescription("Each request (regardless of HTTP method) will increase this counter")
+                .withType(MetricType.COUNTER)
+                .withUnit(MetricUnits.NONE)
+                .build());
 
-        Meter totalMeter = vendor.meter(new HelidonMetadata(metricPrefix + "meter",
-                "Meter for overall HTTP requests",
-                "Each request will mark the meter to see overall throughput",
-                MetricType.METERED,
-                MetricUnits.NONE));
+        Meter totalMeter = vendor.meter(Metadata.builder()
+                .withName(metricPrefix + "meter")
+                .withDisplayName("Meter for overall HTTP requests")
+                .withDescription("Each request will mark the meter to see overall throughput")
+                .withType(MetricType.METERED)
+                .withUnit(MetricUnits.NONE)
+                .build());
 
-        vendor.counter(new HelidonMetadata("grpc.requests.count",
-                "Total number of gRPC requests",
-                "Each gRPC request (regardless of the method) will increase this counter",
-                MetricType.COUNTER,
-                MetricUnits.NONE));
+        vendor.counter(Metadata.builder()
+                .withName("grpc.requests.count")
+                .withDisplayName("Total number of gRPC requests")
+                .withDescription("Each gRPC request (regardless of the method) will increase this counter")
+                .withType(MetricType.COUNTER)
+                .withUnit(MetricUnits.NONE)
+                .build());
 
-        vendor.meter(new HelidonMetadata("grpc.requests.meter",
-                "Meter for overall gRPC requests",
-                "Each gRPC request will mark the meter to see overall throughput",
-                MetricType.METERED,
-                MetricUnits.NONE));
+        vendor.meter(Metadata.builder()
+                .withName("grpc.requests.meter")
+                .withDisplayName("Meter for overall gRPC requests")
+                .withDescription("Each gRPC request will mark the meter to see overall throughput")
+                .withType(MetricType.METERED)
+                .withUnit(MetricUnits.NONE)
+                .build());
 
         rules.any((req, res) -> {
             totalCount.inc();

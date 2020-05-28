@@ -16,12 +16,11 @@
 package io.helidon.tests.integration.webclient;
 
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 
 import javax.json.JsonObject;
 
 import io.helidon.common.http.Http;
+import io.helidon.common.reactive.Single;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientRequestBuilder;
 import io.helidon.webclient.WebClientServiceRequest;
@@ -64,17 +63,17 @@ public class HeaderTest extends TestParent {
         }
 
         @Override
-        public CompletionStage<WebClientServiceRequest> request(WebClientServiceRequest request) {
-            return CompletableFuture.completedFuture(request);
+        public Single<WebClientServiceRequest> request(WebClientServiceRequest request) {
+            return Single.just(request);
         }
 
         @Override
-        public CompletionStage<WebClientServiceResponse> response(WebClientRequestBuilder.ClientRequest request,
+        public Single<WebClientServiceResponse> response(WebClientRequestBuilder.ClientRequest request,
                                                                   WebClientServiceResponse response) {
             List<String> userAgent = request.headers().all(Http.Header.USER_AGENT);
             assertThat(userAgent, hasSize(1));
             assertThat(userAgent, contains(user));
-            return CompletableFuture.completedFuture(response);
+            return Single.just(response);
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ import io.helidon.common.http.MediaType;
 import io.helidon.common.mapper.Mapper;
 import io.helidon.common.reactive.Single;
 import io.helidon.media.common.CharBuffer;
-import io.helidon.media.common.ContentWriters;
 import io.helidon.media.common.MessageBodyWriter;
 import io.helidon.media.common.MessageBodyWriterContext;
 
@@ -44,21 +43,21 @@ public class JsonpBodyWriter implements MessageBodyWriter<JsonStructure> {
     }
 
     @Override
-    public boolean accept(GenericType<?> type, MessageBodyWriterContext context) {
-        return JsonStructure.class.isAssignableFrom(type.rawType());
+    public PredicateResult accept(GenericType<?> type, MessageBodyWriterContext context) {
+        return PredicateResult.supports(JsonStructure.class, type);
     }
 
     @Override
-    public Publisher<DataChunk> write(Single<JsonStructure> content, GenericType<? extends JsonStructure> type,
-            MessageBodyWriterContext context) {
+    public Publisher<DataChunk> write(Single<? extends JsonStructure> content,
+                                      GenericType<? extends JsonStructure> type,
+                                      MessageBodyWriterContext context) {
 
         MediaType contentType = context.findAccepted(MediaType.JSON_PREDICATE, MediaType.APPLICATION_JSON);
         context.contentType(contentType);
-        return content.flatMap(new JsonStructureToChunks(jsonWriterFactory, context.charset()));
+        return content.map(new JsonStructureToChunks(jsonWriterFactory, context.charset()));
     }
 
-    static final class JsonStructureToChunks implements Mapper<JsonStructure, Publisher<DataChunk>> {
-
+    static final class JsonStructureToChunks implements Mapper<JsonStructure, DataChunk> {
         private final JsonWriterFactory factory;
         private final Charset charset;
 
@@ -68,11 +67,11 @@ public class JsonpBodyWriter implements MessageBodyWriter<JsonStructure> {
         }
 
         @Override
-        public Publisher<DataChunk> map(JsonStructure item) {
+        public DataChunk map(JsonStructure item) {
             CharBuffer buffer = new CharBuffer();
             try (JsonWriter writer = factory.createWriter(buffer)) {
                 writer.write(item);
-                return ContentWriters.writeCharBuffer(buffer, charset);
+                return DataChunk.create(false, buffer.encode(charset));
             }
         }
     }

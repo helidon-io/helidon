@@ -28,7 +28,6 @@ import io.helidon.grpc.server.GrpcServerConfiguration;
 import io.helidon.health.HealthSupport;
 import io.helidon.health.checks.HealthChecks;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 
 /**
@@ -84,9 +83,7 @@ public class Server {
                 .register(health)
                 .build();
 
-        ServerConfiguration webServerConfig = ServerConfiguration.builder(config.get("webserver")).build();
-
-        WebServer.create(webServerConfig, routing)
+        WebServer.create(routing, config.get("webserver"))
                 .start()
                 .thenAccept(s -> {
                     System.out.println("HTTP server is UP! http://localhost:" + s.port());
