@@ -112,7 +112,6 @@ public class ClientSecurityFilter implements ClientRequestFilter {
             OutboundSecurityClientBuilder clientBuilder = securityContext.outboundClientBuilder()
                     .outboundEnvironment(outboundEnv)
                     .tracingSpan(tracing.findParent().orElse(null))
-                    .tracingSpan(tracing.findParentSpan().orElse(null))
                     .outboundEndpointConfig(outboundEp);
 
             explicityProvider.ifPresent(clientBuilder::explicitProvider);
