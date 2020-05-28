@@ -20,14 +20,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
 import java.util.logging.Logger;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
+import io.helidon.common.reactive.Single;
 import io.helidon.media.common.MessageBodyReadableContent;
 import io.helidon.media.common.MessageBodyReaderContext;
 
@@ -81,16 +80,8 @@ final class WebClientResponseImpl implements WebClientResponse {
     }
 
     @Override
-    public CompletionStage<Void> close() {
-        if (responseCloser.isClosed()) {
-            return CompletableFuture.completedFuture(null);
-        }
-        CompletableFuture<Void> toReturn = new CompletableFuture<>();
-        responseCloser.close().addListener(future -> {
-            LOGGER.finest(() -> "Response from has been closed.");
-            toReturn.complete(null);
-        });
-        return toReturn;
+    public Single<Void> close() {
+        return responseCloser.close();
     }
 
     @Override
