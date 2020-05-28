@@ -559,7 +559,7 @@ public final class MetricsSupport implements Service {
          * {@link RegistryFactory#create(io.helidon.config.Config)} or
          * {@link RegistryFactory#create()} and create multiple
          * {@link io.helidon.metrics.MetricsSupport} instances with different
-         * {@link #context(String) contexts}.
+         * {@link #webContext(String)} contexts}.
          * <p>
          * If this method is not called,
          * {@link io.helidon.metrics.MetricsSupport} would use the shared
