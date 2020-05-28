@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -120,7 +120,7 @@ public class ContextIT {
 
 
     /**
-     * A test gRPC service that obtains a value from the {@link io.helidon.common.http.ContextualRegistry}.
+     * A test gRPC service that obtains a value from the {@link io.helidon.common.context.Context}.
      */
     public static class ContextService
             implements GrpcService {
@@ -156,7 +156,7 @@ public class ContextIT {
 
 
     /**
-     * A test value to register with the {@link io.helidon.common.http.ContextualRegistry}.
+     * A test value to register with the {@link io.helidon.common.context.Context}.
      */
     private static class TestValue {
         private final String value;

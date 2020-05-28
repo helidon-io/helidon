@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -184,7 +184,7 @@ public class HealthMpServiceIT {
     public static class HealthCheckProviderOne
             implements HealthCheckProvider {
         @Override
-        public List<HealthCheck> healthChecks() {
+        public List<HealthCheck> livenessChecks() {
             return Arrays.asList(
                     new HealthCheckStub("Three"),
                     new HealthCheckStub("Four"));
@@ -199,7 +199,7 @@ public class HealthMpServiceIT {
     public static class HealthCheckProviderTwo
             implements HealthCheckProvider {
         @Override
-        public List<HealthCheck> healthChecks() {
+        public List<HealthCheck> livenessChecks() {
             return Arrays.asList(
                     new HealthCheckStub("Five"),
                     new HealthCheckStub("Six"));

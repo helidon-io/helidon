@@ -77,7 +77,7 @@ class NettyWebServer implements WebServer {
     private final CompletableFuture<WebServer> channelsUpFuture = new CompletableFuture<>();
     private final CompletableFuture<WebServer> channelsCloseFuture = new CompletableFuture<>();
     private final CompletableFuture<WebServer> threadGroupsShutdownFuture = new CompletableFuture<>();
-    private final io.helidon.common.http.ContextualRegistry contextualRegistry;
+    private final Context contextualRegistry;
     private final ConcurrentMap<String, Channel> channels = new ConcurrentHashMap<>();
     private final List<HttpInitializer> initializers = new LinkedList<>();
     private final MessageBodyWriterContext writerContext;
@@ -105,14 +105,7 @@ class NettyWebServer implements WebServer {
         HelidonFeatures.print(HelidonFlavor.SE, config.printFeatureDetails());
         this.bossGroup = new NioEventLoopGroup(sockets.size());
         this.workerGroup = config.workersCount() <= 0 ? new NioEventLoopGroup() : new NioEventLoopGroup(config.workersCount());
-        // the contextual registry needs to be created as a different type is expected. Once we remove ContextualRegistry
-        // we can simply use the one from config
-        Context context = config.context();
-        if (context instanceof io.helidon.common.http.ContextualRegistry) {
-            this.contextualRegistry = (io.helidon.common.http.ContextualRegistry) context;
-        } else {
-            this.contextualRegistry = io.helidon.common.http.ContextualRegistry.create(config.context());
-        }
+        this.contextualRegistry = config.context();
         this.configuration = config;
         this.readerContext = MessageBodyReaderContext.create(readerContext);
         this.writerContext = MessageBodyWriterContext.create(writerContext);
@@ -220,7 +213,7 @@ class NettyWebServer implements WebServer {
                     throw new IllegalStateException(
                             "no socket configuration found for name: " + name);
                 }
-                int port = socketConfig.port() <= 0 ? 0 : socketConfig.port();
+                int port = Math.max(socketConfig.port(), 0);
                 if (channelsUpFuture.isCompletedExceptionally()) {
                     // break because one of the previous channels already failed
                     break;
@@ -397,7 +390,7 @@ class NettyWebServer implements WebServer {
     }
 
     @Override
-    public io.helidon.common.http.ContextualRegistry context() {
+    public Context context() {
         return contextualRegistry;
     }
 

@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.StringTokenizer;
 
 import io.helidon.common.GenericType;
+import io.helidon.common.context.Context;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.http.Parameters;
@@ -57,7 +58,7 @@ abstract class Request implements ServerRequest {
 
     private final BareRequest bareRequest;
     private final WebServer webServer;
-    private final io.helidon.common.http.ContextualRegistry context;
+    private final Context context;
     private final Parameters queryParams;
     private final HashRequestHeaders headers;
     private final MessageBodyReadableContent content;
@@ -73,7 +74,7 @@ abstract class Request implements ServerRequest {
         this.bareRequest = req;
         this.webServer = webServer;
         this.headers = headers;
-        this.context = io.helidon.common.http.ContextualRegistry.create(webServer.context());
+        this.context = Context.create(webServer.context());
         this.queryParams = UriComponent.decodeQuery(req.uri().getRawQuery(), true);
         this.eventListener = new MessageBodyEventListener();
         MessageBodyReaderContext readerContext = MessageBodyReaderContext
@@ -104,10 +105,10 @@ abstract class Request implements ServerRequest {
      */
     static Charset contentCharset(ServerRequest request) {
         return request.headers()
-                      .contentType()
-                      .flatMap(MediaType::charset)
-                      .map(Charset::forName)
-                      .orElse(DEFAULT_CHARSET);
+                .contentType()
+                .flatMap(MediaType::charset)
+                .map(Charset::forName)
+                .orElse(DEFAULT_CHARSET);
     }
 
     @Override
@@ -116,8 +117,7 @@ abstract class Request implements ServerRequest {
     }
 
     @Override
-    @SuppressWarnings("deprecation")
-    public io.helidon.common.http.ContextualRegistry context() {
+    public Context context() {
         return context;
     }
 
@@ -195,7 +195,7 @@ abstract class Request implements ServerRequest {
 
         private Span readSpan;
 
-        private <T> Span createReadSpan(GenericType<?> type) {
+        private Span createReadSpan(GenericType<?> type) {
             // only create this span if we have a parent span
             SpanContext parentSpan = spanContext();
             if (null == parentSpan) {
@@ -226,29 +226,29 @@ abstract class Request implements ServerRequest {
         @Override
         public void onEvent(MessageBodyContext.Event event) {
             switch (event.eventType()) {
-                case BEFORE_ONSUBSCRIBE:
-                    GenericType<?> type = event.entityType().orElse(null);
-                    readSpan = createReadSpan(type);
-                    break;
+            case BEFORE_ONSUBSCRIBE:
+                GenericType<?> type = event.entityType().orElse(null);
+                readSpan = createReadSpan(type);
+                break;
 
-                case AFTER_ONERROR:
-                    if (readSpan != null) {
-                        Tags.ERROR.set(readSpan, Boolean.TRUE);
-                        Throwable ex = event.asErrorEvent().error();
-                        readSpan.log(Map.of("event", "error",
-                                "error.kind", "Exception",
-                                "error.object", ex,
-                                "message", ex.toString()));
-                        readSpan.finish();
-                    }
-                    break;
-                case AFTER_ONCOMPLETE:
-                    if (readSpan != null) {
-                        readSpan.finish();
-                    }
-                    break;
-                default:
-                    // do nothing
+            case AFTER_ONERROR:
+                if (readSpan != null) {
+                    Tags.ERROR.set(readSpan, Boolean.TRUE);
+                    Throwable ex = event.asErrorEvent().error();
+                    readSpan.log(Map.of("event", "error",
+                                        "error.kind", "Exception",
+                                        "error.object", ex,
+                                        "message", ex.toString()));
+                    readSpan.finish();
+                }
+                break;
+            case AFTER_ONCOMPLETE:
+                if (readSpan != null) {
+                    readSpan.finish();
+                }
+                break;
+            default:
+                // do nothing
             }
         }
     }
@@ -313,7 +313,7 @@ abstract class Request implements ServerRequest {
             return absolutePath == null ? this : absolutePath;
         }
 
-        static Path create(Path contextual, String path,  Map<String, String> params) {
+        static Path create(Path contextual, String path, Map<String, String> params) {
             return create(contextual, path, path, params);
         }
 

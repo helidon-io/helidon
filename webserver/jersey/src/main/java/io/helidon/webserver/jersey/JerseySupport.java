@@ -86,18 +86,6 @@ public class JerseySupport implements Service {
     private static final String SEC_WEBSOCKET_KEY = "Sec-WebSocket-Key";
 
     /**
-     * The request scoped span qualifier that can be injected into a Jersey resource.
-     * <pre><code>
-     * {@literal @}Inject{@literal @}Named(JerseySupport.REQUEST_SPAN_QUALIFIER)
-     *  private Span span;
-     * </code></pre>
-     *
-     * @deprecated Use span context ({@link #REQUEST_SPAN_CONTEXT}) instead.
-     */
-    @Deprecated
-    public static final String REQUEST_SPAN_QUALIFIER = "request-parent-span";
-
-    /**
      * The request scoped span context qualifier that can be injected into a Jersey resource.
      * <pre><code>
      * {@literal @}Inject{@literal @}Named(JerseySupport.REQUEST_SPAN_CONTEXT)

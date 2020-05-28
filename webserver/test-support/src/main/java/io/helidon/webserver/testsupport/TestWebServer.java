@@ -18,7 +18,7 @@ package io.helidon.webserver.testsupport;
 
 import java.util.concurrent.CompletableFuture;
 
-import io.helidon.common.http.ContextualRegistry;
+import io.helidon.common.context.Context;
 import io.helidon.common.reactive.Single;
 import io.helidon.media.common.MediaContext;
 import io.helidon.media.common.MessageBodyReaderContext;
@@ -35,7 +35,7 @@ class TestWebServer implements WebServer {
 
     private final CompletableFuture<WebServer> startFuture = new CompletableFuture<>();
     private final CompletableFuture<WebServer> shutdownFuture = new CompletableFuture<>();
-    private final ContextualRegistry context = ContextualRegistry.create();
+    private final Context context = Context.create();
     private final ServerConfiguration configuration = ServerConfiguration.builder().build();
     private final MediaContext mediaContext;
 
@@ -82,7 +82,7 @@ class TestWebServer implements WebServer {
     }
 
     @Override
-    public ContextualRegistry context() {
+    public Context context() {
         return context;
     }
 
