@@ -172,7 +172,7 @@ mapper.subscribe(subscriber);
 
 // after
 Flow.Publisher<Integer> source = ...
-Multi.create(source)
+Multi.from(source)
      .map(Integer::toString)
      .subscribe(subscriber)
 ```
@@ -299,7 +299,7 @@ a stable release should use a 1.4 release.
 - Reactive: Reimplement Multi.flatMapIterable + TCK test [1467](https://github.com/oracle/helidon/pull/1467)
 - Reactive: Reimplement Multi.just(T[]), add Multi.singleton(T) + TCK [1461](https://github.com/oracle/helidon/pull/1461)
 - Reactive: Reimplement Single.flatMap(->Publisher) + TCK test [1465](https://github.com/oracle/helidon/pull/1465)
-- Reactive: Reimplement Single.create + TCK tests [1481](https://github.com/oracle/helidon/pull/1481)
+- Reactive: Reimplement Single.from + TCK tests [1481](https://github.com/oracle/helidon/pull/1481)
 - Reactive: Reimplement Single.map + TCK test [1456](https://github.com/oracle/helidon/pull/1456)
 - Reactive: Reimplement many operators + TCK tests [1442](https://github.com/oracle/helidon/pull/1442)
 - Reactive: Reimplement onErrorResume[With] + TCK tests [1489](https://github.com/oracle/helidon/pull/1489)
