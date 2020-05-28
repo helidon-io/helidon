@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,22 +25,22 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Flow;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.jupiter.api.Test;
+import io.helidon.common.reactive.Multi;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+import org.junit.jupiter.api.Test;
+
 /**
- * Unit test for {@link InputStreamPublisher}.
+ * Unit test for {@code InputStreamPublisher}'s replacement.
  */
 public class InputStreamPublisherTest {
     @Test
     public void testSingle() throws InterruptedException {
         String teststring = "My text to publish with publisher";
-        InputStreamPublisher p =
-                new InputStreamPublisher(
-                        new ByteArrayInputStream(teststring.getBytes(StandardCharsets.UTF_8)),
-                        1024);
+        Multi<ByteBuffer> p = Multi.from(new ByteArrayInputStream(teststring.getBytes(StandardCharsets.UTF_8)))
+                .withByteBufferSize(1024);
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         CountDownLatch cdl = new CountDownLatch(1);
@@ -83,10 +83,8 @@ public class InputStreamPublisherTest {
     @Test
     public void testMultiple() throws InterruptedException {
         String teststring = "My text to publish with publisher";
-        InputStreamPublisher p =
-                new InputStreamPublisher(
-                        new ByteArrayInputStream(teststring.getBytes(StandardCharsets.UTF_8)),
-                        1);
+        Multi<ByteBuffer> p = Multi.from(new ByteArrayInputStream(teststring.getBytes(StandardCharsets.UTF_8)))
+                .withByteBufferSize(1);
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         CountDownLatch cdl = new CountDownLatch(1);
@@ -136,10 +134,8 @@ public class InputStreamPublisherTest {
         }
         teststring = expectedResult.toString();
 
-        InputStreamPublisher p =
-                new InputStreamPublisher(
-                        new ByteArrayInputStream(teststring.getBytes(StandardCharsets.UTF_8)),
-                        2);
+        Multi<ByteBuffer> p = Multi.from(new ByteArrayInputStream(teststring.getBytes(StandardCharsets.UTF_8)))
+                .withByteBufferSize(2);
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         CountDownLatch cdl = new CountDownLatch(1);
