@@ -38,7 +38,6 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
-import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.serialization.IntegerDeserializer;
 import org.apache.kafka.common.serialization.IntegerSerializer;
 import org.apache.kafka.common.serialization.LongDeserializer;
@@ -55,6 +54,7 @@ public class KafkaSeTest extends AbstractKafkaTest {
     private static final String TEST_SE_TOPIC_2 = "special-se-topic-2";
     private static final String TEST_SE_TOPIC_3 = "special-se-topic-3";
     private static final String TEST_SE_TOPIC_4 = "special-se-topic-4";
+    private static final String TEST_SE_TOPIC_5 = "special-se-topic-4";
 
 
     @BeforeAll
@@ -63,6 +63,7 @@ public class KafkaSeTest extends AbstractKafkaTest {
         kafkaResource.getKafkaTestUtils().createTopic(TEST_SE_TOPIC_2, 4, (short) 2);
         kafkaResource.getKafkaTestUtils().createTopic(TEST_SE_TOPIC_3, 4, (short) 2);
         kafkaResource.getKafkaTestUtils().createTopic(TEST_SE_TOPIC_4, 4, (short) 2);
+        kafkaResource.getKafkaTestUtils().createTopic(TEST_SE_TOPIC_5, 4, (short) 2);
         KAFKA_SERVER = kafkaResource.getKafkaConnectString();
     }
 
@@ -186,7 +187,7 @@ public class KafkaSeTest extends AbstractKafkaTest {
         Messaging messaging = Messaging.builder()
                 .connector(kafkaConnector)
                 .listener(fromKafka, payload -> {
-                    LOGGER.info("Kafka says: value="+payload);
+                    LOGGER.info("Kafka says: value=" + payload);
                     result.add(payload);
                     countDownLatch.countDown();
                 })
@@ -264,6 +265,71 @@ public class KafkaSeTest extends AbstractKafkaTest {
             messaging.start();
             assertThat(countDownLatch.await(20, TimeUnit.SECONDS), is(true));
             assertThat(result, containsInAnyOrder(IntStream.range(0, 10).boxed().toArray()));
+        } finally {
+            messaging.stop();
+        }
+    }
+
+    @Test
+    void kafkaHeaderTest() throws InterruptedException {
+        CountDownLatch countDownLatch = new CountDownLatch(3);
+        HashSet<String> result = new HashSet<>();
+
+        Channel<Integer> toKafka = Channel.<Integer>builder()
+                .name("to-kafka")
+                .subscriberConfig(KafkaConnector.configBuilder()
+                        .bootstrapServers(KAFKA_SERVER)
+                        .groupId("test-group")
+                        .topic(TEST_SE_TOPIC_1)
+                        .keySerializer(LongSerializer.class)
+                        .valueSerializer(IntegerSerializer.class)
+                        .build()
+                ).build();
+
+        Channel<Integer> fromKafka = Channel.<Integer>builder()
+                .name("from-kafka")
+                .publisherConfig(KafkaConnector.configBuilder()
+                        .bootstrapServers(KAFKA_SERVER)
+                        .groupId("test-group")
+                        .topic(TEST_SE_TOPIC_1)
+                        .autoOffsetReset(KafkaConfigBuilder.AutoOffsetReset.EARLIEST)
+                        .enableAutoCommit(false)
+                        .keyDeserializer(LongDeserializer.class)
+                        .valueDeserializer(IntegerDeserializer.class)
+                        .build()
+                )
+                .build();
+
+        KafkaConnector kafkaConnector = KafkaConnector.create();
+
+        Messaging messaging = Messaging.builder()
+                .connector(kafkaConnector)
+                .publisher(toKafka,
+                        Multi.from(IntStream.rangeClosed(1, 3).boxed())
+                                .map(KafkaMessage::of)
+                                .peek(msg -> msg.getHeaders()
+                                        .add("secret header",
+                                                ("number: " + msg.getPayload()).getBytes(StandardCharsets.UTF_8))
+                                )
+                )
+                .subscriber(fromKafka, ReactiveStreams.<KafkaMessage<Long, Integer>>builder()
+                        .peek(Message::ack)
+                        .forEach(msg -> {
+                            byte[] headerRawValue = msg.getHeaders().lastHeader("secret header").value();
+                            String value = new String(headerRawValue, StandardCharsets.UTF_8);
+                            result.add(value);
+                            countDownLatch.countDown();
+                        }))
+                .build();
+
+        try {
+            messaging.start();
+            assertThat(countDownLatch.await(20, TimeUnit.SECONDS), is(true));
+            assertThat(result, containsInAnyOrder(
+                    "number: 1",
+                    "number: 2",
+                    "number: 3"
+            ));
         } finally {
             messaging.stop();
         }

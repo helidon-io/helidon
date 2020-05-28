@@ -88,7 +88,7 @@ public interface KafkaMessage<K, V> extends Message<V> {
      * @param <V>     the type of Kafka record value
      * @return A message with the given payload and ack function
      */
-    static <K, V> Message<V> of(K key, V payload, Supplier<CompletionStage<Void>> ack) {
+    static <K, V> KafkaMessage<K, V> of(K key, V payload, Supplier<CompletionStage<Void>> ack) {
         Objects.requireNonNull(payload);
         return new KafkaProducerMessage<>(key, payload, ack);
     }
@@ -102,7 +102,7 @@ public interface KafkaMessage<K, V> extends Message<V> {
      * @param <V>     the type of Kafka record value
      * @return A message with the given payload and ack function
      */
-    static <K, V> Message<V> of(V payload, Supplier<CompletionStage<Void>> ack) {
+    static <K, V> KafkaMessage<K, V> of(V payload, Supplier<CompletionStage<Void>> ack) {
         Objects.requireNonNull(payload);
         return new KafkaProducerMessage<>(null, payload, ack);
     }
@@ -116,7 +116,7 @@ public interface KafkaMessage<K, V> extends Message<V> {
      * @param <V>     the type of Kafka record value
      * @return A message with the given payload and ack function
      */
-    static <K, V> Message<V> of(K key, V payload) {
+    static <K, V> KafkaMessage<K, V> of(K key, V payload) {
         Objects.requireNonNull(payload);
         return new KafkaProducerMessage<>(key, payload, null);
     }
@@ -129,7 +129,7 @@ public interface KafkaMessage<K, V> extends Message<V> {
      * @param <V>     the type of Kafka record value
      * @return A message with the given payload and ack function
      */
-    static <K, V> Message<V> of(V payload) {
+    static <K, V> KafkaMessage<K, V> of(V payload) {
         Objects.requireNonNull(payload);
         return new KafkaProducerMessage<>(null, payload, null);
     }
