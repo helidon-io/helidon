@@ -32,6 +32,7 @@
 :cors-config-table-exclude-methods:
 :!cors-config-table-exclude-keys:
 :basic-table-intro: The table below lists the configuration keys that identify the CORS characteristics.
+:helidon-variant: SE
 
 You can use configuration in combination with the Helidon CORS SE API to add CORS support to your resources.
 Loading the CORS information for different types of resource sharing from declarative configuration,

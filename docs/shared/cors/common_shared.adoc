@@ -28,7 +28,7 @@
 :javadoc-base-url-webserver: {javadoc-base-url}io.helidon.webserver/io/helidon/webserver
 :helidon-variant: SE
 :common-page-prefix-inc:
-:actual-cors-dependency-src:co
+:actual-cors-dependency-src:
 
 = CORS Shared content
 
@@ -83,18 +83,28 @@ In configuration, Helidon represents basic CORS information as a section, identi
 key of your choosing, that contains
 one or more key/value pairs. Each key-value pair assigns one characteristic of CORS behavior.
 
+[subs=attributes+]
 {basic-table-intro}
 
 [[config-key-table]]
 include::{common-page-prefix-inc}[tag=cors-config-table]
 
-The following example of basic cross-origin configuration, when loaded and used by the application, limits cross-origin resource sharing for `PUT` and
+The following example of basic cross-origin
+ifeval::["{helidon-variant}" == "SE"]
+configuration, when loaded and used by the application,
+endif::[]
+ifeval::["{helidon-variant}" != "SE"]
+configuration
+endif::[]
+limits cross-origin resource sharing for `PUT` and
 `DELETE` operations to only `foo.com` and `there.com`:
 
 [source,hocon]
 ----
 ...
+ifeval::["{helidon-variant}" == "SE"]
 restrictive-cors:
+endif::[]
   allow-origins: ["http://foo.com", "http://there.com"]
   allow-methods: ["PUT", "DELETE"]
 ...
@@ -198,7 +208,7 @@ The following example illustrates the mapped cross-origin configuration format.
 ----
 // We want to use the following to insert the SE or MP callout 1 text; we need to use the blank, plus,
 // and subs because the MP attribute value contains backticks, and this is the only way we've found
-// to for the substitution in the callout to work the way we want. And this works when
+// for the substitution in the callout to work the way we want. And this works when
 // rendered in our editing tools and via the asciidoctor command to HTML but not on our built site.
 //
 // <1> {blank}
@@ -212,7 +222,7 @@ The following example illustrates the mapped cross-origin configuration format.
 // include the prefix, then provide its own callout 1, then include the suffix.
 //
 // end::mapped-config-prefix[]
-<1> {mapped-config-id-callout}
+
 // tag::mapped-config-suffix[]
 <2> Collects the sequence of entries, each of which maps a basic CORS config to a path pattern.
 <3> Marks the beginning of an entry (the `-` character) and maps the associated basic CORS config

@@ -42,7 +42,8 @@
 :common-page-prefix-inc: ../../shared/cors/common_shared.adoc
 :config-table-methods-column-explainer: the annotation parameters
 :config-table-methods-column-header: Annotation Parameter
-:basic-table-intro: The table below lists the annotation parameters and the configuration keys that identify the CORS characteristics.
+:basic-table-intro: The table below lists the parameters for the `@CrossOriginConfig` annotation and the configuration keys that identify the CORS characteristics.
+:helidon-variant: MP
 
 Your application code establishes the CORS behavior of your endpoints using the `@CrossOrigin` annotation.
 You and your users can override that behavior, as well as the CORS behavior of the built-in services,
@@ -64,7 +65,7 @@ the mapped cross-origin configuration format.
 // the document is rendered in our editors, and even when using asciidoctor to HTML, but not
 // to our site.
 include::{common-page-prefix-inc}[tag=mapped-config-prefix]
-<1> {mapped-config-id-callout}
+<1> The unique identifier for this mapped CORS config section must be `cors`.
 include::{common-page-prefix-inc}[tag=mapped-config-suffix]
 
 == Specifying Override Values in Configuration 
