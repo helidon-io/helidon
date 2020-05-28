@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -351,19 +351,6 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
 
         config.get("global").asBoolean().ifPresent(this::registerGlobal);
 
-        return this;
-    }
-
-    /**
-     * The host name and port when using the remote controlled sampler.
-     *
-     * @param samplerManagerHostPort host and port of the sampler manager
-     * @return updated builder instance
-     * @deprecated typo, please use {@link #samplerManager(String)}
-     */
-    @Deprecated
-    public JaegerTracerBuilder samplerMananger(String samplerManagerHostPort) {
-        this.samplerManager = samplerManagerHostPort;
         return this;
     }
 
