@@ -218,7 +218,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      * @param type class representing the type supported by this writer
      * @param function writer function
      * @return this {@code MessageBodyWriteableContent} instance
-     * @deprecated use {@link #registerWriter(MessageBodyWriter) } instead
+     * @deprecated since 2.0.0, use {@link #registerWriter(MessageBodyWriter) } instead
      */
     @Deprecated
     public <T> MessageBodyWriterContext registerWriter(Class<T> type, Function<T, Publisher<DataChunk>> function) {
@@ -234,7 +234,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      * @param contentType the media type
      * @param function writer function
      * @return this {@code MessageBodyWriteableContent} instance
-     * @deprecated use {@link #registerWriter(MessageBodyWriter) } instead
+     * @deprecated since 2.0.0, use {@link #registerWriter(MessageBodyWriter) } instead
      */
     @Deprecated
     public <T> MessageBodyWriterContext registerWriter(Class<T> type, MediaType contentType,
@@ -251,7 +251,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      * @param accept the object predicate
      * @param function writer function
      * @return this {@code MessageBodyWriteableContent} instance
-     * @deprecated use {@link #registerWriter(MessageBodyWriter) } instead
+     * @deprecated since 2.0.0 use {@link #registerWriter(MessageBodyWriter) } instead
      */
     @Deprecated
     public <T> MessageBodyWriterContext registerWriter(Predicate<?> accept, Function<T, Publisher<DataChunk>> function) {
@@ -267,7 +267,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      * @param contentType the media type
      * @param function writer function
      * @return this {@code MessageBodyWriteableContent} instance
-     * @deprecated use {@link #registerWriter(MessageBodyWriter) } instead
+     * @deprecated since 2.0.0, use {@link #registerWriter(MessageBodyWriter) } instead
      */
     @Deprecated
     public <T> MessageBodyWriterContext registerWriter(Predicate<?> accept, MediaType contentType,

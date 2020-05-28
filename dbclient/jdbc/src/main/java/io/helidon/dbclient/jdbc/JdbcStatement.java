@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,28 +75,6 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
             return dbContext.namedParameters()
                     .map(params -> prepareNamedStatement(conn, statementName, statement, params))
                     .orElseGet(simpleStatementSupplier);
-        }
-    }
-
-    /**
-     * Switch to {@link #build(java.sql.Connection, io.helidon.dbclient.DbClientServiceContext)} and use services.
-     *
-     * @param connection connection to use
-     * @return prepared statement
-     */
-    @Deprecated
-    protected PreparedStatement build(Connection connection) {
-        LOGGER.fine(() -> String.format("Building SQL statement: %s", statement()));
-        switch (paramType()) {
-        // Statement may not contain any parameters, no conversion is needed.
-        case UNKNOWN:
-            return prepareStatement(connection, statementName(), statement());
-        case INDEXED:
-            return prepareIndexedStatement(connection, statementName(), statement(), indexedParams());
-        case NAMED:
-            return prepareNamedStatement(connection, statementName(), statement(), namedParams());
-        default:
-            throw new IllegalStateException("Unknown SQL statement type");
         }
     }
 
