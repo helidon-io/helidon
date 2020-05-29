@@ -20,13 +20,12 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.time.Duration;
 import java.time.temporal.TemporalUnit;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.ServiceLoader;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
@@ -154,6 +153,7 @@ public interface WebClient {
         private final WebClientConfiguration.Builder<?, ?> configuration = NettyClient.SHARED_CONFIGURATION.get().derive();
         private final HelidonServiceLoader.Builder<WebClientServiceProvider> services = HelidonServiceLoader
                 .builder(ServiceLoader.load(WebClientServiceProvider.class));
+        private final List<WebClientService> webClientServices = new ArrayList<>();
 
         private Config config = Config.empty();
 
@@ -172,17 +172,7 @@ public interface WebClient {
          * @return updated builder instance
          */
         public Builder addService(WebClientService service) {
-            services.addService(new WebClientServiceProvider() {
-                @Override
-                public String configKey() {
-                    return "ignored";
-                }
-
-                @Override
-                public WebClientService create(Config config) {
-                    return service;
-                }
-            });
+            webClientServices.add(service);
             return this;
         }
 
@@ -194,18 +184,6 @@ public interface WebClient {
          */
         public Builder addService(Supplier<? extends WebClientService> serviceSupplier) {
             return addService(serviceSupplier.get());
-        }
-
-
-        /**
-         * Exclude specific {@link WebClientServiceProvider} provider from being loaded.
-         *
-         * @param providerClass excluded provider
-         * @return updated builder instance
-         */
-        public Builder exclude(Class<? extends WebClientServiceProvider> providerClass) {
-            services.addExcludedClass(providerClass);
-            return this;
         }
 
         /**
@@ -440,16 +418,17 @@ public interface WebClient {
 
         private List<WebClientService> services() {
             Config servicesConfig = config.get("services");
-            servicesConfig.get("excludes").asList(String.class).orElse(Collections.emptyList())
-                    .forEach(services::addExcludedClassName);
 
-            Config serviceConfig = servicesConfig.get("config");
-
-            return services.build()
+            services.build()
                     .asList()
-                    .stream()
-                    .map(it -> it.create(serviceConfig.get(it.configKey())))
-                    .collect(Collectors.toList());
+                    .forEach(provider -> {
+                        Config providerConfig = servicesConfig.get(provider.configKey());
+                        if (providerConfig.exists()) {
+                            addService(provider.create(providerConfig));
+                        }
+                    });
+
+            return webClientServices;
         }
 
     }

@@ -53,6 +53,7 @@ class TracingTest extends TestParent {
                 .baseUri(uri)
                 .context(context)
                 .addMediaSupport(JsonpSupport.create())
+                .config(CONFIG.get("client"))
                 .build();
 
         WebClientResponse response = client.get()
@@ -93,6 +94,7 @@ class TracingTest extends TestParent {
                 .baseUri("http://localhost:" + webServer.port() + "/greet")
                 .context(context)
                 .addMediaSupport(JsonpSupport.create())
+                .config(CONFIG.get("client"))
                 .build();
 
         WebClientResponse response = client.get()

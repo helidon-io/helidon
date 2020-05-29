@@ -24,6 +24,7 @@ import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.security.SecurityContext;
 import io.helidon.webclient.WebClient;
+import io.helidon.webclient.security.WebClientSecurity;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
@@ -33,7 +34,9 @@ import io.helidon.webserver.WebServer;
  * Common code for both examples (builder and config based).
  */
 final class SignatureExampleUtil {
-    private static final WebClient CLIENT = WebClient.create();
+    private static final WebClient CLIENT = WebClient.builder()
+            .addService(WebClientSecurity.create())
+            .build();
 
     private static final int START_TIMEOUT_SECONDS = 10;
 
