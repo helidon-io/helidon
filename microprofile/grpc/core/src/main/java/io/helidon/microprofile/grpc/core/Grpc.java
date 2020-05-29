@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.grpc.client;
+package io.helidon.microprofile.grpc.core;
 
+import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
@@ -25,26 +27,49 @@ import javax.enterprise.util.AnnotationLiteral;
 import javax.inject.Qualifier;
 
 /**
- * A qualifier annotation used to mark an injection point for
- * a gRPC service client proxy.
+ * An annotation used to mark a class as representing a gRPC service.
  */
-@Target({ElementType.METHOD, ElementType.FIELD, ElementType.PARAMETER})
-@Retention(RetentionPolicy.RUNTIME)
 @Qualifier
-public @interface GrpcServiceProxy {
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+@Inherited
+@Documented
+public @interface Grpc {
+    /**
+     * Obtain the service name.
+     *
+     * @return  the service name
+     */
+    String name() default "";
 
     /**
-     * An {@link javax.enterprise.util.AnnotationLiteral} for the
-     * {@link GrpcServiceProxy} annotation.
+     * Obtain the service version.
+     *
+     * @return  the service version
+     */
+    int version() default 0;
+
+    /**
+     * An {@link AnnotationLiteral} for the {@link Grpc} annotation.
      */
     class Literal
-            extends AnnotationLiteral<GrpcServiceProxy> implements GrpcServiceProxy {
+            extends AnnotationLiteral<Grpc> implements Grpc {
 
         /**
-         * The singleton instance of {@link GrpcServiceProxy.Literal}.
+         * The singleton instance of {@link Literal}.
          */
         public static final Literal INSTANCE = new Literal();
 
         private static final long serialVersionUID = 1L;
+
+        @Override
+        public String name() {
+            return "";
+        }
+
+        @Override
+        public int version() {
+            return 0;
+        }
     }
 }

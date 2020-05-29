@@ -24,7 +24,7 @@ import javax.enterprise.context.ApplicationScoped;
 import io.helidon.grpc.server.CollectingObserver;
 import io.helidon.microprofile.grpc.core.Bidirectional;
 import io.helidon.microprofile.grpc.core.ClientStreaming;
-import io.helidon.microprofile.grpc.core.RpcService;
+import io.helidon.microprofile.grpc.core.Grpc;
 import io.helidon.microprofile.grpc.core.ServerStreaming;
 import io.helidon.microprofile.grpc.core.Unary;
 
@@ -33,10 +33,10 @@ import io.grpc.stub.StreamObserver;
 /**
  * The gRPC StringService implementation.
  * <p>
- * This class is a gRPC service annotated with {@link RpcService} and {@link ApplicationScoped}
+ * This class is a gRPC service annotated with {@link Grpc} and {@link ApplicationScoped}
  * so that it will be discovered and deployed using CDI when the MP gRPC server starts.
  */
-@RpcService
+@Grpc
 @ApplicationScoped
 public class StringService {
 

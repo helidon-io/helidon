@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,9 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.grpc.core;
+package io.helidon.microprofile.grpc.client;
 
-import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
-import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
@@ -27,49 +25,26 @@ import javax.enterprise.util.AnnotationLiteral;
 import javax.inject.Qualifier;
 
 /**
- * An annotation used to mark a class as representing a gRPC service.
+ * A qualifier annotation used to mark an injection point for
+ * a gRPC service client proxy.
  */
-@Qualifier
-@Target(ElementType.TYPE)
+@Target({ElementType.METHOD, ElementType.FIELD, ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)
-@Inherited
-@Documented
-public @interface RpcService {
-    /**
-     * Obtain the service name.
-     *
-     * @return  the service name
-     */
-    String name() default "";
+@Qualifier
+public @interface GrpcProxy {
 
     /**
-     * Obtain the service version.
-     *
-     * @return  the service version
-     */
-    int version() default 0;
-
-    /**
-     * An {@link AnnotationLiteral} for the {@link RpcService} annotation.
+     * An {@link javax.enterprise.util.AnnotationLiteral} for the
+     * {@link GrpcProxy} annotation.
      */
     class Literal
-            extends AnnotationLiteral<RpcService> implements RpcService {
+            extends AnnotationLiteral<GrpcProxy> implements GrpcProxy {
 
         /**
-         * The singleton instance of {@link Literal}.
+         * The singleton instance of {@link GrpcProxy.Literal}.
          */
         public static final Literal INSTANCE = new Literal();
 
         private static final long serialVersionUID = 1L;
-
-        @Override
-        public String name() {
-            return "";
-        }
-
-        @Override
-        public int version() {
-            return 0;
-        }
     }
 }

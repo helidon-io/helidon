@@ -43,8 +43,8 @@ import io.helidon.grpc.server.GrpcRouting;
 import io.helidon.grpc.server.GrpcServer;
 import io.helidon.grpc.server.GrpcServerConfiguration;
 import io.helidon.grpc.server.GrpcService;
+import io.helidon.microprofile.grpc.core.Grpc;
 import io.helidon.microprofile.grpc.core.InProcessGrpcChannel;
-import io.helidon.microprofile.grpc.core.RpcService;
 import io.helidon.microprofile.grpc.server.spi.GrpcMpContext;
 import io.helidon.microprofile.grpc.server.spi.GrpcMpExtension;
 
@@ -161,11 +161,11 @@ public class GrpcServerCdiExtension
         Instance<Object> instance = beanManager.createInstance();
         GrpcRouting.Builder builder = GrpcRouting.builder();
 
-        // discover @RpcService annotated beans
+        // discover @Grpc annotated beans
         // we use the bean manager to do this as we need the actual bean class
         beanManager.getBeans(Object.class, Any.Literal.INSTANCE)
                 .stream()
-                .filter(this::hasRpcServiceQualifier)
+                .filter(this::hasGrpcQualifier)
                 .forEach(bean -> {
                     Class<?> beanClass = bean.getBeanClass();
                     Annotation[] qualifiers = bean.getQualifiers().toArray(new Annotation[0]);
@@ -194,10 +194,10 @@ public class GrpcServerCdiExtension
         return builder;
     }
 
-    private boolean hasRpcServiceQualifier(Bean<?> bean) {
+    private boolean hasGrpcQualifier(Bean<?> bean) {
         return bean.getQualifiers()
                 .stream()
-                .anyMatch(q -> RpcService.class.isAssignableFrom(q.annotationType()));
+                .anyMatch(q -> Grpc.class.isAssignableFrom(q.annotationType()));
     }
 
     /**
