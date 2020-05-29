@@ -778,11 +778,6 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.integrations.cdi</groupId>
-                <artifactId>helidon-integrations-cdi-jpa-weld</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.integrations.cdi</groupId>
                 <artifactId>helidon-integrations-cdi-jta</artifactId>
                 <version>${helidon.version}</version>
             </dependency>

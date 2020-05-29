@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,10 +57,11 @@ public final class TranslatorFrontendService implements Service {
 
             Response backendResponse = backendTarget
                     .property(ClientTracingFilter.TRACER_PROPERTY_NAME, request.tracer())
-                    .property(ClientTracingFilter.CURRENT_SPAN_CONTEXT_PROPERTY_NAME, request.spanContext())
+                    .property(ClientTracingFilter.CURRENT_SPAN_CONTEXT_PROPERTY_NAME, request.spanContext().orElse(null))
                     .queryParam("q", query)
                     .queryParam("lang", language)
-                    .request().get();
+                    .request()
+                    .get();
 
             final String result;
             if (backendResponse.getStatusInfo().getFamily() == Response.Status.Family.SUCCESSFUL) {

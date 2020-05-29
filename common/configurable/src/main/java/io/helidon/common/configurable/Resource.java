@@ -167,7 +167,7 @@ public interface Resource {
      * @param config configuration
      * @param prefix prefix of the resource
      * @return resource if configured
-     * @deprecated use {@link #create(io.helidon.config.Config)} instead (and change the configuration to use
+     * @deprecated since 2.0.0 use {@link #create(io.helidon.config.Config)} instead (and change the configuration to use
      *  {@code .resource.type} instead of prefixes
      */
     @Deprecated

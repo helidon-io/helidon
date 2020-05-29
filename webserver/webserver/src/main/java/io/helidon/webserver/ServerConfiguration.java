@@ -580,7 +580,7 @@ public interface ServerConfiguration extends SocketConfiguration {
             // experimental
             Config experimentalConfig = config.get("experimental");
             if (experimentalConfig.exists()) {
-                ExperimentalConfiguration.Builder experimentalBuilder = new ExperimentalConfiguration.Builder();
+                ExperimentalConfiguration.Builder experimentalBuilder = ExperimentalConfiguration.builder();
                 Config http2Config = experimentalConfig.get("http2");
                 if (http2Config.exists()) {
                     Http2Configuration.Builder http2Builder = new Http2Configuration.Builder();

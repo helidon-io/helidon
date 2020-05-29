@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.demo.todos.frontend;
 
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import javax.json.JsonObject;
@@ -30,6 +31,8 @@ import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 
+import io.opentracing.Span;
+import io.opentracing.SpanContext;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricRegistry;
@@ -135,10 +138,23 @@ public final class TodosHandler implements Service {
      * @param res the server response
      */
     private void getAll(final ServerRequest req, final ServerResponse res) {
+        AtomicReference<Span> createdSpan = new AtomicReference<>();
+
+        SpanContext spanContext = req.spanContext().orElseGet(() -> {
+           Span mySpan = req.tracer().buildSpan("getAll").start();
+           createdSpan.set(mySpan);
+           return mySpan.context();
+        });
         secure(req, res, sc -> {
-            bsc.getAll(req.spanContext())
+            bsc.getAll(spanContext)
                     .thenAccept(res::send)
-                    .exceptionally(t -> sendError(t, res));
+                    .exceptionally(t -> sendError(t, res))
+                    .whenComplete((noting, throwable) -> {
+                       Span mySpan = createdSpan.get();
+                       if (null != mySpan) {
+                           mySpan.finish();
+                       }
+                    });
         });
     }
 

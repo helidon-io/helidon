@@ -48,6 +48,7 @@ import io.helidon.common.HelidonFlavor;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
+import io.helidon.config.DeprecatedConfig;
 import io.helidon.media.jsonp.server.JsonSupport;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.RequestHeaders;
@@ -536,10 +537,12 @@ public final class MetricsSupport implements Service {
          */
         public Builder config(Config config) {
             this.config = config;
+
             // align with health checks
-            config.get("web-context").asString().ifPresent(this::context);
-            // backward compatibility
-            config.get("context").asString().ifPresent(this::context);
+            DeprecatedConfig.get(config, "web-context", "context")
+                    .asString()
+                    .ifPresent(this::webContext);
+
             config.get(CORS_CONFIG_KEY)
                     .as(CrossOriginConfig::create)
                     .ifPresent(this::crossOriginConfig);
@@ -556,7 +559,7 @@ public final class MetricsSupport implements Service {
          * {@link RegistryFactory#create(io.helidon.config.Config)} or
          * {@link RegistryFactory#create()} and create multiple
          * {@link io.helidon.metrics.MetricsSupport} instances with different
-         * {@link #context(String) contexts}.
+         * {@link #webContext(String)} contexts}.
          * <p>
          * If this method is not called,
          * {@link io.helidon.metrics.MetricsSupport} would use the shared
@@ -569,19 +572,6 @@ public final class MetricsSupport implements Service {
         public Builder registryFactory(RegistryFactory factory) {
             registryFactory = () -> factory;
             return this;
-        }
-
-        /**
-         * Set a new root context for REST API of metrics.
-         *
-         * @param newContext context to use
-         * @return updated builder instance
-         * @deprecated use {@link #webContext(String)} instead, aligned with API
-         * of heatlh checks
-         */
-        @Deprecated
-        public Builder context(String newContext) {
-            return webContext(newContext);
         }
 
         /**

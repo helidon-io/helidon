@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ public final class MetricUtil {
     }
 
     /**
-     * DO NOT USE THIS METHOD please.
+     * DO NOT USE THIS METHOD please, it will be removed.
      *
      * @param element element
      * @param annotClass annotation class
@@ -54,7 +54,8 @@ public final class MetricUtil {
      * @param <E> element type
      * @param <A> annotation type
      * @return lookup result
-     * @deprecated This method is made public to migrate from metrics1 to metrics2 for gRPC, this should be refactored
+     * @deprecated This method is made public to migrate from metrics1 to metrics2 for gRPC, this should be refactored.
+     *      This method will be removed outside of major version of Helidon.
      */
     @SuppressWarnings("unchecked")
     @Deprecated
