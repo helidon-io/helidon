@@ -31,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.reactive.BufferedEmittingPublisher;
 import io.helidon.common.reactive.Multi;
+import io.helidon.common.reactive.Single;
 
 import org.junit.jupiter.api.Test;
 
@@ -67,6 +68,13 @@ public class DataChunkInputStreamTest {
             sb.append((char) c);
         }
         assertThat(sb.toString(), is("foobar"));
+    }
+
+    @Test
+    public void closeMoreTheOnce() throws IOException {
+        InputStream is = new DataChunkInputStream(Single.just(DataChunk.create("test".getBytes())));
+        is.close();
+        is.close();
     }
 
     @Test
