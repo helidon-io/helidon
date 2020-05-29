@@ -23,7 +23,7 @@ import java.util.logging.LogManager;
 import io.helidon.config.Config;
 import io.helidon.health.HealthSupport;
 import io.helidon.health.checks.HealthChecks;
-import io.helidon.media.jsonb.server.JsonBindingSupport;
+import io.helidon.media.jsonb.JsonbSupport;
 import io.helidon.metrics.MetricsSupport;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.StaticContentSupport;
@@ -64,8 +64,11 @@ public final class Main {
         // By default this will pick up application.yaml from the classpath
         Config config = Config.create();
 
-        // Get webserver config from the "server" section of application.yaml
-        WebServer server = WebServer.create(createRouting(config), config.get("server"));
+        // Get webserver config from the "server" section of application.yaml and JSON support registration
+        WebServer server = WebServer.builder(createRouting(config))
+                .config(config.get("server"))
+                .addMediaSupport(JsonbSupport.create())
+                .build();
 
         // Try to start the server. If successful, print some info and arrange to
         // print a message at shutdown. If unsuccessful, print the exception.
@@ -87,8 +90,9 @@ public final class Main {
 
     /**
      * Creates new {@link Routing}.
-     * @return routing configured with JSON support, a health check, and a service
+     *
      * @param config configuration of this server
+     * @return routing configured with a health check, and a service
      */
     private static Routing createRouting(Config config) {
 
@@ -100,7 +104,6 @@ public final class Main {
         return Routing.builder()
                 .register("/public", StaticContentSupport.builder("public")
                         .welcomeFileName("index.html"))
-                .register(JsonBindingSupport.create())
                 .register(health) // Health at "/health"
                 .register(metrics) // Metrics at "/metrics"
                 .register("/employees", employeeService)

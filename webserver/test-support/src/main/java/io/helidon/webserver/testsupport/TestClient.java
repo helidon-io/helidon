@@ -36,6 +36,7 @@ import io.helidon.common.http.Http;
 import io.helidon.common.http.ReadOnlyParameters;
 import io.helidon.common.reactive.Single;
 import io.helidon.media.common.MediaContext;
+import io.helidon.media.common.MediaSupport;
 import io.helidon.webserver.BareRequest;
 import io.helidon.webserver.BareResponse;
 import io.helidon.webserver.Handler;
@@ -84,12 +85,27 @@ public class TestClient {
      * Creates new {@link TestClient} instance with specified routing.
      *
      * @param routing a routing to test
-     * @param mediaContext media support
+     * @param mediaContext media context
      * @return new instance
      * @throws NullPointerException if routing parameter is null
      */
     public static TestClient create(Routing routing, MediaContext mediaContext) {
         return new TestClient(routing, mediaContext, null);
+    }
+
+    /**
+     * Creates new {@link TestClient} instance with specified routing.
+     *
+     * @param routing a routing to test
+     * @param mediaSupport media support
+     * @return new instance
+     * @throws NullPointerException if routing parameter is null
+     */
+    public static TestClient create(Routing routing, MediaSupport mediaSupport) {
+        MediaContext mediaContext = MediaContext.builder()
+                .addMediaSupport(mediaSupport)
+                .build();
+        return create(routing, mediaContext);
     }
 
     /**

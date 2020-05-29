@@ -26,7 +26,7 @@ import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 
 import io.helidon.media.common.MediaContext;
-import io.helidon.media.jsonp.common.JsonpSupport;
+import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientRequestBuilder;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import javax.json.Json;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 
-import io.helidon.media.jsonp.server.JsonSupport;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
@@ -42,7 +41,6 @@ public class CounterService implements Service {
     @Override
     public void update(Routing.Rules routingRules) {
         routingRules.any(this::handleAny)
-                    .register("/api", JsonSupport.create())
                     .get("/api/counter", this::handleGet);
     }
 

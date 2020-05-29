@@ -19,7 +19,7 @@ package io.helidon.tests.integration.webclient;
 import java.util.concurrent.CompletionStage;
 
 import io.helidon.config.Config;
-import io.helidon.media.jsonp.common.JsonpSupport;
+import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.security.integration.webserver.WebSecurity;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;

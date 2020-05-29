@@ -30,7 +30,7 @@ import io.helidon.common.http.MediaType;
 import io.helidon.common.http.Parameters;
 import io.helidon.common.http.Reader;
 import io.helidon.media.common.MediaContext;
-import io.helidon.media.jsonp.common.JsonpSupport;
+import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.HttpException;
 import io.helidon.webserver.RequestPredicate;

@@ -22,7 +22,7 @@ import java.util.logging.LogManager;
 import io.helidon.config.Config;
 import io.helidon.health.HealthSupport;
 import io.helidon.health.checks.HealthChecks;
-import io.helidon.media.jsonp.server.JsonSupport;
+import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.metrics.MetricsSupport;
 import io.helidon.openapi.OpenAPISupport;
 import io.helidon.webserver.Routing;
@@ -62,8 +62,11 @@ public final class Main {
         // By default this will pick up application.yaml from the classpath
         Config config = Config.create();
 
-        // Get webserver config from the "server" section of application.yaml
-        WebServer server = WebServer.create(createRouting(config), config.get("server"));
+        // Get webserver config from the "server" section of application.yaml and register JSON support
+        WebServer server = WebServer.builder(createRouting(config))
+                .config(config.get("server"))
+                .addMediaSupport(JsonpSupport.create())
+                .build();
 
         // Try to start the server. If successful, print some info and arrange to
         // print a message at shutdown. If unsuccessful, print the exception.
@@ -88,7 +91,7 @@ public final class Main {
     /**
      * Creates new {@link Routing}.
      *
-     * @return routing configured with JSON support, a health check, and a service
+     * @return routing configured with a health check, and a service
      * @param config configuration of this server
      */
     private static Routing createRouting(Config config) {
@@ -100,7 +103,6 @@ public final class Main {
                 .build();
 
         return Routing.builder()
-                .register(JsonSupport.create())
                 .register(OpenAPISupport.create(config.get(OpenAPISupport.Builder.CONFIG_KEY)))
                 .register(health)                   // Health at "/health"
                 .register(metrics)                  // Metrics at "/metrics"

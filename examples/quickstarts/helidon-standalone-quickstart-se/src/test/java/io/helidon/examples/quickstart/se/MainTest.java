@@ -23,7 +23,7 @@ import javax.json.Json;
 import javax.json.JsonObject;
 import javax.json.JsonReaderFactory;
 
-import io.helidon.media.jsonp.common.JsonpSupport;
+import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.webclient.WebClient;
 import io.helidon.webserver.WebServer;
 

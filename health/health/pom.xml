@@ -34,8 +34,8 @@
             <artifactId>helidon-webserver</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.media.jsonp</groupId>
-            <artifactId>helidon-media-jsonp-common</artifactId>
+            <groupId>io.helidon.media</groupId>
+            <artifactId>helidon-media-jsonp</artifactId>
         </dependency>
         <dependency>
             <groupId>org.eclipse.microprofile.health</groupId>
