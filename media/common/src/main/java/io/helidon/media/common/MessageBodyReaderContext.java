@@ -148,7 +148,7 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
     @SuppressWarnings("unchecked")
     public <T> Single<T> unmarshall(Publisher<DataChunk> payload, GenericType<T> type) {
         if (payload == null) {
-            return Single.<T>empty();
+            return Single.empty();
         }
 
         // Flow.Publisher - can only be supported by streaming media
@@ -178,16 +178,14 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
      *
      * @param <T> entity type
      * @param payload inbound payload
-     * @param readerType the requested reader class
+     * @param reader specific reader
      * @param type actual representation of the entity type
      * @return publisher, never {@code null}
      */
-    @SuppressWarnings("unchecked")
-    public <T> Single<T> unmarshall(Publisher<DataChunk> payload, Class<? extends MessageBodyReader<T>> readerType,
-            GenericType<T> type) {
-
+    public <T> Single<T> unmarshall(Publisher<DataChunk> payload, MessageBodyReader<T> reader, GenericType<T> type) {
+        Objects.requireNonNull(reader);
         if (payload == null) {
-            return Single.<T>empty();
+            return Single.empty();
         }
 
         // Flow.Publisher - can only be supported by streaming media
@@ -198,10 +196,6 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
 
         try {
             Publisher<DataChunk> filteredPayload = applyFilters(payload, type);
-            MessageBodyReader<T> reader = (MessageBodyReader<T>) readers.get(readerType);
-            if (reader == null) {
-                return readerNotFound(readerType.getTypeName());
-            }
             return reader.read(filteredPayload, type, this);
         } catch (Throwable ex) {
             return transformationFailed(ex);
@@ -220,7 +214,7 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
     @SuppressWarnings("unchecked")
     public <T> Publisher<T> unmarshallStream(Publisher<DataChunk> payload, GenericType<T> type) {
         if (payload == null) {
-            return Multi.<T>empty();
+            return Multi.empty();
         }
         try {
             Publisher<DataChunk> filteredPayload = applyFilters(payload, type);
@@ -240,23 +234,19 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
      *
      * @param <T> entity type
      * @param payload inbound payload
-     * @param readerType the requested reader class
+     * @param reader specific reader
      * @param type actual representation of the entity type
      * @return publisher, never {@code null}
      */
     @SuppressWarnings("unchecked")
-    public <T> Publisher<T> unmarshallStream(Publisher<DataChunk> payload, Class<? extends MessageBodyReader<T>> readerType,
+    public <T> Publisher<T> unmarshallStream(Publisher<DataChunk> payload, MessageBodyStreamReader<T> reader,
             GenericType<T> type) {
-
+        Objects.requireNonNull(reader);
         if (payload == null) {
-            return Multi.<T>empty();
+            return Multi.empty();
         }
         try {
             Publisher<DataChunk> filteredPayload = applyFilters(payload, type);
-            MessageBodyStreamReader<T> reader = (MessageBodyStreamReader<T>) sreaders.get(readerType);
-            if (reader == null) {
-                return readerNotFound(readerType.getTypeName());
-            }
             return reader.read(filteredPayload, type, this);
         } catch (Throwable ex) {
             return transformationFailed(ex);
