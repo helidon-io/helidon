@@ -65,8 +65,8 @@
             <artifactId>helidon-webserver</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.media.jsonp</groupId>
-            <artifactId>helidon-media-jsonp-server</artifactId>
+            <groupId>io.helidon.media</groupId>
+            <artifactId>helidon-media-jsonp</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>

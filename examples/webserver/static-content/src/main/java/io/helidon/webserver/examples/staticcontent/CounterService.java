@@ -24,7 +24,6 @@ import javax.json.Json;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 
-import io.helidon.media.jsonp.server.JsonSupport;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
@@ -42,7 +41,6 @@ public class CounterService implements Service {
     @Override
     public void update(Routing.Rules routingRules) {
         routingRules.any(this::handleAny)
-                    .register("/api", JsonSupport.create())
                     .get("/api/counter", this::handleGet);
     }
 

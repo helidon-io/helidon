@@ -43,13 +43,16 @@ import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonValue;
 
+import io.helidon.common.GenericType;
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
+import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.config.DeprecatedConfig;
-import io.helidon.media.jsonp.server.JsonSupport;
+import io.helidon.media.jsonp.JsonpBodyWriter;
+import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.RequestHeaders;
 import io.helidon.webserver.Routing;
@@ -105,6 +108,9 @@ public final class MetricsSupport implements Service {
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
     private static final String DEFAULT_CONTEXT = "/metrics";
     private static final String FEATURE_NAME = "Metrics";
+
+    private static final GenericType<JsonObject> JSON_TYPE = GenericType.create(JsonObject.class);
+    private static final JsonpBodyWriter JSONP_WRITER = JsonpSupport.writer();
 
     static {
         HelidonFeatures.register(HelidonFlavor.SE, FEATURE_NAME);
@@ -171,7 +177,7 @@ public final class MetricsSupport implements Service {
 
         MediaType mediaType = findBestAccepted(req.headers());
         if (mediaType == MediaType.APPLICATION_JSON) {
-            res.send(toJsonData(registry));
+            sendJson(res, toJsonData(registry));
         } else if (mediaType == MediaType.TEXT_PLAIN) {
             res.send(toPrometheusData(registry));
         } else {
@@ -188,7 +194,7 @@ public final class MetricsSupport implements Service {
         }
 
         if (req.headers().isAccepted(MediaType.APPLICATION_JSON)) {
-            res.send(toJsonMeta(registry));
+            sendJson(res, toJsonMeta(registry));
         } else {
             res.status(Http.Status.NOT_ACCEPTABLE_406);
             res.send();
@@ -405,9 +411,6 @@ public final class MetricsSupport implements Service {
         // register the metric registry and factory to be available to all
         rules.any(new MetricsContextHandler(app, rf));
 
-        rules.anyOf(List.of(Http.Method.GET, Http.Method.OPTIONS),
-                JsonSupport.create());
-
         // routing to root of metrics
         rules.get(context, (req, res) -> getMultiple(req, res, base, app, vendor))
                 .options(context, (req, res) -> optionsMultiple(req, res, base, app, vendor));
@@ -451,7 +454,7 @@ public final class MetricsSupport implements Service {
                     if (mediaType == MediaType.APPLICATION_JSON) {
                         JsonObjectBuilder builder = JSON.createObjectBuilder();
                         entry.getValue().jsonData(builder, entry.getKey());
-                        res.send(builder.build());
+                        sendJson(res, builder.build());
                     } else if (mediaType == MediaType.TEXT_PLAIN) {
                         final StringBuilder sb = new StringBuilder();
                         entry.getValue().prometheusData(sb, entry.getKey(), true);
@@ -466,10 +469,14 @@ public final class MetricsSupport implements Service {
                 });
     }
 
+    private static void sendJson(ServerResponse res, JsonObject object) {
+        res.send(JSONP_WRITER.write(Single.just(object), JSON_TYPE, res.writerContext()));
+    }
+
     private void getMultiple(ServerRequest req, ServerResponse res, Registry... registries) {
         MediaType mediaType = findBestAccepted(req.headers());
         if (mediaType == MediaType.APPLICATION_JSON) {
-            res.send(toJsonData(registries));
+            sendJson(res, toJsonData(registries));
         } else if (mediaType == MediaType.TEXT_PLAIN) {
             res.send(toPrometheusData(registries));
         } else {
@@ -480,7 +487,7 @@ public final class MetricsSupport implements Service {
 
     private void optionsMultiple(ServerRequest req, ServerResponse res, Registry... registries) {
         if (req.headers().isAccepted(MediaType.APPLICATION_JSON)) {
-            res.send(toJsonMeta(registries));
+            sendJson(res, toJsonMeta(registries));
         } else {
             res.status(Http.Status.NOT_ACCEPTABLE_406);
             res.send();
@@ -495,7 +502,7 @@ public final class MetricsSupport implements Service {
                     if (req.headers().isAccepted(MediaType.APPLICATION_JSON)) {
                         JsonObjectBuilder builder = JSON.createObjectBuilder();
                         HelidonMetric.class.cast(entry.getKey()).jsonMeta(builder, entry.getValue());
-                        res.send(builder.build());
+                        sendJson(res, builder.build());
                     } else {
                         res.status(Http.Status.NOT_ACCEPTABLE_406);
                         res.send();

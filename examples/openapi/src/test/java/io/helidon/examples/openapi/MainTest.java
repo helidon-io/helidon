@@ -27,7 +27,7 @@ import javax.json.JsonString;
 
 import io.helidon.common.http.MediaType;
 import io.helidon.examples.openapi.internal.SimpleAPIModelReader;
-import io.helidon.media.jsonp.common.JsonpSupport;
+import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.webclient.WebClient;
 import io.helidon.webserver.WebServer;
 

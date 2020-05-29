@@ -23,7 +23,7 @@ import java.util.function.Consumer;
 import javax.json.JsonObject;
 
 import io.helidon.common.http.Http;
-import io.helidon.media.jsonp.server.JsonSupport;
+import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.metrics.RegistryFactory;
 import io.helidon.security.SecurityContext;
 import io.helidon.webserver.Routing;
@@ -107,9 +107,7 @@ public final class TodosHandler implements Service {
 
     @Override
     public void update(final Routing.Rules rules) {
-        rules
-                .any(JsonSupport.create())
-                .get("/todo/{id}", this::getSingle)
+        rules.get("/todo/{id}", this::getSingle)
                 .delete("/todo/{id}", this::delete)
                 .put("/todo/{id}", this::update)
                 .get("/todo", this::getAll)

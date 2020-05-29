@@ -19,5 +19,5 @@
  */
 module io.helidon.bundles.webserver {
     requires transitive io.helidon.webserver;
-    requires transitive io.helidon.media.jsonp.server;
+    requires transitive io.helidon.media.jsonp;
 }

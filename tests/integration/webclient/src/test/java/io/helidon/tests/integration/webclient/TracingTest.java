@@ -23,7 +23,7 @@ import java.util.concurrent.ExecutionException;
 import javax.json.JsonObject;
 
 import io.helidon.common.context.Context;
-import io.helidon.media.jsonp.common.JsonpSupport;
+import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
 

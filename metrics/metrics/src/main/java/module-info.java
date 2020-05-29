@@ -26,7 +26,7 @@ module io.helidon.metrics {
     requires transitive microprofile.metrics.api;
     requires java.management;
     requires io.helidon.webserver;
-    requires io.helidon.media.jsonp.server;
+    requires io.helidon.media.jsonp;
     requires java.json;
     requires io.helidon.config.mp;
     requires microprofile.config.api;
