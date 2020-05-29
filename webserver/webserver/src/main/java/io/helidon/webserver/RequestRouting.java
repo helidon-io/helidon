@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -270,15 +270,13 @@ class RequestRouting implements Routing {
             this.errorHandlers = new LinkedList<>(errorHandlers);
         }
 
-        @Override
-        @SuppressWarnings("deprecation")
-        public Span span() {
+        Span span() {
             return context().get(ServerRequest.class, Span.class).orElse(null);
         }
 
         @Override
-        public SpanContext spanContext() {
-            return context().get(ServerRequest.class, SpanContext.class).orElse(null);
+        public Optional<SpanContext> spanContext() {
+            return context().get(ServerRequest.class, SpanContext.class);
         }
 
         /**

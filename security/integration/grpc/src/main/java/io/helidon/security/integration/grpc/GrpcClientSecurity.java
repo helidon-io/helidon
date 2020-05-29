@@ -90,7 +90,6 @@ public final class GrpcClientSecurity
             OutboundSecurityClientBuilder clientBuilder = context.outboundClientBuilder()
                     .outboundEnvironment(outboundEnv)
                     .tracingSpan(tracing.findParent().orElse(null))
-                    .tracingSpan(tracing.findParentSpan().orElse(null))
                     .outboundEndpointConfig(outboundEp)
                     .explicitProvider(explicitProvider);
 

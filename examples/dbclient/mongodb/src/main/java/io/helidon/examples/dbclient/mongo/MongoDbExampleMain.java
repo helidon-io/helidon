@@ -23,8 +23,7 @@ import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbStatementType;
 import io.helidon.dbclient.health.DbClientHealthCheck;
-import io.helidon.dbclient.metrics.DbCounter;
-import io.helidon.dbclient.metrics.DbTimer;
+import io.helidon.dbclient.metrics.DbClientMetrics;
 import io.helidon.dbclient.tracing.DbClientTracing;
 import io.helidon.health.HealthSupport;
 import io.helidon.media.jsonb.common.JsonbSupport;
@@ -100,11 +99,12 @@ public final class MongoDbExampleMain {
 
         DbClient dbClient = DbClient.builder(dbConfig)
                 // add an interceptor to named statement(s)
-                .addInterceptor(DbCounter.create(), "select-all", "select-one")
+                .addService(DbClientMetrics.counter().statementNames("select-all", "select-one"))
                 // add an interceptor to statement type(s)
-                .addInterceptor(DbTimer.create(), DbStatementType.DELETE, DbStatementType.UPDATE, DbStatementType.INSERT)
+                .addService(DbClientMetrics.timer()
+                                    .statementTypes(DbStatementType.DELETE, DbStatementType.UPDATE, DbStatementType.INSERT))
                 // add an interceptor to all statements
-                .addInterceptor(DbClientTracing.create())
+                .addService(DbClientTracing.create())
                 .build();
 
         HealthSupport health = HealthSupport.builder()

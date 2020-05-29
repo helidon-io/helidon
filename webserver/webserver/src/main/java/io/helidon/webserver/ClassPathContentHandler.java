@@ -36,7 +36,7 @@ import java.util.logging.Logger;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
-import io.helidon.common.reactive.Multi;
+import io.helidon.common.reactive.IoMulti;
 
 /**
  * Handles static content from the classpath.
@@ -195,9 +195,10 @@ class ClassPathContentHandler extends StaticContentHandler {
         }
 
         InputStream in = url.openStream();
-        InputStreamPublisher byteBufPublisher = new InputStreamPublisher(in, 2048);
-        response.send(Multi.from(byteBufPublisher)
-                              .map(DataChunk::create));
+        response.send(IoMulti.builder(in)
+                .byteBufferSize(2048)
+                .build()
+                .map(DataChunk::create));
     }
 
     static String fileName(URL url) {

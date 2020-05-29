@@ -17,15 +17,12 @@
 
 package io.helidon.common.reactive;
 
-import org.reactivestreams.Publisher;
-import org.reactivestreams.tck.PublisherVerification;
-import org.reactivestreams.tck.TestEnvironment;
-import org.reactivestreams.FlowAdapters;
-import org.reactivestreams.tck.flow.FlowPublisherVerification;
-import org.testng.annotations.Test;
-
 import java.util.concurrent.Flow;
 import java.util.stream.IntStream;
+
+import org.reactivestreams.tck.TestEnvironment;
+import org.reactivestreams.tck.flow.FlowPublisherVerification;
+import org.testng.annotations.Test;
 
 @Test
 public class ConcatPublisherTckTest extends FlowPublisherVerification<Integer> {

@@ -49,7 +49,7 @@ public abstract class SignatureExampleTest {
                 .build();
 
         client = WebClient.builder()
-                .register(WebClientSecurity.create(security))
+                .addService(WebClientSecurity.create(security))
                 .build();
     }
 

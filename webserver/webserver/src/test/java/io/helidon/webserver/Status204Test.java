@@ -34,25 +34,25 @@ public class Status204Test {
     private WebServer server;
 
     @BeforeEach
-    public void createAndStartServer() throws Exception {
-        this.server = Routing.builder()
+    void createAndStartServer() {
+        this.server = WebServer.create(Routing.builder()
                .get(((req, res) -> {
                    res.send("test");
                }))
                .put(Handler.create(String.class, (req, res, entity) -> {
                    res.status(Http.Status.NO_CONTENT_204).send();
-               }))
-               .createServer();
-        this.server.start().toCompletableFuture().get();
+               })));
+
+        this.server.start().await();
     }
 
     @AfterEach
-    public void stopServer() throws Exception {
-        this.server.shutdown().toCompletableFuture().get();
+    void stopServer() {
+        this.server.shutdown().await();
     }
 
     @Test
-    public void callPutAndGet() throws Exception {
+    void callPutAndGet() throws Exception {
         WebClient webClient = WebClient.builder()
                 .baseUri("http://localhost:" + server.port())
                 .build();

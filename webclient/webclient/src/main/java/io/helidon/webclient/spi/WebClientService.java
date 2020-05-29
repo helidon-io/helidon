@@ -15,9 +15,7 @@
  */
 package io.helidon.webclient.spi;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-
+import io.helidon.common.reactive.Single;
 import io.helidon.webclient.WebClientRequestBuilder;
 import io.helidon.webclient.WebClientServiceRequest;
 import io.helidon.webclient.WebClientServiceResponse;
@@ -34,7 +32,7 @@ public interface WebClientService {
      * @param request client service request
      * @return completion stage of the client service request
      */
-    CompletionStage<WebClientServiceRequest> request(WebClientServiceRequest request);
+    Single<WebClientServiceRequest> request(WebClientServiceRequest request);
 
     /**
      * Method which is called when the last byte of the response is processed.
@@ -43,8 +41,8 @@ public interface WebClientService {
      * @param response client service response
      * @return completion stage of the client service response
      */
-    default CompletionStage<WebClientServiceResponse> response(WebClientRequestBuilder.ClientRequest request,
+    default Single<WebClientServiceResponse> response(WebClientRequestBuilder.ClientRequest request,
                                                                WebClientServiceResponse response) {
-        return CompletableFuture.completedFuture(response);
+        return Single.just(response);
     }
 }

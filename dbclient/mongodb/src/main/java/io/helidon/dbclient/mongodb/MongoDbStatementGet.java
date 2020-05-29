@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,15 +18,11 @@ package io.helidon.dbclient.mongodb;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CompletionStage;
 
-import io.helidon.common.mapper.MapperManager;
 import io.helidon.common.reactive.Single;
-import io.helidon.dbclient.DbMapperManager;
 import io.helidon.dbclient.DbRow;
 import io.helidon.dbclient.DbStatementGet;
-import io.helidon.dbclient.DbStatementType;
-import io.helidon.dbclient.common.InterceptorSupport;
+import io.helidon.dbclient.common.DbStatementContext;
 import io.helidon.dbclient.mongodb.MongoDbTransaction.TransactionManager;
 
 import com.mongodb.reactivestreams.client.MongoDatabase;
@@ -38,19 +34,8 @@ public class MongoDbStatementGet implements DbStatementGet {
 
     private final MongoDbStatementQuery theQuery;
 
-    MongoDbStatementGet(MongoDatabase db,
-                        String statementName,
-                        String statement,
-                        DbMapperManager dbMapperManager,
-                        MapperManager mapperManager,
-                        InterceptorSupport interceptors) {
-        this.theQuery = new MongoDbStatementQuery(DbStatementType.GET,
-                                                  db,
-                                                  statementName,
-                                                  statement,
-                                                  dbMapperManager,
-                                                  mapperManager,
-                                                  interceptors);
+    MongoDbStatementGet(MongoDatabase db, DbStatementContext statementContext) {
+        this.theQuery = new MongoDbStatementQuery(db, statementContext);
     }
 
     @Override
@@ -90,10 +75,9 @@ public class MongoDbStatementGet implements DbStatementGet {
     }
 
     @Override
-    public CompletionStage<Optional<DbRow>> execute() {
-        return theQuery.execute()
-                .thenApply(dbRows -> Single.from(dbRows.publisher()))
-                .thenCompose(Single::toOptionalStage);
+    public Single<Optional<DbRow>> execute() {
+        return Single.from(theQuery.execute())
+                .toOptionalSingle();
     }
 
     /**

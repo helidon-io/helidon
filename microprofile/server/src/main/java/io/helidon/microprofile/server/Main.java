@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import javax.enterprise.inject.spi.CDI;
  * Uses {@code logging.properties} to configure Java logging unless a configuration is defined through
  * a Java system property. The file is expected either in the directory the application was started, or on
  * the classpath.
- * @deprecated use {@link io.helidon.microprofile.cdi.Main} instead
+ * @deprecated since 2.0.0, use {@link io.helidon.microprofile.cdi.Main} instead
  */
 @Deprecated
 public final class Main {
@@ -35,7 +35,7 @@ public final class Main {
     }
 
     /**
-     * Main method to start server. The server will collection JAX-RS application automatically (through
+     * Main method to start server. The server will collect JAX-RS application automatically (through
      * CDI extension - just annotate it with {@link javax.enterprise.context.ApplicationScoped}).
      *
      * @param args command line arguments, currently ignored

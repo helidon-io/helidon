@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,19 +18,19 @@ package io.helidon.dbclient;
 import java.util.Arrays;
 import java.util.List;
 import java.util.ServiceLoader;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
 import io.helidon.common.mapper.MapperManager;
+import io.helidon.common.reactive.Single;
+import io.helidon.common.reactive.Subscribable;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
-import io.helidon.config.ConfigValue;
 import io.helidon.dbclient.spi.DbClientProvider;
 import io.helidon.dbclient.spi.DbClientProviderBuilder;
-import io.helidon.dbclient.spi.DbInterceptorProvider;
+import io.helidon.dbclient.spi.DbClientServiceProvider;
 import io.helidon.dbclient.spi.DbMapperProvider;
 
 /**
@@ -40,27 +40,31 @@ public interface DbClient {
     /**
      * Execute database statements in transaction.
      *
-     * @param <T>      statement execution result type
+     * @param <T>      statement execution result type, MUST be either a {@link io.helidon.common.reactive.Multi}
+     *                 or a {@link io.helidon.common.reactive.Single}, as returned by all APIs of DbClient.
+     * @param <U>      the type provided by the result type
      * @param executor database statement executor, see {@link DbExecute}
      * @return statement execution result
      */
-    <T> CompletionStage<T> inTransaction(Function<DbTransaction, CompletionStage<T>> executor);
+    <U, T extends Subscribable<U>> T inTransaction(Function<DbTransaction, T> executor);
 
     /**
      * Execute database statement.
      *
-     * @param <T>      statement execution result type
+     * @param <T>      statement execution result type, MUST be either a {@link io.helidon.common.reactive.Multi}
+     *                 or a {@link io.helidon.common.reactive.Single}, as returned by all APIs of DbClient
+     * @param <U>      the type provided by the result type
      * @param executor database statement executor, see {@link DbExecute}
      * @return statement execution result
      */
-    <T extends CompletionStage<?>> T execute(Function<DbExecute, T> executor);
+    <U, T extends Subscribable<U>> T execute(Function<DbExecute, T> executor);
 
     /**
      * Pings the database, completes when DB is up and ready, completes exceptionally if not.
      *
      * @return stage that completes when the ping finished
      */
-    CompletionStage<Void> ping();
+    Single<Void> ping();
 
     /**
      * Type of this database provider (such as jdbc:mysql, mongoDB etc.).
@@ -90,7 +94,8 @@ public interface DbClient {
         DbClientProvider theSource = DbClientProviderLoader.first();
         if (null == theSource) {
             throw new DbClientException(
-                    "No DbSource defined on classpath/module path. An implementation of io.helidon.dbclient.spi.DbSource is required "
+                    "No DbSource defined on classpath/module path. An implementation of io.helidon.dbclient.spi.DbSource is "
+                            + "required "
                             + "to access a DB");
         }
 
@@ -149,14 +154,14 @@ public interface DbClient {
             HelidonFeatures.register(HelidonFlavor.SE, "DbClient");
         }
 
-        private final HelidonServiceLoader.Builder<DbInterceptorProvider> interceptorServices = HelidonServiceLoader.builder(
-                ServiceLoader.load(DbInterceptorProvider.class));
+        private final HelidonServiceLoader.Builder<DbClientServiceProvider> clientServiceProviders = HelidonServiceLoader.builder(
+                ServiceLoader.load(DbClientServiceProvider.class));
 
         /**
          * Provider specific database handler builder instance.
          */
         private final DbClientProviderBuilder<?> theBuilder;
-        private Config config;
+        private Config config = Config.empty();
 
         /**
          * Create an instance of Helidon database handler builder.
@@ -174,65 +179,18 @@ public interface DbClient {
          */
         @Override
         public DbClient build() {
-            // add interceptors from service loader
-            if (null != config) {
-                Config interceptors = config.get("interceptors");
-                List<DbInterceptorProvider> providers = interceptorServices.build().asList();
-                for (DbInterceptorProvider provider : providers) {
-                    Config providerConfig = interceptors.get(provider.configKey());
-                    if (!providerConfig.exists()) {
-                        continue;
-                    }
-                    // if configured, we want to at least add a global one
-                    AtomicBoolean added = new AtomicBoolean(false);
-                    Config global = providerConfig.get("global");
-                    if (global.exists() && !global.isLeaf()) {
-                        // we must iterate through nodes
-                        global.asNodeList().ifPresent(configs -> {
-                            configs.forEach(globalConfig -> {
-                                added.set(true);
-                                addInterceptor(provider.create(globalConfig));
-                            });
-                        });
-                    }
-
-                    Config named = providerConfig.get("named");
-                    if (named.exists()) {
-                        // we must iterate through nodes
-                        named.asNodeList().ifPresent(configs -> {
-                            configs.forEach(namedConfig -> {
-                                ConfigValue<List<String>> names = namedConfig.get("names").asList(String.class);
-                                names.ifPresent(nameList -> {
-                                    added.set(true);
-                                    addInterceptor(provider.create(namedConfig), nameList.toArray(new String[0]));
-                                });
-                            });
-                        });
-                    }
-                    Config typed = providerConfig.get("typed");
-                    if (typed.exists()) {
-                        typed.asNodeList().ifPresent(configs -> {
-                            configs.forEach(typedConfig -> {
-                                ConfigValue<List<String>> types = typedConfig.get("types").asList(String.class);
-                                types.ifPresent(typeList -> {
-                                    DbStatementType[] typeArray = typeList.stream()
-                                            .map(DbStatementType::valueOf)
-                                            .toArray(DbStatementType[]::new);
-
-                                    added.set(true);
-                                    addInterceptor(provider.create(typedConfig), typeArray);
-                                });
-                            });
-                        });
-                    }
-                    if (!added.get()) {
-                        if (global.exists()) {
-                            addInterceptor(provider.create(global));
-                        } else {
-                            addInterceptor(provider.create(providerConfig));
-                        }
-                    }
+            // add client services from service loader
+            Config servicesConfig = config.get("services");
+            List<DbClientServiceProvider> providers = clientServiceProviders.build().asList();
+            for (DbClientServiceProvider provider : providers) {
+                Config providerConfig = servicesConfig.get(provider.configKey());
+                if (!providerConfig.exists()) {
+                    // this client service is on classpath, yet there is no configuration for it, so it is ignored
+                    continue;
                 }
+
+                provider.create(providerConfig)
+                    .forEach(this::addService);
             }
 
             return theBuilder.build();
@@ -245,44 +203,30 @@ public interface DbClient {
          * @param provider provider to add to the list of loaded providers
          * @return updated builder instance
          */
-        public Builder addInterceptorProvider(DbInterceptorProvider provider) {
-            this.interceptorServices.addService(provider);
+        public Builder addServiceProvider(DbClientServiceProvider provider) {
+            this.clientServiceProviders.addService(provider);
             return this;
         }
 
         /**
-         * Add a global interceptor.
+         * Add a client service.
          *
-         * A global interceptor is applied to each statement.
-         * @param interceptor interceptor to apply
+         * @param clientService clientService to apply
          * @return updated builder instance
          */
-        public Builder addInterceptor(DbInterceptor interceptor) {
-            theBuilder.addInterceptor(interceptor);
+        public Builder addService(DbClientService clientService) {
+            theBuilder.addService(clientService);
             return this;
         }
 
         /**
-         * Add an interceptor to specific named statements.
+         * Add a client service.
          *
-         * @param interceptor interceptor to apply
-         * @param statementNames names of statements to apply it on
+         * @param clientServiceSupplier supplier of client service
          * @return updated builder instance
          */
-        public Builder addInterceptor(DbInterceptor interceptor, String... statementNames) {
-            theBuilder.addInterceptor(interceptor, statementNames);
-            return this;
-        }
-
-        /**
-         * Add an interceptor to specific statement types.
-         *
-         * @param interceptor interceptor to apply
-         * @param dbStatementTypes types of statements to apply it on
-         * @return updated builder instance
-         */
-        public Builder addInterceptor(DbInterceptor interceptor, DbStatementType... dbStatementTypes) {
-            theBuilder.addInterceptor(interceptor, dbStatementTypes);
+        public Builder addService(Supplier<? extends DbClientService> clientServiceSupplier) {
+            theBuilder.addService(clientServiceSupplier.get());
             return this;
         }
 

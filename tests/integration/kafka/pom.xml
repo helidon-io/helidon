@@ -60,8 +60,34 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.apache.kafka</groupId>
-            <artifactId>kafka-clients</artifactId>
+            <groupId>io.helidon.messaging.kafka</groupId>
+            <artifactId>helidon-messaging-kafka</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.messaging</groupId>
+            <artifactId>helidon-messaging</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.messaging</groupId>
+            <artifactId>helidon-microprofile-messaging</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.microprofile.reactive.messaging</groupId>
+            <artifactId>microprofile-reactive-messaging-api</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.eclipse.microprofile.reactive-streams-operators</groupId>
+                    <artifactId>microprofile-reactive-streams-operators-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.eclipse.microprofile.reactive-streams-operators</groupId>
+                    <artifactId>microprofile-reactive-streams-operators-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>jakarta.enterprise</groupId>
+                    <artifactId>jakarta.enterprise.cdi-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.kafka</groupId>
@@ -80,18 +106,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.messaging.connectors.kafka</groupId>
-            <artifactId>helidon-messaging-connectors-kafka</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.microprofile.reactive-streams</groupId>
-            <artifactId>helidon-microprofile-reactive-streams</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.microprofile.messaging</groupId>
-            <artifactId>helidon-microprofile-messaging</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.reactivestreams</groupId>
             <artifactId>reactive-streams-tck</artifactId>
             <scope>test</scope>
@@ -101,23 +115,10 @@
             <artifactId>mockito-core</artifactId>
             <scope>test</scope>
         </dependency>
-         <dependency>
-            <groupId>org.eclipse.microprofile.reactive.messaging</groupId>
-            <artifactId>microprofile-reactive-messaging-api</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.eclipse.microprofile.reactive-streams-operators</groupId>
-                    <artifactId>microprofile-reactive-streams-operators-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.eclipse.microprofile.reactive-streams-operators</groupId>
-                    <artifactId>microprofile-reactive-streams-operators-core</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>jakarta.enterprise</groupId>
-                    <artifactId>jakarta.enterprise.cdi-api</artifactId>
-                </exclusion>
-            </exclusions>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>

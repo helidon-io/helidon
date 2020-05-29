@@ -24,7 +24,6 @@ import java.util.function.Supplier;
 
 import io.helidon.security.spi.SecurityProvider;
 
-import io.opentracing.Span;
 import io.opentracing.SpanContext;
 
 /**
@@ -38,7 +37,6 @@ public class SecurityRequestBuilder<T extends SecurityRequestBuilder<T>> {
     private final Map<String, Supplier<Object>> resources = new HashMap<>();
     private String providerName;
     private boolean isOptional;
-    private Span tracingSpan;
     private SpanContext tracingSpanContext;
 
     @SuppressWarnings("unchecked")
@@ -105,22 +103,6 @@ public class SecurityRequestBuilder<T extends SecurityRequestBuilder<T>> {
      * Tracing span to support Open tracing. Provider developer can add additional spans as children of this span
      * to trace their progress.
      *
-     * @param span span of current security request (e.g. authentication, authorization or outbound)
-     * @return updated builder instance
-     * @see io.opentracing.util.GlobalTracer#get()
-     * @see io.opentracing.Tracer#buildSpan(String)
-     * @deprecated to be removed in 2.0, now needed for backward compatibility
-     */
-    @Deprecated
-    public T tracingSpan(Span span) {
-        this.tracingSpan = span;
-        return myInstance;
-    }
-
-    /**
-     * Tracing span to support Open tracing. Provider developer can add additional spans as children of this span
-     * to trace their progress.
-     *
      * @param spanContext span of current security request (e.g. authentication, authorization or outbound, or any parent if
      *                    these are not traced)
      * @return updated builder instance
@@ -168,17 +150,15 @@ public class SecurityRequestBuilder<T extends SecurityRequestBuilder<T>> {
         return providerName;
     }
 
-    private final class SecurityRequestImpl implements SecurityRequest {
+    private static final class SecurityRequestImpl implements SecurityRequest {
         private final String providerName;
         private final boolean isOptional;
-        private final Span tracingSpan;
         private final Optional<SpanContext> tracingSpanContext;
         private final Map<String, Supplier<Object>> resources = new HashMap<>();
 
         private SecurityRequestImpl(SecurityRequestBuilder<?> builder) {
             this.providerName = builder.providerName;
             this.isOptional = builder.isOptional;
-            this.tracingSpan = builder.tracingSpan;
             this.tracingSpanContext = Optional.ofNullable(builder.tracingSpanContext);
             this.resources.putAll(builder.resources);
         }
@@ -186,11 +166,6 @@ public class SecurityRequestBuilder<T extends SecurityRequestBuilder<T>> {
         @Override
         public boolean isOptional() {
             return isOptional;
-        }
-
-        @Override
-        public Span tracingSpan() {
-            return tracingSpan;
         }
 
         @Override
@@ -207,7 +182,6 @@ public class SecurityRequestBuilder<T extends SecurityRequestBuilder<T>> {
             return "SecurityRequestImpl{"
                     + "providerName='" + providerName + '\''
                     + ", isOptional=" + isOptional
-                    + ", tracingSpan=" + tracingSpan
                     + '}';
         }
     }

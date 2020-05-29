@@ -43,8 +43,8 @@ public class JsonpBodyWriter implements MessageBodyWriter<JsonStructure> {
     }
 
     @Override
-    public boolean accept(GenericType<?> type, MessageBodyWriterContext context) {
-        return JsonStructure.class.isAssignableFrom(type.rawType());
+    public PredicateResult accept(GenericType<?> type, MessageBodyWriterContext context) {
+        return PredicateResult.supports(JsonStructure.class, type);
     }
 
     @Override

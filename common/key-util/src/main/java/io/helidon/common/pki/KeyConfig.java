@@ -399,6 +399,16 @@ public final class KeyConfig {
         }
 
         /**
+         * Pass-phrase of the keystore (supported with JKS and PKCS12 keystores).
+         *
+         * @param keystorePassword keystore password to use, calls {@link #keystorePassphrase(char[])}
+         * @return updated builder instance
+         */
+        public KeystoreBuilder keystorePassphrase(String keystorePassword) {
+            return keystorePassphrase(keystorePassword.toCharArray());
+        }
+
+        /**
          * Alias of the private key in the keystore.
          *
          * @param keyAlias alias of the key in the keystore
@@ -444,6 +454,18 @@ public final class KeyConfig {
             this.keyPassphrase = Arrays.copyOf(privateKeyPassphrase, privateKeyPassphrase.length);
 
             return this;
+        }
+
+        /**
+         * Pass-phrase of the key in the keystore (used for private keys).
+         * This is (by default) the same as keystore passphrase - only configure
+         * if it differs from keystore passphrase.
+         *
+         * @param privateKeyPassphrase pass-phrase of the key
+         * @return updated builder instance
+         */
+        public KeystoreBuilder keyPassphrase(String privateKeyPassphrase) {
+            return keyPassphrase(privateKeyPassphrase.toCharArray());
         }
 
         /**
@@ -652,6 +674,17 @@ public final class KeyConfig {
             this.pemKeyPassphrase = Arrays.copyOf(passphrase, passphrase.length);
 
             return this;
+        }
+
+        /**
+         * Passphrase for private key. If the key is encrypted (and in PEM PKCS#8 format), this passphrase will be used to
+         * decrypt it.
+         *
+         * @param passphrase passphrase used to encrypt the private key
+         * @return updated builder instance
+         */
+        public PemBuilder keyPassphrase(String passphrase) {
+            return keyPassphrase(passphrase.toCharArray());
         }
 
         /**

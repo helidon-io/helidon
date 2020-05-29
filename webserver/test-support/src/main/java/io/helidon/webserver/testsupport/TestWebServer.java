@@ -17,9 +17,9 @@
 package io.helidon.webserver.testsupport;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 
-import io.helidon.common.http.ContextualRegistry;
+import io.helidon.common.context.Context;
+import io.helidon.common.reactive.Single;
 import io.helidon.media.common.MediaContext;
 import io.helidon.media.common.MessageBodyReaderContext;
 import io.helidon.media.common.MessageBodyWriterContext;
@@ -35,7 +35,7 @@ class TestWebServer implements WebServer {
 
     private final CompletableFuture<WebServer> startFuture = new CompletableFuture<>();
     private final CompletableFuture<WebServer> shutdownFuture = new CompletableFuture<>();
-    private final ContextualRegistry context = ContextualRegistry.create();
+    private final Context context = Context.create();
     private final ServerConfiguration configuration = ServerConfiguration.builder().build();
     private final MediaContext mediaContext;
 
@@ -57,23 +57,23 @@ class TestWebServer implements WebServer {
     }
 
     @Override
-    public CompletionStage<WebServer> start() {
+    public Single<WebServer> start() {
         if (shutdownFuture.isDone()) {
             throw new IllegalStateException("Cannot start over!");
         }
         startFuture.complete(this);
-        return startFuture;
+        return Single.from(startFuture);
     }
 
     @Override
-    public CompletionStage<WebServer> shutdown() {
+    public Single<WebServer> shutdown() {
         shutdownFuture.complete(this);
-        return shutdownFuture;
+        return Single.from(shutdownFuture);
     }
 
     @Override
-    public CompletionStage<WebServer> whenShutdown() {
-        return shutdownFuture;
+    public Single<WebServer> whenShutdown() {
+        return Single.from(shutdownFuture);
     }
 
     @Override
@@ -82,7 +82,7 @@ class TestWebServer implements WebServer {
     }
 
     @Override
-    public ContextualRegistry context() {
+    public Context context() {
         return context;
     }
 

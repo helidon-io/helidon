@@ -73,7 +73,7 @@
         <version.lib.jboss.transaction-spi>7.6.0.Final</version.lib.jboss.transaction-spi>
         <version.lib.jboss.transaction-api>1.0.0.Final</version.lib.jboss.transaction-api>
         <version.lib.jedis>3.1.0</version.lib.jedis>
-        <version.lib.jersey>2.30.1</version.lib.jersey>
+        <version.lib.jersey>2.31</version.lib.jersey>
         <version.lib.jsonb-api>1.0.2</version.lib.jsonb-api>
         <version.lib.jsonp-api>1.1.6</version.lib.jsonp-api>
         <version.lib.jsonp-impl>1.1.6</version.lib.jsonp-impl>
@@ -648,6 +648,20 @@
                 <groupId>org.eclipse.microprofile.reactive.messaging</groupId>
                 <artifactId>microprofile-reactive-messaging-api</artifactId>
                 <version>${version.lib.microprofile-reactive-messaging-api}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.eclipse.microprofile.reactive-streams-operators</groupId>
+                        <artifactId>microprofile-reactive-streams-operators-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.eclipse.microprofile.reactive-streams-operators</groupId>
+                        <artifactId>microprofile-reactive-streams-operators-core</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>javax.enterprise</groupId>
+                        <artifactId>cdi-api</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>com.netflix.hystrix</groupId>

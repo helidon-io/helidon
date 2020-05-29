@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,28 +15,24 @@
  */
 package io.helidon.tests.integration.dbclient.jdbc.destroy;
 
-import java.util.List;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
-import java.util.logging.Logger;
 
+import io.helidon.common.reactive.Multi;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbRow;
-import io.helidon.dbclient.DbRows;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.tests.integration.dbclient.common.AbstractIT.DB_CLIENT;
-
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Destroy database
  */
 public class DestroyIT {
-
-    /** Local logger instance. */
-    static final Logger LOGGER = Logger.getLogger(DestroyIT.class.getName());
 
     /**
      * Delete database content.
@@ -48,8 +44,8 @@ public class DestroyIT {
     private static void dropSchema(DbClient dbClient) throws ExecutionException, InterruptedException {
         dbClient.execute(exec -> exec
                 .namedDml("drop-poketypes")
-                .thenCompose(result -> exec.namedDml("drop-pokemons"))
-                .thenCompose(result -> exec.namedDml("drop-types"))
+                .flatMapSingle(result -> exec.namedDml("drop-pokemons"))
+                .flatMapSingle(result -> exec.namedDml("drop-types"))
         ).toCompletableFuture().get();
     }
 
@@ -68,65 +64,30 @@ public class DestroyIT {
 
     /**
      * Verify that table Types does not exist.
-     *
-     * @throws ExecutionException when database query failed
      */
     @Test
-    public void testTypesDeleted() throws InterruptedException {
-        try {
-            DbRows<DbRow> rows = DB_CLIENT.execute(exec -> exec
-                .namedQuery("select-types")
-            ).toCompletableFuture().get();
-            if (rows != null) {
-                List<DbRow> rowsList = rows.collect().toCompletableFuture().get();
-                LOGGER.warning(() -> String.format("Rows count: %d", rowsList.size()));
-                fail("No Types rows shall be returned after database cleanup!");
-            }
-        } catch (ExecutionException ex) {
-            LOGGER.info(() -> String.format("Caught expected exception: %s", ex.getMessage()));
-        }
+    void testTypesDeleted() {
+        testTableNotExist("select-types");
     }
 
     /**
      * Verify that table Pokemons does not exist.
-     *
-     * @throws ExecutionException when database query failed
      */
     @Test
-    public void testPokemonsDeleted() throws InterruptedException {
-        try {
-            DbRows<DbRow> rows = DB_CLIENT.execute(exec -> exec
-                .namedQuery("select-pokemons")
-            ).toCompletableFuture().get();
-            if (rows != null) {
-                List<DbRow> rowsList = rows.collect().toCompletableFuture().get();
-                LOGGER.warning(() -> String.format("Rows count: %d", rowsList.size()));
-                fail("No Pokemons rows shall be returned after database cleanup!");
-            }
-        } catch (ExecutionException ex) {
-            LOGGER.info(() -> String.format("Caught expected exception: %s", ex.getMessage()));
-        }
+    public void testPokemonsDeleted() {
+        testTableNotExist("select-pokemons");
     }
 
     /**
      * Verify that table PokemonTypes does not exist.
-     *
-     * @throws ExecutionException when database query failed
      */
     @Test
-    public void testPokemonTypesDeleted() throws InterruptedException {
-        try {
-            DbRows<DbRow> rows = DB_CLIENT.execute(exec -> exec
-                .namedQuery("select-poketypes-all")
-            ).toCompletableFuture().get();
-            if (rows != null) {
-                List<DbRow> rowsList = rows.collect().toCompletableFuture().get();
-                LOGGER.warning(() -> String.format("Rows count: %d", rowsList.size()));
-                fail("No PokemonTypes rows shall be returned after database cleanup!");
-            }
-        } catch (ExecutionException ex) {
-            LOGGER.info(() -> String.format("Caught expected exception: %s", ex.getMessage()));
-        }
+    public void testPokemonTypesDeleted() {
+        testTableNotExist("select-poketypes-all");
     }
 
+    private void testTableNotExist(String statementName) {
+        Multi<DbRow> result = DB_CLIENT.execute(exec -> exec.namedQuery(statementName));
+        assertThrows(CompletionException.class, () -> result.collectList().await(), "Table should have been dropped");
+    }
 }

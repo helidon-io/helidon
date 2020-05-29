@@ -33,6 +33,7 @@ import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.HashParameters;
 import io.helidon.common.reactive.Multi;
+import io.helidon.media.common.MessageBodyOperator;
 import io.helidon.media.common.MessageBodyWriterContext;
 
 import org.junit.jupiter.api.Test;
@@ -58,9 +59,15 @@ public class JsonpStreamWriterTest {
     @Test
     void testAcceptedTypes() {
         assertAll(
-                () -> assertThat("JsonObject accepted", WRITER.accept(JSON_OBJECT, CONTEXT), is(true)),
-                () -> assertThat("JsonArray accepted", WRITER.accept(JSON_ARRAY, CONTEXT), is(true)),
-                () -> assertThat("Pojo not accepted", WRITER.accept(MY_TYPE, CONTEXT), is(false))
+                () -> assertThat("JsonObject accepted",
+                                 WRITER.accept(JSON_OBJECT, CONTEXT),
+                                 is(MessageBodyOperator.PredicateResult.SUPPORTED)),
+                () -> assertThat("JsonArray accepted",
+                                 WRITER.accept(JSON_ARRAY, CONTEXT),
+                                 is(MessageBodyOperator.PredicateResult.SUPPORTED)),
+                () -> assertThat("Pojo not accepted",
+                                 WRITER.accept(MY_TYPE, CONTEXT),
+                                 is(MessageBodyOperator.PredicateResult.NOT_SUPPORTED))
         );
     }
 

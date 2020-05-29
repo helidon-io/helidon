@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ public class ExperimentalConfigTest {
         Http2Configuration http2 = builder.build();
         assertThat(http2.enable(), is(true));
         assertThat(http2.maxContentLength(), is(32 * 1024));
-        ExperimentalConfiguration config = new ExperimentalConfiguration.Builder().http2(http2).build();
+        ExperimentalConfiguration config = ExperimentalConfiguration.builder().http2(http2).build();
         assertThat(config.http2(), is(http2));
     }
 

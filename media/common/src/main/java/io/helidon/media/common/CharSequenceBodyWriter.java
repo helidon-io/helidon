@@ -30,14 +30,14 @@ import io.helidon.common.reactive.Single;
 public final class CharSequenceBodyWriter implements MessageBodyWriter<CharSequence> {
 
     /**
-     * Enforce the use of {@link #get()}.
+     * Enforce the use of {@link #create()}.
      */
     private CharSequenceBodyWriter() {
     }
 
     @Override
-    public boolean accept(GenericType<?> type, MessageBodyWriterContext context) {
-        return CharSequence.class.isAssignableFrom(type.rawType());
+    public PredicateResult accept(GenericType<?> type, MessageBodyWriterContext context) {
+        return PredicateResult.supports(CharSequence.class, type);
     }
 
     @Override

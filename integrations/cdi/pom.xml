@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2018, 2020 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -40,7 +40,6 @@
         <module>hibernate-cdi</module>
         <module>jedis-cdi</module>
         <module>jpa-cdi</module>
-        <module>jpa-weld</module> <!-- Deprecated and slated for eventual removal. -->
         <module>jta-cdi</module>
         <module>jta-weld</module>
         <module>oci-objectstorage-cdi</module>

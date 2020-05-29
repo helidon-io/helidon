@@ -27,6 +27,8 @@ import io.helidon.media.common.MessageBodyReaderContext;
 
 public class NameReader implements MessageBodyReader<Name> {
 
+    private static final MediaType TYPE = MediaType.parse("application/name");
+
     private NameReader() {
     }
 
@@ -41,11 +43,11 @@ public class NameReader implements MessageBodyReader<Name> {
     }
 
     @Override
-    public boolean accept(GenericType<?> type, MessageBodyReaderContext context) {
+    public PredicateResult accept(GenericType<?> type, MessageBodyReaderContext context) {
         return context.contentType()
-                .map(ct -> MediaType.parse("application/name").equals(ct))
-                .map(acceptable -> acceptable && Name.class.isAssignableFrom(type.rawType()))
-                .orElse(false);
+                .filter(TYPE::equals)
+                .map(it -> PredicateResult.supports(Name.class, type))
+                .orElse(PredicateResult.NOT_SUPPORTED);
     }
 }
 

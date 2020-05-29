@@ -41,6 +41,29 @@ classes, we felt that in this case the change was warranted and acceptable, for 
 We apologize for the inconvenience, but we do feel that the impact of the changes is minimal
 and that the changes will be beneficial in the long run.     
 
+#### Internal `helidon-common-metrics` and Related Classes Removed
+Later releases of Helidon 1.x included the `helidon-common-metrics` component and related
+classes which provided a common interface to ease the transition from MicroProfile 
+Metrics 1.x to 2.x. 
+Although intended for use only by Helidon subsystems rather than 
+by developers and users, the component and its contents had to be public so multiple Helidon 
+subsystems could use them. 
+Therefore, user code might have used these elements.
+
+This release removes this common interface and associated classes. 
+Any user code that used these internal classes can use the corresponding supported classes in 
+`io.helidon.metrics:helidon-metrics` and MicroProfile Metrics 2.0 instead. 
+
+|Helidon Artifact |Interfaces/Classes |
+|--------------|----------------|
+|`io.helidon.common:helidon-common-metrics` |Entire artifact, including all `io.helidon.common.metrics...` classes |
+|`io.helidon.metrics:helidon-metrics` |`HelidonMetadata` |
+| |`InternalBridgeImpl` |
+| |`InternalMetadataBuilderImpl` |
+| |`InternalMetadataImpl` |
+| |`InternalMetricIDImpl` |
+
+
 ## [2.0.0-M3]
 
 ### Notes

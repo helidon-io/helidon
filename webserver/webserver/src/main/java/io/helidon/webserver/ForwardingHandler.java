@@ -32,6 +32,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpContent;
@@ -92,7 +93,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
             return;
         }
 
-        if (requestContext.publisher().tryAcquire() > 0) {
+        if (requestContext.publisher().hasRequests()) {
             ctx.channel().read();
         }
     }
@@ -106,6 +107,12 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
             ctx.channel().config().setAutoRead(false);
 
             HttpRequest request = (HttpRequest) msg;
+            try {
+                checkDecoderResult(request);
+            } catch (Throwable e) {
+                send400BadRequest(ctx, e.getMessage());
+                return;
+            }
             ReferenceHoldingQueue<DataChunk> queue = new ReferenceHoldingQueue<>();
             queues.add(queue);
             requestContext = new RequestContext(new HttpRequestScopedPublisher(ctx, queue), request);
@@ -138,7 +145,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                             if (queue.release()) {
                                 queues.remove(queue);
                             }
-                            publisherRef.drain();
+                            publisherRef.clearBuffer(DataChunk::release);
 
                             // Enable auto-read only after response has been completed
                             // to avoid a race condition with the next response
@@ -193,7 +200,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                     LOGGER.finer(() -> "Closing connection because request payload was not consumed; method: " + method);
                     ctx.close();
                 } else {
-                    requestContext.publisher().submit(content);
+                    requestContext.publisher().emit(content);
                 }
             }
 
@@ -216,7 +223,17 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
             }
             // Simply forward raw bytebuf to Tyrus for processing
             LOGGER.finest(() -> "Received ByteBuf of WebSockets connection" + msg);
-            requestContext.publisher().submit((ByteBuf) msg);
+            requestContext.publisher().emit((ByteBuf) msg);
+        }
+    }
+
+    private static void checkDecoderResult(HttpRequest request) {
+        DecoderResult decoderResult = request.decoderResult();
+        if (decoderResult.isFailure()) {
+            LOGGER.info(String.format("Request %s to %s rejected: %s", request.method()
+                            .asciiName(), request.uri(), decoderResult.cause().getMessage()));
+            throw new BadRequestException(String.format("Request was rejected: %s", decoderResult.cause().getMessage()),
+                    decoderResult.cause());
         }
     }
 
@@ -265,7 +282,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         if (requestContext != null) {
-            requestContext.publisher().error(cause);
+            requestContext.publisher().fail(cause);
         }
         ctx.close();
     }

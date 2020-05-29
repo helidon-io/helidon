@@ -207,6 +207,11 @@
                 <artifactId>helidon-media-jsonp-server</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.media</groupId>
+                <artifactId>helidon-media-multipart</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
             <!-- config -->
             <dependency>
                 <groupId>io.helidon.config</groupId>
@@ -550,11 +555,6 @@
                 <artifactId>helidon-common-context</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
-            <dependency>
-                <groupId>io.helidon.common</groupId>
-                <artifactId>helidon-common-metrics</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
 
             <!-- db client -->
             <dependency>
@@ -778,11 +778,6 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.integrations.cdi</groupId>
-                <artifactId>helidon-integrations-cdi-jpa-weld</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.integrations.cdi</groupId>
                 <artifactId>helidon-integrations-cdi-jta</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
@@ -825,8 +820,13 @@
             </dependency>
             <!-- Messaging -->
             <dependency>
-                <groupId>io.helidon.messaging.connectors.kafka</groupId>
-                <artifactId>helidon-messaging-connectors-kafka</artifactId>
+                <groupId>io.helidon.messaging</groupId>
+                <artifactId>helidon-messaging</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.messaging.kafka</groupId>
+                <artifactId>helidon-messaging-kafka</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
         </dependencies>

@@ -113,7 +113,7 @@ public final class PokemonMain {
     private static Routing createRouting(Config config) {
         Config dbConfig = config.get("db");
 
-        // Interceptors are added through a service loader - see mongoDB example for explicit interceptors
+        // Client services are added through a service loader - see mongoDB example for explicit services
         DbClient dbClient = DbClient.builder(dbConfig)
                 .build();
 

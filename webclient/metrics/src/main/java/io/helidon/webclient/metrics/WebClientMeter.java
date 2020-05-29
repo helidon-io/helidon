@@ -15,10 +15,8 @@
  */
 package io.helidon.webclient.metrics;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-
 import io.helidon.common.http.Http;
+import io.helidon.common.reactive.Single;
 import io.helidon.webclient.WebClientServiceRequest;
 
 import org.eclipse.microprofile.metrics.Metadata;
@@ -40,7 +38,7 @@ public class WebClientMeter extends WebClientMetric {
     }
 
     @Override
-    public CompletionStage<WebClientServiceRequest> request(WebClientServiceRequest request) {
+    public Single<WebClientServiceRequest> request(WebClientServiceRequest request) {
         Http.RequestMethod method = request.method();
         request.whenResponseReceived()
                 .thenAccept(response -> {
@@ -48,6 +46,7 @@ public class WebClientMeter extends WebClientMetric {
                         updateMeter(createMetadata(request, null));
                     }
                 });
+
         request.whenComplete()
                 .thenAccept(response -> {
                     if (shouldContinueOnSuccess(method, response.status().code())) {
@@ -61,7 +60,7 @@ public class WebClientMeter extends WebClientMetric {
                     return null;
                 });
 
-        return CompletableFuture.completedFuture(request);
+        return Single.just(request);
     }
 
     private void updateMeter(Metadata metadata) {

@@ -141,7 +141,9 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
     private HelidonContainerImpl init() {
         LOGGER.fine(() -> "Initializing CDI container " + id);
 
-        addHelidonBeanDefiningAnnotations("javax.ws.rs.Path", "javax.websocket.server.ServerEndpoint");
+        addHelidonBeanDefiningAnnotations("javax.ws.rs.Path",
+                                          "javax.ws.rs.ext.Provider",
+                                          "javax.websocket.server.ServerEndpoint");
 
         ResourceLoader resourceLoader = new WeldResourceLoader() {
             @Override

@@ -21,18 +21,14 @@ import java.nio.charset.StandardCharsets;
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Publisher;
-import java.util.concurrent.Flow.Subscriber;
-import java.util.concurrent.Flow.Subscription;
 import java.util.function.Predicate;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.http.ReadOnlyParameters;
-import io.helidon.common.reactive.CompletionSingle;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
 
@@ -121,7 +117,7 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
      * @param <T> supported type
      * @param type class representing the supported type
      * @param reader reader function
-     * @deprecated use {@link #registerReader(MessageBodyReader) } instead
+     * @deprecated since 2.0.0 use {@link #registerReader(MessageBodyReader) } instead
      */
     @Deprecated
     public <T> void registerReader(Class<T> type, io.helidon.common.http.Reader<T> reader) {
@@ -133,7 +129,7 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
      * @param <T> supported type
      * @param predicate class predicate
      * @param reader reader function
-     * @deprecated use {@link #registerReader(MessageBodyReader) } instead
+     * @deprecated since 2.0.0 use {@link #registerReader(MessageBodyReader) } instead
      */
     @Deprecated
     public <T> void registerReader(Predicate<Class<?>> predicate, io.helidon.common.http.Reader<T> reader) {
@@ -396,62 +392,17 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
         public <U extends T> Single<U> read(Publisher<DataChunk> publisher, GenericType<U> type,
                 MessageBodyReaderContext context) {
 
-            return new SingleFromCompletionStage(reader.applyAndCast(publisher, (Class<U>) type.rawType()));
+            return Single.from(reader.applyAndCast(publisher, (Class<U>) type.rawType()));
         }
 
         @Override
-        public boolean accept(GenericType<?> type, MessageBodyReaderContext context) {
+        public PredicateResult accept(GenericType<?> type, MessageBodyReaderContext context) {
             if (predicate != null) {
-                return predicate.test(type.rawType());
+                return predicate.test(type.rawType())
+                        ? PredicateResult.SUPPORTED
+                        : PredicateResult.NOT_SUPPORTED;
             }
-            return clazz.isAssignableFrom(type.rawType());
-        }
-    }
-
-    /**
-     * Single from future.
-     * @param <T> item type
-     */
-    private static final class SingleFromCompletionStage<T> extends CompletionSingle<T> {
-
-        private final CompletionStage<? extends T> future;
-        private Subscriber<? super T> subscriber;
-        private volatile boolean requested;
-
-        SingleFromCompletionStage(CompletionStage<? extends T> future) {
-            this.future = Objects.requireNonNull(future, "future");
-        }
-
-        private void submit(T item) {
-            subscriber.onNext(item);
-            subscriber.onComplete();
-        }
-
-        private <U extends T> U raiseError(Throwable error) {
-            subscriber.onError(error);
-            return null;
-        }
-
-        @Override
-        public void subscribe(Subscriber<? super T> subscriber) {
-            if (this.subscriber != null) {
-                throw new IllegalStateException("Already subscribed to");
-            }
-            this.subscriber = subscriber;
-            subscriber.onSubscribe(new Subscription() {
-                @Override
-                public void request(long n) {
-                    if (n > 0 && !requested) {
-                        future.exceptionally(SingleFromCompletionStage.this::raiseError);
-                        future.thenAccept(SingleFromCompletionStage.this::submit);
-                        requested = true;
-                    }
-                }
-
-                @Override
-                public void cancel() {
-                }
-            });
+            return PredicateResult.supports(clazz, type);
         }
     }
 }

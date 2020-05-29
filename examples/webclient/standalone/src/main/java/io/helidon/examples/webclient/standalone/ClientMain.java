@@ -192,7 +192,7 @@ public class ClientMain {
         WebClient webClient = WebClient.builder()
                 .baseUri(url)
                 .config(config)
-                .register(clientService)
+                .addService(clientService)
                 .build();
 
         //Perform any GET request using this newly created WebClient instance.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package io.helidon.dbclient;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletionStage;
 
 /**
  * Database statement that can process parameters.
@@ -107,8 +106,7 @@ public interface DbStatement<D extends DbStatement<D, R>, R> {
     /**
      * Execute this statement using the parameters configured with {@code params} and {@code addParams} methods.
      *
-     * @return The future with result of this statement, as soon as the statement is executed; note that for queries
-     *  this is before the results are actually obtained from the database
+     * @return The result of this statement, never blocking.
      */
-    CompletionStage<R> execute();
+    R execute();
 }

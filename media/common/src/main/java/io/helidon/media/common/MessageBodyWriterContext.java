@@ -42,7 +42,7 @@ import io.helidon.common.reactive.Single;
 public final class MessageBodyWriterContext extends MessageBodyContext implements MessageBodyWriters, MessageBodyFilters {
 
     /**
-     * {@link MultiMapper} used to map bytes chunks.
+     * {@link Mapper} used to map bytes chunks.
      */
     private static final BytesMapper BYTES_MAPPER = new BytesMapper();
 
@@ -218,7 +218,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      * @param type class representing the type supported by this writer
      * @param function writer function
      * @return this {@code MessageBodyWriteableContent} instance
-     * @deprecated use {@link #registerWriter(MessageBodyWriter) } instead
+     * @deprecated since 2.0.0, use {@link #registerWriter(MessageBodyWriter) } instead
      */
     @Deprecated
     public <T> MessageBodyWriterContext registerWriter(Class<T> type, Function<T, Publisher<DataChunk>> function) {
@@ -234,7 +234,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      * @param contentType the media type
      * @param function writer function
      * @return this {@code MessageBodyWriteableContent} instance
-     * @deprecated use {@link #registerWriter(MessageBodyWriter) } instead
+     * @deprecated since 2.0.0, use {@link #registerWriter(MessageBodyWriter) } instead
      */
     @Deprecated
     public <T> MessageBodyWriterContext registerWriter(Class<T> type, MediaType contentType,
@@ -251,7 +251,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      * @param accept the object predicate
      * @param function writer function
      * @return this {@code MessageBodyWriteableContent} instance
-     * @deprecated use {@link #registerWriter(MessageBodyWriter) } instead
+     * @deprecated since 2.0.0 use {@link #registerWriter(MessageBodyWriter) } instead
      */
     @Deprecated
     public <T> MessageBodyWriterContext registerWriter(Predicate<?> accept, Function<T, Publisher<DataChunk>> function) {
@@ -267,7 +267,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      * @param contentType the media type
      * @param function writer function
      * @return this {@code MessageBodyWriteableContent} instance
-     * @deprecated use {@link #registerWriter(MessageBodyWriter) } instead
+     * @deprecated since 2.0.0, use {@link #registerWriter(MessageBodyWriter) } instead
      */
     @Deprecated
     public <T> MessageBodyWriterContext registerWriter(Predicate<?> accept, MediaType contentType,
@@ -284,11 +284,10 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      * @param <T> entity type parameter
      * @param content input publisher
      * @param type actual representation of the entity type
-     * @param fallback fallback context, may be {@code null}
      * @return publisher, never {@code null}
      */
     @SuppressWarnings("unchecked")
-    public <T> Publisher<DataChunk> marshall(Single<T> content, GenericType<T> type, MessageBodyWriterContext fallback) {
+    public <T> Publisher<DataChunk> marshall(Single<T> content, GenericType<T> type) {
         try {
             if (content == null) {
                 return applyFilters(Multi.<DataChunk>empty());
@@ -304,12 +303,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
                                                         + ".");
             }
 
-            MessageBodyWriter<T> writer;
-            if (fallback != null) {
-                writer = (MessageBodyWriter<T>) writers.select(type, this, fallback.writers);
-            } else {
-                writer = (MessageBodyWriter<T>) writers.select(type, this);
-            }
+            MessageBodyWriter<T> writer = (MessageBodyWriter<T>) writers.select(type, this);
             if (writer == null) {
                 throw new IllegalStateException("No writer found for type: " + type);
             }
@@ -327,23 +321,17 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      * @param content input publisher
      * @param writerType the requested writer class
      * @param type actual representation of the entity type
-     * @param fallback fallback context, may be {@code null}
      * @return publisher, never {@code null}
      */
     @SuppressWarnings("unchecked")
     public <T> Publisher<DataChunk> marshall(Single<T> content, Class<? extends MessageBodyWriter<T>> writerType,
-            GenericType<T> type, MessageBodyWriterContext fallback) {
+            GenericType<T> type) {
 
         try {
             if (content == null) {
                 return applyFilters(Multi.<DataChunk>empty());
             }
-            MessageBodyWriter<T> writer;
-            if (fallback != null) {
-                writer = (MessageBodyWriter<T>) writers.get(writerType, fallback.writers);
-            } else {
-                writer = (MessageBodyWriter<T>) writers.get(writerType, null);
-            }
+            MessageBodyWriter<T> writer = (MessageBodyWriter<T>) writers.get(writerType);
             if (writer == null) {
                 throw new IllegalStateException("No writer found for type: " + type);
             }
@@ -360,21 +348,15 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      * @param <T> entity type parameter
      * @param content input publisher
      * @param type actual representation of the entity type
-     * @param fallback fallback context
      * @return publisher, never {@code null}
      */
     @SuppressWarnings("unchecked")
-    public <T> Publisher<DataChunk> marshallStream(Publisher<T> content, GenericType<T> type, MessageBodyWriterContext fallback) {
+    public <T> Publisher<DataChunk> marshallStream(Publisher<T> content, GenericType<T> type) {
         try {
             if (content == null) {
                 return applyFilters(Multi.<DataChunk>empty());
             }
-            MessageBodyStreamWriter<T> writer;
-            if (fallback != null) {
-                writer = (MessageBodyStreamWriter<T>) swriters.select(type, this, fallback.swriters);
-            } else {
-                writer = (MessageBodyStreamWriter<T>) swriters.select(type, this);
-            }
+            MessageBodyStreamWriter<T> writer = (MessageBodyStreamWriter<T>) swriters.select(type, this);
             if (writer == null) {
                 throw new IllegalStateException("No stream writer found for type: " + type);
             }
@@ -392,23 +374,17 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      * @param content input publisher
      * @param writerType the requested writer class
      * @param type actual representation of the entity type
-     * @param fallback fallback context
      * @return publisher, never {@code null}
      */
     @SuppressWarnings("unchecked")
     public <T> Publisher<DataChunk> marshallStream(Publisher<T> content, Class<? extends MessageBodyWriter<T>> writerType,
-            GenericType<T> type, MessageBodyWriterContext fallback) {
+            GenericType<T> type) {
 
         try {
             if (content == null) {
                 return applyFilters(Multi.<DataChunk>empty());
             }
-            MessageBodyStreamWriter<T> writer;
-            if (fallback != null) {
-                writer = (MessageBodyStreamWriter<T>) swriters.get(writerType, fallback.swriters);
-            } else {
-                writer = (MessageBodyStreamWriter<T>) swriters.get(writerType, null);
-            }
+            MessageBodyStreamWriter<T> writer = (MessageBodyStreamWriter<T>) swriters.get(writerType);
             if (writer == null) {
                 throw new IllegalStateException("No stream writer found for type: " + type);
             }
@@ -593,22 +569,22 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
 
         @Override
         @SuppressWarnings("unchecked")
-        public boolean accept(GenericType<?> type, MessageBodyWriterContext context) {
+        public PredicateResult accept(GenericType<?> type, MessageBodyWriterContext context) {
             if (this.type != null) {
                 if (!this.type.isAssignableFrom(type.rawType())) {
-                    return false;
+                    return PredicateResult.NOT_SUPPORTED;
                 }
             } else {
                 if (!predicate.test((Object) type.rawType())) {
-                    return false;
+                    return PredicateResult.NOT_SUPPORTED;
                 }
             }
             MediaType ct = context.contentType().orElse(null);
             if (!(contentType != null && ct != null && !ct.test(contentType))) {
                 context.contentType(contentType);
-                return true;
+                return PredicateResult.SUPPORTED;
             }
-            return false;
+            return PredicateResult.NOT_SUPPORTED;
         }
 
         @Override
@@ -620,7 +596,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
     }
 
     /**
-     * Implementation of {@link MultiMapper} to convert {@code byte[]} to
+     * Implementation of {@link Mapper} to convert {@code byte[]} to
      * a publisher of {@link DataChunk}.
      */
     private static final class BytesMapper implements Mapper<byte[], Publisher<DataChunk>> {

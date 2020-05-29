@@ -28,12 +28,14 @@ public interface MediaSupportProvider {
      *
      * @return name of the configuration node of this service
      */
-    String type();
+    default String configKey() {
+        return "unconfigured";
+    }
 
     /**
      * Create a new service instance based on configuration.
      *
-     * @param config configuration of this service
+     * @param config configuration of this service, never null
      * @return a new media service instance
      */
     MediaSupport create(Config config);

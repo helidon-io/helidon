@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,24 +15,26 @@
  */
 package io.helidon.dbclient.jdbc;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 
-import io.helidon.dbclient.DbInterceptorContext;
+import io.helidon.common.reactive.Single;
+import io.helidon.dbclient.DbClientServiceContext;
 import io.helidon.dbclient.DbStatementDml;
+import io.helidon.dbclient.common.DbStatementContext;
 
-class JdbcStatementDml extends JdbcStatement<DbStatementDml, Long> implements DbStatementDml {
+class JdbcStatementDml extends JdbcStatement<DbStatementDml, Single<Long>> implements DbStatementDml {
 
     JdbcStatementDml(JdbcExecuteContext executeContext,
-                     JdbcStatementContext statementContext) {
+                     DbStatementContext statementContext) {
         super(executeContext, statementContext);
     }
 
     @Override
-    protected CompletionStage<Long> doExecute(CompletionStage<DbInterceptorContext> dbContextFuture,
-                                              CompletableFuture<Void> statementFuture,
-                                              CompletableFuture<Long> queryFuture) {
+    protected Single<Long> doExecute(Single<DbClientServiceContext> dbContextFuture,
+                                     CompletableFuture<Void> statementFuture,
+                                     CompletableFuture<Long> queryFuture) {
 
         executeContext().addFuture(queryFuture);
 
@@ -43,24 +45,42 @@ class JdbcStatementDml extends JdbcStatement<DbStatementDml, Long> implements Db
             return null;
         });
 
-        return dbContextFuture.thenCompose(dbContext -> {
-            return connection().thenCompose(connection -> {
-                executorService().submit(() -> {
-                    try {
-                        PreparedStatement preparedStatement = build(connection, dbContext);
-                        long count = preparedStatement.executeLargeUpdate();
-                        statementFuture.complete(null);
-                        queryFuture.complete(count);
-                        preparedStatement.close();
-                    } catch (Exception e) {
-                        statementFuture.completeExceptionally(e);
-                        queryFuture.completeExceptionally(e);
-                    }
-                });
-                // the query future is reused, as it completes with the number of updated records
-                return queryFuture;
-            });
-        });
+        return dbContextFuture
+                .flatMapSingle(dbContext -> doExecute(dbContext, statementFuture, queryFuture));
     }
 
+    private Single<Long> doExecute(DbClientServiceContext dbContext,
+                                   CompletableFuture<Void> statementFuture,
+                                   CompletableFuture<Long> queryFuture) {
+
+        return Single.from(connection())
+                .flatMapSingle(connection -> doExecute(dbContext, connection, statementFuture, queryFuture));
+    }
+
+    private Single<Long> doExecute(DbClientServiceContext dbContext,
+                                   Connection connection,
+                                   CompletableFuture<Void> statementFuture,
+                                   CompletableFuture<Long> queryFuture) {
+
+        executorService().submit(() -> callStatement(dbContext, connection, statementFuture, queryFuture));
+
+        // the query future is reused, as it completes with the number of updated records
+        return Single.from(queryFuture);
+    }
+
+    private void callStatement(DbClientServiceContext dbContext,
+                               Connection connection,
+                               CompletableFuture<Void> statementFuture,
+                               CompletableFuture<Long> queryFuture) {
+        try {
+            PreparedStatement preparedStatement = build(connection, dbContext);
+            long count = preparedStatement.executeLargeUpdate();
+            statementFuture.complete(null);
+            queryFuture.complete(count);
+            preparedStatement.close();
+        } catch (Exception e) {
+            statementFuture.completeExceptionally(e);
+            queryFuture.completeExceptionally(e);
+        }
+    }
 }

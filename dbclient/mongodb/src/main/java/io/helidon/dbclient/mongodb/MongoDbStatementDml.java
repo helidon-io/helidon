@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,50 +16,30 @@
 package io.helidon.dbclient.mongodb;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-import java.util.logging.Logger;
 
-import io.helidon.common.mapper.MapperManager;
-import io.helidon.dbclient.DbInterceptorContext;
-import io.helidon.dbclient.DbMapperManager;
+import io.helidon.common.reactive.Single;
+import io.helidon.dbclient.DbClientServiceContext;
 import io.helidon.dbclient.DbStatementDml;
 import io.helidon.dbclient.DbStatementType;
-import io.helidon.dbclient.common.InterceptorSupport;
+import io.helidon.dbclient.common.DbStatementContext;
 
 import com.mongodb.reactivestreams.client.MongoDatabase;
 
 /**
  * DML statement for MongoDB.
  */
-public class MongoDbStatementDml extends MongoDbStatement<DbStatementDml, Long> implements DbStatementDml {
-
-    private static final Logger LOGGER = Logger.getLogger(MongoDbStatementDml.class.getName());
+public class MongoDbStatementDml extends MongoDbStatement<DbStatementDml, Single<Long>> implements DbStatementDml {
 
     private DbStatementType dbStatementType;
-
     private MongoStatement statement;
 
-    MongoDbStatementDml(
-            DbStatementType dbStatementType,
-            MongoDatabase db,
-            String statementName,
-            String statement,
-            DbMapperManager dbMapperManager,
-            MapperManager mapperManager,
-            InterceptorSupport interceptors
-    ) {
-        super(dbStatementType,
-              db,
-              statementName,
-              statement,
-              dbMapperManager,
-              mapperManager,
-              interceptors);
-        this.dbStatementType = dbStatementType;
+    MongoDbStatementDml(MongoDatabase db, DbStatementContext statementContext) {
+        super(db, statementContext);
+        this.dbStatementType = statementContext.statementType();
     }
 
     @Override
-    public CompletionStage<Long> execute() {
+    public Single<Long> execute() {
         statement = new MongoStatement(dbStatementType, READER_FACTORY, build());
         switch (statement.getOperation()) {
         case INSERT:
@@ -79,18 +59,17 @@ public class MongoDbStatementDml extends MongoDbStatement<DbStatementDml, Long> 
     }
 
     @Override
-    protected CompletionStage<Long> doExecute(
-            CompletionStage<DbInterceptorContext> dbContextFuture,
-            CompletableFuture<Void> statementFuture,
-            CompletableFuture<Long> queryFuture
-    ) {
-        return MongoDbDMLExecutor.executeDml(
+    protected Single<Long> doExecute(Single<DbClientServiceContext> dbContext,
+                                     CompletableFuture<Void> statementFuture,
+                                     CompletableFuture<Long> queryFuture) {
+
+        return Single.from(MongoDbDMLExecutor.executeDml(
                 this,
                 dbStatementType,
                 statement,
-                dbContextFuture,
+                dbContext,
                 statementFuture,
-                queryFuture);
+                queryFuture));
     }
 
     @Override
