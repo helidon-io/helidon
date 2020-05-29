@@ -22,7 +22,6 @@ import java.util.Map;
 
 import javax.json.Json;
 import javax.json.JsonReaderFactory;
-import javax.json.JsonStructure;
 import javax.json.JsonWriterFactory;
 
 import io.helidon.common.HelidonFeatures;

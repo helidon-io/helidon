@@ -23,7 +23,6 @@ import java.util.function.Consumer;
 import javax.json.JsonObject;
 
 import io.helidon.common.http.Http;
-import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.metrics.RegistryFactory;
 import io.helidon.security.SecurityContext;
 import io.helidon.webserver.Routing;
