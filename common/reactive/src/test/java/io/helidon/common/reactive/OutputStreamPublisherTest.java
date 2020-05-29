@@ -110,7 +110,7 @@ public class OutputStreamPublisherTest {
         sub.request(1);
 
         // need to make sure we do not block any method
-        assertThrows(UnitTestException.class, () -> publisher.write("Test".getBytes()));
+        assertThrows(IOException.class, () -> publisher.write("Test".getBytes()));
         publisher.close();
     }
 

@@ -40,32 +40,37 @@ public class OutputStreamPublisher extends OutputStream implements Flow.Publishe
 
     private static final byte[] FLUSH_BUFFER = new byte[0];
 
-    private final SingleSubscriberHolder<ByteBuffer> subscriber = new SingleSubscriberHolder<>();
-    private final Object invocationLock = new Object();
-
-    private final RequestedCounter requested = new RequestedCounter();
-
+    private final EmittingPublisher<ByteBuffer> emittingPublisher = EmittingPublisher.create();
     private final CompletableFuture<?> completionResult = new CompletableFuture<>();
     private final AtomicBoolean written = new AtomicBoolean();
+    private volatile CompletableFuture<Void> demandUpdated = new CompletableFuture<>();
+
+    /**
+     * Create new output stream that {@link java.util.concurrent.Flow.Publisher}
+     * publishes any data written to it as {@link ByteBuffer} events.
+     */
+    public OutputStreamPublisher() {
+        emittingPublisher.onCancel(() -> {
+            // when write is called, an exception is thrown as it is a cancelled subscriber
+            // when close is called, we do not throw an exception, as that should be silent
+            completionResult.complete(null);
+        });
+        emittingPublisher.onRequest((n, demand) -> {
+            // complete previous and create new future for demand update
+            CompletableFuture<Void> demandUpdated = this.demandUpdated;
+            this.demandUpdated = new CompletableFuture<>();
+            demandUpdated.complete(null);
+        });
+    }
 
     @Override
-    public void subscribe(Flow.Subscriber<? super ByteBuffer> subscriberParam) {
-        if (subscriber.register(subscriberParam)) {
-            subscriberParam.onSubscribe(new Flow.Subscription() {
-                @Override
-                public void request(long n) {
-                    requested.increment(n, t -> complete(t));
-                }
-
-                @Override
-                public void cancel() {
-                    subscriber.cancel();
-                    // when write is called, an exception is thrown as it is a cancelled subscriber
-                    // when close is called, we do not throw an exception, as that should be silent
-                    completionResult.complete(null);
-                }
-            });
+    public void subscribe(Flow.Subscriber<? super ByteBuffer> subscriber) {
+        if (completionResult.isCompletedExceptionally()) {
+            subscriber.onSubscribe(SubscriptionHelper.CANCELED);
+            completionResult.whenComplete((o, throwable) -> subscriber.onError(throwable));
+            return;
         }
+        emittingPublisher.subscribe(subscriber);
     }
 
     @Override
@@ -149,26 +154,25 @@ public class OutputStreamPublisher extends OutputStream implements Flow.Publishe
         }
 
         try {
-            final Flow.Subscriber<? super ByteBuffer> sub = subscriber.get();
-
             long start = System.currentTimeMillis();
 
-            while (!subscriber.isClosed() && !requested.tryDecrement()) {
-                Thread.sleep(250); // wait until some data can be sent or the stream has been closed
+            ByteBuffer byteBuffer = createBuffer(buffer, offset, length);
 
-                long diff = System.currentTimeMillis() - start;
-                if (diff > HARD_TIMEOUT_MILLIS) {
-                    throw new IOException("Timed out while waiting for subscriber to read data");
-                }
-            }
-
-            synchronized (invocationLock) {
-                if (subscriber.isClosed()) {
+            // defend against racing demand updates
+            CompletableFuture<Void> demandUpdated = this.demandUpdated;
+            while (!emittingPublisher.emit(byteBuffer)) {
+                if (emittingPublisher.isCancelled()) {
                     throw new IOException("Output stream already closed.");
                 }
+                if (emittingPublisher.isFailed()) {
+                    Throwable throwable = emittingPublisher.failCause().get();
+                    throw new IOException(throwable);
+                }
 
-                sub.onNext(createBuffer(buffer, offset, length));
+                // wait until some data can be sent or the stream has been closed
+                await(start, 250, demandUpdated);
             }
+
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             complete(e);
@@ -183,21 +187,27 @@ public class OutputStreamPublisher extends OutputStream implements Flow.Publishe
     }
 
     private void complete() {
-        subscriber.close(sub -> {
-            synchronized (invocationLock) {
-                sub.onComplete();
-                signalCloseComplete(null);
-            }
-        });
+        emittingPublisher.complete();
+        signalCloseComplete(null);
     }
 
     private void complete(Throwable t) {
-        subscriber.close(sub -> {
-            synchronized (invocationLock) {
-                sub.onError(t);
-                signalCloseComplete(t);
+        emittingPublisher.fail(t);
+        signalCloseComplete(t);
+    }
+
+    private void await(long startTime, long waitTime, CompletableFuture<?> future) throws
+            ExecutionException,
+            InterruptedException,
+            IOException {
+        try {
+            future.get(waitTime, TimeUnit.MILLISECONDS);
+        } catch (TimeoutException e) {
+            long diff = System.currentTimeMillis() - startTime;
+            if (diff > HARD_TIMEOUT_MILLIS) {
+                throw new IOException("Timed out while waiting for subscriber to read data");
             }
-        });
+        }
     }
 
     /**

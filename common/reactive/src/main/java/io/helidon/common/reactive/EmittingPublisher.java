@@ -18,6 +18,7 @@
 package io.helidon.common.reactive;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -42,6 +43,7 @@ import java.util.function.BiConsumer;
  */
 public class EmittingPublisher<T> implements Flow.Publisher<T> {
     private volatile Flow.Subscriber<? super T> subscriber;
+    private volatile Throwable error = null;
     private final AtomicReference<State> state = new AtomicReference<>(State.NOT_REQUESTED_YET);
     private final AtomicLong requested = new AtomicLong();
     private final AtomicBoolean emitting = new AtomicBoolean(false);
@@ -132,6 +134,7 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
     private void signalOnError(Throwable throwable) {
         if (state.compareAndSet(State.NOT_REQUESTED_YET, State.FAILED)
                 || state.compareAndSet(State.READY_TO_EMIT, State.FAILED)) {
+            this.error = throwable;
             for (;;) {
                 try {
                     if (emitting.getAndSet(true)) {
@@ -183,7 +186,7 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
      * If there is requested less than 1, nothing is sent and method returns false.
      *
      * @param item to be sent downstream
-     * @return true if item successfully sent, false if canceled on no demand
+     * @return true if item successfully sent, false if canceled or no demand
      * @throws IllegalStateException if publisher is completed
      */
     public boolean emit(T item) {
@@ -234,6 +237,15 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
      */
     public boolean isUnbounded() {
         return this.requested.get() == Long.MAX_VALUE;
+    }
+
+    /**
+     * Return cause of fail, if publisher is in failed state.
+     *
+     * @return optional cause of fail
+     */
+    public Optional<Throwable> failCause(){
+        return Optional.ofNullable(this.error);
     }
 
     /**
