@@ -101,28 +101,26 @@ final class MessageBodyOperators<T extends MessageBodyOperator<?>> implements It
     <U extends MessageBodyOperator<V>, V extends MessageBodyContext> T select(GenericType<?> type, V context) {
         Objects.requireNonNull(type, "type is null!");
         Objects.requireNonNull(context, "context is null!");
-        try {
-            lock.readLock().lock();
-            T assignableOperator = null;
+        T assignableOperator = null;
+        MessageBodyOperators<T> current = this;
 
-            for (T operator : operators) {
-                MessageBodyOperator.PredicateResult accept = ((U) operator).accept(type, context);
-                if (accept == MessageBodyOperator.PredicateResult.COMPATIBLE && assignableOperator == null) {
-                    assignableOperator = operator;
-                } else if (accept == MessageBodyOperator.PredicateResult.SUPPORTED) {
-                    return operator;
+        while (current != null) {
+            try {
+                current.lock.readLock().lock();
+                for (T operator : current.operators) {
+                    MessageBodyOperator.PredicateResult accept = ((U) operator).accept(type, context);
+                    if (accept == MessageBodyOperator.PredicateResult.COMPATIBLE && assignableOperator == null) {
+                        assignableOperator = operator;
+                    } else if (accept == MessageBodyOperator.PredicateResult.SUPPORTED) {
+                        return operator;
+                    }
                 }
+            } finally {
+                current.lock.readLock().unlock();
             }
-            if (assignableOperator != null) {
-                return assignableOperator;
-            }
-        } finally {
-            lock.readLock().unlock();
+            current = current.parent;
         }
-        if (parent != null) {
-            return parent.select(type, context);
-        }
-        return null;
+        return assignableOperator;
     }
 
     /**
