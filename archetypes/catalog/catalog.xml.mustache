@@ -16,15 +16,21 @@
     limitations under the License.
 
 -->
-<archetype-catalog groupId="{{project.groupId}}" version="{{project.version}}">
-    <archetype id="bare"
-               artifactId="helidon-se"
-               name="Helidon SE Bare"
-               description="Bare Helidon SE application"
+<archetype-catalog modelVersion="1.0"
+                   name="helidon-archetypes"
+                   groupId="{{project.groupId}}"
+                   version="{{project.version}}">
+
+    <archetype artifactId="helidon-bare-se"
+               name="bare"
+               title="Helidon SE Bare"
+               summary="Minimal Helidon SE application"
+               description="Minimal Helidon SE project suitable to start from scratch"
                tags="se,rest" />
-    <archetype id="bare"
-               artifactId="helidon-mp"
-               name="Helidon MP Bare"
-               description="Bare Helidon MP application"
+    <archetype artifactId="helidon-bare-mp"
+               name="bare"
+               title="Helidon MP Bare"
+               summary="Minimal Helidon MP application"
+               description="Minimal Helidon MP project suitable to start from scratch"
                tags="mp,rest" />
 </archetype-catalog>

@@ -26,6 +26,6 @@
         <version>2.0.0-SNAPSHOT</version>
     </parent>
     <packaging>helidon-archetype</packaging>
-    <artifactId>helidon-se</artifactId>
+    <artifactId>helidon-bare-se</artifactId>
     <name>Helidon SE Bare Archetype</name>
 </project>
