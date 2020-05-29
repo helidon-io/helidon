@@ -35,8 +35,12 @@ import org.jboss.arquillian.container.spi.client.container.ContainerConfiguratio
  */
 public class HelidonContainerConfiguration implements ContainerConfiguration {
     private String appClassName = null;
+    private String resourceClassName = null;
+    private String excludeArchivePattern = null;
     private int port = 8080;
     private boolean deleteTmp = true;
+    private boolean addResourcesToApps = false;
+    private boolean replaceConfigSourcesWithMp = false;
     private boolean useRelativePath = false;
 
     public String getApp() {
@@ -45,6 +49,14 @@ public class HelidonContainerConfiguration implements ContainerConfiguration {
 
     public void setApp(String app) {
         this.appClassName = app;
+    }
+
+    public String getResource() {
+        return resourceClassName;
+    }
+
+    public void setResource(String resource) {
+        this.resourceClassName = resource;
     }
 
     public int getPort() {
@@ -71,6 +83,29 @@ public class HelidonContainerConfiguration implements ContainerConfiguration {
         this.useRelativePath = b;
     }
 
+    public boolean getAddResourcesToApps() {
+        return addResourcesToApps;
+    }
+
+    public void setAddResourcesToApps(boolean addResourcesToApps) {
+        this.addResourcesToApps = addResourcesToApps;
+    }
+
+    public void setReplaceConfigSourcesWithMp(boolean replaceConfigSourcesWithMp) {
+        this.replaceConfigSourcesWithMp = replaceConfigSourcesWithMp;
+    }
+
+    public boolean getReplaceConfigSourcesWithMp() {
+        return replaceConfigSourcesWithMp;
+    }
+
+    public String getExcludeArchivePattern() {
+        return excludeArchivePattern;
+    }
+
+    public void setExcludeArchivePattern(String excludeArchivePattern) {
+        this.excludeArchivePattern = excludeArchivePattern;
+    }
     @Override
     public void validate() throws ConfigurationException {
         if ((port <= 0) || (port > Short.MAX_VALUE)) {
