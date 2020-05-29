@@ -144,25 +144,25 @@ public final class JsonpSupport implements MediaSupport {
     }
 
     /**
-     * Create a new JSON-P entity reader.
+     * Return JSON-P reader instance.
      *
-     * @return JsonEntityReader
+     * @return JSON-P reader instance
      */
-    public MessageBodyReader<JsonStructure> newReader() {
+    public MessageBodyReader<JsonStructure> readerInstance() {
         return reader;
     }
 
     /**
-     * Create a new JSON-P entity writer.
+     * Return JSON-P entity writer.
      *
-     * @return JsonEntityWriter
+     * @return JSON-P writer instance
      */
-    public MessageBodyWriter<JsonStructure> newWriter() {
+    public MessageBodyWriter<JsonStructure> writerInstance() {
         return writer;
     }
 
     /**
-     * Create a new JSON-P stream writer.
+     * Return JSON-P stream writer.
      * <p>
      * This stream writer supports {@link java.util.concurrent.Flow.Publisher publishers}
      * of {@link javax.json.JsonStructure} (such as {@link javax.json.JsonObject})
@@ -170,23 +170,23 @@ public final class JsonpSupport implements MediaSupport {
      *
      * @return JSON processing stream writer.
      */
-    public MessageBodyStreamWriter<JsonStructure> newStreamWriter() {
+    public MessageBodyStreamWriter<JsonStructure> streamWriterInstance() {
         return streamWriter;
     }
 
     @Override
     public Collection<MessageBodyReader<?>> readers() {
-        return List.of(newReader());
+        return List.of(reader);
     }
 
     @Override
     public Collection<MessageBodyWriter<?>> writers() {
-        return List.of(newWriter());
+        return List.of(writer);
     }
 
     @Override
     public Collection<MessageBodyStreamWriter<?>> streamWriters() {
-        return List.of(newStreamWriter());
+        return List.of(streamWriter);
     }
 
     /**

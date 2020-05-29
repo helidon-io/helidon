@@ -117,16 +117,16 @@ public final class JacksonSupport implements MediaSupport {
     }
 
     /**
-     * Creates new Jackson reader instance.
+     * Return Jackson reader instance.
      *
      * @return Jackson reader instance
      */
-    public MessageBodyReader<Object> newReader() {
+    public MessageBodyReader<Object> readerInstance() {
         return reader;
     }
 
     /**
-     * Creates new Jackson writer instance.
+     * Return Jackson writer instance.
      *
      * @return Jackson writer instance
      */
@@ -136,12 +136,12 @@ public final class JacksonSupport implements MediaSupport {
 
     @Override
     public Collection<MessageBodyReader<?>> readers() {
-        return List.of(newReader());
+        return List.of(reader);
     }
 
     @Override
     public Collection<MessageBodyWriter<?>> writers() {
-        return List.of(newWriter());
+        return List.of(writer);
     }
 
 }

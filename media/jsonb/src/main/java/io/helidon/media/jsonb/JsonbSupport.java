@@ -122,7 +122,7 @@ public final class JsonbSupport implements MediaSupport {
      *
      * @return JSON-B reader instance
      */
-    public MessageBodyReader<Object> newReader() {
+    public MessageBodyReader<Object> readerInstance() {
         return reader;
     }
 
@@ -131,18 +131,18 @@ public final class JsonbSupport implements MediaSupport {
      *
      * @return JSON-B writer instance
      */
-    public MessageBodyWriter<Object> newWriter() {
+    public MessageBodyWriter<Object> writerInstance() {
         return writer;
     }
 
     @Override
     public Collection<MessageBodyReader<?>> readers() {
-        return List.of(newReader());
+        return List.of(reader);
     }
 
     @Override
     public Collection<MessageBodyWriter<?>> writers() {
-        return List.of(newWriter());
+        return List.of(writer);
     }
 
 }
