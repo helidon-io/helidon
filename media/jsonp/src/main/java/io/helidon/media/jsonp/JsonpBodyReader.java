@@ -37,7 +37,7 @@ import io.helidon.media.common.MessageBodyReaderContext;
 /**
  * Message body reader for {@link JsonStructure} sub-classes (JSON-P).
  */
-public final class JsonpBodyReader implements MessageBodyReader<JsonStructure> {
+final class JsonpBodyReader implements MessageBodyReader<JsonStructure> {
 
     private final JsonReaderFactory jsonFactory;
 

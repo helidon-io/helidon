@@ -34,7 +34,7 @@ import io.helidon.media.common.MessageBodyWriterContext;
 /**
  * Message body writer for {@link JsonStructure} sub-classes (JSON-P).
  */
-public class JsonpBodyWriter implements MessageBodyWriter<JsonStructure> {
+class JsonpBodyWriter implements MessageBodyWriter<JsonStructure> {
 
     private final JsonWriterFactory jsonWriterFactory;
 

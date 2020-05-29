@@ -34,7 +34,7 @@ import io.helidon.media.jsonp.JsonpBodyWriter.JsonStructureToChunks;
 /**
  * Message body writer for {@link javax.json.JsonStructure} sub-classes (JSON-P).
  */
-public class JsonpBodyStreamWriter implements MessageBodyStreamWriter<JsonStructure> {
+class JsonpBodyStreamWriter implements MessageBodyStreamWriter<JsonStructure> {
     private static final byte[] ARRAY_JSON_END_BYTES = "]".getBytes(StandardCharsets.UTF_8);
     private static final byte[] ARRAY_JSON_BEGIN_BYTES = "[".getBytes(StandardCharsets.UTF_8);
     private static final byte[] COMMA_BYTES = ",".getBytes(StandardCharsets.UTF_8);

@@ -22,10 +22,12 @@ import java.util.Map;
 
 import javax.json.Json;
 import javax.json.JsonReaderFactory;
+import javax.json.JsonStructure;
 import javax.json.JsonWriterFactory;
 
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
+import io.helidon.common.LazyValue;
 import io.helidon.media.common.MediaSupport;
 import io.helidon.media.common.MessageBodyReader;
 import io.helidon.media.common.MessageBodyStreamWriter;
@@ -34,20 +36,111 @@ import io.helidon.media.common.MessageBodyWriter;
 /**
  * Support for JSON Processing integration.
  *
- * For usage examples navigate to {@link MediaSupport}
+ * For usage examples navigate to {@link MediaSupport}.
  */
 public final class JsonpSupport implements MediaSupport {
+
+    private static final LazyValue<JsonpSupport> DEFAULT =
+            LazyValue.create(() -> new JsonpSupport(Builder.readerFactory(null),
+                                                    Builder.writerFactory(null)));
 
     static {
         HelidonFeatures.register(HelidonFlavor.SE, "Media", "JSON-P");
     }
 
-    private final JsonReaderFactory jsonReaderFactory;
-    private final JsonWriterFactory jsonWriterFactory;
+    private final JsonpBodyReader reader;
+    private final JsonpBodyWriter writer;
+    private final JsonpBodyStreamWriter streamWriter;
 
     private JsonpSupport(JsonReaderFactory readerFactory, JsonWriterFactory writerFactory) {
-        this.jsonReaderFactory = readerFactory;
-        this.jsonWriterFactory = writerFactory;
+        reader = new JsonpBodyReader(readerFactory);
+        writer = new JsonpBodyWriter(writerFactory);
+        streamWriter = new JsonpBodyStreamWriter(writerFactory);
+    }
+
+    /**
+     * Provides a default instance for JSON-P readers and writers.
+     *
+     * @return json processing with default configuration
+     */
+    public static JsonpSupport create() {
+        return DEFAULT.get();
+    }
+
+    /**
+     * Create an instance with the provided JSON-P configuration.
+     *
+     * @param jsonPConfig configuration of the processing library
+     * @return a configured JSON-P instance
+     */
+    public static JsonpSupport create(Map<String, ?> jsonPConfig) {
+        return builder().jsonProcessingConfig(jsonPConfig).build();
+    }
+
+    /**
+     * Fluent API builder to create instances of JSON-P.
+     *
+     * @return a new builder instance
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    /**
+     * Return a default JSON-P entity reader.
+     *
+     * @return default JSON-P body reader instance
+     */
+    public static MessageBodyReader<JsonStructure> reader() {
+        return DEFAULT.get().reader;
+    }
+
+    /**
+     * Create a new JSON-P entity reader based on {@link JsonReaderFactory}.
+     *
+     * @param readerFactory json reader factory
+     * @return new JSON-P body reader instance
+     */
+    public static MessageBodyReader<JsonStructure> reader(JsonReaderFactory readerFactory) {
+        return new JsonpBodyReader(readerFactory);
+    }
+
+    /**
+     * Return a default JSON-P entity writer.
+     *
+     * @return default JSON-P body writer instance
+     */
+    public static MessageBodyWriter<JsonStructure> writer() {
+        return DEFAULT.get().writer;
+    }
+
+    /**
+     * Create a new JSON-P entity writer based on {@link JsonWriterFactory}.
+     *
+     * @param writerFactory json writer factory
+     * @return new JSON-P body writer instance
+     */
+    public static MessageBodyWriter<JsonStructure> writer(JsonWriterFactory writerFactory) {
+        return new JsonpBodyWriter(writerFactory);
+    }
+
+    /**
+     * Return a default JSON-P entity stream writer.
+     *
+     * @return default JSON-P body stream writer instance
+     */
+    public static MessageBodyStreamWriter<JsonStructure> streamWriter() {
+        return DEFAULT.get().streamWriter;
+    }
+
+    /**
+     * Create a new JSON-P entity stream writer based on {@link JsonWriterFactory}.
+     *
+     * @param writerFactory json writer factory
+     * @return new JSON-P stream body writer instance
+     */
+    public static MessageBodyStreamWriter<JsonStructure> streamWriter(JsonWriterFactory writerFactory) {
+        return new JsonpBodyStreamWriter(writerFactory);
     }
 
     /**
@@ -55,8 +148,8 @@ public final class JsonpSupport implements MediaSupport {
      *
      * @return JsonEntityReader
      */
-    public JsonpBodyReader newReader() {
-        return new JsonpBodyReader(jsonReaderFactory);
+    public MessageBodyReader<JsonStructure> newReader() {
+        return reader;
     }
 
     /**
@@ -64,8 +157,8 @@ public final class JsonpSupport implements MediaSupport {
      *
      * @return JsonEntityWriter
      */
-    public JsonpBodyWriter newWriter() {
-        return new JsonpBodyWriter(jsonWriterFactory);
+    public MessageBodyWriter<JsonStructure> newWriter() {
+        return writer;
     }
 
     /**
@@ -77,8 +170,8 @@ public final class JsonpSupport implements MediaSupport {
      *
      * @return JSON processing stream writer.
      */
-    public JsonpBodyStreamWriter newStreamWriter() {
-        return new JsonpBodyStreamWriter(jsonWriterFactory);
+    public MessageBodyStreamWriter<JsonStructure> newStreamWriter() {
+        return streamWriter;
     }
 
     @Override
@@ -97,54 +190,9 @@ public final class JsonpSupport implements MediaSupport {
     }
 
     /**
-     * Provides a default instance for JSON-P readers and writers.
-     * @return json processing with default configuration
-     */
-    public static JsonpSupport create() {
-        return Builder.DEFAULT_INSTANCE;
-    }
-
-    /**
-     * Create an instance with the provided JSON-P configuration.
-     * @param jsonPConfig configuration of the processing library
-     * @return a configured JSON-P instance
-     */
-    public static JsonpSupport create(Map<String, ?> jsonPConfig) {
-        return builder().jsonProcessingConfig(jsonPConfig).build();
-    }
-
-    /**
-     * Create a new JSON-P entity reader.
-     *
-     * @return JsonEntityReader
-     */
-    public static JsonpBodyReader reader() {
-        return create().newReader();
-    }
-
-    /**
-     * Create a new JSON-P entity writer.
-     *
-     * @return JsonEntityReader
-     */
-    public static JsonpBodyWriter writer() {
-        return create().newWriter();
-    }
-
-    /**
-     * Fluent API builder to create instances of JSON-P.
-     *
-     * @return a new builder instance
-     */
-    public static Builder builder() {
-        return new Builder();
-    }
-
-    /**
      * Fluent-API builder for {@link JsonpSupport}.
      */
     public static class Builder implements io.helidon.common.Builder<JsonpSupport> {
-        private static final JsonpSupport DEFAULT_INSTANCE = new JsonpSupport(readerFactory(null), writerFactory(null));
 
         private JsonWriterFactory jsonWriterFactory;
         private JsonReaderFactory jsonReaderFactory;
@@ -153,7 +201,7 @@ public final class JsonpSupport implements MediaSupport {
         @Override
         public JsonpSupport build() {
             if ((null == jsonReaderFactory) && (null == jsonWriterFactory) && (null == jsonPConfig)) {
-                return DEFAULT_INSTANCE;
+                return DEFAULT.get();
             }
 
             if (null == jsonPConfig) {
@@ -194,6 +242,7 @@ public final class JsonpSupport implements MediaSupport {
 
         /**
          * Explicit JSON-P Writer factory instance.
+         *
          * @param factory writer factory
          * @return updated builder instance
          */
@@ -204,6 +253,7 @@ public final class JsonpSupport implements MediaSupport {
 
         /**
          * Explicit JSON-P Reader factory instance.
+         *
          * @param factory reader factory
          * @return updated builder instance
          */
