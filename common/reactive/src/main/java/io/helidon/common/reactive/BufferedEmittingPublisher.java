@@ -237,12 +237,12 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
 
     private int emitOrBuffer(T item) {
         for (;;) {
-            try {
                 if (emitting.getAndSet(true)) {
                     // race against parallel emits
                     // only those can add to buffer
                     continue;
                 }
+            try {
                 if (buffer.isEmpty() && emitter.emit(item)) {
                     // Buffer drained, emit successful
                     // saved time by skipping buffer
