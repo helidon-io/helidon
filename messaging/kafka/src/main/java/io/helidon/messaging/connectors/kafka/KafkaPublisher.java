@@ -73,7 +73,7 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
 
     private final Lock taskLock = new ReentrantLock();
     private final Queue<ConsumerRecord<K, V>> backPressureBuffer = new LinkedList<>();
-    private final Map<TopicPartition, List<KafkaMessage<K, V>>> pendingCommits = new HashMap<>();
+    private final Map<TopicPartition, List<KafkaConsumerMessage<K, V>>> pendingCommits = new HashMap<>();
     private final PartitionsAssignedLatch partitionsAssignedLatch = new PartitionsAssignedLatch();
     private final ScheduledExecutorService scheduler;
     private final AtomicLong requests = new AtomicLong();
@@ -142,10 +142,10 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
                                 for (long i = 0; i < eventsToEmit; i++) {
                                     ConsumerRecord<K, V> cr = backPressureBuffer.poll();
                                     CompletableFuture<Void> kafkaCommit = new CompletableFuture<>();
-                                    KafkaMessage<K, V> kafkaMessage = new KafkaMessage<>(cr, kafkaCommit, ackTimeout);
+                                    KafkaConsumerMessage<K, V> kafkaMessage =
+                                            new KafkaConsumerMessage<>(cr, kafkaCommit, ackTimeout);
                                     if (!autoCommit) {
-                                        TopicPartition key = new TopicPartition(kafkaMessage.getPayload().topic(),
-                                                kafkaMessage.getPayload().partition());
+                                        TopicPartition key = new TopicPartition(cr.topic(), cr.partition());
                                         pendingCommits.computeIfAbsent(key, k -> new LinkedList<>()).add(kafkaMessage);
                                     } else {
                                         kafkaCommit.complete(null);
@@ -180,7 +180,10 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
     }
 
     private int currentNoAck() {
-        return pendingCommits.values().stream().map(list -> list.size()).reduce((a, b) -> a + b).orElse(0);
+        return pendingCommits.values().stream()
+                .map(List::size)
+                .reduce(Integer::sum)
+                .orElse(0);
     }
 
     /**
@@ -190,15 +193,15 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
      */
     private void processACK() {
         Map<TopicPartition, OffsetAndMetadata> offsets = new LinkedHashMap<>();
-        List<KafkaMessage<K, V>> messagesToCommit = new LinkedList<>();
+        List<KafkaConsumerMessage<K, V>> messagesToCommit = new LinkedList<>();
         // Commit highest offset + 1 of each partition that was ACK, and remove from pending
-        for (Entry<TopicPartition, List<KafkaMessage<K, V>>> entry : pendingCommits.entrySet()) {
+        for (Entry<TopicPartition, List<KafkaConsumerMessage<K, V>>> entry : pendingCommits.entrySet()) {
             // No need to sort it, offsets are consumed in order
-            List<KafkaMessage<K, V>> byPartition = entry.getValue();
-            Iterator<KafkaMessage<K, V>> iterator = byPartition.iterator();
+            List<KafkaConsumerMessage<K, V>> byPartition = entry.getValue();
+            Iterator<KafkaConsumerMessage<K, V>> iterator = byPartition.iterator();
             KafkaMessage<K, V> highest = null;
             while (iterator.hasNext()) {
-                KafkaMessage<K, V> element = iterator.next();
+                KafkaConsumerMessage<K, V> element = iterator.next();
                 if (element.isAck()) {
                     messagesToCommit.add(element);
                     highest = element;
@@ -208,7 +211,7 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
                 }
             }
             if (highest != null) {
-                OffsetAndMetadata offset = new OffsetAndMetadata(highest.getPayload().offset() + 1);
+                OffsetAndMetadata offset = new OffsetAndMetadata(highest.getOffset().get() + 1);
                 LOGGER.fine(() -> String.format("%s Will commit %s %s", topics, entry.getKey(), offset));
                 offsets.put(entry.getKey(), offset);
             }
@@ -217,10 +220,10 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
             LOGGER.fine(() -> String.format("%s Offsets %s", topics, offsets));
             try {
                 kafkaConsumer.commitSync(offsets);
-                messagesToCommit.stream().forEach(message -> message.kafkaCommit().complete(null));
+                messagesToCommit.forEach(message -> message.kafkaCommit().complete(null));
             } catch (RuntimeException e) {
                 LOGGER.log(Level.SEVERE, "Unable to commit in Kafka " + offsets, e);
-                messagesToCommit.stream().forEach(message -> message.kafkaCommit().completeExceptionally(e));
+                messagesToCommit.forEach(message -> message.kafkaCommit().completeExceptionally(e));
             }
         }
     }
