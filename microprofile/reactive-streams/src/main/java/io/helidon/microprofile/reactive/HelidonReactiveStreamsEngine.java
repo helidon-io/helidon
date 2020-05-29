@@ -172,14 +172,14 @@ public final class HelidonReactiveStreamsEngine implements ReactiveStreamsEngine
                     requireNullSource(result, stage);
 
                     Publisher publisher = ((Stage.PublisherStage) stage).getRsPublisher();
-                    result = Multi.from(FlowAdapters.toFlowPublisher(publisher));
+                    result = Multi.create(FlowAdapters.toFlowPublisher(publisher));
                     continue;
                 }
                 if (stage instanceof Stage.Of) {
                     requireNullSource(result, stage);
 
                     Iterable iterable = ((Stage.Of) stage).getElements();
-                    result = Multi.from(iterable);
+                    result = Multi.create(iterable);
                     continue;
                 }
                 if (stage instanceof Stage.ProcessorStage) {
@@ -188,7 +188,7 @@ public final class HelidonReactiveStreamsEngine implements ReactiveStreamsEngine
                         // act as a source
                         Processor processor = ((Stage.ProcessorStage) stage).getRsProcessor();
                         graphInlet = FlowAdapters.toFlowSubscriber(processor);
-                        result = Multi.from(FlowAdapters.toFlowPublisher(processor));
+                        result = Multi.create(FlowAdapters.toFlowPublisher(processor));
                     } else {
                         // act as a middle operator
                         Processor processor = ((Stage.ProcessorStage) stage).getRsProcessor();
@@ -216,13 +216,13 @@ public final class HelidonReactiveStreamsEngine implements ReactiveStreamsEngine
                 if (stage instanceof Stage.FromCompletionStage) {
                     requireNullSource(result, stage);
                     CompletionStage cs = ((Stage.FromCompletionStage) stage).getCompletionStage();
-                    result = Multi.from(cs);
+                    result = Multi.create(cs);
                     continue;
                 }
                 if (stage instanceof Stage.FromCompletionStageNullable) {
                     requireNullSource(result, stage);
                     CompletionStage cs = ((Stage.FromCompletionStageNullable) stage).getCompletionStage();
-                    result = Multi.from(cs, true);
+                    result = Multi.create(cs, true);
                     continue;
                 }
                 if (stage instanceof Stage.Coupled) {
@@ -234,13 +234,13 @@ public final class HelidonReactiveStreamsEngine implements ReactiveStreamsEngine
                     Flow.Subscriber s = FlowAdapters.toFlowSubscriber(((SubscriberWithCompletionStage) build(
                             coupled.getSubscriber().getStages(), Mode.SUBSCRIBER))
                             .getSubscriber());
-                    Multi f = Multi.from(FlowAdapters.toFlowPublisher(
+                    Multi f = Multi.create(FlowAdapters.toFlowPublisher(
                             (Publisher) build(coupled.getPublisher().getStages(), Mode.PUBLISHER)));
 
                     Flow.Processor processor = coupledBuildProcessor(s, f);
                     if (result == null) {
                         graphInlet = processor;
-                        result = Multi.from(processor);
+                        result = Multi.create(processor);
                     } else {
                         result = new DeferredViaProcessor(result, processor);
                     }
@@ -322,7 +322,7 @@ public final class HelidonReactiveStreamsEngine implements ReactiveStreamsEngine
 
                     Function mapper = ((Stage.FlatMapCompletionStage) stage).getMapper();
                     // FIXME dedicated concatMap
-                    result = result.flatMap(v -> Multi.from((CompletionStage) mapper.apply(v)), 1, false, 1);
+                    result = result.flatMap(v -> Multi.create((CompletionStage) mapper.apply(v)), 1, false, 1);
                     continue;
                 }
                 if (stage instanceof Stage.FlatMapIterable) {
@@ -514,15 +514,15 @@ public final class HelidonReactiveStreamsEngine implements ReactiveStreamsEngine
                 .onComplete(() -> complete(subscriberActivity))
                 .onError(e -> fail(subscriberActivity, e))
                 .compose(upstream -> new MultiCancelOnExecutor<>(upstream, coupledExecutor))
-                .takeUntil(Multi.from(publisherActivity, true))
+                .takeUntil(Multi.create(publisherActivity, true))
                 .onCancel(() -> complete(subscriberActivity))
                 .subscribe(subscriber);
 
-        Multi<? extends R> outlet = Multi.from(publisher)
+        Multi<? extends R> outlet = Multi.create(publisher)
                 .onComplete(() -> complete(publisherActivity))
                 .onError(e -> fail(publisherActivity, e))
                 .compose(upstream -> new MultiCancelOnExecutor<>(upstream, coupledExecutor))
-                .takeUntil(Multi.from(subscriberActivity, true))
+                .takeUntil(Multi.create(subscriberActivity, true))
                 .onCancel(() -> complete(publisherActivity));
 
         return new BridgeProcessor<>(inlet, outlet);

@@ -106,7 +106,7 @@ public class MessagingTest {
         Channel<String> channel1 = Channel.create("channel1");
 
         Messaging.builder()
-                .publisher(channel1, Multi.from(testData.expected), Message::of)
+                .publisher(channel1, Multi.create(testData.expected), Message::of)
                 .listener(channel1, testData::add)
                 .build()
                 .start();
@@ -139,7 +139,7 @@ public class MessagingTest {
         Channel<String> channel1 = Channel.create("channel1");
 
         Messaging.builder()
-                .publisher(channel1, Multi.from(testData.expected).map(Message::of))
+                .publisher(channel1, Multi.create(testData.expected).map(Message::of))
                 .listener(channel1, testData::add)
                 .build()
                 .start();
@@ -172,7 +172,7 @@ public class MessagingTest {
         Channel<String> channel1 = Channel.create("channel1");
 
         Messaging.builder()
-                .publisher(channel1, Multi.from(testData.expected).map(testMessages::of))
+                .publisher(channel1, Multi.create(testData.expected).map(testMessages::of))
                 .subscriber(channel1, multi -> multi.map(Message::getPayload).forEach(testData::add))
                 .build()
                 .start();

@@ -137,8 +137,8 @@ public class RoutingTest {
         BareResponse bareResponseMock = Mockito.mock(BareResponse.class);
         final CompletableFuture<BareResponse> completedFuture =
                 CompletableFuture.completedFuture(bareResponseMock);
-        Mockito.doReturn(Single.from(completedFuture)).when(bareResponseMock).whenCompleted();
-        Mockito.doReturn(Single.from(completedFuture)).when(bareResponseMock).whenHeadersCompleted();
+        Mockito.doReturn(Single.create(completedFuture)).when(bareResponseMock).whenCompleted();
+        Mockito.doReturn(Single.create(completedFuture)).when(bareResponseMock).whenHeadersCompleted();
         return bareResponseMock;
     }
 

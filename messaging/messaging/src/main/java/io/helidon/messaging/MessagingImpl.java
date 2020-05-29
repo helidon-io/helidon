@@ -69,8 +69,8 @@ class MessagingImpl implements Messaging {
     public void stop() {
         state.stop(this);
         Multi.concat(
-                Multi.from(incomingConnectors.values()).map(Object.class::cast),
-                Multi.from(outgoingConnectors.values()).map(Object.class::cast))
+                Multi.create(incomingConnectors.values()).map(Object.class::cast),
+                Multi.create(outgoingConnectors.values()).map(Object.class::cast))
                 .distinct()
                 .filter(Stoppable.class::isInstance)
                 .map(Stoppable.class::cast)

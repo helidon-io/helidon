@@ -65,7 +65,7 @@ public class JsonpBodyStreamWriter implements MessageBodyStreamWriter<JsonStruct
                                                                        context.charset());
 
         return Single.just(DataChunk.create(ARRAY_JSON_BEGIN_BYTES))
-                .onCompleteResumeWith(Multi.from(publisher)
+                .onCompleteResumeWith(Multi.create(publisher)
                                               .map(jsonToChunks)
                                               .flatMap(it -> {
                                                   if (first.getAndSet(false)) {

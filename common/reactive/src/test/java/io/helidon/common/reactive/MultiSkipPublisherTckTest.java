@@ -31,7 +31,7 @@ public class MultiSkipPublisherTckTest extends FlowPublisherVerification<Integer
 
     @Override
     public Flow.Publisher<Integer> createFlowPublisher(long l) {
-        return Multi.from(() -> IntStream.range(0, 5 + (int)l).boxed().iterator())
+        return Multi.create(() -> IntStream.range(0, 5 + (int)l).boxed().iterator())
                 .skip(5);
     }
 

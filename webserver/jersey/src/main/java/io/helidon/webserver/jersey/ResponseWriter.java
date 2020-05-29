@@ -134,7 +134,7 @@ class ResponseWriter implements ContainerResponseWriter {
             res.headers().put(entry.getKey(), entry.getValue());
         }
 
-        res.send(Multi.from(publisher)
+        res.send(Multi.create(publisher)
                 .map(byteBuffer -> DataChunk.create(doFlush(context, byteBuffer), byteBuffer, true)));
 
         return publisher;

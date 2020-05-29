@@ -44,7 +44,7 @@ public class EmittingPublisherTckTest extends FlowPublisherVerification<Integer>
     public Flow.Publisher<Integer> createFailedFlowPublisher() {
         BufferedEmittingPublisher<Integer> emitter = BufferedEmittingPublisher.create();
         emitter.fail(new RuntimeException());
-        return Multi.from(() -> { throw new RuntimeException(); });
+        return Multi.create(() -> { throw new RuntimeException(); });
     }
 
     @Override

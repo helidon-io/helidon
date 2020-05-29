@@ -84,7 +84,7 @@ public class DataChunkInputStreamTest {
             pub.complete();
         });
         Future<?> receiveFuture = executorService.submit(() -> {
-            DataChunkInputStream chunkInputStream = new DataChunkInputStream(Multi.from(pub)
+            DataChunkInputStream chunkInputStream = new DataChunkInputStream(Multi.create(pub)
                     .map(s -> DataChunk.create(s.getBytes())));
             for (int i = 0; i < test_data.size(); i++) {
                 try {

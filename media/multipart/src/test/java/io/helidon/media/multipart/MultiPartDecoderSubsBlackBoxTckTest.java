@@ -48,7 +48,7 @@ public class MultiPartDecoderSubsBlackBoxTckTest extends FlowSubscriberBlackboxV
     @Override
     public Flow.Subscriber<DataChunk> createFlowSubscriber() {
         MultiPartDecoder decoder = MultiPartDecoder.create("boundary", MEDIA_CONTEXT.readerContext());
-        Multi.from(decoder).forEach(part -> {});
+        Multi.create(decoder).forEach(part -> {});
         return decoder;
     }
 

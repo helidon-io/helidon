@@ -34,14 +34,14 @@ public class SingleFromCompletionStageTckTest extends FlowPublisherVerification<
     @Override
     public Flow.Publisher<Long> createFlowPublisher(long l) {
         CompletableFuture<Long> cf = CompletableFuture.completedFuture(1L);
-        return Single.from(cf);
+        return Single.create(cf);
     }
 
     @Override
     public Flow.Publisher<Long> createFailedFlowPublisher() {
         CompletableFuture<Long> cf = new CompletableFuture<>();
         cf.completeExceptionally(new IOException());
-        return Single.from(cf);
+        return Single.create(cf);
     }
 
     @Override

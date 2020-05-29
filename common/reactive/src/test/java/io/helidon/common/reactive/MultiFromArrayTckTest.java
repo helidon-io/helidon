@@ -40,7 +40,7 @@ public class MultiFromArrayTckTest extends FlowPublisherVerification<Integer> {
 
     @Override
     public Flow.Publisher<Integer> createFailedFlowPublisher() {
-        return Multi.from(() -> { throw new RuntimeException(); });
+        return Multi.create(() -> { throw new RuntimeException(); });
     }
 
     @Override

@@ -76,7 +76,7 @@ class JdbcStatementQuery extends JdbcStatement<DbStatementQuery, Multi<DbRow>> i
                                    CompletableFuture<Void> statementFuture,
                                    CompletableFuture<Long> queryFuture) {
 
-        return Single.from(connection())
+        return Single.create(connection())
                 .flatMap(connection -> doExecute(dbContext, connection, statementFuture, queryFuture));
     }
 
@@ -118,7 +118,7 @@ class JdbcStatementQuery extends JdbcStatement<DbStatementQuery, Multi<DbRow>> i
             }
         });
 
-        return Single.from(result).flatMap(Function.identity());
+        return Single.create(result).flatMap(Function.identity());
 
     }
 
@@ -129,7 +129,7 @@ class JdbcStatementQuery extends JdbcStatement<DbStatementQuery, Multi<DbRow>> i
             CompletableFuture<Long> queryFuture,
             ResultSet resultSet) {
 
-        return Multi.from(new JdbcDbRows(resultSet,
+        return Multi.create(new JdbcDbRows(resultSet,
                                          executorService,
                                          dbMapperManager,
                                          mapperManager,

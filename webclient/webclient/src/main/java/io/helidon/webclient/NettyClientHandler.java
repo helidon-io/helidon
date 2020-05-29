@@ -309,7 +309,7 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
                             }
                         });
             }
-            return Single.from(cf, true);
+            return Single.create(cf, true);
         }
 
     }

@@ -35,7 +35,7 @@ public class MultiPartEncoderSubsBlackBoxTckTest extends FlowSubscriberBlackboxV
     @Override
     public Flow.Subscriber<WriteableBodyPart> createFlowSubscriber() {
         MultiPartEncoder encoder = MultiPartEncoder.create("boundary", MEDIA_CONTEXT.writerContext());
-        Multi.from(encoder).forEach(ch -> {});
+        Multi.create(encoder).forEach(ch -> {});
         return encoder;
     }
 

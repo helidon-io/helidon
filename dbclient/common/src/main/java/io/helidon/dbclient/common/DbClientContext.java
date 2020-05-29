@@ -76,7 +76,7 @@ public class DbClientContext {
             result = result.thenCompose(service::statement);
         }
 
-        return Single.from(result);
+        return Single.create(result);
     }
 
     /**

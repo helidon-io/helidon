@@ -94,7 +94,7 @@ public class MultiPartEncoder implements Processor<WriteableBodyPart, DataChunk>
             emitter = BufferedEmittingPublisher.create();
             // relay request to upstream, already reduced by flatmap
             emitter.onRequest((r, t) -> upstream.request(r));
-            Multi.from(emitter)
+            Multi.create(emitter)
                     .flatMap(Function.identity())
                     .onCompleteResume(DataChunk.create(("--" + boundary + "--").getBytes(StandardCharsets.UTF_8)))
                     .subscribe(downstream);
