@@ -35,7 +35,7 @@ import io.helidon.media.common.MessageBodyReaderContext;
 /**
  * Message body writer supporting object binding with JSON-B.
  */
-public class JsonbBodyReader implements MessageBodyReader<Object> {
+class JsonbBodyReader implements MessageBodyReader<Object> {
 
     private final Jsonb jsonb;
 

@@ -24,6 +24,7 @@ import javax.json.bind.JsonbBuilder;
 
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
+import io.helidon.common.LazyValue;
 import io.helidon.media.common.MediaSupport;
 import io.helidon.media.common.MessageBodyReader;
 import io.helidon.media.common.MessageBodyWriter;
@@ -31,69 +32,34 @@ import io.helidon.media.common.MessageBodyWriter;
 /**
  * Support for JSON-B integration.
  *
- * For usage examples navigate to the {@link MediaSupport}
+ * For usage examples navigate to the {@link MediaSupport}.
  *
  * @see Jsonb
  */
 public final class JsonbSupport implements MediaSupport {
 
+    private static final Jsonb JSON_B = JsonbBuilder.create();
+    private static final LazyValue<JsonbSupport> DEFAULT = LazyValue.create(() -> new JsonbSupport(JSON_B));
+
     static {
         HelidonFeatures.register(HelidonFlavor.SE, "Media", "JSON-B");
     }
 
-    private static final Jsonb JSON_B = JsonbBuilder.create();
-    private static final JsonbSupport DEFAULT = new JsonbSupport(JSON_B);
+    private final JsonbBodyReader reader;
+    private final JsonbBodyWriter writer;
 
-    private final Jsonb jsonb;
-
-    private JsonbSupport(final Jsonb jsonb) {
-        this.jsonb = jsonb;
+    private JsonbSupport(Jsonb jsonb) {
+        this.reader = JsonbBodyReader.create(jsonb);
+        this.writer = JsonbBodyWriter.create(jsonb);
     }
 
     /**
-     * Creates new JSON-B reader instance.
+     * Creates a new {@link JsonbSupport}.
      *
-     * @return JSON-B reader instance
+     * @return a new {@link JsonbSupport}
      */
-    public static JsonbBodyReader reader() {
-        return create().newReader();
-    }
-
-    /**
-     * Creates new JSON-B writer instance.
-     *
-     * @return JSON-B writer instance
-     */
-    public static JsonbBodyWriter writer() {
-        return create().newWriter();
-    }
-
-    /**
-     * Creates new JSON-B reader instance.
-     *
-     * @return JSON-B reader instance
-     */
-    public JsonbBodyReader newReader() {
-        return JsonbBodyReader.create(jsonb);
-    }
-
-    /**
-     * Creates new JSON-B writer instance.
-     *
-     * @return JSON-B writer instance
-     */
-    public JsonbBodyWriter newWriter() {
-        return JsonbBodyWriter.create(jsonb);
-    }
-
-    @Override
-    public Collection<MessageBodyReader<?>> readers() {
-        return List.of(newReader());
-    }
-
-    @Override
-    public Collection<MessageBodyWriter<?>> writers() {
-        return List.of(newWriter());
+    public static JsonbSupport create() {
+        return DEFAULT.get();
     }
 
     /**
@@ -106,17 +72,77 @@ public final class JsonbSupport implements MediaSupport {
      * @exception NullPointerException if {@code jsonb} is {@code
      * null}
      */
-    public static JsonbSupport create(final Jsonb jsonb) {
+    public static JsonbSupport create(Jsonb jsonb) {
         Objects.requireNonNull(jsonb);
         return new JsonbSupport(jsonb);
     }
 
     /**
-     * Creates a new {@link JsonbSupport}.
+     * Return a default JSON-B entity reader.
      *
-     * @return a new {@link JsonbSupport}
+     * @return default JSON-B body writer instance
      */
-    public static JsonbSupport create() {
-        return DEFAULT;
+    public static MessageBodyReader<Object> reader() {
+        return DEFAULT.get().reader;
     }
+
+    /**
+     * Create a new JSON-B entity reader based on {@link Jsonb} instance.
+     *
+     * @param jsonb jsonb instance
+     * @return new JSON-B body reader instance
+     */
+    public static MessageBodyReader<Object> reader(Jsonb jsonb) {
+        Objects.requireNonNull(jsonb);
+        return JsonbBodyReader.create(jsonb);
+    }
+
+    /**
+     * Return a default JSON-B entity writer.
+     *
+     * @return default JSON-B body writer instance
+     */
+    public static MessageBodyWriter<Object> writer() {
+        return DEFAULT.get().writer;
+    }
+
+    /**
+     * Create a new JSON-B entity writer based on {@link Jsonb} instance.
+     *
+     * @param jsonb jsonb instance
+     * @return new JSON-B body writer instance
+     */
+    public static MessageBodyWriter<Object> writer(Jsonb jsonb) {
+        Objects.requireNonNull(jsonb);
+        return JsonbBodyWriter.create(jsonb);
+    }
+
+    /**
+     * Return JSON-B reader instance.
+     *
+     * @return JSON-B reader instance
+     */
+    public MessageBodyReader<Object> newReader() {
+        return reader;
+    }
+
+    /**
+     * Return JSON-B writer instance.
+     *
+     * @return JSON-B writer instance
+     */
+    public MessageBodyWriter<Object> newWriter() {
+        return writer;
+    }
+
+    @Override
+    public Collection<MessageBodyReader<?>> readers() {
+        return List.of(newReader());
+    }
+
+    @Override
+    public Collection<MessageBodyWriter<?>> writers() {
+        return List.of(newWriter());
+    }
+
 }
