@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.grpc</groupId>
         <artifactId>helidon-grpc-project</artifactId>
-        <version>2.0.0-M4-SNAPSHOT</version>
+        <version>2.0.0-M4</version>
     </parent>
 
     <artifactId>helidon-grpc-metrics</artifactId>
