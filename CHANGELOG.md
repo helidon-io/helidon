@@ -63,6 +63,12 @@ Any user code that used these internal classes can use the corresponding support
 | |`InternalMetadataImpl` |
 | |`InternalMetricIDImpl` |
 
+## 2.0.0-M4
+
+### Notes
+
+Internal project release in preparation for RC1.
+
 
 ## [2.0.0-M3]
 
