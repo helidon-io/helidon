@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2020 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -16,16 +16,16 @@
     limitations under the License.
 
 -->
-<archetype-descriptor>
+<archetype-descriptor modelVersion="1.0" name="helidon-bare-mp">
     <properties>
-        <property id="gradle" description="Gradle based project"/>
-        <property id="maven" description="Maven based project"/>
-        <property id="groupId" description="Project groupId"/>
-        <property id="artifactId" description="Project artifactId"/>
-        <property id="version" description="Project version" default="1.0-SNAPSHOT"/>
-        <property id="name" description="Project name"/>
-        <property id="package" description="Java package name"/>
-        <property id="helidonVersion" description="Version of Helidon to use"/>
+        <property id="groupId" />
+        <property id="artifactId" />
+        <property id="version" value="1.0-SNAPSHOT" />
+        <property id="name" value="myproject" />
+        <property id="package" />
+        <property id="gradle" exported="false" />
+        <property id="maven" exported="false" />
+        <property id="helidonVersion" exported="false" readonly="true" value="{{project.version}}"/>
     </properties>
     <transformations>
         <transformation id="packaged">
