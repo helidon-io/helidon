@@ -37,21 +37,21 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 /**
- * {@link OutputStreamPublisher} reactive streams tck test.
+ * {@link OutputStreamMulti} reactive streams tck test.
  */
-public class OutputStreamPublisherTckTest extends FlowPublisherVerification<ByteBuffer> {
+public class OutputStreamMultiTckTest extends FlowPublisherVerification<ByteBuffer> {
 
     private static ExecutorService executor;
     private static final TestEnvironment env = new TestEnvironment(150);
 
-    public OutputStreamPublisherTckTest() {
+    public OutputStreamMultiTckTest() {
         super(env);
     }
 
     @Override
     public Flow.Publisher<ByteBuffer> createFlowPublisher(long l) {
         CountDownLatch countDownLatch = new CountDownLatch((int) l);
-        OutputStreamPublisher osp = new OutputStreamPublisher();
+        OutputStreamMulti osp = IoMulti.create();
         executor.submit(() -> {
             for (long n = 0; n < l; n++) {
                 final long fn = n;
@@ -73,14 +73,14 @@ public class OutputStreamPublisherTckTest extends FlowPublisherVerification<Byte
             }
         });
 
-        return Multi.from(osp);
+        return osp;
     }
 
     @Override
     public Flow.Publisher<ByteBuffer> createFailedFlowPublisher() {
-        OutputStreamPublisher osp = new OutputStreamPublisher();
+        OutputStreamMulti osp = IoMulti.create();
         osp.signalCloseComplete(new Exception("test"));
-        return Multi.from(osp);
+        return osp;
     }
 
     @Override

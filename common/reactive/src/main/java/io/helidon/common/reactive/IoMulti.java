@@ -18,9 +18,11 @@
 package io.helidon.common.reactive;
 
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.Builder;
 
@@ -30,11 +32,36 @@ import io.helidon.common.Builder;
 public interface IoMulti {
 
     /**
-     * Create a {@link Multi} instance that publishes {@link ByteBuffer}s from the given {@link InputStream}.
+     * Create a {@link Multi} publisher, to which is possible to publish
+     * as in to an {@link OutputStream}. In case there is no demand,
+     * {@link OutputStream#write(byte[], int, int)} methods are blocked
+     * until downstream request for more data.
+     *
+     * @return new {@link Multi} publisher extending {@link OutputStream}
+     */
+    static OutputStreamMulti create() {
+        return new OutputStreamMulti();
+    }
+
+    /**
+     * Creates a builder of the {@link Multi} publisher, to which is possible
+     * to publish as in to an {@link OutputStream}. In case there is no demand,
+     * {@link OutputStream#write(byte[], int, int)} methods are blocked
+     * until downstream request for more data.
+     *
+     * @return the builder
+     */
+    static OutputStreamMultiBuilder builder() {
+        return new OutputStreamMultiBuilder();
+    }
+
+    /**
+     * Create a {@link Multi} instance that publishes {@link ByteBuffer}s from
+     * the given {@link InputStream}.
      * <p>
-     * {@link InputStream} is trusted not to block on read operations, in case it can't be assured use
-     * builder to specify executor for asynchronous waiting for blocking reads.
-     * {@code IoMulti.builder(is).executor(executorService).build()}.
+     * {@link InputStream} is trusted not to block on read operations, in case
+     * it can't be assured use builder to specify executor for asynchronous waiting
+     * for blocking reads. {@code IoMulti.builder(is).executor(executorService).build()}.
      *
      * @param inputStream the Stream to publish
      * @return Multi
@@ -78,7 +105,8 @@ public interface IoMulti {
         }
 
         /**
-         * If the {@code InputStream} can block in read method, use executor for asynchronous waiting.
+         * If the {@code InputStream} can block in read method, use executor for
+         * asynchronous waiting.
          *
          * @param executor used for asynchronous waiting for blocking reads
          * @return this builder
@@ -95,6 +123,28 @@ public interface IoMulti {
                 return new MultiFromBlockingInputStream(inputStream, bufferSize, executor);
             }
             return new MultiFromInputStream(inputStream, bufferSize);
+        }
+    }
+
+    final class OutputStreamMultiBuilder implements Builder<OutputStreamMulti> {
+
+        private final OutputStreamMulti streamMulti = new OutputStreamMulti();
+
+        /**
+         * Set max timeout for which is allowed to block write methods,
+         * in case there is no demand from downstream.
+         *
+         * @param timeout the maximum time to block
+         * @param unit    the time unit of the timeout argument
+         */
+        OutputStreamMultiBuilder timeout(long timeout, TimeUnit unit) {
+            streamMulti.timeout(TimeUnit.MILLISECONDS.convert(timeout, unit));
+            return this;
+        }
+
+        @Override
+        public OutputStreamMulti build() {
+            return streamMulti;
         }
     }
 }

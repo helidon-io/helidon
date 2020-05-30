@@ -34,9 +34,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * events.
  */
 @SuppressWarnings("WeakerAccess")
-public class OutputStreamPublisher extends OutputStream implements Flow.Publisher<ByteBuffer> {
+public class OutputStreamMulti extends OutputStream implements Multi<ByteBuffer> {
 
-    private static final long HARD_TIMEOUT_MILLIS = Duration.ofMinutes(10).toMillis();
+    private long timeout = Duration.ofMinutes(10).toMillis();
 
     private static final byte[] FLUSH_BUFFER = new byte[0];
 
@@ -49,7 +49,7 @@ public class OutputStreamPublisher extends OutputStream implements Flow.Publishe
      * Create new output stream that {@link java.util.concurrent.Flow.Publisher}
      * publishes any data written to it as {@link ByteBuffer} events.
      */
-    public OutputStreamPublisher() {
+    protected OutputStreamMulti() {
         emittingPublisher.onCancel(() -> {
             // when write is called, an exception is thrown as it is a cancelled subscriber
             // when close is called, we do not throw an exception, as that should be silent
@@ -61,6 +61,10 @@ public class OutputStreamPublisher extends OutputStream implements Flow.Publishe
             this.demandUpdated = new CompletableFuture<>();
             demandUpdated.complete(null);
         });
+    }
+
+    void timeout(long timeout) {
+        this.timeout = timeout;
     }
 
     @Override
@@ -98,7 +102,7 @@ public class OutputStreamPublisher extends OutputStream implements Flow.Publishe
             return;
         }
         try {
-            completionResult.get(HARD_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
+            completionResult.get(timeout, TimeUnit.MILLISECONDS);
         } catch (CancellationException e) {
             throw new IOException(e);
         } catch (InterruptedException e) {
@@ -204,7 +208,7 @@ public class OutputStreamPublisher extends OutputStream implements Flow.Publishe
             future.get(waitTime, TimeUnit.MILLISECONDS);
         } catch (TimeoutException e) {
             long diff = System.currentTimeMillis() - startTime;
-            if (diff > HARD_TIMEOUT_MILLIS) {
+            if (diff > timeout) {
                 throw new IOException("Timed out while waiting for subscriber to read data");
             }
         }
