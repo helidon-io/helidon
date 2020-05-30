@@ -11,7 +11,7 @@ For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.co
 
 ### Notes
 
-This is the fourth milestone release of Helidon 2.0. 
+This is the first release candidate of Helidon 2.0. 
 
 ### Notable New Features
 
