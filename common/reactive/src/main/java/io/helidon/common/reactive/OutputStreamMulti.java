@@ -28,6 +28,7 @@ import java.util.concurrent.Flow;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
 
 /**
  * Output stream that {@link java.util.concurrent.Flow.Publisher} publishes any data written to it as {@link ByteBuffer}
@@ -65,6 +66,23 @@ public class OutputStreamMulti extends OutputStream implements Multi<ByteBuffer>
 
     void timeout(long timeout) {
         this.timeout = timeout;
+    }
+
+    /**
+     * Callback executed when request signal from downstream arrive.
+     * <ul>
+     * <li><b>param</b> {@code n} the requested count.</li>
+     * <li><b>param</b> {@code demand} the current total cumulative requested count,
+     * ranges between [0, {@link Long#MAX_VALUE}] where the max indicates that this
+     * publisher is unbounded.</li>
+     * </ul>
+     *
+     * @param requestCallback to be executed
+     * @return this OutputStreamMulti
+     */
+    public OutputStreamMulti onRequest(BiConsumer<Long, Long> requestCallback){
+        this.emittingPublisher.onRequest(requestCallback);
+        return this;
     }
 
     @Override

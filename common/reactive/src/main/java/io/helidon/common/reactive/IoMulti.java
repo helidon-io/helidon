@@ -23,6 +23,7 @@ import java.nio.ByteBuffer;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
 
 import io.helidon.common.Builder;
 
@@ -137,8 +138,24 @@ public interface IoMulti {
          * @param timeout the maximum time to block
          * @param unit    the time unit of the timeout argument
          */
-        OutputStreamMultiBuilder timeout(long timeout, TimeUnit unit) {
+        public OutputStreamMultiBuilder timeout(long timeout, TimeUnit unit) {
             streamMulti.timeout(TimeUnit.MILLISECONDS.convert(timeout, unit));
+            return this;
+        }
+
+        /**
+         * Callback executed when request signal from downstream arrive.
+         * <ul>
+         * <li><b>param</b> {@code n} the requested count.</li>
+         * <li><b>param</b> {@code demand} the current total cumulative requested count,
+         * ranges between [0, {@link Long#MAX_VALUE}] where the max indicates that this
+         * publisher is unbounded.</li>
+         * </ul>
+         *
+         * @param requestCallback to be executed
+         */
+        public OutputStreamMultiBuilder onRequest(BiConsumer<Long, Long> requestCallback){
+            streamMulti.onRequest(requestCallback);
             return this;
         }
 

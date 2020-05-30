@@ -69,6 +69,43 @@ public class OutputStreamMultiTest {
     }
 
     @Test
+    void testRequestCallback() throws IOException {
+        OutputStreamMulti osMulti = IoMulti.builder()
+                .build();
+
+        TestSubscriber<String> testSubscriber = new TestSubscriber<>();
+
+        osMulti.onRequest((n, demand) -> {
+            for (int i = 1; i <= n; i++) {
+                try {
+                    osMulti.write(("test" + i).getBytes());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        })
+                .map(ByteBuffer::array)
+                .map(String::new)
+                .subscribe(testSubscriber);
+
+        testSubscriber.assertEmpty()
+        .request(2)
+        .assertValues("test1", "test2")
+                .request(15)
+                .assertItemCount(17)
+                .request(3)
+                .assertItemCount(20)
+                .request(2000)
+                .assertItemCount(2020)
+                .request(2980)
+                .assertItemCount(5000);
+
+        osMulti.close();
+
+        testSubscriber.assertComplete();
+    }
+
+    @Test
     public void testBasic() {
         OutputStreamMulti publisher = IoMulti.create();
         TestSubscriber<ByteBuffer> subscriber = new TestSubscriber<>();
