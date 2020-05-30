@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -163,16 +163,6 @@ public class GrpcServerConfigurationTest {
     @Test
     public void shouldSetTracingConfiguration() {
         GrpcTracingConfig tracingConfig = mock(GrpcTracingConfig.class);
-        GrpcServerConfiguration configuration = GrpcServerConfiguration.builder()
-                .tracingConfig(tracingConfig)
-                .build();
-
-        assertThat(configuration.tracingConfig(), is(sameInstance(tracingConfig)));
-    }
-
-    @Test
-    public void shouldSetTracingConfigurationOldConfig() {
-        TracingConfiguration tracingConfig = mock(TracingConfiguration.class);
         GrpcServerConfiguration configuration = GrpcServerConfiguration.builder()
                 .tracingConfig(tracingConfig)
                 .build();

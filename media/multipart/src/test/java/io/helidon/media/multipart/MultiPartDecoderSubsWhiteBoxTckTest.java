@@ -86,7 +86,7 @@ public class MultiPartDecoderSubsWhiteBoxTckTest extends FlowSubscriberWhiteboxV
             }
         };
 
-        Multi.from(decoder).forEach(part -> {});
+        Multi.create(decoder).forEach(part -> {});
         return decoder;
     }
 

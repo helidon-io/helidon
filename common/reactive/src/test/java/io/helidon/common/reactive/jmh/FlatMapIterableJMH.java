@@ -61,7 +61,7 @@ public class FlatMapIterableJMH {
         Arrays.fill(inner, 888);
         List<Integer> innerList = Arrays.asList(inner);
 
-        multi = Multi.from(outerList).flatMapIterable(v -> innerList);
+        multi = Multi.create(outerList).flatMapIterable(v -> innerList);
     }
 
     @Benchmark

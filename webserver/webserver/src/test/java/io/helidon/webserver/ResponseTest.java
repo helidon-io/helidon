@@ -130,7 +130,7 @@ public class ResponseTest {
     private static <T> void marshall(Response rsp, Single<T> entity, Class<T> clazz)
             throws InterruptedException, ExecutionException, TimeoutException {
 
-        Multi.from(rsp.writerContext().marshall(entity, GenericType.create(clazz)))
+        Multi.create(rsp.writerContext().marshall(entity, GenericType.create(clazz)))
                 .collectList()
                 .get(10, TimeUnit.SECONDS);
     }
@@ -283,12 +283,12 @@ public class ResponseTest {
 
         @Override
         public Single<BareResponse> whenCompleted() {
-            return Single.from(closeFuture);
+            return Single.create(closeFuture);
         }
 
         @Override
         public Single<BareResponse> whenHeadersCompleted() {
-            return Single.from(closeFuture);
+            return Single.create(closeFuture);
         }
 
         @Override

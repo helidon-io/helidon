@@ -89,7 +89,7 @@ public class MultiSwitchIfEmptyTest {
         SubmissionPublisher<Integer> sp = new SubmissionPublisher<>(Runnable::run, 128);
         TestSubscriber<Integer> ts = new TestSubscriber<>(Long.MAX_VALUE);
 
-        Multi.from(sp)
+        Multi.create(sp)
                 .switchIfEmpty(Multi.singleton(2))
                 .subscribe(ts);
 
@@ -108,7 +108,7 @@ public class MultiSwitchIfEmptyTest {
         TestSubscriber<Integer> ts = new TestSubscriber<>(Long.MAX_VALUE);
 
         Multi.<Integer>empty()
-                .switchIfEmpty(Multi.from(sp))
+                .switchIfEmpty(Multi.create(sp))
                 .subscribe(ts);
 
         assertTrue(sp.hasSubscribers());

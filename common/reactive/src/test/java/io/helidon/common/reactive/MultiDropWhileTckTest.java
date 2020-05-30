@@ -32,7 +32,7 @@ public class MultiDropWhileTckTest extends FlowPublisherVerification<Integer> {
 
     @Override
     public Flow.Publisher<Integer> createFlowPublisher(long l) {
-        return Multi.from(() -> IntStream.range(0, (int)l + 5).boxed().iterator())
+        return Multi.create(() -> IntStream.range(0, (int)l + 5).boxed().iterator())
                 .dropWhile(v -> v < 5);
     }
 

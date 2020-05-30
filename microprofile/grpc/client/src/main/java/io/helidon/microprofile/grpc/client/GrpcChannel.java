@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,21 +26,46 @@ import javax.enterprise.util.Nonbinding;
 import javax.inject.Qualifier;
 
 /**
- * An qualifier annotation to specify the name of a gRPC channel to inject.
+ * A qualifier annotation that can be used to specify the name of a configured gRPC
+ * channel to inject, or the name of the host to connect to, as described in
+ * {@link io.helidon.grpc.client.GrpcChannelsProvider#channel(String)} documentation.
  * <p>
  * For example:
+ *
  * <pre>
- *     &#064;javax.inject.Inject
- *     &#064;io.helidon.microprofile.grpc.core.Channel(name="foo")
- *     private io.grpc.Channel channel;
+ *     &#064;Inject
+ *     &#064;GrpcChannel(name = "foo")
+ *     private Channel channel;
  * </pre>
+ *
+ * This annotation can also be specified at the injection point for a client proxy,
+ * in combination with the {@link GrpcProxy @GrpcProxy} annotation:
+ *
+ * <pre>
+ *     &#064;Inject
+ *     &#064;GrpcChannel(name = "foo")
+ *     &#064;GrpcProxy
+ *     private FooServiceClient client;
+ * </pre>
+ *
+ * Alternatively, if the client proxy should always use the same channel, it can
+ * be specified on the client interface instead:
+ *
+ * <pre>
+ *     &#064;Grpc(name = "FooService")
+ *     &#064;GrpcChannel(name = "foo")
+ *     public interface FooServiceClient {
+ *         ...
+ *     };
+ * </pre>
+ *
  */
-@Target({ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.FIELD, ElementType.PARAMETER})
+@Target({ElementType.TYPE, ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.FIELD, ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)
 @Qualifier
 public @interface GrpcChannel {
     /**
-     * Obtain the name of the channel.
+     * The name of the configured channel or gRPC server host.
      *
      * @return  name of the channel
      */

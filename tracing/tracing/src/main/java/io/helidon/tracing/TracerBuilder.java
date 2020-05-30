@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import io.helidon.common.Builder;
 import io.helidon.config.Config;
 
 import io.opentracing.Tracer;
-import io.opentracing.util.GlobalTracer;
 
 /**
  * A builder for tracing {@link Tracer tracer}.
@@ -250,7 +249,6 @@ public interface TracerBuilder<T extends TracerBuilder> extends Builder<Tracer> 
 
     /**
      * When enabled, the created instance is also registered as a global tracer.
-     * When set to {@code true} method {@link #build()} will have the same result as {@link #buildAndRegister()}.
      *
      * @param global whether to register this tracer as a global tracer once built
      * @return updated builder instance
@@ -266,18 +264,4 @@ public interface TracerBuilder<T extends TracerBuilder> extends Builder<Tracer> 
     // declaration on io.helidon.common.Builder
     // this class returned an Object instead of Tracer
     Tracer build();
-
-    /**
-     * Build and register as a global tracer.
-     *
-     * @return The {@link Tracer} built and registered
-     * @deprecated Use {@link #registerGlobal(boolean)} to control whether the resulting instance is
-     * registered as a {@link io.opentracing.util.GlobalTracer}.
-     */
-    @Deprecated
-    default Tracer buildAndRegister() {
-        Tracer result = build();
-        GlobalTracer.register(result);
-        return result;
-    }
 }

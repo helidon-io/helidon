@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ import io.helidon.common.reactive.Single;
  * It is possible to register function to convert publisher to {@link io.helidon.common.reactive.Single} of a single entity using
  * {@link #registerReader(Class, Reader)} or {@link #registerReader(Predicate, Reader)} methods. It
  * is then possible to use {@link #as(Class)} method to obtain such entity.
- * @deprecated use {@code io.helidon.media.common.MessageBodyReadableContent} instead
+ * @deprecated since 2.0.0, use {@code io.helidon.media.common.MessageBodyReadableContent} instead
  */
 @Deprecated
 public interface Content extends Flow.Publisher<DataChunk> {
@@ -73,7 +73,7 @@ public interface Content extends Flow.Publisher<DataChunk> {
      *
      * @param function a function that transforms a given publisher (that is either the original
      *                 publisher or the publisher transformed by the last previously registered filter).
-     * @deprecated use {@code io.helidon.media.common.MessageBodyReaderContext.registerFilter}
+     * @deprecated since 2.0.0, use {@code io.helidon.media.common.MessageBodyReaderContext.registerFilter}
      */
     @Deprecated
     void registerFilter(Function<Flow.Publisher<DataChunk>, Flow.Publisher<DataChunk>> function);
@@ -93,7 +93,7 @@ public interface Content extends Flow.Publisher<DataChunk> {
      *               If an exception is thrown, the resulting completion stage of
      *               {@link #as(Class)} method call ends exceptionally.
      * @param <T>    the requested type
-     * @deprecated use {@code io.helidon.media.common.MessageBodyReaderContext.registerReader}
+     * @deprecated since 2.0.0, use {@code io.helidon.media.common.MessageBodyReaderContext.registerReader}
      */
     @Deprecated
     <T> void registerReader(Class<T> type, Reader<T> reader);
@@ -116,7 +116,7 @@ public interface Content extends Flow.Publisher<DataChunk> {
      *                  If an exception is thrown, the resulting completion stage of
      *                  {@link #as(Class)} method call ends exceptionally.
      * @param <T>       the requested type
-     * @deprecated use {@code io.helidon.media.common.MessageBodyReaderContext.registerReader}
+     * @deprecated since 2.0.0, use {@code io.helidon.media.common.MessageBodyReaderContext.registerReader}
      */
     @Deprecated
     <T> void registerReader(Predicate<Class<?>> predicate, Reader<T> reader);

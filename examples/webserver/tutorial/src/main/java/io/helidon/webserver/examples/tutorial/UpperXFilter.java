@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ public final class UpperXFilter implements Function<Publisher<DataChunk>, Publis
 
     @Override
     public Publisher<DataChunk> apply(Publisher<DataChunk> publisher) {
-        return Multi.from(publisher).map(responseChunk -> {
+        return Multi.create(publisher).map(responseChunk -> {
             if (responseChunk == null) {
                 return null;
             }

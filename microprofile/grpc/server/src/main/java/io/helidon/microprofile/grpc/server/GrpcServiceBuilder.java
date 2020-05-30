@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,9 +45,9 @@ import io.helidon.microprofile.grpc.core.GrpcInterceptor;
 import io.helidon.microprofile.grpc.core.GrpcInterceptorBinding;
 import io.helidon.microprofile.grpc.core.GrpcInterceptors;
 import io.helidon.microprofile.grpc.core.GrpcMarshaller;
+import io.helidon.microprofile.grpc.core.GrpcMethod;
 import io.helidon.microprofile.grpc.core.Instance;
 import io.helidon.microprofile.grpc.core.ModelHelper;
-import io.helidon.microprofile.grpc.core.RpcMethod;
 
 import io.grpc.ServerInterceptor;
 
@@ -153,10 +153,10 @@ public class GrpcServiceBuilder
      *                     to look-up CDI beans.
      */
     private void addServiceMethods(ServiceDescriptor.Builder builder, AnnotatedMethodList methodList, BeanManager beanManager) {
-        for (AnnotatedMethod am : methodList.withAnnotation(RpcMethod.class)) {
+        for (AnnotatedMethod am : methodList.withAnnotation(GrpcMethod.class)) {
             addServiceMethod(builder, am, beanManager);
         }
-        for (AnnotatedMethod am : methodList.withMetaAnnotation(RpcMethod.class)) {
+        for (AnnotatedMethod am : methodList.withMetaAnnotation(GrpcMethod.class)) {
             addServiceMethod(builder, am, beanManager);
         }
     }
@@ -174,7 +174,7 @@ public class GrpcServiceBuilder
      */
     @SuppressWarnings("unchecked")
     private void addServiceMethod(ServiceDescriptor.Builder builder, AnnotatedMethod method, BeanManager beanManager) {
-        RpcMethod annotation = method.firstAnnotationOrMetaAnnotation(RpcMethod.class);
+        GrpcMethod annotation = method.firstAnnotationOrMetaAnnotation(GrpcMethod.class);
         String name = determineMethodName(method, annotation);
         Supplier<?> instanceSupplier = instanceSupplier();
 

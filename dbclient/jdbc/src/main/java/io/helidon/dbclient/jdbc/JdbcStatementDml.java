@@ -53,7 +53,7 @@ class JdbcStatementDml extends JdbcStatement<DbStatementDml, Single<Long>> imple
                                    CompletableFuture<Void> statementFuture,
                                    CompletableFuture<Long> queryFuture) {
 
-        return Single.from(connection())
+        return Single.create(connection())
                 .flatMapSingle(connection -> doExecute(dbContext, connection, statementFuture, queryFuture));
     }
 
@@ -65,7 +65,7 @@ class JdbcStatementDml extends JdbcStatement<DbStatementDml, Single<Long>> imple
         executorService().submit(() -> callStatement(dbContext, connection, statementFuture, queryFuture));
 
         // the query future is reused, as it completes with the number of updated records
-        return Single.from(queryFuture);
+        return Single.create(queryFuture);
     }
 
     private void callStatement(DbClientServiceContext dbContext,

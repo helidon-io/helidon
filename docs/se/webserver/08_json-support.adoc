@@ -32,34 +32,36 @@ Declare the following dependency in your project:
 .Webserver JSON-P Dependency
 ----
 <dependency>
-    <groupId>io.helidon.media.jsonp</groupId>
-    <artifactId>helidon-media-jsonp-server</artifactId>
+    <groupId>io.helidon.media</groupId>
+    <artifactId>helidon-media-jsonp</artifactId>
 </dependency>
 ----
 
 === Usage
 
-To enable JSON-P support, first register it with the route builder.
+To enable JSON-P support, first register it with the web server.
 Then you can add routes that handle and return JSON.
 
 [source,java]
-.Configure JsonSupport and use it for reading and writing of entities
+.Configure JsonpSupport and use it for reading and writing of entities
 ----
-Routing.builder()
-       .register(JsonSupport.create()) // <1>
-       .post("/sayhello", Handler.create(JsonObject.class, this::sayHello)) // <2>
-       .build();
+JsonpSupport jsonbSupport = JsonpSupport.create(); // <1>
+WebServer webServer = WebServer.builder()
+    .addMediaSupport(jsonpSupport) // <2>
+    .build();
 ----
-<1> Register JsonSupport to enable transformation from and to `JsonObject` objects
-<2> Register a handler that receives a `JsonObject` as its input.
+<1> Register JsonpSupport to enable transformation from and to `JsonObject` objects
+<2> Register that JsonpSupport instance to enable automatic
+deserialization of Java objects from and serialization of Java objects
+to JSON.
 
 [source,java]
 .Handler that receives and returns JSON objects
 ----
-private static final JsonBuilderFactory jsonFactory = Json.createBuilderFactory(Collections.emptyMap()); <1>
+private static final JsonBuilderFactory JSON_FACTORY = Json.createBuilderFactory(Collections.emptyMap()); <1>
 
 private void sayHello(ServerRequest req, ServerResponse res, JsonObject json) { // <2>
-        JsonObject msg = jsonFactory.createObjectBuilder()   // <3>
+        JsonObject msg = JSON_FACTORY.createObjectBuilder()   // <3>
           .add("message", "Hello " + json.getString("name"))
           .build();
         res.send(msg);                            // <4>
@@ -80,10 +82,10 @@ curl --noproxy '*' -X POST -H "Content-Type: application/json" \
 
 === Configuring Json Reader/Writer factories
 To configure JSON-P `JsonReaderFactory` and `JsonWriterFactory` that are used by
- the `JsonSupport` instance, create the `JsonSupport` object:
+ the `JsonpSupport` instance, create the `JsonpSupport` object:
 
 [source,java]
-.Create `JsonSupport` with the provided configuration
+.Create `JsonpSupport` with the provided configuration
 ----
-JsonSupport.create(Map.of(JsonGenerator.PRETTY_PRINTING, false))
+JsonpSupport.create(Map.of(JsonGenerator.PRETTY_PRINTING, false))
 ----

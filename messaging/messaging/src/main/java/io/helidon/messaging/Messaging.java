@@ -246,7 +246,7 @@ public interface Messaging {
                                             Consumer<Multi<? extends Message<? extends PAYLOAD>>> consumer) {
             Processor<? extends Message<? extends PAYLOAD>, ? extends Message<? extends PAYLOAD>> processor =
                     ReactiveStreams.<Message<? extends PAYLOAD>>builder().buildRs();
-            consumer.accept(Multi.from(FlowAdapters.toFlowPublisher(processor)));
+            consumer.accept(Multi.create(FlowAdapters.toFlowPublisher(processor)));
             this.subscriber(channel, processor);
             return this;
         }

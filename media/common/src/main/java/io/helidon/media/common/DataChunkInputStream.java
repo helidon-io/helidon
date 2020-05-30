@@ -19,6 +19,7 @@ package io.helidon.media.common;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Flow;
@@ -97,7 +98,7 @@ public class DataChunkInputStream extends InputStream {
     @Override
     public void close() {
         // Assert: if current != next, next cannot ever be resolved with a chunk that needs releasing
-        current.whenComplete(DataChunkInputStream::releaseChunk);
+        Optional.ofNullable(current).ifPresent(it -> current.whenComplete(DataChunkInputStream::releaseChunk));
         current = null;
     }
 

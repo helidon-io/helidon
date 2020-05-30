@@ -76,7 +76,7 @@ class MessageUtils {
      * @return unwrapped value
      */
     static Object unwrap(Object value, Class<?> type, Supplier<CompletionStage<Void>> onAck) {
-        if (type.equals(Message.class)) {
+        if (Message.class.isAssignableFrom(type)) {
             if (value instanceof Message) {
                 return value;
             } else {

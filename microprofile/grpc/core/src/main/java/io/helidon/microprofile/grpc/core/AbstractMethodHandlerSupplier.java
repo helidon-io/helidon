@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,8 +55,8 @@ abstract class AbstractMethodHandlerSupplier
     }
 
     /**
-     * Determine whether the specified method is annotated with {@link io.helidon.microprofile.grpc.core.RpcMethod}
-     * or another annotation that is itself annotated with {@link io.helidon.microprofile.grpc.core.RpcMethod}
+     * Determine whether the specified method is annotated with {@link GrpcMethod}
+     * or another annotation that is itself annotated with {@link GrpcMethod}
      * with a type matching this handler's {@link #methodType}.
      *
      * @param method  the method to test
@@ -67,7 +67,7 @@ abstract class AbstractMethodHandlerSupplier
             return false;
         }
 
-        RpcMethod annotation = method.firstAnnotationOrMetaAnnotation(RpcMethod.class);
+        GrpcMethod annotation = method.firstAnnotationOrMetaAnnotation(GrpcMethod.class);
         return annotation != null && methodType.equals(annotation.type());
     }
 

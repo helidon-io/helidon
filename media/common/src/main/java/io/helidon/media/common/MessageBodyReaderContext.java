@@ -117,7 +117,7 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
      * @param <T> supported type
      * @param type class representing the supported type
      * @param reader reader function
-     * @deprecated use {@link #registerReader(MessageBodyReader) } instead
+     * @deprecated since 2.0.0 use {@link #registerReader(MessageBodyReader) } instead
      */
     @Deprecated
     public <T> void registerReader(Class<T> type, io.helidon.common.http.Reader<T> reader) {
@@ -129,7 +129,7 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
      * @param <T> supported type
      * @param predicate class predicate
      * @param reader reader function
-     * @deprecated use {@link #registerReader(MessageBodyReader) } instead
+     * @deprecated since 2.0.0 use {@link #registerReader(MessageBodyReader) } instead
      */
     @Deprecated
     public <T> void registerReader(Predicate<Class<?>> predicate, io.helidon.common.http.Reader<T> reader) {
@@ -392,7 +392,7 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
         public <U extends T> Single<U> read(Publisher<DataChunk> publisher, GenericType<U> type,
                 MessageBodyReaderContext context) {
 
-            return Single.from(reader.applyAndCast(publisher, (Class<U>) type.rawType()));
+            return Single.create(reader.applyAndCast(publisher, (Class<U>) type.rawType()));
         }
 
         @Override

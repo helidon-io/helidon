@@ -108,7 +108,7 @@ class JdbcDbClient implements DbClient {
                 - so here we resume with the commit future that provides us with either empty multi, or error multi
                 - the flatMap just returns the multi result of the completion stage
             */
-            multi = multi.onCompleteResumeWith(Single.from(commitFuture).flatMap(Function.identity()));
+            multi = multi.onCompleteResumeWith(Single.create(commitFuture).flatMap(Function.identity()));
 
             // if result completes with an exception, or commit failed, we attempt a rollback
             multi = multi.onError(throwable -> {
@@ -124,7 +124,7 @@ class JdbcDbClient implements DbClient {
 
             future = future.exceptionally(RollbackHandler.create(execute, Level.WARNING));
 
-            return (T) Single.from(future);
+            return (T) Single.create(future);
         } else {
             execute.doRollback();
             throw new IllegalStateException("You must return a Single or Multi instance to inTransaction, yet "

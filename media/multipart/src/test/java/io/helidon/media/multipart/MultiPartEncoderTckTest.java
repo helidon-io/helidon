@@ -39,7 +39,7 @@ public class MultiPartEncoderTckTest extends FlowPublisherVerification<DataChunk
     @Override
     public Flow.Publisher<DataChunk> createFlowPublisher(final long l) {
         MultiPartEncoder encoder = MultiPartEncoder.create("boundary", MEDIA_CONTEXT.writerContext());
-        Multi.from(LongStream.rangeClosed(1, l)
+        Multi.create(LongStream.rangeClosed(1, l)
                 .mapToObj(i ->
                         WriteableBodyPart.builder()
                                 .entity("part" + i)

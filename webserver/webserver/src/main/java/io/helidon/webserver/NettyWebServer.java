@@ -287,7 +287,7 @@ class NettyWebServer implements WebServer {
             started = true;
             LOGGER.fine(() -> "All channels startup routine initiated: " + bootstrapsSize);
         }
-        return Single.from(startFuture);
+        return Single.create(startFuture);
     }
 
     private void started(WebServer server) {
@@ -375,13 +375,13 @@ class NettyWebServer implements WebServer {
         for (Channel channel : channels.values()) {
             channel.close();
         }
-        return Single.from(shutdownFuture);
+        return Single.create(shutdownFuture);
     }
 
     @Override
     public Single<WebServer> whenShutdown() {
         // we need to return a new single each time
-        return Single.from(shutdownFuture);
+        return Single.create(shutdownFuture);
     }
 
     @Override

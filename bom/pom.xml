@@ -178,33 +178,18 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.media.jackson</groupId>
-                <artifactId>helidon-media-jackson-common</artifactId>
+                <groupId>io.helidon.media</groupId>
+                <artifactId>helidon-media-jackson</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.media.jackson</groupId>
-                <artifactId>helidon-media-jackson-server</artifactId>
+                <groupId>io.helidon.media</groupId>
+                <artifactId>helidon-media-jsonb</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.media.jsonb</groupId>
-                <artifactId>helidon-media-jsonb-common</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.media.jsonb</groupId>
-                <artifactId>helidon-media-jsonb-server</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.media.jsonp</groupId>
-                <artifactId>helidon-media-jsonp-common</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.media.jsonp</groupId>
-                <artifactId>helidon-media-jsonp-server</artifactId>
+                <groupId>io.helidon.media</groupId>
+                <artifactId>helidon-media-jsonp</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
@@ -774,11 +759,6 @@
             <dependency>
                 <groupId>io.helidon.integrations.cdi</groupId>
                 <artifactId>helidon-integrations-cdi-jpa</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.integrations.cdi</groupId>
-                <artifactId>helidon-integrations-cdi-jpa-weld</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>

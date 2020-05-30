@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -99,12 +99,13 @@ public class AtnProvider extends SynchronousProvider implements AuthenticationPr
     }
 
     private List<Auth> fromAnnotations(EndpointConfig endpointConfig) {
-        return endpointConfig.combineAnnotations(Authentications.class, EndpointConfig.AnnotationScope.METHOD)
-                             .stream()
-                             .map(Authentications::value)
-                             .flatMap(Arrays::stream)
-                             .map(Auth::new)
-                             .collect(Collectors.toList());
+        return endpointConfig.securityLevels()
+                .stream()
+                .flatMap(level -> level.combineAnnotations(Authentications.class, EndpointConfig.AnnotationScope.METHOD).stream())
+                .map(Authentications::value)
+                .flatMap(Arrays::stream)
+                .map(Auth::new)
+                .collect(Collectors.toList());
     }
 
     private Subject buildSubject(Auth authentication) {

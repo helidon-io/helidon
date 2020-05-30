@@ -36,7 +36,7 @@ import io.helidon.grpc.server.GrpcServerConfiguration;
 import io.helidon.grpc.server.ServiceDescriptor;
 import io.helidon.microprofile.grpc.core.Bidirectional;
 import io.helidon.microprofile.grpc.core.ClientStreaming;
-import io.helidon.microprofile.grpc.core.RpcService;
+import io.helidon.microprofile.grpc.core.Grpc;
 import io.helidon.microprofile.grpc.core.ServerStreaming;
 import io.helidon.microprofile.grpc.core.Unary;
 import io.helidon.microprofile.grpc.server.test.BidiServiceGrpc;
@@ -302,7 +302,7 @@ public class AnnotatedServiceTest {
     /**
      * The unary methods service implementation.
      */
-    @RpcService
+    @Grpc
     public static class UnaryService {
         @Unary
         public Services.TestResponse requestResponse(Services.TestRequest request) {
@@ -360,7 +360,7 @@ public class AnnotatedServiceTest {
     /**
      * The server streaming service.
      */
-    @RpcService
+    @Grpc
     public static class ServerStreamingService {
 
         @ServerStreaming
@@ -396,7 +396,7 @@ public class AnnotatedServiceTest {
     /**
      * The client streaming service.
      */
-    @RpcService
+    @Grpc
     public static class ClientStreamingService {
         @ClientStreaming
         public StreamObserver<TestRequest> streaming(StreamObserver<TestResponse> observer) {
@@ -436,7 +436,7 @@ public class AnnotatedServiceTest {
     /**
      * The bi-directional streaming service.
      */
-    @RpcService
+    @Grpc
     public static class BidiService {
         @Bidirectional
         public StreamObserver<TestRequest> bidi(StreamObserver<TestResponse> observer) {

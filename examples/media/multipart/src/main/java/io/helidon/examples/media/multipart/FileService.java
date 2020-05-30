@@ -125,7 +125,7 @@ public final class FileService implements Service {
                 }).forEach((part) -> {
                     if ("file[]".equals(part.name())) {
                         final ByteChannel channel = newByteChannel(storage, part.filename());
-                        Multi.from(part.content()).forEach(chunk -> writeChunk(channel, chunk));
+                        Multi.create(part.content()).forEach(chunk -> writeChunk(channel, chunk));
                     }
                 });
     }

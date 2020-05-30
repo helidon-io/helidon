@@ -80,7 +80,19 @@ public class KafkaSubscriber<K, V> implements Subscriber<Message<V>> {
         for (String topic : topics) {
             CompletableFuture<Void> completableFuture = new CompletableFuture<>();
             futureList.add(completableFuture);
-            ProducerRecord<K, V> record = new ProducerRecord<>(topic, message.getPayload());
+            ProducerRecord<K, V> record;
+            if (message instanceof KafkaMessage) {
+                KafkaMessage<K, V> kafkaMessage = (KafkaMessage<K, V>) message;
+                record = new ProducerRecord<>(
+                        topic,
+                        null,
+                        null,
+                        kafkaMessage.getKey().orElse(null),
+                        kafkaMessage.getPayload(),
+                        kafkaMessage.getHeaders());
+            } else {
+                record = new ProducerRecord<>(topic, message.getPayload());
+            }
             kafkaProducer.send(record, (metadata, exception) -> {
                 if (exception != null) {
                     subscription.cancel();

@@ -90,7 +90,7 @@ public class SingleFlatMapSingleTest {
         SubmissionPublisher<Integer> sp = new SubmissionPublisher<>(Runnable::run, 32);
         TestSubscriber<Integer> ts = new TestSubscriber<>();
 
-        Single.from(sp)
+        Single.create(sp)
                 .flatMapSingle(v -> Single.just(2))
                 .subscribe(ts);
 
@@ -108,7 +108,7 @@ public class SingleFlatMapSingleTest {
         TestSubscriber<Integer> ts = new TestSubscriber<>();
 
         Single.just(1)
-                .flatMapSingle(v -> Single.from(sp))
+                .flatMapSingle(v -> Single.create(sp))
                 .subscribe(ts);
 
         ts.request1();

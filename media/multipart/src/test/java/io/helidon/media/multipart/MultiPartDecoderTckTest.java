@@ -37,7 +37,7 @@ public class MultiPartDecoderTckTest extends FlowPublisherVerification<ReadableB
     }
 
     static Flow.Publisher<DataChunk> upstream(final long l) {
-        return Multi.from(LongStream.rangeClosed(1, l)
+        return Multi.create(LongStream.rangeClosed(1, l)
                 .mapToObj(i -> {
                             String chunk = "";
                             if (i == 1L) {

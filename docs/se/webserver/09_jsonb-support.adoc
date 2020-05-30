@@ -34,33 +34,28 @@ Declare the following dependency in your project:
 [source,xml,subs="verbatim,attributes"]
 ----
 <dependency>
-    <groupId>io.helidon.media.jsonb</groupId>
-    <artifactId>helidon-media-jsonb-server</artifactId>
+    <groupId>io.helidon.media</groupId>
+    <artifactId>helidon-media-jsonb</artifactId>
 </dependency>
 ----
 
 === Usage
-To enable JSON-B support, first create and
-https://helidon.io/docs/latest/apidocs/io/helidon/webserver/Routing.Builder.html#register-io.helidon.webserver.Service...-[register]
-a
-https://helidon.io/docs/latest/apidocs/io/helidon/media/jsonb/server/JsonBindingSupport.html[`JsonBindingSupport`]
+To enable JSON-B support, first create and register a
+https://helidon.io/docs/latest/apidocs/io/helidon/media/jsonb/JsonbSupport.html[`JsonbSupport`]
 instance with a
-https://helidon.io/docs/latest/apidocs/io/helidon/webserver/Routing.Builder.html[`Routing.Builder`].
-`JsonBindingSupport` is a `Service`, so it will install its own
-`Handler` that will provide serialization and deserialization services
-using https://github.com/eclipse-ee4j/yasson[Yasson], an
-implementation of the http://json-b.net/[JSON-B specification].
+https://helidon.io/docs/latest/apidocs/io/helidon/webserver/WebServer.Builder.html[`WebServer.Builder`].
 
 [source,java]
-.Create and register `JsonBindingSupport` first
+.Registration of the `JsonbSupport` via `WebServer`
 ----
-final JsonBindingSupport jsonBindingSupport = JsonBindingSupport.create(); // <1>
-final Routing.Builder routingBuilder = Routing.builder();
-routingBuilder.register(jsonBindingSupport); // <2>
+JsonbSupport jsonbSupport = JsonbSupport.create(); // <1>
+WebServer webServer = WebServer.builder()
+    .addMediaSupport(jsonbSupport) // <2>
+    .build();
 ----
-<1> Create a `JsonBindingSupport` instance.  This instance may be
+<1> Create a `JsonbSupport` instance.  This instance may be
 reused freely.
-<2> Register that `JsonBindingSupport` instance to enable automatic
+<2> Register that `JsonbSupport` instance to enable automatic
 deserialization of Java objects from and serialization of Java objects
 to JSON.
 

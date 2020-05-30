@@ -228,7 +228,7 @@ public abstract class MessageBodyContext implements MessageBodyFilters {
      * Register a function filter.
      *
      * @param function filter function
-     * @deprecated use {@link #registerFilter(MessageBodyFilter)} instead
+     * @deprecated since 2.0.0 use {@link #registerFilter(MessageBodyFilter)} instead
      */
     @Deprecated
     public void registerFilter(Function<Publisher<DataChunk>, Publisher<DataChunk>> function) {

@@ -283,7 +283,7 @@ public interface WebClient {
          *
          * @param amount amount of time
          * @param unit   time unit
-         * @deprecated see {@link WebClient.Builder#connectTimeout(long, TimeUnit)}
+         * @deprecated use {@link WebClient.Builder#connectTimeout(long, TimeUnit)}, this method will be removed
          * @return updated builder instance
          */
         @Deprecated
@@ -309,7 +309,7 @@ public interface WebClient {
          *
          * @param amount amount of time
          * @param unit   time unit
-         * @deprecated see {@link WebClient.Builder#readTimeout(long, TimeUnit)}
+         * @deprecated use {@link WebClient.Builder#readTimeout(long, TimeUnit)}, this method will be removed
          * @return updated builder instance
          */
         @Deprecated

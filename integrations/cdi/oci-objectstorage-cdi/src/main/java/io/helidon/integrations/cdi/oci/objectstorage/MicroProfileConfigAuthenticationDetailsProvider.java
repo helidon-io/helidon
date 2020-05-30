@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,12 @@ final class MicroProfileConfigAuthenticationDetailsProvider extends CustomerAuth
     this.config = Objects.requireNonNull(config);
   }
 
+  /**
+   * This method is implementing an interface of a third party. Until
+   * that interface removes this method, we need to keep it in Helidon.
+   *
+   * @return pass phrase
+   */
   @Deprecated
   @Override
   public String getPassPhrase() {

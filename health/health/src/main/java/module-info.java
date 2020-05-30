@@ -24,7 +24,7 @@ module io.helidon.health {
     requires transitive microprofile.health.api;
     requires io.helidon.webserver;
     requires io.helidon.webserver.cors;
-    requires io.helidon.media.jsonp.common;
+    requires io.helidon.media.jsonp;
     requires java.json;
 
     exports io.helidon.health;

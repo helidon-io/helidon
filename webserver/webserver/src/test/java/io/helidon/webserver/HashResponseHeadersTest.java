@@ -183,8 +183,8 @@ public class HashResponseHeadersTest {
         CompletableFuture<BareResponse> headersFuture = new CompletableFuture<>();
         CompletableFuture<BareResponse> future = new CompletableFuture<>();
         BareResponse result = mock(BareResponse.class);
-        when(result.whenHeadersCompleted()).thenReturn(Single.from(headersFuture));
-        when(result.whenCompleted()).thenReturn(Single.from(future));
+        when(result.whenHeadersCompleted()).thenReturn(Single.create(headersFuture));
+        when(result.whenCompleted()).thenReturn(Single.create(future));
         doAnswer(invocationOnMock -> {
             headersFuture.complete(result);
             return null;

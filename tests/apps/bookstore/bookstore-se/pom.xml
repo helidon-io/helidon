@@ -55,16 +55,16 @@
             <artifactId>helidon-metrics</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.media.jsonp</groupId>
-            <artifactId>helidon-media-jsonp-common</artifactId>
+            <groupId>io.helidon.media</groupId>
+            <artifactId>helidon-media-jsonp</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.media.jsonb</groupId>
-            <artifactId>helidon-media-jsonb-common</artifactId>
+            <groupId>io.helidon.media</groupId>
+            <artifactId>helidon-media-jsonb</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.media.jackson</groupId>
-            <artifactId>helidon-media-jackson-common</artifactId>
+            <groupId>io.helidon.media</groupId>
+            <artifactId>helidon-media-jackson</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.tests.apps.bookstore.common</groupId>
