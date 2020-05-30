@@ -22,11 +22,11 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.helidon.examples.quickstarts</groupId>
     <artifactId>helidon-standalone-quickstart-mp</artifactId>
-    <version>2.0.0-SNAPSHOT</version>
+    <version>2.0.0-M4-SNAPSHOT</version>
     <name>Helidon Standalone Quickstart MP Example</name>
 
     <properties>
-        <helidon.version>2.0.0-SNAPSHOT</helidon.version>
+        <helidon.version>2.0.0-M4-SNAPSHOT</helidon.version>
         <mainClass>io.helidon.microprofile.cdi.Main</mainClass>
 
         <maven.compiler.source>11</maven.compiler.source>
