@@ -302,13 +302,14 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
         }
     }
 
-    private boolean boundedEmit(T item){
+    private boolean internalEmit(T item){
         for (;;) {
             if (emitting.getAndSet(true)) {
                 // race against parallel emits
                 // only those can decrement counter
                 continue;
             }
+            Throwable error;
             try {
                 Flow.Subscriber<? super T> subscriber = this.subscriber;
                 if (subscriber == null) {
@@ -325,39 +326,12 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
             } catch (NullPointerException npe) {
                 throw npe;
             } catch (Throwable t) {
-                emitting.set(false);
-                fail(new IllegalStateException(t));
-                return false;
+                error = t;
             } finally {
                 emitting.set(false);
             }
-        }
-    }
-
-    private boolean unboundedEmit(T item) {
-        for (;;) {
-            if (emitting.getAndSet(true)) {
-                // race against parallel emits
-                // only those can decrement counter
-                continue;
-            }
-            try {
-                Flow.Subscriber<? super T> subscriber = this.subscriber;
-                if (subscriber == null) {
-                    // cancel released the reference
-                    return false;
-                }
-                subscriber.onNext(item);
-                return true;
-            } catch (NullPointerException npe) {
-                throw npe;
-            } catch (Throwable t) {
-                emitting.set(false);
-                fail(new IllegalStateException(t));
-                return false;
-            } finally {
-                emitting.set(false);
-            }
+            fail(new IllegalStateException(error));
+            return false;
         }
     }
 
@@ -398,11 +372,7 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
         READY_TO_EMIT {
             @Override
             <T> boolean emit(EmittingPublisher<T> publisher, T item) {
-                if (publisher.isUnbounded()) {
-                    return publisher.unboundedEmit(item);
-                } else {
-                    return publisher.boundedEmit(item);
-                }
+                return publisher.internalEmit(item);
             }
 
             @Override
