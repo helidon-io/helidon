@@ -20,8 +20,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Flow;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.IntStream;
 
 import org.reactivestreams.tck.TestEnvironment;
 import org.reactivestreams.tck.flow.FlowPublisherVerification;
@@ -30,43 +29,37 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 @Test
-public class EmittingPublisherTckTest extends FlowPublisherVerification<Integer> {
+public class BufferedEmittingPublisherTckTest extends FlowPublisherVerification<Integer> {
 
     private static ExecutorService executor;
 
-    public EmittingPublisherTckTest() {
+    public BufferedEmittingPublisherTckTest() {
         super(new TestEnvironment(200));
     }
 
     @Override
     public Flow.Publisher<Integer> createFlowPublisher(long l) {
-        AtomicLong counter = new AtomicLong(l);
-        CountDownLatch completeLatch = new CountDownLatch((int) l);
-        EmittingPublisher<Integer> osp = EmittingPublisher.create();
-        osp.onRequest((r, demand) -> {
-            for (long n = 0; n < r && n <= l; n++) {
-                final long fn = n;
-                //stochastic test of emit methods being thread-safe
-                executor.submit(() -> {
-                    long cnt = counter.getAndDecrement();
-                    if (cnt > 0) {
-                        osp.emit((int) fn);
-                        completeLatch.countDown();
-                    }
-                });
-            }
+        CountDownLatch emitLatch = new CountDownLatch((int) l);
+        BufferedEmittingPublisher<Integer> emitter = BufferedEmittingPublisher.create();
+        executor.submit(() -> {
+            //stochastic test of emit methods being thread-safe
+            IntStream.range(0, (int) l)
+                    .boxed()
+                    .parallel()
+                    .forEach(item -> {
+                        emitter.emit(item);
+                        emitLatch.countDown();
+                    });
         });
-
         executor.submit(() -> {
             try {
-                completeLatch.await(2, TimeUnit.SECONDS);
-                osp.complete();
+                emitLatch.await();
+                emitter.complete();
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         });
-
-        return osp;
+        return emitter;
     }
 
     @Override
@@ -78,14 +71,7 @@ public class EmittingPublisherTckTest extends FlowPublisherVerification<Integer>
 
     @Override
     public long maxElementsFromPublisher() {
-        return Integer.MAX_VALUE;
-    }
-
-    @Override
-    public void required_spec102_maySignalLessThanRequestedAndTerminateSubscription() throws Throwable {
-        for (int i = 0; i < 1000; i++) {
-            super.required_spec102_maySignalLessThanRequestedAndTerminateSubscription();
-        }
+        return Integer.MAX_VALUE - 1;
     }
 
     @Override
