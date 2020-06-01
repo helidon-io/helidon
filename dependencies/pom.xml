@@ -133,6 +133,21 @@
                         <groupId>org.glassfish.hk2.external</groupId>
                         <artifactId>jakarta.inject</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>org.glassfish.jersey.media</groupId>
+                        <artifactId>jersey-media-jaxb</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jersey.core</groupId>
+                <artifactId>jersey-client</artifactId>
+                <version>${version.lib.jersey}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.glassfish.hk2.external</groupId>
+                        <artifactId>jakarta.inject</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
@@ -949,6 +964,10 @@
                     <exclusion>
                         <groupId>jakarta.json</groupId>
                         <artifactId>jakarta.json-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.sun.activation</groupId>
+                        <artifactId>jakarta.activation</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>

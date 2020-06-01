@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
@@ -435,6 +436,9 @@ public class JerseySupport implements Service {
      * Builder for convenient way to create {@link JerseySupport}.
      */
     public static final class Builder implements Configurable<Builder>, io.helidon.common.Builder<JerseySupport> {
+        private static final String JERSEY_DISABLE_PROVIDERS = "jersey.config.disableDefaultProvider";
+        private static final String JERSEY_DISABLE_WADL = "jersey.config.server.wadl.disableWadl";
+        private static final AtomicBoolean SYS_PROP_HANDLED = new AtomicBoolean();
 
         private ResourceConfig resourceConfig;
         private ExecutorService executorService;
@@ -446,6 +450,25 @@ public class JerseySupport implements Service {
         }
 
         private Builder(Application application) {
+            if (SYS_PROP_HANDLED.compareAndSet(false, true)) {
+                String property = System.getProperty(JERSEY_DISABLE_PROVIDERS);
+                if (null == property) {
+                    LOGGER.fine("Disabling all Jersey default providers (DOM, SAX, Rendered Image, XML Source, and "
+                                        + "XML Stream Source). You can enabled them by setting system property "
+                                        + JERSEY_DISABLE_PROVIDERS + " to NONE");
+                    System.setProperty(JERSEY_DISABLE_PROVIDERS, "ALL");
+                } else if ("NONE".equals(property)) {
+                    System.getProperties().remove(JERSEY_DISABLE_PROVIDERS);
+                }
+
+                property = System.getProperty(JERSEY_DISABLE_WADL);
+                if (null == property) {
+                    LOGGER.fine("Disabling Jersey WADL feature, you can enable it by setting system property "
+                                        + JERSEY_DISABLE_WADL + " to false");
+                    System.setProperty(JERSEY_DISABLE_WADL, "true");
+                }
+            }
+
             if (application == null) {
                 application = new Application();
             }
