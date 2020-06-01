@@ -41,7 +41,7 @@ public class InputStreamPublisherTest {
     public void testSingle() throws InterruptedException {
         String teststring = "My text to publish with publisher";
 
-        Multi<ByteBuffer> p = IoMulti.builder(new ByteArrayInputStream(teststring.getBytes(StandardCharsets.UTF_8)))
+        Multi<ByteBuffer> p = IoMulti.builderInputStream(new ByteArrayInputStream(teststring.getBytes(StandardCharsets.UTF_8)))
                 .byteBufferSize(1024)
                 .build();
 
@@ -86,7 +86,7 @@ public class InputStreamPublisherTest {
     @Test
     public void testMultiple() throws InterruptedException {
         String teststring = "My text to publish with publisher";
-        Multi<ByteBuffer> p = IoMulti.builder(new ByteArrayInputStream(teststring.getBytes(StandardCharsets.UTF_8)))
+        Multi<ByteBuffer> p = IoMulti.builderInputStream(new ByteArrayInputStream(teststring.getBytes(StandardCharsets.UTF_8)))
                 .byteBufferSize(1)
                 .build();
 
@@ -138,7 +138,7 @@ public class InputStreamPublisherTest {
         }
         teststring = expectedResult.toString();
 
-        Multi<ByteBuffer> p = IoMulti.builder(new ByteArrayInputStream(teststring.getBytes(StandardCharsets.UTF_8)))
+        Multi<ByteBuffer> p = IoMulti.builderInputStream(new ByteArrayInputStream(teststring.getBytes(StandardCharsets.UTF_8)))
                 .byteBufferSize(2)
                 .build();
 

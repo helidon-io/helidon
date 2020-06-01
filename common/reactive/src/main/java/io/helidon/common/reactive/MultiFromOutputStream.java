@@ -35,7 +35,7 @@ import java.util.function.BiConsumer;
  * events.
  */
 @SuppressWarnings("WeakerAccess")
-public class OutputStreamMulti extends OutputStream implements Multi<ByteBuffer> {
+public class MultiFromOutputStream extends OutputStream implements Multi<ByteBuffer> {
 
     private long timeout = Duration.ofMinutes(10).toMillis();
 
@@ -50,7 +50,7 @@ public class OutputStreamMulti extends OutputStream implements Multi<ByteBuffer>
      * Create new output stream that {@link java.util.concurrent.Flow.Publisher}
      * publishes any data written to it as {@link ByteBuffer} events.
      */
-    protected OutputStreamMulti() {
+    protected MultiFromOutputStream() {
         emittingPublisher.onCancel(() -> {
             // when write is called, an exception is thrown as it is a cancelled subscriber
             // when close is called, we do not throw an exception, as that should be silent
@@ -80,7 +80,7 @@ public class OutputStreamMulti extends OutputStream implements Multi<ByteBuffer>
      * @param requestCallback to be executed
      * @return this OutputStreamMulti
      */
-    public OutputStreamMulti onRequest(BiConsumer<Long, Long> requestCallback){
+    public MultiFromOutputStream onRequest(BiConsumer<Long, Long> requestCallback){
         this.emittingPublisher.onRequest(requestCallback);
         return this;
     }

@@ -51,7 +51,7 @@ public class MultiFromTrustedInputStreamTckTest extends FlowPublisherVerificatio
     }
 
     protected Multi<ByteBuffer> getPublisher(InputStream is) {
-        return IoMulti.builder(is)
+        return IoMulti.builderInputStream(is)
                 .byteBufferSize(BUFFER_SIZE)
                 .build();
     }

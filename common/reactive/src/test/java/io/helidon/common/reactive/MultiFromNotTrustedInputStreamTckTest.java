@@ -27,7 +27,7 @@ public class MultiFromNotTrustedInputStreamTckTest extends MultiFromTrustedInput
     static final int BUFFER_SIZE = 4;
 
     protected Multi<ByteBuffer> getPublisher(InputStream is) {
-        return IoMulti.builder(is)
+        return IoMulti.builderInputStream(is)
                 .executor(Executors.newFixedThreadPool(4))
                 .byteBufferSize(BUFFER_SIZE)
                 .build();

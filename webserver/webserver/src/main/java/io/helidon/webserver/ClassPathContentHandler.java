@@ -195,7 +195,7 @@ class ClassPathContentHandler extends StaticContentHandler {
         }
 
         InputStream in = url.openStream();
-        response.send(IoMulti.builder(in)
+        response.send(IoMulti.builderInputStream(in)
                 .byteBufferSize(2048)
                 .build()
                 .map(DataChunk::create));

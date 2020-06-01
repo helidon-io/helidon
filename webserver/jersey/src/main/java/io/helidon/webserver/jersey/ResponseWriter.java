@@ -29,7 +29,7 @@ import javax.ws.rs.core.MediaType;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
-import io.helidon.common.reactive.OutputStreamMulti;
+import io.helidon.common.reactive.MultiFromOutputStream;
 import io.helidon.webserver.ConnectionClosedException;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
@@ -45,7 +45,7 @@ class ResponseWriter implements ContainerResponseWriter {
 
     private static final Logger LOGGER = Logger.getLogger(ResponseWriter.class.getName());
 
-    private final OutputStreamMulti publisher = new OutputStreamMulti() {
+    private final MultiFromOutputStream publisher = new MultiFromOutputStream() {
         @Override
         public void write(byte[] b) throws IOException {
             try {
@@ -180,7 +180,8 @@ class ResponseWriter implements ContainerResponseWriter {
 
     /**
      * Flush buffer if using SSE or if an empty buffer is received for writing. See
-     * {@link OutputStreamMulti#flush()}. Manual flushing is required to support
+     * {@link io.helidon.common.reactive.MultiFromOutputStream#flush()}.
+     * Manual flushing is required to support
      * {@link javax.ws.rs.core.StreamingOutput} in MP.
      *
      * @param context The container response.

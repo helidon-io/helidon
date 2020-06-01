@@ -33,14 +33,14 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * {@link OutputStreamMulti} test.
+ * {@link MultiFromOutputStream} test.
  */
 public class OutputStreamMultiTest {
 
     @Test
     void testMulti() {
         StringBuilder result = new StringBuilder();
-        OutputStreamMulti osMulti = IoMulti.create();
+        MultiFromOutputStream osMulti = IoMulti.createOutputStream();
 
         Single<Void> multiFuture = osMulti.map(ByteBuffer::array)
                 .map(String::new)
@@ -58,7 +58,7 @@ public class OutputStreamMultiTest {
 
     @Test
     void testMultiTimeout() {
-        OutputStreamMulti osMulti = IoMulti.builder()
+        MultiFromOutputStream osMulti = IoMulti.builderOutputStream()
                 .timeout(200, TimeUnit.MILLISECONDS)
                 .build();
 
@@ -70,7 +70,7 @@ public class OutputStreamMultiTest {
 
     @Test
     void testRequestCallback() throws IOException {
-        OutputStreamMulti osMulti = IoMulti.builder()
+        MultiFromOutputStream osMulti = IoMulti.builderOutputStream()
                 .build();
 
         TestSubscriber<String> testSubscriber = new TestSubscriber<>();
@@ -107,7 +107,7 @@ public class OutputStreamMultiTest {
 
     @Test
     public void testBasic() {
-        OutputStreamMulti publisher = IoMulti.create();
+        MultiFromOutputStream publisher = IoMulti.createOutputStream();
         TestSubscriber<ByteBuffer> subscriber = new TestSubscriber<>();
         publisher.subscribe(subscriber);
         subscriber.requestMax();
@@ -125,7 +125,7 @@ public class OutputStreamMultiTest {
 
     @Test
     void testSignalCloseCompleteWithException() {
-        OutputStreamMulti publisher = IoMulti.create();
+        MultiFromOutputStream publisher = IoMulti.createOutputStream();
         publisher.signalCloseComplete(new IllegalStateException("foo!"));
         try {
             publisher.close();
@@ -138,7 +138,7 @@ public class OutputStreamMultiTest {
 
     @Test
     void testCloseOnNoDataWritten() throws IOException {
-        OutputStreamMulti publisher = IoMulti.create();
+        MultiFromOutputStream publisher = IoMulti.createOutputStream();
         TestSubscriber<ByteBuffer> sub = new TestSubscriber<>();
 
         publisher.subscribe(sub);
@@ -152,7 +152,7 @@ public class OutputStreamMultiTest {
 
     @Test
     void testCancel() throws IOException {
-        OutputStreamMulti publisher = IoMulti.create();
+        MultiFromOutputStream publisher = IoMulti.createOutputStream();
         TestSubscriber<ByteBuffer> sub = new TestSubscriber<>();
 
         publisher.subscribe(sub);
@@ -167,7 +167,7 @@ public class OutputStreamMultiTest {
 
     @Test
     void testError() throws IOException {
-        OutputStreamMulti publisher = IoMulti.create();
+        MultiFromOutputStream publisher = IoMulti.createOutputStream();
         TestSubscriber<ByteBuffer> sub = new TestSubscriber<>() {
             @Override
             public void onNext(ByteBuffer item) {

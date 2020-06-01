@@ -40,8 +40,8 @@ public interface IoMulti {
      *
      * @return new {@link Multi} publisher extending {@link OutputStream}
      */
-    static OutputStreamMulti create() {
-        return new OutputStreamMulti();
+    static MultiFromOutputStream createOutputStream() {
+        return new MultiFromOutputStream();
     }
 
     /**
@@ -52,7 +52,7 @@ public interface IoMulti {
      *
      * @return the builder
      */
-    static OutputStreamMultiBuilder builder() {
+    static OutputStreamMultiBuilder builderOutputStream() {
         return new OutputStreamMultiBuilder();
     }
 
@@ -68,8 +68,8 @@ public interface IoMulti {
      * @return Multi
      * @throws NullPointerException if {@code stream} is {@code null}
      */
-    static Multi<ByteBuffer> create(final InputStream inputStream) {
-        return IoMulti.builder(inputStream)
+    static Multi<ByteBuffer> createInputStream(final InputStream inputStream) {
+        return IoMulti.builderInputStream(inputStream)
                 .build();
     }
 
@@ -79,7 +79,7 @@ public interface IoMulti {
      * @param inputStream the Stream to publish
      * @return the builder
      */
-    static MultiFromInputStreamBuilder builder(final InputStream inputStream) {
+    static MultiFromInputStreamBuilder builderInputStream(final InputStream inputStream) {
         Objects.requireNonNull(inputStream);
         return new MultiFromInputStreamBuilder(inputStream);
     }
@@ -127,9 +127,9 @@ public interface IoMulti {
         }
     }
 
-    final class OutputStreamMultiBuilder implements Builder<OutputStreamMulti> {
+    final class OutputStreamMultiBuilder implements Builder<MultiFromOutputStream> {
 
-        private final OutputStreamMulti streamMulti = new OutputStreamMulti();
+        private final MultiFromOutputStream streamMulti = new MultiFromOutputStream();
 
         /**
          * Set max timeout for which is allowed to block write methods,
@@ -160,7 +160,7 @@ public interface IoMulti {
         }
 
         @Override
-        public OutputStreamMulti build() {
+        public MultiFromOutputStream build() {
             return streamMulti;
         }
     }
