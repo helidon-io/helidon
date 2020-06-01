@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,11 +53,13 @@ class HelidonMeterTest {
 
     @BeforeAll
     static void initClass() throws InterruptedException {
-        Metadata meta = new HelidonMetadata("requests",
-                                     "Requests",
-                                     "Tracks the number of requests to the server",
-                                     MetricType.METERED,
-                                     MetricUnits.PER_SECOND);
+        Metadata meta = Metadata.builder()
+				.withName("requests")
+				.withDisplayName("Requests")
+				.withDescription("Tracks the number of requests to the server")
+				.withType(MetricType.METERED)
+				.withUnit(MetricUnits.PER_SECOND)
+				.build();
 
         LongAdder nanoTime = new LongAdder();
         LongAdder milliTime = new LongAdder();

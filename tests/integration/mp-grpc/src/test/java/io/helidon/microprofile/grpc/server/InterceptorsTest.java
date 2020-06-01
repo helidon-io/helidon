@@ -28,7 +28,7 @@ import io.helidon.grpc.server.ServiceDescriptor;
 import io.helidon.microprofile.grpc.core.GrpcInterceptor;
 import io.helidon.microprofile.grpc.core.GrpcInterceptorBinding;
 import io.helidon.microprofile.grpc.core.GrpcInterceptors;
-import io.helidon.microprofile.grpc.core.RpcService;
+import io.helidon.microprofile.grpc.core.Grpc;
 import io.helidon.microprofile.grpc.core.Unary;
 
 import io.grpc.Metadata;
@@ -232,7 +232,7 @@ public class InterceptorsTest {
         int id() default 0;
     }
 
-    @RpcService
+    @Grpc
     @InterceptorOne
     @ApplicationScoped
     public static class InterceptedServiceOne {
@@ -241,7 +241,7 @@ public class InterceptorsTest {
         }
     }
 
-    @RpcService
+    @Grpc
     @ApplicationScoped
     public static class InterceptedServiceTwo {
         @Unary
@@ -254,7 +254,7 @@ public class InterceptorsTest {
         }
     }
 
-    @RpcService
+    @Grpc
     @InterceptorOne
     @ApplicationScoped
     public static class InterceptedServiceThree {
@@ -268,7 +268,7 @@ public class InterceptorsTest {
         }
     }
 
-    @RpcService
+    @Grpc
     @InterceptorThree(id = 2)
     @ApplicationScoped
     public static class InterceptedServiceFour {
@@ -277,7 +277,7 @@ public class InterceptorsTest {
         }
     }
 
-    @RpcService
+    @Grpc
     @ApplicationScoped
     @GrpcInterceptors({ServerInterceptorOne.class, ServerInterceptorTwo.class})
     public static class InterceptedServiceFive {
@@ -286,7 +286,7 @@ public class InterceptorsTest {
         }
     }
 
-    @RpcService
+    @Grpc
     @ApplicationScoped
     public static class InterceptedServiceSix {
         @Unary
@@ -295,7 +295,7 @@ public class InterceptorsTest {
         }
     }
 
-    @RpcService
+    @Grpc
     @ApplicationScoped
     @GrpcInterceptors(ServerInterceptorFive.class)
     public static class InterceptedServiceSeven {
@@ -304,7 +304,7 @@ public class InterceptorsTest {
         }
     }
 
-    @RpcService
+    @Grpc
     @ApplicationScoped
     public static class InterceptedServiceEight {
         @Unary

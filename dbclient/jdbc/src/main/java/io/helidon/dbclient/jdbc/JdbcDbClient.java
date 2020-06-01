@@ -17,6 +17,7 @@ package io.helidon.dbclient.jdbc;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
@@ -33,6 +34,7 @@ import io.helidon.common.reactive.Single;
 import io.helidon.common.reactive.Subscribable;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbClientException;
+import io.helidon.dbclient.DbClientService;
 import io.helidon.dbclient.DbExecute;
 import io.helidon.dbclient.DbMapperManager;
 import io.helidon.dbclient.DbStatementDml;
@@ -42,7 +44,7 @@ import io.helidon.dbclient.DbStatementType;
 import io.helidon.dbclient.DbStatements;
 import io.helidon.dbclient.DbTransaction;
 import io.helidon.dbclient.common.AbstractDbExecute;
-import io.helidon.dbclient.common.InterceptorSupport;
+import io.helidon.dbclient.common.DbStatementContext;
 
 /**
  * Helidon DB implementation for JDBC drivers.
@@ -60,7 +62,7 @@ class JdbcDbClient implements DbClient {
     private final DbStatements statements;
     private final DbMapperManager dbMapperManager;
     private final MapperManager mapperManager;
-    private final InterceptorSupport interceptors;
+    private final List<DbClientService> clientServices;
 
     JdbcDbClient(JdbcDbClientProviderBuilder builder) {
         this.executorService = builder.executorService();
@@ -68,7 +70,7 @@ class JdbcDbClient implements DbClient {
         this.statements = builder.statements();
         this.dbMapperManager = builder.dbMapperManager();
         this.mapperManager = builder.mapperManager();
-        this.interceptors = builder.interceptors();
+        this.clientServices = builder.clientServices();
     }
 
     @Override
@@ -78,7 +80,7 @@ class JdbcDbClient implements DbClient {
         JdbcTxExecute execute = new JdbcTxExecute(
                 statements,
                 executorService,
-                interceptors,
+                clientServices,
                 connectionPool,
                 dbMapperManager,
                 mapperManager);
@@ -106,7 +108,7 @@ class JdbcDbClient implements DbClient {
                 - so here we resume with the commit future that provides us with either empty multi, or error multi
                 - the flatMap just returns the multi result of the completion stage
             */
-            multi = multi.onCompleteResumeWith(Single.from(commitFuture).flatMap(Function.identity()));
+            multi = multi.onCompleteResumeWith(Single.create(commitFuture).flatMap(Function.identity()));
 
             // if result completes with an exception, or commit failed, we attempt a rollback
             multi = multi.onError(throwable -> {
@@ -122,7 +124,7 @@ class JdbcDbClient implements DbClient {
 
             future = future.exceptionally(RollbackHandler.create(execute, Level.WARNING));
 
-            return (T) Single.from(future);
+            return (T) Single.create(future);
         } else {
             execute.doRollback();
             throw new IllegalStateException("You must return a Single or Multi instance to inTransaction, yet "
@@ -170,11 +172,12 @@ class JdbcDbClient implements DbClient {
     public <U, T extends Subscribable<U>> T execute(Function<DbExecute, T> executor) {
 
         JdbcExecute execute = new JdbcExecute(statements,
-                                              executorService,
-                                              interceptors,
-                                              connectionPool,
-                                              dbMapperManager,
-                                              mapperManager);
+                                              JdbcExecute.createContext(statements,
+                                                                        executorService,
+                                                                        clientServices,
+                                                                        connectionPool,
+                                                                        dbMapperManager,
+                                                                        mapperManager));
 
         Subscribable<U> result;
 
@@ -226,19 +229,24 @@ class JdbcDbClient implements DbClient {
 
         private JdbcTxExecute(DbStatements statements,
                               ExecutorService executorService,
-                              InterceptorSupport interceptors,
+                              List<DbClientService> clientServices,
                               ConnectionPool connectionPool,
                               DbMapperManager dbMapperManager,
                               MapperManager mapperManager) {
-            super(statements, createTxContext(executorService, interceptors, connectionPool, dbMapperManager, mapperManager));
+            super(statements, JdbcExecuteContext.jdbcBuilder()
+                    .statements(statements)
+                    .clientServices(clientServices)
+                    .dbType(connectionPool.dbType())
+                    .connection(createConnection(executorService, connectionPool))
+                    .dbMapperManager(dbMapperManager)
+                    .mapperManager(mapperManager)
+                    .executorService(executorService)
+                    .build());
         }
 
-        private static JdbcExecuteContext createTxContext(ExecutorService executorService,
-                                                          InterceptorSupport interceptors,
-                                                          ConnectionPool connectionPool,
-                                                          DbMapperManager dbMapperManager,
-                                                          MapperManager mapperManager) {
-            CompletionStage<Connection> connection = CompletableFuture.supplyAsync(connectionPool::connection, executorService)
+        private static CompletionStage<Connection> createConnection(ExecutorService executorService,
+                                                                    ConnectionPool connectionPool) {
+            return CompletableFuture.supplyAsync(connectionPool::connection, executorService)
                     .thenApply(conn -> {
                         try {
                             conn.setAutoCommit(false);
@@ -247,13 +255,6 @@ class JdbcDbClient implements DbClient {
                         }
                         return conn;
                     });
-
-            return JdbcExecuteContext.create(executorService,
-                                             interceptors,
-                                             connectionPool.dbType(),
-                                             connection,
-                                             dbMapperManager,
-                                             mapperManager);
         }
 
         @Override
@@ -302,17 +303,9 @@ class JdbcDbClient implements DbClient {
             this.context = context;
         }
 
-        private JdbcExecute(DbStatements statements,
-                            ExecutorService executorService,
-                            InterceptorSupport interceptors,
-                            ConnectionPool connectionPool,
-                            DbMapperManager dbMapperManager,
-                            MapperManager mapperManager) {
-            this(statements, createContext(executorService, interceptors, connectionPool, dbMapperManager, mapperManager));
-        }
-
-        private static JdbcExecuteContext createContext(ExecutorService executorService,
-                                                        InterceptorSupport interceptors,
+        private static JdbcExecuteContext createContext(DbStatements statements,
+                                                        ExecutorService executorService,
+                                                        List<DbClientService> clientServices,
                                                         ConnectionPool connectionPool,
                                                         DbMapperManager dbMapperManager,
                                                         MapperManager mapperManager) {
@@ -326,49 +319,52 @@ class JdbcDbClient implements DbClient {
                         return conn;
                     });
 
-            return JdbcExecuteContext.create(executorService,
-                                             interceptors,
-                                             connectionPool.dbType(),
-                                             connection,
-                                             dbMapperManager,
-                                             mapperManager);
+            return JdbcExecuteContext.jdbcBuilder()
+                    .statements(statements)
+                    .executorService(executorService)
+                    .connection(connection)
+                    .clientServices(clientServices)
+                    .dbMapperManager(dbMapperManager)
+                    .mapperManager(mapperManager)
+                    .dbType(connectionPool.dbType())
+                    .build();
         }
 
         @Override
         public DbStatementQuery createNamedQuery(String statementName, String statement) {
             return new JdbcStatementQuery(context,
-                                          JdbcStatementContext.create(DbStatementType.QUERY, statementName, statement));
+                                          DbStatementContext.create(context, DbStatementType.QUERY, statementName, statement));
 
         }
 
         @Override
         public DbStatementGet createNamedGet(String statementName, String statement) {
             return new JdbcStatementGet(context,
-                                        JdbcStatementContext.create(DbStatementType.GET, statementName, statement));
+                                        DbStatementContext.create(context, DbStatementType.GET, statementName, statement));
         }
 
         @Override
         public DbStatementDml createNamedDmlStatement(String statementName, String statement) {
             return new JdbcStatementDml(context,
-                                        JdbcStatementContext.create(DbStatementType.DML, statementName, statement));
+                                        DbStatementContext.create(context, DbStatementType.DML, statementName, statement));
         }
 
         @Override
         public DbStatementDml createNamedInsert(String statementName, String statement) {
             return new JdbcStatementDml(context,
-                                        JdbcStatementContext.create(DbStatementType.INSERT, statementName, statement));
+                                        DbStatementContext.create(context, DbStatementType.INSERT, statementName, statement));
         }
 
         @Override
         public DbStatementDml createNamedUpdate(String statementName, String statement) {
             return new JdbcStatementDml(context,
-                                        JdbcStatementContext.create(DbStatementType.UPDATE, statementName, statement));
+                                        DbStatementContext.create(context, DbStatementType.UPDATE, statementName, statement));
         }
 
         @Override
         public DbStatementDml createNamedDelete(String statementName, String statement) {
             return new JdbcStatementDml(context,
-                                        JdbcStatementContext.create(DbStatementType.DELETE, statementName, statement));
+                                        DbStatementContext.create(context, DbStatementType.DELETE, statementName, statement));
         }
 
         JdbcExecuteContext context() {

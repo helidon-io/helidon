@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -124,11 +124,13 @@ class HelidonHistogramTest {
 
     @BeforeAll
     static void initClass() {
-        meta = new HelidonMetadata("file_sizes",
-                            "theDisplayName",
-                            "Users file size",
-                            MetricType.HISTOGRAM,
-                            MetricUnits.KILOBYTES);
+        meta = Metadata.builder()
+				.withName("file_sizes")
+				.withDisplayName("theDisplayName")
+				.withDescription("Users file size")
+				.withType(MetricType.HISTOGRAM)
+				.withUnit(MetricUnits.KILOBYTES)
+				.build();
 
         histoInt = HelidonHistogram.create("application", meta);
         histoIntID = new MetricID("file_sizes");

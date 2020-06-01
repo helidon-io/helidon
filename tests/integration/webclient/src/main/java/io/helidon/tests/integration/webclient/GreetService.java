@@ -31,6 +31,7 @@ import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.security.SecurityContext;
 import io.helidon.webclient.WebClient;
+import io.helidon.webclient.security.WebClientSecurity;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
@@ -84,6 +85,7 @@ public class GreetService implements Service {
     private void basicAuthOutbound(ServerRequest serverRequest, ServerResponse response) {
         WebClient webClient = WebClient.builder()
                 .baseUri("http://localhost:" + Main.serverPort + "/greet/secure/basic")
+                .addService(WebClientSecurity.create())
                 .build();
 
         webClient.get()

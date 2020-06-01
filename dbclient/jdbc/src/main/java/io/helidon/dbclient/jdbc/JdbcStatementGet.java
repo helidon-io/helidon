@@ -22,6 +22,7 @@ import java.util.Optional;
 import io.helidon.common.reactive.Single;
 import io.helidon.dbclient.DbRow;
 import io.helidon.dbclient.DbStatementGet;
+import io.helidon.dbclient.common.DbStatementContext;
 
 /**
  * A JDBC get implementation.
@@ -33,7 +34,7 @@ class JdbcStatementGet implements DbStatementGet {
     private final JdbcStatementQuery query;
 
     JdbcStatementGet(JdbcExecuteContext executeContext,
-                     JdbcStatementContext statementContext) {
+                     DbStatementContext statementContext) {
 
         this.query = new JdbcStatementQuery(executeContext,
                                             statementContext);
@@ -77,7 +78,7 @@ class JdbcStatementGet implements DbStatementGet {
 
     @Override
     public Single<Optional<DbRow>> execute() {
-        return Single.from(query.execute())
+        return Single.create(query.execute())
                 .toOptionalSingle();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ public abstract class AbstractServiceBuilder {
      */
     protected AbstractServiceBuilder(Class<?> serviceClass, Supplier<?> instance) {
         this.serviceClass = Objects.requireNonNull(serviceClass);
-        this.annotatedServiceClass = ModelHelper.getAnnotatedResourceClass(serviceClass, RpcService.class);
+        this.annotatedServiceClass = ModelHelper.getAnnotatedResourceClass(serviceClass, Grpc.class);
         this.instance = Objects.requireNonNull(instance);
         this.handlerSuppliers = loadHandlerSuppliers();
     }
@@ -69,7 +69,7 @@ public abstract class AbstractServiceBuilder {
      * @return  {@code true} if this modeller contains an annotated service
      */
     public boolean isAnnotatedService() {
-        return annotatedServiceClass.isAnnotationPresent(RpcService.class);
+        return annotatedServiceClass.isAnnotationPresent(Grpc.class);
     }
 
     /**
@@ -122,7 +122,7 @@ public abstract class AbstractServiceBuilder {
         AnnotatedMethodList allDeclaredMethods = AnnotatedMethodList.create(getAllDeclaredMethods(serviceClass));
 
         // log warnings for all non-public annotated methods
-        allDeclaredMethods.withMetaAnnotation(RpcMethod.class).isNotPublic()
+        allDeclaredMethods.withMetaAnnotation(GrpcMethod.class).isNotPublic()
                 .forEach(method -> LOGGER.log(Level.WARNING, () -> String.format("The gRPC method, %s, MUST be "
                                               + "public scoped otherwise the method is ignored", method)));
     }
@@ -169,7 +169,7 @@ public abstract class AbstractServiceBuilder {
     /**
      * Determine the name of the gRPC service.
      * <p>
-     * If the class is annotated with {@link io.helidon.microprofile.grpc.core.RpcService}
+     * If the class is annotated with {@link Grpc}
      * then the name value from the annotation is used as the service name. If the annotation
      * has no name value or the annotation is not present the simple name of the class is used.
      *
@@ -177,7 +177,7 @@ public abstract class AbstractServiceBuilder {
      * @return the name of the gRPC service
      */
     protected String determineServiceName(Class<?> annotatedClass) {
-        RpcService serviceAnnotation = annotatedClass.getAnnotation(RpcService.class);
+        Grpc serviceAnnotation = annotatedClass.getAnnotation(Grpc.class);
         String name = null;
 
         if (serviceAnnotation != null) {
@@ -194,10 +194,10 @@ public abstract class AbstractServiceBuilder {
     /**
      * Determine the name to use from the method.
      * <p>
-     * If the method is annotated with {@link io.helidon.microprofile.grpc.core.RpcMethod} then use the value of {@link io.helidon.microprofile.grpc.core.RpcMethod#name()}
-     * unless {@link io.helidon.microprofile.grpc.core.RpcMethod#name()} returns empty string, in which case use the actual method name.
+     * If the method is annotated with {@link GrpcMethod} then use the value of {@link GrpcMethod#name()}
+     * unless {@link GrpcMethod#name()} returns empty string, in which case use the actual method name.
      * <p>
-     * If the method is annotated with an annotation that has the meta-annotation {@link io.helidon.microprofile.grpc.core.RpcMethod} then use
+     * If the method is annotated with an annotation that has the meta-annotation {@link GrpcMethod} then use
      * the value of that annotation's {@code name()} method. If that annotation does not have a {@code name()}
      * method or the {@code name()} method return empty string then use the actual method name.
      *
@@ -205,8 +205,8 @@ public abstract class AbstractServiceBuilder {
      * @param annotation  the method type annotation
      * @return the value to use for the method name
      */
-    public static String determineMethodName(AnnotatedMethod method, RpcMethod annotation) {
-        Annotation actualAnnotation = method.annotationsWithMetaAnnotation(RpcMethod.class)
+    public static String determineMethodName(AnnotatedMethod method, GrpcMethod annotation) {
+        Annotation actualAnnotation = method.annotationsWithMetaAnnotation(GrpcMethod.class)
                 .findFirst()
                 .orElse(annotation);
 

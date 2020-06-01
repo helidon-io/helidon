@@ -96,7 +96,7 @@ public interface Multi<T> extends Subscribable<T> {
         if (publishers.length == 0) {
             return empty();
         } else if (publishers.length == 1) {
-            return Multi.from(publishers[0]);
+            return Multi.create(publishers[0]);
         }
         return new MultiConcatArray<>(publishers);
     }
@@ -146,10 +146,110 @@ public interface Multi<T> extends Subscribable<T> {
      * @param completionStage the CompletionStage to
      * @param <T> the element type of the stage and result
      * @return Multi
-     * @see #from(CompletionStage, boolean)
+     * @see #create(CompletionStage, boolean)
+     * @deprecated use {@link #create(java.util.concurrent.CompletionStage)} instead
      */
+    @Deprecated
     static <T> Multi<T> from(CompletionStage<T> completionStage) {
-        return from(completionStage, false);
+        return create(completionStage);
+    }
+
+    /**
+     * Wrap a CompletionStage into a Multi and signal its outcome non-blockingly.
+     * @param completionStage the CompletionStage to
+     * @param nullMeansEmpty if true, a null result is interpreted to be an empty sequence
+     *                       if false, the resulting sequence fails with {@link NullPointerException}
+     * @param <T> the element type of the stage and result
+     * @return Multi
+     * @deprecated use {@link #create(java.util.concurrent.CompletionStage, boolean)} instead
+     */
+    @Deprecated
+    static <T> Multi<T> from(CompletionStage<T> completionStage, boolean nullMeansEmpty) {
+        return create(completionStage, nullMeansEmpty);
+    }
+
+    /**
+     * Create a {@link Multi} instance that publishes the given iterable.
+     *
+     * @param <T>      item type
+     * @param iterable iterable to publish
+     * @return Multi
+     * @throws NullPointerException if iterable is {@code null}
+     * @deprecated use {@link #create(java.lang.Iterable)} instead
+     */
+    @Deprecated
+    static <T> Multi<T> from(Iterable<T> iterable) {
+        return create(iterable);
+    }
+
+    /**
+     * Create a {@link Multi} instance wrapped around the given publisher.
+     *
+     * @param <T>    item type
+     * @param source source publisher
+     * @return Multi
+     * @throws NullPointerException if source is {@code null}
+     * @deprecated use {@link #create(java.util.concurrent.Flow.Publisher)} instead
+     */
+    @Deprecated
+    static <T> Multi<T> from(Publisher<T> source) {
+        return create(source);
+    }
+
+    /**
+     * Create a {@link Multi} instance wrapped around the given {@link Single}.
+     *
+     * @param <T>    item type
+     * @param single source {@link Single} publisher
+     * @return Multi
+     * @throws NullPointerException if source is {@code null}
+     * @deprecated use {@link #create(io.helidon.common.reactive.Single)} instead
+     */
+    @Deprecated
+    static <T> Multi<T> from(Single<T> single) {
+        return create(single);
+    }
+
+    /**
+     * Create a {@link Multi} instance that publishes the given {@link Stream}.
+     * <p>
+     *     Note that Streams can be only consumed once, therefore, the
+     *     returned Multi will signal {@link IllegalStateException} if
+     *     multiple subscribers try to consume it.
+     * <p>
+     *     The operator calls {@link Stream#close()} when the stream finishes,
+     *     fails or the flow gets canceled. To avoid closing the stream automatically,
+     *     it is recommended to turn the {@link Stream} into an {@link Iterable}
+     *     via {@link Stream#iterator()} and use {@link #create(Iterable)}:
+     *     <pre>{@code
+     *     Stream<T> stream = ...
+     *     Multi<T> multi = Multi.create(stream::iterator);
+     *     }</pre>
+     *
+     * @param <T>      item type
+     * @param stream the Stream to publish
+     * @return Multi
+     * @throws NullPointerException if {@code stream} is {@code null}
+     * @deprecated use {@link #create(java.util.stream.Stream)} instead
+     */
+    @Deprecated
+    static <T> Multi<T> from(Stream<T> stream) {
+        return create(stream);
+    }
+
+    /**
+     * Wrap a CompletionStage into a Multi and signal its outcome non-blockingly.
+     * <p>
+     *     A null result from the CompletionStage will yield a
+     *     {@link NullPointerException} signal.
+     * </p>
+     * @param completionStage the CompletionStage to
+     * @param <T> the element type of the stage and result
+     * @return Multi
+     * @see #create(CompletionStage, boolean)
+     */
+    static <T> Multi<T> create(CompletionStage<T> completionStage) {
+        return create(completionStage, false);
     }
 
     /**
@@ -160,7 +260,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @param <T> the element type of the stage and result
      * @return Multi
      */
-    static <T> Multi<T> from(CompletionStage<T> completionStage, boolean nullMeansEmpty) {
+    static <T> Multi<T> create(CompletionStage<T> completionStage, boolean nullMeansEmpty) {
         Objects.requireNonNull(completionStage, "completionStage is null");
         return new MultiFromCompletionStage<>(completionStage, nullMeansEmpty);
     }
@@ -173,7 +273,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Multi
      * @throws NullPointerException if iterable is {@code null}
      */
-    static <T> Multi<T> from(Iterable<T> iterable) {
+    static <T> Multi<T> create(Iterable<T> iterable) {
         return new MultiFromIterable<>(iterable);
     }
 
@@ -185,7 +285,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Multi
      * @throws NullPointerException if source is {@code null}
      */
-    static <T> Multi<T> from(Publisher<T> source) {
+    static <T> Multi<T> create(Publisher<T> source) {
         if (source instanceof Multi) {
             return (Multi<T>) source;
         }
@@ -200,8 +300,8 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Multi
      * @throws NullPointerException if source is {@code null}
      */
-    static <T> Multi<T> from(Single<T> single) {
-        return from((Publisher<T>) single);
+    static <T> Multi<T> create(Single<T> single) {
+        return create((Publisher<T>) single);
     }
 
     /**
@@ -214,10 +314,10 @@ public interface Multi<T> extends Subscribable<T> {
      *     The operator calls {@link Stream#close()} when the stream finishes,
      *     fails or the flow gets canceled. To avoid closing the stream automatically,
      *     it is recommended to turn the {@link Stream} into an {@link Iterable}
-     *     via {@link Stream#iterator()} and use {@link #from(Iterable)}:
+     *     via {@link Stream#iterator()} and use {@link #create(Iterable)}:
      *     <pre>{@code
      *     Stream<T> stream = ...
-     *     Multi<T> multi = Multi.from(stream::iterator);
+     *     Multi<T> multi = Multi.create(stream::iterator);
      *     }</pre>
      *
      * @param <T>      item type
@@ -225,7 +325,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @return Multi
      * @throws NullPointerException if {@code stream} is {@code null}
      */
-    static <T> Multi<T> from(Stream<T> stream) {
+    static <T> Multi<T> create(Stream<T> stream) {
         Objects.requireNonNull(stream, "stream is null");
         return new MultiFromStream<>(stream);
     }
@@ -276,7 +376,7 @@ public interface Multi<T> extends Subscribable<T> {
      * @throws NullPointerException if {@code items} is {@code null}
      */
     static <T> Multi<T> just(Collection<T> items) {
-        return Multi.from(items);
+        return Multi.create(items);
     }
 
     /**
@@ -446,7 +546,7 @@ public interface Multi<T> extends Subscribable<T> {
      */
     @SuppressWarnings("unchecked")
     default <U> Multi<U> compose(Function<? super Multi<T>, ? extends Flow.Publisher<? extends U>> composer) {
-        return from((Flow.Publisher<U>) to(composer));
+        return create((Flow.Publisher<U>) to(composer));
     }
 
     /**
@@ -920,7 +1020,7 @@ public interface Multi<T> extends Subscribable<T> {
      */
     default Single<Void> forEach(Consumer<? super T> consumer) {
         CompletableFuture<Void> future = new CompletableFuture<>();
-        Single<Void> single = Single.from(future, true);
+        Single<Void> single = Single.create(future, true);
         FunctionalSubscriber<T> subscriber = new FunctionalSubscriber<>(consumer,
                 future::completeExceptionally,
                 () -> future.complete(null),
@@ -931,7 +1031,6 @@ public interface Multi<T> extends Subscribable<T> {
         );
 
         this.subscribe(subscriber);
-
         return single;
     }
 

@@ -38,12 +38,11 @@ db:
         enabled: true
         # name prefix defaults to "db.pool." - if you have more than one client within a JVM, you may want to distinguish between them
         name-prefix: "hikari."
-  interceptors:
+  services:
     tracing:
-      global:
+      - enabled: true
     metrics:
-      global:
-        - type: METER
+      - type: METER
   statements:
     ## Ping statement
     ping: "DO 0"

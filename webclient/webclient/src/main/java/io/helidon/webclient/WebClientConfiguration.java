@@ -540,7 +540,54 @@ class WebClientConfiguration {
         }
 
         /**
-         * Updates builder instance from the config.
+         * Configures this {@link WebClientConfiguration.Builder} from the supplied {@link Config}.
+         * <table class="config">
+         * <caption>Optional configuration parameters</caption>
+         * <tr>
+         *     <th>key</th>
+         *     <th>description</th>
+         * </tr>
+         * <tr>
+         *     <td>uri</td>
+         *     <td>Basic uri for each client request</td>
+         * </tr>
+         * <tr>
+         *     <td>connect-timeout-millis</td>
+         *     <td>Request connection timeout</td>
+         * </tr>
+         * <tr>
+         *     <td>read-timeout-millis</td>
+         *     <td>Response read timeout</td>
+         * </tr>
+         * <tr>
+         *     <td>follow-redirects</td>
+         *     <td>Whether redirects should be followed or not</td>
+         * </tr>
+         * <tr>
+         *     <td>max-redirects</td>
+         *     <td>Max number of followed redirections</td>
+         * </tr>
+         * <tr>
+         *     <td>user-agent</td>
+         *     <td>Name of the user agent which should be used</td>
+         * </tr>
+         * <tr>
+         *     <td>cookies</td>
+         *     <td>Default cookies which should be used</td>
+         * </tr>
+         * <tr>
+         *     <td>headers</td>
+         *     <td>Default headers which should be used</td>
+         * </tr>
+         * <tr>
+         *     <td>ssl</td>
+         *     <td>SSL configuration. See {@link Ssl.Builder#config(Config)}</td>
+         * </tr>
+         * <tr>
+         *     <td>proxy</td>
+         *     <td>Proxy configuration. See {@link Proxy.Builder#config(Config)}</td>
+         * </tr>
+         * </table>
          *
          * @param config config
          * @return updated builder instance
@@ -548,6 +595,7 @@ class WebClientConfiguration {
         public B config(Config config) {
             this.config = config;
             // now for other options
+            config.get("uri").asString().ifPresent(baseUri -> uri(URI.create(baseUri)));
             config.get("connect-timeout-millis").asLong().ifPresent(timeout -> connectTimeout(Duration.ofMillis(timeout)));
             config.get("read-timeout-millis").asLong().ifPresent(timeout -> readTimeout(Duration.ofMillis(timeout)));
             config.get("follow-redirects").asBoolean().ifPresent(this::followRedirects);
@@ -563,6 +611,7 @@ class WebClientConfiguration {
                     .as(Proxy.builder()::config)
                     .map(Proxy.Builder::build)
                     .ifPresent(this::proxy);
+            config.get("media-support").as(MediaContext::create).ifPresent(this::mediaContext);
             return me;
         }
 

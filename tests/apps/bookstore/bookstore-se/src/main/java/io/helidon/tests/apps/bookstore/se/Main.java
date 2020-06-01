@@ -24,8 +24,9 @@ import io.helidon.common.pki.KeyConfig;
 import io.helidon.config.Config;
 import io.helidon.health.HealthSupport;
 import io.helidon.health.checks.HealthChecks;
-import io.helidon.media.jsonb.common.JsonbSupport;
-import io.helidon.media.jsonp.common.JsonpSupport;
+import io.helidon.media.jackson.JacksonSupport;
+import io.helidon.media.jsonb.JsonbSupport;
+import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.metrics.MetricsSupport;
 import io.helidon.webserver.ExperimentalConfiguration;
 import io.helidon.webserver.Http2Configuration;
@@ -120,7 +121,7 @@ public final class Main {
             wsBuilder.addMediaSupport(JsonbSupport.create());
             break;
         case JACKSON:
-            wsBuilder.addMediaSupport(io.helidon.media.jackson.common.JacksonSupport.create());
+            wsBuilder.addMediaSupport(JacksonSupport.create());
             break;
         default:
             throw new RuntimeException("Unknown JSON library " + jsonLibrary);

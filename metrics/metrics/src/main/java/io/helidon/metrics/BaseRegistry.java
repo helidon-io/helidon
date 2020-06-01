@@ -56,27 +56,31 @@ final class BaseRegistry extends Registry {
     private static final String CONFIG_METRIC_ENABLED_BASE = "base.";
     static final String BASE_ENABLED_KEY = CONFIG_METRIC_ENABLED_BASE + "enabled";
 
-    private static final Metadata MEMORY_USED_HEAP =
-            new HelidonMetadata("memory.usedHeap",
-                    "Used Heap Memory",
-                    "Displays the amount of used heap memory in bytes.",
-                    MetricType.GAUGE,
-                    MetricUnits.BYTES);
+    private static final Metadata MEMORY_USED_HEAP = Metadata.builder()
+            .withName("memory.usedHeap")
+            .withDisplayName("Used Heap Memory")
+            .withDescription("Displays the amount of used heap memory in bytes.")
+            .withType(MetricType.GAUGE)
+            .withUnit(MetricUnits.BYTES)
+            .build();
 
-    private static final Metadata MEMORY_COMMITTED_HEAP =
-            new HelidonMetadata("memory.committedHeap",
-                    "Committed Heap Memory",
+    private static final Metadata MEMORY_COMMITTED_HEAP = Metadata.builder()
+            .withName("memory.committedHeap")
+            .withDisplayName("Committed Heap Memory")
+            .withDescription(
                     "Displays the amount of memory in bytes that is "
                             + "committed for the Java virtual "
                             + "machine to use. This amount of memory is "
                             + "guaranteed for the Java virtual "
-                            + "machine to use.",
-                    MetricType.GAUGE,
-                    MetricUnits.BYTES);
+                            + "machine to use.")
+            .withType(MetricType.GAUGE)
+            .withUnit(MetricUnits.BYTES)
+            .build();
 
-    private static final Metadata MEMORY_MAX_HEAP =
-            new HelidonMetadata("memory.maxHeap",
-                    "Max Heap Memory",
+    private static final Metadata MEMORY_MAX_HEAP = Metadata.builder()
+            .withName("memory.maxHeap")
+            .withDisplayName("Max Heap Memory")
+            .withDescription(
                     "Displays the maximum amount of heap memory in bytes that can"
                             + " be used for "
                             + "memory management. This attribute displays -1 if "
@@ -88,84 +92,94 @@ final class BaseRegistry extends Registry {
                             + "committed memory. The Java virtual machine may fail"
                             + " to allocate memory "
                             + "even if the amount of used memory does not exceed "
-                            + "this maximum size.",
-                    MetricType.GAUGE,
-                    MetricUnits.BYTES);
+                            + "this maximum size.")
+            .withType(MetricType.GAUGE)
+            .withUnit(MetricUnits.BYTES)
+            .build();
 
-    private static final Metadata JVM_UPTIME =
-            new HelidonMetadata("jvm.uptime",
-                    "JVM Uptime",
+    private static final Metadata JVM_UPTIME = Metadata.builder()
+            .withName("jvm.uptime")
+            .withDisplayName("JVM Uptime")
+            .withDescription(
                     "Displays the start time of the Java virtual machine in "
                             + "milliseconds. This "
                             + "attribute displays the approximate time when the Java "
                             + "virtual machine "
-                            + "started.",
-                    MetricType.GAUGE,
-                    MetricUnits.MILLISECONDS);
+                            + "started.")
+            .withType(MetricType.GAUGE)
+            .withUnit(MetricUnits.MILLISECONDS)
+            .build();
 
-    private static final Metadata THREAD_COUNT =
-            new HelidonMetadata("thread.count",
-                    "Thread Count",
-                    "Displays the current number of live threads including both "
-                            + "daemon and nondaemon threads",
-                    MetricType.GAUGE,
-                    MetricUnits.NONE);
+    private static final Metadata THREAD_COUNT = Metadata.builder()
+            .withName("thread.count")
+            .withDisplayName("Thread Count")
+            .withDescription("Displays the current number of live threads including both "
+                            + "daemon and nondaemon threads")
+            .withType(MetricType.GAUGE)
+            .withUnit(MetricUnits.NONE)
+            .build();
 
-    private static final Metadata THREAD_DAEMON_COUNT =
-            new HelidonMetadata("thread.daemon.count",
-                    "Daemon Thread Count",
-                    "Displays the current number of live daemon threads.",
-                    MetricType.GAUGE,
-                    MetricUnits.NONE);
+    private static final Metadata THREAD_DAEMON_COUNT = Metadata.builder()
+            .withName("thread.daemon.count")
+            .withDisplayName("Daemon Thread Count")
+            .withDescription("Displays the current number of live daemon threads.")
+            .withType(MetricType.GAUGE)
+            .withUnit(MetricUnits.NONE)
+            .build();
 
-    private static final Metadata THREAD_MAX_COUNT =
-            new HelidonMetadata("thread.max.count",
-                    "Peak Thread Count",
-                    "Displays the peak live thread count since the Java "
+    private static final Metadata THREAD_MAX_COUNT = Metadata.builder()
+            .withName("thread.max.count")
+            .withDisplayName("Peak Thread Count")
+            .withDescription("Displays the peak live thread count since the Java "
                             + "virtual machine started or "
                             + "peak was reset. This includes daemon and "
-                            + "non-daemon threads.",
-                    MetricType.GAUGE,
-                    MetricUnits.NONE);
+                            + "non-daemon threads.")
+            .withType(MetricType.GAUGE)
+            .withUnit(MetricUnits.NONE)
+            .build();
 
-    private static final Metadata CL_LOADED_COUNT =
-            new HelidonMetadata("classloader.loadedClasses.count",
-                    "Current Loaded Class Count",
-                    "Displays the number of classes that are currently loaded in "
-                            + "the Java virtual machine.",
-                    MetricType.GAUGE,
-                    MetricUnits.NONE);
+    private static final Metadata CL_LOADED_COUNT = Metadata.builder()
+            .withName("classloader.loadedClasses.count")
+            .withDisplayName("Current Loaded Class Count")
+            .withDescription("Displays the number of classes that are currently loaded in "
+                            + "the Java virtual machine.")
+            .withType(MetricType.GAUGE)
+            .withUnit(MetricUnits.NONE)
+            .build();
 
-    private static final Metadata CL_LOADED_TOTAL =
-            new HelidonMetadata("classloader.loadedClasses.total",
-                    "Total Loaded Class Count",
-                    "Displays the total number of classes that have been loaded "
-                            + "since the Java virtual machine has started execution.",
-                    MetricType.COUNTER,
-                    MetricUnits.NONE);
+    private static final Metadata CL_LOADED_TOTAL = Metadata.builder()
+            .withName("classloader.loadedClasses.total")
+            .withDisplayName("Total Loaded Class Count")
+            .withDescription("Displays the total number of classes that have been loaded "
+                            + "since the Java virtual machine has started execution.")
+            .withType(MetricType.COUNTER)
+            .withUnit(MetricUnits.NONE)
+            .build();
 
-    private static final Metadata CL_UNLOADED_COUNT =
-            new HelidonMetadata("classloader.unloadedClasses.total",
-                    "Total Unloaded Class Count",
-                    "Displays the total number of classes unloaded since the Java "
-                            + "virtual machine has started execution.",
-                    MetricType.COUNTER,
-                    MetricUnits.NONE);
+    private static final Metadata CL_UNLOADED_COUNT = Metadata.builder()
+            .withName("classloader.unloadedClasses.total")
+            .withDisplayName("Total Unloaded Class Count")
+            .withDescription("Displays the total number of classes unloaded since the Java "
+                            + "virtual machine has started execution.")
+            .withType(MetricType.COUNTER)
+            .withUnit(MetricUnits.NONE)
+            .build();
 
-    private static final Metadata OS_AVAILABLE_CPU =
-            new HelidonMetadata("cpu.availableProcessors",
-                    "Available Processors",
-                    "Displays the number of processors available to the Java "
+    private static final Metadata OS_AVAILABLE_CPU = Metadata.builder()
+            .withName("cpu.availableProcessors")
+            .withDisplayName("Available Processors")
+            .withDescription("Displays the number of processors available to the Java "
                             + "virtual machine. This "
                             + "value may change during a particular invocation of"
-                            + " the virtual machine.",
-                    MetricType.GAUGE,
-                    MetricUnits.NONE);
+                            + " the virtual machine.")
+            .withType(MetricType.GAUGE)
+            .withUnit(MetricUnits.NONE)
+            .build();
 
-    private static final Metadata OS_LOAD_AVERAGE =
-            new HelidonMetadata("cpu.systemLoadAverage",
-                    "System Load Average",
-                    "Displays the system load average for the last minute. The "
+    private static final Metadata OS_LOAD_AVERAGE = Metadata.builder()
+            .withName("cpu.systemLoadAverage")
+            .withDisplayName("System Load Average")
+            .withDescription("Displays the system load average for the last minute. The "
                             + "system load average "
                             + "is the sum of the number of runnable entities "
                             + "queued to the available "
@@ -182,9 +196,10 @@ final class BaseRegistry extends Registry {
                             + "and may be queried frequently. The load average may"
                             + " be unavailable on some "
                             + "platforms where it is expensive to implement this "
-                            + "method.",
-                    MetricType.GAUGE,
-                    MetricUnits.NONE);
+                            + "method.")
+            .withType(MetricType.GAUGE)
+            .withUnit(MetricUnits.NONE)
+            .build();
 
     private final Config config;
 
@@ -237,25 +252,31 @@ final class BaseRegistry extends Registry {
     }
 
     private static Metadata gcTimeMeta() {
-        return new HelidonMetadata("gc.time",
-                            "Garbage Collection Time",
+        return Metadata.builder()
+                .withName("gc.time")
+                .withDisplayName("Garbage Collection Time")
+                .withDescription(
                             "Displays the approximate accumulated collection elapsed time in milliseconds. "
                                     + "This attribute displays -1 if the collection elapsed time is undefined for this "
                                     + "collector. The Java virtual machine implementation may use a high resolution "
                                     + "timer to measure the elapsed time. This attribute may display the same value "
                                     + "even if the collection count has been incremented if the collection elapsed "
-                                    + "time is very short.",
-                            MetricType.GAUGE,
-                            MetricUnits.MILLISECONDS);
+                                    + "time is very short.")
+                .withType(MetricType.GAUGE)
+                .withUnit(MetricUnits.MILLISECONDS)
+                .build();
     }
 
     private static Metadata gcCountMeta() {
-        return new HelidonMetadata("gc.total",
-                            "Garbage Collection Count",
+        return Metadata.builder()
+                .withName("gc.total")
+                .withDisplayName("Garbage Collection Count")
+                .withDescription(
                             "Displays the total number of collections that have occurred. This attribute lists "
-                                    + "-1 if the collection count is undefined for this collector.",
-                            MetricType.COUNTER,
-                            MetricUnits.NONE);
+                                    + "-1 if the collection count is undefined for this collector.")
+                .withType(MetricType.COUNTER)
+                .withUnit(MetricUnits.NONE)
+                .build();
     }
 
     private static void register(BaseRegistry registry, Metadata meta, Metric metric, Tag... tags) {

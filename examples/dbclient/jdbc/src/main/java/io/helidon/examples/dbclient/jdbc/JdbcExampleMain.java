@@ -23,8 +23,8 @@ import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.health.DbClientHealthCheck;
 import io.helidon.health.HealthSupport;
-import io.helidon.media.jsonb.common.JsonbSupport;
-import io.helidon.media.jsonp.common.JsonpSupport;
+import io.helidon.media.jsonb.JsonbSupport;
+import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.metrics.MetricsSupport;
 import io.helidon.tracing.TracerBuilder;
 import io.helidon.webserver.Routing;
@@ -97,7 +97,7 @@ public final class JdbcExampleMain {
     private static Routing createRouting(Config config) {
         Config dbConfig = config.get("db");
 
-        // Interceptors are added through a service loader - see mongoDB example for explicit interceptors
+        // Client services are added through a service loader - see mongoDB example for explicit services
         DbClient dbClient = DbClient.builder(dbConfig)
                 .build();
 

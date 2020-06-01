@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import io.helidon.common.http.AlreadyCompletedException;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.http.SetCookie;
+import io.helidon.common.reactive.Single;
 
 import org.hamcrest.collection.IsIterableContainingInOrder;
 import org.junit.jupiter.api.Test;
@@ -182,8 +183,8 @@ public class HashResponseHeadersTest {
         CompletableFuture<BareResponse> headersFuture = new CompletableFuture<>();
         CompletableFuture<BareResponse> future = new CompletableFuture<>();
         BareResponse result = mock(BareResponse.class);
-        when(result.whenHeadersCompleted()).thenReturn(headersFuture);
-        when(result.whenCompleted()).thenReturn(future);
+        when(result.whenHeadersCompleted()).thenReturn(Single.create(headersFuture));
+        when(result.whenCompleted()).thenReturn(Single.create(future));
         doAnswer(invocationOnMock -> {
             headersFuture.complete(result);
             return null;

@@ -78,7 +78,7 @@ public class MultiDefaultIfEmptyTest {
         SubmissionPublisher<Integer> sp = new SubmissionPublisher<>(Runnable::run, 128);
         TestSubscriber<Integer> ts = new TestSubscriber<>(Long.MAX_VALUE);
 
-        Multi.from(sp)
+        Multi.create(sp)
                 .defaultIfEmpty(2)
                 .subscribe(ts);
 

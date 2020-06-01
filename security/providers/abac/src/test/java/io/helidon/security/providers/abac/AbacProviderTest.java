@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import javax.annotation.security.RolesAllowed;
 import io.helidon.security.AuthorizationResponse;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.ProviderRequest;
+import io.helidon.security.SecurityLevel;
 import io.helidon.security.SecurityResponse;
 
 import org.junit.jupiter.api.Test;
@@ -47,9 +48,12 @@ public class AbacProviderTest {
         Attrib1 attrib = Mockito.mock(Attrib1.class);
         doReturn(Attrib1.class).when(attrib).annotationType();
 
+        SecurityLevel level = SecurityLevel.create("mock")
+                .withClassAnnotations(Map.of(Attrib1.class, List.of(attrib)))
+                .build();
+
         EndpointConfig ec = EndpointConfig.builder()
-                .annotations(EndpointConfig.AnnotationScope.CLASS,
-                             Map.of(Attrib1.class, List.of(attrib)))
+                .securityLevels(List.of(level))
                 .build();
 
         ProviderRequest request = Mockito.mock(ProviderRequest.class);
@@ -72,9 +76,12 @@ public class AbacProviderTest {
         RolesAllowed attrib = Mockito.mock(RolesAllowed.class);
         doReturn(RolesAllowed.class).when(attrib).annotationType();
 
+        SecurityLevel level = SecurityLevel.create("mock")
+                .withClassAnnotations(Map.of(RolesAllowed.class, List.of(attrib)))
+                .build();
+
         EndpointConfig ec = EndpointConfig.builder()
-                .annotations(EndpointConfig.AnnotationScope.CLASS,
-                             Map.of(RolesAllowed.class, List.of(attrib)))
+                .securityLevels(List.of(level))
                 .build();
 
         ProviderRequest request = Mockito.mock(ProviderRequest.class);
@@ -98,9 +105,12 @@ public class AbacProviderTest {
         when(attrib.value()).thenReturn(false);
         doReturn(Attrib1.class).when(attrib).annotationType();
 
+        SecurityLevel level = SecurityLevel.create("mock")
+                .withClassAnnotations(Map.of(Attrib1.class, List.of(attrib)))
+                .build();
+
         EndpointConfig ec = EndpointConfig.builder()
-                .annotations(EndpointConfig.AnnotationScope.CLASS,
-                             Map.of(Attrib1.class, List.of(attrib)))
+                .securityLevels(List.of(level))
                 .build();
 
         ProviderRequest request = Mockito.mock(ProviderRequest.class);
@@ -124,8 +134,12 @@ public class AbacProviderTest {
         when(attrib.value()).thenReturn(true);
         doReturn(Attrib1.class).when(attrib).annotationType();
 
+        SecurityLevel level = SecurityLevel.create("mock")
+                .withClassAnnotations(Map.of(Attrib1.class, List.of(attrib)))
+                .build();
+
         EndpointConfig ec = EndpointConfig.builder()
-                .annotations(EndpointConfig.AnnotationScope.CLASS, Map.of(Attrib1.class, List.of(attrib)))
+                .securityLevels(List.of(level))
                 .build();
 
         ProviderRequest request = Mockito.mock(ProviderRequest.class);

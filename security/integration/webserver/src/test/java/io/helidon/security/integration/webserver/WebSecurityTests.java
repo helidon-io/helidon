@@ -19,11 +19,9 @@ package io.helidon.security.integration.webserver;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
-import io.helidon.common.context.Context;
 import io.helidon.common.http.Http;
 import io.helidon.security.AuditEvent;
 import io.helidon.security.Security;
-import io.helidon.security.SecurityContext;
 import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
@@ -61,7 +59,7 @@ public abstract class WebSecurityTests {
                 .build();
 
         securitySetup = WebClient.builder()
-                .register(WebClientSecurity.create(security))
+                .addService(WebClientSecurity.create(security))
                 .build();
 
         webClient = WebClient.create();

@@ -30,7 +30,7 @@ public class MultiLimitPublisherTckTest extends FlowPublisherVerification<Intege
 
     @Override
     public Flow.Publisher<Integer> createFlowPublisher(long l) {
-        return Multi.from(() -> IntStream.range(0, 2 * (int)l).boxed().iterator())
+        return Multi.create(() -> IntStream.range(0, 2 * (int)l).boxed().iterator())
                 .limit(l);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,11 +66,13 @@ class HelidonTimerTest {
 
     @BeforeAll
     static void initClass() {
-        meta = new HelidonMetadata("response_time",
-                            "Responses",
-                            "Server response time for /index.html",
-                            MetricType.TIMER,
-                            MetricUnits.NANOSECONDS);
+        meta = Metadata.builder()
+				.withName("response_time")
+				.withDisplayName("Responses")
+				.withDescription("Server response time for /index.html")
+				.withType(MetricType.TIMER)
+				.withUnit(MetricUnits.NANOSECONDS)
+				.build();
 
         dataSetTimer = HelidonTimer.create("application", meta, dataSetTimerClock);
         dataSetTimerID = new MetricID("response_time");

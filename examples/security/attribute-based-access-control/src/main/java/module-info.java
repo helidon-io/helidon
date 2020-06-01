@@ -31,9 +31,6 @@ module io.helidon.security.examples.abac {
     requires io.helidon.security.abac.policy;
     requires io.helidon.security.abac.scope;
 
-    // needed for jersey to start without a lot of errors (hk2 actually)
-    requires java.xml.bind;
-
     // java util logging
     requires java.logging;
 

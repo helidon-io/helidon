@@ -26,7 +26,7 @@ public class SingleFromCompletionStageTest {
     public void nullItemDisallowed() {
         TestSubscriber<Object> ts = new TestSubscriber<>();
 
-        Single.from(CompletableFuture.completedStage(null))
+        Single.create(CompletableFuture.completedStage(null))
         .subscribe(ts);
 
         ts.assertFailure(NullPointerException.class);
@@ -36,7 +36,7 @@ public class SingleFromCompletionStageTest {
     public void nullItemDisallowed2() {
         TestSubscriber<Object> ts = new TestSubscriber<>();
 
-        Single.from(CompletableFuture.completedStage(null), false)
+        Single.create(CompletableFuture.completedStage(null), false)
                 .subscribe(ts);
 
         ts.assertFailure(NullPointerException.class);
@@ -46,7 +46,7 @@ public class SingleFromCompletionStageTest {
     public void nullItemMeansEmpty() {
         TestSubscriber<Object> ts = new TestSubscriber<>();
 
-        Single.from(CompletableFuture.completedStage(null), true)
+        Single.create(CompletableFuture.completedStage(null), true)
                 .subscribe(ts);
 
         ts.assertResult();
@@ -58,7 +58,7 @@ public class SingleFromCompletionStageTest {
 
         CompletableFuture<Integer> cf = new CompletableFuture<>();
 
-        Single.from(cf)
+        Single.create(cf)
                 .subscribe(ts);
 
         ts.cancel();

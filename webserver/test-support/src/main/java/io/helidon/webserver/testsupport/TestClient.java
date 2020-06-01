@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Flow;
 import java.util.concurrent.TimeUnit;
@@ -37,6 +36,7 @@ import io.helidon.common.http.Http;
 import io.helidon.common.http.ReadOnlyParameters;
 import io.helidon.common.reactive.Single;
 import io.helidon.media.common.MediaContext;
+import io.helidon.media.common.MediaSupport;
 import io.helidon.webserver.BareRequest;
 import io.helidon.webserver.BareResponse;
 import io.helidon.webserver.Handler;
@@ -85,12 +85,27 @@ public class TestClient {
      * Creates new {@link TestClient} instance with specified routing.
      *
      * @param routing a routing to test
-     * @param mediaContext media support
+     * @param mediaContext media context
      * @return new instance
      * @throws NullPointerException if routing parameter is null
      */
     public static TestClient create(Routing routing, MediaContext mediaContext) {
         return new TestClient(routing, mediaContext, null);
+    }
+
+    /**
+     * Creates new {@link TestClient} instance with specified routing.
+     *
+     * @param routing a routing to test
+     * @param mediaSupport media support
+     * @return new instance
+     * @throws NullPointerException if routing parameter is null
+     */
+    public static TestClient create(Routing routing, MediaSupport mediaSupport) {
+        MediaContext mediaContext = MediaContext.builder()
+                .addMediaSupport(mediaSupport)
+                .build();
+        return create(routing, mediaContext);
     }
 
     /**
@@ -268,13 +283,13 @@ public class TestClient {
         }
 
         @Override
-        public CompletionStage<BareResponse> whenHeadersCompleted() {
-            return headersCompletionStage;
+        public Single<BareResponse> whenHeadersCompleted() {
+            return Single.create(headersCompletionStage);
         }
 
         @Override
-        public CompletionStage<BareResponse> whenCompleted() {
-            return completionStage;
+        public Single<BareResponse> whenCompleted() {
+            return Single.create(completionStage);
         }
 
         @Override

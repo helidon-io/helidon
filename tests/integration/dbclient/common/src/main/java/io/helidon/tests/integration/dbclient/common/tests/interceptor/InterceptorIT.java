@@ -15,14 +15,12 @@
  */
 package io.helidon.tests.integration.dbclient.common.tests.interceptor;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-
 import io.helidon.common.reactive.Multi;
+import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
-import io.helidon.dbclient.DbInterceptor;
-import io.helidon.dbclient.DbInterceptorContext;
+import io.helidon.dbclient.DbClientService;
+import io.helidon.dbclient.DbClientServiceContext;
 import io.helidon.dbclient.DbRow;
 import io.helidon.tests.integration.dbclient.common.AbstractIT;
 
@@ -33,40 +31,40 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
 /**
- * Verify interceptors handling.
+ * Verify services handling.
  */
 public class InterceptorIT {
 
-    private static final class TestInterceptor implements DbInterceptor {
+    private static final class TestClientService implements DbClientService {
 
         private boolean called;
-        private DbInterceptorContext context;
+        private DbClientServiceContext context;
 
-        private TestInterceptor() {
+        private TestClientService() {
             this.called = false;
             this.context = null;
         }
 
         @Override
-        public CompletionStage<DbInterceptorContext> statement(DbInterceptorContext context) {
+        public Single<DbClientServiceContext> statement(DbClientServiceContext context) {
             this.called = true;
             this.context = context;
-            return CompletableFuture.completedFuture(context);
+            return Single.just(context);
         }
 
         private boolean called() {
             return called;
         }
 
-        private DbInterceptorContext getContext() {
+        private DbClientServiceContext getContext() {
             return context;
         }
 
     }
 
-    private static DbClient initDbClient(TestInterceptor interceptor) {
+    private static DbClient initDbClient(TestClientService interceptor) {
         Config dbConfig = AbstractIT.CONFIG.get("db");
-        return DbClient.builder(dbConfig).addInterceptor(interceptor).build();
+        return DbClient.builder(dbConfig).addService(interceptor).build();
     }
 
     /**
@@ -75,7 +73,7 @@ public class InterceptorIT {
      */
     @Test
     public void testStatementInterceptor() {
-        TestInterceptor interceptor = new TestInterceptor();
+        TestClientService interceptor = new TestClientService();
         DbClient dbClient = initDbClient(interceptor);
         Multi<DbRow> rows = dbClient.execute(exec -> exec
                 .createNamedQuery("select-pokemon-named-arg")

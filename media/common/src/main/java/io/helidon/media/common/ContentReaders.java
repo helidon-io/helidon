@@ -54,7 +54,7 @@ public final class ContentReaders {
      * @return Single
      */
     public static Single<byte[]> readBytes(Publisher<DataChunk> chunks) {
-        return Multi.from(chunks).collect(new BytesCollector());
+        return Multi.create(chunks).collect(new BytesCollector());
     }
 
     /**
@@ -121,7 +121,9 @@ public final class ContentReaders {
      * {@link InputStream#read()}) block.
      *
      * @return a input stream content reader
+     * @deprecated use {@link DefaultMediaSupport#inputStreamReader()}
      */
+    @Deprecated(since = "2.0.0")
     public static Reader<InputStream> inputStreamReader() {
         return (publisher, clazz) -> CompletableFuture.completedFuture(new DataChunkInputStream(publisher));
     }

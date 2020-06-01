@@ -19,13 +19,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 
-import io.helidon.common.context.Context;
-import io.helidon.common.context.Contexts;
 import io.helidon.common.mapper.MapperManager;
-import io.helidon.dbclient.DbInterceptor;
-import io.helidon.dbclient.DbInterceptorContext;
+import io.helidon.common.reactive.Single;
+import io.helidon.dbclient.DbClientServiceContext;
 import io.helidon.dbclient.DbMapperManager;
 import io.helidon.dbclient.DbStatement;
 import io.helidon.dbclient.DbStatementType;
@@ -38,68 +35,33 @@ import io.helidon.dbclient.DbStatementType;
  */
 public abstract class AbstractStatement<S extends DbStatement<S, R>, R> implements DbStatement<S, R> {
 
+    private final DbClientContext clientContext;
+    private final DbStatementContext statementContext;
+
     private ParamType paramType = ParamType.UNKNOWN;
     private StatementParameters parameters;
-    private final DbStatementType dbStatementType;
-    private final String statementName;
-    private final String statement;
-    private final DbMapperManager dbMapperManager;
-    private final MapperManager mapperManager;
-    private final InterceptorSupport interceptors;
 
     /**
      * Statement that handles parameters.
      *
-     * @param dbStatementType   type of this statement
-     * @param statementName   name of this statement
-     * @param statement       text of this statement
-     * @param dbMapperManager db mapper manager to use when mapping types to parameters
-     * @param mapperManager   mapper manager to use when mapping results
-     * @param interceptors    interceptors to be executed
+     * @param statementContext database statement configuration and context
      */
-    protected AbstractStatement(DbStatementType dbStatementType,
-                                String statementName,
-                                String statement,
-                                DbMapperManager dbMapperManager,
-                                MapperManager mapperManager,
-                                InterceptorSupport interceptors) {
-        this.dbStatementType = dbStatementType;
-        this.statementName = statementName;
-        this.statement = statement;
-        this.dbMapperManager = dbMapperManager;
-        this.mapperManager = mapperManager;
-        this.interceptors = interceptors;
+    protected AbstractStatement(DbStatementContext statementContext) {
+        this.statementContext = statementContext;
+        this.clientContext = statementContext.clientContext();
     }
 
     @Override
     public R execute() {
         CompletableFuture<Long> queryFuture = new CompletableFuture<>();
         CompletableFuture<Void> statementFuture = new CompletableFuture<>();
-        DbInterceptorContext dbContext = DbInterceptorContext.create(dbType())
+        DbClientServiceContext dbContext = DbClientServiceContext.create(dbType())
                 .resultFuture(queryFuture)
                 .statementFuture(statementFuture);
 
         update(dbContext);
-        CompletionStage<DbInterceptorContext> dbContextFuture = invokeInterceptors(dbContext);
+        Single<DbClientServiceContext> dbContextFuture = clientContext.invokeServices(dbContext);
         return doExecute(dbContextFuture, statementFuture, queryFuture);
-    }
-
-    /**
-     * Invoke all interceptors.
-     *
-     * @param dbContext initial interceptor context
-     * @return future with the result of interceptors processing
-     */
-    CompletionStage<DbInterceptorContext> invokeInterceptors(DbInterceptorContext dbContext) {
-        CompletableFuture<DbInterceptorContext> result = CompletableFuture.completedFuture(dbContext);
-
-        dbContext.context(Contexts.context().orElseGet(Context::create));
-
-        for (DbInterceptor interceptor : interceptors.interceptors(statementType(), statementName())) {
-            result = result.thenCompose(interceptor::statement);
-        }
-
-        return result;
     }
 
     /**
@@ -108,19 +70,19 @@ public abstract class AbstractStatement<S extends DbStatement<S, R>, R> implemen
      * @return statement type
      */
     protected DbStatementType statementType() {
-        return dbStatementType;
+        return statementContext.statementType();
     }
 
     /**
      * Execute the statement against the database.
      *
-     * @param dbContext future that completes after all interceptors are invoked
+     * @param dbContext future that completes after all services are invoked
      * @param statementFuture future that should complete when the statement finishes execution
      * @param queryFuture future that should complete when the result set is fully read (if one exists),
      *                      otherwise complete same as statementFuture
      * @return result of this db statement.
      */
-    protected abstract R doExecute(CompletionStage<DbInterceptorContext> dbContext,
+    protected abstract R doExecute(Single<DbClientServiceContext> dbContext,
                                    CompletableFuture<Void> statementFuture,
                                    CompletableFuture<Long> queryFuture);
 
@@ -130,6 +92,15 @@ public abstract class AbstractStatement<S extends DbStatement<S, R>, R> implemen
      * @return type of this db
      */
     protected abstract String dbType();
+
+    /**
+     * Context of the DB client.
+     *
+     * @return context with access to client wide configuration and runtime
+     */
+    public DbClientContext clientContext() {
+        return clientContext;
+    }
 
     @Override
     public S params(List<?> parameters) {
@@ -191,7 +162,7 @@ public abstract class AbstractStatement<S extends DbStatement<S, R>, R> implemen
      * @return mapper manager for DB types
      */
     protected DbMapperManager dbMapperManager() {
-        return dbMapperManager;
+        return clientContext.dbMapperManager();
     }
 
     /**
@@ -200,7 +171,7 @@ public abstract class AbstractStatement<S extends DbStatement<S, R>, R> implemen
      * @return generic mapper manager
      */
     protected MapperManager mapperManager() {
-        return mapperManager;
+        return clientContext.mapperManager();
     }
 
     /**
@@ -231,7 +202,7 @@ public abstract class AbstractStatement<S extends DbStatement<S, R>, R> implemen
      * @return name of this statement (never null, may be generated)
      */
     protected String statementName() {
-        return statementName;
+        return statementContext.statementName();
     }
 
     /**
@@ -240,23 +211,23 @@ public abstract class AbstractStatement<S extends DbStatement<S, R>, R> implemen
      * @return text of this statement
      */
     protected String statement() {
-        return statement;
+        return statementContext.statement();
     }
 
     /**
-     * Update the interceptor context with the statement name, statement and
+     * Update the client service context with the statement name, statement and
      * statement parameters.
      *
-     * @param dbContext interceptor context
+     * @param dbContext client service context
      */
-    protected void update(DbInterceptorContext dbContext) {
-        dbContext.statementName(statementName);
+    protected void update(DbClientServiceContext dbContext) {
+        dbContext.statementName(statementContext.statementName());
         initParameters(ParamType.INDEXED);
 
         if (paramType == ParamType.NAMED) {
-            dbContext.statement(statement, parameters.namedParams());
+            dbContext.statement(statementContext.statement(), parameters.namedParams());
         } else {
-            dbContext.statement(statement, parameters.indexedParams());
+            dbContext.statement(statementContext.statement(), parameters.indexedParams());
         }
         dbContext.statementType(statementType());
     }
@@ -279,13 +250,13 @@ public abstract class AbstractStatement<S extends DbStatement<S, R>, R> implemen
         switch (type) {
         case NAMED:
             this.paramType = ParamType.NAMED;
-            this.parameters = new NamedStatementParameters(dbMapperManager);
+            this.parameters = new NamedStatementParameters(clientContext.dbMapperManager());
             break;
         case INDEXED:
         case UNKNOWN:
         default:
             this.paramType = ParamType.INDEXED;
-            this.parameters = new IndexedStatementParameters(dbMapperManager);
+            this.parameters = new IndexedStatementParameters(clientContext.dbMapperManager());
             break;
         }
     }

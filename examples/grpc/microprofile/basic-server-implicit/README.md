@@ -7,7 +7,7 @@ It is implicit because in this example you don't write the
 
 The gRPC services to deploy will be discovered by CDI when the gRPC server starts.
 The `StringService` is a POJO service implementation that is annotated with the
-CDI qualifier `RpcService` so that it can be discovered.
+CDI qualifier `Grpc` so that it can be discovered.
 
 Two additional services (`GreetService` and `EchoService`) that are not normally CDI
 managed beans are manually added as CDI managed beans in the `AdditionalServices` class

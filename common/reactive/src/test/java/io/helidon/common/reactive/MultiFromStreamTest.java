@@ -36,7 +36,7 @@ public class MultiFromStreamTest {
         TestSubscriber<Object> ts = new TestSubscriber<>();
         AtomicInteger close = new AtomicInteger();
 
-        Multi.from(Stream.empty().onClose(close::incrementAndGet))
+        Multi.create(Stream.empty().onClose(close::incrementAndGet))
         .subscribe(ts);
 
         assertThat(ts.getItems().isEmpty(), is(true));
@@ -49,7 +49,7 @@ public class MultiFromStreamTest {
     public void singletonIterableUnboundedRequest() {
         TestSubscriber<Integer> ts = new TestSubscriber<>();
 
-        Multi.from(Stream.of(1))
+        Multi.create(Stream.of(1))
                 .subscribe(ts);
 
         assertThat(ts.getItems().isEmpty(), is(true));
@@ -68,7 +68,7 @@ public class MultiFromStreamTest {
     public void limit() {
         TestSubscriber<Integer> ts = new TestSubscriber<>();
 
-        Multi.from(Stream.of(1))
+        Multi.create(Stream.of(1))
                 .limit(1)
                 .subscribe(ts);
 
@@ -82,7 +82,7 @@ public class MultiFromStreamTest {
     public void singletonIterableBoundedRequest() {
         TestSubscriber<Integer> ts = new TestSubscriber<>();
 
-        Multi.from(Stream.of(1))
+        Multi.create(Stream.of(1))
                 .subscribe(ts);
 
         assertThat(ts.getItems().isEmpty(), is(true));
@@ -101,7 +101,7 @@ public class MultiFromStreamTest {
     public void iteratorNull() {
         TestSubscriber<Integer> ts = new TestSubscriber<>();
 
-        Multi.from(Stream.of((Integer)null))
+        Multi.create(Stream.of((Integer)null))
                 .subscribe(ts);
 
         ts.request1();
@@ -116,7 +116,7 @@ public class MultiFromStreamTest {
         TestSubscriber<Integer> ts = new TestSubscriber<>();
         AtomicInteger close = new AtomicInteger();
 
-        Multi.from(withIterator(new Iterator<Integer>() {
+        Multi.create(withIterator(new Iterator<Integer>() {
 
             @Override
             public boolean hasNext() {
@@ -143,7 +143,7 @@ public class MultiFromStreamTest {
         TestSubscriber<Integer> ts = new TestSubscriber<>();
         AtomicInteger close = new AtomicInteger();
 
-        Multi.from(withIterator(new Iterator<Integer>() {
+        Multi.create(withIterator(new Iterator<Integer>() {
 
             @Override
             public boolean hasNext() {
@@ -171,7 +171,7 @@ public class MultiFromStreamTest {
         TestSubscriber<Integer> ts = new TestSubscriber<>();
         AtomicInteger close = new AtomicInteger();
 
-        Multi.from(withIterator(new Iterator<Integer>() {
+        Multi.create(withIterator(new Iterator<Integer>() {
             int calls;
             @Override
             public boolean hasNext() {
@@ -202,7 +202,7 @@ public class MultiFromStreamTest {
         TestSubscriber<Integer> ts = new TestSubscriber<>();
         AtomicInteger close = new AtomicInteger();
 
-        Multi.from(withIterator(new Iterator<Integer>() {
+        Multi.create(withIterator(new Iterator<Integer>() {
             int calls;
             @Override
             public boolean hasNext() {
@@ -238,7 +238,7 @@ public class MultiFromStreamTest {
             }
         };
 
-        Multi.from(Stream.of(1))
+        Multi.create(Stream.of(1))
                 .subscribe(ts);
 
         ts.requestMax();
@@ -266,7 +266,7 @@ public class MultiFromStreamTest {
     public void normal() {
         TestSubscriber<Integer> ts = new TestSubscriber<>(Long.MAX_VALUE);
 
-        Multi.from(IntStream.range(0, 5).boxed())
+        Multi.create(IntStream.range(0, 5).boxed())
                 .subscribe(ts);
 
         ts.assertResult(0, 1, 2, 3, 4);
@@ -276,7 +276,7 @@ public class MultiFromStreamTest {
     public void normalBackpressured() {
         TestSubscriber<Integer> ts = new TestSubscriber<>();
 
-        Multi.from(IntStream.range(0, 5).boxed())
+        Multi.create(IntStream.range(0, 5).boxed())
                 .subscribe(ts);
 
         ts.assertEmpty()
@@ -295,7 +295,7 @@ public class MultiFromStreamTest {
 
         TestSubscriber<Integer> ts = new TestSubscriber<>();
 
-        Multi.from(stream)
+        Multi.create(stream)
                 .subscribe(ts);
 
         ts.assertFailure(IllegalStateException.class);
@@ -312,7 +312,7 @@ public class MultiFromStreamTest {
 
         TestSubscriber<Integer> ts = new TestSubscriber<>();
 
-        Multi.from(stream)
+        Multi.create(stream)
                 .subscribe(ts);
 
         ts.assertFailure(IllegalStateException.class);
@@ -328,7 +328,7 @@ public class MultiFromStreamTest {
 
         TestSubscriber<Integer> ts = new TestSubscriber<>();
 
-        Multi.from(stream)
+        Multi.create(stream)
                 .subscribe(ts);
 
         ts.assertFailure(IllegalArgumentException.class);
@@ -342,7 +342,7 @@ public class MultiFromStreamTest {
 
         TestSubscriber<Integer> ts = new TestSubscriber<>(Long.MAX_VALUE);
 
-        Multi.from(stream)
+        Multi.create(stream)
                 .subscribe(ts);
 
         ts.assertResult(1, 2, 3, 4, 5);

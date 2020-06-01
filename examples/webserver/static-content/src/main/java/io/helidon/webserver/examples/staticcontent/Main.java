@@ -17,6 +17,7 @@
 package io.helidon.webserver.examples.staticcontent;
 
 import io.helidon.common.http.Http;
+import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.StaticContentSupport;
 import io.helidon.webserver.WebServer;
@@ -58,6 +59,7 @@ public class Main {
     public static void main(String[] args) {
         WebServer server = WebServer.builder(createRouting())
                 .port(8080)
+                .addMediaSupport(JsonpSupport.create())
                 .build();
 
         // Start the server and print some info.

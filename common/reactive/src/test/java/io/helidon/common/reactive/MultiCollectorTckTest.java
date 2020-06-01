@@ -34,12 +34,12 @@ public class MultiCollectorTckTest extends FlowPublisherVerification<List<Intege
 
     @Override
     public Flow.Publisher<List<Integer>> createFlowPublisher(long l) {
-        return Multi.from(() -> IntStream.range(0, (int)l).boxed().iterator()).collectStream(Collectors.toList());
+        return Multi.create(() -> IntStream.range(0, (int)l).boxed().iterator()).collectStream(Collectors.toList());
     }
 
     @Override
     public Flow.Publisher<List<Integer>> createFailedFlowPublisher() {
-        return Multi.from(() -> { throw new RuntimeException(); });
+        return Multi.create(() -> { throw new RuntimeException(); });
     }
 
     @Override

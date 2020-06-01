@@ -54,7 +54,9 @@ import io.helidon.common.HelidonFlavor;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
-import io.helidon.media.jsonp.server.JsonSupport;
+import io.helidon.media.common.MessageBodyReaderContext;
+import io.helidon.media.common.MessageBodyWriterContext;
+import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.openapi.internal.OpenAPIConfigImpl;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
@@ -156,9 +158,16 @@ public class OpenAPISupport implements Service {
      */
     public void configureEndpoint(Routing.Rules rules) {
 
-        rules.get(JsonSupport.create())
+        rules.get(this::registerJsonpSupport)
                 .any(webContext, corsEnabledServiceHelper.processor())
                 .get(webContext, this::prepareResponse);
+    }
+
+    private void registerJsonpSupport(ServerRequest req, ServerResponse res) {
+        MessageBodyReaderContext readerContext = req.content().readerContext();
+        MessageBodyWriterContext writerContext = res.writerContext();
+        JsonpSupport.create().register(readerContext, writerContext);
+        req.next();
     }
 
     static synchronized SnakeYAMLParserHelper<ExpandedTypeDescription> helper() {

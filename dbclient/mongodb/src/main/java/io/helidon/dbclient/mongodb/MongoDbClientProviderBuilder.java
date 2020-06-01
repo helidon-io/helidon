@@ -15,6 +15,8 @@
  */
 package io.helidon.dbclient.mongodb;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Optional;
 
 import io.helidon.common.GenericType;
@@ -22,12 +24,10 @@ import io.helidon.common.mapper.MapperManager;
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbClientException;
-import io.helidon.dbclient.DbInterceptor;
+import io.helidon.dbclient.DbClientService;
 import io.helidon.dbclient.DbMapper;
 import io.helidon.dbclient.DbMapperManager;
-import io.helidon.dbclient.DbStatementType;
 import io.helidon.dbclient.DbStatements;
-import io.helidon.dbclient.common.InterceptorSupport;
 import io.helidon.dbclient.spi.DbClientProviderBuilder;
 import io.helidon.dbclient.spi.DbMapperProvider;
 
@@ -36,7 +36,7 @@ import io.helidon.dbclient.spi.DbMapperProvider;
  */
 public final class MongoDbClientProviderBuilder implements DbClientProviderBuilder<MongoDbClientProviderBuilder> {
 
-    private final InterceptorSupport.Builder interceptors = InterceptorSupport.builder();
+    private final List<DbClientService> clientServices = new LinkedList<>();
     private final DbMapperManager.Builder dbMapperBuilder = DbMapperManager.builder();
 
     private String url;
@@ -118,20 +118,8 @@ public final class MongoDbClientProviderBuilder implements DbClientProviderBuild
     }
 
     @Override
-    public MongoDbClientProviderBuilder addInterceptor(DbInterceptor interceptor) {
-        this.interceptors.add(interceptor);
-        return this;
-    }
-
-    @Override
-    public MongoDbClientProviderBuilder addInterceptor(DbInterceptor interceptor, String... statementNames) {
-        this.interceptors.add(interceptor, statementNames);
-        return this;
-    }
-
-    @Override
-    public MongoDbClientProviderBuilder addInterceptor(DbInterceptor interceptor, DbStatementType... dbStatementTypes) {
-        this.interceptors.add(interceptor, dbStatementTypes);
+    public MongoDbClientProviderBuilder addService(DbClientService clientService) {
+        this.clientServices.add(clientService);
         return this;
     }
 
@@ -182,8 +170,8 @@ public final class MongoDbClientProviderBuilder implements DbClientProviderBuild
         return this;
     }
 
-    InterceptorSupport interceptors() {
-        return interceptors.build();
+    List<DbClientService> clientServices() {
+        return List.copyOf(clientServices);
     }
 
     DbMapperManager.Builder dbMapperBuilder() {

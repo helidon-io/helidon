@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,9 +30,9 @@ import io.helidon.microprofile.grpc.core.AbstractServiceBuilder;
 import io.helidon.microprofile.grpc.core.AnnotatedMethod;
 import io.helidon.microprofile.grpc.core.AnnotatedMethodList;
 import io.helidon.microprofile.grpc.core.GrpcMarshaller;
+import io.helidon.microprofile.grpc.core.GrpcMethod;
 import io.helidon.microprofile.grpc.core.Instance;
 import io.helidon.microprofile.grpc.core.ModelHelper;
-import io.helidon.microprofile.grpc.core.RpcMethod;
 
 /**
  * A builder for constructing a {@link ClientServiceDescriptor.Builder} instances
@@ -111,10 +111,10 @@ class GrpcClientBuilder
      * @param methodList  the list of methods to add
      */
     private void addServiceMethods(ClientServiceDescriptor.Builder builder, AnnotatedMethodList methodList) {
-        for (AnnotatedMethod am : methodList.withAnnotation(RpcMethod.class)) {
+        for (AnnotatedMethod am : methodList.withAnnotation(GrpcMethod.class)) {
             addServiceMethod(builder, am);
         }
-        for (AnnotatedMethod am : methodList.withMetaAnnotation(RpcMethod.class)) {
+        for (AnnotatedMethod am : methodList.withMetaAnnotation(GrpcMethod.class)) {
             addServiceMethod(builder, am);
         }
     }
@@ -129,7 +129,7 @@ class GrpcClientBuilder
      * @param method   the {@link io.helidon.microprofile.grpc.core.AnnotatedMethod} representing the method to add
      */
     private void addServiceMethod(ClientServiceDescriptor.Builder builder, AnnotatedMethod method) {
-        RpcMethod annotation = method.firstAnnotationOrMetaAnnotation(RpcMethod.class);
+        GrpcMethod annotation = method.firstAnnotationOrMetaAnnotation(GrpcMethod.class);
         String name = determineMethodName(method, annotation);
 
         MethodHandler handler = handlerSuppliers().stream()

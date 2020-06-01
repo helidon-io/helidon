@@ -78,7 +78,7 @@ public class SingleDefaultIfEmptyTest {
         SubmissionPublisher<Integer> sp = new SubmissionPublisher<>(Runnable::run, 128);
         TestSubscriber<Integer> ts = new TestSubscriber<>(Long.MAX_VALUE);
 
-        Single.from(sp)
+        Single.create(sp)
                 .defaultIfEmpty(2)
                 .subscribe(ts);
 

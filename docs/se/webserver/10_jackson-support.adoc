@@ -33,31 +33,24 @@ Declare the following dependency in your project:
 [source,xml,subs="verbatim,attributes"]
 ----
 <dependency>
-    <groupId>io.helidon.media.jackson</groupId>
-    <artifactId>helidon-media-jackson-server</artifactId>
+    <groupId>io.helidon.media</groupId>
+    <artifactId>helidon-media-jackson</artifactId>
 </dependency>
 ----
 
 === Usage
-To enable Jackson support, first create and
-https://helidon.io/docs/latest/apidocs/io/helidon/webserver/Routing.Builder.html#register-io.helidon.webserver.Service...-[register]
-a
-https://helidon.io/docs/latest/apidocs/io/helidon/media/jsonb/server/JacksonSupport.html[`JacksonSupport`]
+To enable Jackson support, first create and register a
+https://helidon.io/docs/latest/apidocs/io/helidon/media/jackson/JacksonSupport.html[`JacksonSupport`]
 instance with a
-https://helidon.io/docs/latest/apidocs/io/helidon/webserver/Routing.Builder.html[`Routing.Builder`].
-`JacksonSupport` is a
-https://helidon.io/docs/latest/apidocs/io/helidon/webserver/Service.html[`Service`],
-so it will install its own
-https://helidon.io/docs/latest/apidocs/io/helidon/webserver/Handler.html[`Handler`]
-that will provide serialization and deserialization services using
-https://github.com/FasterXML/jackson#jackson-project-home-github[Jackson].
+https://helidon.io/docs/latest/apidocs/io/helidon/webserver/WebServer.Builder.html[`WebServer.Builder`].
 
 [source,java]
-.Create and register `JacksonSupport` first
+.Registration of the `JacksonSupport` via `WebServer`
 ----
-final JacksonSupport jacksonSupport = JacksonSupport.create(); // <1>
-final Routing.Builder routingBuilder = Routing.builder();
-routingBuilder.register(jacksonSupport); // <2>
+JacksonSupport jacksonSupport = JacksonSupport.create(); // <1>
+WebServer webServer = WebServer.builder()
+    .addMediaSupport(jacksonSupport) // <2>
+    .build();
 ----
 <1> Create a `JacksonSupport` instance.  This instance may be
 reused freely.

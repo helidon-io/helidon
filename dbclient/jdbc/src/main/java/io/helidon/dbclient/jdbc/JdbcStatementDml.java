@@ -18,21 +18,21 @@ package io.helidon.dbclient.jdbc;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 
 import io.helidon.common.reactive.Single;
-import io.helidon.dbclient.DbInterceptorContext;
+import io.helidon.dbclient.DbClientServiceContext;
 import io.helidon.dbclient.DbStatementDml;
+import io.helidon.dbclient.common.DbStatementContext;
 
 class JdbcStatementDml extends JdbcStatement<DbStatementDml, Single<Long>> implements DbStatementDml {
 
     JdbcStatementDml(JdbcExecuteContext executeContext,
-                     JdbcStatementContext statementContext) {
+                     DbStatementContext statementContext) {
         super(executeContext, statementContext);
     }
 
     @Override
-    protected Single<Long> doExecute(CompletionStage<DbInterceptorContext> dbContextFuture,
+    protected Single<Long> doExecute(Single<DbClientServiceContext> dbContextFuture,
                                      CompletableFuture<Void> statementFuture,
                                      CompletableFuture<Long> queryFuture) {
 
@@ -45,19 +45,19 @@ class JdbcStatementDml extends JdbcStatement<DbStatementDml, Single<Long>> imple
             return null;
         });
 
-        return Single.from(dbContextFuture)
+        return dbContextFuture
                 .flatMapSingle(dbContext -> doExecute(dbContext, statementFuture, queryFuture));
     }
 
-    private Single<Long> doExecute(DbInterceptorContext dbContext,
+    private Single<Long> doExecute(DbClientServiceContext dbContext,
                                    CompletableFuture<Void> statementFuture,
                                    CompletableFuture<Long> queryFuture) {
 
-        return Single.from(connection())
+        return Single.create(connection())
                 .flatMapSingle(connection -> doExecute(dbContext, connection, statementFuture, queryFuture));
     }
 
-    private Single<Long> doExecute(DbInterceptorContext dbContext,
+    private Single<Long> doExecute(DbClientServiceContext dbContext,
                                    Connection connection,
                                    CompletableFuture<Void> statementFuture,
                                    CompletableFuture<Long> queryFuture) {
@@ -65,10 +65,10 @@ class JdbcStatementDml extends JdbcStatement<DbStatementDml, Single<Long>> imple
         executorService().submit(() -> callStatement(dbContext, connection, statementFuture, queryFuture));
 
         // the query future is reused, as it completes with the number of updated records
-        return Single.from(queryFuture);
+        return Single.create(queryFuture);
     }
 
-    private void callStatement(DbInterceptorContext dbContext,
+    private void callStatement(DbClientServiceContext dbContext,
                                Connection connection,
                                CompletableFuture<Void> statementFuture,
                                CompletableFuture<Long> queryFuture) {

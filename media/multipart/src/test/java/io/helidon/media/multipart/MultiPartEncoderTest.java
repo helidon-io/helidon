@@ -100,7 +100,7 @@ public class MultiPartEncoderTest {
     @Test
     public void testRequests() throws Exception {
         MultiPartEncoder enc = MultiPartEncoder.create("boundary", MEDIA_CONTEXT.writerContext());
-        Multi.from(LongStream.range(1, 500)
+        Multi.create(LongStream.range(1, 500)
                 .mapToObj(i ->
                         WriteableBodyPart.builder()
                                 .entity("part" + i)

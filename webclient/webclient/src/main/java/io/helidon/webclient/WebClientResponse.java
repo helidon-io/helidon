@@ -16,9 +16,9 @@
 package io.helidon.webclient;
 
 import java.net.URI;
-import java.util.concurrent.CompletionStage;
 
 import io.helidon.common.http.Http;
+import io.helidon.common.reactive.Single;
 import io.helidon.media.common.MessageBodyReadableContent;
 
 /**
@@ -66,10 +66,9 @@ public interface WebClientResponse {
     URI lastEndpointURI();
 
     /**
-     * Closes created response.
-     * This needs to be called when user handles response himself.
+     * Asynchronous close of the response.
      *
-     * @return completion stage of the closing process
+     * @return single of the closing process
      */
-    CompletionStage<Void> close();
+    Single<Void> close();
 }

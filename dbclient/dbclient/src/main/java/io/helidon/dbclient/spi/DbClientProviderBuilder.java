@@ -20,9 +20,8 @@ import io.helidon.common.GenericType;
 import io.helidon.common.mapper.MapperManager;
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
-import io.helidon.dbclient.DbInterceptor;
+import io.helidon.dbclient.DbClientService;
 import io.helidon.dbclient.DbMapper;
-import io.helidon.dbclient.DbStatementType;
 import io.helidon.dbclient.DbStatements;
 
 /**
@@ -114,37 +113,10 @@ public interface DbClientProviderBuilder<T extends DbClientProviderBuilder<T>> e
      * This allows to add implementation of tracing, metrics, logging etc. without the need to hard-code these into
      * the base.
      *
-     * @param interceptor interceptor instance
+     * @param clientService interceptor instance
      * @return updated builder instance
      */
-    T addInterceptor(DbInterceptor interceptor);
-
-    /**
-     * Add an interceptor that is active only on the configured statement names.
-     * This interceptor is only executed on named statements.
-     *
-     * @param interceptor interceptor instance
-     * @param statementNames statement names to be active on
-     * @return updated builder instance
-     */
-    T addInterceptor(DbInterceptor interceptor, String... statementNames);
-
-    /**
-     * Add an interceptor thas is active only on configured statement types.
-     * This interceptor is executed on all statements of that type.
-     * <p>
-     * Note the specific handling of the following types:
-     * <ul>
-     *     <li>{@link io.helidon.dbclient.DbStatementType#DML} - used only when the statement is created as a DML statement
-     *          such as when using {@link io.helidon.dbclient.DbExecute#createDmlStatement(String)}
-     *          (this interceptor would not be enabled for inserts, updates, deletes)</li>
-     * </ul>
-     *
-     * @param interceptor interceptor instance
-     * @param dbStatementTypes statement types to be active on
-     * @return updated builder instance
-     */
-    T addInterceptor(DbInterceptor interceptor, DbStatementType... dbStatementTypes);
+    T addService(DbClientService clientService);
 
     /**
      * Build database handler for specific provider.

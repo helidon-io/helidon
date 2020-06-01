@@ -49,8 +49,8 @@
             <artifactId>helidon-media-multipart</artifactId>
         </dependency>
         <dependency>
-            <artifactId>helidon-media-jsonp-common</artifactId>
-            <groupId>io.helidon.media.jsonp</groupId>
+            <groupId>io.helidon.media</groupId>
+            <artifactId>helidon-media-jsonp</artifactId>
         </dependency>
         <dependency>
             <groupId>org.glassfish</groupId>

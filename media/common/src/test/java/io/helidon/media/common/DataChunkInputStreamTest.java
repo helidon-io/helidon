@@ -32,6 +32,7 @@ import java.util.concurrent.TimeUnit;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.reactive.BufferedEmittingPublisher;
 import io.helidon.common.reactive.Multi;
+import io.helidon.common.reactive.Single;
 
 import org.junit.jupiter.api.Test;
 
@@ -84,6 +85,13 @@ public class DataChunkInputStreamTest {
     }
 
     @Test
+    public void closeMoreTheOnce() throws IOException {
+        InputStream is = new DataChunkInputStream(Single.just(DataChunk.create("test".getBytes())));
+        is.close();
+        is.close();
+    }
+
+    @Test
     public void differentThreads() throws Exception {
         List<String> test_data = List.of("test0", "test1", "test2", "test3");
         List<String> result = new ArrayList<>();
@@ -98,7 +106,7 @@ public class DataChunkInputStreamTest {
             pub.complete();
         });
         Future<?> receiveFuture = executorService.submit(() -> {
-            DataChunkInputStream chunkInputStream = new DataChunkInputStream(Multi.from(pub)
+            DataChunkInputStream chunkInputStream = new DataChunkInputStream(Multi.create(pub)
                     .map(s -> DataChunk.create(s.getBytes())));
             for (int i = 0; i < test_data.size(); i++) {
                 try {

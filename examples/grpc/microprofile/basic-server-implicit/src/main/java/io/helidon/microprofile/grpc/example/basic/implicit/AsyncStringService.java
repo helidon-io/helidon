@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import javax.enterprise.context.ApplicationScoped;
 import io.helidon.grpc.server.CollectingObserver;
 import io.helidon.microprofile.grpc.core.Bidirectional;
 import io.helidon.microprofile.grpc.core.ClientStreaming;
-import io.helidon.microprofile.grpc.core.RpcService;
+import io.helidon.microprofile.grpc.core.Grpc;
 import io.helidon.microprofile.grpc.core.ServerStreaming;
 import io.helidon.microprofile.grpc.core.Unary;
 
@@ -35,11 +35,11 @@ import io.grpc.stub.StreamObserver;
 /**
  * The gRPC StringService implementation that uses async unary methods.
  * <p>
- * This class is a gRPC service annotated with {@link io.helidon.microprofile.grpc.core.RpcService} and
+ * This class is a gRPC service annotated with {@link io.helidon.microprofile.grpc.core.Grpc} and
  * {@link javax.enterprise.context.ApplicationScoped} so that it will be discovered and deployed using
  * CDI when the MP gRPC server starts.
  */
-@RpcService
+@Grpc
 @ApplicationScoped
 public class AsyncStringService {
 
