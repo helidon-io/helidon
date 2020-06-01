@@ -55,19 +55,19 @@ class HelloTest {
     }
 
     @Test
-    void TestHello() {
+    void testHello() {
         WebTarget target = baseTarget.path("/hello");
         assertOk(target.request().get(), "Hello World");
     }
 
     @Test
-    void TestHelloTimeout() {
+    void testHelloTimeout() {
         WebTarget target = baseTarget.path("/helloTimeout");
         assertOk(target.request().get(), "Hello World");
     }
 
     @Test
-    void TestHelloAsync() {
+    void testHelloAsync() {
         WebTarget target = baseTarget.path("/helloAsync");
         assertOk(target.request().get(), "Hello World");
     }

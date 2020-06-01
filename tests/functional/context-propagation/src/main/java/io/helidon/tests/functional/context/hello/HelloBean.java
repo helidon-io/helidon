@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import javax.enterprise.context.ApplicationScoped;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 
-import io.opentracing.SpanContext;
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
 import org.eclipse.microprofile.faulttolerance.Timeout;
 
@@ -44,7 +43,7 @@ public class HelloBean {
     public String getHello() {
         Context context = Contexts.context().get();
         Objects.requireNonNull(context);
-        Objects.requireNonNull(context.get(SpanContext.class).get());
+
         return "Hello World";
     }
 
@@ -57,7 +56,8 @@ public class HelloBean {
     public String getHelloTimeout() {
         Context context = Contexts.context().get();
         Objects.requireNonNull(context);
-        Objects.requireNonNull(context.get(SpanContext.class).get());
+        // span context may be null if tracer is not configured
+        //Objects.requireNonNull(context.get(SpanContext.class).get());
         return "Hello World";
     }
 
@@ -70,7 +70,7 @@ public class HelloBean {
     public CompletionStage<String> getHelloAsync() {
         Context context = Contexts.context().get();
         Objects.requireNonNull(context);
-        Objects.requireNonNull(context.get(SpanContext.class).get());
+        //Objects.requireNonNull(context.get(SpanContext.class).get());
         return CompletableFuture.completedFuture("Hello World");
     }
 }
