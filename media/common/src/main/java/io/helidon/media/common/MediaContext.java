@@ -333,8 +333,9 @@ public final class MediaContext {
 
         @Override
         public MediaSupport create(Config config) {
-            boolean includeStackTraces = config.get(Builder.DEFAULTS_INCLUDE_STACK_TRACES).asBoolean().orElse(false);
-            return DefaultMediaSupport.create(includeStackTraces);
+            DefaultMediaSupport.Builder builder = DefaultMediaSupport.builder();
+            config.get(Builder.DEFAULTS_INCLUDE_STACK_TRACES).asBoolean().ifPresent(builder::includeStackTraces);
+            return builder.build();
         }
     }
 
