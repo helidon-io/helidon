@@ -41,6 +41,7 @@ public class DataChunkInputStream extends InputStream {
     private final String originalThreadID;
     private final boolean validate;
     private final Flow.Publisher<DataChunk> originalPublisher;
+    private int bufferIndex;
     private CompletableFuture<DataChunk> current = new CompletableFuture<>();
     private CompletableFuture<DataChunk> next = current;
     private volatile Flow.Subscription subscription;
@@ -100,6 +101,7 @@ public class DataChunkInputStream extends InputStream {
         // Assert: if current != next, next cannot ever be resolved with a chunk that needs releasing
         Optional.ofNullable(current).ifPresent(it -> current.whenComplete(DataChunkInputStream::releaseChunk));
         current = null;
+        bufferIndex = 0;
     }
 
     @Override
@@ -135,24 +137,27 @@ public class DataChunkInputStream extends InputStream {
 
             ByteBuffer[] currentBuffers = chunk.data();
             int count = 0;
-            for (int i = 0; i < currentBuffers.length; i++) {
+            for (int i = bufferIndex; i < currentBuffers.length; i++) {
+
                 if (i == 0 && currentBuffers[i].position() == 0) {
                     LOGGER.finest(() -> "Reading chunk ID: " + chunk.id());
                 }
-                // If there is anything to read, then read as much as fits into buf
+
                 int rem = currentBuffers[i].remaining();
-                int currentLen = len;
-                if (currentLen > rem) {
-                    currentLen = rem;
+                int blen = len;
+                if (blen > rem) {
+                    blen = rem;
                 }
-                if (currentLen > 0) {
-                    currentBuffers[i].get(buf, off, currentLen);
-                    off += currentLen;
-                    count += currentLen;
-                    len -= currentLen;
-                }
-                if (rem > currentLen) {
+                currentBuffers[i].get(buf, off, blen);
+                off += blen;
+                count += blen;
+                len -= blen;
+
+                if (rem > blen) {
                     break;
+                }
+                if (count < len && i < currentBuffers.length - 1) {
+                    bufferIndex++;
                 }
 
                 // Chunk is consumed entirely - release the chunk, and prefetch a new chunk; do not
@@ -161,9 +166,10 @@ public class DataChunkInputStream extends InputStream {
                 // Assert: it is safe to request new chunks eagerly - there is no mechanism
                 // to push back unconsumed data, so we can assume we own all the chunks,
                 // consumed and unconsumed.
-                if (i == currentBuffers.length - 1 && currentLen == rem) {
+                if (i == currentBuffers.length - 1 && blen == rem) {
                     releaseChunk(chunk, null);
                     current = next;
+                    bufferIndex = 0;
                     subscription.request(1);
                 }
             }
