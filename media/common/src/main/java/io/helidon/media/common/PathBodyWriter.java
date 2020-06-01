@@ -34,7 +34,9 @@ import static io.helidon.media.common.ByteChannelBodyWriter.DEFAULT_RETRY_SCHEMA
 /**
  * Message body writer for {@link Path}.
  */
-public final class PathBodyWriter implements MessageBodyWriter<Path> {
+final class PathBodyWriter implements MessageBodyWriter<Path> {
+
+    private final static PathBodyWriter DEFAULT = new PathBodyWriter();
 
     /**
      * Enforces the use of {@link #create()}.
@@ -58,12 +60,12 @@ public final class PathBodyWriter implements MessageBodyWriter<Path> {
      * Create a new of of {@link PathBodyWriter}.
      * @return new {@link Path} message body writer.
      */
-    public static PathBodyWriter create() {
-        return new PathBodyWriter();
+    static PathBodyWriter create() {
+        return DEFAULT;
     }
 
     /**
-     * Implementation of {@link MultiMapper} that converts a {@link Path} to a
+     * Implementation of {@link Mapper} that converts a {@link Path} to a
      * publisher of {@link DataChunk}.
      */
     private static final class PathToChunks implements Mapper<Path, Publisher<DataChunk>> {

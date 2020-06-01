@@ -27,7 +27,9 @@ import io.helidon.common.reactive.Single;
 /**
  * Writer for {@code CharSequence}.
  */
-public final class CharSequenceBodyWriter implements MessageBodyWriter<CharSequence> {
+final class CharSequenceBodyWriter implements MessageBodyWriter<CharSequence> {
+
+    private static final CharSequenceBodyWriter DEFAULT = new CharSequenceBodyWriter();
 
     /**
      * Enforce the use of {@link #create()}.
@@ -50,11 +52,12 @@ public final class CharSequenceBodyWriter implements MessageBodyWriter<CharSeque
     }
 
     /**
-     * Create a new instance of {@link CharSequenceBodyWriter}.
+     * Return an instance of {@link CharSequenceBodyWriter}.
+     *
      * @return {@link CharSequence} message body writer.
      */
-    public static CharSequenceBodyWriter create() {
-        return new CharSequenceBodyWriter();
+    static CharSequenceBodyWriter create() {
+        return DEFAULT;
     }
 
     private static final class CharSequenceToChunks implements Mapper<CharSequence, Publisher<DataChunk>> {

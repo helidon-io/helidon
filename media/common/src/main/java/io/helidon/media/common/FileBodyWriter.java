@@ -35,7 +35,9 @@ import static io.helidon.media.common.ByteChannelBodyWriter.DEFAULT_RETRY_SCHEMA
 /**
  * Message body writer for {@link File}.
  */
-public final class FileBodyWriter implements MessageBodyWriter<File> {
+final class FileBodyWriter implements MessageBodyWriter<File> {
+
+    private final static FileBodyWriter DEFAULT = new FileBodyWriter();
 
     /**
      * Enforces the use of {@link #create()}.
@@ -56,11 +58,12 @@ public final class FileBodyWriter implements MessageBodyWriter<File> {
     }
 
     /**
-     * Create a new {@link FileBodyWriter} instance.
+     * Return an instance of {@link FileBodyWriter}.
+     *
      * @return {@link File} message body writer.
      */
-    public static FileBodyWriter create() {
-        return new FileBodyWriter();
+    static FileBodyWriter create() {
+        return DEFAULT;
     }
 
     /**

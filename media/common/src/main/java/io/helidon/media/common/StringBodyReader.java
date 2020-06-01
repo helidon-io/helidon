@@ -24,7 +24,9 @@ import io.helidon.common.reactive.Single;
 /**
  * Message body reader for {@link String}.
  */
-public final class StringBodyReader implements MessageBodyReader<String> {
+final class StringBodyReader implements MessageBodyReader<String> {
+
+    private static final StringBodyReader DEFAULT = new StringBodyReader();
 
     /**
      * Private to enforce the use of {@link #create()}.
@@ -49,7 +51,7 @@ public final class StringBodyReader implements MessageBodyReader<String> {
      * Create a new instance of {@link StringBodyReader}.
      * @return {@link String} message body reader.
      */
-    public static StringBodyReader create() {
-        return new StringBodyReader();
+    static StringBodyReader create() {
+        return DEFAULT;
     }
 }
