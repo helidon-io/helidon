@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import java.util.Map;
 
 import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
 import org.eclipse.microprofile.config.Config;
-import org.eclipse.microprofile.config.ConfigProvider;
+import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
 /**
@@ -98,15 +98,18 @@ public final class OciConfigConfigSource implements ConfigSource {
   @Override
   public String getValue(final String propertyName) {
     final String returnValue;
-    if (propertyName == null || propertyName.equals("oci.auth.profile") || propertyName.equals("oci.config.path")) {
+    if (propertyName == null) {
       returnValue = null;
+    } else if (propertyName.equals(ConfigSource.CONFIG_ORDINAL)) {
+      returnValue = String.valueOf(this.getOrdinal());
     } else {
       Map<String, String> properties = this.properties;
       if (properties == null) {
-        final Config config = ConfigProvider.getConfig();
-        assert config != null;
+        final Config config = ConfigProviderResolver.instance()
+          .getBuilder()
+          .addDefaultSources()
+          .build();
         final String profile = config.getOptionalValue("oci.auth.profile", String.class).orElse("DEFAULT");
-        assert profile != null;
         final String configFilePath = config.getOptionalValue("oci.config.path", String.class).orElse(null);
         final ConfigFileAuthenticationDetailsProvider provider;
         ConfigFileAuthenticationDetailsProvider temp = null;
@@ -122,10 +125,8 @@ public final class OciConfigConfigSource implements ConfigSource {
           provider = temp;
         }
         properties = createProperties(provider);
-        assert properties != null;
         this.properties = properties;
       }
-      assert properties != null;
       returnValue = properties.get(propertyName);
     }
     return returnValue;
@@ -176,7 +177,7 @@ public final class OciConfigConfigSource implements ConfigSource {
    */
   @Override
   public Map<String, String> getProperties() {
-    Map<String, String> properties = this.properties;
+    final Map<String, String> properties = this.properties;
     return properties == null || properties.isEmpty() ? Collections.emptyMap() : properties;
   }
 
