@@ -28,6 +28,7 @@ import java.util.concurrent.Flow;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 
 /**
@@ -44,13 +45,14 @@ public class MultiFromOutputStream extends OutputStream implements Multi<ByteBuf
     private final EmittingPublisher<ByteBuffer> emittingPublisher = EmittingPublisher.create();
     private final CompletableFuture<?> completionResult = new CompletableFuture<>();
     private final AtomicBoolean written = new AtomicBoolean();
-    private volatile CompletableFuture<Void> demandUpdated = new CompletableFuture<>();
+    private final AtomicReference<CompletableFuture<Void>> demandUpdated = new AtomicReference<>();
 
     /**
      * Create new output stream that {@link java.util.concurrent.Flow.Publisher}
      * publishes any data written to it as {@link ByteBuffer} events.
      */
     protected MultiFromOutputStream() {
+        this.demandUpdated.set(new CompletableFuture<>());
         emittingPublisher.onCancel(() -> {
             // when write is called, an exception is thrown as it is a cancelled subscriber
             // when close is called, we do not throw an exception, as that should be silent
@@ -58,9 +60,17 @@ public class MultiFromOutputStream extends OutputStream implements Multi<ByteBuf
         });
         emittingPublisher.onRequest((n, demand) -> {
             // complete previous and create new future for demand update
-            CompletableFuture<Void> demandUpdated = this.demandUpdated;
-            this.demandUpdated = new CompletableFuture<>();
-            demandUpdated.complete(null);
+            for (;;) {
+                CompletableFuture<Void> demandUpdated = this.demandUpdated.get();
+
+                if (!this.demandUpdated.compareAndSet(demandUpdated, new CompletableFuture<>())) {
+                    // try again, other thread raced us
+                    continue;
+                }
+
+                demandUpdated.complete(null);
+                break;
+            }
         });
     }
 
@@ -181,7 +191,7 @@ public class MultiFromOutputStream extends OutputStream implements Multi<ByteBuf
             ByteBuffer byteBuffer = createBuffer(buffer, offset, length);
 
             // defend against racing demand updates
-            CompletableFuture<Void> demandUpdated = this.demandUpdated;
+            CompletableFuture<Void> demandUpdated = this.demandUpdated.get();
             while (!emittingPublisher.emit(byteBuffer)) {
                 if (emittingPublisher.isCancelled()) {
                     throw new IOException("Output stream already closed.");
@@ -193,6 +203,7 @@ public class MultiFromOutputStream extends OutputStream implements Multi<ByteBuf
 
                 // wait until some data can be sent or the stream has been closed
                 await(start, 250, demandUpdated);
+                demandUpdated = this.demandUpdated.get();
             }
 
         } catch (InterruptedException e) {
