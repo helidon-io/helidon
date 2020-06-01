@@ -15,6 +15,13 @@
  */
 package io.helidon.microprofile.cdi;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import javax.enterprise.inject.se.SeContainer;
+import javax.enterprise.inject.spi.CDI;
+
 /**
  * This is the "master" main class of Helidon MP.
  * You can boot the Helidon MP instance using this class if you want do not need to modify
@@ -39,6 +46,8 @@ package io.helidon.microprofile.cdi;
  * </ul>
  */
 public final class Main {
+    private static final Logger LOGGER = Logger.getLogger(Main.class.getName());
+    private static final AtomicBoolean MAIN_CALLED = new AtomicBoolean();
     private static final HelidonContainer CONTAINER;
 
     static {
@@ -46,7 +55,7 @@ public final class Main {
         CONTAINER = ContainerInstanceHolder.get();
     }
 
-    private static HelidonContainer inUse;
+    private static volatile HelidonContainer inUse;
 
     private Main() {
     }
@@ -69,12 +78,26 @@ public final class Main {
         }
 
         inUse.start();
+        MAIN_CALLED.set(true);
     }
 
     /**
      * Shutdown CDI container.
      */
     public static void shutdown() {
-        inUse.shutdown();
+        if (null != inUse && MAIN_CALLED.get()) {
+            LOGGER.finest("Shutting down container from cdi.Main");
+            // re-set the main called, so if somebody starts, shuts down and starts again, we correctly evaluate the
+            // shutdown method
+            MAIN_CALLED.set(false);
+            inUse.shutdown();
+        } else {
+            // now we need to cover cases where the main method was not invoked
+            try {
+                ((SeContainer) CDI.current()).close();
+            } catch (IllegalStateException e) {
+                LOGGER.log(Level.FINEST, "Failed to obtain a CDI instance to shut down, probably duplicate call", e);
+            }
+        }
     }
 }

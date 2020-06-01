@@ -228,29 +228,42 @@ public class ServerCdiExtension implements Extension {
     }
 
     private void stopServer(@Observes @Priority(PLATFORM_BEFORE) @BeforeDestroyed(ApplicationScoped.class) Object event) {
-        boolean isRunning = IN_PROGRESS_OR_RUNNING.get();
-        try {
-            doStop(event);
-        } finally {
-            if (isRunning) {
+        // we set running for a short duration of this call
+        // in case somebody calls this method on a stopped server, and attempts to start another instance at exactly
+        // the same time, they may get a parallel running exception - this is a case that does not make sense, so
+        // as these are lifecycle methods of CDI, you would need to explicitly fire these events to achieve this
+        boolean wasInProgress = IN_PROGRESS_OR_RUNNING.getAndSet(true);
+
+        if (started) {
+            // we own the in progress marker
+            try {
+                doStop(event);
+            } finally {
                 IN_PROGRESS_OR_RUNNING.set(false);
             }
+        } else {
+            if (!wasInProgress) {
+                // if it was not in progress, we need to set it back to that state
+                IN_PROGRESS_OR_RUNNING.set(false);
+            }
+            // otherwise it was in progress and we were not started, so this instance did not own
+            // the progress
         }
     }
 
     private void doStop(Object event) {
-        if (null == webserver) {
+        if (null == webserver || !started) {
             // nothing to do
             return;
         }
         long beforeT = System.nanoTime();
 
-        System.out.println("Stopping WebServer for " + event);
         try {
             webserver.shutdown()
                     .toCompletableFuture()
                     .get();
 
+            started = false;
             jerseySupports.forEach(JerseySupport::close);
         } catch (InterruptedException | ExecutionException e) {
             LOGGER.log(Level.SEVERE, "Failed to stop web server", e);
