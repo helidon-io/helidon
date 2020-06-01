@@ -17,8 +17,20 @@
 
 package io.helidon.messaging.connectors.kafka;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -27,22 +39,21 @@ import java.util.function.Function;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 
 import io.helidon.common.reactive.Multi;
 import io.helidon.config.Config;
 import io.helidon.messaging.Channel;
 import io.helidon.messaging.Messaging;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
+import io.helidon.messaging.connectors.kafka.AbstractSampleBean.Channel6;
+import io.helidon.messaging.connectors.kafka.AbstractSampleBean.Channel8;
 
 import org.apache.kafka.common.serialization.IntegerDeserializer;
 import org.apache.kafka.common.serialization.IntegerSerializer;
 import org.apache.kafka.common.serialization.LongDeserializer;
 import org.apache.kafka.common.serialization.LongSerializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.junit.jupiter.api.BeforeAll;
@@ -55,6 +66,8 @@ public class KafkaSeTest extends AbstractKafkaTest {
     private static final String TEST_SE_TOPIC_3 = "special-se-topic-3";
     private static final String TEST_SE_TOPIC_4 = "special-se-topic-4";
     private static final String TEST_SE_TOPIC_5 = "special-se-topic-4";
+    private static final String TEST_SE_TOPIC_6 = "special-se-topic-6";
+    private static final String TEST_SE_TOPIC_7 = "special-se-topic-7";
 
 
     @BeforeAll
@@ -64,6 +77,8 @@ public class KafkaSeTest extends AbstractKafkaTest {
         kafkaResource.getKafkaTestUtils().createTopic(TEST_SE_TOPIC_3, 4, (short) 2);
         kafkaResource.getKafkaTestUtils().createTopic(TEST_SE_TOPIC_4, 4, (short) 2);
         kafkaResource.getKafkaTestUtils().createTopic(TEST_SE_TOPIC_5, 4, (short) 2);
+        kafkaResource.getKafkaTestUtils().createTopic(TEST_SE_TOPIC_6, 1, (short) 2);
+        kafkaResource.getKafkaTestUtils().createTopic(TEST_SE_TOPIC_7, 2, (short) 2);
         KAFKA_SERVER = kafkaResource.getKafkaConnectString();
     }
 
@@ -333,5 +348,108 @@ public class KafkaSeTest extends AbstractKafkaTest {
         } finally {
             messaging.stop();
         }
+    }
+
+    @Test
+    void someEventsNoAckWithOnePartition() {
+        LOGGER.fine(() -> "==========> test someEventsNoAckWithOnePartition()");
+        final String GROUP = "group_1";
+        final String TOPIC = TEST_SE_TOPIC_6;
+        Channel<String> fromKafka = Channel.<String>builder()
+                .name("from-kafka")
+                .publisherConfig(KafkaConnector.configBuilder()
+                        .bootstrapServers(KAFKA_SERVER)
+                        .groupId(GROUP)
+                        .topic(TOPIC)
+                        .autoOffsetReset(KafkaConfigBuilder.AutoOffsetReset.EARLIEST)
+                        .enableAutoCommit(false)
+                        .keyDeserializer(LongDeserializer.class)
+                        .valueDeserializer(StringDeserializer.class)
+                        .build()
+                )
+                .build();
+        List<String> uncommit = new ArrayList<>();
+        Channel6 kafkaConsumingBean = new Channel6();
+        Map<String, Object> config = new HashMap<>();
+        config.put("bootstrap.servers", KAFKA_SERVER);
+        config.put("key.serializer", LongSerializer.class.getName());
+        config.put("value.serializer", StringSerializer.class.getName());
+        Messaging messaging = Messaging.builder().connector(KafkaConnector.create())
+                .subscriber(fromKafka, ReactiveStreams.<KafkaMessage<Long, String>>builder()
+                        .forEach(msg -> kafkaConsumingBean.onMsg(msg)))
+                .build();
+        try {
+            messaging.start();
+            // Push some messages that will ACK
+            List<String> testData = IntStream.range(0, 20).mapToObj(i -> Integer.toString(i)).collect(Collectors.toList());
+            produceAndCheck(kafkaConsumingBean, testData, TOPIC, testData);
+            kafkaConsumingBean.restart();
+            // Next message will not ACK
+            testData = Arrays.asList(Channel6.NO_ACK);
+            uncommit.addAll(testData);
+            produceAndCheck(kafkaConsumingBean, testData, TOPIC, testData);
+            kafkaConsumingBean.restart();
+            // As this topic only have one partition, next messages will not ACK because previous message wasn't
+            testData = IntStream.range(100, 120).mapToObj(i -> Integer.toString(i)).collect(Collectors.toList());
+            uncommit.addAll(testData);
+            produceAndCheck(kafkaConsumingBean, testData, TOPIC, testData);
+        } finally {
+            messaging.stop();
+        }
+        // We receive uncommitted messages again
+        List<String> events = readTopic(TOPIC, uncommit.size(), GROUP);
+        Collections.sort(events);
+        Collections.sort(uncommit);
+        assertEquals(uncommit, events);
+    }
+
+    @Test
+    void someEventsNoAckWithDifferentPartitions() {
+        LOGGER.fine(() -> "==========> test someEventsNoAckWithDifferentPartitions()");
+        final long FROM = 2000;
+        final long TO = FROM + Channel8.LIMIT;
+        final String GROUP = "group_2";
+        final String TOPIC = TEST_SE_TOPIC_7;
+        Channel<String> fromKafka = Channel.<String>builder()
+                .name("from-kafka")
+                .publisherConfig(KafkaConnector.configBuilder()
+                        .bootstrapServers(KAFKA_SERVER)
+                        .groupId(GROUP)
+                        .topic(TOPIC)
+                        .autoOffsetReset(KafkaConfigBuilder.AutoOffsetReset.EARLIEST)
+                        .enableAutoCommit(false)
+                        .keyDeserializer(LongDeserializer.class)
+                        .valueDeserializer(StringDeserializer.class)
+                        .build()
+                )
+                .build();
+        // Send the message that will not ACK. This will make in one partition to not commit any new message
+        Channel8 kafkaConsumingBean = new Channel8();
+        Map<String, Object> config = new HashMap<>();
+        config.put("bootstrap.servers", KAFKA_SERVER);
+        config.put("key.serializer", LongSerializer.class.getName());
+        config.put("value.serializer", StringSerializer.class.getName());
+        Messaging messaging = Messaging.builder().connector(KafkaConnector.create())
+                .subscriber(fromKafka, ReactiveStreams.<KafkaMessage<Long, String>>builder()
+                        .forEach(msg -> kafkaConsumingBean.onMsg(msg)))
+                .build();
+        try {
+            messaging.start();
+            List<String> testData = Arrays.asList(Channel8.NO_ACK);
+            produceAndCheck(kafkaConsumingBean, testData, TOPIC, testData);
+            kafkaConsumingBean.restart();
+            // Now sends new messages. Some of them will be lucky and will not go to the partition with no ACK
+            testData = LongStream.range(FROM, TO)
+                    .mapToObj(i -> Long.toString(i)).collect(Collectors.toList());
+            produceAndCheck(kafkaConsumingBean, testData, TOPIC, testData);
+        } finally {
+            messaging.stop();
+        }
+        int uncommited = kafkaConsumingBean.uncommitted();
+        // At least one message was not committed
+        assertTrue(uncommited > 0);
+        LOGGER.fine(() -> "Uncommitted messages : " + uncommited);
+        List<String> messages = readTopic(TOPIC, uncommited, GROUP);
+        assertEquals(uncommited, messages.size(), "Received messages are " + messages);
     }
 }
