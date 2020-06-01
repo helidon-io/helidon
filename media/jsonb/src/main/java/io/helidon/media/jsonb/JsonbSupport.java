@@ -38,12 +38,13 @@ import io.helidon.media.common.MessageBodyWriter;
  */
 public final class JsonbSupport implements MediaSupport {
 
-    private static final Jsonb JSON_B = JsonbBuilder.create();
-    private static final LazyValue<JsonbSupport> DEFAULT = LazyValue.create(() -> new JsonbSupport(JSON_B));
-
     static {
         HelidonFeatures.register(HelidonFlavor.SE, "Media", "JSON-B");
     }
+
+    private static final Jsonb JSON_B = JsonbBuilder.create();
+    private static final LazyValue<JsonbSupport> DEFAULT = LazyValue.create(() -> new JsonbSupport(JSON_B));
+
 
     private final JsonbBodyReader reader;
     private final JsonbBodyWriter writer;

@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Objects;
 
 import io.helidon.common.reactive.RetrySchema;
+import io.helidon.config.Config;
 
 /**
  * MediaSupport which registers default readers and writers to the contexts.
@@ -180,6 +181,28 @@ public class DefaultMediaSupport implements MediaSupport {
          */
         public Builder byteChannelRetrySchema(RetrySchema schema) {
             this.schema = Objects.requireNonNull(schema);
+            return this;
+        }
+
+        /**
+         * Configures this {@link DefaultMediaSupport.Builder} from the supplied {@link Config}.
+         * <table class="config">
+         * <caption>Optional configuration parameters</caption>
+         * <tr>
+         *     <th>key</th>
+         *     <th>description</th>
+         * </tr>
+         * <tr>
+         *     <td>include-stack-traces</td>
+         *     <td>Whether stack traces should be included in response</td>
+         * </tr>
+         * </table>
+         *
+         * @param config media support config
+         * @return updated builder instance
+         */
+        public Builder config(Config config) {
+            config.get("include-stack-traces").asBoolean().ifPresent(this::includeStackTraces);
             return this;
         }
     }

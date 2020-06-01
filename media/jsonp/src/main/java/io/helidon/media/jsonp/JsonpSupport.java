@@ -40,13 +40,13 @@ import io.helidon.media.common.MessageBodyWriter;
  */
 public final class JsonpSupport implements MediaSupport {
 
-    private static final LazyValue<JsonpSupport> DEFAULT =
-            LazyValue.create(() -> new JsonpSupport(Builder.readerFactory(null),
-                                                    Builder.writerFactory(null)));
-
     static {
         HelidonFeatures.register(HelidonFlavor.SE, "Media", "JSON-P");
     }
+
+    private static final LazyValue<JsonpSupport> DEFAULT =
+            LazyValue.create(() -> new JsonpSupport(Builder.readerFactory(null),
+                                                    Builder.writerFactory(null)));
 
     private final JsonpBodyReader reader;
     private final JsonpBodyWriter writer;
@@ -165,8 +165,8 @@ public final class JsonpSupport implements MediaSupport {
      * Return JSON-P stream writer.
      * <p>
      * This stream writer supports {@link java.util.concurrent.Flow.Publisher publishers}
-     * of {@link javax.json.JsonStructure} (such as {@link javax.json.JsonObject})
-     * , writing them as an array of JSONs.
+     * of {@link javax.json.JsonStructure} (such as {@link javax.json.JsonObject}),
+     * writing them as an array of JSONs.
      *
      * @return JSON processing stream writer.
      */

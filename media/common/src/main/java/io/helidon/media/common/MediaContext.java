@@ -105,7 +105,6 @@ public final class MediaContext {
 
         private static final String SERVICE_NAME = "name";
         private static final String DEFAULTS_NAME = "defaults";
-        private static final String DEFAULTS_INCLUDE_STACK_TRACES = "include-stack-traces";
 
         private static final int DEFAULTS_PRIORITY = 100;
         private static final int BUILDER_PRIORITY = 200;
@@ -236,20 +235,6 @@ public final class MediaContext {
         }
 
         /**
-         * Whether stack traces should be included in response.
-         *
-         * This is server side setting.
-         *
-         * @param includeStackTraces include stack traces
-         * @return this builder instance
-         */
-        public Builder includeStackTraces(boolean includeStackTraces) {
-            servicesConfig.computeIfAbsent(DEFAULTS_NAME, k -> new HashMap<>())
-                    .put(DEFAULTS_INCLUDE_STACK_TRACES, Boolean.toString(includeStackTraces));
-            return this;
-        }
-
-        /**
          * Whether Java Service Loader should be used to load {@link MediaSupportProvider}.
          *
          * @param discoverServices use Java Service Loader
@@ -333,9 +318,9 @@ public final class MediaContext {
 
         @Override
         public MediaSupport create(Config config) {
-            DefaultMediaSupport.Builder builder = DefaultMediaSupport.builder();
-            config.get(Builder.DEFAULTS_INCLUDE_STACK_TRACES).asBoolean().ifPresent(builder::includeStackTraces);
-            return builder.build();
+            return DefaultMediaSupport.builder()
+                    .config(config)
+                    .build();
         }
     }
 

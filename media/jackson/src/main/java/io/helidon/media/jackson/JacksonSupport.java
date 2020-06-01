@@ -38,15 +38,15 @@ import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
  */
 public final class JacksonSupport implements MediaSupport {
 
+    static {
+        HelidonFeatures.register(HelidonFlavor.SE, "Media", "Jackson");
+    }
+
     private static final ObjectMapper MAPPER = new ObjectMapper()
             .registerModule(new ParameterNamesModule())
             .registerModule(new Jdk8Module())
             .registerModule(new JavaTimeModule());
     private static final LazyValue<JacksonSupport> DEFAULT = LazyValue.create(() -> new JacksonSupport(MAPPER));
-
-    static {
-        HelidonFeatures.register(HelidonFlavor.SE, "Media", "Jackson");
-    }
 
     private final JacksonBodyReader reader;
     private final JacksonBodyWriter writer;
