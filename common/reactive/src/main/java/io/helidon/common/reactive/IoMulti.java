@@ -18,9 +18,12 @@
 package io.helidon.common.reactive;
 
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
 
 import io.helidon.common.Builder;
 
@@ -30,18 +33,43 @@ import io.helidon.common.Builder;
 public interface IoMulti {
 
     /**
-     * Create a {@link Multi} instance that publishes {@link ByteBuffer}s from the given {@link InputStream}.
+     * Create a {@link Multi} publisher, to which is possible to publish
+     * as in to an {@link OutputStream}. In case there is no demand,
+     * {@link OutputStream#write(byte[], int, int)} methods are blocked
+     * until downstream request for more data.
+     *
+     * @return new {@link Multi} publisher extending {@link OutputStream}
+     */
+    static MultiFromOutputStream createOutputStream() {
+        return new MultiFromOutputStream();
+    }
+
+    /**
+     * Creates a builder of the {@link Multi} publisher, to which is possible
+     * to publish as in to an {@link OutputStream}. In case there is no demand,
+     * {@link OutputStream#write(byte[], int, int)} methods are blocked
+     * until downstream request for more data.
+     *
+     * @return the builder
+     */
+    static OutputStreamMultiBuilder builderOutputStream() {
+        return new OutputStreamMultiBuilder();
+    }
+
+    /**
+     * Create a {@link Multi} instance that publishes {@link ByteBuffer}s from
+     * the given {@link InputStream}.
      * <p>
-     * {@link InputStream} is trusted not to block on read operations, in case it can't be assured use
-     * builder to specify executor for asynchronous waiting for blocking reads.
-     * {@code IoMulti.builder(is).executor(executorService).build()}.
+     * {@link InputStream} is trusted not to block on read operations, in case
+     * it can't be assured use builder to specify executor for asynchronous waiting
+     * for blocking reads. {@code IoMulti.builder(is).executor(executorService).build()}.
      *
      * @param inputStream the Stream to publish
      * @return Multi
      * @throws NullPointerException if {@code stream} is {@code null}
      */
-    static Multi<ByteBuffer> create(final InputStream inputStream) {
-        return IoMulti.builder(inputStream)
+    static Multi<ByteBuffer> createInputStream(final InputStream inputStream) {
+        return IoMulti.builderInputStream(inputStream)
                 .build();
     }
 
@@ -51,7 +79,7 @@ public interface IoMulti {
      * @param inputStream the Stream to publish
      * @return the builder
      */
-    static MultiFromInputStreamBuilder builder(final InputStream inputStream) {
+    static MultiFromInputStreamBuilder builderInputStream(final InputStream inputStream) {
         Objects.requireNonNull(inputStream);
         return new MultiFromInputStreamBuilder(inputStream);
     }
@@ -78,7 +106,8 @@ public interface IoMulti {
         }
 
         /**
-         * If the {@code InputStream} can block in read method, use executor for asynchronous waiting.
+         * If the {@code InputStream} can block in read method, use executor for
+         * asynchronous waiting.
          *
          * @param executor used for asynchronous waiting for blocking reads
          * @return this builder
@@ -95,6 +124,44 @@ public interface IoMulti {
                 return new MultiFromBlockingInputStream(inputStream, bufferSize, executor);
             }
             return new MultiFromInputStream(inputStream, bufferSize);
+        }
+    }
+
+    final class OutputStreamMultiBuilder implements Builder<MultiFromOutputStream> {
+
+        private final MultiFromOutputStream streamMulti = new MultiFromOutputStream();
+
+        /**
+         * Set max timeout for which is allowed to block write methods,
+         * in case there is no demand from downstream.
+         *
+         * @param timeout the maximum time to block
+         * @param unit    the time unit of the timeout argument
+         */
+        public OutputStreamMultiBuilder timeout(long timeout, TimeUnit unit) {
+            streamMulti.timeout(TimeUnit.MILLISECONDS.convert(timeout, unit));
+            return this;
+        }
+
+        /**
+         * Callback executed when request signal from downstream arrive.
+         * <ul>
+         * <li><b>param</b> {@code n} the requested count.</li>
+         * <li><b>param</b> {@code demand} the current total cumulative requested count,
+         * ranges between [0, {@link Long#MAX_VALUE}] where the max indicates that this
+         * publisher is unbounded.</li>
+         * </ul>
+         *
+         * @param requestCallback to be executed
+         */
+        public OutputStreamMultiBuilder onRequest(BiConsumer<Long, Long> requestCallback){
+            streamMulti.onRequest(requestCallback);
+            return this;
+        }
+
+        @Override
+        public MultiFromOutputStream build() {
+            return streamMulti;
         }
     }
 }

@@ -28,44 +28,72 @@ import java.util.concurrent.Flow;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
 
 /**
  * Output stream that {@link java.util.concurrent.Flow.Publisher} publishes any data written to it as {@link ByteBuffer}
  * events.
  */
 @SuppressWarnings("WeakerAccess")
-public class OutputStreamPublisher extends OutputStream implements Flow.Publisher<ByteBuffer> {
+public class MultiFromOutputStream extends OutputStream implements Multi<ByteBuffer> {
 
-    private static final long HARD_TIMEOUT_MILLIS = Duration.ofMinutes(10).toMillis();
+    private long timeout = Duration.ofMinutes(10).toMillis();
 
     private static final byte[] FLUSH_BUFFER = new byte[0];
 
-    private final SingleSubscriberHolder<ByteBuffer> subscriber = new SingleSubscriberHolder<>();
-    private final Object invocationLock = new Object();
-
-    private final RequestedCounter requested = new RequestedCounter();
-
+    private final EmittingPublisher<ByteBuffer> emittingPublisher = EmittingPublisher.create();
     private final CompletableFuture<?> completionResult = new CompletableFuture<>();
     private final AtomicBoolean written = new AtomicBoolean();
+    private final AtomicReference<CompletableFuture<Void>> demandUpdated = new AtomicReference<>();
+
+    /**
+     * Create new output stream that {@link java.util.concurrent.Flow.Publisher}
+     * publishes any data written to it as {@link ByteBuffer} events.
+     */
+    protected MultiFromOutputStream() {
+        this.demandUpdated.set(new CompletableFuture<>());
+        emittingPublisher.onCancel(() -> {
+            // when write is called, an exception is thrown as it is a cancelled subscriber
+            // when close is called, we do not throw an exception, as that should be silent
+            completionResult.complete(null);
+        });
+        emittingPublisher.onRequest((n, demand) -> {
+            // complete previous and create new future for demand update
+            this.demandUpdated.getAndSet(new CompletableFuture<>())
+                    .complete(null);
+        });
+    }
+
+    void timeout(long timeout) {
+        this.timeout = timeout;
+    }
+
+    /**
+     * Callback executed when request signal from downstream arrive.
+     * <ul>
+     * <li><b>param</b> {@code n} the requested count.</li>
+     * <li><b>param</b> {@code demand} the current total cumulative requested count,
+     * ranges between [0, {@link Long#MAX_VALUE}] where the max indicates that this
+     * publisher is unbounded.</li>
+     * </ul>
+     *
+     * @param requestCallback to be executed
+     * @return this OutputStreamMulti
+     */
+    public MultiFromOutputStream onRequest(BiConsumer<Long, Long> requestCallback){
+        this.emittingPublisher.onRequest(requestCallback);
+        return this;
+    }
 
     @Override
-    public void subscribe(Flow.Subscriber<? super ByteBuffer> subscriberParam) {
-        if (subscriber.register(subscriberParam)) {
-            subscriberParam.onSubscribe(new Flow.Subscription() {
-                @Override
-                public void request(long n) {
-                    requested.increment(n, t -> complete(t));
-                }
-
-                @Override
-                public void cancel() {
-                    subscriber.cancel();
-                    // when write is called, an exception is thrown as it is a cancelled subscriber
-                    // when close is called, we do not throw an exception, as that should be silent
-                    completionResult.complete(null);
-                }
-            });
+    public void subscribe(Flow.Subscriber<? super ByteBuffer> subscriber) {
+        if (completionResult.isCompletedExceptionally()) {
+            subscriber.onSubscribe(SubscriptionHelper.CANCELED);
+            completionResult.whenComplete((o, throwable) -> subscriber.onError(throwable));
+            return;
         }
+        emittingPublisher.subscribe(subscriber);
     }
 
     @Override
@@ -93,7 +121,7 @@ public class OutputStreamPublisher extends OutputStream implements Flow.Publishe
             return;
         }
         try {
-            completionResult.get(HARD_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
+            completionResult.get(timeout, TimeUnit.MILLISECONDS);
         } catch (CancellationException e) {
             throw new IOException(e);
         } catch (InterruptedException e) {
@@ -149,26 +177,26 @@ public class OutputStreamPublisher extends OutputStream implements Flow.Publishe
         }
 
         try {
-            final Flow.Subscriber<? super ByteBuffer> sub = subscriber.get();
-
             long start = System.currentTimeMillis();
 
-            while (!subscriber.isClosed() && !requested.tryDecrement()) {
-                Thread.sleep(250); // wait until some data can be sent or the stream has been closed
+            ByteBuffer byteBuffer = createBuffer(buffer, offset, length);
 
-                long diff = System.currentTimeMillis() - start;
-                if (diff > HARD_TIMEOUT_MILLIS) {
-                    throw new IOException("Timed out while waiting for subscriber to read data");
-                }
-            }
-
-            synchronized (invocationLock) {
-                if (subscriber.isClosed()) {
+            // defend against racing demand updates
+            CompletableFuture<Void> demandUpdated = this.demandUpdated.get();
+            while (!emittingPublisher.emit(byteBuffer)) {
+                if (emittingPublisher.isCancelled()) {
                     throw new IOException("Output stream already closed.");
                 }
+                if (emittingPublisher.isFailed()) {
+                    Throwable throwable = emittingPublisher.failCause().get();
+                    throw new IOException(throwable);
+                }
 
-                sub.onNext(createBuffer(buffer, offset, length));
+                // wait until some data can be sent or the stream has been closed
+                await(start, 250, demandUpdated);
+                demandUpdated = this.demandUpdated.get();
             }
+
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             complete(e);
@@ -183,21 +211,27 @@ public class OutputStreamPublisher extends OutputStream implements Flow.Publishe
     }
 
     private void complete() {
-        subscriber.close(sub -> {
-            synchronized (invocationLock) {
-                sub.onComplete();
-                signalCloseComplete(null);
-            }
-        });
+        emittingPublisher.complete();
+        signalCloseComplete(null);
     }
 
     private void complete(Throwable t) {
-        subscriber.close(sub -> {
-            synchronized (invocationLock) {
-                sub.onError(t);
-                signalCloseComplete(t);
+        emittingPublisher.fail(t);
+        signalCloseComplete(t);
+    }
+
+    private void await(long startTime, long waitTime, CompletableFuture<?> future) throws
+            ExecutionException,
+            InterruptedException,
+            IOException {
+        try {
+            future.get(waitTime, TimeUnit.MILLISECONDS);
+        } catch (TimeoutException e) {
+            long diff = System.currentTimeMillis() - startTime;
+            if (diff > timeout) {
+                throw new IOException("Timed out while waiting for subscriber to read data");
             }
-        });
+        }
     }
 
     /**

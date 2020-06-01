@@ -19,6 +19,7 @@ package io.helidon.common.reactive;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -37,6 +38,7 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
     private final AtomicReference<State> state = new AtomicReference<>(State.READY_TO_EMIT);
     private final ConcurrentLinkedQueue<T> buffer = new ConcurrentLinkedQueue<>();
     private final EmittingPublisher<T> emitter = new EmittingPublisher<>();
+    private final AtomicLong deferredDrains = new AtomicLong(0);
     private final AtomicBoolean draining = new AtomicBoolean(false);
     private final AtomicBoolean emitting = new AtomicBoolean(false);
     private final AtomicReference<Throwable> error = new AtomicReference<>();
@@ -232,17 +234,24 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
                 emitter.complete();
             }
             draining.set(false);
+            if (deferredDrains.getAndUpdate(d -> d == 0 ? 0 : d - 1) > 0) {
+                // in case of parallel drains invoked by request
+                // increasing demand during draining
+                drainBuffer();
+            }
+        } else {
+            deferredDrains.incrementAndGet();
         }
     }
 
     private int emitOrBuffer(T item) {
         for (;;) {
+            if (emitting.getAndSet(true)) {
+                // race against parallel emits
+                // only those can add to buffer
+                continue;
+            }
             try {
-                if (emitting.getAndSet(true)) {
-                    // race against parallel emits
-                    // only those can add to buffer
-                    continue;
-                }
                 if (buffer.isEmpty() && emitter.emit(item)) {
                     // Buffer drained, emit successful
                     // saved time by skipping buffer
