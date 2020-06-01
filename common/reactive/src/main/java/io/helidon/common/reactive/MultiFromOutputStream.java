@@ -60,17 +60,8 @@ public class MultiFromOutputStream extends OutputStream implements Multi<ByteBuf
         });
         emittingPublisher.onRequest((n, demand) -> {
             // complete previous and create new future for demand update
-            for (;;) {
-                CompletableFuture<Void> demandUpdated = this.demandUpdated.get();
-
-                if (!this.demandUpdated.compareAndSet(demandUpdated, new CompletableFuture<>())) {
-                    // try again, other thread raced us
-                    continue;
-                }
-
-                demandUpdated.complete(null);
-                break;
-            }
+            this.demandUpdated.getAndSet(new CompletableFuture<>())
+                    .complete(null);
         });
     }
 
