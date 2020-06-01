@@ -130,7 +130,7 @@ public final class JacksonSupport implements MediaSupport {
      *
      * @return Jackson writer instance
      */
-    public MessageBodyWriter<Object> newWriter() {
+    public MessageBodyWriter<Object> writerInstance() {
         return writer;
     }
 
