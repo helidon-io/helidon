@@ -36,7 +36,7 @@ import com.fasterxml.jackson.databind.type.TypeFactory;
 /**
  * Message body reader supporting object binding with Jackson.
  */
-public final class JacksonBodyReader implements MessageBodyReader<Object> {
+final class JacksonBodyReader implements MessageBodyReader<Object> {
 
     private final ObjectMapper objectMapper;
 

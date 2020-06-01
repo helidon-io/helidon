@@ -290,7 +290,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
     public <T> Publisher<DataChunk> marshall(Single<T> content, GenericType<T> type) {
         try {
             if (content == null) {
-                return applyFilters(Multi.<DataChunk>empty());
+                return applyFilters(Multi.empty());
             }
             if (byte[].class.equals(type.rawType())) {
                 return applyFilters(((Single<byte[]>) content).flatMap(BYTES_MAPPER));
@@ -319,21 +319,15 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      *
      * @param <T> entity type parameter
      * @param content input publisher
-     * @param writerType the requested writer class
+     * @param writer specific writer
      * @param type actual representation of the entity type
      * @return publisher, never {@code null}
      */
-    @SuppressWarnings("unchecked")
-    public <T> Publisher<DataChunk> marshall(Single<T> content, Class<? extends MessageBodyWriter<T>> writerType,
-            GenericType<T> type) {
-
+    public <T> Publisher<DataChunk> marshall(Single<T> content, MessageBodyWriter<T> writer, GenericType<T> type) {
+        Objects.requireNonNull(writer);
         try {
             if (content == null) {
-                return applyFilters(Multi.<DataChunk>empty());
-            }
-            MessageBodyWriter<T> writer = (MessageBodyWriter<T>) writers.get(writerType);
-            if (writer == null) {
-                throw new IllegalStateException("No writer found for type: " + type);
+                return applyFilters(Multi.empty());
             }
             return applyFilters(writer.write(content, type, this));
         } catch (Throwable ex) {
@@ -354,7 +348,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
     public <T> Publisher<DataChunk> marshallStream(Publisher<T> content, GenericType<T> type) {
         try {
             if (content == null) {
-                return applyFilters(Multi.<DataChunk>empty());
+                return applyFilters(Multi.empty());
             }
             MessageBodyStreamWriter<T> writer = (MessageBodyStreamWriter<T>) swriters.select(type, this);
             if (writer == null) {
@@ -372,21 +366,16 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      *
      * @param <T> entity type parameter
      * @param content input publisher
-     * @param writerType the requested writer class
+     * @param writer specific writer
      * @param type actual representation of the entity type
      * @return publisher, never {@code null}
      */
-    @SuppressWarnings("unchecked")
-    public <T> Publisher<DataChunk> marshallStream(Publisher<T> content, Class<? extends MessageBodyWriter<T>> writerType,
+    public <T> Publisher<DataChunk> marshallStream(Publisher<T> content, MessageBodyStreamWriter<T> writer,
             GenericType<T> type) {
-
+        Objects.requireNonNull(writer);
         try {
             if (content == null) {
-                return applyFilters(Multi.<DataChunk>empty());
-            }
-            MessageBodyStreamWriter<T> writer = (MessageBodyStreamWriter<T>) swriters.get(writerType);
-            if (writer == null) {
-                throw new IllegalStateException("No stream writer found for type: " + type);
+                return applyFilters(Multi.empty());
             }
             return applyFilters(writer.write(content, type, this));
         } catch (Throwable ex) {

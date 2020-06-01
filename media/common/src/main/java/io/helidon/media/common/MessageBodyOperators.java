@@ -123,30 +123,6 @@ final class MessageBodyOperators<T extends MessageBodyOperator<?>> implements It
         return assignableOperator;
     }
 
-    /**
-     * Select an operator by it class.
-     * @param operatorClass required operator class
-     * found in this registry hierarchy
-     * @return operator, or {@code null} or no operator was found
-     */
-    T get(Class<? extends MessageBodyOperator> operatorClass) {
-        Objects.requireNonNull(operatorClass, "operatorClass is null!");
-        try {
-            lock.readLock().lock();
-            for (T operator : operators) {
-                if (operator.getClass().equals(operatorClass)) {
-                    return operator;
-                }
-            }
-        } finally {
-            lock.readLock().unlock();
-        }
-        if (parent != null) {
-            return parent.get(operatorClass);
-        }
-        return null;
-    }
-
     @Override
     public Iterator<T> iterator() {
         return new ParentedIterator<>(this);

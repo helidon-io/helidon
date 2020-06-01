@@ -35,7 +35,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 /**
  * Message body writer supporting object binding with Jackson.
  */
-public final class JacksonBodyWriter implements MessageBodyWriter<Object> {
+final class JacksonBodyWriter implements MessageBodyWriter<Object> {
 
     private final ObjectMapper objectMapper;
 

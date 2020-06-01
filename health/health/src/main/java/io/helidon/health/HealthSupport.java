@@ -35,6 +35,7 @@ import javax.json.JsonArrayBuilder;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
+import javax.json.JsonStructure;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.HelidonFeatures;
@@ -42,7 +43,7 @@ import io.helidon.common.HelidonFlavor;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
-import io.helidon.media.jsonp.JsonpBodyWriter;
+import io.helidon.media.common.MessageBodyWriter;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
@@ -88,7 +89,7 @@ public final class HealthSupport implements Service {
     private final Set<String> excludedHealthChecks;
     private final boolean backwardCompatible;
     private final CorsEnabledServiceHelper corsEnabledServiceHelper;
-    private final JsonpBodyWriter jsonpWriter = JsonpSupport.writer();
+    private final MessageBodyWriter<JsonStructure> jsonpWriter = JsonpSupport.writer();
 
     private HealthSupport(Builder builder) {
         this.enabled = builder.enabled;

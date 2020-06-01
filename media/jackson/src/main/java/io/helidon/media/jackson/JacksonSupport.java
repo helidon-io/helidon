@@ -21,6 +21,7 @@ import java.util.Objects;
 
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
+import io.helidon.common.LazyValue;
 import io.helidon.media.common.MediaSupport;
 import io.helidon.media.common.MessageBodyReader;
 import io.helidon.media.common.MessageBodyWriter;
@@ -33,7 +34,7 @@ import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 /**
  * Support for Jackson integration.
  *
- * For usage examples navigate to the {@link MediaSupport}
+ * For usage examples navigate to the {@link MediaSupport}.
  */
 public final class JacksonSupport implements MediaSupport {
 
@@ -45,73 +46,14 @@ public final class JacksonSupport implements MediaSupport {
             .registerModule(new ParameterNamesModule())
             .registerModule(new Jdk8Module())
             .registerModule(new JavaTimeModule());
+    private static final LazyValue<JacksonSupport> DEFAULT = LazyValue.create(() -> new JacksonSupport(MAPPER));
 
-    private static final JacksonSupport DEFAULT_JACKSON = new JacksonSupport(MAPPER);
-
-    private final ObjectMapper objectMapper;
+    private final JacksonBodyReader reader;
+    private final JacksonBodyWriter writer;
 
     private JacksonSupport(final ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
-    }
-
-    /**
-     * Creates new Jackson reader instance.
-     *
-     * @return Jackson reader instance
-     */
-    public static JacksonBodyReader reader() {
-        return create().newReader();
-    }
-
-    /**
-     * Creates new Jackson writer instance.
-     *
-     * @return Jackson writer instance
-     */
-    public static JacksonBodyWriter writer() {
-        return create().newWriter();
-    }
-
-    /**
-     * Creates new Jackson reader instance.
-     *
-     * @return Jackson reader instance
-     */
-    public JacksonBodyReader newReader() {
-        return JacksonBodyReader.create(objectMapper);
-    }
-
-    /**
-     * Creates new Jackson writer instance.
-     *
-     * @return Jackson writer instance
-     */
-    public JacksonBodyWriter newWriter() {
-        return JacksonBodyWriter.create(objectMapper);
-    }
-
-    @Override
-    public Collection<MessageBodyReader<?>> readers() {
-        return List.of(newReader());
-    }
-
-    @Override
-    public Collection<MessageBodyWriter<?>> writers() {
-        return List.of(newWriter());
-    }
-
-    /**
-     * Creates a new {@link JacksonSupport}.
-     *
-     * @param objectMapper must not be {@code null}
-     * @return a new {@link JacksonSupport}
-     *
-     * @exception NullPointerException if {@code objectMapper}
-     * is {@code null}
-     */
-    public static JacksonSupport create(ObjectMapper objectMapper) {
-        Objects.requireNonNull(objectMapper);
-        return new JacksonSupport(objectMapper);
+        this.reader = JacksonBodyReader.create(objectMapper);
+        this.writer = JacksonBodyWriter.create(objectMapper);
     }
 
     /**
@@ -120,7 +62,86 @@ public final class JacksonSupport implements MediaSupport {
      * @return a new {@link JacksonSupport}
      */
     public static JacksonSupport create() {
-        return DEFAULT_JACKSON;
+        return DEFAULT.get();
+    }
+
+    /**
+     * Creates a new {@link JacksonSupport}.
+     *
+     * @param objectMapper must not be {@code null}
+     * @return a new {@link JacksonSupport}
+     */
+    public static JacksonSupport create(ObjectMapper objectMapper) {
+        Objects.requireNonNull(objectMapper);
+        return new JacksonSupport(objectMapper);
+    }
+
+    /**
+     * Return a default Jackson entity reader.
+     *
+     * @return default Jackson body writer instance
+     */
+    public static MessageBodyReader<Object> reader() {
+        return DEFAULT.get().reader;
+    }
+
+    /**
+     * Create a new Jackson entity reader based on {@link ObjectMapper} instance.
+     *
+     * @param objectMapper object mapper instance
+     * @return new Jackson body reader instance
+     */
+    public static MessageBodyReader<Object> reader(ObjectMapper objectMapper) {
+        Objects.requireNonNull(objectMapper);
+        return JacksonBodyReader.create(objectMapper);
+    }
+
+    /**
+     * Return a default Jackson entity writer.
+     *
+     * @return default Jackson body writer instance
+     */
+    public static MessageBodyWriter<Object> writer() {
+        return DEFAULT.get().writer;
+    }
+
+    /**
+     * Create a new Jackson entity writer based on {@link ObjectMapper} instance.
+     *
+     * @param objectMapper object mapper instance
+     * @return new Jackson body writer instance
+     */
+    public static MessageBodyWriter<Object> writer(ObjectMapper objectMapper) {
+        Objects.requireNonNull(objectMapper);
+        return JacksonBodyWriter.create(objectMapper);
+    }
+
+    /**
+     * Return Jackson reader instance.
+     *
+     * @return Jackson reader instance
+     */
+    public MessageBodyReader<Object> readerInstance() {
+        return reader;
+    }
+
+    /**
+     * Return Jackson writer instance.
+     *
+     * @return Jackson writer instance
+     */
+    public MessageBodyWriter<Object> writerInstance() {
+        return writer;
+    }
+
+    @Override
+    public Collection<MessageBodyReader<?>> readers() {
+        return List.of(reader);
+    }
+
+    @Override
+    public Collection<MessageBodyWriter<?>> writers() {
+        return List.of(writer);
     }
 
 }

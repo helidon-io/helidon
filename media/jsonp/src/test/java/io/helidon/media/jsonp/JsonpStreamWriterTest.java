@@ -34,6 +34,7 @@ import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.HashParameters;
 import io.helidon.common.reactive.Multi;
 import io.helidon.media.common.MessageBodyOperator;
+import io.helidon.media.common.MessageBodyStreamWriter;
 import io.helidon.media.common.MessageBodyWriterContext;
 
 import org.junit.jupiter.api.Test;
@@ -51,7 +52,7 @@ public class JsonpStreamWriterTest {
     private static final JsonReaderFactory JSON_PARSER = Json.createReaderFactory(Map.of());
 
     private static final MessageBodyWriterContext CONTEXT = MessageBodyWriterContext.create(HashParameters.create());
-    private static final JsonpBodyStreamWriter WRITER = JsonpSupport.create().newStreamWriter();
+    private static final JsonpBodyStreamWriter WRITER = (JsonpBodyStreamWriter) JsonpSupport.streamWriter();
     private static final GenericType<JsonObject> JSON_OBJECT = GenericType.create(JsonObject.class);
     private static final GenericType<JsonArray> JSON_ARRAY = GenericType.create(JsonArray.class);
     private static final GenericType<JsonpStreamWriterTest> MY_TYPE = GenericType.create(JsonpStreamWriterTest.class);
