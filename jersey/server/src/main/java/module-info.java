@@ -25,6 +25,4 @@ module io.helidon.jersey.server {
     requires transitive jakarta.inject.api;
     requires transitive jakarta.activation;
     requires transitive java.annotation;
-
-    requires transitive java.xml.bind;
 }

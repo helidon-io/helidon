@@ -21,6 +21,4 @@ module io.helidon.jersey.client {
     requires transitive java.ws.rs;
     requires transitive jersey.common;
     requires transitive jersey.client;
-
-    requires java.xml.bind;
 }
