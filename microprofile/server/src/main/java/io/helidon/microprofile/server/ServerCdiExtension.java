@@ -228,26 +228,14 @@ public class ServerCdiExtension implements Extension {
     }
 
     private void stopServer(@Observes @Priority(PLATFORM_BEFORE) @BeforeDestroyed(ApplicationScoped.class) Object event) {
-        // we set running for a short duration of this call
-        // in case somebody calls this method on a stopped server, and attempts to start another instance at exactly
-        // the same time, they may get a parallel running exception - this is a case that does not make sense, so
-        // as these are lifecycle methods of CDI, you would need to explicitly fire these events to achieve this
-        boolean wasInProgress = IN_PROGRESS_OR_RUNNING.getAndSet(true);
-
-        if (started) {
-            // we own the in progress marker
-            try {
+        try {
+            if (started) {
                 doStop(event);
-            } finally {
-                IN_PROGRESS_OR_RUNNING.set(false);
             }
-        } else {
-            if (!wasInProgress) {
-                // if it was not in progress, we need to set it back to that state
-                IN_PROGRESS_OR_RUNNING.set(false);
-            }
-            // otherwise it was in progress and we were not started, so this instance did not own
-            // the progress
+        } finally {
+            // as there only can be a single CDI in a single JVM, once this CDI is shutting down, we
+            // can start another one
+            IN_PROGRESS_OR_RUNNING.set(false);
         }
     }
 
