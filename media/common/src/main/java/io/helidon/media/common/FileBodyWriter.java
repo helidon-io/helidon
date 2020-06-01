@@ -37,7 +37,7 @@ import static io.helidon.media.common.ByteChannelBodyWriter.DEFAULT_RETRY_SCHEMA
  */
 final class FileBodyWriter implements MessageBodyWriter<File> {
 
-    private final static FileBodyWriter DEFAULT = new FileBodyWriter();
+    private static final FileBodyWriter DEFAULT = new FileBodyWriter();
 
     /**
      * Enforces the use of {@link #create()}.

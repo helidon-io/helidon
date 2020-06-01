@@ -153,7 +153,8 @@ public class DefaultMediaSupport implements MediaSupport {
         private boolean includeStackTraces = false;
         private RetrySchema schema = ByteChannelBodyWriter.DEFAULT_RETRY_SCHEMA;
 
-        private Builder() {}
+        private Builder() {
+        }
 
         @Override
         public DefaultMediaSupport build() {

@@ -36,7 +36,7 @@ import static io.helidon.media.common.ByteChannelBodyWriter.DEFAULT_RETRY_SCHEMA
  */
 final class PathBodyWriter implements MessageBodyWriter<Path> {
 
-    private final static PathBodyWriter DEFAULT = new PathBodyWriter();
+    private static final PathBodyWriter DEFAULT = new PathBodyWriter();
 
     /**
      * Enforces the use of {@link #create()}.
