@@ -26,13 +26,10 @@ import javax.enterprise.inject.spi.CDI;
 
 import io.helidon.microprofile.cdi.HelidonContainer;
 
-import static io.helidon.microprofile.server.Server.Builder.IN_PROGRESS_OR_RUNNING;
-
 /**
  * Server to handle lifecycle of microprofile implementation.
  */
 public class ServerImpl implements Server {
-    private static final Logger LOGGER = Logger.getLogger(ServerImpl.class.getName());
     private static final Logger STARTUP_LOGGER = Logger.getLogger("io.helidon.microprofile.startup.server");
 
     private final HelidonContainer helidonContainer = HelidonContainer.instance();
@@ -97,7 +94,6 @@ public class ServerImpl implements Server {
     @Override
     public Server stop() {
         container.close();
-        IN_PROGRESS_OR_RUNNING.set(false);
         return this;
     }
 

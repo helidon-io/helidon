@@ -68,6 +68,7 @@ final class ContainerInstanceHolder {
         for (Runnable resetListener : RESET_LISTENERS) {
             resetListener.run();
         }
+        HelidonCdiProvider.unset();
         RESET_LISTENERS.clear();
     }
 }

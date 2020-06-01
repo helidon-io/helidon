@@ -28,6 +28,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -49,6 +50,7 @@ import io.helidon.common.Prioritized;
 import io.helidon.common.configurable.ServerThreadPoolSupplier;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
+import io.helidon.microprofile.cdi.BuildTimeStart;
 import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.Service;
@@ -70,6 +72,7 @@ public class ServerCdiExtension implements Extension {
     }
 
     private static final Logger LOGGER = Logger.getLogger(ServerCdiExtension.class.getName());
+    private static final AtomicBoolean IN_PROGRESS_OR_RUNNING = new AtomicBoolean();
 
     // build time
     private WebServer.Builder serverBuilder = WebServer.builder()
@@ -91,6 +94,15 @@ public class ServerCdiExtension implements Extension {
     private volatile String listenHost = "0.0.0.0";
     private volatile boolean started;
     private final List<JerseySupport> jerseySupports = new LinkedList<>();
+
+    private void buildTime(@Observes @BuildTimeStart Object event) {
+        // update the status of server, as we may have been started without a builder being used
+        // such as when cdi.Main or SeContainerInitializer are used
+        if (!IN_PROGRESS_OR_RUNNING.compareAndSet(false, true)) {
+            throw new IllegalStateException("There is another builder in progress, or another Server running. "
+                                                    + "You cannot run more than one in parallel");
+        }
+    }
 
     private void prepareRuntime(@Observes @RuntimeStart Config config) {
         serverBuilder.config(config.get("server"));
@@ -216,6 +228,17 @@ public class ServerCdiExtension implements Extension {
     }
 
     private void stopServer(@Observes @Priority(PLATFORM_BEFORE) @BeforeDestroyed(ApplicationScoped.class) Object event) {
+        boolean isRunning = IN_PROGRESS_OR_RUNNING.get();
+        try {
+            doStop(event);
+        } finally {
+            if (isRunning) {
+                IN_PROGRESS_OR_RUNNING.set(false);
+            }
+        }
+    }
+
+    private void doStop(Object event) {
         if (null == webserver) {
             // nothing to do
             return;

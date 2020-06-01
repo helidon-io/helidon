@@ -29,6 +29,7 @@ import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -51,8 +52,9 @@ class HelidonContainerInitializerTest {
     }
 
     @AfterEach
+    @BeforeEach
     void resetConfig() {
-        // restore the config to default
+        // restore the config to default (also before first test, as other tests may have broken it)
         configResolver.registerConfig(defaultConfig, cl);
     }
 
@@ -88,7 +90,7 @@ class HelidonContainerInitializerTest {
                 .withSources(MpConfigSources.create(Map.of(HelidonContainerInitializer.CONFIG_ALLOW_INITIALIZER, "true")))
                 .build();
 
-        configResolver.registerConfig((org.eclipse.microprofile.config.Config) config, cl);
+        configResolver.registerConfig(config, cl);
         // now we can start using SeContainerInitializer
         SeContainerInitializer seContainerInitializer = SeContainerInitializer.newInstance();
         assertThat(seContainerInitializer, instanceOf(HelidonContainerInitializer.class));

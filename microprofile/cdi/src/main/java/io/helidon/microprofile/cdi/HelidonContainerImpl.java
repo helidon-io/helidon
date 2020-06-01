@@ -236,7 +236,18 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
             return cdi;
         }
         LogConfig.configureRuntime();
-        Contexts.runInContext(ROOT_CONTEXT, this::doStart);
+        try {
+            Contexts.runInContext(ROOT_CONTEXT, this::doStart);
+        } catch (Exception e) {
+            try {
+                // we must clean up
+                shutdown();
+            } catch (Exception exception) {
+                e.addSuppressed(exception);
+            }
+            throw e;
+        }
+
         if (EXIT_ON_STARTED) {
             exitOnStarted();
         }
