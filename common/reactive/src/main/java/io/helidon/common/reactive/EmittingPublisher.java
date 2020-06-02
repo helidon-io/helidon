@@ -157,7 +157,7 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
                 }
                 if (state.compareAndSet(State.INIT, State.FAILED)
                         || state.compareAndSet(State.SUBSCRIBED, State.FAILED)
-                        || state.compareAndSet(State.REQUESTED, State.CANCELLED)
+                        || state.compareAndSet(State.REQUESTED, State.FAILED)
                         || state.compareAndSet(State.READY_TO_EMIT, State.FAILED)) {
                     this.error = throwable;
                     EmittingPublisher.this.subscriber = null;
@@ -184,8 +184,8 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
                     return;
                 }
                 if (state.compareAndSet(State.INIT, State.COMPLETED)
-                        || state.compareAndSet(State.SUBSCRIBED, State.FAILED)
-                        || state.compareAndSet(State.REQUESTED, State.FAILED)
+                        || state.compareAndSet(State.SUBSCRIBED, State.COMPLETED)
+                        || state.compareAndSet(State.REQUESTED, State.COMPLETED)
                         || state.compareAndSet(State.READY_TO_EMIT, State.COMPLETED)) {
                     EmittingPublisher.this.subscriber = null;
                     subscriber.onComplete();

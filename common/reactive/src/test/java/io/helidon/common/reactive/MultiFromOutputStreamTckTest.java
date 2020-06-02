@@ -23,6 +23,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Flow;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -32,19 +33,19 @@ import org.reactivestreams.Subscription;
 import org.reactivestreams.tck.TestEnvironment;
 import org.reactivestreams.tck.flow.FlowPublisherVerification;
 import org.reactivestreams.tck.flow.support.Function;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 /**
  * {@link MultiFromOutputStream} reactive streams tck test.
  */
-public class OutputStreamMultiTckTest extends FlowPublisherVerification<ByteBuffer> {
+public class MultiFromOutputStreamTckTest extends FlowPublisherVerification<ByteBuffer> {
 
     private static ExecutorService executor;
     private static final TestEnvironment env = new TestEnvironment(150);
 
-    public OutputStreamMultiTckTest() {
+    public MultiFromOutputStreamTckTest() {
         super(env);
     }
 
@@ -198,13 +199,16 @@ public class OutputStreamMultiTckTest extends FlowPublisherVerification<ByteBuff
         });
     }
 
-    @BeforeClass
-    public static void beforeClass() {
+    @Override
+    @BeforeMethod
+    public void setUp() throws Exception {
+        super.setUp();
         executor = Executors.newCachedThreadPool();
     }
 
-    @AfterClass
-    public static void afterClass() {
-        executor.shutdown();
+    @AfterMethod
+    public void tearDown() throws InterruptedException {
+        executor.shutdownNow();
+        executor.awaitTermination(10, TimeUnit.SECONDS);
     }
 }
