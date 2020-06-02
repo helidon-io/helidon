@@ -91,7 +91,7 @@ final class ByteChannelBodyWriter implements MessageBodyWriter<ReadableByteChann
 
         @Override
         public Publisher<DataChunk> map(ReadableByteChannel channel) {
-            return new ReadableByteChannelPublisher(channel, schema);
+            return ReadableByteChannelPublisher.builder(channel).retrySchema(schema).build();
         }
     }
 }
