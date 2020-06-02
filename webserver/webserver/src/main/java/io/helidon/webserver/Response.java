@@ -238,6 +238,12 @@ abstract class Response implements ServerResponse {
     }
 
     @Override
+    public Response registerFilter(Function<Publisher<DataChunk>, Publisher<DataChunk>> function) {
+        writerContext.registerFilter(p -> function.apply(p));
+        return this;
+    }
+
+    @Override
     public <T> Response registerWriter(Class<T> type, Function<T, Publisher<DataChunk>> function) {
         writerContext.registerWriter(type, function);
         return this;
