@@ -15,16 +15,25 @@
  */
 package io.helidon.media.common;
 
+import java.util.concurrent.Flow;
+
 /**
  * Registry of {@link MessageBodyFilters}.
  */
 public interface MessageBodyFilters {
 
     /**
-     * Register a message body filter.
+     * Registers a message body filter.
+     * <p>
+     * The registered filters are applied to form a chain from the first registered to the last registered.
+     * The first evaluation of the function transforms the original publisher to a new publisher. Any subsequent
+     * evaluation receives the publisher transformed by the last previously registered filter.
      *
-     * @param filter message body filter to register
-     * @return MessageBodyFilters
+     * @param filter a function to map previously registered or original {@code Publisher} to the new one. If returns
+     *               {@code null} then the result will be ignored.
+     * @return this instance of {@link MessageBodyFilters}
+     * @see MessageBodyContext#applyFilters(Flow.Publisher)
+     * @throws NullPointerException if parameter {@code function} is {@code null}
      */
     MessageBodyFilters registerFilter(MessageBodyFilter filter);
 }

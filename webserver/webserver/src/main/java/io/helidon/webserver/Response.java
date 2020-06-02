@@ -239,7 +239,7 @@ abstract class Response implements ServerResponse {
 
     @Override
     public Response registerFilter(Function<Publisher<DataChunk>, Publisher<DataChunk>> function) {
-        writerContext.registerFilter(function);
+        writerContext.registerFilter(p -> function.apply(p));
         return this;
     }
 
