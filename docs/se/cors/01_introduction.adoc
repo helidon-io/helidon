@@ -19,6 +19,7 @@
 = About CORS in Helidon SE
 :toc:
 :toc-placement: preamble
+:h1Prefix: SE
 :pagename: cors-introduction
 :description: Helidon SE CORS Support
 :keywords: helidon, java, cors, se
@@ -26,148 +27,28 @@
 :quickstart-example: {helidon-tag}/examples/quickstarts/helidon-quickstart-se
 :cors-spec: https://www.w3.org/TR/cors/
 :helidon-se-cors-example: {helidon-tag}/examples/cors
-:model-reader-java: {mp-openapi-prefix}/api/src/main/java/org/eclipse/microprofile/openapi/OASModelReader.java
-:filter-java: {mp-openapi-prefix}/api/src/main/java/org/eclipse/microprofile/openapi/OASFilter.java
 :helidon-tag: https://github.com/oracle/helidon/tree/{helidon-version}
 :quickstart-example: {helidon-tag}/examples/quickstarts/helidon-quickstart-se
 :javadoc-base-url-api: {javadoc-base-url}io.helidon.webserver.cors/io/helidon/webserver/cors
 :javadoc-base-url-webserver: {javadoc-base-url}io.helidon.webserver/io/helidon/webserver
+:helidon-variant: SE
+:common-page-prefix-inc: ../../shared/cors/common_shared.adoc
+
 
 link:{cors-spec}[Cross-origin resource sharing] (CORS) support in Helidon SE provides a flexible
-mechanism that allows a Helidon SE application to control how other web applications can access its resources, even if that web application is not served from the same domain.
+mechanism that allows a Helidon SE application to control how another web application can access its resources,
+even if that web application is served from a different domain.
 
+== Overview
+include::{common-page-prefix-inc}[tag=cors-intro]
 
-
-== Getting Started
-
-Before you begin you must:
-
-
-. Determine the type of cross origin sharing you want to allow for each endpoint in your application.
-+
-For example, suppose you want to allow unrestricted access for GET, HEAD, and POST requests
-(what CORS refers to as "simple" requests), but permit other types of requests only from the two
-origins `foo.com` and `there.com`. This means that you have two types of CORS sharing: relaxed for the
-simple requests and stricter for others. In practice, you can use as many types of sharing as makes sense for
-your application.
-
-. Add the CORS dependencies to the Maven `pom.xml` file.
-. Add the CORS support in your application.
-
-The <<about/04_managing-dependencies.adoc, Managing Dependencies>> page describes how you
-should declare dependency management for Helidon applications. For CORS support, you must include
-the following dependency in your project:
-
-[source,xml,subs="attributes+"]
-----
-<dependency>
-    <groupId>io.helidon.webserver</groupId>
-    <artifactId>helidon-webserver-cors</artifactId>
-</dependency>
-----
-
-== Adding CORS Support in Your Helidon SE Application [[adding-cors-support]]
-Because Helidon SE does not use annotation processing to identify endpoints, you need to
-provide the CORS information for your application another way.
-
-The high-level process for adding CORS support in your Helidon SE application is:
-
-. Create a link:{javadoc-base-url-api}/CrossOriginConfig.html[`CrossOriginConfig`] instance for each type of resource sharing that you decided your application should provide.
-The `CrossOriginConfig` Java class represents the details for a particular type of sharing.
-
-. Create a link:{javadoc-base-url-api}/CorsSupport.html[`CorsSupport`] instance that includes the `CrossOriginConfig` instances from the previous step.
-.  Use that `CorsSupport` instance to set up the routing rules.
-
-Each of these classes has an associated builder.
-// tag::cors-config-table[]
-The table below describes
-ifndef::cors-config-table-exclude-methods[the methods on the `CrossOriginConfig.Builder` class and ]
-the configuration keys that map to the headers defined in the CORS protocol.
-
-ifndef::cors-config-table-exclude-methods[]
-[width="100%",options="header",cols="4*"]
-endif::[]
-ifdef::cors-config-table-exclude-methods[]
-[width="100%",options="header",cols="3*"]
-endif::[]
-
-|====================
-ifndef::cors-config-table-exclude-methods[| Methods ]
-| Configuration Key | Default | CORS Header Name
-
-ifndef::cors-config-table-exclude-methods[|`allowCredentials`]
-|`allow-credentials`|`false`|`Access-Control-Allow-Credentials`
-
-ifndef::cors-config-table-exclude-methods[|`allowHeaders`]
-|`allow-headers`|`["*"]`|`Access-Control-Allow-Headers`
-
-ifndef::cors-config-table-exclude-methods[|`allowMethods`]
-|`allow-methods`|`["*"]`|`Access-Control-Allow-Methods`
-
-ifndef::cors-config-table-exclude-methods[|`allowOrigins`]
-|`allow-origins`|`["*"]`|`Access-Control-Allow-Origins`
-
-ifndef::cors-config-table-exclude-methods[|`exposeHeaders`]
-|`expose-headers`|`none`|`Access-COntrol-Expose-Headers`
-
-ifndef::cors-config-table-exclude-methods[|`maxAgeSeconds`]
-|`max-age`|`3600`|`Access-Control-Max-Age`
-
-ifndef::cors-config-table-exclude-methods[|`enabled`]
-|`enabled`|`true`|n/a|
-|====================
-
-If the cross-origin configuration is disabled (`enabled` = false), then the Helidon CORS implementation ignores the cross-origin configuration entry.
-// end::cors-config-table[]
-
-== Sample Routing Setup Using the CrossOriginConfig API
-
-In the link:{quickstart-example}[Helidon SE Quickstart application] you can change the greeting by sending a PUT request to the `/greet/greeting` resource.
-
-In this example, we use the low-level `CrossOriginConfig` API and the `CorsSupport` API to influence the <<se/webserver/03_routing.adoc,routing>>,
-thereby restricting how that resource is shared.
-
-To understand how to use configuration instead of the low-level API, see <<se/cors/02_configuration.adoc, Using Configuration for CORS>>.
-
-The following code shows how to prepare your application's routing to support metrics and health support as well as
-CORS.
-
-[[intro-quick-start-code-example]]
-[source,java]
-----
-    private static Routing createRouting(Config config) {
-
-        MetricsSupport metrics = MetricsSupport.create();
-        GreetService greetService = new GreetService(config);
-        HealthSupport health = HealthSupport.builder()
-                .addLiveness(HealthChecks.healthChecks())   // Adds a convenient set of checks
-                .build();
-        CorsSupport corsSupport = CorsSupport.builder()  // <1>
-                .addCrossOriginConfig(CrossOriginConfig.builder() // <2>
-                            .allowOrigins("http://foo.com", "http://there.com") // <3>
-                            .allowMethods("PUT", "DELETE") // <4>
-                            .build())
-                .addCrossOriginConfig(CrossOriginConfig.create()) // <5>
-                .build();
-
-        // Note: Add the CORS routing *before* registering the GreetService routing.
-        return Routing.builder()
-                .register(JsonSupport.create())
-                .register(health)                   // Health at "/health"
-                .register(metrics)                 // Metrics at "/metrics"
-                .register("/greet", corsSupport, greetService) // <6>
-                .build();
-    }
-----
-<1> Create a `CorsSupport` instance using its builder.
-<2> Add a `CrossOriginSupport` instance (using _its_ builder) to constrain resource sharing.
-<3> List the origins (sites) allowed to share resources from this app.
-<4> List the HTTP methods the constraint applies to.
-<5> Add a `CrossOriginSupport` instance that permits all sharing (the default).
-<6> Register the new `CorsSupport` instance with -- but in front of -- the service which implements the business logic.
-
-The few additional lines identified above allow the application to participate in CORS.
 
 
 == Next Steps
-See the Helidon CORS support in action by building and running the link:{helidon-se-cors-example}[CORS example].
+
+To introduce CORS into your Helidon SE application, do any or all of the following:
+
+* Modify your code using the Helidon SE CORS API. <<se/cors/02_using-the-api.adoc,Learn more.>>
+* Use configuration in combination with the Helidon SE CORS API to add CORS to your application. <<se/cors/03_using-configuration.adoc,Learn more.>>
+* Update your application to include any of the built-in Helidon services that automatically
+support CORS. <<se/cors/04_support-in-builtin-services.adoc, Learn more.>>
