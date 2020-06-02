@@ -47,13 +47,13 @@ public class OutputStreamMultiTest {
                 .forEach(result::append);
 
         PrintWriter printer = new PrintWriter(osMulti);
-        printer.println("test1");
-        printer.println("test2");
-        printer.println("test3");
+        printer.print("test1");
+        printer.print("test2");
+        printer.print("test3");
         printer.close();
 
         multiFuture.await();
-        assertThat(result.toString(), is(equalTo("test1\ntest2\ntest3\n")));
+        assertThat(result.toString(), is(equalTo("test1test2test3")));
     }
 
     @Test
