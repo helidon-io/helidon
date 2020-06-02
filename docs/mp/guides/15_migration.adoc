@@ -95,4 +95,25 @@ and started. This has resulted in some changes in APIs and behavior:
 Helidon now supports only MicroProfile Metrics 2.x. Support for Metrics 1.x has been removed,
 and modules for 2.x have been renamed from `metrics2` to `metrics`.
 
+== Java EE dependencies
+We have moved from dependencies in groupId `javax` (Java EE modules) to dependencies
+in groupId `jakarta` (Jakarta EE modules).
 
+In case you declared a dependency on a javax module, you should change it to a jakarta one.
+
+Example:
+```xml
+<dependency>
+    <groupId>javax.activation</groupId>
+    <artifactId>javax.activation-api</artifactId>
+</dependency>
+```
+
+should be changed to
+```xml
+<dependency>
+    <groupId>jakarta.activation</groupId>
+    <artifactId>jakarta.activation-api</artifactId>
+</dependency>
+```
+As the `javax` module is no longer in dependency management of Helidon parent pom files.
