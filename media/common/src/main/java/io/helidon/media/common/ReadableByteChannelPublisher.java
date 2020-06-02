@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.helidon.common.LazyValue;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.reactive.RequestedCounter;
 import io.helidon.common.reactive.RetrySchema;
@@ -45,29 +46,59 @@ public class ReadableByteChannelPublisher implements Flow.Publisher<DataChunk> {
 
     private static final int DEFAULT_CHUNK_CAPACITY = 1024 * 8;
 
+    final LazyValue<ScheduledExecutorService> executor;
+
     private final ReadableByteChannel channel;
     private final RetrySchema retrySchema;
+    private final boolean externalExecutor;
+    private final int chunkCapacity;
 
     private final SingleSubscriberHolder<DataChunk> subscriber = new SingleSubscriberHolder<>();
     private final RequestedCounter requested = new RequestedCounter();
-    private final int chunkCapacity = DEFAULT_CHUNK_CAPACITY;
-
     private final AtomicBoolean publishing = new AtomicBoolean(false);
-    private volatile AtomicInteger retryCounter = new AtomicInteger();
-    private volatile long lastRetryDelay = 0;
+    private final AtomicInteger retryCounter = new AtomicInteger();
 
-    private ScheduledExecutorService scheduledExecutorService;
-    private volatile DataChunk curentChunk;
+    private volatile long lastRetryDelay = 0;
+    private volatile DataChunk currentChunk;
 
     /**
      * Creates new instance.
      *
      * @param channel a channel to read and publish
      * @param retrySchema a retry schema functional interface used in case, that channel read retrieved zero bytes.
+     * @deprecated please use {@link #builder(java.nio.channels.ReadableByteChannel)} or
+     *   {@link #create(java.nio.channels.ReadableByteChannel)} instead
+     *
      */
+    @Deprecated(since = "2.0.0", forRemoval = true)
     public ReadableByteChannelPublisher(ReadableByteChannel channel, RetrySchema retrySchema) {
         this.channel = channel;
         this.retrySchema = retrySchema;
+        this.executor = LazyValue.create(() -> Executors.newScheduledThreadPool(1));
+        this.externalExecutor = false;
+        this.chunkCapacity = DEFAULT_CHUNK_CAPACITY;
+    }
+
+    private ReadableByteChannelPublisher(Builder builder) {
+        this.channel = builder.theChannel;
+        this.retrySchema = builder.retrySchema;
+        this.executor = builder.executor;
+        this.externalExecutor = builder.externalExecutor;
+        this.chunkCapacity = builder.bufferCapacity;
+    }
+
+    /**
+     * Create a a new instance with default retry schema and executor service.
+     *
+     * @param channel channel to read and publish from
+     * @return a new publisher for the channel
+     */
+    public static ReadableByteChannelPublisher create(ReadableByteChannel channel) {
+        return builder(channel).build();
+    }
+
+    public static Builder builder(ReadableByteChannel channel) {
+        return new Builder(channel);
     }
 
     @Override
@@ -86,6 +117,7 @@ public class ReadableByteChannelPublisher implements Flow.Publisher<DataChunk> {
                     @Override
                     public void cancel() {
                         subscriber.cancel();
+                        closeExecutor();
                     }
                 });
             } finally {
@@ -110,11 +142,11 @@ public class ReadableByteChannelPublisher implements Flow.Publisher<DataChunk> {
      */
     private boolean publishSingleOrFinish(Flow.Subscriber<? super DataChunk> subscr) throws Exception {
         DataChunk chunk;
-        if (curentChunk == null) {
+        if (currentChunk == null) {
             chunk = allocateNewChunk();
         } else {
-            chunk = curentChunk;
-            curentChunk = null;
+            chunk = currentChunk;
+            currentChunk = null;
         }
 
         ByteBuffer bb = chunk.data()[0];
@@ -130,7 +162,7 @@ public class ReadableByteChannelPublisher implements Flow.Publisher<DataChunk> {
             bb.flip();
             subscr.onNext(chunk);
         } else {
-            curentChunk = chunk;
+            currentChunk = chunk;
         }
         // Last or not
         if (count < 0) {
@@ -140,11 +172,11 @@ public class ReadableByteChannelPublisher implements Flow.Publisher<DataChunk> {
                 LOGGER.log(Level.WARNING, "Cannot close readable byte channel! (Close attempt after fully read channel.)", e);
             }
             tryComplete();
-            if (curentChunk != null) {
-                curentChunk.release();
+            if (currentChunk != null) {
+                currentChunk.release();
             }
             return true;
-        } else  {
+        } else {
             return count > 0;
         }
     }
@@ -191,18 +223,90 @@ public class ReadableByteChannelPublisher implements Flow.Publisher<DataChunk> {
     }
 
     private synchronized void planNextTry(long afterMillis) {
-        if (scheduledExecutorService == null) {
-            scheduledExecutorService = Executors.newScheduledThreadPool(1);
-        }
-        scheduledExecutorService.schedule(this::tryPublish, afterMillis, TimeUnit.MILLISECONDS);
+        executor.get().schedule(this::tryPublish, afterMillis, TimeUnit.MILLISECONDS);
     }
 
     private void tryComplete() {
         subscriber.close(Flow.Subscriber::onComplete);
+        closeExecutor();
     }
 
     private void tryComplete(Throwable t) {
         subscriber.close(sub -> sub.onError(t));
+        closeExecutor();
     }
 
+    private void closeExecutor() {
+        if (!externalExecutor && executor.isLoaded()) {
+            executor.get().shutdownNow();
+        }
+    }
+
+    /**
+     * Fluent API builder for {@link io.helidon.media.common.ReadableByteChannelPublisher}.
+     * <p>
+     * Obtain an instance using
+     * {@link io.helidon.media.common.ReadableByteChannelPublisher#builder(java.nio.channels.ReadableByteChannel)}
+     */
+    public static final class Builder implements io.helidon.common.Builder<ReadableByteChannelPublisher> {
+        private final ReadableByteChannel theChannel;
+
+        private LazyValue<ScheduledExecutorService> executor = LazyValue.create(() -> Executors.newScheduledThreadPool(1));
+        private RetrySchema retrySchema;
+        private boolean externalExecutor;
+        private int bufferCapacity = DEFAULT_CHUNK_CAPACITY;
+
+        private Builder(ReadableByteChannel theChannel) {
+            this.theChannel = theChannel;
+        }
+
+        @Override
+        public ReadableByteChannelPublisher build() {
+            if (null == retrySchema) {
+                retrySchema = RetrySchema.linear(0, 10, 250);
+            }
+
+            return new ReadableByteChannelPublisher(this);
+        }
+
+        /**
+         * Configure executor service to use for scheduling reads from the channel.
+         * If an executor is configured using this method, it will not be terminated when the publisher completes.
+         *
+         * @param executor to use for scheduling
+         * @return updated builder instance
+         */
+        public Builder executor(ScheduledExecutorService executor) {
+            this.executor = LazyValue.create(executor);
+            this.externalExecutor = true;
+            return this;
+        }
+
+        /**
+         * Retry schema to use when reading from the channel.
+         * If a channel read fails (e.g. no data is read), the read is scheduled using
+         * {@link #executor} using the provided retry schema, to prolong the delays between retries.
+         * <p>
+         * By default the first delay is {@code 0} milliseconds, incrementing by {@code 50 milliseconds} up
+         * to {@code 250} milliseconds.
+         *
+         * @param retrySchema schema to use
+         * @return updated builder instance
+         */
+        public Builder retrySchema(RetrySchema retrySchema) {
+            this.retrySchema = retrySchema;
+            return this;
+        }
+
+        /**
+         * Capacity of byte buffer used to create {@link io.helidon.common.http.DataChunk data chunks}.
+         *
+         * @param bufferCapacity capacity of the buffer, defaults to 8 Kb
+         * @return updated builder instance
+         */
+        public Builder bufferCapacity(int bufferCapacity) {
+            this.bufferCapacity = bufferCapacity;
+            return this;
+        }
+    }
 }
