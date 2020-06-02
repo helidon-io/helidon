@@ -93,7 +93,7 @@ public class ReadableByteChannelPublisherTest {
         assertThat(pc.threads.size(), is(2));
         assertThat(pc.isOpen(), is(false));
 
-        LazyValue<ScheduledExecutorService> executor = publisher.executor;
+        LazyValue<ScheduledExecutorService> executor = publisher.executor();
         assertThat("Executor should have been used", executor.isLoaded(), is(true));
         assertThat("Executor should have been shut down", executor.get().isShutdown(), is(true));
     }
@@ -114,7 +114,7 @@ public class ReadableByteChannelPublisherTest {
         assertThat(pc.threads.size(), is(2));
         assertThat(pc.isOpen(), is(false));
 
-        LazyValue<ScheduledExecutorService> executor = publisher.executor;
+        LazyValue<ScheduledExecutorService> executor = publisher.executor();
         assertThat("Executor was provided", executor.isLoaded(), is(true));
 
         ScheduledExecutorService usedExecutor = executor.get();
@@ -155,7 +155,7 @@ public class ReadableByteChannelPublisherTest {
             assertThat(e.getCause(), instanceOf(ClosedChannelException.class));
         }
 
-        LazyValue<ScheduledExecutorService> executor = publisher.executor;
+        LazyValue<ScheduledExecutorService> executor = publisher.executor();
         assertThat("Executor should have not been used", executor.isLoaded(), is(false));
     }
 
@@ -171,7 +171,8 @@ public class ReadableByteChannelPublisherTest {
         // start reading (this will cause 2 second delay)
         Single<byte[]> data = ContentReaders.readBytes(publisher);
         // run the stream
-        data.thenRun(() -> {});
+        data.thenRun(() -> {
+        });
         Thread.sleep(1000);
         // immediately close the channel, so we fail reading
         pc.close();
@@ -179,7 +180,7 @@ public class ReadableByteChannelPublisherTest {
         CompletionException c = assertThrows(CompletionException.class, () -> data.await(5, TimeUnit.SECONDS));
         assertThat(c.getCause(), instanceOf(ClosedChannelException.class));
 
-        LazyValue<ScheduledExecutorService> executor = publisher.executor;
+        LazyValue<ScheduledExecutorService> executor = publisher.executor();
         assertThat("Executor should have been used", executor.isLoaded(), is(true));
         assertThat("Executor should have been shut down", executor.get().isShutdown(), is(true));
     }
@@ -226,8 +227,7 @@ public class ReadableByteChannelPublisherTest {
         assertThat("Should not complete", completeCalled.get(), is(false));
         assertThat("Exception should be null", failure.get(), is(nullValue()));
 
-
-        LazyValue<ScheduledExecutorService> executor = publisher.executor;
+        LazyValue<ScheduledExecutorService> executor = publisher.executor();
         assertThat("Executor should have been used", executor.isLoaded(), is(true));
         assertThat("Executor should have been shut down", executor.get().isShutdown(), is(true));
     }

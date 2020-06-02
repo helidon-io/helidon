@@ -46,12 +46,11 @@ public class ReadableByteChannelPublisher implements Flow.Publisher<DataChunk> {
 
     private static final int DEFAULT_CHUNK_CAPACITY = 1024 * 8;
 
-    final LazyValue<ScheduledExecutorService> executor;
-
     private final ReadableByteChannel channel;
     private final RetrySchema retrySchema;
     private final boolean externalExecutor;
     private final int chunkCapacity;
+    private final LazyValue<ScheduledExecutorService> executor;
 
     private final SingleSubscriberHolder<DataChunk> subscriber = new SingleSubscriberHolder<>();
     private final RequestedCounter requested = new RequestedCounter();
@@ -97,6 +96,12 @@ public class ReadableByteChannelPublisher implements Flow.Publisher<DataChunk> {
         return builder(channel).build();
     }
 
+    /**
+     * Create a new builder to configure the publisher.
+     *
+     * @param channel channel to read data from
+     * @return a new builder instance
+     */
     public static Builder builder(ReadableByteChannel channel) {
         return new Builder(channel);
     }
@@ -126,6 +131,11 @@ public class ReadableByteChannelPublisher implements Flow.Publisher<DataChunk> {
 
             tryPublish(); // give onNext a chance in case request has been invoked in onSubscribe
         }
+    }
+
+    // for tests
+    LazyValue<ScheduledExecutorService> executor() {
+        return executor;
     }
 
     private DataChunk allocateNewChunk() {
