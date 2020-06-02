@@ -32,6 +32,11 @@ class LazyValueImpl<T> implements LazyValue<T> {
         this.delegate = supplier;
     }
 
+    LazyValueImpl(T value) {
+        this.loaded = true;
+        this.value = value;
+    }
+
     @Override
     public T get() {
         if (loaded) {

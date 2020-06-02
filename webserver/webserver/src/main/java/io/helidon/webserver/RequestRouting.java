@@ -28,6 +28,7 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.helidon.common.LazyValue;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.http.AlreadyCompletedException;
 import io.helidon.common.http.Http;
@@ -69,7 +70,10 @@ class RequestRouting implements Routing {
         try {
             WebServer webServer = bareRequest.webServer();
             HashRequestHeaders requestHeaders = new HashRequestHeaders(bareRequest.headers());
-            RoutedResponse response = new RoutedResponse(webServer, bareResponse, requestHeaders.acceptedTypes());
+            RoutedResponse response = new RoutedResponse(
+                    webServer,
+                    bareResponse,
+                    LazyValue.create(requestHeaders::acceptedTypes));
 
             // Jersey needs the raw path (not decoded) so we get that too
             String path = canonicalize(bareRequest.uri().normalize().getPath());
@@ -438,7 +442,7 @@ class RequestRouting implements Routing {
 
     private static class RoutedResponse extends Response {
 
-        RoutedResponse(WebServer webServer, BareResponse bareResponse, List<MediaType> acceptedTypes) {
+        RoutedResponse(WebServer webServer, BareResponse bareResponse, LazyValue<List<MediaType>> acceptedTypes) {
             super(webServer, bareResponse, acceptedTypes);
         }
 

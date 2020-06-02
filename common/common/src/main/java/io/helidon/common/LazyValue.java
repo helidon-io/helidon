@@ -47,7 +47,7 @@ public interface LazyValue<T> extends Supplier<T> {
      * @return a lazy value that will always return the value provided
      */
     static <T> LazyValue<T> create(T value) {
-        return () -> value;
+        return new LazyValueImpl<>(value);
     }
 
 }
