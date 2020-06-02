@@ -137,27 +137,23 @@ public class DataChunkInputStream extends InputStream {
 
             ByteBuffer[] currentBuffers = chunk.data();
             int count = 0;
-            for (int i = bufferIndex; i < currentBuffers.length; i++) {
-
-                if (i == 0 && currentBuffers[i].position() == 0) {
+            while (bufferIndex < currentBuffers.length) {
+                if (bufferIndex == 0 && currentBuffers[bufferIndex].position() == 0) {
                     LOGGER.finest(() -> "Reading chunk ID: " + chunk.id());
                 }
 
-                int rem = currentBuffers[i].remaining();
+                int rem = currentBuffers[bufferIndex].remaining();
                 int blen = len;
                 if (blen > rem) {
                     blen = rem;
                 }
-                currentBuffers[i].get(buf, off, blen);
+                currentBuffers[bufferIndex].get(buf, off, blen);
                 off += blen;
                 count += blen;
                 len -= blen;
 
                 if (rem > blen) {
                     break;
-                }
-                if (count < len && i < currentBuffers.length - 1) {
-                    bufferIndex++;
                 }
 
                 // Chunk is consumed entirely - release the chunk, and prefetch a new chunk; do not
@@ -166,12 +162,14 @@ public class DataChunkInputStream extends InputStream {
                 // Assert: it is safe to request new chunks eagerly - there is no mechanism
                 // to push back unconsumed data, so we can assume we own all the chunks,
                 // consumed and unconsumed.
-                if (i == currentBuffers.length - 1 && blen == rem) {
+                if (bufferIndex == currentBuffers.length - 1) {
                     releaseChunk(chunk, null);
                     current = next;
                     bufferIndex = 0;
                     subscription.request(1);
+                    break;
                 }
+                bufferIndex++;
             }
             return count;
         } catch (InterruptedException e) {
