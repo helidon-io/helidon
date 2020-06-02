@@ -16,28 +16,42 @@
 
 package io.helidon.common;
 
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
 class LazyValueImpl<T> implements LazyValue<T> {
+    private final Lock theLock = new ReentrantLock();
 
-    private final AtomicReference<T> value = new AtomicReference<>();
-    private T rawValue;
+    private T value;
+
     private Supplier<T> delegate;
+    private volatile boolean loaded;
 
     LazyValueImpl(Supplier<T> supplier) {
         this.delegate = supplier;
     }
 
-    LazyValueImpl(T value) {
-        this.rawValue = value;
-    }
-
     @Override
     public T get() {
-        if (rawValue == null) {
-            rawValue = value.updateAndGet(t -> t != null ? t : delegate.get());
+        if (loaded) {
+            return value;
         }
-        return rawValue;
+
+        // not loaded (probably)
+        theLock.lock();
+
+        try {
+            if (loaded) {
+                return value;
+            }
+            value = delegate.get();
+            loaded = true;
+            delegate = null;
+        } finally {
+            theLock.unlock();
+        }
+
+        return value;
     }
 }
