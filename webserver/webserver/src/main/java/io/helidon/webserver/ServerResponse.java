@@ -247,28 +247,6 @@ public interface ServerResponse extends MessageBodyFilters, MessageBodyWriters {
                                       MediaType contentType,
                                       Function<T, Publisher<DataChunk>> function);
 
-    /**
-     * Registers a provider of the new response content publisher - typically a filter.
-     * <p>
-     * All response content is always represented by a single {@link Publisher Publisher}
-     * of {@link DataChunk response chunks}. This method can be used to filter or completely replace original publisher by
-     * a new one with different contract. For example data coding, logging, filtering, caching, etc.
-     * <p>
-     * New publisher is created at the moment of content write by any {@link #send(Object) send(...)} method including the empty
-     * one.
-     * <p>
-     * All registered filters are used as a chain from original content {@code Publisher}, first registered to the last
-     * registered.
-     *
-     * @param function a function to map previously registered or original {@code Publisher} to the new one. If returns
-     *                 {@code null} then the result will be ignored.
-     * @return this instance of {@link ServerResponse}
-     * @throws NullPointerException if parameter {@code function} is {@code null}
-     * @deprecated since 2.0.0, use {@link #registerFilter(io.helidon.media.common.MessageBodyFilter)} instead
-     */
-    @Deprecated
-    ServerResponse registerFilter(Function<Publisher<DataChunk>, Publisher<DataChunk>> function);
-
     @Override
     ServerResponse registerFilter(MessageBodyFilter filter);
 

@@ -96,14 +96,14 @@ public class MainTest {
     }
 
     @Test
-    public void filterAndProcessEntity() throws Exception {
-        TestResponse response = createClient(Main::filterAndProcessEntity)
+    public void mediaReader() throws Exception {
+        TestResponse response = createClient(Main::mediaReader)
                 .path("/create-record")
                 .post(MediaPublisher.create(MediaType.parse("application/name"), "John Smith"));
         assertEquals(201, response.status().code());
         assertEquals("John Smith", response.asString().get());
         // Unsupported Content-Type
-        response = createClient(Main::filterAndProcessEntity)
+        response = createClient(Main::mediaReader)
                 .path("/create-record")
                 .post(MediaPublisher.create(MediaType.TEXT_PLAIN, "John Smith"));
         assertEquals(500, response.status().code());

@@ -88,7 +88,7 @@ public final class MessageBodyReadableContent
     @Deprecated
     @Override
     public void registerFilter(Function<Publisher<DataChunk>, Publisher<DataChunk>> function) {
-        context.registerFilter(function);
+        context.registerFilter(p -> function.apply(p));
     }
 
     @Deprecated
