@@ -27,7 +27,6 @@ import java.util.function.Supplier;
  *
  * @param <T> type of the provided object
  */
-@FunctionalInterface
 public interface LazyValue<T> extends Supplier<T> {
     /**
      * Create a lazy value from a supplier.
@@ -50,4 +49,10 @@ public interface LazyValue<T> extends Supplier<T> {
         return new LazyValueImpl<>(value);
     }
 
+    /**
+     * Return true if the value is loaded, false if the supplier was not invoked.
+     *
+     * @return {@code true} if the value is loaded
+     */
+    boolean isLoaded();
 }
