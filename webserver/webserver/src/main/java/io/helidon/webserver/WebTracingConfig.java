@@ -234,7 +234,7 @@ public abstract class WebTracingConfig {
 
         @Override
         public void accept(ServerRequest req, ServerResponse res) {
-            if (checkedIfShouldTrace.compareAndSet(false, true)) {
+            if (shouldTrace && checkedIfShouldTrace.compareAndSet(false, true)) {
                 if (req.tracer().scopeManager() instanceof NoopScopeManager) {
                     shouldTrace = false;
                 }

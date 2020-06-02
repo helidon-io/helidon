@@ -24,6 +24,7 @@ import javax.enterprise.context.ApplicationScoped;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
+import io.helidon.metrics.RegistryFactory;
 
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
 import org.eclipse.microprofile.faulttolerance.Timeout;
@@ -41,9 +42,12 @@ public class HelloBean {
      * @return Hello string.
      */
     public String getHello() {
-        Context context = Contexts.context().get();
+        Context context = Contexts.context().orElse(null);
         Objects.requireNonNull(context);
-
+        // application scoped context
+        Objects.requireNonNull(context.get(RegistryFactory.class).orElse(null));
+        // request scoped context
+        Objects.requireNonNull(context.get(MyMessage.class).orElse(null));
         return "Hello World";
     }
 
@@ -54,10 +58,12 @@ public class HelloBean {
      */
     @Timeout(1000)
     public String getHelloTimeout() {
-        Context context = Contexts.context().get();
+        Context context = Contexts.context().orElse(null);
         Objects.requireNonNull(context);
-        // span context may be null if tracer is not configured
-        //Objects.requireNonNull(context.get(SpanContext.class).get());
+        // application scoped context
+        Objects.requireNonNull(context.get(RegistryFactory.class).orElse(null));
+        // request scoped context
+        Objects.requireNonNull(context.get(MyMessage.class).orElse(null));
         return "Hello World";
     }
 
@@ -68,9 +74,12 @@ public class HelloBean {
      */
     @Asynchronous
     public CompletionStage<String> getHelloAsync() {
-        Context context = Contexts.context().get();
+        Context context = Contexts.context().orElse(null);
         Objects.requireNonNull(context);
-        //Objects.requireNonNull(context.get(SpanContext.class).get());
+        // application scoped context
+        Objects.requireNonNull(context.get(RegistryFactory.class).orElse(null));
+        // request scoped context
+        Objects.requireNonNull(context.get(MyMessage.class).orElse(null));
         return CompletableFuture.completedFuture("Hello World");
     }
 }
