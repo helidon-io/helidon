@@ -39,8 +39,11 @@ import io.helidon.common.reactive.SingleSubscriberHolder;
  * again after some period defined be retry schema.
  * <p>
  * Only first subscriber is accepted.
+ *
+ * @deprecated Will be removed. Please use {@link io.helidon.common.reactive.IoMulti} methods instead
  */
-public class ReadableByteChannelPublisher implements Flow.Publisher<DataChunk> {
+@Deprecated(since = "2.0.0", forRemoval = true)
+class ReadableByteChannelPublisher implements Flow.Publisher<DataChunk> {
 
     private static final Logger LOGGER = Logger.getLogger(ReadableByteChannelPublisher.class.getName());
 
@@ -246,7 +249,7 @@ public class ReadableByteChannelPublisher implements Flow.Publisher<DataChunk> {
         closeExecutor();
     }
 
-    private void closeExecutor() {
+    private synchronized void closeExecutor() {
         if (!externalExecutor && executor.isLoaded()) {
             executor.get().shutdownNow();
         }
