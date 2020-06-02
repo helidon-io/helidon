@@ -84,7 +84,7 @@ public class ResponseOrderingTest {
                 .any("/stream", (req, res) -> {
                     res.status(Http.Status.ACCEPTED_202);
                     Multi<DataChunk> multi = Multi.create(req.content()).map(chunk -> {
-                        return DataChunk.create(false, chunk.data(), chunk::release);
+                        return DataChunk.create(false, chunk::release, chunk.data());
                     });
                     res.send(multi);
                 })

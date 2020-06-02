@@ -248,7 +248,7 @@ class BareResponseImpl implements BareResponse {
         if (lengthOptimization) {
             if (firstChunk != null) {
                 HttpUtil.setTransferEncodingChunked(response, false);
-                HttpUtil.setContentLength(response, firstChunk.data().remaining());
+                HttpUtil.setContentLength(response, firstChunk.remaining());
             }
             initWriteResponse();
         }

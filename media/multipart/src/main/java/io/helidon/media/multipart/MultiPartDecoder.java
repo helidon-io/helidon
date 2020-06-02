@@ -101,8 +101,14 @@ public class MultiPartDecoder implements Processor<DataChunk, ReadableBodyPart> 
     @Override
     public void onNext(DataChunk chunk) {
         try {
-            int id = parser.offer(chunk.data());
-            chunksByIds.put(id, chunk);
+            ByteBuffer[] byteBuffers = chunk.data();
+            for (int i = 0; i < byteBuffers.length; i++) {
+                int id = parser.offer(byteBuffers[i]);
+                // record the chunk using the id of the last buffer
+                if (i == byteBuffers.length - 1) {
+                    chunksByIds.put(id, chunk);
+                }
+            }
             parser.parse();
         } catch (MimeParser.ParsingException ex) {
             emitter.fail(ex);
@@ -240,7 +246,8 @@ public class MultiPartDecoder implements Processor<DataChunk, ReadableBodyPart> 
         if (chunk == null) {
             throw new IllegalStateException("Parent chunk not found, id=" + id);
         }
-        boolean release = data.limit() == chunk.data().limit();
+        ByteBuffer[] originalBuffers = chunk.data();
+        boolean release = data.limit() == originalBuffers[originalBuffers.length - 1].limit();
         if (release) {
             chunksByIds.remove(id);
         }

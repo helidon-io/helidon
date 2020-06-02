@@ -114,7 +114,7 @@ public final class SizeLogEntry extends AbstractLogEntry {
 
         @Override
         public void onNext(DataChunk item) {
-            sizeAdder.add(item.data().remaining());
+            sizeAdder.add(item.remaining());
             subscriber.onNext(item);
         }
 

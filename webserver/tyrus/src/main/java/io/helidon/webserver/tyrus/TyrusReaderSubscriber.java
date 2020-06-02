@@ -64,9 +64,15 @@ public class TyrusReaderSubscriber implements Flow.Subscriber<DataChunk> {
     @Override
     public void onNext(DataChunk item) {
         if (executorService == null) {
-            submitBuffer(item.data());
+            for (ByteBuffer byteBuffer : item.data()) {
+                submitBuffer(byteBuffer);
+            }
         } else {
-            executorService.submit(() -> submitBuffer(item.data()));
+            executorService.submit(() -> {
+                for (ByteBuffer byteBuffer : item.data()) {
+                    submitBuffer(byteBuffer);
+                }
+            });
         }
     }
 

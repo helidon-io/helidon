@@ -18,6 +18,7 @@ package io.helidon.media.common;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -68,6 +69,19 @@ public class DataChunkInputStreamTest {
             sb.append((char) c);
         }
         assertThat(sb.toString(), is("foobar"));
+    }
+
+    @Test
+    public void chunksWithManyBuffers() throws IOException {
+        InputStream is = new DataChunkInputStream(Multi.just(
+                DataChunk.create(ByteBuffer.wrap("foo".getBytes()), ByteBuffer.wrap(",xxx".getBytes()).position(4)),
+                DataChunk.create(ByteBuffer.wrap(",bar".getBytes()), ByteBuffer.wrap(",bob".getBytes()))));
+        int c;
+        StringBuilder sb = new StringBuilder();
+        while ((c = is.read()) != -1) {
+            sb.append((char) c);
+        }
+        assertThat(sb.toString(), is("foo,bar,bob"));
     }
 
     @Test
