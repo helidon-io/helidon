@@ -48,8 +48,8 @@ public interface IoMulti {
      * @deprecated Please use {@link #outputStreamMulti()}
      */
     @Deprecated(since = "2.0.0", forRemoval = true)
-    static MultiFromOutputStream createOutputStream() {
-        return new MultiFromOutputStream();
+    static OutputStreamMulti createOutputStream() {
+        return new OutputStreamMulti();
     }
 
     /**
@@ -62,8 +62,8 @@ public interface IoMulti {
      *
      * @return new {@link OutputStream} implementing {@link Multi}
      */
-    static MultiFromOutputStream outputStreamMulti() {
-        return new MultiFromOutputStream();
+    static OutputStreamMulti outputStreamMulti() {
+        return new OutputStreamMulti();
     }
 
     /**
@@ -309,9 +309,9 @@ public interface IoMulti {
         }
     }
 
-    final class OutputStreamMultiBuilder implements Builder<MultiFromOutputStream> {
+    final class OutputStreamMultiBuilder implements Builder<OutputStreamMulti> {
 
-        private final MultiFromOutputStream streamMulti = new MultiFromOutputStream();
+        private final OutputStreamMulti streamMulti = new OutputStreamMulti();
 
         private OutputStreamMultiBuilder() {
         }
@@ -345,7 +345,7 @@ public interface IoMulti {
         }
 
         @Override
-        public MultiFromOutputStream build() {
+        public OutputStreamMulti build() {
             return streamMulti;
         }
     }

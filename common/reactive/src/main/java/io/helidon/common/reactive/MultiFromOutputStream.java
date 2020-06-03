@@ -34,8 +34,9 @@ import java.util.function.BiConsumer;
 /**
  * Output stream that {@link java.util.concurrent.Flow.Publisher} publishes any data written to it as {@link ByteBuffer}
  * events.
+ * @deprecated please use {@link io.helidon.common.reactive.OutputStreamMulti} instead
  */
-@SuppressWarnings("WeakerAccess")
+@Deprecated(since = "2.0.0", forRemoval = true)
 public class MultiFromOutputStream extends OutputStream implements Multi<ByteBuffer> {
 
     private long timeout = Duration.ofMinutes(10).toMillis();
