@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * {@link MultiFromOutputStream} test.
  */
-public class OutputStreamMultiTest {
+public class MultiFromOutputStreamTest {
 
     @Test
     void testMulti() {

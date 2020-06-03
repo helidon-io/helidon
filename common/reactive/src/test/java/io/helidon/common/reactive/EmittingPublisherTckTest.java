@@ -17,8 +17,6 @@
 package io.helidon.common.reactive;
 
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Flow;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -26,13 +24,14 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.reactivestreams.tck.TestEnvironment;
 import org.reactivestreams.tck.flow.FlowPublisherVerification;
 import org.testng.annotations.AfterClass;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 @Test
 public class EmittingPublisherTckTest extends FlowPublisherVerification<Integer> {
 
-    private static ExecutorService executor;
+    private static TidyTestExecutor executor;
 
     public EmittingPublisherTckTest() {
         super(new TestEnvironment(200));
@@ -44,27 +43,30 @@ public class EmittingPublisherTckTest extends FlowPublisherVerification<Integer>
         CountDownLatch completeLatch = new CountDownLatch((int) l);
         EmittingPublisher<Integer> osp = EmittingPublisher.create();
         osp.onRequest((r, demand) -> {
-            for (long n = 0; n < r && n <= l; n++) {
+            boolean accepted = true;
+            for (long n = 0; n < r && n <= l && accepted; n++) {
                 final long fn = n;
                 //stochastic test of emit methods being thread-safe
-                executor.submit(() -> {
+                accepted = executor.submitAwaitable(() -> {
                     long cnt = counter.getAndDecrement();
                     if (cnt > 0) {
                         osp.emit((int) fn);
                         completeLatch.countDown();
+                        if (cnt == 1) {
+                            executor.submit(() -> {
+                                try {
+                                    completeLatch.await(2, TimeUnit.SECONDS);
+                                    osp.complete();
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                            });
+                        }
                     }
                 });
             }
         });
 
-        executor.submit(() -> {
-            try {
-                completeLatch.await(2, TimeUnit.SECONDS);
-                osp.complete();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        });
 
         return osp;
     }
@@ -96,12 +98,17 @@ public class EmittingPublisherTckTest extends FlowPublisherVerification<Integer>
     }
 
     @BeforeClass
-    public static void beforeClass() {
-        executor = Executors.newCachedThreadPool();
+    public void beforeClass() {
+        executor = new TidyTestExecutor();
     }
 
     @AfterClass
-    public static void afterClass() {
-        executor.shutdown();
+    public void afterClass() {
+        executor.shutdownNow();
+    }
+
+    @AfterMethod
+    public void tearDown() throws InterruptedException {
+        executor.awaitAllFinished();
     }
 }

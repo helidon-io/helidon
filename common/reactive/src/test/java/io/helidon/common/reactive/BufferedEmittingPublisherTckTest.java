@@ -17,21 +17,20 @@
 package io.helidon.common.reactive;
 
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Flow;
 import java.util.stream.IntStream;
 
 import org.reactivestreams.tck.TestEnvironment;
 import org.reactivestreams.tck.flow.FlowPublisherVerification;
 import org.testng.annotations.AfterClass;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 @Test
 public class BufferedEmittingPublisherTckTest extends FlowPublisherVerification<Integer> {
 
-    private static ExecutorService executor;
+    private static TidyTestExecutor executor;
 
     public BufferedEmittingPublisherTckTest() {
         super(new TestEnvironment(200));
@@ -82,12 +81,17 @@ public class BufferedEmittingPublisherTckTest extends FlowPublisherVerification<
     }
 
     @BeforeClass
-    public static void beforeClass() {
-        executor = Executors.newCachedThreadPool();
+    public void beforeClass() {
+        executor = new TidyTestExecutor();
     }
 
     @AfterClass
-    public static void afterClass() {
-        executor.shutdown();
+    public void afterClass() {
+        executor.shutdownNow();
+    }
+
+    @AfterMethod
+    public void tearDown() throws InterruptedException {
+        executor.awaitAllFinished();
     }
 }
