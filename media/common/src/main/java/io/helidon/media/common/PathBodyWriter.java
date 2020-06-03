@@ -26,10 +26,7 @@ import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.mapper.Mapper;
-import io.helidon.common.reactive.RetrySchema;
 import io.helidon.common.reactive.Single;
-
-import static io.helidon.media.common.ByteChannelBodyWriter.DEFAULT_RETRY_SCHEMA;
 
 /**
  * Message body writer for {@link Path}.
@@ -53,7 +50,7 @@ final class PathBodyWriter implements MessageBodyWriter<Path> {
     public Publisher<DataChunk> write(Single<? extends Path> content,
                                       GenericType<? extends Path> type,
                                       MessageBodyWriterContext context) {
-        return content.flatMap(new PathToChunks(DEFAULT_RETRY_SCHEMA, context));
+        return content.flatMap(new PathToChunks(context));
     }
 
     /**
@@ -70,11 +67,9 @@ final class PathBodyWriter implements MessageBodyWriter<Path> {
      */
     private static final class PathToChunks implements Mapper<Path, Publisher<DataChunk>> {
 
-        private final RetrySchema schema;
         private final MessageBodyWriterContext context;
 
-        PathToChunks(RetrySchema schema, MessageBodyWriterContext context) {
-            this.schema = schema;
+        PathToChunks(MessageBodyWriterContext context) {
             this.context = context;
         }
 
@@ -84,9 +79,7 @@ final class PathBodyWriter implements MessageBodyWriter<Path> {
                 context.contentType(MediaType.APPLICATION_OCTET_STREAM);
                 context.contentLength(Files.size(path));
                 FileChannel fc = FileChannel.open(path, StandardOpenOption.READ);
-                return ReadableByteChannelPublisher.builder(fc)
-                        .retrySchema(schema)
-                        .build();
+                return ContentWriters.byteChannelWriter().apply(fc);
             } catch (IOException ex) {
                 return Single.<DataChunk>error(ex);
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package io.helidon.media.common;
+package io.helidon.common.reactive;
 
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Flow;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -29,26 +28,13 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.common.LazyValue;
-import io.helidon.common.http.DataChunk;
-import io.helidon.common.reactive.RequestedCounter;
-import io.helidon.common.reactive.RetrySchema;
-import io.helidon.common.reactive.SingleSubscriberHolder;
 
 /**
- * Publish a channel content to a single {@link Flow.Subscriber subscriber}. If channel doesn't offer data, then it is requested
- * again after some period defined be retry schema.
- * <p>
- * Only first subscriber is accepted.
- *
- * @deprecated Will be removed. Please use
- *  {@link io.helidon.common.reactive.IoMulti#multiFromByteChannel(java.nio.channels.ReadableByteChannel)} instead
+ * This class is copied from media support, to be refactored later.
+ * This is to have the implementation in correct module.
  */
-@Deprecated(since = "2.0.0", forRemoval = true)
-public class ReadableByteChannelPublisher implements Flow.Publisher<DataChunk> {
-
-    private static final Logger LOGGER = Logger.getLogger(ReadableByteChannelPublisher.class.getName());
-
-    private static final int DEFAULT_CHUNK_CAPACITY = 1024 * 8;
+class MultiFromByteChannel implements Multi<ByteBuffer> {
+    private static final Logger LOGGER = Logger.getLogger(MultiFromByteChannel.class.getName());
 
     private final ReadableByteChannel channel;
     private final RetrySchema retrySchema;
@@ -56,33 +42,24 @@ public class ReadableByteChannelPublisher implements Flow.Publisher<DataChunk> {
     private final int chunkCapacity;
     private final LazyValue<ScheduledExecutorService> executor;
 
-    private final SingleSubscriberHolder<DataChunk> subscriber = new SingleSubscriberHolder<>();
+    private final SingleSubscriberHolder<ByteBuffer> subscriber = new SingleSubscriberHolder<>();
     private final RequestedCounter requested = new RequestedCounter();
     private final AtomicBoolean publishing = new AtomicBoolean(false);
     private final AtomicInteger retryCounter = new AtomicInteger();
 
     private volatile long lastRetryDelay = 0;
-    private volatile DataChunk currentChunk;
+    private volatile ByteBuffer currentBuffer;
 
-    /**
-     * Creates new instance.
-     *
-     * @param channel a channel to read and publish
-     * @param retrySchema a retry schema functional interface used in case, that channel read retrieved zero bytes.
-     * @deprecated please use
-     * {@link io.helidon.common.reactive.IoMulti#multiFromByteChannel(java.nio.channels.ReadableByteChannel)}
-     */
-    @Deprecated(since = "2.0.0", forRemoval = true)
-    public ReadableByteChannelPublisher(ReadableByteChannel channel, RetrySchema retrySchema) {
-        this.channel = channel;
-        this.retrySchema = retrySchema;
-        this.executor = LazyValue.create(() -> Executors.newScheduledThreadPool(1));
-        this.externalExecutor = false;
-        this.chunkCapacity = DEFAULT_CHUNK_CAPACITY;
+    MultiFromByteChannel(IoMulti.MultiFromByteChannelBuilder builder) {
+        this.channel = builder.theChannel();
+        this.retrySchema = builder.retrySchema();
+        this.executor = builder.executor();
+        this.externalExecutor = builder.isExternalExecutor();
+        this.chunkCapacity = builder.bufferCapacity();
     }
 
     @Override
-    public void subscribe(Flow.Subscriber<? super DataChunk> subscriberParam) {
+    public void subscribe(Flow.Subscriber<? super ByteBuffer> subscriberParam) {
         if (subscriber.register(subscriberParam)) {
             publishing.set(true); // prevent onNext from inside of onSubscribe
 
@@ -113,8 +90,8 @@ public class ReadableByteChannelPublisher implements Flow.Publisher<DataChunk> {
         return executor;
     }
 
-    private DataChunk allocateNewChunk() {
-        return DataChunk.create(false, ByteBuffer.allocate(chunkCapacity));
+    private ByteBuffer allocateNewBuffer() {
+        return ByteBuffer.allocate(chunkCapacity);
     }
 
     /**
@@ -125,16 +102,15 @@ public class ReadableByteChannelPublisher implements Flow.Publisher<DataChunk> {
      * @return {@code true} if next item was published or subscriber was completed otherwise {@code false}
      * @throws Exception if any error happens and {@code onError()} must be called on the subscriber
      */
-    private boolean publishSingleOrFinish(Flow.Subscriber<? super DataChunk> subscr) throws Exception {
-        DataChunk chunk;
-        if (currentChunk == null) {
-            chunk = allocateNewChunk();
+    private boolean publishSingleOrFinish(Flow.Subscriber<? super ByteBuffer> subscr) throws Exception {
+        ByteBuffer bb;
+        if (currentBuffer == null) {
+            bb = allocateNewBuffer();
         } else {
-            chunk = currentChunk;
-            currentChunk = null;
+            bb = currentBuffer;
+            currentBuffer = null;
         }
 
-        ByteBuffer bb = chunk.data()[0];
         int count = 0;
         while (bb.remaining() > 0) {
             count = channel.read(bb);
@@ -145,9 +121,9 @@ public class ReadableByteChannelPublisher implements Flow.Publisher<DataChunk> {
         // Send or store
         if (bb.capacity() > bb.remaining()) {
             bb.flip();
-            subscr.onNext(chunk);
+            subscr.onNext(bb);
         } else {
-            currentChunk = chunk;
+            currentBuffer = bb;
         }
         // Last or not
         if (count < 0) {
@@ -157,9 +133,6 @@ public class ReadableByteChannelPublisher implements Flow.Publisher<DataChunk> {
                 LOGGER.log(Level.WARNING, "Cannot close readable byte channel! (Close attempt after fully read channel.)", e);
             }
             tryComplete();
-            if (currentChunk != null) {
-                currentChunk.release();
-            }
             return true;
         } else {
             return count > 0;
@@ -174,7 +147,7 @@ public class ReadableByteChannelPublisher implements Flow.Publisher<DataChunk> {
             // Publish, if can
             if (!subscriber.isClosed() && requested.get() > 0 && publishing.compareAndSet(false, true)) {
                 try {
-                    Flow.Subscriber<? super DataChunk> sub = this.subscriber.get(); // blocking retrieval
+                    Flow.Subscriber<? super ByteBuffer> sub = this.subscriber.get(); // blocking retrieval
                     while (!subscriber.isClosed() && requested.tryDecrement()) {
                         if (!publishSingleOrFinish(sub)) {
                             // Not yet published but can be done in the future

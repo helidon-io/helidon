@@ -17,11 +17,13 @@ package io.helidon.media.common;
 
 import java.nio.channels.ReadableByteChannel;
 import java.util.concurrent.Flow.Publisher;
+import java.util.function.Function;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.mapper.Mapper;
+import io.helidon.common.reactive.IoMulti;
 import io.helidon.common.reactive.RetrySchema;
 import io.helidon.common.reactive.Single;
 
@@ -30,11 +32,13 @@ import io.helidon.common.reactive.Single;
  */
 final class ByteChannelBodyWriter implements MessageBodyWriter<ReadableByteChannel> {
 
-    static final RetrySchema DEFAULT_RETRY_SCHEMA = RetrySchema.linear(0, 10, 250);
-
-    private static final ByteChannelBodyWriter DEFAULT = new ByteChannelBodyWriter(DEFAULT_RETRY_SCHEMA);
+    private static final ByteChannelBodyWriter DEFAULT = new ByteChannelBodyWriter();
 
     private final ByteChannelToChunks mapper;
+
+    private ByteChannelBodyWriter() {
+        this.mapper = new ByteChannelToChunks();
+    }
 
     /**
      * Enforce the use of the static factory method.
@@ -83,15 +87,22 @@ final class ByteChannelBodyWriter implements MessageBodyWriter<ReadableByteChann
      */
     private static final class ByteChannelToChunks implements Mapper<ReadableByteChannel, Publisher<DataChunk>> {
 
-        private final RetrySchema schema;
+        private final Function<ReadableByteChannel, Publisher<DataChunk>> publisherFunction;
+
+        ByteChannelToChunks() {
+            this.publisherFunction = channel -> IoMulti.multiFromByteChannel(channel).map(DataChunk::create);
+        }
 
         ByteChannelToChunks(RetrySchema schema) {
-            this.schema = schema;
+            this.publisherFunction = channel -> IoMulti.multiFromByteChannelBuilder(channel)
+                    .retrySchema(schema)
+                    .build()
+                    .map(DataChunk::create);
         }
 
         @Override
         public Publisher<DataChunk> map(ReadableByteChannel channel) {
-            return ReadableByteChannelPublisher.builder(channel).retrySchema(schema).build();
+            return publisherFunction.apply(channel);
         }
     }
 }
