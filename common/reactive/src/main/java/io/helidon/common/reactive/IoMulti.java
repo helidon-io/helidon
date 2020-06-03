@@ -313,6 +313,9 @@ public interface IoMulti {
 
         private final MultiFromOutputStream streamMulti = new MultiFromOutputStream();
 
+        private OutputStreamMultiBuilder() {
+        }
+
         /**
          * Set max timeout for which is allowed to block write methods,
          * in case there is no demand from downstream.
