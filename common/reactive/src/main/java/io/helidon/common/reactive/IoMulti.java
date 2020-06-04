@@ -25,7 +25,9 @@ import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
 
 import io.helidon.common.Builder;
@@ -179,10 +181,14 @@ public interface IoMulti {
     final class MultiFromByteChannelBuilder implements Builder<Multi<ByteBuffer>> {
         private static final int DEFAULT_BUFFER_CAPACITY = 1024 * 8;
         private static final RetrySchema DEFAULT_RETRY_SCHEMA = RetrySchema.linear(0, 10, 250);
+        private static final String THREAD_PREFIX = "multi-rbc-";
+        private static final AtomicLong COUNTER = new AtomicLong();
+        private static final ThreadFactory THREAD_FACTORY = r -> new Thread(r, THREAD_PREFIX + COUNTER.incrementAndGet());
 
         private final ReadableByteChannel theChannel;
 
-        private LazyValue<ScheduledExecutorService> executor = LazyValue.create(() -> Executors.newScheduledThreadPool(1));
+        private LazyValue<ScheduledExecutorService> executor = LazyValue
+                .create(() -> Executors.newScheduledThreadPool(1, THREAD_FACTORY));
         private RetrySchema retrySchema = DEFAULT_RETRY_SCHEMA;
         private int bufferCapacity = DEFAULT_BUFFER_CAPACITY;
         private boolean externalExecutor;
