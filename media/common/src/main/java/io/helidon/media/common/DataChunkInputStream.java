@@ -35,7 +35,7 @@ import io.helidon.common.http.DataChunk;
  *
  * This implementation is documented here {@code /docs-internal/datachunkinputstream.md}.
  */
-class DataChunkInputStream extends InputStream {
+public class DataChunkInputStream extends InputStream {
     private static final Logger LOGGER = Logger.getLogger(DataChunkInputStream.class.getName());
 
     private final String originalThreadID;
