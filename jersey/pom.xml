@@ -37,6 +37,7 @@
 
     <modules>
         <module>client</module>
+        <module>connector</module>
         <module>server</module>
         <module>jsonp</module>
         <module>common</module>
