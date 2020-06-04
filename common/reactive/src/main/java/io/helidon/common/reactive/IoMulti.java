@@ -175,8 +175,8 @@ public interface IoMulti {
     }
 
     /**
-     * Fluent API builder for creating a {@link io.helidon.common.reactive.Multi} from an
-     * {@link java.io.InputStream}.
+     * Fluent API builder for creating a {@link io.helidon.common.reactive.Multi} from a
+     * {@link java.nio.channels.ReadableByteChannel}.
      */
     final class MultiFromByteChannelBuilder implements Builder<Multi<ByteBuffer>> {
         private static final int DEFAULT_BUFFER_CAPACITY = 1024 * 8;
