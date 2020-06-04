@@ -31,7 +31,7 @@ public class SingleFromPublisherZeroTckTest extends FlowPublisherVerification<Lo
 
     @Override
     public Flow.Publisher<Long> createFlowPublisher(long l) {
-        return Single.from(Multi.empty());
+        return Single.create(Multi.empty());
     }
 
     @Override

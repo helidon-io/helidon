@@ -16,7 +16,6 @@
 package io.helidon.media.multipart;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 
 import io.helidon.media.common.MessageBodyReadableContent;
@@ -51,7 +50,7 @@ public final class ReadableBodyPart implements BodyPart {
      * memory. When buffered, {@link #as(java.lang.Class)} can be called to
      * unmarshall the content synchronously. Otherwise, use {@link #content()}
      * and {@link MessageBodyReadableContent#as(Class)} to do it
-     * asynchronously with a {@link CompletionStage}.
+     * asynchronously with a {@link io.helidon.common.reactive.Single}.
      *
      * @return {@code true} if buffered, {@code false} otherwise
      */

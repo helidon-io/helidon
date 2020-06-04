@@ -41,8 +41,8 @@ public final class MultiPartBodyReader implements MessageBodyReader<MultiPart> {
     }
 
     @Override
-    public boolean accept(GenericType<?> type, MessageBodyReaderContext ctx) {
-        return MultiPart.class.isAssignableFrom(type.rawType());
+    public PredicateResult accept(GenericType<?> type, MessageBodyReaderContext ctx) {
+        return PredicateResult.supports(MultiPart.class, type);
     }
 
     @Override
@@ -55,7 +55,7 @@ public final class MultiPartBodyReader implements MessageBodyReader<MultiPart> {
                 .orElseThrow(() -> new IllegalStateException("boundary header is missing"));
         MultiPartDecoder decoder = MultiPartDecoder.create(boundary, context);
         publisher.subscribe(decoder);
-        return (Single<U>) Multi.from(decoder).collect(new PartsCollector());
+        return (Single<U>) Multi.create(decoder).collect(new PartsCollector());
     }
 
     /**
@@ -84,7 +84,7 @@ public final class MultiPartBodyReader implements MessageBodyReader<MultiPart> {
 
             // buffer the data
             // TODO support disk buffering with threshold
-            Publisher<DataChunk> bufferedData = Single.from(ContentReaders.readBytes(content).toStage())
+            Publisher<DataChunk> bufferedData = Single.create(ContentReaders.readBytes(content).toStage())
                     .flatMap(BYTES_TO_CHUNKS);
 
             // create a content copy with the buffered data
@@ -106,7 +106,7 @@ public final class MultiPartBodyReader implements MessageBodyReader<MultiPart> {
     }
 
     /**
-     * Implementation of {@link MultiMapper} that converts {@code byte[]} to a
+     * Implementation of {@link Mapper} that converts {@code byte[]} to a
      * publisher of {@link DataChunk} by copying the bytes.
      */
     private static final class BytesToChunks implements Mapper<byte[], Publisher<DataChunk>> {

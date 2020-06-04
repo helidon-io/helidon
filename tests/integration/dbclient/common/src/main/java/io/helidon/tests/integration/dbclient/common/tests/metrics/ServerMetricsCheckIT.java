@@ -29,7 +29,6 @@ import java.util.logging.Logger;
 import javax.json.Json;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
-import javax.json.JsonStructure;
 import javax.json.JsonValue;
 import javax.json.stream.JsonParsingException;
 
@@ -38,8 +37,7 @@ import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbRow;
 import io.helidon.dbclient.DbStatementType;
-import io.helidon.dbclient.metrics.DbCounter;
-import io.helidon.dbclient.metrics.DbTimer;
+import io.helidon.dbclient.metrics.DbClientMetrics;
 import io.helidon.metrics.MetricsSupport;
 import io.helidon.tests.integration.dbclient.common.AbstractIT;
 import io.helidon.tests.integration.dbclient.common.AbstractIT.Pokemon;
@@ -89,9 +87,11 @@ public class ServerMetricsCheckIT {
         Config dbConfig = AbstractIT.CONFIG.get("db");
         return DbClient.builder(dbConfig)
                 // add an interceptor to named statement(s)
-                .addInterceptor(DbCounter.create(), "select-pokemons", "insert-pokemon")
+                .addService(DbClientMetrics.counter()
+                                    .statementNames("select-pokemons", "insert-pokemon"))
                 // add an interceptor to statement type(s)
-                .addInterceptor(DbTimer.create(), DbStatementType.INSERT)
+                .addService(DbClientMetrics.timer()
+                                    .statementTypes(DbStatementType.INSERT))
                 .build();
     }
 
@@ -122,7 +122,9 @@ public class ServerMetricsCheckIT {
      */
     @AfterAll
     public static void shutdown() throws InterruptedException, ExecutionException {
-        SERVER.shutdown().toCompletableFuture().get();
+        if (null != SERVER) {
+            SERVER.shutdown().toCompletableFuture().get();
+        }
     }
 
     /**
@@ -148,10 +150,9 @@ public class ServerMetricsCheckIT {
      *
      * @throws InterruptedException if the current thread was interrupted
      * @throws IOException if an I/O error occurs when sending or receiving HTTP request
-     * @throws ExecutionException when database query failed
      */
     @Test
-    public void testHttpMetrics() throws IOException, InterruptedException, ExecutionException {
+    public void testHttpMetrics() throws IOException, InterruptedException {
         // Call select-pokemons to trigger it
         Multi<DbRow> rows = DB_CLIENT.execute(exec -> exec
                 .namedQuery("select-pokemons"));
@@ -161,20 +162,19 @@ public class ServerMetricsCheckIT {
         Pokemon pokemon = new Pokemon(BASE_ID + 1, "Lickitung", TYPES.get(1));
         Long result = DB_CLIENT.execute(exec -> exec
                 .namedInsert("insert-pokemon", pokemon.getId(), pokemon.getName())
-        ).toCompletableFuture().get();
+        ).await();
         // Read and process metrics response
-        String response = get(URL + "/metrics");
+        String response = get(URL + "/metrics/application");
         LOGGER.info("RESPONSE: " + response);
-        JsonStructure jsonResponse = null;
+        JsonObject application = null;
         try (JsonReader jr = Json.createReader(new StringReader(response))) {
-            jsonResponse = jr.read();
+            application = jr.readObject();
         } catch (JsonParsingException | IllegalStateException ex) {
             fail(String.format("Error parsing response: %s", ex.getMessage()));
         }
-        assertThat(jsonResponse, notNullValue());
-        assertThat(jsonResponse.getValueType(), equalTo(JsonValue.ValueType.OBJECT));
-        assertThat(jsonResponse.asJsonObject().containsKey("application"), equalTo(true));
-        JsonObject application = jsonResponse.asJsonObject().getJsonObject("application");
+        assertThat(application, notNullValue());
+        assertThat(application.getValueType(), equalTo(JsonValue.ValueType.OBJECT));
+
         assertThat(application.size(), greaterThan(0));
         assertThat(application.containsKey("db.counter.select-pokemons"), equalTo(true));
         assertThat(application.containsKey("db.counter.insert-pokemon"), equalTo(true));

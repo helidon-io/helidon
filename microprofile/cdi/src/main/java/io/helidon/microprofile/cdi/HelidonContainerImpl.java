@@ -141,7 +141,9 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
     private HelidonContainerImpl init() {
         LOGGER.fine(() -> "Initializing CDI container " + id);
 
-        addHelidonBeanDefiningAnnotations("javax.ws.rs.Path", "javax.websocket.server.ServerEndpoint");
+        addHelidonBeanDefiningAnnotations("javax.ws.rs.Path",
+                                          "javax.ws.rs.ext.Provider",
+                                          "javax.websocket.server.ServerEndpoint");
 
         ResourceLoader resourceLoader = new WeldResourceLoader() {
             @Override
@@ -234,7 +236,18 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
             return cdi;
         }
         LogConfig.configureRuntime();
-        Contexts.runInContext(ROOT_CONTEXT, this::doStart);
+        try {
+            Contexts.runInContext(ROOT_CONTEXT, this::doStart);
+        } catch (Exception e) {
+            try {
+                // we must clean up
+                shutdown();
+            } catch (Exception exception) {
+                e.addSuppressed(exception);
+            }
+            throw e;
+        }
+
         if (EXIT_ON_STARTED) {
             exitOnStarted();
         }

@@ -23,15 +23,16 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.BufferedEmittingPublisher;
+import io.helidon.common.reactive.Single;
 import io.helidon.webclient.spi.WebClientService;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.HttpContent;
@@ -111,7 +112,7 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
                 if (interceptor.shouldIntercept(response.status(), requestConfiguration)) {
                     interceptor.handleInterception(response, clientRequest, responseFuture);
                     if (!interceptor.continueAfterInterception()) {
-                        responseCloser.close().addListener(future -> LOGGER.finest("Response closed due to redirection"));
+                        responseCloser.close().thenAccept(future -> LOGGER.finest(() -> "Response closed due to redirection"));
                         return;
                     }
                 }
@@ -145,21 +146,18 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
 
             csr.whenComplete((clientSerResponse, throwable) -> {
                 if (throwable != null) {
-                    responseCloser.close()
-                            .addListener(future -> {
-                                responseReceived.completeExceptionally(throwable);
-                                responseFuture.completeExceptionally(throwable);
-                            });
+                    responseReceived.completeExceptionally(throwable);
+                    responseFuture.completeExceptionally(throwable);
+                    responseCloser.close();
                 } else {
                     responseReceived.complete(clientServiceResponse);
                     responseReceived.thenRun(() -> {
+                        responseFuture.complete(clientResponse);
                         if (shouldResponseAutomaticallyClose(clientResponse)) {
-                            responseCloser.close().addListener(future -> {
-                                LOGGER.finest("Response automatically closed. No entity expected.");
-                                responseFuture.complete(clientResponse);
-                            });
-                        } else {
-                            responseFuture.complete(clientResponse);
+                            responseCloser.close()
+                                    .thenAccept(aVoid -> {
+                                        LOGGER.finest(() -> "Response automatically closed. No entity expected");
+                                    });
                         }
                     });
                 }
@@ -264,10 +262,8 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
 
         public int emit(final ByteBuf buf) {
             buf.retain();
-            return super.emit(DataChunk.create(false,
-                    buf.nioBuffer().asReadOnlyBuffer(),
-                    buf::release,
-                    true));
+            return super.emit(DataChunk.create(false, true, buf::release,
+                    buf.nioBuffer().asReadOnlyBuffer()));
         }
     }
 
@@ -275,25 +271,43 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
 
         private final AtomicBoolean closed;
         private final ChannelHandlerContext ctx;
+        private final CompletableFuture<Void> cf;
 
         ResponseCloser(ChannelHandlerContext ctx) {
             this.ctx = ctx;
             this.closed = new AtomicBoolean();
+            this.cf = new CompletableFuture<>();
         }
 
         boolean isClosed() {
             return closed.get();
         }
 
-        ChannelFuture close() {
+        /**
+         * Asynchronous close method.
+         *
+         * @return single of the closing process
+         */
+        Single<Void> close() {
             if (closed.compareAndSet(false, true)) {
                 WebClientServiceResponse clientServiceResponse = ctx.channel().attr(SERVICE_RESPONSE).get();
                 requestComplete.complete(clientServiceResponse);
 
                 publisher.complete();
-                return ctx.close();
+                ctx.close()
+                        .addListener(future -> {
+                            if (future.isSuccess()) {
+                                 LOGGER.finest(() -> "Response from has been closed.");
+                                 cf.complete(null);
+                            } else {
+                                LOGGER.log(Level.SEVERE,
+                                           future.cause(),
+                                           () -> "An exception occurred while closing the response");
+                                cf.completeExceptionally(future.cause());
+                            }
+                        });
             }
-            throw new WebClientException("Response has been already closed!");
+            return Single.create(cf, true);
         }
 
     }

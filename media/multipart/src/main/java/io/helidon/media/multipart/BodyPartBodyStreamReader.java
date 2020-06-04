@@ -32,8 +32,8 @@ public final class BodyPartBodyStreamReader implements MessageBodyStreamReader<R
     }
 
     @Override
-    public boolean accept(GenericType<?> type, MessageBodyReaderContext context) {
-        return BodyPart.class.isAssignableFrom(type.rawType());
+    public PredicateResult accept(GenericType<?> type, MessageBodyReaderContext context) {
+        return PredicateResult.supports(BodyPart.class, type);
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -90,7 +90,7 @@ public interface GrpcServerConfiguration {
     GrpcTracingConfig tracingConfig();
 
     /**
-     * Returns a count of threads in s pool used to tryProcess gRPC requests.
+     * Returns a count of threads in s pool used to process gRPC requests.
      * <p>
      * Default value is {@code CPU_COUNT * 2}.
      *
@@ -253,7 +253,7 @@ public interface GrpcServerConfiguration {
         }
 
         /**
-         * Sets a count of threads in pool used to tryProcess HTTP requests.
+         * Sets a count of threads in pool used to process HTTP requests.
          * Default value is {@code CPU_COUNT * 2}.
          * <p>
          * Configuration key: {@code workers}

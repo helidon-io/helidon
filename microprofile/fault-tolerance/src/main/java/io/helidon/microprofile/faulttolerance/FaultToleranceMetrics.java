@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,21 +17,19 @@
 package io.helidon.microprofile.faulttolerance;
 
 import java.lang.reflect.Method;
-import java.util.Collections;
 
 import javax.enterprise.inject.spi.CDI;
-
-import io.helidon.common.metrics.InternalBridge.MetricID;
-import io.helidon.common.metrics.InternalBridge.MetricRegistry;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Histogram;
+import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Metric;
+import org.eclipse.microprofile.metrics.MetricID;
+import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 
-import static io.helidon.common.metrics.InternalBridge.Metadata.newMetadata;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceExtension.getRealClass;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceExtension.isFaultToleranceMetricsEnabled;
 
@@ -63,7 +61,7 @@ class FaultToleranceMetrics {
         MetricID metricID = newMetricID(String.format(METRIC_NAME_TEMPLATE,
                 method.getDeclaringClass().getName(),
                 method.getName(), name));
-        return (T) getMetricRegistry().getBridgeMetrics().get(metricID);
+        return (T) getMetricRegistry().getMetrics().get(metricID);
     }
 
     static Counter getCounter(Method method, String name) {
@@ -305,7 +303,7 @@ class FaultToleranceMetrics {
     private static Counter registerCounter(String name, String description) {
         return getMetricRegistry().counter(
                 newMetadata(name, name, description, MetricType.COUNTER, MetricUnits.NONE,
-                        true, Collections.emptyMap()));
+                        true));
     }
 
     /**
@@ -318,7 +316,7 @@ class FaultToleranceMetrics {
     static Histogram registerHistogram(String name, String description) {
         return getMetricRegistry().histogram(
                 newMetadata(name, name, description, MetricType.HISTOGRAM, MetricUnits.NANOSECONDS,
-                        true, Collections.emptyMap()));
+                        true));
     }
 
     /**
@@ -335,18 +333,29 @@ class FaultToleranceMetrics {
                 method.getDeclaringClass().getName(),
                 method.getName(),
                 metricName));
-        Gauge<T> existing = getMetricRegistry().getBridgeGauges().get(metricID);
+        Gauge<T> existing = getMetricRegistry().getGauges().get(metricID);
         if (existing == null) {
             getMetricRegistry().register(
                     newMetadata(metricID.getName(), metricID.getName(), description, MetricType.GAUGE, MetricUnits.NANOSECONDS,
-                            true, Collections.emptyMap()),
+                            true),
                     gauge);
         }
         return existing;
     }
 
     private static MetricID newMetricID(String name) {
-        return MetricID.Factory.INSTANCE.newMetricID(name);
+        return new MetricID(name);
     }
 
+    private static Metadata newMetadata(String name, String displayName, String description, MetricType metricType,
+                                        String metricUnits, boolean isReusable) {
+        return Metadata.builder()
+                .withName(name)
+                .withDisplayName(displayName)
+                .withDescription(description)
+                .withType(metricType)
+                .withUnit(metricUnits)
+                .reusable(isReusable)
+                .build();
+    }
 }

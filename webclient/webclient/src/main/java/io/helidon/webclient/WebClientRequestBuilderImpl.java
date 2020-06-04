@@ -35,6 +35,7 @@ import java.util.StringTokenizer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
@@ -270,8 +271,20 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     }
 
     @Override
+    public WebClientRequestBuilder connectTimeout(long amount, TimeUnit unit) {
+        this.connectTimeout = Duration.of(amount, unit.toChronoUnit());
+        return this;
+    }
+
+    @Override
     public WebClientRequestBuilder readTimeout(long amount, TemporalUnit unit) {
         this.readTimeout = Duration.of(amount, unit);
+        return this;
+    }
+
+    @Override
+    public WebClientRequestBuilder readTimeout(long amount, TimeUnit unit) {
+        this.readTimeout = Duration.of(amount,  unit.toChronoUnit());
         return this;
     }
 
@@ -411,7 +424,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     private <T> Single<T> invokeWithEntity(Flow.Publisher<DataChunk> requestEntity, GenericType<T> responseType) {
         return invoke(requestEntity)
                 .map(this::getContentFromClientResponse)
-                .flatMapSingle(content -> Single.from(content.as(responseType)));
+                .flatMapSingle(content -> Single.create(content.as(responseType)));
     }
 
     private Single<WebClientResponse> invoke(Flow.Publisher<DataChunk> requestEntity) {
@@ -419,9 +432,9 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         CompletableFuture<WebClientServiceRequest> sent = new CompletableFuture<>();
         CompletableFuture<WebClientServiceResponse> responseReceived = new CompletableFuture<>();
         CompletableFuture<WebClientServiceResponse> complete = new CompletableFuture<>();
-        Single<WebClientServiceRequest> singleSent = Single.from(sent);
-        Single<WebClientServiceResponse> singleResponseReceived = Single.from(responseReceived);
-        Single<WebClientServiceResponse> singleComplete = Single.from(complete);
+        Single<WebClientServiceRequest> singleSent = Single.create(sent);
+        Single<WebClientServiceResponse> singleResponseReceived = Single.create(responseReceived);
+        Single<WebClientServiceResponse> singleComplete = Single.create(complete);
         WebClientServiceRequest completedRequest = new WebClientServiceRequestImpl(this,
                                                                                    singleSent,
                                                                                    singleResponseReceived,
@@ -432,7 +445,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
             rcs = rcs.thenCompose(service::request);
         }
 
-        return Single.from(rcs.thenCompose(serviceRequest -> {
+        return Single.create(rcs.thenCompose(serviceRequest -> {
             HttpHeaders headers = toNettyHttpHeaders();
             DefaultHttpRequest request = new DefaultHttpRequest(toNettyHttpVersion(httpVersion),
                                                                 toNettyMethod(method),

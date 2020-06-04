@@ -28,9 +28,11 @@ import io.helidon.common.reactive.Single;
 /**
  * Message body writer for {@link ReadableByteChannel}.
  */
-public final class ByteChannelBodyWriter implements MessageBodyWriter<ReadableByteChannel> {
+final class ByteChannelBodyWriter implements MessageBodyWriter<ReadableByteChannel> {
 
     static final RetrySchema DEFAULT_RETRY_SCHEMA = RetrySchema.linear(0, 10, 250);
+
+    private static final ByteChannelBodyWriter DEFAULT = new ByteChannelBodyWriter(DEFAULT_RETRY_SCHEMA);
 
     private final ByteChannelToChunks mapper;
 
@@ -44,8 +46,8 @@ public final class ByteChannelBodyWriter implements MessageBodyWriter<ReadableBy
     }
 
     @Override
-    public boolean accept(GenericType<?> type, MessageBodyWriterContext context) {
-        return ReadableByteChannel.class.isAssignableFrom(type.rawType());
+    public PredicateResult accept(GenericType<?> type, MessageBodyWriterContext context) {
+        return PredicateResult.supports(ReadableByteChannel.class, type);
     }
 
     @Override
@@ -62,20 +64,21 @@ public final class ByteChannelBodyWriter implements MessageBodyWriter<ReadableBy
      * @param schema retry schema
      * @return {@link ReadableByteChannel} message body writer
      */
-    public static ByteChannelBodyWriter create(RetrySchema schema) {
+    static ByteChannelBodyWriter create(RetrySchema schema) {
         return new ByteChannelBodyWriter(schema);
     }
 
     /**
-     * Create a new instance of {@link ByteChannelBodyWriter}.
+     * Return an instance of {@link ByteChannelBodyWriter}.
+     *
      * @return {@link ReadableByteChannel} message body writer
      */
-    public static ByteChannelBodyWriter create() {
-        return new ByteChannelBodyWriter(DEFAULT_RETRY_SCHEMA);
+    static ByteChannelBodyWriter create() {
+        return DEFAULT;
     }
 
     /**
-     * Implementation of {@link MultiMapper} that converts a
+     * Implementation of {@link Mapper} that converts a
      * {@link ReadableByteChannel} to a publisher of {@link DataChunk}.
      */
     private static final class ByteChannelToChunks implements Mapper<ReadableByteChannel, Publisher<DataChunk>> {

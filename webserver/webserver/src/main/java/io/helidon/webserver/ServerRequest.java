@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,12 @@
 
 package io.helidon.webserver;
 
+import java.util.Optional;
+
+import io.helidon.common.context.Context;
 import io.helidon.common.http.HttpRequest;
 import io.helidon.media.common.MessageBodyReadableContent;
 
-import io.opentracing.Span;
 import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
 
@@ -60,8 +62,7 @@ public interface ServerRequest extends HttpRequest {
      *
      * @return a request context
      */
-    @SuppressWarnings("deprecation")
-    io.helidon.common.http.ContextualRegistry context();
+    Context context();
 
     /**
      * Returns the Internet Protocol (IP) address of the interface on which the request was received.
@@ -121,27 +122,13 @@ public interface ServerRequest extends HttpRequest {
     long requestId();
 
     /**
-     * Returns a span connected with current {@link Handler} call.
-     * <p>
-     * {@code Span} is a tracing component from <a href="http://opentracing.io">opentracing.io</a> standard.
-     *
-     * @return a current span
-     * @deprecated use {@link #spanContext()} instead
-     */
-    @Deprecated
-    Span span();
-
-    /**
      * Returns a span context related to the current request.
      * <p>
      * {@code SpanContext} is a tracing component from <a href="http://opentracing.io">opentracing.io</a> standard.
      *
-     * @return the related span context, may be null if not enabled
-     * @deprecated this method will have a different return type in next backward incompatible version
-     *  of Helidon. It will return {@code Optional<SpanContext>}. All methods that can return null will use
-     *  {@link java.util.Optional}
+     * @return the related span context, empty if not enabled
      */
-    SpanContext spanContext();
+    Optional<SpanContext> spanContext();
 
     /**
      * Returns the {@link io.opentracing.Tracer} associated with {@link io.helidon.webserver.WebServer}.

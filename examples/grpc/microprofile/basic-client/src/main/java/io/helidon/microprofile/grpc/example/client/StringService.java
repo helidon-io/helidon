@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import java.util.stream.Stream;
 
 import io.helidon.microprofile.grpc.core.Bidirectional;
 import io.helidon.microprofile.grpc.core.ClientStreaming;
-import io.helidon.microprofile.grpc.core.RpcService;
+import io.helidon.microprofile.grpc.core.Grpc;
 import io.helidon.microprofile.grpc.core.ServerStreaming;
 import io.helidon.microprofile.grpc.core.Unary;
 
@@ -29,10 +29,10 @@ import io.grpc.stub.StreamObserver;
 /**
  * The gRPC StringService.
  * <p>
- * This class has the {@link io.helidon.microprofile.grpc.core.RpcService} annotation
+ * This class has the {@link io.helidon.microprofile.grpc.core.Grpc} annotation
  * so that it will be discovered and loaded using CDI when the MP gRPC server starts.
  */
-@RpcService
+@Grpc
 @SuppressWarnings("CdiManagedBeanInconsistencyInspection")
 public interface StringService {
 

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,7 @@ package io.helidon.microprofile.metrics;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
 
-import io.helidon.common.metrics.InternalBridge.MetricRegistry;
-
+import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricRegistry.Type;
 import org.eclipse.microprofile.metrics.annotation.RegistryType;
 
@@ -34,29 +33,6 @@ final class RegistryProducer {
             io.helidon.metrics.RegistryFactory.getInstance();
 
     private RegistryProducer() {
-    }
-
-    @Produces
-    public static MetricRegistry getDefaultRegistryInternal() {
-        return getApplicationRegistryInternal();
-    }
-
-    @Produces
-    @RegistryType(type = Type.APPLICATION)
-    public static MetricRegistry getApplicationRegistryInternal() {
-        return REGISTRY_FACTORY.getBridgeRegistry(Type.APPLICATION);
-    }
-
-    @Produces
-    @RegistryType(type = Type.BASE)
-    public static MetricRegistry getBaseRegistryInternal() {
-        return REGISTRY_FACTORY.getBridgeRegistry(Type.BASE);
-    }
-
-    @Produces
-    @RegistryType(type = Type.VENDOR)
-    public static MetricRegistry getVendorRegistryInternal() {
-        return REGISTRY_FACTORY.getBridgeRegistry(Type.VENDOR);
     }
 
     @Produces
@@ -87,7 +63,7 @@ final class RegistryProducer {
      * all run on the same VM and must not interfere with each other.
      */
     static void clearApplicationRegistry() {
-        MetricRegistry applicationRegistry = getApplicationRegistryInternal();
+        MetricRegistry applicationRegistry = getApplicationRegistry();
         applicationRegistry.getNames().forEach(applicationRegistry::remove);
     }
 }

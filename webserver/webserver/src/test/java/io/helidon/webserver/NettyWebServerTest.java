@@ -79,8 +79,8 @@ public class NettyWebServerTest {
                     final AtomicReference<Subscription> subscription = new AtomicReference<>();
 
                     // Read request and immediately write to response
-                    Multi.from(breq.bodyPublisher()).subscribe((DataChunk chunk) -> {
-                        DataChunk responseChunk = DataChunk.create(true, chunk.data(), chunk::release);
+                    Multi.create(breq.bodyPublisher()).subscribe((DataChunk chunk) -> {
+                        DataChunk responseChunk = DataChunk.create(true, chunk::release, chunk.data());
                         responsePublisher.submit(responseChunk);
                         ForkJoinPool.commonPool().submit(() -> {
                             try {

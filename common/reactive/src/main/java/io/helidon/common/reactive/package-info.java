@@ -18,6 +18,7 @@
  * Common reactive library for Helidon projects.
  *
  * @see java.util.concurrent.Flow
- * @see io.helidon.common.reactive.OutputStreamPublisher
+ * @see io.helidon.common.reactive.Multi
+ * @see io.helidon.common.reactive.IoMulti
  */
 package io.helidon.common.reactive;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,19 +55,19 @@ class HelloTest {
     }
 
     @Test
-    void TestHello() {
+    void testHello() {
         WebTarget target = baseTarget.path("/hello");
         assertOk(target.request().get(), "Hello World");
     }
 
     @Test
-    void TestHelloTimeout() {
+    void testHelloTimeout() {
         WebTarget target = baseTarget.path("/helloTimeout");
         assertOk(target.request().get(), "Hello World");
     }
 
     @Test
-    void TestHelloAsync() {
+    void testHelloAsync() {
         WebTarget target = baseTarget.path("/helloAsync");
         assertOk(target.request().get(), "Hello World");
     }

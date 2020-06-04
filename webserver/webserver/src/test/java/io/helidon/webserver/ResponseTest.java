@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Publisher;
@@ -31,6 +30,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 
 import io.helidon.common.GenericType;
+import io.helidon.common.LazyValue;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
@@ -131,7 +131,7 @@ public class ResponseTest {
     private static <T> void marshall(Response rsp, Single<T> entity, Class<T> clazz)
             throws InterruptedException, ExecutionException, TimeoutException {
 
-        Multi.from(rsp.writerContext().marshall(entity, GenericType.create(clazz)))
+        Multi.create(rsp.writerContext().marshall(entity, GenericType.create(clazz)))
                 .collectList()
                 .get(10, TimeUnit.SECONDS);
     }
@@ -259,7 +259,7 @@ public class ResponseTest {
     static class ResponseImpl extends Response {
 
         public ResponseImpl(BareResponse bareResponse) {
-            super(mock(WebServer.class), bareResponse, List.of());
+            super(mock(WebServer.class), bareResponse, LazyValue.create(List.of()));
         }
 
         @Override
@@ -283,13 +283,13 @@ public class ResponseTest {
         }
 
         @Override
-        public CompletionStage<BareResponse> whenCompleted() {
-            return closeFuture;
+        public Single<BareResponse> whenCompleted() {
+            return Single.create(closeFuture);
         }
 
         @Override
-        public CompletionStage<BareResponse> whenHeadersCompleted() {
-            return closeFuture;
+        public Single<BareResponse> whenHeadersCompleted() {
+            return Single.create(closeFuture);
         }
 
         @Override

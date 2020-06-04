@@ -25,7 +25,9 @@ import io.helidon.common.reactive.Single;
 /**
  * Message body reader for {@link InputStream}.
  */
-public class InputStreamBodyReader implements MessageBodyReader<InputStream> {
+class InputStreamBodyReader implements MessageBodyReader<InputStream> {
+
+    private static final InputStreamBodyReader DEFAULT = new InputStreamBodyReader();
 
     /**
      * Enforce the use of {@link #create()}.
@@ -34,8 +36,12 @@ public class InputStreamBodyReader implements MessageBodyReader<InputStream> {
     }
 
     @Override
-    public boolean accept(GenericType<?> type, MessageBodyReaderContext context) {
-        return InputStream.class.isAssignableFrom(type.rawType());
+    public PredicateResult accept(GenericType<?> type, MessageBodyReaderContext context) {
+        if (InputStream.class.equals(type.rawType())
+                || DataChunkInputStream.class.equals(type.rawType())) {
+            return PredicateResult.SUPPORTED;
+        }
+        return PredicateResult.NOT_SUPPORTED;
     }
 
     @Override
@@ -47,10 +53,11 @@ public class InputStreamBodyReader implements MessageBodyReader<InputStream> {
     }
 
     /**
-     * Create a new instance of {@link InputStreamBodyReader}.
+     * Return an instance of {@link InputStreamBodyReader}.
+     *
      * @return {@link InputStream} message body reader.
      */
-    public static InputStreamBodyReader create() {
-        return new InputStreamBodyReader();
+    static InputStreamBodyReader create() {
+        return DEFAULT;
     }
 }

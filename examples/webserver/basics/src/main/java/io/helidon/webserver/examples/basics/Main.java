@@ -28,9 +28,9 @@ import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.http.Parameters;
-import io.helidon.common.http.Reader;
 import io.helidon.media.common.MediaContext;
-import io.helidon.media.jsonp.common.JsonpSupport;
+import io.helidon.media.common.MessageBodyReader;
+import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.HttpException;
 import io.helidon.webserver.RequestPredicate;
@@ -243,13 +243,9 @@ public class Main {
     }
 
     /**
-     * It is possible register custom request content {@link Reader Reader}. It collects
-     * all {@link DataChunk RequestChunks} into a single entity of the given type.
-     * <p>
-     * It is also possible to register filters which can modify original {@link java.util.concurrent.Flow Flow} of
-     * {@link DataChunk RequestChunks}.
+     * Use a custom {@link MessageBodyReader reader} to convert the request content into an object of a given type.
      */
-    public void filterAndProcessEntity() {
+    public void mediaReader() {
         Routing routing = Routing.builder()
                                  .post("/create-record", Handler.create(Name.class, (req, res, name) -> {
                                      System.out.println("Name: " + name);

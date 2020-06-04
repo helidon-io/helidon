@@ -92,7 +92,7 @@ public class SingleTimeoutTest {
 
         SubmissionPublisher<Long> sp = new SubmissionPublisher<>(Runnable::run, 128);
 
-        Single.from(sp)
+        Single.create(sp)
                 .timeout(1, TimeUnit.MILLISECONDS, executor)
                 .subscribe(ts);
 

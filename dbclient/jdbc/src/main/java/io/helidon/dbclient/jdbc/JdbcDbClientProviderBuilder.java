@@ -15,6 +15,8 @@
  */
 package io.helidon.dbclient.jdbc;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
@@ -25,12 +27,10 @@ import io.helidon.common.mapper.MapperManager;
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbClientException;
-import io.helidon.dbclient.DbInterceptor;
+import io.helidon.dbclient.DbClientService;
 import io.helidon.dbclient.DbMapper;
 import io.helidon.dbclient.DbMapperManager;
-import io.helidon.dbclient.DbStatementType;
 import io.helidon.dbclient.DbStatements;
-import io.helidon.dbclient.common.InterceptorSupport;
 import io.helidon.dbclient.spi.DbClientProviderBuilder;
 import io.helidon.dbclient.spi.DbMapperProvider;
 
@@ -39,9 +39,9 @@ import io.helidon.dbclient.spi.DbMapperProvider;
  * the {@link io.helidon.dbclient.spi.DbClientProviderBuilder} from Helidon DB API.
  */
 public final class JdbcDbClientProviderBuilder implements DbClientProviderBuilder<JdbcDbClientProviderBuilder> {
-
-    private final InterceptorSupport.Builder interceptors = InterceptorSupport.builder();
     private final DbMapperManager.Builder dbMapperBuilder = DbMapperManager.builder();
+
+    private final List<DbClientService> clientServices = new LinkedList<>();
 
     private String url;
     private String username;
@@ -196,20 +196,8 @@ public final class JdbcDbClientProviderBuilder implements DbClientProviderBuilde
     }
 
     @Override
-    public JdbcDbClientProviderBuilder addInterceptor(DbInterceptor interceptor) {
-        this.interceptors.add(interceptor);
-        return this;
-    }
-
-    @Override
-    public JdbcDbClientProviderBuilder addInterceptor(DbInterceptor interceptor, String... statementNames) {
-        this.interceptors.add(interceptor, statementNames);
-        return this;
-    }
-
-    @Override
-    public JdbcDbClientProviderBuilder addInterceptor(DbInterceptor interceptor, DbStatementType... dbStatementTypes) {
-        this.interceptors.add(interceptor, dbStatementTypes);
+    public JdbcDbClientProviderBuilder addService(DbClientService clientService) {
+        this.clientServices.add(clientService);
         return this;
     }
 
@@ -217,8 +205,8 @@ public final class JdbcDbClientProviderBuilder implements DbClientProviderBuilde
         return statements;
     }
 
-    InterceptorSupport interceptors() {
-        return interceptors.build();
+    List<DbClientService> clientServices() {
+        return List.copyOf(clientServices);
     }
 
     DbMapperManager dbMapperManager() {

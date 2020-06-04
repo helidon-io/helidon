@@ -33,7 +33,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.emptyCollectionOf;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -53,13 +52,13 @@ public class AwaitTest {
 
         Single<String> future =
                 Single.just("1")
-                .peek(peekFuture::complete);
+                        .peek(peekFuture::complete);
+
+        assertThat("Peek needs to be invoked with first call to CS method!", peekFuture.isDone(), is(not(true)));
+
         future.thenAccept(whenCompleteFuture::complete);
 
-        assertThat("Peek needs to be invoked at await!", peekFuture.isDone(), is(not(true)));
-        assertThat("WhenComplete needs to be invoked at await!", whenCompleteFuture.isDone(), is(not(true)));
-
-        future.await();
+        future.await(100, TimeUnit.MILLISECONDS);
 
         assertThat("Peek needs to be invoked at await!", peekFuture.isDone(), is(true));
         assertThat(peekFuture.get(), is(equalTo("1")));
@@ -72,14 +71,14 @@ public class AwaitTest {
         CompletableFuture<String> peekFuture = new CompletableFuture<>();
         CompletableFuture<String> whenCompleteFuture = new CompletableFuture<>();
 
-        CompletionAwaitable<String> awaitable = Single.just("1")
-                .peek(peekFuture::complete)
-                .whenComplete((s, throwable) -> whenCompleteFuture.complete(s));
+        Single<String> single = Single.just("1")
+                .peek(peekFuture::complete);
 
-        assertThat("Peek needs to be invoked at await!", peekFuture.isDone(), is(not(true)));
-        assertThat("WhenComplete needs to be invoked at await!", whenCompleteFuture.isDone(), is(not(true)));
+        assertThat("Peek needs to be invoked at first CS method!", peekFuture.isDone(), is(not(true)));
 
-        awaitable.await(100, TimeUnit.MILLISECONDS);
+        single.whenComplete((s, throwable) -> whenCompleteFuture.complete(s));
+
+        single.await(100, TimeUnit.MILLISECONDS);
 
         assertThat("Peek needs to be invoked at await!", peekFuture.isDone(), is(true));
         assertThat(peekFuture.get(), is(equalTo("1")));
@@ -89,71 +88,67 @@ public class AwaitTest {
 
 
     @Test
-    void lazyCSConversionCallbackOrderSingle() {
+    void callbackOrderSingle() {
         List<Integer> result = new ArrayList<>();
         AtomicInteger cnt = new AtomicInteger(0);
-        Runnable registerCall = () -> result.add(cnt.incrementAndGet());
 
         CompletionAwaitable<String> awaitable = Single.just("2")
                 .flatMapSingle(Single::just)
-                .peek(s -> registerCall.run())
+                .peek(s -> result.add(1))
                 .map(s -> {
-                    registerCall.run();
+                    result.add(2);
                     return s;
                 })
                 .flatMapSingle(Single::just)
-                .peek(s -> registerCall.run())
+                .peek(s -> result.add(3))
                 .flatMapSingle(Single::just)
                 .map(s -> {
-                    registerCall.run();
+                    result.add(4);
                     return s;
                 })
                 .flatMapSingle(Single::just)
-                .whenComplete((s, throwable) -> registerCall.run())
+                .whenComplete((s, throwable) -> result.add(5))
                 .thenApply(s -> {
-                    registerCall.run();
+                    result.add(6);
                     return s;
                 })
-                .whenComplete((s, throwable) -> registerCall.run());
+                .whenComplete((s, throwable) -> result.add(7));
 
-        assertThat(result, emptyCollectionOf(Integer.class));
         awaitable.await(SAFE_WAIT_MILLIS, TimeUnit.MILLISECONDS);
-        assertThat(result, equalTo(IntStream.rangeClosed(1, cnt.get()).boxed().collect(Collectors.toList())));
+        assertThat(result, equalTo(IntStream.rangeClosed(1, 7).boxed().collect(Collectors.toList())));
     }
 
 
     @Test
-    void lazyCSConversionCallbackOrderMulti() {
+    void callbackOrderMulti() {
         List<Integer> result = new ArrayList<>();
         AtomicInteger cnt = new AtomicInteger(0);
-        Runnable registerCall = () -> result.add(cnt.incrementAndGet());
 
-        CompletionAwaitable<Void> awaitable = Multi.just(1L, 2L,3L )
+        CompletionAwaitable<Void> awaitable = Multi.just(1L)
                 .flatMap(Single::just)
-                .peek(s -> registerCall.run())
+                .peek(s -> result.add(1))
                 .map(s -> {
-                    registerCall.run();
+                    result.add(2);
                     return s;
                 })
                 .flatMap(Single::just)
-                .peek(s -> registerCall.run())
+                .peek(s -> result.add(3))
                 .flatMap(Single::just)
                 .map(s -> {
-                    registerCall.run();
+                    result.add(4);
                     return s;
                 })
                 .flatMap(Single::just)
-                .forEach(aLong -> registerCall.run())
-                .whenComplete((s, throwable) -> registerCall.run())
+                .forEach(aLong -> result.add(5))
+                .whenComplete((s, throwable) -> result.add(6))
                 .thenApply(s -> {
-                    registerCall.run();
+                    result.add(7);
                     return s;
                 })
-                .whenComplete((s, throwable) -> registerCall.run());
+                .whenComplete((s, throwable) -> result.add(8));
 
-        //For each operator triggers stream on its own, we are just waiting for it to finish
         awaitable.await(SAFE_WAIT_MILLIS, TimeUnit.MILLISECONDS);
-        assertThat(result, equalTo(IntStream.rangeClosed(1, cnt.get()).boxed().collect(Collectors.toList())));
+        assertThat(result, equalTo(IntStream.rangeClosed(1, 8).boxed().collect(Collectors.toList())));
     }
 
     @Test

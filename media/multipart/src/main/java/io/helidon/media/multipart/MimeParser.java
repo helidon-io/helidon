@@ -299,7 +299,7 @@ final class MimeParser {
 
         /**
          * Create a new exception with the specified cause.
-         * @param message exception cause
+         * @param cause exception cause
          */
         private ParsingException(Throwable cause) {
             super(cause);
@@ -773,7 +773,7 @@ final class MimeParser {
 
     /**
      * Boyer-Moore search method.
-     * Copied from {@link java.util.regex.Pattern.java}
+     * Copied from {@link java.util.regex.Pattern}
      *
      * Pre calculates arrays needed to generate the bad character shift and the
      * good suffix shift. Only the last seven bits are used to see if chars
@@ -821,10 +821,7 @@ final class MimeParser {
 
     /**
      * Finds the boundary in the given buffer using Boyer-Moore algorithm.
-     * Copied from {@link java.util.regex.Pattern.java}
-     *
-     * @param off start index in buf
-     * @param len number of bytes in buf
+     * Copied from {@link java.util.regex.Pattern}
      *
      * @return -1 if there is no match or index where the match starts
      */

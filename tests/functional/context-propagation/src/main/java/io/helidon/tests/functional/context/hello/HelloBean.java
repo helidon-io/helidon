@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,8 @@ import javax.enterprise.context.ApplicationScoped;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
+import io.helidon.metrics.RegistryFactory;
 
-import io.opentracing.SpanContext;
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
 import org.eclipse.microprofile.faulttolerance.Timeout;
 
@@ -42,9 +42,12 @@ public class HelloBean {
      * @return Hello string.
      */
     public String getHello() {
-        Context context = Contexts.context().get();
+        Context context = Contexts.context().orElse(null);
         Objects.requireNonNull(context);
-        Objects.requireNonNull(context.get(SpanContext.class).get());
+        // application scoped context
+        Objects.requireNonNull(context.get(RegistryFactory.class).orElse(null));
+        // request scoped context
+        Objects.requireNonNull(context.get(MyMessage.class).orElse(null));
         return "Hello World";
     }
 
@@ -55,9 +58,12 @@ public class HelloBean {
      */
     @Timeout(1000)
     public String getHelloTimeout() {
-        Context context = Contexts.context().get();
+        Context context = Contexts.context().orElse(null);
         Objects.requireNonNull(context);
-        Objects.requireNonNull(context.get(SpanContext.class).get());
+        // application scoped context
+        Objects.requireNonNull(context.get(RegistryFactory.class).orElse(null));
+        // request scoped context
+        Objects.requireNonNull(context.get(MyMessage.class).orElse(null));
         return "Hello World";
     }
 
@@ -68,9 +74,12 @@ public class HelloBean {
      */
     @Asynchronous
     public CompletionStage<String> getHelloAsync() {
-        Context context = Contexts.context().get();
+        Context context = Contexts.context().orElse(null);
         Objects.requireNonNull(context);
-        Objects.requireNonNull(context.get(SpanContext.class).get());
+        // application scoped context
+        Objects.requireNonNull(context.get(RegistryFactory.class).orElse(null));
+        // request scoped context
+        Objects.requireNonNull(context.get(MyMessage.class).orElse(null));
         return CompletableFuture.completedFuture("Hello World");
     }
 }

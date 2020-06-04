@@ -94,7 +94,7 @@ public class MultiTimeoutTest {
 
         SubmissionPublisher<Long> sp = new SubmissionPublisher<>(Runnable::run, 128);
 
-        Multi.from(sp)
+        Multi.create(sp)
                 .timeout(1, TimeUnit.MILLISECONDS, executor)
                 .subscribe(ts);
 
@@ -114,7 +114,7 @@ public class MultiTimeoutTest {
         SubmissionPublisher<Long> sp = new SubmissionPublisher<>(Runnable::run, 128);
         SubmissionPublisher<Long> sp2 = new SubmissionPublisher<>(Runnable::run, 128);
 
-        Multi.from(sp)
+        Multi.create(sp)
                 .timeout(100, TimeUnit.MILLISECONDS, executor, sp2)
                 .subscribe(ts);
 

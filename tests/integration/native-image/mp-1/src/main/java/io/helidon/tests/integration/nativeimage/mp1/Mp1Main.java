@@ -21,7 +21,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -53,8 +52,6 @@ import io.helidon.security.jwt.jwk.JwkRSA;
 
 import io.opentracing.Tracer;
 import io.opentracing.util.GlobalTracer;
-import org.eclipse.microprofile.config.Config;
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException;
 
 import static io.helidon.common.http.Http.Status.FORBIDDEN_403;
@@ -111,11 +108,11 @@ public final class Mp1Main {
         long time = System.currentTimeMillis() - now;
         System.out.println("Tests finished in " + time + " millis");
 
-        Config config = ConfigProvider.getConfig();
-        List<String> names = new ArrayList<>();
-        config.getPropertyNames()
-                .forEach(names::add);
-        names.sort(String::compareTo);
+        //        Config config = ConfigProvider.getConfig();
+        //        List<String> names = new ArrayList<>();
+        //        config.getPropertyNames()
+        //                .forEach(names::add);
+        //        names.sort(String::compareTo);
 
         //        System.out.println("All configuration options:");
         //        names.forEach(it -> {
@@ -243,8 +240,36 @@ public final class Mp1Main {
         // Static content
         validateStaticContent(collector, target);
 
+        // Make sure resource and provider classes are discovered
+        validateNoClassApp(collector, target);
+
         collector.collect()
                 .checkValid();
+    }
+
+    private static void validateNoClassApp(Errors.Collector collector, WebTarget target) {
+        String path = "/noclass";
+        String expected = "Hello World ";
+
+        Response response = target.path(path)
+                .request()
+                .get();
+
+        if (response.getStatus() == OK_200.code()) {
+            String entity = response.readEntity(String.class);
+            if (!expected.equals(entity)) {
+                collector.fatal("Endpoint " + path + "should return \"" + expected + "\", but returned \"" + entity + "\"");
+            }
+        } else {
+            collector.fatal("Endpoint " + path + " should be handled by JaxRsResource.java. Status received: "
+                                    + response.getStatus());
+        }
+
+        int count = AutoFilter.count();
+
+        if (count == 0) {
+            collector.fatal("Filter should have been added to JaxRsApplicationNoClass automatically");
+        }
     }
 
     private static void validateStaticContent(Errors.Collector collector, WebTarget target) {

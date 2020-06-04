@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package io.helidon.metrics;
 
 import java.util.EnumMap;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Supplier;
 
 import io.helidon.config.Config;
 
@@ -42,7 +41,7 @@ import org.eclipse.microprofile.metrics.MetricRegistry.Type;
  */
 // this class is not immutable, as we may need to update registries with configuration post creation
 // see Github issue #360
-public final class RegistryFactory implements io.helidon.common.metrics.InternalBridge.MetricRegistry.RegistryFactory {
+public final class RegistryFactory {
     private static final RegistryFactory INSTANCE = create();
 
     private final EnumMap<Type, Registry> registries = new EnumMap<>(Type.class);
@@ -83,34 +82,6 @@ public final class RegistryFactory implements io.helidon.common.metrics.Internal
      */
     public static RegistryFactory create(Config config) {
         return new RegistryFactory(config);
-    }
-
-
-
-    /**
-     * Get a supplier for registry factory. The supplier will return the singleton isntance
-     * that is created.
-     *
-     * @return supplier of registry factory (to bind as late as possible)
-     * @deprecated use {@link io.helidon.metrics.RegistryFactory#getInstance() RegistryFactory::getInstance} instead.
-     */
-    @Deprecated
-    public static Supplier<RegistryFactory> getRegistryFactory() {
-        return RegistryFactory::getInstance;
-    }
-
-    /**
-     * Create a registry factory for systems without CDI.
-     *
-     * @param config configuration to load the factory config from
-     * @return a new registry factory to obtain application registry (and other registries)
-     * @deprecated use {@link #create()} or {@link #create(io.helidon.config.Config)} instead when a new
-     * registry factory instance is needed. Use {@link #getInstance()} or {@link #getInstance(io.helidon.config.Config)}
-     * to retrieve the shared (singleton) instance.
-     */
-    @Deprecated
-    public static RegistryFactory createSeFactory(Config config) {
-        return create(config);
     }
 
     /**
@@ -154,11 +125,6 @@ public final class RegistryFactory implements io.helidon.common.metrics.Internal
             ensureBase();
         }
         return publicRegistries.get(type);
-    }
-
-    @Override
-    public io.helidon.common.metrics.InternalBridge.MetricRegistry getBridgeRegistry(Type type) {
-        return io.helidon.common.metrics.InternalBridge.MetricRegistry.class.cast(getRegistry(type));
     }
 
     private void update(Config config) {

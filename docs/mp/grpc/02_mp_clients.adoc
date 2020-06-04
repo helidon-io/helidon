@@ -61,7 +61,7 @@ For example, suppose we have a simple server side service that has a unary metho
 .Simple gRPC Service
 ----
 @ApplicationScoped
-@io.helidon.microprofile.grpc.core.RpcService
+@io.helidon.microprofile.grpc.core.Grpc
 public class StringService {
 
     @io.helidon.microprofile.grpc.core.Unary
@@ -81,7 +81,7 @@ To write a client for the StringService all that is required is an interface.
 .Simple gRPC Service
 ----
 @ApplicationScoped
-@io.helidon.microprofile.grpc.core.RpcService
+@io.helidon.microprofile.grpc.core.Grpc
 public class StringService {
 
     @io.helidon.microprofile.grpc.core.Unary
@@ -100,7 +100,7 @@ unary method signature:
 .Simple gRPC Service
 ----
 @ApplicationScoped
-@io.helidon.microprofile.grpc.core.RpcService
+@io.helidon.microprofile.grpc.core.Grpc
 public class StringService {
 
     @io.helidon.microprofile.grpc.core.Unary
@@ -114,7 +114,7 @@ We could also have made the client asynchronous by using one of the async method
 .Simple gRPC Service
 ----
 @ApplicationScoped
-@io.helidon.microprofile.grpc.core.RpcService
+@io.helidon.microprofile.grpc.core.Grpc
 public class StringService {
 
     @io.helidon.microprofile.grpc.core.Unary
@@ -237,13 +237,13 @@ The field is then annotated so that CDI will inject the client proxy into the fi
 public class Client {
 
     @Inject                                  <1>
-    @GrpcServiceProxy                        <2>
+    @GrpcProxy                        <2>
     @GrpcChannel(name = "test-server")       <3>
     private StringService stringService;
 ----
 
 <1> The `@Inject` annotation tells the CDI to inject the client implementation; the gRPC MP APIs have a bean provider that does this.
-<2> The `@GrpcServiceProxy` annotation is used by the CDI container to match the injection point to the gRPC MP APIs provider
+<2> The `@GrpcProxy` annotation is used by the CDI container to match the injection point to the gRPC MP APIs provider
 <3> The `@GrpcChannel` annotation identifies the gRPC channel to be used by the client. The name used in the annotation refers to
 a channel name in the application configuration.
 

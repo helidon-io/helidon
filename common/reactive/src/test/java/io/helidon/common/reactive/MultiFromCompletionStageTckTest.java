@@ -16,13 +16,13 @@
 
 package io.helidon.common.reactive;
 
-import org.reactivestreams.tck.TestEnvironment;
-import org.reactivestreams.tck.flow.FlowPublisherVerification;
-import org.testng.annotations.Test;
-
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow;
+
+import org.reactivestreams.tck.TestEnvironment;
+import org.reactivestreams.tck.flow.FlowPublisherVerification;
+import org.testng.annotations.Test;
 
 @Test
 public class MultiFromCompletionStageTckTest extends FlowPublisherVerification<Long> {
@@ -34,14 +34,14 @@ public class MultiFromCompletionStageTckTest extends FlowPublisherVerification<L
     @Override
     public Flow.Publisher<Long> createFlowPublisher(long l) {
         CompletableFuture<Long> cf = CompletableFuture.completedFuture(1L);
-        return Multi.from(cf);
+        return Multi.create(cf);
     }
 
     @Override
     public Flow.Publisher<Long> createFailedFlowPublisher() {
         CompletableFuture<Long> cf = new CompletableFuture<>();
         cf.completeExceptionally(new IOException());
-        return Multi.from(cf);
+        return Multi.create(cf);
     }
 
     @Override

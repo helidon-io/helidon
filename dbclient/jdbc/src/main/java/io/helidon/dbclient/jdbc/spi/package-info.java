@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 /**
  * Service provider interface for Helidon DB implementation for JDBC.
  *
- * The main entry point for JDBC DB Client configuration interceptors implementation
+ * The main entry point for JDBC DB Client configuration services implementation
  * is {@link io.helidon.dbclient.jdbc.spi.HikariCpExtensionProvider}.
  */
 package io.helidon.dbclient.jdbc.spi;

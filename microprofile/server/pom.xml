@@ -73,8 +73,8 @@
         </dependency>
         <dependency>
             <!-- this is to include JSON-P native image configuration -->
-            <groupId>io.helidon.media.jsonp</groupId>
-            <artifactId>helidon-media-jsonp-common</artifactId>
+            <groupId>io.helidon.media</groupId>
+            <artifactId>helidon-media-jsonp</artifactId>
             <scope>runtime</scope>
         </dependency>
         <dependency>

@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow.Publisher;
@@ -53,7 +54,7 @@ public final class ContentReaders {
      * @return Single
      */
     public static Single<byte[]> readBytes(Publisher<DataChunk> chunks) {
-        return Multi.from(chunks).collect(new BytesCollector());
+        return Multi.create(chunks).collect(new BytesCollector());
     }
 
     /**
@@ -120,7 +121,9 @@ public final class ContentReaders {
      * {@link InputStream#read()}) block.
      *
      * @return a input stream content reader
+     * @deprecated use {@link DefaultMediaSupport#inputStreamReader()}
      */
+    @Deprecated(since = "2.0.0")
     public static Reader<InputStream> inputStreamReader() {
         return (publisher, clazz) -> CompletableFuture.completedFuture(new DataChunkInputStream(publisher));
     }
@@ -182,7 +185,9 @@ public final class ContentReaders {
         @Override
         public void collect(DataChunk chunk) {
             try {
-                Utils.write(chunk.data(), baos);
+                for (ByteBuffer byteBuffer : chunk.data()) {
+                    Utils.write(byteBuffer, baos);
+                }
             } catch (IOException e) {
                 throw new IllegalArgumentException("Cannot convert byte buffer to a byte array!", e);
             } finally {

@@ -29,7 +29,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
@@ -44,6 +43,7 @@ import io.helidon.common.http.MediaType;
 import io.helidon.common.http.Parameters;
 import io.helidon.common.http.SetCookie;
 import io.helidon.common.http.Utils;
+import io.helidon.common.reactive.Single;
 
 /**
  * A {@link ResponseHeaders} implementation on top of {@link HashParameters}.
@@ -321,14 +321,14 @@ class HashResponseHeaders extends HashParameters implements ResponseHeaders {
     }
 
     @Override
-    public CompletionStage<ResponseHeaders> whenSend() {
-        return completionStage;
+    public Single<ResponseHeaders> whenSent() {
+        return Single.create(completionStage);
     }
 
     @Override
-    public CompletionStage<ResponseHeaders> send() {
+    public Single<ResponseHeaders> send() {
         completable.doComplete(this);
-        return whenSend();
+        return whenSent();
     }
 
     /**

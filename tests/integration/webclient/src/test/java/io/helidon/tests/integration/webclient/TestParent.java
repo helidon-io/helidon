@@ -21,7 +21,7 @@ import java.util.stream.Stream;
 
 import io.helidon.common.context.Context;
 import io.helidon.config.Config;
-import io.helidon.media.jsonp.common.JsonpSupport;
+import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
@@ -85,7 +85,7 @@ class TestParent {
                 .context(context)
                 .addMediaSupport(JsonpSupport.create());
 
-        Stream.of(clientServices).forEach(builder::register);
+        Stream.of(clientServices).forEach(builder::addService);
         return builder.build();
     }
 

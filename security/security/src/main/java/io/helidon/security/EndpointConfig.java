@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,10 @@
 
 package io.helidon.security;
 
-import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -121,42 +119,6 @@ public class EndpointConfig implements AbacSupport {
     }
 
     /**
-     * All custom annotations for scopes defined in parameters, in the same order.
-     *
-     * @param scopes scopes the caller is interested in
-     * @return a map of annotation classes to annotation instances
-     * @see SecurityProvider#supportedAnnotations()
-     * @deprecated use iteration over security levels instead
-     */
-    @Deprecated
-    public Map<Class<? extends Annotation>, List<Annotation>> annotations(AnnotationScope... scopes) {
-        Map<Class<? extends Annotation>, List<Annotation>> result = new HashMap<>();
-
-        for (AnnotationScope scope : scopes) {
-            Map<Class<? extends Annotation>, List<Annotation>> map;
-            switch (scope) {
-            case APPLICATION:
-                map = securityLevels.get(0).getClassLevelAnnotations();
-                break;
-            case CLASS:
-                map = securityLevels.get(securityLevels.size() - 1).getClassLevelAnnotations();
-                break;
-            case METHOD:
-                map = securityLevels.get(securityLevels.size() - 1).getMethodLevelAnnotations();
-                break;
-            default:
-                map = null;
-            }
-            if (null != map) {
-                map.forEach((annotClass, annotList) -> result.computeIfAbsent(annotClass, aClass -> new LinkedList<>())
-                        .addAll(annotList));
-            }
-        }
-
-        return result;
-    }
-
-    /**
      * Get all security levels endpoint configuration object registered.
      * The first level represents {@link AnnotationScope#APPLICATION} level annotations.
      * Other levels are representations of each resource and method used on path to get to the target method.
@@ -165,25 +127,6 @@ public class EndpointConfig implements AbacSupport {
      */
     public List<SecurityLevel> securityLevels() {
         return securityLevels;
-    }
-
-    /**
-     * Get all annotations of a specific class declared on any level.
-     *
-     * @param annotationClass Class of annotation you want
-     * @param scopes          scopes the caller is interested in
-     * @param <T>             type of annotation wanted
-     * @return list of annotations in order specified by methodFirst parameter
-     * @deprecated use iteration over security levels instead
-     */
-    @Deprecated
-    @SuppressWarnings("unchecked")
-    public <T extends Annotation> List<T> combineAnnotations(Class<T> annotationClass, AnnotationScope... scopes) {
-        List<T> result = new LinkedList<>();
-
-        result.addAll((Collection<? extends T>) annotations(scopes).getOrDefault(annotationClass, List.of()));
-
-        return result;
     }
 
     /**
@@ -293,62 +236,6 @@ public class EndpointConfig implements AbacSupport {
          */
         public Builder configMap(Map<String, Config> configMap) {
             this.configMap.putAll(configMap);
-            return this;
-        }
-
-        /**
-         * Add annotations of a specific scope to this request builder.
-         * Only used by frameworks that use annotations.
-         *
-         * @param scope       Annotation scope to add annotations for
-         * @param annotations Collected annotations based on security provider requirements.
-         * @return updated Builder instance
-         * @deprecated Use the {@link #securityLevels(List) securityLevels} method.
-         */
-        @Deprecated
-        public Builder annotations(AnnotationScope scope,
-                                   Map<Class<? extends Annotation>, List<Annotation>> annotations) {
-            // here we must switch from a proxy to actual annotation type
-            Map<Class<? extends Annotation>, List<Annotation>> newAnnots = new HashMap<>();
-
-            if (securityLevels.isEmpty()) {
-                securityLevels.add(SecurityLevel.create("APPLICATION").build()); //Security level of Application
-                securityLevels.add(SecurityLevel.create("CLASS").build()); // Security level of class and method
-            }
-            SecurityLevel securityLevel;
-            int index;
-            if (scope == AnnotationScope.APPLICATION) {
-                index = 0;
-            } else {
-                index = securityLevels.size() - 1;
-            }
-            securityLevel = securityLevels.get(index);
-
-            annotations.forEach((aClass, list) -> {
-                if (!list.isEmpty()) {
-                    Annotation annotation = list.get(0);
-                    newAnnots.put(annotation.annotationType(), list);
-                }
-            });
-
-            switch (scope) {
-            case APPLICATION:
-            case CLASS:
-                securityLevels.set(index,
-                                   SecurityLevel.create(securityLevel)
-                                           .withClassAnnotations(newAnnots)
-                                           .build());
-                break;
-            case METHOD:
-                securityLevels.set(index,
-                                   SecurityLevel.create(securityLevel)
-                                           .withMethodAnnotations(newAnnots)
-                                           .build());
-                break;
-            default:
-                throw new IllegalStateException("Scope FIELD is not supported here.");
-            }
-
             return this;
         }
 

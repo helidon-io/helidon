@@ -27,16 +27,13 @@
     </parent>
     <groupId>io.helidon.archetypes</groupId>
     <artifactId>helidon-archetypes-project</artifactId>
-    <name>Helidon Template Application Types used by CLI</name>
+    <name>Helidon Archetypes</name>
     <packaging>pom</packaging>
-
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
 
     <modules>
         <module>se</module>
         <module>mp</module>
+        <module>catalog</module>
     </modules>
 
     <build>
@@ -50,3 +47,4 @@
         </plugins>
     </build>
 </project>
+

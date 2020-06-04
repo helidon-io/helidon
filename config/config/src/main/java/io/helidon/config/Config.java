@@ -375,6 +375,22 @@ public interface Config {
     }
 
     /**
+     * Creates a new {@link Config} loaded from the specified {@link ConfigSource}s.
+     * No other sources will be included.
+     *
+     * @param configSources ordered list of configuration sources
+     * @return new instance of {@link Config}
+     * @see #builder(Supplier[])
+     */
+    @SafeVarargs
+    static Config just(Supplier<? extends ConfigSource>... configSources) {
+        return builder(configSources)
+                .disableEnvironmentVariablesSource()
+                .disableSystemPropertiesSource()
+                .build();
+    }
+
+    /**
      * Returns the {@code Context} instance associated with the current
      * {@code Config} node that allows the application to access the last loaded
      * instance of the node or to request that the entire configuration be

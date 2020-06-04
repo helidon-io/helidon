@@ -25,7 +25,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Flow;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -42,11 +41,12 @@ import io.helidon.common.mapper.MapperException;
 import io.helidon.common.mapper.MapperManager;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
+import io.helidon.dbclient.DbClientServiceContext;
 import io.helidon.dbclient.DbColumn;
-import io.helidon.dbclient.DbInterceptorContext;
 import io.helidon.dbclient.DbMapperManager;
 import io.helidon.dbclient.DbRow;
 import io.helidon.dbclient.DbStatementQuery;
+import io.helidon.dbclient.common.DbStatementContext;
 
 /**
  * Implementation of query.
@@ -57,30 +57,30 @@ class JdbcStatementQuery extends JdbcStatement<DbStatementQuery, Multi<DbRow>> i
     private static final Logger LOGGER = Logger.getLogger(JdbcStatementQuery.class.getName());
 
     JdbcStatementQuery(JdbcExecuteContext executeContext,
-                       JdbcStatementContext statementContext) {
+                       DbStatementContext statementContext) {
         super(executeContext, statementContext);
     }
 
     @Override
-    protected Multi<DbRow> doExecute(CompletionStage<DbInterceptorContext> dbContextFuture,
+    protected Multi<DbRow> doExecute(Single<DbClientServiceContext> dbContextFuture,
                                      CompletableFuture<Void> statementFuture,
                                      CompletableFuture<Long> queryFuture) {
 
         executeContext().addFuture(queryFuture);
 
-        return Single.from(dbContextFuture)
+        return dbContextFuture
                 .flatMap(dbContext -> doExecute(dbContext, statementFuture, queryFuture));
     }
 
-    private Multi<DbRow> doExecute(DbInterceptorContext dbContext,
+    private Multi<DbRow> doExecute(DbClientServiceContext dbContext,
                                    CompletableFuture<Void> statementFuture,
                                    CompletableFuture<Long> queryFuture) {
 
-        return Single.from(connection())
+        return Single.create(connection())
                 .flatMap(connection -> doExecute(dbContext, connection, statementFuture, queryFuture));
     }
 
-    private Multi<DbRow> doExecute(DbInterceptorContext dbContext,
+    private Multi<DbRow> doExecute(DbClientServiceContext dbContext,
                                    Connection connection,
                                    CompletableFuture<Void> statementFuture,
                                    CompletableFuture<Long> queryFuture) {
@@ -118,7 +118,7 @@ class JdbcStatementQuery extends JdbcStatement<DbStatementQuery, Multi<DbRow>> i
             }
         });
 
-        return Single.from(result).flatMap(Function.identity());
+        return Single.create(result).flatMap(Function.identity());
 
     }
 
@@ -129,7 +129,7 @@ class JdbcStatementQuery extends JdbcStatement<DbStatementQuery, Multi<DbRow>> i
             CompletableFuture<Long> queryFuture,
             ResultSet resultSet) {
 
-        return Multi.from(new JdbcDbRows(resultSet,
+        return Multi.create(new JdbcDbRows(resultSet,
                                          executorService,
                                          dbMapperManager,
                                          mapperManager,
@@ -187,10 +187,6 @@ class JdbcStatementQuery extends JdbcStatement<DbStatementQuery, Multi<DbRow>> i
         } catch (ClassNotFoundException e) {
             return null;
         }
-    }
-
-    String name() {
-        return statementName();
     }
 
     private static final class JdbcDbRows {

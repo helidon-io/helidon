@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import io.helidon.dbclient.spi.DbClientServiceProvider;
+
 /**
  * Helidon DB Client Tracing.
  */
@@ -25,8 +27,9 @@ module io.helidon.dbclient.tracing {
 
     requires io.opentracing.api;
     requires io.opentracing.util;
+    requires io.helidon.dbclient.common;
 
     exports io.helidon.dbclient.tracing;
 
-    provides io.helidon.dbclient.spi.DbInterceptorProvider with io.helidon.dbclient.tracing.DbClientTracingProvider;
+    provides DbClientServiceProvider with io.helidon.dbclient.tracing.DbClientTracingProvider;
 }

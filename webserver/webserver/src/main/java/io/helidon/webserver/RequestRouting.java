@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.helidon.common.LazyValue;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.http.AlreadyCompletedException;
 import io.helidon.common.http.Http;
@@ -69,7 +70,10 @@ class RequestRouting implements Routing {
         try {
             WebServer webServer = bareRequest.webServer();
             HashRequestHeaders requestHeaders = new HashRequestHeaders(bareRequest.headers());
-            RoutedResponse response = new RoutedResponse(webServer, bareResponse, requestHeaders.acceptedTypes());
+            RoutedResponse response = new RoutedResponse(
+                    webServer,
+                    bareResponse,
+                    LazyValue.create(requestHeaders::acceptedTypes));
 
             // Jersey needs the raw path (not decoded) so we get that too
             String path = canonicalize(bareRequest.uri().normalize().getPath());
@@ -270,15 +274,13 @@ class RequestRouting implements Routing {
             this.errorHandlers = new LinkedList<>(errorHandlers);
         }
 
-        @Override
-        @SuppressWarnings("deprecation")
-        public Span span() {
+        Span span() {
             return context().get(ServerRequest.class, Span.class).orElse(null);
         }
 
         @Override
-        public SpanContext spanContext() {
-            return context().get(ServerRequest.class, SpanContext.class).orElse(null);
+        public Optional<SpanContext> spanContext() {
+            return context().get(ServerRequest.class, SpanContext.class);
         }
 
         /**
@@ -440,7 +442,7 @@ class RequestRouting implements Routing {
 
     private static class RoutedResponse extends Response {
 
-        RoutedResponse(WebServer webServer, BareResponse bareResponse, List<MediaType> acceptedTypes) {
+        RoutedResponse(WebServer webServer, BareResponse bareResponse, LazyValue<List<MediaType>> acceptedTypes) {
             super(webServer, bareResponse, acceptedTypes);
         }
 

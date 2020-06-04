@@ -16,7 +16,6 @@
 package io.helidon.media.common;
 
 import java.util.Objects;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.function.Function;
@@ -25,6 +24,7 @@ import java.util.function.Predicate;
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.reactive.Multi;
+import io.helidon.common.reactive.Single;
 
 /**
  * Readable {@link MessageBodyContent}.
@@ -88,7 +88,7 @@ public final class MessageBodyReadableContent
     @Deprecated
     @Override
     public void registerFilter(Function<Publisher<DataChunk>, Publisher<DataChunk>> function) {
-        context.registerFilter(function);
+        context.registerFilter(p -> function.apply(p));
     }
 
     @Deprecated
@@ -113,8 +113,8 @@ public final class MessageBodyReadableContent
     }
 
     @Override
-    public <T> CompletionStage<T> as(final Class<T> type) {
-        return context.unmarshall(publisher, GenericType.create(type)).toStage();
+    public <T> Single<T> as(final Class<T> type) {
+        return context.unmarshall(publisher, GenericType.create(type));
     }
 
     /**
@@ -125,8 +125,8 @@ public final class MessageBodyReadableContent
      * @param <T> the requested type
      * @return a completion stage of the requested type
      */
-    public <T> CompletionStage<T> as(final GenericType<T> type) {
-        return context.unmarshall(publisher, type).toStage();
+    public <T> Single<T> as(final GenericType<T> type) {
+        return context.unmarshall(publisher, type);
     }
 
     /**
@@ -150,7 +150,7 @@ public final class MessageBodyReadableContent
      * @return a stream of entities
      */
     public <T> Multi<T> asStream(GenericType<T> type) {
-        return Multi.from(context.unmarshallStream(publisher, type));
+        return Multi.create(context.unmarshallStream(publisher, type));
     }
 
     /**

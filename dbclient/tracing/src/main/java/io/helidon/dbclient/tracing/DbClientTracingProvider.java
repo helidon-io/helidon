@@ -15,21 +15,43 @@
  */
 package io.helidon.dbclient.tracing;
 
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.logging.Logger;
+
 import io.helidon.config.Config;
-import io.helidon.dbclient.DbInterceptor;
-import io.helidon.dbclient.spi.DbInterceptorProvider;
+import io.helidon.dbclient.DbClientService;
+import io.helidon.dbclient.spi.DbClientServiceProvider;
 
 /**
  * Provider of tracing interceptors.
  */
-public class DbClientTracingProvider implements DbInterceptorProvider {
+public class DbClientTracingProvider implements DbClientServiceProvider {
+    private static final Logger LOGGER = Logger.getLogger(DbClientTracingProvider.class.getName());
+
     @Override
     public String configKey() {
         return "tracing";
     }
 
     @Override
-    public DbInterceptor create(Config config) {
+    public Collection<DbClientService> create(Config config) {
+        List<Config> tracingConfigs = config.asNodeList().orElseGet(List::of);
+        List<DbClientService> result = new LinkedList<>();
+
+        for (Config tracingConfig : tracingConfigs) {
+            result.add(fromConfig(tracingConfig));
+        }
+
+        if (result.isEmpty()) {
+            LOGGER.info("DB Client tracing is enabled, yet none is configured in config.");
+        }
+
+        return result;
+    }
+
+    private DbClientService fromConfig(Config config) {
         return DbClientTracing.create(config);
     }
 }

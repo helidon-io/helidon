@@ -26,10 +26,18 @@ class HelidonCdiProvider implements CDIProvider {
 
     @Override
     public CDI<Object> getCDI() {
-        return CURRENT_CDI.get();
+        CDI<Object> cdi = CURRENT_CDI.get();
+        if (null == cdi) {
+            throw new IllegalStateException("There is no CDI instance available");
+        }
+        return cdi;
     }
 
     static void setCdi(CDI<Object> cdi) {
         CURRENT_CDI.set(cdi);
+    }
+
+    static void unset() {
+        CURRENT_CDI.set(null);
     }
 }

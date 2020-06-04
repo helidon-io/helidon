@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,14 +85,6 @@ public class ConfigUserStore implements SecureUserStore {
             return cu;
         }
 
-        /**
-         * @deprecated this is needed (for now) for digest authentication.
-         */
-        @Deprecated
-        char[] password() {
-            return password;
-        }
-
         @Override
         public String login() {
             return login;
@@ -110,7 +102,7 @@ public class ConfigUserStore implements SecureUserStore {
 
         @Override
         public Optional<String> digestHa1(String realm, HttpDigest.Algorithm algorithm) {
-            return Optional.of(DigestToken.ha1(algorithm, realm, login(), password()));
+            return Optional.of(DigestToken.ha1(algorithm, realm, login(), password));
         }
 
         @Override

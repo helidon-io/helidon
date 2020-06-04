@@ -32,7 +32,7 @@ public class SingleFlatMapMultiTckTest extends FlowPublisherVerification<Integer
     @Override
     public Flow.Publisher<Integer> createFlowPublisher(long l) {
         return Single.just(1)
-                .flatMap(v -> Multi.from(() -> IntStream.range(0, (int)l).boxed().iterator()));
+                .flatMap(v -> Multi.create(() -> IntStream.range(0, (int)l).boxed().iterator()));
     }
 
     @Override

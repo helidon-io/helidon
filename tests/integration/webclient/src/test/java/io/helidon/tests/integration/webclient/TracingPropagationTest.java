@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import io.helidon.common.context.Context;
+import io.helidon.config.Config;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
 import io.helidon.webserver.WebServer;
@@ -55,6 +56,7 @@ class TracingPropagationTest {
         WebClient client = WebClient.builder()
                 .baseUri(uri)
                 .context(context)
+                .config(Config.create().get("client"))
                 .build();
 
         client.get()

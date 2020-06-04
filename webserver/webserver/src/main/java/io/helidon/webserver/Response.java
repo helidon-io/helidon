@@ -25,6 +25,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 import io.helidon.common.GenericType;
+import io.helidon.common.LazyValue;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
@@ -65,7 +66,7 @@ abstract class Response implements ServerResponse {
      * @param webServer a web server.
      * @param bareResponse an implementation of the response SPI.
      */
-    Response(WebServer webServer, BareResponse bareResponse, List<MediaType> acceptedTypes) {
+    Response(WebServer webServer, BareResponse bareResponse, LazyValue<List<MediaType>> acceptedTypes) {
         this.webServer = webServer;
         this.bareResponse = bareResponse;
         this.headers = new HashResponseHeaders(bareResponse);
@@ -168,7 +169,7 @@ abstract class Response implements ServerResponse {
     }
 
     @Override
-    public <T> CompletionStage<ServerResponse> send(T content) {
+    public <T> Single<ServerResponse> send(T content) {
         try {
             sendLockSupport.execute(() -> {
                 Publisher<DataChunk> sendPublisher = writerContext.marshall(
@@ -184,7 +185,7 @@ abstract class Response implements ServerResponse {
     }
 
     @Override
-    public CompletionStage<ServerResponse> send(Publisher<DataChunk> content) {
+    public Single<ServerResponse> send(Publisher<DataChunk> content) {
         try {
             Publisher<DataChunk> sendPublisher = writerContext.applyFilters(content);
             sendLockSupport.execute(() -> {
@@ -199,12 +200,12 @@ abstract class Response implements ServerResponse {
     }
 
     @Override
-    public CompletionStage<ServerResponse> send() {
+    public Single<ServerResponse> send() {
         return send((Publisher<DataChunk>) null);
     }
 
     @Override
-    public <T> CompletionStage<ServerResponse> send(Publisher<T> content, Class<T> itemClass) {
+    public <T> Single<ServerResponse> send(Publisher<T> content, Class<T> itemClass) {
         try {
             sendLockSupport.execute(() -> {
                 GenericType<T> type = GenericType.create(itemClass);
@@ -239,7 +240,7 @@ abstract class Response implements ServerResponse {
 
     @Override
     public Response registerFilter(Function<Publisher<DataChunk>, Publisher<DataChunk>> function) {
-        writerContext.registerFilter(function);
+        writerContext.registerFilter(p -> function.apply(p));
         return this;
     }
 
@@ -272,8 +273,8 @@ abstract class Response implements ServerResponse {
     }
 
     @Override
-    public CompletionStage<ServerResponse> whenSent() {
-        return completionStage;
+    public Single<ServerResponse> whenSent() {
+        return Single.create(completionStage);
     }
 
     @Override

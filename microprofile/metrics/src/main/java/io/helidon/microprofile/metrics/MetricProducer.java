@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,8 +28,6 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
 import javax.enterprise.inject.spi.InjectionPoint;
 
-import io.helidon.metrics.HelidonMetadata;
-
 import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
@@ -54,16 +52,20 @@ import org.eclipse.microprofile.metrics.annotation.Timed;
 class MetricProducer {
 
     private static Metadata newMetadata(InjectionPoint ip, Metric metric, MetricType metricType) {
-        return metric == null ? new HelidonMetadata(getName(ip),
-                                             "",
-                                             "",
-                                             metricType,
-                                             chooseDefaultUnit(metricType))
-                : new HelidonMetadata(getName(metric, ip),
-                               metric.displayName(),
-                               metric.description(),
-                               metricType,
-                               metric.unit());
+        return metric == null ? Metadata.builder()
+                    .withName(getName(ip))
+                    .withDisplayName("")
+                    .withDescription("")
+                    .withType(metricType)
+                    .withUnit(chooseDefaultUnit(metricType))
+                    .build()
+                : Metadata.builder()
+                    .withName(getName(metric, ip))
+                    .withDisplayName(metric.displayName())
+                    .withDescription(metric.description())
+                    .withType(metricType)
+                    .withUnit(metric.unit())
+                    .build();
     }
 
     private static String chooseDefaultUnit(MetricType metricType) {

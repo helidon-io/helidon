@@ -24,6 +24,7 @@ import java.util.function.Function;
 import io.helidon.common.GenericType;
 import io.helidon.common.reactive.Multi;
 import io.helidon.dbclient.DbRow;
+import io.helidon.dbclient.common.DbClientContext;
 
 import com.mongodb.reactivestreams.client.FindPublisher;
 import org.bson.Document;
@@ -36,6 +37,7 @@ import org.bson.Document;
 public final class MongoDbRows<T> {
 
     private final AtomicBoolean resultRequested = new AtomicBoolean();
+    private DbClientContext clientContext;
     private final FindPublisher<Document> documentFindPublisher;
     private final MongoDbStatement dbStatement;
     private final CompletableFuture<Long> queryFuture;
@@ -44,11 +46,14 @@ public final class MongoDbRows<T> {
     private final MongoDbRows<?> parent;
     private final CompletableFuture<Void> statementFuture;
 
-    MongoDbRows(FindPublisher<Document> documentFindPublisher,
+    MongoDbRows(DbClientContext clientContext,
+                FindPublisher<Document> documentFindPublisher,
                 MongoDbStatement dbStatement,
                 Class<T> initialType,
                 CompletableFuture<Void> statementFuture,
                 CompletableFuture<Long> queryFuture) {
+
+        this.clientContext = clientContext;
         this.documentFindPublisher = documentFindPublisher;
         this.dbStatement = dbStatement;
         this.statementFuture = statementFuture;
@@ -56,22 +61,6 @@ public final class MongoDbRows<T> {
         this.currentType = GenericType.create(initialType);
         this.resultMapper = Function.identity();
         this.parent = null;
-    }
-
-    private MongoDbRows(FindPublisher<Document> documentFindPublisher,
-                        MongoDbStatement dbStatement,
-                        CompletableFuture<Void> statementFuture,
-                        CompletableFuture<Long> queryFuture,
-                        GenericType<T> nextType,
-                        Function<?, T> resultMapper,
-                        MongoDbRows<?> parent) {
-        this.documentFindPublisher = documentFindPublisher;
-        this.dbStatement = dbStatement;
-        this.statementFuture = statementFuture;
-        this.queryFuture = queryFuture;
-        this.resultMapper = resultMapper;
-        this.currentType = nextType;
-        this.parent = parent;
     }
 
     Flow.Publisher<T> publisher() {
@@ -90,14 +79,14 @@ public final class MongoDbRows<T> {
         Flow.Publisher<?> parentPublisher = parent.publisher();
         Function<Object, T> mappingFunction = (Function<Object, T>) resultMapper;
         // otherwise we must apply mapping
-        return Multi.from(parentPublisher).map(mappingFunction::apply);
+        return Multi.create(parentPublisher).map(mappingFunction::apply);
     }
 
     private Flow.Publisher<DbRow> toDbPublisher() {
-        MongoDbQueryProcessor qp = new MongoDbQueryProcessor(
-                dbStatement,
-                statementFuture,
-                queryFuture);
+        MongoDbQueryProcessor qp = new MongoDbQueryProcessor(clientContext,
+                                                             dbStatement,
+                                                             statementFuture,
+                                                             queryFuture);
         documentFindPublisher.subscribe(qp);
 
         return qp;

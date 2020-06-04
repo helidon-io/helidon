@@ -38,36 +38,34 @@ db:
         enabled: true
         # name prefix defaults to "db.pool." - if you have more than one client within a JVM, you may want to distinguish between them
         name-prefix: "hikari."
-  interceptors:
+  services:
     tracing:
-      global:
+      # would trace all statement names that start with select-
+      - statement-names: ["select-.*"]
+      # would trace all delete statements
+      - statement-types: ["DELETE"]
     metrics:
-      # possible also global:
-      global:
-        - type: METER
-          # changing the name format - by removing the parameter (statement name) we get an overall metric
-          name-format: "db.meter.overall"
-        - type: METER
-          # meter per statement name
-        - type: METER
-          # meter per statement type
-          name-format: "db.meter.%2$s"
-      named:
-        - names: ["select-all", "select-one"]
-          errors: false
-          type: TIMER
-          description: "Timer for successful selects"
-      typed:
-        - types: ["DELETE", "UPDATE", "INSERT", "DML"]
-          type: COUNTER
-          errors: false
-          name-format: "db.counter.%s.success"
-          description: "Counter of successful DML statements"
-        - types: ["DELETE", "UPDATE", "INSERT", "DML"]
-          type: COUNTER
-          success: false
-          name-format: "db.counter.%s.error"
-          description: "Counter of failed DML statements"
+      - type: METER
+        name-format: "db.meter.overall"
+      - type: METER
+        # meter per statement name (default name format)
+      - type: METER
+        # meter per statement type
+        name-format: "db.meter.%1$s"
+      - type: TIMER
+        errors: false
+        statement-names: ["select-.*"]
+        description: "Timer for successful selects"
+      - type: COUNTER
+        errors: false
+        statement-types: ["DELETE", "UPDATE", "INSERT", "DML"]
+        name-format: "db.counter.%s.success"
+        description: "Counter of successful DML statements"
+      - type: COUNTER
+        statement-types: ["DELETE", "UPDATE", "INSERT", "DML"]
+        success: false
+        name-format: "db.counter.%s.error"
+        description: "Counter of failed DML statements"
   statements:
     # required ping statement
     ping: "DO 0"

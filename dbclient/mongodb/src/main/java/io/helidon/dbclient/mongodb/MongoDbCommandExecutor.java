@@ -24,9 +24,10 @@ import java.util.logging.Logger;
 
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
-import io.helidon.dbclient.DbInterceptorContext;
+import io.helidon.dbclient.DbClientServiceContext;
 import io.helidon.dbclient.DbRow;
 import io.helidon.dbclient.DbStatementType;
+import io.helidon.dbclient.common.DbClientContext;
 
 import com.mongodb.reactivestreams.client.MongoDatabase;
 import org.bson.Document;
@@ -48,7 +49,7 @@ final class MongoDbCommandExecutor {
     }
 
     static Multi<DbRow> executeCommand(MongoDbStatement dbStatement,
-                                       CompletionStage<DbInterceptorContext> dbContextFuture,
+                                       CompletionStage<DbClientServiceContext> dbContextFuture,
                                        CompletableFuture<Void> statementFuture,
                                        CompletableFuture<Long> commandFuture) {
 
@@ -77,7 +78,7 @@ final class MongoDbCommandExecutor {
                                                         CompletableFuture<Void> statementFuture,
                                                         CompletableFuture<Long> commandFuture) {
 
-        return Single.from(stmtFuture)
+        return Single.create(stmtFuture)
                 .flatMap(mongoStmt -> callStatement(dbStatement, mongoStmt, statementFuture, commandFuture));
     }
 
@@ -104,6 +105,7 @@ final class MongoDbCommandExecutor {
 
         private final AtomicBoolean resultRequested = new AtomicBoolean(false);
         private final Publisher<Document> publisher;
+        private final DbClientContext clientContext;
         private final MongoDbStatement dbStatement;
         private final CompletableFuture<Void> statementFuture;
         private final CompletableFuture<Long> commandFuture;
@@ -112,6 +114,7 @@ final class MongoDbCommandExecutor {
                     MongoDbStatement dbStatement,
                     CompletableFuture<Void> statementFuture,
                     CompletableFuture<Long> commandFuture) {
+            this.clientContext = dbStatement.clientContext();
             this.publisher = publisher;
             this.dbStatement = dbStatement;
             this.statementFuture = statementFuture;
@@ -124,10 +127,10 @@ final class MongoDbCommandExecutor {
         }
 
         private Flow.Publisher<DbRow> toDbPublisher() {
-            MongoDbQueryProcessor qp = new MongoDbQueryProcessor(
-                    dbStatement,
-                    statementFuture,
-                    commandFuture);
+            MongoDbQueryProcessor qp = new MongoDbQueryProcessor(clientContext,
+                                                                 dbStatement,
+                                                                 statementFuture,
+                                                                 commandFuture);
             publisher.subscribe(qp);
             return qp;
         }

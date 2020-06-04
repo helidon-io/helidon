@@ -17,6 +17,8 @@
 package io.helidon.common.http;
 
 import java.nio.ByteBuffer;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
@@ -25,7 +27,7 @@ import java.util.concurrent.CompletableFuture;
  * <p>
  * The DataChunk and the content it carries stay immutable as long as method
  * {@link #release()} is not called. After that, the given instance and the associated
- * data structure instances (e.g., the {@link ByteBuffer} obtained by {@link #data()})
+ * data structure instances (e.g., the {@link ByteBuffer} array obtained by {@link #data()})
  * should not be used. The idea behind this class is to be able to
  * minimize data copying; ideally, in order to achieve the best performance,
  * to not copy them at all. However, the implementations may choose otherwise.
@@ -35,14 +37,15 @@ import java.util.concurrent.CompletableFuture;
  * threads may result in a race condition unless an external synchronization is used.
  */
 @FunctionalInterface
-public interface DataChunk {
+public interface DataChunk extends Iterable<ByteBuffer> {
+
     /**
      * Creates a simple {@link ByteBuffer} backed data chunk. The resulting
      * instance doesn't have any kind of a lifecycle and as such, it doesn't need
      * to be released.
      *
      * @param byteBuffer a byte buffer to create the request chunk from
-     * @return a request chunk
+     * @return a data chunk
      */
     static DataChunk create(ByteBuffer byteBuffer) {
         return create(false, byteBuffer);
@@ -54,106 +57,76 @@ public interface DataChunk {
      * to be released.
      *
      * @param bytes a byte array to create the request chunk from
-     * @return a request chunk
+     * @return a data chunk
      */
     static DataChunk create(byte[] bytes) {
-        return create(false, ByteBuffer.wrap(bytes));
+        return create(false, false, ByteBuffer.wrap(bytes));
+    }
+
+    /**
+     * Creates a data chunk backed by one or more ByteBuffer. The resulting
+     * instance doesn't have any kind of a lifecycle and as such, it doesn't need
+     * to be released.
+     *
+     * @param byteBuffers the data for the chunk
+     * @return a data chunk
+     */
+    static DataChunk create(ByteBuffer... byteBuffers) {
+        return new DataChunkImpl(false, false, byteBuffers);
     }
 
     /**
      * Creates a reusable data chunk.
      *
-     * @param flush a signal that chunk should be written and flushed from any cache if possible
-     * @param data  a data chunk. Should not be reused until {@code releaseCallback} is used
+     * @param flush       a signal that this chunk should be written and flushed from any cache if possible
+     * @param byteBuffers the data for this chunk. Should not be reused until {@code releaseCallback} is used
      * @return a reusable data chunk with no release callback
      */
-    static DataChunk create(boolean flush, ByteBuffer data) {
-        return create(flush, data, Utils.EMPTY_RUNNABLE, false);
+    static DataChunk create(boolean flush, ByteBuffer... byteBuffers) {
+        return new DataChunkImpl(flush, false, byteBuffers);
     }
 
     /**
      * Creates a reusable data chunk.
      *
-     * @param flush a signal that chunk should be written and flushed from any cache if possible
-     * @param data  a data chunk. Should not be reused until {@code releaseCallback} is used
-     * @param readOnly indicates underlying buffer is not reused
+     * @param flush       a signal that this chunk should be written and flushed from any cache if possible
+     * @param readOnly    indicates underlying buffers are not reused
+     * @param byteBuffers the data for this chunk. Should not be reused until {@code releaseCallback} is used
      * @return a reusable data chunk with no release callback
      */
-    static DataChunk create(boolean flush, ByteBuffer data, boolean readOnly) {
-        return create(flush, data, Utils.EMPTY_RUNNABLE, readOnly);
+    static DataChunk create(boolean flush, boolean readOnly, ByteBuffer... byteBuffers) {
+        return new DataChunkImpl(flush, readOnly, byteBuffers);
     }
 
     /**
-     * Creates a reusable data chunk.
+     * Creates a reusable byteBuffers chunk.
      *
-     * @param flush           a signal that chunk should be written and flushed from any cache if possible
-     * @param data            a data chunk. Should not be reused until {@code releaseCallback} is used
+     * @param flush           a signal that this chunk should be written and flushed from any cache if possible
+     * @param releaseCallback a callback which is called when this chunk is completely processed and instance is free for reuse
+     * @param byteBuffers     the data for this chunk. Should not be reused until {@code releaseCallback} is used
+     * @return a reusable data chunk with a release callback
+     */
+    static DataChunk create(boolean flush, Runnable releaseCallback, ByteBuffer... byteBuffers) {
+        return new DataChunkImpl(flush, false, releaseCallback, byteBuffers);
+    }
+
+    /**
+     * Creates a reusable byteBuffers chunk.
+     *
+     * @param flush           a signal that this chunk should be written and flushed from any cache if possible
+     * @param readOnly        indicates underlying buffers are not reused
+     * @param byteBuffers     the data for this chunk. Should not be reused until {@code releaseCallback} is used
      * @param releaseCallback a callback which is called when this chunk is completely processed and instance is free for reuse
      * @return a reusable data chunk with a release callback
      */
-    static DataChunk create(boolean flush, ByteBuffer data, Runnable releaseCallback) {
-        return create(flush, data, releaseCallback, false);
+    static DataChunk create(boolean flush, boolean readOnly, Runnable releaseCallback, ByteBuffer... byteBuffers) {
+        return new DataChunkImpl(flush, readOnly, releaseCallback, byteBuffers);
     }
 
     /**
-     * Creates a reusable data chunk.
-     *
-     * @param flush           a signal that chunk should be written and flushed from any cache if possible
-     * @param data            a data chunk. Should not be reused until {@code releaseCallback} is used
-     * @param releaseCallback a callback which is called when this chunk is completely processed and instance is free for reuse
-     * @param readOnly       indicates underlying buffer is not reused
-     * @return a reusable data chunk with a release callback
-     */
-    static DataChunk create(boolean flush, ByteBuffer data, Runnable releaseCallback, boolean readOnly) {
-        return new DataChunk() {
-            private boolean isReleased = false;
-            private CompletableFuture<DataChunk> writeFuture;
-
-            @Override
-            public ByteBuffer data() {
-                return data;
-            }
-
-            @Override
-            public boolean flush() {
-                return flush;
-            }
-
-            @Override
-            public void release() {
-                releaseCallback.run();
-                isReleased = true;
-            }
-
-            @Override
-            public boolean isReleased() {
-                return isReleased;
-            }
-
-            @Override
-            public boolean isReadOnly() {
-                return readOnly;
-            }
-
-            @Override
-            public void writeFuture(CompletableFuture<DataChunk> writeFuture) {
-                this.writeFuture = writeFuture;
-            }
-
-            @Override
-            public Optional<CompletableFuture<DataChunk>> writeFuture() {
-                return Optional.ofNullable(writeFuture);
-            }
-        };
-    }
-
-    /**
-     * Returns a representation of this chunk as a ByteBuffer. Multiple calls
-     * of this method always return the same ByteBuffer instance. As such, when
-     * the buffer is read, the subsequent call of the {@link #data()} returns
-     * a buffer that is also already read.
+     * Returns a representation of this chunk as an array of ByteBuffer.
      * <p>
-     * It is expected the returned ByteBuffer holds a reference to data that
+     * It is expected the returned byte buffers hold references to data that
      * will become stale upon calling method {@link #release()}. (For instance,
      * the memory segment is pooled by the underlying TCP server and is reused
      * for a subsequent request chunk.) The idea behind this class is to be able to
@@ -163,10 +136,44 @@ public interface DataChunk {
      * Note that the methods of this instance are expected to be called by a single
      * thread; if not, external synchronization must be used.
      *
-     * @return a ByteBuffer representation of this chunk that is guarantied to stay
+     * @return an array of ByteBuffer representing the data of this chunk that are guarantied to stay
      * immutable as long as method {@link #release()} is not called
      */
-    ByteBuffer data();
+    ByteBuffer[] data();
+
+    /**
+     * Returns the sum of elements between the current position and the limit of each of the underlying ByteBuffer.
+     *
+     * @return The number of elements remaining in all underlying buffers
+     */
+    default int remaining() {
+        int remaining = 0;
+        for (ByteBuffer byteBuffer : data()) {
+            remaining += byteBuffer.remaining();
+        }
+        return remaining;
+    }
+
+    @Override
+    default Iterator<ByteBuffer> iterator() {
+        final ByteBuffer[] byteBuffers = data();
+        return new Iterator<ByteBuffer>() {
+            private int index = 0;
+
+            @Override
+            public boolean hasNext() {
+                return index < byteBuffers.length;
+            }
+
+            @Override
+            public ByteBuffer next() {
+                if (index < byteBuffers.length) {
+                    return byteBuffers[index++];
+                }
+                throw new NoSuchElementException();
+            }
+        };
+    }
 
     /**
      * The tracing ID of this chunk.
@@ -178,10 +185,9 @@ public interface DataChunk {
     }
 
     /**
-     * Gets the content of the underlying {@link ByteBuffer} as an array of bytes.
-     * If the the ByteBuffer was read, the returned array contains only the part of
-     * data that wasn't read yet. On the other hand, calling this method doesn't cause
-     * the underlying {@link ByteBuffer} to be read.
+     * Gets the content of the underlying byte buffers as an array of bytes.
+     * The returned array contains only the part of data that wasn't read yet.
+     * Calling this method doesn't cause the underlying byte buffers to be read.
      * <p>
      * It is expected the returned byte array holds a reference to data that
      * will become stale upon calling method {@link #release()}. (For instance,
@@ -197,12 +203,23 @@ public interface DataChunk {
      * method {@link #release()} is not called
      */
     default byte[] bytes() {
-        return Utils.toByteArray(data().asReadOnlyBuffer());
+        byte[] bytes = null;
+        for (ByteBuffer byteBuffer : data()) {
+            if (bytes == null) {
+                bytes = Utils.toByteArray(byteBuffer.asReadOnlyBuffer());
+            } else {
+                byte[] newBytes = new byte[bytes.length + byteBuffer.remaining()];
+                System.arraycopy(bytes, 0, newBytes, 0, bytes.length);
+                Utils.toByteArray(byteBuffer.asReadOnlyBuffer(), newBytes, bytes.length);
+                bytes = newBytes;
+            }
+        }
+        return bytes == null ? new byte[0] : bytes;
     }
 
     /**
      * Whether this chunk is released and the associated data structures returned
-     * by methods (such as {@link #data()} or {@link #bytes()}) should not be used.
+     * by methods (such as {@link #iterator()} or {@link #bytes()}) should not be used.
      * The implementations may choose to not implement this optimization and to never mutate
      * the underlying memory; in such case this method does no-op.
      * <p>
@@ -217,7 +234,7 @@ public interface DataChunk {
 
     /**
      * Releases this chunk. The underlying data as well as the data structure instances returned by
-     * methods {@link #bytes()} and {@link #data()} may become stale and should not be used
+     * methods {@link #bytes()} and {@link #iterator()} may become stale and should not be used
      * anymore. The implementations may choose to not implement this optimization and to never mutate
      * the underlying memory; in such case this method does no-op.
      * <p>
@@ -247,11 +264,15 @@ public interface DataChunk {
      * @return A copy of this data chunk.
      */
     default DataChunk duplicate() {
-        byte[] bytes = new byte[data().limit()];
-        data().get(bytes);
-        DataChunk dup = DataChunk.create(bytes);
-        dup.data().position(0);
-        return dup;
+        ByteBuffer[] byteBuffers = data();
+        ByteBuffer[] byteBuffersCopy = new ByteBuffer[byteBuffers.length];
+        for (int i = 0; i < byteBuffers.length; i++) {
+            byte[] bytes = new byte[byteBuffers[i].limit()];
+            byteBuffers[i].get(bytes);
+            byteBuffers[i].position(0);
+            byteBuffersCopy[i] = ByteBuffer.wrap(bytes);
+        }
+        return DataChunk.create(byteBuffersCopy);
     }
 
     /**
@@ -271,7 +292,15 @@ public interface DataChunk {
      * @return Outcome of test.
      */
     default boolean isFlushChunk() {
-        return flush() && data().limit() == 0;
+        if (!flush()) {
+            return false;
+        }
+        for (ByteBuffer byteBuffer : data()) {
+            if (byteBuffer.limit() != 0) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**

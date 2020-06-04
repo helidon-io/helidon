@@ -1,0 +1,255 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2020 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Helidon SE Migration Guide
+:description: Helidon Migration Guide
+:keywords: helidon, porting, migration, incompatibilities
+:helidon-uc-flavor: SE
+:helidon-lc-flavor: se
+
+In Helidon 2 we have made some changes to APIs and runtime behavior. This guide
+will help you migrate a Helidon SE 1.x application to 2.x.
+
+include::../../common/guides/migration.adoc[]
+
+== Configuration
+
+1. File watching is now done through a `ChangeWatcher` - use of `PollingStrategies.watch()` needs to be refactored to
+   `FileSystemWatcher.create()` and the method to configure it on config source builder has changed to
+   `changeWatcher(ChangeWatcher)`.
+2. Methods on `ConfigSources` now return specific builders (they used to return `AbstractParsableConfigSource.Builder`
+   with a complex type declaration). If you store such a builder in a variable, either change it to the correct type,
+   or use `var`
+3. Some APIs were cleaned up to be aligned with the development guidelines of Helidon. When using Git config source,
+   or etcd config source, the factory methods moved to the config source itself, and the builder now accepts all
+   configuration options through methods
+4. The API of config source builders has been cleaned, so now only methods that are relevant to a specific config
+   source type can be invoked on such a builder. Previously you could configure a polling strategy on a source that
+   did not support polling
+5. There is a small change in behavior of Helidon Config vs. MicroProfile Config:
+   The MP TCK require that system properties are fully mutable (e.g. as soon as the property is changed, it
+   must be used), so MP Config methods work in this manner (with a certain performance overhead).
+   Helidon Config treats System properties as a mutable config source, with a (optional) time based polling strategy. So
+   the change is reflected as well, though not immediately (this is only relevant if you use change notifications).
+6. `CompositeConfigSource` has been removed from `Config`. If you need to configure `MerginStrategy`, you can do it now on
+    `Config` `Builder`
+
+Example of advanced configuration of config:
+```java
+Config.builder()
+       // system properties with a polling strategy of 10 seconds
+       .addSource(ConfigSources.systemProperties()
+            .pollingStrategy(PollingStrategies.regular(Duration.ofSeconds(10))))
+       // environment variables
+       .addSource(ConfigSources.environmentVariables())
+       // optional file config source with change watcher
+       .addSource(ConfigSources.file(Paths.get("/conf/app.yaml"))
+                          .optional()
+                          .changeWatcher(FileSystemWatcher.create()))
+       // classpath config source
+       .addSource(ConfigSources.classpath("application.yaml"))
+       // map config source (also supports polling strategy)
+       .addSource(ConfigSources.create(Map.of("key", "value")))
+       .build();
+```
+
+
+== Resource class when loaded from Config
+
+The configuration approach to `Resource` class was using prefixes which was not aligned with our approach to configuration.
+All usages were refactored as follows:
+
+1. The `Resource` class expects a config node `resource` that will be used to read it
+2. The feature set remains unchanged - we support path, classpath, url, content as plain text, and content as base64
+3. Classes using resources are changed as well, such as `KeyConfig` - see details below
+
+== Media Support
+
+In Helidon 1.x support for JSON and other media types was configured when constructing
+`webserver.Routing` using the `register` method. In Helidon 2 Media Support has been
+refactored so that it can be shared between the Helidon `WebServer` and `WebClient`.
+You now specify media support as part of the WebServer build:
+
+```java
+WebServer.builder()
+    .addMediaSupport(JsonpSupport.create()) //registers reader and writer for Json-P
+    .build()
+```
+
+This replaces `Routing.builder().register(JsonSupport.create())...`
+
+The new JSON MediaSupport classes are:
+
+* `io.helidon.media.jsonp.JsonpSupport` in module `io.helidon.media:helidon-media-jsonp`
+* `io.helidon.media.jsonb.JsonbSupport` in module `io.helidon.media:helidon-media-jsonb`
+* `io.helidon.media.jackson.JacksonSupport` in module `io.helidon.media:helidon-media-jackson`
+
+
+== Reactive
+
+|===
+|Removed | Replacement
+
+|`io.helidon.common.reactive.ReactiveStreamsAdapter`|`org.reactivestreams.FlowAdapters`
+|===
+
+== Security: OidcConfig
+
+Configuration has been updated to use the new `Resource` approach:
+
+1. `oidc-metadata.resource` is the new key for loading `oidc-metadata` from local resource
+2. `sign-jwk.resource` is the new key for loading signing JWK resource
+
+== Security: JwtProvider and JwtAuthProvider
+
+Configuration has been updated to use the new `Resource` approach:
+
+1. `jwk.resource` is the new key for loading JWK for verifying signatures
+2. `jwt.resource` is also used for outbound as key for loading JWK for signing tokens
+
+==  PKI Key Configuration
+
+The configuration has been updated to have a nicer tree structure:
+
+Example of a public key from keystore:
+```yaml
+keystore:
+   cert.alias: "service_cert"
+   resource.path: "/conf/keystore.p12"
+   type: "PKCS12"
+   passphrase: "password"
+```
+
+Example of a private key from keystore:
+```yaml
+keystore:
+  key:
+    alias: "myPrivateKey"
+    passphrase: "password"
+  resource.resource-path: "keystore/keystore.p12"
+  passphrase: "password"
+```
+
+Example of a pem resource with private key and certificate chain:
+```yaml
+pem:
+  key:
+    passphrase: "password"
+    resource.resource-path: "keystore/id_rsa.p8"
+  cert-chain:
+    resource.resource-path: "keystore/public_key_cert.pem"
+```
+
+
+== GrpcTlsDescriptor
+
+Configuration has been updated to use the new `Resource` approach:
+
+1. `tls-cert.resource` is the new key for certificate
+2. `tls-key.resource` is the new key for private key
+3. `tl-ca-cert` is the the new key for certificate
+
+== WebServer Configuration
+
+=== SSL/TLS
+There is a new class `io.helidon.webserver.TlsConfig` that can be used
+to configure TLS for a WebServer socket.
+Class `io.helidon.webserver.SSLContextBuilder` has been deprecated and will
+be removed.
+
+The class uses a `Builder` pattern:
+```java
+TlsConfig.builder()
+   .privateKey(KeyConfig.keystoreBuilder()
+   .keystore(Resource.create("certificate.p12"))
+   .keystorePassphrase("helidon")
+```
+
+The builder or built instance can be registered with a socket configuration builder
+including the `WebServer.Builder` itself:
+
+```java
+WebServer.builder(routing())
+                .tls(tlsConfig)
+                .build();
+```
+
+=== Additional Sockets
+
+Additional socket configuration has changed both in config
+and in API.
+
+The configuration now accepts following structure:
+```yaml
+server:
+   port: 8000
+   sockets:
+     - name: "admin"
+       port: 8001
+     - name: "static"
+       port: 8002
+       enabled: false
+```
+
+Socket name is now a value of a property, allowing more freedom in naming.
+The default socket name is implicit (and set to `@default`).
+
+We have added the `enabled` flag to support disabling sockets through configuration.
+
+To add socket using a builder, you can use:
+
+```java
+WebServer.builder()
+   .addSocket(SocketConfigurationBuidler.builder()
+      .port(8001)
+      .name("admin")));
+```
+
+There is also a specialized method to add a socket and routing
+together, to remove mapping through a name.
+
+=== Deprecation of ServerConfiguration
+
+`io.helidon.webserver.ServerConfiguration.Builder` is no longer used
+to configure `WebServer`.
+
+Most methods from this class have been moved to `WebServer.Builder` or deprecated.
+
+Example of a simple WebServer setup:
+
+```java
+WebServer.builder()
+   .port(8001)
+   .host("localhost")
+   .routing(createRouting())
+   .build();
+```
+
+=== Other significant WebServer deprecations
+
+- `io.helidon.webserver.WebServer.Builder` - all methods that accept `ServerConfiguration` or its builder are deprecated, please use
+      methods on `WebServer.Builder` instead
+- `io.helidon.webserver.WebServer.Builder` - all methods for socket configuration that accept a name
+      and socket are deprecated, socket name is now part of socket configuration itself
+- `io.helidon.webserver.ResponseHeaders.whenSend()` - please use `whenSent()`
+- `io.helidon.webserver.Routing.createServer(ServerConfiguration)` - please use `WebServer.builder()`
+- `io.helidon.webserver.Routing.createServer()` - please use `WebServer.builder()`
+- `io.helidon.webserver.SocketConfiguration.DEFAULT` - use a builder to create a named configuration
+- `io.helidon.webserver.SocketConfiguration.Builder.ssl(SSLContext) - use `TlsConfig` instead
+- `io.helidon.webserver.SocketConfiguration.Builder.enabledSSlProtocols(String...) - use `TlsConfig` instead
+

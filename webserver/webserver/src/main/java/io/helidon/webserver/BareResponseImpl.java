@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BooleanSupplier;
@@ -29,6 +28,7 @@ import java.util.logging.Logger;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
+import io.helidon.common.reactive.Single;
 
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
@@ -248,7 +248,7 @@ class BareResponseImpl implements BareResponse {
         if (lengthOptimization) {
             if (firstChunk != null) {
                 HttpUtil.setTransferEncodingChunked(response, false);
-                HttpUtil.setContentLength(response, firstChunk.data().remaining());
+                HttpUtil.setContentLength(response, firstChunk.remaining());
             }
             initWriteResponse();
         }
@@ -377,13 +377,15 @@ class BareResponseImpl implements BareResponse {
     }
 
     @Override
-    public CompletionStage<BareResponse> whenCompleted() {
-        return responseFuture;
+    public Single<BareResponse> whenCompleted() {
+        // need to return a new single each time
+        return Single.create(responseFuture);
     }
 
     @Override
-    public CompletionStage<BareResponse> whenHeadersCompleted() {
-        return headersFuture;
+    public Single<BareResponse> whenHeadersCompleted() {
+        // need to return a new single each time
+        return Single.create(headersFuture);
     }
 
     @Override
