@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.examples.integrations.cdi.pokemons;
+package io.helidon.examples.integrations.cdi.pokemon;
 
 import javax.json.bind.annotation.JsonbTransient;
 import javax.persistence.Access;

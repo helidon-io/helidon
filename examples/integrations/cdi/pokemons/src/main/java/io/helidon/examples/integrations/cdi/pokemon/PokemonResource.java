@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.examples.integrations.cdi.pokemons;
+package io.helidon.examples.integrations.cdi.pokemon;
 
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
@@ -27,7 +27,6 @@ import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -51,8 +50,8 @@ public class PokemonResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Response getPokemons() {
-        List<Pokemon> types =  entityManager.createNamedQuery("getPokemons", Pokemon.class).getResultList();
-        return Response.ok(new GenericEntity<>(types){}).build();
+        List<Pokemon> pokemons =  entityManager.createNamedQuery("getPokemons", Pokemon.class).getResultList();
+        return Response.ok(new GenericEntity<>(pokemons){}).build();
     }
 
     @GET
@@ -60,7 +59,7 @@ public class PokemonResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Pokemon getPokemonById(@PathParam("id") String id) {
         try {
-            return entityManager.find(Pokemon.class, id);
+            return entityManager.find(Pokemon.class, Integer.valueOf(id));
         } catch (IllegalArgumentException e) {
             throw new NotFoundException("Unable to find pokemon with ID " + id);
         }
@@ -69,10 +68,10 @@ public class PokemonResource {
     @DELETE
     @Path("{id}")
     @Produces(MediaType.APPLICATION_JSON)
+    @Transactional(Transactional.TxType.REQUIRED)
     public void deletePokemon(@PathParam("id") String id) {
         Pokemon pokemon = getPokemonById(id);
-        entityManager.detach(pokemon);
-        entityManager.flush();
+        entityManager.remove(pokemon);
     }
 
     @GET
