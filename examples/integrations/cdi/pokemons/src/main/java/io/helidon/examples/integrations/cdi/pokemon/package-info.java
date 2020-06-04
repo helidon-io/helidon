@@ -15,7 +15,6 @@
  */
 
 /**
- * Provides classes and interfaces demonstrating the usage of JPA and
- * JTA integration within Helidon MicroProfile.
+ * Pokemon JPA integration sample.
  */
-package io.helidon.examples.integrations.cdi.pokemons;
+package io.helidon.examples.integrations.cdi.pokemon;

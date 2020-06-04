@@ -23,8 +23,8 @@
                                  http://xmlns.jcp.org/xml/ns/persistence/persistence_2_2.xsd">
   <persistence-unit name="test" transaction-type="JTA">
     <jta-data-source>test</jta-data-source>
-    <class>io.helidon.examples.integrations.cdi.pokemons.Pokemon</class>
-    <class>io.helidon.examples.integrations.cdi.pokemons.PokemonType</class>
+    <class>io.helidon.examples.integrations.cdi.pokemon.Pokemon</class>
+    <class>io.helidon.examples.integrations.cdi.pokemon.PokemonType</class>
     <properties>
       <property name="javax.persistence.schema-generation.database.action" value="drop-and-create"/>
       <property name="javax.persistence.sql-load-script-source" value="META-INF/init_script.sql"/>
