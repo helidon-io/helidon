@@ -216,31 +216,42 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
     }
 
     private void drainBuffer() {
-        if (!draining.getAndSet(true)) {
-            while (!buffer.isEmpty()) {
-                if (emitter.emit(buffer.peek())) {
-                    if (onEmitCallback != null) {
-                        onEmitCallback.accept(buffer.poll());
-                    } else {
-                        buffer.poll();
-                    }
-                } else {
-                    break;
-                }
+        deferredDrains.incrementAndGet();
+
+        long drains;
+        do {
+            if (draining.getAndSet(true)) {
+                //other thread already draining
+                return;
             }
-            if (buffer.isEmpty()
-                    && state.compareAndSet(State.COMPLETING, State.COMPLETED)) {
-                //Buffer drained, time for complete
-                emitter.complete();
-            }
-            draining.set(false);
-            if (deferredDrains.getAndUpdate(d -> d == 0 ? 0 : d - 1) > 0) {
+            drains = deferredDrains.getAndUpdate(d -> d == 0 ? 0 : d - 1);
+            if (drains > 0) {
                 // in case of parallel drains invoked by request
                 // increasing demand during draining
-                drainBuffer();
+                actualDrain();
+                drains--;
             }
-        } else {
-            deferredDrains.incrementAndGet();
+            draining.set(false);
+            //changed while draining, try again
+        } while (drains < deferredDrains.get());
+    }
+
+    private void actualDrain() {
+        while (!buffer.isEmpty()) {
+            if (emitter.emit(buffer.peek())) {
+                if (onEmitCallback != null) {
+                    onEmitCallback.accept(buffer.poll());
+                } else {
+                    buffer.poll();
+                }
+            } else {
+                break;
+            }
+        }
+        if (buffer.isEmpty()
+                && state.compareAndSet(State.COMPLETING, State.COMPLETED)) {
+            //Buffer drained, time for complete
+            emitter.complete();
         }
     }
 
