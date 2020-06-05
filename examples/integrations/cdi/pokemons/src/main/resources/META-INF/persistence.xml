@@ -28,15 +28,6 @@
     <properties>
       <property name="javax.persistence.schema-generation.database.action" value="drop-and-create"/>
       <property name="javax.persistence.sql-load-script-source" value="META-INF/init_script.sql"/>
-      <property name="eclipselink.create-ddl-jdbc-file-name" value="createDDL_ddlGeneration.jdbc"/>
-      <property name="eclipselink.ddl-generation.output-mode" value="sql-script"/>
-      <property name="eclipselink.deploy-on-startup" value="true"/>
-      <property name="eclipselink.jdbc.native-sql" value="true"/>
-      <property name="eclipselink.logging.logger" value="JavaLogger"/>
-      <property name="eclipselink.logging.parameters" value="true"/>
-      <property name="eclipselink.target-database" value="org.eclipse.persistence.platform.database.H2Platform"/>
-      <property name="eclipselink.target-server" value="io.helidon.integrations.cdi.eclipselink.CDISEPlatform"/>
-      <property name="eclipselink.weaving" value="false"/>
     </properties>
   </persistence-unit>
 </persistence>
