@@ -28,9 +28,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.GenericEntity;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import java.util.List;
 
 /**
@@ -51,9 +49,8 @@ public class PokemonResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getPokemons() {
-        List<Pokemon> pokemons =  entityManager.createNamedQuery("getPokemons", Pokemon.class).getResultList();
-        return Response.ok(new GenericEntity<>(pokemons){}).build();
+    public List<Pokemon> getPokemons() {
+        return entityManager.createNamedQuery("getPokemons", Pokemon.class).getResultList();
     }
 
     @GET

@@ -20,9 +20,7 @@ import javax.persistence.PersistenceContext;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.GenericEntity;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import java.util.List;
 
 /**
@@ -38,9 +36,7 @@ public class PokemonTypeResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getPokemonTypes() {
-        List<PokemonType> types =  entityManager.createNamedQuery(
-                "getPokemonTypes", PokemonType.class).getResultList();
-        return Response.ok(new GenericEntity<>(types){}).build();
+    public List<PokemonType> getPokemonTypes() {
+        return entityManager.createNamedQuery("getPokemonTypes", PokemonType.class).getResultList();
     }
 }
