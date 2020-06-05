@@ -91,6 +91,11 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.jersey</groupId>
+                <artifactId>helidon-jersey-connector</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.jersey</groupId>
                 <artifactId>helidon-jersey-media-jsonp</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
