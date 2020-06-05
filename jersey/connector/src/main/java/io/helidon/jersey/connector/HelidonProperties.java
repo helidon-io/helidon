@@ -20,9 +20,12 @@ import io.helidon.config.Config;
 import io.helidon.webclient.WebClient;
 
 /**
- * Configuration options specific to the Client API that utilizes {@link HelidonConnector}
+ * Configuration options specific to the Client API that utilizes {@link HelidonConnector}.
  */
 public final class HelidonProperties {
+
+    private HelidonProperties() {
+    }
 
     /**
      * A Helidon {@link Config} instance that is passed to {@link WebClient.Builder#config(Config)} if available.

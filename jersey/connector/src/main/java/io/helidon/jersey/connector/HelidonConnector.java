@@ -16,25 +16,6 @@
 
 package io.helidon.jersey.connector;
 
-import io.helidon.common.Version;
-import io.helidon.webclient.WebClient;
-import io.helidon.webclient.WebClientRequestBuilder;
-import io.helidon.webclient.WebClientResponse;
-import org.glassfish.jersey.client.ClientAsyncExecutorLiteral;
-import org.glassfish.jersey.client.ClientConfig;
-import org.glassfish.jersey.client.ClientProperties;
-import org.glassfish.jersey.client.ClientRequest;
-import org.glassfish.jersey.client.ClientResponse;
-import org.glassfish.jersey.client.JerseyClient;
-import org.glassfish.jersey.client.spi.AsyncConnectorCallback;
-import org.glassfish.jersey.client.spi.Connector;
-import org.glassfish.jersey.internal.util.PropertiesHelper;
-import org.glassfish.jersey.spi.ExecutorServiceProvider;
-
-import javax.ws.rs.ProcessingException;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.core.Configuration;
-import javax.ws.rs.core.Response;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -52,13 +33,34 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.logging.Logger;
 
+import javax.ws.rs.ProcessingException;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.core.Configuration;
+import javax.ws.rs.core.Response;
+
+import io.helidon.common.Version;
+import io.helidon.webclient.WebClient;
+import io.helidon.webclient.WebClientRequestBuilder;
+import io.helidon.webclient.WebClientResponse;
+
+import org.glassfish.jersey.client.ClientAsyncExecutorLiteral;
+import org.glassfish.jersey.client.ClientConfig;
+import org.glassfish.jersey.client.ClientProperties;
+import org.glassfish.jersey.client.ClientRequest;
+import org.glassfish.jersey.client.ClientResponse;
+import org.glassfish.jersey.client.JerseyClient;
+import org.glassfish.jersey.client.spi.AsyncConnectorCallback;
+import org.glassfish.jersey.client.spi.Connector;
+import org.glassfish.jersey.internal.util.PropertiesHelper;
+import org.glassfish.jersey.spi.ExecutorServiceProvider;
+
 /**
  * A {@link Connector} that utilizes the Helidon HTTP Client to send and receive
  * HTTP request and responses.
  */
 class HelidonConnector implements Connector {
 
-    private static final String helidonVersion = "Helidon/" + Version.VERSION + " (java " + AccessController
+    private static final String HELIDON_VERSION = "Helidon/" + Version.VERSION + " (java " + AccessController
             .doPrivileged(PropertiesHelper.getSystemProperty("java.runtime.version")) + ")";
     static final Logger LOGGER = Logger.getLogger(HelidonConnector.class.getName());
 
@@ -113,8 +115,11 @@ class HelidonConnector implements Connector {
     @Override
     public Future<?> apply(ClientRequest request, AsyncConnectorCallback callback) {
         final BiConsumer<? super ClientResponse, ? super Throwable> action = (r, th) -> {
-            if (th == null) callback.response(r);
-            else callback.failure(th);
+            if (th == null) {
+                callback.response(r);
+            } else {
+                callback.failure(th);
+            }
         };
         return applyInternal(request)
                 .whenCompleteAsync(action, executorServiceKeeper.getExecutorService(request))
@@ -123,7 +128,7 @@ class HelidonConnector implements Connector {
 
     @Override
     public String getName() {
-        return helidonVersion;
+        return HELIDON_VERSION;
     }
 
     @Override

@@ -16,7 +16,6 @@
 
 package io.helidon.jersey.connector;
 
-import javax.ws.rs.ProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Optional;
@@ -24,6 +23,8 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Flow;
 import java.util.function.Function;
+
+import javax.ws.rs.ProcessingException;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
@@ -46,8 +47,12 @@ import org.glassfish.jersey.client.ClientRequest;
  * and an Entity is provided to be submitted by the Helidon Client.
  */
 class HelidonEntity {
+
+    private HelidonEntity() {
+    }
+
     /**
-     * HelidonEnity type chosen by HelidonEntityType
+     * HelidonEntity type chosen by HelidonEntityType.
      */
     enum HelidonEntityType {
         /**
@@ -77,12 +82,10 @@ class HelidonEntity {
             case BYTE_ARRAY_OUTPUT_STREAM:
                 return Optional.of(new OutputStreamBodyWriter());
             case OUTPUT_STREAM_MULTI:
-                //Helidon default
-                return Optional.empty();
             case READABLE_BYTE_CHANNEL:
+            default:
                 return Optional.empty();
         }
-        return Optional.empty();
     }
 
     /**
@@ -107,13 +110,13 @@ class HelidonEntity {
                 case BYTE_ARRAY_OUTPUT_STREAM:
                     final ByteArrayOutputStream baos = new ByteArrayOutputStream(bufferSize);
                     requestContext.setStreamProvider(contentLength -> baos);
-                    ((ProcessingRunnable) () -> requestContext.writeEntity()).run();
+                    ((ProcessingRunnable) requestContext::writeEntity).run();
                     stage = requestBuilder.submit(baos);
                     break;
                 case READABLE_BYTE_CHANNEL:
                     final OutputStreamChannel channel = new OutputStreamChannel(bufferSize);
                     requestContext.setStreamProvider(contentLength -> channel);
-                    executorService.execute((ProcessingRunnable) () -> requestContext.writeEntity());
+                    executorService.execute((ProcessingRunnable) requestContext::writeEntity);
                     stage = requestBuilder.submit(channel);
                     break;
                 case OUTPUT_STREAM_MULTI:
@@ -125,6 +128,7 @@ class HelidonEntity {
                     });
                     stage = requestBuilder.submit(Multi.create(publisher).map(DataChunk::create));
                     break;
+                default:
             }
         }
         return stage;
