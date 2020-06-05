@@ -29,7 +29,8 @@ import javax.persistence.Table;
 import javax.persistence.Transient;
 
 /**
- * A Pokemon entity class.
+ * A Pokemon entity class. A Pokemon is represented as a triple of an
+ * ID, a name and a type.
  */
 @Entity(name = "Pokemon")
 @Table(name = "POKEMON")

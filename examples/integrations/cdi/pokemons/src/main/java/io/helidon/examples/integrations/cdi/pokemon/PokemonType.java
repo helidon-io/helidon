@@ -26,7 +26,7 @@ import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
 /**
- * Class PokemonType.
+ * A Pokemon Type entity. A type is represented by an ID and a name.
  */
 @Entity(name = "PokemonType")
 @Table(name = "POKEMONTYPE")

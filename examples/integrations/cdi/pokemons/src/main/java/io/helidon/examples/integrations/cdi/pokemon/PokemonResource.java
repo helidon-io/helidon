@@ -15,11 +15,9 @@
  */
 package io.helidon.examples.integrations.cdi.pokemon;
 
-import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.TypedQuery;
-import javax.transaction.Transaction;
 import javax.transaction.Transactional;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
@@ -36,16 +34,20 @@ import javax.ws.rs.core.Response;
 import java.util.List;
 
 /**
- * Class PokemonService.
+ * This class implements REST endpoints to interact with Pokemons. The following
+ * operations are supported:
+ *
+ * GET /pokemon: Retrieve list of all pokemons
+ * GET /pokemon/{id}: Retrieve single pokemon by ID
+ * GET /pokemon/name/{name}: Retrieve single pokemon by name
+ * DELETE /pokemon/{id}: Delete a pokemon by ID
+ * POST /pokemon: Create a new pokemon
  */
 @Path("pokemon")
 public class PokemonResource {
 
     @PersistenceContext(unitName = "test")
     private EntityManager entityManager;
-
-    @Inject
-    private Transaction transaction;
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -80,7 +82,7 @@ public class PokemonResource {
     public Pokemon getPokemonByName(@PathParam("name") String name) {
         TypedQuery<Pokemon> query = entityManager.createNamedQuery("getPokemonByName", Pokemon.class);
         List<Pokemon> list = query.setParameter("name", name).getResultList();
-        if (list.size() == 0) {
+        if (list.isEmpty()) {
             throw new NotFoundException("Unable to find pokemon with name " + name);
         }
         return list.get(0);
