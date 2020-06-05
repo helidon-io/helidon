@@ -32,14 +32,24 @@ The default MicroProfile Config Sources are:
 * Environment variables (ordinal=300)
 * /META-INF/microprofile-config.properties (ordinal=100)
 
-Each Config Source has a ordinal that determines the priority of the Config Source. A Config Source with higher ordinal has high priority as compared to the Config Source with lower ordinal. The values taken from the high-priority Configsource overrides the values from low-priority Config Source. This helps to customize the configuration of Config Sources using external Config Source if an external Config Source has higher ordinal values than the built-in Config Sources of the application.
+Each Config Source has an ordinal that determines the priority of the Config Source.
+A Config Source with higher ordinal has higher priority as compared to the Config Source with
+lower ordinal. The values taken from the high-priority Config Source overrides the values
+from low-priority Config Source.
+
+This helps to customize the configuration of Config Sources using external Config Source
+if an external Config Source has higher ordinal values than the built-in Config Sources of the application.
 
 
 == Creating Custom Config Sources
 
-Custom Config Sources are loaded using the Java ServiceLoader pattern and can be registered by providing a file named `org.eclipse.microprofile.config.spi.ConfigSource` in the `/META-INF/services/` folder.
+Custom Config Sources are loaded using the Java Service Loader pattern, by implementing
+either `org.eclipse.microprofile.config.spi.ConfigSource`,
+or `org.eclipse.microprofile.config.spi.ConfigSourceProvider` SPI and registering
+it as a service (Using `META-INF/services/${class-name}` file when using classpath, or
+using the `provides` statement in `module-info.java` when using module path).
 
-You need to use the following methods and implement the interface `org.eclipse.microprofile.config.spi.ConfigSource` to create a custom Config Source:
+The interface `org.eclipse.microprofile.config.spi.ConfigSource` requires implementation of the following methods:
 
 * `String getName()`
 * `Map<String, String> getProperties()`
@@ -51,38 +61,37 @@ You need to use the following methods and implement the interface `org.eclipse.m
 [source,java]
 ----
 public class CustomConfigSource implements ConfigSource {
-        private static final String NAME = "MyConfigSource";
-        private static final int PRIORITY = 200; // Default for MP is 100
-        private static final Map<String, String> PROPERTIES = mapOf("app.greeting", "Hi");
+    private static final String NAME = "MyConfigSource";
+    private static final int ORDINAL = 200; // Default for MP is 100
+    private static final Map<String, String> PROPERTIES = mapOf("app.greeting", "Hi");
 
 
-	    @Override
-	    public String getName() { 
-		return NAME; <1>
-	    }
+    @Override
+    public String getName() {
+        return NAME; <1>
+    }
 
-	    @Override
-	    public Map<String, String> getProperties() { 
-		    return PROPERTIES; <2>
-	    }
+    @Override
+    public Map<String, String> getProperties() {
+        return PROPERTIES; <2>
+    }
 
-	    @Override
-	    public String getValue(String key) {
-		    return PROPERTIES.get(key); <3>
-	    }
+    @Override
+    public String getValue(String key) {
+        return PROPERTIES.get(key); <3>
+    }
 
-	    @Override
-	    public int getOrdinal() {
-		    return PRIORITY; <4>
-	    }
-
+    @Override
+    public int getOrdinal() {
+        return ORDINAL; <4>
+    }
 }
 ----
 
 <1> Returns the name of the Config Source to use for logging or analysis of configured values.
 <2> Returns the properties in this Config Source as a map.
-<3> Returns the value stored in the propertyName of this Config Source.
-<4> Returns the ordinal based on the set order for this Config Source.
+<3> Returns the value of the requested key, or `null` if the key is not available
+<4> Returns the ordinal of this Config Source.
 
 
 == Creating MicroProfile Config Sources for Manual Setup of Config
@@ -112,16 +121,20 @@ To create an in-memory source from properties with custom name, use `create(Stri
 [source,java]
 .Create MicroProfile Config Source based on Environment Variables and Custom Map
 ----
-org.eclipse.microprofile.config.Config mpConfig = ConfigProviderResolver.instance()
-        .getBuilder() <1>
+ConfigProviderResolver resolver = ConfigProviderResolver.instance();
+
+org.eclipse.microprofile.config.Config Config config = resolver.getBuilder().getBuilder() <1>
         .withSources(MpConfigSources.environmentVariables()) <2>
         .withSources(MpConfigSources.create(Map.of("key","value"))) <3>
         .build(); <4>
+
+resolver.registerConfig(config, null); <5>
 ----
 <1> Creates MicroProfile Config Source builder.
 <2> Adds environment variables.
-<3> Adds custom map.
+<3> Adds a custom map.
 <4> Builds the MicroProfile Config Source.
+<5> Registers the config, so it can be used by other components
 
 
 == Creating MicroProfile Config Source from Helidon SE Config Source
@@ -142,6 +155,7 @@ To use advanced Helidon SE features in Helidon MP, create MicroProfile Config So
 The latest config version is queried each time  `org.eclipse.microprofile.config.spi.ConfigSource#getValue(String)` is called.
 
 ----
+ConfigProviderResolver.instance();
 Config config = ConfigProviderResolver.instance()
                 .getBuilder()
                 .withSources(MpConfigSources.create(helidonConfig)) <1>
@@ -153,7 +167,9 @@ Config config = ConfigProviderResolver.instance()
 
 == Create Yaml MicroProfile Config Source Programatically
 
-You can create Yaml Microprofile Config Source from a path or a URL. When you create a MicroProfile instance from the builder, the `YamlMpConfigSource` allows you to create a custom Config Source and register it with the builder.
+You can create Yaml Microprofile Config Source from a path or a URL. When you create a MicroProfile instance from the builder,
+the `YamlMpConfigSource` allows you to create a custom Config Source and register
+it with the builder.
 
 
 === Example
