@@ -16,12 +16,13 @@
 
 package io.helidon.jersey.connector;
 
-import org.glassfish.jersey.client.spi.Connector;
-import org.glassfish.jersey.client.spi.ConnectorProvider;
+import java.io.OutputStream;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.core.Configuration;
-import java.io.OutputStream;
+
+import org.glassfish.jersey.client.spi.Connector;
+import org.glassfish.jersey.client.spi.ConnectorProvider;
 
 /**
  * Provider for Helidon WebClient {@link Connector} that utilizes the Helidon HTTP Client to send and receive

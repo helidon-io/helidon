@@ -17,15 +17,16 @@
 
 package io.helidon.jersey.connector;
 
-import javax.net.ssl.SSLContext;
-import javax.ws.rs.ProcessingException;
-import javax.ws.rs.core.Configuration;
 import java.io.InputStream;
 import java.net.URI;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+
+import javax.net.ssl.SSLContext;
+import javax.ws.rs.ProcessingException;
+import javax.ws.rs.core.Configuration;
 
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
@@ -36,6 +37,7 @@ import io.helidon.media.common.MessageBodyReader;
 import io.helidon.webclient.Proxy;
 import io.helidon.webclient.Ssl;
 import io.helidon.webclient.WebClientResponse;
+
 import io.netty.handler.codec.http.HttpHeaderValues;
 import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.client.ClientRequest;
@@ -44,6 +46,9 @@ import org.glassfish.jersey.client.ClientRequest;
  * Helidon specific classes and implementations.
  */
 class HelidonStructures {
+
+    private HelidonStructures() {
+    }
 
     static Headers createHeaders(Map<String, List<String>> data) {
         return new ReadOnlyHeaders(data);
@@ -91,7 +96,7 @@ class HelidonStructures {
     }
 
     private static class ReadOnlyHeaders extends ReadOnlyParameters implements Headers {
-        public ReadOnlyHeaders(Map<String, List<String>> data) {
+        ReadOnlyHeaders(Map<String, List<String>> data) {
             super(data);
         }
     }
