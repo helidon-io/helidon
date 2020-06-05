@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-package io.helidon.media.common;
+package io.helidon.common.reactive;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ReadableByteChannel;
@@ -25,7 +27,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.Flow.Subscription;
@@ -37,10 +39,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.IntFunction;
 
 import io.helidon.common.LazyValue;
-import io.helidon.common.http.DataChunk;
-import io.helidon.common.reactive.RetrySchema;
-import io.helidon.common.reactive.Single;
 
+import org.hamcrest.collection.IsCollectionWithSize;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -48,24 +48,30 @@ import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * Tests {@link io.helidon.media.common.ReadableByteChannelPublisher}.
+ * Tests {@link io.helidon.common.reactive.MultiFromByteChannel}.
  */
-public class ReadableByteChannelPublisherTest {
+public class MultiFromByteChannelTest {
 
     private static final int TEST_DATA_SIZE = 250 * 1024;
 
     @Test
-    void allData() throws Exception {
+    void testReadAllData() {
         PeriodicalChannel pc = new PeriodicalChannel(i -> 256, TEST_DATA_SIZE);
         CountingOnNextDelegatingPublisher publisher = new CountingOnNextDelegatingPublisher(
-                new ReadableByteChannelPublisher(pc, RetrySchema.constant(5)));
+                IoMulti.multiFromByteChannelBuilder(pc)
+                        .retrySchema(RetrySchema.constant(5))
+                        .build());
         // assert
-        byte[] bytes = ContentReaders.readBytes(publisher).get(5, TimeUnit.SECONDS);
+        byte[] bytes = Multi.create(publisher)
+                .collect(new BufferCollector())
+                .await(5, TimeUnit.SECONDS);
+
         assertThat(bytes.length, is(TEST_DATA_SIZE));
         assertByteSequence(bytes);
         assertThat(pc.threads.size(), is(1));
@@ -77,60 +83,116 @@ public class ReadableByteChannelPublisherTest {
     }
 
     @Test
-    void chunky() throws Exception {
+    void testChunky() {
         PeriodicalChannel pc = createChannelWithNoAvailableData(25, 3);
-        ReadableByteChannelPublisher publisher = new ReadableByteChannelPublisher(pc, RetrySchema.constant(2));
+        Multi<ByteBuffer> publisher = IoMulti.multiFromByteChannelBuilder(pc)
+                .retrySchema(RetrySchema.constant(2))
+                .build();
+
         // assert
-        byte[] bytes = ContentReaders.readBytes(publisher).get(5, TimeUnit.SECONDS);
+        byte[] bytes = Multi.create(publisher)
+                .collect(new BufferCollector())
+                .await(5, TimeUnit.SECONDS);
+
         assertThat(bytes.length, is(TEST_DATA_SIZE));
         assertByteSequence(bytes);
         assertThat(pc.threads.size(), is(2));
         assertThat(pc.isOpen(), is(false));
 
-        LazyValue<ScheduledExecutorService> executor = publisher.executor();
+        MultiFromByteChannel multi = (MultiFromByteChannel) publisher;
+        LazyValue<ScheduledExecutorService> executor = multi.executor();
         assertThat("Executor should have been used", executor.isLoaded(), is(true));
         assertThat("Executor should have been shut down", executor.get().isShutdown(), is(true));
     }
 
     @Test
-    void chunkyNoDelay() throws Exception {
-        PeriodicalChannel pc = createChannelWithNoAvailableData(10, 3);
-        ReadableByteChannelPublisher publisher = new ReadableByteChannelPublisher(pc, RetrySchema.constant(0));
+    void testChunkyWithCustomExecutor() {
+        ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
+
+        PeriodicalChannel pc = createChannelWithNoAvailableData(25, 3);
+        Multi<ByteBuffer> publisher = IoMulti.multiFromByteChannelBuilder(pc)
+                .retrySchema(RetrySchema.constant(2))
+                .executor(executorService)
+                .build();
+
         // assert
-        byte[] bytes = ContentReaders.readBytes(publisher).get(5, TimeUnit.SECONDS);
+        byte[] bytes = Multi.create(publisher)
+                .collect(new BufferCollector())
+                .await(5, TimeUnit.SECONDS);
+
         assertThat(bytes.length, is(TEST_DATA_SIZE));
         assertByteSequence(bytes);
-        assertThat(pc.threads.size(), is(1));
+        assertThat(pc.threads.size(), is(2));
+        assertThat(pc.isOpen(), is(false));
+
+        MultiFromByteChannel multi = (MultiFromByteChannel) publisher;
+        LazyValue<ScheduledExecutorService> executor = multi.executor();
+        assertThat("Executor was provided", executor.isLoaded(), is(true));
+
+        ScheduledExecutorService usedExecutor = executor.get();
+        assertThat("Executor should not have been shut down, as we use an explicit one",
+                   usedExecutor.isShutdown(),
+                   is(false));
+
+        assertThat("Executor should have been our instance", usedExecutor, is(sameInstance(executorService)));
+        executorService.shutdownNow();
+    }
+
+    @Test
+    void testChunkyNoDelay() {
+        PeriodicalChannel pc = createChannelWithNoAvailableData(10, 3);
+        Multi<ByteBuffer> publisher = IoMulti.multiFromByteChannelBuilder(pc)
+                .retrySchema(RetrySchema.constant(2))
+                .build();
+        // assert
+        byte[] bytes = Multi.create(publisher)
+                .collect(new BufferCollector())
+                .await(5, TimeUnit.SECONDS);
+
+        assertThat(bytes.length, is(TEST_DATA_SIZE));
+        assertByteSequence(bytes);
+
+        // remove current thread from used threads (some of the processing may happen in current thread
+        pc.threads.remove(Thread.currentThread());
+        assertThat(pc.threads, IsCollectionWithSize.hasSize(1));
         assertThat(pc.isOpen(), is(false));
     }
 
     @Test
-    void onClosedChannel() throws Exception {
+    void testOnClosedChannel() {
         PeriodicalChannel pc = new PeriodicalChannel(i -> 1024, TEST_DATA_SIZE);
         pc.close();
-        ReadableByteChannelPublisher publisher = new ReadableByteChannelPublisher(pc, RetrySchema.constant(0));
+        Multi<ByteBuffer> publisher = IoMulti.multiFromByteChannelBuilder(pc)
+                .retrySchema(RetrySchema.constant(0))
+                .build();
         // assert
         try {
-            ContentReaders.readBytes(publisher).get(5, TimeUnit.SECONDS);
-            fail("Did not throw expected ExecutionException!");
-        } catch (ExecutionException e) {
+            Multi.create(publisher)
+                    .collect(new BufferCollector())
+                    .await(5, TimeUnit.SECONDS);
+            fail("Did not throw expected CompletionException!");
+        } catch (CompletionException e) {
             assertThat(e.getCause(), instanceOf(ClosedChannelException.class));
         }
 
-        LazyValue<ScheduledExecutorService> executor = publisher.executor();
+        MultiFromByteChannel multi = (MultiFromByteChannel) publisher;
+        LazyValue<ScheduledExecutorService> executor = multi.executor();
         assertThat("Executor should have not been used", executor.isLoaded(), is(false));
     }
 
     @Test
     @Disabled("This test uses a sleep, so could cause issues on slow environments")
-    void onClosedInProgress() throws Exception {
+    void testOnClosedInProgress() throws Exception {
         PeriodicalChannel pc = createChannelWithNoAvailableData(5, 2);
 
-        RetrySchema schema = RetrySchema.constant(TimeUnit.SECONDS.toMillis(2));
-        ReadableByteChannelPublisher publisher = new ReadableByteChannelPublisher(pc, schema);
+        Multi<ByteBuffer> publisher = IoMulti.multiFromByteChannelBuilder(pc)
+                .retrySchema(RetrySchema.constant(TimeUnit.SECONDS.toMillis(2)))
+                .build();
 
         // start reading (this will cause 2 second delay)
-        Single<byte[]> data = ContentReaders.readBytes(publisher);
+        Single<byte[]> data = Multi.create(publisher)
+                .collect(new BufferCollector());
+
         // run the stream
         data.thenRun(() -> {
         });
@@ -141,7 +203,8 @@ public class ReadableByteChannelPublisherTest {
         CompletionException c = assertThrows(CompletionException.class, () -> data.await(5, TimeUnit.SECONDS));
         assertThat(c.getCause(), instanceOf(ClosedChannelException.class));
 
-        LazyValue<ScheduledExecutorService> executor = publisher.executor();
+        MultiFromByteChannel multi = (MultiFromByteChannel) publisher;
+        LazyValue<ScheduledExecutorService> executor = multi.executor();
         assertThat("Executor should have been used", executor.isLoaded(), is(true));
         assertThat("Executor should have been shut down", executor.get().isShutdown(), is(true));
     }
@@ -150,14 +213,16 @@ public class ReadableByteChannelPublisherTest {
     void testCancelled() throws Exception {
         PeriodicalChannel pc = createChannelWithNoAvailableData(5, 1);
 
-        ReadableByteChannelPublisher publisher = new ReadableByteChannelPublisher(pc, RetrySchema.constant(100));
+        Multi<ByteBuffer> publisher = IoMulti.multiFromByteChannelBuilder(pc)
+                .retrySchema(RetrySchema.constant(100))
+                .build();
 
         AtomicReference<Subscription> subscriptionRef = new AtomicReference<>();
         final CountDownLatch onNextCalled = new CountDownLatch(1);
         AtomicReference<Throwable> failure = new AtomicReference<>();
         AtomicBoolean completeCalled = new AtomicBoolean();
 
-        publisher.subscribe(new Subscriber<>() {
+        publisher.subscribe(new Subscriber<ByteBuffer>() {
             @Override
             public void onSubscribe(Subscription subscription) {
                 subscriptionRef.set(subscription);
@@ -165,7 +230,7 @@ public class ReadableByteChannelPublisherTest {
             }
 
             @Override
-            public void onNext(DataChunk item) {
+            public void onNext(ByteBuffer item) {
                 onNextCalled.countDown();
             }
 
@@ -186,23 +251,30 @@ public class ReadableByteChannelPublisherTest {
         assertThat("Should not complete", completeCalled.get(), is(false));
         assertThat("Exception should be null", failure.get(), is(nullValue()));
 
-        LazyValue<ScheduledExecutorService> executor = publisher.executor();
+        MultiFromByteChannel multi = (MultiFromByteChannel) publisher;
+        LazyValue<ScheduledExecutorService> executor = multi.executor();
         assertThat("Executor should have been used", executor.isLoaded(), is(true));
         assertThat("Executor should have been shut down", executor.get().isShutdown(), is(true));
     }
 
     @Test
-    void negativeDelay() throws Exception {
+    void testNegativeDelay() {
         PeriodicalChannel pc = createChannelWithNoAvailableData(10, 1);
 
         RetrySchema schema = (i, delay) -> i >= 3 ? -10 : 0;
-        ReadableByteChannelPublisher publisher = new ReadableByteChannelPublisher(pc, schema);
+
+        Multi<ByteBuffer> publisher = IoMulti.multiFromByteChannelBuilder(pc)
+                .retrySchema(schema)
+                .build();
 
         // assert
         try {
-            ContentReaders.readBytes(publisher).get(5, TimeUnit.SECONDS);
-            fail("Did not throw expected ExecutionException!");
-        } catch (ExecutionException e) {
+            Multi.create(publisher)
+                    .collect(new BufferCollector())
+                    .await(5, TimeUnit.SECONDS);
+
+            fail("Did not throw expected CompletionException!");
+        } catch (CompletionException e) {
             assertThat(e.getCause(), instanceOf(TimeoutException.class));
         }
     }
@@ -229,12 +301,12 @@ public class ReadableByteChannelPublisherTest {
         }
     }
 
-    private static class CountingOnNextSubscriber implements Subscriber<DataChunk> {
+    private static class CountingOnNextSubscriber implements Subscriber<ByteBuffer> {
 
-        private final Subscriber<? super DataChunk> delegate;
+        private final Subscriber<? super ByteBuffer> delegate;
         private volatile int onNextCount;
 
-        CountingOnNextSubscriber(Subscriber<? super DataChunk> delegate) {
+        CountingOnNextSubscriber(Subscriber<? super ByteBuffer> delegate) {
             this.delegate = delegate;
         }
 
@@ -244,7 +316,7 @@ public class ReadableByteChannelPublisherTest {
         }
 
         @Override
-        public void onNext(DataChunk item) {
+        public void onNext(ByteBuffer item) {
             onNextCount++;
             delegate.onNext(item);
         }
@@ -260,17 +332,17 @@ public class ReadableByteChannelPublisherTest {
         }
     }
 
-    static class CountingOnNextDelegatingPublisher implements Publisher<DataChunk> {
+    static class CountingOnNextDelegatingPublisher implements Publisher<ByteBuffer> {
 
-        private final Publisher<DataChunk> delegate;
+        private final Publisher<ByteBuffer> delegate;
         private CountingOnNextSubscriber subscriber;
 
-        CountingOnNextDelegatingPublisher(Publisher<DataChunk> delegate) {
+        CountingOnNextDelegatingPublisher(Publisher<ByteBuffer> delegate) {
             this.delegate = delegate;
         }
 
         @Override
-        public void subscribe(Subscriber<? super DataChunk> subscriber) {
+        public void subscribe(Subscriber<? super ByteBuffer> subscriber) {
             if (this.subscriber == null) {
                 this.subscriber = new CountingOnNextSubscriber(subscriber);
             }
@@ -339,8 +411,35 @@ public class ReadableByteChannelPublisherTest {
         }
 
         @Override
-        public synchronized void close() throws IOException {
+        public synchronized void close() {
             this.open = false;
+        }
+    }
+
+    private static class BufferCollector implements Collector<ByteBuffer, byte[]> {
+        private final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+        @Override
+        public void collect(ByteBuffer item) {
+            try {
+                write(item, baos);
+            } catch (IOException ignored) {
+            }
+        }
+
+        @Override
+        public byte[] value() {
+            return baos.toByteArray();
+        }
+    }
+
+    static void write(ByteBuffer byteBuffer, OutputStream out) throws IOException {
+        if (byteBuffer.hasArray()) {
+            out.write(byteBuffer.array(), byteBuffer.arrayOffset() + byteBuffer.position(), byteBuffer.remaining());
+        } else {
+            byte[] buff = new byte[byteBuffer.remaining()];
+            byteBuffer.get(buff);
+            out.write(buff);
         }
     }
 }

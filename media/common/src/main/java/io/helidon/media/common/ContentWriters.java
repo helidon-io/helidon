@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,10 +21,12 @@ import java.io.StringWriter;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
+import java.util.Objects;
 import java.util.concurrent.Flow.Publisher;
 import java.util.function.Function;
 
 import io.helidon.common.http.DataChunk;
+import io.helidon.common.reactive.IoMulti;
 import io.helidon.common.reactive.RetrySchema;
 import io.helidon.common.reactive.Single;
 
@@ -164,8 +166,12 @@ public final class ContentWriters {
      * @return a {@link ReadableByteChannel} writer
      */
     public static Function<ReadableByteChannel, Publisher<DataChunk>> byteChannelWriter(RetrySchema retrySchema) {
-        final RetrySchema schema = retrySchema == null ? RetrySchema.linear(0, 10, 250) : retrySchema;
-        return channel -> new ReadableByteChannelPublisher(channel, schema);
+        Objects.requireNonNull(retrySchema);
+
+        return channel -> IoMulti.multiFromByteChannelBuilder(channel)
+                .retrySchema(retrySchema)
+                .build()
+                .map(DataChunk::create);
     }
 
     /**
@@ -174,7 +180,7 @@ public final class ContentWriters {
      * @return a {@link ReadableByteChannel} writer
      */
     public static Function<ReadableByteChannel, Publisher<DataChunk>> byteChannelWriter() {
-        return byteChannelWriter(null);
+        return channel -> IoMulti.multiFromByteChannel(channel).map(DataChunk::create);
     }
 
 }

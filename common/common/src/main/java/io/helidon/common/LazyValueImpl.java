@@ -38,6 +38,11 @@ class LazyValueImpl<T> implements LazyValue<T> {
     }
 
     @Override
+    public boolean isLoaded() {
+        return loaded;
+    }
+
+    @Override
     public T get() {
         if (loaded) {
             return value;

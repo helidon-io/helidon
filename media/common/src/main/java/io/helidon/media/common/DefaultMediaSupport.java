@@ -35,7 +35,11 @@ public class DefaultMediaSupport implements MediaSupport {
     private final ThrowableBodyWriter throwableBodyWriter;
 
     private DefaultMediaSupport(Builder builder) {
-        byteChannelBodyWriter = ByteChannelBodyWriter.create(builder.schema);
+        if (builder.schema == null) {
+            byteChannelBodyWriter = ByteChannelBodyWriter.create();
+        } else {
+            byteChannelBodyWriter = ByteChannelBodyWriter.create(builder.schema);
+        }
         throwableBodyWriter = ThrowableBodyWriter.create(builder.includeStackTraces);
     }
 
@@ -152,7 +156,7 @@ public class DefaultMediaSupport implements MediaSupport {
     public static class Builder implements io.helidon.common.Builder<DefaultMediaSupport> {
 
         private boolean includeStackTraces = false;
-        private RetrySchema schema = ByteChannelBodyWriter.DEFAULT_RETRY_SCHEMA;
+        private RetrySchema schema;
 
         private Builder() {
         }
