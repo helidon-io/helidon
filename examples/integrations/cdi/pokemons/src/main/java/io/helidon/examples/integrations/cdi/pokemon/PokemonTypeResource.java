@@ -26,7 +26,9 @@ import javax.ws.rs.core.Response;
 import java.util.List;
 
 /**
- * Class TypeResource.
+ * This class implements a REST endpoint to retrieve Pokemon types.
+ *
+ * GET /type: Retrieve list of all pokemon types
  */
 @Path("type")
 public class PokemonTypeResource {
