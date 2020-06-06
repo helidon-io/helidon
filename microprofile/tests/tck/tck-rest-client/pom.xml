@@ -45,6 +45,11 @@
             <artifactId>jakarta.xml.bind-api</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -59,10 +64,11 @@
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>uk.co.deliverymind</groupId>
+                <groupId>uk.co.automatictester</groupId>
                 <artifactId>wiremock-maven-plugin</artifactId>
                 <executions>
                     <execution>
+                        <id>start</id>
                         <phase>test-compile</phase>
                         <goals>
                             <goal>run</goal>
@@ -71,6 +77,13 @@
                             <dir>target/classes</dir>
                             <params>--port=8765</params>
                         </configuration>
+                    </execution>
+                    <execution>
+                        <id>stop</id>
+                        <phase>post-integration-test</phase>
+                        <goals>
+                            <goal>stop</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>
