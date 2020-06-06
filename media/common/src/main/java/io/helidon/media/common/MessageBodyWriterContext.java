@@ -27,7 +27,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 import io.helidon.common.GenericType;
-import io.helidon.common.LazyValue;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
@@ -53,7 +52,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
     private static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
 
     private final Parameters headers;
-    private final LazyValue<List<MediaType>> acceptedTypes;
+    private final List<MediaType> acceptedTypes;
     private final MessageBodyOperators<MessageBodyWriter<?>> writers;
     private final MessageBodyOperators<MessageBodyStreamWriter<?>> swriters;
     private boolean contentTypeCached;
@@ -65,7 +64,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      * Private to enforce the use of the static factory methods.
      */
     private MessageBodyWriterContext(MessageBodyWriterContext parent, EventListener eventListener, Parameters headers,
-                                     LazyValue<List<MediaType>> acceptedTypes) {
+                                     List<MediaType> acceptedTypes) {
 
         super(parent, eventListener);
         Objects.requireNonNull(headers, "headers cannot be null!");
@@ -73,7 +72,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
         if (acceptedTypes != null) {
             this.acceptedTypes = acceptedTypes;
         } else {
-            this.acceptedTypes = LazyValue.create(List.of());
+            this.acceptedTypes = List.of();
         }
         if (parent != null) {
             this.writers = new MessageBodyOperators<>(parent.writers);
@@ -94,7 +93,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
         this.headers = headers;
         this.writers = new MessageBodyOperators<>();
         this.swriters = new MessageBodyOperators<>();
-        this.acceptedTypes = LazyValue.create(List.of());
+        this.acceptedTypes = List.of();
     }
 
     /**
@@ -105,7 +104,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
         this.headers = ReadOnlyParameters.empty();
         this.writers = new MessageBodyOperators<>();
         this.swriters = new MessageBodyOperators<>();
-        this.acceptedTypes = LazyValue.create(List.of());
+        this.acceptedTypes = List.of();
         this.contentTypeCache = Optional.empty();
         this.contentTypeCached = true;
         this.charsetCache = DEFAULT_CHARSET;
@@ -118,7 +117,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
         this.headers = headers;
         this.writers = new MessageBodyOperators<>(writerContext.writers);
         this.swriters = new MessageBodyOperators<>(writerContext.swriters);
-        this.acceptedTypes = writerContext.acceptedTypes;
+        this.acceptedTypes = List.copyOf(writerContext.acceptedTypes);
         this.contentTypeCache = writerContext.contentTypeCache;
         this.contentTypeCached = writerContext.contentTypeCached;
         this.charsetCache = writerContext.charsetCache;
@@ -137,7 +136,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      * @return MessageBodyWriterContext
      */
     public static MessageBodyWriterContext create(MediaContext mediaContext, EventListener eventListener, Parameters headers,
-                                                  LazyValue<List<MediaType>> acceptedTypes) {
+                                                  List<MediaType> acceptedTypes) {
 
         if (mediaContext == null) {
             return new MessageBodyWriterContext(null, eventListener, headers, acceptedTypes);
@@ -156,7 +155,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      * @return MessageBodyWriterContext
      */
     public static MessageBodyWriterContext create(MessageBodyWriterContext parent, EventListener eventListener,
-            Parameters headers, LazyValue<List<MediaType>> acceptedTypes) {
+            Parameters headers, List<MediaType> acceptedTypes) {
 
         return new MessageBodyWriterContext(parent, eventListener, headers, acceptedTypes);
     }
@@ -416,7 +415,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      * @return List never {@code null}
      */
     public List<MediaType> acceptedTypes() {
-        return acceptedTypes.get();
+        return acceptedTypes;
     }
 
     /**
@@ -468,10 +467,10 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
         Objects.requireNonNull(defaultType, "defaultType cannot be null");
         MediaType contentType = contentType().orElse(null);
         if (contentType == null) {
-            if (acceptedTypes.get().isEmpty()) {
+            if (acceptedTypes.isEmpty()) {
                 return defaultType;
             } else {
-                for (final MediaType acceptedType : acceptedTypes.get()) {
+                for (final MediaType acceptedType : acceptedTypes) {
                     if (predicate.test(acceptedType)) {
                         if (acceptedType.isWildcardType() || acceptedType.isWildcardSubtype()) {
                             return defaultType;
@@ -497,7 +496,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
      */
     public MediaType findAccepted(MediaType mediaType) throws IllegalStateException {
         Objects.requireNonNull(mediaType, "mediaType cannot be null");
-        for (MediaType acceptedType : acceptedTypes.get()) {
+        for (MediaType acceptedType : acceptedTypes) {
             if (mediaType.equals(acceptedType)) {
                 return acceptedType;
             }
