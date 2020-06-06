@@ -27,7 +27,7 @@ import org.glassfish.jersey.client.spi.ConnectorProvider;
 /**
  * Provider for Helidon WebClient {@link Connector} that utilizes the Helidon HTTP Client to send and receive
  * HTTP request and responses.
- * <p/>
+ * <p>
  * The following properties are only supported at construction of this class:
  * <ul>
  * <li>{@link org.glassfish.jersey.client.ClientProperties#CONNECT_TIMEOUT}</li>
