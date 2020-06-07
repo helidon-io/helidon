@@ -29,8 +29,9 @@ import javax.ws.rs.ProcessingException;
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.MediaType;
+import io.helidon.common.reactive.IoMulti;
 import io.helidon.common.reactive.Multi;
-import io.helidon.common.reactive.MultiFromOutputStream;
+import io.helidon.common.reactive.OutputStreamMulti;
 import io.helidon.common.reactive.Single;
 import io.helidon.media.common.ContentWriters;
 import io.helidon.media.common.MessageBodyWriter;
@@ -120,7 +121,7 @@ class HelidonEntity {
                     stage = requestBuilder.submit(channel);
                     break;
                 case OUTPUT_STREAM_MULTI:
-                    final MultiFromOutputStream publisher = new MultiFromOutputStream() {};
+                    final OutputStreamMulti publisher = IoMulti.outputStreamMulti();
                     requestContext.setStreamProvider(contentLength -> publisher);
                     executorService.execute((ProcessingRunnable) () -> {
                         requestContext.writeEntity();
