@@ -114,7 +114,7 @@
         <version.plugin.toolchains>1.1</version.plugin.toolchains>
         <version.plugin.version-plugin>2.3</version.plugin.version-plugin>
         <version.plugin.buildnumber>1.4</version.plugin.buildnumber>
-        <version.plugin.wiremock>2.7.0</version.plugin.wiremock>
+        <version.plugin.wiremock>2.14.0</version.plugin.wiremock>
 
         <javadoc.link.jackson-annotations>https://fasterxml.github.io/jackson-annotations/javadoc/2.9/</javadoc.link.jackson-annotations>
         <javadoc.link.jackson-core>https://fasterxml.github.io/jackson-core/javadoc/2.9/</javadoc.link.jackson-core>
@@ -590,7 +590,7 @@
                     <version>${version.plugin.archetype}</version>
                 </plugin>
                 <plugin>
-                    <groupId>uk.co.deliverymind</groupId>
+                    <groupId>uk.co.automatictester</groupId>
                     <artifactId>wiremock-maven-plugin</artifactId>
                     <version>${version.plugin.wiremock}</version>
                 </plugin>

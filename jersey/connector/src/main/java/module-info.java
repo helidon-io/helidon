@@ -15,17 +15,18 @@
  */
 
 /**
- * Utilities for Jersey handling.
+ * A {@link org.glassfish.jersey.client.spi.Connector} that utilizes the Helidon HTTP Client to send and receive
+ *  * HTTP request and responses.
  */
-module io.helidon.jersey.common {
-    requires java.logging;
-    requires java.annotation;
-
-    requires io.helidon.common;
-
-    requires java.ws.rs;
+module io.helidon.jersey.connector {
+    requires jersey.client;
     requires jersey.common;
-    requires jersey.server;
+    requires jakarta.activation;
+    requires java.logging;
+    requires java.ws.rs;
+    requires io.helidon.common.reactive;
+    requires io.helidon.webclient;
+    requires io.netty.codec.http;
 
-    exports io.helidon.jersey.common;
+    exports io.helidon.jersey.connector;
 }
