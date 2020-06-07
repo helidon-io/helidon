@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,17 +15,17 @@
  */
 
 /**
- * Utilities for Jersey handling.
+ * Eclipse Microprofile Tracing implementation for helidon microprofile.
  */
-module io.helidon.jersey.common {
-    requires java.logging;
-    requires java.annotation;
-
-    requires io.helidon.common;
-
-    requires java.ws.rs;
+module io.helidon.jersey.connector {
+    requires jersey.client;
     requires jersey.common;
-    requires jersey.server;
+    requires jakarta.activation;
+    requires java.logging;
+    requires java.ws.rs;
+    requires io.helidon.common.reactive;
+    requires io.helidon.webclient;
+    requires io.netty.codec.http;
 
-    exports io.helidon.jersey.common;
+    exports io.helidon.jersey.connector;
 }
