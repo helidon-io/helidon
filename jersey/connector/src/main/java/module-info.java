@@ -15,7 +15,8 @@
  */
 
 /**
- * Eclipse Microprofile Tracing implementation for helidon microprofile.
+ * A {@link org.glassfish.jersey.client.spi.Connector} that utilizes the Helidon HTTP Client to send and receive
+ *  * HTTP request and responses.
  */
 module io.helidon.jersey.connector {
     requires jersey.client;
