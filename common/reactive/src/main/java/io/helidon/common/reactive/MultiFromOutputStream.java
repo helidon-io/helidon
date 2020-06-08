@@ -28,12 +28,12 @@ import java.util.concurrent.Flow;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 
 /**
  * Output stream that {@link java.util.concurrent.Flow.Publisher} publishes any data written to it as {@link ByteBuffer}
  * events.
+ *
  * @deprecated please use {@link io.helidon.common.reactive.OutputStreamMulti} instead
  */
 @Deprecated(since = "2.0.0", forRemoval = true)
@@ -46,23 +46,21 @@ public class MultiFromOutputStream extends OutputStream implements Multi<ByteBuf
     private final EmittingPublisher<ByteBuffer> emittingPublisher = EmittingPublisher.create();
     private final CompletableFuture<?> completionResult = new CompletableFuture<>();
     private final AtomicBoolean written = new AtomicBoolean();
-    private final AtomicReference<CompletableFuture<Void>> demandUpdated = new AtomicReference<>();
+    private volatile CompletableFuture<Void> demandUpdated = new CompletableFuture<>();
 
     /**
      * Create new output stream that {@link java.util.concurrent.Flow.Publisher}
      * publishes any data written to it as {@link ByteBuffer} events.
      */
     protected MultiFromOutputStream() {
-        this.demandUpdated.set(new CompletableFuture<>());
         emittingPublisher.onCancel(() -> {
             // when write is called, an exception is thrown as it is a cancelled subscriber
             // when close is called, we do not throw an exception, as that should be silent
             completionResult.complete(null);
+            demandUpdated.cancel(true);
         });
         emittingPublisher.onRequest((n, demand) -> {
-            // complete previous and create new future for demand update
-            this.demandUpdated.getAndSet(new CompletableFuture<>())
-                    .complete(null);
+            this.demandUpdated.complete(null);
         });
     }
 
@@ -82,7 +80,7 @@ public class MultiFromOutputStream extends OutputStream implements Multi<ByteBuf
      * @param requestCallback to be executed
      * @return this OutputStreamMulti
      */
-    public MultiFromOutputStream onRequest(BiConsumer<Long, Long> requestCallback){
+    public MultiFromOutputStream onRequest(BiConsumer<Long, Long> requestCallback) {
         this.emittingPublisher.onRequest(requestCallback);
         return this;
     }
@@ -182,8 +180,6 @@ public class MultiFromOutputStream extends OutputStream implements Multi<ByteBuf
 
             ByteBuffer byteBuffer = createBuffer(buffer, offset, length);
 
-            // defend against racing demand updates
-            CompletableFuture<Void> demandUpdated = this.demandUpdated.get();
             while (!emittingPublisher.emit(byteBuffer)) {
                 if (emittingPublisher.isCancelled()) {
                     throw new IOException("Output stream already closed.");
@@ -194,8 +190,8 @@ public class MultiFromOutputStream extends OutputStream implements Multi<ByteBuf
                 }
 
                 // wait until some data can be sent or the stream has been closed
-                await(start, 250, demandUpdated);
-                demandUpdated = this.demandUpdated.get();
+                await(start, timeout, demandUpdated);
+                demandUpdated = new CompletableFuture<>();
             }
 
         } catch (InterruptedException e) {
