@@ -23,6 +23,7 @@
 :spec-name: MicroProfile Config
 :description: {spec-name} support in Helidon MP
 :keywords: helidon, mp, microprofile, config, encryption, reference
+:h1Prefix: MP
 
 == About {spec-name}
 Helidon MicroProfile Config is an implementation of https://github.com/eclipse/microprofile-config/[Eclipse MicroProfile Config].
