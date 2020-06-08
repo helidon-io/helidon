@@ -27,10 +27,18 @@ tracing:
 db:
   source: jdbc
   connection:
-    url: jdbc:mysql://127.0.0.1:3306/pokemon?useSSL=false
-    username: user
-    password: password
-    poolName: mysql
+    # url: jdbc:h2:tcp://localhost:9092/test
+    # username: sa
+    # password:
+    # poolName: h2
+    # url: jdbc:mysql://127.0.0.1:3306/pokemon?useSSL=false
+    # username: user
+    # password: password
+    # poolName: mysql
+    url: jdbc:oracle:thin:@localhost:11521/XE
+    username: scott
+    password: tiger
+    poolName: oracle
     initializationFailTimeout: -1
     connectionTimeout: 2000
     helidon:

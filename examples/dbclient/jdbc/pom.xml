@@ -16,8 +16,8 @@
   -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>io.helidon.applications</groupId>
@@ -56,6 +56,10 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.dbclient</groupId>
+            <artifactId>helidon-dbclient-oracle</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.dbclient</groupId>
             <artifactId>helidon-dbclient-tracing</artifactId>
         </dependency>
         <dependency>
@@ -74,10 +78,26 @@
             <groupId>io.helidon.dbclient</groupId>
             <artifactId>helidon-dbclient-jsonp</artifactId>
         </dependency>
+        <!--<dependency>-->
+        <!--<groupId>mysql</groupId>-->
+        <!--<artifactId>mysql-connector-java</artifactId>-->
+        <!--</dependency>-->
         <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
+            <groupId>com.oracle.ojdbc</groupId>
+            <artifactId>ojdbc10</artifactId>
+            <version>19.3.0.0</version>
         </dependency>
+<!--                <dependency>-->
+<!--                <groupId>io.quarkus</groupId>-->
+<!--                <artifactId>quarkus-jdbc-h2</artifactId>-->
+<!--                <version>1.2.1.Final</version>-->
+<!--                <scope>runtime</scope>-->
+<!--            </dependency>-->
+<!--                <dependency>-->
+<!--                    <groupId>com.h2database</groupId>-->
+<!--                    <artifactId>h2</artifactId>-->
+<!--                    <version>1.4.197</version>-->
+<!--                </dependency>-->
         <dependency>
             <groupId>com.zaxxer</groupId>
             <artifactId>HikariCP</artifactId>
