@@ -21,13 +21,11 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.Objects;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Flow;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 
 /**
@@ -44,8 +42,6 @@ public class MultiFromOutputStream extends OutputStream implements Multi<ByteBuf
     private static final byte[] FLUSH_BUFFER = new byte[0];
 
     private final EmittingPublisher<ByteBuffer> emittingPublisher = EmittingPublisher.create();
-    private final CompletableFuture<?> completionResult = new CompletableFuture<>();
-    private final AtomicBoolean written = new AtomicBoolean();
     private volatile CompletableFuture<Void> demandUpdated = new CompletableFuture<>();
 
     /**
@@ -54,9 +50,6 @@ public class MultiFromOutputStream extends OutputStream implements Multi<ByteBuf
      */
     protected MultiFromOutputStream() {
         emittingPublisher.onCancel(() -> {
-            // when write is called, an exception is thrown as it is a cancelled subscriber
-            // when close is called, we do not throw an exception, as that should be silent
-            completionResult.complete(null);
             demandUpdated.cancel(true);
         });
         emittingPublisher.onRequest((n, demand) -> {
@@ -87,11 +80,6 @@ public class MultiFromOutputStream extends OutputStream implements Multi<ByteBuf
 
     @Override
     public void subscribe(Flow.Subscriber<? super ByteBuffer> subscriber) {
-        if (completionResult.isCompletedExceptionally()) {
-            subscriber.onSubscribe(SubscriptionHelper.CANCELED);
-            completionResult.whenComplete((o, throwable) -> subscriber.onError(throwable));
-            return;
-        }
         emittingPublisher.subscribe(subscriber);
     }
 
@@ -114,48 +102,6 @@ public class MultiFromOutputStream extends OutputStream implements Multi<ByteBuf
     @Override
     public void close() throws IOException {
         complete();
-
-        if (!written.get() && !completionResult.isCompletedExceptionally()) {
-            // no need to wait for
-            return;
-        }
-        try {
-            completionResult.get(timeout, TimeUnit.MILLISECONDS);
-        } catch (CancellationException e) {
-            throw new IOException(e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new IOException(e);
-        } catch (ExecutionException e) {
-            throw new IOException(e.getCause());
-        } catch (TimeoutException e) {
-            throw new IOException("Timed out while waiting for subscriber to read data", e);
-        }
-    }
-
-    /**
-     * Signals this publishing output stream that it can safely return from otherwise blocking invocation
-     * to it's {@link #close()} method.
-     * Subsequent multiple invocations of this method are allowed, but have no effect on this publishing output stream.
-     * <p>
-     * When the {@link #close()} method on this output stream is invoked, it will block waiting for a signal to complete.
-     * This is useful in cases, when the receiving side needs to synchronize it's completion with the publisher, e.g. to
-     * ensure that any resources used by the subscribing party are not released prematurely due to a premature exit from
-     * publishing output stream {@code close()} method.
-     * <p>
-     * Additionally, this mechanism can be used to propagate any downstream completion exceptions back to this publisher
-     * and up it's call stack. When a non-null {@code throwable} parameter is passed into the method, it will be wrapped
-     * in an {@link IOException} and thrown from the {@code close()} method when it is invoked.
-     *
-     * @param throwable represents a completion error condition that should be thrown when a {@code close()} method is invoked
-     *                  on this publishing output stream. If set to {@code null}, the {@code close()} method will exit normally.
-     */
-    void signalCloseComplete(Throwable throwable) {
-        if (throwable == null) {
-            completionResult.complete(null);
-        } else {
-            completionResult.completeExceptionally(throwable);
-        }
     }
 
     /**
@@ -170,10 +116,6 @@ public class MultiFromOutputStream extends OutputStream implements Multi<ByteBuf
 
     private void publish(byte[] buffer, int offset, int length) throws IOException {
         Objects.requireNonNull(buffer);
-
-        if (length > 0) {
-            written.set(true);
-        }
 
         try {
             long start = System.currentTimeMillis();
@@ -196,25 +138,25 @@ public class MultiFromOutputStream extends OutputStream implements Multi<ByteBuf
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            complete(e);
+            fail(e);
             throw new IOException(e);
         } catch (ExecutionException e) {
-            complete(e.getCause());
+            fail(e.getCause());
             throw new IOException(e.getCause());
         } catch (IllegalStateException e) {
-            complete(e);
+            fail(e);
             throw new IOException(e);
         }
     }
 
-    private void complete() {
+    void complete() {
         emittingPublisher.complete();
-        signalCloseComplete(null);
+        demandUpdated.complete(null);
     }
 
-    private void complete(Throwable t) {
+    void fail(Throwable t) {
         emittingPublisher.fail(t);
-        signalCloseComplete(t);
+        demandUpdated.completeExceptionally(t);
     }
 
     private void await(long startTime, long waitTime, CompletableFuture<?> future) throws

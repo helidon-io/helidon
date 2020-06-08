@@ -69,7 +69,7 @@ public class MultiFromOutputStreamTckTest extends FlowPublisherVerification<Byte
     @Override
     public Flow.Publisher<ByteBuffer> createFailedFlowPublisher() {
         MultiFromOutputStream osp = IoMulti.createOutputStream();
-        osp.signalCloseComplete(new Exception("test"));
+        osp.fail(new Exception("test"));
         return osp;
     }
 
