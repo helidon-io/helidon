@@ -36,6 +36,7 @@
         <module>dbclient</module>
         <module>common</module>
         <module>jdbc</module>
+        <module>oracle</module>
         <module>mongodb</module>
         <module>tracing</module>
         <module>metrics</module>
