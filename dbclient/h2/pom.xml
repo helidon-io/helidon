@@ -16,8 +16,8 @@
   -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <artifactId>helidon-dbclient-project</artifactId>
@@ -25,14 +25,19 @@
         <version>2.0.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>helidon-dbclient-oracle</artifactId>
-    <name>Helidon DB Client Oracle</name>
-    <description>Helidon DB implementation for Oracle</description>
+    <artifactId>helidon-dbclient-h2</artifactId>
+    <name>Helidon DB Client H2</name>
+    <description>Helidon DB implementation for H2</description>
 
     <dependencies>
         <dependency>
-            <groupId>com.oracle.ojdbc</groupId>
-            <artifactId>ojdbc10</artifactId>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.oracle.substratevm</groupId>
+            <artifactId>svm</artifactId>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 </project>

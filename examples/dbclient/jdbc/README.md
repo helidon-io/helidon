@@ -4,9 +4,9 @@ This example shows how to run Helidon DB Client over JDBC.
 
 Examples are given for H2, Oracle, or MySQL databases (note that MySQL is currently not supported for GraalVM native image)
 
-Uncomment the appropriate dependencies in the pom.xml for the desired database (h2, oracle, or myssql) and insure others are commented.
+Uncomment the appropriate dependencies in the pom.xml for the desired database (H2, Oracle, or MySQL) and insure others are commented.
 
-Uncomment the appropriate configuration in the application.xml for the desired database (h2, oracle, or myssql) and insure others are commented.
+Uncomment the appropriate configuration in the application.xml for the desired database (H2, Oracle, or MySQL) and insure others are commented.
 
 ## Build
 
@@ -14,7 +14,7 @@ Uncomment the appropriate configuration in the application.xml for the desired d
 mvn package
 ```
 
-This example may also be run as a GraalVM native image in which case can be building using the following: 
+This example may also be run as a GraalVM native image in which case can be built using the following: 
 
 ```
 mvn package -Pnative-image
@@ -40,7 +40,10 @@ Then run the application:
 ```
 java -jar target/helidon-examples-dbclient-jdbc.jar
 ```
-
+or in the case of native image
+```
+./target/helidon-examples-dbclient-jdbc
+```
  
 ## Exercise
 
