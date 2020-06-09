@@ -43,6 +43,7 @@ import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
+import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Timer;
 
 /**
@@ -73,6 +74,27 @@ public class GrpcMetrics
      * The context key to use to obtain rules to use when applying metrics.
      */
     private static final Context.Key<MetricsRules> KEY = Context.keyWithDefault(KEY_STRING, new MetricsRules(MetricType.INVALID));
+
+    static {
+        InternalBridge.Metadata counterMetadata = InternalBridge.newMetadataBuilder()
+                .withName("grpc.requests.count")
+                .withDisplayName("Total number of gRPC requests")
+                .withDescription("Each gRPC request (regardless of the method) will increase this counter")
+                .withType(MetricType.COUNTER)
+                .withUnit(MetricUnits.NONE)
+                .build();
+
+        InternalBridge.Metadata meterMetadata = InternalBridge.newMetadataBuilder()
+                .withName("grpc.requests.meter")
+                .withDisplayName("Meter for overall gRPC requests")
+                .withDescription("Each gRPC request will mark the meter to measure overall throughput")
+                .withType(MetricType.METERED)
+                .withUnit(MetricUnits.NONE)
+                .build();
+
+        VENDOR_REGISTRY.counter(counterMetadata);
+        VENDOR_REGISTRY.meter(meterMetadata);
+    }
 
     /**
      * The metric rules to use.
