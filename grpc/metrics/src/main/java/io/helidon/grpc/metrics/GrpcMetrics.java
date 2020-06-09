@@ -43,6 +43,7 @@ import org.eclipse.microprofile.metrics.MetadataBuilder;
 import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
+import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
 
@@ -52,11 +53,6 @@ import org.eclipse.microprofile.metrics.Timer;
 @Priority(InterceptorPriorities.TRACING + 1)
 public class GrpcMetrics
         implements ServerInterceptor, ServiceDescriptor.Configurer, MethodDescriptor.Configurer {
-
-    static {
-        HelidonFeatures.register("gRPC Server", "Metrics");
-        HelidonFeatures.register("gRPC Client", "Metrics");
-    }
 
     /**
      * The registry of vendor metrics.
@@ -69,6 +65,19 @@ public class GrpcMetrics
      */
     private static final MetricRegistry APP_REGISTRY =
             RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.APPLICATION);
+
+    static {
+        HelidonFeatures.register("gRPC Server", "Metrics");
+        HelidonFeatures.register("gRPC Client", "Metrics");
+
+        VENDOR_REGISTRY.meter(org.eclipse.microprofile.metrics.Metadata.builder()
+                .withName("grpc.requests.meter")
+                .withDisplayName("Meter for overall gRPC requests")
+                .withDescription("Each gRPC request will mark the meter to see overall throughput")
+                .withType(MetricType.METERED)
+                .withUnit(MetricUnits.NONE)
+                .build());
+    }
 
     /**
      * The context key name to use to obtain rules to use when applying metrics.
