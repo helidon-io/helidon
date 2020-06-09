@@ -367,6 +367,22 @@ public final class MetricsSupport implements Service {
                 .withUnit(MetricUnits.NONE)
                 .build());
 
+        vendor.counter(Metadata.builder()
+                .withName("grpc.requests.count")
+                .withDisplayName("Total number of gRPC requests")
+                .withDescription("Each gRPC request (regardless of the method) will increase this counter")
+                .withType(MetricType.COUNTER)
+                .withUnit(MetricUnits.NONE)
+                .build());
+
+        vendor.meter(Metadata.builder()
+                .withName("grpc.requests.meter")
+                .withDisplayName("Meter for overall gRPC requests")
+                .withDescription("Each gRPC request will mark the meter to see overall throughput")
+                .withType(MetricType.METERED)
+                .withUnit(MetricUnits.NONE)
+                .build());
+
         rules.any((req, res) -> {
             totalCount.inc();
             totalMeter.mark();
