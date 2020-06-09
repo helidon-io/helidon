@@ -10,3 +10,6 @@ mvn package
 java -jar target/helidon-examples-microprofile-websocket.jar
 ```
 
+```
+http://localhost:7001/web/index.html
+```

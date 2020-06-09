@@ -14,5 +14,9 @@
 # limitations under the License.
 #
 
-server.port: 7001
-
+server:
+  port: 7001
+  # location on classpath (e.g. src/main/resources/WEB in maven)
+  static.classpath:
+    location: "/WEB"
+    context: "/web"
