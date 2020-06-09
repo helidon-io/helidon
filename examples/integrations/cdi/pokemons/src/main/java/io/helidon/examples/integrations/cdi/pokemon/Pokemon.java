@@ -52,6 +52,9 @@ public class Pokemon {
 
     private int type;
 
+    /**
+     * Creates a new pokemon.
+     */
     public Pokemon() {
     }
 
@@ -75,11 +78,21 @@ public class Pokemon {
         this.name = name;
     }
 
+    /**
+     * Returns pokemon's type.
+     *
+     * @return Pokemon's type.
+     */
     @ManyToOne
     public PokemonType getPokemonType() {
         return pokemonType;
     }
 
+    /**
+     * Sets pokemon's type.
+     *
+     * @param pokemonType Pokemon's type.
+     */
     public void setPokemonType(PokemonType pokemonType) {
         this.pokemonType = pokemonType;
         this.type = pokemonType.getId();
