@@ -16,11 +16,24 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= JPA
+= Helidon MP JPA
 :toc:
 :toc-placement: preamble
 :spec-name: Jakarta Persistence
 :description: {spec-name} support in Helidon MP
 :keywords: helidon, mp, microprofile, persistence, database
+:h1Prefix: MP
 
-== This page is Under Construction and will be available soon
+== Overview
+Helidon MicroProfile’s JPA support goes beyond the usual surface-level integration to give you the kind of managed support you are probably used to from the Java EE application server days. It does it transparently and using familiar tools. 
+
+
+
+
+== Next Steps
+Learn more about the 
+https://jcp.org/en/jsr/detail?id=338[Java Persistence API (JPA)]
+
+Configure and use the Java Persistence API (JPA) from
+within a Helidon MP application. <<mp/guides/09_jpa.adoc, Helidon MP JPA Guide>>.
+
