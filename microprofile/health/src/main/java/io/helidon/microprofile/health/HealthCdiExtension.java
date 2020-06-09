@@ -30,8 +30,6 @@ import javax.enterprise.inject.spi.BeforeBeanDiscovery;
 import javax.enterprise.inject.spi.CDI;
 import javax.enterprise.inject.spi.Extension;
 
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.config.mp.MpConfig;
@@ -80,10 +78,6 @@ public class HealthCdiExtension implements Extension {
     };
 
     private static final Logger LOGGER = Logger.getLogger(HealthCdiExtension.class.getName());
-
-    static {
-        HelidonFeatures.register(HelidonFlavor.MP, "Health");
-    }
 
     void registerProducers(@Observes BeforeBeanDiscovery bbd) {
         bbd.addAnnotatedType(JvmRuntimeProducers.class, "health.JvmRuntimeProducers")

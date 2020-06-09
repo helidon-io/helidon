@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,6 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.common.HelidonFeatures;
 import io.helidon.config.Config;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.EndpointConfig;
@@ -76,11 +75,6 @@ public final class GoogleTokenProvider extends SynchronousProvider implements Au
     private static final String HEADER_AUTHENTICATION_REQUIRED = "WWW-Authenticate";
 
     static final long TIME_SKEW_SECONDS = TimeUnit.SECONDS.convert(5, TimeUnit.MINUTES);
-
-    static {
-        HelidonFeatures.register("Security", "Authentication", "Google-Login");
-        HelidonFeatures.register("Security", "Outbound", "Google-Login");
-    }
 
     private final EvictableCache<String, CachedRecord> subjectCache = EvictableCache.<String, CachedRecord>builder()
             .evictor((key, record) -> record.getValidSupplier().get())

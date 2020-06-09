@@ -41,6 +41,7 @@ import javax.enterprise.inject.spi.Extension;
 
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
+import io.helidon.common.Version;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.config.mp.MpConfig;
@@ -93,7 +94,6 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
 
     static {
         HelidonFeatures.flavor(HelidonFlavor.MP);
-        HelidonFeatures.register(HelidonFlavor.MP, "CDI");
 
         Context.Builder contextBuilder = Context.builder()
                 .id("helidon-cdi");
@@ -337,6 +337,7 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
         LOGGER.fine("Container started in " + now + " millis (this excludes the initialization time)");
 
         HelidonFeatures.print(HelidonFlavor.MP,
+                              Version.VERSION,
                               config.getOptionalValue("features.print-details", Boolean.class).orElse(false));
 
         // shutdown hook should be added after all initialization is done, otherwise a race condition may happen

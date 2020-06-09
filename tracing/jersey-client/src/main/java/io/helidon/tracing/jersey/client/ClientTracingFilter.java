@@ -33,7 +33,6 @@ import javax.ws.rs.client.ClientResponseContext;
 import javax.ws.rs.client.ClientResponseFilter;
 import javax.ws.rs.core.MultivaluedMap;
 
-import io.helidon.common.HelidonFeatures;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.tracing.config.SpanTracingConfig;
@@ -141,10 +140,6 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
     private static final List<String> PROPAGATED_HEADERS = List.of(X_REQUEST_ID, X_OT_SPAN_CONTEXT);
     private static final int HTTP_STATUS_ERROR_THRESHOLD = 400;
     private static final int HTTP_STATUS_SERVER_ERROR_THRESHOLD = 500;
-
-    static {
-        HelidonFeatures.register("Tracing", "Integration", "Jersey Client");
-    }
 
     private final Optional<TracerProvider> tracerProvider;
 

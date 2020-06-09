@@ -45,8 +45,6 @@ import javax.json.JsonStructure;
 import javax.json.JsonValue;
 
 import io.helidon.common.GenericType;
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.reactive.Single;
@@ -112,10 +110,6 @@ public final class MetricsSupport implements Service {
 
     private static final GenericType<JsonObject> JSON_TYPE = GenericType.create(JsonObject.class);
     private static final MessageBodyWriter<JsonStructure> JSONP_WRITER = JsonpSupport.writer();
-
-    static {
-        HelidonFeatures.register(HelidonFlavor.SE, FEATURE_NAME);
-    }
 
     private final String context;
     private final RegistryFactory rf;

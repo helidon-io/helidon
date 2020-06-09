@@ -25,8 +25,6 @@ import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 import io.helidon.common.mapper.MapperManager;
 import io.helidon.common.reactive.CompletionAwaitable;
 import io.helidon.common.reactive.Multi;
@@ -50,9 +48,6 @@ import io.helidon.dbclient.common.DbStatementContext;
  * Helidon DB implementation for JDBC drivers.
  */
 class JdbcDbClient implements DbClient {
-    static {
-        HelidonFeatures.register(HelidonFlavor.SE, "DbClient", "JDBC");
-    }
 
     /** Local logger instance. */
     private static final Logger LOGGER = Logger.getLogger(DbClient.class.getName());

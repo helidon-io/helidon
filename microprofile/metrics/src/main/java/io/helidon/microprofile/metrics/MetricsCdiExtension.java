@@ -57,8 +57,6 @@ import javax.inject.Singleton;
 import javax.interceptor.Interceptor;
 
 import io.helidon.common.Errors;
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
 import io.helidon.metrics.MetricsSupport;
@@ -98,10 +96,6 @@ public class MetricsCdiExtension implements Extension {
     private final Map<Bean<?>, AnnotatedMember<?>> producers = new HashMap<>();
 
     private final Map<MetricID, AnnotatedMethodConfigurator<?>> annotatedGaugeSites = new HashMap<>();
-
-    static {
-        HelidonFeatures.register(HelidonFlavor.MP, "Metrics");
-    }
 
     private Errors.Collector errors = Errors.collector();
 

@@ -33,8 +33,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import io.helidon.common.GenericType;
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 import io.helidon.common.Prioritized;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.common.serviceloader.Priorities;
@@ -52,10 +50,6 @@ import io.helidon.config.spi.OverrideSource;
  * {@link Config} Builder implementation.
  */
 class BuilderImpl implements Config.Builder {
-    static {
-        HelidonFeatures.register(HelidonFlavor.SE, "Config");
-    }
-
     /*
      * Config sources
      */

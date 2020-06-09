@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import io.helidon.common.HelidonFeatures;
 import io.helidon.config.Config;
 import io.helidon.tracing.Tag;
 import io.helidon.tracing.TracerBuilder;
@@ -113,10 +112,6 @@ public class ZipkinTracerBuilder implements TracerBuilder<ZipkinTracerBuilder> {
     static final String DEFAULT_ZIPKIN_HOST = "127.0.0.1";
     static final Version DEFAULT_VERSION = Version.V2;
     static final boolean DEFAULT_ENABLED = true;
-
-    static {
-        HelidonFeatures.register("Tracing", "Zipkin");
-    }
 
     private final List<Tag<?>> tags = new LinkedList<>();
     private String serviceName;

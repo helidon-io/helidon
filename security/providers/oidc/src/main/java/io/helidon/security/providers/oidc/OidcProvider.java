@@ -45,7 +45,6 @@ import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.Response;
 
 import io.helidon.common.Errors;
-import io.helidon.common.HelidonFeatures;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.security.AuthenticationResponse;
@@ -90,10 +89,6 @@ import io.helidon.security.util.TokenHandler;
  */
 public final class OidcProvider extends SynchronousProvider implements AuthenticationProvider, OutboundSecurityProvider {
     private static final Logger LOGGER = Logger.getLogger(OidcProvider.class.getName());
-
-    static {
-        HelidonFeatures.register("Security", "Authentication", "OIDC");
-    }
 
     private final OidcConfig oidcConfig;
     private final TokenHandler paramHeaderHandler;
@@ -178,10 +173,6 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
                                             .readEntity(String.class));
                 }
             };
-        }
-
-        if (propagate) {
-            HelidonFeatures.register("Security", "Outbound", "OIDC");
         }
     }
 

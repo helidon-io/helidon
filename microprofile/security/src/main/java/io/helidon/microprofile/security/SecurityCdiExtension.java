@@ -27,8 +27,6 @@ import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.BeforeBeanDiscovery;
 import javax.enterprise.inject.spi.Extension;
 
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
 import io.helidon.microprofile.cdi.RuntimeStart;
@@ -51,10 +49,6 @@ import static javax.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
  */
 public class SecurityCdiExtension implements Extension {
     private static final Logger LOGGER = Logger.getLogger(SecurityCdiExtension.class.getName());
-
-    static {
-        HelidonFeatures.register(HelidonFlavor.MP, "Security");
-    }
 
     private Security.Builder securityBuilder = Security.builder();
 

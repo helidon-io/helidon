@@ -34,7 +34,6 @@ import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 
 import io.helidon.common.Errors;
-import io.helidon.common.HelidonFeatures;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.security.AuthorizationResponse;
@@ -57,10 +56,6 @@ import io.helidon.security.spi.SynchronousProvider;
  * @see #create(Config)
  */
 public final class AbacProvider extends SynchronousProvider implements AuthorizationProvider {
-    static {
-        HelidonFeatures.register("Security", "Authorization", "ABAC");
-    }
-
     private static final String CONFIG_KEY = "abac";
 
     private final List<AbacValidator<? extends AbacValidatorConfig>> validators = new ArrayList<>();

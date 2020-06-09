@@ -19,8 +19,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 import io.helidon.common.reactive.Single;
 import io.helidon.webclient.WebClientServiceRequest;
 import io.helidon.webclient.spi.WebClientService;
@@ -39,10 +37,6 @@ import io.opentracing.util.GlobalTracer;
 public final class WebClientTracing implements WebClientService {
     private static final int HTTP_STATUS_ERROR_THRESHOLD = 400;
     private static final int HTTP_STATUS_SERVER_ERROR_THRESHOLD = 500;
-
-    static {
-        HelidonFeatures.register(HelidonFlavor.SE, "WebClient", "Tracing");
-    }
 
     private WebClientTracing() {
     }

@@ -24,7 +24,6 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import io.helidon.common.HelidonFeatures;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
@@ -94,10 +93,6 @@ public final class WebSecurity implements Service {
     public static final String CONTEXT_ADD_HEADERS = "security.addHeaders";
 
     private static final AtomicInteger SECURITY_COUNTER = new AtomicInteger();
-
-    static {
-        HelidonFeatures.register("Security", "Integration", "WebServer");
-    }
 
     private final Security security;
     private final Config config;

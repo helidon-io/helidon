@@ -43,8 +43,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
 
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 import io.helidon.webserver.jersey.JerseySupport;
 
 import org.eclipse.microprofile.config.Config;
@@ -58,10 +56,6 @@ import static javax.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
  */
 public class JaxRsCdiExtension implements Extension {
     private static final Logger LOGGER = Logger.getLogger(JaxRsCdiExtension.class.getName());
-
-    static {
-        HelidonFeatures.register(HelidonFlavor.MP, "JAX-RS");
-    }
 
     private final List<JaxRsApplication> applicationMetas = new LinkedList<>();
 

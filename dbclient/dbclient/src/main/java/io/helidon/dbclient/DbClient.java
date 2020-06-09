@@ -21,8 +21,6 @@ import java.util.ServiceLoader;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 import io.helidon.common.mapper.MapperManager;
 import io.helidon.common.reactive.Single;
 import io.helidon.common.reactive.Subscribable;
@@ -150,9 +148,6 @@ public interface DbClient {
      * Helidon database handler builder.
      */
     final class Builder implements io.helidon.common.Builder<DbClient> {
-        static {
-            HelidonFeatures.register(HelidonFlavor.SE, "DbClient");
-        }
 
         private final HelidonServiceLoader.Builder<DbClientServiceProvider> clientServiceProviders = HelidonServiceLoader.builder(
                 ServiceLoader.load(DbClientServiceProvider.class));

@@ -35,8 +35,6 @@ import javax.websocket.server.ServerApplicationConfig;
 import javax.websocket.server.ServerEndpoint;
 import javax.websocket.server.ServerEndpointConfig;
 
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 import io.helidon.config.Config;
 import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.microprofile.server.RoutingName;
@@ -54,10 +52,6 @@ public class WebSocketCdiExtension implements Extension {
     private static final Logger LOGGER = Logger.getLogger(WebSocketCdiExtension.class.getName());
 
     private static final String DEFAULT_WEBSOCKET_PATH = "/";
-
-    static {
-        HelidonFeatures.register(HelidonFlavor.MP, "WebSocket");
-    }
 
     private Config config;
 
