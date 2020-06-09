@@ -47,6 +47,9 @@ public class PokemonType {
     @Column(name = "NAME")
     private String name;
 
+    /**
+     * Creates a new type.
+     */
     public PokemonType() {
     }
 

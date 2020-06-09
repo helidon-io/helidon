@@ -15,6 +15,8 @@
  */
 package io.helidon.examples.integrations.cdi.pokemon;
 
+import java.util.List;
+
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.TypedQuery;
@@ -29,7 +31,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
-import java.util.List;
 
 /**
  * This class implements REST endpoints to interact with Pokemons. The following
@@ -47,12 +48,24 @@ public class PokemonResource {
     @PersistenceContext(unitName = "test")
     private EntityManager entityManager;
 
+    /**
+     * Retrieves list of all pokemons.
+     *
+     * @return List of pokemons.
+     */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public List<Pokemon> getPokemons() {
         return entityManager.createNamedQuery("getPokemons", Pokemon.class).getResultList();
     }
 
+    /**
+     * Retrieves single pokemon by ID.
+     *
+     * @param id The ID.
+     * @return A pokemon that matches the ID.
+     * @throws NotFoundException If no pokemon found for the ID.
+     */
     @GET
     @Path("{id}")
     @Produces(MediaType.APPLICATION_JSON)
@@ -64,6 +77,11 @@ public class PokemonResource {
         }
     }
 
+    /**
+     * Deletes a single pokemon by ID.
+     *
+     * @param id The ID.
+     */
     @DELETE
     @Path("{id}")
     @Produces(MediaType.APPLICATION_JSON)
@@ -73,6 +91,13 @@ public class PokemonResource {
         entityManager.remove(pokemon);
     }
 
+    /**
+     * Retrieves a pokemon by name.
+     *
+     * @param name The name.
+     * @return A pokemon that matches the name.
+     * @throws NotFoundException If no pokemon found for the name.
+     */
     @GET
     @Path("name/{name}")
     @Produces(MediaType.APPLICATION_JSON)
@@ -85,6 +110,12 @@ public class PokemonResource {
         return list.get(0);
     }
 
+    /**
+     * Creates a new pokemon.
+     *
+     * @param pokemon New pokemon.
+     * @throws BadRequestException If a problem was found.
+     */
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Transactional(Transactional.TxType.REQUIRED)
@@ -99,3 +130,4 @@ public class PokemonResource {
         }
     }
 }
+
