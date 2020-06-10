@@ -24,6 +24,7 @@ import javax.websocket.Encoder;
 import javax.websocket.server.ServerEndpointConfig;
 
 import io.helidon.webserver.Routing;
+import io.helidon.webserver.StaticContentSupport;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.tyrus.TyrusSupport;
 
@@ -52,6 +53,7 @@ public class Main {
                                 ServerEndpointConfig.Builder.create(MessageBoardEndpoint.class, "/board")
                                         .encoders(encoders).build())
                                 .build())
+                .register("/web", StaticContentSupport.builder("/WEB").build())
                 .build();
     }
 
