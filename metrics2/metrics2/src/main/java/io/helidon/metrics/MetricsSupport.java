@@ -342,18 +342,6 @@ public final class MetricsSupport implements Service {
                 MetricType.METERED,
                 MetricUnits.NONE));
 
-        vendor.counter(new HelidonMetadata("grpc.requests.count",
-                "Total number of gRPC requests",
-                "Each gRPC request (regardless of the method) will increase this counter",
-                MetricType.COUNTER,
-                MetricUnits.NONE));
-
-        vendor.meter(new HelidonMetadata("grpc.requests.meter",
-                "Meter for overall gRPC requests",
-                "Each gRPC request will mark the meter to see overall throughput",
-                MetricType.METERED,
-                MetricUnits.NONE));
-
         rules.any((req, res) -> {
             totalCount.inc();
             totalMeter.mark();

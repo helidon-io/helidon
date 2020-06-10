@@ -43,6 +43,7 @@ import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
+import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Timer;
 
 /**
@@ -55,14 +56,36 @@ public class GrpcMetrics
     /**
      * The registry of vendor metrics.
      */
-    private static final io.helidon.common.metrics.InternalBridge.MetricRegistry VENDOR_REGISTRY =
+    static final io.helidon.common.metrics.InternalBridge.MetricRegistry VENDOR_REGISTRY =
             InternalBridge.INSTANCE.getRegistryFactory().getBridgeRegistry(MetricRegistry.Type.VENDOR);
 
     /**
      * The registry of application metrics.
      */
-    private static final io.helidon.common.metrics.InternalBridge.MetricRegistry APP_REGISTRY =
+    static final io.helidon.common.metrics.InternalBridge.MetricRegistry APP_REGISTRY =
             InternalBridge.INSTANCE.getRegistryFactory().getBridgeRegistry(MetricRegistry.Type.APPLICATION);
+
+    /**
+     * Built-in counter for all gRPC calls.
+     */
+    static final InternalBridge.Metadata GRPC_COUNTER = InternalBridge.newMetadataBuilder()
+                    .withName("grpc.requests.count")
+                    .withDisplayName("Total number of gRPC requests")
+                    .withDescription("Each gRPC request (regardless of the method) will increase this counter")
+                    .withType(MetricType.COUNTER)
+                    .withUnit(MetricUnits.NONE)
+                    .build();
+
+    /**
+     * Built-in meter for all gRPC calls.
+     */
+    static final InternalBridge.Metadata GRPC_METER = InternalBridge.newMetadataBuilder()
+                    .withName("grpc.requests.meter")
+                    .withDisplayName("Meter for overall gRPC requests")
+                    .withDescription("Each gRPC request will mark the meter to measure overall throughput")
+                    .withType(MetricType.METERED)
+                    .withUnit(MetricUnits.NONE)
+                    .build();
 
     /**
      * The context key name to use to obtain rules to use when applying metrics.
@@ -249,8 +272,8 @@ public class GrpcMetrics
                 serverCall = call;
         }
 
-        serverCall = new MeteredServerCall<>(VENDOR_REGISTRY.meter("grpc.requests.meter"), serverCall);
-        serverCall = new CountedServerCall<>(VENDOR_REGISTRY.counter("grpc.requests.count"), serverCall);
+        serverCall = new MeteredServerCall<>(VENDOR_REGISTRY.meter(GRPC_METER), serverCall);
+        serverCall = new CountedServerCall<>(VENDOR_REGISTRY.counter(GRPC_COUNTER), serverCall);
 
         return next.startCall(serverCall, headers);
     }
