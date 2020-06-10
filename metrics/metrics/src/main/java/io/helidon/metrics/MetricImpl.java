@@ -147,6 +147,15 @@ abstract class MetricImpl implements HelidonMetric {
     }
 
     @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{" +
+                "registryType='" + registryType + '\'' +
+                ", metadata=" + metadata +
+                ", name='" + getName() + '\'' +
+                '}';
+    }
+
+    @Override
     public void jsonMeta(JsonObjectBuilder builder, List<MetricID> metricIDs) {
         JsonObjectBuilder metaBuilder =
                 new MetricsSupport.MergingJsonObjectBuilder(JSON.createObjectBuilder());

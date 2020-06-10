@@ -54,30 +54,31 @@ import org.eclipse.microprofile.metrics.Timer;
 public class GrpcMetrics
         implements ServerInterceptor, ServiceDescriptor.Configurer, MethodDescriptor.Configurer {
 
+    static {
+        HelidonFeatures.register("gRPC Server", "Metrics");
+        HelidonFeatures.register("gRPC Client", "Metrics");
+    }
+
     /**
      * The registry of vendor metrics.
      */
-    private static final MetricRegistry VENDOR_REGISTRY =
+    static final MetricRegistry VENDOR_REGISTRY =
             RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.VENDOR);
 
     /**
      * The registry of application metrics.
      */
-    private static final MetricRegistry APP_REGISTRY =
+    static final MetricRegistry APP_REGISTRY =
             RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.APPLICATION);
 
-    static {
-        HelidonFeatures.register("gRPC Server", "Metrics");
-        HelidonFeatures.register("gRPC Client", "Metrics");
-
-        VENDOR_REGISTRY.meter(org.eclipse.microprofile.metrics.Metadata.builder()
-                .withName("grpc.requests.meter")
-                .withDisplayName("Meter for overall gRPC requests")
-                .withDescription("Each gRPC request will mark the meter to see overall throughput")
-                .withType(MetricType.METERED)
-                .withUnit(MetricUnits.NONE)
-                .build());
-    }
+    static final org.eclipse.microprofile.metrics.Metadata GRPC_METER = org.eclipse.microprofile.metrics.Metadata
+            .builder()
+            .withName("grpc.requests.meter")
+            .withDisplayName("Meter for overall gRPC requests")
+            .withDescription("Each gRPC request will mark the meter to see overall throughput")
+            .withType(MetricType.METERED)
+            .withUnit(MetricUnits.NONE)
+            .build();
 
     /**
      * The context key name to use to obtain rules to use when applying metrics.
@@ -264,8 +265,7 @@ public class GrpcMetrics
                 serverCall = call;
         }
 
-        serverCall = new MeteredServerCall<>(VENDOR_REGISTRY.meter("grpc.requests.meter"), serverCall);
-        serverCall = new CountedServerCall<>(VENDOR_REGISTRY.counter("grpc.requests.count"), serverCall);
+        serverCall = new MeteredServerCall<>(VENDOR_REGISTRY.meter(GRPC_METER), serverCall);
 
         return next.startCall(serverCall, headers);
     }

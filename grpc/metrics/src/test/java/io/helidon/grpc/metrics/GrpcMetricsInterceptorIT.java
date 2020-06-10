@@ -75,28 +75,22 @@ public class GrpcMetricsInterceptorIT {
 
     private static Meter vendorMeter;
 
-    private static Counter vendorCounter;
-
     private long vendorMeterCount;
-
-    private long vendorCount;
 
     @BeforeAll
     static void configureMetrics() {
         Routing.Rules rules = Routing.builder().get("metrics");
         MetricsSupport.create().update(rules);
 
-        vendorRegistry = RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.VENDOR);
-        appRegistry = RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.APPLICATION);
-        vendorMeter = vendorRegistry.meter("grpc.requests.meter");
-        vendorCounter = vendorRegistry.counter("grpc.requests.count");
+        vendorRegistry = GrpcMetrics.VENDOR_REGISTRY;
+        appRegistry = GrpcMetrics.APP_REGISTRY;
+        vendorMeter = vendorRegistry.meter(GrpcMetrics.GRPC_METER);
     }
 
     @BeforeEach
     public void setup() {
         // obtain the current counts for vendor metrics so that we can assert
         // the count in each test
-        vendorCount = vendorCounter.getCount();
         vendorMeterCount = vendorMeter.getCount();
     }
 
@@ -323,11 +317,9 @@ public class GrpcMetricsInterceptorIT {
     }
 
     private void assertVendorMetrics() {
-        Meter meter = vendorRegistry.meter("grpc.requests.meter");
-        Counter counter = vendorRegistry.counter("grpc.requests.count");
+        Meter meter = vendorRegistry.meter(GrpcMetrics.GRPC_METER);
 
         assertThat(meter.getCount(), is(vendorMeterCount + 1));
-        assertThat(counter.getCount(), is(vendorCount + 1));
     }
 
     private GrpcService createMockService() {
