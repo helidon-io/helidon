@@ -67,7 +67,7 @@ import static org.mockito.Mockito.when;
 @SuppressWarnings("unchecked")
 public class GrpcMetricsInterceptorIT {
 
-    private static io.helidon.common.metrics.InternalBridge.MetricRegistry vendorRegsistry;
+    private static io.helidon.common.metrics.InternalBridge.MetricRegistry vendorRegistry;
 
     private static io.helidon.common.metrics.InternalBridge.MetricRegistry appRegistry;
 
@@ -84,10 +84,10 @@ public class GrpcMetricsInterceptorIT {
         Routing.Rules rules = Routing.builder().get("metrics");
         MetricsSupport.create().update(rules);
 
-        vendorRegsistry = io.helidon.common.metrics.InternalBridge.INSTANCE.getRegistryFactory().getBridgeRegistry(MetricRegistry.Type.VENDOR);
-        appRegistry = io.helidon.common.metrics.InternalBridge.INSTANCE.getRegistryFactory().getBridgeRegistry(MetricRegistry.Type.APPLICATION);
-        vendorMeter = vendorRegsistry.meter("grpc.requests.meter");
-        vendorCounter = vendorRegsistry.counter("grpc.requests.count");
+        vendorRegistry = GrpcMetrics.VENDOR_REGISTRY;
+        appRegistry = GrpcMetrics.APP_REGISTRY;
+        vendorMeter = vendorRegistry.meter(GrpcMetrics.GRPC_METER);
+        vendorCounter = vendorRegistry.counter(GrpcMetrics.GRPC_COUNTER);
     }
 
     @BeforeEach
@@ -320,8 +320,8 @@ public class GrpcMetricsInterceptorIT {
     }
 
     private void assertVendorMetrics() {
-        Meter meter = vendorRegsistry.meter("grpc.requests.meter");
-        Counter counter = vendorRegsistry.counter("grpc.requests.count");
+        Meter meter = vendorRegistry.meter("grpc.requests.meter");
+        Counter counter = vendorRegistry.counter("grpc.requests.count");
 
         assertThat(meter.getCount(), is(vendorMeterCount + 1));
         assertThat(counter.getCount(), is(vendorCount + 1));
