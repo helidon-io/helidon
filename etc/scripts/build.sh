@@ -47,12 +47,3 @@ mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml \
     -Pexamples,archetypes,spotbugs,javadoc,docs,sources,tck,tests,pipeline
 
 examples/quickstarts/archetypes/test-archetypes.sh
-
-#
-# test running from jar file, and then from module path
-#
-# The first integration test tests all MP features except for JPA/JTA
-# with multiple JAX-RS applications including security
-tests/integration/native-image/mp-1/test-runtime.sh
-# The third integration test tests Helidon Quickstart MP
-tests/integration/native-image/mp-3/test-runtime.sh
