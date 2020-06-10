@@ -320,8 +320,8 @@ public class GrpcMetricsInterceptorIT {
     }
 
     private void assertVendorMetrics() {
-        Meter meter = vendorRegistry.meter("grpc.requests.meter");
-        Counter counter = vendorRegistry.counter("grpc.requests.count");
+        Meter meter = vendorRegistry.meter(GrpcMetrics.GRPC_METER);
+        Counter counter = vendorRegistry.counter(GrpcMetrics.GRPC_COUNTER);
 
         assertThat(meter.getCount(), is(vendorMeterCount + 1));
         assertThat(counter.getCount(), is(vendorCount + 1));
