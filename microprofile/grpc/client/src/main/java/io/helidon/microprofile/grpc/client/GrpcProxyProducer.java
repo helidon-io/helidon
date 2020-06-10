@@ -41,28 +41,7 @@ class GrpcProxyProducer {
     /**
      * A CDI producer method that produces a client proxy for a gRPC service that
      * will connect to the server using the channel specified via {@link GrpcChannel}
-     * annotation on the proxy interface, or the default {@link Channel}.
-     * <p>
-     * This is not a real producer method but is used as a stub by the gRPC client
-     * CDI extension to create real producers as injection points are discovered.
-     *
-     * @param injectionPoint the injection point where the client proxy is to be injected
-     * @return a gRPC client proxy
-     */
-    @GrpcProxy
-    static Object proxyUsingDefaultChannel(InjectionPoint injectionPoint, ChannelProducer producer) {
-        Class<?> type = ModelHelper.getGenericType(injectionPoint.getType());
-        String channelName = type.isAnnotationPresent(GrpcChannel.class)
-                ? type.getAnnotation(GrpcChannel.class).name()
-                : GrpcChannelsProvider.DEFAULT_CHANNEL_NAME;
-        Channel channel = producer.findChannel(channelName);
-        GrpcProxyBuilder<?> builder = GrpcProxyBuilder.create(channel, type);
-        return builder.build();
-    }
-
-    /**
-     * A CDI producer method that produces a client proxy for a gRPC service that
-     * will connect to the server using a named {@link Channel}.
+     * annotation on the proxy interface or injection point, or the default {@link Channel}.
      * <p>
      * This is not a real producer method but is used as a stub by the gRPC client
      * CDI extension to create real producers as injection points are discovered.
@@ -74,9 +53,19 @@ class GrpcProxyProducer {
     @GrpcChannel(name = GrpcChannelsProvider.DEFAULT_CHANNEL_NAME)
     static Object proxyUsingNamedChannel(InjectionPoint injectionPoint, ChannelProducer producer) {
         Class<?> type = ModelHelper.getGenericType(injectionPoint.getType());
-        GrpcChannel channelName = injectionPoint.getAnnotated().getAnnotation(GrpcChannel.class);
-        Channel channel = producer.findChannel(channelName.name());
+
+        String channelName;
+        if (injectionPoint.getAnnotated().isAnnotationPresent(GrpcChannel.class)) {
+            channelName = injectionPoint.getAnnotated().getAnnotation(GrpcChannel.class).name();
+        } else {
+            channelName = type.isAnnotationPresent(GrpcChannel.class)
+                    ? type.getAnnotation(GrpcChannel.class).name()
+                    : GrpcChannelsProvider.DEFAULT_CHANNEL_NAME;
+        }
+
+        Channel channel = producer.findChannel(channelName);
         GrpcProxyBuilder<?> builder = GrpcProxyBuilder.create(channel, type);
+
         return builder.build();
     }
 
