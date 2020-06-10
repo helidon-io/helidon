@@ -148,11 +148,11 @@ abstract class MetricImpl implements HelidonMetric {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{" +
-                "registryType='" + registryType + '\'' +
-                ", metadata=" + metadata +
-                ", name='" + getName() + '\'' +
-                '}';
+        return getClass().getSimpleName() + "{"
+                + "registryType='" + registryType + '\''
+                + ", metadata=" + metadata
+                + ", name='" + getName() + '\''
+                + '}';
     }
 
     @Override

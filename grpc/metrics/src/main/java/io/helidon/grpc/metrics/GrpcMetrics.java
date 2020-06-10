@@ -68,7 +68,7 @@ public class GrpcMetrics
     /**
      * Built-in counter for all gRPC calls.
      */
-    static InternalBridge.Metadata GRPC_COUNTER = InternalBridge.newMetadataBuilder()
+    static final InternalBridge.Metadata GRPC_COUNTER = InternalBridge.newMetadataBuilder()
                     .withName("grpc.requests.count")
                     .withDisplayName("Total number of gRPC requests")
                     .withDescription("Each gRPC request (regardless of the method) will increase this counter")
@@ -79,7 +79,7 @@ public class GrpcMetrics
     /**
      * Built-in meter for all gRPC calls.
      */
-    static InternalBridge.Metadata GRPC_METER = InternalBridge.newMetadataBuilder()
+    static final InternalBridge.Metadata GRPC_METER = InternalBridge.newMetadataBuilder()
                     .withName("grpc.requests.meter")
                     .withDisplayName("Meter for overall gRPC requests")
                     .withDescription("Each gRPC request will mark the meter to measure overall throughput")
