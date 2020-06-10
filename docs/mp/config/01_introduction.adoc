@@ -166,6 +166,7 @@ Step-by-step guide about using {spec-name} in your Helidon MP application.
 
 The following configuration sources can be used to retrieve the configuration:
 
+[cols="3,5"]
 |===
 |Source |Description
 
