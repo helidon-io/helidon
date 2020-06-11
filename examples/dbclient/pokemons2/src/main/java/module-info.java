@@ -17,7 +17,7 @@
 /**
  * Pokemon demo using H2.
  */
-module io.helidon.examples.dbclient.pokemons.jdbc {
+module io.helidon.examples.dbclient.pokemons2.jdbc {
     requires java.logging;
     requires java.json;
 
@@ -27,9 +27,10 @@ module io.helidon.examples.dbclient.pokemons.jdbc {
     requires io.helidon.media.jsonb;
     requires io.helidon.media.jsonp;
     requires io.helidon.metrics;
-    requires io.helidon.tracing;
     requires io.helidon.dbclient;
     requires io.helidon.webserver;
 
-    provides io.helidon.dbclient.spi.DbMapperProvider with io.helidon.examples.dbclient.pokemons.PokemonMapperProvider;
+    provides io.helidon.dbclient.spi.DbMapperProvider with
+            io.helidon.examples.dbclient.pokemons2.PokemonMapperProvider,
+            io.helidon.examples.dbclient.pokemons2.PokemonTypeMapperProvider;
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.examples.dbclient.pokemons;
+package io.helidon.examples.dbclient.pokemons2;
 
 import java.io.IOException;
 import java.util.logging.LogManager;
@@ -26,7 +26,6 @@ import io.helidon.health.HealthSupport;
 import io.helidon.media.jsonb.JsonbSupport;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.metrics.MetricsSupport;
-import io.helidon.tracing.TracerBuilder;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 
@@ -44,7 +43,7 @@ public final class PokemonMain {
     /**
      * Application main entry point.
      *
-     * @param args Command line arguments. Run with MongoDB support when 1st argument is mongo, run with JDBC support otherwise.
+     * @param args command line arguments
      * @throws java.io.IOException if there are problems reading logging properties
      */
     public static void main(final String[] args) throws IOException {
@@ -58,27 +57,25 @@ public final class PokemonMain {
      * @throws java.io.IOException if there are problems reading logging properties
      */
     static WebServer startServer() throws IOException {
-        // load logging configuration
+        // Load logging configuration
         LogManager.getLogManager().readConfiguration(PokemonMain.class.getResourceAsStream("/logging.properties"));
 
         // By default this will pick up application.yaml from the classpath
         Config config = Config.create();
 
-        // Prepare routing for the server
+        // Prepare routing and build server
         Routing routing = createRouting(config);
-
         WebServer server = WebServer.builder(routing)
                 .addMediaSupport(JsonpSupport.create())
                 .addMediaSupport(JsonbSupport.create())
                 .config(config.get("server"))
-                .tracer(TracerBuilder.create(config.get("tracing")).build())
                 .build();
 
-        // Start the server and print some info.
+        // Start the server and print some info
         server.start()
                 .thenAccept(ws -> System.out.println("WEB server is up! http://localhost:" + ws.port() + "/"));
 
-        // Server threads are not daemon. NO need to block. Just react.
+        // Server threads are not daemon
         server.whenShutdown()
                 .thenRun(() -> System.out.println("WEB server is DOWN. Good bye!"));
 
@@ -86,7 +83,7 @@ public final class PokemonMain {
     }
 
     /**
-     * Creates new {@link io.helidon.webserver.Routing}.
+     * Creates new {@link Routing}.
      *
      * @param config configuration of this server
      * @return routing configured with JSON support, a health check, and a service
@@ -94,10 +91,10 @@ public final class PokemonMain {
     private static Routing createRouting(Config config) {
         Config dbConfig = config.get("db");
 
-        // Client services are added through a service loader - see mongoDB example for explicit services
-        DbClient dbClient = DbClient.builder(dbConfig)
-                .build();
+        // Client services are added through a service loader
+        DbClient dbClient = DbClient.builder(dbConfig).build();
 
+        // Support for health
         HealthSupport health = HealthSupport.builder()
                 .addLiveness(DbClientHealthCheck.create(dbClient))
                 .build();

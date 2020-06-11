@@ -41,5 +41,6 @@
         <module>mongodb</module>
         <module>common</module>
         <module>pokemons</module>
+        <module>pokemons2</module>
     </modules>
 </project>

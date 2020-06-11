@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.examples.dbclient.pokemons;
+package io.helidon.examples.dbclient.pokemons2;
 
 /**
  * POJO representing Pokemon.
@@ -39,6 +39,7 @@ public class Pokemon {
      * @param idType id of beast type
      */
     public Pokemon(int id, String name, int idType) {
+        this.id = id;
         this.name = name;
         this.idType = idType;
     }

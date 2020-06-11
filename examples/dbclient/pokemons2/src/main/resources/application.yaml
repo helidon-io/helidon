@@ -17,11 +17,6 @@
 server:
   port: 8080
   host: 0.0.0.0
-  features:
-    print-details: true
-
-tracing:
-  service: jdbc-db
 
 db:
   source: jdbc
@@ -38,14 +33,12 @@ db:
         # name prefix defaults to "db.pool." - if you have more than one client within a JVM, you may want to distinguish between them
         name-prefix: "hikari."
   services:
-    tracing:
-      - enabled: true
     metrics:
       - type: METER
   statements:
-    ## Ping statement
+    # Ping statement
     ping: "DO 0"
-    ## Create database schema
+    # Create database schema
     create-types: "CREATE TABLE POKEMONTYPE (id INTEGER NOT NULL PRIMARY KEY, name VARCHAR(64) NOT NULL)"
     create-pokemons: "CREATE TABLE POKEMON (id INTEGER NOT NULL PRIMARY KEY, name VARCHAR(64) NOT NULL, id_type INTEGER NOT NULL REFERENCES POKEMONTYPE(id))"
     # Select all types
@@ -59,11 +52,5 @@ db:
     # Insert records into database
     insert-type: "INSERT INTO POKEMONTYPE(id, name) VALUES(?, ?)"
     insert-pokemon: "INSERT INTO POKEMON(id, name, id_type) VALUES(?, ?, ?)"
-    # Update name of pokemon specified by id
-    update-pokemon-by-id: "UPDATE POKEMON SET name = :name, id_type = :idType WHERE id = :id"
     # Delete pokemon by id
     delete-pokemon-by-id: "DELETE FROM POKEMON WHERE id = :id"
-    # Delete all types
-    delete-all-types: "DELETE FROM POKEMONTYPE"
-    # Delete all pokemons
-    delete-all-pokemons: "DELETE FROM POKEMON"

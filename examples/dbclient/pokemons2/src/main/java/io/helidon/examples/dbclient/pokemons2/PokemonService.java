@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package io.helidon.examples.dbclient.pokemons;
+package io.helidon.examples.dbclient.pokemons2;
 
+import java.util.List;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import javax.json.JsonObject;
+import java.util.logging.Logger;;
 
 import io.helidon.common.http.Http;
 import io.helidon.dbclient.DbClient;
@@ -32,7 +32,15 @@ import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 
 /**
- * Example service using a database.
+ * This class implements REST endpoints to interact with Pokemon and Pokemon types.
+ * The following operations are supported:
+ *
+ * GET /type: List all pokemon types
+ * GET /pokemon: Retrieve list of all pokemons
+ * GET /pokemon/{id}: Retrieve single pokemon by ID
+ * GET /pokemon/name/{name}: Retrieve single pokemon by name
+ * DELETE /pokemon/{id}: Delete a pokemon by ID
+ * POST /pokemon: Create a new pokemon
  */
 public class PokemonService implements Service {
 
@@ -46,76 +54,36 @@ public class PokemonService implements Service {
 
     @Override
     public void update(Routing.Rules rules) {
-        rules
-                .get("/", this::index)
-                // List all types
-                .get("/type", this::listTypes)
-                // List all pokemons
+        rules.get("/type", this::listTypes)
                 .get("/pokemon", this::listPokemons)
-                // Get pokemon by name
                 .get("/pokemon/name/{name}", this::getPokemonByName)
-                // Get pokemon by ID
                 .get("/pokemon/{id}", this::getPokemonById)
-                // Create new pokemon
                 .post("/pokemon", Handler.create(Pokemon.class, this::insertPokemon))
-                // Update name of existing pokemon
-                .put("/pokemon", Handler.create(Pokemon.class, this::updatePokemon))
-                // Delete pokemon by ID including type relation
                 .delete("/pokemon/{id}", this::deletePokemonById);
     }
 
-
-    /**
-     * Return index page.
-     *
-     * @param request  the server request
-     * @param response the server response
-     */
-    private void index(ServerRequest request, ServerResponse response) {
-        response.send("Pokemon JDBC Example:\n"
-        + "     GET /type                - List all pokemon types\n"
-        + "     GET /pokemon             - List all pokemons\n"
-        + "     GET /pokemon/{id}        - Get pokemon by id\n"
-        + "     GET /pokemon/name/{name} - Get pokemon by name\n"
-        + "    POST /pokemon             - Insert new pokemon:\n"
-        + "                                {\"id\":<id>,\"name\":<name>,\"type\":<type>}\n"
-        + "     PUT /pokemon             - Update pokemon\n"
-        + "                                {\"id\":<id>,\"name\":<name>,\"type\":<type>}\n"
-        + "  DELETE /pokemon/{id}        - Delete pokemon with specified id\n");
-    }
-
-    /**
-     * Return JsonArray with all stored pokemons.
-     * Pokemon object contains list of all type names.
-     * This method is abstract because implementation is DB dependent.
-     *
-     * @param request  the server request
-     * @param response the server response
-     */
     private void listTypes(ServerRequest request, ServerResponse response) {
-        response.send(dbClient.execute(exec -> exec.namedQuery("select-all-types"))
-                .map(it -> it.as(JsonObject.class)), JsonObject.class);
+        try {
+            List<PokemonType> pokemonTypes =
+                    dbClient.execute(exec -> exec.namedQuery("select-all-types"))
+                            .map(row -> row.as(PokemonType.class)).collectList().get();
+            response.send(pokemonTypes);
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    /**
-     * Return JsonArray with all stored pokemons.
-     * Pokemon object contains list of all type names.
-     * This method is abstract because implementation is DB dependent.
-     *
-     * @param request  the server request
-     * @param response the server response
-     */
     private void listPokemons(ServerRequest request, ServerResponse response) {
-        response.send(dbClient.execute(exec -> exec.namedQuery("select-all-pokemons"))
-                .map(it -> it.as(JsonObject.class)), JsonObject.class);
+        try {
+            List<Pokemon> pokemons =
+                    dbClient.execute(exec -> exec.namedQuery("select-all-pokemons"))
+                            .map(it -> it.as(Pokemon.class)).collectList().get();
+            response.send(pokemons);
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    /**
-     * Get a single pokemon by id.
-     *
-     * @param request  server request
-     * @param response server response
-     */
     private void getPokemonById(ServerRequest request, ServerResponse response) {
         try {
             int pokemonId = Integer.parseInt(request.path().param("id"));
@@ -124,21 +92,15 @@ public class PokemonService implements Service {
                     .addParam("id", pokemonId)
                     .execute())
                     .thenAccept(maybeRow -> maybeRow
-                    .ifPresentOrElse(
-                            row -> sendRow(row, response),
-                            () -> sendNotFound(response, "Pokemon " + pokemonId + " not found")))
+                            .ifPresentOrElse(
+                                    row -> sendRow(row, response),
+                                    () -> sendNotFound(response, "Pokemon " + pokemonId + " not found")))
                     .exceptionally(throwable -> sendError(throwable, response));
         } catch (NumberFormatException ex) {
             sendError(ex, response);
         }
     }
 
-    /**
-     * Get a single pokemon by name.
-     *
-     * @param request  server request
-     * @param response server response
-     */
     private void getPokemonByName(ServerRequest request, ServerResponse response) {
         String pokemonName = request.path().param("name");
         dbClient.execute(exec -> exec.namedGet("select-pokemon-by-name", pokemonName))
@@ -152,12 +114,6 @@ public class PokemonService implements Service {
                 .exceptionally(throwable -> sendError(throwable, response));
     }
 
-    /**
-     * Insert new pokemon with specified name.
-     *
-     * @param request  the server request
-     * @param response the server response
-     */
     private void insertPokemon(ServerRequest request, ServerResponse response, Pokemon pokemon) {
         dbClient.execute(exec -> exec
                 .createNamedInsert("insert-pokemon")
@@ -167,28 +123,6 @@ public class PokemonService implements Service {
                 .exceptionally(throwable -> sendError(throwable, response));
     }
 
-    /**
-     * Update a pokemon.
-     * Uses a transaction.
-     *
-     * @param request  the server request
-     * @param response the server response
-     */
-    private void updatePokemon(ServerRequest request, ServerResponse response, Pokemon pokemon) {
-        dbClient.execute(exec -> exec
-                .createNamedUpdate("update-pokemon-by-id")
-                .namedParam(pokemon)
-                .execute())
-                .thenAccept(count -> response.send("Updated: " + count + " values\n"))
-                .exceptionally(throwable -> sendError(throwable, response));
-    }
-
-    /**
-     * Delete pokemon with specified id (key).
-     *
-     * @param request  the server request
-     * @param response the server response
-     */
     private void deletePokemonById(ServerRequest request, ServerResponse response) {
         try {
             int id = Integer.parseInt(request.path().param("id"));
@@ -203,42 +137,11 @@ public class PokemonService implements Service {
         }
     }
 
-    /**
-     * Delete pokemon with specified id (key).
-     *
-     * @param request  the server request
-     * @param response the server response
-     */
-    private void deleteAllPokemons(ServerRequest request, ServerResponse response) {
-        // Response message contains information about deleted records from both tables
-        StringBuilder sb = new StringBuilder();
-        // Pokemon must be removed from both PokemonTypes and Pokemons tables in transaction
-        dbClient.execute(exec -> exec
-                // Execute delete from PokemonTypes table
-                .createDelete("DELETE FROM Pokemons")
-                .execute())
-                // Process response when transaction is completed
-                .thenAccept(count -> response.send("Deleted: " + count + " values\n"))
-                .exceptionally(throwable -> sendError(throwable, response));
-     }
-
-    /**
-     * Send a 404 status code.
-     *
-     * @param response the server response
-     * @param message entity content
-     */
     private void sendNotFound(ServerResponse response, String message) {
         response.status(Http.Status.NOT_FOUND_404);
         response.send(message);
     }
 
-    /**
-     * Send a single DB row as JSON object.
-     *
-     * @param row row as read from the database
-     * @param response server response
-     */
     private void sendRow(DbRow row, ServerResponse response) {
         response.send(row.as(javax.json.JsonObject.class));
     }
@@ -250,7 +153,7 @@ public class PokemonService implements Service {
      * @param response server response
      * @param <T> type of expected response, will be always {@code null}
      * @return {@code Void} so this method can be registered as a lambda
-     *      with {@link java.util.concurrent.CompletionStage#exceptionally(java.util.function.Function)}
+     * with {@link java.util.concurrent.CompletionStage#exceptionally(java.util.function.Function)}
      */
     private <T> T sendError(Throwable throwable, ServerResponse response) {
         Throwable realCause = throwable;
@@ -262,5 +165,4 @@ public class PokemonService implements Service {
         LOGGER.log(Level.WARNING, "Failed to process request", throwable);
         return null;
     }
-
 }
