@@ -33,6 +33,8 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.RequestScoped;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Default;
 import javax.enterprise.inject.spi.AfterDeploymentValidation;
@@ -41,6 +43,7 @@ import javax.enterprise.inject.spi.AnnotatedType;
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.BeforeBeanDiscovery;
+import javax.enterprise.inject.spi.DeploymentException;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessAnnotatedType;
 import javax.enterprise.inject.spi.ProcessInjectionPoint;
@@ -50,8 +53,10 @@ import javax.enterprise.inject.spi.WithAnnotations;
 import javax.enterprise.inject.spi.configurator.AnnotatedMethodConfigurator;
 import javax.enterprise.inject.spi.configurator.AnnotatedTypeConfigurator;
 import javax.inject.Qualifier;
+import javax.inject.Singleton;
 import javax.interceptor.Interceptor;
 
+import io.helidon.common.Errors;
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
 import io.helidon.config.Config;
@@ -98,6 +103,8 @@ public class MetricsCdiExtension implements Extension {
         HelidonFeatures.register(HelidonFlavor.MP, "Metrics");
     }
 
+    private Errors.Collector errors = Errors.collector();
+
     @SuppressWarnings("unchecked")
     private static <T> T getReference(BeanManager bm, Type type, Bean<?> bean) {
         return (T) bm.getReference(bean, type, bm.createCreationalContext(bean));
@@ -124,13 +131,13 @@ public class MetricsCdiExtension implements Extension {
                                               counted.absolute());
             String displayName = counted.displayName().trim();
             Metadata meta = Metadata.builder()
-                .withName(metricName)
-                .withDisplayName(displayName.isEmpty() ? metricName : displayName)
-                .withDescription(counted.description().trim())
-                .withType(MetricType.COUNTER)
-                .withUnit(counted.unit().trim())
-                .reusable(counted.reusable())
-                .build();
+                    .withName(metricName)
+                    .withDisplayName(displayName.isEmpty() ? metricName : displayName)
+                    .withDescription(counted.description().trim())
+                    .withType(MetricType.COUNTER)
+                    .withUnit(counted.unit().trim())
+                    .reusable(counted.reusable())
+                    .build();
             registry.counter(meta, tags(counted.tags()));
             LOGGER.log(Level.FINE, () -> "Registered counter " + metricName);
         } else if (annotation instanceof Metered) {
@@ -139,13 +146,13 @@ public class MetricsCdiExtension implements Extension {
                                               metered.absolute());
             String displayName = metered.displayName().trim();
             Metadata meta = Metadata.builder()
-                .withName(metricName)
-                .withDisplayName(displayName.isEmpty() ? metricName : displayName)
-                .withDescription(metered.description().trim())
-                .withType(MetricType.METERED)
-                .withUnit(metered.unit().trim())
-                .reusable(metered.reusable())
-                .build();
+                    .withName(metricName)
+                    .withDisplayName(displayName.isEmpty() ? metricName : displayName)
+                    .withDescription(metered.description().trim())
+                    .withType(MetricType.METERED)
+                    .withUnit(metered.unit().trim())
+                    .reusable(metered.reusable())
+                    .build();
             registry.meter(meta, tags(metered.tags()));
             LOGGER.log(Level.FINE, () -> "Registered meter " + metricName);
         } else if (annotation instanceof Timed) {
@@ -154,28 +161,28 @@ public class MetricsCdiExtension implements Extension {
                                               timed.absolute());
             String displayName = timed.displayName().trim();
             Metadata meta = Metadata.builder()
-                .withName(metricName)
-                .withDisplayName(displayName.isEmpty() ? metricName : displayName)
-                .withDescription(timed.description().trim())
-                .withType(MetricType.TIMER)
-                .withUnit(timed.unit().trim())
-                .reusable(timed.reusable())
-                .build();
+                    .withName(metricName)
+                    .withDisplayName(displayName.isEmpty() ? metricName : displayName)
+                    .withDescription(timed.description().trim())
+                    .withType(MetricType.TIMER)
+                    .withUnit(timed.unit().trim())
+                    .reusable(timed.reusable())
+                    .build();
             registry.timer(meta, tags(timed.tags()));
             LOGGER.log(Level.FINE, () -> "Registered timer " + metricName);
         } else if (annotation instanceof ConcurrentGauge) {
             ConcurrentGauge concurrentGauge = (ConcurrentGauge) annotation;
             String metricName = getMetricName(element, clazz, lookupResult.getType(), concurrentGauge.name().trim(),
-                    concurrentGauge.absolute());
+                                              concurrentGauge.absolute());
             String displayName = concurrentGauge.displayName().trim();
             Metadata meta = Metadata.builder()
-                .withName(metricName)
-                .withDisplayName(displayName.isEmpty() ? metricName : displayName)
-                .withDescription(concurrentGauge.description().trim())
-                .withType(MetricType.CONCURRENT_GAUGE)
-                .withUnit(concurrentGauge.unit().trim())
-                .reusable(concurrentGauge.reusable())
-                .build();
+                    .withName(metricName)
+                    .withDisplayName(displayName.isEmpty() ? metricName : displayName)
+                    .withDescription(concurrentGauge.description().trim())
+                    .withType(MetricType.CONCURRENT_GAUGE)
+                    .withUnit(concurrentGauge.unit().trim())
+                    .reusable(concurrentGauge.reusable())
+                    .build();
             registry.concurrentGauge(meta, tags(concurrentGauge.tags()));
             LOGGER.log(Level.FINE, () -> "Registered concurrent gauge " + metricName);
         }
@@ -208,7 +215,7 @@ public class MetricsCdiExtension implements Extension {
         return result;
     }
 
-    private static MetricRegistry getMetricRegistry() {
+    static MetricRegistry getMetricRegistry() {
         return RegistryProducer.getDefaultRegistry();
     }
 
@@ -217,7 +224,7 @@ public class MetricsCdiExtension implements Extension {
      *
      * @param discovery bean discovery event
      */
-    public void before(@Observes BeforeBeanDiscovery discovery) {
+    void before(@Observes BeforeBeanDiscovery discovery) {
         LOGGER.log(Level.FINE, () -> "Before bean discovery " + discovery);
 
         // Initialize our implementation
@@ -354,6 +361,12 @@ public class MetricsCdiExtension implements Extension {
             @Observes AfterDeploymentValidation adv, BeanManager bm) {
         LOGGER.log(Level.FINE, () -> "registerProducers");
 
+        Errors problems = errors.collect();
+        errors = null;
+        if (problems.hasFatal()) {
+            throw new DeploymentException("Metrics module found issues with deployment: " + problems.toString());
+        }
+
         MetricRegistry registry = getMetricRegistry();
         producers.entrySet().forEach(entry -> {
             Metric metric = entry.getValue().getAnnotation(Metric.class);
@@ -364,13 +377,13 @@ public class MetricsCdiExtension implements Extension {
                                                   metric.name(), metric.absolute());
                 T instance = getReference(bm, entry.getValue().getBaseType(), entry.getKey());
                 Metadata md = Metadata.builder()
-                    .withName(metricName)
-                    .withDisplayName(metric.displayName())
-                    .withDescription(metric.description())
-                    .withType(getMetricType(instance))
-                    .withUnit(metric.unit())
-                    .reusable(false)
-                    .build();
+                        .withName(metricName)
+                        .withDisplayName(metric.displayName())
+                        .withDescription(metric.description())
+                        .withType(getMetricType(instance))
+                        .withUnit(metric.unit())
+                        .reusable(false)
+                        .build();
                 registry.register(md, instance);
             }
         });
@@ -449,6 +462,21 @@ public class MetricsCdiExtension implements Extension {
             return;
         }
 
+        Annotation annotation = type.getAnnotation(RequestScoped.class);
+        if (annotation != null) {
+            errors.fatal(clazz, "Cannot configure @Gauge on a request scoped bean");
+            return;
+        }
+
+        if (type.getAnnotation(ApplicationScoped.class) == null && type.getAnnotation(Singleton.class) == null) {
+            if (ConfigProvider.getConfig().getOptionalValue("metrics.warn-dependent", Boolean.class).orElse(true)) {
+                LOGGER.warning("@Gauge is configured on a bean " + clazz.getName()
+                                       + " that is neither ApplicationScoped nor Singleton. This is most likely a bug."
+                                       + " You may set 'metrics.warn-dependent' configuration option to 'false' to remove "
+                                       + "this warning.");
+            }
+        }
+
         // Process @Gauge methods keeping non-private declared on this class
         configurator.filterMethods(method -> method.getJavaMember().getDeclaringClass().equals(clazz)
                 && !Modifier.isPrivate(method.getJavaMember().getModifiers())
@@ -484,13 +512,13 @@ public class MetricsCdiExtension implements Extension {
                                           bm);
                 Gauge gaugeAnnotation = site.getAnnotated().getAnnotation(Gauge.class);
                 Metadata md = Metadata.builder()
-                    .withName(gaugeID.getName())
-                    .withDisplayName(gaugeAnnotation.displayName())
-                    .withDescription(gaugeAnnotation.description())
-                    .withType(MetricType.GAUGE)
-                    .withUnit(gaugeAnnotation.unit())
-                    .reusable(false)
-                    .build();
+                        .withName(gaugeID.getName())
+                        .withDisplayName(gaugeAnnotation.displayName())
+                        .withDescription(gaugeAnnotation.description())
+                        .withType(MetricType.GAUGE)
+                        .withUnit(gaugeAnnotation.unit())
+                        .reusable(false)
+                        .build();
                 LOGGER.log(Level.FINE, () -> String.format("Registering gauge with metadata %s", md.toString()));
                 registry.register(md, dg, gaugeID.getTagsAsList().toArray(new Tag[0]));
             } catch (Throwable t) {
