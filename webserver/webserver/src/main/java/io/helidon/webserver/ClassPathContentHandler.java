@@ -103,9 +103,6 @@ class ClassPathContentHandler extends StaticContentHandler {
         // try to find the resource on classpath (cannot use root URL and then resolve, as root and sub-resource
         // may be from different jar files/directories
         URL url = classLoader.getResource(resource);
-        if (url == null) {
-            return false;
-        }
 
         String welcomeFileName = welcomePageName();
         if (null != welcomeFileName) {
@@ -124,6 +121,14 @@ class ClassPathContentHandler extends StaticContentHandler {
                 }
             }
         }
+
+        if (url == null) {
+            LOGGER.fine(() -> "Requested resource " + resource + " does not exist");
+            return false;
+        }
+
+        URL logUrl = url; // need to be effectively final to use in lambda
+        LOGGER.finest(()  -> "Located resource url. Resource: " + resource + ", URL: " + logUrl);
 
         // now read the URL - we have direct support for files and jar files, others are handled by stream only
         switch (url.getProtocol()) {
@@ -195,7 +200,7 @@ class ClassPathContentHandler extends StaticContentHandler {
         }
 
         InputStream in = url.openStream();
-        response.send(IoMulti.builderInputStream(in)
+        response.send(IoMulti.multiFromStreamBuilder(in)
                 .byteBufferSize(2048)
                 .build()
                 .map(DataChunk::create));
