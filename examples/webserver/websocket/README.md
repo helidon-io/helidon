@@ -9,5 +9,5 @@ mvn package
 java -jar target/helidon-examples-webserver-websocket.jar
 ```
 
-Open http://localhost:8080 in your browser.
+Open http://localhost:8080/web/index.html in your browser.
 ``
