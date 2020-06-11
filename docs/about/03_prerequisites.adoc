@@ -62,5 +62,8 @@ export JAVA_HOME=/usr/lib/jvm/jdk-11
 
 == Try the Quickstart Examples
 
-Now you are ready to try the
- <<guides/01_overview.adoc#_getting_started,Quickstart Examples>>.
+Now you are ready to try the Quickstart Examples:
+
+1. <<mp/guides/02_quickstart.adoc,Helidon MP Quickstart Example>>
+2. <<se/guides/02_quickstart.adoc,Helidon SE Quickstart Example>>
+
