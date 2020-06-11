@@ -30,6 +30,7 @@ final class FeatureDescriptor {
     private final String description;
     private final boolean nativeSupported;
     private final String nativeDescription;
+    private final boolean experimental;
 
     private FeatureDescriptor(Builder builder) {
         this.flavors = builder.flavors;
@@ -38,6 +39,7 @@ final class FeatureDescriptor {
         this.description = builder.description;
         this.nativeSupported = builder.nativeSupported;
         this.nativeDescription = builder.nativeDescription;
+        this.experimental = builder.experimental;
     }
 
     static Builder builder() {
@@ -94,6 +96,24 @@ final class FeatureDescriptor {
         return String.join("/", path());
     }
 
+    boolean experimental() {
+        return experimental;
+    }
+
+    boolean hasFlavor(HelidonFlavor expected) {
+        for (HelidonFlavor flavor : flavors) {
+            if (flavor == expected) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public String toString() {
+        return name;
+    }
+
     static class Builder implements io.helidon.common.Builder<FeatureDescriptor> {
         private HelidonFlavor[] flavors = new HelidonFlavor[] {HelidonFlavor.SE, HelidonFlavor.MP};
         private String name;
@@ -101,6 +121,7 @@ final class FeatureDescriptor {
         private String description = null;
         private boolean nativeSupported = true;
         private String nativeDescription = null;
+        private boolean experimental;
 
         private Builder() {
         }
@@ -160,6 +181,11 @@ final class FeatureDescriptor {
                 throw new IllegalArgumentException("Path must have at least one element");
             }
             this.path = path;
+            return this;
+        }
+
+        Builder experimental(boolean experimental) {
+            this.experimental = experimental;
             return this;
         }
     }
