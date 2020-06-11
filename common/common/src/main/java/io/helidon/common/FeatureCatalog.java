@@ -517,6 +517,10 @@ final class FeatureCatalog {
         return features;
     }
 
+    // hide utility class constructor
+    private FeatureCatalog() {
+    }
+
     private static void exclude(String packageName) {
         EXCLUDED.add(packageName);
     }

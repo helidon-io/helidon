@@ -53,9 +53,9 @@ final class FeatureDescriptor {
             return false;
         }
         FeatureDescriptor that = (FeatureDescriptor) o;
-        return Arrays.equals(flavors, that.flavors) &&
-                name.equals(that.name) &&
-                Arrays.equals(path, that.path);
+        return Arrays.equals(flavors, that.flavors)
+                && name.equals(that.name)
+                && Arrays.equals(path, that.path);
     }
 
     @Override
