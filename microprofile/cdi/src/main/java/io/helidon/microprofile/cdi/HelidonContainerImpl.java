@@ -67,6 +67,7 @@ import org.jboss.weld.environment.se.events.ContainerShutdown;
 import org.jboss.weld.environment.se.logging.WeldSELogger;
 import org.jboss.weld.manager.BeanManagerImpl;
 import org.jboss.weld.resources.spi.ResourceLoader;
+import org.jboss.weld.serialization.spi.ProxyServices;
 
 import static org.jboss.weld.config.ConfigurationKey.EXECUTOR_THREAD_POOL_TYPE;
 import static org.jboss.weld.executor.ExecutorServicesFactory.ThreadPoolType.COMMON;
@@ -171,6 +172,9 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
         });
 
         Deployment deployment = createDeployment(resourceLoader, bootstrap);
+        // we need to configure custom proxy services to
+        // load classes in module friendly way
+        deployment.getServices().add(ProxyServices.class, new HelidonProxyServices());
 
         ExternalConfigurationBuilder configurationBuilder = new ExternalConfigurationBuilder()
                 // weld-se uses CommonForkJoinPoolExecutorServices by default

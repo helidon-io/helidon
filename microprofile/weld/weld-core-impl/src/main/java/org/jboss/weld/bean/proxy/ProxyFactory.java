@@ -83,7 +83,7 @@ import static org.jboss.weld.util.reflection.Reflections.cast;
  * Why?
  * In original Weld, the name is generated with bean identifier that is based on identity hashCode - and that is OK as
  * long as you run in a single JVM (which is the case with hotspot).
- * Wehn running in native image, we go through the process of generating proxies at build time (in GraalVM when building the
+ * When running in native image, we go through the process of generating proxies at build time (in GraalVM when building the
  * native image) and then running them from the native image.
  * As these are two separate instances of JVM, we get different identity has codes, and as a result different class names
  * at compile time and at runtime. The Helidon change ensures these names are equal and we can reuse the generated proxy
