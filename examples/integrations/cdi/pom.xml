@@ -38,5 +38,6 @@
         <module>jedis</module>
         <module>jpa</module>
         <module>oci-objectstorage</module>
+        <module>pokemons</module>
     </modules>
 </project>
