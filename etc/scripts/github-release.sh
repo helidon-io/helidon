@@ -109,4 +109,3 @@ curl \
   -d "${PAYLOAD}" \
   ${GITHUB_API_URL}/repos/${GITHUB_OWNER}/${REPO}/releases
 
-
