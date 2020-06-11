@@ -76,7 +76,7 @@ public class GreetResource {
     }
 
     /**
-     * Return a wordly greeting message.
+     * Return a worldly greeting message.
      *
      * @return {@link JsonObject}
      */
