@@ -289,6 +289,23 @@ public final class Mp1Main {
             collector.fatal("Endpoint " + path + " should contain static content from /web/resource.txt. Status received: "
                                     + response.getStatus());
         }
+
+        path = "/static";
+        expected = "welcome!";
+        response = target.path(path)
+                .request()
+                .get();
+
+        if (response.getStatus() == OK_200.code()) {
+            String entity = response.readEntity(String.class);
+            if (!expected.equals(entity)) {
+                collector.fatal("Endpoint " + path + "should return welcome file's content \"" + expected
+                                        + "\", but returned \"" + entity + "\"");
+            }
+        } else {
+            collector.fatal("Endpoint " + path + " should contain static content from /web/welcome.txt. Status received: "
+                                    + response.getStatus());
+        }
     }
 
     private static void validateInjection(Errors.Collector collector, WebTarget target) {
