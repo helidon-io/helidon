@@ -1,0 +1,45 @@
+
+package {{package}};
+
+/**
+ * POJO representing a Pokemon type.
+ */
+public class PokemonType {
+
+    private int id;
+    private String name;
+
+    /**
+     * Default constructor.
+     */
+    public PokemonType() {
+        // JSON-B
+    }
+
+    /**
+     * Create a pokemon type.
+     *
+     * @param id id of the type
+     * @param name name of the type
+     */
+    public PokemonType(int id, String name) {
+        this.id = id;
+        this.name = name;
+    }
+
+    public int id() {
+        return id;
+    }
+
+    public void id(int id) {
+        this.id = id;
+    }
+
+    public String name() {
+        return name;
+    }
+
+    public void name(String name) {
+        this.name = name;
+    }
+}
