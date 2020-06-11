@@ -22,8 +22,7 @@
 
 = WebServer Configuration
 
-Configure the WebServer using the Helidon configuration framework, either programmatically 
-or via a configuration file.
+Configure the WebServer either programmatically, or by the Helidon configuration framework.
 
 == Configuring the WebServer in your code
 
@@ -32,40 +31,38 @@ application code.
 
 [source,java]
 ----
-ServerConfiguration configuration = ServerConfiguration.builder()
-                                                       .bindAddress(InetAddress.getLocalHost())
-                                                       .port(8080)
-                                                       .build();
-WebServer webServer = WebServer.create(configuration, routing);
+WebServer webServer = WebServer.builder()
+      .bindAddress(InetAddress.getLocalHost())
+      .port(8080)
+      .build();
 ----
 
 == Configuring the WebServer in a configuration file
 
 You can also define the configuration in a file.
 
-[source,hocon]
-.WebServer configuration file `application.conf`
+[source,yaml]
+.WebServer configuration file `application.yaml`
 ----
-webserver {
-  port: 8080,
-  bind-address: "0.0.0.0",
-}
+server:
+  port: 8080
+  bind-address: "0.0.0.0"
 ----
 
 Then, in your application code, load the configuration from that file.
 
 [source,java]
-.WebServer initialization using the `application.conf` file located on the classpath
+.WebServer initialization using the `application.yaml` file located on the classpath
 ----
-ServerConfiguration configuration = ServerConfiguration.create(
-        Config.builder()
-              .sources(classpath("application.conf"))
-              .build());
+Config config = Config.create(); // <1>
+WebServer webServer = WebServer.create(routing, config.get("server")); // <2>
+----
 
-WebServer webServer = WebServer.create(configuration, routing);
-----
+<1> `application.yaml` is a default configuration source loaded when YAML support is on classpath, so we can
+just use `Config.create()`
+<2> Server expects the configuration tree located on the node of `server`
 
 == Configuration options
 
 See all configuration options 
- link:{javadoc-base-url-api}/ServerConfiguration.html[here].
+ link:{javadoc-base-url-api}/WebServer.html[here].
