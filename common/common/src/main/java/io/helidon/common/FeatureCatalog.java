@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * When updating this class, please keep the grouping (SE/MP/both/excludes) and keep
@@ -38,14 +39,20 @@ final class FeatureCatalog {
               "Config",
               "Configuration module",
               "Config");
-        addSe("io.helidon.grpc.server",
-              "gRPC Server",
-              "Server for gRPC services",
-              "grpc");
-        addSe("io.helidon.grpc.client",
-              "gRPC Client",
-              "Client for gRPC services",
-              "grpcClient");
+        add("io.helidon.grpc.server",
+            FeatureDescriptor.builder()
+                    .name("gRPC Server")
+                    .description("Server for gRPC services")
+                    .path("grpc")
+                    .flavor(HelidonFlavor.SE)
+                    .nativeSupported(false));
+        add("io.helidon.grpc.client",
+            FeatureDescriptor.builder()
+                    .name("gRPC Client")
+                    .description("Client for gRPC services")
+                    .path("grpcClient")
+                    .flavor(HelidonFlavor.SE)
+                    .nativeSupported(false));
         addSe("io.helidon.grpc.metrics",
               "Metrics",
               "Metrics for gRPC services",
@@ -98,10 +105,14 @@ final class FeatureCatalog {
               "Metrics",
               "Metrics support",
               "Metrics");
-        addSe("io.helidon.metrics.prometheus",
-              "Prometheus",
-              "Metrics support for Prometheus",
-              "WebServer", "Prometheus");
+        add("io.helidon.metrics.prometheus",
+            FeatureDescriptor.builder()
+                    .name("Prometheus")
+                    .description("Metrics support for Prometheus")
+                    .path("WebServer", "Prometheus")
+                    .nativeSupported(false)
+                    .flavor(HelidonFlavor.SE)
+        );
         addSe("io.helidon.openapi",
               "OpenAPI",
               "Open API support",
@@ -134,10 +145,44 @@ final class FeatureCatalog {
               "Jersey",
               "WebServer integration with Jersey",
               "WebServer", "Jersey");
+        add("io.helidon.webserver.tyrus",
+            FeatureDescriptor.builder()
+                    .flavor(HelidonFlavor.SE)
+                    .name("Websocket")
+                    .description("Jakarta Websocket implementation")
+                    .path("WebServer", "Websocket")
+                    .nativeSupported(false));
 
         /*
          * MP Modules
          */
+        add("io.helidon.integrations.cdi.eclipselink",
+            FeatureDescriptor.builder()
+                    .name("EclipseLink")
+                    .description("EclipseLink support for Helidon MP")
+                    .path("JPA", "EclipseLink")
+                    .flavor(HelidonFlavor.MP)
+                    .nativeSupported(false));
+        add("io.helidon.integrations.cdi.hibernate",
+            FeatureDescriptor.builder()
+                    .name("Hibernate")
+                    .description("Hibernate support for Helidon MP")
+                    .path("JPA", "Hibernate")
+                    .flavor(HelidonFlavor.MP)
+                    .nativeDescription("Experimental support, tested on limited use cases"));
+        add("io.helidon.integrations.cdi.jpa",
+            FeatureDescriptor.builder()
+                    .name("JPA")
+                    .description("Jakarta persistence API support for Helidon MP")
+                    .flavor(HelidonFlavor.MP)
+                    .path("JPA"));
+        add("io.helidon.integrations.jta.cdi",
+            FeatureDescriptor.builder()
+                    .name("JTA")
+                    .description("Jakarta transaction API support for Helidon MP")
+                    .path("JTA")
+                    .flavor(HelidonFlavor.MP)
+                    .nativeDescription("Experimental support, tested on limited use cases"));
         addMp("io.helidon.microprofile.accesslog",
               "Access Log",
               "Access log support",
@@ -158,6 +203,30 @@ final class FeatureCatalog {
               "Fault Tolerance",
               "MicroProfile Fault Tolerance spec implementation",
               "FT");
+        add("io.helidon.microprofile.grpc.server",
+            FeatureDescriptor.builder()
+                    .name("gRPC Server")
+                    .description("Server for gRPC services")
+                    .path("grpc")
+                    .flavor(HelidonFlavor.MP)
+                    .nativeSupported(false));
+        add("io.helidon.microprofile.grpc.client",
+            FeatureDescriptor.builder()
+                    .name("gRPC Client")
+                    .description("Client for gRPC services")
+                    .path("grpcClient")
+                    .flavor(HelidonFlavor.MP)
+                    .nativeSupported(false));
+        addMp("io.helidon.microprofile.grpc.metrics",
+              "Metrics",
+              "Metrics for gRPC client",
+              "grpcClient", "Metrics"
+        );
+        addMp("io.helidon.microprofile.grpc.metrics",
+              "Metrics",
+              "Metrics for gRPC server",
+              "grpcServer", "Metrics"
+        );
         addMp("io.helidon.microprofile.health",
               "Health",
               "MicroProfile Health spec implementation",
@@ -194,20 +263,22 @@ final class FeatureCatalog {
               "Tracing",
               "MicroProfile tracing spec implementation",
               "Tracing");
-        addMp("io.helidon.microprofile.tyrus",
-              "Websocket",
-              "Jakarta Websocket implementation",
-              "Websocket");
 
-        // TODO we do not see this package
+        add("io.helidon.microprofile.tyrus",
+            FeatureDescriptor.builder()
+                    .flavor(HelidonFlavor.MP)
+                    .name("Websocket")
+                    .description("Jakarta Websocket implementation")
+                    .path("Websocket")
+                    .nativeSupported(false));
+
         add("io.helidon.microprofile.restclient",
             FeatureDescriptor.builder()
                     .name("REST Client")
                     .description("MicroProfile REST client spec implementation")
                     .path("RESTClient")
                     .flavor(HelidonFlavor.MP)
-                    .nativeDescription("Does not support execution of default methods on interfaces.")
-                    .build());
+                    .nativeDescription("Does not support execution of default methods on interfaces."));
 
         /*
          * Common modules
@@ -217,13 +288,17 @@ final class FeatureCatalog {
             "Support for secret encryption in config",
             "Config", "Encryption");
         add("io.helidon.config.etcd",
-            "etcd",
-            "Config source based on etcd",
-            "Config", "etcd");
+            FeatureDescriptor.builder()
+                    .name("etcd")
+                    .description("Config source based on etcd")
+                    .path("Config", "etcd")
+                    .nativeSupported(false));
         add("io.helidon.config.git",
-            "git",
-            "Config source based on a git repository",
-            "Config", "git");
+            FeatureDescriptor.builder()
+                    .name("git")
+                    .description("Config source based on a git repository")
+                    .path("Config", "git")
+                    .nativeSupported(false));
         add("io.helidon.config.hocon",
             "HOCON",
             "HOCON media type support for config",
@@ -265,9 +340,11 @@ final class FeatureCatalog {
             "Built in health checks",
             "Health", "Builtins");
         add("io.helidon.security.abac.policy.el",
-            "EL",
-            "ABAC Jakarta Expression Language policy support",
-            "Security", "Provider", "ABAC", "Policy", "EL");
+            FeatureDescriptor.builder()
+                    .name("EL")
+                    .description("ABAC Jakarta Expression Language policy support")
+                    .path("Security", "Provider", "ABAC", "Policy", "EL")
+                    .nativeSupported(false));
         add("io.helidon.security.abac.role",
             "Role",
             "ABAC Role based attribute validator",
@@ -297,9 +374,11 @@ final class FeatureCatalog {
             "Security provider for attribute based access control",
             "Security", "Provider", "ABAC");
         add("io.helidon.security.providers.google.login",
-            "Google Login",
-            "Security provider for Google login button authentication and outbound",
-            "Security", "Provider", "Google-Login");
+            FeatureDescriptor.builder()
+                    .name("Google Login")
+                    .description("Security provider for Google login button authentication and outbound")
+                    .path("Security", "Provider", "Google-Login")
+                    .nativeSupported(false));
         add("io.helidon.security.providers.header",
             "Header",
             "Security provider for header based authentication",
@@ -317,9 +396,11 @@ final class FeatureCatalog {
             "Security provider for HTTP Signature authentication and outbound",
             "Security", "Provider", "HttpSign");
         add("io.helidon.security.providers.idcs.mapper",
-            "IDCS Role Mapper",
-            "Security provider role mapping - Oracle IDCS",
-            "Security", "Provider", "IdcsRoleMapper");
+            FeatureDescriptor.builder()
+                    .name("IDCS Role Mapper")
+                    .description("Security provider role mapping - Oracle IDCS")
+                    .path("Security", "Provider", "IdcsRoleMapper")
+                    .nativeSupported(false));
         add("io.helidon.security.providers.jwt",
             "JWT",
             "Security provider for JWT based authentication",
@@ -364,14 +445,17 @@ final class FeatureCatalog {
         /*
          * Packages that are not a feature
          */
+        exclude("io.helidon.bundles.config");
         exclude("io.helidon.common");
         exclude("io.helidon.common.configurable");
         exclude("io.helidon.common.context");
         exclude("io.helidon.common.features");
         exclude("io.helidon.common.http");
         exclude("io.helidon.common.mapper");
+        exclude("io.helidon.common.mapper.spi");
         exclude("io.helidon.common.media.type");
         exclude("io.helidon.common.media.type.spi");
+        exclude("io.helidon.openapi.internal");
         exclude("io.helidon.common.pki");
         exclude("io.helidon.common.reactive");
         exclude("io.helidon.common.serviceloader");
@@ -379,6 +463,14 @@ final class FeatureCatalog {
         exclude("io.helidon.config.mp");
         exclude("io.helidon.config.mp.spi");
         exclude("io.helidon.health.common");
+        exclude("io.helidon.integrations.cdi.delegates");
+        exclude("io.helidon.integrations.cdi.referencecountedcontext");
+        exclude("io.helidon.integrations.cdi.jpa.jaxb");
+        exclude("io.helidon.integrations.datasource.cdi");
+        exclude("io.helidon.integrations.datasource.hikaricp.cdi");
+        exclude("io.helidon.integrations.graal.nativeimage.extension");
+        exclude("io.helidon.integrations.graal.mp.nativeimage.extension");
+        exclude("io.helidon.integrations.jta.weld");
         exclude("io.helidon.jersey.common");
         exclude("io.helidon.media.common");
         exclude("io.helidon.media.common.spi");
@@ -386,6 +478,7 @@ final class FeatureCatalog {
         exclude("io.helidon.security.abac.policy.spi");
         exclude("io.helidon.security.annotations");
         exclude("io.helidon.security.integration.common");
+        exclude("io.helidon.security.integration.jersey.client");
         exclude("io.helidon.security.internal");
         exclude("io.helidon.security.jwt");
         exclude("io.helidon.security.jwt.jwk");
@@ -401,6 +494,7 @@ final class FeatureCatalog {
         exclude("io.helidon.tracing.spi");
         exclude("io.helidon.tracing.tracerresolver");
         exclude("io.helidon.webclient.jaxrs");
+        exclude("io.helidon.webclient.spi");
     }
 
     static Set<FeatureDescriptor> get(String packageName) {
@@ -434,8 +528,7 @@ final class FeatureCatalog {
         add(packageName, FeatureDescriptor.builder()
                 .name(name)
                 .path(path)
-                .description(description)
-                .build());
+                .description(description));
     }
 
     private static void addSe(String packageName,
@@ -446,8 +539,7 @@ final class FeatureCatalog {
                 .name(name)
                 .path(path)
                 .description(description)
-                .flavor(HelidonFlavor.SE)
-                .build());
+                .flavor(HelidonFlavor.SE));
     }
 
     private static void addMp(String packageName,
@@ -458,11 +550,11 @@ final class FeatureCatalog {
                 .name(name)
                 .path(path)
                 .description(description)
-                .flavor(HelidonFlavor.MP)
-                .build());
+                .flavor(HelidonFlavor.MP));
     }
 
-    private static void add(String packageName, FeatureDescriptor descriptor) {
+    private static void add(String packageName, Supplier<FeatureDescriptor> descriptorBuilder) {
+        FeatureDescriptor descriptor = descriptorBuilder.get();
         Set<FeatureDescriptor> featureDescriptors = ensurePackage(packageName);
         if (!featureDescriptors.add(descriptor)) {
             throw new IllegalStateException("Feature "

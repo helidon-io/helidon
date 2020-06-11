@@ -19,6 +19,7 @@ package io.helidon.common;
 import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -57,6 +58,7 @@ import java.util.stream.Collectors;
 public final class HelidonFeatures {
     private static final Logger LOGGER = Logger.getLogger(HelidonFeatures.class.getName());
     private static final AtomicBoolean PRINTED = new AtomicBoolean();
+    private static final AtomicBoolean SCANNED = new AtomicBoolean();
     private static final AtomicReference<HelidonFlavor> CURRENT_FLAVOR = new AtomicReference<>();
     private static final Map<HelidonFlavor, Set<FeatureDescriptor>> FEATURES = new EnumMap<>(HelidonFlavor.class);
     private static final Map<HelidonFlavor, Map<String, Node>> ROOT_FEATURE_NODES = new EnumMap<>(HelidonFlavor.class);
@@ -67,7 +69,6 @@ public final class HelidonFeatures {
 
     private static void register(FeatureDescriptor featureDescriptor) {
         for (HelidonFlavor flavor : featureDescriptor.flavors()) {
-
             String[] path = featureDescriptor.path();
 
             // all root features for a flavor
@@ -139,7 +140,7 @@ public final class HelidonFeatures {
             return;
         }
 
-        scan();
+        scan(Thread.currentThread().getContextClassLoader());
 
         Set<FeatureDescriptor> features = FEATURES.get(currentFlavor);
         if (null == features) {
@@ -160,15 +161,53 @@ public final class HelidonFeatures {
         }
     }
 
-    private static void scan() {
+    /**
+     * Will scan all features and log errors and warnings for features that have a
+     * native image limitation.
+     * This method is automatically called when building a native image with Helidon.
+     * @param classLoader to look for features in
+     */
+    public static void nativeBuildTime(ClassLoader classLoader) {
+        scan(classLoader);
+        for (FeatureDescriptor feat : ALL_FEATURES) {
+            if (!feat.nativeSupported()) {
+                LOGGER.severe("Feature '" + feat.name()
+                                      + "' for path '" + feat.stringPath()
+                                      + "' IS NOT SUPPORTED in native image. Image may still build and run.");
+            } else {
+                if (!feat.nativeDescription().isBlank()) {
+                    LOGGER.warning("Feature '" + feat.name()
+                                           + "' for path '" + feat.stringPath()
+                                           + "' has limited support in native image: " + feat.nativeDescription());
+                }
+            }
+        }
+    }
+
+    private static void scan(ClassLoader classLoader) {
+        if (!SCANNED.compareAndSet(false, true)) {
+            // already scanned
+            return;
+        }
         // scan all packages for features
         // warn if in native image
         // this is the place to add support for package annotations in the future
-        Package[] packages = Package.getPackages();
+        Set<String> packages = new HashSet<>();
 
-        for (Package aPackage : packages) {
-            String packageName = aPackage.getName();
+        ClassLoader current = classLoader;
+        while (true) {
+            Package[] clPackages = current.getDefinedPackages();
+            for (Package clPackage : clPackages) {
+                packages.add(clPackage.getName());
+            }
+            ClassLoader parent = current.getParent();
+            if (parent == null || parent == current) {
+                break;
+            }
+            current = parent;
+        }
 
+        for (String packageName : packages) {
             Set<FeatureDescriptor> featureDescriptors = FeatureCatalog.get(packageName);
             if (featureDescriptors == null) {
                 if (packageName.startsWith("io.helidon.")) {

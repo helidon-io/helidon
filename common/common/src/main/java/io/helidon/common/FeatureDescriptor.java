@@ -94,7 +94,7 @@ final class FeatureDescriptor {
         return String.join("/", path());
     }
 
-    static class Builder {
+    static class Builder implements io.helidon.common.Builder<FeatureDescriptor> {
         private HelidonFlavor[] flavors = new HelidonFlavor[] {HelidonFlavor.SE, HelidonFlavor.MP};
         private String name;
         private String[] path;
@@ -105,6 +105,7 @@ final class FeatureDescriptor {
         private Builder() {
         }
 
+        @Override
         public FeatureDescriptor build() {
             if (name == null) {
                 name = path[path.length - 1];

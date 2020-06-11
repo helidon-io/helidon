@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,8 @@ import javax.json.JsonObject;
 import javax.json.JsonReaderFactory;
 import javax.json.stream.JsonParsingException;
 
+import io.helidon.common.HelidonFeatures;
+import io.helidon.common.LogConfig;
 import io.helidon.config.mp.MpConfigProviderResolver;
 
 import com.oracle.svm.core.annotate.AutomaticFeature;
@@ -65,6 +67,21 @@ public class HelidonReflectionFeature implements Feature {
 
     @Override
     public void beforeAnalysis(BeforeAnalysisAccess access) {
+        // need the application classloader
+        Class<?> logConfigClass = access.findClassByName(LogConfig.class.getName());
+        ClassLoader classLoader = logConfigClass.getClassLoader();
+
+        // initialize logging (if on classpath)
+        try {
+            logConfigClass.getMethod("initClass")
+                    .invoke(null);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        //LogConfig.initClass();
+
+        // make sure we print all the warnings for native image
+        HelidonFeatures.nativeBuildTime(classLoader);
         // to add a startup hook:
         //RuntimeSupport.getRuntimeSupport().addStartupHook(() -> {});
 

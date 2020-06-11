@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.microprofile.cdi;
+package io.helidon.common;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -23,8 +23,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
-
-import io.helidon.common.NativeImageHelper;
 
 /**
  * Logging configuration utility.
@@ -36,7 +34,7 @@ import io.helidon.common.NativeImageHelper;
  * If you wish to configure the logging system differently, just do not include the file and/or
  * system properties, or set system property {@value #SYS_PROP_DISABLE_CONFIG} to {@code true}.
  */
-final class LogConfig {
+public final class LogConfig {
     private static final String LOGGING_FILE = "logging.properties";
     private static final String SYS_PROP_DISABLE_CONFIG = "io.helidon.logging.config.disabled";
     private static final String SYS_PROP_LOGGING_CLASS = "java.util.logging.config.class";
@@ -53,7 +51,7 @@ final class LogConfig {
      * Reconfigures logging with runtime configuration if within a native image.
      * See GraalVM native image support in Helidon.
      */
-    static void configureRuntime() {
+    public static void configureRuntime() {
         if (NativeImageHelper.isRuntime()) {
             configureLogging("runtime");
         }
@@ -74,7 +72,7 @@ final class LogConfig {
 
     private static void doConfigureLogging(String when) throws IOException {
         String disableConfigProperty = System.getProperty(SYS_PROP_DISABLE_CONFIG);
-        if ((null != disableConfigProperty) && Boolean.parseBoolean(disableConfigProperty)) {
+        if (Boolean.parseBoolean(disableConfigProperty)) {
             // we are explicitly request to disable this feature
             return;
         }
@@ -110,25 +108,27 @@ final class LogConfig {
         } else {
             // second look for classpath (only the first one)
             InputStream resourceStream = LogConfig.class.getResourceAsStream("/" + LOGGING_FILE);
-            if (null != resourceStream) {
+            if (resourceStream != null) {
                 logConfigStream = new BufferedInputStream(resourceStream);
                 source = "classpath: /" + LOGGING_FILE;
             } else {
                 return source;
             }
         }
-        if (null != logConfigStream) {
-            try {
-                LogManager.getLogManager().readConfiguration(logConfigStream);
-            } finally {
-                logConfigStream.close();
-            }
+
+        try {
+            LogManager.getLogManager().readConfiguration(logConfigStream);
+        } finally {
+            logConfigStream.close();
         }
 
         return source;
     }
 
-    static void buildTime() {
+    /**
+     * This method is for internal use, to correctly load logging configuration at AOT build time.
+     */
+    public static void initClass() {
         // DO NOT DELETE THIS METHOD
         // we need to ensure class initialization for native image by invoking this method
     }
