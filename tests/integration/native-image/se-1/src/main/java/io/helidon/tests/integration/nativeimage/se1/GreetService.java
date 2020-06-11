@@ -91,7 +91,7 @@ public class GreetService implements Service {
     }
 
     /**
-     * Return a wordly greeting message.
+     * Return a worldly greeting message.
      * @param request the server request
      * @param response the server response
      */
