@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ class WebServerBinder extends AbstractBinder {
     @Override
     protected void configure() {
         bindFactory(WebServerRequestReferencingFactory.class).to(ServerRequest.class)
-                                                             .proxy(false)
+                                                             .proxy(true).proxyForSameScope(false)
                                                              .in(RequestScoped.class);
         bindFactory(ReferencingFactory.<ServerRequest>referenceFactory()).to(new GenericType<Ref<ServerRequest>>() { })
                                                                          .in(RequestScoped.class);
