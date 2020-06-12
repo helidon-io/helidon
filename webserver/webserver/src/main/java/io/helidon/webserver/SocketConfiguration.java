@@ -31,8 +31,6 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.DeprecatedConfig;
 
-import io.netty.handler.ssl.ClientAuth;
-
 /**
  * The SocketConfiguration configures a port to listen on and its associated server socket parameters.
  */

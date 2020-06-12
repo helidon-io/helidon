@@ -27,7 +27,6 @@ import javax.net.ssl.SSLContext;
 
 import io.helidon.common.context.Context;
 
-import io.netty.handler.ssl.ClientAuth;
 import io.opentracing.Tracer;
 
 /**
