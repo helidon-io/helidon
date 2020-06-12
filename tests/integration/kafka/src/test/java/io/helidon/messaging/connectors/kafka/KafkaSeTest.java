@@ -28,7 +28,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -53,7 +52,6 @@ import org.apache.kafka.common.serialization.IntegerSerializer;
 import org.apache.kafka.common.serialization.LongDeserializer;
 import org.apache.kafka.common.serialization.LongSerializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
-import org.apache.kafka.common.serialization.StringSerializer;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.junit.jupiter.api.BeforeAll;
@@ -370,10 +368,6 @@ public class KafkaSeTest extends AbstractKafkaTest {
                 .build();
         List<String> uncommit = new ArrayList<>();
         Channel6 kafkaConsumingBean = new Channel6();
-        Map<String, Object> config = new HashMap<>();
-        config.put("bootstrap.servers", KAFKA_SERVER);
-        config.put("key.serializer", LongSerializer.class.getName());
-        config.put("value.serializer", StringSerializer.class.getName());
         Messaging messaging = Messaging.builder().connector(KafkaConnector.create())
                 .subscriber(fromKafka, ReactiveStreams.<KafkaMessage<Long, String>>builder()
                         .forEach(msg -> kafkaConsumingBean.onMsg(msg)))
@@ -425,10 +419,6 @@ public class KafkaSeTest extends AbstractKafkaTest {
                 .build();
         // Send the message that will not ACK. This will make in one partition to not commit any new message
         Channel8 kafkaConsumingBean = new Channel8();
-        Map<String, Object> config = new HashMap<>();
-        config.put("bootstrap.servers", KAFKA_SERVER);
-        config.put("key.serializer", LongSerializer.class.getName());
-        config.put("value.serializer", StringSerializer.class.getName());
         Messaging messaging = Messaging.builder().connector(KafkaConnector.create())
                 .subscriber(fromKafka, ReactiveStreams.<KafkaMessage<Long, String>>builder()
                         .forEach(msg -> kafkaConsumingBean.onMsg(msg)))
