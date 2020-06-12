@@ -17,12 +17,12 @@ import io.helidon.webserver.WebServer;
 /**
  * Main class that starts up server and registers Pokemon services.
  */
-public final class PokemonMain {
+public final class Main {
 
     /**
      * Cannot be instantiated.
      */
-    private PokemonMain() {
+    private Main() {
     }
 
     /**
@@ -43,7 +43,7 @@ public final class PokemonMain {
      */
     static WebServer startServer() throws IOException {
         // Load logging configuration
-        LogManager.getLogManager().readConfiguration(PokemonMain.class.getResourceAsStream("/logging.properties"));
+        LogManager.getLogManager().readConfiguration(Main.class.getResourceAsStream("/logging.properties"));
 
         // By default this will pick up application.yaml from the classpath
         Config config = Config.create();
