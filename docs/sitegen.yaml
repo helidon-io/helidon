@@ -198,6 +198,14 @@ backend:
               items:
                 - includes:
                     - "se/websocket/*.adoc"
+            - title: "AOT"
+              pathprefix: "/se/aot"
+              glyph:
+                type: "icon"
+                value: "save"
+              items:
+                - includes:
+                    - "se/aot/*.adoc"
         - title: "Helidon MP"
           items:
             - title: "Introduction"
@@ -347,6 +355,14 @@ backend:
               items:
                 - includes:
                     - "mp/websocket/*.adoc"
+            - title: "AOT"
+              pathprefix: "/mp/aot"
+              glyph:
+                type: "icon"
+                value: "save"
+              items:
+                - includes:
+                    - "mp/aot/*.adoc"
         - title: "Additional resources"
           items:
             - title: "Javadocs"
