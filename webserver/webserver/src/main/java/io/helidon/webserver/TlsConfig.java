@@ -59,7 +59,7 @@ public final class TlsConfig {
     private final Set<String> enabledTlsProtocols;
     private final SSLContext sslContext;
     private final boolean enabled;
-    private final ClientAuth clientAuth;
+    private final ClientAuthentication clientAuth;
 
     private TlsConfig(Builder builder) {
         this.enabledTlsProtocols = Set.copyOf(builder.enabledTlsProtocols);
@@ -95,7 +95,7 @@ public final class TlsConfig {
         return sslContext;
     }
 
-    ClientAuth clientAuth() {
+    ClientAuthentication clientAuth() {
         return clientAuth;
     }
 
@@ -123,10 +123,10 @@ public final class TlsConfig {
 
         private boolean enabled;
         private Boolean explicitEnabled;
-        private ClientAuth clientAuth;
+        private ClientAuthentication clientAuth;
 
         private Builder() {
-            clientAuth = ClientAuth.NONE;
+            clientAuth = ClientAuthentication.NONE;
         }
 
         @Override
@@ -178,7 +178,7 @@ public final class TlsConfig {
         }
 
         private void clientAuth(String it) {
-            clientAuth(ClientAuth.valueOf(it.toUpperCase()));
+            clientAuth(ClientAuthentication.valueOf(it.toUpperCase()));
         }
 
         /**
@@ -187,7 +187,7 @@ public final class TlsConfig {
          * @param clientAuth client authentication
          * @return this builder
          */
-        public Builder clientAuth(ClientAuth clientAuth) {
+        public Builder clientAuth(ClientAuthentication clientAuth) {
             this.clientAuth = Objects.requireNonNull(clientAuth);
             return this;
         }

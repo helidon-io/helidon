@@ -16,10 +16,10 @@
 
 
 server:
-  port: -1
+  port: 0
   sockets:
     - name: "secured"
-      port: -1
+      port: 0
       ssl:
         client-auth: "REQUIRE"
         trust:
@@ -34,7 +34,7 @@ server:
             resource:
               resource-path: "server.p12"
     - name: "invalid-server-cert"
-      port: -1
+      port: 0
       ssl:
         client-auth: "REQUIRE"
         trust:
@@ -49,7 +49,7 @@ server:
             resource:
               resource-path: "server-invalid/server.p12"
     - name: "client-no-ca"
-      port: -1
+      port: 0
       ssl:
         client-auth: "REQUIRE"
         trust:
@@ -64,7 +64,7 @@ server:
             resource:
               resource-path: "client-no-ca/server.p12"
     - name: "optional"
-      port: -1
+      port: 0
       ssl:
         client-auth: "OPTIONAL"
         trust:

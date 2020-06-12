@@ -71,7 +71,7 @@ class ServerBasicConfig implements ServerConfiguration {
     }
 
     @Override
-    public ClientAuth clientAuth() {
+    public ClientAuthentication clientAuth() {
         return socketConfig.clientAuth();
     }
 
@@ -141,7 +141,7 @@ class ServerBasicConfig implements ServerConfiguration {
         private final Set<String> enabledSslProtocols;
         private final String name;
         private final boolean enabled;
-        private final ClientAuth clientAuth;
+        private final ClientAuthentication clientAuth;
 
         /**
          * Creates new instance.
@@ -162,7 +162,7 @@ class ServerBasicConfig implements ServerConfiguration {
             } else {
                 this.sslContext = null;
                 this.enabledSslProtocols = Set.of();
-                this.clientAuth = ClientAuth.NONE;
+                this.clientAuth = ClientAuthentication.NONE;
             }
         }
 
@@ -202,7 +202,7 @@ class ServerBasicConfig implements ServerConfiguration {
         }
 
         @Override
-        public ClientAuth clientAuth() {
+        public ClientAuthentication clientAuth() {
             return clientAuth;
         }
 

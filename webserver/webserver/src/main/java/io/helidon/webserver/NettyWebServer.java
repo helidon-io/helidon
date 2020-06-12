@@ -146,7 +146,7 @@ class NettyWebServer implements WebServer {
                 sslContext = new JdkSslContext(
                         soConfig.ssl(), false, null,
                         IdentityCipherSuiteFilter.INSTANCE, appProtocolConfig,
-                        soConfig.clientAuth(), protocols, false);
+                        soConfig.clientAuth().nettyClientAuth(), protocols, false);
             }
 
             if (soConfig.backlog() > 0) {

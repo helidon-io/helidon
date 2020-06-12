@@ -15,10 +15,10 @@
 #
 
 server:
-  port: -1
+  port: 0
   sockets:
     - name: "secured"
-      port: -1
+      port: 0
       ssl:
         client-auth: "REQUIRE"
         trust:

@@ -125,7 +125,7 @@ public interface SocketConfiguration {
      *
      * @return client authentication
      */
-    ClientAuth clientAuth();
+    ClientAuthentication clientAuth();
 
     /**
      * Whether this socket is enabled (and will be opened on server startup), or disabled
