@@ -48,7 +48,6 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
     private volatile Throwable error = null;
     private final AtomicReference<State> state = new AtomicReference<>(State.INIT);
     private final AtomicLong requested = new AtomicLong();
-    private final TTASLock emitLock = new TTASLock();
     private final AtomicBoolean subscribed = new AtomicBoolean(false);
     private final LazyValue<Boolean> unbounded = LazyValue.create(() -> this.requested.get() == Long.MAX_VALUE);
     private final CompletableFuture<Void> deferredComplete = new CompletableFuture<>();
@@ -150,31 +149,29 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
     }
 
     private void signalOnError(Throwable throwable) {
-        emitLock.lock();
-        try {
-            Flow.Subscriber<? super T> subscriber = this.subscriber;
-            if (subscriber == null) {
-                // cancel released the reference already
-                return;
+        synchronized (this) {
+            try {
+                Flow.Subscriber<? super T> subscriber = this.subscriber;
+                if (subscriber == null) {
+                    // cancel released the reference already
+                    return;
+                }
+                if (state.compareAndSet(State.INIT, State.FAILED)
+                        || state.compareAndSet(State.SUBSCRIBED, State.FAILED)
+                        || state.compareAndSet(State.REQUESTED, State.FAILED)
+                        || state.compareAndSet(State.READY_TO_EMIT, State.FAILED)) {
+                    this.error = throwable;
+                    EmittingPublisher.this.subscriber = null;
+                    subscriber.onError(throwable);
+                }
+            } catch (Throwable t) {
+                throw new IllegalStateException("On error threw an exception!", t);
             }
-            if (state.compareAndSet(State.INIT, State.FAILED)
-                    || state.compareAndSet(State.SUBSCRIBED, State.FAILED)
-                    || state.compareAndSet(State.REQUESTED, State.FAILED)
-                    || state.compareAndSet(State.READY_TO_EMIT, State.FAILED)) {
-                this.error = throwable;
-                EmittingPublisher.this.subscriber = null;
-                subscriber.onError(throwable);
-            }
-        } catch (Throwable t) {
-            throw new IllegalStateException("On error threw an exception!", t);
-        } finally {
-            emitLock.unlock();
         }
     }
 
     private void signalOnComplete() {
-        emitLock.lock();
-        try {
+        synchronized (this) {
             Flow.Subscriber<? super T> subscriber = this.subscriber;
             if (subscriber == null) {
                 // cancel released the reference already
@@ -187,8 +184,6 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
                 EmittingPublisher.this.subscriber = null;
                 subscriber.onComplete();
             }
-        } finally {
-            emitLock.unlock();
         }
     }
 
@@ -298,30 +293,29 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
 
     private boolean internalEmit(T item) {
         Throwable error;
-        emitLock.lock();
-        try {
-            //State could have changed before acquiring the lock
-            if (State.READY_TO_EMIT != state.get()) {
-                return false;
+        synchronized (this) {
+            try {
+                //State could have changed before acquiring the lock
+                if (State.READY_TO_EMIT != state.get()) {
+                    return false;
+                }
+                Flow.Subscriber<? super T> subscriber = this.subscriber;
+                if (subscriber == null) {
+                    // cancel released the reference
+                    return false;
+                }
+                if (requested.getAndUpdate(r -> r > 0 ? r != Long.MAX_VALUE ? r - 1 : Long.MAX_VALUE : 0) < 1) {
+                    // there is a chance racing request will increment counter between this check and onNext
+                    // lets delegate that to emit caller
+                    return false;
+                }
+                subscriber.onNext(item);
+                return true;
+            } catch (NullPointerException npe) {
+                throw npe;
+            } catch (Throwable t) {
+                error = t;
             }
-            Flow.Subscriber<? super T> subscriber = this.subscriber;
-            if (subscriber == null) {
-                // cancel released the reference
-                return false;
-            }
-            if (requested.getAndUpdate(r -> r > 0 ? r != Long.MAX_VALUE ? r - 1 : Long.MAX_VALUE : 0) < 1) {
-                // there is a chance racing request will increment counter between this check and onNext
-                // lets delegate that to emit caller
-                return false;
-            }
-            subscriber.onNext(item);
-            return true;
-        } catch (NullPointerException npe) {
-            throw npe;
-        } catch (Throwable t) {
-            error = t;
-        } finally {
-            emitLock.unlock();
         }
         fail(new IllegalStateException(error));
         return false;
@@ -408,6 +402,7 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
         };
 
         abstract <T> boolean emit(EmittingPublisher<T> publisher, T item);
+
         abstract boolean isTerminated();
 
     }

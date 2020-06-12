@@ -40,7 +40,6 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
     private final EmittingPublisher<T> emitter = new EmittingPublisher<>();
     private final AtomicLong deferredDrains = new AtomicLong(0);
     private final AtomicBoolean draining = new AtomicBoolean(false);
-    private final TTASLock emitLock = new TTASLock();
     private final AtomicReference<Throwable> error = new AtomicReference<>();
     private BiConsumer<Long, Long> requestCallback = null;
     private Consumer<? super T> onEmitCallback = null;
@@ -257,27 +256,27 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
     }
 
     private int emitOrBuffer(T item) {
-        emitLock.lock();
-        try {
-            if (buffer.isEmpty() && emitter.emit(item)) {
-                // Buffer drained, emit successful
-                // saved time by skipping buffer
-                if (onEmitCallback != null) {
-                    onEmitCallback.accept(item);
+        synchronized (this) {
+            try {
+                if (buffer.isEmpty() && emitter.emit(item)) {
+                    // Buffer drained, emit successful
+                    // saved time by skipping buffer
+                    if (onEmitCallback != null) {
+                        onEmitCallback.accept(item);
+                    }
+                    return 0;
+                } else {
+                    // safe slower path thru buffer
+                    buffer.add(item);
+                    state.get().drain(this);
+                    return buffer.size();
                 }
-                return 0;
-            } else {
-                // safe slower path thru buffer
-                buffer.add(item);
-                state.get().drain(this);
-                return buffer.size();
+            } finally {
+                // If unbounded, check only once if buffer is empty
+                if (!safeToSkipBuffer && isUnbounded() && buffer.isEmpty()) {
+                    safeToSkipBuffer = true;
+                }
             }
-        } finally {
-            // If unbounded, check only once if buffer is empty
-            if (!safeToSkipBuffer && isUnbounded() && buffer.isEmpty()) {
-                safeToSkipBuffer = true;
-            }
-            emitLock.unlock();
         }
     }
 
@@ -300,7 +299,6 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
 
     private enum State {
         READY_TO_EMIT {
-
             @Override
             <T> int emit(BufferedEmittingPublisher<T> publisher, T item) {
                 if (publisher.safeToSkipBuffer) {
