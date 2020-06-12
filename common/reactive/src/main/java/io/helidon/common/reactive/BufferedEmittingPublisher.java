@@ -281,7 +281,8 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
     }
 
     private int unboundedEmitOrBuffer(T item) {
-        // Not reachable unless
+        // Not reachable unless unbounded req was made
+        // and buffer is empty
         if (emitter.emit(item)) {
             // Emit successful
             if (onEmitCallback != null) {
