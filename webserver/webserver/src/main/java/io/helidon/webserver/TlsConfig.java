@@ -44,8 +44,6 @@ import io.helidon.common.pki.KeyConfig;
 import io.helidon.config.Config;
 import io.helidon.config.DeprecatedConfig;
 
-import io.netty.handler.ssl.ClientAuth;
-
 /**
  * A class wrapping transport layer security (TLS) configuration for
  * WebServer sockets.
