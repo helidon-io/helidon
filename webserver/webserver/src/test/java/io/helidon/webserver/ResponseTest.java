@@ -30,7 +30,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 
 import io.helidon.common.GenericType;
-import io.helidon.common.LazyValue;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
@@ -259,7 +258,7 @@ public class ResponseTest {
     static class ResponseImpl extends Response {
 
         public ResponseImpl(BareResponse bareResponse) {
-            super(mock(WebServer.class), bareResponse, LazyValue.create(List.of()));
+            super(mock(WebServer.class), bareResponse, List.of());
         }
 
         @Override
