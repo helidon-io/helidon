@@ -56,13 +56,20 @@ public final class Main {
                 .config(config.get("server"))
                 .build();
 
-        // Start the server and print some info
+        // Try to start the server. If successful, print some info and arrange to
+        // print a message at shutdown. If unsuccessful, print the exception.
         server.start()
-                .thenAccept(ws -> System.out.println("WEB server is up! http://localhost:" + ws.port() + "/"));
-
-        // Server threads are not daemon
-        server.whenShutdown()
-                .thenRun(() -> System.out.println("WEB server is DOWN. Good bye!"));
+                .thenAccept(ws -> {
+                    System.out.println(
+                            "WEB server is up! http://localhost:" + ws.port() + "/");
+                    ws.whenShutdown().thenRun(()
+                            -> System.out.println("WEB server is DOWN. Good bye!"));
+                })
+                .exceptionally(t -> {
+                    System.err.println("Startup failed: " + t.getMessage());
+                    t.printStackTrace(System.err);
+                    return null;
+                });
 
         return server;
     }
