@@ -1,6 +1,6 @@
-# Helidon DB Client Pokemon Example with JDBC
+# Helidon DB Client Pokemon Example
 
-This example shows how to run Helidon DB Client over JDBC.
+This example shows how to run Helidon DB Client.
 
 Application provides REST service endpoint with CRUD operations on Pokemnons
 database.
@@ -26,26 +26,49 @@ Database model contains two tables:
 
 with 1:N relationship between *Types* and *Pokemons*
 
+Examples are given for H2, Oracle, or MySQL databases (note that MySQL is currently not supported for GraalVM native image)
+
+Uncomment the appropriate dependencies in the pom.xml for the desired database (H2, Oracle, or MySQL) and insure others are commented.
+
+Uncomment the appropriate configuration in the application.xml for the desired database (H2, Oracle, or MySQL) and insure others are commented.
+
 ## Build
 
 ```
-cd <project_root>/examples/dbclient/pokemons
 mvn package
 ```
 
+This example may also be run as a GraalVM native image in which case can be built using the following: 
+
+```
+mvn package -Pnative-image
+```
+
+
 ## Run
 
-This example requires a MySQL database, start it using docker:
+This example requires a database. 
+
+Instructions for H2 can be found here: http://www.h2database.com/html/cheatSheet.html
+
+Instructions for Oracle can be found here: https://github.com/oracle/docker-images/tree/master/OracleDatabase/SingleInstance
+
+MySQL can be run as a docker container with the following command:
 ```
-docker run --rm --name mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=root \
-       -e MYSQL_DATABASE=pokemon -e MYSQL_USER=user -e MYSQL_PASSWORD=password  mysql:5.7
+docker run --rm --name mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=pokemon -e MYSQL_USER=user -e MYSQL_PASSWORD=password  mysql:5.7
 ```
 
-Then run the `io.helidon.examples.dbclient.pokemons.PokemonMain` class:
+
+Then run the application:
+
 ```
-cd <project_root>/examples/dbclient/pokemons
-java -jar target/helidon-examples-dbclient-pokemons.jar
+java -jar target/helidon-examples-dbclient-jdbc.jar
 ```
+or in the case of native image
+```
+./target/helidon-examples-dbclient-jdbc
+```
+ 
 
 ### Run with MongoDB
 

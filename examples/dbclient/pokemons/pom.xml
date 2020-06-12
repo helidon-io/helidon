@@ -80,13 +80,21 @@
             <artifactId>helidon-dbclient-jsonp</artifactId>
         </dependency>
         <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
+        <groupId>mysql</groupId>
+        <artifactId>mysql-connector-java</artifactId>
         </dependency>
-        <dependency>
-            <groupId>com.zaxxer</groupId>
-            <artifactId>HikariCP</artifactId>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>io.helidon.dbclient</groupId>-->
+<!--            <artifactId>helidon-dbclient-h2</artifactId>-->
+<!--        </dependency>-->
+                <dependency>
+                    <groupId>io.helidon.dbclient</groupId>
+                    <artifactId>helidon-dbclient-oracle</artifactId>
+                </dependency>
+                <dependency>
+                    <groupId>com.oracle.ojdbc</groupId>
+                    <artifactId>ojdbc10</artifactId>
+                </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-jdk14</artifactId>

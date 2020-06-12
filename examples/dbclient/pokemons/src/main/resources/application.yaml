@@ -23,14 +23,21 @@ server:
 tracing:
   service: jdbc-db
 
-# docker run --rm --name mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=pokemon -e MYSQL_USER=user -e MYSQL_PASSWORD=password  mysql:5.7
 db:
   source: jdbc
   connection:
+#    url: jdbc:h2:tcp://localhost:9092//tmp/test
+#    username: sa
+#    password:
+#    poolName: h2
     url: jdbc:mysql://127.0.0.1:3306/pokemon?useSSL=false
     username: user
     password: password
     poolName: mysql
+#    url: jdbc:oracle:thin:@localhost:11521/XE
+#    username: "sys as sysdba"
+#    password: testing12345
+#    poolName: oracle
     initializationFailTimeout: -1
     connectionTimeout: 2000
     helidon:

@@ -41,13 +41,8 @@ import java.util.UUID;
  * multi-release JAR with more efficient implementation for a newer versions of
  * Java.
  */
-import com.oracle.svm.core.SubstrateUtil;
 import com.oracle.svm.core.annotate.Substitute;
 import com.oracle.svm.core.annotate.TargetClass;
-
-import java.nio.ByteOrder;
-import java.util.Arrays;
-import java.util.UUID;
 
 @TargetClass(className = "org.h2.util.Bits")
 @Substitute
