@@ -18,12 +18,11 @@ package io.helidon.webserver.examples.mtls;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.http.Http;
 import io.helidon.common.pki.KeyConfig;
+import io.helidon.webserver.ClientAuthentication;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.SocketConfiguration;
 import io.helidon.webserver.TlsConfig;
 import io.helidon.webserver.WebServer;
-
-import io.netty.handler.ssl.ClientAuth;
 
 /**
  * Setting up {@link WebServer} to support mutual TLS via builder.
@@ -84,7 +83,7 @@ public class ServerBuilderMain {
                 .keystorePassphrase("password")
                 .build();
         return TlsConfig.builder()
-                .clientAuth(ClientAuth.REQUIRE)
+                .clientAuth(ClientAuthentication.REQUIRE)
                 .trust(keyConfig)
                 .privateKey(keyConfig)
                 .build();
