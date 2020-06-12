@@ -52,7 +52,6 @@ import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.ApplicationProtocolConfig;
 import io.netty.handler.ssl.ApplicationProtocolNames;
-import io.netty.handler.ssl.ClientAuth;
 import io.netty.handler.ssl.IdentityCipherSuiteFilter;
 import io.netty.handler.ssl.JdkSslContext;
 import io.netty.util.concurrent.Future;
@@ -147,7 +146,7 @@ class NettyWebServer implements WebServer {
                 sslContext = new JdkSslContext(
                         soConfig.ssl(), false, null,
                         IdentityCipherSuiteFilter.INSTANCE, appProtocolConfig,
-                        ClientAuth.NONE, protocols, false);
+                        soConfig.clientAuth(), protocols, false);
             }
 
             if (soConfig.backlog() > 0) {

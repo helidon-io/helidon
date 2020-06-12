@@ -31,6 +31,8 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.DeprecatedConfig;
 
+import io.netty.handler.ssl.ClientAuth;
+
 /**
  * The SocketConfiguration configures a port to listen on and its associated server socket parameters.
  */
@@ -117,6 +119,13 @@ public interface SocketConfiguration {
      * @return the SSL protocols to enable
      */
     Set<String> enabledSslProtocols();
+
+    /**
+     * Whether to require client authentication or not.
+     *
+     * @return client authentication
+     */
+    ClientAuth clientAuth();
 
     /**
      * Whether this socket is enabled (and will be opened on server startup), or disabled

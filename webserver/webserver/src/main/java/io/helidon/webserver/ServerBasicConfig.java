@@ -27,6 +27,7 @@ import javax.net.ssl.SSLContext;
 
 import io.helidon.common.context.Context;
 
+import io.netty.handler.ssl.ClientAuth;
 import io.opentracing.Tracer;
 
 /**
@@ -67,6 +68,11 @@ class ServerBasicConfig implements ServerConfiguration {
     @Override
     public Set<String> enabledSslProtocols() {
         return socketConfig.enabledSslProtocols();
+    }
+
+    @Override
+    public ClientAuth clientAuth() {
+        return socketConfig.clientAuth();
     }
 
     @Override
@@ -135,6 +141,7 @@ class ServerBasicConfig implements ServerConfiguration {
         private final Set<String> enabledSslProtocols;
         private final String name;
         private final boolean enabled;
+        private final ClientAuth clientAuth;
 
         /**
          * Creates new instance.
@@ -151,9 +158,11 @@ class ServerBasicConfig implements ServerConfiguration {
             if (tlsConfig.enabled()) {
                 this.sslContext = tlsConfig.sslContext();
                 this.enabledSslProtocols = new HashSet<>(tlsConfig.enabledTlsProtocols());
+                this.clientAuth = tlsConfig.clientAuth();
             } else {
                 this.sslContext = null;
                 this.enabledSslProtocols = Set.of();
+                this.clientAuth = ClientAuth.NONE;
             }
         }
 
@@ -190,6 +199,11 @@ class ServerBasicConfig implements ServerConfiguration {
         @Override
         public Set<String> enabledSslProtocols() {
             return enabledSslProtocols;
+        }
+
+        @Override
+        public ClientAuth clientAuth() {
+            return clientAuth;
         }
 
         @Override
