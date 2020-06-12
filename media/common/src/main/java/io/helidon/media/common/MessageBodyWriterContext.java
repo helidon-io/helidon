@@ -117,7 +117,7 @@ public final class MessageBodyWriterContext extends MessageBodyContext implement
         this.headers = headers;
         this.writers = new MessageBodyOperators<>(writerContext.writers);
         this.swriters = new MessageBodyOperators<>(writerContext.swriters);
-        this.acceptedTypes = List.copyOf(writerContext.acceptedTypes);
+        this.acceptedTypes = writerContext.acceptedTypes;
         this.contentTypeCache = writerContext.contentTypeCache;
         this.contentTypeCached = writerContext.contentTypeCached;
         this.charsetCache = writerContext.charsetCache;
