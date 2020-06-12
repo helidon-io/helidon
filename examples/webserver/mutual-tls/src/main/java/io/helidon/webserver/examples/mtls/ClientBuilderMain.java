@@ -25,6 +25,9 @@ import io.helidon.webclient.WebClient;
  */
 public class ClientBuilderMain {
 
+    private ClientBuilderMain() {
+    }
+
     /**
      * Start the example.
      * This example executes two requests by Helidon {@link WebClient} which are configured

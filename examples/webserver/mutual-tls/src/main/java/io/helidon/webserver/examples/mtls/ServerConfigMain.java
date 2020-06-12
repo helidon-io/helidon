@@ -25,6 +25,9 @@ import io.helidon.webserver.WebServer;
  */
 public class ServerConfigMain {
 
+    private ServerConfigMain() {
+    }
+
     /**
      * Start the example.
      * This will start Helidon {@link WebServer} which is configured by the configuration.
