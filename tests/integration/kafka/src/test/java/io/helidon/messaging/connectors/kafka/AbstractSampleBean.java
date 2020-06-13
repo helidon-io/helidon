@@ -205,13 +205,10 @@ abstract class AbstractSampleBean {
         }
     }
 
-    @ApplicationScoped
     public static class Channel6 extends AbstractSampleBean {
         static final String NO_ACK = "noAck";
 
-        @Incoming("test-channel-6")
-        @Acknowledgment(Acknowledgment.Strategy.MANUAL)
-        public CompletionStage<String> channel6(KafkaMessage<Long,  String> msg) {
+        public CompletionStage<String> onMsg(KafkaMessage<Long,  String> msg) {
             LOGGER.fine(() -> String.format("Received %s", msg.getPayload()));
             consumed().add(msg.getPayload());
             // Certain messages are not ACK. We can check later that they will be sent again.
@@ -221,12 +218,11 @@ abstract class AbstractSampleBean {
             } else {
                 LOGGER.fine(() -> "ACK is not sent");
             }
-			countDown("channel6()");
+            countDown("channel6()");
             return CompletableFuture.completedFuture(null);
         }
     }
-    
-    @ApplicationScoped
+
     public static class Channel8 extends AbstractSampleBean {
         static final String NO_ACK = "noAck";
         static final int LIMIT = 10;
@@ -236,9 +232,7 @@ abstract class AbstractSampleBean {
         // Limit is for one scenario that Kafka rebalances and sends again same data in different partition
         private final AtomicInteger limit = new AtomicInteger();
 
-        @Incoming("test-channel-8")
-        @Acknowledgment(Acknowledgment.Strategy.MANUAL)
-        public CompletionStage<String> channel6(KafkaMessage<Long,  String> msg) {
+        public CompletionStage<String> onMsg(KafkaMessage<Long,  String> msg) {
             ConsumerRecord<Long, String> record = msg.unwrap(ConsumerRecord.class);
             consumed().add(record.value());
             // Certain messages are not ACK. We can check later that they will be sent again.
