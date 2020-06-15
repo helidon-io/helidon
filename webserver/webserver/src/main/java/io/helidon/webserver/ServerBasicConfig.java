@@ -70,6 +70,11 @@ class ServerBasicConfig implements ServerConfiguration {
     }
 
     @Override
+    public ClientAuthentication clientAuth() {
+        return socketConfig.clientAuth();
+    }
+
+    @Override
     public int workersCount() {
         return workers;
     }
@@ -135,6 +140,7 @@ class ServerBasicConfig implements ServerConfiguration {
         private final Set<String> enabledSslProtocols;
         private final String name;
         private final boolean enabled;
+        private final ClientAuthentication clientAuth;
 
         /**
          * Creates new instance.
@@ -151,9 +157,11 @@ class ServerBasicConfig implements ServerConfiguration {
             if (tlsConfig.enabled()) {
                 this.sslContext = tlsConfig.sslContext();
                 this.enabledSslProtocols = new HashSet<>(tlsConfig.enabledTlsProtocols());
+                this.clientAuth = tlsConfig.clientAuth();
             } else {
                 this.sslContext = null;
                 this.enabledSslProtocols = Set.of();
+                this.clientAuth = ClientAuthentication.NONE;
             }
         }
 
@@ -190,6 +198,11 @@ class ServerBasicConfig implements ServerConfiguration {
         @Override
         public Set<String> enabledSslProtocols() {
             return enabledSslProtocols;
+        }
+
+        @Override
+        public ClientAuthentication clientAuth() {
+            return clientAuth;
         }
 
         @Override

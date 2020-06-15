@@ -119,6 +119,13 @@ public interface SocketConfiguration {
     Set<String> enabledSslProtocols();
 
     /**
+     * Whether to require client authentication or not.
+     *
+     * @return client authentication
+     */
+    ClientAuthentication clientAuth();
+
+    /**
      * Whether this socket is enabled (and will be opened on server startup), or disabled
      * (and ignored on server startup).
      *

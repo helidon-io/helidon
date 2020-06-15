@@ -1007,6 +1007,12 @@ public final class Http {
          * Indicates the authentication scheme that should be used to access the requested entity.
          */
         public static final String WWW_AUTHENTICATE = "WWW-Authenticate";
+        /**
+         * The <code>{@value}</code> header name.
+         * Corresponds to the certificate CN subject value when client authentication enabled.
+         * This header will be removed if it is part of the request.
+         */
+        public static final String X_HELIDON_CN = "X-HELIDON-CN";
 
         private Header() {
         }

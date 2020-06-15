@@ -19,6 +19,7 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import javax.net.ssl.SSLContext;
@@ -158,8 +159,9 @@ public class Ssl {
          * @return updated builder instance
          */
         public Builder certificateTrustStore(KeyConfig keyStore) {
+            Objects.requireNonNull(keyStore);
             certificates = keyStore.certs();
-            return null;
+            return this;
         }
 
         /**
@@ -169,6 +171,7 @@ public class Ssl {
          * @return updated builder instance
          */
         public Builder clientKeyStore(KeyConfig keyConfig) {
+            Objects.requireNonNull(keyConfig);
             keyConfig.privateKey().ifPresent(privateKey -> clientPrivateKey = privateKey);
             clientCertificateChain = keyConfig.certChain();
             return this;
@@ -224,10 +227,9 @@ public class Ssl {
             Config serverConfig = config.get("server");
             serverConfig.get("disable-hostname-verification").asBoolean().ifPresent(this::disableHostnameVerification);
             serverConfig.get("trust-all").asBoolean().ifPresent(this::trustAll);
-            serverConfig.get("truststore").as(KeyConfig::create).ifPresent(this::certificateTrustStore);
+            serverConfig.as(KeyConfig::create).ifPresent(this::certificateTrustStore);
 
-            Config clientConfig = config.get("client");
-            clientConfig.get("keystore").as(KeyConfig::create).ifPresent(this::clientKeyStore);
+            config.get("client").as(KeyConfig::create).ifPresent(this::clientKeyStore);
             return this;
         }
 

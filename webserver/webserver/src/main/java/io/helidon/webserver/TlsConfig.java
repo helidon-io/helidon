@@ -57,11 +57,13 @@ public final class TlsConfig {
     private final Set<String> enabledTlsProtocols;
     private final SSLContext sslContext;
     private final boolean enabled;
+    private final ClientAuthentication clientAuth;
 
     private TlsConfig(Builder builder) {
         this.enabledTlsProtocols = Set.copyOf(builder.enabledTlsProtocols);
         this.sslContext = builder.sslContext;
         this.enabled = (null != sslContext);
+        this.clientAuth = builder.clientAuth;
     }
 
     /**
@@ -91,6 +93,10 @@ public final class TlsConfig {
         return sslContext;
     }
 
+    ClientAuthentication clientAuth() {
+        return clientAuth;
+    }
+
     /**
      * Whether this TLS config has security enabled (and the socket is going to be
      * protected by one of the TLS protocols), or no (and the socket is going to be plain).
@@ -115,8 +121,10 @@ public final class TlsConfig {
 
         private boolean enabled;
         private Boolean explicitEnabled;
+        private ClientAuthentication clientAuth;
 
         private Builder() {
+            clientAuth = ClientAuthentication.NONE;
         }
 
         @Override
@@ -150,6 +158,7 @@ public final class TlsConfig {
          * @return this builder
          */
         public Builder config(Config config) {
+            config.get("client-auth").asString().ifPresent(this::clientAuth);
             config.get("private-key")
                     .ifExists(it -> privateKey(KeyConfig.create(it)));
 
@@ -163,6 +172,21 @@ public final class TlsConfig {
                     .ifPresent(this::sessionTimeoutSeconds);
 
 
+            return this;
+        }
+
+        private void clientAuth(String it) {
+            clientAuth(ClientAuthentication.valueOf(it.toUpperCase()));
+        }
+
+        /**
+         * Configures whether client authentication will be required or not.
+         *
+         * @param clientAuth client authentication
+         * @return this builder
+         */
+        public Builder clientAuth(ClientAuthentication clientAuth) {
+            this.clientAuth = Objects.requireNonNull(clientAuth);
             return this;
         }
 
