@@ -13,28 +13,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.jersey.connector;
 
+import javax.ws.rs.client.ClientBuilder;
 import java.util.NoSuchElementException;
 import java.util.ServiceLoader;
 
+import org.glassfish.jersey.client.JerseyClient;
 import org.junit.jupiter.api.Test;
 import org.glassfish.jersey.client.spi.ConnectorProvider;
-import io.helidon.jersey.connector.HelidonConnectorProvider;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class TestConnectorProvider {
+public class ConnectorProviderTest {
 
     /**
-     * Test how Jersey will load the Helidon connector.
+     * Test how Jersey will load the Helidon connector provider.
      *
      * @throws NoSuchElementException If not found.
      */
     @Test
-    public void testConnectorProviderLoader() throws NoSuchElementException {
+    public void testConnectorProvider() throws NoSuchElementException {
         ServiceLoader<ConnectorProvider> loader = ServiceLoader.load(ConnectorProvider.class);
         ConnectorProvider provider = loader.findFirst().orElseThrow();
+        assertThat(provider, instanceOf(HelidonConnectorProvider.class));
+    }
+
+    /**
+     * Check that Jersey has found the Helidon connector provider.
+     */
+    @Test
+    public void testConnectorLoaded() {
+        JerseyClient jerseyClient = (JerseyClient) ClientBuilder.newClient();
+        ConnectorProvider provider = jerseyClient.getConfiguration().getConnectorProvider();
         assertThat(provider, instanceOf(HelidonConnectorProvider.class));
     }
 }
