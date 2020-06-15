@@ -2,7 +2,7 @@
                            Project Helidon
                            ===============
 
-Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -22,4 +22,6 @@ Third Party Dependencies
 
 This project includes or depends on code from third party projects.
 Attributions are contained in 3RD-PARTY.txt 
+
+https://github.com/oracle/helidon/blob/${project.version}/3RD-PARTY.txt
 
