@@ -30,7 +30,7 @@ public class ConnectorProviderTest {
     /**
      * There should be no {@link org.glassfish.jersey.client.spi.ConnectorProvider}'s in
      * path when running this test. This test will fail if the {@code io.helidon.jersey.connector}
-     * modulesis available.
+     * modules is available.
      *
      * @throws NoSuchElementException If not found.
      */
