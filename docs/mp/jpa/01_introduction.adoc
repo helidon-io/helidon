@@ -16,11 +16,42 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= JPA
+= Helidon MP JPA
 :toc:
 :toc-placement: preamble
 :spec-name: Jakarta Persistence
 :description: {spec-name} support in Helidon MP
 :keywords: helidon, mp, microprofile, persistence, database
+:h1Prefix: MP
 
-== This page is Under Construction and will be available soon
+== Overview
+Helidon MP supports JPA in much the same way that Java EE application
+servers do, but with much less weight.  If you come from a Java EE
+background, you'll feel right at home: you work with JPA in Helidon MP
+in all the ways that you're familiar with.
+
+For example, in Helidon MP's JPA integration, you can work with a
+fully managed `EntityManager` by injecting it in the same way you
+would in a Java EE application server:
+
+[source,java]
+====
+@PersistenceContext
+private EntityManager em;
+====
+
+The Jakarta Persistence API is a specification that governs how Java
+objects map to relational databases, and has existed since 2006.
+Hibernate and Eclipselink, two of the most popular JPA
+implementations, are supported by Helidon MP JPA. 
+
+
+
+
+== Next Steps
+Learn more about the 
+https://jcp.org/en/jsr/detail?id=338[Java Persistence API (JPA)]
+
+Configure and use the Java Persistence API (JPA) from
+within a Helidon MP application. <<mp/guides/09_jpa.adoc, Helidon MP JPA Guide>>.
+
