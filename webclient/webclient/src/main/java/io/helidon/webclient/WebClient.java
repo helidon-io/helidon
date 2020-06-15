@@ -19,7 +19,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.time.Duration;
-import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -261,38 +260,10 @@ public interface WebClient {
          *
          * @param amount amount of time
          * @param unit   time unit
-         * @deprecated use {@link WebClient.Builder#connectTimeout(long, TimeUnit)}, this method will be removed
-         * @return updated builder instance
-         */
-        @Deprecated
-        public Builder connectTimeout(long amount, TemporalUnit unit) {
-            configuration.connectTimeout(Duration.of(amount, unit));
-            return this;
-        }
-
-        /**
-         * Sets new connection timeout.
-         *
-         * @param amount amount of time
-         * @param unit   time unit
          * @return updated builder instance
          */
         public Builder connectTimeout(long amount, TimeUnit unit) {
             configuration.connectTimeout(Duration.of(amount, unit.toChronoUnit()));
-            return this;
-        }
-
-        /**
-         * Sets new read timeout.
-         *
-         * @param amount amount of time
-         * @param unit   time unit
-         * @deprecated use {@link WebClient.Builder#readTimeout(long, TimeUnit)}, this method will be removed
-         * @return updated builder instance
-         */
-        @Deprecated
-        public Builder readTimeout(long amount, TemporalUnit unit) {
-            configuration.readTimeout(Duration.of(amount, unit));
             return this;
         }
 

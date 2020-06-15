@@ -22,7 +22,6 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -265,20 +264,8 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     }
 
     @Override
-    public WebClientRequestBuilder connectTimeout(long amount, TemporalUnit unit) {
-        this.connectTimeout = Duration.of(amount, unit);
-        return this;
-    }
-
-    @Override
     public WebClientRequestBuilder connectTimeout(long amount, TimeUnit unit) {
         this.connectTimeout = Duration.of(amount, unit.toChronoUnit());
-        return this;
-    }
-
-    @Override
-    public WebClientRequestBuilder readTimeout(long amount, TemporalUnit unit) {
-        this.readTimeout = Duration.of(amount, unit);
         return this;
     }
 
