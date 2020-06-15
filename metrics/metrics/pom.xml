@@ -115,7 +115,7 @@
                         <configuration>
                             <systemPropertyVariables>
                                 <helidon.concurrentGauge.minRequiredSeconds>45</helidon.concurrentGauge.minRequiredSeconds>
-                                <helidon.histogram.tolerance>0.01</helidon.histogram.tolerance>
+                                <helidon.histogram.tolerance>0.25</helidon.histogram.tolerance>
                             </systemPropertyVariables>
                         </configuration>
                     </plugin>
