@@ -91,7 +91,7 @@
         </dependency>
         <dependency>
             <groupId>org.apache.kafka</groupId>
-            <artifactId>kafka_2.11</artifactId>
+            <artifactId>kafka_2.12</artifactId>
             <scope>test</scope>
             <exclusions>
                 <exclusion>
