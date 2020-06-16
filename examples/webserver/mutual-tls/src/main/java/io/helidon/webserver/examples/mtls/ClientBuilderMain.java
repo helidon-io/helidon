@@ -17,8 +17,8 @@ package io.helidon.webserver.examples.mtls;
 
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.KeyConfig;
-import io.helidon.webclient.WebClientTls;
 import io.helidon.webclient.WebClient;
+import io.helidon.webclient.WebClientTls;
 
 /**
  * Setting up {@link WebClient} to support mutual TLS via builder.

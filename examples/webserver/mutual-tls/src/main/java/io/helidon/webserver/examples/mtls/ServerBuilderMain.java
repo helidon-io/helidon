@@ -21,8 +21,8 @@ import io.helidon.common.pki.KeyConfig;
 import io.helidon.webserver.ClientAuthentication;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.SocketConfiguration;
-import io.helidon.webserver.WebServerTls;
 import io.helidon.webserver.WebServer;
+import io.helidon.webserver.WebServerTls;
 
 /**
  * Setting up {@link WebServer} to support mutual TLS via builder.

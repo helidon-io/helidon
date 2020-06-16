@@ -35,8 +35,8 @@ import io.helidon.config.Config;
 import io.helidon.media.common.DefaultMediaSupport;
 import io.helidon.media.common.MessageBodyReader;
 import io.helidon.webclient.Proxy;
-import io.helidon.webclient.WebClientTls;
 import io.helidon.webclient.WebClientResponse;
+import io.helidon.webclient.WebClientTls;
 
 import io.netty.handler.codec.http.HttpHeaderValues;
 import org.glassfish.jersey.client.ClientProperties;
