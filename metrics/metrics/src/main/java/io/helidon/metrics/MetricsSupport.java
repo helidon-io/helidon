@@ -110,7 +110,6 @@ public final class MetricsSupport implements Service {
     private static final String DEFAULT_CONTEXT = "/metrics";
     private static final String FEATURE_NAME = "Metrics";
 
-    private static final GenericType<JsonObject> JSON_TYPE = GenericType.create(JsonObject.class);
     private static final MessageBodyWriter<JsonStructure> JSONP_WRITER = JsonpSupport.writer();
 
     static {
@@ -455,7 +454,7 @@ public final class MetricsSupport implements Service {
     }
 
     private static void sendJson(ServerResponse res, JsonObject object) {
-        res.send(JSONP_WRITER.write(Single.just(object), JSON_TYPE, res.writerContext()));
+        res.send(JSONP_WRITER.marshall(object));
     }
 
     private void getMultiple(ServerRequest req, ServerResponse res, Registry... registries) {

@@ -73,8 +73,6 @@ public final class HealthSupport implements Service {
 
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
-    private static final GenericType<JsonObject> JSON_TYPE = GenericType.create(JsonObject.class);
-
     static {
         HelidonFeatures.register(HelidonFlavor.SE, FEATURE_NAME);
     }
@@ -150,8 +148,7 @@ public final class HealthSupport implements Service {
 
     private void send(ServerResponse res, HealthResponse hres) {
         res.status(hres.status());
-        // skip selection process and an additional route configuration by using the writer directly
-        res.send(jsonpWriter.write(Single.just(hres.json), JSON_TYPE, res.writerContext()));
+        res.send(jsonpWriter.marshall(hres.json));
     }
 
     HealthResponse callHealthChecks(List<HealthCheck> healthChecks) {
