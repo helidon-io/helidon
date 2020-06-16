@@ -40,7 +40,7 @@ public interface MessageBodyReader<T> extends MessageBodyOperator<MessageBodyRea
     <U extends T> Single<U> read(Publisher<DataChunk> publisher, GenericType<U> type, MessageBodyReaderContext context);
 
     /**
-     * Unmarshall the readable content using this reader.
+     * Unmarshall the given content using this reader.
      *
      * @param content readable content to unmarshall
      * @param type requested type
