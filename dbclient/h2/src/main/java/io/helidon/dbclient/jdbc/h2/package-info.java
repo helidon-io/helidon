@@ -13,4 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/**
+ * Helidon DB implementation for H2.
+ */
 package io.helidon.dbclient.jdbc.h2;
