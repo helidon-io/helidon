@@ -27,6 +27,13 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 
 import io.helidon.microprofile.server.Server;
+import io.helidon.jersey.connector.HelidonConnectorProvider;
+
+import org.glassfish.jersey.client.JerseyClient;
+import org.glassfish.jersey.client.spi.ConnectorProvider;
+
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -39,6 +46,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * Unit test for {@link MpSubResource}.
  */
 class MpSubResourceTest {
+    private static Client client;
     private static Server server;
     private static WebTarget baseTarget;
 
@@ -47,7 +55,7 @@ class MpSubResourceTest {
         LogManager.getLogManager().readConfiguration(MpSubResourceTest.class.getResourceAsStream("/logging.properties"));
         Main.main(new String[0]);
         server = Main.server();
-        Client client = ClientBuilder.newClient();
+        client = ClientBuilder.newClient();
         baseTarget = client.target("http://localhost:" + server.port());
     }
 
@@ -153,6 +161,17 @@ class MpSubResourceTest {
 
         assertOk(secureRequest(target, "jack"), okMessage);
         assertOk(secureRequest(target, "jill"), okMessage);
+    }
+
+    /**
+     * Verifies that the {@code HelidonConnectorProvider} is being used
+     * by Jersey.
+     */
+    @Test
+    public void testConnectorLoaded() {
+        JerseyClient jerseyClient = (JerseyClient) client;
+        ConnectorProvider provider = jerseyClient.getConfiguration().getConnectorProvider();
+        assertThat(provider, instanceOf(HelidonConnectorProvider.class));
     }
 
     private void assertOk(Response response, String expectedMessage) {
