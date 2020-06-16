@@ -167,9 +167,9 @@ public interface ServerResponse extends MessageBodyFilters, MessageBodyWriters {
     Single<ServerResponse> send(Publisher<DataChunk> content);
 
     /**
-     * Send a message using the given function to produce the content publisher.
+     * Send a message using the given marshalling function.
      *
-     * @param function marshalling function to produce the content publisher
+     * @param function marshalling function
      * @return a completion stage of the response - completed when response is transferred
      */
     Single<ServerResponse> send(Function<MessageBodyWriterContext, Publisher<DataChunk>> function);
