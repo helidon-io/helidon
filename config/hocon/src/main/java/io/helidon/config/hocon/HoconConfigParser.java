@@ -22,7 +22,6 @@ import java.util.Set;
 
 import javax.annotation.Priority;
 
-import io.helidon.common.HelidonFeatures;
 import io.helidon.config.ConfigException;
 import io.helidon.config.spi.ConfigNode.ListNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
@@ -70,10 +69,6 @@ public class HoconConfigParser implements ConfigParser {
 
     private static final Set<String> SUPPORTED_MEDIA_TYPES =
             Set.of(MEDIA_TYPE_APPLICATION_HOCON, MEDIA_TYPE_APPLICATION_JSON);
-
-    static {
-        HelidonFeatures.register("Config", "HOCON");
-    }
 
     private final boolean resolvingEnabled;
     private final ConfigResolveOptions resolveOptions;

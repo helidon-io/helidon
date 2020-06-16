@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,26 +16,27 @@
 
 package io.helidon.common;
 
+import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
-import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
-
-import io.helidon.common.spi.HelidonFeatureProvider;
+import java.util.stream.Collectors;
 
 /**
  * Helidon Features support.
  * <p>
- * A feature can register using either {@link #register(HelidonFlavor, String...)} or {@link #register(String...)} methods
- * on this class, or using the {@link io.helidon.common.spi.HelidonFeatureProvider} service loader interface.
+ * A Helidon feature is added by its package name. In this version, only Helidon internal features are supported.
  * <p>
- * All registered features can be printed using {@link #print(HelidonFlavor, boolean)} as a simple line such as:
+ * All registered features can be printed using {@link #print(HelidonFlavor, String, boolean)} as a simple line such as:
  * <br>
  * {@code Helidon MP 2.0.0 features: [CDI, Config, JAX-RS, JPA, JTA, Server]}
  * <br>
@@ -57,58 +58,29 @@ import io.helidon.common.spi.HelidonFeatureProvider;
 public final class HelidonFeatures {
     private static final Logger LOGGER = Logger.getLogger(HelidonFeatures.class.getName());
     private static final AtomicBoolean PRINTED = new AtomicBoolean();
+    private static final AtomicBoolean SCANNED = new AtomicBoolean();
     private static final AtomicReference<HelidonFlavor> CURRENT_FLAVOR = new AtomicReference<>();
-    private static final Map<HelidonFlavor, Set<String>> FEATURES = new EnumMap<>(HelidonFlavor.class);
+    private static final Map<HelidonFlavor, Set<FeatureDescriptor>> FEATURES = new EnumMap<>(HelidonFlavor.class);
     private static final Map<HelidonFlavor, Map<String, Node>> ROOT_FEATURE_NODES = new EnumMap<>(HelidonFlavor.class);
+    private static final List<FeatureDescriptor> ALL_FEATURES = new LinkedList<>();
 
     private HelidonFeatures() {
     }
 
-    /**
-     * Register a feature for a flavor.
-     * This should be called from a static initializer of a feature
-     * class. In SE this would be one of the *Support classes or similar,
-     * in MP most likely a CDI extension class.
-     *
-     * <p>Example for security providers (SE) - application with Oidc provider:
-     * <ul>
-     *     <li>Security calls {@code register(SE, "security")}</li>
-     *     <li>OIDC provider calls {@code register(SE, "security", "authentication", "OIDC"}</li>
-     *     <li>OIDC provider calls {@code register(SE, "security", "outbound", "OIDC"} if outbound is enabled</li>
-     * </ul>
-     *
-     * @param flavor flavor to register a feature for
-     * @param path path of the feature (single value for root level features)
-     */
-    public static void register(HelidonFlavor flavor, String... path) {
-        if (path.length == 0) {
-            throw new IllegalArgumentException("At least the root feature name must be provided, but path was empty");
-        }
-        if (path.length == 1) {
-            FEATURES.computeIfAbsent(flavor, key -> new TreeSet<>(String.CASE_INSENSITIVE_ORDER))
-                    .add(path[0]);
-        }
+    private static void register(FeatureDescriptor featureDescriptor) {
+        for (HelidonFlavor flavor : featureDescriptor.flavors()) {
+            String[] path = featureDescriptor.path();
 
-        var rootFeatures = ROOT_FEATURE_NODES.computeIfAbsent(flavor, it -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER));
-        ensureNode(rootFeatures, path);
-    }
-
-    /**
-     * Register a feature for all flavors.
-     *
-     * <p>Example for security providers (SE) - application with Oidc provider:
-     * <ul>
-     *     <li>Security calls {@code register(SE, "security")}</li>
-     *     <li>OIDC provider calls {@code register("security", "authentication", "OIDC"}</li>
-     *     <li>OIDC provider calls {@code register("security", "outbound", "OIDC"} if outbound is enabled</li>
-     * </ul>
-     *
-     * @param path path of the feature (single value for root level features)
-     */
-    public static void register(String... path) {
-        for (HelidonFlavor value : HelidonFlavor.values()) {
-            register(value, path);
+            // all root features for a flavor
+            if (path.length == 1) {
+                FEATURES.computeIfAbsent(flavor, key -> new TreeSet<>(Comparator.comparing(FeatureDescriptor::name)))
+                        .add(featureDescriptor);
+            }
+            var rootFeatures = ROOT_FEATURE_NODES.computeIfAbsent(flavor, it -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER));
+            Node node = ensureNode(rootFeatures, path);
+            node.descriptor(featureDescriptor);
         }
+        ALL_FEATURES.add(featureDescriptor);
     }
 
     static Node ensureNode(Map<String, Node> rootFeatureNodes, String... path) {
@@ -124,6 +96,7 @@ public final class HelidonFeatures {
             String pathElement = path[i];
             lastNode = ensureNode(pathElement, lastNode);
         }
+
         return lastNode;
     }
 
@@ -145,13 +118,16 @@ public final class HelidonFeatures {
      * This method only prints feature the first time it is called.
      *
      * @param flavor flavor to print features for
+     * @param version version of Helidon
      * @param details set to {@code true} to print the tree structure of sub-features
      */
-    public static void print(HelidonFlavor flavor, boolean details) {
-        // First scan all features
-        ServiceLoader.load(HelidonFeatureProvider.class)
-                .forEach(HelidonFeatureProvider::register);
+    public static void print(HelidonFlavor flavor, String version, boolean details) {
+        // print features in another thread, so we do not block the main thread of the application (to reduce startup time)
+        new Thread(() -> features(flavor, version, details), "features-thread")
+                .start();
+    }
 
+    private static void features(HelidonFlavor flavor, String version, boolean details) {
         CURRENT_FLAVOR.compareAndSet(null, HelidonFlavor.SE);
 
         HelidonFlavor currentFlavor = CURRENT_FLAVOR.get();
@@ -163,24 +139,146 @@ public final class HelidonFeatures {
         if (!PRINTED.compareAndSet(false, true)) {
             return;
         }
-        Set<String> strings = FEATURES.get(currentFlavor);
-        if (null == strings) {
-            LOGGER.info("Helidon " + currentFlavor + " " + Version.VERSION + " has no registered features");
+
+        scan(Thread.currentThread().getContextClassLoader());
+
+        Set<FeatureDescriptor> features = FEATURES.get(currentFlavor);
+        if (null == features) {
+            LOGGER.info("Helidon " + currentFlavor + " " + version + " has no registered features");
         } else {
-            LOGGER.info("Helidon " + currentFlavor + " " + Version.VERSION + " features: " + strings);
+            String featureString = "[" + features.stream()
+                    .map(FeatureDescriptor::name)
+                    .collect(Collectors.joining(", "))
+                    + "]";
+            LOGGER.info("Helidon " + currentFlavor + " " + version + " features: " + featureString);
         }
         if (details) {
             LOGGER.info("Detailed feature tree:");
             FEATURES.get(currentFlavor)
-                    .forEach(name -> printDetails(name, ROOT_FEATURE_NODES.get(currentFlavor).get(name), 0));
+                    .forEach(feature -> printDetails(feature.name(),
+                                                     ROOT_FEATURE_NODES.get(currentFlavor).get(feature.path()[0]),
+                                                     0));
+        }
+    }
+
+    /**
+     * Will scan all features and log errors and warnings for features that have a
+     * native image limitation.
+     * This method is automatically called when building a native image with Helidon.
+     * @param classLoader to look for features in
+     */
+    public static void nativeBuildTime(ClassLoader classLoader) {
+        scan(classLoader);
+        for (FeatureDescriptor feat : ALL_FEATURES) {
+            if (!feat.nativeSupported()) {
+                LOGGER.severe("Feature '" + feat.name()
+                                      + "' for path '" + feat.stringPath()
+                                      + "' IS NOT SUPPORTED in native image. Image may still build and run.");
+            } else {
+                if (!feat.nativeDescription().isBlank()) {
+                    LOGGER.warning("Feature '" + feat.name()
+                                           + "' for path '" + feat.stringPath()
+                                           + "' has limited support in native image: " + feat.nativeDescription());
+                }
+            }
+        }
+    }
+
+    private static void scan(ClassLoader classLoader) {
+        if (!SCANNED.compareAndSet(false, true)) {
+            // already scanned
+            return;
+        }
+        // scan all packages for features
+        // warn if in native image
+        // this is the place to add support for package annotations in the future
+        Set<String> packages = new HashSet<>();
+
+        ClassLoader current = classLoader;
+        while (true) {
+            Package[] clPackages = current.getDefinedPackages();
+            for (Package clPackage : clPackages) {
+                packages.add(clPackage.getName());
+            }
+            ClassLoader parent = current.getParent();
+            if (parent == null || parent == current) {
+                break;
+            }
+            current = parent;
+        }
+
+        for (String packageName : packages) {
+            Set<FeatureDescriptor> featureDescriptors = FeatureCatalog.get(packageName);
+            if (featureDescriptors == null) {
+                if (packageName.startsWith("io.helidon.")) {
+                    LOGGER.warning("No catalog entry for package " + packageName);
+                }
+            } else {
+                featureDescriptors.forEach(HelidonFeatures::register);
+            }
+        }
+
+        if (NativeImageHelper.isRuntime()) {
+            // make sure we warn about all features
+            ALL_FEATURES.sort(Comparator.comparing(FeatureDescriptor::name));
+            for (FeatureDescriptor feature : ALL_FEATURES) {
+                if (feature.nativeSupported()) {
+                    String desc = feature.nativeDescription();
+                    if (desc != null && !desc.isBlank()) {
+                        LOGGER.warning("Native image for feature "
+                                               + feature.name()
+                                               + "("
+                                               + feature.stringPath()
+                                               + "): "
+                                               + desc);
+                    }
+                } else {
+                    LOGGER.severe("You are using a feature not supported in native image: "
+                                          + feature.name()
+                                          + "("
+                                          + feature.stringPath()
+                                          + ")");
+                }
+            }
         }
     }
 
     private static void printDetails(String name, Node node, int level) {
 
-        System.out.println("  ".repeat(level) + name);
+        FeatureDescriptor feat = node.descriptor;
+        if (feat == null) {
+            System.out.println("  ".repeat(level) + name);
+        } else {
+            String prefix = " ".repeat(level * 2);
+            // start on index 10 or a tab spaces after tree
+            int len = prefix.length() + name.length();
+            String suffix;
+            if (len <= 8) {
+                suffix = " ".repeat(10 - len);
+            } else {
+                suffix = "\t";
+            }
+            String nativeDesc = "";
+            if (!feat.nativeSupported()) {
+                nativeDesc = " (NOT SUPPORTED in native image)";
+            } else {
+                if (!feat.nativeDescription().isBlank()) {
+                    nativeDesc = " (Native image: " + feat.nativeDescription() + ")";
+                }
+            }
+            System.out.println(prefix + name + suffix + feat.description() + nativeDesc);
+        }
 
-        node.children.forEach((childName, childNode) -> printDetails(childName, childNode, level + 1));
+        node.children.forEach((childName, childNode) -> {
+            FeatureDescriptor descriptor = childNode.descriptor;
+            String actualName;
+            if (descriptor == null) {
+                actualName = childName;
+            } else {
+                actualName = descriptor.name();
+            }
+            printDetails(actualName, childNode, level + 1);
+        });
     }
 
     /**
@@ -198,6 +296,7 @@ public final class HelidonFeatures {
     static final class Node {
         private final Map<String, Node> children = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         private final String name;
+        private FeatureDescriptor descriptor;
 
         Node(String name) {
             this.name = name;
@@ -211,5 +310,10 @@ public final class HelidonFeatures {
         Map<String, Node> children() {
             return children;
         }
+
+        void descriptor(FeatureDescriptor featureDescriptor) {
+            this.descriptor = featureDescriptor;
+        }
     }
+
 }

@@ -21,7 +21,4 @@ module io.helidon.common {
     requires java.logging;
 
     exports io.helidon.common;
-    exports io.helidon.common.spi;
-
-    uses io.helidon.common.spi.HelidonFeatureProvider;
 }

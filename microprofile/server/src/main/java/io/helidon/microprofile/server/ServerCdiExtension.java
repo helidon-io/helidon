@@ -44,8 +44,6 @@ import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.DeploymentException;
 import javax.enterprise.inject.spi.Extension;
 
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 import io.helidon.common.Prioritized;
 import io.helidon.common.configurable.ServerThreadPoolSupplier;
 import io.helidon.common.http.Http;
@@ -67,10 +65,6 @@ import static javax.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
  * Extension to handle web server configuration and lifecycle.
  */
 public class ServerCdiExtension implements Extension {
-    static {
-        HelidonFeatures.register(HelidonFlavor.MP, "Server");
-    }
-
     private static final Logger LOGGER = Logger.getLogger(ServerCdiExtension.class.getName());
     private static final AtomicBoolean IN_PROGRESS_OR_RUNNING = new AtomicBoolean();
 

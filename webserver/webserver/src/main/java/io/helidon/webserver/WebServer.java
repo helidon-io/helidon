@@ -26,8 +26,6 @@ import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 import io.helidon.common.context.Context;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
@@ -325,10 +323,6 @@ public interface WebServer {
 
         private static final Logger LOGGER = Logger.getLogger(Builder.class.getName());
         private static final MediaContext DEFAULT_MEDIA_SUPPORT = MediaContext.create();
-
-        static {
-            HelidonFeatures.register(HelidonFlavor.SE, "WebServer");
-        }
 
         private final Map<String, Routing> routings = new HashMap<>();
         private Routing defaultRouting;

@@ -34,7 +34,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.common.Errors;
-import io.helidon.common.HelidonFeatures;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.security.EndpointConfig;
@@ -61,10 +60,6 @@ import io.helidon.security.providers.abac.spi.AbacValidator;
  */
 public final class PolicyValidator implements AbacValidator<PolicyValidator.PolicyConfig> {
     private static final Logger LOGGER = Logger.getLogger(PolicyValidator.class.getName());
-
-    static {
-        HelidonFeatures.register("Security", "Authorization", "ABAC", "Policy");
-    }
 
     private final List<PolicyExecutor> executors = new LinkedList<>();
 

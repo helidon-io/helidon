@@ -40,7 +40,6 @@ import javax.enterprise.inject.spi.DeploymentException;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessAnnotatedType;
 
-import io.helidon.common.HelidonFeatures;
 import io.helidon.config.Config;
 import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.microprofile.server.RoutingBuilders;
@@ -64,10 +63,6 @@ public class OpenApiCdiExtension implements Extension {
     private static final String INDEX_PATH = "META-INF/jandex.idx";
 
     private static final Logger LOGGER = Logger.getLogger(OpenApiCdiExtension.class.getName());
-
-    static {
-        HelidonFeatures.register("OpenAPI");
-    }
 
     private final String[] indexPaths;
     private final int indexURLCount;

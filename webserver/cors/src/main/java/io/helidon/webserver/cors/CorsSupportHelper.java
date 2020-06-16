@@ -29,8 +29,6 @@ import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.webserver.cors.CorsSupportBase.RequestAdapter;
@@ -145,9 +143,6 @@ class CorsSupportHelper<Q, R> {
          * A CORS preflight request.
          */
         PREFLIGHT
-    }
-    static {
-        HelidonFeatures.register(HelidonFlavor.SE, "CORS");
     }
 
     /**

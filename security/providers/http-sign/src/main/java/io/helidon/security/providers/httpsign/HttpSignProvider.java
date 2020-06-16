@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-import io.helidon.common.HelidonFeatures;
 import io.helidon.config.Config;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.EndpointConfig;
@@ -69,11 +68,6 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
                             List.of("authorization")))
             .build();
     static final String ATTRIB_NAME_KEY_ID = HttpSignProvider.class.getName() + ".keyId";
-
-    static {
-        HelidonFeatures.register("Security", "Authentication", "Http-Sign");
-        HelidonFeatures.register("Security", "Outbound", "Http-Sign");
-    }
 
     private final boolean optional;
     private final String realm;

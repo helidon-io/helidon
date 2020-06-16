@@ -31,8 +31,6 @@ import javax.enterprise.inject.spi.ProcessManagedBean;
 import javax.enterprise.inject.spi.WithAnnotations;
 
 import io.helidon.common.Errors;
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
@@ -45,10 +43,6 @@ import static javax.interceptor.Interceptor.Priority.PLATFORM_AFTER;
  */
 public class MessagingCdiExtension implements Extension {
     private static final Logger LOGGER = Logger.getLogger(MessagingCdiExtension.class.getName());
-
-    static {
-        HelidonFeatures.register(HelidonFlavor.MP, "Messaging");
-    }
 
     private final ChannelRouter channelRouter = new ChannelRouter();
 

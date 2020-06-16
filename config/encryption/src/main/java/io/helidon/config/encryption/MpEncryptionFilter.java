@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.common.HelidonFeatures;
 import io.helidon.config.mp.spi.MpConfigFilter;
 
 import org.eclipse.microprofile.config.Config;
@@ -64,10 +63,6 @@ public final class MpEncryptionFilter implements MpConfigFilter {
     private static final Logger LOGGER = Logger.getLogger(MpEncryptionFilter.class.getName());
     private static final String PREFIX_ALIAS = "${ALIAS=";
     private static final String PREFIX_CLEAR = "${CLEAR=";
-
-    static {
-        HelidonFeatures.register("Config", "Encryption");
-    }
 
     private PrivateKey privateKey;
     private char[] masterPassword;

@@ -22,8 +22,6 @@ import java.util.Objects;
 import javax.json.bind.Jsonb;
 import javax.json.bind.JsonbBuilder;
 
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 import io.helidon.common.LazyValue;
 import io.helidon.media.common.MediaSupport;
 import io.helidon.media.common.MessageBodyReader;
@@ -37,10 +35,6 @@ import io.helidon.media.common.MessageBodyWriter;
  * @see Jsonb
  */
 public final class JsonbSupport implements MediaSupport {
-
-    static {
-        HelidonFeatures.register(HelidonFlavor.SE, "Media", "JSON-B");
-    }
 
     private static final Jsonb JSON_B = JsonbBuilder.create();
     private static final LazyValue<JsonbSupport> DEFAULT = LazyValue.create(() -> new JsonbSupport(JSON_B));

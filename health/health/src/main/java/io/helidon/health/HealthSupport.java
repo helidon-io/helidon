@@ -38,8 +38,6 @@ import javax.json.JsonObjectBuilder;
 import javax.json.JsonStructure;
 
 import io.helidon.common.GenericType;
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
@@ -74,10 +72,6 @@ public final class HealthSupport implements Service {
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
     private static final GenericType<JsonObject> JSON_TYPE = GenericType.create(JsonObject.class);
-
-    static {
-        HelidonFeatures.register(HelidonFlavor.SE, FEATURE_NAME);
-    }
 
     private final boolean enabled;
     private final String webContext;

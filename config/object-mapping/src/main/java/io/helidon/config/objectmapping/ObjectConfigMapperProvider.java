@@ -21,7 +21,6 @@ import java.util.function.Function;
 
 import javax.annotation.Priority;
 
-import io.helidon.common.HelidonFeatures;
 import io.helidon.config.Config;
 import io.helidon.config.objectmapping.ObjectConfigMappers.BuilderConfigMapper;
 import io.helidon.config.objectmapping.ObjectConfigMappers.ConfigMethodHandleConfigMapper;
@@ -49,10 +48,6 @@ public class ObjectConfigMapperProvider implements ConfigMapperProvider {
     private static final String METHOD_FROM_STRING = "fromString";
     private static final String METHOD_PARSE = "parse";
     private static final String METHOD_CREATE = "create";
-
-    static {
-        HelidonFeatures.register("Config", "Object Mapping");
-    }
 
     @Override
     public Map<Class<?>, Function<Config, ?>> mappers() {

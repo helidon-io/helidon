@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import io.helidon.common.HelidonFeatures;
 import io.helidon.config.Config;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.EndpointConfig;
@@ -41,10 +40,6 @@ import io.helidon.security.util.TokenHandler;
  * This provider also supports propagation of identity through a header.
  */
 public class HeaderAtnProvider extends SynchronousProvider implements AuthenticationProvider, OutboundSecurityProvider {
-    static {
-        HelidonFeatures.register("Security", "Authentication", "Header");
-    }
-
     private final boolean optional;
     private final boolean authenticate;
     private final boolean propagate;
@@ -59,10 +54,6 @@ public class HeaderAtnProvider extends SynchronousProvider implements Authentica
         this.subjectType = builder.subjectType;
         this.atnTokenHandler = builder.atnTokenHandler;
         this.outboundTokenHandler = builder.outboundTokenHandler;
-
-        if (propagate) {
-            HelidonFeatures.register("Security", "Outbound", "Header");
-        }
     }
 
     /**

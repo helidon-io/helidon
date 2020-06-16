@@ -18,8 +18,6 @@ package io.helidon.dbclient.mongodb;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 import io.helidon.common.reactive.Single;
 import io.helidon.common.reactive.Subscribable;
 import io.helidon.dbclient.DbClient;
@@ -40,10 +38,6 @@ import org.reactivestreams.Subscription;
  * MongoDB driver handler.
  */
 public class MongoDbClient implements DbClient {
-    static {
-        HelidonFeatures.register(HelidonFlavor.SE, "DbClient", "MongoDB");
-    }
-
     private final MongoDbClientConfig config;
     private final MongoClient client;
     private final MongoDatabase db;
