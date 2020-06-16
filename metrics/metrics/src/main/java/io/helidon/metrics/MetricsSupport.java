@@ -44,12 +44,10 @@ import javax.json.JsonObjectBuilder;
 import javax.json.JsonStructure;
 import javax.json.JsonValue;
 
-import io.helidon.common.GenericType;
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
-import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.config.DeprecatedConfig;
 import io.helidon.media.common.MessageBodyWriter;
