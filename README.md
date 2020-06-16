@@ -26,6 +26,10 @@ Helidon supports two programming models:
 
 In either case your application is just a Java SE program.
 
+## License
+
+Helidon is available under Apache License 2.0.
+
 ## Documentation
 
 Latest documentation and javadocs are available at <https://helidon.io/docs/latest>.
