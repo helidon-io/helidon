@@ -44,6 +44,7 @@ public interface MessageBodyStreamWriter<T> extends MessageBodyOperator<MessageB
      * Create a marshalling function that can be used to marshall the publisher with a context.
      *
      * @param publisher objects to convert to payload
+     * @param type requested type representation
      * @return Marshalling function
      */
     default Function<MessageBodyWriterContext, Publisher<DataChunk>> marshall(Publisher<T> publisher,
