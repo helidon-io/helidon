@@ -23,11 +23,15 @@ import java.security.ProtectionDomain;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Map;
+import java.util.logging.Logger;
+
+import io.helidon.common.NativeImageHelper;
 
 import org.jboss.weld.logging.BeanLogger;
 import org.jboss.weld.serialization.spi.ProxyServices;
 
 class HelidonProxyServices implements ProxyServices {
+    private static final Logger LOGGER = Logger.getLogger(HelidonProxyServices.class.getName());
     // a cache of all classloaders (this should be empty in most cases, as we use a single class loader in Helidon)
     private final Map<ClassLoader, ClassDefiningCl> classLoaders = Collections.synchronizedMap(new IdentityHashMap<>());
     private final ClassLoader contextCl;
@@ -72,7 +76,7 @@ class HelidonProxyServices implements ProxyServices {
             return defineClassSamePackage(originalClass, className, classBytes, off, len);
         } else {
             // use a custom classloader to define classes in a new package
-            return wrapCl(originalClass.getClassLoader()).doDefineClass(className, classBytes, off, len);
+            return wrapCl(originalClass.getClassLoader()).doDefineClass(originalClass, className, classBytes, off, len);
         }
     }
 
@@ -87,7 +91,8 @@ class HelidonProxyServices implements ProxyServices {
         if (samePackage(originalClass, className)) {
             return defineClassSamePackage(originalClass, className, classBytes, off, len);
         } else {
-            return wrapCl(originalClass.getClassLoader()).doDefineClass(className, classBytes, off, len, protectionDomain);
+            return wrapCl(originalClass.getClassLoader())
+                    .doDefineClass(originalClass, className, classBytes, off, len, protectionDomain);
         }
     }
 
@@ -97,6 +102,14 @@ class HelidonProxyServices implements ProxyServices {
     }
 
     private Class<?> defineClassSamePackage(Class<?> originalClass, String className, byte[] classBytes, int off, int len) {
+        if (NativeImageHelper.isRuntime()) {
+            throw new IllegalStateException("Cannot define class in native image. Class name: " + className + ", original "
+                                                    + "class: " + originalClass
+                    .getName());
+        }
+
+        LOGGER.finest("Defining class " + className + " original class: " + originalClass.getName());
+
         try {
             Module classModule = originalClass.getModule();
             if (!myModule.canRead(classModule)) {
@@ -152,7 +165,15 @@ class HelidonProxyServices implements ProxyServices {
             super(parent);
         }
 
-        Class<?> doDefineClass(String className, byte[] bytes, int off, int len) {
+        Class<?> doDefineClass(Class<?> originalClass, String className, byte[] bytes, int off, int len) {
+            if (NativeImageHelper.isRuntime()) {
+                throw new IllegalStateException("Cannot define class in native image. Class name: " + className + ", original "
+                                                        + "class: " + originalClass
+                        .getName());
+            }
+
+            LOGGER.finest("Defining class " + className + " original class: " + originalClass.getName());
+
             try {
                 // avoid duplicate attempts to define a class
                 return super.loadClass(className);
@@ -161,7 +182,20 @@ class HelidonProxyServices implements ProxyServices {
             }
         }
 
-        Class<?> doDefineClass(String className, byte[] bytes, int off, int len, ProtectionDomain domain) {
+        Class<?> doDefineClass(Class<?> originalClass,
+                               String className,
+                               byte[] bytes,
+                               int off,
+                               int len,
+                               ProtectionDomain domain) {
+            if (NativeImageHelper.isRuntime()) {
+                throw new IllegalStateException("Cannot define class in native image. Class name: " + className + ", original "
+                                                        + "class: " + originalClass
+                        .getName());
+            }
+
+            LOGGER.finest("Defining class " + className + " original class: " + originalClass.getName());
+
             try {
                 // avoid duplicate attempts to define a class
                 return super.loadClass(className);
