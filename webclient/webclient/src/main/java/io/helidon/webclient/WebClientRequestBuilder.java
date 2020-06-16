@@ -339,6 +339,17 @@ public interface WebClientRequestBuilder {
     Single<WebClientResponse> submit(Object requestEntity);
 
     /**
+     * Performs prepared request and submitting request entity using a marshalling function.
+     *
+     * When response is received, it is not converted to any other specific type and returned {@link CompletionStage}
+     * is notified.
+     *
+     * @param function marshalling function
+     * @return request completion stage
+     */
+    Single<WebClientResponse> submit(Function<MessageBodyWriterContext, Flow.Publisher<DataChunk>> function);
+
+    /**
      * Request to a server. Contains all information about used request headers, configuration etc.
      */
     interface ClientRequest extends HttpRequest {

@@ -16,6 +16,7 @@
 package io.helidon.media.common;
 
 import java.util.concurrent.Flow.Publisher;
+import java.util.function.Function;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
@@ -36,5 +37,17 @@ public interface MessageBodyWriter<T> extends MessageBodyOperator<MessageBodyWri
      * @param context the context providing the headers abstraction
      * @return Publisher of objects
      */
-    Publisher<DataChunk> write(Single<? extends T> single, GenericType<? extends T> type, MessageBodyWriterContext context);
+    Publisher<DataChunk> write(Single<? extends T> single,
+                               GenericType<? extends T> type,
+                               MessageBodyWriterContext context);
+
+    /**
+     * Create a marshalling function that can be used to marshall the given value with a context.
+     *
+     * @param value value to marshall
+     * @return Marshalling function
+     */
+    default Function<MessageBodyWriterContext, Publisher<DataChunk>> marshall(T value) {
+        return ctx -> ctx.marshall(Single.just(value), this, GenericType.create(value));
+    }
 }

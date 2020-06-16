@@ -351,6 +351,11 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     }
 
     @Override
+    public Single<WebClientResponse> submit(Function<MessageBodyWriterContext, Flow.Publisher<DataChunk>> function) {
+        return submit(function.apply(writerContext));
+    }
+
+    @Override
     public MessageBodyReaderContext readerContext() {
         return readerContext;
     }

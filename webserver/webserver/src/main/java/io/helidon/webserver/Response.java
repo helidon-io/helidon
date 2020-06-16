@@ -220,6 +220,11 @@ abstract class Response implements ServerResponse {
     }
 
     @Override
+    public Single<ServerResponse> send(Function<MessageBodyWriterContext, Publisher<DataChunk>> function) {
+        return send(function.apply(writerContext));
+    }
+
+    @Override
     public Response registerWriter(MessageBodyWriter<?> writer) {
         writerContext.registerWriter(writer);
         return this;
