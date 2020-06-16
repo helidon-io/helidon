@@ -63,6 +63,13 @@ Any user code that used these internal classes can use the corresponding support
 | |`InternalMetadataImpl` |
 | |`InternalMetricIDImpl` |
 
+#### WebClient and WebServer TLS class names aligned
+Class configuration names for TLS are now aligned between WebClient and WebServer
+
+| Old Name                 | New Name           |
+| ------------------------ | ------------------ |
+| `Ssl`                    | `WebClientTls`     |
+| `TlsConfig`              | `WebServerTls`     |
 
 ## [2.0.0-M3]
 
