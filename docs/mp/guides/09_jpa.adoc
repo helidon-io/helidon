@@ -52,7 +52,7 @@ In a shell, `cd` into an empty directory and run this:
 mvn archetype:generate \
     -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
-    -DarchetypeArtifactId=helidon-mp \
+    -DarchetypeArtifactId=helidon-bare-mp \
     -DarchetypeVersion={helidon-version} \
     -DgroupId=io.helidon.example \
     -DartifactId=helidon-jpa \
