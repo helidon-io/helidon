@@ -250,7 +250,14 @@ backend:
                     - "mp/cors/hide*.adoc"
                   includes:
                     - "mp/cors/*.adoc"
-
+            - title: "Fault Tolerance"
+              pathprefix: "/mp/faulttolerance"
+              glyph:
+                type: "icon"
+                value: "share"
+              items:
+                  includes:
+                    - "mp/faulttolerance/*.adoc"
             - title: "gRPC server"
               pathprefix: "/mp/grpc"
               glyph:
