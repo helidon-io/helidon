@@ -21,7 +21,7 @@ import io.helidon.common.pki.KeyConfig;
 import io.helidon.webserver.ClientAuthentication;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.SocketConfiguration;
-import io.helidon.webserver.TlsConfig;
+import io.helidon.webserver.WebServerTls;
 import io.helidon.webserver.WebServer;
 
 /**
@@ -76,13 +76,13 @@ public class ServerBuilderMain {
         return webServer;
     }
 
-    private static TlsConfig tlsConfig() {
+    private static WebServerTls tlsConfig() {
         KeyConfig keyConfig = KeyConfig.keystoreBuilder()
                 .trustStore()
                 .keystore(Resource.create("server.p12"))
                 .keystorePassphrase("password")
                 .build();
-        return TlsConfig.builder()
+        return WebServerTls.builder()
                 .clientAuth(ClientAuthentication.REQUIRE)
                 .trust(keyConfig)
                 .privateKey(keyConfig)

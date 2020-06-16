@@ -35,7 +35,7 @@ import io.helidon.config.Config;
 import io.helidon.media.common.DefaultMediaSupport;
 import io.helidon.media.common.MessageBodyReader;
 import io.helidon.webclient.Proxy;
-import io.helidon.webclient.Ssl;
+import io.helidon.webclient.WebClientTls;
 import io.helidon.webclient.WebClientResponse;
 
 import io.netty.handler.codec.http.HttpHeaderValues;
@@ -82,8 +82,8 @@ class HelidonStructures {
         return ProxyBuilder.createProxy(request);
     }
 
-    static Optional<Ssl> createSSL(SSLContext context) {
-        return context == null ? Optional.empty() : Optional.of(Ssl.builder().sslContext(context).build());
+    static Optional<WebClientTls> createSSL(SSLContext context) {
+        return context == null ? Optional.empty() : Optional.of(WebClientTls.builder().sslContext(context).build());
     }
 
     static boolean hasEntity(WebClientResponse webClientResponse) {

@@ -35,7 +35,7 @@ server:
               resource-path: "server.p12"
     - name: "invalid-server-cert"
       port: 0
-      ssl:
+      tls:
         client-auth: "REQUIRE"
         trust:
           keystore:
@@ -50,7 +50,7 @@ server:
               resource-path: "server-invalid/server.p12"
     - name: "client-no-ca"
       port: 0
-      ssl:
+      tls:
         client-auth: "REQUIRE"
         trust:
           keystore:
@@ -65,7 +65,7 @@ server:
               resource-path: "client-no-ca/server.p12"
     - name: "optional"
       port: 0
-      ssl:
+      tls:
         client-auth: "OPTIONAL"
         trust:
           keystore:
@@ -80,7 +80,7 @@ server:
               resource-path: "server.p12"
 
 success:
-  ssl:
+  tls:
     server:
       keystore:
         passphrase: "password"
@@ -94,7 +94,7 @@ success:
           resource-path: "client.p12"
 
 no-client-cert:
-  ssl:
+  tls:
     server:
       keystore:
         passphrase: "password"
@@ -103,7 +103,7 @@ no-client-cert:
           resource-path: "client.p12"
 
 server-cert-invalid-cn:
-  ssl:
+  tls:
     server:
       keystore:
         passphrase: "password"
@@ -117,7 +117,7 @@ server-cert-invalid-cn:
           resource-path: "server-invalid/client.p12"
 
 client-disable-hostname-verification:
-  ssl:
+  tls:
     server:
       disable-hostname-verification: true
       keystore:
@@ -132,7 +132,7 @@ client-disable-hostname-verification:
           resource-path: "server-invalid/client.p12"
 
 client-no-ca:
-  ssl:
+  tls:
     server:
       keystore:
         passphrase: "password"
@@ -146,7 +146,7 @@ client-no-ca:
           resource-path: "client-no-ca/client.p12"
 
 client-trust-all:
-  ssl:
+  tls:
     server:
       trust-all: true
       keystore:

@@ -83,13 +83,13 @@ class NettyClientInitializer extends ChannelInitializer<SocketChannel> {
                     pipeline.addLast(proxyHandler);
                 });
 
-        // SSL configuration
+        // TLS configuration
         if (address.toString().startsWith("https")) {
             configuration.sslContext().ifPresent(ctx -> {
                 SslHandler sslHandler = ctx.newHandler(channel.alloc(), address.getHost(), address.getPort());
 
                 //This is how to enable hostname verification in netty
-                if (!configuration.ssl().disableHostnameVerification()) {
+                if (!configuration.tls().disableHostnameVerification()) {
                     SSLEngine sslEngine = sslHandler.engine();
                     SSLParameters sslParameters = sslEngine.getSSLParameters();
                     sslParameters.setEndpointIdentificationAlgorithm("HTTPS");

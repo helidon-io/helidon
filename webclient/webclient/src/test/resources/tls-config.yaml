@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-ssl:
+tls:
   server:
     disable-hostname-verification: true
     trust-all: true

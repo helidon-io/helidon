@@ -28,9 +28,9 @@ import io.helidon.common.pki.KeyConfig;
 import io.helidon.config.Config;
 
 /**
- * Configuration of SSL requests.
+ * Configuration of TLS requests.
  */
-public class Ssl {
+public class WebClientTls {
 
     private final boolean trustAll;
     private final boolean disableHostnameVerification;
@@ -39,7 +39,7 @@ public class Ssl {
     private final List<X509Certificate> clientCertificateChain;
     private final SSLContext sslContext;
 
-    private Ssl(Builder builder) {
+    private WebClientTls(Builder builder) {
         this.trustAll = builder.trustAll;
         this.disableHostnameVerification = builder.disableHostnameVerification;
         this.certificates = builder.certificates;
@@ -116,9 +116,9 @@ public class Ssl {
     }
 
     /**
-     * Fluent API builder for {@link Ssl} instance.
+     * Fluent API builder for {@link WebClientTls} instance.
      */
-    public static final class Builder implements io.helidon.common.Builder<Ssl> {
+    public static final class Builder implements io.helidon.common.Builder<WebClientTls> {
 
         private boolean trustAll = false;
         private boolean disableHostnameVerification = false;
@@ -234,8 +234,8 @@ public class Ssl {
         }
 
         @Override
-        public Ssl build() {
-            return new Ssl(this);
+        public WebClientTls build() {
+            return new WebClientTls(this);
         }
     }
 }

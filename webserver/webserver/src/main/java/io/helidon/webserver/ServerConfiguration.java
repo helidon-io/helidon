@@ -666,8 +666,8 @@ public interface ServerConfiguration extends SocketConfiguration {
         }
 
         @Override
-        public Builder tls(TlsConfig tlsConfig) {
-            this.defaultSocketBuilder.tls(tlsConfig);
+        public Builder tls(WebServerTls webServerTls) {
+            this.defaultSocketBuilder.tls(webServerTls);
             return this;
         }
     }

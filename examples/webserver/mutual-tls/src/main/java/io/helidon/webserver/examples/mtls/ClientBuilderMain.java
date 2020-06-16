@@ -17,7 +17,7 @@ package io.helidon.webserver.examples.mtls;
 
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.KeyConfig;
-import io.helidon.webclient.Ssl;
+import io.helidon.webclient.WebClientTls;
 import io.helidon.webclient.WebClient;
 
 /**
@@ -57,7 +57,7 @@ public class ClientBuilderMain {
                 .keystorePassphrase("password")
                 .build();
         return WebClient.builder()
-                .ssl(Ssl.builder()
+                .tls(WebClientTls.builder()
                              .certificateTrustStore(keyConfig)
                              .clientKeyStore(keyConfig)
                              .build())

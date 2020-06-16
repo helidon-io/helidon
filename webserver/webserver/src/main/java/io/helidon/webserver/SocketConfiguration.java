@@ -242,10 +242,10 @@ public interface SocketConfiguration {
          * <p>
          * If this method is called again, the previous configuration would be ignored.
          *
-         * @param tlsConfig ssl configuration to use with this socket
+         * @param webServerTls ssl configuration to use with this socket
          * @return this builder
          */
-        B tls(TlsConfig tlsConfig);
+        B tls(WebServerTls webServerTls);
 
         /**
          * Configures SSL for this socket. When configured, the server enforces SSL
@@ -254,7 +254,7 @@ public interface SocketConfiguration {
          * @param tlsConfig supplier ssl configuration to use with this socket
          * @return this builder
          */
-        default B tls(Supplier<TlsConfig> tlsConfig) {
+        default B tls(Supplier<WebServerTls> tlsConfig) {
             return tls(tlsConfig.get());
         }
 
@@ -281,11 +281,11 @@ public interface SocketConfiguration {
                     .asList(String.class)
                     .asOptional();
 
-            // ssl
-            Config sslConfig = config.get("ssl");
+            // tls
+            Config sslConfig = DeprecatedConfig.get(config, "tls", "ssl");
             if (sslConfig.exists()) {
                 try {
-                    TlsConfig.Builder builder = TlsConfig.builder();
+                    WebServerTls.Builder builder = WebServerTls.builder();
                     enabledProtocols.ifPresent(builder::enabledProtocols);
                     builder.config(sslConfig);
 
@@ -307,14 +307,14 @@ public interface SocketConfiguration {
          */
         @Deprecated
         static final String UNCONFIGURED_NAME = "io.helidon.webserver.SocketConfiguration.UNCONFIGURED";
-        private final TlsConfig.Builder tlsConfigBuilder = TlsConfig.builder();
+        private final WebServerTls.Builder tlsConfigBuilder = WebServerTls.builder();
 
         private int port = 0;
         private InetAddress bindAddress = null;
         private int backlog = DEFAULT_BACKLOG_SIZE;
         private int timeoutMillis = 0;
         private int receiveBufferSize = 0;
-        private TlsConfig tlsConfig;
+        private WebServerTls webServerTls;
         // this is for backward compatibility, should be initialized to null once the
         // methods with `name` are removed from server builder (for adding sockets)
         private String name = UNCONFIGURED_NAME;
@@ -325,8 +325,8 @@ public interface SocketConfiguration {
 
         @Override
         public SocketConfiguration build() {
-            if (null == tlsConfig) {
-                tlsConfig = tlsConfigBuilder.build();
+            if (null == webServerTls) {
+                webServerTls = tlsConfigBuilder.build();
             }
 
             if (null == name) {
@@ -398,7 +398,7 @@ public interface SocketConfiguration {
          * @param sslContext a SSL context to use
          * @return this builder
          *
-         * @deprecated since 2.0.0, please use {@link #tls(TlsConfig)} instead
+         * @deprecated since 2.0.0, please use {@link #tls(WebServerTls)} instead
          */
         @Deprecated
         public Builder ssl(SSLContext sslContext) {
@@ -428,7 +428,7 @@ public interface SocketConfiguration {
          * default protocols
          * @return this builder
          *
-         * @deprecated since 2.0.0, please use {@link io.helidon.webserver.TlsConfig.Builder#enabledProtocols(String...)}
+         * @deprecated since 2.0.0, please use {@link WebServerTls.Builder#enabledProtocols(String...)}
          *              instead
          */
         @Deprecated
@@ -469,8 +469,8 @@ public interface SocketConfiguration {
         }
 
         @Override
-        public Builder tls(TlsConfig tlsConfig) {
-            this.tlsConfig = tlsConfig;
+        public Builder tls(WebServerTls webServerTls) {
+            this.webServerTls = webServerTls;
             return this;
         }
 
@@ -526,8 +526,8 @@ public interface SocketConfiguration {
             return receiveBufferSize;
         }
 
-        TlsConfig tlsConfig() {
-            return tlsConfig;
+        WebServerTls tlsConfig() {
+            return webServerTls;
         }
 
         private static InetAddress string2InetAddress(String address) {

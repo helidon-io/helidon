@@ -25,7 +25,7 @@ import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.KeyConfig;
 import io.helidon.config.Config;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.TlsConfig;
+import io.helidon.webserver.WebServerTls;
 import io.helidon.webserver.WebServer;
 
 /**
@@ -61,7 +61,7 @@ public final class Main {
                 .config(config)
                 .routing(routing())
                 // now let's configure TLS
-                .tls(TlsConfig.builder()
+                .tls(WebServerTls.builder()
                         .privateKey(KeyConfig.keystoreBuilder()
                         .keystore(Resource.create("certificate.p12"))
                         .keystorePassphrase("helidon")))

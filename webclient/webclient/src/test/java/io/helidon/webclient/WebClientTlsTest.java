@@ -28,18 +28,18 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * TODO Javadoc
  */
-public class SslTest {
+public class WebClientTlsTest {
 
     @Test
     public void sslDefaults() {
-        Ssl ssl = Ssl.builder().build();
+        WebClientTls webClientTls = WebClientTls.builder().build();
 
-        assertThat(ssl.disableHostnameVerification(), is(false));
-        assertThat(ssl.trustAll(), is(false));
-        assertThat(ssl.certificates().size(), is(0));
-        assertThat(ssl.clientCertificateChain().size(), is(0));
-        assertThat(ssl.clientPrivateKey(), is(Optional.empty()));
-        assertThat(ssl.sslContext(), is(Optional.empty()));
+        assertThat(webClientTls.disableHostnameVerification(), is(false));
+        assertThat(webClientTls.trustAll(), is(false));
+        assertThat(webClientTls.certificates().size(), is(0));
+        assertThat(webClientTls.clientCertificateChain().size(), is(0));
+        assertThat(webClientTls.clientPrivateKey(), is(Optional.empty()));
+        assertThat(webClientTls.sslContext(), is(Optional.empty()));
     }
 
     //@Test
@@ -47,12 +47,12 @@ public class SslTest {
         Config config = Config.builder()
                 .disableSystemPropertiesSource()
                 .disableEnvironmentVariablesSource()
-                .sources(ConfigSources.classpath("ssl-config.yaml"))
+                .sources(ConfigSources.classpath("tls-config.yaml"))
                 .build();
-        Ssl ssl = Ssl.builder().config(config.get("ssl")).build();
+        WebClientTls webClientTls = WebClientTls.builder().config(config.get("tls")).build();
 
-        assertThat(ssl.disableHostnameVerification(), is(true));
-        assertThat(ssl.trustAll(), is(true));
+        assertThat(webClientTls.disableHostnameVerification(), is(true));
+        assertThat(webClientTls.trustAll(), is(true));
     }
 
 }

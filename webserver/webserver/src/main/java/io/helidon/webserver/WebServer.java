@@ -558,8 +558,8 @@ public interface WebServer {
         }
 
         @Override
-        public Builder tls(TlsConfig tlsConfig) {
-            configurationBuilder.tls(tlsConfig);
+        public Builder tls(WebServerTls webServerTls) {
+            configurationBuilder.tls(webServerTls);
             return this;
         }
 

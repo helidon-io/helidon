@@ -48,7 +48,7 @@ import io.helidon.config.DeprecatedConfig;
  * A class wrapping transport layer security (TLS) configuration for
  * WebServer sockets.
  */
-public final class TlsConfig {
+public final class WebServerTls {
     private static final String PROTOCOL = "TLS";
     // secure random cannot be stored in native image, it must
     // be initialized at runtime
@@ -59,7 +59,7 @@ public final class TlsConfig {
     private final boolean enabled;
     private final ClientAuthentication clientAuth;
 
-    private TlsConfig(Builder builder) {
+    private WebServerTls(Builder builder) {
         this.enabledTlsProtocols = Set.copyOf(builder.enabledTlsProtocols);
         this.sslContext = builder.sslContext;
         this.enabled = (null != sslContext);
@@ -67,7 +67,7 @@ public final class TlsConfig {
     }
 
     /**
-     * A fluent API builder for {@link io.helidon.webserver.TlsConfig}.
+     * A fluent API builder for {@link WebServerTls}.
      *
      * @return a new builder instance
      */
@@ -81,7 +81,7 @@ public final class TlsConfig {
      * @param config located on the node of the tls configuration (usually this is {@code ssl})
      * @return a new TLS configuration
      */
-    public static TlsConfig create(Config config) {
+    public static WebServerTls create(Config config) {
         return builder().config(config).build();
     }
 
@@ -108,9 +108,9 @@ public final class TlsConfig {
     }
 
     /**
-     * Fluent API builder for {@link io.helidon.webserver.TlsConfig}.
+     * Fluent API builder for {@link WebServerTls}.
      */
-    public static class Builder implements io.helidon.common.Builder<TlsConfig> {
+    public static class Builder implements io.helidon.common.Builder<WebServerTls> {
         private final Set<String> enabledTlsProtocols = new HashSet<>();
 
         private SSLContext sslContext;
@@ -128,7 +128,7 @@ public final class TlsConfig {
         }
 
         @Override
-        public TlsConfig build() {
+        public WebServerTls build() {
             boolean enabled;
 
             if (null == explicitEnabled) {
@@ -140,7 +140,7 @@ public final class TlsConfig {
             if (!enabled) {
                 this.sslContext = null;
                 // ssl is disabled
-                return new TlsConfig(this);
+                return new WebServerTls(this);
             }
 
             if (null == sslContext) {
@@ -148,7 +148,7 @@ public final class TlsConfig {
                 sslContext = newSSLContext();
             }
 
-            return new TlsConfig(this);
+            return new WebServerTls(this);
         }
 
         /**
