@@ -52,6 +52,12 @@ public class WebSocketEndpoint {
     @Inject
     private MsgProcessingBean msgProcessingBean;
 
+    /**
+     * On WebSocket session is opened.
+     *
+     * @param session        web socket session
+     * @param endpointConfig endpoint config
+     */
     @OnOpen
     public void onOpen(Session session, EndpointConfig endpointConfig) {
         System.out.println("New WebSocket client connected with session " + session.getId());
@@ -66,6 +72,12 @@ public class WebSocketEndpoint {
         subscriberRegister.put(session.getId(), single);
     }
 
+    /**
+     * When WebSocket session is closed.
+     *
+     * @param session     web socket session
+     * @param closeReason web socket close reason
+     */
     @OnClose
     public void onClose(final Session session, final CloseReason closeReason) {
         LOGGER.info("Closing session " + session.getId());

@@ -49,7 +49,7 @@ public class MsgProcessingBean {
     public Publisher<String> preparePublisher() {
         // Create new publisher for emitting to by this::process
         return ReactiveStreams
-                .fromPublisher(FlowAdapters.toPublisher(Multi.create(emitter).log()))
+                .fromPublisher(FlowAdapters.toPublisher(Multi.create(emitter)))
                 .buildRs();
     }
 
