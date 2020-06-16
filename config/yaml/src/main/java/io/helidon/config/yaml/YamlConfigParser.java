@@ -17,6 +17,7 @@
 package io.helidon.config.yaml;
 
 import java.io.InputStreamReader;
+import java.io.Reader;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -30,6 +31,7 @@ import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigParserException;
 
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 /**
  * YAML {@link ConfigParser} implementation that supports {@value #MEDIA_TYPE_APPLICATION_YAML}.
@@ -89,10 +91,8 @@ public class YamlConfigParser implements ConfigParser {
 
     @Override
     public ObjectNode parse(Content content) throws ConfigParserException {
-        Map yamlMap;
         try (InputStreamReader reader = new InputStreamReader(content.data(), content.charset())) {
-            Yaml yaml = new Yaml();
-            yamlMap = yaml.loadAs(reader, Map.class);
+            Map yamlMap = toMap(reader);
             if (yamlMap == null) { // empty source
                 return ObjectNode.empty();
             }
@@ -103,6 +103,13 @@ public class YamlConfigParser implements ConfigParser {
         } catch (Exception e) {
             throw new ConfigParserException("Cannot read from source: " + e.getLocalizedMessage(), e);
         }
+    }
+
+    static Map toMap(Reader reader) {
+        // the default of Snake YAML is a Map, safe constructor makes sure we never deserialize into anything
+        // harmful
+        Yaml yaml = new Yaml(new SafeConstructor());
+        return (Map) yaml.loadAs(reader, Object.class);
     }
 
     private static ObjectNode fromMap(Map<?, ?> map) {
