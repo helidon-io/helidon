@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -945,7 +945,7 @@ public class Jwt {
         }
 
         <T> Optional<T> validate(String name, Optional<T> optional, Errors.Collector collector) {
-            if (mandatory && !optional.isPresent()) {
+            if (mandatory && optional.isEmpty()) {
                 collector.fatal("Field " + name + " is mandatory, yet not defined in JWT");
             }
             return optional;
@@ -1154,12 +1154,15 @@ public class Jwt {
 
         @Override
         public void validate(Jwt token, Errors.Collector collector) {
-            token.issueTime().ifPresent(it -> {
+            Optional<Instant> issueTime = token.issueTime();
+            issueTime.ifPresent(it -> {
                 // must be issued in the past
                 if (latest().isBefore(it)) {
                     collector.fatal(token, "Token was not issued in the past: " + it);
                 }
             });
+            // ensure we fail if mandatory and not present
+            super.validate("issueTime", issueTime, collector);
         }
     }
 
@@ -1201,11 +1204,14 @@ public class Jwt {
 
         @Override
         public void validate(Jwt token, Errors.Collector collector) {
-            token.expirationTime().ifPresent(it -> {
+            Optional<Instant> expirationTime = token.expirationTime();
+            expirationTime.ifPresent(it -> {
                 if (earliest().isAfter(it)) {
                     collector.fatal(token, "Token no longer valid, expiration: " + it);
                 }
             });
+            // ensure we fail if mandatory and not present
+            super.validate("expirationTime", expirationTime, collector);
         }
     }
 
@@ -1247,11 +1253,14 @@ public class Jwt {
 
         @Override
         public void validate(Jwt token, Errors.Collector collector) {
-            token.notBefore().ifPresent(it -> {
+            Optional<Instant> notBefore = token.notBefore();
+            notBefore.ifPresent(it -> {
                 if (latest().isBefore(it)) {
                     collector.fatal(token, "Token not yet valid, not before: " + it);
                 }
             });
+            // ensure we fail if mandatory and not present
+            super.validate("notBefore", notBefore, collector);
         }
     }
 
