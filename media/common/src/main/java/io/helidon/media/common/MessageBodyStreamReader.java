@@ -36,5 +36,29 @@ public interface MessageBodyStreamReader<T> extends MessageBodyOperator<MessageB
      * @param context reader context
      * @return publisher
      */
-    <U extends T> Publisher<U> read(Publisher<DataChunk> publisher, GenericType<U> type, MessageBodyReaderContext context);
+    <U extends T> Publisher<U> read(Publisher<DataChunk> publisher,
+                                    GenericType<U> type,
+                                    MessageBodyReaderContext context);
+
+    /**
+     * Unmarshall the given content using this reader.
+     *
+     * @param content readable content to unmarshall
+     * @param type requested type
+     * @return publisher
+     */
+    default Publisher<T> unmarshall(MessageBodyReadableContent content, GenericType<T> type) {
+        return content.readerContext().unmarshallStream(content, this, type);
+    }
+
+    /**
+     * Unmarshall the given content using this reader.
+     *
+     * @param content readable content to unmarshall
+     * @param type requested type
+     * @return publisher
+     */
+    default Publisher<T> unmarshall(MessageBodyReadableContent content, Class<T> type) {
+        return content.readerContext().unmarshallStream(content, this, GenericType.create(type));
+    }
 }
