@@ -235,7 +235,6 @@ class KafkaMpTest extends AbstractKafkaTest{
 
     private static void cdiContainerUp() {
         Set<Class<?>> classes = new HashSet<>();
-        classes.add(KafkaConnector.class);
         classes.add(AbstractSampleBean.Channel1.class);
         classes.add(AbstractSampleBean.Channel4.class);
         classes.add(AbstractSampleBean.Channel5.class);
