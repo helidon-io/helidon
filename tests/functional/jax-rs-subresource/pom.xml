@@ -41,6 +41,10 @@
             <artifactId>helidon-microprofile-security</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.jersey</groupId>
+            <artifactId>helidon-jersey-connector</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>
