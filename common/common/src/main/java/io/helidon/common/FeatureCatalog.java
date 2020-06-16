@@ -97,10 +97,13 @@ final class FeatureCatalog {
               "Multi-part",
               "Media support for Multi-part entities",
               "WebClient", "Multipart");
-        addSe("io.helidon.messaging",
-              "Messaging",
-              "Reactive messaging support",
-              "Messaging");
+        add("io.helidon.messaging",
+            FeatureDescriptor.builder()
+                    .name("Messaging")
+                    .description("Reactive messaging support")
+                    .path("Messaging")
+                    .flavor(HelidonFlavor.SE)
+                    .experimental(true));
         addSe("io.helidon.metrics",
               "Metrics",
               "Metrics support",
@@ -235,10 +238,13 @@ final class FeatureCatalog {
               "JWT Auth",
               "MicroProfile JWT Auth spec implementation",
               "Security", "JWTAuth");
-        addMp("io.helidon.microprofile.messaging",
-              "Messaging",
-              "MicroProfile Reactive Messaging spec implementation",
-              "Messaging");
+        add("io.helidon.microprofile.messaging",
+            FeatureDescriptor.builder()
+                    .name("Messaging")
+                    .description("MicroProfile Reactive Messaging spec implementation")
+                    .path("Messaging")
+                    .flavor(HelidonFlavor.MP)
+                    .experimental(true));
         addMp("io.helidon.microprofile.metrics",
               "Metrics",
               "MicroProfile metrics spec implementation",
@@ -247,6 +253,13 @@ final class FeatureCatalog {
               "Open API",
               "MicroProfile Open API spec implementation",
               "OpenAPI");
+        add("io.helidon.microprofile.reactive",
+            FeatureDescriptor.builder()
+                    .name("Reactive")
+                    .description("MicroProfile Reactive Stream operators")
+                    .path("Reactive")
+                    .flavor(HelidonFlavor.MP)
+                    .experimental(true));
         addMp("io.helidon.microprofile.security",
               "Security",
               "Security support",
@@ -312,17 +325,21 @@ final class FeatureCatalog {
             "YAML media type support for config",
             "Config", "YAML");
         add("io.helidon.dbclient",
-            "Db Client",
-            "Reactive database client",
-            "DbClient");
+            FeatureDescriptor.builder()
+                    .name("Db Client")
+                    .description("Reactive database client")
+                    .path("DbClient")
+                    .experimental(true));
         add("io.helidon.dbclient.health",
             "Health Check",
             "Reactive database client health check support",
             "DbClient", "Health");
         add("io.helidon.dbclient.jdbc",
-            "JDBC",
-            "Reactive database client over JDBC",
-            "DbClient", "JDBC");
+            FeatureDescriptor.builder()
+                    .name("JDBC")
+                    .description("Reactive database client over JDBC")
+                    .path("DbClient", "JDBC")
+                    .nativeDescription("Tested with h2 drivers (see examples)"));
         add("io.helidon.dbclient.metrics",
             "Metrics",
             "Reactive database client metrics support",
@@ -339,6 +356,13 @@ final class FeatureCatalog {
             "Built-ins",
             "Built in health checks",
             "Health", "Builtins");
+        add("io.helidon.messaging.connectors.kafka",
+            FeatureDescriptor.builder()
+                    .name("Kafka Connector")
+                    .description("Reactive messaging connector for Kafka")
+                    .path("Messaging", "Kafka")
+                    .experimental(true)
+                    .nativeSupported(false));
         add("io.helidon.security.abac.policy.el",
             FeatureDescriptor.builder()
                     .name("EL")
@@ -426,9 +450,11 @@ final class FeatureCatalog {
             "Zipkin tracer integration",
             "Tracing", "Zipkin");
         add("io.helidon.webclient",
-            "Web Client",
-            "Reactive web client",
-            "WebClient");
+            FeatureDescriptor.builder()
+                    .name("Web Client")
+                    .description("Reactive web client")
+                    .path("WebClient")
+                    .experimental(true));
         add("io.helidon.webclient.metrics",
             "Metrics",
             "Reactive web client support for metrics",
@@ -573,5 +599,80 @@ final class FeatureCatalog {
     private static Set<FeatureDescriptor> ensurePackage(String packageName) {
         return FEATURES.computeIfAbsent(packageName, it -> new HashSet<>());
     }
-}
 
+    // this section can be used to print native image support for all features. Commented out not to pollute production code
+    /*
+    public static void main(String[] args) {
+        List<FeatureDescriptor> allFeatures = FEATURES.values()
+                .stream()
+                .flatMap(Collection::stream)
+                .sorted(Comparator.comparing(FeatureDescriptor::stringPath))
+                .collect(Collectors.toList());
+
+        print(HelidonFlavor.SE, allFeatures);
+//        print(HelidonFlavor.MP, allFeatures);
+    }
+
+    private static void print(HelidonFlavor flavor, List<FeatureDescriptor> allFeatures) {
+        String last = null;
+        for (FeatureDescriptor it : allFeatures) {
+            if (it.hasFlavor(flavor)) {
+                System.out.println("|" + supported(it)
+                                           + " |" + feature(last, it)
+                                           + " |" + component(it)
+                                           + " |" + description(it));
+                last = root(it);
+            }
+        }
+
+    }
+
+    private static String component(FeatureDescriptor it) {
+        List<String> components = new ArrayList<>(Arrays.asList(it.path()));
+
+        if (components.size() <= 2) {
+            return it.name();
+        }
+        // remove first (root component is listed already as feature)
+        components.remove(0);
+        // remove last (me)
+        components.remove(components.size() - 1);
+
+        // The rest is prefix
+        return String.join("/", components) + ": " + it.name();
+    }
+
+    private static String feature(String last, FeatureDescriptor it) {
+        String root = root(it);
+        if (root.equals(last)) {
+            return "{nbsp}";
+        }
+        return it.name();
+    }
+
+    private static String root(FeatureDescriptor it) {
+        return it.path()[0];
+    }
+
+    private static String description(FeatureDescriptor it) {
+        if (it.nativeDescription().isBlank()) {
+            if (it.nativeSupported()) {
+                return "{nbsp}";
+            }
+            return "Not yet tested.";
+        }
+        return it.nativeDescription();
+    }
+
+    private static String supported(FeatureDescriptor it) {
+        if (it.nativeSupported()) {
+            if (it.nativeDescription().isBlank()) {
+                return "✅";
+            }
+            return "\uD83D\uDD36";
+        } else {
+            return "❓";
+        }
+    }
+     */
+}

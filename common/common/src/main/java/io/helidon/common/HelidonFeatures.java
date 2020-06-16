@@ -57,6 +57,7 @@ import java.util.stream.Collectors;
  */
 public final class HelidonFeatures {
     private static final Logger LOGGER = Logger.getLogger(HelidonFeatures.class.getName());
+    private static final Logger EXPERIMENTAL = Logger.getLogger(HelidonFeatures.class.getName() + ".experimental");
     private static final AtomicBoolean PRINTED = new AtomicBoolean();
     private static final AtomicBoolean SCANNED = new AtomicBoolean();
     private static final AtomicReference<HelidonFlavor> CURRENT_FLAVOR = new AtomicReference<>();
@@ -158,7 +159,25 @@ public final class HelidonFeatures {
                     .forEach(feature -> printDetails(feature.name(),
                                                      ROOT_FEATURE_NODES.get(currentFlavor).get(feature.path()[0]),
                                                      0));
+        } else {
+            List<FeatureDescriptor> allExperimental = new LinkedList<>();
+            FEATURES.get(currentFlavor)
+                    .forEach(feature -> gatherExperimental(allExperimental,
+                                                           ROOT_FEATURE_NODES.get(currentFlavor).get(feature.path()[0])));
+
+            if (!allExperimental.isEmpty()) {
+                EXPERIMENTAL.info("You are using experimental features. These APIs may change, please follow changelog!");
+                allExperimental
+                        .forEach(it -> EXPERIMENTAL.info("\tExperimental feature: " + it.name() + " (" + it.stringPath() + ")"));
+            }
         }
+    }
+
+    private static void gatherExperimental(List<FeatureDescriptor> allExperimental, Node node) {
+        if (node.descriptor != null && node.descriptor.experimental()) {
+            allExperimental.add(node.descriptor);
+        }
+        node.children().values().forEach(it -> gatherExperimental(allExperimental, it));
     }
 
     /**
@@ -253,11 +272,12 @@ public final class HelidonFeatures {
             // start on index 10 or a tab spaces after tree
             int len = prefix.length() + name.length();
             String suffix;
-            if (len <= 8) {
-                suffix = " ".repeat(10 - len);
+            if (len <= 18) {
+                suffix = " ".repeat(20 - len);
             } else {
                 suffix = "\t";
             }
+            String experimental = feat.experimental() ? "Experimental - " : "";
             String nativeDesc = "";
             if (!feat.nativeSupported()) {
                 nativeDesc = " (NOT SUPPORTED in native image)";
@@ -266,7 +286,7 @@ public final class HelidonFeatures {
                     nativeDesc = " (Native image: " + feat.nativeDescription() + ")";
                 }
             }
-            System.out.println(prefix + name + suffix + feat.description() + nativeDesc);
+            System.out.println(prefix + name + suffix + experimental + feat.description() + nativeDesc);
         }
 
         node.children.forEach((childName, childNode) -> {
