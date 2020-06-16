@@ -57,6 +57,7 @@ import java.util.stream.Collectors;
  */
 public final class HelidonFeatures {
     private static final Logger LOGGER = Logger.getLogger(HelidonFeatures.class.getName());
+    private static final Logger EXPERIMENTAL = Logger.getLogger(HelidonFeatures.class.getName() + ".experimental");
     private static final AtomicBoolean PRINTED = new AtomicBoolean();
     private static final AtomicBoolean SCANNED = new AtomicBoolean();
     private static final AtomicReference<HelidonFlavor> CURRENT_FLAVOR = new AtomicReference<>();
@@ -165,8 +166,9 @@ public final class HelidonFeatures {
                                                            ROOT_FEATURE_NODES.get(currentFlavor).get(feature.path()[0])));
 
             if (!allExperimental.isEmpty()) {
-                LOGGER.info("You are using experimental features. These APIs may change, please follow changelog!");
-                allExperimental.forEach(it -> LOGGER.info("\tExperimental feature: " + it.name() + " (" + it.stringPath() + ")"));
+                EXPERIMENTAL.info("You are using experimental features. These APIs may change, please follow changelog!");
+                allExperimental
+                        .forEach(it -> EXPERIMENTAL.info("\tExperimental feature: " + it.name() + " (" + it.stringPath() + ")"));
             }
         }
     }
