@@ -254,9 +254,9 @@ backend:
               pathprefix: "/mp/faulttolerance"
               glyph:
                 type: "icon"
-                value: "share"
+                value: "warning"
               items:
-                  includes:
+                  - includes:
                     - "mp/faulttolerance/*.adoc"
             - title: "gRPC server"
               pathprefix: "/mp/grpc"

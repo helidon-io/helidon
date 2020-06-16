@@ -18,7 +18,7 @@
 
 = Fault Tolerance Introduction
 :pagename: faulttolerance-introduction
-:description: Fault ToleranceIntroduction
+:description: Fault Tolerance Introduction
 :keywords: helidon, webserver, faulttolerance, mp
 
 Fault Tolerance is part of the MicroProfile set of specifications [1]. This API defines mostly
@@ -26,16 +26,17 @@ annotations that improve application robustness by providing support to convenie
 error conditions (faults) that may occur in real-world applications. Examples include
 service restarts, network delays, temporal infrastructure instabilities, etc.
 
-This section describes a few configuration parameters that are specific to Helidon's Fault
-Tolerance implementation. The reader is referred to [1] for further information about the
-Fault Tolerance MicroProfile API.
-
 == Fault Tolerance in Helidon
 
 Fault Tolerance method annotations are internally implemented using _commands_.
 Essentially, each Fault Tolerance method invocation runs under the supervision
 of one of these commands. Command execution can be affected by certain properties:
 some defined by the Fault Tolerance specification and others internal to Helidon.
+
+== Fault Tolerance Configuration
+This section describes a few configuration parameters that are specific to Helidon's Fault
+Tolerance implementation. The reader is referred to [1] for further information about the
+Fault Tolerance MicroProfile API.
 
 The following is a list of config properties supported by Helidon that are
 _not_ part of the Fault Tolerance specification:
@@ -56,4 +57,4 @@ a `@Retry` delay that accounts for the execution of some internal logic in
 Helidon. This value will be subtracted from the actual delay. Default is
 250 milliseconds.
 
-- [1] https://github.com/eclipse/microprofile-fault-tolerance
+[1] https://github.com/eclipse/microprofile-fault-tolerance
