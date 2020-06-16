@@ -1,13 +1,4 @@
 /*
- * This class is copied from pre-Java 9 H2 src.
- * The only modification is the addition of com.oracle.svm.core annotations to provide substitutions
- * Why?
- * The Java 9 version of this 1.4.199 org.h2.util.Bits class used VarHandle
- * causing "com.oracle.graal.pointsto.constraints.UnsupportedFeatureException: VarHandle object must be a compile time constant"
- * during native image build
- *
- * Helidon changes are under the copyright of:
- *
  * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,14 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * Author: Paul Parkinson, Oracle
- */
-
-/*
- * Copyright 2004-2020 H2 Group. Multiple-Licensed under the MPL 2.0,
- * and the EPL 1.0 (https://h2database.com/html/license.html).
- * Initial Developer: H2 Group
  */
 
 package io.helidon.dbclient.jdbc.h2;
