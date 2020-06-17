@@ -63,7 +63,7 @@ public final class HealthSupport implements Service {
      */
     public static final String DEFAULT_WEB_CONTEXT = "/health";
 
-    private static final String FEATURE_NAME = "Health";
+    private static final String SERVICE_NAME = "Health";
 
     private static final Logger LOGGER = Logger.getLogger(HealthSupport.class.getName());
 
@@ -85,7 +85,7 @@ public final class HealthSupport implements Service {
         this.enabled = builder.enabled;
         this.webContext = builder.webContext;
         this.backwardCompatible = builder.backwardCompatible;
-        corsEnabledServiceHelper = CorsEnabledServiceHelper.create(FEATURE_NAME, builder.crossOriginConfig);
+        corsEnabledServiceHelper = CorsEnabledServiceHelper.create(SERVICE_NAME, builder.crossOriginConfig);
 
         if (enabled) {
             builder.allChecks

@@ -74,7 +74,7 @@ import static io.helidon.webserver.cors.CorsEnabledServiceHelper.CORS_CONFIG_KEY
  * Support for metrics for Helidon Web Server.
  *
  * <p>
- * By defaults cretes the /metrics endpoint with three sub-paths: application,
+ * By defaults creates the /metrics endpoint with three sub-paths: application,
  * vendor and base.
  * <p>
  * To register with web server:
@@ -104,7 +104,7 @@ public final class MetricsSupport implements Service {
 
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
     private static final String DEFAULT_CONTEXT = "/metrics";
-    private static final String FEATURE_NAME = "Metrics";
+    private static final String SERVICE_NAME = "Metrics";
 
     private static final MessageBodyWriter<JsonStructure> JSONP_WRITER = JsonpSupport.writer();
 
@@ -117,7 +117,7 @@ public final class MetricsSupport implements Service {
     private MetricsSupport(Builder builder) {
         this.rf = builder.registryFactory.get();
         this.context = builder.context;
-        corsEnabledServiceHelper = CorsEnabledServiceHelper.create(FEATURE_NAME, builder.crossOriginConfig);
+        corsEnabledServiceHelper = CorsEnabledServiceHelper.create(SERVICE_NAME, builder.crossOriginConfig);
     }
 
     /**
