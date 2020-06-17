@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,8 +64,14 @@ public class SecurityLevel {
     private SecurityLevel(SecurityLevelBuilder builder) {
         this.className = builder.className;
         this.methodName = builder.methodName;
-        this.classLevelAnnotations = Collections.unmodifiableMap(builder.classAnnotations);
-        this.methodLevelAnnotations = Collections.unmodifiableMap(builder.methodAnnotations);
+
+        Map<Class<? extends Annotation>, List<Annotation>> m = new HashMap<>();
+        builder.classAnnotations.forEach((key, value) -> m.put(key, Collections.unmodifiableList(value)));
+        this.classLevelAnnotations = Collections.unmodifiableMap(m);
+
+        Map<Class<? extends Annotation>, List<Annotation>> meth = new HashMap<>();
+        builder.methodAnnotations.forEach((key, value) -> meth.put(key, Collections.unmodifiableList(value)));
+        this.methodLevelAnnotations = Collections.unmodifiableMap(meth);
     }
 
     /**
@@ -112,11 +118,12 @@ public class SecurityLevel {
     public Map<Class<? extends Annotation>, List<Annotation>> allAnnotations() {
         Map<Class<? extends Annotation>, List<Annotation>> result = new HashMap<>(classLevelAnnotations);
         methodLevelAnnotations.forEach((key, value) -> {
+            List<Annotation> anno = new LinkedList<>();
             if (result.containsKey(key)) {
-                result.get(key).addAll(value);
-            } else {
-                result.put(key, value);
+                anno.addAll(result.get(key));
             }
+            anno.addAll(value);
+            result.put(key, anno);
         });
         return result;
     }
