@@ -85,6 +85,10 @@ class MessagingImpl implements Messaging {
         this.config = config;
     }
 
+    Config getConfig() {
+        return this.config;
+    }
+
     void addIncomingConnector(IncomingConnectorFactory connector) {
         incomingConnectors.put(getConnectorName(connector.getClass()), connector);
     }
@@ -124,14 +128,14 @@ class MessagingImpl implements Messaging {
         if (channel.getPublisherConfig() != null) {
             configBuilder
                     .addSource(ConnectorConfigHelper
-                            .prefixedConfigSource(ConnectorFactory.OUTGOING_PREFIX + channel.name(),
+                            .prefixedConfigSource(ConnectorFactory.INCOMING_PREFIX + channel.name(),
                                     channel.getPublisherConfig()));
         }
 
         if (channel.getSubscriberConfig() != null) {
             configBuilder
                     .addSource(ConnectorConfigHelper
-                            .prefixedConfigSource(ConnectorFactory.INCOMING_PREFIX + channel.name(),
+                            .prefixedConfigSource(ConnectorFactory.OUTGOING_PREFIX + channel.name(),
                                     channel.getSubscriberConfig()));
         }
         Config mergedConfig = configBuilder.build();

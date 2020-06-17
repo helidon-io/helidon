@@ -234,7 +234,7 @@ public class MessagingTest {
         Channel<String> channel = Channel.create("from-test-connector");
 
         HashMap<String, String> p = new HashMap<>();
-        p.put("mp.messaging.outgoing." + channel.name() + ".connector", TestConnector.CONNECTOR_NAME);
+        p.put("mp.messaging.incoming." + channel.name() + ".connector", TestConnector.CONNECTOR_NAME);
         Config config = Config.builder()
                 .sources(ConfigSources.create(p))
                 .build();
@@ -259,7 +259,7 @@ public class MessagingTest {
         Channel<String> channel = Channel.create("from-test-connector");
 
         HashMap<String, String> p = new HashMap<>();
-        p.put("mp.messaging.outgoing." + channel.name() + ".connector", TestConnector.CONNECTOR_NAME);
+        p.put("mp.messaging.incoming." + channel.name() + ".connector", TestConnector.CONNECTOR_NAME);
         Config config = Config.builder()
                 .sources(ConfigSources.create(p))
                 .build();
@@ -286,7 +286,7 @@ public class MessagingTest {
         Channel<String> channel = Channel.create("to-test-connector");
 
         HashMap<String, String> p = new HashMap<>();
-        p.put("mp.messaging.incoming." + channel.name() + ".connector", TestConnector.CONNECTOR_NAME);
+        p.put("mp.messaging.outgoing." + channel.name() + ".connector", TestConnector.CONNECTOR_NAME);
         Config config = Config.builder()
                 .sources(ConfigSources.create(p))
                 .disableSystemPropertiesSource()
@@ -310,8 +310,8 @@ public class MessagingTest {
         Channel<String> toConnectorChannel = Channel.create("to-test-connector");
 
         HashMap<String, String> p = new HashMap<>();
-        p.put("mp.messaging.outgoing." + fromConnectorChannel.name() + ".connector", TestConnector.CONNECTOR_NAME);
-        p.put("mp.messaging.incoming." + toConnectorChannel.name() + ".connector", TestConnector.CONNECTOR_NAME);
+        p.put("mp.messaging.incoming." + fromConnectorChannel.name() + ".connector", TestConnector.CONNECTOR_NAME);
+        p.put("mp.messaging.outgoing." + toConnectorChannel.name() + ".connector", TestConnector.CONNECTOR_NAME);
         Config config = Config.builder()
                 .sources(ConfigSources.create(p))
                 .build();
@@ -335,8 +335,8 @@ public class MessagingTest {
         Channel<String> toConnectorChannel = Channel.create("to-test-connector");
 
         HashMap<String, String> p = new HashMap<>();
-        p.put("mp.messaging.outgoing." + fromConnectorChannel.name() + ".connector", TestConnector.CONNECTOR_NAME);
-        p.put("mp.messaging.incoming." + toConnectorChannel.name() + ".connector", TestConnector.CONNECTOR_NAME);
+        p.put("mp.messaging.incoming." + fromConnectorChannel.name() + ".connector", TestConnector.CONNECTOR_NAME);
+        p.put("mp.messaging.outgoing." + toConnectorChannel.name() + ".connector", TestConnector.CONNECTOR_NAME);
         Config config = Config.builder()
                 .sources(ConfigSources.create(p))
                 .build();
