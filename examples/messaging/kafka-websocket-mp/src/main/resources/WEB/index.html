@@ -1,0 +1,127 @@
+<!--
+  ~ Copyright (c)  2020 Oracle and/or its affiliates.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  ~
+  -->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>Helidon Reactive Messaging</title>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="main.css">
+    <!-- Code snipped highlight -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/tomorrow.min.css">
+</head>
+<body>
+
+<div id="root">
+    <div id="producer">
+        <div id="inputCloud">
+            <input type="text" id="input" value="Fly Helidon!"/>
+        </div>
+        <div id="submit">Send</div>
+    </div>
+    <div id="helidon"></div>
+    <div id="rest-tip">
+        <div id="rest-tip-arrow"></div>
+        <div id="rest-tip-label">REST call /rest/messages/send/{msg}</div>
+    </div>
+    <div id="sse-tip">
+        <div id="sse-tip-label">Messages received from Kafka over websocket</div>
+        <div id="sse-tip-arrow"></div>
+    </div>
+    <div id="msgBox"></div>
+    <div id="snippet">
+        <pre>
+            <code class="java"></code>
+        </pre>
+    </div>
+</div>
+
+<script>
+
+    const snippet = $('.java');
+    const helidon = $('#helidon');
+    const messageBox = $('#msgBox');
+    const input = $("#input");
+    const submit = $("#submit");
+
+    // Include snippet, strip imports and highlight code
+    $.get('MsgProcessingBean.java', function (data) {
+        snippet.html(data
+            .replace(/[\s\S]*@ApplicationScoped/gm,"@ApplicationScoped")
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+        );
+        snippet.each(function(i, e) {hljs.highlightBlock(e)});
+    }, 'text');
+
+    // Pre-filled example messages
+    const templates = ["Fly Helidon!", "We ❤️ microservices!", "Reactive wings are faster!"];
+    let template_idx = 1;
+
+    submit.on("click", onSubmit);
+
+    var ws = new WebSocket("ws://127.0.0.1:7001/ws/messages");
+    ws.onmessage = function (e) {
+        console.log(e.data);
+        onMessage(e.data)
+    }
+
+
+    function onMessage(data) {
+        fly();
+        messageBox.prepend(`<div id="msg">${data}</div>`);
+        cleanQueue();
+    }
+
+    function cleanQueue() {
+        const messageQueue = $("#msgBox div");
+        if (messageQueue.length > 6) {
+            messageQueue
+                .last()
+                .fadeOut(100, function () {
+                    $(this).remove();
+                    cleanQueue();
+                });
+        }
+    }
+
+    function onSubmit() {
+        fetch("/rest/messages/send/" + input.val());
+        template_idx = template_idx < templates.length - 1 ? template_idx + 1 : 0;
+        input.val(templates[template_idx]);
+    }
+
+    function fly() {
+        const id = setInterval(handler, 2);
+        let position = -500;
+
+        function handler() {
+            if (position > (window.innerWidth)) {
+                clearInterval(id);
+            } else {
+                position += 50;
+                helidon.css("left", `${position}px`);
+            }
+        }
+    }
+</script>
+
+</body>
+</html>

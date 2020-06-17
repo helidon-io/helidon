@@ -118,9 +118,11 @@
         <version.lib.yasson>1.0.6</version.lib.yasson>
         <version.lib.zipkin>2.12.5</version.lib.zipkin>
         <version.lib.zipkin.sender-urlconnection>2.12.0</version.lib.zipkin.sender-urlconnection>
-        <version.lib.kafka>2.3.1</version.lib.kafka>
+        <version.lib.kafka>2.5.0</version.lib.kafka>
         <version.lib.kafka-junit5>3.2.1</version.lib.kafka-junit5>
         <version.lib.reactive-streams-tck>1.0.3</version.lib.reactive-streams-tck>
+        <version.lib.scala>2.12.10</version.lib.scala>
+        <version.lib.zookeeper>3.5.7</version.lib.zookeeper>
     </properties>
 
     <dependencyManagement>
@@ -924,8 +926,22 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.kafka</groupId>
-                <artifactId>kafka_2.11</artifactId>
+                <artifactId>kafka_2.12</artifactId>
                 <version>${version.lib.kafka}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.zookeeper</groupId>
+                        <artifactId>zookeeper</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.scala-lang</groupId>
+                        <artifactId>scala-library</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.scala-lang</groupId>
+                        <artifactId>scala-reflect</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <!-- Testing libraries -->
             <dependency>
@@ -1033,6 +1049,22 @@
                 <groupId>com.salesforce.kafka.test</groupId>
                 <artifactId>kafka-junit5</artifactId>
                 <version>${version.lib.kafka-junit5}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.zookeeper</groupId>
+                        <artifactId>zookeeper</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.zookeeper</groupId>
+                <artifactId>zookeeper</artifactId>
+                <version>${version.lib.zookeeper}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.scala-lang</groupId>
+                <artifactId>scala-library</artifactId>
+                <version>${version.lib.scala}</version>
             </dependency>
             <dependency>
                 <groupId>org.reactivestreams</groupId>
