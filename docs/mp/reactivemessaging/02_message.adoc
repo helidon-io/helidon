@@ -77,10 +77,10 @@ public PublisherBuilder<Integer> streamOfMessages() {
 @Incoming("consume-and-ack")
 @Acknowledgment(Acknowledgment.Strategy.MANUAL)
 public void receiveAndAckMessage(Message<String> msg) {
-    // Calling ack() will print "This articular message was acked!" to System.out
-    msg.ack();
+    msg.ack();<1>
 }
 ----
+<1> Calling ack() will print "This articular message was acked!" to System.out
 
 [source,java]
 .Example of manual acknowledgment
@@ -96,10 +96,11 @@ public PublisherBuilder<Integer> streamOfMessages() {
 @Incoming("consume-and-ack")
 @Acknowledgment(Acknowledgment.Strategy.MANUAL)
 public void receiveAndAckMessage(Message<String> msg) {
-    // Calling ack() will print "This articular message was acked!" to System.out
-    msg.ack();
+    msg.ack();<1>
 }
 ----
+<1> Calling ack() will print "This articular message was acked!" to System.out
+
 [source,java]
 .Example of explicit pre-process acknowledgment
 ----
