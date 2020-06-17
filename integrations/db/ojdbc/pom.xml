@@ -38,6 +38,12 @@
         <dependency>
             <groupId>com.oracle.ojdbc</groupId>
             <artifactId>ojdbc10</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.oracle.ojdbc</groupId>
+                    <artifactId>ucp</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
 
