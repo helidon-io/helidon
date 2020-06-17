@@ -36,6 +36,7 @@ import java.util.logging.Logger;
 
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
+import io.helidon.common.Version;
 import io.helidon.common.context.Context;
 import io.helidon.common.reactive.Single;
 import io.helidon.media.common.MessageBodyReaderContext;
@@ -101,7 +102,9 @@ class NettyWebServer implements WebServer {
                    MessageBodyReaderContext readerContext) {
         Set<Map.Entry<String, SocketConfiguration>> sockets = config.sockets().entrySet();
 
-        HelidonFeatures.print(HelidonFlavor.SE, config.printFeatureDetails());
+        HelidonFeatures.print(HelidonFlavor.SE,
+                              Version.VERSION,
+                              config.printFeatureDetails());
         this.bossGroup = new NioEventLoopGroup(sockets.size());
         this.workerGroup = config.workersCount() <= 0 ? new NioEventLoopGroup() : new NioEventLoopGroup(config.workersCount());
         this.contextualRegistry = config.context();

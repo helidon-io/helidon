@@ -64,11 +64,6 @@
                 <artifactId>os-maven-plugin</artifactId>
                 <version>${version.plugin.os}</version>
             </extension>
-            <extension>
-                <groupId>io.helidon.build-tools</groupId>
-                <artifactId>helidon-maven-plugin</artifactId>
-                <version>${version.plugin.helidon}</version>
-            </extension>
         </extensions>
         <pluginManagement>
             <plugins>
@@ -156,6 +151,7 @@
                             <manifest>
                                 <addClasspath>true</addClasspath>
                                 <classpathPrefix>libs</classpathPrefix>
+                                <!--suppress MavenModelInspection -->
                                 <mainClass>${mainClass}</mainClass>
                                 <useUniqueVersions>false</useUniqueVersions>
                             </manifest>
@@ -167,6 +163,7 @@
                     <artifactId>exec-maven-plugin</artifactId>
                     <version>${version.plugin.exec}</version>
                     <configuration>
+                        <!--suppress MavenModelInspection -->
                         <mainClass>${mainClass}</mainClass>
                     </configuration>
                 </plugin>
@@ -188,4 +185,25 @@
             </plugins>
         </pluginManagement>
     </build>
+    <profiles>
+        <profile>
+            <id>helidon-cli</id>
+            <activation>
+                <property>
+                    <name>helidon.cli</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>io.helidon.build-tools</groupId>
+                        <artifactId>helidon-maven-plugin</artifactId>
+                        <version>${version.plugin.helidon}</version>
+                        <extensions>true</extensions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

@@ -26,8 +26,6 @@ import java.util.ServiceLoader;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 import io.helidon.common.context.Context;
 import io.helidon.common.http.Http;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
@@ -144,10 +142,6 @@ public interface WebClient {
     final class Builder implements io.helidon.common.Builder<WebClient>,
                                    ParentingMediaContextBuilder<Builder>,
                                    MediaContextBuilder<Builder> {
-
-        static {
-            HelidonFeatures.register(HelidonFlavor.SE, "WebClient");
-        }
 
         private final WebClientConfiguration.Builder<?, ?> configuration = NettyClient.SHARED_CONFIGURATION.get().derive();
         private final HelidonServiceLoader.Builder<WebClientServiceProvider> services = HelidonServiceLoader

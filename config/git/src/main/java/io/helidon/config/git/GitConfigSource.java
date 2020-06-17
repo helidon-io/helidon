@@ -32,7 +32,6 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.common.HelidonFeatures;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.AbstractConfigSource;
 import io.helidon.config.Config;
@@ -66,10 +65,6 @@ public class GitConfigSource extends AbstractConfigSource
         implements ParsableSource, PollableSource<byte[]>, AutoCloseable {
 
     private static final Logger LOGGER = Logger.getLogger(GitConfigSource.class.getName());
-
-    static {
-        HelidonFeatures.register("Config", "git");
-    }
 
     private final URI uri;
     private final String branch;

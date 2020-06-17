@@ -23,7 +23,6 @@ import java.util.Set;
 
 import javax.annotation.Priority;
 
-import io.helidon.common.HelidonFeatures;
 import io.helidon.config.ConfigException;
 import io.helidon.config.spi.ConfigNode.ListNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
@@ -59,10 +58,6 @@ public class YamlConfigParser implements ConfigParser {
     public static final int PRIORITY = ConfigParser.PRIORITY + 100;
 
     private static final Set<String> SUPPORTED_MEDIA_TYPES = Set.of(MEDIA_TYPE_APPLICATION_YAML);
-
-    static {
-        HelidonFeatures.register("Config", "YAML");
-    }
 
     /**
      * Default constructor needed by Java Service loader.

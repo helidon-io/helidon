@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import io.helidon.common.HelidonFeatures;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.security.AuthenticationResponse;
@@ -67,11 +66,6 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
     private static final Logger LOGGER = Logger.getLogger(HttpBasicAuthProvider.class.getName());
     private static final Pattern CREDENTIAL_PATTERN = Pattern.compile("(.*):(.*)");
     private static final char[] EMPTY_PASSWORD = new char[0];
-
-    static {
-        HelidonFeatures.register("Security", "Authentication", "Basic-Auth");
-        HelidonFeatures.register("Security", "Outbound", "Basic-Auth");
-    }
 
     private final List<SecureUserStore> userStores;
     private final String realm;

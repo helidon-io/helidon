@@ -32,8 +32,6 @@ import javax.ws.rs.container.ResourceInfo;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 import io.helidon.config.Config;
 import io.helidon.microprofile.cors.CorsSupportMp.RequestAdapterMp;
 import io.helidon.microprofile.cors.CorsSupportMp.ResponseAdapterMp;
@@ -51,10 +49,6 @@ class CrossOriginFilter implements ContainerRequestFilter, ContainerResponseFilt
      * Key used for retrieving CORS-related configuration from MP configuration.
      */
     public static final String CORS_CONFIG_KEY = "cors";
-
-    static {
-        HelidonFeatures.register(HelidonFlavor.MP, "CORS");
-    }
 
     @Context
     private ResourceInfo resourceInfo;

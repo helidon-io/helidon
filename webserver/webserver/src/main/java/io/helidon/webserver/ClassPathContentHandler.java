@@ -173,7 +173,7 @@ class ClassPathContentHandler extends StaticContentHandler {
         if (method == Http.Method.HEAD) {
             response.send();
         } else {
-            response.send(extrEntry.tempFile);
+            FileSystemContentHandler.send(response, extrEntry.tempFile);
         }
 
         return true;

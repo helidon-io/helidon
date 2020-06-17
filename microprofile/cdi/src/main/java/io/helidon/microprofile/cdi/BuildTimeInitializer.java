@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 package io.helidon.microprofile.cdi;
 
+import io.helidon.common.LogConfig;
+
 /**
  * Holds the container singleton.
  * This class MUST NOT be referenced if {@link io.helidon.microprofile.cdi.HelidonContainerInitializer}
@@ -24,9 +26,8 @@ final class BuildTimeInitializer {
     private static volatile HelidonContainerImpl container;
 
     static {
-        // need static initialization of this class
-        LogConfig.buildTime();
-
+        // need to initialize logging as soon as possible
+        LogConfig.initClass();
         createContainer();
     }
 

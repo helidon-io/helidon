@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,6 @@ package io.helidon.dbclient.metrics;
 
 import java.util.function.BiFunction;
 
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbStatementType;
 import io.helidon.dbclient.common.DbClientServiceBase;
@@ -31,10 +29,6 @@ import org.eclipse.microprofile.metrics.Metadata;
  */
 abstract class DbClientMetricBuilderBase<T extends DbClientMetricBuilderBase<T>>
         extends DbClientServiceBase.DbClientServiceBuilderBase<T> {
-
-    static {
-        HelidonFeatures.register(HelidonFlavor.SE, "DbClient", "Metrics");
-    }
 
     private Metadata meta;
     private BiFunction<String, DbStatementType, String> nameFormat;

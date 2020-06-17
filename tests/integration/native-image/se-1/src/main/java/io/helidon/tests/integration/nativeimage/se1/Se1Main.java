@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,6 +75,7 @@ public final class Se1Main {
                 .config(config.get("server"))
                 .tracer(TracerBuilder.create(config.get("tracing")).build())
                 .addMediaSupport(JsonpSupport.create())
+                .printFeatureDetails(true)
                 .build();
 
         // Try to start the server. If successful, print some info and arrange to

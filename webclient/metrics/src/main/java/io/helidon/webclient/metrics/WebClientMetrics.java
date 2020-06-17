@@ -18,8 +18,6 @@ package io.helidon.webclient.metrics;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.webclient.WebClientException;
@@ -32,10 +30,6 @@ import io.helidon.webclient.spi.WebClientService;
  * Container object for all metrics created by the config.
  */
 public class WebClientMetrics implements WebClientService {
-
-    static {
-        HelidonFeatures.register(HelidonFlavor.SE, "WebClient", "Metrics");
-    }
 
     private final List<WebClientMetric> metrics;
 

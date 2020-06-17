@@ -17,8 +17,6 @@ package io.helidon.dbclient.health;
 
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 import io.helidon.dbclient.DbClient;
 
 import org.eclipse.microprofile.health.HealthCheck;
@@ -29,9 +27,6 @@ import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
  * Database health check.
  */
 public final class DbClientHealthCheck implements HealthCheck {
-    static {
-        HelidonFeatures.register(HelidonFlavor.SE, "DbClient", "HealthCheck");
-    }
 
     private final DbClient dbClient;
     private final String name;

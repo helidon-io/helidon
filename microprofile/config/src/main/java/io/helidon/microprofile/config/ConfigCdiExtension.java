@@ -60,8 +60,6 @@ import javax.enterprise.inject.spi.ProcessBean;
 import javax.enterprise.inject.spi.ProcessObserverMethod;
 import javax.inject.Provider;
 
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 import io.helidon.common.NativeImageHelper;
 import io.helidon.config.mp.MpConfig;
 import io.helidon.config.mp.MpConfigImpl;
@@ -102,8 +100,6 @@ public class ConfigCdiExtension implements Extension {
     private static final Map<Class<?>, Class<?>> REPLACED_TYPES = new HashMap<>();
 
     static {
-        HelidonFeatures.register(HelidonFlavor.MP, "Config");
-
         // this code is duplicated in mapper manager in Config
         REPLACED_TYPES.put(byte.class, Byte.class);
         REPLACED_TYPES.put(short.class, Short.class);

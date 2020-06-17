@@ -1,0 +1,60 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2020 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Fault Tolerance Introduction
+:pagename: faulttolerance-introduction
+:description: Fault Tolerance Introduction
+:keywords: helidon, webserver, faulttolerance, mp
+
+Fault Tolerance is part of the MicroProfile set of specifications [1]. This API defines mostly
+annotations that improve application robustness by providing support to conveniently handle
+error conditions (faults) that may occur in real-world applications. Examples include
+service restarts, network delays, temporal infrastructure instabilities, etc.
+
+== Fault Tolerance in Helidon
+
+Fault Tolerance method annotations are internally implemented using _commands_.
+Essentially, each Fault Tolerance method invocation runs under the supervision
+of one of these commands. Command execution can be affected by certain properties:
+some defined by the Fault Tolerance specification and others internal to Helidon.
+
+== Fault Tolerance Configuration
+This section describes a few configuration parameters that are specific to Helidon's Fault
+Tolerance implementation. The reader is referred to [1] for further information about the
+Fault Tolerance MicroProfile API.
+
+The following is a list of config properties supported by Helidon that are
+_not_ part of the Fault Tolerance specification:
+
+- `fault-tolerance.commandThreadPoolSize`: Asynchronous commands require the use of a
+separate thread pool. Threads created in this pool are named `helidon-ft-async-<N>`.
+This config property controls the size of such a pool. The default size is 8.
+
+- `fault-tolerance.threadWaitingPeriod`: A thread that has been interrupted but
+is still running (e.g. in a busy loop) has to be waited for. This config property
+controls the maximum waiting time in milliseconds. Default value is 2000 milliseconds.
+
+- `fault-tolerance.bulkheadTaskQueueingPeriod`: Time to wait
+for a task to be queued on a bulkhead. Default value is 2000 milliseconds.
+
+- `fault-tolerance.delayCorrection`: This is an internal correction applied to
+a `@Retry` delay that accounts for the execution of some internal logic in
+Helidon. This value will be subtracted from the actual delay. Default is
+250 milliseconds.
+
+[1] https://github.com/eclipse/microprofile-fault-tolerance

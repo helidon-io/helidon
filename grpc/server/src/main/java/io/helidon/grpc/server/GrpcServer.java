@@ -21,8 +21,6 @@ import java.util.Objects;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
 
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 import io.helidon.common.context.Context;
 import io.helidon.grpc.core.PriorityBag;
 
@@ -244,10 +242,6 @@ public interface GrpcServer {
      */
     final class Builder
             implements io.helidon.common.Builder<GrpcServer> {
-
-        static {
-            HelidonFeatures.register(HelidonFlavor.SE, "gRPC Server");
-        }
 
         private final GrpcRouting routing;
 

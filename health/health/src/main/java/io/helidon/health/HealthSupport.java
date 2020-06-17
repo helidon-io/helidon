@@ -37,8 +37,6 @@ import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonStructure;
 
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.media.common.MessageBodyWriter;
@@ -70,10 +68,6 @@ public final class HealthSupport implements Service {
     private static final Logger LOGGER = Logger.getLogger(HealthSupport.class.getName());
 
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
-
-    static {
-        HelidonFeatures.register(HelidonFlavor.SE, FEATURE_NAME);
-    }
 
     private final boolean enabled;
     private final String webContext;

@@ -30,7 +30,6 @@ import javax.ws.rs.client.ClientRequestContext;
 import javax.ws.rs.client.ClientRequestFilter;
 import javax.ws.rs.core.MultivaluedMap;
 
-import io.helidon.common.HelidonFeatures;
 import io.helidon.common.context.Contexts;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.OutboundSecurityClientBuilder;
@@ -52,10 +51,6 @@ import io.helidon.security.integration.common.SecurityTracing;
 public class ClientSecurityFilter implements ClientRequestFilter {
 
     private static final Logger LOGGER = Logger.getLogger(ClientSecurityFilter.class.getName());
-
-    static {
-        HelidonFeatures.register("Security", "Integration", "Jersey Client");
-    }
 
     /**
      * Create an instance of this filter (used by Jersey or for unit tests, do not use explicitly in your production code).

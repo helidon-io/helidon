@@ -19,8 +19,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 import io.helidon.common.LazyValue;
 import io.helidon.media.common.MediaSupport;
 import io.helidon.media.common.MessageBodyReader;
@@ -37,10 +35,6 @@ import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
  * For usage examples navigate to the {@link MediaSupport}.
  */
 public final class JacksonSupport implements MediaSupport {
-
-    static {
-        HelidonFeatures.register(HelidonFlavor.SE, "Media", "Jackson");
-    }
 
     private static final ObjectMapper MAPPER = new ObjectMapper()
             .registerModule(new ParameterNamesModule())
