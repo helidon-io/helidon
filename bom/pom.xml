@@ -672,6 +672,16 @@
 
             <!-- integrations -->
             <dependency>
+                <groupId>io.helidon.integrations.db</groupId>
+                <artifactId>ojdbc</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.db</groupId>
+                <artifactId>h2</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.serviceconfiguration</groupId>
                 <artifactId>helidon-serviceconfiguration-api</artifactId>
                 <version>${helidon.version}</version>

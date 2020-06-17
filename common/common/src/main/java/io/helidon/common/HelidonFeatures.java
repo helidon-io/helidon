@@ -230,7 +230,7 @@ public final class HelidonFeatures {
             Set<FeatureDescriptor> featureDescriptors = FeatureCatalog.get(packageName);
             if (featureDescriptors == null) {
                 if (packageName.startsWith("io.helidon.")) {
-                    LOGGER.warning("No catalog entry for package " + packageName);
+                    LOGGER.fine("No catalog entry for package " + packageName);
                 }
             } else {
                 featureDescriptors.forEach(HelidonFeatures::register);
