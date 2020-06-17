@@ -28,4 +28,43 @@
     <packaging>helidon-archetype-catalog</packaging>
     <artifactId>helidon-archetype-catalog</artifactId>
     <name>Helidon Archetype Catalog</name>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.helidon.archetypes</groupId>
+            <artifactId>helidon-bare-se</artifactId>
+            <version>${project.version}</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.archetypes</groupId>
+            <artifactId>helidon-bare-mp</artifactId>
+            <version>${project.version}</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.archetypes</groupId>
+            <artifactId>helidon-quickstart-se</artifactId>
+            <version>${project.version}</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.archetypes</groupId>
+            <artifactId>helidon-quickstart-mp</artifactId>
+            <version>${project.version}</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.archetypes</groupId>
+            <artifactId>helidon-database-se</artifactId>
+            <version>${project.version}</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.archetypes</groupId>
+            <artifactId>helidon-database-mp</artifactId>
+            <version>${project.version}</version>
+            <optional>true</optional>
+        </dependency>
+    </dependencies>
 </project>
