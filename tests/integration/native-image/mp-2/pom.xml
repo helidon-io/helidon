@@ -100,16 +100,16 @@
             <artifactId>helidon-integrations-cdi-jpa</artifactId>
             <scope>runtime</scope>
         </dependency>
-        <dependency>
-            <groupId>io.helidon.integrations.db</groupId>
-            <artifactId>h2</artifactId>
-            <scope>runtime</scope>
-        </dependency>
 <!--        <dependency>-->
 <!--            <groupId>io.helidon.integrations.db</groupId>-->
-<!--            <artifactId>ojdbc</artifactId>-->
+<!--            <artifactId>h2</artifactId>-->
 <!--            <scope>runtime</scope>-->
 <!--        </dependency>-->
+        <dependency>
+            <groupId>io.helidon.integrations.db</groupId>
+            <artifactId>ojdbc</artifactId>
+            <scope>runtime</scope>
+        </dependency>
         <!-- Testing -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>

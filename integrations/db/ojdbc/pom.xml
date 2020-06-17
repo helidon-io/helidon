@@ -29,6 +29,12 @@
     <name>Helidon Ingtegrations DB Oracle JDBC</name>
     <description>JDBC driver for Oracle database with native-image support</description>
 
+    <properties>
+        <spotbugs.skip>true</spotbugs.skip>
+        <maven.source.skip>true</maven.source.skip>
+        <maven.javadoc.skip>true</maven.javadoc.skip>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>com.oracle.ojdbc</groupId>

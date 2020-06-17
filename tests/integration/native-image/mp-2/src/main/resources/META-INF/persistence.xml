@@ -28,8 +28,8 @@
       <!--
       The dialect must match the database used.
       -->
-      <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect"/>
-<!--      <property name="hibernate.dialect" value="org.hibernate.dialect.Oracle10gDialect"/>-->
+<!--      <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect"/>-->
+      <property name="hibernate.dialect" value="org.hibernate.dialect.Oracle10gDialect"/>
       <!--
       DDL must be disabled, as it causes conflicts when starting connections and JPA.
       This is a limitation for native image
