@@ -25,7 +25,7 @@
 :h1Prefix: SE
 
 Helidon is a collection of Java libraries for writing microservices. Helidon
-offers two programming models: Helidion SE and Helidon MP.
+offers two programming models: Helidon SE and Helidon MP.
 
 == About Helidon SE Components
 
