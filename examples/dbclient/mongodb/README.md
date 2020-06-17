@@ -44,3 +44,7 @@ The query operation adds database trace.
 - `curl -i -X DELETE http://localhost:8079/db` - delete all pokemon
 
 The application also supports update and delete - see `PokemonService.java` for bound endpoints.
+
+---
+
+Pokémon, and Pokémon character names are trademarks of Nintendo.

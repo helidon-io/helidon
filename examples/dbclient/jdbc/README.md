@@ -63,3 +63,7 @@ The query operation adds database trace.
 - `curl http://localhost:8079/db/Squirtle` - get a single pokemon
 
 The application also supports update and delete - see `PokemonService.java` for bound endpoints.
+
+---
+
+Pokémon, and Pokémon character names are trademarks of Nintendo.

@@ -5,3 +5,7 @@ With Java:
 mvn package
 java -jar target/helidon-integrations-examples-pokemons-jpa.jar
 ```
+
+---
+
+Pokémon, and Pokémon character names are trademarks of Nintendo.
