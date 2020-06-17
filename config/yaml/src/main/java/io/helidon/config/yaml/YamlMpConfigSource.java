@@ -30,7 +30,6 @@ import java.util.Map;
 import io.helidon.config.ConfigException;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
-import org.yaml.snakeyaml.Yaml;
 
 /**
  * MicroProfile {@link org.eclipse.microprofile.config.spi.ConfigSource} that can be used
@@ -115,9 +114,7 @@ public class YamlMpConfigSource implements ConfigSource {
      * @return config source loaded from the content
      */
     public static ConfigSource create(String name, Reader content) {
-        Map yamlMap;
-        Yaml yaml = new Yaml();
-        yamlMap = yaml.loadAs(content, Map.class);
+        Map yamlMap = YamlConfigParser.toMap(content);
         if (yamlMap == null) { // empty source
             return new YamlMpConfigSource(name, Map.of());
         }
