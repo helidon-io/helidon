@@ -564,16 +564,6 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.dbclient</groupId>
-                <artifactId>helidon-dbclient-oracle</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.dbclient</groupId>
-                <artifactId>helidon-dbclient-h2</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.dbclient</groupId>
                 <artifactId>helidon-dbclient-mongodb</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
@@ -681,6 +671,16 @@
             </dependency>
 
             <!-- integrations -->
+            <dependency>
+                <groupId>io.helidon.integrations.db</groupId>
+                <artifactId>ojdbc</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.db</groupId>
+                <artifactId>h2</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
             <dependency>
                 <groupId>io.helidon.serviceconfiguration</groupId>
                 <artifactId>helidon-serviceconfiguration-api</artifactId>

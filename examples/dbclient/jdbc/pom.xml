@@ -79,16 +79,12 @@
         <!--<artifactId>mysql-connector-java</artifactId>-->
         <!--</dependency>-->
         <dependency>
-            <groupId>io.helidon.dbclient</groupId>
-            <artifactId>helidon-dbclient-h2</artifactId>
+            <groupId>io.helidon.integrations.db</groupId>
+            <artifactId>h2</artifactId>
         </dependency>
 <!--        <dependency>-->
-<!--            <groupId>io.helidon.dbclient</groupId>-->
-<!--            <artifactId>helidon-dbclient-oracle</artifactId>-->
-<!--        </dependency>-->
-<!--        <dependency>-->
-<!--            <groupId>com.oracle.ojdbc</groupId>-->
-<!--            <artifactId>ojdbc10</artifactId>-->
+<!--            <groupId>io.helidon.integrations.db</groupId>-->
+<!--            <artifactId>ojdbc</artifactId>-->
 <!--        </dependency>-->
         <dependency>
             <groupId>org.slf4j</groupId>

@@ -27,9 +27,9 @@
     <properties>
       <!--
       The dialect must match the database used.
-      Also it must be enabled for reflection (see src/main/resources/META-INF/native-image/tests/mp-2/reflect-config.json)
       -->
       <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect"/>
+<!--      <property name="hibernate.dialect" value="org.hibernate.dialect.Oracle10gDialect"/>-->
       <!--
       DDL must be disabled, as it causes conflicts when starting connections and JPA.
       This is a limitation for native image

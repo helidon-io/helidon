@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+  Copyright (c) 2020 Oracle and/or its affiliates.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -20,27 +20,19 @@
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <artifactId>helidon-project</artifactId>
-        <groupId>io.helidon</groupId>
+        <groupId>io.helidon.integrations.db</groupId>
+        <artifactId>helidon-integrations-db-project</artifactId>
         <version>2.0.0-SNAPSHOT</version>
     </parent>
-    <packaging>pom</packaging>
 
-    <groupId>io.helidon.dbclient</groupId>
-    <artifactId>helidon-dbclient-project</artifactId>
-    <name>Helidon DB Client Project</name>
+    <artifactId>ojdbc</artifactId>
+    <name>Helidon Ingtegrations DB Oracle JDBC</name>
+    <description>JDBC driver for Oracle database with native-image support</description>
 
-    <description>Support for reactive database client access.</description>
-
-    <modules>
-        <module>dbclient</module>
-        <module>common</module>
-        <module>jdbc</module>
-        <module>mongodb</module>
-        <module>tracing</module>
-        <module>metrics</module>
-        <module>metrics-jdbc</module>
-        <module>health</module>
-        <module>jsonp</module>
-    </modules>
+    <dependencies>
+        <dependency>
+            <groupId>com.oracle.ojdbc</groupId>
+            <artifactId>ojdbc10</artifactId>
+        </dependency>
+    </dependencies>
 </project>

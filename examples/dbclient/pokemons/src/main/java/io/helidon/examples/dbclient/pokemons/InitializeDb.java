@@ -15,8 +15,6 @@
  */
 package io.helidon.examples.dbclient.pokemons;
 
-import java.util.concurrent.ExecutionException;
-
 import io.helidon.common.reactive.Single;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbExecute;
@@ -41,8 +39,8 @@ public class InitializeDb {
                 initSchema(dbClient);
             }
             initData(dbClient);
-        } catch (ExecutionException | InterruptedException ex) {
-            System.out.printf("Could not initialize database: %s", ex.getMessage());
+        } catch (Exception ex) {
+            System.out.printf("Could not initialize database: %s\n", ex.getMessage());
         }
     }
 
@@ -71,15 +69,13 @@ public class InitializeDb {
      * InitializeDb database content (rows in tables).
      *
      * @param dbClient database client
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
-    private static void initData(DbClient dbClient) throws InterruptedException, ExecutionException {
+    private static void initData(DbClient dbClient) {
         // Init pokemon types
         dbClient.execute(exec
                 -> initTypes(exec)
                         .flatMapSingle(count -> initPokemons(exec)))
-                .toCompletableFuture().get();
+                .await();
     }
 
     /**

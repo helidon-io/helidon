@@ -334,17 +334,21 @@ final class FeatureCatalog {
             "Health Check",
             "Reactive database client health check support",
             "DbClient", "Health");
+        add("io.helidon.dbclient.jsonp",
+            "JSON-P",
+            "JSON Processing mapping DbRow",
+            "DbClient", "JSON-P");
         add("io.helidon.dbclient.jdbc",
             FeatureDescriptor.builder()
                     .name("JDBC")
                     .description("Reactive database client over JDBC")
                     .path("DbClient", "JDBC")
-                    .nativeDescription("Tested with h2 drivers (see examples)"));
+                    .nativeDescription("Tested with Helidon Oracle and H2 drivers (see examples)"));
         add("io.helidon.dbclient.metrics",
             "Metrics",
             "Reactive database client metrics support",
             "DbClient", "Metrics");
-        add("io.helidon.dbclient.mongo",
+        add("io.helidon.dbclient.mongodb",
             "mongo",
             "Reactive database client with reactive mongo driver",
             "DbClient", "mongo");
@@ -481,25 +485,29 @@ final class FeatureCatalog {
         exclude("io.helidon.common.mapper.spi");
         exclude("io.helidon.common.media.type");
         exclude("io.helidon.common.media.type.spi");
-        exclude("io.helidon.openapi.internal");
         exclude("io.helidon.common.pki");
         exclude("io.helidon.common.reactive");
         exclude("io.helidon.common.serviceloader");
         exclude("io.helidon.config.spi");
         exclude("io.helidon.config.mp");
         exclude("io.helidon.config.mp.spi");
+        exclude("io.helidon.dbclient.spi");
+        exclude("io.helidon.dbclient.jdbc.spi");
+        exclude("io.helidon.dbclient.common");
         exclude("io.helidon.health.common");
         exclude("io.helidon.integrations.cdi.delegates");
         exclude("io.helidon.integrations.cdi.referencecountedcontext");
         exclude("io.helidon.integrations.cdi.jpa.jaxb");
         exclude("io.helidon.integrations.datasource.cdi");
         exclude("io.helidon.integrations.datasource.hikaricp.cdi");
+        exclude("io.helidon.integrations.db.h2");
         exclude("io.helidon.integrations.graal.nativeimage.extension");
         exclude("io.helidon.integrations.graal.mp.nativeimage.extension");
         exclude("io.helidon.integrations.jta.weld");
         exclude("io.helidon.jersey.common");
         exclude("io.helidon.media.common");
         exclude("io.helidon.media.common.spi");
+        exclude("io.helidon.openapi.internal");
         exclude("io.helidon.security.abac.policy");
         exclude("io.helidon.security.abac.policy.spi");
         exclude("io.helidon.security.annotations");
@@ -532,7 +540,10 @@ final class FeatureCatalog {
                     return Set.of();
                 }
                 // now let's see if a test or an example (we consider these not to be features as well
-                if (packageName.contains(".examples.") || packageName.contains(".tests.")) {
+                if (packageName.contains(".examples.")
+                        || packageName.contains(".tests.")
+                        || packageName.endsWith(".tests")
+                        || packageName.endsWith(".example")) {
                     return Set.of();
                 }
             }

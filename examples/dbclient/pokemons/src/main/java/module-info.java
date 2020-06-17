@@ -32,4 +32,7 @@ module io.helidon.examples.dbclient.pokemons.jdbc {
     requires io.helidon.webserver;
 
     provides io.helidon.dbclient.spi.DbMapperProvider with io.helidon.examples.dbclient.pokemons.PokemonMapperProvider;
+
+    // so Yasson can set private fields
+    opens io.helidon.examples.dbclient.pokemons to org.eclipse.yasson;
 }
