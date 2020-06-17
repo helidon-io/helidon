@@ -21,34 +21,11 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon</groupId>
-        <artifactId>helidon-project</artifactId>
+        <groupId>io.helidon.archetypes</groupId>
+        <artifactId>helidon-archetypes-project</artifactId>
         <version>2.0.0-SNAPSHOT</version>
     </parent>
-    <groupId>io.helidon.archetypes</groupId>
-    <artifactId>helidon-archetypes-project</artifactId>
-    <name>Helidon Archetypes</name>
-    <packaging>pom</packaging>
-
-    <modules>
-        <module>bare-se</module>
-        <module>bare-mp</module>
-        <module>quickstart-se</module>
-        <module>quickstart-mp</module>
-        <module>database-mp</module>
-        <module>database-se</module>
-        <module>catalog</module>
-    </modules>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>io.helidon.build-tools.archetype</groupId>
-                <artifactId>helidon-archetype-maven-plugin</artifactId>
-                <version>${version.plugin.helidon-build-tools}</version>
-                <extensions>true</extensions>
-            </plugin>
-        </plugins>
-    </build>
+    <packaging>helidon-archetype</packaging>
+    <artifactId>helidon-quickstart-se</artifactId>
+    <name>Helidon SE Quickstart Archetype</name>
 </project>
-
