@@ -46,8 +46,6 @@ mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml \
     -Dmaven.test.failure.ignore=true \
     -Pexamples,archetypes,spotbugs,javadoc,sources,tck,tests,pipeline
 
-examples/quickstarts/archetypes/test-archetypes.sh
-
 #
 # test running from jar file, and then from module path
 #
