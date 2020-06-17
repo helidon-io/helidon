@@ -34,6 +34,10 @@ Latest documentation and javadocs are available at <https://helidon.io/docs/late
 
 See Getting Started at <https://helidon.io>.
 
+## License
+
+Helidon is available under Apache License 2.0.
+
 ## Downloads / Accessing Binaries
 
 There are no Helidon downloads. Just use our Maven releases (GroupID `io.helidon`).
