@@ -7,15 +7,248 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
-## [Unreleased]
+## [2.0.0-RC2]
 
 ### Notes
 
-This is the fourth milestone release of Helidon 2.0. 
+This is the second release candidate of Helidon 2.0.
 
 ### Notable New Features
 
+This release focuses on documentation, bug fixes, performance fixes and cleanup.
+
+Also, a number of deprecated methods have been removed from this release. See
+"Remove deprecations" in the list below.
+
 ### Changes
+
+- CORS: Change CORS config key from path-prefix to path-expr; method names also [1807](https://github.com/oracle/helidon/pull/1807)
+- Config: Decrypt AES method made visible [2003](https://github.com/oracle/helidon/pull/2003)
+- Config: Fix #1802 - Allow use of filters and mappers when converting MP to He… [1803](https://github.com/oracle/helidon/pull/1803)
+- Config: Log warning if a known configuration file exists and we have no parser [1853](https://github.com/oracle/helidon/pull/1853)
+- Config: Using SafeConstructor with YAML parsing. [2019](https://github.com/oracle/helidon/pull/2019)
+- Config: Fixes StackOverflowError unearthed by new MicroProfile Config implementation [1760](https://github.com/oracle/helidon/pull/1760)
+- DBClient: doc for issue 1629 [1652](https://github.com/oracle/helidon/pull/1652)
+- DBClient: api update to reactive [1828](https://github.com/oracle/helidon/pull/1828)
+- DBClient: JSON-P Streaming support [1796](https://github.com/oracle/helidon/pull/1796)
+- FaultTolerance: Wait for thread completion only if interrupted flag set [1843](https://github.com/oracle/helidon/pull/1843)
+- Features: Experimental feature support. [2018](https://github.com/oracle/helidon/pull/2018)
+- Features: Feature refactoring [1944](https://github.com/oracle/helidon/pull/1944)
+- Health check fixed [1809](https://github.com/oracle/helidon/pull/1809)
+- JAX-RS @Provider autodiscovery [1880](https://github.com/oracle/helidon/pull/1880)
+- JDBC: Updated UCP version to always be in sync with Oracle's OJDBC8 version since the two artifacts are mutually dependent [1831](https://github.com/oracle/helidon/pull/1831)
+- Jersey: connector to Helidon WebClient [1932](https://github.com/oracle/helidon/pull/1932)
+- Jersey: Correctly disable Jersey WADL support and built-in providers. [1971](https://github.com/oracle/helidon/pull/1971)
+- Jersey: Make the helidon-jersey-connector module discoverable by Jersey if available [2008](https://github.com/oracle/helidon/pull/2008)
+- Jersey: Upgrading Jersey to version 2.31 [1887](https://github.com/oracle/helidon/pull/1887)
+- Kafka specific message [1890](https://github.com/oracle/helidon/pull/1890)
+- Media Support: DataChunkInputStream more then one close does not throw exception [1904](https://github.com/oracle/helidon/pull/1904)
+- Media Support: lazy accepted types parsing [1921](https://github.com/oracle/helidon/pull/1921)
+- Media Support: flattening [1899](https://github.com/oracle/helidon/pull/1899)
+- Media Support: methods [1905](https://github.com/oracle/helidon/pull/1905)
+- Media Support: DataChunk ByteBuffer array [1877](https://github.com/oracle/helidon/pull/1877)
+- Media Support: DataChunkInputStream can cause deadlock if handled by the same thread… [1825](https://github.com/oracle/helidon/pull/1825)
+- Media Support: DataChunkInputStream char duplication fix [1824](https://github.com/oracle/helidon/pull/1824)
+- Media Support: Fix handling of generics when reading objects [1769](https://github.com/oracle/helidon/pull/1769)
+- Media Support: Service loader added to MediaContext [1861](https://github.com/oracle/helidon/pull/1861)
+- Messaging: Messaging with Kafka examples [2016](https://github.com/oracle/helidon/pull/2016)
+- Metrics: Fail deployment for Gauges in RequestScoped beans [1978](https://github.com/oracle/helidon/pull/1978)
+- Metrics: Remove MP Metrics 1.0-to-2.0 bridge component and related classes [1879](https://github.com/oracle/helidon/pull/1879)
+- MicroProfile: Changed name of SyntheticApplication to HelidonMP [1812](https://github.com/oracle/helidon/pull/1812)
+- MicroProfile: Container startup issue fixed. [1912](https://github.com/oracle/helidon/pull/1912)
+- Modules: Module and Java 12+ friendly way of defining classes for Weld Proxies. [1967](https://github.com/oracle/helidon/pull/1967)
+- Native Image: Database native support update [2028](https://github.com/oracle/helidon/pull/2028)
+- Native Image: MP native image no longer misses bean types for proxies. [1988](https://github.com/oracle/helidon/pull/1988)
+- Native image fixes for new Jersey version. [1910](https://github.com/oracle/helidon/pull/1910)
+- Native image: AOT (native image) documentation for Helidon. [1989](https://github.com/oracle/helidon/pull/1989)
+- Native image: Remove obsolete configuration file. [1927](https://github.com/oracle/helidon/pull/1927)
+- Native image: Welcome file for classpath static content in native image [1980](https://github.com/oracle/helidon/pull/1980)
+- Reactive: Use EmittingPublisher in OutputStreamPublisher to remove busy waiting [1900](https://github.com/oracle/helidon/pull/1900)
+- Reactive: Alias for concatArray [1826](https://github.com/oracle/helidon/pull/1826)
+- Reactive: BufferedEmittingPublisher as replacement for OriginThreadPublisher [1830](https://github.com/oracle/helidon/pull/1830)
+- Reactive: BufferedEmittingPublisher draining race condition fix [1928](https://github.com/oracle/helidon/pull/1928)
+- Reactive: Deprecated Multi#from [1888](https://github.com/oracle/helidon/pull/1888)
+- Reactive: Emit after close fix [1856](https://github.com/oracle/helidon/pull/1856)
+- Reactive: EmittingPublisher cleanup [1923](https://github.com/oracle/helidon/pull/1923)
+- Reactive: Multi await feature for intentional blocking [1664](https://github.com/oracle/helidon/pull/1664)
+- Reactive: Multi from InputStream [1770](https://github.com/oracle/helidon/pull/1770)
+- Reactive: Multi onComplete operators [1806](https://github.com/oracle/helidon/pull/1806)
+- Reactive: MultiFromOutputStream blocking close refactor [1943](https://github.com/oracle/helidon/pull/1943)
+- Reactive: ReadableByteChannelPublisher executor leak [1924](https://github.com/oracle/helidon/pull/1924)
+- Reactive: Reimplement Concat with varargs [1815](https://github.com/oracle/helidon/pull/1815)
+- Reactive: Remove OriginThreadPublisher [1859](https://github.com/oracle/helidon/pull/1859)
+- Reactive: ResponseCloser now supports Single [1883](https://github.com/oracle/helidon/pull/1883)
+- Reactive: Revert filters as function instead of reactive processors. [1917](https://github.com/oracle/helidon/pull/1917)
+- Reactive: SE Reactive Messaging [1636](https://github.com/oracle/helidon/pull/1636)
+- Reactive: Single onCancel and OnComplete fixes [1814](https://github.com/oracle/helidon/pull/1814)
+- Reactive: Trigger Single stream only in terminal ops [1864](https://github.com/oracle/helidon/pull/1864)
+- Reactive: Trigger Single to CS conversion on first CS method call [1886](https://github.com/oracle/helidon/pull/1886)
+- Security: Rearrange the messages which report missing config  [1810](https://github.com/oracle/helidon/pull/1810)
+- Security: Security level memory leak [2013](https://github.com/oracle/helidon/pull/2013)
+- Security: master: correctly validate mandatory JWT claims. [2011](https://github.com/oracle/helidon/pull/2011)
+- Tracing performance optimization. [1916](https://github.com/oracle/helidon/pull/1916)
+- WebClient: API changed from CompletionStage to Single [1832](https://github.com/oracle/helidon/pull/1832)
+- WebClient: API update [1870](https://github.com/oracle/helidon/pull/1870)
+- WebClient: automatic system loader [1903](https://github.com/oracle/helidon/pull/1903)
+- WebClientL minor proxy fixes [1792](https://github.com/oracle/helidon/pull/1792)
+- WebClient: SSL in WebClient and WebServer changed to TLS [2006](https://github.com/oracle/helidon/pull/2006)
+- WebClient: TemporalUnit methods removed [2004](https://github.com/oracle/helidon/pull/2004)
+- WebClient/DBClient: Alignment of client service APIs between Db and Web Clients. [1863](https://github.com/oracle/helidon/pull/1863)
+- WebServer API to use Single and Multi [1882](https://github.com/oracle/helidon/pull/1882)
+- WebServer configuration changes [1766](https://github.com/oracle/helidon/pull/1766)
+- WebServer: Allows proxying of ServerRequest v2.x/master [1878](https://github.com/oracle/helidon/pull/1878)
+- WebServer: Check Netty validation of headers before processing request [1827](https://github.com/oracle/helidon/pull/1827)
+- WebServer: Fix #1711 StaticContentHandler fails with encoded URLs [1811](https://github.com/oracle/helidon/pull/1811)
+- WebServer: Lazy list for even lazier acceptedTypes parsing [1940](https://github.com/oracle/helidon/pull/1940)
+- WebServer: Multipart [1787](https://github.com/oracle/helidon/pull/1787)
+- WebServer: Mutual TLS implementation, example and tests [1992](https://github.com/oracle/helidon/pull/1992)
+- WebServer: Socket configuration changes. [1844](https://github.com/oracle/helidon/pull/1844)
+- WebServer: Static content handlers now use explicit writers. [1922](https://github.com/oracle/helidon/pull/1922)
+- WebServer: Updated SSL Configuration for WebServer [1852](https://github.com/oracle/helidon/pull/1852)
+- WebSockets example: HTML page for user experience [1946](https://github.com/oracle/helidon/pull/1946)
+- gRPC: client API improvements (2.0) [1851](https://github.com/oracle/helidon/pull/1851)
+- gRPC: Add JSONB support to gRPC [1836](https://github.com/oracle/helidon/pull/1836)
+- gRPC: Minor gRPC 2.0 fixes and improvements [1959](https://github.com/oracle/helidon/pull/1959)
+- gRPC: Minor gRPC fixes (2.0) [1951](https://github.com/oracle/helidon/pull/1951)
+- gRPC: Revert "Minor gRPC fixes (2.0)" [1956](https://github.com/oracle/helidon/pull/1956)
+- Archetypes: (and other examples) typo [1981](https://github.com/oracle/helidon/pull/1981)
+- Archetypes: catalog [1898](https://github.com/oracle/helidon/pull/1898)
+- Archetypes: Fixed tag in catalog [2036](https://github.com/oracle/helidon/pull/2036)
+- Archetypes: New DB archetype for SE [1982](https://github.com/oracle/helidon/pull/1982)
+- Archetypes: New application types (templates) for the CLI [1797](https://github.com/oracle/helidon/pull/1797)
+- Archetypes: Quickstart archetypes for SE and MP [2035](https://github.com/oracle/helidon/pull/2035)
+- Archetypes: Renamed archetype to helidon-bare-mp [2021](https://github.com/oracle/helidon/pull/2021)
+- Archetypes: Renamed basic archetype to bare [1839](https://github.com/oracle/helidon/pull/1839)
+- Archetypes: Use helidon-archetype packaging [1889](https://github.com/oracle/helidon/pull/1889)
+- Archetypes: isolate the helidon-maven-plugin extension  [2023](https://github.com/oracle/helidon/pull/2023)
+- Deprecations: Remove deprecations [1884](https://github.com/oracle/helidon/pull/1884) [1885](https://github.com/oracle/helidon/pull/1885) [1892](https://github.com/oracle/helidon/pull/1892)
+- Docs: helidon intro 1625 [1701](https://github.com/oracle/helidon/pull/1701)
+- Docs: helidon se intro 1626 [1729](https://github.com/oracle/helidon/pull/1729)
+- Docs: Add CORS MP and SE doc [1895](https://github.com/oracle/helidon/pull/1895)
+- Docs: Fix broken link in prerequisite page to quickstart example [1996](https://github.com/oracle/helidon/pull/1996)
+- Docs: Fix formatting issues with included guides [1771](https://github.com/oracle/helidon/pull/1771)
+- Docs: Fixed SE Config Guide typos from issue 1649 [1993](https://github.com/oracle/helidon/pull/1993)
+- Docs: Fixed tables in Security Providers - issue 1599 [1848](https://github.com/oracle/helidon/pull/1848)
+- Docs: Helidon MP 2.0 Intro [1653](https://github.com/oracle/helidon/pull/1653)
+- Docs: Mp config docs [1935](https://github.com/oracle/helidon/pull/1935)
+- Docs: New doc section for FT documenting internal config properties [2020](https://github.com/oracle/helidon/pull/2020)
+- Docs: Update 3rd party attributions. Renamed 3RD-PARTY to THIRD_PARTY_LICEN… [2024](https://github.com/oracle/helidon/pull/2024)
+- Docs: Update NOTICE.txt and include in artifacts [1945](https://github.com/oracle/helidon/pull/1945)
+- Docs: Update SE docs for changed APIs [1970](https://github.com/oracle/helidon/pull/1970)
+- Docs: Updated migration guides. [1920](https://github.com/oracle/helidon/pull/1920)
+- Docs: WebClient Intro doc updated with changes [1659](https://github.com/oracle/helidon/pull/1659)
+- Docs: migration guides [1829](https://github.com/oracle/helidon/pull/1829)
+- Docs: updated mp jpa intro - added link to mp jpa guide and API [1953](https://github.com/oracle/helidon/pull/1953)
+- Tests: Add tolerance to metrics tests; widen tolerance used during pipeline runs (2.x) [1999](https://github.com/oracle/helidon/pull/1999)
+- Tests: Decrease the number of events of KafkaCdiExtensionTest [1763](https://github.com/oracle/helidon/pull/1763)
+- Tests: Fix intermittent test failure in GrpcServiceTest. [1947](https://github.com/oracle/helidon/pull/1947)
+- Tests: Fix test failing on windows [1919](https://github.com/oracle/helidon/pull/1919)
+- Tests: Fixed archetype test based on API changes [1818](https://github.com/oracle/helidon/pull/1818)
+- Tests: MP Messaging hamcrestination [1765](https://github.com/oracle/helidon/pull/1765)
+- Tests: Move test dependencies into main pom [1938](https://github.com/oracle/helidon/pull/1938)
+- Tests: Moving 2 tests from KafkaMP to KafkaSE [1918](https://github.com/oracle/helidon/pull/1918)
+- Tests: Properly stop wiremock after rest-client tcks [1939](https://github.com/oracle/helidon/pull/1939)
+- Tests: Redesign in Kafka tests [1847](https://github.com/oracle/helidon/pull/1847)
+- Tests: Removes mp-test-libs bundle [1813](https://github.com/oracle/helidon/pull/1813)
+- Tests: Sometimes KafkaCdiExtensionTest fails [1816](https://github.com/oracle/helidon/pull/1816)
+- Examples: Add trademark notices for Pokemon [2034](https://github.com/oracle/helidon/pull/2034)
+- Examples: WIP: New JPA example and archetype using Pokemons [1933](https://github.com/oracle/helidon/pull/1933)
+
+#### Thank You!
+
+Thanks to community members [dansiviter](https://github.com/dansiviter) and [graemerocher](https://github.com/graemerocher) 
+for their contributions to this release.
+
+## [2.0.0-RC1]
+
+### Notes
+
+This is the first release candidate of Helidon 2.0.
+
+### Notable New Features
+
+This release primarily focuses on finalizing APIs for 2.0. It also includes a number
+of performance and bug fixes. We expect APIs to be pretty stable between this 
+release and the final 2.0.0 release.
+
+### Changes
+
+- CORS: Change CORS config key from path-prefix to path-expr; method names also [1807](https://github.com/oracle/helidon/pull/1807)
+- Config: Fix #1802 - Allow use of filters and mappers when converting MP to He… [1803](https://github.com/oracle/helidon/pull/1803)
+- Config: Log warning if a known configuration file exists and we have no parser [1853](https://github.com/oracle/helidon/pull/1853)
+- Config: Rearrange the messages which report missing config  [1810](https://github.com/oracle/helidon/pull/1810)
+- DBClient: DB client api update to reactive [1828](https://github.com/oracle/helidon/pull/1828)
+- DBClient: JSON-P Streaming support [1796](https://github.com/oracle/helidon/pull/1796)
+- FaultTolerance: Wait for thread completion only if interrupted flag set [1843](https://github.com/oracle/helidon/pull/1843)
+- Health: Health check fixed [1809](https://github.com/oracle/helidon/pull/1809)
+- JAX-RS: JAX-RS @Provider autodiscovery [1880](https://github.com/oracle/helidon/pull/1880)
+- JDBC: Updated UCP version to always be in sync with Oracle's OJDBC8 version since the two artifacts are mutually dependent [1831](https://github.com/oracle/helidon/pull/1831)
+- MediaSupport: DataChunkInputStream char duplication fix [1824](https://github.com/oracle/helidon/pull/1824)
+- MediaSupport: Fix handling of generics when reading objects [1769](https://github.com/oracle/helidon/pull/1769)
+- MediaSupport: Media support flattening [1899](https://github.com/oracle/helidon/pull/1899)
+- MediaSupport: Media support methods [1905](https://github.com/oracle/helidon/pull/1905)
+- MediaSupport: Revert context to original read only parameters. [1819](https://github.com/oracle/helidon/pull/1819)
+- MediaSupport: Service loader added to MediaContext [1861](https://github.com/oracle/helidon/pull/1861)
+- Metrics: Remove MP Metrics 1.0-to-2.0 bridge component and related classes [1879](https://github.com/oracle/helidon/pull/1879)
+- MicroProfile: Changed name of SyntheticApplication to HelidonMP [1812](https://github.com/oracle/helidon/pull/1812)
+- MicroProfile: Container startup issue fixed. [1912](https://github.com/oracle/helidon/pull/1912)
+- NativeImage:Native image fixes for new Jersey version. [1910](https://github.com/oracle/helidon/pull/1910)
+- OCI ObjectStore: Fixes StackOverflowError unearthed by new MicroProfile Config implementation [1760](https://github.com/oracle/helidon/pull/1760)
+- Performance: DataChunk ByteBuffer array [1877](https://github.com/oracle/helidon/pull/1877)
+- Performance: Media lazy accepted types parsing [1921](https://github.com/oracle/helidon/pull/1921)
+- Performance: Tracing performance optimization. [1916](https://github.com/oracle/helidon/pull/1916)
+- Reactive: Alias for concatArray [1826](https://github.com/oracle/helidon/pull/1826)
+- Reactive: BufferedEmittingPublisher as replacement for OriginThreadPublisher [1830](https://github.com/oracle/helidon/pull/1830)
+- Reactive: Decrease the number of events of KafkaCdiExtensionTest [1763](https://github.com/oracle/helidon/pull/1763)
+- Reactive: Deprecated Multi#from [1888](https://github.com/oracle/helidon/pull/1888)
+- Reactive: Emit after close fix [1856](https://github.com/oracle/helidon/pull/1856)
+- Reactive: Kafka specific message [1890](https://github.com/oracle/helidon/pull/1890)
+- Reactive: Multi await feature for intentional blocking [1664](https://github.com/oracle/helidon/pull/1664)
+- Reactive: Multi from InputStream [1770](https://github.com/oracle/helidon/pull/1770)
+- Reactive: Multi onComplete operators [1806](https://github.com/oracle/helidon/pull/1806)
+- Reactive: Redesign in Kafka tests [1847](https://github.com/oracle/helidon/pull/1847)
+- Reactive: Reimplement Concat with varargs [1815](https://github.com/oracle/helidon/pull/1815)
+- Reactive: Remove OriginThreadPublisher [1859](https://github.com/oracle/helidon/pull/1859)
+- Reactive: ResponseCloser now supports Single [1883](https://github.com/oracle/helidon/pull/1883)
+- Reactive: Revert filters as function instead of reactive processors. [1917](https://github.com/oracle/helidon/pull/1917)
+- Reactive: SE Reactive Messaging [1636](https://github.com/oracle/helidon/pull/1636)
+- Reactive: Single onCancel and OnComplete fixes [1814](https://github.com/oracle/helidon/pull/1814)
+- Reactive: Sometimes KafkaCdiExtensionTest fails [1816](https://github.com/oracle/helidon/pull/1816)
+- Reactive: Trigger Single stream only in terminal ops [1864](https://github.com/oracle/helidon/pull/1864)
+- Reactive: Trigger Single to CS conversion on first CS method call [1886](https://github.com/oracle/helidon/pull/1886)
+- Reactive: Use EmittingPublisher in OutputStreamPublisher to remove busy waiting [1900](https://github.com/oracle/helidon/pull/1900)
+- Security: Fixed tables in Security Providers - issue 1599 [1848](https://github.com/oracle/helidon/pull/1848)
+- WebClient DBClient: Alignment of client service APIs between Db and Web Clients. [1863](https://github.com/oracle/helidon/pull/1863)
+- WebClient: API changed from CompletionStage to Single [1832](https://github.com/oracle/helidon/pull/1832)
+- WebClient: WebClient API update [1870](https://github.com/oracle/helidon/pull/1870)
+- WebClient: automatic system loader [1903](https://github.com/oracle/helidon/pull/1903)
+- WebClient: minor proxy fixes [1792](https://github.com/oracle/helidon/pull/1792)
+- WebServer: Check Netty validation of headers before processing request [1827](https://github.com/oracle/helidon/pull/1827)
+- WebServer: DataChunkInputStream can cause deadlock if handled by the same thread… [1825](https://github.com/oracle/helidon/pull/1825)
+- WebServer: DataChunkInputStream more then one close does not throw exception [1904](https://github.com/oracle/helidon/pull/1904)
+- WebServer: Fix #1711 StaticContentHandler fails with encoded URLs [1811](https://github.com/oracle/helidon/pull/1811)
+- WebServer: Multipart [1787](https://github.com/oracle/helidon/pull/1787)
+- WebServer: Socket configuration changes. [1844](https://github.com/oracle/helidon/pull/1844)
+- WebServer: Updated SSL Configuration for WebServer [1852](https://github.com/oracle/helidon/pull/1852)
+- WebServer: WebServer API to use Single and Multi [1882](https://github.com/oracle/helidon/pull/1882)
+- WebServer: configuration changes [1766](https://github.com/oracle/helidon/pull/1766)
+- gRPC: Add JSONB support to gRPC [1836](https://github.com/oracle/helidon/pull/1836)
+- gRPC: gRPC client API improvements (2.0) [1851](https://github.com/oracle/helidon/pull/1851)
+- Build: enable unstable pipeline status [1768](https://github.com/oracle/helidon/pull/1768)
+- CLI: Archetype catalog [1898](https://github.com/oracle/helidon/pull/1898)
+- CLI: Configure helidon-maven-plugin extension for all apps [1896](https://github.com/oracle/helidon/pull/1896)
+- CLI: New application types (templates) for the CLI [1797](https://github.com/oracle/helidon/pull/1797)
+- CLI: Renamed basic archetype to bare [1839](https://github.com/oracle/helidon/pull/1839)
+- CLI: Use helidon-archetype packaging [1889](https://github.com/oracle/helidon/pull/1889)
+- Dependencies: Upgrading Jersey to version 2.31 [1887](https://github.com/oracle/helidon/pull/1887)
+- Deprecations: Remove deprecations [1884](https://github.com/oracle/helidon/pull/1884) [1885](https://github.com/oracle/helidon/pull/1885) [1892](https://github.com/oracle/helidon/pull/1892)
+- Documentatino: Fix formatting issues with included guides [1771](https://github.com/oracle/helidon/pull/1771)
+- Documentation: Add CORS MP and SE doc [1895](https://github.com/oracle/helidon/pull/1895)
+- Documentation: Docs helidon intro 1625 [1701](https://github.com/oracle/helidon/pull/1701)
+- Documentation: Docs helidon se intro 1626 [1729](https://github.com/oracle/helidon/pull/1729)
+- Documentation: Updated migration guides. [1920](https://github.com/oracle/helidon/pull/1920)
+- Documentation: migration guides [1829](https://github.com/oracle/helidon/pull/1829)
+- Tests: Fix test failing on windows [1919](https://github.com/oracle/helidon/pull/1919)
 
 ### Backward incompatible changes
 
@@ -62,14 +295,6 @@ Any user code that used these internal classes can use the corresponding support
 | |`InternalMetadataBuilderImpl` |
 | |`InternalMetadataImpl` |
 | |`InternalMetricIDImpl` |
-
-#### WebClient and WebServer TLS class names aligned
-Class configuration names for TLS are now aligned between WebClient and WebServer
-
-| Old Name                 | New Name           |
-| ------------------------ | ------------------ |
-| `Ssl`                    | `WebClientTls`     |
-| `TlsConfig`              | `WebServerTls`     |
 
 ## [2.0.0-M3]
 
@@ -636,7 +861,8 @@ If there is no authorization provider configured, ABAC provider will be configur
       otherwise they are ignored
 
 
-[Unreleased]: https://github.com/oracle/helidon/compare/2.0.0-M3...HEAD
+[2.0.0-RC2]: https://github.com/oracle/helidon/compare/2.0.0-RC1...2.0.0-RC2
+[2.0.0-RC1]: https://github.com/oracle/helidon/compare/2.0.0-M3...2.0.0-RC1
 [2.0.0-M3]: https://github.com/oracle/helidon/compare/2.0.0-M2...2.0.0-M3
 [2.0.0-M2]: https://github.com/oracle/helidon/compare/2.0.0-M1...2.0.0-M2
 [2.0.0-M1]: https://github.com/oracle/helidon/compare/1.4.0...2.0.0-M1
