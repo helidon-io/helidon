@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.KeyConfig;
-import io.helidon.webclient.Ssl;
+import io.helidon.webclient.WebClientTls;
 import io.helidon.webclient.WebClient;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -39,7 +39,7 @@ public class Pkcs12StoreSslTest {
     @BeforeAll
     public static void createClientAcceptingAllCertificates() {
         client = WebClient.builder()
-                .ssl(Ssl.builder()
+                .tls(WebClientTls.builder()
                              .trustAll(true)
                              .build())
                 .build();
@@ -51,7 +51,7 @@ public class Pkcs12StoreSslTest {
                 WebServer.builder(Routing.builder()
                                           .any((req, res) -> res.send("It works!"))
                                           .build())
-                        .tls(TlsConfig.builder()
+                        .tls(WebServerTls.builder()
                                      .privateKey(KeyConfig.keystoreBuilder()
                                                          .keystore(Resource.create("ssl/certificate.p12"))
                                                          .keystorePassphrase(new char[] {'h', 'e', 'l', 'i', 'd', 'o', 'n'})

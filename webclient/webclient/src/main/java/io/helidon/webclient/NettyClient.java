@@ -45,7 +45,7 @@ final class NettyClient implements WebClient {
             .create(() -> "Helidon/" + Version.VERSION + " (java " + System.getProperty("java.runtime.version") + ")");
     private static final Proxy DEFAULT_PROXY = Proxy.noProxy();
     private static final MediaContext DEFAULT_MEDIA_SUPPORT = MediaContext.create();
-    private static final Ssl DEFAULT_SSL = Ssl.builder().build();
+    private static final WebClientTls DEFAULT_TLS = WebClientTls.builder().build();
 
     private static final AtomicBoolean DEFAULTS_CONFIGURED = new AtomicBoolean();
 
@@ -60,7 +60,7 @@ final class NettyClient implements WebClient {
                     .readerContextParent(DEFAULT_MEDIA_SUPPORT.readerContext())
                     .writerContextParent(DEFAULT_MEDIA_SUPPORT.writerContext())
                     .proxy(DEFAULT_PROXY)
-                    .ssl(DEFAULT_SSL)
+                    .tls(DEFAULT_TLS)
                     .build();
 
     // configurable per client instance

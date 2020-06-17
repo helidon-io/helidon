@@ -153,11 +153,11 @@ class ServerBasicConfig implements ServerConfiguration {
             this.backlog = builder.backlog() < 0 ? DEFAULT_BACKLOG_SIZE : builder.backlog();
             this.timeoutMillis = Math.max(builder.timeoutMillis(), 0);
             this.receiveBufferSize = Math.max(builder.receiveBufferSize(), 0);
-            TlsConfig tlsConfig = builder.tlsConfig();
-            if (tlsConfig.enabled()) {
-                this.sslContext = tlsConfig.sslContext();
-                this.enabledSslProtocols = new HashSet<>(tlsConfig.enabledTlsProtocols());
-                this.clientAuth = tlsConfig.clientAuth();
+            WebServerTls webServerTls = builder.tlsConfig();
+            if (webServerTls.enabled()) {
+                this.sslContext = webServerTls.sslContext();
+                this.enabledSslProtocols = new HashSet<>(webServerTls.enabledTlsProtocols());
+                this.clientAuth = webServerTls.clientAuth();
             } else {
                 this.sslContext = null;
                 this.enabledSslProtocols = Set.of();

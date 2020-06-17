@@ -19,7 +19,7 @@ server:
   sockets:
     - name: "secured"
       port: 0
-      ssl:
+      tls:
         client-auth: "REQUIRE"
         trust:
           keystore:
@@ -34,7 +34,7 @@ server:
               resource-path: "server.p12"
 
 client:
-  ssl:
+  tls:
     server:
       keystore:
         passphrase: "password"

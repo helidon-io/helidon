@@ -274,13 +274,13 @@ public interface WebClient {
         }
 
         /**
-         * Sets new {@link Ssl} instance which contains ssl configuration.
+         * Sets new {@link WebClientTls} instance which contains ssl configuration.
          *
-         * @param ssl ssl instance
+         * @param webClientTls tls instance
          * @return updated builder instance
          */
-        public Builder ssl(Ssl ssl) {
-            configuration.ssl(ssl);
+        public Builder tls(WebClientTls webClientTls) {
+            configuration.tls(webClientTls);
             return this;
         }
 

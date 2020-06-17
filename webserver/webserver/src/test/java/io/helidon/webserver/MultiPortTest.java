@@ -21,7 +21,7 @@ import io.helidon.common.http.Http;
 import io.helidon.common.pki.KeyConfig;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.webclient.Ssl;
+import io.helidon.webclient.WebClientTls;
 import io.helidon.webclient.WebClient;
 
 import org.hamcrest.Matcher;
@@ -44,13 +44,13 @@ public class MultiPortTest {
     private static WebClient webClient;
     private Handler commonHandler;
     private WebServer webServer;
-    private TlsConfig tlsConfig;
+    private WebServerTls webServerTls;
 
     @BeforeAll
     public static void createClientAcceptingAllCertificates() {
         webClient = WebClient.builder()
                 .followRedirects(true)
-                .ssl(Ssl.builder().trustAll(true).build())
+                .tls(WebClientTls.builder().trustAll(true).build())
                 .build();
     }
 
@@ -67,7 +67,7 @@ public class MultiPortTest {
             }
         };
 
-        tlsConfig = TlsConfig.builder()
+        webServerTls = WebServerTls.builder()
                 .privateKey(KeyConfig.keystoreBuilder()
                                     .keystore(Resource.create("ssl/certificate.p12"))
                                     .keystorePassphrase("helidon".toCharArray())
@@ -108,7 +108,7 @@ public class MultiPortTest {
                 Routing.builder()
                         .get("/", commonHandler)
                         .get("/variable", (req, res) -> res.send("Variable 8443")))
-                .tls(tlsConfig)
+                .tls(webServerTls)
                 .build();
 
         try {
@@ -144,7 +144,7 @@ public class MultiPortTest {
                         .get("/variable", (req, res) -> res.send("Variable 8443"))
 
                         .build())
-                .tls(tlsConfig)
+                .tls(webServerTls)
                 .addSocket(SocketConfiguration.create("plain"))
                 .addNamedRouting("plain",
                                  Routing.builder()
@@ -176,7 +176,7 @@ public class MultiPortTest {
                         .get("/variable", (req, res) -> res.send("Variable BOTH")))
                 .addSocket(SocketConfiguration.builder()
                                    .name("secured")
-                                   .tls(tlsConfig))
+                                   .tls(webServerTls))
                 .build();
 
         webServer.start()
@@ -197,7 +197,7 @@ public class MultiPortTest {
         // start all of the servers
         webServer = WebServer.builder(Routing.builder()
                                               .get("/foo", commonHandler))
-                .tls(tlsConfig)
+                .tls(webServerTls)
                 .addSocket(SocketConfiguration.create("redirect"))
                 .addNamedRouting("redirect",
                                  Routing.builder()
@@ -225,7 +225,7 @@ public class MultiPortTest {
                 .join();
 
         WebClient webClient = WebClient.builder()
-                .ssl(Ssl.builder().trustAll(true).build())
+                .tls(WebClientTls.builder().trustAll(true).build())
                 .build();
 
         //        Response response = client.target("http://localhost:" + webServer.port("redirect")).path("/foo").request()

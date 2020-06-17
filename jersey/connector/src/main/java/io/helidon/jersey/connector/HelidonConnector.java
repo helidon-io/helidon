@@ -98,7 +98,7 @@ class HelidonConnector implements Connector {
         webClientBuilder.connectTimeout(ClientProperties.getValue(config.getProperties(),
                 ClientProperties.CONNECT_TIMEOUT, 10000), TimeUnit.MILLISECONDS);
 
-        HelidonStructures.createSSL(client.getSslContext()).ifPresent(webClientBuilder::ssl);
+        HelidonStructures.createSSL(client.getSslContext()).ifPresent(webClientBuilder::tls);
 
         webClient = webClientBuilder.build();
     }
