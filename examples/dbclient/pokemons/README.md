@@ -87,3 +87,7 @@ Make sure that `localhost` is not being accessed trough proxy when proxy is conf
 ```
 export NO_PROXY='localhost'
 ```
+
+---
+
+Pokémon, and Pokémon character names are trademarks of Nintendo.
