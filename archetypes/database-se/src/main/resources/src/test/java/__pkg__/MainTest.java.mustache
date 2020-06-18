@@ -63,7 +63,11 @@ public class MainTest {
         webClient.get()
                 .path("/type")
                 .request(JsonArray.class)
-                .thenAccept(array -> assertThat(array.size(), is(18)))
+                .thenAccept(array -> {
+                    assertThat(array.size(), is(18));
+                    assertThat(array.get(0).asJsonObject().getInt("id"), is(1));
+                    assertThat(array.get(0).asJsonObject().getString("name"), is("Normal"));
+                })
                 .toCompletableFuture()
                 .get();
     }
