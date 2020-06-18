@@ -105,11 +105,11 @@ public class SetCookie {
             result.append("Path=");
             result.append(path);
         }
-        if (secure != null) {
+        if (secure != null && secure.booleanValue()) {
             result.append(PARAM_SEPARATOR);
             result.append("Secure");
         }
-        if (httpOnly != null) {
+        if (httpOnly != null && httpOnly.booleanValue()) {
             result.append(PARAM_SEPARATOR);
             result.append("HttpOnly");
         }
