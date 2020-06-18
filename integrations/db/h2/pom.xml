@@ -35,6 +35,7 @@
          to have a bad module-info.  So for now we skip generating javadocs.
         -->
         <maven.javadoc.skip>true</maven.javadoc.skip>
+        <spotbugs.skip>true</spotbugs.skip>
     </properties>
 
     <dependencies>
