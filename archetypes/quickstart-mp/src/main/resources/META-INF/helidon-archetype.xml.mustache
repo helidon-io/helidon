@@ -53,6 +53,10 @@
             <includes>
                 <include>build.gradle.mustache</include>
                 <include>README.md.mustache</include>
+                <include>Dockerfile.mustache</include>
+                <include>Dockerfile.native.mustache</include>
+                <include>Dockerfile.jlink.mustache</include>
+                <include>.dockerignore</include>
             </includes>
         </template-set>
         <template-set if="maven">
@@ -60,6 +64,10 @@
             <includes>
                 <include>pom.xml.mustache</include>
                 <include>README.md.mustache</include>
+                <include>Dockerfile.mustache</include>
+                <include>Dockerfile.native.mustache</include>
+                <include>Dockerfile.jlink.mustache</include>
+                <include>.dockerignore</include>
             </includes>
         </template-set>
     </template-sets>

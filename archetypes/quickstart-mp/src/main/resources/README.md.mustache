@@ -1,6 +1,6 @@
 # Helidon Quickstart MP
 
-This example implements a simple Hello World REST service using MicroProfile.
+Sample Helidon MP project that includes multiple REST operations.
 
 ## Build and run
 
@@ -63,8 +63,8 @@ Exercise the application as described above
 ```
 kubectl cluster-info                         # Verify which cluster
 kubectl get pods                             # Verify connectivity to cluster
-kubectl create -f app.yaml               # Deploy application
-kubectl get service {{artifactId}}  # Verify deployed service
+kubectl create -f app.yaml                   # Deploy application
+kubectl get service helidon-quickstart-mp    # Verify deployed service
 ```
 
 ## Build a native image with GraalVM
