@@ -1,0 +1,5 @@
+{
+    "classes": [
+        "org.hibernate.dialect.Oracle10gDialect"
+    ]
+}
