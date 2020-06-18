@@ -37,9 +37,7 @@ import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonStructure;
 
-import io.helidon.common.GenericType;
 import io.helidon.common.http.Http;
-import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.media.common.MessageBodyWriter;
 import io.helidon.media.jsonp.JsonpSupport;
@@ -65,13 +63,11 @@ public final class HealthSupport implements Service {
      */
     public static final String DEFAULT_WEB_CONTEXT = "/health";
 
-    private static final String FEATURE_NAME = "Health";
+    private static final String SERVICE_NAME = "Health";
 
     private static final Logger LOGGER = Logger.getLogger(HealthSupport.class.getName());
 
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
-
-    private static final GenericType<JsonObject> JSON_TYPE = GenericType.create(JsonObject.class);
 
     private final boolean enabled;
     private final String webContext;
@@ -89,7 +85,7 @@ public final class HealthSupport implements Service {
         this.enabled = builder.enabled;
         this.webContext = builder.webContext;
         this.backwardCompatible = builder.backwardCompatible;
-        corsEnabledServiceHelper = CorsEnabledServiceHelper.create(FEATURE_NAME, builder.crossOriginConfig);
+        corsEnabledServiceHelper = CorsEnabledServiceHelper.create(SERVICE_NAME, builder.crossOriginConfig);
 
         if (enabled) {
             builder.allChecks
@@ -144,8 +140,7 @@ public final class HealthSupport implements Service {
 
     private void send(ServerResponse res, HealthResponse hres) {
         res.status(hres.status());
-        // skip selection process and an additional route configuration by using the writer directly
-        res.send(jsonpWriter.write(Single.just(hres.json), JSON_TYPE, res.writerContext()));
+        res.send(jsonpWriter.marshall(hres.json));
     }
 
     HealthResponse callHealthChecks(List<HealthCheck> healthChecks) {

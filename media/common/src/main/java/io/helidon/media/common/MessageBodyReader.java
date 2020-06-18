@@ -38,4 +38,26 @@ public interface MessageBodyReader<T> extends MessageBodyOperator<MessageBodyRea
      * @return Single publisher
      */
     <U extends T> Single<U> read(Publisher<DataChunk> publisher, GenericType<U> type, MessageBodyReaderContext context);
+
+    /**
+     * Unmarshall the given content using this reader.
+     *
+     * @param content readable content to unmarshall
+     * @param type requested type
+     * @return Single publisher
+     */
+    default Single<T> unmarshall(MessageBodyReadableContent content, GenericType<T> type) {
+        return (Single<T>) content.readerContext().unmarshall(content, this, type);
+    }
+
+    /**
+     * Unmarshall the given content using this reader.
+     *
+     * @param content readable content to unmarshall
+     * @param type requested type
+     * @return Single publisher
+     */
+    default Single<T> unmarshall(MessageBodyReadableContent content, Class<T> type) {
+        return (Single<T>) content.readerContext().unmarshall(content, this, GenericType.create(type));
+    }
 }

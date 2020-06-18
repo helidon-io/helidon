@@ -23,9 +23,7 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.logging.Logger;
 
-import io.helidon.common.GenericType;
 import io.helidon.common.http.Http;
-import io.helidon.common.reactive.Single;
 import io.helidon.media.common.DefaultMediaSupport;
 import io.helidon.media.common.MessageBodyWriter;
 
@@ -35,7 +33,6 @@ import io.helidon.media.common.MessageBodyWriter;
 class FileSystemContentHandler extends StaticContentHandler {
     private static final Logger LOGGER = Logger.getLogger(FileSystemContentHandler.class.getName());
     private static final MessageBodyWriter<Path> PATH_WRITER = DefaultMediaSupport.pathWriter();
-    private static final GenericType<Path> PATH_TYPE = GenericType.create(Path.class);
 
     private final Path root;
 
@@ -131,7 +128,7 @@ class FileSystemContentHandler extends StaticContentHandler {
     }
 
     static void send(ServerResponse response, Path path) {
-        response.send(PATH_WRITER.write(Single.just(path), PATH_TYPE, response.writerContext()));
+        response.send(PATH_WRITER.marshall(path));
     }
 
     /**
