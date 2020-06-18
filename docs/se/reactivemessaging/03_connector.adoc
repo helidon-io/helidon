@@ -17,6 +17,11 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Connector
+:toc:
+:toc-placement: preamble
+:description: Reactive Messaging Connector in Helidon SE
+:keywords: helidon, se, messaging, connector
+:h1Prefix: SE
 
 == Messaging Connector
 Connector for Reactive Messaging is a factory producing Publishers and Subscribers for Channels in Reactive Messaging

@@ -17,6 +17,11 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Message
+:toc:
+:toc-placement: preamble
+:description: Reactive Messaging Message in Helidon MP
+:keywords: helidon, mp, messaging, message
+:h1Prefix: MP
 
 == Message
 The Reactive Messaging

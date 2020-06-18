@@ -17,6 +17,11 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Connector
+:toc:
+:toc-placement: preamble
+:description: Reactive Messaging Connector in Helidon MP
+:keywords: helidon, mp, messaging, connector
+:h1Prefix: MP
 
 == Messaging Connector Bean
 

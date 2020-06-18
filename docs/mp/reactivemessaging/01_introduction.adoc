@@ -22,6 +22,7 @@
 :spec-name: MicroProfile Reactive Messaging
 :description: {spec-name} support in Helidon MP
 :keywords: helidon, mp, microprofile, messaging
+:h1Prefix: MP
 
 == Reactive Messaging
 

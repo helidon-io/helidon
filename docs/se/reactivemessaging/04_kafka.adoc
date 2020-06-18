@@ -21,9 +21,10 @@
 :toc-placement: preamble
 :description: Reactive Messaging support for Kafka in Helidon SE
 :keywords: helidon, se, messaging, kafka
+:h1Prefix: SE
 
 == Reactive Kafka Connector
-Connecting streams to Kafka via Reactive Messaging just can't be easier. 
+Connecting streams to Kafka with Reactive Messaging couldn't be easier.
 
 [source,xml]
 .Dependencies needed:
