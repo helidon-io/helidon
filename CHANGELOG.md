@@ -15,6 +15,17 @@ For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.co
 
 ### Changes
 
+### Backward incompatible changes
+
+#### WebClient and WebServer TLS class names aligned
+Class configuration names for TLS are now aligned between WebClient and WebServer
+
+| Old Name                 | New Name           |
+| ------------------------ | ------------------ |
+| `Ssl`                    | `WebClientTls`     |
+| `TlsConfig`              | `WebServerTls`     |
+
+
 ## [2.0.0-RC2]
 
 ### Notes
