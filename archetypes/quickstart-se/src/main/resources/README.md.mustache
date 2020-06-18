@@ -1,6 +1,6 @@
 # Helidon Quickstart SE
 
-This project implements a simple Hello World REST service using Helidon SE.
+Sample Helidon SE project that includes multiple REST operations.
 
 ## Build and run
 
@@ -61,10 +61,10 @@ Exercise the application as described above
 ## Deploy the application to Kubernetes
 
 ```
-kubectl cluster-info                # Verify which cluster
-kubectl get pods                    # Verify connectivity to cluster
-kubectl create -f app.yaml   # Deply application
-kubectl get service {{artifactId}}  # Get service info
+kubectl cluster-info                        # Verify which cluster
+kubectl get pods                            # Verify connectivity to cluster
+kubectl create -f app.yaml                  # Deploy application
+kubectl get service helidon-quickstart-se   # Get service info
 ```
 
 ## Build a native image with GraalVM

@@ -6,6 +6,7 @@ import javax.json.JsonObject;
 import javax.json.JsonReader;
 import javax.json.JsonValue;
 import java.util.concurrent.ExecutionException;
+import java.util.logging.Logger;
 
 import io.helidon.common.reactive.Single;
 import io.helidon.dbclient.DbClient;
@@ -19,6 +20,8 @@ import static javax.json.Json.createReader;
  * Pokémon, and Pokémon character names are trademarks of Nintendo.
  */
 public class InitializeDb {
+
+    private static final Logger LOGGER = Logger.getLogger(InitializeDb.class.getName());
 
     /**
      * Pokemon types source file.
@@ -44,7 +47,7 @@ public class InitializeDb {
             initSchema(dbClient);
             initData(dbClient);
         } catch (ExecutionException | InterruptedException e) {
-            throw new RuntimeException(e);
+            LOGGER.warning(e.getCause() != null ? e.getCause().getMessage() : e.getMessage());
         }
     }
 
@@ -60,7 +63,7 @@ public class InitializeDb {
                     .flatMapSingle(result -> exec.namedDml("create-pokemons")))
                     .await();
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            LOGGER.warning(e.getCause() != null ? e.getCause().getMessage() : e.getMessage());
         }
     }
 
