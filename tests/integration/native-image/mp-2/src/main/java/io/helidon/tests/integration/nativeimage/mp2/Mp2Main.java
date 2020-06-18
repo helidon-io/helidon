@@ -81,6 +81,12 @@ public final class Mp2Main {
 
         response = jack.request().get();
         validateResponse(response, collector, path, "Sparrow");
+
+        response = jack.request().post(Entity.text("The Ripper"));
+        validateResponse(response, collector, path, "Jack");
+
+        response = jack.request().get();
+        validateResponse(response, collector, path, "The Ripper");
     }
 
     private static void validateResponse(Response response, Errors.Collector collector, String path, String expected) {

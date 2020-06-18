@@ -128,10 +128,6 @@ final class FeatureCatalog {
               "Tracing",
               "Tracing support",
               "Tracing");
-        addSe("io.helidon.webclient",
-              "WebClient",
-              "Helidon WebClient",
-              "WebClient");
         addSe("io.helidon.webserver",
               "WebServer",
               "Helidon WebServer",
@@ -491,9 +487,10 @@ final class FeatureCatalog {
         exclude("io.helidon.config.spi");
         exclude("io.helidon.config.mp");
         exclude("io.helidon.config.mp.spi");
-        exclude("io.helidon.dbclient.spi");
-        exclude("io.helidon.dbclient.jdbc.spi");
         exclude("io.helidon.dbclient.common");
+        exclude("io.helidon.dbclient.jdbc.spi");
+        exclude("io.helidon.dbclient.metrics.jdbc");
+        exclude("io.helidon.dbclient.spi");
         exclude("io.helidon.health.common");
         exclude("io.helidon.integrations.cdi.delegates");
         exclude("io.helidon.integrations.cdi.referencecountedcontext");
