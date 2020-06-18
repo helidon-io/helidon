@@ -52,7 +52,7 @@ for native image.
 |❓ |{nbsp} |git |Not yet tested.
 |✅ |Db Client |Db Client |{nbsp}
 |✅ |{nbsp} |Health Check |{nbsp}
-|🔶 |{nbsp} |JDBC |Tested with h2 drivers (see examples)
+|🔶 |{nbsp} |JDBC |Tested with Helidon modules for Oracle and H2 driver (see examples)
 |✅ |{nbsp} |Metrics |{nbsp}
 |✅ |{nbsp} |Tracing |{nbsp}
 |✅ |{nbsp} |mongo |{nbsp}

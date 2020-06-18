@@ -46,24 +46,14 @@ for native image.
 |✅ |CDI |CDI |{nbsp}
 |✅ |Config |Config |{nbsp}
 |✅ |{nbsp} |Encryption |{nbsp}
-|✅ |{nbsp} |HOCON |{nbsp}
-|✅ |{nbsp} |Object Mapping |{nbsp}
 |✅ |{nbsp} |YAML |{nbsp}
-|❓ |{nbsp} |etcd |Not yet tested.
-|❓ |{nbsp} |git |Not yet tested.
-|✅ |Db Client |Db Client |{nbsp}
-|✅ |{nbsp} |Health Check |{nbsp}
-|🔶 |{nbsp} |JDBC |Tested with h2 drivers (see examples)
-|✅ |{nbsp} |Metrics |{nbsp}
-|✅ |{nbsp} |Tracing |{nbsp}
-|✅ |{nbsp} |mongo |{nbsp}
 |✅ |Fault Tolerance |Fault Tolerance |{nbsp}
 |✅ |Health |Health |{nbsp}
 |✅ |{nbsp} |Built-ins |{nbsp}
 |✅ |JAX-RS |JAX-RS |{nbsp}
 |✅ |JPA |JPA |{nbsp}
 |❓ |{nbsp} |EclipseLink |Not yet tested.
-|🔶 |{nbsp} |Hibernate |Experimental support, tested on limited use cases
+|🔶 |{nbsp} |Hibernate |Experimental support, tested on limited use cases with Helidon Oracle and H2 JDBC modules
 |🔶 |JTA |JTA |Experimental support, tested on limited use cases
 |✅ |Messaging |Messaging |{nbsp}
 |✅ |Metrics |Metrics |{nbsp}
