@@ -30,9 +30,12 @@
     <description>JDBC driver for h2 with native-image support</description>
 
     <properties>
-        <spotbugs.skip>true</spotbugs.skip>
-        <maven.source.skip>true</maven.source.skip>
+        <!--
+         To build javadocs we need to have a valid module-info file. But com.oracle.substratevm:svm appears
+         to have a bad module-info.  So for now we skip generating javadocs.
+        -->
         <maven.javadoc.skip>true</maven.javadoc.skip>
+        <spotbugs.skip>true</spotbugs.skip>
     </properties>
 
     <dependencies>
@@ -57,17 +60,6 @@
                         <artifactId>maven-jar-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>empty-sources-jar</id>
-                                <phase>package</phase>
-                                <goals>
-                                    <goal>jar</goal>
-                                </goals>
-                                <configuration>
-                                    <classifier>sources</classifier>
-                                    <classesDirectory>${project.build.directory}/sources</classesDirectory>
-                                </configuration>
-                            </execution>
-                            <execution>
                                 <id>empty-javadoc-jar</id>
                                 <phase>package</phase>
                                 <goals>
@@ -83,5 +75,5 @@
                 </plugins>
             </build>
         </profile>
-</profiles>
+    </profiles>
 </project>
