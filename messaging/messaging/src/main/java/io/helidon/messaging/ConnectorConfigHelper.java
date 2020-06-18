@@ -34,16 +34,14 @@ final class ConnectorConfigHelper {
     }
 
     static ConfigValue<String> getIncomingConnectorName(Config config, String channelName) {
-        //Looks suspicious but incoming connector configured for outgoing channel is ok
-        return config.get(ConnectorFactory.OUTGOING_PREFIX)
+        return config.get(ConnectorFactory.INCOMING_PREFIX)
                 .get(channelName)
                 .get(ConnectorFactory.CONNECTOR_ATTRIBUTE)
                 .asString();
     }
 
     static ConfigValue<String> getOutgoingConnectorName(Config config, String channelName) {
-        //Looks suspicious but outgoing connector configured for incoming channel is ok
-        return config.get(ConnectorFactory.INCOMING_PREFIX)
+        return config.get(ConnectorFactory.OUTGOING_PREFIX)
                 .get(channelName)
                 .get(ConnectorFactory.CONNECTOR_ATTRIBUTE)
                 .asString();

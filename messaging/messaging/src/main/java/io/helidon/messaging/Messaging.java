@@ -345,6 +345,9 @@ public interface Messaging {
          * @return new instance of {@link io.helidon.messaging.Messaging}
          */
         public Messaging build() {
+            if (messaging.getConfig() == null) {
+                messaging.setConfig(Config.create());
+            }
             return messaging;
         }
 
