@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Helidon MP Migration Guide
+:h1Prefix: MP
 :description: Helidon MP Migration Guide
 :keywords: helidon, porting, migration, incompatibilities
 :helidon-uc-flavor: MP

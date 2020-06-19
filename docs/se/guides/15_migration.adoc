@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Helidon SE Migration Guide
+:h1Prefix: SE
 :description: Helidon Migration Guide
 :keywords: helidon, porting, migration, incompatibilities
 :helidon-uc-flavor: SE

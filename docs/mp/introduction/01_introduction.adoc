@@ -19,7 +19,7 @@
 = Helidon MP Introduction
 :description: about Helidon MP
 :keywords: helidon, java, microservices, microprofile
-:h1Prefix:MP
+:h1Prefix: MP
 
 Helidon MP is an Eclipse MicroProfile runtime that allows the Jakarta EE community to run microservices in a portable way.
 

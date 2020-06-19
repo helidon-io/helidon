@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Helidon MP Quickstart
+:h1Prefix: MP
 :description: Helidon MP Quickstart guide
 :keywords: helidon
 

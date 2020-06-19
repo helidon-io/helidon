@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Security Providers
+:h1Prefix: SE
 :description: Helidon Security providers
 :keywords: helidon, security
 

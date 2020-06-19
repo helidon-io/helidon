@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Helidon MP JPA Guide
+:h1Prefix: MP
 :description: Helidon MP JPA Guide
 :keywords: helidon, guide, transaction, jpa, microprofile
 

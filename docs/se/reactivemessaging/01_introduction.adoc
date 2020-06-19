@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Reactive Messaging
+:h1Prefix: SE
 :toc:
 :toc-placement: preamble
 :description: Reactive Messaging support in Helidon SE

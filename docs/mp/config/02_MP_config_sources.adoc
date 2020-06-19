@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Microprofile Config Sources
+:h1Prefix: MP
 :pagename: MicroProfileSources
 :description: MicroProfile Config Sources
 :keywords: helidon, mp, ordinal, mpconfig, yamlmpconfig

@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = CDI extension for JTA
+:h1Prefix: MP
 :description: Helidon CDI extension for JTA
 :keywords: helidon, java, microservices, microprofile, extensions, cdi, jta
 

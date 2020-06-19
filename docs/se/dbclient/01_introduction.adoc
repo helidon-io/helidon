@@ -17,12 +17,9 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = About Helidon DB Client
-
 :description: Helidon DB Client
 :keywords: helidon, se, database, dbclient
-:h1Prefix: SE & MP 
-
-
+:h1Prefix: SE
 
 The Helidon SE DB Client provides a unified, reactive API for working with databases in non-blocking way. 
 
@@ -70,48 +67,38 @@ Before you begin you must add the DB Client dependencies and configure the clien
 The <<about/04_managing-dependencies.adoc, Managing Dependencies>> page describes how you
 should declare dependency management for Helidon applications.
 
-+
 For the DB Client using JDBC implementation and H2 database, you must include the following dependencies in your project:
 
-+
 [source,java]
 ----
 <dependencies>
      <dependency>
-         <groupId>io.helidon.dbclient</groupId> // <1> 
+         <groupId>io.helidon.dbclient</groupId> // <1>
          <artifactId>helidon-dbclient</artifactId>
      </dependency>
      <dependency>
-         <groupId>io.helidon.dbclient</groupId> // <2> 
+         <groupId>io.helidon.dbclient</groupId> // <2>
          <artifactId>helidon-dbclient-jdbc</artifactId>
      </dependency>
      <dependency>
-         <groupId>com.h2.database</groupId> // <3> 
+         <groupId>com.h2.database</groupId> // <3>
          <artifactId>h2</artifactId>
          <version>1.4.200</version>
-    </dependency>    
-     ...
+    </dependency>
 </dependencies>
-
 ----
-
-+
-
 <1> Add the Helidon DB Client
 <2> Specify JDBC or MongoDB
 <3> Add the database JDBC driver (only for JDBC)
 
-. Use Helidon Config to configure the client. 
-+ 
+. Use Helidon Config to configure the client.
 
 The DB Client must be configured before you begin. In the example below we'll use Helidon Config to set up JDBC-based client:
 
-+
-[source,java]
+[source,yaml]
 ----
-
 db:
-  source: "jdbc" // <1>
+  source: "jdbc" // <1> 
   connection:
     url: "jdbc:mysql://127.0.0.1:3306/pokemon?useSSL=false" // <2>
     username: "user"
@@ -121,8 +108,6 @@ db:
     select-all-pokemons: "SELECT id, name FROM Pokemons"
     
 ----
-
-+
 <1> Source: `jdbc` or `mongoDb`
 <2> Connection: database connection parameters
 <3> Statements: named statements to be used in application
@@ -166,13 +151,12 @@ Note that `get` statements are query statements that allow zero to one results.
 
 Ordered parameters are written down as `?` in the statement text:
 
+[source,sql]
 ----
 SELECT name FROM Pokemons WHERE id = ?
 ----
 
-
 The ordered parameters are equivalent to JDBC `PreparedStatement` parameters.
-
 
 Methods to set ordered parameters are:
 
@@ -182,14 +166,17 @@ Methods to set ordered parameters are:
 * `addParam(Object parameter)` with single parameter, can be called repeatedly
 
 === Named Parameters
+
 Named parameters are written down as `:<name>` in the JDBC statements
 
+[source,sql]
 ----
 SELECT name FROM Pokemons WHERE id = :id
 ----
 
 or as `$<name>` in the MongoDB statement:
 
+[source,json]
 ----
 {
     "collection": "pokemons",
@@ -213,6 +200,7 @@ type.
 
 JDBC query with ordered parameters and query that does not run in the transaction:
 
+[source,java]
 ----
 dbClient.execute(exec -> exec
     .createQuery("SELECT name FROM Pokemons WHERE id = ?")
@@ -223,6 +211,7 @@ dbClient.execute(exec -> exec
 
 JDBC query with named parameters and the query runs in transaction:
 
+[source,java]
 ----
 dbClient.inTransaction(tx -> tx
     .createQuery("SELECT name FROM Pokemons WHERE id = :id")
@@ -235,6 +224,7 @@ Both examples will return `Multi<DbRow>` with rows returned by the query.
 
 This example shows a MongoDB update statement with named parameters and the query does not run in transaction:
 
+[source,java]
 ----
 dbClient.execute(exec -> exec
     .createUpdate("{\"collection\": \"pokemons\","
@@ -254,6 +244,7 @@ Execution of DML statements will always return `Single<Long>` with the number of
 
 In following example, the number of modified records is printed to standard output:
 
+[source,java]
 ----
 dbClient.execute(exec -> exec
     .insert("INSERT INTO Pokemons (id, name) VALUES(?, ?)",

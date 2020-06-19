@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = gRPC Server Routing
+:h1Prefix: SE
 :pagename: grpc-server-routing
 :description: Helidon gRPC Server Routing
 :keywords: helidon, grpc, java

@@ -19,7 +19,7 @@
 = Reactive Streams Operators
 :toc:
 :toc-placement: preamble
-:h1Prefix: Se & Mp
+:h1Prefix: MP
 :spec-name: MicroProfile Reactive Streams Operators
 :description: {spec-name} support in Helidon MP
 :keywords: helidon, mp, microprofile, reactivestreams

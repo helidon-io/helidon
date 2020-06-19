@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = CDI extension for Oracle UCP
+:h1Prefix: MP
 :description: Helidon CDI extension for Oracle Universal Connection Pool
 :keywords: helidon, java, microservices, microprofile, extensions, cdi, ucp
 :hikaricp-props-url: https://github.com/brettwooldridge/HikariCP/blob/dev/README.md#configuration-knobs-baby

@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Configuring the Application
+:h1Prefix: MP
 :description: Helidon MicroProfile application configuration
 :keywords: helidon, microprofile, micro-profile
 

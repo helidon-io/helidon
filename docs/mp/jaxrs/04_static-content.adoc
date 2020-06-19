@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Serving Static Content
+:h1Prefix: MP
 :description: Helidon MicroProfile static content
 :keywords: helidon, microprofile, micro-profile
 

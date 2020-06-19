@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = gRPC Server Security
+:h1Prefix: SE
 :description: Helidon Security gRPC integration
 :keywords: helidon, grpc, security
 

@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Helidon MP Health Check Guide
+:h1Prefix: MP
 :description: Helidon health-checks
 :keywords: helidon, health-checks, health, check
 

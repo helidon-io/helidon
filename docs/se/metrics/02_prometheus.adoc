@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Prometheus Metrics
+:h1Prefix: SE
 :description: Helidon Prometheus metrics
 :keywords: helidon, metrics, prometheus
 

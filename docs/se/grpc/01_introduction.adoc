@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = gRPC Server Introduction
+:h1Prefix: SE
 :pagename: grpc-server-introduction
 :description: Helidon gRPC Server Introduction
 :keywords: helidon, grpc, java

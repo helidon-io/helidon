@@ -19,7 +19,7 @@
 = Overview
 :toc:
 :toc-placement: preamble
-:h1Prefix: Se & Mp
+:h1Prefix: MP
 :helidon: Helidon
 :description: Reactive Streams support in {helidon}
 :keywords: helidon, mp, microprofile, reactivestreams

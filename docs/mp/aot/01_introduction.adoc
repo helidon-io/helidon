@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = GraalVM native image
+:h1Prefix: MP
 :description: Helidon AOT using GraalVM native-image
 :keywords: helidon, aot, native, native-image, image, executable, mp
 

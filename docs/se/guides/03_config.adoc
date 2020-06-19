@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Helidon SE Config Guide
+:h1Prefix: SE
 :description: Helidon configuration
 :keywords: helidon, configuration, microprofile, guide, SE
 :toc:

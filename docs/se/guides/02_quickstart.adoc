@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Helidon SE Quickstart
+:h1Prefix: SE
 :description: Helidon SE Quickstart Guide
 :keywords: helidon
 

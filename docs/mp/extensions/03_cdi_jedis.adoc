@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = CDI extension for Jedis
+:h1Prefix: MP
 :description: Helidon CDI extension for Jedis
 :keywords: helidon, java, microservices, microprofile, extensions, cdi, jedis, redis
 :cdi-extension-api-url: https://docs.jboss.org/cdi/spec/2.0/cdi-spec.html#spi

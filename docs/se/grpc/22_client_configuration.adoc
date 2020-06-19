@@ -16,6 +16,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
+:h1Prefix: SE
 :javadoc-base-url-api: {javadoc-base-url}io.helidon.grpc.client/io/helidon/grpc/client
 :pagename: grpc-client-configuration
 :description: Helidon gRPC Client Configuration

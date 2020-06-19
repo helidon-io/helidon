@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Helidon MP Tracing Guide
+:h1Prefix: MP
 :description: Helidon tracing
 :keywords: helidon, tracing, microprofile, guide
 :toc:

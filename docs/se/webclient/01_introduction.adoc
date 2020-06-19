@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = WebClient Introduction
+:h1Prefix: SE
 :pagename: WebClient-Introduction
 :description: Helidon WebClient
 :keywords: helidon, se, rest, httpclient, webclient, reactive
@@ -228,16 +229,14 @@ requestBuilder.request(JsonObject.class)
 
 The <<about/04_managing-dependencies.adoc,Managing Dependencies>> page describes how you should declare dependency management for Helidon applications. You must declare the following dependency in your project's pom.xml:
 
-[source,xml,subs="verbatim,attributes"]
+[source,xml]
+.Dependency on WebClient.
 ----
 <dependency>
     <groupId>io.helidon.webclient</groupId>
     <artifactId>helidon-webclient</artifactId>
-    <1>
 </dependency>
 ----
-        
-<1> Dependency on WebClient.
 
 
 
