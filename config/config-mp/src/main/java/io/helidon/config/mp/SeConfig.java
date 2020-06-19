@@ -113,20 +113,16 @@ class SeConfig implements Config {
         // check if there are any sub-nodes that have prefix with our key
         boolean isObject = false;
 
-
+        Iterator<String> it = delegate.getPropertyNames().iterator();
         if (stringKey.isEmpty()) {
-            boolean empty = true;
-            for (String propertyName : delegate.getPropertyNames()) {
-                empty = false;
-                break;
-            }
-
-            if (empty) {
+            if (!it.hasNext()) {
                 return hasValue() ? Type.VALUE : Type.MISSING;
             }
             return Type.OBJECT;
         }
-        for (String name : delegate.getPropertyNames()) {
+
+        while (it.hasNext()) {
+            String name = it.next();
             if (name.equals(stringKey)) {
                 continue;
             }
