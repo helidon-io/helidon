@@ -16,6 +16,9 @@
 
 package io.helidon.config.mp;
 
+import io.helidon.config.ConfigSources;
+import io.helidon.config.OverrideSources;
+
 import org.eclipse.microprofile.config.Config;
 
 /**
@@ -44,10 +47,15 @@ public final class MpConfig {
         }
 
         io.helidon.config.Config mapper = io.helidon.config.Config.builder()
+                .sources(ConfigSources.empty())
+                .overrides(OverrideSources.empty())
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
-                .disableCaching()
                 .disableParserServices()
+                .disableFilterServices()
+                .disableCaching()
+                .disableValueResolving()
+                .changesExecutor(command -> {})
                 .build();
 
         return new SeConfig(mapper, mpConfig);
