@@ -59,6 +59,7 @@ backend:
         value: "images/helidon_logo_dark.svg"
       items:
         - title: "Introduction"
+          pathprefix: "/about"
           items:
             - title: "About"
               pathprefix: "/about"
@@ -69,6 +70,7 @@ backend:
                 - includes:
                     - "about/*.adoc"
         - title: "Helidon SE"
+          pathprefix: "/se"
           items:
             - title: "Introduction"
               pathprefix: "/se/introduction"
@@ -207,6 +209,7 @@ backend:
                 - includes:
                     - "se/aot/*.adoc"
         - title: "Helidon MP"
+          pathprefix: "/mp"
           items:
             - title: "Introduction"
               pathprefix: "/mp/introduction"
