@@ -101,9 +101,9 @@ class AdHocConfigBuilderTest {
 
         resolver.registerConfig(resolver.getBuilder()
                                         .withSources(MpConfigSources.create(propMap))
-                                        .build(), null);
+                                        .build(), cl);
 
-        Config config = (Config) resolver.getConfig();
+        Config config = (Config) resolver.getConfig(cl);
 
         org.eclipse.microprofile.config.Config c = AdHocConfigBuilder
                 .from(config.get("mp.messaging.outcoming.test-channel"))
@@ -145,15 +145,15 @@ class AdHocConfigBuilderTest {
 
         resolver.registerConfig(resolver.getBuilder()
                                         .withSources(MpConfigSources.create(propMap))
-                                        .build(), null);
+                                        .build(), cl);
 
-        Config config = (Config) resolver.getConfig();
+        Config config = (Config) resolver.getConfig(cl);
 
         resolver.registerConfig(resolver.getBuilder()
                                         .withSources(MpConfigSources.create(propMap2))
-                                        .build(), null);
+                                        .build(), cl);
 
-        Config config2 = (Config) resolver.getConfig();
+        Config config2 = (Config) resolver.getConfig(cl);
 
         org.eclipse.microprofile.config.Config c = AdHocConfigBuilder
                 .from(config.get("mp.messaging.outcoming.test-channel"))

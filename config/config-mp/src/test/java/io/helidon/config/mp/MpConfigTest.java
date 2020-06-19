@@ -290,11 +290,13 @@ public class MpConfigTest {
             Config myConfig = instance.getConfig(myCl);
             // this must not throw an exception - path should be on any environment
             // and the MP env var processing should make it available
-            String path = myConfig.getValue("path", String.class);
+            String fooBar = myConfig.getValue("foo.bar", String.class);
+            assertThat(fooBar, is("mapped-env-value"));
 
             io.helidon.config.Config helidonConfig = (io.helidon.config.Config) myConfig;
             // should work if we use it as SE as well
-            helidonConfig.get("path").asString().get();
+            fooBar = helidonConfig.get("foo.bar").asString().get();
+            assertThat(fooBar, is("mapped-env-value"));
         } finally {
             instance.registerConfig(current, myCl);
         }
