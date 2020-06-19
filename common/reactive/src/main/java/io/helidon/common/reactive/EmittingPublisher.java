@@ -94,8 +94,8 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
                 }
                 requested.updateAndGet(r -> Long.MAX_VALUE - r > n ? n + r : Long.MAX_VALUE);
                 state.compareAndSet(State.INIT, State.REQUESTED);
-                if (state.compareAndSet(State.SUBSCRIBED, State.READY_TO_EMIT)
-                        || State.READY_TO_EMIT == state.get()) {
+                if (state.updateAndGet(s -> s == State.SUBSCRIBED ? State.READY_TO_EMIT : s)
+                        == State.READY_TO_EMIT) {
                     if (requestCallback != null) {
                         requestCallback.accept(n, requested.get());
                     }
@@ -104,10 +104,8 @@ public class EmittingPublisher<T> implements Flow.Publisher<T> {
 
             @Override
             public void cancel() {
-                if (state.compareAndSet(State.INIT, State.CANCELLED)
-                        || state.compareAndSet(State.SUBSCRIBED, State.CANCELLED)
-                        || state.compareAndSet(State.REQUESTED, State.CANCELLED)
-                        || state.compareAndSet(State.READY_TO_EMIT, State.CANCELLED)) {
+                if (state.getAndUpdate(s -> s != State.COMPLETED && s != State.FAILED ? State.CANCELLED : s)
+                        != State.CANCELLED) {
                     cancelCallback.run();
                     EmittingPublisher.this.subscriber = null;
                 }
