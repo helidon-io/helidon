@@ -17,9 +17,9 @@
 
 package io.helidon.messaging;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 
 import io.helidon.config.mp.MpConfig;
 
@@ -56,17 +56,25 @@ public class TestConfigurableConnector implements IncomingConnectorFactory, Outg
 
     @Override
     public SubscriberBuilder<? extends Message<?>, Void> getSubscriberBuilder(final Config config) {
-        io.helidon.config.Config helidonConfig = MpConfig.toHelidonConfig(config);
-        printConfig(helidonConfig);
+        printConfig(config);
         return ReactiveStreams.<Message<CompletableFuture<Map<String, String>>>>builder()
                 .map(Message::getPayload)
-                .forEach(f -> f.complete(helidonConfig
-                        .traverse()
-                        .map(c -> Map.entry(c.key().name(), c.asString().get()))
-                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)))
-                );
+                .forEach(f -> f.complete(toMap(config)));
     }
 
+    private static Map<String, String> toMap(Config config) {
+        Map<String, String> result = new HashMap<>();
+
+        config.getPropertyNames()
+                .forEach(it -> {
+                    config.getOptionalValue(it, String.class).ifPresent(value -> result.put(it, value));
+                });
+
+        return result;
+    }
+    private static void printConfig(Config c) {
+        toMap(c).forEach((key, value) -> System.out.println(key + ": " + value));
+    }
     private static void printConfig(io.helidon.config.Config c) {
         c.asMap().orElse(Map.of()).forEach((key, value) -> System.out.println(key + ": " + value));
     }

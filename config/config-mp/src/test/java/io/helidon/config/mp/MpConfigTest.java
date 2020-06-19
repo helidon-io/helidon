@@ -30,6 +30,7 @@ import io.helidon.config.spi.ConfigMapper;
 import io.helidon.config.spi.ConfigMapperProvider;
 
 import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.junit.jupiter.api.BeforeAll;
@@ -272,6 +273,30 @@ public class MpConfigTest {
 
         public static void reset() {
             counter.set(0);
+        }
+    }
+
+    @Test
+    void testEnvVar() {
+        ConfigProviderResolver instance = ConfigProviderResolver.instance();
+        ClassLoader myCl = Thread.currentThread().getContextClassLoader();
+        Config current = ConfigProvider.getConfig(myCl);
+
+        try {
+            instance.registerConfig(instance.getBuilder()
+                                            .withSources(MpConfigSources.environmentVariables())
+                                            .build(),
+                                    myCl);
+            Config myConfig = instance.getConfig(myCl);
+            // this must not throw an exception - path should be on any environment
+            // and the MP env var processing should make it available
+            String path = myConfig.getValue("path", String.class);
+
+            io.helidon.config.Config helidonConfig = (io.helidon.config.Config) myConfig;
+            // should work if we use it as SE as well
+            helidonConfig.get("path").asString().get();
+        } finally {
+            instance.registerConfig(current, myCl);
         }
     }
 }

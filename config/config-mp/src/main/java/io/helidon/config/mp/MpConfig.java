@@ -16,12 +16,6 @@
 
 package io.helidon.config.mp;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-
-import io.helidon.config.ConfigSources;
-
 import org.eclipse.microprofile.config.Config;
 
 /**
@@ -49,30 +43,13 @@ public final class MpConfig {
             return (io.helidon.config.Config) mpConfig;
         }
 
-        io.helidon.config.Config.Builder builder = io.helidon.config.Config.builder()
+        io.helidon.config.Config mapper = io.helidon.config.Config.builder()
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .disableCaching()
-                .disableParserServices();
-
-        if (mpConfig instanceof MpConfigImpl) {
-            ((MpConfigImpl) mpConfig).converters()
-                    .forEach((clazz, converter) -> {
-                        Class<Object> cl = (Class<Object>) clazz;
-                        builder.addStringMapper(cl, converter::convert);
-                    });
-        }
-
-        Map<String, String> allConfig = new HashMap<>();
-        mpConfig.getPropertyNames()
-                .forEach(it -> {
-                    // covering the condition where a config key disappears between getting the property names and requesting
-                    // the value
-                    Optional<String> optionalValue = mpConfig.getOptionalValue(it, String.class);
-                    optionalValue.ifPresent(value -> allConfig.put(it, value));
-                });
-
-        return builder.addSource(ConfigSources.create(allConfig))
+                .disableParserServices()
                 .build();
+
+        return new SeConfig(mapper, mpConfig);
     }
 }
