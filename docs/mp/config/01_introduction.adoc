@@ -26,6 +26,7 @@
 :h1Prefix: MP
 
 == About {spec-name}
+
 Helidon MicroProfile Config is an implementation of https://github.com/eclipse/microprofile-config/[Eclipse MicroProfile Config].
 You can configure your applications using MicroProfile's config configuration sources and APIs.
 
@@ -33,6 +34,7 @@ You can also extend the configuration using MicroProfile SPI to add custom `Conf
 `org.eclipse.microprofile.config.spi.ConfigSource` and `org.eclipse.microprofile.config.spi.Converter` interfaces respectively.
 
 === {spec-name} Features
+
 {spec-name} uses `ConfigSource` SPI to load configuration data, either from default configuration sources such
 file `META-INF/microprofile-config.properties`, environment variables, and system properties; or from custom `ConfigSource`
 located by Java Service Loader.
@@ -48,14 +50,14 @@ by Java Service Loader.
 You can use MicroProfile Config API to get configuration properties by using `ConfigProvider.getConfig()`
 or injecting configuration values with `@ConfigProperty`.
 
-[source=java]
+[source,java]
 .Using ConfigProvider.getConfig()
 ----
 org.eclipse.microprofile.config.Config config = ConfigProvider.getConfig();
 config.getOptionalValue("app.greeting", String.class).orElse("Hello");
 ----
 
-[source=java]
+[source,java]
 .Injecting configured properties into a constructor
 ----
 @Inject
@@ -68,6 +70,7 @@ public GreetingProvider(@ConfigProperty(name = "app.greeting", defaultValue = "H
 
 The example below shows how the MicroProfile configuration file `microprofile-config.properties` can be used to modify the server listen port property.
 
+[source,properties]
 ----
 // Application properties. This is the default greeting
 app.greeting=Hello
@@ -85,7 +88,7 @@ Helidon MicroProfile Config offers the following features on top of the specific
 You can use `${reference}` to reference another configuration key in a key value. This
 allows to configure a single key to be reused in multiple other keys.
 
-[source=yaml]
+[source,yaml]
 .Example
 ----
 uri: "http://localhost:8080"
@@ -99,7 +102,7 @@ You can encrypt secrets using a master password and store them in a configuratio
 The config encryption filter in MicroProfile Config is enabled by default.
 For more information, see <<about/02_configuration-secrets.adoc,Configuration Secrets>>.
 
-[source=properties]
+[source,properties]
 .Example of encrypted secrets
 ----
 # Password encrypted using a master password
@@ -123,7 +126,7 @@ If a file named `meta-config.yaml`, or `meta-config.properties` is in the curren
 on the classpath and there is no explicit setup of `Config` in the code, the configuration will
 be loaded from the `meta-config` file.
 
-[source=yaml]
+[source,yaml]
 .Example of a YAML meta configuration file:
 ----
 sources:
@@ -196,6 +199,7 @@ The following configuration sources can be used to retrieve the configuration:
 
 You can use `MpConfigSources.create(helidonConfig)` to create a config source from Helidon config and then use it to create a MicroProfile instance.
 
+[source,java]
 ----
 io.helidon.config.Config helidonConfig = io.helidon.config.Config.builder()
                 .addSource(ConfigSources.create(Map.of("key", "value"))) <1>

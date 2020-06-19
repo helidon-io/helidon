@@ -16,6 +16,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
+:h1Prefix: SE
 :pagename: grpc-client-introduction
 :description: Helidon gRPC Client Introduction
 :keywords: helidon, grpc, java

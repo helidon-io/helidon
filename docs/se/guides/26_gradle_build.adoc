@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Gradle Guide
+:h1Prefix: SE
 :description: Helidon Gradle Guide
 :keywords: helidon, guide, gradle, build
 :helidon-uc-flavor: SE

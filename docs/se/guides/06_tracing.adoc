@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Helidon SE Tracing Guide
+:h1Prefix: SE
 :description: Helidon tracing
 :keywords: helidon, tracing, microprofile, guide
 :toc:

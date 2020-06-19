@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Containers Integration
+:h1Prefix: SE
 :description: Helidon Security containers integration
 :keywords: helidon, security
 

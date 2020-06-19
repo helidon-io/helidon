@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Security Introduction
+:h1Prefix: SE
 :description: Helidon Security introduction
 :keywords: helidon, security
 

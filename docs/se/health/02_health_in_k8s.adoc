@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Kubernetes Probes
+:h1Prefix: SE
 :description: Kubernetes probes
 :keywords: helidon, readiness, liveness, probes, kubernetes
 :kubernetes-probes-url: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes

@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = GraalVM Native Images
+:h1Prefix: MP
 :description:  Helidon Native Image
 :keywords: helidon, guide, graalvm, native-image
 :helidon-uc-flavor: MP

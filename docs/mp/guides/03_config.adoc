@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Helidon MP Config Guide
+:h1Prefix: MP
 :description: Helidon configuration
 :keywords: helidon, configuration, microprofile, guide
 :toc:

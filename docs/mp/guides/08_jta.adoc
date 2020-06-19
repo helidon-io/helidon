@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Helidon MP JTA Guide
+:h1Prefix: MP
 :description: Helidon MP JTA Guide
 :keywords: helidon, guide, transaction, jta, microprofile
 

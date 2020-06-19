@@ -16,6 +16,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
+:h1Prefix: SE
 :javadoc-base-url-api: {javadoc-base-url}io.helidon.webserver/io/helidon/webserver
 :description: Helidon Reactive Webserver Configuration
 :keywords: helidon, reactive, reactive streams, reactive java, reactive webserver

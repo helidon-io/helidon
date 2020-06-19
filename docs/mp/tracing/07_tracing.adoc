@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Tracing
+:h1Prefix: MP
 :description: Helidon MP Tracing Support
 = :keywords: helidon, tracing, microprofile, micro-profile
 
@@ -40,8 +41,8 @@ the service name to be associated with tracing spans sent by this instance.
 
 All tracer specific configuration is expected in config under `tracing`.
 
-Example `microprofile-config.properties` with minimal tracer configuration:
-
+[source,properties]
+.Example `microprofile-config.properties` with minimal tracer configuration
 ----
 tracing.service=helidon-mp
 ----
@@ -49,6 +50,7 @@ tracing.service=helidon-mp
 For additional supported properties, please see <<tracing/01_tracing.adoc#Tracing-config,tracing configuration>>
 
 == Creating custom spans
+
 MicroProfile OpenTracing implementation will add support to simply
 add custom spans by annotation. Until we implement this support, you
 can configure custom spans as follows (in JAX-RS resources):
@@ -78,6 +80,7 @@ _Exceptions that require manual handling_:
 - When you use `async()` on the Jersey client request
 
 In such cases, you must provide the SpanContext by hand:
+
 [source,java]
 .Tracing propagation with Jersey client (on a different thread)
 ----
@@ -96,6 +99,7 @@ Response response = client.target(serviceEndpoint)
 
 Tracer and SpanContext can be obtained from `ServerRequest` that can be injected into Resource classes:
 
+[source,java]
 ----
 @Context
 io.helidon.webserver.ServerRequest serverRequest;

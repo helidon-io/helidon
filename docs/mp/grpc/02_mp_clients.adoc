@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = gRPC MicroProfile Clients
+:h1Prefix: MP
 :pagename: grpc-microprofile-clients
 :description: Building Helidon gRPC MicroProfile Clients
 :keywords: helidon, grpc, microprofile, micro-profile

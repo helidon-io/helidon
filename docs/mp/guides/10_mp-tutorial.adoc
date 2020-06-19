@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Helidon MP Tutorial
+:h1Prefix: MP
 :description: Helidon MP Tutorial
 :keywords: helidon
 

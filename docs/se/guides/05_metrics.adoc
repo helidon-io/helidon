@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Helidon SE Metrics Guide
+:h1Prefix: SE
 :description: Helidon metrics
 :keywords: helidon, metrics, microprofile, guide
 

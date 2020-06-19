@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = gRPC MicroProfile Server Services
+:h1Prefix: MP
 :pagename: grpc-microprofile-server
 :description: Helidon gRPC MicroProfile Server-Side Services
 :keywords: helidon, grpc, microprofile, micro-profile

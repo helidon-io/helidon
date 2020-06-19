@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Adding Security
+:h1Prefix: MP
 :description: Helidon MicroProfile security
 :keywords: helidon, microprofile, micro-profile
 

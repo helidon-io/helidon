@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Maven Guide
+:h1Prefix: MP
 :description: Helidon Maven Guide
 :keywords: helidon, guide, maven, build
 :helidon-uc-flavor: MP
