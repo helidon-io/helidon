@@ -49,6 +49,7 @@ public final class ContentWriters {
      * @param bytes the byte array
      * @param copy if {@code true} the byte array is copied
      * @return Single
+     * @since 2.0.0
      */
     public static Single<DataChunk> writeBytes(byte[] bytes, boolean copy) {
         byte[] data;
@@ -68,6 +69,7 @@ public final class ContentWriters {
      * @param cs the char sequence
      * @param charset the charset to use to encode the char sequence
      * @return Single
+     * @since 2.0.0
      */
     public static Single<DataChunk> writeCharSequence(CharSequence cs, Charset charset) {
         return Single.just(DataChunk.create(false, charset.encode(cs.toString())));
@@ -80,6 +82,7 @@ public final class ContentWriters {
      * @param buffer the char buffer
      * @param charset the charset to use to encode the char sequence
      * @return Single
+     * @since 2.0.0
      */
     public static Single<DataChunk> writeCharBuffer(CharBuffer buffer, Charset charset) {
         return Single.just(DataChunk.create(false, buffer.encode(charset)));
@@ -92,6 +95,7 @@ public final class ContentWriters {
      * @param throwable the {@link Throwable}
      * @param charset the charset to use to encode the stack trace
      * @return Single
+     * @since 2.0.0
      */
     public static Single<DataChunk> writeStackTrace(Throwable throwable, Charset charset) {
         final StringWriter stringWriter = new StringWriter();
@@ -121,7 +125,10 @@ public final class ContentWriters {
      * @param copy a signal if byte array should be copied - set it {@code true}
      * if {@code byte[]} will be immediately reused.
      * @return a {@code byte[]} writer
+     *
+     * @deprecated since 2.0.0, use {@link #writeBytes(byte[], boolean)} instead
      */
+    @Deprecated(since = "2.0.0")
     public static Function<byte[], Publisher<DataChunk>> byteArrayWriter(boolean copy) {
         return (bytes) -> writeBytes(bytes, copy);
     }
@@ -136,7 +143,10 @@ public final class ContentWriters {
      * @param charset a standard charset to use
      * @return a {@link String} writer
      * @throws NullPointerException if parameter {@code charset} is {@code null}
+     * @deprecated since 2.0.0, use {@link #writeCharSequence(CharSequence, Charset)}
+     *  or {@link DefaultMediaSupport#charSequenceWriter()} instead
      */
+    @Deprecated(since = "2.0.0")
     public static Function<CharSequence, Publisher<DataChunk>> charSequenceWriter(Charset charset) {
         return (cs) -> writeCharSequence(cs, charset);
     }
@@ -151,7 +161,9 @@ public final class ContentWriters {
      * @param charset a standard charset to use
      * @return a {@link String} writer
      * @throws NullPointerException if parameter {@code charset} is {@code null}
+     * @deprecated since 2.0.0, use {@link #writeCharBuffer(CharBuffer, Charset)} instead
      */
+    @Deprecated(since = "2.0.0")
     public static Function<CharBuffer, Publisher<DataChunk>> charBufferWriter(Charset charset) {
         return (buffer) -> writeCharBuffer(buffer, charset);
     }
@@ -164,7 +176,9 @@ public final class ContentWriters {
      * @param retrySchema a retry schema to use in case when {@code read}
      * operation reads {@code 0 bytes}
      * @return a {@link ReadableByteChannel} writer
+     * @deprecated since 2.0.0, use {@link DefaultMediaSupport#byteChannelWriter(RetrySchema)}} instead
      */
+    @Deprecated(since = "2.0.0")
     public static Function<ReadableByteChannel, Publisher<DataChunk>> byteChannelWriter(RetrySchema retrySchema) {
         Objects.requireNonNull(retrySchema);
 
@@ -178,7 +192,9 @@ public final class ContentWriters {
      * Returns a writer function for {@link ReadableByteChannel}.
      *
      * @return a {@link ReadableByteChannel} writer
+     * @deprecated since 2.0.0, use {@link DefaultMediaSupport#byteChannelWriter()}} instead
      */
+    @Deprecated(since = "2.0.0")
     public static Function<ReadableByteChannel, Publisher<DataChunk>> byteChannelWriter() {
         return channel -> IoMulti.multiFromByteChannel(channel).map(DataChunk::create);
     }

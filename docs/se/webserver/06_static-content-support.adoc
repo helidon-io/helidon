@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Static Content Support
+:h1Prefix: SE
 :description: Helidon Reactive WebServer static content support
 :keywords: helidon, reactive, reactive streams, reactive java, reactive webserver
 

@@ -19,6 +19,7 @@
 :javadoc-base-url-api: {javadoc-base-url}io.helidon.config/io/helidon/config
 
 = Additional Supported Formats and Sources
+:h1Prefix: SE
 :description: Helidon config supported formats and sources
 :keywords: helidon, config
 :toc: preamble

@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Configuring the Server
+:h1Prefix: MP
 :description: Helidon MicroProfile server configuration
 :keywords: helidon, microprofile, micro-profile
 
@@ -59,6 +60,7 @@ ssl:
 ----
 
 == Configuring additional ports
+
 Helidon MP can expose multiple ports, with the following limitations:
 
 - The default port is the port that serves your application (JAX-RS applications and resources)
@@ -91,6 +93,7 @@ health:
 ----
 
 == Assigning JAX-RS applications to ports
+
 Since 1.4
 
 Helidon has the concept of named routings. These correspond to the named ports
@@ -107,7 +110,8 @@ The annotation has two attributes:
 - `value` that defines the routing name
 - `required` to mark that the routing name MUST be configured in Helidon server
 
-Example:
+[source,yaml]
+.`@RoutingName` example
 ----
 @ApplicationScoped
 @ApplicationPath("/admin")
@@ -121,12 +125,14 @@ The example above will be bound to `admin` routing (and port) and will fail if s
 is not configured.
 
 === Configuration override of routing name
+
 For each application class you can define the routing name and its required flag by specifying a configuration
 option `class-name.routing-name.name` and `class-name.routing-name.required`.
 
 Example (YAML) configuration for a class `io.helidon.examples.AdminApplication` that changes the
 routing name to `management` and its required flag to `false`:
 
+[source,yaml]
 ----
 io.helidon.examples.AdminApplication:
   routing-name:
@@ -135,6 +141,7 @@ io.helidon.examples.AdminApplication:
 ----
 
 == Overriding JAX-RS application path
+
 Since Helidon 1.4
 In JAX-RS we can use `@ApplicationPath` to configure a path the JAX-RS application is available on.
 As this is compiled into the source code, Helidon provides a way to override this using configuration.
@@ -145,6 +152,7 @@ option `class-name.routing-path.path`.
 Example (YAML) configuration for a class `io.helidon.example.AdminApplication` that changes the
 routing path to `/management`:
 
+[source,yaml]
 ----
 io.helidon.examples.AdminApplication:
   routing-path:
@@ -152,8 +160,10 @@ io.helidon.examples.AdminApplication:
 ----
 
 == Example configuration of JAX-RS application
+
 A full configuration example (YAML):
 
+[source,yaml]
 ----
 server:
   port: 8080

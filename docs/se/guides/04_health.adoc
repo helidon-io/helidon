@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Helidon SE Health Check Guide
+:h1Prefix: SE
 :description: Helidon health-checks
 :keywords: helidon, health-check, health, check
 
@@ -509,7 +510,7 @@ HealthSupport health = HealthSupport.builder()
 ----
 <1> Add built-in health-checks.
 <2> Add a custom liveness check.
-<2> Add a custom readiness check.
+<3> Add a custom readiness check.
 
 
 [source,bash]

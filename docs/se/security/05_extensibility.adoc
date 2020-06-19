@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Extending Security
+:h1Prefix: SE
 
 This guide describes how you can extend the Security component.
 

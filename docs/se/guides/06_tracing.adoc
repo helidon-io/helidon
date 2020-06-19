@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Helidon SE Tracing Guide
+:h1Prefix: SE
 :description: Helidon tracing
 :keywords: helidon, tracing, microprofile, guide
 :toc:
@@ -164,7 +165,7 @@ import io.helidon.tracing.TracerBuilder; // <1>
 <1> Add a new import statement.
 <2> Call the new `buildServerConfig` method to build a `ServerConfiguration` object.
 <3> Build the `ServerConfiguration` object.
-<3> Build and register a `Tracer` object using the tracing configuration.
+<4> Build and register a `Tracer` object using the tracing configuration.
 
 [source,java]
 .Update the `GreetService` class; 1) Add a new import and 2) Replace the `getDefaultMessageHandler` method:
@@ -628,7 +629,7 @@ tracing:
 docker build -t helidon-tracing-se .
 ----
 
-==== Deploy Zipkin into Kubernetes
+=== Deploy Zipkin into Kubernetes
 
 [source,yaml]
 .Create the Kubernetes YAML specification, named `zipkin.yaml`, with the following contents:
@@ -675,7 +676,7 @@ Navigate to http://localhost:9412/zipkin to validate that you can access Zipkin 
 take a few seconds before it is ready.
 
 
-==== Deploy your Helidon application into Kubernetes
+=== Deploy your Helidon application into Kubernetes
 
 [source,yaml]
 .Create the Kubernetes YAML specification, named `tracing.yaml`, with the following contents:
@@ -723,7 +724,7 @@ spec:
 kubectl apply -f ./tracing.yaml
 ----
 
-==== Access your application and the Zipkin trace
+=== Access your application and the Zipkin trace
 
 [source,bash]
 .Get the application service information:
@@ -751,7 +752,7 @@ curl http://localhost:31143/greet
 Access the Zipkin UI at http://localhost:9412/zipkin and click on the refresh icon to see the trace that was just created.
 
 
-==== Cleanup
+=== Cleanup
 
 You can now delete the Kubernetes resources that were just created during this example.
 

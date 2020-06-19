@@ -27,7 +27,7 @@ import io.helidon.common.http.Parameters;
  * Accessor for the {@link Charset} specified by a content-type header.
  * @deprecated since 2.0.0, use {@link MessageBodyContext#charset()} instead
  */
-@Deprecated
+@Deprecated(since = "2.0.0")
 public class ContentTypeCharset {
 
     /**

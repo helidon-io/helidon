@@ -19,6 +19,7 @@
 :javadoc-base-url-api: {javadoc-base-url}io.helidon.config/io/helidon/config
 
 = Hierarchical Features
+:h1Prefix: SE
 :description: Helidon hierarchical features
 :keywords: helidon, config
 :toc: preamble

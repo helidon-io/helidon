@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Helidon MP Data Source Guide
+:h1Prefix: MP
 :description: Helidon MP Data Source Guide
 :keywords: helidon, guide, datasource, microprofile
 

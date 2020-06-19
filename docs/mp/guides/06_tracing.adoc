@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Helidon MP Tracing Guide
+:h1Prefix: MP
 :description: Helidon tracing
 :keywords: helidon, tracing, microprofile, guide
 :toc:
@@ -293,7 +294,7 @@ import org.eclipse.microprofile.opentracing.Traced; // <1>
 ...
 ----
 <1> Import the `Traced` annotation.
-<1> Enable tracing for getMessage.
+<2> Enable tracing for getMessage.
 
 [source,bash]
 .Build and run the application, then invoke the endpoints and check the response:
@@ -605,7 +606,7 @@ tracing.host=zipkin
 docker build -t helidon-tracing-mp .
 ----
 
-==== Deploy Zipkin into Kubernetes
+=== Deploy Zipkin into Kubernetes
 
 [source,yaml]
 .Create the Kubernetes YAML specification, named `zipkin.yaml`, with the following contents:
@@ -653,7 +654,7 @@ Navigate to http://localhost:9412/zipkin to validate that you can access Zipkin 
 take a few seconds before it is ready.
 
 
-==== Deploy your Helidon application into Kubernetes
+=== Deploy your Helidon application into Kubernetes
 
 [source,yaml]
 .Create the Kubernetes YAML specification, named `tracing.yaml`, with the following contents:
@@ -701,7 +702,7 @@ spec:
 kubectl apply -f ./tracing.yaml
 ----
 
-==== Access your application and the Zipkin trace
+=== Access your application and the Zipkin trace
 
 [source,bash]
 .Get the application service information:
@@ -729,7 +730,7 @@ curl http://localhost:31143/greet
 Access the Zipkin UI at http://localhost:9412/zipkin and click on the refresh icon to see the trace that was just created.
 
 
-==== Cleanup
+=== Cleanup
 
 You can now delete the Kubernetes resources that were just created during this example.
 

@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Jaeger Tracing
+:h1Prefix: SE
 :description: Helidon Tracing Support
 :keywords: helidon, tracing, jaeger
 

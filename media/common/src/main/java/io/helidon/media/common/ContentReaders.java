@@ -52,6 +52,7 @@ public final class ContentReaders {
      *
      * @param chunks source publisher
      * @return Single
+     * @since 2.0.0
      */
     public static Single<byte[]> readBytes(Publisher<DataChunk> chunks) {
         return Multi.create(chunks).collect(new BytesCollector());
@@ -73,6 +74,7 @@ public final class ContentReaders {
      * @param chunks source publisher
      * @param charset charset to use for decoding the input
      * @return Single
+     * @since 2.0.0
      */
     public static Single<String> readURLEncodedString(Publisher<DataChunk> chunks,
             Charset charset) {
@@ -85,7 +87,10 @@ public final class ContentReaders {
      *
      * @param charset the charset to use with the returned string content reader
      * @return a string content reader
+     * @deprecated since 2.0.0, use {@link #readString(Publisher, Charset)}}
+     *  or {@link DefaultMediaSupport#stringReader()} instead
      */
+    @Deprecated(since = "2.0.0")
     public static Reader<String> stringReader(Charset charset) {
         return (chunks, type) -> readString(chunks, charset).toStage();
     }
@@ -96,7 +101,9 @@ public final class ContentReaders {
      *
      * @param charset the charset to use with the returned string content reader
      * @return the URL-decoded string content reader
+     * @deprecated since 2.0.0, use {@link #readURLEncodedString(Publisher, Charset)} instead
      */
+    @Deprecated(since = "2.0.0")
     public static Reader<String> urlEncodedStringReader(Charset charset) {
         return (chunks, type) -> readURLEncodedString(chunks, charset).toStage();
     }
@@ -107,7 +114,9 @@ public final class ContentReaders {
      *
      * @return reader that transforms a publisher of byte buffers to a
      * completion stage that might end exceptionally with
+     * @deprecated since 2.0.0, use {@link #readBytes(Publisher)} instead
      */
+    @Deprecated(since = "2.0.0")
     public static Reader<byte[]> byteArrayReader() {
         return (publisher, clazz) -> readBytes(publisher).toStage();
     }
@@ -121,7 +130,7 @@ public final class ContentReaders {
      * {@link InputStream#read()}) block.
      *
      * @return a input stream content reader
-     * @deprecated use {@link DefaultMediaSupport#inputStreamReader()}
+     * @deprecated since 2.0.0, use {@link DefaultMediaSupport#inputStreamReader()}
      */
     @Deprecated(since = "2.0.0")
     public static Reader<InputStream> inputStreamReader() {

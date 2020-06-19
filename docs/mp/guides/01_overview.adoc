@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Overview
+:h1Prefix: MP
 :description: Helidon MP Guides
 :keywords: helidon, java, microservices, microprofile, guides
 

@@ -19,7 +19,7 @@
 = Helidon MP Introduction
 :description: about Helidon MP
 :keywords: helidon, java, microservices, microprofile
-:h1Prefix:MP
+:h1Prefix: MP
 
 Helidon MP is an Eclipse MicroProfile runtime that allows the Jakarta EE community to run microservices in a portable way.
 
@@ -38,24 +38,27 @@ Helidon has added additional APIs to the core set of Microprofile APIs giving yo
 [cols="2,5"]
 |=======
 |CDI Extensions
-|In addition to MicroProfile support, Helidon MP provides CDI extensions to address areas not covered by MicroProfile.<<mp/extensions/01_overview.adoc,Learn more>>.
+|In addition to MicroProfile support, Helidon MP provides CDI extensions to address areas not covered by MicroProfile.
+<<mp/extensions/01_overview.adoc,Learn more>>.
 
 |Configuration
 |The MP Config component provides a Java API to load and process configuration properties in key/value form into a Config object which the application can use to retrieve config data.
-<<mp/config/introduction.adoc, Learn more>>. 
+<<mp/config/01_introduction.adoc, Learn more>>.
 
 |  CORS Support
-|  Although it is possible for any Helidon application to implement its own support for CORS, there are common tasks (such as processing preflight requests) that can be provided in a Helidon module. <<mp/cors/01_introduction.adoc, Learn more>>. 
+|  Although it is possible for any Helidon application to implement its own support for CORS, there are common tasks (such as processing preflight requests) that can be provided in a Helidon module. 
+<<mp/cors/01_introduction.adoc, Learn more>>. 
 
 |GraalVM Native Image Support for Helidon MP
-|GraalVM native-image support is now available for both Helidon MP and Helidon SE. Helidon MP includes support for GraalVM to enable the conversion of Helidon MP applications to native executable code via the native-image utility.<<mp/guides/36_graalnative.adoc, Learn more>>.
+|GraalVM native-image support is now available for both Helidon MP and Helidon SE. Helidon MP includes support for GraalVM to enable the conversion of Helidon MP applications to native executable code via the native-image utility. <<mp/guides/36_graalnative.adoc, Learn more>>.
 
 | gRPC 
-|  Helidon gRPC Server provides a framework for creating gRPC (general-purpose Remote Procedure Calls) applications.
+|  Helidon gRPC Server provides a framework for creating gRPC (general-purpose Remote Procedure Calls) applications. 
 <<mp/grpc/01_introduction.adoc, Learn more>>.
 
 | Health Checks 
-|  The health check API combines the statuses of all the dependencies that affect availability and the ability to perform correctly such as network latency and storage. <<mp/health/01_health.adoc, Learn more>>.
+|  The health check API combines the statuses of all the dependencies that affect availability and the ability to perform correctly such as network latency and storage.
+<<mp/health/01_introduction.adoc, Learn more>>.
 
 
 |JAX-RS/Jersey
@@ -68,7 +71,7 @@ Helidon has added additional APIs to the core set of Microprofile APIs giving yo
 
 |Metrics 
 |Heldion supports both a base set and a Helidon-specific set of metrics that expose information in JSON format (as specified by the MicroProfile Metrics specification) or in plain text (for Prometheus metrics). 
-<<mp/metrics/01_metrics.adoc, Learn more>>.
+<<mp/metrics/01_introduction.adoc, Learn more>>.
 
 
 |OpenAPI  
@@ -81,11 +84,11 @@ Helidon has added additional APIs to the core set of Microprofile APIs giving yo
 
 
 |Reactive Messaging and Reactive Operators
-|With Helidon MP 2.0 you can now formalize manipulation with reactive streams and reactive messaging. Reactive messaging heavily depends on standardized operators so together they provide great portability between existing implementations. <<mp/reactivemessaging/01_introduction.adoc, Learn more about Reactive Messaging>> and <<mp/reactivestreams/01_introduction.adoc, Reactive Streams>>.
+|With Helidon MP 2.0 you can now formalize manipulation with reactive streams and reactive messaging. Reactive messaging heavily depends on standardized operators so together they provide great portability between existing implementations. <<mp/reactivemessaging/01_introduction.adoc, Learn more about Reactive Messaging>> and <<mp/reactivestreams/01_overview.adoc, Reactive Streams>>.
 
 |Security 
 |The MP security modules support authentication, authorization, outbound security and audits for your applications.
-<<mp/security/01_introduction.adoc, Learn more>>.
+<<mp/security/01_security.adoc, Learn more>>.
 
 
 |=======
@@ -98,5 +101,5 @@ Learn about the steps needed to get started with Helidon MP <<mp/introduction/02
 
 For more information about the Helidon MicroProfile APIs see  https://github.com/oracle/helidon/wiki/Supported-APIs[the Helidon API Wiki page].
 
-Try the <<mp/guides/03_quickstart.adoc,Helidon MP quickstart>> to get your
+Try the <<mp/guides/02_quickstart.adoc,Helidon MP quickstart>> to get your
 first Helidon MP application up and running in minutes.

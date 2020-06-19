@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Rest Client
+:h1Prefix: MP
 :description: Helidon MP Rest Client
 = :keywords: helidon, rest, client, microprofile, micro-profile
 

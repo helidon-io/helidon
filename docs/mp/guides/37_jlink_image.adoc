@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Custom Runtime Images with `jlink`
+:h1Prefix: MP
 :description: Helidon Custom Runtime Images
 :keywords: helidon, guide, jlink, image
 :helidon-uc-flavor: MP

@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Security Tools
+:h1Prefix: SE
 :description: Helidon Security Tools
 :keywords: helidon, security
 

@@ -19,6 +19,7 @@
 :javadoc-base-url-api: {javadoc-base-url}io.helidon.config/io/helidon/config
 
 = Loading Configuration: Config Sources and Parsers
+:h1Prefix: SE
 :description: A summary of Helidon config sources and parsers
 :keywords: Helidon, config, sources, parsers
 
