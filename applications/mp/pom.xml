@@ -31,31 +31,12 @@
     <description>Parent pom for Helidon MP applications</description>
 
     <properties>
-        <!-- we need this explicit version to work with native image -->
-        <version.h2.jdbc>1.2.1.Final</version.h2.jdbc>
-        <!-- we need this explicit version to work with native image -->
-        <version.h2.db>1.4.197</version.h2.db>
         <version.plugin.jandex>1.0.6</version.plugin.jandex>
         <version.plugin.jaxb2>0.14.0</version.plugin.jaxb2>
         <version.plugin.eclipselink>2.7.1.1</version.plugin.eclipselink>
         <version.plugin.hibernate.enhance>5.4.6.Final</version.plugin.hibernate.enhance>
         <mainClass>io.helidon.microprofile.cdi.Main</mainClass>
     </properties>
-
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>com.h2database</groupId>
-                <artifactId>h2</artifactId>
-                <version>${version.h2.db}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.quarkus</groupId>
-                <artifactId>quarkus-jdbc-h2</artifactId>
-                <version>${version.h2.jdbc}</version>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
 
     <build>
         <pluginManagement>

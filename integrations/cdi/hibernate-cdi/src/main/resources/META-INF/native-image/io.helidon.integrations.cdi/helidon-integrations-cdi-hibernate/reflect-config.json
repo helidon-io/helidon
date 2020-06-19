@@ -50,15 +50,6 @@
         ]
     },
     {
-        "name": "org.hibernate.dialect.H2Dialect",
-        "methods": [
-            {
-                "name": "<init>",
-                "parameterTypes": []
-            }
-        ]
-    },
-    {
         "name": "org.hibernate.engine.config.internal.ConfigurationServiceImpl",
         "allPublicMethods": true
     },
