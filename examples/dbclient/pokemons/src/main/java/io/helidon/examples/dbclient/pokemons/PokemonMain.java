@@ -36,7 +36,7 @@ import io.helidon.webserver.WebServer;
  */
 public final class PokemonMain {
 
-    /** MongoDB configuration. Default configuration file {@code appliaction.yaml} contains MySQL/JDBC configuration. */
+    /** MongoDB configuration. Default configuration file {@code appliaction.yaml} contains JDBC configuration. */
     private static final String MONGO_CFG = "mongo.yaml";
 
     /** Whether MongoDB support is selected. */
@@ -63,7 +63,7 @@ public final class PokemonMain {
             System.out.println("MongoDB database selected");
             mongo = true;
         } else {
-            System.out.println("MySQL/JDBC database selected");
+            System.out.println("JDBC database selected");
             mongo = false;
         }
         startServer();

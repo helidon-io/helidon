@@ -31,7 +31,7 @@
 
     <properties>
         <!--
-         To build javadocs we need to have a valid module-info file. But com.oracle.substratevm:svm appears
+         To build javadocs we need to have a valid module-info file. But org.graalvm.nativeimage:svm appears
          to have a bad module-info.  So for now we skip generating javadocs.
         -->
         <maven.javadoc.skip>true</maven.javadoc.skip>
@@ -44,7 +44,7 @@
             <artifactId>h2</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.oracle.substratevm</groupId>
+            <groupId>org.graalvm.nativeimage</groupId>
             <artifactId>svm</artifactId>
             <scope>provided</scope>
         </dependency>
