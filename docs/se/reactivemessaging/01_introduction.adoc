@@ -34,7 +34,7 @@ For example connecting your streams to external services usually requires a lot 
 code for configuration handling, backpressure propagation, acknowledgement and more.
 
 For such tasks there is a system of connectors, emitters and means to orchestrate them in Helidon,
-called *Reative Messaging*. It's basically an API for connecting and configuring
+called *Reactive Messaging*. It's basically an API for connecting and configuring
 Connectors and Emitters with your reactive streams thru so called <<Channel,Channels>>.
 
 You may wonder how *Reactive Messaging* relates to
@@ -46,9 +46,9 @@ Helidon SE Messaging with some limitation(there is no CDI in Helidon SE).
 All Messaging connectors in Helidon are made to be universally usable by Helidon MP and SE.
 
 === Channel
-Channel is a named pair of `Publisher` and `Subscriber`, channels can be connected together by
-<<Processors,processors>>. Registering of `Publisher` or `Subscriber` for a channel can be done
-by Messaging API, or configured implicitly for using registered <<se/03_connector.adoc,connector>>
+Channel is a named pair of `Publisher` and `Subscriber`. Channels can be connected together by
+<<Processor,processors>>. Registering of `Publisher` or `Subscriber` for a channel can be done
+by Messaging API, or configured implicitly for using registered <<se/reactivemessaging/03_connector.adoc,connector>>
 for generating such `Publisher` or `Subscriber`.
 
 [source,java]
@@ -97,13 +97,13 @@ Messaging.builder()
 
 === Message
 Reactive Messaging in Helidon SE uses the same concept of
-<<mp/reactivemessaging/02_message.adoc,message wrapping>> as Microprofile messaging.
+<<mp/reactivemessaging/02_message.adoc,message wrapping>> as MicroProfile messaging.
 The only notable difference is that SE Messaging does almost no implicit or automatic
-acknowledgement due to _no magic_ phylosophy of Helidon SE.
+acknowledgement due to _no magic_ philosophy of Helidon SE.
 
 Only exception to this are variants of methods `Messaging.Builder#listener` and
-`Messaging.Builder#processor` with consumer or function params, conviniently unwraping payload
-for you. After such implicit unwraping is not possible to do manual acknowledgement, therefore
+`Messaging.Builder#processor` with consumer or function params,  conveniently unwrapping payload
+for you. After such implicit unwrapping is not possible to do a manual acknowledgement, therefore
 implicit ack before callback is executed is necessary.
 
 === Connector
@@ -114,7 +114,7 @@ like <<mp/reactivemessaging/01_introduction.adoc,MicroProfile Reactive Messaging
 This allows connectors to be usable in both flavors of Helidon with one limitation which is
 that connector has to be able to work without CDI.
 
-Example of such versatile connector is Helidon's own:
+Example of such a versatile connector is Helidon's own:
 
  * <<se/reactivemessaging/04_kafka.adoc,Kafka connector>>
 

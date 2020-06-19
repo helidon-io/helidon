@@ -71,7 +71,7 @@ Messaging messaging = Messaging.builder()
         .build()
         .start();
 ----
-<1> Prepare channel for connecting kafka connector with specific publisher configuration -> listener
+<1> Prepare a channel for connecting kafka connector with specific publisher configuration -> listener
 <2> Channel -> connector mapping is automatic when using KafkaConnector.configBuilder()
 <3> Prepare Kafka connector, can be used by any channel
 
@@ -98,7 +98,7 @@ messaging = Messaging.builder()
         .build()
         .start();
 ----
-<1> Prepare channel for connecting kafka connector with specific publisher configuration -> listener
+<1> Prepare a channel for connecting kafka connector with specific publisher configuration -> listener
 <2> Channel -> connector mapping is automatic when using KafkaConnector.configBuilder()
 <3> Prepare Kafka connector, can be used by any channel
 

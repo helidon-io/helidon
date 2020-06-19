@@ -24,8 +24,8 @@
 :h1Prefix: SE
 
 == Messaging Connector
-Connector for Reactive Messaging is a factory producing Publishers and Subscribers for Channels in Reactive Messaging
-Messaging connector is just an implementation of
+Connector for Reactive Messaging is a factory producing Publishers and Subscribers for
+Channels in Reactive Messaging. Messaging connector is just an implementation of
 `IncomingConnectorFactory`, `OutgoingConnectorFactory` or both.
 
 [source,java]
@@ -122,7 +122,10 @@ public class ExampleConnector implements IncomingConnectorFactory {
 
 ==== Explicit Config
 
-Explicit config for channel's publisher is possible with `Channel.Builder#publisherConfig(Config config)` and for subscriber with `Channel.Builder#subscriberConfig(Config config)`. Supplied <<se/config/01_introduction.adoc,Heldion Config>> is merged with mandatory attributes and any implicit config found. Resulting config is served to Connector.     
+An explicit config for channel's publisher is possible with `Channel.Builder#publisherConfig(Config config)`
+and for subscriber with `Channel.Builder#subscriberConfig(Config config)`.
+Supplied <<se/config/01_introduction.adoc,Heldion Config>> is merged with
+mandatory attributes and any implicit config found. Resulting config is served to Connector.
 
 [source,java]
 .Example consuming from Kafka connector with explicit config:
