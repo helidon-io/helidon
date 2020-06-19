@@ -21,11 +21,14 @@ import java.util.Map;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.config.mp.MpConfigSources;
+
+import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-
-import org.junit.jupiter.api.Test;
 
 class AdHocConfigBuilderTest {
 
@@ -37,6 +40,38 @@ class AdHocConfigBuilderTest {
     private static final String ADDITION_ATTR_1_VALUE = "addition-attr1-value";
     private static final String ADDITION_ATTR_2_VALUE = "addition-attr2-value";
     private static final String TEST_CONNECTOR = "test-connector";
+
+    private static ConfigProviderResolver resolver;
+    private static ClassLoader cl;
+
+    @BeforeAll
+    static void initClass() {
+        resolver = ConfigProviderResolver.instance();
+        cl = Thread.currentThread().getContextClassLoader();
+    }
+
+    @Test
+    void currentContextMp() {
+        // MP tests ensure that the MP Config -> SE Config casting works as expected
+        // when obtained from config resolver
+        Map<String, String> propMap = Map.of(
+                "mp.messaging.outcoming.test-channel.key.serializer", AdHocConfigBuilderTest.class.getName()
+        );
+
+        resolver.registerConfig(resolver.getBuilder()
+                                        .withSources(MpConfigSources.create(propMap))
+                                        .build(), cl);
+
+        Config config = (Config) resolver.getConfig(cl);
+
+        org.eclipse.microprofile.config.Config c = AdHocConfigBuilder
+                .from(config.get("mp.messaging.outcoming.test-channel"))
+                .put(TEST_KEY, TEST_TOPIC_CUSTOM)
+                .build();
+
+        assertThat(c.getValue(TEST_KEY, String.class), is(TEST_TOPIC_CUSTOM));
+        assertThat(c.getValue("key.serializer", String.class), is(AdHocConfigBuilderTest.class.getName()));
+    }
 
     @Test
     void currentContext() {
@@ -58,6 +93,27 @@ class AdHocConfigBuilderTest {
     }
 
     @Test
+    void customValueOverrideMp() {
+        Map<String, String> propMap = Map.of(
+                "mp.messaging.outcoming.test-channel." + TEST_KEY, TEST_TOPIC_CONFIG,
+                "mp.messaging.outcoming.test-channel.key.serializer", AdHocConfigBuilderTest.class.getName()
+        );
+
+        resolver.registerConfig(resolver.getBuilder()
+                                        .withSources(MpConfigSources.create(propMap))
+                                        .build(), null);
+
+        Config config = (Config) resolver.getConfig();
+
+        org.eclipse.microprofile.config.Config c = AdHocConfigBuilder
+                .from(config.get("mp.messaging.outcoming.test-channel"))
+                .put(TEST_KEY, TEST_TOPIC_CUSTOM)
+                .build();
+
+        assertThat(c.getValue(TEST_KEY, String.class), is(TEST_TOPIC_CUSTOM));
+    }
+
+    @Test
     void customValueOverride() {
         Map<String, String> propMap = Map.of(
                 "mp.messaging.outcoming.test-channel." + TEST_KEY, TEST_TOPIC_CONFIG,
@@ -74,6 +130,38 @@ class AdHocConfigBuilderTest {
                 .build();
 
         assertThat(c.getValue(TEST_KEY, String.class), is(TEST_TOPIC_CUSTOM));
+    }
+
+    @Test
+    void putAllTestMp() {
+        Map<String, String> propMap = Map.of(
+                "mp.messaging.outcoming.test-channel." + TEST_KEY, TEST_TOPIC_CONFIG
+        );
+
+        Map<String, String> propMap2 = Map.of(
+                "mp.messaging.connector." + TEST_CONNECTOR + "." + ADDITION_ATTR_1, ADDITION_ATTR_1_VALUE,
+                "mp.messaging.connector." + TEST_CONNECTOR + "." + ADDITION_ATTR_2, ADDITION_ATTR_2_VALUE
+        );
+
+        resolver.registerConfig(resolver.getBuilder()
+                                        .withSources(MpConfigSources.create(propMap))
+                                        .build(), null);
+
+        Config config = (Config) resolver.getConfig();
+
+        resolver.registerConfig(resolver.getBuilder()
+                                        .withSources(MpConfigSources.create(propMap2))
+                                        .build(), null);
+
+        Config config2 = (Config) resolver.getConfig();
+
+        org.eclipse.microprofile.config.Config c = AdHocConfigBuilder
+                .from(config.get("mp.messaging.outcoming.test-channel"))
+                .putAll(config2.get("mp.messaging.connector." + TEST_CONNECTOR))
+                .build();
+
+        assertThat(c.getValue(ADDITION_ATTR_1, String.class), is(ADDITION_ATTR_1_VALUE));
+        assertThat(c.getValue(ADDITION_ATTR_2, String.class), is(ADDITION_ATTR_2_VALUE));
     }
 
     @Test

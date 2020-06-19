@@ -1,5 +1,5 @@
 /*
- * Copyright (c)  2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,7 +65,7 @@ final class ConnectorConfigHelper {
         Config incomingChannelConfig = rootConfig.get("mp.messaging.incoming");
         Config outgoingChannelConfig = rootConfig.get("mp.messaging.outgoing");
 
-        Config channelsConfig = (Config) ConnectorConfigBuilder
+        Config channelsConfig = ConnectorConfigBuilder
                 .create(incomingChannelConfig)
                 .config(outgoingChannelConfig)
                 .build();
