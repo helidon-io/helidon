@@ -76,7 +76,7 @@ public interface Content extends Multi<DataChunk> {
      *                 publisher or the publisher transformed by the last previously registered filter).
      * @deprecated since 2.0.0, use {@code io.helidon.media.common.MessageBodyReaderContext.registerFilter}
      */
-    @Deprecated
+    @Deprecated(since = "2.0.0")
     void registerFilter(Function<Flow.Publisher<DataChunk>, Flow.Publisher<DataChunk>> function);
 
     /**
@@ -96,7 +96,7 @@ public interface Content extends Multi<DataChunk> {
      * @param <T>    the requested type
      * @deprecated since 2.0.0, use {@code io.helidon.media.common.MessageBodyReaderContext.registerReader}
      */
-    @Deprecated
+    @Deprecated(since = "2.0.0")
     <T> void registerReader(Class<T> type, Reader<T> reader);
 
     /**
@@ -119,7 +119,7 @@ public interface Content extends Multi<DataChunk> {
      * @param <T>       the requested type
      * @deprecated since 2.0.0, use {@code io.helidon.media.common.MessageBodyReaderContext.registerReader}
      */
-    @Deprecated
+    @Deprecated(since = "2.0.0")
     <T> void registerReader(Predicate<Class<?>> predicate, Reader<T> reader);
 
     /**

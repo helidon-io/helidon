@@ -194,7 +194,7 @@ public interface ServerResponse extends MessageBodyFilters, MessageBodyWriters {
      * @throws NullPointerException if {@code function} parameter is {@code null}
      * @deprecated Since 2.0.0, use {@link #registerWriter(io.helidon.media.common.MessageBodyWriter)} instead
      */
-    @Deprecated
+    @Deprecated(since = "2.0.0")
     <T> ServerResponse registerWriter(Class<T> type, Function<T, Publisher<DataChunk>> function);
 
     /**
@@ -213,7 +213,7 @@ public interface ServerResponse extends MessageBodyFilters, MessageBodyWriters {
      * @throws NullPointerException if {@code function} parameter is {@code null}
      * @deprecated since 2.0.0, use {@link #registerWriter(io.helidon.media.common.MessageBodyWriter)} instead
      */
-    @Deprecated
+    @Deprecated(since = "2.0.0")
     <T> ServerResponse registerWriter(Class<T> type,
                                       MediaType contentType,
                                       Function<? extends T, Publisher<DataChunk>> function);

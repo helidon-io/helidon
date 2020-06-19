@@ -263,7 +263,7 @@ even though it is considered a default source.
 curl http://localhost:8080/greet
 ...
 {
-  "message": "HelloFrom-config.properties World!"
+  "message": "HelloFrom-config.properties World!" # <1>
 }
 ----
 <1> The greeting was picked up from `config.properties`, overriding the value in `META-INF/microprofile-config.properties`.
@@ -339,7 +339,7 @@ import static io.helidon.config.ConfigSources.file;
 curl http://localhost:8080/greet
 ...
 {
-  "message": "HelloFromConfigFile World!"
+  "message": "HelloFromConfigFile World!" # <1>
 }
 ----
 <1> The configuration property from the file `config-file.properties` takes precedence.
@@ -410,7 +410,7 @@ import static io.helidon.config.ConfigSources.directory;
 curl http://localhost:8080/greet
 ...
 {
-  "message": "HelloFromFileInDirectoryConf World!"
+  "message": "HelloFromFileInDirectoryConf World!" # <1>
 }
 ----
 <1> The greeting was fetched from the file named `app.greeting`.
@@ -580,7 +580,7 @@ public class GreetingProvider {
 constructor as a `String` parameter named `message`.
 
 
-===== Injecting at field level
+=== Injecting at field level
 
 You can inject configuration at the field level as shown below.  Use the `volatile` keyword
 since you cannot use `AtomicReference` with field level injection.
@@ -627,7 +627,7 @@ curl http://localhost:8080/greet
 }
 ----
 
-===== Injecting the Config object
+=== Injecting the Config object
 
 You can inject the `Config` object into the class and access it directly as shown below.
 This object is not initialized when the `GreetingProvider` constructor is called, so you need to provide
@@ -678,7 +678,7 @@ curl http://localhost:8080/greet
 ----
 
 
-===== Navigating the Config tree
+=== Navigating the Config tree
 
 Helidon offers a variety of methods to access in-memory configuration.  These can be categorized as _key access_ or _tree navigation_.
 You have been using _key access_ for all of the examples to this point.  For example `app.greeting` is accessing

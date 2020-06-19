@@ -48,21 +48,19 @@ system properties can also be simplified.
 Aliases are produced for any environment variable name that matches _all_ of
 the following:
 
-<1> does not begin or end with a `'_'` character
-<2> does not contain `"__"`
-<3> contains one or more `'_'` characters
+. does not begin or end with a `'_'` character
+. does not contain `"__"`
+. contains one or more `'_'` characters
 
 For each such name, two aliases are added with the names mapped as follows:
 
-<1> Replace any `"\_dash_"` or `"\_DASH_"` substrings with `"-"`, e.g. `"APP_PAGE_dash_SIZE"`
+. Replace any `"\_dash_"` or `"\_DASH_"` substrings with `"-"`, e.g. `"APP_PAGE_dash_SIZE"`
 becomes `"APP_PAGE-SIZE"`.
-
-<2> Replace `'_'` with `'.'` and add as an alias, e.g. `"APP_GREETING"` is
+. Replace `'_'` with `'.'` and add as an alias, e.g. `"APP_GREETING"` is
 added as `"APP.GREETING"` and `"APP_PAGE-SIZE"` is added as `"APP.PAGE-SIZE"`.
 This mapping is added primarily to support mixed case config keys such as
 `"app.someCamelCaseKey"`.
-
-<3> Convert the result of step 2 to lowercase and add as an alias, e.g.
+. Convert the result of step 2 to lowercase and add as an alias, e.g.
 `"APP.GREETING"` is added as `"app.greeting"` and `"APP.PAGE-SIZE"` is added
 as `"app.page-size"`.
 

@@ -71,7 +71,7 @@ TIP: For a complete list of fixes and enhancements, see the Helidon 2.0  https:/
 Helidon SE already supports GraalVM, but in 2.0 GraalVM native image support will also be available in Helidon MP. <<mp/guides/36_graalnative.adoc,GraalVM Native Images Guide>> +
 
 * *Helidon Command Line Tool* +
-One of the new features in Helidon 2.0 is the addition of a command line interface. The Helidon CLI enables developers to get started with Helidon with minimal effort: you can create a new application, build it, run it, and more, by writing some simple commands. <<se/cli/01_introduction.adoc, Learn more about Helidon CLI>>.
+One of the new features in Helidon 2.0 is the addition of a command line interface. The Helidon CLI enables developers to get started with Helidon with minimal effort: you can create a new application, build it, run it, and more, by writing some simple commands.
 
 
 * *DB Client for Helidon SE* +
@@ -105,9 +105,11 @@ View the https://github.com/oracle/helidon/blob/2.0.0-M1/CHANGELOG.md#backward-i
 
 == Next Steps
 
+
 <<se/guides/02_quickstart.adoc,Helidon SE Quickstart Examples>>
 
 <<mp/guides/02_quickstart.adoc, Helidon MP Quickstart Examples>>
+
 
 
 

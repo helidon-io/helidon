@@ -42,7 +42,7 @@ Here is the code for a minimalist gRPC application that runs on a default port (
                                 .build())
                 .start() // <2>
                 .toCompletableFuture()
-                .get(10, TimeUnit.SECONDS); // <3>Implement the simplest possible gRPC service.
+                .get(10, TimeUnit.SECONDS); // Implement the simplest possible gRPC service. // <3>
 
         System.out.println("gRPC Server started at: http://localhost:" + grpcServer.port()); // <4>
     }
