@@ -40,7 +40,7 @@ Helidon libraries interoperate with popular tools from the cloud-native space, s
 * https://opentracing.io/[OpenTracing]
 * https://coreos.com/etcd/[Etcd]
 
-TIP: The <<guides/01_overview.adoc#_getting_started,Helidon Quickstart Examples>>
+TIP: The <<se/guides/01_overview.adoc,Helidon Quickstart Examples>>
  contain support for Docker and Kubernetes.
 
 
@@ -59,7 +59,7 @@ The table below shows to primary differences between Helidon SE and Helidon MP.
 |Microframework model with a very small footprint and limited functionality (~7 MB) | https://projects.eclipse.org/proposals/eclipse-microprofile[Eclipse MicroProfile] implementation; slightly larger footprint than SE (~13 MB) 
 |Functional style is reactive non-blocking   |Declarative style with dependency injection
 |Transparent "no magic" development experience; pure java application development with no annotations and no dependency injections  |Jakarta EE microprofile development experience; all Jakarta components (CDI, JAX-RS, JSON-P/B)
-|Learn more about <<se/01_introduction.adoc, Helidon SE>>. | Learn more about <<mp/01_introduction.adoc, Helidon MP>>.
+|Learn more about <<se/introduction/01_introduction.adoc, Helidon SE>>. | Learn more about <<mp/introduction/01_introduction.adoc, Helidon MP>>.
 |====================
 
 == What's New in Helidon 2.0
@@ -68,10 +68,10 @@ The Helidon 2.0 release contains significant new features, enhancements and fixe
 TIP: For a complete list of fixes and enhancements, see the Helidon 2.0  https://github.com/oracle/helidon/blob/2.0.0/CHANGELOG.md[changelog].
 
 * *GraalVM Native-image Support in Helidon MP* +
-Helidon SE already supports GraalVM, but in 2.0 GraalVM native image support will also be available in Helidon MP. <<guides/36_graalnative.adoc,GraalVM Native Images Guide>> +
+Helidon SE already supports GraalVM, but in 2.0 GraalVM native image support will also be available in Helidon MP. <<mp/guides/36_graalnative.adoc,GraalVM Native Images Guide>> +
 
 * *Helidon Command Line Tool* +
-One of the new features in Helidon 2.0 is the addition of a command line interface. The Helidon CLI enables developers to get started with Helidon with minimal effort: you can create a new application, build it, run it, and more, by writing some simple commands. <<se/cli/01_introduction.adoc, Learn more about Helidon CLI>>.
+One of the new features in Helidon 2.0 is the addition of a command line interface. The Helidon CLI enables developers to get started with Helidon with minimal effort: you can create a new application, build it, run it, and more, by writing some simple commands.
 
 
 * *DB Client for Helidon SE* +
@@ -79,7 +79,7 @@ The new database client for Helidon SE will include support for the MongoDB reac
 
 
 * *Extending MicroProfile Reactive Messaging and Reactive Operators Support* +
-MP Reactive Operators will be included in both frameworks, while MP Reactive Messaging will only be included in Helidon MP. <<mp/reactivemessaging/01_introduction.adoc, Learn more about Reactive Messaging>> and <<mp/reactivestreams/01_introduction.adoc, Reactive Streams>>.
+MP Reactive Operators will be included in both frameworks, while MP Reactive Messaging will only be included in Helidon MP. <<mp/reactivemessaging/01_introduction.adoc, Learn more about Reactive Messaging>> and <<mp/reactivestreams/01_overview.adoc, Reactive Streams>>.
 
 * *Helidon Web Client* +
 The new reactive web client can integrate with other Helidon SE APIs. 
@@ -105,7 +105,7 @@ View the https://github.com/oracle/helidon/blob/2.0.0-M1/CHANGELOG.md#backward-i
 
 == Next Steps
 
-<<guides/01_overview.adoc#_getting_started,Helidon Quickstart Examples>>
+<<se/guides/02_quickstart.adoc,Helidon Quickstart Examples>>
 
 
 
