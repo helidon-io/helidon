@@ -35,6 +35,7 @@ import javax.net.ssl.SSLException;
 import io.helidon.common.LazyValue;
 import io.helidon.common.context.Context;
 import io.helidon.config.Config;
+import io.helidon.config.DeprecatedConfig;
 import io.helidon.media.common.MediaContext;
 import io.helidon.media.common.MediaContextBuilder;
 import io.helidon.media.common.MediaSupport;
@@ -603,7 +604,7 @@ class WebClientConfiguration {
             config.get("user-agent").asString().ifPresent(this::userAgent);
             config.get("cookies").asNode().ifPresent(this::cookies);
             config.get("headers").asNode().ifPresent(this::headers);
-            config.get("tls")
+            DeprecatedConfig.get(config, "tls", "ssl")
                     .as(WebClientTls.builder()::config)
                     .map(WebClientTls.Builder::build)
                     .ifPresent(this::tls);
