@@ -18,6 +18,7 @@ package io.helidon.config.mp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -42,6 +43,7 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.arrayWithSize;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 
 /**
@@ -282,19 +284,33 @@ public class MpConfigTest {
         ClassLoader myCl = Thread.currentThread().getContextClassLoader();
         Config current = ConfigProvider.getConfig(myCl);
 
+        //Make the test OS independent
+        String pathVarName = System.getenv()
+                .keySet()
+                .stream()
+                .filter(s -> "path".equals(s.toLowerCase()))
+                .findFirst()
+                .orElseThrow(() -> new NoSuchElementException("Path env property is expected to be available!"));
+
+        String expectedPath = System.getenv(pathVarName);
+
+
         try {
             instance.registerConfig(instance.getBuilder()
                                             .withSources(MpConfigSources.environmentVariables())
                                             .build(),
                                     myCl);
-            Config myConfig = instance.getConfig(myCl);
+            Config mpConfig = instance.getConfig(myCl);
             // this must not throw an exception - path should be on any environment
             // and the MP env var processing should make it available
-            String path = myConfig.getValue("path", String.class);
+            String mpPath = mpConfig.getValue(pathVarName, String.class);
 
-            io.helidon.config.Config helidonConfig = (io.helidon.config.Config) myConfig;
+            io.helidon.config.Config helidonConfig = (io.helidon.config.Config) mpConfig;
             // should work if we use it as SE as well
-            helidonConfig.get("path").asString().get();
+            String helidonPath = helidonConfig.get(pathVarName).asString().get();
+
+            assertThat(mpPath, is(equalTo(expectedPath)));
+            assertThat(helidonPath, is(equalTo(expectedPath)));
         } finally {
             instance.registerConfig(current, myCl);
         }
