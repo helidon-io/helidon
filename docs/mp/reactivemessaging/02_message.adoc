@@ -74,7 +74,7 @@ https://download.eclipse.org/microprofile/microprofile-reactive-messaging-1.0/mi
 @Outgoing("consume-and-ack")
 public PublisherBuilder<Integer> streamOfMessages() {
     return ReactiveStreams.of(Message.of("This is Payload", () -> {
-            System.out.println("This articular message was acked!");
+            System.out.println("This particular message was acked!");
             return CompletableFuture.completedFuture(null);
         })).buildRs();
 }
@@ -85,7 +85,7 @@ public void receiveAndAckMessage(Message<String> msg) {
     msg.ack();<1>
 }
 ----
-<1> Calling ack() will print "This articular message was acked!" to System.out
+<1> Calling ack() will print "This particular message was acked!" to System.out
 
 [source,java]
 .Example of manual acknowledgment
@@ -93,7 +93,7 @@ public void receiveAndAckMessage(Message<String> msg) {
 @Outgoing("consume-and-ack")
 public PublisherBuilder<Integer> streamOfMessages() {
     return ReactiveStreams.of(Message.of("This is Payload", () -> {
-            System.out.println("This articular message was acked!");
+            System.out.println("This particular message was acked!");
             return CompletableFuture.completedFuture(null);
         })).buildRs();
 }
@@ -104,7 +104,7 @@ public void receiveAndAckMessage(Message<String> msg) {
     msg.ack();<1>
 }
 ----
-<1> Calling ack() will print "This articular message was acked!" to System.out
+<1> Calling ack() will print "This particular message was acked!" to System.out
 
 [source,java]
 .Example of explicit pre-process acknowledgment
@@ -112,14 +112,14 @@ public void receiveAndAckMessage(Message<String> msg) {
 @Outgoing("consume-and-ack")
 public PublisherBuilder<Integer> streamOfMessages() {
     return ReactiveStreams.of(Message.of("This is Payload", () -> {
-            System.out.println("This articular message was acked!");
+            System.out.println("This particular message was acked!");
             return CompletableFuture.completedFuture(null);
         })).buildRs();
 }
 
 /**
 * Prints to the console:
-* > This articular message was acked!
+* > This particular message was acked!
 * > Method invocation!
 */
 @Incoming("consume-and-ack")
@@ -134,7 +134,7 @@ public void receiveAndAckMessage(Message<String> msg) {
 @Outgoing("consume-and-ack")
 public PublisherBuilder<Integer> streamOfMessages() {
     return ReactiveStreams.of(Message.of("This is Payload", () -> {
-            System.out.println("This articular message was acked!");
+            System.out.println("This particular message was acked!");
             return CompletableFuture.completedFuture(null);
         })).buildRs();
 }
@@ -142,7 +142,7 @@ public PublisherBuilder<Integer> streamOfMessages() {
 /**
 * Prints to the console:
 * > Method invocation!
-* > This articular message was acked!
+* > This particular message was acked!
 */
 @Incoming("consume-and-ack")
 @Acknowledgment(Acknowledgment.Strategy.POST_PROCESSING)
