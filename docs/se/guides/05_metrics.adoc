@@ -363,8 +363,8 @@ import java.util.Collections;
 import javax.json.Json;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
-import org.eclipse.microprofile.metrics.Meter;
-import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.Meter; // <1>
+import org.eclipse.microprofile.metrics.MetricRegistry; // <1>
 
 public class GreetingCards implements Service {
 
@@ -542,8 +542,8 @@ import java.util.Random;
 import javax.json.Json;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
-import org.eclipse.microprofile.metrics.Histogram;
-import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.Histogram; // <1>
+import org.eclipse.microprofile.metrics.MetricRegistry; // <1>
 
 public class GreetingCards implements Service {
 
@@ -580,8 +580,8 @@ public class GreetingCards implements Service {
 <1> Import metrics classes.
 <2> Declare a `Histogram` member variable.
 <3> Create and register the `Histogram` metric in the `MetricRegistry`.
-<5> Loop, loading the histogram with numbers.
 <4> Update the `Histogram` metric with a random number.
+<5> Loop, loading the histogram with numbers.
 
 
 [source,bash]

@@ -257,7 +257,7 @@ even though it is considered a default source.
 curl http://localhost:8080/greet
 ...
 {
-  "message": "HelloFrom-config.properties World!"
+  "message": "HelloFrom-config.properties World!" # <1>
 }
 ----
 <1> The greeting was picked up from `config.properties`, overriding the value in `application.yaml`.
@@ -333,7 +333,7 @@ import static io.helidon.config.ConfigSources.file;
 curl http://localhost:8080/greet
 ...
 {
-  "message": "HelloFrom-config-file.properties World!"
+  "message": "HelloFrom-config-file.properties World!" # <1>
 }
 ----
 <1> The configuration property from the file `config-file.properties` takes precedence.
@@ -404,7 +404,7 @@ import static io.helidon.config.ConfigSources.directory;
 curl http://localhost:8080/greet
 ...
 {
-  "message": "HelloFromFileInDirectoryConf World!"
+  "message": "HelloFromFileInDirectoryConf World!" # <1>
 }
 ----
 <1> The greeting was fetched from the file named `app.greeting`.
@@ -548,7 +548,7 @@ the `greeting` child node of the `app` parent node.  There are many options for 
 methods as described in <<config/03_hierarchical-features.adoc,Hierarchical Config>> and <<config/06_advanced-configuration.adoc,Advanced Config>>.
 
 
-===== Accessing config using keys or navigation
+=== Accessing config using keys or navigation
 
 The simplest way to access configuration data is using a key, as shown below in the `GreetService` class.  The
 key can be composite as shown below:

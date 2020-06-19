@@ -70,6 +70,7 @@ Before you begin you must add the DB Client dependencies and configure the clien
 The <<about/04_managing-dependencies.adoc, Managing Dependencies>> page describes how you
 should declare dependency management for Helidon applications.
 
++
 For the DB Client using JDBC implementation and H2 database, you must include the following dependencies in your project:
 
 +
@@ -94,7 +95,7 @@ For the DB Client using JDBC implementation and H2 database, you must include th
 
 ----
 
-+ 
++
 
 <1> Add the Helidon DB Client
 <2> Specify JDBC or MongoDB
@@ -110,7 +111,7 @@ The DB Client must be configured before you begin. In the example below we'll us
 ----
 
 db:
-  source: "jdbc" // <1> 
+  source: "jdbc" // <1>
   connection:
     url: "jdbc:mysql://127.0.0.1:3306/pokemon?useSSL=false" // <2>
     username: "user"

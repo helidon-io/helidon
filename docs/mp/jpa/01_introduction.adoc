@@ -35,10 +35,10 @@ fully managed `EntityManager` by injecting it in the same way you
 would in a Java EE application server:
 
 [source,java]
-====
+----
 @PersistenceContext
 private EntityManager em;
-====
+----
 
 The Jakarta Persistence API is a specification that governs how Java
 objects map to relational databases, and has existed since 2006.
