@@ -23,7 +23,6 @@ import java.util.concurrent.TimeUnit;
 
 import javax.annotation.Priority;
 
-import io.helidon.common.HelidonFeatures;
 import io.helidon.grpc.core.GrpcHelper;
 import io.helidon.grpc.core.InterceptorPriorities;
 import io.helidon.grpc.server.MethodDescriptor;
@@ -43,6 +42,7 @@ import org.eclipse.microprofile.metrics.MetadataBuilder;
 import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
+import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
 
@@ -53,22 +53,26 @@ import org.eclipse.microprofile.metrics.Timer;
 public class GrpcMetrics
         implements ServerInterceptor, ServiceDescriptor.Configurer, MethodDescriptor.Configurer {
 
-    static {
-        HelidonFeatures.register("gRPC Server", "Metrics");
-        HelidonFeatures.register("gRPC Client", "Metrics");
-    }
-
     /**
      * The registry of vendor metrics.
      */
-    private static final MetricRegistry VENDOR_REGISTRY =
+    static final MetricRegistry VENDOR_REGISTRY =
             RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.VENDOR);
 
     /**
      * The registry of application metrics.
      */
-    private static final MetricRegistry APP_REGISTRY =
+    static final MetricRegistry APP_REGISTRY =
             RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.APPLICATION);
+
+    static final org.eclipse.microprofile.metrics.Metadata GRPC_METER = org.eclipse.microprofile.metrics.Metadata
+            .builder()
+            .withName("grpc.requests.meter")
+            .withDisplayName("Meter for overall gRPC requests")
+            .withDescription("Each gRPC request will mark the meter to see overall throughput")
+            .withType(MetricType.METERED)
+            .withUnit(MetricUnits.NONE)
+            .build();
 
     /**
      * The context key name to use to obtain rules to use when applying metrics.
@@ -255,8 +259,7 @@ public class GrpcMetrics
                 serverCall = call;
         }
 
-        serverCall = new MeteredServerCall<>(VENDOR_REGISTRY.meter("grpc.requests.meter"), serverCall);
-        serverCall = new CountedServerCall<>(VENDOR_REGISTRY.counter("grpc.requests.count"), serverCall);
+        serverCall = new MeteredServerCall<>(VENDOR_REGISTRY.meter(GRPC_METER), serverCall);
 
         return next.startCall(serverCall, headers);
     }

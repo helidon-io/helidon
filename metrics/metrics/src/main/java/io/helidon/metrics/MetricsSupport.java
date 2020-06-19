@@ -44,12 +44,8 @@ import javax.json.JsonObjectBuilder;
 import javax.json.JsonStructure;
 import javax.json.JsonValue;
 
-import io.helidon.common.GenericType;
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
-import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.config.DeprecatedConfig;
 import io.helidon.media.common.MessageBodyWriter;
@@ -78,7 +74,7 @@ import static io.helidon.webserver.cors.CorsEnabledServiceHelper.CORS_CONFIG_KEY
  * Support for metrics for Helidon Web Server.
  *
  * <p>
- * By defaults cretes the /metrics endpoint with three sub-paths: application,
+ * By defaults creates the /metrics endpoint with three sub-paths: application,
  * vendor and base.
  * <p>
  * To register with web server:
@@ -108,14 +104,9 @@ public final class MetricsSupport implements Service {
 
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
     private static final String DEFAULT_CONTEXT = "/metrics";
-    private static final String FEATURE_NAME = "Metrics";
+    private static final String SERVICE_NAME = "Metrics";
 
-    private static final GenericType<JsonObject> JSON_TYPE = GenericType.create(JsonObject.class);
     private static final MessageBodyWriter<JsonStructure> JSONP_WRITER = JsonpSupport.writer();
-
-    static {
-        HelidonFeatures.register(HelidonFlavor.SE, FEATURE_NAME);
-    }
 
     private final String context;
     private final RegistryFactory rf;
@@ -126,7 +117,7 @@ public final class MetricsSupport implements Service {
     private MetricsSupport(Builder builder) {
         this.rf = builder.registryFactory.get();
         this.context = builder.context;
-        corsEnabledServiceHelper = CorsEnabledServiceHelper.create(FEATURE_NAME, builder.crossOriginConfig);
+        corsEnabledServiceHelper = CorsEnabledServiceHelper.create(SERVICE_NAME, builder.crossOriginConfig);
     }
 
     /**
@@ -367,22 +358,6 @@ public final class MetricsSupport implements Service {
                 .withUnit(MetricUnits.NONE)
                 .build());
 
-        vendor.counter(Metadata.builder()
-                .withName("grpc.requests.count")
-                .withDisplayName("Total number of gRPC requests")
-                .withDescription("Each gRPC request (regardless of the method) will increase this counter")
-                .withType(MetricType.COUNTER)
-                .withUnit(MetricUnits.NONE)
-                .build());
-
-        vendor.meter(Metadata.builder()
-                .withName("grpc.requests.meter")
-                .withDisplayName("Meter for overall gRPC requests")
-                .withDescription("Each gRPC request will mark the meter to see overall throughput")
-                .withType(MetricType.METERED)
-                .withUnit(MetricUnits.NONE)
-                .build());
-
         rules.any((req, res) -> {
             totalCount.inc();
             totalMeter.mark();
@@ -471,7 +446,7 @@ public final class MetricsSupport implements Service {
     }
 
     private static void sendJson(ServerResponse res, JsonObject object) {
-        res.send(JSONP_WRITER.write(Single.just(object), JSON_TYPE, res.writerContext()));
+        res.send(JSONP_WRITER.marshall(object));
     }
 
     private void getMultiple(ServerRequest req, ServerResponse res, Registry... registries) {

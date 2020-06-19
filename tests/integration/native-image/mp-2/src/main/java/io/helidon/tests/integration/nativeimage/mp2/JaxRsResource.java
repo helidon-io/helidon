@@ -19,7 +19,6 @@ import java.net.URI;
 
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
-import javax.persistence.EntityNotFoundException;
 import javax.persistence.PersistenceContext;
 import javax.transaction.Transaction;
 import javax.transaction.Transactional;
@@ -75,14 +74,15 @@ public class JaxRsResource {
         GreetingEntity greeting;
 
         boolean created = false;
-        try {
-            greeting = this.entityManager.getReference(GreetingEntity.class, firstPart);
-            greeting.setSecondPart(secondPart);
-            //entityManager.persist(greeting);
-        } catch (EntityNotFoundException entityNotFoundException) {
+
+        greeting = this.entityManager.find(GreetingEntity.class, firstPart);
+
+        if (greeting == null) {
             greeting = new GreetingEntity(firstPart, secondPart);
             entityManager.persist(greeting);
             created = true;
+        } else {
+            greeting.setSecondPart(secondPart);
         }
 
         if (created) {

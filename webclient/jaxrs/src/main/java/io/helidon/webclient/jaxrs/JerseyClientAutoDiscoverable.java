@@ -16,28 +16,51 @@
 package io.helidon.webclient.jaxrs;
 
 import java.util.concurrent.ExecutorService;
+import java.util.logging.Logger;
 
 import javax.annotation.Priority;
 import javax.ws.rs.ConstrainedTo;
 import javax.ws.rs.RuntimeType;
+import javax.ws.rs.core.Configuration;
 import javax.ws.rs.core.FeatureContext;
 
 import org.glassfish.jersey.client.ClientAsyncExecutor;
 import org.glassfish.jersey.internal.spi.AutoDiscoverable;
+import org.glassfish.jersey.model.internal.CommonConfig;
 import org.glassfish.jersey.spi.ExecutorServiceProvider;
+
+import static org.glassfish.jersey.CommonProperties.PROVIDER_DEFAULT_DISABLE;
 
 /**
  * Auto discoverable feature to use a custom executor service
  * for all client asynchronous operations.
  * This is needed to support {@link io.helidon.common.context.Context} for
  * outbound calls.
+ * Also disables default providers, unless configured by user.
  */
 @ConstrainedTo(RuntimeType.CLIENT)
 @Priority(121)
 public class JerseyClientAutoDiscoverable implements AutoDiscoverable {
+    private static final Logger LOGGER = Logger.getLogger(JerseyClientAutoDiscoverable.class.getName());
+
     @Override
     public void configure(FeatureContext context) {
         context.register(new EsProvider());
+        Configuration jaxRsConfiguration = context.getConfiguration();
+        if (jaxRsConfiguration instanceof CommonConfig) {
+            // this should be always true, as we are in Jersey
+            CommonConfig configuration = (CommonConfig) jaxRsConfiguration;
+
+            Object property = configuration.getProperty(PROVIDER_DEFAULT_DISABLE);
+            if (null == property) {
+                LOGGER.fine("Disabling all Jersey default providers (DOM, SAX, Rendered Image, XML Source, and "
+                                    + "XML Stream Source). You can enabled them by setting system property "
+                                    + PROVIDER_DEFAULT_DISABLE + " to NONE");
+                configuration.property(PROVIDER_DEFAULT_DISABLE, "ALL");
+            } else if ("NONE".equals(property)) {
+                configuration.property(PROVIDER_DEFAULT_DISABLE, null);
+            }
+        }
     }
 
     @ClientAsyncExecutor

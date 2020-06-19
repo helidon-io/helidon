@@ -16,7 +16,7 @@
 
 config-based:
   port: 8080
-  ssl:
+  tls:
     private-key.keystore:
       resource.resource-path: "certificate.p12"
       passphrase: "helidon"

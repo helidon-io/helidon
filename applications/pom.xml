@@ -44,10 +44,10 @@
         <maven.compiler.target>${maven.compiler.source}</maven.compiler.target>
         <maven.compiler.release>${maven.compiler.source}</maven.compiler.release>
         <version.plugin.compiler>3.8.1</version.plugin.compiler>
-        <version.plugin.dependency>3.0.0</version.plugin.dependency>
+        <version.plugin.dependency>3.1.2</version.plugin.dependency>
         <version.plugin.exec>1.6.0</version.plugin.exec>
         <version.plugin.failsafe>2.19.1</version.plugin.failsafe>
-        <version.plugin.helidon>2.0.0-RC1</version.plugin.helidon>
+        <version.plugin.helidon>2.0.0-RC3</version.plugin.helidon>
         <version.plugin.jar>3.0.2</version.plugin.jar>
         <version.plugin.os>1.5.0.Final</version.plugin.os>
         <version.plugin.protobuf>0.5.1</version.plugin.protobuf>
@@ -63,11 +63,6 @@
                 <groupId>kr.motd.maven</groupId>
                 <artifactId>os-maven-plugin</artifactId>
                 <version>${version.plugin.os}</version>
-            </extension>
-            <extension>
-                <groupId>io.helidon.build-tools</groupId>
-                <artifactId>helidon-maven-plugin</artifactId>
-                <version>${version.plugin.helidon}</version>
             </extension>
         </extensions>
         <pluginManagement>
@@ -156,6 +151,7 @@
                             <manifest>
                                 <addClasspath>true</addClasspath>
                                 <classpathPrefix>libs</classpathPrefix>
+                                <!--suppress MavenModelInspection -->
                                 <mainClass>${mainClass}</mainClass>
                                 <useUniqueVersions>false</useUniqueVersions>
                             </manifest>
@@ -167,6 +163,7 @@
                     <artifactId>exec-maven-plugin</artifactId>
                     <version>${version.plugin.exec}</version>
                     <configuration>
+                        <!--suppress MavenModelInspection -->
                         <mainClass>${mainClass}</mainClass>
                     </configuration>
                 </plugin>
@@ -188,4 +185,25 @@
             </plugins>
         </pluginManagement>
     </build>
+    <profiles>
+        <profile>
+            <id>helidon-cli</id>
+            <activation>
+                <property>
+                    <name>helidon.cli</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>io.helidon.build-tools</groupId>
+                        <artifactId>helidon-maven-plugin</artifactId>
+                        <version>${version.plugin.helidon}</version>
+                        <extensions>true</extensions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

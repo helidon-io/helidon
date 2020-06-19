@@ -16,6 +16,7 @@
 package io.helidon.media.common;
 
 import java.util.concurrent.Flow.Publisher;
+import java.util.function.Function;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
@@ -35,5 +36,19 @@ public interface MessageBodyStreamWriter<T> extends MessageBodyOperator<MessageB
      * @param context writer context
      * @return HTTP payload publisher
      */
-    Publisher<DataChunk> write(Publisher<? extends T> publisher, GenericType<? extends T> type, MessageBodyWriterContext context);
+    Publisher<DataChunk> write(Publisher<? extends T> publisher,
+                               GenericType<? extends T> type,
+                               MessageBodyWriterContext context);
+
+    /**
+     * Create a marshalling function that can be used to marshall the publisher with a context.
+     *
+     * @param publisher objects to convert to payload
+     * @param type requested type representation
+     * @return Marshalling function
+     */
+    default Function<MessageBodyWriterContext, Publisher<DataChunk>> marshall(Publisher<T> publisher,
+                                                                              GenericType<T> type) {
+        return ctx -> ctx.marshallStream(publisher, this, type);
+    }
 }

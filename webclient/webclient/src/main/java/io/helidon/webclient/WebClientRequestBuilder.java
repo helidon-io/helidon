@@ -17,7 +17,6 @@ package io.helidon.webclient;
 
 import java.net.URI;
 import java.net.URL;
-import java.time.temporal.TemporalUnit;
 import java.util.Map;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
@@ -191,31 +190,9 @@ public interface WebClientRequestBuilder {
      *
      * @param amount amount of time
      * @param unit   time unit
-     * @deprecated use {@link WebClientRequestBuilder#connectTimeout(long, TimeUnit)}, this method will be removed
-     * @return updated builder instance
-     */
-    @Deprecated
-    WebClientRequestBuilder connectTimeout(long amount, TemporalUnit unit);
-
-    /**
-     * Sets new connection timeout for this request.
-     *
-     * @param amount amount of time
-     * @param unit   time unit
      * @return updated builder instance
      */
     WebClientRequestBuilder connectTimeout(long amount, TimeUnit unit);
-
-    /**
-     * Sets new read timeout for this request.
-     *
-     * @param amount amount of time
-     * @param unit   time unit
-     * @deprecated use {@link WebClientRequestBuilder#readTimeout(long, TimeUnit)}, this method will be removed
-     * @return updated builder instance
-     */
-    @Deprecated
-    WebClientRequestBuilder readTimeout(long amount, TemporalUnit unit);
 
     /**
      * Sets new read timeout for this request.
@@ -360,6 +337,17 @@ public interface WebClientRequestBuilder {
      * @return request completion stage
      */
     Single<WebClientResponse> submit(Object requestEntity);
+
+    /**
+     * Performs prepared request and submitting request entity using a marshalling function.
+     *
+     * When response is received, it is not converted to any other specific type and returned {@link CompletionStage}
+     * is notified.
+     *
+     * @param function marshalling function
+     * @return request completion stage
+     */
+    Single<WebClientResponse> submit(Function<MessageBodyWriterContext, Flow.Publisher<DataChunk>> function);
 
     /**
      * Request to a server. Contains all information about used request headers, configuration etc.

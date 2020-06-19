@@ -1,0 +1,166 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2020 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Kafka Connector
+:toc:
+:toc-placement: preamble
+:description: Reactive Messaging support for Kafka in Helidon SE
+:keywords: helidon, se, messaging, kafka
+:h1Prefix: SE
+
+== Reactive Kafka Connector
+Connecting streams to Kafka with Reactive Messaging couldn't be easier.
+
+[source,xml]
+.Dependencies needed:
+----
+<dependency>
+    <groupId>io.helidon.messaging</groupId>
+    <artifactId>helidon-messaging</artifactId>
+</dependency>
+<dependency>
+    <groupId>io.helidon.messaging.kafka</groupId>
+    <artifactId>helidon-messaging-kafka</artifactId>
+</dependency>
+----
+
+=== Explicit config with config builder
+
+[source,java]
+.Example of consuming from Kafka:
+----
+String kafkaServer = config.get("app.kafka.bootstrap.servers").asString().get();
+String topic = config.get("app.kafka.topic").asString().get();
+
+Channel<String> fromKafka = Channel.<String>builder()<1><2>
+        .name("from-kafka")
+        .publisherConfig(KafkaConnector.configBuilder()
+                .bootstrapServers(kafkaServer)
+                .groupId("example-group-" + session.getId())
+                .topic(topic)
+                .autoOffsetReset(KafkaConfigBuilder.AutoOffsetReset.LATEST)
+                .enableAutoCommit(true)
+                .keyDeserializer(StringDeserializer.class)
+                .valueDeserializer(StringDeserializer.class)
+                .build()
+        )
+        .build();
+
+KafkaConnector kafkaConnector = KafkaConnector.create();<3>
+
+Messaging messaging = Messaging.builder()
+        .connector(kafkaConnector)
+        .listener(fromKafka, payload -> {
+            System.out.println("Kafka says: " + payload);
+        })
+        .build()
+        .start();
+----
+<1> Prepare a channel for connecting kafka connector with specific publisher configuration -> listener
+<2> Channel -> connector mapping is automatic when using KafkaConnector.configBuilder()
+<3> Prepare Kafka connector, can be used by any channel
+
+[source,java]
+.Example of producing to Kafka:
+----
+String kafkaServer = config.get("app.kafka.bootstrap.servers").asString().get();
+String topic = config.get("app.kafka.topic").asString().get();
+
+Channel<String> toKafka = Channel.<String>builder()<1><2>
+        .subscriberConfig(KafkaConnector.configBuilder()
+                .bootstrapServers(kafkaServer)                
+                .topic(topic)
+                .keySerializer(StringSerializer.class)
+                .valueSerializer(StringSerializer.class)
+                .build()
+        ).build();
+
+KafkaConnector kafkaConnector = KafkaConnector.create();<3>
+
+messaging = Messaging.builder()
+        .publisher(toKafka, Multi.just("test1", "test2").map(Message::of))
+        .connector(kafkaConnector)
+        .build()
+        .start();
+----
+<1> Prepare a channel for connecting kafka connector with specific publisher configuration -> listener
+<2> Channel -> connector mapping is automatic when using KafkaConnector.configBuilder()
+<3> Prepare Kafka connector, can be used by any channel
+
+=== Implicit Helidon Config
+
+[source,yaml]
+.Example of connector config:
+----
+mp.messaging:
+
+  incoming.from-kafka:
+    connector: helidon-kafka
+    topic: messaging-test-topic-1
+    auto.offset.reset: latest
+    enable.auto.commit: true
+    group.id: example-group-id
+
+  outgoing.to-kafka:
+    connector: helidon-kafka
+    topic: messaging-test-topic-1
+
+  connector:
+    helidon-kafka:
+      bootstrap.servers: localhost:9092
+      key.serializer: org.apache.kafka.common.serialization.StringSerializer
+      value.serializer: org.apache.kafka.common.serialization.StringSerializer
+      key.deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value.deserializer: org.apache.kafka.common.serialization.StringDeserializer
+----
+
+[source,java]
+.Example of consuming from Kafka:
+----
+Channel<String> fromKafka = Channel.create("from-kafka");
+
+KafkaConnector kafkaConnector = KafkaConnector.create();<1>
+
+Messaging messaging = Messaging.builder()
+        .connector(kafkaConnector)
+        .listener(fromKafka, payload -> {
+            System.out.println("Kafka says: " + payload);
+        })
+        .build()
+        .start();
+----
+<1> Prepare Kafka connector, can be used by any channel
+
+[source,java]
+.Example of producing to Kafka:
+----
+Channel<String> toKafka = Channel.create("to-kafka");
+
+KafkaConnector kafkaConnector = KafkaConnector.create();<1>
+
+messaging = Messaging.builder()
+        .publisher(toKafka, Multi.just("test1", "test2").map(Message::of))
+        .connector(kafkaConnector)
+        .build()
+        .start();
+----
+<1> Prepare Kafka connector, can be used by any channel
+
+Don't forget to check out the examples with pre-configured Kafka docker image, for easy testing: 
+
+* https://github.com/oracle/helidon/tree/master/examples/messaging

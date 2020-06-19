@@ -22,5 +22,14 @@
 :spec-name: MicroProfile Metrics
 :description: {spec-name} support in Helidon MP
 :keywords: helidon, mp, microprofile, metrics
+:h1Prefix: MP
 
-== This page is Under Construction and will be available soon
+== Overview
+Helidon provides three types of metrics: base, vendor, and application.  Helidon automatically provides built-in base and vendor metrics.
+Applications can use these metrics without additional configuration or code changes.
+
+== Next Steps
+
+Learn more about https://github.com/eclipse/microprofile-metrics/releases/tag/2.0[MicroProfile Metrics specification].
+
+Create a sample MicroProfile (MP) project that can be used to run some basic examples using both built-in and custom metrics with Helidon MP. <<mp/guides/05_metrics.adoc, Helidon MP Metrics Guide>>.

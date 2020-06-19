@@ -47,7 +47,11 @@
     <profiles>
         <profile>
             <id>native-image</id>
+            <properties>
+                <native-image>true</native-image>
+            </properties>
             <modules>
+                <module>jpa</module>
                 <module>native-image</module>
             </modules>
         </profile>

@@ -24,12 +24,16 @@ import java.time.Instant;
 import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
+import io.helidon.media.common.DefaultMediaSupport;
+import io.helidon.media.common.MessageBodyWriter;
 
 /**
  * Serves files from the filesystem as a static WEB content.
  */
 class FileSystemContentHandler extends StaticContentHandler {
     private static final Logger LOGGER = Logger.getLogger(FileSystemContentHandler.class.getName());
+    private static final MessageBodyWriter<Path> PATH_WRITER = DefaultMediaSupport.pathWriter();
+
     private final Path root;
 
     FileSystemContentHandler(String welcomeFilename, ContentTypeSelector contentTypeSelector, Path root) {
@@ -119,8 +123,12 @@ class FileSystemContentHandler extends StaticContentHandler {
         if (method == Http.Method.HEAD) {
             response.send();
         } else {
-            response.send(path);
+            send(response, path);
         }
+    }
+
+    static void send(ServerResponse response, Path path) {
+        response.send(PATH_WRITER.marshall(path));
     }
 
     /**

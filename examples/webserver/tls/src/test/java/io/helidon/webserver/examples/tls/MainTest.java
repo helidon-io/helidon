@@ -23,7 +23,7 @@ import java.util.stream.Stream;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.webclient.Ssl;
+import io.helidon.webclient.WebClientTls;
 import io.helidon.webclient.WebClient;
 import io.helidon.webserver.WebServer;
 
@@ -56,13 +56,13 @@ class MainTest {
         configBasedClient = WebClient.builder()
                 .baseUri("https://localhost:" + configBasedServer.port())
                 // trust all, as we use a self-signed certificate
-                .ssl(Ssl.builder().trustAll(true).build())
+                .tls(WebClientTls.builder().trustAll(true).build())
                 .build();
 
         builderBasedClient = WebClient.builder()
                 .baseUri("https://localhost:" + builderBasedServer.port())
                 // trust all, as we use a self-signed certificate
-                .ssl(Ssl.builder().trustAll(true).build())
+                .tls(WebClientTls.builder().trustAll(true).build())
                 .build();
     }
 

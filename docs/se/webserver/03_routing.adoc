@@ -39,7 +39,7 @@ Routing routing = Routing.builder()
                          .get("/hello", (req, res) -> res.send("Hello World!")) // <1>
                          .build();
 
-WebServer webServer = WebServer.create(configuration, routing); // <2>
+WebServer webServer = WebServer.create(routing); // <2>
 ----
 <1> Handle all GETs to `/hello` path. Send the `Hello World!` string.
 <2> Add the `routing` to the WebServer.
@@ -62,6 +62,7 @@ WebServer webServer = WebServer.create(configuration, routing); // <2>
 |*OPTIONS*| `+.options((req, res) -> { /* handler */ })+`
 |_any method_|`+.any((req, res) -> { /* handler */ })+`
 |_multiple methods_|`+.anyOf(List.of(Http.Method.GET, Http.Method.POST), (req, res) -> { /* handler */ })+`
+|_custom method_|`+.anyOf(Set.of(Http.RequestMethod.create("CUSTOM")), (req, res) -> { /* handler */ })+`
 |===
 
 == Path Matcher Routing

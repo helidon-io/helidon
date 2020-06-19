@@ -20,10 +20,11 @@ import java.util.concurrent.Flow;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
 
 /**
- * Represents an HTTP entity as a {@link Flow.Publisher publisher} of {@link DataChunk chunks} with specific
+ * Represents an HTTP entity as a {@link Multi multi} of {@link DataChunk chunks} with specific
  * features.
  * <h3>Default publisher contract</h3>
  * Default publisher accepts only single subscriber. Other subscribers receives
@@ -41,10 +42,10 @@ import io.helidon.common.reactive.Single;
  * It is possible to register function to convert publisher to {@link io.helidon.common.reactive.Single} of a single entity using
  * {@link #registerReader(Class, Reader)} or {@link #registerReader(Predicate, Reader)} methods. It
  * is then possible to use {@link #as(Class)} method to obtain such entity.
- * @deprecated since 2.0.0, use {@code io.helidon.media.common.MessageBodyReadableContent} instead
+ * @deprecated use {@code io.helidon.media.common.MessageBodyReadableContent} instead
  */
-@Deprecated
-public interface Content extends Flow.Publisher<DataChunk> {
+@Deprecated(since = "2.0.0")
+public interface Content extends Multi<DataChunk> {
     /**
      * If possible, adds the given Subscriber to this publisher. This publisher is effectively
      * either the original publisher

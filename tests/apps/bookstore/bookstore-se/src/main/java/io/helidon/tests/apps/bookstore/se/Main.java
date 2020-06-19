@@ -31,7 +31,7 @@ import io.helidon.metrics.MetricsSupport;
 import io.helidon.webserver.ExperimentalConfiguration;
 import io.helidon.webserver.Http2Configuration;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.TlsConfig;
+import io.helidon.webserver.WebServerTls;
 import io.helidon.webserver.WebServer;
 
 /**
@@ -142,7 +142,7 @@ public final class Main {
             return;
         }
 
-        wsBuilder.tls(TlsConfig.builder()
+        wsBuilder.tls(WebServerTls.builder()
                               .privateKey(KeyConfig.keystoreBuilder()
                                                   .keystore(Resource.create("certificate.p12"))
                                                   .keystorePassphrase("helidon".toCharArray())

@@ -105,7 +105,11 @@ View the https://github.com/oracle/helidon/blob/2.0.0-M1/CHANGELOG.md#backward-i
 
 == Next Steps
 
-<<se/guides/02_quickstart.adoc,Helidon Quickstart Examples>>
+
+<<se/guides/02_quickstart.adoc,Helidon SE Quickstart Examples>>
+
+<<mp/guides/02_quickstart.adoc, Helidon MP Quickstart Examples>>
+
 
 
 

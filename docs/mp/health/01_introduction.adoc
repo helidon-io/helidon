@@ -17,10 +17,26 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = MicroProfile Health
-:toc:
-:toc-placement: preamble
 :spec-name: MicroProfile Health
 :description: {spec-name} support in Helidon MP
 :keywords: helidon, mp, microprofile, health
+:h1Prefix: MP 
 
-== This page is Under Construction and will be available soon
+== Overview
+Applications implement health checks to expose health status that is collected
+ at regular intervals by external tooling, such as orchestrators like
+ Kubernetes. The orchestrator may then take action, such as restarting your
+ application if the health check fails.
+
+A typical health check combines the statuses of all the dependencies that
+ affect availability and the ability to perform correctly:
+
+* network latency
+* storage
+* database
+* other services used by your application
+
+== Next Steps
+
+Create a sample MicroProfile (MP) project
+that can be used to run some basic examples using both built-in and custom health-checks with Helidon MP.  <<mp/guides/04_health.adoc, Helidon MP Health Check Guide>>.

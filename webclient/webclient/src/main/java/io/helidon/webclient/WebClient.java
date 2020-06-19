@@ -19,7 +19,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.time.Duration;
-import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -27,8 +26,6 @@ import java.util.ServiceLoader;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 import io.helidon.common.context.Context;
 import io.helidon.common.http.Http;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
@@ -146,10 +143,6 @@ public interface WebClient {
                                    ParentingMediaContextBuilder<Builder>,
                                    MediaContextBuilder<Builder> {
 
-        static {
-            HelidonFeatures.register(HelidonFlavor.SE, "WebClient");
-        }
-
         private final WebClientConfiguration.Builder<?, ?> configuration = NettyClient.SHARED_CONFIGURATION.get().derive();
         private final HelidonServiceLoader.Builder<WebClientServiceProvider> services = HelidonServiceLoader
                 .builder(ServiceLoader.load(WebClientServiceProvider.class));
@@ -261,38 +254,10 @@ public interface WebClient {
          *
          * @param amount amount of time
          * @param unit   time unit
-         * @deprecated use {@link WebClient.Builder#connectTimeout(long, TimeUnit)}, this method will be removed
-         * @return updated builder instance
-         */
-        @Deprecated
-        public Builder connectTimeout(long amount, TemporalUnit unit) {
-            configuration.connectTimeout(Duration.of(amount, unit));
-            return this;
-        }
-
-        /**
-         * Sets new connection timeout.
-         *
-         * @param amount amount of time
-         * @param unit   time unit
          * @return updated builder instance
          */
         public Builder connectTimeout(long amount, TimeUnit unit) {
             configuration.connectTimeout(Duration.of(amount, unit.toChronoUnit()));
-            return this;
-        }
-
-        /**
-         * Sets new read timeout.
-         *
-         * @param amount amount of time
-         * @param unit   time unit
-         * @deprecated use {@link WebClient.Builder#readTimeout(long, TimeUnit)}, this method will be removed
-         * @return updated builder instance
-         */
-        @Deprecated
-        public Builder readTimeout(long amount, TemporalUnit unit) {
-            configuration.readTimeout(Duration.of(amount, unit));
             return this;
         }
 
@@ -309,13 +274,13 @@ public interface WebClient {
         }
 
         /**
-         * Sets new {@link Ssl} instance which contains ssl configuration.
+         * Sets new {@link WebClientTls} instance which contains ssl configuration.
          *
-         * @param ssl ssl instance
+         * @param webClientTls tls instance
          * @return updated builder instance
          */
-        public Builder ssl(Ssl ssl) {
-            configuration.ssl(ssl);
+        public Builder tls(WebClientTls webClientTls) {
+            configuration.tls(webClientTls);
             return this;
         }
 

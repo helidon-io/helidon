@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import io.helidon.jersey.connector.HelidonConnectorProvider;
+
 /**
  * A {@link org.glassfish.jersey.client.spi.Connector} that utilizes the Helidon HTTP Client to send and receive
  *  * HTTP request and responses.
@@ -29,4 +31,5 @@ module io.helidon.jersey.connector {
     requires io.netty.codec.http;
 
     exports io.helidon.jersey.connector;
+    provides org.glassfish.jersey.client.spi.ConnectorProvider with HelidonConnectorProvider;
 }

@@ -17,7 +17,7 @@
 package io.helidon.config.mp;
 
 import org.eclipse.microprofile.config.Config;
-import org.eclipse.microprofile.config.ConfigProvider;
+import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -35,7 +35,10 @@ public class MpConfigReferenceTest {
     static void initClass() {
         System.setProperty("value2", VALUE_2);
 
-        config = ConfigProvider.getConfig();
+        config = ConfigProviderResolver.instance()
+                .getBuilder()
+                .addDefaultSources()
+                .build();
     }
 
     @Test

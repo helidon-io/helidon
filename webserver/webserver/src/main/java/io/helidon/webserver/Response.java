@@ -25,7 +25,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 import io.helidon.common.GenericType;
-import io.helidon.common.LazyValue;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
@@ -66,7 +65,7 @@ abstract class Response implements ServerResponse {
      * @param webServer a web server.
      * @param bareResponse an implementation of the response SPI.
      */
-    Response(WebServer webServer, BareResponse bareResponse, LazyValue<List<MediaType>> acceptedTypes) {
+    Response(WebServer webServer, BareResponse bareResponse, List<MediaType> acceptedTypes) {
         this.webServer = webServer;
         this.bareResponse = bareResponse;
         this.headers = new HashResponseHeaders(bareResponse);
@@ -218,6 +217,11 @@ abstract class Response implements ServerResponse {
             eventListener.finish();
             throw e;
         }
+    }
+
+    @Override
+    public Single<ServerResponse> send(Function<MessageBodyWriterContext, Publisher<DataChunk>> function) {
+        return send(function.apply(writerContext));
     }
 
     @Override

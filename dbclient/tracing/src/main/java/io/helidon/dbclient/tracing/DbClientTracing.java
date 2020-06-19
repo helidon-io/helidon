@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,6 @@ package io.helidon.dbclient.tracing;
 
 import java.util.Map;
 
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 import io.helidon.common.context.Context;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
@@ -39,10 +37,6 @@ import io.opentracing.util.GlobalTracer;
  * This interceptor is added through Java Service loader.
  */
 public class DbClientTracing extends DbClientServiceBase {
-    static {
-        HelidonFeatures.register(HelidonFlavor.SE, "DbClient", "Tracing");
-    }
-
     private DbClientTracing(Builder builder) {
         super(builder);
     }

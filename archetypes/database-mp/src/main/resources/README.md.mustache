@@ -1,0 +1,41 @@
+# Helidon MP Database
+
+Helidon MP application that uses JPA with an in-memory H2 database
+
+## Build and run
+
+With JDK11+
+```bash
+mvn package
+java -jar target/{{artifactId}}.jar
+```
+
+## Exercise the application
+
+```
+curl -X GET http://localhost:8080/pokemon
+[{"id":1,"idType":12,"name":"Bulbasaur"}, ...]
+
+curl -X GET http://localhost:8080/type
+[{"id":1,"name":"Normal"}, ...]
+
+curl -H "Content-Type: application/json" --request POST --data '{"id":100, "idType":1, "name":"Test"}' http://localhost:8080/pokemon
+```
+
+## Try health and metrics
+
+```
+curl -s -X GET http://localhost:8080/health
+{"outcome":"UP",...
+. . .
+
+# Prometheus Format
+curl -s -X GET http://localhost:8080/metrics
+# TYPE base:gc_g1_young_generation_count gauge
+. . .
+
+# JSON Format
+curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
+{"base":...
+. . .
+```

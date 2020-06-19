@@ -1,0 +1,35 @@
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: helidon-quickstart-se
+  labels:
+    app: helidon-quickstart-se
+spec:
+  type: NodePort
+  selector:
+    app: helidon-quickstart-se
+  ports:
+  - port: 8080
+    targetPort: 8080
+    name: http
+---
+kind: Deployment
+apiVersion: extensions/v1beta1
+metadata:
+  name: helidon-quickstart-se
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: helidon-quickstart-se
+        version: v1
+    spec:
+      containers:
+      - name: helidon-quickstart-se
+        image: helidon-quickstart-se
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+---

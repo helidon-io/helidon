@@ -54,6 +54,7 @@
         <module>dbclient</module>
         <module>webclient</module>
         <module>cors</module>
+        <module>messaging</module>
     </modules>
 
     <build>

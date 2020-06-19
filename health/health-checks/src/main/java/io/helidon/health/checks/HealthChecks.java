@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package io.helidon.health.checks;
 
 import java.lang.management.ManagementFactory;
 
-import io.helidon.common.HelidonFeatures;
 import io.helidon.common.NativeImageHelper;
 
 import org.eclipse.microprofile.health.HealthCheck;
@@ -28,9 +27,6 @@ import org.eclipse.microprofile.health.HealthCheck;
  * @see #healthChecks()
  */
 public final class HealthChecks {
-    static {
-        HelidonFeatures.register("Health", "Built-ins");
-    }
 
     private HealthChecks() {
     }

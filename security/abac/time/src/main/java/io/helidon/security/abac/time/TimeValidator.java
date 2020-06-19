@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,6 @@ import java.util.List;
 import java.util.Set;
 
 import io.helidon.common.Errors;
-import io.helidon.common.HelidonFeatures;
 import io.helidon.config.Config;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.ProviderRequest;
@@ -55,10 +54,6 @@ import io.helidon.security.providers.abac.spi.AbacValidator;
  */
 public final class TimeValidator implements AbacValidator<TimeValidator.TimeConfig> {
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
-
-    static {
-        HelidonFeatures.register("Security", "Authorization", "ABAC", "Time");
-    }
 
     private TimeValidator() {
     }

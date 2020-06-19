@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package io.helidon.integrations.graal.nativeimage.extension;
 
+import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
@@ -39,9 +40,12 @@ import javax.json.JsonObject;
 import javax.json.JsonReaderFactory;
 import javax.json.stream.JsonParsingException;
 
+import io.helidon.common.HelidonFeatures;
+import io.helidon.common.LogConfig;
 import io.helidon.config.mp.MpConfigProviderResolver;
 
 import com.oracle.svm.core.annotate.AutomaticFeature;
+import com.oracle.svm.core.jdk.Resources;
 import com.oracle.svm.core.jdk.proxy.DynamicProxyRegistry;
 import com.oracle.svm.hosted.FeatureImpl;
 import org.graalvm.nativeimage.ImageSingletons;
@@ -58,6 +62,8 @@ public class HelidonReflectionFeature implements Feature {
     private static final boolean TRACE_PARSING = NativeConfig.option("reflection.trace-parsing", false);
     private static final boolean TRACE = NativeConfig.option("reflection.trace", false);
 
+    private static final String ENTITY_ANNOTATION_CLASS_NAME = "javax.persistence.Entity";
+
     @Override
     public boolean isInConfiguration(IsInConfigurationAccess access) {
         return ENABLED;
@@ -65,6 +71,21 @@ public class HelidonReflectionFeature implements Feature {
 
     @Override
     public void beforeAnalysis(BeforeAnalysisAccess access) {
+        // need the application classloader
+        Class<?> logConfigClass = access.findClassByName(LogConfig.class.getName());
+        ClassLoader classLoader = logConfigClass.getClassLoader();
+
+        // initialize logging (if on classpath)
+        try {
+            logConfigClass.getMethod("initClass")
+                    .invoke(null);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        //LogConfig.initClass();
+
+        // make sure we print all the warnings for native image
+        HelidonFeatures.nativeBuildTime(classLoader);
         // to add a startup hook:
         //RuntimeSupport.getRuntimeSupport().addStartupHook(() -> {});
 
@@ -83,12 +104,38 @@ public class HelidonReflectionFeature implements Feature {
         // rest client registration (proxy support)
         processRegisterRestClient(context);
 
+        // JPA Entity registration
+        processEntity(context);
+
         registerForReflection(context);
     }
 
     @Override
     public void beforeCompilation(BeforeCompilationAccess access) {
         MpConfigProviderResolver.buildTimeEnd();
+    }
+
+    private void processEntity(BeforeAnalysisContext context) {
+        final Class<? extends Annotation> annotation = (Class<? extends Annotation>) context.access()
+                .findClassByName(ENTITY_ANNOTATION_CLASS_NAME);
+        if (annotation == null) {
+            return;
+        }
+        traceParsing(() -> "Looking up annotated by " + ENTITY_ANNOTATION_CLASS_NAME);
+        final List<Class<?>> annotatedList = context.access().findAnnotatedClasses(annotation);
+        annotatedList.forEach(aClass -> {
+            String resourceName = aClass.getName().replace('.', '/') + ".class";
+            InputStream resourceStream = aClass.getClassLoader().getResourceAsStream(resourceName);
+            Resources.registerResource(resourceName, resourceStream);
+            for (Field declaredField : aClass.getDeclaredFields()) {
+                if (!Modifier.isPublic(declaredField.getModifiers()) && declaredField.getAnnotations().length == 0) {
+                    RuntimeReflection.register(declaredField);
+                    if (TRACE) {
+                        System.out.println("    non annotaded field " + declaredField);
+                    }
+                }
+            }
+        });
     }
 
     @SuppressWarnings("unchecked")

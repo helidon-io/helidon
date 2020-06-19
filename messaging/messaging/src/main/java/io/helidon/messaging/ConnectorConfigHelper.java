@@ -1,5 +1,5 @@
 /*
- * Copyright (c)  2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,16 +34,14 @@ final class ConnectorConfigHelper {
     }
 
     static ConfigValue<String> getIncomingConnectorName(Config config, String channelName) {
-        //Looks suspicious but incoming connector configured for outgoing channel is ok
-        return config.get(ConnectorFactory.OUTGOING_PREFIX)
+        return config.get(ConnectorFactory.INCOMING_PREFIX)
                 .get(channelName)
                 .get(ConnectorFactory.CONNECTOR_ATTRIBUTE)
                 .asString();
     }
 
     static ConfigValue<String> getOutgoingConnectorName(Config config, String channelName) {
-        //Looks suspicious but outgoing connector configured for incoming channel is ok
-        return config.get(ConnectorFactory.INCOMING_PREFIX)
+        return config.get(ConnectorFactory.OUTGOING_PREFIX)
                 .get(channelName)
                 .get(ConnectorFactory.CONNECTOR_ATTRIBUTE)
                 .asString();
@@ -67,7 +65,7 @@ final class ConnectorConfigHelper {
         Config incomingChannelConfig = rootConfig.get("mp.messaging.incoming");
         Config outgoingChannelConfig = rootConfig.get("mp.messaging.outgoing");
 
-        Config channelsConfig = (Config) ConnectorConfigBuilder
+        Config channelsConfig = ConnectorConfigBuilder
                 .create(incomingChannelConfig)
                 .config(outgoingChannelConfig)
                 .build();

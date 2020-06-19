@@ -1,0 +1,6 @@
+[
+  {
+    "name":"java.net.InetAddress",
+    "methods":[{"name":"<init>","parameterTypes":[] }]
+  }
+]

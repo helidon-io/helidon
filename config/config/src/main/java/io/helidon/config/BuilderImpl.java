@@ -30,11 +30,8 @@ import java.util.concurrent.Executors;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import io.helidon.common.GenericType;
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 import io.helidon.common.Prioritized;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.common.serviceloader.Priorities;
@@ -52,15 +49,9 @@ import io.helidon.config.spi.OverrideSource;
  * {@link Config} Builder implementation.
  */
 class BuilderImpl implements Config.Builder {
-    static {
-        HelidonFeatures.register(HelidonFlavor.SE, "Config");
-    }
-
     /*
      * Config sources
      */
-    // sources to be sorted by priority
-    private final List<HelidonSourceWithPriority> prioritizedSources = new ArrayList<>();
     // sources "pre-sorted" - all user defined sources without priority will be ordered
     // as added, as well as config sources from meta configuration
     private final List<ConfigSource> sources = new LinkedList<>();
@@ -124,7 +115,6 @@ class BuilderImpl implements Config.Builder {
     public Config.Builder sources(List<Supplier<? extends ConfigSource>> sourceSuppliers) {
         // replace current config sources with the ones provided
         sources.clear();
-        prioritizedSources.clear();
 
         sourceSuppliers.stream()
                 .map(Supplier::get)
@@ -420,7 +410,7 @@ class BuilderImpl implements Config.Builder {
             envVarAliasGeneratorEnabled = true;
         }
 
-        boolean nothingConfigured = sources.isEmpty() && prioritizedSources.isEmpty();
+        boolean nothingConfigured = sources.isEmpty();
 
         if (nothingConfigured) {
             // use meta configuration to load all sources
@@ -435,27 +425,10 @@ class BuilderImpl implements Config.Builder {
             sources.stream()
                     .map(context::sourceRuntimeBase)
                     .forEach(targetSources::add);
-
-            // prioritized sources are next
-            targetSources.addAll(mergePrioritized(context));
         }
 
         // targetSources now contain runtimes correctly ordered for each config source
         return new ConfigSourcesRuntime(targetSources, mergingStrategy);
-    }
-
-    private List<ConfigSourceRuntimeImpl> mergePrioritized(ConfigContextImpl context) {
-        List<PrioritizedConfigSource> allPrioritized = new ArrayList<>();
-        prioritizedSources.stream()
-                .map(it -> new PrioritizedConfigSource(it, context))
-                .forEach(allPrioritized::add);
-
-        Priorities.sort(allPrioritized);
-
-        return allPrioritized
-                .stream()
-                .map(it -> it.runtime(context))
-                .collect(Collectors.toList());
     }
 
     @SuppressWarnings("ParameterNumber")
@@ -611,6 +584,7 @@ class BuilderImpl implements Config.Builder {
                 .disableSystemPropertiesSource()
                 .disableParserServices()
                 .disableFilterServices()
+                .changesExecutor(command -> {})
                 .build();
 
     }

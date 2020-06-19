@@ -28,28 +28,38 @@ The Helidon SE DB Client provides a unified, reactive API for working with datab
 
 == Helidon DB Client Features Overview
 
-The DB Client simplfies how you work with databases by allowing the use of blocking JDBC drivers in your reactive application by wrapping a blocking driver in an executor service. Specifically, the Heldion DB Client provides the following:
+The DB Client simplifies how you work with databases by abstracting the type of the database.
+The API can be used both for relational and non-relational databases.
 
-* Unified API for data access and query 
-+
-The API was implemented as a layer above JDBC or MongoDB Reactive Streams Java Driver, so any relational databases with JDBC driver or MongoDB are supported.
+The API provides:
 
-* Reactive database access with non-reactive drivers 
+* Database configuration abstraction
 +
-Most JDBC drivers are blocking. Using them in a reactive application is problematic. Helidon DB Client allows the use of blocking JDBC drivers in your reactive application by wrapping a blocking driver in an executor service.
+Using Helidon configuration allows database implementation specific configuration options
+without the need to use database implementation specific APIs. This allows for seamless switching between databases
+based on configuration.
+
+* Statement configuration abstraction
++
+Using Helidon configuration allows use of database specific statements. This allows usage of
+different databases on different environments without changing code.
+
+* Unified API for data access and query
++
+Thanks to the statement configuration abstraction, we can invoke a statement against a relational
+or non-relations databases (such as MySQL and MongoDB) withough modifying source code
+
+* Reactive database access with backpressure
++
+Current we support natively reactive driver for MongoDB, and an executor service wrapped
+support for any JDBC driver.
+This allows for seamless use of JDBC drivers in a reactive non-blocking environment, including support
+for backpressure (result set is processed as requested by the query subscriber)
 
 * Observability +
 +
 The API offers support for health checks, metrics and tracing.
 
-* Backpressure Management
-+
-Helidon DB Client performs database operations only when it’s requested by the consumer. This is propagated all the way to the TCP layer.
-
-* Improved portability between database drivers 
-+
-The DB Client works with native database statements that can be used inline in the code or defined as named statements in database configuration. +
-By moving the native query code to configuration files, the Helidon DB Client allows you to switch to another database by changing the configuration files, not the code.
 
 == Getting Started
 
@@ -58,7 +68,9 @@ Before you begin you must add the DB Client dependencies and configure the clien
 . Add the DB Client dependencies to the Maven `pom.xml` file. 
 +
 The <<about/04_managing-dependencies.adoc, Managing Dependencies>> page describes how you
-should declare dependency management for Helidon applications. For the DB Client you must include the following dependencies in your project:
+should declare dependency management for Helidon applications.
+
+For the DB Client using JDBC implementation and H2 database, you must include the following dependencies in your project:
 
 +
 [source,java]
@@ -86,12 +98,12 @@ should declare dependency management for Helidon applications. For the DB Client
 
 <1> Add the Helidon DB Client
 <2> Specify JDBC or MongoDB
-<3> Add the database details
+<3> Add the database JDBC driver (only for JDBC)
 
 . Use Helidon Config to configure the client. 
 + 
 
-The DB Client must be configured before you begin. In the example below we'll use Helidon Config to set up your JDBC-based client:
+The DB Client must be configured before you begin. In the example below we'll use Helidon Config to set up JDBC-based client:
 
 +
 [source,java]
@@ -99,25 +111,26 @@ The DB Client must be configured before you begin. In the example below we'll us
 
 db:
   source: "jdbc" // <1> 
-    connection:
+  connection:
     url: "jdbc:mysql://127.0.0.1:3306/pokemon?useSSL=false" // <2>
     username: "user"
     password: "password"
-    poolName: "mysql"
   statements: // <3>
-    ping: "DO 0"
+    ping: "DO 0" // <4>
     select-all-pokemons: "SELECT id, name FROM Pokemons"
     
 ----
 
 +
-<1> Source: JDBC or MongoDB
+<1> Source: `jdbc` or `mongoDb`
 <2> Connection: database connection parameters
-<3> Statements: named statements when used
+<3> Statements: named statements to be used in application
+<4> A ping statement used by health check
 
 == Using DB Client API Methods
 
-The Helidon DB Client API contains many methods to run various statements with parameters and to retrieve statement execution results. The following sections describe the options you can use to build and execute your statements.
+The Helidon DB Client API contains many methods to run various statements with parameters and to retrieve statement execution
+results. The following sections describe the options you can use to build and execute your statements.
 
 === Executor Selection
 
@@ -125,9 +138,10 @@ The Helidon DB Client API contains many methods to run various statements with p
 
 * `execute(Function<DbExecute, T> executor)`
 
-* `inTransaction(Function<DbTransaction, CompletionStage<T>> executor)`
+* `inTransaction(Function<DbTransaction, T> executor)`
 
-Both methods require `Function` interface argument with statements `executor`.
+Both methods provide an executor (either `DbExecute` or `DbTransaction`) and expect either `Single` or a `Multi` result,
+usually returned by one of their methods.
 
 === Statement Building and Execution
 DbExecute class offers many methods for various statements builders:
@@ -137,15 +151,19 @@ DbExecute class offers many methods for various statements builders:
 * update statements: `createUpdate`, `createNamedUpdate`
 * delete statements: `createDelete`, `createNamedDelete`
 * query statements: `createQuery`, `createNamedQuery`
-* common statements: `createStatement`, `createNamedStatement`
+* get statements: `createGet`, `createNamedGet`
 
-Methods with "Named" in their name (`create**Named**DmlStatement`) expect statement name from statements section of Config.
+Methods with "Named" in their name (`create**Named**DmlStatement`) expect statement name from statements section of Config,
+or a named statement configured when the `DbClient` was created using a `Builder`.
 
-All statement builders offer methods to set statement parameters. Those parameters can be ordered parameters or named parameters. Ordered and named parameters can’t be mixed in a single statement.
+All statement builders offer methods to set statement parameters. Those parameters can be ordered parameters or named parameters.
+Ordered and named parameters can’t be mixed in a single statement.
+
+Note that `get` statements are query statements that allow zero to one results.
 
 === Ordered Parameters
 
-Ordered parameters are written down as `?` in the SQL statement:
+Ordered parameters are written down as `?` in the statement text:
 
 ----
 SELECT name FROM Pokemons WHERE id = ?
@@ -163,7 +181,7 @@ Methods to set ordered parameters are:
 * `addParam(Object parameter)` with single parameter, can be called repeatedly
 
 === Named Parameters
-Named parameters are written down as :`<name>` in the SQL statement:
+Named parameters are written down as `:<name>` in the JDBC statements
 
 ----
 SELECT name FROM Pokemons WHERE id = :id
@@ -188,7 +206,9 @@ Methods to set named parameters are:
 
 === Statement Execution
 
-Statements are executed by calling execute() method after statement parameters are set. This method returns `CompletionStage<R>` where `R` is the statement execution result.
+Statements are executed by calling execute() method after statement parameters are set.
+This method returns either a `Single` or `Multi` depending on statement type. The type returned also depends on statement
+type.
 
 JDBC query with ordered parameters and query that does not run in the transaction:
 
@@ -210,7 +230,7 @@ dbClient.inTransaction(tx -> tx
 );
 ----
 
-Both examples will return `CompletionStage<DbRows<DbRow>>` with rows returned by the query.
+Both examples will return `Multi<DbRow>` with rows returned by the query.
 
 This example shows a MongoDB update statement with named parameters and the query does not run in transaction:
 
@@ -225,34 +245,34 @@ dbClient.execute(exec -> exec
 );
 ----
 
-This update statement will return `CompletionStage<Long>` with the number of modified records in the database.
+This update statement will return `Single<Long>` with the number of modified records in the database.
 
 ==== DML Statement Result
 
-Execution of DML statements will always return `CompletionStage<Long>` with the number of modified records in the database.
+Execution of DML statements will always return `Single<Long>` with the number of modified records in the database.
 
-In following example, the number of modified records is being printed to standard output:
+In following example, the number of modified records is printed to standard output:
 
 ----
 dbClient.execute(exec -> exec
     .insert("INSERT INTO Pokemons (id, name) VALUES(?, ?)",
         1, "Pikachu"))
     .thenAccept(count -> 
-        System.out.printf("Inserted %d records, count\n"));
-        
+        System.out.printf("Inserted %d records\n", count));
 ----
 
 ==== Query Statement Result
 
-Execution of a query statement will always return `CompletionStage<DbRows<DbRow>>`. Class `DbRows` offers several methods to access this result:
+Execution of a query statement will always return `Multi<DbRow>>`. `Multi` has several useful properties:
         
-* `Flow.Publisher<DbRow> publisher()` to process individual result rows using `Flow.Subscriber<DbRow>`
-* `CompletionStage<List<DbRow>> collect()` to collect all rows and return them as `List<DbRow>`
-* `<U> DbRows<U> map(…)` to map returned result using provided mapper    
+* It is an implementation of `Flow.Publisher` to process individual result rows using `Flow.Subscriber<DbRow>`
+* `Single<List<DbRow>> collectList()` to collect all rows and return them as a promise of `List<DbRow>`
+* `<U> Multi<U> map(…)` to map returned result using provided mapper
 
 == Next Steps
 
-Now that you understand how to build and execute statements, try it for yourself. https://github.com/oracle/helidon/tree/master/examples/dbclient[DB Client Examples].
+Now that you understand how to build and execute statements, try it for yourself.
+https://github.com/oracle/helidon/tree/master/examples/dbclient[DB Client Examples].
 
 
 

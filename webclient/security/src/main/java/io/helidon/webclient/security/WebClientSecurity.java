@@ -21,8 +21,6 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.logging.Logger;
 
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 import io.helidon.common.context.Context;
 import io.helidon.common.reactive.Single;
 import io.helidon.security.EndpointConfig;
@@ -47,10 +45,6 @@ public class WebClientSecurity implements WebClientService {
     private static final Logger LOGGER = Logger.getLogger(WebClientSecurity.class.getName());
 
     private static final String PROVIDER_NAME = "io.helidon.security.rest.client.security.providerName";
-
-    static {
-        HelidonFeatures.register(HelidonFlavor.SE, "WebClient", "Security");
-    }
 
     private Security security;
 

@@ -19,6 +19,7 @@ package io.helidon.webserver;
 import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
@@ -26,6 +27,7 @@ import java.util.logging.Logger;
 import javax.net.ssl.SSLEngine;
 
 import io.helidon.common.http.DataChunk;
+import io.helidon.common.http.Http;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -44,6 +46,7 @@ import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 
+import static io.helidon.webserver.HttpInitializer.CERTIFICATE_NAME;
 import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
 import static io.netty.handler.codec.http.HttpResponseStatus.CONTINUE;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
@@ -113,6 +116,9 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                 send400BadRequest(ctx, e.getMessage());
                 return;
             }
+            request.headers().remove(Http.Header.X_HELIDON_CN);
+            Optional.ofNullable(ctx.channel().attr(CERTIFICATE_NAME).get())
+                    .ifPresent(name -> request.headers().set(Http.Header.X_HELIDON_CN, name));
             ReferenceHoldingQueue<DataChunk> queue = new ReferenceHoldingQueue<>();
             queues.add(queue);
             requestContext = new RequestContext(new HttpRequestScopedPublisher(ctx, queue), request);

@@ -201,13 +201,14 @@ public final class EncryptionUtil {
     }
 
     /**
-     *
+     * Decrypt using legacy AES.
+     * Will only decrypt messages encrypted with previously used AES method.
      *
      * @param masterPassword  master password
      * @param encryptedBase64 encrypted secret, base64 encoded
      * @return Decrypted secret
      */
-    static String decryptAesLegacy(char[] masterPassword, String encryptedBase64) {
+    public static String decryptAesLegacy(char[] masterPassword, String encryptedBase64) {
         Objects.requireNonNull(masterPassword, "Password must be provided for encryption");
         Objects.requireNonNull(encryptedBase64, "Encrypted bytes must be provided for decryption (base64 encoded)");
 
@@ -248,7 +249,7 @@ public final class EncryptionUtil {
      * @return Decrypted secret
      * @throws ConfigEncryptionException if something bad happens during decryption (e.g. wrong password)
      */
-    static String decryptAes(char[] masterPassword, String encryptedBase64) throws ConfigEncryptionException {
+    public static String decryptAes(char[] masterPassword, String encryptedBase64) throws ConfigEncryptionException {
         Objects.requireNonNull(masterPassword, "Password must be provided for encryption");
         Objects.requireNonNull(encryptedBase64, "Encrypted bytes must be provided for decryption (base64 encoded)");
 

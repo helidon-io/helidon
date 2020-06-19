@@ -30,14 +30,12 @@ Here is the code for a minimalist web application that runs on a random free por
 
 [source,java]
 ----
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         WebServer webServer = WebServer
                 .create(Routing.builder()
-                        .any((req, res) -> res.send("It works!")) // <1>
-                        .build())
+                                .any((req, res) -> res.send("It works!"))) // <1>
                 .start() // <2>
-                .toCompletableFuture()
-                .get(10, TimeUnit.SECONDS); // <3>
+                .await(10, TimeUnit.SECONDS); // <3>
 
         System.out.println("Server started at: http://localhost:" + webServer.port()); // <4>
     }
@@ -45,13 +43,14 @@ Here is the code for a minimalist web application that runs on a random free por
 
 <1> For any kind of request, at any path, respond with `It works!`.
 <2> Start the server.
-<3> Wait for the server to start while throwing possible errors as exceptions.
+<3> Wait for the server to start while throwing possible errors as runtime exceptions.
 <4> The server is bound to a random free port.
 
 == Maven Coordinates
 
 The <<about/04_managing-dependencies.adoc, Managing Dependencies>> page describes how you
-should declare dependency management for Helidon applications. Then declare the following dependency in your project:
+should declare dependency management for Helidon applications.
+Then declare the following dependency in your project:
 
 [source,xml,subs="verbatim,attributes"]
 ----

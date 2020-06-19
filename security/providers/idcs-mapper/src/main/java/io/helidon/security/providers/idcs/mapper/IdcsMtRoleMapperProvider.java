@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,6 @@ import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 
-import io.helidon.common.HelidonFeatures;
 import io.helidon.config.Config;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.Grant;
@@ -66,10 +65,6 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
     private static final Logger LOGGER = Logger
             .getLogger(IdcsMtRoleMapperProvider.class.getName());
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
-
-    static {
-        HelidonFeatures.register("Security", "Role-Mapper", "IDCS-Multitenant");
-    }
 
     private final TokenHandler idcsTenantTokenHandler;
     private final TokenHandler idcsAppNameTokenHandler;

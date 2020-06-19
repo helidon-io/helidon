@@ -99,7 +99,7 @@ readonly WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
 readonly PREPARE_HOOKS=( )
 
 # Hooks for deployment work
-readonly PERFORM_HOOKS=( ${WS_DIR}/examples/quickstarts/archetypes/deploy-archetypes.sh )
+readonly PERFORM_HOOKS=( )
 
 source ${WS_DIR}/etc/scripts/pipeline-env.sh
 

@@ -41,5 +41,6 @@
         <module>streaming</module>
         <module>websocket</module>
         <module>tls</module>
+        <module>mutual-tls</module>
     </modules>
 </project>

@@ -1,0 +1,105 @@
+
+package {{package}};
+
+import java.io.IOException;
+import java.util.logging.LogManager;
+
+import io.helidon.config.Config;
+import io.helidon.dbclient.DbClient;
+import io.helidon.dbclient.health.DbClientHealthCheck;
+import io.helidon.health.HealthSupport;
+import io.helidon.media.jsonb.JsonbSupport;
+import io.helidon.media.jsonp.JsonpSupport;
+import io.helidon.metrics.MetricsSupport;
+import io.helidon.webserver.Routing;
+import io.helidon.webserver.WebServer;
+
+/**
+ * Main class that starts up server and registers Pokemon services.
+ *
+ * Pokémon, and Pokémon character names are trademarks of Nintendo.
+ */
+public final class Main {
+
+    /**
+     * Cannot be instantiated.
+     */
+    private Main() {
+    }
+
+    /**
+     * Application main entry point.
+     *
+     * @param args command line arguments
+     * @throws java.io.IOException if there are problems reading logging properties
+     */
+    public static void main(final String[] args) throws IOException {
+        startServer();
+    }
+
+    /**
+     * Start the server.
+     *
+     * @return the created {@link io.helidon.webserver.WebServer} instance
+     * @throws java.io.IOException if there are problems reading logging properties
+     */
+    static WebServer startServer() throws IOException {
+        // Load logging configuration
+        LogManager.getLogManager().readConfiguration(Main.class.getResourceAsStream("/logging.properties"));
+
+        // By default this will pick up application.yaml from the classpath
+        Config config = Config.create();
+
+        // Prepare routing and build server
+        Routing routing = createRouting(config);
+        WebServer server = WebServer.builder(routing)
+                .addMediaSupport(JsonpSupport.create())
+                .addMediaSupport(JsonbSupport.create())
+                .config(config.get("server"))
+                .build();
+
+        // Try to start the server. If successful, print some info and arrange to
+        // print a message at shutdown. If unsuccessful, print the exception.
+        server.start()
+                .thenAccept(ws -> {
+                    System.out.println(
+                            "WEB server is up! http://localhost:" + ws.port() + "/");
+                    ws.whenShutdown().thenRun(()
+                            -> System.out.println("WEB server is DOWN. Good bye!"));
+                })
+                .exceptionally(t -> {
+                    System.err.println("Startup failed: " + t.getMessage());
+                    t.printStackTrace(System.err);
+                    return null;
+                });
+
+        return server;
+    }
+
+    /**
+     * Creates new {@link io.helidon.webserver.Routing}.
+     *
+     * @param config configuration for this server
+     * @return routing configured with JSON support, a health check, and a service
+     */
+    private static Routing createRouting(Config config) {
+        Config dbConfig = config.get("db");
+
+        // Client services are added through a service loader
+        DbClient dbClient = DbClient.builder(dbConfig).build();
+
+        // Support for health
+        HealthSupport health = HealthSupport.builder()
+                .addLiveness(DbClientHealthCheck.create(dbClient))
+                .build();
+
+        // Initialize database schema
+        InitializeDb.init(dbClient);
+
+        return Routing.builder()
+                .register(health)                   // Health at "/health"
+                .register(MetricsSupport.create())  // Metrics at "/metrics"
+                .register("/", new PokemonService(dbClient))
+                .build();
+    }
+}

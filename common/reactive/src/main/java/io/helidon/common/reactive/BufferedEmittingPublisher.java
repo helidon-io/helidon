@@ -40,10 +40,10 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
     private final EmittingPublisher<T> emitter = new EmittingPublisher<>();
     private final AtomicLong deferredDrains = new AtomicLong(0);
     private final AtomicBoolean draining = new AtomicBoolean(false);
-    private final AtomicBoolean emitting = new AtomicBoolean(false);
     private final AtomicReference<Throwable> error = new AtomicReference<>();
     private BiConsumer<Long, Long> requestCallback = null;
     private Consumer<? super T> onEmitCallback = null;
+    private boolean safeToSkipBuffer = false;
 
     protected BufferedEmittingPublisher() {
     }
@@ -216,41 +216,47 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
     }
 
     private void drainBuffer() {
-        if (!draining.getAndSet(true)) {
-            while (!buffer.isEmpty()) {
-                if (emitter.emit(buffer.peek())) {
-                    if (onEmitCallback != null) {
-                        onEmitCallback.accept(buffer.poll());
-                    } else {
-                        buffer.poll();
-                    }
-                } else {
-                    break;
-                }
+        deferredDrains.incrementAndGet();
+
+        long drains;
+        do {
+            if (draining.getAndSet(true)) {
+                //other thread already draining
+                return;
             }
-            if (buffer.isEmpty()
-                    && state.compareAndSet(State.COMPLETING, State.COMPLETED)) {
-                //Buffer drained, time for complete
-                emitter.complete();
-            }
-            draining.set(false);
-            if (deferredDrains.getAndUpdate(d -> d == 0 ? 0 : d - 1) > 0) {
+            drains = deferredDrains.getAndUpdate(d -> d == 0 ? 0 : d - 1);
+            if (drains > 0) {
                 // in case of parallel drains invoked by request
                 // increasing demand during draining
-                drainBuffer();
+                actualDrain();
+                drains--;
             }
-        } else {
-            deferredDrains.incrementAndGet();
+            draining.set(false);
+            // changed while draining, try again
+        } while (drains < deferredDrains.get());
+    }
+
+    private void actualDrain() {
+        while (!buffer.isEmpty()) {
+            if (emitter.emit(buffer.peek())) {
+                if (onEmitCallback != null) {
+                    onEmitCallback.accept(buffer.poll());
+                } else {
+                    buffer.poll();
+                }
+            } else {
+                break;
+            }
+        }
+        if (buffer.isEmpty()
+                && state.compareAndSet(State.COMPLETING, State.COMPLETED)) {
+            // Buffer drained, time for complete
+            emitter.complete();
         }
     }
 
     private int emitOrBuffer(T item) {
-        for (;;) {
-            if (emitting.getAndSet(true)) {
-                // race against parallel emits
-                // only those can add to buffer
-                continue;
-            }
+        synchronized (this) {
             try {
                 if (buffer.isEmpty() && emitter.emit(item)) {
                     // Buffer drained, emit successful
@@ -260,21 +266,45 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
                     }
                     return 0;
                 } else {
-                    //safe slower path thru buffer
+                    // safe slower path thru buffer
                     buffer.add(item);
                     state.get().drain(this);
                     return buffer.size();
                 }
             } finally {
-                emitting.set(false);
+                // If unbounded, check only once if buffer is empty
+                if (!safeToSkipBuffer && isUnbounded() && buffer.isEmpty()) {
+                    safeToSkipBuffer = true;
+                }
             }
         }
     }
+
+    private int unboundedEmitOrBuffer(T item) {
+        // Not reachable unless unbounded req was made
+        // and buffer is empty
+        if (emitter.emit(item)) {
+            // Emit successful
+            if (onEmitCallback != null) {
+                onEmitCallback.accept(item);
+            }
+            return 0;
+        } else {
+            // Emitter can be only in terminal state
+            // buffer for later retrieval by clearBuffer()
+            buffer.add(item);
+            return buffer.size();
+        }
+    }
+
 
     private enum State {
         READY_TO_EMIT {
             @Override
             <T> int emit(BufferedEmittingPublisher<T> publisher, T item) {
+                if (publisher.safeToSkipBuffer) {
+                    return publisher.unboundedEmitOrBuffer(item);
+                }
                 return publisher.emitOrBuffer(item);
             }
 

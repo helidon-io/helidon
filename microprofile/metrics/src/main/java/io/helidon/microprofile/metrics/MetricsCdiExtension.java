@@ -33,6 +33,8 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.RequestScoped;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Default;
 import javax.enterprise.inject.spi.AfterDeploymentValidation;
@@ -41,6 +43,7 @@ import javax.enterprise.inject.spi.AnnotatedType;
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.BeforeBeanDiscovery;
+import javax.enterprise.inject.spi.DeploymentException;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessAnnotatedType;
 import javax.enterprise.inject.spi.ProcessInjectionPoint;
@@ -50,10 +53,10 @@ import javax.enterprise.inject.spi.WithAnnotations;
 import javax.enterprise.inject.spi.configurator.AnnotatedMethodConfigurator;
 import javax.enterprise.inject.spi.configurator.AnnotatedTypeConfigurator;
 import javax.inject.Qualifier;
+import javax.inject.Singleton;
 import javax.interceptor.Interceptor;
 
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
+import io.helidon.common.Errors;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
 import io.helidon.metrics.MetricsSupport;
@@ -94,9 +97,7 @@ public class MetricsCdiExtension implements Extension {
 
     private final Map<MetricID, AnnotatedMethodConfigurator<?>> annotatedGaugeSites = new HashMap<>();
 
-    static {
-        HelidonFeatures.register(HelidonFlavor.MP, "Metrics");
-    }
+    private Errors.Collector errors = Errors.collector();
 
     @SuppressWarnings("unchecked")
     private static <T> T getReference(BeanManager bm, Type type, Bean<?> bean) {
@@ -208,7 +209,7 @@ public class MetricsCdiExtension implements Extension {
         return result;
     }
 
-    private static MetricRegistry getMetricRegistry() {
+    static MetricRegistry getMetricRegistry() {
         return RegistryProducer.getDefaultRegistry();
     }
 
@@ -217,7 +218,7 @@ public class MetricsCdiExtension implements Extension {
      *
      * @param discovery bean discovery event
      */
-    public void before(@Observes BeforeBeanDiscovery discovery) {
+    void before(@Observes BeforeBeanDiscovery discovery) {
         LOGGER.log(Level.FINE, () -> "Before bean discovery " + discovery);
 
         // Initialize our implementation
@@ -354,6 +355,12 @@ public class MetricsCdiExtension implements Extension {
             @Observes AfterDeploymentValidation adv, BeanManager bm) {
         LOGGER.log(Level.FINE, () -> "registerProducers");
 
+        Errors problems = errors.collect();
+        errors = null;
+        if (problems.hasFatal()) {
+            throw new DeploymentException("Metrics module found issues with deployment: " + problems.toString());
+        }
+
         MetricRegistry registry = getMetricRegistry();
         producers.entrySet().forEach(entry -> {
             Metric metric = entry.getValue().getAnnotation(Metric.class);
@@ -447,6 +454,21 @@ public class MetricsCdiExtension implements Extension {
         // If abstract class, then handled by concrete subclasses
         if (Modifier.isAbstract(clazz.getModifiers())) {
             return;
+        }
+
+        Annotation annotation = type.getAnnotation(RequestScoped.class);
+        if (annotation != null) {
+            errors.fatal(clazz, "Cannot configure @Gauge on a request scoped bean");
+            return;
+        }
+
+        if (type.getAnnotation(ApplicationScoped.class) == null && type.getAnnotation(Singleton.class) == null) {
+            if (ConfigProvider.getConfig().getOptionalValue("metrics.warn-dependent", Boolean.class).orElse(true)) {
+                LOGGER.warning("@Gauge is configured on a bean " + clazz.getName()
+                                       + " that is neither ApplicationScoped nor Singleton. This is most likely a bug."
+                                       + " You may set 'metrics.warn-dependent' configuration option to 'false' to remove "
+                                       + "this warning.");
+            }
         }
 
         // Process @Gauge methods keeping non-private declared on this class

@@ -28,7 +28,7 @@ into Java primitive types and simple objects (such as `Double`) and to
 express parts of the config tree as complex types (`List`, `Map`, and
 custom types specific to your application). This section introduces how to
 use the built-in mappings and your own custom ones to convert to simple and
-complext types.
+complex types.
 
 == Converting Configuration to Simple Types
 The link:{javadoc-base-url-api}/Config.html[`Config`] class itself provides many
@@ -119,9 +119,9 @@ The `Config` class exposes several methods for mapping a structured config node
 to a Java `List` or `Map`. The link:{javadoc-base-url-api}/Config.html[JavaDoc]
 contains complete details, but briefly your application can convert a structured `Config` node into:
 
-* a `List<T>` of a given type,
+* a `List<T>` of a given type
 * a `Map<String, String>` in which each key is the fully-qualified key `String` for a
-config entry and the value is its `String` value, or
+config entry and the value is its `String` value
 
 === Custom Conversions
 Often your code will be simpler if you can treat parts of the configuration as

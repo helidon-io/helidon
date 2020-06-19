@@ -1,5 +1,5 @@
 /*
- * Copyright (c)  2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,6 @@ import java.util.concurrent.Flow;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 import io.helidon.common.reactive.Multi;
 import io.helidon.config.Config;
 
@@ -66,10 +64,6 @@ public interface Messaging {
     }
 
     final class Builder implements io.helidon.common.Builder<Messaging> {
-
-        static {
-            HelidonFeatures.register(HelidonFlavor.SE, "Messaging");
-        }
 
         private final MessagingImpl messaging;
 
@@ -351,6 +345,9 @@ public interface Messaging {
          * @return new instance of {@link io.helidon.messaging.Messaging}
          */
         public Messaging build() {
+            if (messaging.getConfig() == null) {
+                messaging.setConfig(Config.create());
+            }
             return messaging;
         }
 

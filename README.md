@@ -8,9 +8,6 @@
     <a href="https://github.com/oracle/helidon/issues">
         <img src="https://img.shields.io/github/issues/oracle/helidon.svg" alt="latest version">
     </a>
-    <a href="https://app.wercker.com/project/byKey/de00e8ec6178ba9a2db8ee863d5c568a">
-        <img src="https://app.wercker.com/status/de00e8ec6178ba9a2db8ee863d5c568a/s/master" alt="build status">
-    </a>
     <a href="https://twitter.com/intent/follow?screen_name=helidon_project">
         <img src="https://img.shields.io/twitter/follow/helidon_project.svg?style=social&logo=twitter" alt="follow on Twitter">
     </a>
@@ -25,6 +22,10 @@ Helidon supports two programming models:
 * Helidon SE: a small, functional style API
 
 In either case your application is just a Java SE program.
+
+## License
+
+Helidon is available under Apache License 2.0.
 
 ## Documentation
 
@@ -41,8 +42,7 @@ See Getting Started at <https://helidon.io>.
 
 ## Build
 
-You can build Helidon using JDK 8 or above. Building with 9+ results in jar
-files that are valid Java 9 modules containing Java 8 bytecodes.
+You need JDK 11+ to build Helidon.
 
 You also need Maven. We recommend 3.5 or newer.
 

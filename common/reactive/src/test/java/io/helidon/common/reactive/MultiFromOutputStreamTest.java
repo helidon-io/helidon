@@ -21,16 +21,13 @@ import java.io.PrintWriter;
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.jupiter.api.Test;
-
 import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.fail;
+
+import org.junit.jupiter.api.Test;
 
 /**
  * {@link MultiFromOutputStream} test.
@@ -121,19 +118,6 @@ public class MultiFromOutputStreamTest {
         assertThat(size, is(equalTo(1L)));
         ByteBuffer bb = subscriber.getItems().get(0);
         assertThat(new String(bb.array()), is(equalTo("foo")));
-    }
-
-    @Test
-    void testSignalCloseCompleteWithException() {
-        MultiFromOutputStream publisher = IoMulti.createOutputStream();
-        publisher.signalCloseComplete(new IllegalStateException("foo!"));
-        try {
-            publisher.close();
-            fail("an exception should have been thrown");
-        } catch (IOException ex) {
-            assertThat(ex.getCause(), is(not(nullValue())));
-            assertThat(ex.getCause(), is(instanceOf(IllegalStateException.class)));
-        }
     }
 
     @Test

@@ -35,6 +35,7 @@ import javax.net.ssl.SSLException;
 import io.helidon.common.LazyValue;
 import io.helidon.common.context.Context;
 import io.helidon.config.Config;
+import io.helidon.config.DeprecatedConfig;
 import io.helidon.media.common.MediaContext;
 import io.helidon.media.common.MediaContextBuilder;
 import io.helidon.media.common.MediaSupport;
@@ -75,7 +76,7 @@ class WebClientConfiguration {
     private final int maxRedirects;
     private final MessageBodyReaderContext readerContext;
     private final MessageBodyWriterContext writerContext;
-    private final Ssl ssl;
+    private final WebClientTls webClientTls;
     private final URI uri;
 
     /**
@@ -89,7 +90,7 @@ class WebClientConfiguration {
         this.followRedirects = builder.followRedirects;
         this.userAgent = builder.userAgent;
         this.proxy = builder.proxy;
-        this.ssl = builder.ssl;
+        this.webClientTls = builder.webClientTls;
         this.maxRedirects = builder.maxRedirects;
         this.clientHeaders = builder.clientHeaders;
         this.cookiePolicy = builder.cookiePolicy;
@@ -127,21 +128,21 @@ class WebClientConfiguration {
     Optional<SslContext> sslContext() {
         SslContext sslContext;
         try {
-            if (ssl.sslContext().isPresent()) {
-                sslContext = nettySslFromJavaNet(ssl.sslContext().get());
+            if (webClientTls.sslContext().isPresent()) {
+                sslContext = nettySslFromJavaNet(webClientTls.sslContext().get());
             } else {
                 SslContextBuilder sslContextBuilder = SslContextBuilder
                         .forClient()
                         .sslProvider(SslProvider.JDK);
-                if (ssl.certificates().size() > 0) {
-                    sslContextBuilder.trustManager(ssl.certificates().toArray(new X509Certificate[0]));
+                if (webClientTls.certificates().size() > 0) {
+                    sslContextBuilder.trustManager(webClientTls.certificates().toArray(new X509Certificate[0]));
                 }
-                if (ssl.clientPrivateKey().isPresent()) {
-                    sslContextBuilder.keyManager(ssl.clientPrivateKey().get(),
-                                                 ssl.clientCertificateChain().toArray(new X509Certificate[0]));
+                if (webClientTls.clientPrivateKey().isPresent()) {
+                    sslContextBuilder.keyManager(webClientTls.clientPrivateKey().get(),
+                                                 webClientTls.clientCertificateChain().toArray(new X509Certificate[0]));
                 }
 
-                if (ssl.trustAll()) {
+                if (webClientTls.trustAll()) {
                     sslContextBuilder.trustManager(InsecureTrustManagerFactory.INSTANCE);
                 }
 
@@ -232,8 +233,8 @@ class WebClientConfiguration {
         return userAgent.get();
     }
 
-    Ssl ssl() {
-        return ssl;
+    WebClientTls tls() {
+        return webClientTls;
     }
 
     Optional<Context> context() {
@@ -282,7 +283,7 @@ class WebClientConfiguration {
         private LazyValue<String> userAgent;
         private Proxy proxy;
         private boolean enableAutomaticCookieStore;
-        private Ssl ssl;
+        private WebClientTls webClientTls;
         private URI uri;
         private MessageBodyReaderContext readerContext;
         private MessageBodyWriterContext writerContext;
@@ -371,13 +372,13 @@ class WebClientConfiguration {
         }
 
         /**
-         * New SSL configuration.
+         * New TLS configuration.
          *
-         * @param ssl ssl configuration
+         * @param webClientTls tls configuration
          * @return updated builder instance
          */
-        public B ssl(Ssl ssl) {
-            this.ssl = ssl;
+        public B tls(WebClientTls webClientTls) {
+            this.webClientTls = webClientTls;
             return me;
         }
 
@@ -580,8 +581,8 @@ class WebClientConfiguration {
          *     <td>Default headers which should be used</td>
          * </tr>
          * <tr>
-         *     <td>ssl</td>
-         *     <td>SSL configuration. See {@link Ssl.Builder#config(Config)}</td>
+         *     <td>tls</td>
+         *     <td>TLS configuration. See {@link WebClientTls.Builder#config(Config)}</td>
          * </tr>
          * <tr>
          *     <td>proxy</td>
@@ -603,10 +604,10 @@ class WebClientConfiguration {
             config.get("user-agent").asString().ifPresent(this::userAgent);
             config.get("cookies").asNode().ifPresent(this::cookies);
             config.get("headers").asNode().ifPresent(this::headers);
-            config.get("ssl")
-                    .as(Ssl.builder()::config)
-                    .map(Ssl.Builder::build)
-                    .ifPresent(this::ssl);
+            DeprecatedConfig.get(config, "tls", "ssl")
+                    .as(WebClientTls.builder()::config)
+                    .map(WebClientTls.Builder::build)
+                    .ifPresent(this::tls);
             config.get("proxy")
                     .as(Proxy.builder()::config)
                     .map(Proxy.Builder::build)
@@ -627,7 +628,7 @@ class WebClientConfiguration {
             followRedirects(configuration.followRedirects);
             userAgent(configuration.userAgent);
             proxy(configuration.proxy);
-            ssl(configuration.ssl);
+            tls(configuration.webClientTls);
             maxRedirects(configuration.maxRedirects);
             clientHeaders(configuration.clientHeaders);
             enableAutomaticCookieStore(configuration.enableAutomaticCookieStore);
