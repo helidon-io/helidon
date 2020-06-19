@@ -52,7 +52,7 @@ number of additional Helidon features:
 
 |Configuration  
 | The Config component provides a Java API to load and process configuration properties in key/value form into a Config object which the application can use to retrieve config data.
-<<se/config/introduction.adoc, Learn more>>. 
+<<se/config/01_introduction.adoc, Learn more>>. 
 
 | Metrics 
 |  Heldion supports both a base set and a Helidon-specific set of metrics that expose information in JSON format (as specified by the MicroProfile Metrics specification) or in plain text (for Prometheus metrics). 
