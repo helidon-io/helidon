@@ -43,9 +43,28 @@
             <groupId>jakarta.transaction</groupId>
             <artifactId>jakarta.transaction-api</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.xml.bind</groupId>
+            <artifactId>jakarta.xml.bind-api</artifactId>
+        </dependency>
+        <dependency>
+            <!-- needed to compile persistence.xml -->
+            <groupId>io.helidon.microprofile.server</groupId>
+            <artifactId>helidon-microprofile-server</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.bundles</groupId>
+            <artifactId>helidon-microprofile</artifactId>
+            <scope>runtime</scope>
+        </dependency>
         <!-- dependency>
             <groupId>io.helidon.integrations.db</groupId>
             <artifactId>h2</artifactId>
+            <scope>runtime</scope>
         </dependency -->
         <dependency>
             <groupId>com.h2database</groupId>
@@ -76,26 +95,10 @@
             <groupId>org.jboss</groupId>
             <artifactId>jandex</artifactId>
             <scope>runtime</scope>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.microprofile.server</groupId>
-            <artifactId>helidon-microprofile-server</artifactId>
-            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>org.glassfish.jersey.media</groupId>
             <artifactId>jersey-media-json-binding</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.microprofile.config</groupId>
-            <artifactId>helidon-microprofile-config</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.microprofile.config</groupId>
-            <artifactId>microprofile-config-api</artifactId>
             <scope>runtime</scope>
         </dependency>
         <dependency>
@@ -131,21 +134,45 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>com.ethlo.persistence.tools</groupId>
-                <artifactId>eclipselink-maven-plugin</artifactId>
+                <groupId>org.jvnet.jaxb2.maven2</groupId>
+                <artifactId>maven-jaxb2-plugin</artifactId>
+                <version>0.14.0</version>
                 <executions>
                     <execution>
-                        <id>weave</id>
-                        <phase>process-classes</phase>
+                        <id>Generate persistence.xml Java objects</id>
                         <goals>
-                            <goal>weave</goal>
+                            <goal>generate</goal>
                         </goals>
+                        <configuration>
+                            <generatePackage>io.helidon.archetypes.tests.jaxb</generatePackage>
+                            <markGenerated>true</markGenerated>
+                            <schemas>
+                                <schema>
+                                    <dependencyResource>
+                                        <groupId>jakarta.persistence</groupId>
+                                        <artifactId>jakarta.persistence-api</artifactId>
+                                        <resource>javax/persistence/persistence_2_2.xsd</resource>
+                                    </dependencyResource>
+                                </schema>
+                            </schemas>
+                            <strict>false</strict>
+                        </configuration>
                     </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.hibernate.orm.tooling</groupId>
+                <artifactId>hibernate-enhance-maven-plugin</artifactId>
+                <version>5.4.6.Final</version>
+                <executions>
                     <execution>
-                        <id>modelgen</id>
-                        <phase>generate-sources</phase>
+                        <configuration>
+                            <failOnError>true</failOnError>
+                            <enableLazyInitialization>true</enableLazyInitialization>
+                            <enableDirtyTracking>true</enableDirtyTracking>
+                        </configuration>
                         <goals>
-                            <goal>modelgen</goal>
+                            <goal>enhance</goal>
                         </goals>
                     </execution>
                 </executions>
