@@ -61,16 +61,12 @@ Switch property `javax.sql.DataSource.test.dataSource.url` in `microprofile-conf
 to use a TCP connection:
 
 ```
-javax.sql.DataSource.test.dataSource.url=jdbc:h2:tcp://localhost:1521/test;IFEXISTS=FALSE
+javax.sql.DataSource.test.dataSource.url=jdbc:h2:tcp://localhost:1521/test
 ```
 
-Next, uncomment the following dependencies in your project's pom file:
+Next, uncomment the following dependency in your project's pom file:
 
 ```
-<dependency>
-    <groupId>io.helidon.integrations.db</groupId>
-    <artifactId>ojdbc</artifactId>
-</dependency>
 <dependency>
     <groupId>io.helidon.integrations.db</groupId>
     <artifactId>h2</artifactId>
