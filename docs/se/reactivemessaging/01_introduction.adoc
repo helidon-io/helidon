@@ -26,7 +26,7 @@
 == Reactive Messaging
 
 Asynchronous messaging is a commonly used form of communication in the world of microservices.
-WWhile its possible to start building your reactive streams directly by combining operators and
+While its possible to start building your reactive streams directly by combining operators and
 connecting them to reactive APIs, with Helidon SE Reactive Messaging, you can now use prepared
 tools for repetitive use case scenarios .
 
