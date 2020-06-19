@@ -4,13 +4,14 @@
         "javax.enterprise.inject.spi.BeanManager",
         "org.hibernate.annotations.common.reflection.java.JavaXClass",
         "org.hibernate.internal.CoreMessageLogger",
-        "org.hibernate.persister.entity.AbstractEntityPersister",
+        "org.hibernate.persister.entity.EntityPersister",
         "org.hibernate.resource.beans.container.spi.ExtendedBeanManager",
         "org.hibernate.resource.beans.container.internal.CdiBasedBeanContainer",
         "org.hibernate.id.IdentifierGenerator",
         "org.hibernate.metadata.ClassMetadata",
         "org.hibernate.persister.walking.spi.AttributeSource",
-        "org.hibernate.tuple.Tuplizer"
+        "org.hibernate.tuple.Tuplizer",
+        "org.hibernate.persister.collection.CollectionPersister"
     ],
     "classes": [
         "org.hibernate.event.spi.LoadEventListener[]",
