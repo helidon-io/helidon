@@ -425,7 +425,7 @@ public class HelidonReflectionFeature implements Feature {
                                             e);
         }
 
-        traceParsing(() -> "Looking up annotated by " + annotationClass.getName());
+        traceParsing(() -> "Looking up annotated by " + annotation.getName());
 
         List<Class<?>> annotatedList = findAnnotated(context, annotationClass.getName());
 
