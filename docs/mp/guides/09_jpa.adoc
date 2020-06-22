@@ -50,7 +50,7 @@ In a shell, `cd` into an empty directory and run this:
 
 [source,bash,subs="attributes+"]
 ----
-mvn archetype:generate \
+mvn -U archetype:generate \
     -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
     -DarchetypeArtifactId=helidon-bare-mp \
