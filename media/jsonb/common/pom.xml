@@ -21,7 +21,7 @@
     <parent>
         <artifactId>helidon-media-jsonb-project</artifactId>
         <groupId>io.helidon.media.jsonb</groupId>
-        <version>1.4.5-SNAPSHOT</version>
+        <version>1.4.6-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 

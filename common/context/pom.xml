@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.common</groupId>
         <artifactId>helidon-common-project</artifactId>
-        <version>1.4.5-SNAPSHOT</version>
+        <version>1.4.6-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-common-context</artifactId>
     <name>Helidon Common Context</name>

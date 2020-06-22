@@ -25,7 +25,7 @@
     <parent>
         <groupId>io.helidon.grpc</groupId>
         <artifactId>helidon-grpc-project</artifactId>
-        <version>1.4.5-SNAPSHOT</version>
+        <version>1.4.6-SNAPSHOT</version>
     </parent>
 
     <artifactId>io.grpc</artifactId>
