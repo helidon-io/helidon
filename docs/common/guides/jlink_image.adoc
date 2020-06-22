@@ -46,7 +46,7 @@ Generate the project using the Helidon {helidon-uc-flavor} Quickstart Maven arch
 
 [source,bash,subs="attributes+"]
 ----
-mvn archetype:generate -DinteractiveMode=false \
+mvn -U archetype:generate -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
     -DarchetypeArtifactId=helidon-quickstart-{helidon-lc-flavor} \
     -DarchetypeVersion={helidon-version} \

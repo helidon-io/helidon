@@ -41,7 +41,7 @@ Generate the project sources using one (or both) of the Helidon Maven
 [source,bash,subs="attributes+"]
 .Run the Maven archetype
 ----
-mvn archetype:generate -DinteractiveMode=false \
+mvn -U archetype:generate -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
     -DarchetypeArtifactId=helidon-quickstart-se \
     -DarchetypeVersion={helidon-version} \
