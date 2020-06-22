@@ -40,7 +40,7 @@ The result is a simple project that can be used for the examples in this guide.
 [source,bash,subs="attributes+"]
 .Run the Maven archetype:
 ----
-mvn archetype:generate -DinteractiveMode=false \
+mvn -U archetype:generate -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
     -DarchetypeArtifactId=helidon-quickstart-mp \
     -DarchetypeVersion={helidon-version} \

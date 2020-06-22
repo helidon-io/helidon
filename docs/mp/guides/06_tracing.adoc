@@ -68,7 +68,7 @@ Use the Helidon MP Maven archetype to create a simple project that can be used f
 [source,bash,subs="attributes+"]
 .Run the Maven archetype:
 ----
-mvn archetype:generate -DinteractiveMode=false \
+mvn -U archetype:generate -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
     -DarchetypeArtifactId=helidon-quickstart-mp \
     -DarchetypeVersion={helidon-version} \
@@ -448,7 +448,7 @@ what you did at the start of this guide:
 [source,bash,subs="attributes+"]
 .Run the Maven archetype:
 ----
-mvn archetype:generate -DinteractiveMode=false \
+mvn -U archetype:generate -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
     -DarchetypeArtifactId=helidon-quickstart-mp \
     -DarchetypeVersion={helidon-version} \

@@ -67,7 +67,7 @@ export VERSION="0.7.0"
        repo (see staging repository profile at end of this document)
     
         ```
-        mvn archetype:generate -DinteractiveMode=false \
+        mvn -U archetype:generate -DinteractiveMode=false \
             -DarchetypeGroupId=io.helidon.archetypes \
             -DarchetypeArtifactId=helidon-quickstart-se \
             -DarchetypeVersion=${VERSION} \
