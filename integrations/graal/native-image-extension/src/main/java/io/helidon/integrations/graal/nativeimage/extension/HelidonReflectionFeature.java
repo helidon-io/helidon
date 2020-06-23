@@ -204,10 +204,12 @@ public class HelidonReflectionFeature implements Feature {
         // all annotated classes
         context.scan()
                 .getClassesWithAnnotation(annotation)
+                .stream()
+                .map(it -> it.loadClass(true))
+                .filter(Objects::nonNull)
                 .forEach(it -> {
                     traceParsing(() -> " class " + it.getName());
-                    context.register(context.access.findClassByName(it.getName()))
-                            .addAll();
+                    context.register(it).addAll();
                 });
 
         // all annotated methods and constructors
@@ -216,10 +218,10 @@ public class HelidonReflectionFeature implements Feature {
                 .forEach(it -> {
                     it.getMethodAndConstructorInfo().forEach(method -> {
                         if (method.hasAnnotation(annotation)) {
-                            Class<?> clazz = context.access().findClassByName(it.getName());
+                            Class<?> clazz = it.loadClass();
                             if (method.isConstructor()) {
                                 try {
-                                    context.register(clazz).add(toConstructor(context, clazz, method));
+                                    context.register(clazz).add(method.loadClassAndGetConstructor());
                                 } catch (Exception e) {
                                     traceParsing(() -> "Failed to load constructor " + method);
                                     if (TRACE_PARSING) {
@@ -228,7 +230,7 @@ public class HelidonReflectionFeature implements Feature {
                                 }
                             } else {
                                 try {
-                                    context.register(clazz).add(toMethod(context, clazz, method));
+                                    context.register(clazz).add(method.loadClassAndGetMethod());
                                 } catch (Exception e) {
                                     traceParsing(() -> "Failed to load method " + method);
                                     if (TRACE_PARSING) {
