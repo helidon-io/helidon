@@ -320,6 +320,11 @@ class ConfigMapperManager implements ConfigMapper {
         public ConfigValue<Config> asNode() {
             return as(Config.class);
         }
+
+        @Override
+        public ConfigMapper mapper() {
+            return mapperManager;
+        }
     }
 
     // this class exists for debugging purposes - it is clearly seen that this mapper was not found
