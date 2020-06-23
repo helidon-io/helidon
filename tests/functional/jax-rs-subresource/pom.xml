@@ -22,7 +22,7 @@
     <parent>
         <artifactId>helidon-tests-functional-project</artifactId>
         <groupId>io.helidon.tests.functional</groupId>
-        <version>1.4.5-SNAPSHOT</version>
+        <version>1.4.6-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-tests-functional-jax-rs-subresource</artifactId>
     <name>Helidon Functional Test: JAX-RS Subresources</name>

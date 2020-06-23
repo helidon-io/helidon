@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.helidon.jersey</groupId>
         <artifactId>helidon-jersey-project</artifactId>
-        <version>1.4.5-SNAPSHOT</version>
+        <version>1.4.6-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
