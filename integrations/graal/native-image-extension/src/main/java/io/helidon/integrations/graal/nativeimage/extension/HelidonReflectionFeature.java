@@ -52,8 +52,6 @@ import com.oracle.svm.core.jdk.Resources;
 import com.oracle.svm.core.jdk.proxy.DynamicProxyRegistry;
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ClassInfo;
-import io.github.classgraph.MethodInfo;
-import io.github.classgraph.MethodParameterInfo;
 import io.github.classgraph.ScanResult;
 import org.graalvm.nativeimage.ImageSingletons;
 import org.graalvm.nativeimage.hosted.Feature;
@@ -134,6 +132,11 @@ public class HelidonReflectionFeature implements Feature {
         ScanResult scan = context.scan();
         ClassInfo superclass = scan.getClassInfo(className);
 
+        if (null == superclass) {
+            traceParsing(() -> "Class " + className + " is not on classpath, cannot find subclasses.");
+            return List.of();
+        }
+
         List<Class<?>> subclasses = scan
                 .getSubclasses(className)
                 .stream()
@@ -162,37 +165,21 @@ public class HelidonReflectionFeature implements Feature {
         return context.scan()
                 .getClassesWithAnnotation(annotation)
                 .stream()
-                .map(classInfo -> context.access().findClassByName(classInfo.getName()))
+                .map(classInfo -> {
+                    Class<?> clazz = null;
+                    try {
+                        clazz = classInfo.loadClass();
+                    } catch (Exception e) {
+                        traceParsing(() -> "Class " + classInfo.getName() + " annotated by " + annotation + " cannot be loaded");
+                        if (TRACE_PARSING) {
+                            traceParsing(() -> "\tException class: " + e.getClass().getName() + ", message: " + e.getMessage());
+                        }
+                    }
+
+                    return clazz;
+                })
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
-    }
-
-    private static Method toMethod(BeforeAnalysisContext context,
-                                   Class<?> clazz,
-                                   MethodInfo method) throws NoSuchMethodException, ClassNotFoundException {
-
-        return clazz.getDeclaredMethod(method.getName(), toClassParams(context.access(), method.getParameterInfo()));
-    }
-
-    private static Constructor<?> toConstructor(BeforeAnalysisContext context,
-                                                Class<?> clazz,
-                                                MethodInfo method) throws NoSuchMethodException, ClassNotFoundException {
-
-        return clazz.getDeclaredConstructor(toClassParams(context.access(), method.getParameterInfo()));
-    }
-
-    private static Class<?>[] toClassParams(BeforeAnalysisAccess access, MethodParameterInfo[] parameters)
-            throws ClassNotFoundException {
-        Class<?>[] params = new Class[parameters.length];
-        for (int i = 0; i < parameters.length; i++) {
-            MethodParameterInfo param = parameters[i];
-            Class<?> paramClass = access.findClassByName(param.getTypeDescriptor().toString());
-            if (null == paramClass) {
-                throw new ClassNotFoundException("Failed to find parameter class: " + param.getTypeDescriptor().toString());
-            }
-            params[i] = paramClass;
-        }
-        return params;
     }
 
     private void addAnnotatedWithReflected(BeforeAnalysisContext context) {
@@ -202,14 +189,14 @@ public class HelidonReflectionFeature implements Feature {
         traceParsing(() -> "Looking up annotated by " + annotation);
 
         // all annotated classes
-        context.scan()
-                .getClassesWithAnnotation(annotation)
-                .stream()
-                .map(it -> it.loadClass(true))
-                .filter(Objects::nonNull)
+        findAnnotated(context, annotation)
                 .forEach(it -> {
-                    traceParsing(() -> " class " + it.getName());
-                    context.register(it).addAll();
+                    if (context.isExcluded(it)) {
+                        traceParsing(() -> " class " + it.getName() + " annotated by " + annotation + " is excluded.");
+                    } else {
+                        traceParsing(() -> " class " + it.getName());
+                        context.register(it).addAll();
+                    }
                 });
 
         // all annotated methods and constructors
@@ -248,10 +235,9 @@ public class HelidonReflectionFeature implements Feature {
                 .forEach(it -> {
                     it.getFieldInfo().forEach(field -> {
                         if (field.hasAnnotation(annotation)) {
-                            Class<?> clazz = context.access().findClassByName(it.getName());
                             try {
-                                context.register(clazz).add(clazz.getDeclaredField(field.getName()));
-                            } catch (NoSuchFieldException e) {
+                                context.register(it.loadClass()).add(field.loadClassAndGetField());
+                            } catch (Exception e) {
                                 traceParsing(() -> "Failed to load field " + field);
                                 if (TRACE_PARSING) {
                                     e.printStackTrace();
