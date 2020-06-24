@@ -192,6 +192,9 @@ class SeConfig implements Config {
 
     @Override
     public <T> ConfigValue<T> as(Class<T> type) {
+        if (type() == Type.MISSING) {
+            return ConfigValues.empty();
+        }
         if (impl().getConverter(type).isPresent()) {
             return delegate.getOptionalValue(stringKey, type)
                     .map(ConfigValues::simpleValue)
@@ -212,6 +215,9 @@ class SeConfig implements Config {
 
     @Override
     public <T> ConfigValue<List<T>> asList(Class<T> type) throws ConfigMappingException {
+        if (type() == Type.MISSING) {
+            return ConfigValues.empty();
+        }
         if (Config.class.equals(type)) {
             return toNodeList();
         }
@@ -220,6 +226,9 @@ class SeConfig implements Config {
 
     @Override
     public <T> ConfigValue<List<T>> asList(Function<Config, T> mapper) throws ConfigMappingException {
+        if (type() == Type.MISSING) {
+            return ConfigValues.empty();
+        }
         return asNodeList()
                 .as(it -> it.stream()
                         .map(mapper)
@@ -228,6 +237,9 @@ class SeConfig implements Config {
 
     @Override
     public ConfigValue<List<Config>> asNodeList() throws ConfigMappingException {
+        if (type() == Type.MISSING) {
+            return ConfigValues.empty();
+        }
         return asList(Config.class);
     }
 
@@ -269,6 +281,9 @@ class SeConfig implements Config {
     }
 
     private Stream<Config> traverseSubNodes(Config config, Predicate<Config> predicate) {
+        if (type() == Type.MISSING) {
+            return Stream.of();
+        }
         if (config.type().isLeaf()) {
             return Stream.of(config);
         } else {

@@ -629,7 +629,7 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
                     oidcConfig = OidcConfig.create(config);
                 }
             }
-            config.get("propagate").as(Boolean.class).ifPresent(this::propagate);
+            config.get("propagate").asBoolean().ifPresent(this::propagate);
             if (null == outboundConfig) {
                 config.get("outbound").ifExists(outbound -> outboundConfig(OutboundConfig.create(outbound)));
             }
