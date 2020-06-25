@@ -40,6 +40,24 @@ See Getting Started at <https://helidon.io>.
 There are no Helidon downloads. Just use our Maven releases (GroupID `io.helidon`).
 See Getting Started at <https://helidon.io>. 
 
+## Helidon CLI
+
+MacOS:
+```bash
+curl -O https://helidon.io/cli/latest/darwin/helidon
+chmod +x ./helidon
+sudo mv ./helidon /usr/local/bin/
+```
+
+Linux:
+```bash
+curl -O https://helidon.io/cli/latest/linux/helidon
+chmod +x ./helidon
+sudo mv ./helidon /usr/local/bin/
+```
+
+See this [document](HELIDON-CLI.md) for more info.
+
 ## Build
 
 You need JDK 11+ to build Helidon.
