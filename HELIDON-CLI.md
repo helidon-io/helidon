@@ -45,5 +45,5 @@ restart your application.
 ## Demo
 
 <p align="center">
-    <img src="etc/images/Helidon_cli.gif" height="572">
+    <img src="etc/images/Helidon_cli.gif">
 </p>
