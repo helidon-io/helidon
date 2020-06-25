@@ -27,6 +27,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.logging.Logger;
 
 import javax.websocket.DeploymentException;
+import javax.websocket.Extension;
 import javax.websocket.server.HandshakeRequest;
 import javax.websocket.server.ServerEndpointConfig;
 
@@ -60,6 +61,7 @@ public class TyrusSupport implements Service {
     private final TyrusHandler handler = new TyrusHandler();
     private Set<Class<?>> endpointClasses;
     private Set<ServerEndpointConfig> endpointConfigs;
+    private Set<Extension> extensions;
 
     /**
      * Create from another instance.
@@ -70,12 +72,18 @@ public class TyrusSupport implements Service {
         this.engine = other.engine;
         this.endpointClasses = other.endpointClasses;
         this.endpointConfigs = other.endpointConfigs;
+        this.extensions = other.extensions;
     }
 
-    TyrusSupport(WebSocketEngine engine, Set<Class<?>> endpointClasses, Set<ServerEndpointConfig> endpointConfigs) {
+    TyrusSupport(
+			WebSocketEngine engine,
+			Set<Class<?>> endpointClasses,
+			Set<ServerEndpointConfig> endpointConfigs,
+			Set<Extension> extensions) {
         this.engine = engine;
         this.endpointClasses = endpointClasses;
         this.endpointConfigs = endpointConfigs;
+        this.extensions = extensions;
     }
 
     /**
@@ -109,6 +117,15 @@ public class TyrusSupport implements Service {
     }
 
     /**
+     * Access to extensions.
+     *
+     * @return Immutable set of extensions.
+     */
+    public Set<Extension> extensions() {
+        return Collections.unmodifiableSet(extensions);
+    }
+
+    /**
      * Returns executor service, can be overridden.
      *
      * @return Executor service or {@code null}.
@@ -133,6 +150,7 @@ public class TyrusSupport implements Service {
 
         private Set<Class<?>> endpointClasses = new HashSet<>();
         private Set<ServerEndpointConfig> endpointConfigs = new HashSet<>();
+        private Set<Extension> extensions = new HashSet<>();
 
         private Builder() {
         }
@@ -159,8 +177,21 @@ public class TyrusSupport implements Service {
             return this;
         }
 
+        /**
+         * Register an extension.
+         *
+         * @param extension The extension.
+         * @return The builder.
+         */
+        public Builder register(Extension extension) {
+            extensions.add(extension);
+            return this;
+        }
+
         @Override
         public TyrusSupport build() {
+            // a purposefully mutable extensions
+            Set<Extension> installedExtensions = new HashSet<>(extensions);
             // Create container and WebSocket engine
             TyrusServerContainer serverContainer = new TyrusServerContainer(endpointClasses) {
                 private final WebSocketEngine engine =
@@ -174,6 +205,11 @@ public class TyrusSupport implements Service {
                 @Override
                 public void register(ServerEndpointConfig serverEndpointConfig) {
                     throw new UnsupportedOperationException("Use TyrusWebSocketEngine for registration");
+                }
+
+                @Override
+                public Set<Extension> getInstalledExtensions() {
+                    return installedExtensions;
                 }
 
                 @Override
@@ -202,7 +238,7 @@ public class TyrusSupport implements Service {
             });
 
             // Create TyrusSupport using WebSocket engine
-            return new TyrusSupport(serverContainer.getWebSocketEngine(), endpointClasses, endpointConfigs);
+            return new TyrusSupport(serverContainer.getWebSocketEngine(), endpointClasses, endpointConfigs, extensions);
         }
     }
 
