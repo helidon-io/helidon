@@ -23,7 +23,7 @@ db:
       - type: METER
   statements:
     # Ping statement
-    ping: "DO 0"
+    ping: "SET @HELIDON_PING=0"
     # Create database schema
     create-types: "CREATE TABLE POKEMONTYPE (id INTEGER NOT NULL PRIMARY KEY, name VARCHAR(64) NOT NULL)"
     create-pokemons: "CREATE TABLE POKEMON (id INTEGER NOT NULL PRIMARY KEY, name VARCHAR(64) NOT NULL, id_type INTEGER NOT NULL REFERENCES POKEMONTYPE(id))"
