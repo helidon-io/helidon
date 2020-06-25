@@ -113,6 +113,23 @@ public class MainTest {
         assertThat(getPokemonCount(), is(6));
     }
 
+    @Test
+    public void testMetricsHealth() throws Exception {
+        webClient.get()
+                .path("/health")
+                .request()
+                .thenAccept(r -> assertThat(r.status(), is(Http.Status.OK_200)))
+                .toCompletableFuture()
+                .get();
+
+        webClient.get()
+                .path("/metrics")
+                .request()
+                .thenAccept(r -> assertThat(r.status(), is(Http.Status.OK_200)))
+                .toCompletableFuture()
+                .get();
+    }
+
     private int getPokemonCount() throws Exception {
         CompletableFuture<Integer> result = new CompletableFuture<>();
         webClient.get()
