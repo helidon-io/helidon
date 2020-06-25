@@ -380,7 +380,7 @@ class SeConfig implements Config {
 
             // start from index 1, as 0 is already aded
             int i = 1;
-            while(true) {
+            while (true) {
                 indexedConfigKey = configKey + "." + i;
                 optionalValue = delegate.getOptionalValue(indexedConfigKey, String.class);
                 if (optionalValue.isPresent()) {
@@ -394,14 +394,14 @@ class SeConfig implements Config {
             return result;
         } else {
             // and further still we may have a list of objects
-            if (get("0").type() == Type.MISSING){
+            if (get("0").type() == Type.MISSING) {
                 throw MissingValueException.create(key);
             }
             // there are objects here, let's do that
             List<T> result = new LinkedList<>();
 
             int i = 0;
-            while(true) {
+            while (true) {
                 Config config = get(String.valueOf(i));
                 if (config.type() == Type.MISSING) {
                     break;
