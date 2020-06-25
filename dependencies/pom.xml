@@ -51,7 +51,7 @@
         <version.lib.failsafe>2.3.1</version.lib.failsafe>
         <version.lib.google-api-client>1.30.5</version.lib.google-api-client>
         <version.lib.google-error-prone>2.3.3</version.lib.google-error-prone>
-        <version.lib.graalvm>20.0.0</version.lib.graalvm>
+        <version.lib.graalvm>20.1.0</version.lib.graalvm>
         <version.lib.grpc>1.27.1</version.lib.grpc>
         <version.lib.guava>28.1-jre</version.lib.guava>
         <version.lib.h2>1.4.199</version.lib.h2>

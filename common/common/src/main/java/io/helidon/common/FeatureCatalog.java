@@ -150,7 +150,8 @@ final class FeatureCatalog {
                     .name("Websocket")
                     .description("Jakarta Websocket implementation")
                     .path("WebServer", "Websocket")
-                    .nativeSupported(false));
+                    .nativeSupported(true)
+                    .nativeDescription("Server only"));
 
         /*
          * MP Modules

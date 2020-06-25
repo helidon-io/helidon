@@ -663,9 +663,8 @@ public class HelidonReflectionFeature implements Feature {
         }
 
         void addFields(boolean all) {
-            Field[] fields = clazz.getFields();
-
             try {
+                Field[] fields = clazz.getFields();
                 // add all public fields
                 for (Field field : fields) {
                     add(field);
