@@ -171,20 +171,24 @@ full(){
     mvn ${MAVEN_ARGS} clean install ${STAGED_PROFILE}
     cd ${SCRATCH}
 
+    echo "===== Running tests ====="
+    cd ${SCRATCH}/helidon/tests
+    mvn ${MAVEN_ARGS} clean install ${STAGED_PROFILE}
+
     # Primes dependencies for native-image builds
     cd ${SCRATCH}/helidon/tests/integration/native-image
     mvn ${MAVEN_ARGS} clean install ${STAGED_PROFILE}
 
-    echo "===== Running native image tests ====="
-    if [ -z "${GRAALVM_HOME}" ]; then
-        echo "WARNING! GRAALVM_HOME is not set. Skipping native image tests"
-    else
-        readonly native_image_tests="se-1 mp-1 mp-2 mp-3"
-        for native_test in ${native_image_tests}; do
-            cd ${SCRATCH}/helidon/tests/integration/native-image/${native_test}
-            mvn ${MAVEN_ARGS} clean package -Pnative-image ${STAGED_PROFILE}
-        done
-    fi
+#    echo "===== Running native image tests ====="
+#    if [ -z "${GRAALVM_HOME}" ]; then
+#        echo "WARNING! GRAALVM_HOME is not set. Skipping native image tests"
+#    else
+#        readonly native_image_tests="se-1 mp-1 mp-2 mp-3"
+#        for native_test in ${native_image_tests}; do
+#            cd ${SCRATCH}/helidon/tests/integration/native-image/${native_test}
+#            mvn ${MAVEN_ARGS} clean package -Pnative-image ${STAGED_PROFILE}
+#        done
+#    fi
 
 }
 
@@ -206,62 +210,61 @@ testGET() {
     return 0
 }
 
-quick(){
+#
+# $1 = archetype name: "quickstart-se"
+testArchetype(){
+    archetype_name=$1
+    archetype_pkg=`echo ${archetype_name} | tr "\-" "\."`
 
-    echo "===== Quick Test ====="
-    cd ${SCRATCH}
+    echo "===== Testing Archetype ${archetype_name} ====="
 
-    echo "===== Testing Archetypes ====="
-    mvn ${MAVEN_ARGS} archetype:generate -DinteractiveMode=false \
+    mvn ${MAVEN_ARGS} -U archetype:generate -DinteractiveMode=false \
         -DarchetypeGroupId=io.helidon.archetypes \
-        -DarchetypeArtifactId=helidon-quickstart-se \
+        -DarchetypeArtifactId=helidon-${archetype_name} \
         -DarchetypeVersion=${VERSION} \
         -DgroupId=io.helidon.examples \
-        -DartifactId=helidon-quickstart-se \
-        -Dpackage=io.helidon.examples.quickstart.se \
+        -DartifactId=helidon-${archetype_name} \
+        -Dpackage=io.helidon.examples.${archetype_pkg} \
         ${STAGED_PROFILE}
 
-    mvn ${MAVEN_ARGS} -f helidon-quickstart-se/pom.xml ${STAGED_PROFILE} clean package
+    mvn ${MAVEN_ARGS} -f helidon-${archetype_name}/pom.xml ${STAGED_PROFILE} clean package
 
-    echo "===== Running and pinging SE app ====="
-    java -jar helidon-quickstart-se/target/helidon-quickstart-se.jar &
+    echo "===== Running and pinging ${archetype_name} app ====="
+    java -jar helidon-${archetype_name}/target/helidon-${archetype_name}.jar &
     PID=$!
 
     # Wait for app to come up
     waituntilready
 
     # Hit some endpoints
-    testGET http://localhost:8080/greet
-    testGET http://localhost:8080/greet/Joe
+    if [ "${archetype_name}" = "quickstart-se" -o  "${archetype_name}" = "quickstart-mp" ]; then
+        testGET http://localhost:8080/greet
+        testGET http://localhost:8080/greet/Joe
+    fi
     testGET http://localhost:8080/health
     testGET http://localhost:8080/metrics
 
     kill ${PID}
+}
 
-    mvn ${MAVEN_ARGS} archetype:generate -DinteractiveMode=false \
-        -DarchetypeGroupId=io.helidon.archetypes \
-        -DarchetypeArtifactId=helidon-quickstart-mp \
-        -DarchetypeVersion=${VERSION} \
-        -DgroupId=io.helidon.examples \
-        -DartifactId=helidon-quickstart-mp \
-        -Dpackage=io.helidon.examples.quickstart.mp \
-        ${STAGED_PROFILE}
+quick(){
+    readonly archetypes=" 
+      database-se \
+      bare-se \
+      bare-mp \
+      database-mp \
+      quickstart-se \
+      quickstart-mp \
+      "
 
-    mvn ${MAVEN_ARGS} -f helidon-quickstart-mp/pom.xml ${STAGED_PROFILE} clean package
+    echo "===== Quick Test ====="
+    cd ${SCRATCH}
 
-    echo "===== Running and pinging MP app ====="
-    java -jar helidon-quickstart-mp/target/helidon-quickstart-mp.jar &
-    PID=$!
+    echo "===== Testing Archetypes ====="
 
-    waituntilready
-
-    testGET http://localhost:8080/greet
-    testGET http://localhost:8080/greet/Joe
-    testGET http://localhost:8080/metrics
-    testGET http://localhost:8080/health
-    testGET http://localhost:8080/openapi
-
-    kill ${PID}
+    for a in ${archetypes}; do
+        testArchetype $a
+    done
 }
 
 cd ${SCRATCH}
