@@ -351,11 +351,14 @@ class SeConfig implements Config {
     }
 
     private <T> ConfigValue<List<T>> asList(String configKey, Class<T> typeArg) {
+        return new SeConfigValue<>(key(), () -> toList(configKey, typeArg));
+    }
+
+    private <T> List<T> toList(String configKey, Class<T> typeArg) {
         // first try to see if we have a direct value
         Optional<String> optionalValue = delegate.getOptionalValue(configKey, String.class);
         if (optionalValue.isPresent()) {
-            List<T> theList = toList(configKey, optionalValue.get(), typeArg);
-            return new SeConfigValue<>(key, theList);
+            return valueToList(configKey, optionalValue.get(), typeArg);
         }
 
         /*
@@ -386,11 +389,11 @@ class SeConfig implements Config {
                     break;
                 }
             }
-            return new SeConfigValue<>(key, result);
+            return result;
         } else {
             // and further still we may have a list of objects
             if (get("0").type() == Type.MISSING){
-                return ConfigValues.empty();
+                throw MissingValueException.create(key);
             }
             // there are objects here, let's do that
             List<T> result = new LinkedList<>();
@@ -402,13 +405,13 @@ class SeConfig implements Config {
                 }
                 result.add(config.as(typeArg).get());
             }
-            return new SeConfigValue<>(key, result);
+            return result;
         }
     }
 
-    private <T> List<T> toList(String configKey,
-                               String stringValue,
-                               Class<T> typeArg) {
+    private <T> List<T> valueToList(String configKey,
+                                    String stringValue,
+                                    Class<T> typeArg) {
         if (stringValue.isEmpty()) {
             return List.of();
         }

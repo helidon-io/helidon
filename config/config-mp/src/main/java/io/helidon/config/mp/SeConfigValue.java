@@ -16,6 +16,7 @@
 
 package io.helidon.config.mp;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -32,10 +33,6 @@ class SeConfigValue<T> implements ConfigValue<T> {
     SeConfigValue(Config.Key key, Supplier<T> valueSupplier) {
         this.key = key;
         this.valueSupplier = valueSupplier;
-    }
-
-    SeConfigValue(Config.Key key, T value) {
-        this(key, () -> value);
     }
 
     @Override
@@ -76,5 +73,49 @@ class SeConfigValue<T> implements ConfigValue<T> {
     @Override
     public Supplier<Optional<T>> optionalSupplier() {
         return this::asOptional;
+    }
+
+    @Override
+    public int hashCode() {
+        try {
+            return Objects.hash(key, asOptional());
+        } catch (ConfigMappingException e) {
+            return Objects.hash(key);
+        }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        SeConfigValue<?> that = (SeConfigValue<?>) o;
+        if (!key.equals(that.key)) {
+            return false;
+        }
+
+        Optional<?> myOptional;
+        try {
+            myOptional = asOptional();
+        } catch (ConfigMappingException e) {
+            try {
+                that.asOptional();
+                // same key, one failed -> different value
+                return false;
+            } catch (ConfigMappingException configMappingException) {
+                // same key, both failed -> same value
+                return true;
+            }
+        }
+        try {
+            Optional<?> thatOptional = that.asOptional();
+            return myOptional.equals(thatOptional);
+        } catch (ConfigMappingException e) {
+            // same key, one failed -> different value
+            return false;
+        }
     }
 }

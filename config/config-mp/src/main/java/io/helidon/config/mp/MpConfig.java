@@ -16,8 +16,7 @@
 
 package io.helidon.config.mp;
 
-import java.util.LinkedList;
-import java.util.List;
+import java.util.Iterator;
 
 import io.helidon.config.ConfigSources;
 import io.helidon.config.OverrideSources;
@@ -51,22 +50,11 @@ public final class MpConfig {
 
         // If the mpConfig is based on an SE config (such as when we use meta configuration)
         // we must reuse that se config instance
-        Iterable<ConfigSource> configSources = mpConfig.getConfigSources();
-        List<ConfigSource> allSources = new LinkedList<>();
-        for (ConfigSource source : configSources) {
-            allSources.add(source);
-            if (allSources.size() > 1) {
-                // we only care about first or first two
-                break;
-            }
-        }
-
-        if (allSources.size() == 1) {
-            ConfigSource first = allSources.get(0);
-            if (first instanceof MpHelidonConfigSource) {
-                // we only have Helidon SE config as a source - let's just use it
-                return ((MpHelidonConfigSource) first).unwrap();
-            }
+        Iterator<ConfigSource> configSources = mpConfig.getConfigSources().iterator();
+        ConfigSource first = configSources.hasNext() ? configSources.next() : null;
+        if (!configSources.hasNext() && first instanceof MpHelidonConfigSource) {
+            // we only have Helidon SE config as a source - let's just use it
+            return ((MpHelidonConfigSource) first).unwrap();
         }
 
         // we use Helidon SE config to handle object mapping (and possible other mappers on classpath)
