@@ -47,11 +47,11 @@ public class PokemonResource {
     @Path("{id}")
     @Produces(MediaType.APPLICATION_JSON)
     public Pokemon getPokemonById(@PathParam("id") String id) {
-        try {
-            return entityManager.find(Pokemon.class, Integer.valueOf(id));
-        } catch (IllegalArgumentException e) {
+        Pokemon pokemon = entityManager.find(Pokemon.class, Integer.valueOf(id));
+        if (pokemon == null) {
             throw new NotFoundException("Unable to find pokemon with ID " + id);
         }
+        return pokemon;
     }
 
     @DELETE
