@@ -79,6 +79,18 @@ class MainTest {
         assertThat(getPokemonCount(), is(6));
     }
 
+    @Test
+    void testHealthMetrics() {
+        Response response = client.target(getConnectionString("/health"))
+                .request()
+                .get();
+        assertThat(response.getStatus(), is(200));
+        response = client.target(getConnectionString("/metrics"))
+                .request()
+                .get();
+        assertThat(response.getStatus(), is(200));
+    }
+
     private int getPokemonCount() {
         JsonArray pokemons = client.target(getConnectionString("/pokemon"))
                 .request()
