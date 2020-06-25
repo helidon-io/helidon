@@ -378,8 +378,9 @@ class SeConfig implements Config {
             // first element is already in
             result.add(convert(indexedConfigKey, optionalValue.get(), typeArg));
 
-            // hardcoded limit to lists of 1000 elements
-            for (int i = 1; i < 1000; i++) {
+            // start from index 1, as 0 is already aded
+            int i = 1;
+            while(true) {
                 indexedConfigKey = configKey + "." + i;
                 optionalValue = delegate.getOptionalValue(indexedConfigKey, String.class);
                 if (optionalValue.isPresent()) {
@@ -388,6 +389,7 @@ class SeConfig implements Config {
                     // finish the iteration on first missing index
                     break;
                 }
+                i++;
             }
             return result;
         } else {
@@ -398,12 +400,14 @@ class SeConfig implements Config {
             // there are objects here, let's do that
             List<T> result = new LinkedList<>();
 
-            for (int i = 0; i < 1000; i++) {
+            int i = 0;
+            while(true) {
                 Config config = get(String.valueOf(i));
                 if (config.type() == Type.MISSING) {
                     break;
                 }
                 result.add(config.as(typeArg).get());
+                i++;
             }
             return result;
         }
