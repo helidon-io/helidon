@@ -249,12 +249,12 @@ testArchetype(){
 
 quick(){
     readonly archetypes=" 
-      database-se \
-      bare-se \
-      bare-mp \
-      database-mp \
       quickstart-se \
       quickstart-mp \
+      bare-se \
+      bare-mp \
+      database-se \
+      database-mp \
       "
 
     echo "===== Quick Test ====="
