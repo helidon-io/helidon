@@ -33,6 +33,7 @@ import java.util.stream.Stream;
 import io.helidon.common.GenericType;
 import io.helidon.config.ConfigValue;
 import io.helidon.config.MetaConfig;
+import io.helidon.config.spi.ConfigMapper;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
@@ -295,6 +296,11 @@ public class MpConfigProviderResolver extends ConfigProviderResolver {
         @Override
         public ConfigValue<Map<String, String>> asMap() {
             return getCurrent().asMap();
+        }
+
+        @Override
+        public ConfigMapper mapper() {
+            return getCurrent().mapper();
         }
 
         @Override

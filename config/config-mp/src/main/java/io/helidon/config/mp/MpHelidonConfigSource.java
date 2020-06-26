@@ -18,6 +18,8 @@ package io.helidon.config.mp;
 
 import java.util.Map;
 
+import io.helidon.config.Config;
+
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
 final class MpHelidonConfigSource implements ConfigSource {
@@ -47,5 +49,9 @@ final class MpHelidonConfigSource implements ConfigSource {
     @Override
     public String getName() {
         return "Helidon Config";
+    }
+
+    Config unwrap() {
+        return helidonConfig;
     }
 }

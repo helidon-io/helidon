@@ -169,12 +169,12 @@ public class HeaderAtnProvider extends SynchronousProvider implements Authentica
          * @return updated builder instance
          */
         public Builder config(Config config) {
-            config.get("optional").as(Boolean.class).ifPresent(this::optional);
-            config.get("authenticate").as(Boolean.class).ifPresent(this::authenticate);
-            config.get("propagate").as(Boolean.class).ifPresent(this::propagate);
-            config.get("principal-type").as(SubjectType.class).ifPresent(this::subjectType);
-            config.get("atn-token").as(TokenHandler.class).ifPresent(this::atnTokenHandler);
-            config.get("outbound-token").as(TokenHandler.class).ifPresent(this::outboundTokenHandler);
+            config.get("optional").asBoolean().ifPresent(this::optional);
+            config.get("authenticate").asBoolean().ifPresent(this::authenticate);
+            config.get("propagate").asBoolean().ifPresent(this::propagate);
+            config.get("principal-type").asString().map(SubjectType::valueOf).ifPresent(this::subjectType);
+            config.get("atn-token").as(TokenHandler::create).ifPresent(this::atnTokenHandler);
+            config.get("outbound-token").as(TokenHandler::create).ifPresent(this::outboundTokenHandler);
 
             return this;
         }

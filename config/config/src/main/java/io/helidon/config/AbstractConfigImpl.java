@@ -23,6 +23,8 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 
+import io.helidon.config.spi.ConfigMapper;
+
 /**
  * Abstract common implementation of {@link Config} extended by appropriate Config node types:
  * {@link ConfigListImpl}, {@link ConfigMissingImpl}, {@link ConfigObjectImpl}, {@link ConfigLeafImpl}.
@@ -151,6 +153,11 @@ abstract class AbstractConfigImpl implements Config {
                         onChangeConsumer.accept(contextConfig(event.config()));
                     }
                 });
+    }
+
+    @Override
+    public ConfigMapper mapper() {
+        return mapperManager;
     }
 
     /**

@@ -9,22 +9,77 @@ For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.co
 
 ## [Unreleased]
 
-### Notes
+### Changes
+
+## [2.0.0]
+
+Helidon 2.0.0 is a major release that includes significant new features and fixes.
+As a major release it also includes some backward incompatible API changes.
+See section below.
 
 ### Notable New Features
 
+- Helidon MP GraalVM Native Image support (in addition to existing Helidon SE GraalVM Native Image support)
+- Jakarta WebSocket support
+- CORS support
+- Easy generation of jlink custom runtime images including support for CDS archives for improved startup performance
+- Move to Java 11 APIs
+- Move to Jakarta EE APIs
+- Improved discovery and handling of JAX-RS applications
+- New MediaSupport API
+- Plus many other minor features and fixes
+
+The following are early access features that are ready for developer use:
+
+- Helidon SE reactive Web Client
+- Helidon SE reactive DB Client
+- MicroProfile Reactive Streams Operators
+- MicroProfile Reactive Streams Messaging
+- The Helidon CLI for creating new projects and fast iterative development
+
+For more information see our documentation at 
+[Helidon 2.0.0 Documentation ](https://helidon.io/docs/v2/#/about/01_overview)
+
 ### Changes
+
+Changes between 2.0.0-RC2 and 2.0.0:
+
+- Config: SE Config can be created from MP Config  [2060](https://github.com/oracle/helidon/pull/2060)
+- Native image: Upgrade svm, annotation for reflection [2070](https://github.com/oracle/helidon/pull/2070)
+- Native image: JPA tests and native-image build changes [2014](https://github.com/oracle/helidon/pull/2014)
+- Native image updates [2050](https://github.com/oracle/helidon/pull/2050)
+- Native Image: Oracle DB with JPA [2044](https://github.com/oracle/helidon/pull/2044)
+- WebServer: Content now extends Multi [2043](https://github.com/oracle/helidon/pull/2043)
+- MediaSupport: media support deprecations cleanup [2068](https://github.com/oracle/helidon/pull/2068)
+- Reactive: Cancelling race condition fix [2027](https://github.com/oracle/helidon/pull/2027)
+- Security: Secure and httpOnly used correctly in SetCookie [2056](https://github.com/oracle/helidon/pull/2056)
+- Archetypes: Update MP db archetype to compile with native image. [2073](https://github.com/oracle/helidon/pull/2073)
+- Archetypes: DB Archetypes: README updates for native support [2065](https://github.com/oracle/helidon/pull/2065)
+- Archetypes: Remove unused import from template [2048](https://github.com/oracle/helidon/pull/2048)
+- Documentation: update for AOT. [2045](https://github.com/oracle/helidon/pull/2045)
+- Documentation: Collapsible docs menus / integrate build-tools 2.0.0 [2067](https://github.com/oracle/helidon/pull/2067)
+- Documentation: Docs cleanup [2074](https://github.com/oracle/helidon/pull/2074)
+- Documentation: Various AsciiDoctor warning fixes [2072](https://github.com/oracle/helidon/pull/2072)
+- Documentation: intro for JWT auth - link to mp spec [2069](https://github.com/oracle/helidon/pull/2069)
+- Documentation: Fixed broken links; added new  [2071](https://github.com/oracle/helidon/pull/2071)
+- Documentatino: SE Messaging doc [2029](https://github.com/oracle/helidon/pull/2029)
+- Documentation: WebClient doc update [2064](https://github.com/oracle/helidon/pull/2064)
+- Documentation: fixed broken links in the intro [2022](https://github.com/oracle/helidon/pull/2022)
+
 
 ### Backward incompatible changes
 
-#### WebClient and WebServer TLS class names aligned
-Class configuration names for TLS are now aligned between WebClient and WebServer
+In order to stay current with dependencies and also refine our APIs we have 
+introduced some backward incompatible changes in this release. For details
+see the
+[Helidon 2.0 MP Migration Guide](https://helidon.io/docs/v2/#/mp/guides/15_migration)
+and the
+[Helidon 2.0 SE Migration Guide](https://helidon.io/docs/v2/#/se/guides/15_migration)
 
-| Old Name                 | New Name           |
-| ------------------------ | ------------------ |
-| `Ssl`                    | `WebClientTls`     |
-| `TlsConfig`              | `WebServerTls`     |
+#### Thank You!
 
+Thanks to community members [dansiviter](https://github.com/dansiviter), [graemerocher](https://github.com/graemerocher) ,
+and [akarnokd](https://github.com/akarnokd) for their contributions to this release.
 
 ## [2.0.0-RC2]
 
@@ -172,6 +227,17 @@ Also, a number of deprecated methods have been removed from this release. See
 - Tests: Sometimes KafkaCdiExtensionTest fails [1816](https://github.com/oracle/helidon/pull/1816)
 - Examples: Add trademark notices for Pokemon [2034](https://github.com/oracle/helidon/pull/2034)
 - Examples: WIP: New JPA example and archetype using Pokemons [1933](https://github.com/oracle/helidon/pull/1933)
+
+### Backward incompatible changes
+
+#### WebClient and WebServer TLS class names aligned
+Class configuration names for TLS are now aligned between WebClient and WebServer
+
+| Old Name                 | New Name           |
+| ------------------------ | ------------------ |
+| `Ssl`                    | `WebClientTls`     |
+| `TlsConfig`              | `WebServerTls`     |
+
 
 #### Thank You!
 
@@ -880,7 +946,8 @@ If there is no authorization provider configured, ABAC provider will be configur
       otherwise they are ignored
 
 
-[Unreleased]: https://github.com/oracle/helidon/compare/2.0.0-RC2...HEAD
+[Unreleased]: https://github.com/oracle/helidon/compare/2.0.0...HEAD
+[2.0.0]: https://github.com/oracle/helidon/compare/2.0.0-RC2...2.0.0
 [2.0.0-RC2]: https://github.com/oracle/helidon/compare/2.0.0-RC1...2.0.0-RC2
 [2.0.0-RC1]: https://github.com/oracle/helidon/compare/2.0.0-M3...2.0.0-RC1
 [2.0.0-M3]: https://github.com/oracle/helidon/compare/2.0.0-M2...2.0.0-M3

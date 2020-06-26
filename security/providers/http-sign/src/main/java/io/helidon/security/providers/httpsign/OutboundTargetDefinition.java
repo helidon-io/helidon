@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -271,9 +271,9 @@ public final class OutboundTargetDefinition {
 
             // mandatory
             builder.keyId(config.get("key-id").asString().get());
-            config.get("header").as(HttpSignHeader.class).ifPresent(builder::header);
-            config.get("sign-headers").as(SignedHeadersConfig.class).ifPresent(builder::signedHeaders);
-            config.get("private-key").as(KeyConfig.class).ifPresent(builder::privateKeyConfig);
+            config.get("header").asString().map(HttpSignHeader::valueOf).ifPresent(builder::header);
+            config.get("sign-headers").as(SignedHeadersConfig::create).ifPresent(builder::signedHeaders);
+            config.get("private-key").as(KeyConfig::create).ifPresent(builder::privateKeyConfig);
             config.get("hmac.secret").asString().ifPresent(builder::hmacSecret);
 
             // last, as we configure defaults based on configuration
