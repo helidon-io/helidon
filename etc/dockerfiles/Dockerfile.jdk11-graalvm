@@ -23,7 +23,7 @@ RUN set -x \
     && apt-get -y install curl
 
 RUN curl -O -L \
-    https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-20.0.0/graalvm-ce-java11-linux-amd64-20.0.0.tar.gz && \
+    https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-20.1.0/graalvm-ce-java11-linux-amd64-20.1.0.tar.gz && \
     tar -xvzf graalvm-*.tar.gz && \
     rm graalvm-*.tar.gz && \
     mv graalvm-* graalvm && \
