@@ -201,12 +201,12 @@ public final class SecurityHandler implements Handler {
                 .ifPresent(builder::authorizer);
         config.get(KEY_AUTHENTICATE).as(Boolean.class).or(() -> defaults.authenticate)
                 .ifPresent(builder::authenticate);
-        config.get(KEY_AUTHENTICATION_OPTIONAL).as(Boolean.class)
+        config.get(KEY_AUTHENTICATION_OPTIONAL).asBoolean()
                 .or(() -> defaults.authenticationOptional)
                 .ifPresent(builder::authenticationOptional);
-        config.get(KEY_AUDIT).as(Boolean.class).or(() -> defaults.audited)
+        config.get(KEY_AUDIT).asBoolean().or(() -> defaults.audited)
                 .ifPresent(builder::audit);
-        config.get(KEY_AUTHORIZE).as(Boolean.class).or(() -> defaults.authorize)
+        config.get(KEY_AUTHORIZE).asBoolean().or(() -> defaults.authorize)
                 .ifPresent(builder::authorize);
         config.get(KEY_AUDIT_EVENT_TYPE).asString().or(() -> defaults.auditEventType)
                 .ifPresent(builder::auditEventType);
@@ -229,7 +229,7 @@ public final class SecurityHandler implements Handler {
         }
 
         // optional atn implies atn
-        config.get(KEY_AUTHENTICATION_OPTIONAL).as(Boolean.class).ifPresent(aBoolean -> {
+        config.get(KEY_AUTHENTICATION_OPTIONAL).asBoolean().ifPresent(aBoolean -> {
             if (aBoolean) {
                 if (!config.get(KEY_AUTHENTICATE).exists()) {
                     builder.authenticate(true);

@@ -91,7 +91,7 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
 
         outboundConfig.targets().forEach(target -> target.getConfig().ifPresent(targetConfig -> {
             OutboundTargetDefinition outboundTargetDefinition = targetConfig.get("signature")
-                    .as(OutboundTargetDefinition.class)
+                    .as(OutboundTargetDefinition::create)
                     .get();
             targetKeys.put(target.name(), outboundTargetDefinition);
         }));

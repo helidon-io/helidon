@@ -30,6 +30,7 @@ import java.util.stream.Stream;
 
 import io.helidon.common.GenericType;
 import io.helidon.config.spi.ConfigFilter;
+import io.helidon.config.spi.ConfigMapper;
 import io.helidon.config.spi.ConfigMapperProvider;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigSource;
@@ -649,6 +650,13 @@ public interface Config {
      * @see Config#as(Class)
      */
     <T> T convert(Class<T> type, String value) throws ConfigMappingException;
+
+    /**
+     * The mapper used by this config instance.
+     *
+     * @return configuration mapper
+     */
+    ConfigMapper mapper();
 
     //
     // accessors

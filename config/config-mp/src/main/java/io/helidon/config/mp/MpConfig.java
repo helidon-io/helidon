@@ -16,10 +16,13 @@
 
 package io.helidon.config.mp;
 
+import java.util.Iterator;
+
 import io.helidon.config.ConfigSources;
 import io.helidon.config.OverrideSources;
 
 import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.spi.ConfigSource;
 
 /**
  * Utilities for Helidon MicroProfile Config implementation.
@@ -40,12 +43,21 @@ public final class MpConfig {
      * @param mpConfig MP Config instance
      * @return a new Helidon config using only the mpConfig as its config source
      */
-    @SuppressWarnings("unchecked")
     public static io.helidon.config.Config toHelidonConfig(Config mpConfig) {
         if (mpConfig instanceof io.helidon.config.Config) {
             return (io.helidon.config.Config) mpConfig;
         }
 
+        // If the mpConfig is based on an SE config (such as when we use meta configuration)
+        // we must reuse that se config instance
+        Iterator<ConfigSource> configSources = mpConfig.getConfigSources().iterator();
+        ConfigSource first = configSources.hasNext() ? configSources.next() : null;
+        if (!configSources.hasNext() && first instanceof MpHelidonConfigSource) {
+            // we only have Helidon SE config as a source - let's just use it
+            return ((MpHelidonConfigSource) first).unwrap();
+        }
+
+        // we use Helidon SE config to handle object mapping (and possible other mappers on classpath)
         io.helidon.config.Config mapper = io.helidon.config.Config.builder()
                 .sources(ConfigSources.empty())
                 .overrides(OverrideSources.empty())
@@ -55,7 +67,8 @@ public final class MpConfig {
                 .disableFilterServices()
                 .disableCaching()
                 .disableValueResolving()
-                .changesExecutor(command -> {})
+                .changesExecutor(command -> {
+                })
                 .build();
 
         return new SeConfig(mapper, mpConfig);

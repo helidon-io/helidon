@@ -39,6 +39,7 @@ import io.helidon.config.ConfigMappingException;
 import io.helidon.config.ConfigValue;
 import io.helidon.config.ConfigValues;
 import io.helidon.config.MissingValueException;
+import io.helidon.config.spi.ConfigMapper;
 
 /**
  * Implementation of SE config backed by MP config.
@@ -73,7 +74,8 @@ class SeConfig implements Config {
         this.delegateImpl = delegateImpl;
     }
 
-    SeConfig(io.helidon.config.Config mapper, org.eclipse.microprofile.config.Config delegate) {
+    SeConfig(Config mapper,
+             org.eclipse.microprofile.config.Config delegate) {
         this.mapper = mapper;
         this.prefix = Key.create("");
         this.key = prefix;
@@ -101,7 +103,13 @@ class SeConfig implements Config {
 
     @Override
     public Config get(Key key) {
-        return children.computeIfAbsent(key, it -> new SeConfig(mapper, prefix, key, fullKey.child(key), delegate, delegateImpl));
+        return children.computeIfAbsent(key,
+                                        it -> new SeConfig(mapper,
+                                                           prefix,
+                                                           key,
+                                                           fullKey.child(key),
+                                                           delegate,
+                                                           delegateImpl));
     }
 
     @Override
@@ -158,19 +166,6 @@ class SeConfig implements Config {
 
     }
 
-    private Stream<Config> traverseSubNodes(Config config, Predicate<Config> predicate) {
-        if (config.type().isLeaf()) {
-            return Stream.of(config);
-        } else {
-            return config.asNodeList()
-                    .map(list -> list.stream()
-                            .filter(predicate)
-                            .map(node -> traverseSubNodes(node, predicate))
-                            .reduce(Stream.of(config), Stream::concat))
-                    .orElseThrow(MissingValueException.createSupplier(key()));
-        }
-    }
-
     @Override
     public <T> T convert(Class<T> type, String value) throws ConfigMappingException {
         try {
@@ -191,14 +186,22 @@ class SeConfig implements Config {
         if (genericType.isClass()) {
             return (ConfigValue<T>) as(genericType.rawType());
         }
-        throw new UnsupportedOperationException("MP Configuration does not support generic types.");
+
+        return new SeConfigValue<>(key, () -> mapper.mapper().map(SeConfig.this, genericType));
     }
 
     @Override
     public <T> ConfigValue<T> as(Class<T> type) {
-        return delegate.getOptionalValue(stringKey, type)
-                .map(ConfigValues::simpleValue)
-                .orElseGet(ConfigValues::empty);
+        if (type() == Type.MISSING) {
+            return ConfigValues.empty();
+        }
+        if (impl().getConverter(type).isPresent()) {
+            return delegate.getOptionalValue(stringKey, type)
+                    .map(ConfigValues::simpleValue)
+                    .orElseGet(ConfigValues::empty);
+        } else {
+            return new SeConfigValue<>(key, () -> mapper.mapper().map(SeConfig.this, type));
+        }
     }
 
     @Override
@@ -212,16 +215,20 @@ class SeConfig implements Config {
 
     @Override
     public <T> ConfigValue<List<T>> asList(Class<T> type) throws ConfigMappingException {
+        if (type() == Type.MISSING) {
+            return ConfigValues.empty();
+        }
         if (Config.class.equals(type)) {
             return toNodeList();
         }
-        return asList(stringKey, type)
-                .map(ConfigValues::simpleValue)
-                .orElseGet(ConfigValues::empty);
+        return asList(stringKey, type);
     }
 
     @Override
     public <T> ConfigValue<List<T>> asList(Function<Config, T> mapper) throws ConfigMappingException {
+        if (type() == Type.MISSING) {
+            return ConfigValues.empty();
+        }
         return asNodeList()
                 .as(it -> it.stream()
                         .map(mapper)
@@ -230,6 +237,9 @@ class SeConfig implements Config {
 
     @Override
     public ConfigValue<List<Config>> asNodeList() throws ConfigMappingException {
+        if (type() == Type.MISSING) {
+            return ConfigValues.empty();
+        }
         return asList(Config.class);
     }
 
@@ -263,6 +273,27 @@ class SeConfig implements Config {
     @Override
     public String toString() {
         return type() + " " + stringKey + " = " + currentValue().orElse(null);
+    }
+
+    @Override
+    public ConfigMapper mapper() {
+        return mapper.mapper();
+    }
+
+    private Stream<Config> traverseSubNodes(Config config, Predicate<Config> predicate) {
+        if (type() == Type.MISSING) {
+            return Stream.of();
+        }
+        if (config.type().isLeaf()) {
+            return Stream.of(config);
+        } else {
+            return config.asNodeList()
+                    .map(list -> list.stream()
+                            .filter(predicate)
+                            .map(node -> traverseSubNodes(node, predicate))
+                            .reduce(Stream.of(config), Stream::concat))
+                    .orElseThrow(MissingValueException.createSupplier(key()));
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -319,12 +350,15 @@ class SeConfig implements Config {
         return delegateImpl;
     }
 
-    private <T> Optional<List<T>> asList(String configKey,
-                                         Class<T> typeArg) {
+    private <T> ConfigValue<List<T>> asList(String configKey, Class<T> typeArg) {
+        return new SeConfigValue<>(key(), () -> toList(configKey, typeArg));
+    }
+
+    private <T> List<T> toList(String configKey, Class<T> typeArg) {
         // first try to see if we have a direct value
         Optional<String> optionalValue = delegate.getOptionalValue(configKey, String.class);
         if (optionalValue.isPresent()) {
-            return Optional.of(toList(configKey, optionalValue.get(), typeArg));
+            return valueToList(configKey, optionalValue.get(), typeArg);
         }
 
         /*
@@ -344,8 +378,9 @@ class SeConfig implements Config {
             // first element is already in
             result.add(convert(indexedConfigKey, optionalValue.get(), typeArg));
 
-            // hardcoded limit to lists of 1000 elements
-            for (int i = 1; i < 1000; i++) {
+            // start from index 1, as 0 is already aded
+            int i = 1;
+            while (true) {
                 indexedConfigKey = configKey + "." + i;
                 optionalValue = delegate.getOptionalValue(indexedConfigKey, String.class);
                 if (optionalValue.isPresent()) {
@@ -354,16 +389,33 @@ class SeConfig implements Config {
                     // finish the iteration on first missing index
                     break;
                 }
+                i++;
             }
-            return Optional.of(result);
+            return result;
         } else {
-            return Optional.empty();
+            // and further still we may have a list of objects
+            if (get("0").type() == Type.MISSING) {
+                throw MissingValueException.create(key);
+            }
+            // there are objects here, let's do that
+            List<T> result = new LinkedList<>();
+
+            int i = 0;
+            while (true) {
+                Config config = get(String.valueOf(i));
+                if (config.type() == Type.MISSING) {
+                    break;
+                }
+                result.add(config.as(typeArg).get());
+                i++;
+            }
+            return result;
         }
     }
 
-    private <T> List<T> toList(String configKey,
-                               String stringValue,
-                               Class<T> typeArg) {
+    private <T> List<T> valueToList(String configKey,
+                                    String stringValue,
+                                    Class<T> typeArg) {
         if (stringValue.isEmpty()) {
             return List.of();
         }
