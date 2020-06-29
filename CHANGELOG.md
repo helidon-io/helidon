@@ -7,9 +7,19 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
-## [Unreleased]
+## [2.0.1]
 
-### Changes
+2.0.1 is a minor bug fix release to Helidon 2.0.0. This release fixes a
+key issue in Config as well as some issues in documentation and
+example archetypes.
+
+### Fixes
+
+- Config: Support for SE mappers in MP. [2091](https://github.com/oracle/helidon/pull/2091)
+- Archetype fails on maven version detection on some Linux distributions [2102](https://github.com/oracle/helidon/issues/2102) [2106](https://github.com/oracle/helidon/pull/2106)
+- Archetypes: Some fixes and improvements to the db archetypes [2100](https://github.com/oracle/helidon/pull/2100)
+- GraalVM: Update docs, READMEs, Dockerfiles to graalvm 20.1.0 [2103](https://github.com/oracle/helidon/pull/2103)
+- Docs: add basic documentation for CLI [2101](https://github.com/oracle/helidon/pull/2101) [2094](https://github.com/oracle/helidon/pull/2094)
 
 ## [2.0.0]
 
@@ -946,7 +956,7 @@ If there is no authorization provider configured, ABAC provider will be configur
       otherwise they are ignored
 
 
-[Unreleased]: https://github.com/oracle/helidon/compare/2.0.0...HEAD
+[2.0.1]: https://github.com/oracle/helidon/compare/2.0.0...2.0.1
 [2.0.0]: https://github.com/oracle/helidon/compare/2.0.0-RC2...2.0.0
 [2.0.0-RC2]: https://github.com/oracle/helidon/compare/2.0.0-RC1...2.0.0-RC2
 [2.0.0-RC1]: https://github.com/oracle/helidon/compare/2.0.0-M3...2.0.0-RC1
