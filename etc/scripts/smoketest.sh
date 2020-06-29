@@ -136,7 +136,7 @@ fi
 
 readonly SCRIPT_DIR=$(dirname ${SCRIPT_PATH})
 
-readonly DATESTAMP=$(date +%Y-%m-%d)
+readonly DATESTAMP=$(date +%Y-%m-%d-%H-%M-%S)
 mkdir -p /var/tmp/helidon-smoke
 readonly SCRATCH=$(mktemp -d /var/tmp/helidon-smoke/${VERSION}-${DATESTAMP}.XXXX)
 
@@ -201,6 +201,7 @@ waituntilready() {
 }
 
 testGET() {
+    echo "GET $1"
     http_code=`curl -s -o /dev/null -w "%{http_code}" -X GET $1`
     if [ ${http_code} -ne "200" ]; then
         echo "ERROR: Bad HTTP code. Expected 200 got ${http_code}. GET $1"
@@ -212,7 +213,7 @@ testGET() {
 
 #
 # $1 = archetype name: "quickstart-se"
-testArchetype(){
+buildAndTestArchetype(){
     archetype_name=$1
     archetype_pkg=`echo ${archetype_name} | tr "\-" "\."`
 
@@ -227,12 +228,28 @@ testArchetype(){
         -Dpackage=io.helidon.examples.${archetype_pkg} \
         ${STAGED_PROFILE}
 
+
+    echo "===== ${archetype_name}: building jar ====="
     mvn ${MAVEN_ARGS} -f helidon-${archetype_name}/pom.xml ${STAGED_PROFILE} clean package
 
-    echo "===== Running and pinging ${archetype_name} app ====="
+    echo "===== Running and pinging ${archetype_name} app using jar ====="
     java -jar helidon-${archetype_name}/target/helidon-${archetype_name}.jar &
     PID=$!
+    testApp ${archetype_name}
+    kill ${PID}
 
+    echo "===== ${archetype_name}: building jlink image ====="
+    mvn ${MAVEN_ARGS} -f helidon-${archetype_name}/pom.xml ${STAGED_PROFILE} -Pjlink-image package -DskipTests
+
+    echo "===== Running and pinging ${archetype_name} app using jlink image ====="
+    helidon-${archetype_name}/target/helidon-${archetype_name}/bin/start &
+    PID=$!
+    testApp ${archetype_name}
+    kill ${PID}
+    sleep 1
+}
+
+testApp(){
     # Wait for app to come up
     waituntilready
 
@@ -243,8 +260,6 @@ testArchetype(){
     fi
     testGET http://localhost:8080/health
     testGET http://localhost:8080/metrics
-
-    kill ${PID}
 }
 
 quick(){
@@ -263,7 +278,7 @@ quick(){
     echo "===== Testing Archetypes ====="
 
     for a in ${archetypes}; do
-        testArchetype $a
+        buildAndTestArchetype $a
     done
 }
 
