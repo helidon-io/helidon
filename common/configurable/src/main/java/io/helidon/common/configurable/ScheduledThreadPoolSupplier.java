@@ -16,7 +16,6 @@
 
 package io.helidon.common.configurable;
 
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
@@ -32,7 +31,7 @@ import io.helidon.config.Config;
  * Supplier of a custom scheduled thread pool.
  * The returned thread pool supports {@link io.helidon.common.context.Context} propagation.
  */
-public final class ScheduledThreadPoolSupplier implements Supplier<ExecutorService> {
+public final class ScheduledThreadPoolSupplier implements Supplier<ScheduledExecutorService> {
     private static final int EXECUTOR_DEFAULT_CORE_POOL_SIZE = 16;
     private static final boolean EXECUTOR_DEFAULT_IS_DAEMON = true;
     private static final String EXECUTOR_DEFAULT_THREAD_NAME_PREFIX = "helidon-";
