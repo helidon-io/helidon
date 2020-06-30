@@ -961,7 +961,7 @@ If there is no authorization provider configured, ABAC provider will be configur
 
 
 [Unreleased]: https://github.com/oracle/helidon/compare/2.0.0...HEAD
-[2.0.0]: https://github.com/oracle/helidon/compare/2.0.0...2.0.1
+[2.0.1]: https://github.com/oracle/helidon/compare/2.0.0...2.0.1
 [2.0.0]: https://github.com/oracle/helidon/compare/2.0.0-RC2...2.0.0
 [2.0.0-RC2]: https://github.com/oracle/helidon/compare/2.0.0-RC1...2.0.0-RC2
 [2.0.0-RC1]: https://github.com/oracle/helidon/compare/2.0.0-M3...2.0.0-RC1
