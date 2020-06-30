@@ -349,6 +349,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     @Override
     public WebClientRequestBuilder contentType(MediaType contentType) {
         this.headers.contentType(contentType);
+        this.writerContext.contentType(contentType);
         return this;
     }
 

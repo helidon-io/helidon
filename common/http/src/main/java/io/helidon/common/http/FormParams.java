@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,12 @@
  * limitations under the License.
  */
 package io.helidon.common.http;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Provides access to any form parameters present in the request entity.
@@ -33,4 +39,42 @@ public interface FormParams extends Parameters {
     static FormParams create(String paramAssignments, MediaType mediaType) {
         return FormParamsImpl.create(paramAssignments, mediaType);
     }
+
+    /**
+     * Creates a new {@link Builder} of {@code FormParams} instance.
+     *
+     * @return builder instance
+     */
+    static Builder builder() {
+        return new Builder();
+    }
+
+    /**
+     * Builder of a new {@link FormParams} instance.
+     */
+    class Builder implements io.helidon.common.Builder<FormParams> {
+
+        private final Map<String, List<String>> params = new HashMap<>();
+
+        private Builder() {
+        }
+
+        /**
+         * Adds a new values to specific param key.
+         *
+         * @param key param key
+         * @param value values
+         * @return updated builder instance
+         */
+        public Builder add(String key, String... value) {
+            params.computeIfAbsent(key, k -> new ArrayList<>()).addAll(Arrays.asList(value));
+            return this;
+        }
+
+        @Override
+        public FormParams build() {
+            return FormParamsImpl.create(params);
+        }
+    }
+
 }

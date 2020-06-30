@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,10 @@ class FormParamsImpl extends ReadOnlyParameters implements FormParams {
             MediaType.APPLICATION_FORM_URLENCODED, preparePattern("&"),
             MediaType.TEXT_PLAIN, preparePattern("\n"));
 
+    private FormParamsImpl(Map<String, List<String>> params) {
+        super(params);
+    }
+
     private static Pattern preparePattern(String assignmentSeparator) {
         return Pattern.compile(String.format("([^=]+)=([^%1$s]+)%1$s?", assignmentSeparator));
     }
@@ -45,18 +49,12 @@ class FormParamsImpl extends ReadOnlyParameters implements FormParams {
         while (m.find()) {
             final String key = m.group(1);
             final String value = m.group(2);
-            List<String> values = params.compute(key, (k, v) -> {
-                        if (v == null) {
-                            v = new ArrayList<>();
-                        }
-                        v.add(value);
-                        return v;
-            });
+            params.computeIfAbsent(key, k -> new ArrayList<>()).add(value);
         }
         return new FormParamsImpl(params);
     }
 
-    private FormParamsImpl(Map<String, List<String>> params) {
-        super(params);
+    static FormParams create(Map<String, List<String>> params) {
+        return new FormParamsImpl(params);
     }
 }
