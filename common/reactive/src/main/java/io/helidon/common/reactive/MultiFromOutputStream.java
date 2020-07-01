@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.time.Duration;
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Flow;
@@ -37,12 +36,13 @@ import java.util.function.BiConsumer;
 @Deprecated(since = "2.0.0", forRemoval = true)
 public class MultiFromOutputStream extends OutputStream implements Multi<ByteBuffer> {
 
-    private long timeout = Duration.ofMinutes(10).toMillis();
-
+    private static final int BUFFER_SIZE = 4 * 1024;
     private static final byte[] FLUSH_BUFFER = new byte[0];
 
+    private long timeout = Duration.ofMinutes(10).toMillis();
     private final EmittingPublisher<ByteBuffer> emittingPublisher = EmittingPublisher.create();
     private volatile CompletableFuture<Void> demandUpdated = new CompletableFuture<>();
+    private final ByteBuffer byteBuffer = ByteBuffer.allocate(BUFFER_SIZE);
 
     /**
      * Create new output stream that {@link java.util.concurrent.Flow.Publisher}
@@ -85,22 +85,27 @@ public class MultiFromOutputStream extends OutputStream implements Multi<ByteBuf
 
     @Override
     public void write(byte[] b) throws IOException {
+        publishBufferedMaybe();
         publish(b, 0, b.length);
     }
 
     @Override
     public void write(byte[] b, int off, int len) throws IOException {
+        publishBufferedMaybe();
         publish(b, off, len);
     }
 
     @Override
     public void write(int b) throws IOException {
-        byte bb = (byte) b;
-        publish(new byte[] {bb}, 0, 1);
+        if (!byteBuffer.hasRemaining()) {
+            publish();
+        }
+        byteBuffer.put((byte) b);      // just buffer, no publish
     }
 
     @Override
     public void close() throws IOException {
+        publishBufferedMaybe();
         complete();
     }
 
@@ -111,18 +116,37 @@ public class MultiFromOutputStream extends OutputStream implements Multi<ByteBuf
      */
     @Override
     public void flush() throws IOException {
+        publishBufferedMaybe();
         publish(FLUSH_BUFFER, 0, 0);
     }
 
-    private void publish(byte[] buffer, int offset, int length) throws IOException {
-        Objects.requireNonNull(buffer);
+    private void publishBufferedMaybe() throws IOException {
+        if (byteBuffer.position() > 0) {
+            publish();
+        }
+    }
 
+    private void publish(byte[] b, int off, int len) throws IOException {
+        ByteBuffer emitBuffer = ByteBuffer.allocate(len - off);
+        emitBuffer.put(b, off, len);
+        emitBuffer.flip();
+        doPublish(emitBuffer);
+    }
+
+    private void publish() throws IOException {
+        byteBuffer.flip();
+        ByteBuffer emitBuffer = ByteBuffer.allocate(byteBuffer.remaining());
+        emitBuffer.put(byteBuffer);
+        emitBuffer.flip();
+        doPublish(emitBuffer);
+        byteBuffer.clear();
+    }
+
+    private void doPublish(ByteBuffer emitBuffer) throws IOException {
         try {
             long start = System.currentTimeMillis();
 
-            ByteBuffer byteBuffer = createBuffer(buffer, offset, length);
-
-            while (!emittingPublisher.emit(byteBuffer)) {
+            while (!emittingPublisher.emit(emitBuffer)) {
                 if (emittingPublisher.isCancelled()) {
                     throw new IOException("Output stream already closed.");
                 }
@@ -135,7 +159,6 @@ public class MultiFromOutputStream extends OutputStream implements Multi<ByteBuf
                 await(start, timeout, demandUpdated);
                 demandUpdated = new CompletableFuture<>();
             }
-
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             fail(e);
@@ -171,21 +194,5 @@ public class MultiFromOutputStream extends OutputStream implements Multi<ByteBuf
                 throw new IOException("Timed out while waiting for subscriber to read data");
             }
         }
-    }
-
-    /**
-     * Creates a {@link ByteBuffer} by making a copy of the underlying
-     * byte array. Jersey will reuse this array, so it needs to be
-     * copied here.
-     *
-     * @param buffer The buffer.
-     * @param offset Offset in buffer.
-     * @param length Length of buffer.
-     * @return Newly created {@link ByteBuffer}.
-     */
-    private ByteBuffer createBuffer(byte[] buffer, int offset, int length) {
-        ByteBuffer byteBuffer = ByteBuffer.allocate(length - offset);
-        byteBuffer.put(buffer, offset, length);
-        return byteBuffer.clear();     // resets counters
     }
 }
