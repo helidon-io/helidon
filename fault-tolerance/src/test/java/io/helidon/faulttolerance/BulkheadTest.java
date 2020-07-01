@@ -186,7 +186,7 @@ class BulkheadTest {
         Flow.Publisher<Integer> invoke() {
             invoked.set(true);
             invokedCdl.countDown();
-            return FaultTolerance.async(this::index)
+            return Async.create().invoke(this::index)
                     .flatMap(it -> Multi.create(IntStream.range(it, it + count).boxed()));
         }
 
@@ -215,7 +215,7 @@ class BulkheadTest {
         CompletionStage<Integer> invoke() {
             invoked.set(true);
             invokedCdl.countDown();
-            return FaultTolerance.async(this::index);
+            return Async.create().invoke(this::index);
         }
 
         private int index() {

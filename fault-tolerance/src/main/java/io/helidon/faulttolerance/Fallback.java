@@ -38,7 +38,7 @@ import io.helidon.common.reactive.Single;
  * If none is provided, the method is executed without fallback.
  * @param <T> type of the values returned
  */
-public interface Fallback<T> extends TypedHandler<T> {
+public interface Fallback<T> extends FtHandlerTyped<T> {
     /**
      * A builder to customize {@link Fallback}.
      *

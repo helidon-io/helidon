@@ -107,11 +107,11 @@ interface DelayedTask<T> {
 
             @Override
             public CompletionStage<Void> execute() {
-                CompletionStage<T> result = null;
+                CompletionStage<T> result;
                 try {
                     result = supplier.get();
                 } catch (Exception e) {
-                    return CompletableFuture.failedStage(e);
+                    result = CompletableFuture.failedStage(e);
                 }
                 CompletableFuture<T> future = resultFuture.get();
 

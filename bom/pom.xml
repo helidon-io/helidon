@@ -125,6 +125,12 @@
                 <artifactId>helidon-webclient-security</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <!-- Fault tolerance -->
+            <dependency>
+                <groupId>io.helidon.fault-tolerance</groupId>
+                <artifactId>helidon-fault-tolerance</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
             <!-- gRPC -->
             <dependency>
                 <groupId>io.helidon.grpc</groupId>
