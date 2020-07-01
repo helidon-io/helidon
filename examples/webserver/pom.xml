@@ -42,5 +42,6 @@
         <module>websocket</module>
         <module>tls</module>
         <module>mutual-tls</module>
+        <module>fault-tolerance</module>
     </modules>
 </project>
