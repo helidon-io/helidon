@@ -167,6 +167,37 @@ public class MultiFromOutputStreamTest {
         publisher.close();
     }
 
+    @Test
+    void testByteAtTimeBuffer() throws IOException {
+        MultiFromOutputStream publisher = IoMulti.createOutputStream();
+        TestSubscriber<ByteBuffer> subscriber = new TestSubscriber<>();
+        publisher.subscribe(subscriber);
+        subscriber.requestMax();
+        publisher.write(0);
+        publisher.write(0);
+        publisher.write(0);         // first
+        publisher.flush();             // second
+        long size = subscriber.getItems().stream().count();
+        assertThat(size, is(equalTo(2L)));
+    }
+
+    @Test
+    void testByteAtTimeBufferArray() throws IOException {
+        MultiFromOutputStream publisher = IoMulti.createOutputStream();
+        TestSubscriber<ByteBuffer> subscriber = new TestSubscriber<>();
+        publisher.subscribe(subscriber);
+        subscriber.requestMax();
+        publisher.write(0);                // first
+        publisher.write(new byte[] { 0 });    // second
+        publisher.write(0);
+        publisher.write(0);                // third
+        publisher.write(new byte[] { 0 });    // fourth
+        publisher.write(0);                // fifth
+        publisher.close();
+        long size = subscriber.getItems().stream().count();
+        assertThat(size, is(equalTo(5L)));
+    }
+
     private static final class UnitTestException extends RuntimeException {
         private UnitTestException() {
             super();
