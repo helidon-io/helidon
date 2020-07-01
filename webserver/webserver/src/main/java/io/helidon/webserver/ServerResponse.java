@@ -102,10 +102,10 @@ public interface ServerResponse extends MessageBodyFilters, MessageBodyWriters {
 
     /**
      * Send a {@link Throwable} and close the response.
+     * Invokes error handlers if defined.
      *
      * @param content the {@link Throwable} to send
      * @return {@code null} when invoked
-     * @throws IllegalArgumentException if there is no registered writer for a given type
      * @throws IllegalStateException if any {@code send(...)} method was already called
      * @see #send(Object)
      */
