@@ -17,11 +17,13 @@
 package io.helidon.faulttolerance;
 
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Flow;
 import java.util.function.Supplier;
 
+import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
 
-@FunctionalInterface
 public interface Handler {
     <T> Single<T> invoke(Supplier<? extends CompletionStage<T>> supplier);
+    <T> Multi<T> invokeMulti(Supplier<? extends Flow.Publisher<T>> supplier);
 }

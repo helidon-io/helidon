@@ -17,16 +17,19 @@
 package io.helidon.faulttolerance;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 
+import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
 
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -37,7 +40,7 @@ class CircuitBreakerTest {
     void testCircuitBreaker() throws InterruptedException {
         CircuitBreaker breaker = CircuitBreaker.builder()
                 .volume(10)
-                .ratio(20)
+                .errorRatio(20)
                 .delay(Duration.ofMillis(200))
                 .successThreshold(2)
                 .build();
@@ -48,19 +51,21 @@ class CircuitBreakerTest {
         bad(breaker);
 
         good(breaker);
+        goodMulti(breaker);
 
         // should open the breaker
         bad(breaker);
 
         breakerOpen(breaker);
+        breakerOpenMulti(breaker);
 
         assertThat(breaker.state(), is(CircuitBreaker.State.OPEN));
 
         // need to wait until half open
         int count = 0;
-        while(count++ < 10) {
+        while (count++ < 10) {
             Thread.sleep(50);
-            if(breaker.state() == CircuitBreaker.State.HALF_OPEN) {
+            if (breaker.state() == CircuitBreaker.State.HALF_OPEN) {
                 break;
             }
         }
@@ -80,15 +85,15 @@ class CircuitBreakerTest {
 
         // need to wait until half open
         count = 0;
-        while(count++ < 10) {
+        while (count++ < 10) {
             Thread.sleep(50);
-            if(breaker.state() == CircuitBreaker.State.HALF_OPEN) {
+            if (breaker.state() == CircuitBreaker.State.HALF_OPEN) {
                 break;
             }
         }
 
         good(breaker);
-        bad(breaker);
+        badMulti(breaker);
 
         assertThat(breaker.state(), is(CircuitBreaker.State.OPEN));
     }
@@ -97,6 +102,18 @@ class CircuitBreakerTest {
         Request good = new Request();
         Single<Integer> result = breaker.invoke(good::invoke);
         CompletionException exception = assertThrows(CompletionException.class, () -> result.await(1, TimeUnit.SECONDS));
+
+        Throwable cause = exception.getCause();
+
+        assertThat(cause, notNullValue());
+        assertThat(cause, instanceOf(CircuitBreakerOpenException.class));
+    }
+
+    private void breakerOpenMulti(CircuitBreaker breaker) {
+        Multi<Integer> good = Multi.just(0, 1, 2);
+        Multi<Integer> result = breaker.invokeMulti(() -> good);
+        CompletionException exception = assertThrows(CompletionException.class,
+                                                     () -> result.collectList().await(1, TimeUnit.SECONDS));
 
         Throwable cause = exception.getCause();
 
@@ -116,10 +133,32 @@ class CircuitBreakerTest {
 
     }
 
+    private void badMulti(CircuitBreaker breaker) {
+        Multi<Integer> failing = Multi.error(new IllegalStateException("Fail"));
+        Multi<Integer> failedResult = breaker.invokeMulti(() -> failing);
+
+        CompletionException exception = assertThrows(CompletionException.class,
+                                                     () -> failedResult.collectList().await(1, TimeUnit.SECONDS));
+
+        Throwable cause = exception.getCause();
+
+        assertThat(cause, notNullValue());
+        assertThat(cause, instanceOf(IllegalStateException.class));
+
+    }
+
     private void good(CircuitBreaker breaker) {
         Request good = new Request();
         Single<Integer> result = breaker.invoke(good::invoke);
         result.await(1, TimeUnit.SECONDS);
+    }
+
+    private void goodMulti(CircuitBreaker breaker) {
+        Multi<Integer> good = Multi.just(0, 1, 2);
+        Multi<Integer> result = breaker.invokeMulti(() -> good);
+        List<Integer> list = result.collectList().await(1, TimeUnit.SECONDS);
+
+        assertThat(list, contains(0, 1, 2));
     }
 
     private static class Failing {
