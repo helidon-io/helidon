@@ -23,3 +23,16 @@ server:
 
 tracing:
   service: "helidon-se"
+  protocol: "http"
+  host: "localhost"
+  port: 7076
+  api-version: 2
+  # mocked zipkin
+  path: "/zipkin/api/v2/spans"
+
+client:
+  follow-redirects: true
+  max-redirects: 5
+  services:
+    tracing:
+    security:

@@ -17,12 +17,15 @@ package io.helidon.tests.integration.nativeimage.se1;
 
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.Set;
 import java.util.logging.LogManager;
 
+import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
 import io.helidon.config.FileSystemWatcher;
 import io.helidon.health.HealthSupport;
 import io.helidon.health.checks.HealthChecks;
+import io.helidon.media.jsonb.JsonbSupport;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.metrics.MetricsSupport;
 import io.helidon.security.integration.webserver.WebSecurity;
@@ -40,6 +43,8 @@ import static io.helidon.config.ConfigSources.file;
  * Main class of this integration test.
  */
 public final class Se1Main {
+    static LazyValue<WebServer> server;
+
     /**
      * Cannot be instantiated.
      */
@@ -70,17 +75,18 @@ public final class Se1Main {
         Config config = buildConfig();
 
         // Get webserver config from the "server" section of application.yaml
-        WebServer server = WebServer.builder()
+        server = LazyValue.create(() -> WebServer.builder()
                 .routing(createRouting(config))
                 .config(config.get("server"))
                 .tracer(TracerBuilder.create(config.get("tracing")).build())
                 .addMediaSupport(JsonpSupport.create())
+                .addMediaSupport(JsonbSupport.create())
                 .printFeatureDetails(true)
-                .build();
+                .build());
 
         // Try to start the server. If successful, print some info and arrange to
         // print a message at shutdown. If unsuccessful, print the exception.
-        server.start()
+        server.get().start()
                 .thenAccept(ws -> {
                     System.out.println(
                             "WEB server is up! http://localhost:" + ws.port() + "/greet");
@@ -95,7 +101,7 @@ public final class Se1Main {
 
         // Server threads are not daemon. No need to block. Just react.
 
-        return server;
+        return server.get();
     }
 
     private static Config buildConfig() {
@@ -119,6 +125,8 @@ public final class Se1Main {
 
         MetricsSupport metrics = MetricsSupport.create();
         GreetService greetService = new GreetService(config);
+        MockZipkinService zipkinService = new MockZipkinService(Set.of("helidon-webclient"));
+        WebClientService webClientService = new WebClientService(config, server, zipkinService);
         HealthSupport health = HealthSupport.builder()
                 .addLiveness(HealthChecks.healthChecks())   // Adds a convenient set of checks
                 .addLiveness(() -> HealthCheckResponse.named("custom") // a custom health check
@@ -135,6 +143,8 @@ public final class Se1Main {
                 .register(health)                   // Health at "/health"
                 .register(metrics)                  // Metrics at "/metrics"
                 .register("/greet", greetService)
+                .register("/wc", webClientService)
+                .register("/zipkin", zipkinService)
                 .build();
     }
 
