@@ -88,7 +88,7 @@ number of additional Helidon features:
 |  Helidon runs on top of Netty so there is no need for an application server. It is not derived from a Java EE application server. That means your cloud native application is compact and efficient without unnecessary overhead or bloat.
 
 |JSON-P and JSON-B  
-|  Helidon supports both JSON processing (JSON P) and JSON building (JSON B) APIs.
+|  Helidon supports both JSON processing (JSON-P) and JSON binding (JSON-B) APIs.
 |=======
 
 == Next Steps

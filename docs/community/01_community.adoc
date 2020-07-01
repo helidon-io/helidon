@@ -31,12 +31,9 @@ creating issues, or submitting pull requests.
 
 Have a question?
 
-* Ask them in the #helidon-users channel at https://join.slack.com/t/helidon/shared_invite/enQtNDM1NjU3MjkyNDg2LWNiNGIzOGFhZDdjNzAyM2Y2MzlmMDI4NWY4YjE1OWQ2OTdkYTZkN2FlNDcxNmUyZmZmMTZhZmZhNWI2ZTI1NGI[https://helidon.slack.com]
+* Ask them in in Slack at http://slack.helidon.io[#helidon-user]
 * Or on https://stackoverflow.com/questions/tagged/helidon[Stack Overflow] using the `helidon` tag
 * Read the https://github.com/oracle/helidon/wiki/FAQ[Helidon FAQ]
-
-**Note**: If the Slack invitation link above does not work, then please try
-the link near the bottom of our https://github.com/oracle/helidon/blob/master/README.md[GitHub README]
 
 == Code and Issues
 

@@ -66,7 +66,7 @@ Helidon has added additional APIs to the core set of Microprofile APIs giving yo
 
 
 |JSON-P and JSON-B  
-|  Helidon supports both JSON processing (JSON P) and JSON building (JSON B) APIs.
+|  Helidon supports both JSON processing (JSON-P) and JSON binding (JSON-B) APIs.
 
 
 |Metrics 
