@@ -32,7 +32,7 @@ class TimeoutImpl implements Timeout {
 
     TimeoutImpl(Timeout.Builder builder) {
         this.timeoutMillis = builder.timeout().toMillis();
-        this.executor = builder.executor();;
+        this.executor = builder.executor();
     }
 
     @Override

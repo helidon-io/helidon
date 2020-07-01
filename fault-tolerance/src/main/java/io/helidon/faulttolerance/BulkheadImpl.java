@@ -84,7 +84,8 @@ class BulkheadImpl implements Bulkhead {
         task.execute()
                 .handle((it, throwable) -> {
                     // we do not care about execution, but let's record it in debug
-                    LOGGER.finest(() -> name + " finished execution: " + task + " (" + (throwable == null ? "success":"failure") +")");
+                    LOGGER.finest(() -> name + " finished execution: " + task
+                            + " (" + (throwable == null ? "success" : "failure") + ")");
                     DelayedTask<?> polled = queue.poll();
                     if (polled != null) {
                         LOGGER.finest(() -> name + " invoke in executor: " + polled);

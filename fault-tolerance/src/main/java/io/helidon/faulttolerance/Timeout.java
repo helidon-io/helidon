@@ -52,7 +52,6 @@ public interface Timeout extends FtHandler {
     class Builder implements io.helidon.common.Builder<Timeout> {
         private Duration timeout = Duration.ofSeconds(10);
         private LazyValue<? extends ScheduledExecutorService> executor = FaultTolerance.scheduledExecutor();
-        ;
 
         private Builder() {
         }
