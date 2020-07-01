@@ -18,11 +18,13 @@ package io.helidon.faulttolerance;
 
 import java.time.Duration;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Flow;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
+import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
 
 public class Timeout implements Handler {
@@ -36,6 +38,11 @@ public class Timeout implements Handler {
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    @Override
+    public <T> Multi<T> invokeMulti(Supplier<? extends Flow.Publisher<T>> supplier) {
+        return null;
     }
 
     @Override

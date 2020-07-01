@@ -27,7 +27,7 @@ import java.util.function.LongConsumer;
  * user callbacks.
  * @param <T> the element type of the sequence
  */
-final class MultiTappedPublisher<T> implements Multi<T> {
+public final class MultiTappedPublisher<T> implements Multi<T> {
 
     private final Multi<T> source;
 
@@ -57,6 +57,20 @@ final class MultiTappedPublisher<T> implements Multi<T> {
         this.onCompleteCallback = onCompleteCallback;
         this.onRequestCallback = onRequestCallback;
         this.onCancelCallback = onCancelCallback;
+    }
+
+    private MultiTappedPublisher(Builder<T> builder) {
+        this(builder.source,
+             builder.onSubscribeCallback,
+             builder.onNextCallback,
+             builder.onErrorCallback,
+             builder.onCompleteCallback,
+             builder.onRequestCallback,
+             builder.onCancelCallback);
+    }
+
+    public static <T> Builder<T> builder(Multi<T> source) {
+        return new Builder<>(source);
     }
 
     @Override
@@ -278,6 +292,60 @@ final class MultiTappedPublisher<T> implements Multi<T> {
                     //  Subscriber
                 }
             }
+        }
+    }
+
+    public static class Builder<T> implements io.helidon.common.Builder<MultiTappedPublisher<T>> {
+        private final Multi<T> source;
+        private Consumer<? super Flow.Subscription> onSubscribeCallback;
+        private Consumer<? super T> onNextCallback;
+        private Runnable onCompleteCallback;
+        private LongConsumer onRequestCallback;
+        private Runnable onCancelCallback;
+        private Consumer<? super Throwable> onErrorCallback;
+
+        private Builder(Multi<T> source) {
+            this.source = source;
+        }
+
+        @Override
+        public MultiTappedPublisher<T> build() {
+            return new MultiTappedPublisher<>(this);
+        }
+
+        Builder<T> onSubscribeCallback(Consumer<? super Flow.Subscription> onSubscribeCallback) {
+            this.onSubscribeCallback = onSubscribeCallback;
+            return this;
+        }
+
+        public Builder<T> onSubscribeCallback(Runnable onSubscribeCallback) {
+            this.onSubscribeCallback = subscription -> onSubscribeCallback.run();
+            return this;
+        }
+
+        public Builder<T> onNextCallback(Consumer<? super T> onNextCallback) {
+            this.onNextCallback = onNextCallback;
+            return this;
+        }
+
+        public Builder<T> onCompleteCallback(Runnable onCompleteCallback) {
+            this.onCompleteCallback = onCompleteCallback;
+            return this;
+        }
+
+        public Builder<T> onRequestCallback(LongConsumer onRequestCallback) {
+            this.onRequestCallback = onRequestCallback;
+            return this;
+        }
+
+        public Builder<T> onCancelCallback(Runnable onCancelCallback) {
+            this.onCancelCallback = onCancelCallback;
+            return this;
+        }
+
+        public Builder<T> onErrorCallback(Consumer<? super Throwable> onErrorCallback) {
+            this.onErrorCallback = onErrorCallback;
+            return this;
         }
     }
 }

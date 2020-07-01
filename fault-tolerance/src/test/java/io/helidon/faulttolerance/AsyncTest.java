@@ -16,6 +16,7 @@
 
 package io.helidon.faulttolerance;
 
+import java.util.List;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -61,6 +62,10 @@ class AsyncTest {
 
         assertThat(cause, notNullValue());
         assertThat(cause, instanceOf(MyException.class));
+    }
+
+    private List<String> syncList() {
+        return List.of("hi", "there");
     }
 
     private String syncError() {

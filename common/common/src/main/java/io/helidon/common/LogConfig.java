@@ -106,13 +106,20 @@ public final class LogConfig {
             logConfigStream = new BufferedInputStream(Files.newInputStream(path));
             source = "file: " + path.toAbsolutePath();
         } else {
-            // second look for classpath (only the first one)
+            // second look for classpath (only the first one in production classpath)
             InputStream resourceStream = LogConfig.class.getResourceAsStream("/" + LOGGING_FILE);
             if (resourceStream != null) {
                 logConfigStream = new BufferedInputStream(resourceStream);
                 source = "classpath: /" + LOGGING_FILE;
             } else {
-                return source;
+                // once more for the current classloader
+                resourceStream = Thread.currentThread().getContextClassLoader().getResourceAsStream(LOGGING_FILE);
+                if (resourceStream != null) {
+                    logConfigStream = new BufferedInputStream(resourceStream);
+                    source = "context classpath: /" + LOGGING_FILE;
+                } else {
+                    return source;
+                }
             }
         }
 

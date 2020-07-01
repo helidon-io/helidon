@@ -16,120 +16,113 @@
 
 package io.helidon.faulttolerance;
 
-import java.util.ArrayDeque;
-import java.util.Queue;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.Semaphore;
+import java.util.Objects;
+import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
-import io.helidon.common.reactive.Single;
 
-public class Bulkhead implements Handler {
-    private final Queue<Enqueued<?>> queue;
-    private final Semaphore inProgress;
-
-    private Bulkhead(Builder builder) {
-        this.inProgress = new Semaphore(builder.limit, true);
-        if (builder.queueLength == 0) {
-            queue = new NoQueue();
-        } else {
-            this.queue = new LinkedBlockingQueue<>(builder.queueLength);
-        }
-    }
-
-    public static Builder builder() {
+/**
+ * Bulkhead protects a resource that cannot serve unlimited parallel
+ * requests.
+ * <p>
+ * When the limit of parallel execution is reached, requests are enqueued
+ * until the queue length is reached. Once both the limit and queue are full,
+ * additional attempts to invoke will end with a failed response with
+ * {@link io.helidon.faulttolerance.BulkheadException}.
+ */
+public interface Bulkhead extends Handler {
+    /**
+     * A new builder for {@link io.helidon.faulttolerance.Bulkhead}.
+     *
+     * @return a new builder
+     */
+    static Builder builder() {
         return new Builder();
     }
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public <T> Single<T> invoke(Supplier<? extends CompletionStage<T>> supplier) {
-        if (inProgress.tryAcquire()) {
-            CompletionStage<T> result = supplier.get();
+    /**
+     * Fluent API builder for {@link io.helidon.faulttolerance.Bulkhead}.
+     */
+    class Builder implements io.helidon.common.Builder<Bulkhead> {
+        private static final int DEFAULT_LIMIT = 10;
+        private static final int DEFAULT_QUEUE_LENGTH = 10;
 
-            result.handle((it, throwable) -> {
-                // we still have an acquired semaphore
-                Enqueued<?> polled = queue.poll();
-                while (polled != null) {
-                    invokeEnqueued((Enqueued<Object>) polled);
-                    polled = queue.poll();
-                }
-                inProgress.release();
-                return null;
-            });
-
-            return Single.create(result);
-        } else {
-            Enqueued<T> enqueued = new Enqueued<>(supplier);
-            if (!queue.offer(enqueued)) {
-                return Single.error(new BulkheadException("Bulkhead queue is full"));
-            }
-            return Single.create(enqueued.future());
-        }
-    }
-
-    private void invokeEnqueued(Enqueued<Object> enqueued) {
-        CompletableFuture<Object> future = enqueued.future();
-        CompletionStage<Object> completionStage = enqueued.originalStage();
-        completionStage.thenAccept(future::complete);
-        completionStage.exceptionally(throwable -> {
-            future.completeExceptionally(throwable);
-            return null;
-        });
-    }
-
-    private static class Enqueued<T> {
-        private LazyValue<CompletableFuture<T>> resultFuture = LazyValue.create(CompletableFuture::new);
-        private Supplier<? extends CompletionStage<T>> supplier;
-
-        private Enqueued(Supplier<? extends CompletionStage<T>> supplier) {
-            this.supplier = supplier;
-        }
-
-        private CompletableFuture<T> future() {
-            return resultFuture.get();
-        }
-
-        private CompletionStage<T> originalStage() {
-            return supplier.get();
-        }
-    }
-
-    public static class Builder implements io.helidon.common.Builder<Bulkhead> {
-        private int limit;
-        private int queueLength = 10;
+        private LazyValue<? extends ExecutorService> executor = FaultTolerance.executor();
+        private int limit = DEFAULT_LIMIT;
+        private int queueLength = DEFAULT_QUEUE_LENGTH;
+        private String name = "Bulkhead-" + System.identityHashCode(this);
 
         private Builder() {
         }
 
         @Override
         public Bulkhead build() {
-            return new Bulkhead(this);
+            return new BulkheadImpl(this);
         }
 
+        /**
+         * Configure executor service to use for executing tasks asynchronously.
+         *
+         * @param executor executor service supplier
+         * @return updated builder instance
+         */
+        public Builder executor(Supplier<? extends ExecutorService> executor) {
+            this.executor = LazyValue.create(Objects.requireNonNull(executor));
+            return this;
+        }
+
+        /**
+         * Maximal number of parallel requests going through this bulkhead.
+         * When the limit is reached, additional requests are enqueued.
+         *
+         * @param limit maximal number of parallel calls, defaults is {@value DEFAULT_LIMIT}
+         * @return updated builder instance
+         */
         public Builder limit(int limit) {
             this.limit = limit;
             return this;
         }
 
+        /**
+         * Maximal number of enqueued requests waiting for processing.
+         * When the limit is reached, additional attempts to invoke
+         * a request will receive a {@link io.helidon.faulttolerance.BulkheadException}.
+         *
+         * @param queueLength length of queue
+         * @return updated builder instance
+         */
         public Builder queueLength(int queueLength) {
             this.queueLength = queueLength;
             return this;
         }
-    }
 
-    private static class NoQueue extends ArrayDeque<Enqueued<?>> {
-        @Override
-        public boolean offer(Enqueued<?> enqueued) {
-            return false;
+        /**
+         * Name is useful for debugging and in exception handling.
+         *
+         * @param name name of this bulkhead
+         * @return updated builder instance
+         */
+        public Builder name(String name) {
+            this.name = name;
+            return this;
         }
 
-        @Override
-        public Enqueued<?> poll() {
-            return null;
+        int limit() {
+            return limit;
+        }
+
+        int queueLength() {
+            return queueLength;
+        }
+
+        LazyValue<? extends ExecutorService> executor() {
+            return executor;
+        }
+
+        String name() {
+            return name;
         }
     }
+
 }

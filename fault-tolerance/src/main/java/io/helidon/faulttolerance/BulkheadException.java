@@ -16,8 +16,12 @@
 
 package io.helidon.faulttolerance;
 
+/**
+ * Failure because of {@link io.helidon.faulttolerance.Bulkhead} issues, most likely that the bulkhead does
+ * not allow any more queued tasks.
+ */
 public class BulkheadException extends RuntimeException {
-    public BulkheadException(String message) {
+    BulkheadException(String message) {
         super(message);
     }
 }

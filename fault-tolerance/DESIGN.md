@@ -9,7 +9,10 @@ existing APIs).
 The FT requires executor service (or more) to handle some of the features provided. To be able to
 configure FT for the whole application, a set of static methods exists on class `FaultTolerance`.
 
-- `FaultTolerance.config(Config)` - use a Helidon config instance to configure defaults  
+- `FaultTolerance.config(Config)` - use a Helidon config instance to configure defaults 
+- `FaultTolerance.executor(Supplier)` - Helidon wide executor service for async operation
+- `FaultTolerance.scheduledExecutor(Supplier)` - Helidon wide scheduled executor service for scheduling retries, 
+            timeouts and similar 
 
 # Asynchronous
 Provides an asynchronous execution for a blocking operation. As Helidon SE network stack is using a 
@@ -24,9 +27,8 @@ Limits the number of parallel calls to a single resource.
 
 Configuration:
 - parallel execution limit
-- executor service
-- queue
 - number of queued records
+- executor service - needed to process enqueued records 
 
 # Circuit Breaker
 Defines a circuit breaker policy to an individual method or a class.
@@ -38,7 +40,8 @@ Half-open: In half-open state, trial executions of the service are allowed. By d
 Circuit state transitions will reset the circuit breaker's records.
 
 Configuration:
-- fail on `<? extends Throwable>` - these are failures
+- scheduled executor service
+- apply on `<? extends Throwable>` - these are failures
 - skip on `<? extends Throwable>` - these are not failures
 - delay (duration) - how long before transitioning from open to half-open
 - volume threshold - rolling window size
@@ -56,7 +59,7 @@ May provide a context of execution with information such as
 
 Configuration:
 - fallback method/handler
-- applyOn `<? extends Throwable>` - these are failures
+- apply On `<? extends Throwable>` - these are failures
 - skip on `<? extends Throwable>` - these are not failures
 
 # Retry
@@ -67,11 +70,17 @@ Configuration:
 - delay between retries (duration)
 - overall maximal duration 
 - jitter (randomize delays a bit - duration) - a jitter of 200 ms will randomly add between -200 and 200 milliseconds to each retry delay.
-- retry on `<? extends Throwable>` - these are failures
-- abort on `<? extends Throwable>` - these will immediately abort retries 
+- apply on `<? extends Throwable>` - these are failures
+- skip on `<? extends Throwable>` - these will immediately abort retries 
 
 # Timeout 
 Can be simply replaced with `Single.timeout`
 
 Configuration:
 - overall timeout (duration)
+
+TODO:
+ - native image support
+ - features (experimental)
+ - documentation
+

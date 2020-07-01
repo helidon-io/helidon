@@ -23,6 +23,7 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Flow;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -31,6 +32,7 @@ import java.util.function.Supplier;
 import io.helidon.common.LazyValue;
 import io.helidon.common.configurable.ScheduledThreadPoolSupplier;
 import io.helidon.common.configurable.ThreadPoolSupplier;
+import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 
@@ -116,12 +118,12 @@ public final class FaultTolerance {
         return new Builder();
     }
 
-    static Throwable getCause(Throwable throwable) {
+    static Throwable cause(Throwable throwable) {
         if (throwable instanceof CompletionException) {
-            return getCause(throwable.getCause());
+            return cause(throwable.getCause());
         }
         if (throwable instanceof ExecutionException) {
-            return getCause(throwable.getCause());
+            return cause(throwable.getCause());
         }
         return throwable;
     }
@@ -168,7 +170,7 @@ public final class FaultTolerance {
 
         @Override
         public void add(Handler ft) {
-            fts.add(ft::invoke);
+            fts.add(new TypedWrapper(ft));
         }
 
         public TypedBuilder<T> addFallback(Fallback<T> fallback) {
@@ -179,7 +181,7 @@ public final class FaultTolerance {
         private TypedBuilder<T> builder(Builder builder) {
             builder.fts
                     .forEach(it -> {
-                        fts.add(it::invoke);
+                        fts.add(new TypedWrapper(it));
                     });
             return this;
         }
@@ -192,6 +194,18 @@ public final class FaultTolerance {
             }
 
             @Override
+            public Multi<T> invokeMulti(Supplier<? extends Flow.Publisher<T>> supplier) {
+                Supplier<? extends Flow.Publisher<T>> next = supplier;
+
+                for (TypedHandler<T> validFt : validFts) {
+                    final var finalNext = next;
+                    next = () -> validFt.invokeMulti(finalNext);
+                }
+
+                return Multi.create(next.get());
+            }
+
+            @Override
             public Single<T> invoke(Supplier<? extends CompletionStage<T>> supplier) {
                 Supplier<? extends CompletionStage<T>> next = supplier;
 
@@ -201,6 +215,24 @@ public final class FaultTolerance {
                 }
 
                 return Single.create(next.get());
+            }
+        }
+
+        private class TypedWrapper implements TypedHandler<T> {
+            private final Handler handler;
+
+            private TypedWrapper(Handler handler) {
+                this.handler = handler;
+            }
+
+            @Override
+            public Single<T> invoke(Supplier<? extends CompletionStage<T>> supplier) {
+                return handler.invoke(supplier);
+            }
+
+            @Override
+            public Multi<T> invokeMulti(Supplier<? extends Flow.Publisher<T>> supplier) {
+                return handler.invokeMulti(supplier);
             }
         }
     }
@@ -234,6 +266,17 @@ public final class FaultTolerance {
                 this.validFts = new LinkedList<>(validFts);
             }
 
+            @Override
+            public <T> Multi<T> invokeMulti(Supplier<? extends Flow.Publisher<T>> supplier) {
+                Supplier<? extends Flow.Publisher<T>> next = supplier;
+
+                for (Handler validFt : validFts) {
+                    final var finalNext = next;
+                    next = () -> validFt.invokeMulti(finalNext);
+                }
+
+                return Multi.create(next.get());
+            }
             @Override
             public <T> Single<T> invoke(Supplier<? extends CompletionStage<T>> supplier) {
                 Supplier<? extends CompletionStage<T>> next = supplier;
