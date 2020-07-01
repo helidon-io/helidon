@@ -19,37 +19,46 @@ package io.helidon.faulttolerance;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.CompletionStage;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import org.junit.jupiter.api.BeforeEach;
+import io.helidon.common.reactive.Multi;
+
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class TimeoutTest {
 
-    @BeforeEach
-    void reset() {
-    }
-
     @Test
-    void testAsync() {
+    void testTimeout() {
+        long now = System.currentTimeMillis();
         CompletionException exc = assertThrows(CompletionException.class,
-                                               () -> FaultTolerance.timeout(Duration.ofSeconds(1), this::timeOut)
-                                                       .await());
-
+                                               () -> Timeout.create(Duration.ofMillis(10)).invoke(CompletableFuture::new)
+                                                       .await(5, TimeUnit.SECONDS));
+        long time = System.currentTimeMillis()- now;
         Throwable cause = exc.getCause();
         assertThat(cause, notNullValue());
         assertThat(cause, instanceOf(TimeoutException.class));
+        assertThat("Should have timed out in FT, not in await in test", time, is(Matchers.lessThan(5000L)));
     }
 
-    private CompletionStage<String> timeOut() {
-        // never completing
-        return new CompletableFuture<>();
+    @Test
+    void testTimeoutMulti() {
+        long now = System.currentTimeMillis();
+        CompletionException exc = assertThrows(CompletionException.class,
+                                               () -> Timeout.create(Duration.ofMillis(10)).invokeMulti(Multi::never)
+                                                       .forEach(it -> {})
+                                                       .await(5, TimeUnit.SECONDS));
+        long time = System.currentTimeMillis()- now;
+        Throwable cause = exc.getCause();
+        assertThat(cause, notNullValue());
+        assertThat(cause, instanceOf(TimeoutException.class));
+        assertThat("Should have timed out in FT, not in await in test", time, is(Matchers.lessThan(5000L)));
     }
-
 }

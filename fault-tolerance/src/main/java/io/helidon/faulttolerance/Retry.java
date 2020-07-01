@@ -35,7 +35,7 @@ import io.helidon.common.LazyValue;
  *     <li>In case at least one record was sent (one {@code onNext} was called), the retry will not trigger.</li>
  * </ul>
  */
-public interface Retry extends Handler {
+public interface Retry extends FtHandler {
     /**
      * A new builder to customize {@code Retry} configuration.
      *

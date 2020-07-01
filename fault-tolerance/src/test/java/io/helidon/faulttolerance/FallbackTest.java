@@ -43,7 +43,7 @@ class FallbackTest {
 
     @Test
     void testFallback() {
-        String result = FaultTolerance.fallback(this::primary, this::fallback)
+        String result = Fallback.create(this::fallback).invoke(this::primary)
                 .await(1, TimeUnit.SECONDS);
 
         assertThat(result, is("fallback"));
@@ -53,7 +53,7 @@ class FallbackTest {
 
     @Test
     void testFallbackFails() {
-        Single<String> result = FaultTolerance.fallback(this::primary, this::fallbackFail);
+        Single<String> result = Fallback.create(this::fallbackFail).invoke(this::primary);
         ConfigException exception = FaultToleranceTest.completionException(result, ConfigException.class);
         Throwable[] suppressed = exception.getSuppressed();
         assertThat("Should have a suppressed exception: " + Arrays.toString(suppressed), suppressed.length, is(1));

@@ -33,7 +33,7 @@ import io.helidon.common.LazyValue;
  * After this period, attempts are made to check if the service is up again - if so, the circuit closes
  * and requests can process as usual again.
  */
-public interface CircuitBreaker extends Handler {
+public interface CircuitBreaker extends FtHandler {
     /**
      * Builder to customize configuration of the breaker.
      * @return a new builder

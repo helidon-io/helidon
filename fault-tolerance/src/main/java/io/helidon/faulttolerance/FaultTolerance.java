@@ -16,7 +16,6 @@
 
 package io.helidon.faulttolerance;
 
-import java.time.Duration;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CompletionException;
@@ -26,7 +25,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Flow;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
@@ -37,7 +35,22 @@ import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 
 /**
- * Access to fault tolerance features.
+ * System wide fault tolerance configuration and access to a customized sequence of fault tolerance handlers.
+ * <p>
+ * Fault tolerance provides the following features:
+ * <ul>
+ *     <li>{@link io.helidon.faulttolerance.Async} - invoke a blocking synchronous call asynchronously in an executor service</li>
+ *     <li>{@link io.helidon.faulttolerance.Bulkhead} - limit number of parallel requests to a resource</li>
+ *     <li>{@link io.helidon.faulttolerance.CircuitBreaker} - stop trying to request a failing resource until it becomes
+ *     available</li>
+ *     <li>{@link io.helidon.faulttolerance.Fallback} - fall back to another supplier of result in case the usual one fails</li>
+ *     <li>{@link io.helidon.faulttolerance.Retry} - try to call a supplier again if invocation fails</li>
+ *     <li>{@link io.helidon.faulttolerance.Timeout} - time out a request if it takes too long</li>
+ * </ul>
+ * @see #config(io.helidon.config.Config)
+ * @see #scheduledExecutor(java.util.function.Supplier)
+ * @see #executor()
+ * @see #builder()
  */
 public final class FaultTolerance {
     private static final AtomicReference<LazyValue<? extends ScheduledExecutorService>> SCHEDULED_EXECUTOR =
@@ -48,6 +61,7 @@ public final class FaultTolerance {
     static {
         SCHEDULED_EXECUTOR.set(LazyValue.create(ScheduledThreadPoolSupplier.builder()
                                                         .threadNamePrefix("ft-schedule-")
+                                                        .corePoolSize(2)
                                                         .config(CONFIG.get().get("scheduled-executor"))
                                                         .build()));
 
@@ -60,6 +74,11 @@ public final class FaultTolerance {
     private FaultTolerance() {
     }
 
+    /**
+     * Configure Helidon wide defaults from a config instance.
+     *
+     * @param config config to read fault tolerance configuration
+     */
     public static void config(Config config) {
         CONFIG.set(config);
 
@@ -67,10 +86,20 @@ public final class FaultTolerance {
         EXECUTOR.set(LazyValue.create(ThreadPoolSupplier.create(CONFIG.get().get("executor"))));
     }
 
+    /**
+     * Configure Helidon wide executor service for Fault Tolerance.
+     *
+     * @param executor executor service to use, such as for {@link io.helidon.faulttolerance.Async}
+     */
     public static void executor(Supplier<? extends ExecutorService> executor) {
         EXECUTOR.set(LazyValue.create(executor::get));
     }
 
+    /**
+     * Configure Helidon wide scheduled executor service for Fault Tolerance.
+     *
+     * @param executor scheduled executor service to use, such as for {@link io.helidon.faulttolerance.Retry} scheduling
+     */
     public static void scheduledExecutor(Supplier<? extends ScheduledExecutorService> executor) {
         SCHEDULED_EXECUTOR.set(LazyValue.create(executor));
     }
@@ -83,39 +112,17 @@ public final class FaultTolerance {
         return SCHEDULED_EXECUTOR.get();
     }
 
-    public static <T> Single<T> async(Supplier<T> syncSupplier) {
-        return Async.builder()
-                .executor(EXECUTOR.get())
-                .build()
-                .invoke(syncSupplier);
-    }
-
-    public static <T> Single<T> fallback(Supplier<? extends CompletionStage<T>> primary,
-                                         Function<Throwable, ? extends CompletionStage<T>> fallback) {
-        return Fallback.<T>builder()
-                .fallback(fallback)
-                .build()
-                .invoke(primary);
-    }
-
-    @SuppressWarnings("unchecked")
-    public static <T> Single<T> retry(Supplier<? extends CompletionStage<T>> command) {
-        return Retry.builder()
-                .build()
-                .invoke(command);
-    }
-
-    public static <T> Single<T> timeout(Duration timeout,
-                                        Supplier<? extends CompletionStage<T>> command) {
-        Timeout ft = Timeout.builder()
-                .timeout(timeout)
-                .build();
-
-        return ft.invoke(command);
-    }
-
+    /**
+     * A builder to configure a customized sequence of fault tolerance handlers.
+     *
+     * @return a new builder
+     */
     public static Builder builder() {
         return new Builder();
+    }
+
+    static Config config() {
+        return CONFIG.get();
     }
 
     static Throwable cause(Throwable throwable) {
@@ -134,45 +141,89 @@ public final class FaultTolerance {
             return (B) this;
         }
 
+        /**
+         * Add a bulkhead to the list.
+         *
+         * @param bulkhead bulkhead handler
+         * @return updated builder instance
+         */
         public B addBulkhead(Bulkhead bulkhead) {
             add(bulkhead);
             return me();
         }
 
+        /**
+         * Add a circuit breaker to the list.
+         *
+         * @param breaker circuit breaker handler
+         * @return updated builder instance
+         */
         public B addBreaker(CircuitBreaker breaker) {
             add(breaker);
             return me();
         }
 
+        /**
+         * Add a timeout to the list.
+         *
+         * @param timeout timeout handler
+         * @return updated builder instance
+         */
         public B addTimeout(Timeout timeout) {
             add(timeout);
             return me();
         }
 
+        /**
+         * Add a retry to the list.
+         *
+         * @param retry retry handler
+         * @return updated builder instance
+         */
         public B addRetry(Retry retry) {
             add(retry);
             return me();
         }
 
-        public abstract void add(Handler ft);
+        /**
+         * Add a handler to the list. This may be a custom handler or one of the predefined ones.
+         *
+         * @param ft fault tolerance handler to add
+         */
+        public abstract B add(FtHandler ft);
     }
 
-    public static class TypedBuilder<T> extends BaseBuilder<TypedBuilder<T>> implements io.helidon.common.Builder<TypedHandler<T>> {
-        private final List<TypedHandler<T>> fts = new LinkedList<>();
+    /**
+     * A builder used for fault tolerance handlers that require a specific type to be used, such as
+     * {@link io.helidon.faulttolerance.Fallback}.
+     * An instance is returned from {@link io.helidon.faulttolerance.FaultTolerance.Builder#addFallback(Fallback)}.
+     *
+     * @param <T> type of results handled by {@link io.helidon.common.reactive.Single} or {@link io.helidon.common.reactive.Multi}
+     */
+    public static class TypedBuilder<T> extends BaseBuilder<TypedBuilder<T>>
+            implements io.helidon.common.Builder<FtHandlerTyped<T>> {
+        private final List<FtHandlerTyped<T>> fts = new LinkedList<>();
 
         private TypedBuilder() {
         }
 
         @Override
-        public TypedHandler<T> build() {
-            return new TypedHandlerImpl<T>(fts);
+        public FtHandlerTyped<T> build() {
+            return new FtHandlerTypedImpl<T>(fts);
         }
 
         @Override
-        public void add(Handler ft) {
+        public TypedBuilder<T> add(FtHandler ft) {
             fts.add(new TypedWrapper(ft));
+            return this;
         }
 
+        /**
+         * Add a fallback to the list of handlers.
+         *
+         * @param fallback fallback instance
+         * @return updated builder instance
+         */
         public TypedBuilder<T> addFallback(Fallback<T> fallback) {
             fts.add(fallback);
             return this;
@@ -186,10 +237,10 @@ public final class FaultTolerance {
             return this;
         }
 
-        private static class TypedHandlerImpl<T> implements TypedHandler<T> {
-            private final List<TypedHandler<T>> validFts;
+        private static class FtHandlerTypedImpl<T> implements FtHandlerTyped<T> {
+            private final List<FtHandlerTyped<T>> validFts;
 
-            private TypedHandlerImpl(List<TypedHandler<T>> validFts) {
+            private FtHandlerTypedImpl(List<FtHandlerTyped<T>> validFts) {
                 this.validFts = new LinkedList<>(validFts);
             }
 
@@ -197,7 +248,7 @@ public final class FaultTolerance {
             public Multi<T> invokeMulti(Supplier<? extends Flow.Publisher<T>> supplier) {
                 Supplier<? extends Flow.Publisher<T>> next = supplier;
 
-                for (TypedHandler<T> validFt : validFts) {
+                for (FtHandlerTyped<T> validFt : validFts) {
                     final var finalNext = next;
                     next = () -> validFt.invokeMulti(finalNext);
                 }
@@ -209,7 +260,7 @@ public final class FaultTolerance {
             public Single<T> invoke(Supplier<? extends CompletionStage<T>> supplier) {
                 Supplier<? extends CompletionStage<T>> next = supplier;
 
-                for (TypedHandler<T> validFt : validFts) {
+                for (FtHandlerTyped<T> validFt : validFts) {
                     final var finalNext = next;
                     next = () -> validFt.invoke(finalNext);
                 }
@@ -218,10 +269,10 @@ public final class FaultTolerance {
             }
         }
 
-        private class TypedWrapper implements TypedHandler<T> {
-            private final Handler handler;
+        private class TypedWrapper implements FtHandlerTyped<T> {
+            private final FtHandler handler;
 
-            private TypedWrapper(Handler handler) {
+            private TypedWrapper(FtHandler handler) {
                 this.handler = handler;
             }
 
@@ -237,17 +288,26 @@ public final class FaultTolerance {
         }
     }
 
-    public static class Builder extends BaseBuilder<Builder> implements io.helidon.common.Builder<Handler> {
-        private final List<Handler> fts = new LinkedList<>();
+    /**
+     * A builder used for setting up a customized list of fault tolerance handlers.
+     */
+    public static class Builder extends BaseBuilder<Builder> implements io.helidon.common.Builder<FtHandler> {
+        private final List<FtHandler> fts = new LinkedList<>();
 
         private Builder() {
         }
 
         @Override
-        public Handler build() {
-            return new HandlerImpl(fts);
+        public FtHandler build() {
+            return new FtHandlerImpl(fts);
         }
 
+        /**
+         * Add a fallback to the list of handlers.
+         *
+         * @param fallback fallback instance
+         * @return a new typed builder instance
+         */
         public <U> TypedBuilder<U> addFallback(Fallback<U> fallback) {
             return new TypedBuilder<U>()
                     .builder(this)
@@ -255,14 +315,15 @@ public final class FaultTolerance {
         }
 
         @Override
-        public void add(Handler ft) {
+        public Builder add(FtHandler ft) {
             fts.add(ft);
+            return this;
         }
 
-        private static class HandlerImpl implements Handler {
-            private final List<Handler> validFts;
+        private static class FtHandlerImpl implements FtHandler {
+            private final List<FtHandler> validFts;
 
-            private HandlerImpl(List<Handler> validFts) {
+            private FtHandlerImpl(List<FtHandler> validFts) {
                 this.validFts = new LinkedList<>(validFts);
             }
 
@@ -270,18 +331,19 @@ public final class FaultTolerance {
             public <T> Multi<T> invokeMulti(Supplier<? extends Flow.Publisher<T>> supplier) {
                 Supplier<? extends Flow.Publisher<T>> next = supplier;
 
-                for (Handler validFt : validFts) {
+                for (FtHandler validFt : validFts) {
                     final var finalNext = next;
                     next = () -> validFt.invokeMulti(finalNext);
                 }
 
                 return Multi.create(next.get());
             }
+
             @Override
             public <T> Single<T> invoke(Supplier<? extends CompletionStage<T>> supplier) {
                 Supplier<? extends CompletionStage<T>> next = supplier;
 
-                for (Handler validFt : validFts) {
+                for (FtHandler validFt : validFts) {
                     final var finalNext = next;
                     next = () -> validFt.invoke(finalNext);
                 }

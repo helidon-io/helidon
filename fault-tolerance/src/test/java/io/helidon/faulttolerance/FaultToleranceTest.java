@@ -45,7 +45,7 @@ public class FaultToleranceTest {
                 .queueLength(0)
                 .build();
 
-        TypedHandler<String> faultTolerance = FaultTolerance.builder()
+        FtHandlerTyped<String> faultTolerance = FaultTolerance.builder()
                 .addBreaker(breaker)
                 .addBulkhead(bulkhead)
                 .addTimeout(Timeout.builder().timeout(Duration.ofMillis(100)).build())

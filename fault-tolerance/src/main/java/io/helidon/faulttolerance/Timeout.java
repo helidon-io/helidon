@@ -17,60 +17,79 @@
 package io.helidon.faulttolerance;
 
 import java.time.Duration;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.Flow;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
-import io.helidon.common.reactive.Multi;
-import io.helidon.common.reactive.Single;
 
-public class Timeout implements Handler {
-    private final Duration timeout;
-    private final LazyValue<? extends ScheduledExecutorService> executor;
-
-    private Timeout(Builder builder) {
-        this.timeout = builder.timeout;
-        this.executor = builder.executor;;
-    }
-
-    public static Builder builder() {
+/**
+ * Timeout attempts to terminate execution after the duration time passes.
+ * In such a case, the consumer of this handler receives a {@link io.helidon.common.reactive.Single}
+ * or {@link io.helidon.common.reactive.Multi} with a {@link java.util.concurrent.TimeoutException}.
+ */
+public interface Timeout extends FtHandler {
+    /**
+     * A builder to create a customized {@link io.helidon.faulttolerance.Timeout}.
+     *
+     * @return a new builder
+     */
+    static Builder builder() {
         return new Builder();
     }
 
-    @Override
-    public <T> Multi<T> invokeMulti(Supplier<? extends Flow.Publisher<T>> supplier) {
-        return null;
+    /**
+     * Create a {@link io.helidon.faulttolerance.Timeout} with specified timeout.
+     *
+     * @param timeout duration of the timeout of operations handled by the new Timeout instance
+     * @return a new timeout
+     */
+    static Timeout create(Duration timeout) {
+        return builder().timeout(timeout).build();
     }
 
-    @Override
-    public <T> Single<T> invoke(Supplier<? extends CompletionStage<T>> supplier) {
-        return Single.create(supplier.get())
-                .timeout(timeout.toMillis(), TimeUnit.MILLISECONDS, executor.get());
-    }
-
-    public static class Builder implements io.helidon.common.Builder<Timeout> {
+    /**
+     * Fluent API builder for {@link io.helidon.faulttolerance.Timeout}.
+     */
+    class Builder implements io.helidon.common.Builder<Timeout> {
         private Duration timeout = Duration.ofSeconds(10);
-        private LazyValue<? extends ScheduledExecutorService> executor = FaultTolerance.scheduledExecutor();;
+        private LazyValue<? extends ScheduledExecutorService> executor = FaultTolerance.scheduledExecutor();
+        ;
 
         private Builder() {
         }
 
         @Override
         public Timeout build() {
-            return new Timeout(this);
+            return new TimeoutImpl(this);
         }
 
+        /**
+         * Timeout duration.
+         *
+         * @param timeout duration of the timeout of operations handled by the new Timeout instance
+         * @return updated builder instance
+         */
         public Builder timeout(Duration timeout) {
             this.timeout = timeout;
             return this;
         }
 
+        /**
+         * Executor service to schedule the timeout.
+         *
+         * @param executor scheduled executor service to use
+         * @return updated builder instance
+         */
         public Builder executor(ScheduledExecutorService executor) {
             this.executor = LazyValue.create(executor);
             return this;
+        }
+
+        Duration timeout() {
+            return timeout;
+        }
+
+        LazyValue<? extends ScheduledExecutorService> executor() {
+            return executor;
         }
     }
 }

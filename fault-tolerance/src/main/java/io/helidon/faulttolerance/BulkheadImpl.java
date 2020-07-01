@@ -82,8 +82,9 @@ class BulkheadImpl implements Bulkhead {
     // this method must be called while holding a permit
     private void execute(DelayedTask<?> task) {
         task.execute()
-                .thenRun(() -> {
-                    LOGGER.finest(() -> name + " finished execution: " + task);
+                .handle((it, throwable) -> {
+                    // we do not care about execution, but let's record it in debug
+                    LOGGER.finest(() -> name + " finished execution: " + task + " (" + (throwable == null ? "success":"failure") +")");
                     DelayedTask<?> polled = queue.poll();
                     if (polled != null) {
                         LOGGER.finest(() -> name + " invoke in executor: " + polled);
@@ -94,6 +95,7 @@ class BulkheadImpl implements Bulkhead {
                         // nothing in the queue, release permit
                         inProgress.release();
                     }
+                    return null;
                 });
     }
 
@@ -103,8 +105,10 @@ class BulkheadImpl implements Bulkhead {
             return false;
         }
 
+        @SuppressWarnings("ReturnOfNull")
         @Override
-        public DelayedTask poll() {
+        public DelayedTask<?> poll() {
+            // this queue is empty, poll must return null
             return null;
         }
     }

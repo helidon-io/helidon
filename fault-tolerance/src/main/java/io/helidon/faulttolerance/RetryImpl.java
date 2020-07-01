@@ -57,10 +57,11 @@ class RetryImpl implements Retry {
 
     private <T> Single<T> retrySingle(RetryContext<? extends CompletionStage<T>> context) {
         long delay = 0;
-        if (context.count.get() != 0) {
+        int currentCallIndex = context.count.getAndIncrement();
+        if (currentCallIndex != 0) {
             Optional<Long> maybeDelay = retryPolicy.nextDelayMillis(context.startedMillis,
                                                                     context.lastDelay.get(),
-                                                                    context.count.getAndIncrement());
+                                                                    currentCallIndex);
             if (maybeDelay.isEmpty()) {
                 return Single.error(context.throwable());
             }
@@ -95,10 +96,11 @@ class RetryImpl implements Retry {
     private <T> Multi<T> retryMulti(RetryContext<? extends Flow.Publisher<T>> context) {
 
         long delay = 0;
-        if (context.count.get() != 0) {
+        int currentCallIndex = context.count.getAndIncrement();
+        if (currentCallIndex != 0) {
             Optional<Long> maybeDelay = retryPolicy.nextDelayMillis(context.startedMillis,
                                                                     context.lastDelay.get(),
-                                                                    context.count.getAndIncrement());
+                                                                    currentCallIndex);
             if (maybeDelay.isEmpty()) {
                 return Multi.error(context.throwable());
             }
@@ -150,7 +152,10 @@ class RetryImpl implements Retry {
             }
             Throwable last = thrown.get(thrown.size() - 1);
             for (int i = 0; i < thrown.size() - 1; i++) {
-                last.addSuppressed(thrown.get(i));
+                Throwable throwable = thrown.get(i);
+                if (throwable != last) {
+                    last.addSuppressed(throwable);
+                }
             }
             return last;
         }

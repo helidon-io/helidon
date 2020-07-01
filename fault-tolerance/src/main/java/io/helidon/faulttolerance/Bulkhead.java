@@ -31,7 +31,7 @@ import io.helidon.common.LazyValue;
  * additional attempts to invoke will end with a failed response with
  * {@link io.helidon.faulttolerance.BulkheadException}.
  */
-public interface Bulkhead extends Handler {
+public interface Bulkhead extends FtHandler {
     /**
      * A new builder for {@link io.helidon.faulttolerance.Bulkhead}.
      *
