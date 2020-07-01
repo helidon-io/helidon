@@ -181,6 +181,7 @@ If your application converts to the same
 target type in several places in the code, this approach allows you to change which mapper it uses by
 changing only the _registration_ of the mapper, not each use of it.
 
+[[WebConfig]]
 ==== Continuing the `Web` Example
 The following examples build on the example configuration from the
 <<config/01_introduction.adoc#create-simple-config-props,`application.properties`>>
@@ -286,6 +287,8 @@ uses reflection to invoke the methods and to map configuration values to fields/
 === Adding the Mapping to the POJO
 If you can change the target class you can add any one of the following methods or
 constructors to the POJO class which the config system will find and use for mapping.
+
+Continuing with the <<WebConfig,WebConfig>> example introduced earlier:
 
 .Methods Supporting Auto-mapping
 |===
