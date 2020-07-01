@@ -306,6 +306,7 @@ public final class FaultTolerance {
          * Add a fallback to the list of handlers.
          *
          * @param fallback fallback instance
+         * @param <U> type of future
          * @return a new typed builder instance
          */
         public <U> TypedBuilder<U> addFallback(Fallback<U> fallback) {

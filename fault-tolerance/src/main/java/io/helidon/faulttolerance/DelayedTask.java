@@ -46,12 +46,14 @@ interface DelayedTask<T> {
 
     static <T> DelayedTask<Multi<T>> createMulti(Supplier<? extends Flow.Publisher<T>> supplier) {
         return new DelayedTask<>() {
-            final AtomicBoolean completed = new AtomicBoolean();
-            final AtomicBoolean hasData = new AtomicBoolean();
-            final LazyValue<CompletableFuture<Void>> completionMarker = LazyValue.create(CompletableFuture::new);
-            final LazyValue<CompletableFuture<Flow.Publisher<T>>> publisherFuture = LazyValue.create(CompletableFuture::new);
-            final LazyValue<Multi<T>> multi = LazyValue.create(() -> {
-                return MultiTappedPublisher.builder(Multi.create(publisherFuture.get()).flatMap(Function.identity()))
+            private final AtomicBoolean completed = new AtomicBoolean();
+            private final AtomicBoolean hasData = new AtomicBoolean();
+            private final LazyValue<CompletableFuture<Void>> completionMarker = LazyValue.create(CompletableFuture::new);
+            private final LazyValue<CompletableFuture<Flow.Publisher<T>>> publisherFuture = LazyValue
+                    .create(CompletableFuture::new);
+            private final LazyValue<Multi<T>> multi = LazyValue.create(() -> {
+                return MultiTappedPublisher
+                        .builder(Multi.create(publisherFuture.get()).flatMap(Function.identity(), 32, true, 32))
                         .onCancelCallback(() -> failMarker(new CancellationException("Multi was cancelled")))
                         .onCompleteCallback(this::completeMarker)
                         .onErrorCallback(this::failMarker)
@@ -103,7 +105,7 @@ interface DelayedTask<T> {
     static <T> DelayedTask<Single<T>> createSingle(Supplier<? extends CompletionStage<T>> supplier) {
         return new DelayedTask<>() {
             // future we returned as a result of invoke command
-            final LazyValue<CompletableFuture<T>> resultFuture = LazyValue.create(CompletableFuture::new);
+            private final LazyValue<CompletableFuture<T>> resultFuture = LazyValue.create(CompletableFuture::new);
 
             @Override
             public CompletionStage<Void> execute() {
@@ -125,7 +127,8 @@ interface DelayedTask<T> {
                     return null;
                 });
 
-                return result.thenRun(() -> {});
+                return result.thenRun(() -> {
+                });
             }
 
             @Override

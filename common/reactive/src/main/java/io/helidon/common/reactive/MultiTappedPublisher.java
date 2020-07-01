@@ -69,6 +69,13 @@ public final class MultiTappedPublisher<T> implements Multi<T> {
              builder.onCancelCallback);
     }
 
+    /**
+     * A builder to customize a multi tapped publisher instance.
+     *
+     * @param source source to wrap
+     * @param <T> type of the multi
+     * @return a new builder
+     */
     public static <T> Builder<T> builder(Multi<T> source) {
         return new Builder<>(source);
     }
@@ -77,9 +84,9 @@ public final class MultiTappedPublisher<T> implements Multi<T> {
     public void subscribe(Flow.Subscriber<? super T> subscriber) {
         Objects.requireNonNull(subscriber, "subscriber is null");
         source.subscribe(new MultiTappedSubscriber<>(subscriber,
-                onSubscribeCallback, onNextCallback,
-                onErrorCallback, onCompleteCallback,
-                onRequestCallback, onCancelCallback));
+                                                     onSubscribeCallback, onNextCallback,
+                                                     onErrorCallback, onCompleteCallback,
+                                                     onRequestCallback, onCancelCallback));
     }
 
     @Override
@@ -295,6 +302,11 @@ public final class MultiTappedPublisher<T> implements Multi<T> {
         }
     }
 
+    /**
+     * Multi tapped publisher builder to register custom callbacks.
+     *
+     * @param <T> type of returned multi
+     */
     public static class Builder<T> implements io.helidon.common.Builder<MultiTappedPublisher<T>> {
         private final Multi<T> source;
         private Consumer<? super Flow.Subscription> onSubscribeCallback;
@@ -318,31 +330,73 @@ public final class MultiTappedPublisher<T> implements Multi<T> {
             return this;
         }
 
+        /**
+         * Subscription callback.
+         *
+         * @param onSubscribeCallback runnable to run when
+         *  {@link Flow.Subscriber#onSubscribe(java.util.concurrent.Flow.Subscription)} is called
+         * @return updated builder instance
+         */
         public Builder<T> onSubscribeCallback(Runnable onSubscribeCallback) {
             this.onSubscribeCallback = subscription -> onSubscribeCallback.run();
             return this;
         }
 
+        /**
+         * On next callback.
+         *
+         * @param onNextCallback runnable to run when
+         *  {@link Flow.Subscriber#onNext(Object)} is called
+         * @return updated builder instance
+         */
         public Builder<T> onNextCallback(Consumer<? super T> onNextCallback) {
             this.onNextCallback = onNextCallback;
             return this;
         }
 
+        /**
+         * On complete callback.
+         *
+         * @param onCompleteCallback runnable to run when
+         *  {@link java.util.concurrent.Flow.Subscriber#onComplete()} is called
+         * @return updated builder instance
+         */
         public Builder<T> onCompleteCallback(Runnable onCompleteCallback) {
             this.onCompleteCallback = onCompleteCallback;
             return this;
         }
 
+        /**
+         * On request callback.
+         *
+         * @param onRequestCallback runnable to run when
+         *  {@link Flow.Subscription#request(long)} is called
+         * @return updated builder instance
+         */
         public Builder<T> onRequestCallback(LongConsumer onRequestCallback) {
             this.onRequestCallback = onRequestCallback;
             return this;
         }
 
+        /**
+         * On cancel callback.
+         *
+         * @param onCancelCallback runnable to run when
+         *  {@link java.util.concurrent.Flow.Subscription#cancel()} is called
+         * @return updated builder instance
+         */
         public Builder<T> onCancelCallback(Runnable onCancelCallback) {
             this.onCancelCallback = onCancelCallback;
             return this;
         }
 
+        /**
+         * On error callback.
+         *
+         * @param onErrorCallback runnable to run when
+         *  {@link Flow.Subscriber#onError(Throwable)} is called
+         * @return updated builder instance
+         */
         public Builder<T> onErrorCallback(Consumer<? super Throwable> onErrorCallback) {
             this.onErrorCallback = onErrorCallback;
             return this;

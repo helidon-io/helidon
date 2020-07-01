@@ -33,7 +33,7 @@ import io.helidon.common.reactive.Single;
 import static io.helidon.faulttolerance.ResultWindow.Result.FAILURE;
 import static io.helidon.faulttolerance.ResultWindow.Result.SUCCESS;
 
-public class CircuitBreakerImpl implements CircuitBreaker {
+class CircuitBreakerImpl implements CircuitBreaker {
     /*
      Configuration options
      */
@@ -142,10 +142,12 @@ public class CircuitBreakerImpl implements CircuitBreaker {
                              }, delayMillis, TimeUnit.MILLISECONDS));
     }
 
+    @Override
     public State state() {
         return state.get();
     }
 
+    @Override
     public void state(State newState) {
         if (newState == State.CLOSED) {
             if (state.get() == State.CLOSED) {

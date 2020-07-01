@@ -15,10 +15,6 @@
  */
 
 /**
- * Fault tolerance module for Helidon reactive implementation.
+ * Fault tolerance for Helidon reactive implementation.
  */
-module io.helidon.faulttolerance {
-    requires io.helidon.config;
-    requires io.helidon.common.configurable;
-    requires java.logging;
-}
+package io.helidon.faulttolerance;

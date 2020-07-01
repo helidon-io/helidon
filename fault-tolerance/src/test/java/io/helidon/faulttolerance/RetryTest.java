@@ -31,7 +31,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -195,7 +194,6 @@ class RetryTest {
     }
 
     @Test
-    @Disabled("Bug in Multi fails this")
     void testMultiRetriesRead() throws InterruptedException {
         Retry retry = Retry.builder()
                 .retryPolicy(Retry.DelayingRetryPolicy.noDelay(3))
@@ -214,12 +212,6 @@ class RetryTest {
                 return Multi.just(0, 1, 2);
             }
         });
-
-
-//        multi.onError(Throwable::printStackTrace)
-//                .forEach(System.out::println);
-//
-//        multi = Multi.concat(Multi.just(0), Multi.error(new RetryException()));
 
         multi.subscribe(ts);
         ts.request(2);
