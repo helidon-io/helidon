@@ -97,7 +97,7 @@ public class FaultToleranceTest {
         return expected.cast(cause);
     }
 
-    private class Manual {
+    private static class Manual {
         private final CompletableFuture<String> future = new CompletableFuture<>();
 
         private CompletionStage<String> call() {

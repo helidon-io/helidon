@@ -54,7 +54,7 @@ class BulkheadTest {
                 .build();
 
         Request inProgress = new Request(0);
-        Single<Integer> inProgressResult = bulkhead.invoke(inProgress::invoke);
+        bulkhead.invoke(inProgress::invoke);
 
         Request[] aLotRequests = new Request[999];
         Single[] aLotResults = new Single[999];

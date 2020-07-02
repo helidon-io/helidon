@@ -65,15 +65,15 @@ public class FtService implements Service {
 
     @Override
     public void update(Routing.Rules rules) {
-        rules.get("/async", this::async)
-                .get("/bulkhead/{millis}", this::bulkhead)
-                .get("/circuitBreaker/{success}", this::circuitBreaker)
-                .get("/fallback/{success}", this::fallback)
-                .get("/retry/{count}", this::retry)
-                .get("/timeout/{millis}", this::timeout);
+        rules.get("/async", this::asyncHandler)
+                .get("/bulkhead/{millis}", this::bulkheadHandler)
+                .get("/circuitBreaker/{success}", this::circuitBreakerHandler)
+                .get("/fallback/{success}", this::fallbackHandler)
+                .get("/retry/{count}", this::retryHandler)
+                .get("/timeout/{millis}", this::timeoutHandler);
     }
 
-    private void timeout(ServerRequest request, ServerResponse response) {
+    private void timeoutHandler(ServerRequest request, ServerResponse response) {
         long sleep = Long.parseLong(request.path().param("millis"));
 
         timeout.invoke(() -> sleep(sleep))
@@ -81,7 +81,7 @@ public class FtService implements Service {
                 .exceptionally(response::send);
     }
 
-    private void retry(ServerRequest request, ServerResponse response) {
+    private void retryHandler(ServerRequest request, ServerResponse response) {
         int count = Integer.parseInt(request.path().param("count"));
 
         AtomicInteger call = new AtomicInteger(1);
@@ -98,7 +98,7 @@ public class FtService implements Service {
                 .exceptionally(response::send);
     }
 
-    private void fallback(ServerRequest request, ServerResponse response) {
+    private void fallbackHandler(ServerRequest request, ServerResponse response) {
         boolean success = "true".equalsIgnoreCase(request.path().param("success"));
 
         if (success) {
@@ -108,7 +108,7 @@ public class FtService implements Service {
         }
     }
 
-    private void circuitBreaker(ServerRequest request, ServerResponse response) {
+    private void circuitBreakerHandler(ServerRequest request, ServerResponse response) {
         boolean success = "true".equalsIgnoreCase(request.path().param("success"));
 
         if (success) {
@@ -123,7 +123,7 @@ public class FtService implements Service {
 
     }
 
-    private void bulkhead(ServerRequest request, ServerResponse response) {
+    private void bulkheadHandler(ServerRequest request, ServerResponse response) {
         long sleep = Long.parseLong(request.path().param("millis"));
 
         bulkhead.invoke(() -> sleep(sleep))
@@ -131,7 +131,7 @@ public class FtService implements Service {
                 .exceptionally(response::send);
     }
 
-    private void async(ServerRequest request, ServerResponse response) {
+    private void asyncHandler(ServerRequest request, ServerResponse response) {
         async.invoke(this::blockingData).thenApply(response::send);
     }
 
@@ -143,7 +143,7 @@ public class FtService implements Service {
         return async.invoke(() -> {
             try {
                 Thread.sleep(sleepMillis);
-            } catch (InterruptedException e) {
+            } catch (InterruptedException ignored) {
             }
             return "Slept for " + sleepMillis + " ms";
         });

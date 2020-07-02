@@ -208,7 +208,6 @@ class RetryTest {
                 //return new PartialPublisher();
                 return Multi.concat(Multi.just(0), Multi.error(new RetryException()));
             } else {
-                TestSubscriber it = ts;
                 return Multi.just(0, 1, 2);
             }
         });
