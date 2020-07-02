@@ -570,7 +570,7 @@ public class SingleTest {
                 .forSingle(s -> {
                     throw testException;
                 })
-                .exceptionally(result::complete);
+                .exceptionallyAccept(result::complete);
 
         assertThat(Single.create(result).await(300, TimeUnit.MILLISECONDS).getCause(), is(testException));
         assertThat(onCancelCnt.get(), is(0));
@@ -599,10 +599,21 @@ public class SingleTest {
 
         RuntimeException testException = new RuntimeException("BOOM!!!");
         Single.error(testException)
-                .exceptionally(exceptionallyFuture::complete)
+                .exceptionallyAccept(exceptionallyFuture::complete)
                 .await(300, TimeUnit.MILLISECONDS);
 
         assertThat(Single.create(exceptionallyFuture).await(300, TimeUnit.MILLISECONDS), is(testException));
+    }
+
+    @Test
+    void testExceptionallyWithoutException() {
+        CompletableFuture<Throwable> exceptionallyFuture = new CompletableFuture<>();
+
+        String result = Single.just(TEST_PAYLOAD)
+                .exceptionallyAccept(exceptionallyFuture::complete)
+                .await(300, TimeUnit.MILLISECONDS);
+
+        assertThat(result, is(TEST_PAYLOAD));
     }
 
     private static class SingleTestSubscriber<T> extends TestSubscriber<T> {
