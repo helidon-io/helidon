@@ -294,6 +294,9 @@ public class CompletionAwaitable<T> implements CompletionStage<T>, Awaitable<T> 
         return new CompletionAwaitable<T>(() -> completionStage, this);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public CompletionAwaitable<T> exceptionallyAccept(final Consumer<Throwable> consumer) {
         return this.handle((item, t) -> {
             if (t != null) {

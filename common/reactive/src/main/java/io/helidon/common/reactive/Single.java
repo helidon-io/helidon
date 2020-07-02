@@ -815,5 +815,5 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
      *                 exceptionally
      * @return the new CompletionStage
      */
-    CompletionAwaitable<T> exceptionallyAccept(final Consumer<Throwable> consumer);
+    CompletionAwaitable<T> exceptionallyAccept(Consumer<Throwable> consumer);
 }
