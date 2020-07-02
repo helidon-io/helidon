@@ -23,6 +23,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Enumeration;
@@ -31,6 +32,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -46,10 +48,11 @@ import io.helidon.common.LogConfig;
 import io.helidon.common.Reflected;
 import io.helidon.config.mp.MpConfigProviderResolver;
 
-import com.oracle.svm.core.annotate.AutomaticFeature;
 import com.oracle.svm.core.jdk.Resources;
 import com.oracle.svm.core.jdk.proxy.DynamicProxyRegistry;
-import com.oracle.svm.hosted.FeatureImpl;
+import io.github.classgraph.ClassGraph;
+import io.github.classgraph.ClassInfo;
+import io.github.classgraph.ScanResult;
 import org.graalvm.nativeimage.ImageSingletons;
 import org.graalvm.nativeimage.hosted.Feature;
 import org.graalvm.nativeimage.hosted.RuntimeReflection;
@@ -58,13 +61,13 @@ import org.graalvm.nativeimage.hosted.RuntimeReflection;
  * Feature to add reflection configuration to the image for Helidon, CDI and Jersey.
  * Override the one in dependencies (native-image-extension from Helidon)
  */
-@AutomaticFeature
 public class HelidonReflectionFeature implements Feature {
     private static final boolean ENABLED = NativeConfig.option("reflection.enable-feature", true);
     private static final boolean TRACE_PARSING = NativeConfig.option("reflection.trace-parsing", false);
     private static final boolean TRACE = NativeConfig.option("reflection.trace", false);
 
-    private static final String ENTITY_ANNOTATION_CLASS_NAME = "javax.persistence.Entity";
+    private static final String AT_ENTITY = "javax.persistence.Entity";
+    private static final String AT_REGISTER_REST_CLIENT = "org.eclipse.microprofile.rest.client.inject.RegisterRestClient";
 
     @Override
     public boolean isInConfiguration(IsInConfigurationAccess access) {
@@ -87,13 +90,18 @@ public class HelidonReflectionFeature implements Feature {
 
         // make sure we print all the warnings for native image
         HelidonFeatures.nativeBuildTime(classLoader);
-        // to add a startup hook:
-        //RuntimeSupport.getRuntimeSupport().addStartupHook(() -> {});
 
         // load configuration
-        HelidonReflectionConfiguration config = loadConfiguration(access);
+        HelidonReflectionConfiguration config = loadConfiguration(access, classLoader);
+
+        // classpath scanning using the correct classloader
+        ScanResult scan = new ClassGraph()
+                .overrideClassLoaders(classLoader)
+                .enableAllInfo()
+                .scan();
+
         // create context (to know what was processed and what should be registered)
-        BeforeAnalysisContext context = new BeforeAnalysisContext(access, config.excluded);
+        BeforeAnalysisContext context = new BeforeAnalysisContext(access, scan, config.excluded);
 
         // process each configured annotation
         config.annotations().forEach(it -> processAnnotated(context, it));
@@ -120,83 +128,133 @@ public class HelidonReflectionFeature implements Feature {
         MpConfigProviderResolver.buildTimeEnd();
     }
 
-    @SuppressWarnings("unchecked")
+    private List<Class<?>> findSubclasses(BeforeAnalysisContext context, String className) {
+        ScanResult scan = context.scan();
+        ClassInfo superclass = scan.getClassInfo(className);
+
+        if (null == superclass) {
+            traceParsing(() -> "Class " + className + " is not on classpath, cannot find subclasses.");
+            return List.of();
+        }
+
+        List<Class<?>> subclasses = scan
+                .getSubclasses(className)
+                .stream()
+                .map(classInfo -> context.access().findClassByName(classInfo.getName()))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        if (superclass.isInterface()) {
+            List<Class<?>> implementations = scan
+                    .getClassesImplementing(className)
+                    .stream()
+                    .map(classInfo -> context.access().findClassByName(classInfo.getName()))
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+
+            List<Class<?>> result = new ArrayList<>(subclasses);
+            result.addAll(implementations);
+            return result;
+        } else {
+            return subclasses;
+        }
+
+    }
+
+    private List<Class<?>> findAnnotated(BeforeAnalysisContext context, String annotation) {
+        return context.scan()
+                .getClassesWithAnnotation(annotation)
+                .stream()
+                .map(classInfo -> {
+                    Class<?> clazz = null;
+                    try {
+                        clazz = classInfo.loadClass();
+                    } catch (Exception e) {
+                        traceParsing(() -> "Class " + classInfo.getName() + " annotated by " + annotation + " cannot be loaded");
+                        traceParsing(() -> "\tException class: " + e.getClass().getName() + ", message: " + e.getMessage());
+                    }
+
+                    return clazz;
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+
     private void addAnnotatedWithReflected(BeforeAnalysisContext context) {
-        FeatureImpl.BeforeAnalysisAccessImpl access = context.access();
-
         // want to make sure we use the correct classloader
-        Class<? extends Annotation> annotation = (Class<? extends Annotation>) access.findClassByName(Reflected.class.getName());
+        String annotation = Reflected.class.getName();
 
-        traceParsing(() -> "Looking up annotated by " + annotation.getName());
+        traceParsing(() -> "Looking up annotated by " + annotation);
 
-        // classes
-        access.findAnnotatedClasses(annotation)
+        // all annotated classes
+        findAnnotated(context, annotation)
                 .forEach(it -> {
-                    traceParsing(() -> " class " + it.getName());
-                    context.register(it).addAll();
+                    if (context.isExcluded(it)) {
+                        traceParsing(() -> " class " + it.getName() + " annotated by " + annotation + " is excluded.");
+                    } else {
+                        traceParsing(() -> " class " + it.getName());
+                        context.register(it).addAll();
+                    }
                 });
 
-        // methods
-        access.findAnnotatedMethods(annotation)
+        // all annotated methods and constructors
+        context.scan()
+                .getClassesWithMethodAnnotation(annotation)
                 .forEach(it -> {
-                    if (context.register(it.getDeclaringClass()).add(it)) {
-                        traceParsing(() -> " method " + it);
-                    }
+                    it.getMethodAndConstructorInfo().forEach(method -> {
+                        if (method.hasAnnotation(annotation)) {
+                            Class<?> clazz = it.loadClass();
+                            if (method.isConstructor()) {
+                                try {
+                                    context.register(clazz).add(method.loadClassAndGetConstructor());
+                                } catch (Exception e) {
+                                    traceParsing(() -> "Failed to load constructor " + method);
+                                    if (TRACE_PARSING) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                            } else {
+                                try {
+                                    context.register(clazz).add(method.loadClassAndGetMethod());
+                                } catch (Exception e) {
+                                    traceParsing(() -> "Failed to load method " + method);
+                                    if (TRACE_PARSING) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                            }
+                        }
+                    });
                 });
 
         // fields
-        access.findAnnotatedFields(annotation)
+        context.scan()
+                .getClassesWithFieldAnnotation(annotation)
                 .forEach(it -> {
-                    if (context.register(it.getDeclaringClass()).add(it)) {
-                        traceParsing(() -> " field " + it);
-                    }
+                    it.getFieldInfo().forEach(field -> {
+                        if (field.hasAnnotation(annotation)) {
+                            try {
+                                context.register(it.loadClass()).add(field.loadClassAndGetField());
+                            } catch (Exception e) {
+                                traceParsing(() -> "Failed to load field " + field);
+                                if (TRACE_PARSING) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }
+                    });
                 });
-
-        // attempt to add annotated constructors if any other field is registered
-        context.toRegister()
-                .forEach(register -> addAnnotatedConstructors(register, annotation));
-    }
-
-    private void addAnnotatedConstructors(Register register, Class<? extends Annotation> annotation) {
-        // only do this if constructors is empty, as otherwise they are already all there
-        if (register.constructors.isEmpty()) {
-            try {
-                Constructor<?>[] constructors = register.clazz.getConstructors();
-                for (Constructor<?> constructor : constructors) {
-                    if (constructor.getAnnotation(annotation) != null) {
-                        if (register.add(constructor)) {
-                            traceParsing(() -> " constructor " + constructor);
-                        }
-                    }
-                }
-                constructors = register.clazz.getDeclaredConstructors();
-                for (Constructor<?> constructor : constructors) {
-                    if (constructor.getAnnotation(annotation) != null) {
-                        if (register.add(constructor)) {
-                            traceParsing(() -> " constructor " + constructor);
-                        }
-                    }
-                }
-            } catch (NoClassDefFoundError e) {
-                if (TRACE) {
-                    System.out.println("Constructors of "
-                                               + register.clazz.getName()
-                                               + " not added to reflection, as a type is not on classpath: "
-                                               + e.getMessage());
-                }
-            }
-        }
     }
 
     @SuppressWarnings("unchecked")
     private void processEntity(BeforeAnalysisContext context) {
         final Class<? extends Annotation> annotation = (Class<? extends Annotation>) context.access()
-                .findClassByName(ENTITY_ANNOTATION_CLASS_NAME);
+                .findClassByName(AT_ENTITY);
         if (annotation == null) {
             return;
         }
-        traceParsing(() -> "Looking up annotated by " + ENTITY_ANNOTATION_CLASS_NAME);
-        final List<Class<?>> annotatedList = context.access().findAnnotatedClasses(annotation);
+        traceParsing(() -> "Looking up annotated by " + AT_ENTITY);
+        final List<Class<?>> annotatedList = findAnnotated(context, AT_ENTITY);
         annotatedList.forEach(aClass -> {
             String resourceName = aClass.getName().replace('.', '/') + ".class";
             InputStream resourceStream = aClass.getClassLoader().getResourceAsStream(resourceName);
@@ -214,24 +272,24 @@ public class HelidonReflectionFeature implements Feature {
 
     @SuppressWarnings("unchecked")
     private void processRegisterRestClient(BeforeAnalysisContext context) {
-        String restClientAnnotationClassName = "org.eclipse.microprofile.rest.client.inject.RegisterRestClient";
+
         Class<? extends Annotation> restClientAnnotation = (Class<? extends Annotation>) context.access()
-                .findClassByName(restClientAnnotationClassName);
+                .findClassByName(AT_REGISTER_REST_CLIENT);
 
         if (null == restClientAnnotation) {
             return;
         }
 
-        traceParsing(() -> "Looking up annotated by " + restClientAnnotationClassName);
+        traceParsing(() -> "Looking up annotated by " + AT_REGISTER_REST_CLIENT);
 
-        List<Class<?>> annotatedList = context.access().findAnnotatedClasses(restClientAnnotation);
+        List<Class<?>> annotatedList = findAnnotated(context, AT_REGISTER_REST_CLIENT);
         DynamicProxyRegistry proxyRegistry = ImageSingletons.lookup(DynamicProxyRegistry.class);
         Class<?> autoCloseable = context.access().findClassByName("java.lang.AutoCloseable");
         Class<?> closeable = context.access().findClassByName("java.io.Closeable");
 
         annotatedList.forEach(it -> {
             if (context.isExcluded(it)) {
-                traceParsing(() -> "Class " + it.getName() + " annotated by " + restClientAnnotationClassName + " is excluded");
+                traceParsing(() -> "Class " + it.getName() + " annotated by " + AT_REGISTER_REST_CLIENT + " is excluded");
             } else {
                 // we need to add it for reflection
                 processClassHierarchy(context, it);
@@ -353,9 +411,9 @@ public class HelidonReflectionFeature implements Feature {
                                             e);
         }
 
-        traceParsing(() -> "Looking up annotated by " + annotationClass.getName());
+        traceParsing(() -> "Looking up annotated by " + annotation.getName());
 
-        List<Class<?>> annotatedList = context.access().findAnnotatedClasses(annotation);
+        List<Class<?>> annotatedList = findAnnotated(context, annotationClass.getName());
 
         annotatedList.forEach(it -> {
             if (context.isExcluded(it)) {
@@ -366,9 +424,8 @@ public class HelidonReflectionFeature implements Feature {
         });
     }
 
-    @SuppressWarnings("unchecked")
     private void findSubclasses(BeforeAnalysisContext context, Class<?> aClass) {
-        List<Class<?>> subclasses = context.access().findSubclasses((Class<Object>) aClass);
+        List<Class<?>> subclasses = findSubclasses(context, aClass.getName());
 
         processClasses(context, subclasses);
     }
@@ -418,11 +475,7 @@ public class HelidonReflectionFeature implements Feature {
         }
     }
 
-    private HelidonReflectionConfiguration loadConfiguration(BeforeAnalysisAccess access) {
-        // load a known class (config is required by all components)
-        Class<?> configClass = access.findClassByName("io.helidon.config.Config");
-        // to get the classloader to retrieve our configuration
-        ClassLoader cl = configClass.getClassLoader();
+    private HelidonReflectionConfiguration loadConfiguration(BeforeAnalysisAccess access, ClassLoader cl) {
         try {
             Enumeration<URL> resources = cl.getResources("META-INF/helidon/native-image/reflection-config.json");
             HelidonReflectionConfiguration config = new HelidonReflectionConfiguration();
@@ -475,7 +528,7 @@ public class HelidonReflectionFeature implements Feature {
         }
     }
 
-    private void traceParsing(Supplier<String> message) {
+    private static void traceParsing(Supplier<String> message) {
         if (TRACE_PARSING) {
             System.out.println(message.get());
         }
@@ -501,18 +554,24 @@ public class HelidonReflectionFeature implements Feature {
     }
 
     private static final class BeforeAnalysisContext {
-        private final FeatureImpl.BeforeAnalysisAccessImpl access;
+        private final BeforeAnalysisAccess access;
+        private ScanResult scan;
         private final Set<Class<?>> processed = new HashSet<>();
         private final Set<Class<?>> excluded = new HashSet<>();
         private final Map<Class<?>, Register> registers = new HashMap<>();
 
-        private BeforeAnalysisContext(BeforeAnalysisAccess access, Set<Class<?>> excluded) {
-            this.access = (FeatureImpl.BeforeAnalysisAccessImpl) access;
+        private BeforeAnalysisContext(BeforeAnalysisAccess access, ScanResult scan, Set<Class<?>> excluded) {
+            this.access = access;
+            this.scan = scan;
             this.excluded.addAll(excluded);
         }
 
-        public FeatureImpl.BeforeAnalysisAccessImpl access() {
+        BeforeAnalysisAccess access() {
             return access;
+        }
+
+        ScanResult scan() {
+            return scan;
         }
 
         public boolean process(Class<?> theClass) {

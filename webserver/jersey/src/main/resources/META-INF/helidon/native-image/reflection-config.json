@@ -31,7 +31,8 @@
         "org.glassfish.jersey.server.ResourceConfig",
         "org.glassfish.jersey.server.ServerConfig",
         "org.glassfish.jersey.internal.inject.InjectionResolver",
-        "org.glassfish.jersey.internal.inject.ReferencingFactory"
+        "org.glassfish.jersey.internal.inject.ReferencingFactory",
+        "org.glassfish.hk2.api.ErrorService"
     ],
     "classes": [
         "org.glassfish.jersey.server.internal.process.RequestProcessingConfigurator$AsyncContextFactory",
