@@ -189,6 +189,7 @@ public final class FaultTolerance {
          * Add a handler to the list. This may be a custom handler or one of the predefined ones.
          *
          * @param ft fault tolerance handler to add
+         * @return updated builder instance
          */
         public abstract B add(FtHandler ft);
     }

@@ -34,14 +34,14 @@ import io.helidon.common.reactive.Single;
  *     Async async = Async.create();
  *
  *     // call a method with no parameters
- *     Single&lt;String> result = async.invoke(this::slowSync);
+ *     Single&lt;String&gt; result = async.invoke(this::slowSync);
  *
  *     // call a method with parameters
- *     async.invoke(() -> processRequest(request))
+ *     async.invoke(() -&gt; processRequest(request))
  *      .thenApply(response::send);
  *
  *     // use async to obtain a Multi (from a method returning List of strings)
- *     Multi&lt;String> stringMulti = async.invoke(this::syncList)
+ *     Multi&lt;String&gt; stringMulti = async.invoke(this::syncList)
  *                 .flatMap(Multi::create);
  * </pre>
  */
