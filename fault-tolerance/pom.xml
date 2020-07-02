@@ -52,6 +52,7 @@
         <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-testing</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>
