@@ -66,17 +66,15 @@ class MainTest {
         // bulkhead is configured for limit of 1 and queue of 1, so third
         // request should fail
         client.get()
-                .path("/bulkhead/100000")
-                .request()
-        .thenRun(() -> {});
+                .path("/bulkhead/10000")
+                .request();
 
         client.get()
-                .path("/bulkhead/100000")
-                .request()
-                .thenRun(() -> {});
+                .path("/bulkhead/10000")
+                .request();
 
         // I want to make sure the above is connected
-        Thread.sleep(100);
+        Thread.sleep(300);
 
         WebClientResponse third = client.get()
                 .path("/bulkhead/10000")
