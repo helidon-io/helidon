@@ -26,7 +26,7 @@ import io.helidon.common.mapper.Mapper;
  * @param <T> the upstream value type
  * @param <R> the result value type
  */
-final class MultiMapperPublisher<T, R> implements Multi<R>, OperatorWithDescription {
+final class MultiMapperPublisher<T, R> implements Multi<R> {
 
     private final Flow.Publisher<T> source;
 
@@ -35,15 +35,6 @@ final class MultiMapperPublisher<T, R> implements Multi<R>, OperatorWithDescript
     MultiMapperPublisher(Flow.Publisher<T> source, Function<? super T, ? extends R> mapper) {
         this.source = source;
         this.mapper = mapper;
-    }
-
-    @Override
-    public String getDescription() {
-        String name = "";
-        if (source instanceof OperatorWithDescription) {
-            name += ((OperatorWithDescription) source).getDescription() + ".";
-        }
-        return name + "map(...)";
     }
 
     @Override

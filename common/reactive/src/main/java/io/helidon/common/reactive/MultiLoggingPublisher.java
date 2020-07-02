@@ -27,16 +27,10 @@ class MultiLoggingPublisher<T> implements Multi<T> {
     private static final Logger LOGGER = Logger.getLogger(MultiLoggingPublisher.class.getName());
 
     private final String caller;
-    private final String streamDescription;
     private final Multi<T> source;
 
     MultiLoggingPublisher(final Multi<T> source) {
         this.source = source;
-        if (this.source instanceof OperatorWithDescription) {
-            streamDescription = ((OperatorWithDescription) this.source).getDescription();
-        } else {
-            streamDescription = this.getClass().getSimpleName();
-        }
         caller = StackWalker.getInstance().walk(frmStream -> frmStream
                 .limit(3)
                 .skip(2)
@@ -45,9 +39,9 @@ class MultiLoggingPublisher<T> implements Multi<T> {
                 .findFirst()).get();
     }
 
-    private String parseStackFrame(String stackFrameAsString){
-        if (stackFrameAsString.contains("/")){
-           return stackFrameAsString.split("/")[1];
+    private String parseStackFrame(String stackFrameAsString) {
+        if (stackFrameAsString.contains("/")) {
+            return stackFrameAsString.split("/")[1];
         }
         return stackFrameAsString;
     }
@@ -59,11 +53,11 @@ class MultiLoggingPublisher<T> implements Multi<T> {
     }
 
     private void logCancel() {
-        loggr(caller, streamDescription + ".cancel()");
+        loggr(caller, "cancel()");
     }
 
     private void logOnComplete() {
-        loggr(caller, streamDescription + ".onComplete()");
+        loggr(caller, "onComplete()");
     }
 
     private void logRequest(long n) {
@@ -71,15 +65,15 @@ class MultiLoggingPublisher<T> implements Multi<T> {
     }
 
     private void logOnError(Throwable throwable) {
-        loggr(caller, streamDescription + ".onError(" + throwable + ")");
+        loggr(caller, "onError(" + throwable + ")");
     }
 
     private void logOnSubscribe(Flow.Subscription subscription) {
-        loggr(caller, streamDescription + ".onSubscribe(...)");
+        loggr(caller, "onSubscribe(...)");
     }
 
     private void logOnNext(T item) {
-        loggr(caller, streamDescription + ".onNext(" + item + ")");
+        loggr(caller, "onNext(" + item + ")");
     }
 
     @Override
