@@ -23,17 +23,10 @@ final class AtomicCycle {
     private final int maxIndex;
 
     AtomicCycle(int maxIndex) {
-        this.maxIndex = maxIndex;
+        this.maxIndex = maxIndex + 1;
     }
 
     int incrementAndGet() {
-        int currentIndex;
-        int nextIndex;
-        do {
-            currentIndex = atomicInteger.get();
-            nextIndex = (currentIndex == maxIndex) ? 0 : currentIndex + 1;
-        } while (!atomicInteger.compareAndSet(currentIndex, nextIndex));
-
-        return nextIndex;
+        return atomicInteger.accumulateAndGet(maxIndex, (current, max) -> (current + 1) % max);
     }
 }
