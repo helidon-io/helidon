@@ -391,7 +391,7 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
     }
 
     /**
-     * Executes given {@link java.lang.Runnable} when onError signal is received.
+     * Executes given {@link java.util.function.Consumer} when onError signal is received.
      *
      * @param onErrorConsumer {@link java.util.function.Consumer} to be executed.
      * @return Single

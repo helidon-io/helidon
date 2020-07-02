@@ -314,6 +314,21 @@ public class CompletionAwaitable<T> implements CompletionStage<T>, Awaitable<T> 
         });
     }
 
+    /**
+     * Returns a new CompletionStage that, when this stage completes
+     * exceptionally, is executed with this stage's exception as the
+     * argument to the supplied consumer. Otherwise, if this stage
+     * completes normally, then the returned stage also completes
+     * normally with the same value.
+     *
+     * @param consumer the consumer to invoke if this CompletionStage completed
+     *                 exceptionally
+     * @return the new CompletionStage
+     */
+    public CompletionAwaitable<T> onError(final Consumer<Throwable> consumer) {
+        return this.exceptionally(consumer);
+    }
+
     @Override
     public CompletableFuture<T> toCompletableFuture() {
         return originalStage.get().toCompletableFuture();
