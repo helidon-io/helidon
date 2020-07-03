@@ -61,8 +61,9 @@ class JsonpBodyStreamWriter implements MessageBodyStreamWriter<JsonStructure> {
         // we do not have join operator
         AtomicBoolean first = new AtomicBoolean(true);
 
-        JsonStructureToChunks jsonToChunks = new JsonStructureToChunks(jsonWriterFactory,
-                                                                       context.charset());
+        JsonStructureToChunks jsonToChunks = new JsonStructureToChunks(true,
+                jsonWriterFactory,
+                context.charset());
 
         return Single.just(DataChunk.create(ARRAY_JSON_BEGIN_BYTES))
                 .onCompleteResumeWith(Multi.create(publisher)

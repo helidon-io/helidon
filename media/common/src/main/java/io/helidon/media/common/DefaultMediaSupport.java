@@ -89,6 +89,15 @@ public class DefaultMediaSupport implements MediaSupport {
     }
 
     /**
+     * Return {@link CharSequence} stream writer instance.
+     *
+     * @return {@link CharSequence} writer
+     */
+    public static MessageBodyStreamWriter<CharSequence> charSequenceStreamWriter() {
+        return CharSequenceBodyStreamWriter.create();
+    }
+
+    /**
      * Create a new instance of {@link ReadableByteChannel} writer.
      *
      * @return {@link ReadableByteChannel} writer
@@ -148,6 +157,11 @@ public class DefaultMediaSupport implements MediaSupport {
                        pathWriter(),
                        fileWriter(),
                        throwableBodyWriter);
+    }
+
+    @Override
+    public Collection<MessageBodyStreamWriter<?>> streamWriters() {
+        return List.of(charSequenceStreamWriter());
     }
 
     /**
