@@ -35,4 +35,3 @@ client:
   max-redirects: 5
   services:
     tracing:
-    security:
