@@ -20,7 +20,6 @@ import java.nio.file.Paths;
 import java.util.Set;
 import java.util.logging.LogManager;
 
-import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
 import io.helidon.config.FileSystemWatcher;
 import io.helidon.health.HealthSupport;
@@ -43,7 +42,6 @@ import static io.helidon.config.ConfigSources.file;
  * Main class of this integration test.
  */
 public final class Se1Main {
-    static LazyValue<WebServer> server;
 
     /**
      * Cannot be instantiated.
@@ -75,18 +73,18 @@ public final class Se1Main {
         Config config = buildConfig();
 
         // Get webserver config from the "server" section of application.yaml
-        server = LazyValue.create(() -> WebServer.builder()
+        WebServer server = WebServer.builder()
                 .routing(createRouting(config))
                 .config(config.get("server"))
                 .tracer(TracerBuilder.create(config.get("tracing")).build())
                 .addMediaSupport(JsonpSupport.create())
                 .addMediaSupport(JsonbSupport.create())
                 .printFeatureDetails(true)
-                .build());
+                .build();
 
         // Try to start the server. If successful, print some info and arrange to
         // print a message at shutdown. If unsuccessful, print the exception.
-        server.get().start()
+        server.start()
                 .thenAccept(ws -> {
                     System.out.println(
                             "WEB server is up! http://localhost:" + ws.port() + "/greet");
@@ -101,7 +99,7 @@ public final class Se1Main {
 
         // Server threads are not daemon. No need to block. Just react.
 
-        return server.get();
+        return server;
     }
 
     private static Config buildConfig() {
@@ -126,7 +124,7 @@ public final class Se1Main {
         MetricsSupport metrics = MetricsSupport.create();
         GreetService greetService = new GreetService(config);
         MockZipkinService zipkinService = new MockZipkinService(Set.of("helidon-webclient"));
-        WebClientService webClientService = new WebClientService(config, server, zipkinService);
+        WebClientService webClientService = new WebClientService(config, zipkinService);
         HealthSupport health = HealthSupport.builder()
                 .addLiveness(HealthChecks.healthChecks())   // Adds a convenient set of checks
                 .addLiveness(() -> HealthCheckResponse.named("custom") // a custom health check

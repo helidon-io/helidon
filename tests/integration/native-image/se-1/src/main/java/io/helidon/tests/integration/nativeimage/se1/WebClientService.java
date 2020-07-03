@@ -28,7 +28,6 @@ import java.util.logging.Logger;
 
 import javax.json.JsonValue;
 
-import io.helidon.common.LazyValue;
 import io.helidon.common.context.Context;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
@@ -42,29 +41,23 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
-import io.helidon.webserver.WebServer;
 
 public class WebClientService implements Service {
 
     private static final Logger LOGGER = Logger.getLogger(WebClientService.class.getName());
-    private final LazyValue<WebClient> client;
-    private MockZipkinService zipkinService;
-    private String context;
-    private final LazyValue<WebServer> server;
+    private final WebClient client;
+    private final MockZipkinService zipkinService;
+    private final String context;
 
-    public WebClientService(Config config, LazyValue<WebServer> server, MockZipkinService zipkinService) {
-        this.server = server;
+    public WebClientService(Config config, MockZipkinService zipkinService) {
         this.zipkinService = zipkinService;
-        client = LazyValue.create(() -> {
-            this.context = "http://localhost:" + this.server.get().port();
-            LOGGER.info(context);
-            return WebClient.builder()
-                    .baseUri(context)
-                    .addReader(JsonbSupport.reader())
-                    .addHeader(Http.Header.ACCEPT, MediaType.APPLICATION_JSON.toString())
-                    .config(config.get("client"))
-                    .build();
-        });
+        this.context = "http://localhost:" + config.get("port").asInt().orElse(7076);
+        client = WebClient.builder()
+                .baseUri(context)
+                .addReader(JsonbSupport.reader())
+                .addHeader(Http.Header.ACCEPT, MediaType.APPLICATION_JSON.toString())
+                .config(config.get("client"))
+                .build();
     }
 
     @Override
@@ -112,7 +105,6 @@ public class WebClientService implements Service {
     public void testTracedGet(Context ctx) {
         final CompletionStage<JsonValue> nextTrace = zipkinService.next();
         client.get()
-                .get()
                 .path("/wc/endpoint")
                 .context(ctx)
                 .request(Animal.class)
@@ -124,7 +116,6 @@ public class WebClientService implements Service {
 
     public void testFollowRedirect(Context ctx) {
         client.get()
-                .get()
                 .path("/wc/redirect")
                 .followRedirects(true)
                 .context(ctx)
@@ -133,7 +124,6 @@ public class WebClientService implements Service {
                 .await(15, TimeUnit.SECONDS);
 
         WebClientResponse response = client.get()
-                .get()
                 .path("/wc/redirect")
                 .followRedirects(false)
                 .context(ctx)
@@ -145,7 +135,6 @@ public class WebClientService implements Service {
     public void testFollowRedirectInfinite(Context ctx) {
         try {
             client.get()
-                    .get()
                     .path("/wc/redirect/infinite")
                     .context(ctx)
                     .request(Animal.class)
