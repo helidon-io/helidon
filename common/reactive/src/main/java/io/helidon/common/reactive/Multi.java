@@ -35,6 +35,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.logging.Level;
 import java.util.stream.Stream;
 
 /**
@@ -830,15 +831,51 @@ public interface Multi<T> extends Subscribable<T> {
      * Log all signals {@code onSubscribe}, {@code onNext},
      * {@code onError}, {@code onComplete}, {@code cancel} and {@code request}
      * coming to and from preceding operator.
-     * <p>
-     * <b>Be aware this operator should be used only for debugging purposes,
-     * stream performance can have negative impact if used in production.</b>
-     * </p>
      *
      * @return Multi
      */
     default Multi<T> log() {
-        return new MultiLoggingPublisher<>(this);
+        return new MultiLoggingPublisher<>(this, Level.INFO, false);
+    }
+
+    /**
+     * Log all signals {@code onSubscribe}, {@code onNext},
+     * {@code onError}, {@code onComplete}, {@code cancel} and {@code request}
+     * coming to and from preceding operator.
+     *
+     * @param level a logging level value
+     * @return Multi
+     */
+    default Multi<T> log(Level level) {
+        return new MultiLoggingPublisher<>(this, level, false);
+    }
+
+    /**
+     * Log all signals {@code onSubscribe}, {@code onNext},
+     * {@code onError}, {@code onComplete}, {@code cancel} and {@code request}
+     * coming to and from preceding operator.
+     *
+     * @param level a logging level value
+     * @param loggerName custom logger name
+     * @return Multi
+     */
+    default Multi<T> log(Level level, String loggerName) {
+        return new MultiLoggingPublisher<>(this, level, loggerName);
+    }
+
+    /**
+     * Log all signals {@code onSubscribe}, {@code onNext},
+     * {@code onError}, {@code onComplete}, {@code cancel} and {@code request}
+     * coming to and from preceding operator.
+     * <p>
+     * Enabled <b>trace</b> option has a negative impact on performance and should <b>NOT</b> be used in production.
+     *</p>
+     * @param level a logging level value
+     * @param trace if true position of operator is looked up from stack and logged
+     * @return Multi
+     */
+    default Multi<T> log(Level level, boolean trace) {
+        return new MultiLoggingPublisher<>(this, level, trace);
     }
 
     /**

@@ -17,7 +17,10 @@
 package io.helidon.common.reactive;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.Flow;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
@@ -26,54 +29,81 @@ class MultiLoggingPublisher<T> implements Multi<T> {
 
     private static final Logger LOGGER = Logger.getLogger(MultiLoggingPublisher.class.getName());
 
+    private static final AtomicLong LOG_ID = new AtomicLong();
+
     private final String caller;
+    private final String loggerName;
+    private final String methodName;
     private final Multi<T> source;
+    private final Level level;
 
-    MultiLoggingPublisher(final Multi<T> source) {
+    MultiLoggingPublisher(final Multi<T> source, Level level, String loggerName) {
+        Objects.requireNonNull(loggerName);
         this.source = source;
-        caller = StackWalker.getInstance().walk(frmStream -> frmStream
-                .limit(3)
-                .skip(2)
-                .map(String::valueOf)
-                .map(this::parseStackFrame)
-                .findFirst()).get();
+        this.level = level;
+        this.loggerName = loggerName;
+        caller = Multi.class.getName();
+        methodName = "log()";
     }
 
-    private String parseStackFrame(String stackFrameAsString) {
-        if (stackFrameAsString.contains("/")) {
-            return stackFrameAsString.split("/")[1];
+    MultiLoggingPublisher(final Multi<T> source, Level level, boolean trace) {
+        this.source = source;
+        this.level = level;
+        if (trace) {
+            Optional<StackWalker.StackFrame> frm = findCaller();
+            if (frm.isPresent()) {
+                caller = frm.map(StackWalker.StackFrame::getClassName).orElse(Multi.class.getName());
+                String fileName = frm.map(f -> f.getFileName() + ":" + f.getLineNumber()).orElse("");
+                methodName = frm.map(StackWalker.StackFrame::getMethodName).orElse("log") + "(" + fileName + ")";
+                loggerName = caller + "." + methodName;
+                return;
+            }
         }
-        return stackFrameAsString;
+        caller = Multi.class.getName();
+        methodName = "log()";
+        loggerName = Multi.class.getSimpleName() + ".log(" + LOG_ID.incrementAndGet() + ")";
     }
 
-    private static void loggr(String caller, String msg) {
-        LogRecord record = new LogRecord(Level.INFO, msg);
+    private Optional<StackWalker.StackFrame> findCaller() {
+        return StackWalker.getInstance().walk(frmStream -> frmStream
+                .limit(4)
+                .skip(3)
+                .findFirst());
+    }
+
+    private void log(Supplier<String> msgSupplier) {
+        if (!LOGGER.isLoggable(level)) {
+            return;
+        }
+        LogRecord record = new LogRecord(level, msgSupplier.get());
         record.setSourceClassName(caller);
+        record.setSourceMethodName(methodName);
+        record.setLoggerName(loggerName);
         LOGGER.log(record);
     }
 
     private void logCancel() {
-        loggr(caller, "cancel()");
+        log(() -> " ⇗ cancel()");
     }
 
     private void logOnComplete() {
-        loggr(caller, "onComplete()");
+        log(() -> " ⇘ onComplete()");
     }
 
     private void logRequest(long n) {
-        loggr(caller, "request(" + (n == Long.MAX_VALUE ? "Long.MAX_VALUE" : n) + ")");
+        log(() -> " ⇗ request(" + (n == Long.MAX_VALUE ? "Long.MAX_VALUE" : n) + ")");
     }
 
     private void logOnError(Throwable throwable) {
-        loggr(caller, "onError(" + throwable + ")");
+        log(() -> " ⇘ onError(" + throwable + ")");
     }
 
     private void logOnSubscribe(Flow.Subscription subscription) {
-        loggr(caller, "onSubscribe(...)");
+        log(() -> " ⇘ onSubscribe(...)");
     }
 
     private void logOnNext(T item) {
-        loggr(caller, "onNext(" + item + ")");
+        log(() -> " ⇘ onNext(" + item + ")");
     }
 
     @Override

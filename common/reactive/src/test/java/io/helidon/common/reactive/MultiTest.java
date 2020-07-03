@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,17 +48,6 @@ import org.junit.jupiter.api.Test;
  * {@link MultiTest} test.
  */
 public class MultiTest {
-
-    @Test
-    void testLog() {
-        Multi.just("a","b","c")
-                .map(String::toUpperCase)
-                .log()
-                .forEach(s -> {
-                    System.out.println("For each says: " + s);
-                });
-        //TODO: assert output
-    }
 
     @Test
     public void testJust() {
