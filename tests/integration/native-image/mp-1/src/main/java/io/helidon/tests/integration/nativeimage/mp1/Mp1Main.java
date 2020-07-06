@@ -73,7 +73,6 @@ public final class Mp1Main {
      * @param args command line arguments.
      */
     public static void main(final String[] args) {
-
         String property = System.getProperty("java.class.path");
         if (null == property || property.trim().isEmpty()) {
             System.out.println("** Running on module path");
