@@ -67,4 +67,95 @@
             <optional>true</optional>
         </dependency>
     </dependencies>
+
+    <properties>
+        <!-- support command-line overrides -->
+        <build.tools.version>${version.plugin.helidon-build-tools}</build.tools.version>
+    </properties>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>io.helidon.build-tools</groupId>
+                <artifactId>helidon-stager-maven-plugin</artifactId>
+                <version>${version.plugin.helidon-build-tools}</version>
+                <executions>
+                    <execution>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>stage</goal>
+                        </goals>
+                        <configuration>
+                            <directories>
+                                <directory target="${project.build.directory}">
+                                    <archives>
+                                        <archive target="cli-data/${project.version}/cli-data.zip">
+                                            <unpack-artifacts>
+                                                <unpack-artifact groupId="io.helidon.archetypes"
+                                                                 artifactId="helidon-archetype-catalog"
+                                                                 version="${project.version}"
+                                                                 type="zip"
+                                                                 target="."/>
+                                            </unpack-artifacts>
+                                            <templates>
+                                                <template source="cli-metadata.properties.mustache"
+                                                          target="metadata.properties">
+                                                    <variables>
+                                                        <variable name="buildtoolsVersion"
+                                                                  value="${build.tools.version}"/>
+                                                        <variable name="cliVersion"
+                                                                  value="${version.plugin.helidon-build-tools}"/>
+                                                    </variables>
+                                                </template>
+                                            </templates>
+                                        </archive>
+                                    </archives>
+                                    <files>
+                                        <file target="cli-data/latest">${project.version}</file>
+                                    </files>
+                                </directory>
+                            </directories>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>com.soebes.maven.plugins</groupId>
+                <artifactId>echo-maven-plugin</artifactId>
+                <version>0.4.0</version>
+                <executions>
+                    <execution>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>echo</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <echos>
+                        <echo> |</echo>
+                        <echo> |                      /')    </echo>
+                        <echo> |               ////  /' )'   </echo>
+                        <echo> |              @   \/'  )'    </echo>
+                        <echo> |  { note }   &lt; (  (_...)' </echo>
+                        <echo> |               \      )      </echo>
+                        <echo> |                \,,,,/       </echo>
+                        <echo> |                 _|_         </echo>
+                        <echo> |</echo>
+                        <echo> |  You must add the following arguments to the CLI to use these snapshot archetypes:</echo>
+                        <echo> |</echo>
+                        <echo> |     --reset --url file://${project.build.directory}/cli-data</echo>
+                        <echo> |</echo>
+                        <echo> |  For example:</echo>
+                        <echo> |</echo>
+                        <echo> |     helidon init --batch --reset --url file://${project.build.directory}/cli-data</echo>
+                        <echo> |</echo>
+                        <echo> |  To use a build tools snapshot, specify the version when building this project, e.g.:</echo>
+                        <echo> |</echo>
+                        <echo> |     mvn clean install -Dbuild.tools.version=2.0.3-SNAPSHOT</echo>
+                        <echo> |</echo>
+                    </echos>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>
