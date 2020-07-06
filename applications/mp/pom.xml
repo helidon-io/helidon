@@ -33,7 +33,7 @@
     <properties>
         <version.plugin.jandex>1.0.6</version.plugin.jandex>
         <version.plugin.jaxb2>0.14.0</version.plugin.jaxb2>
-        <version.plugin.eclipselink>2.7.1.1</version.plugin.eclipselink>
+        <version.plugin.eclipselink>2.7.5.1</version.plugin.eclipselink>
         <version.plugin.hibernate.enhance>5.4.6.Final</version.plugin.hibernate.enhance>
         <mainClass>io.helidon.microprofile.cdi.Main</mainClass>
     </properties>
