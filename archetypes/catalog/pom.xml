@@ -70,7 +70,7 @@
 
     <properties>
         <!-- support command-line overrides -->
-        <build.tools.version>${version.plugin.helidon-build-tools}</build.tools.version>
+        <cli.maven.plugin.version>${version.plugin.helidon-build-tools}</cli.maven.plugin.version>
     </properties>
     <build>
         <plugins>
@@ -101,9 +101,9 @@
                                                           target="metadata.properties">
                                                     <variables>
                                                         <variable name="buildtoolsVersion"
-                                                                  value="${build.tools.version}"/>
+                                                                  value="${cli.maven.plugin.version}"/>
                                                         <variable name="cliVersion"
-                                                                  value="${version.plugin.helidon-build-tools}"/>
+                                                                  value="${cli.maven.plugin.version}"/>
                                                     </variables>
                                                 </template>
                                             </templates>
@@ -121,7 +121,7 @@
             <plugin>
                 <groupId>com.soebes.maven.plugins</groupId>
                 <artifactId>echo-maven-plugin</artifactId>
-                <version>0.4.0</version>
+                <version>${version.plugin.echo}</version>
                 <executions>
                     <execution>
                         <phase>install</phase>
@@ -141,7 +141,7 @@
                         <echo> |                \,,,,/       </echo>
                         <echo> |                 _|_         </echo>
                         <echo> |</echo>
-                        <echo> |  You must add the following arguments to the CLI to use these snapshot archetypes:</echo>
+                        <echo> |  You can test the archetypes locally with the Helidon CLI using the following arguments:</echo>
                         <echo> |</echo>
                         <echo> |     --reset --url file://${project.build.directory}/cli-data</echo>
                         <echo> |</echo>
@@ -149,9 +149,10 @@
                         <echo> |</echo>
                         <echo> |     helidon init --batch --reset --url file://${project.build.directory}/cli-data</echo>
                         <echo> |</echo>
-                        <echo> |  To use a build tools snapshot, specify the version when building this project, e.g.:</echo>
+                        <echo> |  If you also want to test with a local Helidon CLI build, specify the version when building</echo>
+                        <echo> |  this project, e.g.:</echo>
                         <echo> |</echo>
-                        <echo> |     mvn clean install -Dbuild.tools.version=2.0.3-SNAPSHOT</echo>
+                        <echo> |     mvn clean install -Dcli.maven.plugin.version=2.0.3-SNAPSHOT</echo>
                         <echo> |</echo>
                     </echos>
                 </configuration>
