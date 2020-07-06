@@ -83,18 +83,38 @@ public class MultiFromOutputStream extends OutputStream implements Multi<ByteBuf
         emittingPublisher.subscribe(subscriber);
     }
 
+    /**
+     * Writes byte array after possibly publishing internal buffer for
+     * single-byte writes.
+     *
+     * @param b Byte array.
+     * @throws IOException If error while writing.
+     */
     @Override
     public void write(byte[] b) throws IOException {
         publishBufferedMaybe();
         publish(b, 0, b.length);
     }
 
+    /**
+     * Writes byte array given an offset and length after possibly publishing internal
+     * buffer for single-byte writes.
+     *
+     * @param b Byte array.
+     * @throws IOException If error while writing.
+     */
     @Override
     public void write(byte[] b, int off, int len) throws IOException {
         publishBufferedMaybe();
         publish(b, off, len);
     }
 
+    /**
+     * Attempts to buffer single-byte reads until buffer is full.
+     *
+     * @param b Byte to read.
+     * @throws IOException If error while writing.
+     */
     @Override
     public void write(int b) throws IOException {
         if (!byteBuffer.hasRemaining()) {
@@ -112,7 +132,7 @@ public class MultiFromOutputStream extends OutputStream implements Multi<ByteBuf
     /**
      * Send empty buffer as an indication of a user-requested flush.
      *
-     * @throws IOException If an I/O occurs.
+     * @throws IOException If error while writing.
      */
     @Override
     public void flush() throws IOException {
@@ -120,6 +140,11 @@ public class MultiFromOutputStream extends OutputStream implements Multi<ByteBuf
         publish(FLUSH_BUFFER, 0, 0);
     }
 
+    /**
+     * Publish internal buffer for single-byte writes if non-empty.
+     *
+     * @throws IOException If error while writing.
+     */
     private void publishBufferedMaybe() throws IOException {
         if (byteBuffer.position() > 0) {
             publish();
