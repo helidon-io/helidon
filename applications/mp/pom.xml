@@ -71,6 +71,9 @@
                             <version>${version.lib.jaxb-api}</version>
                         </dependency>
                     </dependencies>
+                    <configuration>
+                        <updatePersistenceXml>false</updatePersistenceXml>
+                    </configuration>
                 </plugin>
                  <plugin>
                     <groupId>org.jvnet.jaxb2.maven2</groupId>
