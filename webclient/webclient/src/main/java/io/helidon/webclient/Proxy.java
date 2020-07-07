@@ -362,8 +362,8 @@ public class Proxy {
             return false;
         }
         Proxy proxy = (Proxy) o;
-        return port == proxy.port &&
-                useSystemSelector == proxy.useSystemSelector
+        return port == proxy.port
+                && useSystemSelector == proxy.useSystemSelector
                 && type == proxy.type
                 && Objects.equals(host, proxy.host)
                 && Objects.equals(noProxy, proxy.noProxy)

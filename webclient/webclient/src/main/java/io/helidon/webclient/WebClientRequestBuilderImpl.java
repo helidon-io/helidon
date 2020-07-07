@@ -858,12 +858,12 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
 
         @Override
         public String toString() {
-            return "ConnectionIdent{" +
-                    "base=" + base +
-                    ", readTimeout=" + readTimeout +
-                    ", proxy=" + proxy +
-                    ", tls=" + tls +
-                    '}';
+            return "ConnectionIdent{"
+                    + "base=" + base
+                    + ", readTimeout=" + readTimeout
+                    + ", proxy=" + proxy
+                    + ", tls=" + tls
+                    + '}';
         }
     }
 
