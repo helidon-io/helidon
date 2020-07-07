@@ -250,6 +250,14 @@ public interface WebClientRequestBuilder {
     WebClientRequestBuilder accept(MediaType... mediaTypes);
 
     /**
+     * Whether connection should be kept alive after request.
+     *
+     * @param keepAlive keep alive
+     * @return updated builder instance
+     */
+    WebClientRequestBuilder keepAlive(boolean keepAlive);
+
+    /**
      * Performs prepared request and transforms response to requested type.
      *
      * When transformation is done the returned {@link CompletionStage} is notified.

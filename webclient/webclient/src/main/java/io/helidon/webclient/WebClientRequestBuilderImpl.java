@@ -26,18 +26,22 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Flow;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
+import java.util.logging.Logger;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.LazyValue;
@@ -57,6 +61,7 @@ import io.helidon.media.common.MessageBodyWriterContext;
 import io.helidon.webclient.spi.WebClientService;
 
 import io.netty.bootstrap.Bootstrap;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelOption;
@@ -69,6 +74,7 @@ import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
+import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.util.AsciiString;
 import io.netty.util.AttributeKey;
@@ -77,7 +83,17 @@ import io.netty.util.AttributeKey;
  * Implementation of {@link WebClientRequestBuilder}.
  */
 class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
+
+    private static final Logger LOGGER = Logger.getLogger(WebClientRequestBuilderImpl.class.getName());
+
+    private static final Map<ConnectionIdent, Set<ChannelRecord>> CHANNEL_CACHE = new ConcurrentHashMap<>();
     static final AttributeKey<WebClientRequestImpl> REQUEST = AttributeKey.valueOf("request");
+    static final AttributeKey<CompletableFuture<WebClientServiceResponse>> RECEIVED = AttributeKey.valueOf("received");
+    static final AttributeKey<CompletableFuture<WebClientServiceResponse>> COMPLETED = AttributeKey.valueOf("completed");
+    static final AttributeKey<CompletableFuture<WebClientResponse>> RESULT = AttributeKey.valueOf("result");
+    static final AttributeKey<AtomicBoolean> IN_USE = AttributeKey.valueOf("inUse");
+    static final AttributeKey<WebClientResponse> RESPONSE = AttributeKey.valueOf("response");
+    static final AttributeKey<ConnectionIdent> CONNECTION_IDENT = AttributeKey.valueOf("connectionIdent");
 
     private static final AtomicLong REQUEST_NUMBER = new AtomicLong(0);
     private static final String DEFAULT_TRANSPORT_PROTOCOL = "http";
@@ -111,6 +127,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     private List<WebClientService> services;
     private Duration readTimeout;
     private Duration connectTimeout;
+    private boolean keepAlive;
 
     private WebClientRequestBuilderImpl(LazyValue<NioEventLoopGroup> eventGroup,
                                         WebClientConfiguration configuration,
@@ -139,6 +156,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         this.readTimeout = configuration.readTimout();
         this.connectTimeout = configuration.connectTimeout();
         this.proxy = configuration.proxy().orElse(Proxy.noProxy());
+        this.keepAlive = configuration.keepAlive();
     }
 
     public static WebClientRequestBuilder create(LazyValue<NioEventLoopGroup> eventGroup,
@@ -169,6 +187,41 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
             throw new WebClientException("Max number of redirects extended! (" + maxRedirects + ")");
         }
         return builder;
+    }
+
+    private static ChannelFuture obtainChannelFuture(RequestConfiguration configuration,
+                                                     Bootstrap bootstrap) {
+        ConnectionIdent connectionIdent = new ConnectionIdent(configuration);
+        Set<ChannelRecord> channels = CHANNEL_CACHE.computeIfAbsent(connectionIdent,
+                                                                    s -> Collections.synchronizedSet(new HashSet<>()));
+        synchronized (channels) {
+            for (ChannelRecord channelRecord : channels) {
+                Channel channel = channelRecord.channel;
+                if (channel.isOpen() && channel.attr(IN_USE).get().compareAndSet(false, true)) {
+                    LOGGER.finest(() -> "Reusing -> " + channel.hashCode());
+                    LOGGER.finest(() -> "Setting in use -> true");
+                    return channelRecord.channelFuture;
+                }
+                LOGGER.finest(() -> "Not accepted -> " + channel.hashCode());
+                LOGGER.finest(() -> "Open -> " + channel.isOpen());
+                LOGGER.finest(() -> "In use -> " + channel.attr(IN_USE).get());
+            }
+            LOGGER.finest(() -> "New connection to -> " + connectionIdent);
+            URI uri = connectionIdent.base;
+            ChannelFuture connect = bootstrap.connect(uri.getHost(), uri.getPort());
+            Channel channel = connect.channel();
+            channel.attr(IN_USE).set(new AtomicBoolean(true));
+            channel.attr(CONNECTION_IDENT).set(connectionIdent);
+            channels.add(new ChannelRecord(connect));
+            return connect;
+        }
+    }
+
+    static void removeChannelFromCache(ConnectionIdent key, Channel channel) {
+        LOGGER.finest(() -> "Removing from channel cache.");
+        LOGGER.finest(() -> "Connection ident -> " + key);
+        LOGGER.finest(() -> "Channel -> " + channel.hashCode());
+        CHANNEL_CACHE.get(key).remove(new ChannelRecord(channel));
     }
 
     @Override
@@ -271,7 +324,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
 
     @Override
     public WebClientRequestBuilder readTimeout(long amount, TimeUnit unit) {
-        this.readTimeout = Duration.of(amount,  unit.toChronoUnit());
+        this.readTimeout = Duration.of(amount, unit.toChronoUnit());
         return this;
     }
 
@@ -302,6 +355,12 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     @Override
     public WebClientRequestBuilder accept(MediaType... mediaTypes) {
         Arrays.stream(mediaTypes).forEach(headers::addAccept);
+        return this;
+    }
+
+    @Override
+    public WebClientRequestBuilder keepAlive(boolean keepAlive) {
+        this.keepAlive = keepAlive;
         return this;
     }
 
@@ -416,7 +475,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     private <T> Single<T> invokeWithEntity(Flow.Publisher<DataChunk> requestEntity, GenericType<T> responseType) {
         return invoke(requestEntity)
                 .map(this::getContentFromClientResponse)
-                .flatMapSingle(content -> Single.create(content.as(responseType)));
+                .flatMapSingle(content -> content.as(responseType));
     }
 
     private Single<WebClientResponse> invoke(Flow.Publisher<DataChunk> requestEntity) {
@@ -443,6 +502,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
                                                                 toNettyMethod(method),
                                                                 uri.toASCIIString(),
                                                                 headers);
+            HttpUtil.isKeepAlive(request);
 
             requestConfiguration = RequestConfiguration.builder(uri)
                     .update(configuration)
@@ -455,6 +515,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
                     .services(services)
                     .context(context)
                     .proxy(proxy)
+                    .keepAlive(keepAlive)
                     .build();
             WebClientRequestImpl clientRequest = new WebClientRequestImpl(this);
 
@@ -464,12 +525,21 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
             Bootstrap bootstrap = new Bootstrap();
             bootstrap.group(group)
                     .channel(NioSocketChannel.class)
-                    .handler(new NettyClientInitializer(requestConfiguration, result, responseReceived, complete))
+                    .handler(new NettyClientInitializer(requestConfiguration))
+                    .option(ChannelOption.SO_KEEPALIVE, keepAlive)
                     .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, (int) connectTimeout.toMillis());
 
-            ChannelFuture channelFuture = bootstrap.connect(uri.getHost(), uri.getPort());
+            ChannelFuture channelFuture = keepAlive
+                    ? obtainChannelFuture(requestConfiguration, bootstrap)
+                    : bootstrap.connect(uri.getHost(), uri.getPort());
+
             channelFuture.addListener((ChannelFutureListener) future -> {
+                LOGGER.finest(() -> "ChannelFuture hashcode -> " + channelFuture.hashCode());
+                LOGGER.finest(() -> "Channel hashcode -> " + channelFuture.channel().hashCode());
                 channelFuture.channel().attr(REQUEST).set(clientRequest);
+                channelFuture.channel().attr(RECEIVED).set(responseReceived);
+                channelFuture.channel().attr(COMPLETED).set(complete);
+                channelFuture.channel().attr(RESULT).set(result);
                 Throwable cause = future.cause();
                 if (null == cause) {
                     RequestContentSubscriber requestContentSubscriber = new RequestContentSubscriber(request,
@@ -600,7 +670,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         }
         this.headers.toMap().forEach(headers::add);
         addHeaderIfAbsent(headers, HttpHeaderNames.HOST, uri.getHost() + ":" + uri.getPort());
-        addHeaderIfAbsent(headers, HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE);
+        addHeaderIfAbsent(headers, HttpHeaderNames.CONNECTION, keepAlive ? HttpHeaderValues.KEEP_ALIVE : HttpHeaderValues.CLOSE);
         addHeaderIfAbsent(headers, HttpHeaderNames.ACCEPT_ENCODING, HttpHeaderValues.GZIP);
         addHeaderIfAbsent(headers, HttpHeaderNames.USER_AGENT, configuration.userAgent());
         return headers;
@@ -716,4 +786,85 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
             }
         }
     }
+
+    private static class ChannelRecord {
+
+        private final ChannelFuture channelFuture;
+        private final Channel channel;
+
+        private ChannelRecord(ChannelFuture channelFuture) {
+            this.channelFuture = channelFuture;
+            this.channel = channelFuture.channel();
+        }
+
+        private ChannelRecord(Channel channel) {
+            this.channelFuture = null;
+            this.channel = channel;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            ChannelRecord that = (ChannelRecord) o;
+            //Intentional comparison without equals
+            return channel == that.channel;
+        }
+
+        @Override
+        public int hashCode() {
+            return channel.hashCode();
+        }
+    }
+
+    static class ConnectionIdent {
+
+        private final URI base;
+        private final Duration readTimeout;
+        private final Proxy proxy;
+        private final WebClientTls tls;
+
+        private ConnectionIdent(RequestConfiguration requestConfiguration) {
+            URI uri = requestConfiguration.requestURI();
+            this.base = URI.create(uri.getScheme() + "://" + uri.getAuthority());
+            this.readTimeout = requestConfiguration.readTimout();
+            this.proxy = requestConfiguration.proxy().orElse(null);
+            this.tls = requestConfiguration.tls();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            ConnectionIdent that = (ConnectionIdent) o;
+            return Objects.equals(base, that.base) &&
+                    Objects.equals(readTimeout, that.readTimeout) &&
+                    Objects.equals(proxy, that.proxy) &&
+                    Objects.equals(tls, that.tls);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(base, readTimeout, proxy, tls);
+        }
+
+        @Override
+        public String toString() {
+            return "ConnectionIdent{" +
+                    "base=" + base +
+                    ", readTimeout=" + readTimeout +
+                    ", proxy=" + proxy +
+                    ", tls=" + tls +
+                    '}';
+        }
+    }
+
 }
