@@ -23,7 +23,7 @@ WORKDIR /helidon
 # Incremental docker builds will always resume after that, unless you update
 # the pom
 ADD pom.xml .
-RUN mvn package -DskipTests
+RUN mvn package -Dmaven.test.skip
 
 # Do the Maven build!
 # Incremental docker builds will resume here when you change sources
