@@ -363,13 +363,13 @@ public class Proxy {
         }
         Proxy proxy = (Proxy) o;
         return port == proxy.port &&
-                useSystemSelector == proxy.useSystemSelector &&
-                type == proxy.type &&
-                Objects.equals(host, proxy.host) &&
-                Objects.equals(noProxy, proxy.noProxy) &&
-                Objects.equals(username, proxy.username) &&
-                Objects.equals(password, proxy.password) &&
-                Objects.equals(systemSelector, proxy.systemSelector);
+                useSystemSelector == proxy.useSystemSelector
+                && type == proxy.type
+                && Objects.equals(host, proxy.host)
+                && Objects.equals(noProxy, proxy.noProxy)
+                && Objects.equals(username, proxy.username)
+                && Objects.equals(password, proxy.password)
+                && Objects.equals(systemSelector, proxy.systemSelector);
     }
 
     @Override

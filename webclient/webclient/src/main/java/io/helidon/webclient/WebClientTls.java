@@ -124,12 +124,12 @@ public class WebClientTls {
             return false;
         }
         WebClientTls that = (WebClientTls) o;
-        return trustAll == that.trustAll &&
-                disableHostnameVerification == that.disableHostnameVerification &&
-                Objects.equals(clientPrivateKey, that.clientPrivateKey) &&
-                Objects.equals(certificates, that.certificates) &&
-                Objects.equals(clientCertificateChain, that.clientCertificateChain) &&
-                Objects.equals(sslContext, that.sslContext);
+        return trustAll == that.trustAll
+                && disableHostnameVerification == that.disableHostnameVerification
+                && Objects.equals(clientPrivateKey, that.clientPrivateKey)
+                && Objects.equals(certificates, that.certificates)
+                && Objects.equals(clientCertificateChain, that.clientCertificateChain)
+                && Objects.equals(sslContext, that.sslContext);
     }
 
     @Override

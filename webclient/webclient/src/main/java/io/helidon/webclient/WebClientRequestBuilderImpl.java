@@ -845,10 +845,10 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
                 return false;
             }
             ConnectionIdent that = (ConnectionIdent) o;
-            return Objects.equals(base, that.base) &&
-                    Objects.equals(readTimeout, that.readTimeout) &&
-                    Objects.equals(proxy, that.proxy) &&
-                    Objects.equals(tls, that.tls);
+            return Objects.equals(base, that.base)
+                    && Objects.equals(readTimeout, that.readTimeout)
+                    && Objects.equals(proxy, that.proxy)
+                    && Objects.equals(tls, that.tls);
         }
 
         @Override
