@@ -70,7 +70,7 @@
 
     <properties>
         <!-- support command-line overrides -->
-        <cli.maven.plugin.version>${version.plugin.helidon-build-tools}</cli.maven.plugin.version>
+        <cli.build.tools.version>${version.plugin.helidon-build-tools}</cli.build.tools.version>
     </properties>
     <build>
         <plugins>
@@ -100,9 +100,9 @@
                                                           target="metadata.properties">
                                                     <variables>
                                                         <variable name="buildtoolsVersion"
-                                                                  value="${cli.maven.plugin.version}"/>
+                                                                  value="${cli.build.tools.version}"/>
                                                         <variable name="cliVersion"
-                                                                  value="${cli.maven.plugin.version}"/>
+                                                                  value="${cli.build.tools.version}"/>
                                                     </variables>
                                                 </template>
                                             </templates>
@@ -150,7 +150,7 @@
                         <echo> |  If you also want to test with a local Helidon CLI build, specify the version when building</echo>
                         <echo> |  this project, e.g.:</echo>
                         <echo> |</echo>
-                        <echo> |     mvn clean install -Dcli.maven.plugin.version=2.0.3-SNAPSHOT</echo>
+                        <echo> |     mvn clean install -Dcli.build.tools.version=2.0.3-SNAPSHOT</echo>
                         <echo> |</echo>
                     </echos>
                 </configuration>
