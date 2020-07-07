@@ -604,6 +604,16 @@
                     <artifactId>snakeyaml-codegen-maven-plugin</artifactId>
                     <version>${version.plugin.helidon-build-tools}</version>
                 </plugin>
+                <plugin>
+                    <groupId>io.helidon.build-tools</groupId>
+                    <artifactId>helidon-stager-maven-plugin</artifactId>
+                    <version>${version.plugin.helidon-build-tools}</version>
+                </plugin>
+                <plugin>
+                    <groupId>com.soebes.maven.plugins</groupId>
+                    <artifactId>echo-maven-plugin</artifactId>
+                    <version>${version.plugin.echo}</version>
+                </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
