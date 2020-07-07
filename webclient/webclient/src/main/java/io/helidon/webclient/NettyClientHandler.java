@@ -306,6 +306,7 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
                             });
                 } else {
                     channel.attr(IN_USE).get().set(false);
+                    cf.complete(null);
                 }
                 publisher.complete();
             }
