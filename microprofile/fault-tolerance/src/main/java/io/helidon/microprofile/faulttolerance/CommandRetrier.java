@@ -260,7 +260,7 @@ public class CommandRetrier {
         List<Policy<Object>> policies = new ArrayList<>();
         if (introspector.hasFallback()) {
             CheckedFunction<ExecutionAttemptedEvent<?>, ?> fallbackFunction = event -> {
-                final CommandFallback fallback = new CommandFallback(context, introspector, event);
+                final CommandFallback fallback = new CommandFallback(context, introspector, event.getLastFailure());
                 Object result = fallback.execute();
                 if (result instanceof CompletionStage<?>) {
                     result = ((CompletionStage<?>) result).toCompletableFuture();

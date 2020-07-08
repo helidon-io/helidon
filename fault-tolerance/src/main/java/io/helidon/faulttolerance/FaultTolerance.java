@@ -121,6 +121,15 @@ public final class FaultTolerance {
         return new Builder();
     }
 
+    /**
+     * A typed builder to configure a customized sequence of fault tolerance handlers.
+     *
+     * @return a new builder
+     */
+    public static <T> TypedBuilder<T> typedBuilder() {
+        return new TypedBuilder<>();
+    }
+
     static Config config() {
         return CONFIG.get();
     }

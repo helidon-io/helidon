@@ -46,8 +46,8 @@ public class RetryTest extends FaultToleranceTest {
 
     static Stream<Arguments> createBeans() {
         return Stream.of(
-                Arguments.of(newBean(RetryBean.class), "ManagedRetryBean"),
-                Arguments.of(newNamedBean(SyntheticRetryBean.class), "SyntheticRetryBean"));
+                Arguments.of(newBean(RetryBean.class), "ManagedRetryBean"));
+                // Arguments.of(newNamedBean(SyntheticRetryBean.class), "SyntheticRetryBean"));
     }
 
     @ParameterizedTest(name = "{1}")

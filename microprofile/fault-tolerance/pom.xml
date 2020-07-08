@@ -59,6 +59,10 @@
             <artifactId>microprofile-fault-tolerance-api</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.fault-tolerance</groupId>
+            <artifactId>helidon-fault-tolerance</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.eclipse.microprofile.metrics</groupId>
             <artifactId>microprofile-metrics-api</artifactId>
             <scope>provided</scope>

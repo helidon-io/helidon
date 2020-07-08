@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-/**
- * Fault tolerance module for Helidon reactive implementation.
- */
-module io.helidon.faulttolerance {
-    requires io.helidon.config;
-    requires io.helidon.common.configurable;
-    requires java.logging;
+package io.helidon.microprofile.faulttolerance;
 
-    exports io.helidon.faulttolerance;
+/**
+ * A special supplier that can also throw a {@link java.lang.Throwable}.
+ *
+ * @param <T> Type provided by this supplier.
+ */
+@FunctionalInterface
+interface FtSupplier<T> {
+    T get() throws Throwable;
 }
