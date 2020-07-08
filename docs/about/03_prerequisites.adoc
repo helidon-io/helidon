@@ -34,7 +34,7 @@ deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster (you can
 |https://www.oracle.com/technetwork/java/javase/downloads[Java{nbsp}SE{nbsp}11] (http://jdk.java.net[Open{nbsp}JDK{nbsp}11]) or newer
 |https://maven.apache.org/download.cgi[Maven 3.6.1+]
 |https://docs.docker.com/install/[Docker 18.09+]
-|https://kubernetes.io/docs/tasks/tools/install-kubectl/[Kubectl 1.11.9+]
+|https://kubernetes.io/docs/tasks/tools/install-kubectl/[Kubectl 1.16.5+]
 |=======
 
 

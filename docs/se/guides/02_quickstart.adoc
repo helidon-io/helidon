@@ -143,7 +143,7 @@ Then you can try the application as you did before.
 == Deploy the application to Kubernetes
 
 If you don't have access to a Kubernetes cluster, you can
-<<getting-started/05_kubernetes.adoc,install one on your desktop>>.
+<<about/05_kubernetes.adoc,install one on your desktop>>.
 Then deploy the example:
 
 [source,bash]
