@@ -64,7 +64,17 @@ Exercise the application as described above
 kubectl cluster-info                         # Verify which cluster
 kubectl get pods                             # Verify connectivity to cluster
 kubectl create -f app.yaml                   # Deploy application
+kubectl get pods                             # Wait for quickstart pod to be RUNNING
 kubectl get service helidon-quickstart-mp    # Verify deployed service
+```
+
+Note the PORTs. You can now exercise the application as you did before but use the second
+port number (the NodePort) instead of 8080.
+
+After you’re done, cleanup.
+
+```
+kubectl delete -f app.yaml
 ```
 
 ## Build a native image with GraalVM
