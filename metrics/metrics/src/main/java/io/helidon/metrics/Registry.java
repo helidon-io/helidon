@@ -46,6 +46,7 @@ import org.eclipse.microprofile.metrics.MetricFilter;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
+import org.eclipse.microprofile.metrics.SimpleTimer;
 import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
 
@@ -196,6 +197,26 @@ public class Registry extends MetricRegistry {
         return getOrRegisterMetric(metadata, HelidonConcurrentGauge::create, HelidonConcurrentGauge.class, tags);
     }
 
+    @Override
+    public SimpleTimer simpleTimer(String name) {
+        return simpleTimer(name, NO_TAGS);
+    }
+
+    @Override
+    public SimpleTimer simpleTimer(Metadata metadata) {
+        return simpleTimer(metadata, NO_TAGS);
+    }
+
+    @Override
+    public SimpleTimer simpleTimer(String name, Tag... tags) {
+        return getOrRegisterMetric(name, HelidonSimpleTimer::create, HelidonSimpleTimer.class, tags);
+    }
+
+    @Override
+    public SimpleTimer simpleTimer(Metadata metadata, Tag... tags) {
+        return getOrRegisterMetric(metadata, HelidonSimpleTimer::create, HelidonSimpleTimer.class, tags);
+    }
+
     /**
      * Removes a metric by name. Synchronized for atomic update of more than one internal map.
      *
@@ -310,6 +331,16 @@ public class Registry extends MetricRegistry {
     @Override
     public SortedMap<MetricID, ConcurrentGauge> getConcurrentGauges(MetricFilter filter) {
         return getSortedMetrics(filter, ConcurrentGauge.class);
+    }
+
+    @Override
+    public SortedMap<MetricID, SimpleTimer> getSimpleTimers() {
+        return getSimpleTimers(MetricFilter.ALL);
+    }
+
+    @Override
+    public SortedMap<MetricID, SimpleTimer> getSimpleTimers(MetricFilter filter) {
+        return getSortedMetrics(filter, SimpleTimer.class);
     }
 
     @Override
