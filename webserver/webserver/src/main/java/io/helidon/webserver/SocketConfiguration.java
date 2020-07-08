@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.net.InetAddress;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -98,6 +99,13 @@ public interface SocketConfiguration {
     Set<String> enabledSslProtocols();
 
     /**
+     * Whether to require client authentication or not.
+     *
+     * @return client authentication
+     */
+    ClientAuthentication clientAuth();
+
+    /**
      * Creates a builder of {@link SocketConfiguration} class.
      *
      * @return a builder
@@ -116,6 +124,7 @@ public interface SocketConfiguration {
         private int backlog = 0;
         private int timeoutMillis = 0;
         private int receiveBufferSize = 0;
+        private ClientAuthentication clientAuth = ClientAuthentication.NONE;
 
         private Builder() {
         }
@@ -208,6 +217,21 @@ public interface SocketConfiguration {
         }
 
         /**
+         * Configures whether client authentication will be required or not.
+         *
+         * @param clientAuth client authentication
+         * @return this builder
+         */
+        public Builder clientAuth(ClientAuthentication clientAuth) {
+            this.clientAuth = Objects.requireNonNull(clientAuth);
+            return this;
+        }
+
+        void clientAuth(String it) {
+            clientAuth(ClientAuthentication.valueOf(it.toUpperCase()));
+        }
+
+        /**
          * Configures the SSL protocols to enable with the server socket.
          * @param protocols protocols to enable, if {@code null} enables the
          * default protocols
@@ -235,7 +259,7 @@ public interface SocketConfiguration {
         public SocketConfiguration build() {
             return new ServerBasicConfig.SocketConfig(port, bindAddress,
                     sslContext, enabledSslProtocols, backlog, timeoutMillis,
-                    receiveBufferSize);
+                    receiveBufferSize, clientAuth);
         }
     }
 }
