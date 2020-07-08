@@ -176,9 +176,9 @@ public class MultiFromOutputStreamTest {
         publisher.write(0);
         publisher.write(0);
         publisher.write(0);         // first
+        subscriber.assertEmpty();
         publisher.flush();             // second
-        long size = subscriber.getItems().stream().count();
-        assertThat(size, is(equalTo(2L)));
+        subscriber.assertItemCount(2);
     }
 
     @Test
@@ -187,15 +187,19 @@ public class MultiFromOutputStreamTest {
         TestSubscriber<ByteBuffer> subscriber = new TestSubscriber<>();
         publisher.subscribe(subscriber);
         subscriber.requestMax();
-        publisher.write(0);                // first
-        publisher.write(new byte[] { 0 });    // second
+        publisher.write(0);                  // first
+        subscriber.assertEmpty();
+        publisher.write(new byte[] { 0 });      // second
+        subscriber.assertItemCount(2);
         publisher.write(0);
-        publisher.write(0);                // third
-        publisher.write(new byte[] { 0 });    // fourth
-        publisher.write(0);                // fifth
+        publisher.write(0);                  // third
+        subscriber.assertItemCount(2);
+        publisher.write(new byte[] { 0 });      // fourth
+        subscriber.assertItemCount(4);
+        publisher.write(0);                  // fifth
+        subscriber.assertItemCount(4);
         publisher.close();
-        long size = subscriber.getItems().stream().count();
-        assertThat(size, is(equalTo(5L)));
+        subscriber.assertItemCount(5).assertComplete();
     }
 
     private static final class UnitTestException extends RuntimeException {
