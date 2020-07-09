@@ -133,7 +133,7 @@ interface DelayedTask<T> {
 
             @Override
             public Single<T> result() {
-                return Single.create(resultFuture.get());
+                return Single.create(resultFuture.get(), true);
             }
 
             @Override

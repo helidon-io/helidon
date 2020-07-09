@@ -275,7 +275,7 @@ public final class FaultTolerance {
                     next = () -> validFt.invoke(finalNext);
                 }
 
-                return Single.create(next.get());
+                return Single.create(next.get(), true);
             }
         }
 
@@ -359,7 +359,7 @@ public final class FaultTolerance {
                     next = () -> validFt.invoke(finalNext);
                 }
 
-                return Single.create(next.get());
+                return Single.create(next.get(), true);
             }
         }
     }

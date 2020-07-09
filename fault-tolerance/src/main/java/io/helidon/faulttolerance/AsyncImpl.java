@@ -42,7 +42,7 @@ class AsyncImpl implements Async {
             return Single.error(e);
         }
 
-        return Single.create(future);
+        return Single.create(future, true);
     }
 
     private static class AsyncTask<T> implements Runnable {

@@ -30,11 +30,11 @@ interface ErrorChecker {
             if (applyOn.isEmpty()) {
                 return throwable -> false;
             } else {
-                return throwable -> !applyOn.contains(throwable.getClass());
+                return throwable -> applyOn.stream().filter(t -> t.isAssignableFrom(throwable.getClass())).count() == 0;
             }
         } else {
             if (applyOn.isEmpty()) {
-                return throwable -> skipOn.contains(throwable.getClass());
+                return throwable -> skipOn.stream().filter(t -> t.isAssignableFrom(throwable.getClass())).count() > 0;
             } else {
                 throw new IllegalArgumentException("You have defined both skip and apply set of exception classes. "
                                                            + "This cannot be correctly handled; skipOn: " + skipOn

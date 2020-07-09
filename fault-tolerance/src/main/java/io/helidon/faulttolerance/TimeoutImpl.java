@@ -43,7 +43,7 @@ class TimeoutImpl implements Timeout {
 
     @Override
     public <T> Single<T> invoke(Supplier<? extends CompletionStage<T>> supplier) {
-        return Single.create(supplier.get())
+        return Single.create(supplier.get(), true)
                 .timeout(timeoutMillis, TimeUnit.MILLISECONDS, executor.get());
     }
 }
