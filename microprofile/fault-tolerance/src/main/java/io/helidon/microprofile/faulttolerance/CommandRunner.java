@@ -18,17 +18,25 @@ package io.helidon.microprofile.faulttolerance;
 import javax.interceptor.InvocationContext;
 import java.lang.reflect.Method;
 import java.time.Duration;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import io.helidon.common.reactive.Single;
 import io.helidon.faulttolerance.Async;
+import io.helidon.faulttolerance.Bulkhead;
+import io.helidon.faulttolerance.CircuitBreaker;
 import io.helidon.faulttolerance.Fallback;
 import io.helidon.faulttolerance.FaultTolerance;
 import io.helidon.faulttolerance.FtHandlerTyped;
 import io.helidon.faulttolerance.Retry;
+import io.helidon.faulttolerance.Timeout;
+
 import static io.helidon.microprofile.faulttolerance.AsynchronousUtil.toCompletionStageSupplier;
+import static io.helidon.microprofile.faulttolerance.ThrowableMapper.map;
 
 /**
  * Runs a FT method.
@@ -41,7 +49,7 @@ public class CommandRunner implements FtSupplier<Object> {
 
     private final MethodIntrospector introspector;
 
-    static final ConcurrentHashMap<Method, FtHandlerTyped<Object>> ftHandlers = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<Method, FtHandlerTyped<Object>> ftHandlers = new ConcurrentHashMap<>();
 
     /**
      * Constructor.
@@ -53,6 +61,13 @@ public class CommandRunner implements FtSupplier<Object> {
         this.context = context;
         this.introspector = introspector;
         this.method = context.getMethod();
+    }
+
+    /**
+     * Clears ftHandlers map of any cached handlers.
+     */
+    static void clearFtHandlersMap() {
+        ftHandlers.clear();
     }
 
     /**
@@ -86,7 +101,15 @@ public class CommandRunner implements FtSupplier<Object> {
         } else {
             // Invoke method and wait on result
             single = handler.invoke(toCompletionStageSupplier(context::proceed));
-            return single.get();
+            try {
+                // Need to allow completion with no value (i.e. null) for void methods
+                CompletableFuture<Object> future = single.toStage(true).toCompletableFuture();
+                return future.get();
+            } catch (ExecutionException e) {
+                throw map(e.getCause());     // throw unwrapped exception here
+            } catch (Exception e) {
+                throw map(e);
+            }
         }
     }
 
@@ -98,20 +121,22 @@ public class CommandRunner implements FtSupplier<Object> {
     private FtHandlerTyped<Object> createHandler() {
         FaultTolerance.TypedBuilder<Object> builder = FaultTolerance.typedBuilder();
 
-        // Create retry handler first for priority
+        // Create retry (with timeout) handler and add it first
         if (introspector.hasRetry()) {
-            Retry retry = Retry.builder()
+            Retry.Builder retry = Retry.builder()
                     .retryPolicy(Retry.JitterRetryPolicy.builder()
                             .calls(introspector.getRetry().maxRetries() + 1)
                             .delay(Duration.ofMillis(introspector.getRetry().delay()))
                             .jitter(Duration.ofMillis(introspector.getRetry().jitter()))
-                            .build())
-                    .overallTimeout(Duration.ofDays(1))     // TODO
-                    .build();
-            builder.addRetry(retry);
+                            .build());
+            if (introspector.hasTimeout()) {
+                retry.overallTimeout(Duration.of(introspector.getTimeout().value(),
+                        introspector.getTimeout().unit()));
+            }
+            builder.addRetry(retry.build());
         }
 
-        // Create fallback handler
+        // Create and add fallback handler
         if (introspector.hasFallback()) {
             Fallback<Object> fallback = Fallback.builder()
                     .fallback(throwable -> {
@@ -120,6 +145,36 @@ public class CommandRunner implements FtSupplier<Object> {
                     })
                     .build();
             builder.addFallback(fallback);
+        }
+
+        // Create and add timeout handler
+        if (introspector.hasTimeout() && !introspector.hasRetry()) {
+            Timeout timeout = Timeout.builder()
+                    .timeout(Duration.of(introspector.getTimeout().value(), introspector.getTimeout().unit()))
+                    .build();
+            builder.addTimeout(timeout);
+        }
+
+        // Create and add circuit breaker
+        if (introspector.hasCircuitBreaker()) {
+            CircuitBreaker circuitBreaker = CircuitBreaker.builder()
+                    .delay(Duration.of(introspector.getCircuitBreaker().delay(),
+                            introspector.getCircuitBreaker().delayUnit()))
+                    .successThreshold(introspector.getCircuitBreaker().successThreshold())
+                    .errorRatio((int) (introspector.getCircuitBreaker().failureRatio() * 100))
+                    .volume(introspector.getCircuitBreaker().requestVolumeThreshold())
+                    .applyOn(introspector.getCircuitBreaker().failOn())
+                    .build();
+            builder.addBreaker(circuitBreaker);
+        }
+
+        // Create and add bulkhead
+        if (introspector.hasBulkhead()) {
+            Bulkhead bulkhead = Bulkhead.builder()
+                    .limit(introspector.getBulkhead().value())
+                    .queueLength(introspector.getBulkhead().waitingTaskQueue())
+                    .build();
+            builder.addBulkhead(bulkhead);
         }
 
         return builder.build();

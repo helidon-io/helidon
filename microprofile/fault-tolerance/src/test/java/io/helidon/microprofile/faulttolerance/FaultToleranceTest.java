@@ -34,6 +34,7 @@ import io.helidon.microprofile.cdi.HelidonContainer;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 
 /**
  * Class FaultToleranceTest.
@@ -56,6 +57,17 @@ public abstract class FaultToleranceTest {
         if (cdiContainer != null) {
             cdiContainer.close();
         }
+    }
+
+    /**
+     * Clears all internal handlers before running each test. Latest FT spec has
+     * clarified that each method of each class that uses a bulkhead/breaker has
+     * its own state (in application scope). Most of our unit tests assume
+     * independence so we clear this state before running each test.
+     */
+    @BeforeEach
+    public void resetHandlers() {
+        CommandRunner.clearFtHandlersMap();
     }
 
     protected static <T> T newBean(Class<T> beanClass) {

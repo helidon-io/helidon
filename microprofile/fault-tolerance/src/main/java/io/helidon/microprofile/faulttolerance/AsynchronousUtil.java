@@ -32,6 +32,7 @@ final class AsynchronousUtil {
      * @param supplier The supplier.
      * @return The new supplier.
      */
+    @SuppressWarnings("unchecked")
     static Supplier<? extends CompletionStage<Object>> toCompletionStageSupplier(FtSupplier<Object> supplier) {
         return () -> {
             try {

@@ -22,7 +22,6 @@ import java.lang.reflect.Method;
 import javax.enterprise.inject.spi.CDI;
 import javax.interceptor.InvocationContext;
 
-import net.jodah.failsafe.event.ExecutionAttemptedEvent;
 import org.eclipse.microprofile.faulttolerance.ExecutionContext;
 import org.eclipse.microprofile.faulttolerance.Fallback;
 import org.eclipse.microprofile.faulttolerance.FallbackHandler;
@@ -47,11 +46,11 @@ class CommandFallback {
      *
      * @param context Invocation context.
      * @param introspector Method introspector.
-     * @param event ExecutionAttemptedEvent representing the failure causing the fallback invocation
+     * @param throwable Throwable that caused execution of fallback
      */
-    CommandFallback(InvocationContext context, MethodIntrospector introspector, ExecutionAttemptedEvent<?> event) {
+    CommandFallback(InvocationContext context, MethodIntrospector introspector, Throwable throwable) {
         this.context = context;
-        this.throwable = event.getLastFailure();
+        this.throwable = throwable;
 
         // Establish fallback strategy
         final Fallback fallback = introspector.getFallback();
