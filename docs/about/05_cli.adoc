@@ -16,6 +16,10 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
+= Helidon CLI
+:description: Helidon CLI
+:keywords: helidon cli
+
 == Introduction
 
 The Helidon CLI lets you easily create a Helidon project by picking from a
