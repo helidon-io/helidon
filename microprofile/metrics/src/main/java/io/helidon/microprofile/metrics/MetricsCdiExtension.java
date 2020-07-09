@@ -72,12 +72,14 @@ import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.Tag;
+import org.eclipse.microprofile.metrics.SimpleTimer;
 import org.eclipse.microprofile.metrics.Timer;
 import org.eclipse.microprofile.metrics.annotation.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Gauge;
 import org.eclipse.microprofile.metrics.annotation.Metered;
 import org.eclipse.microprofile.metrics.annotation.Metric;
+import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
 import static io.helidon.microprofile.metrics.MetricUtil.LookupResult;
@@ -91,7 +93,8 @@ public class MetricsCdiExtension implements Extension {
     private static final Logger LOGGER = Logger.getLogger(MetricsCdiExtension.class.getName());
 
     private static final List<Class<? extends Annotation>> METRIC_ANNOTATIONS
-            = Arrays.asList(Counted.class, Metered.class, Timed.class, Gauge.class, ConcurrentGauge.class);
+            = Arrays.asList(Counted.class, Metered.class, Timed.class, Gauge.class, ConcurrentGauge.class,
+                            SimplyTimed.class);
 
     private final Map<Bean<?>, AnnotatedMember<?>> producers = new HashMap<>();
 
@@ -179,6 +182,21 @@ public class MetricsCdiExtension implements Extension {
                 .build();
             registry.concurrentGauge(meta, tags(concurrentGauge.tags()));
             LOGGER.log(Level.FINE, () -> "Registered concurrent gauge " + metricName);
+        } else if (annotation instanceof SimplyTimed) {
+            SimplyTimed simplyTimed = (SimplyTimed) annotation;
+            String metricName = getMetricName(element, clazz, lookupResult.getType(), simplyTimed.name().trim(),
+                    simplyTimed.absolute());
+            String displayName = simplyTimed.displayName().trim();
+            Metadata meta = Metadata.builder()
+                    .withName(metricName)
+                    .withDisplayName(displayName.isEmpty() ? metricName : displayName)
+                    .withDescription(simplyTimed.description().trim())
+                    .withType(MetricType.SIMPLE_TIMER)
+                    .withUnit(simplyTimed.unit().trim())
+                    .reusable(simplyTimed.reusable())
+                    .build();
+            registry.simpleTimer(meta, tags(simplyTimed.tags()));
+            LOGGER.log(Level.FINE, () -> "Registered simple timer " + metricName);
         }
     }
 
@@ -231,9 +249,11 @@ public class MetricsCdiExtension implements Extension {
         discovery.addAnnotatedType(InterceptorMetered.class, "InterceptorMetered");
         discovery.addAnnotatedType(InterceptorTimed.class, "InterceptorTimed");
         discovery.addAnnotatedType(InterceptorConcurrentGauge.class, "InterceptorConcurrentGauge");
+        discovery.addAnnotatedType(InterceptorSimplyTimed.class, "InterceptorSimplyTimed");
     }
 
-    private void registerMetrics(@Observes @WithAnnotations({Counted.class, Metered.class, Timed.class, ConcurrentGauge.class})
+    private void registerMetrics(@Observes @WithAnnotations({Counted.class, Metered.class, Timed.class,
+            ConcurrentGauge.class, SimplyTimed.class})
                                          ProcessAnnotatedType<?> pat) {
         // Filter out interceptors
         AnnotatedType<?> type = pat.getAnnotatedType();
@@ -288,7 +308,7 @@ public class MetricsCdiExtension implements Extension {
     private void processInjectionPoints(@Observes ProcessInjectionPoint<?, ?> pip) {
         Type type = pip.getInjectionPoint().getType();
         if (type.equals(Counter.class) || type.equals(Histogram.class)
-                || type.equals(Meter.class) || type.equals(Timer.class)
+                || type.equals(Meter.class) || type.equals(Timer.class) || type.equals(SimpleTimer.class)
                 || type.equals(org.eclipse.microprofile.metrics.ConcurrentGauge.class)) {
             pip.configureInjectionPoint().addQualifier(VendorDefined.Literal.INSTANCE);
         }

@@ -26,6 +26,7 @@ import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.MetricID;
+import org.eclipse.microprofile.metrics.SimpleTimer;
 import org.eclipse.microprofile.metrics.Timer;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.Test;
@@ -114,6 +115,24 @@ public class MetricsTest extends MetricsBaseTest {
         Timer timer = getMetric(bean, "method2");
         assertThat(timer.getCount(), is(10L));
         assertThat(timer.getMeanRate(), is(greaterThan(0.0)));
+    }
+
+    @Test
+    public void testSimplyTimed1() {
+        SimplyTimedBean bean = newBean(SimplyTimedBean.class);
+        IntStream.range(0, 10).forEach(i -> bean.method1());
+        SimpleTimer simpleTimer = getMetric(bean, "method1");
+        assertThat(simpleTimer.getCount(), is(10L));
+        assertThat(simpleTimer.getElapsedTime().toNanos(), is(greaterThan(0L)));
+    }
+
+    @Test
+    public void testSimplyTimed2() {
+        SimplyTimedBean bean = newBean(SimplyTimedBean.class);
+        IntStream.range(0, 10).forEach(i -> bean.method2());
+        SimpleTimer simpleTimer = getMetric(bean, "method2");
+        assertThat(simpleTimer.getCount(), is(10L));
+        assertThat(simpleTimer.getElapsedTime().toNanos(), is(greaterThan(0L)));
     }
 
     @Test

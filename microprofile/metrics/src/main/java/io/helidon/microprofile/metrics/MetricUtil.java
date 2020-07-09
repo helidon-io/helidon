@@ -34,6 +34,7 @@ import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.annotation.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Metered;
+import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
 /**
@@ -208,6 +209,19 @@ public final class MetricUtil {
                     .reusable(timed.reusable()).build();
             registry.timer(meta);
             LOGGER.fine(() -> "### Registered timer " + metricName);
+        } else if (annotation instanceof SimplyTimed) {
+            SimplyTimed simplyTimed = (SimplyTimed) annotation;
+            String metricName = getMetricName(element, clazz, type, simplyTimed.name().trim(), simplyTimed.absolute());
+            String displayName = simplyTimed.displayName().trim();
+            Metadata meta = Metadata.builder()
+                    .withName(metricName)
+                    .withDisplayName(displayName.isEmpty() ? metricName : displayName)
+                    .withDescription(simplyTimed.description().trim())
+                    .withType(MetricType.SIMPLE_TIMER)
+                    .withUnit(simplyTimed.unit().trim())
+                    .reusable(simplyTimed.reusable()).build();
+            registry.timer(meta);
+            LOGGER.fine(() -> "### Registered simple timer " + metricName);
         }
     }
 
