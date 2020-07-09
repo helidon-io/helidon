@@ -81,11 +81,11 @@ class BareResponseImpl implements BareResponse {
     private volatile boolean isWebSocketUpgrade = false;
 
     /**
-     * @param ctx                    the channel handler context
-     * @param request                the request
+     * @param ctx the channel handler context
+     * @param request the request
      * @param requestContentConsumed whether the request content is consumed
-     * @param thread                 the outbound event loop thread which will be used to write the response
-     * @param requestId              the correlation ID that is added to the log statements
+     * @param thread the outbound event loop thread which will be used to write the response
+     * @param requestId the correlation ID that is added to the log statements
      */
     BareResponseImpl(ChannelHandlerContext ctx,
                      HttpRequest request,
@@ -241,7 +241,7 @@ class BareResponseImpl implements BareResponse {
      * Write last HTTP content. If length optimization is active and a first chunk is cached,
      * switch content encoding and write response.
      *
-     * @param throwable   A throwable.
+     * @param throwable A throwable.
      * @param closeAction Close action listener.
      */
     private void writeLastContent(final Throwable throwable, final ChannelFutureListener closeAction) {
@@ -349,34 +349,34 @@ class BareResponseImpl implements BareResponse {
     }
 
     private ChannelFuture sendData(DataChunk data) {
-        LOGGER.finest(() -> log("Sending data chunk"));
+            LOGGER.finest(() -> log("Sending data chunk"));
 
-        DefaultHttpContent httpContent = new DefaultHttpContent(Unpooled.wrappedBuffer(data.data()));
+            DefaultHttpContent httpContent = new DefaultHttpContent(Unpooled.wrappedBuffer(data.data()));
 
-        LOGGER.finest(() -> log("Sending data chunk on event loop thread."));
+            LOGGER.finest(() -> log("Sending data chunk on event loop thread."));
 
-        ChannelFuture channelFuture;
-        if (data.flush()) {
-            channelFuture = ctx.writeAndFlush(httpContent);
-        } else {
-            channelFuture = ctx.write(httpContent);
-        }
+            ChannelFuture channelFuture;
+            if (data.flush()) {
+                channelFuture = ctx.writeAndFlush(httpContent);
+            } else {
+                channelFuture = ctx.write(httpContent);
+            }
 
-        return channelFuture
-                .addListener(future -> {
-                    data.writeFuture().ifPresent(writeFuture -> {
-                        // Complete write future based con channel future
-                        if (future.isSuccess()) {
-                            writeFuture.complete(data);
-                        } else {
-                            writeFuture.completeExceptionally(future.cause());
-                        }
-                    });
-                    data.release();
-                    LOGGER.finest(() -> log("Data chunk sent with result: " + future.isSuccess()));
-                })
-                .addListener(completeOnFailureListener("Failure when sending a content!"))
-                .addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
+            return channelFuture
+                    .addListener(future -> {
+                        data.writeFuture().ifPresent(writeFuture -> {
+                            // Complete write future based con channel future
+                            if (future.isSuccess()) {
+                                writeFuture.complete(data);
+                            } else {
+                                writeFuture.completeExceptionally(future.cause());
+                            }
+                        });
+                        data.release();
+                        LOGGER.finest(() -> log("Data chunk sent with result: " + future.isSuccess()));
+                    })
+                    .addListener(completeOnFailureListener("Failure when sending a content!"))
+                    .addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
     }
 
     private String log(String s) {
