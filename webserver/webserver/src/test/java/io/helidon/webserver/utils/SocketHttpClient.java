@@ -192,10 +192,8 @@ public class SocketHttpClient implements AutoCloseable {
             if (ending && "".equalsIgnoreCase(t)) {
                 break;
             }
-            if (!ending && "0".equalsIgnoreCase(t)) {
+            if (!ending && ("0".equalsIgnoreCase(t))) {
                 ending = true;
-            } else {
-                ending = false;
             }
         }
         return sb.toString();

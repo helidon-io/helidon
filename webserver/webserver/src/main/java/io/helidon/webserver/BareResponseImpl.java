@@ -41,6 +41,7 @@ import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.util.concurrent.Future;
@@ -59,7 +60,6 @@ class BareResponseImpl implements BareResponse {
     // See HttpConversionUtil.ExtensionHeaderNames
     private static final String HTTP_2_HEADER_PREFIX = "x-http2";
     private static final SocketClosedException CLOSED = new SocketClosedException("Response channel is closed!");
-    private static final LastHttpContent LAST_HTTP_CONTENT = new DefaultLastHttpContent(Unpooled.EMPTY_BUFFER);
 
     private final boolean keepAlive;
     private final ChannelHandlerContext ctx;
@@ -81,11 +81,11 @@ class BareResponseImpl implements BareResponse {
     private volatile boolean isWebSocketUpgrade = false;
 
     /**
-     * @param ctx the channel handler context
-     * @param request the request
+     * @param ctx                    the channel handler context
+     * @param request                the request
      * @param requestContentConsumed whether the request content is consumed
-     * @param thread the outbound event loop thread which will be used to write the response
-     * @param requestId the correlation ID that is added to the log statements
+     * @param thread                 the outbound event loop thread which will be used to write the response
+     * @param requestId              the correlation ID that is added to the log statements
      */
     BareResponseImpl(ChannelHandlerContext ctx,
                      HttpRequest request,
@@ -241,18 +241,41 @@ class BareResponseImpl implements BareResponse {
      * Write last HTTP content. If length optimization is active and a first chunk is cached,
      * switch content encoding and write response.
      *
-     * @param throwable A throwable.
+     * @param throwable   A throwable.
      * @param closeAction Close action listener.
      */
     private void writeLastContent(final Throwable throwable, final ChannelFutureListener closeAction) {
+        boolean chunked = true;
         if (lengthOptimization) {
             if (firstChunk != null) {
-                HttpUtil.setTransferEncodingChunked(response, false);
-                HttpUtil.setContentLength(response, firstChunk.remaining());
+                if (throwable == null) {
+                    HttpUtil.setTransferEncodingChunked(response, false);
+                    HttpUtil.setContentLength(response, firstChunk.remaining());
+                    chunked = false;
+                } else {
+                    //headers not sent yet
+                    response.setStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
+                    //We are not using CombinedHttpHeaders
+                    response.headers()
+                            .set(HttpHeaderNames.TRAILER, Response.STREAM_STATUS + "," + Response.STREAM_RESULT);
+                }
             }
             initWriteResponse();
         }
-        ctx.writeAndFlush(LAST_HTTP_CONTENT)
+
+        LastHttpContent lastHttpContent = new DefaultLastHttpContent(Unpooled.EMPTY_BUFFER);
+
+        if (chunked) {
+            if (throwable != null) {
+                lastHttpContent.trailingHeaders()
+                        .set(Response.STREAM_STATUS, 500)
+                        .set(Response.STREAM_RESULT, throwable);
+                LOGGER.log(Level.SEVERE, throwable, () -> log("Upstream error while sending response."));
+            }
+
+        }
+
+        ctx.writeAndFlush(lastHttpContent)
                 .addListener(completeOnFailureListener("An exception occurred when writing last http content."))
                 .addListener(completeOnSuccessListener(throwable))
                 .addListener(closeAction);
@@ -326,34 +349,34 @@ class BareResponseImpl implements BareResponse {
     }
 
     private ChannelFuture sendData(DataChunk data) {
-            LOGGER.finest(() -> log("Sending data chunk"));
+        LOGGER.finest(() -> log("Sending data chunk"));
 
-            DefaultHttpContent httpContent = new DefaultHttpContent(Unpooled.wrappedBuffer(data.data()));
+        DefaultHttpContent httpContent = new DefaultHttpContent(Unpooled.wrappedBuffer(data.data()));
 
-            LOGGER.finest(() -> log("Sending data chunk on event loop thread."));
+        LOGGER.finest(() -> log("Sending data chunk on event loop thread."));
 
-            ChannelFuture channelFuture;
-            if (data.flush()) {
-                channelFuture = ctx.writeAndFlush(httpContent);
-            } else {
-                channelFuture = ctx.write(httpContent);
-            }
+        ChannelFuture channelFuture;
+        if (data.flush()) {
+            channelFuture = ctx.writeAndFlush(httpContent);
+        } else {
+            channelFuture = ctx.write(httpContent);
+        }
 
-            return channelFuture
-                    .addListener(future -> {
-                        data.writeFuture().ifPresent(writeFuture -> {
-                            // Complete write future based con channel future
-                            if (future.isSuccess()) {
-                                writeFuture.complete(data);
-                            } else {
-                                writeFuture.completeExceptionally(future.cause());
-                            }
-                        });
-                        data.release();
-                        LOGGER.finest(() -> log("Data chunk sent with result: " + future.isSuccess()));
-                    })
-                    .addListener(completeOnFailureListener("Failure when sending a content!"))
-                    .addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
+        return channelFuture
+                .addListener(future -> {
+                    data.writeFuture().ifPresent(writeFuture -> {
+                        // Complete write future based con channel future
+                        if (future.isSuccess()) {
+                            writeFuture.complete(data);
+                        } else {
+                            writeFuture.completeExceptionally(future.cause());
+                        }
+                    });
+                    data.release();
+                    LOGGER.finest(() -> log("Data chunk sent with result: " + future.isSuccess()));
+                })
+                .addListener(completeOnFailureListener("Failure when sending a content!"))
+                .addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
     }
 
     private String log(String s) {
