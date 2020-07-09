@@ -648,8 +648,21 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
      * @return CompletionStage
      */
     default CompletionStage<T> toStage() {
+        return toStage(false);
+    }
+
+    /**
+     * Exposes this {@link Single} instance as a {@link CompletionStage}.
+     * Note that if this {@link Single} completes without a value and {@cdoe completeWithoutValue}
+     * is set to {@code false}, the resulting {@link CompletionStage} will be completed
+     * exceptionally with an {@link IllegalStateException}
+     *
+     * @param completeWithoutValue Allow completion without a value.
+     * @return CompletionStage
+     */
+    default CompletionStage<T> toStage(boolean completeWithoutValue) {
         try {
-            SingleToFuture<T> subscriber = new SingleToFuture<>(false);
+            SingleToFuture<T> subscriber = new SingleToFuture<>(completeWithoutValue);
             this.subscribe(subscriber);
             return subscriber;
         } catch (Throwable ex) {
