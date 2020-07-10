@@ -198,8 +198,7 @@ public class BufferedEmittingPublisherTest {
         publisher.emit(15L);
         assertThat(subscriber.isComplete(), is(equalTo(false)));
         assertThat(subscriber.getLastError(), is(not(nullValue())));
-        assertThat(subscriber.getLastError(), is(instanceOf(IllegalStateException.class)));
-        assertThat(subscriber.getLastError().getCause(), is(instanceOf(UnsupportedOperationException.class)));
+        assertThat(subscriber.getLastError(), is(instanceOf(UnsupportedOperationException.class))); // not sure why the rewrapping was required
     }
 
     @Test
@@ -237,6 +236,8 @@ public class BufferedEmittingPublisherTest {
             }
         };
         publisher.subscribe(subscriber);
-        assertThrows(IllegalStateException.class, () -> publisher.emit(0L));
+        publisher.emit(0L);
+        assertThat(publisher.bufferSize(), is(equalTo(0))); // not sure why throwing anything was done - it is an unsafe practice in a concurrent setting
+        assertThat(publisher.isCancelled(), is(equalTo(true)));
     }
 }

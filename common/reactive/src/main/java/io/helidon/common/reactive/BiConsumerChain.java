@@ -30,13 +30,6 @@ class BiConsumerChain<T, S>
         }
     }
 
-    BiConsumerChain<T, S> combineWith(BiConsumer<? super T, ? super S> another) {
-        BiConsumerChain<T, S> newChain = new BiConsumerChain<>();
-        newChain.addAll(this);
-        newChain.add(another);
-        return newChain;
-    }
-
     static <T, S> BiConsumer<T, S> combine(
             BiConsumer<T, S> current,
             BiConsumer<T, S> another) {
@@ -46,12 +39,18 @@ class BiConsumerChain<T, S>
         if (another == null) {
             return current;
         }
-        if (current instanceof BiConsumerChain) {
-            return ((BiConsumerChain<T, S>) current).combineWith(another);
-        }
         BiConsumerChain<T, S> newChain = new BiConsumerChain<>();
-        newChain.add(current);
-        newChain.add(another);
+        if (current instanceof BiConsumerChain) {
+            newChain.addAll((BiConsumerChain<T, S>) current);
+        } else {
+            newChain.add(current);
+        }
+
+        if (another instanceof BiConsumerChain) {
+            newChain.addAll((BiConsumerChain<T, S>) another);
+        } else {
+            newChain.add(another);
+        }
         return newChain;
     }
 }
