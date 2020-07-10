@@ -20,6 +20,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
@@ -43,7 +44,18 @@ class TimeoutImpl implements Timeout {
 
     @Override
     public <T> Single<T> invoke(Supplier<? extends CompletionStage<T>> supplier) {
-        return Single.create(supplier.get(), true)
-                .timeout(timeoutMillis, TimeUnit.MILLISECONDS, executor.get());
+        System.out.println("TimeoutImpl.invoke called");
+        final AtomicBoolean running = new AtomicBoolean(true);
+        final Thread supplierThread = Thread.currentThread();
+        ScheduledExecutorService service = executor.get();
+        service.schedule(() -> {
+            if (running.get()) {
+                System.out.println("Thread interrupted!");
+                supplierThread.interrupt();
+            }
+        }, timeoutMillis, TimeUnit.MILLISECONDS);
+        CompletionStage<T> stage = supplier.get();
+        running.compareAndSet(true, false);
+        return Single.create(stage, true);
     }
 }
