@@ -88,14 +88,6 @@ backend:
               items:
                 - includes:
                     - "se/guides/*.adoc"
-            - title: "CLI"
-              pathprefix: "/se/cli"
-              glyph:
-                type: "icon"
-                value: "computer"
-              items:
-                - includes:
-                    - "se/cli/*.adoc"
             - title: "Config"
               pathprefix: "/se/config"
               glyph:
@@ -235,14 +227,6 @@ backend:
               items:
                 - includes:
                     - "mp/guides/*.adoc"
-            - title: "CLI"
-              pathprefix: "/mp/cli"
-              glyph:
-                type: "icon"
-                value: "computer"
-              items:
-                - includes:
-                    - "mp/cli/*.adoc"
             - title: "Config"
               pathprefix: "/mp/config"
               glyph:
