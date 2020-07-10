@@ -743,10 +743,6 @@ public class Registry extends MetricRegistry {
                 .orElse(MetricType.INVALID);
     }
 
-    private static <T extends Metric> Metadata toMetadata(String name, T metric) {
-        return Metadata.builder().withName(name).withType(toType(metric)).build();
-    }
-
     private static MetricType toType(Metric metric) {
         // Find subtype of Metric, needed for user-defined metrics
         Class<?> clazz = metric.getClass();
@@ -765,6 +761,11 @@ public class Registry extends MetricRegistry {
 
     private static <T extends HelidonMetric> MetricType toType(Class<T> clazz) {
         return METRIC_TO_TYPE_MAP.getOrDefault(clazz, MetricType.INVALID);
+    }
+
+    // For testing
+    static Map<Class<? extends HelidonMetric>, MetricType> metricToTypeMap() {
+        return METRIC_TO_TYPE_MAP;
     }
 
     /**
