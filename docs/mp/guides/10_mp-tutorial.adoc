@@ -53,7 +53,7 @@ Create a new Maven POM file (called `pom.xml`) and add the following
     <parent> <1>
         <groupId>io.helidon.applications</groupId>
         <artifactId>helidon-mp</artifactId>
-        <version>{helidon.version}</version>
+        <version>{helidon-version}</version>
         <relativePath/>
     </parent>
 
@@ -141,9 +141,8 @@ TIP: The warning message `JAR will be empty - no content was marked for inclusio
 == Start implementing the MicroProfile application
 
 The actual application logic can be created now.
- The first step is to add the application class. Create a directory
- for your source code, and then create directories for the package 
- hierarchy:
+Create a directory for your source code, and then create
+directories for the package hierarchy:
 
 [source,bash]
 .Create directories for source code
@@ -152,58 +151,14 @@ mkdir -p src/main/java/io/helidon/examples
 ----
 
 The application will be a simple REST service that will return a 
- greeting to the caller.  The first iteration of the application will 
- contain a MicroProfile application class, a resource class and a 
- Main class which will be used to start up the Helidon server 
- and the application.
+greeting to the caller.  The first iteration of the application will
+contain a resource class and a Main class which will be used to
+start up the Helidon server and the application.
 
-TIP: Technically, the main class is not needed unless you want to control
- the startup sequence.  You can set the `mainClass` to 
- `io.helidon.microprofile.Main` and it will find the application
- annotated with `ApplicationScoped`.  Though it is likely that
- almost any "real" application would want its own main class.
-
-Create a new Java class inside that directory called `GreetApplication.java`
- and add the following content:
-
-[source,java]
-.src/main/java/io/helidon/examples/GreetApplication.java
-----
-package io.helidon.examples;
-
-import javax.enterprise.context.ApplicationScoped;
-import javax.ws.rs.ApplicationPath;
-import javax.ws.rs.core.Application;
-import java.util.Set;
-
-@ApplicationScoped <1>
-@ApplicationPath("/") <2>
-public class GreetApplication extends Application { <3>
-
-    @Override 
-    public Set<Class<?>> getClasses() { <4>
-        return Set.of(GreetResource.class);
-    }
-
-}
-----
-
-
-<1> The class is annotated with `ApplicationScoped` 
- which specifies that this bean is application scoped. The application scope
- is shared between all web service invocations that execute within the same
- application. 
-<2> The `ApplicationPath` annotation sets the URL path that will be used to 
- access the application.
-<3> The application class must extend `javax.ws.rs.core.Application`. 
-<4> In the application class, override the 
- `public Set<Class<?>> getClasses()` method.  This method must return
- a `Set` of `Class` objects, one for each resource that the application 
- will serve.  Currently, the application only has one resource, the
- `GreetResource`.
-
-TIP:  You can learn more about scopes and contexts, and how they are used 
- from the https://docs.jboss.org/cdi/api/2.0/index.html[Specification].
+TIP: Technically, your own main class is not needed unless you want to control
+the startup sequence. You can set the `mainClass` property to
+`io.helidon.microprofile.cdi.Main` and it will use Helidon's default
+main class.
 
 The `GreetResource` is defined in the `GreetResource.java` class as shown
 below: 
@@ -245,7 +200,8 @@ public class GreetResource {
 <2> The `RequestScoped` annotation defines that this bean is
  request scoped.  The request scope is active only for the duration of
  one web service invocation and it is destroyed at the end of that
- invocation.
+ invocation. You can learn more about scopes and contexts, and how they are used
+from the https://docs.jboss.org/cdi/api/2.0/index.html[Specification].
 <3> A `public JsonObject getDefaultMessage()` method is defined
  which is annotated with `GET`, meaning it will accept the HTTP GET method.
  It is also annotated with `Produces(MediaType.APPLICATION_JSON)` which
@@ -260,7 +216,8 @@ TIP: So far this is just a JAX-RS application, with no Helidon or MicroProfile
  want to learn more about this kind of application.
 
 A main class is also required to start up the server and run the
- application.  Here is the initial main class:
+application. If you don't use Helidon's built-in main class you can
+define your own:
 
 [source,java]
 .src/main/java/io/helidon/examples/Main.java
@@ -320,9 +277,7 @@ Create a `beans.xml` in the `src/main/resources/META-INF` directory
 == Build the application
 
 Helidon MP applications are packaged into a JAR file and the dependencies
- are copied into a `libs` directory.  A detailed explanation of 
- why this particular packaging approach is recommended is provided on the 
- <<guides/30_dockerfile.adoc,Creating Docker Images>> page.
+ are copied into a `libs` directory.
 
  You can now build the application.
 
@@ -377,7 +332,7 @@ Rebuild the application and run it again.  Notice that it now uses port
  8080 as specified in the configuration file.
 
 TIP: You can learn more about options for configuring the Helidon Server on the
- <<microprofile/02_server-configuration.adoc,Configuring the Server>> page.
+ <<mp/jaxrs/02_server-configuration.adoc,Configuring the Server>> page.
 
 In addition to predefined server properties, application-specific 
  configuration information can be added to this file.  Add the `app.greeting`
@@ -588,7 +543,7 @@ Rebuild the application and run it.  After making some requests, update
 ////
 
 TIP: To learn more about Helidon MP configuration please see the 
- <<config/01_introduction.adoc,Config>> section of the documentation.
+ <<mp/config/01_introduction.adoc,Config>> section of the documentation.
 
 == Extending the application
 
@@ -696,30 +651,8 @@ and uses a custom `SimpleFormatter` that supports thread names.
  thread name and message.
 <3> The global logging level is set to `INFO`.
 
-Update the main class to configure logging as shown below:
-
-[source,java]
-.Updated main class with logging 
-----
-import java.util.logging.LogManager;
-
-    // some lines omitted
-
-    public static void main(final String[] args) throws IOException {
-        setupLogging(); <1>
-        Server server = startServer();
-        System.out.println("http://localhost:" + server.port() + "/greet");
-    }
-
-    private static void setupLogging() throws IOException { <2>
-        LogManager.getLogManager().readConfiguration(
-                Main.class.getResourceAsStream("/logging.properties"));
-    }
-----
-
-<1> In the `main()` method introduce a call to a new `setupLogging()` method.
-<2> This new method reads the logging configuration from the `logging.properties`
- file and updates the `LogManager` to use that configuration.
+The Helidon MicroProfile server will detect the new `logging.properties` file and configure
+the LogManager for you.
 
 Rebuild and run the application and notice the new logging format takes effect.
 
@@ -838,7 +771,7 @@ curl -H "Accept: application/json" http://localhost:8080/metrics/application
 }
 ----
 
-Learn more about using Helidon and MicroProfile metrics in the <<guides/09_metrics_mp_guide.adoc,Metrics Guide>>.
+Learn more about using Helidon and MicroProfile metrics in the <<mp/guides/05_metrics.adoc,Metrics Guide>>.
 
 
 == Health Check
@@ -1002,7 +935,7 @@ content-length: 536
 <3> The status is now reported as "UP" and the details are provided in the
  checks.
 
-Learn more about health checks in the <<guides/07_health_mp_guide.adoc,Health Check Guide>>.
+Learn more about health checks in the <<mp/guides/04_health.adoc,Health Check Guide>>.
 
 == Build a Docker Image
 
@@ -1014,7 +947,7 @@ Add a new `Dockerfile` in the project root directory with the following content:
 [source,bash]
 .Dockerfile content
 ----
-FROM maven:3.5.4-jdk-9 as build <1>
+FROM maven:3.6-jdk-11 as build <1>
 WORKDIR /helidon
 
 ADD pom.xml .
@@ -1024,13 +957,13 @@ ADD src src
 RUN mvn package -DskipTests <3> 
 RUN echo "done!"
 
-FROM openjdk:8-jre-slim <4>
+FROM openjdk:11-jre-slim <4>
 WORKDIR /helidon
 
-COPY --from=build /helidon/target/helidon-mp-tutorial-1.0-SNAPSHOT.jar ./ <5>
+COPY --from=build /helidon/target/helidon-mp-tutorial.jar ./ <5>
 COPY --from=build /helidon/target/libs ./libs
 
-CMD ["java", "-jar", "helidon-mp-tutorial-1.0-SNAPSHOT.jar"] <6>
+CMD ["java", "-jar", "helidon-mp-tutorial.jar"] <6>
 EXPOSE 8080
 ----
 
@@ -1077,9 +1010,6 @@ curl http://localhost:8080/health/ready
 {"outcome":"UP","status":"UP","checks":[]}
 ----
 
-Learn more about creating Docker images for Helidon applications at
- <<guides/30_dockerfile.adoc,Creating Docker Images>>.
-
 == Deploy the application to Kubernetes
 
 If you don't have access to a Kubernetes cluster, you can
@@ -1120,11 +1050,14 @@ spec:
       name: http
 ---
 kind: Deployment <3>
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 metadata:
   name: helidon-mp-tutorial
 spec:
   replicas: 1 <4>
+  selector:
+    matchLabels:
+      app: helidon-mp-tutorial
   template:
     metadata:
       labels:
@@ -1209,10 +1142,9 @@ There were several links to more detailed information included in the
 
 * https://projects.eclipse.org/projects/technology.microprofile[Eclipse MicroProfile]
 * https://docs.jboss.org/cdi/api/2.0/index.html[Contexts and Dependency Injection Specification]
-* <<guides/30_dockerfile.adoc,Creating Docker Images>>
-* <<microprofile/02_server-configuration.adoc,Configuring the Server>>
-* <<config/01_introduction.adoc,Config>>
+* <<mp/jaxrs/02_server-configuration.adoc,Configuring the Server>>
+* <<mp/config/01_introduction.adoc,Config>>
 * https://microprofile.io/project/eclipse/microprofile-metrics[MicroProfile Metrics Specification]
-* <<guides/09_metrics_mp_guide.adoc,Metrics Guide>>
+* <<mp/guides/05_metrics.adoc,Metrics Guide>>
 * https://github.com/eclipse/microprofile-health/blob/master/spec/src/main/asciidoc/protocol-wireformat.adoc[MicroProfile Health Protocol and Wireformat]
 * <<about/05_kubernetes.adoc,Install Kubernetes on your desktop>>
