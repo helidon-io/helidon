@@ -18,12 +18,12 @@ package io.helidon.microprofile.faulttolerance;
 import javax.interceptor.InvocationContext;
 import java.lang.reflect.Method;
 import java.time.Duration;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.function.Supplier;
 
 import io.helidon.common.reactive.Single;
 import io.helidon.faulttolerance.Async;
@@ -35,7 +35,6 @@ import io.helidon.faulttolerance.FtHandlerTyped;
 import io.helidon.faulttolerance.Retry;
 import io.helidon.faulttolerance.Timeout;
 
-import static io.helidon.microprofile.faulttolerance.AsynchronousUtil.toCompletionStageSupplier;
 import static io.helidon.microprofile.faulttolerance.ThrowableMapper.map;
 
 /**
@@ -99,10 +98,9 @@ public class CommandRunner implements FtSupplier<Object> {
             // Oops, something went wrong during validation
             throw new InternalError("Validation failed, return type must be Future or CompletionStage");
         } else {
-            // Invoke method and wait on result
-            single = handler.invoke(toCompletionStageSupplier(context::proceed));
+                single = handler.invoke(toCompletionStageSupplier(context::proceed));
             try {
-                // Need to allow completion with no value (i.e. null) for void methods
+                // Need to allow completion with no value (null) for void methods
                 CompletableFuture<Object> future = single.toStage(true).toCompletableFuture();
                 return future.get();
             } catch (ExecutionException e) {
@@ -120,40 +118,6 @@ public class CommandRunner implements FtSupplier<Object> {
      */
     private FtHandlerTyped<Object> createHandler() {
         FaultTolerance.TypedBuilder<Object> builder = FaultTolerance.typedBuilder();
-
-        // Create retry (with timeout) handler and add it first
-        if (introspector.hasRetry()) {
-            Retry.Builder retry = Retry.builder()
-                    .retryPolicy(Retry.JitterRetryPolicy.builder()
-                            .calls(introspector.getRetry().maxRetries() + 1)
-                            .delay(Duration.ofMillis(introspector.getRetry().delay()))
-                            .jitter(Duration.ofMillis(introspector.getRetry().jitter()))
-                            .build());
-            if (introspector.hasTimeout()) {
-                retry.overallTimeout(Duration.of(introspector.getTimeout().value(),
-                        introspector.getTimeout().unit()));
-            }
-            builder.addRetry(retry.build());
-        }
-
-        // Create and add fallback handler
-        if (introspector.hasFallback()) {
-            Fallback<Object> fallback = Fallback.builder()
-                    .fallback(throwable -> {
-                        CommandFallback cfb = new CommandFallback(context, introspector, throwable);
-                        return toCompletionStageSupplier(cfb::execute).get();
-                    })
-                    .build();
-            builder.addFallback(fallback);
-        }
-
-        // Create and add timeout handler
-        if (introspector.hasTimeout() && !introspector.hasRetry()) {
-            Timeout timeout = Timeout.builder()
-                    .timeout(Duration.of(introspector.getTimeout().value(), introspector.getTimeout().unit()))
-                    .build();
-            builder.addTimeout(timeout);
-        }
 
         // Create and add circuit breaker
         if (introspector.hasCircuitBreaker()) {
@@ -177,6 +141,57 @@ public class CommandRunner implements FtSupplier<Object> {
             builder.addBulkhead(bulkhead);
         }
 
+        // Create and add timeout handler -- parent of breaker or bulkhead
+        if (introspector.hasTimeout()) {
+            Timeout timeout = Timeout.builder()
+                    .timeout(Duration.of(introspector.getTimeout().value(), introspector.getTimeout().unit()))
+                    .build();
+            builder.addTimeout(timeout);
+        }
+
+        // Create and add retry handler -- parent of timeout
+        if (introspector.hasRetry()) {
+            Retry.Builder retry = Retry.builder()
+                    .retryPolicy(Retry.JitterRetryPolicy.builder()
+                            .calls(introspector.getRetry().maxRetries() + 1)
+                            .delay(Duration.ofMillis(introspector.getRetry().delay()))
+                            .jitter(Duration.ofMillis(introspector.getRetry().jitter()))
+                            .build())
+                    .overallTimeout(Duration.ofNanos(Long.MAX_VALUE));      // not used
+            builder.addRetry(retry.build());
+        }
+
+        // Create and add fallback handler -- parent of retry
+        if (introspector.hasFallback()) {
+            Fallback<Object> fallback = Fallback.builder()
+                    .fallback(throwable -> {
+                        CommandFallback cfb = new CommandFallback(context, introspector, throwable);
+                        return toCompletionStageSupplier(cfb::execute).get();
+                    })
+                    .build();
+            builder.addFallback(fallback);
+        }
+
         return builder.build();
+    }
+
+    /**
+     * Maps an {@link FtSupplier} to a supplier of {@link CompletionStage}. Avoids
+     * unnecessary wrapping of stages.
+     *
+     * @param supplier The supplier.
+     * @return The new supplier.
+     */
+    @SuppressWarnings("unchecked")
+    static Supplier<? extends CompletionStage<Object>> toCompletionStageSupplier(FtSupplier<Object> supplier) {
+        return () -> {
+            try {
+                Object result = supplier.get();
+                return result instanceof CompletionStage<?> ? (CompletionStage<Object>) result
+                        : CompletableFuture.completedFuture(result);
+            } catch (Throwable e) {
+                return CompletableFuture.failedFuture(e);
+            }
+        };
     }
 }

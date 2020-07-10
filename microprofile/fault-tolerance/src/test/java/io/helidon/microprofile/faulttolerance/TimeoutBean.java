@@ -54,7 +54,7 @@ public class TimeoutBean {
         FaultToleranceTest.printStatus("TimeoutBean::timeoutWithRetries()",
                     duration.get() < 1000 ? "success" : "failure");
         Thread.sleep(duration.getAndAdd(-400));     // needs 2 retries
-        return "success";
+        return duration.get() < 1000 ? "success" : "failure";
     }
 
     @Fallback(fallbackMethod = "onFailure")

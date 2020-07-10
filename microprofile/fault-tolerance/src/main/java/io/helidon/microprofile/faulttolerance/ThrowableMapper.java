@@ -18,6 +18,7 @@ package io.helidon.microprofile.faulttolerance;
 
 import org.eclipse.microprofile.faulttolerance.exceptions.BulkheadException;
 import org.eclipse.microprofile.faulttolerance.exceptions.CircuitBreakerOpenException;
+import org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException;
 
 /**
  * Maps Helidon to MP exceptions.
@@ -33,6 +34,12 @@ class ThrowableMapper {
         }
         if (t instanceof io.helidon.faulttolerance.BulkheadException) {
             return new BulkheadException(t.getMessage(), t.getCause());
+        }
+        if (t instanceof java.util.concurrent.TimeoutException) {
+            return new TimeoutException(t.getMessage(), t.getCause());
+        }
+        if (t instanceof java.lang.InterruptedException) {
+            return new TimeoutException(t.getMessage(), t.getCause());
         }
         return t;
     }
