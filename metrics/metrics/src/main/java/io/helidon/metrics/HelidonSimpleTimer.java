@@ -118,8 +118,8 @@ final class HelidonSimpleTimer extends MetricImpl implements SimpleTimer {
     @Override
     public void jsonData(JsonObjectBuilder builder, MetricID metricID) {
         JsonObjectBuilder myBuilder = JSON.createObjectBuilder()
-                .add(jsonFullKey("total", metricID), getCount())
-                .add(jsonFullKey("elapsedTime_seconds", metricID), elapsedTimeInSeconds());
+                .add(jsonFullKey("count", metricID), getCount())
+                .add(jsonFullKey("elapsedTime", metricID), elapsedTimeInSeconds());
         builder.add(metricID.getName(), myBuilder);
     }
 

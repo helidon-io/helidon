@@ -716,6 +716,8 @@ public class Registry extends MetricRegistry {
                 return HelidonMeter.create(type.getName(), metadata, (Meter) metric);
             case TIMER:
                 return HelidonTimer.create(type.getName(), metadata, (Timer) metric);
+            case SIMPLE_TIMER:
+                return HelidonSimpleTimer.create(type.getName(), metadata, (SimpleTimer) metric);
             case CONCURRENT_GAUGE:
                 return HelidonConcurrentGauge.create(type.getName(), metadata, (ConcurrentGauge) metric);
             case INVALID:
@@ -799,6 +801,7 @@ public class Registry extends MetricRegistry {
         result.put(HelidonHistogram.class, MetricType.HISTOGRAM);
         result.put(HelidonMeter.class, MetricType.METERED);
         result.put(HelidonTimer.class, MetricType.TIMER);
+        result.put(HelidonSimpleTimer.class, MetricType.SIMPLE_TIMER);
         return result;
     }
 }

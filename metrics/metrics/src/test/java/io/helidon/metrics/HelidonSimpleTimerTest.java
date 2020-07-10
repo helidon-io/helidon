@@ -144,6 +144,7 @@ class HelidonSimpleTimerTest {
         JsonObject metricData = json.getJsonObject("response_time");
 
         assertThat(metricData, notNullValue());
-        assertThat("total", metricData.getJsonNumber("total").longValue(), is(200L));
+        assertThat("count", metricData.getJsonNumber("count").longValue(), is(200L));
+        assertThat("elapsedTime", metricData.getJsonNumber("elapsedTime"), notNullValue());
     }
 }
