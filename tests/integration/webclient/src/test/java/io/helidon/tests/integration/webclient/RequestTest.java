@@ -97,6 +97,15 @@ public class RequestTest extends TestParent {
     }
 
     @Test
+    public void testFollowRedirectPath() {
+        JsonObject jsonObject = webClient.get()
+                .path("/redirectPath")
+                .request(JsonObject.class)
+                .await();
+        Assertions.assertEquals("Hello World!", jsonObject.getString("message"));
+    }
+
+    @Test
     public void testFollowRedirectInfinite() {
         try {
             webClient.get()

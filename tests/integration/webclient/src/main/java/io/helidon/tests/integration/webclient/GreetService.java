@@ -76,6 +76,7 @@ public class GreetService implements Service {
         rules
                 .get("/", this::getDefaultMessageHandler)
                 .get("/redirect", this::redirect)
+                .get("/redirectPath", this::redirectPath)
                 .get("/redirect/infinite", this::redirectInfinite)
                 .get("/secure/basic", this::basicAuth)
                 .get("/secure/basic/outbound", this::basicAuthOutbound)
@@ -132,6 +133,12 @@ public class GreetService implements Service {
     private void redirect(ServerRequest request,
                           ServerResponse response) {
         response.headers().add(Http.Header.LOCATION, "http://localhost:" + Main.serverPort + "/greet");
+        response.status(Http.Status.MOVED_PERMANENTLY_301).send();
+    }
+
+    private void redirectPath(ServerRequest request,
+                          ServerResponse response) {
+        response.headers().add(Http.Header.LOCATION, "/greet");
         response.status(Http.Status.MOVED_PERMANENTLY_301).send();
     }
 

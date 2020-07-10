@@ -15,6 +15,7 @@
  */
 package io.helidon.webclient;
 
+import java.net.URI;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.logging.Logger;
@@ -41,10 +42,16 @@ class RedirectInterceptor implements HttpInterceptor {
         if (httpResponse.headers().contains(Http.Header.LOCATION)) {
             String newUri = httpResponse.headers().get(Http.Header.LOCATION);
             LOGGER.fine(() -> "Redirecting to " + newUri);
-            CompletionStage<WebClientResponse> redirectResponse = WebClientRequestBuilderImpl
-                    .create(clientRequest)
-                    .uri(newUri)
-                    .request();
+            WebClientRequestBuilder requestBuilder = WebClientRequestBuilderImpl
+                    .create(clientRequest);
+            if (URI.create(newUri).getHost() == null) {
+                URI uri = clientRequest.uri();
+                requestBuilder.uri(uri.getScheme() + "://" + uri.getAuthority());
+                requestBuilder.path(newUri);
+            } else {
+                requestBuilder.uri(newUri);
+            }
+            CompletionStage<WebClientResponse> redirectResponse = requestBuilder.request();
             redirectResponse.whenComplete((clResponse, throwable) -> {
                 if (throwable == null) {
                     responseFuture.complete(clResponse);
