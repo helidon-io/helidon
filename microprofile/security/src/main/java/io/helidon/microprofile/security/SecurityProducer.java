@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.RequestScoped;
 import javax.enterprise.inject.Produces;
+import javax.enterprise.inject.spi.BeanManager;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
@@ -38,18 +39,18 @@ class SecurityProducer {
 
     @ApplicationScoped
     @Produces
-    Security security() {
+    Security security(BeanManager beanManager) {
         return Contexts.context()
                 .flatMap(this::security)
-                .orElseThrow(() -> new IllegalStateException("Security cannot be injected when not configured"));
+                .orElseGet(() -> securityFromExtension(beanManager));
     }
 
     @RequestScoped
     @Produces
-    SecurityContext securityContext() {
+    SecurityContext securityContext(BeanManager beanManager) {
         return Contexts.context()
                 .flatMap(this::securityContext)
-                .orElseGet(() -> emptyContext(security()));
+                .orElseGet(() -> emptyContext(security(beanManager)));
     }
 
     private Optional<SecurityContext> securityContext(Context context) {
@@ -62,5 +63,11 @@ class SecurityProducer {
 
     private SecurityContext emptyContext(Security security) {
         return security.createContext("security-producer-context-" + contextCounter.incrementAndGet());
+    }
+
+    private Security securityFromExtension(BeanManager beanManager) {
+        return beanManager.getExtension(SecurityCdiExtension.class)
+                .security()
+                .orElseThrow(() -> new IllegalStateException("Security cannot be injected when not configured"));
     }
 }
