@@ -61,7 +61,7 @@
         <version.lib.hystrix>1.5.18</version.lib.hystrix>
         <version.lib.inject>1.0</version.lib.inject>
         <version.lib.interceptor-api>1.2.5</version.lib.interceptor-api>
-        <version.lib.jackson>2.10.0</version.lib.jackson>
+        <version.lib.jackson>2.11.1</version.lib.jackson>
         <version.lib.jaegertracing>1.1.0</version.lib.jaegertracing>
         <version.lib.jandex>2.1.1.Final</version.lib.jandex>
         <version.lib.jaxb-api>2.3.3</version.lib.jaxb-api>
