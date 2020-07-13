@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-parent</artifactId>
-        <version>1.4.5-SNAPSHOT</version>
+        <version>1.4.5</version>
         <relativePath>../parent/pom.xml</relativePath>
     </parent>
     <groupId>io.helidon</groupId>
@@ -32,7 +32,7 @@
     <name>Helidon BOM POM</name>
 
     <properties>
-        <helidon.version>1.4.5-SNAPSHOT</helidon.version>
+        <helidon.version>1.4.5</helidon.version>
     </properties>
 
     <dependencyManagement>

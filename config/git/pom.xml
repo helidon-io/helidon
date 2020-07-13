@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.config</groupId>
         <artifactId>helidon-config-project</artifactId>
-        <version>1.4.5-SNAPSHOT</version>
+        <version>1.4.5</version>
     </parent>
     <artifactId>helidon-config-git</artifactId>
     <name>Helidon Config Git</name>

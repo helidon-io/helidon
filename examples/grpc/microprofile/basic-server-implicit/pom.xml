@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.examples.grpc.microprofile</groupId>
         <artifactId>helidon-examples-grpc-microprofile-project</artifactId>
-        <version>1.4.5-SNAPSHOT</version>
+        <version>1.4.5</version>
     </parent>
     <artifactId>helidon-examples-grpc-microprofile-basic-implicit</artifactId>
     <name>Helidon Microprofile Examples gRPC Implicit Server</name>
