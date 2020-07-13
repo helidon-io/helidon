@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,17 +45,26 @@ public class SecurityMpService implements MpService {
         Config config = context.helidonConfig();
 
         Security security;
-        if (config.get("security.providers").exists()) {
-            security = Security.create(config.get("security"));
+        if (config.get("security.enabled").asBoolean().orElse(true)) {
+            if (config.get("security.providers").exists()) {
+                security = Security.create(config.get("security"));
+            } else {
+                LOGGER.info(
+                        "Security extension for microprofile is enabled, yet security configuration is missing from config "
+                                + "(requires providers configuration at key security.providers). Security will not have any "
+                                + "valid "
+                                + "provider.");
+                security = Security.builder()
+                        .addProvider(AbacProvider.create())
+                        .addAuthenticationProvider(providerRequest -> CompletableFuture
+                                .completedFuture(AuthenticationResponse.failed("No provider configured")))
+                        .build();
+            }
         } else {
-            LOGGER.info(
-                    "Security extension for microprofile is enabled, yet security configuration is missing from config "
-                            + "(requires providers configuration at key security.providers). Security will not have any valid "
-                            + "provider.");
+            // security is disabled, we need to set up some basic stuff - injection, security context etc.
+            LOGGER.info("Security is disabled.");
             security = Security.builder()
-                    .addProvider(AbacProvider.create())
-                    .addAuthenticationProvider(providerRequest -> CompletableFuture
-                            .completedFuture(AuthenticationResponse.failed("No provider configured")))
+                    .enabled(false)
                     .build();
         }
 
