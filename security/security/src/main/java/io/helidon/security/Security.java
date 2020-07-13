@@ -425,7 +425,7 @@ public class Security {
         private boolean tracingEnabled = true;
         private SecurityTime serverTime = SecurityTime.builder().build();
         private Supplier<ExecutorService> executorService = ThreadPoolSupplier.create();
-        private boolean enabled;
+        private boolean enabled = true;
 
         private Builder() {
         }
