@@ -54,22 +54,6 @@ public class AnotherResource {
     private Provider<Integer> provider;
 
     @Inject
-    @ConfigProperty(name = "app.ints")
-    private List<Integer> ints;
-
-    @Inject
-    @ConfigProperty(name = "app.ints")
-    private Optional<List<Integer>> optionalInts;
-
-    @Inject
-    @ConfigProperty(name = "app.ints")
-    private Provider<List<Integer>> providedInts;
-
-    @Inject
-    @ConfigProperty(name = "app.ints")
-    private int[] intsArray;
-
-    @Inject
     @ConfigProperty(name = "app")
     private Map<String, String> detached;
 
@@ -96,13 +80,9 @@ public class AnotherResource {
                 + ", empty=" + empty
                 + ", full=" + full
                 + ", provider=" + provider + "(" + provider.get() + ")"
-                + ", ints=" + ints
-                + ", optionalInts=" + optionalInts
-                + ", providedInts=" + providedInts + "(" + providedInts.get() + ")"
                 + ", detached=" + detached
                 + ", microprofileConfig=" + mpConfig
                 + ", helidonConfig=" + helidonConfig
-                + ", intsArray=" + Arrays.toString(intsArray)
                 + '}';
     }
 }
