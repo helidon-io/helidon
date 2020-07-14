@@ -15,5 +15,6 @@ Then try the endpoints:
 
 ```
 curl -X GET http://localhost:7001/helloworld
-curl -X GET http://localhost:7001/helloworld/another
+curl -X GET http://localhost:7001/helloworld/earth
+curl -X GET http://localhost:7001/another
 ```
