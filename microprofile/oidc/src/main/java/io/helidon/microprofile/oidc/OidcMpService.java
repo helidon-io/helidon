@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,15 @@ import io.helidon.security.providers.oidc.OidcSupport;
 public final class OidcMpService implements MpService {
     @Override
     public void configure(MpServiceContext mpServiceContext) {
-        mpServiceContext.serverRoutingBuilder()
-                .register(OidcSupport.create(mpServiceContext.helidonConfig()));
+        // only configure if security is enabled
+        if (mpServiceContext.helidonConfig()
+                .get("security.enabled")
+                .asBoolean()
+                .orElse(true)) {
+
+            mpServiceContext.serverRoutingBuilder()
+                    .register(OidcSupport.create(mpServiceContext.helidonConfig()));
+        }
 
     }
 }

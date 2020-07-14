@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -102,9 +102,11 @@ public class Security {
     private final SecurityTime serverTime;
     private final Supplier<ExecutorService> executorService;
     private final Config securityConfig;
+    private final boolean enabled;
 
     @SuppressWarnings("unchecked")
     private Security(Builder builder) {
+        this.enabled = builder.enabled;
         this.instanceUuid = UUID.randomUUID().toString();
         this.serverTime = builder.serverTime;
         this.executorService = builder.executorService;
@@ -112,6 +114,13 @@ public class Security {
         this.securityTracer = SecurityUtil.getTracer(builder.tracingEnabled, builder.tracer);
         this.subjectMappingProvider = Optional.ofNullable(builder.subjectMappingProvider);
         this.securityConfig = builder.config;
+
+        if (!enabled) {
+            // security is disabled
+            audit(instanceUuid, SecurityAuditEvent.info(
+                    AuditEvent.SECURITY_TYPE_PREFIX + ".configure",
+                    "Security is disabled."));
+        }
 
         //providers
         List<NamedProvider<AuthorizationProvider>> atzProviders = new LinkedList<>();
@@ -387,6 +396,16 @@ public class Security {
     }
 
     /**
+     * Whether security is enabled or disabled.
+     * Disabled security behaves as if no security is configured.
+     *
+     * @return {@code true} if security is enabled
+     */
+    public boolean enabled() {
+        return enabled;
+    }
+
+    /**
      * Builder pattern class for helping create {@link Security} in a convenient way.
      */
     public static final class Builder implements io.helidon.common.Builder<Security> {
@@ -406,6 +425,7 @@ public class Security {
         private boolean tracingEnabled = true;
         private SecurityTime serverTime = SecurityTime.builder().build();
         private Supplier<ExecutorService> executorService = ThreadPoolSupplier.create();
+        private boolean enabled = true;
 
         private Builder() {
         }
@@ -801,13 +821,27 @@ public class Security {
         }
 
         /**
+         * Security can be disabled using configuration, or explicitly.
+         * By default, security instance is enabled.
+         * Disabled security instance will not perform any checks and allow
+         * all requests (as if it is not configured in Helidon at all).
+         *
+         * @param enabled set to {@code false} to disable security
+         * @return updated builder instance
+         */
+        public Builder enabled(boolean enabled) {
+            this.enabled = enabled;
+            return this;
+        }
+
+        /**
          * Builds configured Security instance.
          *
          * @return built instance.
          */
         @Override
         public Security build() {
-            if (allProviders.isEmpty()) {
+            if (allProviders.isEmpty() && enabled) {
                 LOGGER.warning("Security component is NOT configured with any security providers.");
             }
 
@@ -826,10 +860,21 @@ public class Security {
                         .completedFuture(AuthorizationResponse.permit()), "default");
             }
 
+            if (!enabled) {
+                providerSelectionPolicy(FirstProviderSelectionPolicy::new);
+            }
+
             return new Security(this);
         }
 
         private void fromConfig(Config config) {
+            config.get("enabled").asBoolean().ifPresent(this::enabled);
+
+            if (!enabled) {
+                LOGGER.info("Security is disabled, ignoring provider configuration");
+                return;
+            }
+
             config.get("environment.server-time").as(SecurityTime::create).ifPresent(this::serverTime);
             executorSupplier(ThreadPoolSupplier.create(config.get("environment.executor-service")));
 
