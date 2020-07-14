@@ -18,8 +18,6 @@ package io.helidon.microprofile.example.helloworld.explicit;
 
 import io.helidon.microprofile.server.Server;
 
-import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
-
 /**
  * Explicit example.
  */
