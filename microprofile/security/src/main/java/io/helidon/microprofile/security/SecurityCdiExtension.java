@@ -15,8 +15,10 @@
  */
 package io.helidon.microprofile.security;
 
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
 import javax.annotation.Priority;
@@ -50,8 +52,9 @@ import static javax.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
 public class SecurityCdiExtension implements Extension {
     private static final Logger LOGGER = Logger.getLogger(SecurityCdiExtension.class.getName());
 
-    private Security.Builder securityBuilder = Security.builder();
+    private final AtomicReference<Security> security = new AtomicReference<>();
 
+    private Security.Builder securityBuilder = Security.builder();
     private Config config;
 
     private void registerBean(@Observes BeforeBeanDiscovery abd) {
@@ -72,8 +75,8 @@ public class SecurityCdiExtension implements Extension {
         if (securityBuilder.noProvider(AuthenticationProvider.class)) {
             LOGGER.info(
                     "Authentication provider is missing from security configuration, but security extension for microprofile "
-                    + "is enabled (requires providers configuration at key security.providers). "
-                    + "Security will not have any valid authentication provider");
+                            + "is enabled (requires providers configuration at key security.providers). "
+                            + "Security will not have any valid authentication provider");
 
             securityBuilder.addAuthenticationProvider(this::failingAtnProvider);
         }
@@ -81,8 +84,8 @@ public class SecurityCdiExtension implements Extension {
         if (securityBuilder.noProvider(AuthorizationProvider.class)) {
             LOGGER.info(
                     "Authorization provider is missing from security configuration, but security extension for microprofile "
-                    + "is enabled (requires providers configuration at key security.providers). "
-                    + "ABAC provider is configured for authorization.");
+                            + "is enabled (requires providers configuration at key security.providers). "
+                            + "ABAC provider is configured for authorization.");
             securityBuilder.addAuthorizationProvider(AbacProvider.create());
         }
 
@@ -110,6 +113,7 @@ public class SecurityCdiExtension implements Extension {
             server.serverRoutingBuilder()
                     .register(WebSecurity.create(security, config.get("security")));
         }
+        this.security.set(security);
     }
 
     private CompletionStage<AuthenticationResponse> failingAtnProvider(ProviderRequest request) {
@@ -127,5 +131,14 @@ public class SecurityCdiExtension implements Extension {
             throw new IllegalStateException("Security is already built, you cannot update the builder");
         }
         return securityBuilder;
+    }
+
+    /**
+     * Access to security instance once it is created from {@link #securityBuilder()}.
+     *
+     * @return a security instance, or empty if not yet created
+     */
+    public Optional<Security> security() {
+        return Optional.ofNullable(security.get());
     }
 }
