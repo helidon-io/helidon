@@ -39,8 +39,13 @@ public final class OidcCdiExtension implements Extension {
     }
 
     private void registerOidcSupport(@Observes @Initialized(ApplicationScoped.class) Object adv, BeanManager bm) {
-        ServerCdiExtension server = bm.getExtension(ServerCdiExtension.class);
+        if (config.get("security.enabled")
+                .asBoolean()
+                .orElse(true)) {
+            // only configure if security is enabled
+            ServerCdiExtension server = bm.getExtension(ServerCdiExtension.class);
 
-        server.serverRoutingBuilder().register(OidcSupport.create(config));
+            server.serverRoutingBuilder().register(OidcSupport.create(config));
+        }
     }
 }

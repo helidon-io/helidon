@@ -89,9 +89,20 @@ public class SecurityCdiExtension implements Extension {
             securityBuilder.addAuthorizationProvider(AbacProvider.create());
         }
 
-        Security security = securityBuilder.build();
+        Security tmpSecurity = securityBuilder.build();
         // free it and make sure we fail if somebody wants to update security afterwards
         securityBuilder = null;
+
+        if (!tmpSecurity.enabled()) {
+            // security is disabled, we need to set up some basic stuff - injection, security context etc.
+            LOGGER.info("Security is disabled.");
+            tmpSecurity = Security.builder()
+                    .enabled(false)
+                    .build();
+        }
+
+        // we need an effectively final instance to use in lambda
+        Security security = tmpSecurity;
 
         JaxRsCdiExtension jaxrs = bm.getExtension(JaxRsCdiExtension.class);
         ServerCdiExtension server = bm.getExtension(ServerCdiExtension.class);
