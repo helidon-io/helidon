@@ -115,6 +115,29 @@ public class WebClientTls {
         return Optional.ofNullable(sslContext);
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        WebClientTls that = (WebClientTls) o;
+        return trustAll == that.trustAll
+                && disableHostnameVerification == that.disableHostnameVerification
+                && Objects.equals(clientPrivateKey, that.clientPrivateKey)
+                && Objects.equals(certificates, that.certificates)
+                && Objects.equals(clientCertificateChain, that.clientCertificateChain)
+                && Objects.equals(sslContext, that.sslContext);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects
+                .hash(trustAll, disableHostnameVerification, clientPrivateKey, certificates, clientCertificateChain, sslContext);
+    }
+
     /**
      * Fluent API builder for {@link WebClientTls} instance.
      */

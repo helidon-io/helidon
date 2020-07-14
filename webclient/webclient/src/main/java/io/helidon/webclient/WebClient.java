@@ -376,6 +376,18 @@ public interface WebClient {
             return this;
         }
 
+        /**
+         * Set whether connection to server should be kept alive after request.
+         * This also sets header {@link io.helidon.common.http.Http.Header#CONNECTION} to {@code keep-alive}.
+         *
+         * @param keepAlive keep connection alive
+         * @return updated builder instance
+         */
+        public Builder keepAlive(boolean keepAlive) {
+            configuration.keepAlive(keepAlive);
+            return this;
+        }
+
         WebClientConfiguration configuration() {
             configuration.clientServices(services());
             return configuration.build();

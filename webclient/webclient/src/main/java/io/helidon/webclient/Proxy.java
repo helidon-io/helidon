@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
@@ -350,6 +351,30 @@ public class Proxy {
 
     private InetSocketAddress address() {
         return new InetSocketAddress(host, port);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        Proxy proxy = (Proxy) o;
+        return port == proxy.port
+                && useSystemSelector == proxy.useSystemSelector
+                && type == proxy.type
+                && Objects.equals(host, proxy.host)
+                && Objects.equals(noProxy, proxy.noProxy)
+                && Objects.equals(username, proxy.username)
+                && Objects.equals(password, proxy.password)
+                && Objects.equals(systemSelector, proxy.systemSelector);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(type, host, port, noProxy, username, password, systemSelector, useSystemSelector);
     }
 
     /**

@@ -82,6 +82,7 @@ class TestParent {
         WebClient.Builder builder = WebClient.builder()
                 .baseUri("http://localhost:" + webServer.port() + "/greet")
                 .config(CONFIG.get("client"))
+                .keepAlive(true)
                 .context(context)
                 .addMediaSupport(JsonpSupport.create());
 

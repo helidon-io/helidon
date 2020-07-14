@@ -73,6 +73,7 @@ class WebClientConfiguration {
     private final List<WebClientService> clientServices;
     private final Proxy proxy;
     private final boolean followRedirects;
+    private final boolean keepAlive;
     private final int maxRedirects;
     private final MessageBodyReaderContext readerContext;
     private final MessageBodyWriterContext writerContext;
@@ -105,6 +106,7 @@ class WebClientConfiguration {
         this.writerContext = builder.writerContext;
         this.clientServices = Collections.unmodifiableList(builder.clientServices);
         this.uri = builder.uri;
+        this.keepAlive = builder.keepAlive;
     }
 
     /**
@@ -261,6 +263,10 @@ class WebClientConfiguration {
         return uri;
     }
 
+    boolean keepAlive() {
+        return keepAlive;
+    }
+
     /**
      * A fluent API builder for {@link WebClientConfiguration}.
      */
@@ -283,6 +289,7 @@ class WebClientConfiguration {
         private LazyValue<String> userAgent;
         private Proxy proxy;
         private boolean enableAutomaticCookieStore;
+        private boolean keepAlive;
         private WebClientTls webClientTls;
         private URI uri;
         private MessageBodyReaderContext readerContext;
@@ -540,6 +547,11 @@ class WebClientConfiguration {
             return me;
         }
 
+        B keepAlive(boolean keepAlive) {
+            this.keepAlive = keepAlive;
+            return me;
+        }
+
         /**
          * Configures this {@link WebClientConfiguration.Builder} from the supplied {@link Config}.
          * <table class="config">
@@ -573,6 +585,10 @@ class WebClientConfiguration {
          *     <td>Name of the user agent which should be used</td>
          * </tr>
          * <tr>
+         *     <td>keep-alive</td>
+         *     <td>Whether connection should be kept alive</td>
+         * </tr>
+         * <tr>
          *     <td>cookies</td>
          *     <td>Default cookies which should be used</td>
          * </tr>
@@ -602,6 +618,7 @@ class WebClientConfiguration {
             config.get("follow-redirects").asBoolean().ifPresent(this::followRedirects);
             config.get("max-redirects").asInt().ifPresent(this::maxRedirects);
             config.get("user-agent").asString().ifPresent(this::userAgent);
+            config.get("keep-alive").asBoolean().ifPresent(this::keepAlive);
             config.get("cookies").asNode().ifPresent(this::cookies);
             config.get("headers").asNode().ifPresent(this::headers);
             DeprecatedConfig.get(config, "tls", "ssl")
@@ -638,6 +655,7 @@ class WebClientConfiguration {
             readerContextParent(configuration.readerContext);
             writerContextParent(configuration.writerContext);
             context(configuration.context);
+            keepAlive(configuration.keepAlive);
             configuration.cookieManager.defaultCookies().forEach(this::defaultCookie);
             config = configuration.config;
 
