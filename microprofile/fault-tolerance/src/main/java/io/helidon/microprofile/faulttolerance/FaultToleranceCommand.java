@@ -18,11 +18,14 @@ package io.helidon.microprofile.faulttolerance;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.logging.Logger;
 
+import javax.enterprise.context.control.RequestContextController;
+import javax.enterprise.inject.spi.CDI;
 import javax.interceptor.InvocationContext;
 
 import io.helidon.common.context.Context;
@@ -35,9 +38,9 @@ import com.netflix.hystrix.HystrixCommandProperties;
 import com.netflix.hystrix.HystrixThreadPoolKey;
 import com.netflix.hystrix.HystrixThreadPoolProperties;
 import org.eclipse.microprofile.metrics.Histogram;
+import org.glassfish.jersey.process.internal.RequestContext;
+import org.glassfish.jersey.process.internal.RequestScope;
 
-import static com.netflix.hystrix.HystrixCommandProperties.ExecutionIsolationStrategy.SEMAPHORE;
-import static com.netflix.hystrix.HystrixCommandProperties.ExecutionIsolationStrategy.THREAD;
 import static io.helidon.microprofile.faulttolerance.CircuitBreakerHelper.State;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceExtension.isFaultToleranceMetricsEnabled;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BREAKER_CALLS_FAILED_TOTAL;
@@ -90,6 +93,12 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
     private Context helidonContext;
 
     private CompletableFuture<?> taskQueued;
+
+    private RequestScope requestScope;
+
+    private RequestContextController requestController;
+
+    private RequestContext requestContext;
 
     /**
      * Constructor. Specify a thread pool key if a {@code @Bulkhead} is specified
@@ -146,6 +155,17 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
         this.contextClassLoader = contextClassLoader;
         this.threadWaitingPeriod = commandRetrier.threadWaitingPeriod();
         this.taskQueued = taskQueued;
+
+        // Gather information about current request scope if active
+        try {
+            requestScope = CDI.current().select(RequestScope.class).get();
+            requestContext = requestScope.current();
+            requestController = CDI.current().select(RequestContextController.class).get();
+        } catch (Exception e) {
+            requestScope = null;
+            LOGGER.info(() -> "Request context not active for command " + getCommandKey()
+                    + " on thread " + Thread.currentThread().getName());
+        }
 
         // Special initialization for methods with breakers
         if (introspector.hasCircuitBreaker()) {
@@ -242,14 +262,30 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
             }
         }
 
-        // Finally, invoke the user method
-        try {
-            runThread = Thread.currentThread();
-            return Contexts.runInContextWithThrow(helidonContext, context::proceed);
-        } finally {
-            if (introspector.hasBulkhead()) {
-                bulkheadHelper.markAsNotRunning(this);
+        // Create callable to invoke method
+        Callable<Object> callMethod = () -> {
+            try {
+                runThread = Thread.currentThread();
+                return Contexts.runInContextWithThrow(helidonContext, context::proceed);
+            } finally {
+                if (introspector.hasBulkhead()) {
+                    bulkheadHelper.markAsNotRunning(this);
+                }
             }
+        };
+
+        // Call method in request scope if active
+        if (requestScope != null) {
+            return requestScope.runInScope(requestContext, (Callable<Object>) (() -> {
+                try {
+                    requestController.activate();
+                    return callMethod.call();
+                } finally {
+                    requestController.deactivate();
+                }
+            }));
+        } else {
+            return callMethod.call();
         }
     }
 

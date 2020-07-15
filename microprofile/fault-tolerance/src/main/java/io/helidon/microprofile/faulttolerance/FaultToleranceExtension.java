@@ -40,6 +40,7 @@ import javax.enterprise.inject.spi.ProcessAnnotatedType;
 import javax.enterprise.inject.spi.ProcessManagedBean;
 import javax.enterprise.inject.spi.ProcessSyntheticBean;
 import javax.enterprise.util.AnnotationLiteral;
+import javax.inject.Inject;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
@@ -49,6 +50,7 @@ import org.eclipse.microprofile.faulttolerance.CircuitBreaker;
 import org.eclipse.microprofile.faulttolerance.Fallback;
 import org.eclipse.microprofile.faulttolerance.Retry;
 import org.eclipse.microprofile.faulttolerance.Timeout;
+import org.glassfish.jersey.process.internal.RequestScope;
 
 /**
  * Class FaultToleranceExtension.
@@ -87,7 +89,7 @@ public class FaultToleranceExtension implements Extension {
     }
 
     /**
-     * Class to mimic a {@link Priority} annotation for the purpuse of changing
+     * Class to mimic a {@link Priority} annotation for the purpose of changing
      * its value dynamically.
      */
     private static class LiteralPriority extends AnnotationLiteral<Priority> implements Priority {
@@ -157,6 +159,21 @@ public class FaultToleranceExtension implements Extension {
 
         discovery.addAnnotatedType(bm.createAnnotatedType(CommandInterceptor.class),
                 CommandInterceptor.class.getName());
+        discovery.addAnnotatedType(bm.createAnnotatedType(JerseyRequestScopeAsCdiBean.class),
+                JerseyRequestScopeAsCdiBean.class.getName());
+    }
+
+    /**
+     * We require access to {@link org.glassfish.jersey.process.internal.RequestScope}
+     * via CDI to propagate request contexts to newly created threads, but Jersey
+     * only registers this type as a bean if it can find an injection point (see
+     * org.glassfish.jersey.ext.cdi1x.internal.CdiComponentProvider#afterDiscoveryObserver).
+     * Here we define a dummy bean with such an injection point for Jersey to find.
+     *
+     */
+    private static class JerseyRequestScopeAsCdiBean {
+        @Inject
+        private RequestScope requestScope;
     }
 
     /**
