@@ -168,8 +168,8 @@ public class FaultToleranceExtension implements Extension {
      * via CDI to propagate request contexts to newly created threads, but Jersey
      * only registers this type as a bean if it can find an injection point (see
      * org.glassfish.jersey.ext.cdi1x.internal.CdiComponentProvider#afterDiscoveryObserver).
-     * Here we define a dummy bean with such an injection point for Jersey to find.
-     *
+     * Here we define a dummy bean with such an injection point for Jersey to
+     * create and register a CDI bean for RequestScope.
      */
     private static class JerseyRequestScopeAsCdiBean {
         @Inject
