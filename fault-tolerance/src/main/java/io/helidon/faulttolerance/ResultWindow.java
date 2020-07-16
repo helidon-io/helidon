@@ -63,7 +63,7 @@ final class ResultWindow {
     }
 
     boolean shouldOpen() {
-        return currentSum.get() >= thresholdSum;
+        return currentSum.get() > thresholdSum;
     }
 
     void reset() {
