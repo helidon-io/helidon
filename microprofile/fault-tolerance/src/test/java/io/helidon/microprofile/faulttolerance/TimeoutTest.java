@@ -16,13 +16,10 @@
 
 package io.helidon.microprofile.faulttolerance;
 
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -46,13 +43,7 @@ public class TimeoutTest extends FaultToleranceTest {
     public void testForceTimeoutAsync() throws Exception {
         TimeoutBean bean = newBean(TimeoutBean.class);
         Future<String> future = bean.forceTimeoutAsync();
-        try {
-            future.get();
-        } catch (ExecutionException e) {
-            assertEquals(TimeoutException.class, e.getCause().getClass());
-            return;
-        }
-        fail();
+        assertCompleteExceptionally(future, TimeoutException.class);
     }
 
     @Test

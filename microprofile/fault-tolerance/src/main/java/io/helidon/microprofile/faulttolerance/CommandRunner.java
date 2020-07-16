@@ -87,12 +87,15 @@ public class CommandRunner implements FtSupplier<Object> {
 
             // Return future after mapping exceptions
             if (introspector.isReturnType(CompletionStage.class) || introspector.isReturnType(Future.class)) {
-                return single.handle((o, t) -> {
-                    if (t != null) {
-                        throw map(t instanceof ExecutionException ? t.getCause() : t);
+                CompletableFuture<Object> future = new CompletableFuture<>();
+                single.whenComplete((o, t) -> {
+                    if (t == null) {
+                        future.complete(o);
+                    } else {
+                        future.completeExceptionally(map(t instanceof ExecutionException ? t.getCause() : t));
                     }
-                    return o;
-                }).toCompletableFuture();
+                });
+                return future;
             }
 
             // Oops, something went wrong during validation
