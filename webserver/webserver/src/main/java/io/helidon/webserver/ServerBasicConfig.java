@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,6 +68,11 @@ class ServerBasicConfig implements ServerConfiguration {
     }
 
     @Override
+    public ClientAuthentication clientAuth() {
+        return socketConfig.clientAuth();
+    }
+
+    @Override
     public int workersCount() {
         return workers;
     }
@@ -126,6 +131,7 @@ class ServerBasicConfig implements ServerConfiguration {
         private final int receiveBufferSize;
         private final SSLContext sslContext;
         private final Set<String> enabledSslProtocols;
+        private final ClientAuthentication clientAuth;
 
         /**
          * Creates new instance.
@@ -136,6 +142,7 @@ class ServerBasicConfig implements ServerConfiguration {
          * @param backlog           a maximum length of the queue of incoming connections
          * @param timeoutMillis     a socket timeout in milliseconds or {@code 0} for infinite
          * @param receiveBufferSize proposed TCP receive window size in bytes
+         * @param clientAuth        whether client authentication is required
          */
         SocketConfig(int port,
                      InetAddress bindAddress,
@@ -143,7 +150,8 @@ class ServerBasicConfig implements ServerConfiguration {
                      Set<String> sslProtocols,
                      int backlog,
                      int timeoutMillis,
-                     int receiveBufferSize) {
+                     int receiveBufferSize,
+                     ClientAuthentication clientAuth) {
             this.port = port <= 0 ? 0 : port;
             this.bindAddress = bindAddress;
             this.backlog = backlog <= 0 ? DEFAULT_BACKLOG_SIZE : backlog;
@@ -151,13 +159,14 @@ class ServerBasicConfig implements ServerConfiguration {
             this.receiveBufferSize = receiveBufferSize <= 0 ? 0 : receiveBufferSize;
             this.sslContext = sslContext;
             this.enabledSslProtocols = sslProtocols;
+            this.clientAuth = clientAuth;
         }
 
         /**
          * Creates default values instance.
          */
         SocketConfig() {
-            this(0, null, null, null, 0, 0, 0);
+            this(0, null, null, null, 0, 0, 0, ClientAuthentication.NONE);
         }
 
         @Override
@@ -193,6 +202,11 @@ class ServerBasicConfig implements ServerConfiguration {
         @Override
         public Set<String> enabledSslProtocols() {
             return enabledSslProtocols;
+        }
+
+        @Override
+        public ClientAuthentication clientAuth() {
+            return clientAuth;
         }
     }
 }
