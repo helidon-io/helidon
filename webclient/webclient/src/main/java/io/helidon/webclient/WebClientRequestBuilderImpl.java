@@ -174,7 +174,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     static WebClientRequestBuilder create(WebClientRequestImpl clientRequest) {
         WebClientRequestBuilderImpl builder = new WebClientRequestBuilderImpl(NettyClient.eventGroup(),
                                                                               clientRequest.configuration(),
-                                                                              clientRequest.method());
+                                                                              Http.Method.GET);
         builder.headers(clientRequest.headers());
         builder.queryParams(clientRequest.queryParams());
         builder.uri = clientRequest.uri();

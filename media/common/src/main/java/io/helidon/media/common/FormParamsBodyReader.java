@@ -17,7 +17,10 @@ package io.helidon.media.common;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 import java.util.concurrent.Flow;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
@@ -32,11 +35,19 @@ class FormParamsBodyReader implements MessageBodyReader<FormParams> {
 
     private static final FormParamsBodyReader DEFAULT = new FormParamsBodyReader();
 
+    private static final Map<MediaType, Pattern> PATTERNS = Map.of(
+            MediaType.APPLICATION_FORM_URLENCODED, preparePattern("&"),
+            MediaType.TEXT_PLAIN, preparePattern("\n"));
+
     private FormParamsBodyReader() {
     }
 
     static FormParamsBodyReader create() {
         return DEFAULT;
+    }
+
+    private static Pattern preparePattern(String assignmentSeparator) {
+        return Pattern.compile(String.format("([^=]+)=([^%1$s]+)%1$s?", assignmentSeparator));
     }
 
     @Override
@@ -59,7 +70,19 @@ class FormParamsBodyReader implements MessageBodyReader<FormParams> {
         Single<String> result = mediaType.equals(MediaType.APPLICATION_FORM_URLENCODED)
                 ? ContentReaders.readURLEncodedString(publisher, charset)
                 : ContentReaders.readString(publisher, charset);
-        return (Single<U>) result.map(formStr -> FormParams.create(formStr, mediaType));
+
+        return (Single<U>) result.map(formStr -> create(formStr, mediaType));
+    }
+
+    private FormParams create(String paramAssignments, MediaType mediaType) {
+        FormParams.Builder builder = FormParams.builder();
+        Matcher m = PATTERNS.get(mediaType).matcher(paramAssignments);
+        while (m.find()) {
+            final String key = m.group(1);
+            final String value = m.group(2);
+            builder.add(key, value);
+        }
+        return builder.build();
     }
 
 }

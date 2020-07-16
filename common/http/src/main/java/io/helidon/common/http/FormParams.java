@@ -17,7 +17,7 @@ package io.helidon.common.http;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -35,7 +35,9 @@ public interface FormParams extends Parameters {
      *                         URL-encoded, NL for text/plain)
      * @param mediaType MediaType for which the parameter conversion is occurring
      * @return the new {@code FormParams} instance
+     * @deprecated use {@link FormParams#builder()} instead or register {@code io.helidon.media.common.FormParamsBodyReader}
      */
+    @Deprecated(since = "2.0.2")
     static FormParams create(String paramAssignments, MediaType mediaType) {
         return FormParamsImpl.create(paramAssignments, mediaType);
     }
@@ -52,29 +54,28 @@ public interface FormParams extends Parameters {
     /**
      * Builder of a new {@link FormParams} instance.
      */
-    class Builder implements io.helidon.common.Builder<FormParams> {
+    class Builder implements FormBuilder<Builder, FormParams> {
 
-        private final Map<String, List<String>> params = new HashMap<>();
+        private final Map<String, List<String>> params = new LinkedHashMap<>();
 
         private Builder() {
         }
 
-        /**
-         * Adds a new values to specific param key.
-         *
-         * @param key param key
-         * @param value values
-         * @return updated builder instance
-         */
-        public Builder add(String key, String... value) {
-            params.computeIfAbsent(key, k -> new ArrayList<>()).addAll(Arrays.asList(value));
-            return this;
+        @Override
+        public FormParams build() {
+            return new FormParamsImpl(this);
         }
 
         @Override
-        public FormParams build() {
-            return FormParamsImpl.create(params);
+        public Builder add(String name, String... values) {
+            params.computeIfAbsent(name, k -> new ArrayList<>()).addAll(Arrays.asList(values));
+            return this;
         }
+
+        Map<String, List<String>> params() {
+            return params;
+        }
+
     }
 
 }

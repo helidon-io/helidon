@@ -39,6 +39,10 @@ class FormParamsImpl extends ReadOnlyParameters implements FormParams {
         super(params);
     }
 
+    FormParamsImpl(FormParams.Builder builder) {
+        super(builder.params());
+    }
+
     private static Pattern preparePattern(String assignmentSeparator) {
         return Pattern.compile(String.format("([^=]+)=([^%1$s]+)%1$s?", assignmentSeparator));
     }
@@ -54,7 +58,4 @@ class FormParamsImpl extends ReadOnlyParameters implements FormParams {
         return new FormParamsImpl(params);
     }
 
-    static FormParams create(Map<String, List<String>> params) {
-        return new FormParamsImpl(params);
-    }
 }
