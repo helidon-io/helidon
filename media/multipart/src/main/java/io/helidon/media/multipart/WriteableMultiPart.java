@@ -141,7 +141,10 @@ public class WriteableMultiPart implements MultiPart<WriteableBodyPart> {
          */
         public Builder bodyPart(String name, Path... files) {
             for (Path file : files) {
-                bodyPart(name, file.getFileName().toString(), file);
+                Path fileName = file.getFileName();
+                if (fileName != null) {
+                    bodyPart(name, fileName.toString(), file);
+                }
             }
             return this;
         }
