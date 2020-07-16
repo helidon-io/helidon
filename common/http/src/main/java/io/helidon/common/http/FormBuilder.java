@@ -19,6 +19,9 @@ import io.helidon.common.Builder;
 
 /**
  * Form builder interface.
+ *
+ * @param <B> type of the builder
+ * @param <T> type which the builder builds
  */
 public interface FormBuilder<B, T> extends Builder<T> {
 
