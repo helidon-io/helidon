@@ -17,10 +17,13 @@
 package io.helidon.microprofile.faulttolerance;
 
 import java.time.temporal.ChronoUnit;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.enterprise.context.Dependent;
 
+import org.eclipse.microprofile.faulttolerance.Asynchronous;
 import org.eclipse.microprofile.faulttolerance.Fallback;
 import org.eclipse.microprofile.faulttolerance.Retry;
 import org.eclipse.microprofile.faulttolerance.Timeout;
@@ -39,6 +42,14 @@ public class TimeoutBean {
         FaultToleranceTest.printStatus("TimeoutBean::forceTimeout()", "failure");
         Thread.sleep(1500);
         return "failure";
+    }
+
+    @Asynchronous
+    @Timeout(value=1000, unit=ChronoUnit.MILLIS)
+    public Future<String> forceTimeoutAsync() throws InterruptedException {
+        FaultToleranceTest.printStatus("TimeoutBean::forceTimeoutAsync()", "failure");
+        Thread.sleep(1500);
+        return CompletableFuture.completedFuture("failure");
     }
 
     @Timeout(value=1000, unit=ChronoUnit.MILLIS)

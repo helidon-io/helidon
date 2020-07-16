@@ -85,14 +85,14 @@ public class CommandRunner implements FtSupplier<Object> {
             single = Async.create().invoke(() ->
                     handler.invoke(toCompletionStageSupplier(context::proceed))).get();
 
-            // If return type is CompletionStage, convert it
-            if (introspector.isReturnType(CompletionStage.class)) {
-                return single.toStage();
-            }
-
-            // Otherwise, must be CompletableFuture or Future
-            if (introspector.isReturnType(Future.class)) {
-                return single.toCompletableFuture();
+            // Return future after mapping exceptions
+            if (introspector.isReturnType(CompletionStage.class) || introspector.isReturnType(Future.class)) {
+                return single.handle((o, t) -> {
+                    if (t != null) {
+                        throw map(t instanceof ExecutionException ? t.getCause() : t);
+                    }
+                    return o;
+                }).toCompletableFuture();
             }
 
             // Oops, something went wrong during validation
@@ -145,6 +145,7 @@ public class CommandRunner implements FtSupplier<Object> {
         if (introspector.hasTimeout()) {
             Timeout timeout = Timeout.builder()
                     .timeout(Duration.of(introspector.getTimeout().value(), introspector.getTimeout().unit()))
+                    .async(false)   // no async here
                     .build();
             builder.addTimeout(timeout);
         }

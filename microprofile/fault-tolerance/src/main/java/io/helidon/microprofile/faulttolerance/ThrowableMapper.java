@@ -28,7 +28,7 @@ class ThrowableMapper {
     private ThrowableMapper() {
     }
 
-    static Throwable map(Throwable t) {
+    static RuntimeException map(Throwable t) {
         if (t instanceof io.helidon.faulttolerance.CircuitBreakerOpenException) {
             return new CircuitBreakerOpenException(t.getMessage(), t.getCause());
         }
@@ -41,6 +41,6 @@ class ThrowableMapper {
         if (t instanceof java.lang.InterruptedException) {
             return new TimeoutException(t.getMessage(), t.getCause());
         }
-        return t;
+        return new RuntimeException(t);
     }
 }

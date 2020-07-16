@@ -16,6 +16,7 @@
 
 package io.helidon.faulttolerance;
 
+import java.time.Duration;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
 import java.util.concurrent.ScheduledExecutorService;
@@ -30,32 +31,42 @@ import io.helidon.common.reactive.Single;
 class TimeoutImpl implements Timeout {
     private final long timeoutMillis;
     private final LazyValue<? extends ScheduledExecutorService> executor;
+    private final boolean async;
 
-    TimeoutImpl(Timeout.Builder builder) {
+    TimeoutImpl(Timeout.Builder builder, boolean async) {
         this.timeoutMillis = builder.timeout().toMillis();
         this.executor = builder.executor();
+        this.async = async;
     }
 
     @Override
     public <T> Multi<T> invokeMulti(Supplier<? extends Flow.Publisher<T>> supplier) {
+        if (!async) {
+            throw new UnsupportedOperationException("Timeout with Publisher<T> must be async");
+        }
         return Multi.create(supplier.get())
                 .timeout(timeoutMillis, TimeUnit.MILLISECONDS, executor.get());
     }
 
     @Override
     public <T> Single<T> invoke(Supplier<? extends CompletionStage<T>> supplier) {
-        System.out.println("TimeoutImpl.invoke called");
-        final AtomicBoolean running = new AtomicBoolean(true);
-        final Thread supplierThread = Thread.currentThread();
-        ScheduledExecutorService service = executor.get();
-        service.schedule(() -> {
-            if (running.get()) {
-                System.out.println("Thread interrupted!");
-                supplierThread.interrupt();
-            }
-        }, timeoutMillis, TimeUnit.MILLISECONDS);
-        CompletionStage<T> stage = supplier.get();
-        running.compareAndSet(true, false);
-        return Single.create(stage, true);
+        if (async) {
+            return Single.create(supplier.get())
+                    .timeout(timeoutMillis, TimeUnit.MILLISECONDS, executor.get());
+        } else {
+            Thread currentThread = Thread.currentThread();
+            AtomicBoolean called = new AtomicBoolean();
+            Timeout.create(Duration.ofMillis(timeoutMillis))
+                    .invoke(Single::never)
+                    .exceptionally(it -> {
+                        if (called.compareAndSet(false, true)) {
+                            currentThread.interrupt();
+                        }
+                        return null;
+                    });
+            Single<T> single = Single.create(supplier.get());       // runs in current thread
+            called.set(true);
+            return single;
+        }
     }
 }
