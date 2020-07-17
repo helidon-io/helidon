@@ -52,11 +52,11 @@ public class ServerBuilderMain {
     static WebServer startServer(int unsecured, int secured) {
         SocketConfiguration socketConf = SocketConfiguration.builder()
                 .name("secured")
-                .port(unsecured)
+                .port(secured)
                 .tls(tlsConfig())
                 .build();
         WebServer webServer = WebServer.builder()
-                .port(secured)
+                .port(unsecured)
                 .routing(createPlainRouting())
                 .addSocket(socketConf, createMtlsRouting())
                 .build();
