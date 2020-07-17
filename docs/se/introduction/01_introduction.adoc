@@ -24,17 +24,13 @@
 :keywords: helidon, java, SE, microservices, Netty
 :h1Prefix: SE
 
-Helidon is a collection of Java libraries for writing microservices. Helidon
-offers two programming models: Helidion SE and Helidon MP.
-
-== About Helidon SE Components
-
 Helidon SE is a compact toolkit that embraces the latest Java SE features:
 reactive streams, asynchrous and functional programming, and fluent-style
 APIs.
 
-image::images/SE_components.png[SE Components]
+== About Helidon SE Components
 
+The REST framework for Helidon SE is the Helidon WebServer. It’s built on top of Netty and uses a straight forward request routing API and supports a number of additional Helidon features:
 
 
 == Components
