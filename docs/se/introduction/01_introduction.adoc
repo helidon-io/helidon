@@ -63,7 +63,7 @@ Add support for CORS to your application using a Helidon module.
 //DBClient
 [CARD]
 .DB Client
-[icon=storgae,link=se/dbclient/01_introduction.adoc]
+[icon=storage,link=se/dbclient/01_introduction.adoc]
 --
 Provides a unified, reactive API for working with databases in non-blocking way.
 --
