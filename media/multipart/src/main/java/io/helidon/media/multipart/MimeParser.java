@@ -413,8 +413,9 @@ final class MimeParser {
      */
     Iterator<ParserEvent> parseIterator() {
         return new Iterator<>() {
-            ParserEvent nextEvent;
-            boolean done;
+
+            private ParserEvent nextEvent;
+            private boolean done;
 
             @Override
             public ParserEvent next() {

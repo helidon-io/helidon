@@ -44,6 +44,7 @@ public class MultiPartDecoder implements Processor<DataChunk, ReadableBodyPart> 
     private static final int DOWNSTREAM_INIT = Integer.MIN_VALUE >>> 1;
     private static final int UPSTREAM_INIT = Integer.MIN_VALUE >>> 2;
     private static final int SUBSCRIPTION_LOCK = Integer.MIN_VALUE >>> 3;
+    private static final Iterator<BufferEntry> EMPTY_BUFFER_ENTRY_ITERATOR = new EmptyIterator<>();
     private static final Iterator<MimeParser.ParserEvent> EMPTY_PARSER_ITERATOR = new EmptyIterator<>();
 
     private Subscription upstream;
@@ -102,11 +103,10 @@ public class MultiPartDecoder implements Processor<DataChunk, ReadableBodyPart> 
 
             @Override
             public void request(long n) {
-                long curr = n <= 0 ?
-                        partsRequested.getAndSet(-1) :
-                        partsRequested.getAndUpdate(v -> Long.MAX_VALUE - v > n ? v + n
-                                : v < 0 ? v
-                                : Long.MAX_VALUE);
+                long curr = n <= 0
+                        ? partsRequested.getAndSet(-1)
+                        : partsRequested.getAndUpdate(v -> Long.MAX_VALUE - v > n
+                        ? v + n : v < 0 ? v : Long.MAX_VALUE);
                 if (curr == 0) {
                     drain();
                 }
@@ -193,7 +193,7 @@ public class MultiPartDecoder implements Processor<DataChunk, ReadableBodyPart> 
         // Returns a negative number, if we are serving outer Subscriber, and we can tell it may
         // not issue more requests for parts: either cancelled, or a bad request was observed.
         // Otherwise returns a positive number, if serving inner Subscriber, or actual partsRequested.
-        return bodyPartPublisher != null ? 1: partsRequested.get();
+        return bodyPartPublisher != null ? 1 : partsRequested.get();
     }
 
     private void cleanup() {
@@ -350,7 +350,7 @@ public class MultiPartDecoder implements Processor<DataChunk, ReadableBodyPart> 
                 upstream.request(1);
             }
 
-        } catch(MimeParser.ParsingException ex) {
+        } catch (MimeParser.ParsingException ex) {
             // make sure we do not interact with the parser through the iterator, and do not re-enter
             // the iterator draining loop
             parserIterator = EMPTY_PARSER_ITERATOR;
@@ -405,11 +405,10 @@ public class MultiPartDecoder implements Processor<DataChunk, ReadableBodyPart> 
      */
     protected final class DataChunkPublisher implements Publisher<DataChunk> {
 
-        private final Iterator<BufferEntry> EMPTY_BUFFER_ENTRY_ITERATOR = new EmptyIterator<>();
-        protected final AtomicLong chunksRequested = new AtomicLong(Long.MIN_VALUE + 1);
-        protected Iterator<BufferEntry> bufferEntryIterator = EMPTY_BUFFER_ENTRY_ITERATOR;
-        protected boolean cancelled;
-        protected Subscriber<? super DataChunk> subscriber;
+        private final AtomicLong chunksRequested = new AtomicLong(Long.MIN_VALUE + 1);
+        private Iterator<BufferEntry> bufferEntryIterator = EMPTY_BUFFER_ENTRY_ITERATOR;
+        private boolean cancelled;
+        private Subscriber<? super DataChunk> subscriber;
 
         @Override
         public void subscribe(Subscriber<? super DataChunk> sub) {
@@ -426,11 +425,10 @@ public class MultiPartDecoder implements Processor<DataChunk, ReadableBodyPart> 
                 public void request(long n) {
                     // Illegal n makes chunksRequested negative, which interacts with drain() to drain the
                     // entire bufferEntryIterator, and signal onError
-                    long curr = n <= 0 ? chunksRequested.getAndSet(-1) :
-                            chunksRequested.getAndUpdate(v -> Long.MAX_VALUE - v > n ? v + n
-                                    : v < 0 ? v == Long.MIN_VALUE ? n
-                                    : v
-                                    : Long.MAX_VALUE);
+                    long curr = n <= 0
+                            ? chunksRequested.getAndSet(-1)
+                            : chunksRequested.getAndUpdate(v -> Long.MAX_VALUE - v > n
+                            ? v + n : v < 0 ? v == Long.MIN_VALUE ? n : v : Long.MAX_VALUE);
                     if (curr == 0) {
                         MultiPartDecoder.this.drain();
                     }
@@ -526,7 +524,7 @@ public class MultiPartDecoder implements Processor<DataChunk, ReadableBodyPart> 
         }
     }
 
-    private final static class EmptyIterator<T> implements Iterator<T> {
+    private static final class EmptyIterator<T> implements Iterator<T> {
 
         @Override
         public boolean hasNext() {
