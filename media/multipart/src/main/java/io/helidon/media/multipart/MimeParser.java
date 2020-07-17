@@ -19,6 +19,7 @@ import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -58,10 +59,9 @@ final class MimeParser {
         END_HEADERS,
 
         /**
-         * This event is issued for each part chunk parsed. The event
-         * It may be generated more than once for each part.
+         * This event is used by the Iterator to pass the whole body.
          */
-        CONTENT,
+        BODY,
 
         /**
          * This event is issued when the content for a part is complete.
@@ -74,21 +74,6 @@ final class MimeParser {
          * only once.
          */
         END_MESSAGE,
-
-        /**
-         * This event is issued when there is not enough data in the buffer to
-         * continue parsing. If issued after:
-         * <ul>
-         * <li>{@link #START_MESSAGE} - the parser did not detect the end of
-         * the preamble</li>
-         * <li>{@link #HEADER} - the parser
-         * did not detect the blank line that separates the part headers and the
-         * part body</li>
-         * <li>{@link #CONTENT} - the parser did not
-         * detect the next starting boundary or closing boundary</li>
-         * </ul>
-         */
-        DATA_REQUIRED
     }
 
     /**
@@ -111,21 +96,11 @@ final class MimeParser {
         }
 
         /**
-         * Get this event as a {@link ContentEvent}.
-         *
-         * @return ContentEvent
+         * Get this event as a {@link BodyEvent}.
+         * @return HeaderEvent
          */
-        ContentEvent asContentEvent() {
-            return (ContentEvent) this;
-        }
-
-        /**
-         * Get this event as a {@link DataRequiredEvent}.
-         *
-         * @return DataRequiredEvent
-         */
-        DataRequiredEvent asDataRequiredEvent() {
-            return (DataRequiredEvent) this;
+        BodyEvent asBodyEvent() {
+            return (BodyEvent) this;
         }
     }
 
@@ -199,23 +174,23 @@ final class MimeParser {
     }
 
     /**
-     * The event class for {@link EventType#CONTENT}.
+     * The event class for {@link EventType#BODY}.
      */
-    static final class ContentEvent extends ParserEvent {
+    static final class BodyEvent extends ParserEvent {
 
-        private final VirtualBuffer.BufferEntry bufferEntry;
+        private final List<VirtualBuffer.BufferEntry> buffers;
 
-        ContentEvent(VirtualBuffer.BufferEntry data) {
-            this.bufferEntry = data;
+        BodyEvent(List<VirtualBuffer.BufferEntry> data) {
+            this.buffers = data;
         }
 
-        VirtualBuffer.BufferEntry content() {
-            return bufferEntry;
+        List<VirtualBuffer.BufferEntry> body() {
+            return buffers;
         }
 
         @Override
         EventType type() {
-            return EventType.CONTENT;
+            return EventType.BODY;
         }
     }
 
@@ -245,43 +220,6 @@ final class MimeParser {
         EventType type() {
             return EventType.END_MESSAGE;
         }
-    }
-
-    /**
-     * The event class for {@link EventType#DATA_REQUIRED}.
-     */
-    static final class DataRequiredEvent extends ParserEvent {
-
-        private final boolean content;
-
-        private DataRequiredEvent(boolean content) {
-            this.content = content;
-        }
-
-        /**
-         * Indicate if the required data is for the body content of a part.
-         * @return {@code true} if for body content, {@code false} otherwise
-         */
-        boolean isContent() {
-            return content;
-        }
-
-        @Override
-        EventType type() {
-            return EventType.DATA_REQUIRED;
-        }
-    }
-
-    /**
-     * Callback interface to the parser.
-     */
-    interface EventProcessor {
-
-        /**
-         * Process a parser event.
-         * @param event generated event
-         */
-        void process(ParserEvent event);
     }
 
     /**
@@ -392,16 +330,10 @@ final class MimeParser {
     private boolean closed;
 
     /**
-     * The event listener.
-     */
-    private final EventProcessor listener;
-
-    /**
      * Parses the MIME content.
      */
-    MimeParser(String boundary, EventProcessor eventListener) {
+    MimeParser(String boundary) {
         bndbytes = getBytes("--" + boundary);
-        listener = eventListener;
         bl = bndbytes.length;
         gss = new int[bl];
         buf = new VirtualBuffer();
@@ -445,11 +377,10 @@ final class MimeParser {
      * or {@code START_MESSAGE}
      */
     void close() throws ParsingException {
+        cleanup();
         switch (state) {
             case START_MESSAGE:
             case END_MESSAGE:
-                closed = true;
-                buf.clear();
                 break;
             case DATA_REQUIRED:
                 switch (resumeState) {
@@ -469,129 +400,157 @@ final class MimeParser {
     }
 
     /**
+     * Like close(), but just releases resources and does not throw.
+     */
+    void cleanup() {
+        closed = true;
+        buf.clear();
+    }
+
+    /**
      * Advances parsing.
      * @throws ParsingException if an error occurs during parsing
      */
-    void parse() throws ParsingException {
-        try {
-            while (true) {
-                switch (state) {
-                    case START_MESSAGE:
-                        if (LOGGER.isLoggable(Level.FINER)) {
-                            LOGGER.log(Level.FINER, "state={0}", STATE.START_MESSAGE);
-                        }
-                        state = STATE.SKIP_PREAMBLE;
-                        listener.process(START_MESSAGE_EVENT);
-                        break;
+    Iterator<ParserEvent> parseIterator() {
+        return new Iterator<>() {
+            ParserEvent nextEvent;
+            boolean done;
 
-                    case SKIP_PREAMBLE:
-                        if (LOGGER.isLoggable(Level.FINER)) {
-                            LOGGER.log(Level.FINER, "state={0}", STATE.SKIP_PREAMBLE);
-                        }
-                        skipPreamble();
-                        if (bndStart == -1) {
-                            if (LOGGER.isLoggable(Level.FINER)) {
-                                LOGGER.log(Level.FINER, "state={0}", STATE.DATA_REQUIRED);
-                            }
-                            state = STATE.DATA_REQUIRED;
-                            resumeState = STATE.SKIP_PREAMBLE;
-                            listener.process(new DataRequiredEvent(false));
-                            return;
-                        }
-                        if (LOGGER.isLoggable(Level.FINE)) {
-                            LOGGER.log(Level.FINE, "Skipped the preamble. position={0}", position);
-                        }
-                        state = STATE.START_PART;
-                        break;
+            @Override
+            public ParserEvent next() {
+                if (!hasNext()) {
+                    throw new IllegalStateException("Read past end of stream");
+                }
+                ParserEvent ne = nextEvent;
+                nextEvent = null;
+                done = ne == END_MESSAGE_EVENT;
+                return ne;
+            }
 
-                    // fall through
-                    case START_PART:
-                        if (LOGGER.isLoggable(Level.FINER)) {
-                            LOGGER.log(Level.FINER, "state={0}", STATE.START_PART);
-                        }
-                        state = STATE.HEADERS;
-                        listener.process(START_PART_EVENT);
-                        break;
+            @Override
+            public boolean hasNext() {
+                if (nextEvent != null) {
+                    return true;
+                }
 
-                    case HEADERS:
-                        if (LOGGER.isLoggable(Level.FINER)) {
-                            LOGGER.log(Level.FINER, "state={0}", STATE.HEADERS);
-                        }
-                        String headerLine = readHeaderLine();
-                        if (headerLine == null) {
-                            if (LOGGER.isLoggable(Level.FINER)) {
-                                LOGGER.log(Level.FINER, "state={0}", STATE.DATA_REQUIRED);
-                            }
-                            state = STATE.DATA_REQUIRED;
-                            resumeState = STATE.HEADERS;
-                            listener.process(new DataRequiredEvent(false));
-                            return;
-                        }
-                        if (!headerLine.isEmpty()) {
-                            Hdr header = new Hdr(headerLine);
-                            listener.process(new HeaderEvent(header.name(), header.value()));
-                            break;
-                        }
-                        state = STATE.BODY;
-                        bol = true;
-                        listener.process(END_HEADERS_EVENT);
-                        break;
+                try {
+                    while (true) {
+                        switch (state) {
+                            case START_MESSAGE:
+                                if (LOGGER.isLoggable(Level.FINER)) {
+                                    LOGGER.log(Level.FINER, "state={0}", STATE.START_MESSAGE);
+                                }
+                                state = STATE.SKIP_PREAMBLE;
+                                nextEvent = START_MESSAGE_EVENT;
+                                return true;
 
-                    case BODY:
-                        if (LOGGER.isLoggable(Level.FINER)) {
-                            LOGGER.log(Level.FINER, "state={0}", STATE.BODY);
-                        }
-                        List<VirtualBuffer.BufferEntry> bodyContent = readBody();
-                        if (bndStart == -1 || bodyContent.isEmpty()) {
-                            if (LOGGER.isLoggable(Level.FINER)) {
-                                LOGGER.log(Level.FINER, "state={0}", STATE.DATA_REQUIRED);
-                            }
-                            state = STATE.DATA_REQUIRED;
-                            resumeState = STATE.BODY;
-                            if (bodyContent.isEmpty()) {
-                                listener.process(new DataRequiredEvent(true));
-                                return;
-                            }
-                        } else {
-                            bol = false;
-                        }
-                        for (VirtualBuffer.BufferEntry content : bodyContent) {
-                            listener.process(new ContentEvent(content));
-                        }
-                        break;
+                            case SKIP_PREAMBLE:
+                                if (LOGGER.isLoggable(Level.FINER)) {
+                                    LOGGER.log(Level.FINER, "state={0}", STATE.SKIP_PREAMBLE);
+                                }
+                                skipPreamble();
+                                if (bndStart == -1) {
+                                    if (LOGGER.isLoggable(Level.FINER)) {
+                                        LOGGER.log(Level.FINER, "state={0}", STATE.DATA_REQUIRED);
+                                    }
+                                    state = STATE.DATA_REQUIRED;
+                                    resumeState = STATE.SKIP_PREAMBLE;
+                                    return false;
+                                }
+                                if (LOGGER.isLoggable(Level.FINE)) {
+                                    LOGGER.log(Level.FINE, "Skipped the preamble. position={0}", position);
+                                }
+                                state = STATE.START_PART;
+                                break;
 
-                    case END_PART:
-                        if (LOGGER.isLoggable(Level.FINER)) {
-                            LOGGER.log(Level.FINER, "state={0}", STATE.END_PART);
-                        }
-                        if (done) {
-                            state = STATE.END_MESSAGE;
-                        } else {
-                            state = STATE.START_PART;
-                        }
-                        listener.process(END_PART_EVENT);
-                        break;
+                            // fall through
+                            case START_PART:
+                                if (LOGGER.isLoggable(Level.FINER)) {
+                                    LOGGER.log(Level.FINER, "state={0}", STATE.START_PART);
+                                }
+                                state = STATE.HEADERS;
+                                nextEvent = START_PART_EVENT;
+                                return true;
 
-                    case END_MESSAGE:
-                        if (LOGGER.isLoggable(Level.FINER)) {
-                            LOGGER.log(Level.FINER, "state={0}", STATE.END_MESSAGE);
+                            case HEADERS:
+                                if (LOGGER.isLoggable(Level.FINER)) {
+                                    LOGGER.log(Level.FINER, "state={0}", STATE.HEADERS);
+                                }
+                                String headerLine = readHeaderLine();
+                                if (headerLine == null) {
+                                    if (LOGGER.isLoggable(Level.FINER)) {
+                                        LOGGER.log(Level.FINER, "state={0}", STATE.DATA_REQUIRED);
+                                    }
+                                    state = STATE.DATA_REQUIRED;
+                                    resumeState = STATE.HEADERS;
+                                    return false;
+                                }
+                                if (!headerLine.isEmpty()) {
+                                    Hdr header = new Hdr(headerLine);
+                                    nextEvent = new HeaderEvent(header.name(), header.value());
+                                    return true;
+                                }
+                                state = STATE.BODY;
+                                bol = true;
+                                nextEvent = END_HEADERS_EVENT;
+                                return true;
+
+                            case BODY:
+                                if (LOGGER.isLoggable(Level.FINER)) {
+                                    LOGGER.log(Level.FINER, "state={0}", STATE.BODY);
+                                }
+                                List<VirtualBuffer.BufferEntry> bodyContent = readBody();
+                                if (bndStart == -1 || bodyContent.isEmpty()) {
+                                    if (LOGGER.isLoggable(Level.FINER)) {
+                                        LOGGER.log(Level.FINER, "state={0}", STATE.DATA_REQUIRED);
+                                    }
+                                    state = STATE.DATA_REQUIRED;
+                                    resumeState = STATE.BODY;
+                                    if (bodyContent.isEmpty()) {
+                                        return false;
+                                    }
+                                } else {
+                                    bol = false;
+                                }
+                                nextEvent = new BodyEvent(bodyContent);
+                                return true;
+
+                            case END_PART:
+                                if (LOGGER.isLoggable(Level.FINER)) {
+                                    LOGGER.log(Level.FINER, "state={0}", STATE.END_PART);
+                                }
+                                if (MimeParser.this.done) {
+                                    state = STATE.END_MESSAGE;
+                                } else {
+                                    state = STATE.START_PART;
+                                }
+                                nextEvent = END_PART_EVENT;
+                                return true;
+
+                            case END_MESSAGE:
+                                if (LOGGER.isLoggable(Level.FINER)) {
+                                    LOGGER.log(Level.FINER, "state={0}", STATE.END_MESSAGE);
+                                }
+                                if (done) {
+                                    return false;
+                                }
+                                nextEvent = END_MESSAGE_EVENT;
+                                return true;
+
+                            case DATA_REQUIRED:
+                                return false;
+
+                            default:
+                                // nothing to do
                         }
-                        listener.process(END_MESSAGE_EVENT);
-                        return;
-
-                    case DATA_REQUIRED:
-                        listener.process(new DataRequiredEvent(resumeState == STATE.BODY));
-                        return;
-
-                    default:
-                    // nothing to do
+                    }
+                } catch (ParsingException ex) {
+                    throw ex;
+                } catch (Throwable ex) {
+                    throw new ParsingException(ex);
                 }
             }
-        } catch (ParsingException ex) {
-            throw ex;
-        } catch (Throwable ex) {
-            throw new ParsingException(ex);
-        }
+        };
     }
 
     /**
@@ -740,6 +699,7 @@ final class MimeParser {
      * from the buffer
      */
     private String readHeaderLine() {
+        // FIXME: what about multi-line headers?
         int bufLen = buf.length();
         // need more data to progress
         // need at least one blank line to read (no headers)
