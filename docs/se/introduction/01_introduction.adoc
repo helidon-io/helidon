@@ -87,7 +87,7 @@ Expose health statuses of your applications.
 //Metrics
 [CARD]
 .Metrics
-[icon=av_timer,link=metrics/01_metrics.adoc]
+[icon=av_timer,link=se/metrics/01_metrics.adoc]
 --
 Instrumentation to expose metrics of your applications.
 --
@@ -102,7 +102,7 @@ Support OpenAPI from your application.
 //Reactive Messaging
 [CARD]
 .Reactive Messaging
-[icon=message,link=se/se/reactivemessaging/01_introduction.adoc]
+[icon=message,link=se/reactivemessaging/01_introduction.adoc]
 --
 Use prepared tools for repetitive use case scenarios.
 --
@@ -110,7 +110,7 @@ Use prepared tools for repetitive use case scenarios.
 //Reactive Streams
 [CARD]
 .Reactive Streams
-[icon=waves,link=se/se/reactivestreams/01_overview.adoc]
+[icon=waves,link=se/reactivestreams/01_overview.adoc]
 --
 APIs to work with reactive streams in Helidon.
 --
