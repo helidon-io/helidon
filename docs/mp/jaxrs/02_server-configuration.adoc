@@ -45,18 +45,16 @@ server.port=7011
 # Helidon configuration (optional)
 
 # Length of queue for incoming connections. Default is 1024
-server.backlog: 512
+server.backlog=512
 # TCP receive window. Default is 0 to use implementation default
-server.receive-buffer: 256
+server.receive-buffer=256
 # Socket timeout milliseconds - defaults to 0 (infinite)
-server.timeout: 30000
+server.timeout=30000
 # Defaults to Runtime.availableProcessors()
 server.workers=4
 # Default is not to use SSL
-ssl:
- private-key:
-    keystore-resource-path: "certificate.p12"
-    keystore-passphrase: "abcd"
+ssl.private-key.keystore-resource-path=certificate.p12
+ssl.private-key.keystore-passphrase="abcd"
 ----
 
 == Configuring additional ports

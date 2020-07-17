@@ -67,3 +67,24 @@ just use `Config.create()`
 
 See all configuration options 
  link:{javadoc-base-url-api}/WebServer.html[here].
+
+Available socket configuration options:
+
+[cols="^2s,<2,<2,<6"]
+|===
+|Configuration key |Default value ^|Java type  ^|Description
+
+|`port` |{nbsp} |int |Port to open server socket on, defaults to an available ephemeral port
+|`bind-address` |all local addresses |String |Address to listen on (may be an IPV6 address as well)
+|`backlog` |`1024` |int |Maximum length of the queue of incoming connections on the server socket.
+|`max-header-size` |`8192` |int |Maximal number of bytes of all header values combined. Returns `400` if headers are bigger
+|`max-initial-line-length` |`4096` |int |Maximal number of characters in the initial HTTP line. Returns `400` if line is longer
+|`timeout-millis` |no timeout| long |Server socket timeout.
+|`receive-buffer-size` |implementation default |int |Proposed value of the TCP receive window that is advertised to the remote peer on the server socket.
+|`name` |`@default` for default socket |String |Name used for named sockets, to support additional server sockets (and their named routing)
+|`enabled` |`true` |boolean |A socket can be disabled through configuration, in which case it is never opened
+|`max-chunk-size` | `8192` |int |Maximal size of a chunk to read from incoming requests
+|`validate-headers` |`true` |boolean |Whether to validate header names, if they contain illegal characters.
+|`initial-buffer-size` |`128` |int |Initial size of buffer used to parse HTTP line and headers
+|`tls` |{nbsp} |Object |Configuration of SSL, please see our SSL example in repository
+|===
