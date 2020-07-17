@@ -61,7 +61,10 @@ public class MultiPartDecoderTckTest extends FlowPublisherVerification<ReadableB
     public Flow.Publisher<ReadableBodyPart> createFlowPublisher(final long l) {
         MultiPartDecoder decoder = MultiPartDecoder.create("boundary", MEDIA_CONTEXT.readerContext());
         upstream(l).subscribe(decoder);
-        return decoder;
+        return Multi.create(decoder).map(part -> {
+            part.content().forEach(chunk -> {});
+            return part;
+        });
     }
 
     @Override

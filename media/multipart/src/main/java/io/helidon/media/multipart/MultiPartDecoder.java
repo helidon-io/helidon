@@ -319,7 +319,7 @@ public class MultiPartDecoder implements Processor<DataChunk, ReadableBodyPart> 
                 }
                 // now is the right time to convert a bad request into an error
                 // bodyPartPublisher is null, so this error gets delivered only to outer Subscriber
-                error = new Exception("Expecting only positive requests for parts");
+                error = new IllegalArgumentException("Expecting only positive requests for parts");
             }
 
             // ordering the delivery of errors after the delivery of all signals that precede it
@@ -481,7 +481,7 @@ public class MultiPartDecoder implements Processor<DataChunk, ReadableBodyPart> 
             if (th != null) {
                 subscriber.onError(th);
             } else if (chunksRequested.get() < 0) {
-                subscriber.onError(new Exception("Expecting only positive requests"));
+                subscriber.onError(new IllegalArgumentException("Expecting only positive requests"));
             } else {
                 subscriber.onComplete();
             }
