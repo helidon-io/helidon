@@ -22,7 +22,7 @@
     <parent>
         <artifactId>helidon-config-project</artifactId>
         <groupId>io.helidon.config</groupId>
-        <version>1.4.6-SNAPSHOT</version>
+        <version>1.4.6</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 

@@ -21,7 +21,7 @@
     <parent>
         <artifactId>tck-project</artifactId>
         <groupId>io.helidon.microprofile.tests</groupId>
-        <version>1.4.6-SNAPSHOT</version>
+        <version>1.4.6</version>
     </parent>
     <artifactId>tck-jwt-auth</artifactId>
     <name>Helidon Microprofile Tests TCK JWT-Auth</name>

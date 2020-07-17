@@ -24,12 +24,12 @@
     <parent>
         <groupId>io.helidon.applications</groupId>
         <artifactId>helidon-se</artifactId>
-        <version>1.4.6-SNAPSHOT</version>
+        <version>1.4.6</version>
         <relativePath>../../../applications/se/pom.xml</relativePath>
     </parent>
     <groupId>io.helidon.examples</groupId>
     <artifactId>helidon-quickstart-se</artifactId>
-    <version>1.4.6-SNAPSHOT</version>
+    <version>1.4.6</version>
     <name>Helidon Quickstart SE Example</name>
 
     <properties>
