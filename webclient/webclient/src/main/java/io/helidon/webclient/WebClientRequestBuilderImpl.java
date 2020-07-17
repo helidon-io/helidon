@@ -657,7 +657,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     }
 
     private HttpHeaders toNettyHttpHeaders() {
-        HttpHeaders headers = new DefaultHttpHeaders();
+        HttpHeaders headers = new DefaultHttpHeaders(this.configuration.validateHeaders());
         try {
             Map<String, List<String>> cookieHeaders = this.configuration.cookieManager().get(uri, new HashMap<>());
             List<String> cookies = new ArrayList<>(cookieHeaders.get(Http.Header.COOKIE));
