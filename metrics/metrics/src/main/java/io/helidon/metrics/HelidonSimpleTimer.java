@@ -245,7 +245,7 @@ final class HelidonSimpleTimer extends MetricImpl implements SimpleTimer {
             return false;
         }
         HelidonSimpleTimer that = (HelidonSimpleTimer) o;
-        return delegate.equals(that.delegate);
+        return Objects.equals(delegate, that.delegate);
     }
 
     @Override

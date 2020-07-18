@@ -67,6 +67,8 @@ import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
+import org.eclipse.microprofile.metrics.SimpleTimer;
+import org.eclipse.microprofile.metrics.Tag;
 
 import static io.helidon.webserver.cors.CorsEnabledServiceHelper.CORS_CONFIG_KEY;
 
@@ -419,6 +421,55 @@ public final class MetricsSupport implements Service {
     public void update(Routing.Rules rules) {
         configureVendorMetrics(null, rules);
         configureEndpoint(rules);
+    }
+
+    /**
+     * Creates a {@link Handler} that measures endpoint invocations using a {@link SimpleTimer} metric.
+     * <p>
+     * A frequent use is by callers needing to add {@code SimpleTimer} measurement around a service endpoint:
+     * <pre>{@code
+     *     .get("/",
+     *         MetricsSupport.restResource(this.getClass().getName(), "getDefaultMessageHandler"),
+     *         this::getDefaultMessageHandler)
+     * }</pre>
+     * </p>
+     * @param className name of the class to use in the {@code SimpleMetric}'s tags
+     * @param methodName name of the method to use in the {@code SimpleMetric}'s tags
+     * @return {@code Handler} that uses a {@code SimpleTimer} around the rest of the endpoint request processing
+     */
+    public Handler restResource(String className, String methodName) {
+        Tag[] tags = {new Tag("class", className), new Tag("method", methodName)};
+        Registry app = rf.getARegistry(MetricRegistry.Type.APPLICATION);
+        Metadata metadata = Metadata.builder()
+                .withName("REST_request")
+                .withDisplayName("REST request simple timer")
+                .withDescription("REST request metric for invocations and elapsed time for " + className + "#" + methodName)
+                .withType(MetricType.SIMPLE_TIMER)
+                .withUnit(MetricUnits.NONE) // by spec, units for SimpleTimer applies to the count
+                .notReusable()
+                .build();
+        SimpleTimer simpleTimer = app.simpleTimer(metadata, tags);
+        return (ServerRequest request, ServerResponse response) -> {
+            simpleTimer.time((Runnable) request::next);
+        };
+    }
+
+    /**
+     * Creates a {@link Handler} that measures endpoint invocations using a {@link SimpleTimer} metric.
+     * <p>
+     * A frequent use is by callers needing to add {@code SimpleTimer} measurement around a service endpoint:
+     * <pre>{@code
+     *     .get("/",
+     *         MetricsSupport.restResource(this.getClass().getName(), "getDefaultMessageHandler"),
+     *         this::getDefaultMessageHandler)
+     * }</pre>
+     * </p>
+     * @param service the service object; its class name is used as the class name in the {@code SimpleMetric} tag
+     * @param methodName name of the method to use in the {@code SimpleMetric}'s tags
+     * @return {@code Handler} that uses a {@code SimpleTimer} around the rest of the endpoint request processing
+     */
+    public Handler restResource(Object service, String methodName) {
+        return restResource(service.getClass().getName(), methodName);
     }
 
     private void getOne(ServerRequest req, ServerResponse res, Registry registry) {

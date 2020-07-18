@@ -24,7 +24,9 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;
@@ -36,6 +38,13 @@ import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Metered;
 import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
 import org.eclipse.microprofile.metrics.annotation.Timed;
+
+import javax.enterprise.inject.spi.Annotated;
+import javax.enterprise.inject.spi.AnnotatedMember;
+import javax.enterprise.inject.spi.AnnotatedMethod;
+import javax.enterprise.inject.spi.AnnotatedType;
+import javax.enterprise.inject.spi.configurator.AnnotatedMethodConfigurator;
+import javax.enterprise.inject.spi.configurator.AnnotatedTypeConfigurator;
 
 /**
  * Class MetricUtil.
@@ -73,6 +82,47 @@ public final class MetricUtil {
             annotation = (A) clazz.getAnnotation(annotClass);
         }
         return annotation == null ? null : new LookupResult<>(MatchingType.CLASS, annotation);
+    }
+
+    static <A extends Annotation> LookupResult<A> lookupAnnotation(
+            AnnotatedType<?> annotatedType,
+            AnnotatedMethod<?> annotatedMethod,
+            Class<A> annotClass) {
+        A annotation = annotatedMethod.getAnnotation(annotClass);
+        if (annotation != null) {
+            return new LookupResult<>(matchingType(annotatedMethod), annotation);
+        }
+
+        annotation = annotatedType.getAnnotation(annotClass);
+        if (annotation == null) {
+            annotation = annotatedType.getJavaClass().getAnnotation(annotClass);
+        }
+        return annotation == null ? null : new LookupResult<>(MatchingType.CLASS, annotation);
+    }
+
+    static <A extends Annotation> List<LookupResult<A>> lookupAnnotations(
+            AnnotatedType<?> annotatedType,
+            AnnotatedMethod<?> annotatedMethod,
+            Class<A> annotClass) {
+        List<LookupResult<A>> result = lookupAnnotations(annotatedMethod, annotClass);
+        if (result.isEmpty()) {
+            result = lookupAnnotations(annotatedType, annotClass);
+        }
+        return result;
+    }
+
+    private static <A extends Annotation>  List<LookupResult<A>> lookupAnnotations(Annotated annotated,
+            Class<A> annotClass) {
+        ArrayList<LookupResult<A>> result = new ArrayList<>();
+        // We have to filter by annotation class ourselves, because annotatedMethod.getAnnotations(Class) delegates
+        // to the Java method. That would bypass any annotations that had been added dynamically to the configurator.
+        for (Annotation annotation : annotated.getAnnotations()) {
+            if (annotClass.isInstance(annotation)) {
+                A a = annotClass.cast(annotation);
+                result.add(new LookupResult<>(matchingType(annotated), a));
+            }
+        }
+        return result;
     }
 
     static <E extends Member & AnnotatedElement>
@@ -263,6 +313,13 @@ public final class MetricUtil {
          * Class.
          */
         CLASS
+    }
+
+    private static MatchingType matchingType(Annotated annotated) {
+        return annotated instanceof AnnotatedMember
+                ? (((AnnotatedMember) annotated).getJavaMember() instanceof Method
+                    ? MatchingType.METHOD : MatchingType.CLASS)
+                : MatchingType.CLASS;
     }
 
     /**
