@@ -37,11 +37,13 @@ class BulkheadImpl implements Bulkhead {
     private final Queue<DelayedTask<?>> queue;
     private final Semaphore inProgress;
     private final String name;
+    private final boolean async;
 
     BulkheadImpl(Bulkhead.Builder builder) {
         this.executor = builder.executor();
         this.inProgress = new Semaphore(builder.limit(), true);
         this.name = builder.name();
+        this.async = builder.async();
 
         if (builder.queueLength() == 0) {
             queue = new NoQueue();
@@ -68,8 +70,8 @@ class BulkheadImpl implements Bulkhead {
             execute(task);
             return task.result();
         } else {
-            // no free permit, let's try to enqueue
-            if (queue.offer(task)) {
+            // no free permit, let's try to enqueue in async mode
+            if (async && queue.offer(task)) {
                 LOGGER.finest(() -> name + " enqueue: " + task);
                 return task.result();
             } else {

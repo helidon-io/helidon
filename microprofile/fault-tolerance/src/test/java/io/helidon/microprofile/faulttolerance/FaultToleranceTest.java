@@ -103,17 +103,17 @@ public abstract class FaultToleranceTest {
 
     @SuppressWarnings("unchecked")
     static <T> Future<T>[] getAsyncConcurrentCalls(Supplier<Future<T>> supplier, int size) {
-        return Stream.generate(() -> supplier.get()).limit(size).toArray(Future[]::new);
+        return Stream.generate(supplier::get).limit(size).toArray(Future[]::new);
     }
 
-    static Set<String> getThreadNames(Future<String>[] calls) {
-        return Arrays.asList(calls).stream().map(c -> {
+    static void waitFor(Future<String>[] calls) {
+        for (Future<String> c : calls) {
             try {
-                return c.get();
+                c.get();
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
-        }).collect(Collectors.toSet());
+        }
     }
 
     static <T> void assertCompleteExceptionally(Future<T> future,

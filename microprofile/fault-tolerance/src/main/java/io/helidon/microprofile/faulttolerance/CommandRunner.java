@@ -34,7 +34,6 @@ import io.helidon.faulttolerance.FaultTolerance;
 import io.helidon.faulttolerance.FtHandlerTyped;
 import io.helidon.faulttolerance.Retry;
 import io.helidon.faulttolerance.Timeout;
-
 import static io.helidon.microprofile.faulttolerance.ThrowableMapper.map;
 
 /**
@@ -81,18 +80,34 @@ public class CommandRunner implements FtSupplier<Object> {
 
         Single<Object> single;
         if (introspector.isAsynchronous()) {
-            // Invoke method in new thread and call get() to unwrap singles
-            single = Async.create().invoke(() ->
-                    handler.invoke(toCompletionStageSupplier(context::proceed))).get();
-
-            // Return future after mapping exceptions
             if (introspector.isReturnType(CompletionStage.class) || introspector.isReturnType(Future.class)) {
+                // Invoke method in new thread and call get() to unwrap singles
+                single = Async.create().invoke(() ->
+                        handler.invoke(toCompletionStageSupplier(context::proceed)));
+
+                // Unwrap nested futures and map exceptions on complete
                 CompletableFuture<Object> future = new CompletableFuture<>();
                 single.whenComplete((o, t) -> {
                     if (t == null) {
-                        future.complete(o);
+                        // If future whose value is a future, then unwrap them
+                        Future<?> delegate = null;
+                        if (o instanceof CompletionStage<?>) {
+                            delegate = ((CompletionStage<?>) o).toCompletableFuture();
+                        }
+                        else if (o instanceof Future<?>) {
+                            delegate = (Future<?>) o;
+                        }
+                        if (delegate != null) {
+                            try {
+                                future.complete(delegate.get());
+                            } catch (Exception e) {
+                                future.completeExceptionally(map(e));
+                            }
+                        } else {
+                            future.complete(o);
+                        }
                     } else {
-                        future.completeExceptionally(map(t instanceof ExecutionException ? t.getCause() : t));
+                        future.completeExceptionally(map(t));
                     }
                 });
                 return future;
@@ -140,6 +155,7 @@ public class CommandRunner implements FtSupplier<Object> {
             Bulkhead bulkhead = Bulkhead.builder()
                     .limit(introspector.getBulkhead().value())
                     .queueLength(introspector.getBulkhead().waitingTaskQueue())
+                    .async(introspector.isAsynchronous())
                     .build();
             builder.addBulkhead(bulkhead);
         }

@@ -52,6 +52,7 @@ public interface Bulkhead extends FtHandler {
         private int limit = DEFAULT_LIMIT;
         private int queueLength = DEFAULT_QUEUE_LENGTH;
         private String name = "Bulkhead-" + System.identityHashCode(this);
+        private boolean async = true;
 
         private Builder() {
         }
@@ -108,6 +109,17 @@ public interface Bulkhead extends FtHandler {
             return this;
         }
 
+        /**
+         * Runs bulkhead tasks using an executor. By default is set to {@code true}.
+         *
+         * @param async setting for async
+         * @return updated builder instance
+         */
+        public Builder async(boolean async) {
+            this.async = async;
+            return this;
+        }
+
         int limit() {
             return limit;
         }
@@ -122,6 +134,10 @@ public interface Bulkhead extends FtHandler {
 
         String name() {
             return name;
+        }
+
+        boolean async() {
+            return async;
         }
     }
 

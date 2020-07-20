@@ -41,16 +41,20 @@ public class BulkheadTest extends FaultToleranceTest {
     public void testBulkhead() {
         BulkheadBean bean = newBean(BulkheadBean.class);
         Future<String>[] calls = getAsyncConcurrentCalls(
-            () -> bean.execute(100), BulkheadBean.MAX_CONCURRENT_CALLS);
-        assertThat(getThreadNames(calls).size(), is(BulkheadBean.CONCURRENT_CALLS));
+            () -> bean.execute(100), BulkheadBean.TOTAL_CALLS);
+        waitFor(calls);
+        assertThat(bean.getCounter().concurrentCalls(), is(BulkheadBean.CONCURRENT_CALLS));
+        assertThat(bean.getCounter().totalCalls(), is(BulkheadBean.TOTAL_CALLS));
     }
 
     @Test
     public void testBulkheadPlusOne() {
         BulkheadBean bean = newBean(BulkheadBean.class);
         Future<String>[] calls = getAsyncConcurrentCalls(
-            () -> bean.executePlusOne(100), BulkheadBean.MAX_CONCURRENT_CALLS + 2);
-        assertThat(getThreadNames(calls).size(), is(BulkheadBean.CONCURRENT_CALLS + 1));
+            () -> bean.executePlusOne(100), BulkheadBean.TOTAL_CALLS + 2);
+        waitFor(calls);
+        assertThat(bean.getCounter().concurrentCalls(), is(BulkheadBean.CONCURRENT_CALLS + 1));
+        assertThat(bean.getCounter().totalCalls(), is(BulkheadBean.TOTAL_CALLS + 2));
     }
 
     @Test
@@ -58,7 +62,7 @@ public class BulkheadTest extends FaultToleranceTest {
         BulkheadBean bean = newBean(BulkheadBean.class);
         Future<String>[] calls = getAsyncConcurrentCalls(
             () -> bean.executeNoQueue(2000), 10);
-        RuntimeException e = assertThrows(RuntimeException.class, () -> getThreadNames(calls));
+        RuntimeException e = assertThrows(RuntimeException.class, () -> waitFor(calls));
         assertThat(e.getCause().getCause(), instanceOf(BulkheadException.class));
     }
 
@@ -67,7 +71,7 @@ public class BulkheadTest extends FaultToleranceTest {
         BulkheadBean bean = newBean(BulkheadBean.class);
         Future<String>[] calls = getAsyncConcurrentCalls(
             () -> bean.executeNoQueueWithFallback(2000), 10);
-        getThreadNames(calls);
+        waitFor(calls);
     }
 
     @Test

@@ -58,11 +58,11 @@ public class FallbackAntn extends MethodAntn implements Fallback {
                 final Method fallbackMethod = JavaMethodFinder.findMethod(method.getDeclaringClass(),
                         methodName,
                         method.getGenericParameterTypes());
-                if (!fallbackMethod.getReturnType().isAssignableFrom(method.getReturnType())
-                        && !Future.class.isAssignableFrom(method.getReturnType())
-                        && !CompletionStage.class.isAssignableFrom(method.getReturnType())) {        // async
-                    throw new FaultToleranceDefinitionException("Fallback method return type "
-                            + "is invalid: " + fallbackMethod.getReturnType());
+                if (!method.getReturnType().isAssignableFrom(fallbackMethod.getReturnType())) {
+                    throw new FaultToleranceDefinitionException("Fallback method " + fallbackMethod.getName()
+                            + " in class " + fallbackMethod.getDeclaringClass().getSimpleName()
+                            + " incompatible return type " + fallbackMethod.getReturnType()
+                            + " with " + method.getReturnType());
                 }
             } catch (NoSuchMethodException e) {
                 throw new FaultToleranceDefinitionException(e);

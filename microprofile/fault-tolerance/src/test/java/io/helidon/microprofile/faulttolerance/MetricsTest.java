@@ -336,20 +336,20 @@ public class MetricsTest extends FaultToleranceTest {
     public void testBulkheadMetrics() throws Exception {
         MetricsBean bean = newBean(MetricsBean.class);
         Future<String>[] calls = getAsyncConcurrentCalls(
-            () -> bean.concurrent(100), BulkheadBean.MAX_CONCURRENT_CALLS);
-        getThreadNames(calls);
+            () -> bean.concurrent(100), BulkheadBean.TOTAL_CALLS);
+        waitFor(calls);
         assertThat(getGauge(bean, "concurrent",
                               BULKHEAD_CONCURRENT_EXECUTIONS, long.class).getValue(),
                    is(0L));
         assertThat(getCounter(bean, "concurrent",
                                 BULKHEAD_CALLS_ACCEPTED_TOTAL, long.class),
-                   is((long) BulkheadBean.MAX_CONCURRENT_CALLS));
+                   is((long) BulkheadBean.TOTAL_CALLS));
         assertThat(getCounter(bean, "concurrent",
                                 BULKHEAD_CALLS_REJECTED_TOTAL, long.class),
                    is(0L));
         assertThat(getHistogram(bean, "concurrent",
                                   BULKHEAD_EXECUTION_DURATION, long.class).getCount(),
-                   is((long)BulkheadBean.MAX_CONCURRENT_CALLS));
+                   is((long)BulkheadBean.TOTAL_CALLS));
     }
 
     @Test
@@ -362,10 +362,10 @@ public class MetricsTest extends FaultToleranceTest {
                 } catch (Exception e) {
                     return "failure";
                 }
-            }, BulkheadBean.MAX_CONCURRENT_CALLS);
+            }, BulkheadBean.TOTAL_CALLS);
         CompletableFuture.allOf(calls).get();
         assertThat(getHistogram(bean, "concurrentAsync",
                                   BULKHEAD_EXECUTION_DURATION, long.class).getCount(),
-                   is((long)BulkheadBean.MAX_CONCURRENT_CALLS));
+                   is((long)BulkheadBean.TOTAL_CALLS));
     }
 }

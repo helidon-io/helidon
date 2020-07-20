@@ -16,6 +16,8 @@
 
 package io.helidon.microprofile.faulttolerance;
 
+import java.util.concurrent.ExecutionException;
+
 import org.eclipse.microprofile.faulttolerance.exceptions.BulkheadException;
 import org.eclipse.microprofile.faulttolerance.exceptions.CircuitBreakerOpenException;
 import org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException;
@@ -29,6 +31,9 @@ class ThrowableMapper {
     }
 
     static Throwable map(Throwable t) {
+        if (t instanceof ExecutionException) {
+            t = t.getCause();
+        }
         if (t instanceof io.helidon.faulttolerance.CircuitBreakerOpenException) {
             return new CircuitBreakerOpenException(t.getMessage(), t.getCause());
         }
