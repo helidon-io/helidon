@@ -152,11 +152,11 @@ into a non-negative. All other updates observe they are "locked out" from enteri
 `deferredInit()` can witness if any of `onError`/`onComplete`/request happened, and enter `drainBoth()` on their
 behalf.
 
-Uninitialized state is represented by `Integer.MIN_VALUE` (`0b10000000`). Each end attempts to transition to
+Uninitialized state is represented by `Integer.MIN_VALUE` (`0b1000`). Each end attempts to transition to
 half-initialized for their end, unless it is already initialized. It is safe to enter `drainBoth()`
 only after both ends have initialized, so the number of ends that have been initialized is tracked as
-the fourth bit: each end tries to add `SUBSCRIPTION_LOCK` (`0b00010000`). Before the second of them,
-the counter necessarily appears as `0b11110000`, and adding `SUBSCRIPTION_LOCK` clears all the high
+the fourth bit: each end tries to add `SUBSCRIPTION_LOCK` (`0b0001`). Before the second of them,
+the counter necessarily appears as `0b1111`, and adding `SUBSCRIPTION_LOCK` clears all the high
 bits, leaving only zero, unless there were already attempts to enter `drainBoth()` by outer Subscriber
 requesting parts as part of `onSubscribe`, or by upstream delivering `onError` or `onComplete`, which are
 allowed to occur without requests from downstream.
