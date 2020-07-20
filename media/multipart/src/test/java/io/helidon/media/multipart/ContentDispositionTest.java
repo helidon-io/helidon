@@ -17,6 +17,9 @@ package io.helidon.media.multipart;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+
+import io.helidon.common.http.Http;
+
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -205,5 +208,42 @@ public class ContentDispositionTest {
                 .build();
         assertThat(cd.type(), is(equalTo("inline")));
         assertThat(cd.parameters().get("foo"), is(equalTo("bar")));
+    }
+
+    @Test
+    public void testContentDispositionDefault(){
+        ContentDisposition cd = ContentDisposition.builder().build();
+        assertThat(cd.type(), is(equalTo("form-data")));
+        assertThat(cd.parameters().size(), is(0));
+    }
+
+    @Test
+    public void testQuotes(){
+        String template = "form-data;"
+                + "filename=\"file.txt\";"
+                + "size=300;"
+                + "name=\"someName\"";
+        ContentDisposition cd = ContentDisposition.builder()
+                .name("someName")
+                .filename("file.txt")
+                .size(300)
+                .build();
+        assertThat(cd.toString(), is(equalTo(template)));
+    }
+
+    @Test
+    public void testDateQuotes() {
+        ZonedDateTime zonedDateTime = ZonedDateTime.now();
+        String date = zonedDateTime.format(Http.DateTime.RFC_1123_DATE_TIME);
+        String template = "form-data;"
+                + "creation-date=\"" + date + "\";"
+                + "modification-date=\"" + date + "\";"
+                + "read-date=\"" + date + "\"";
+        ContentDisposition cd = ContentDisposition.builder()
+                .creationDate(zonedDateTime)
+                .readDate(zonedDateTime)
+                .modificationDate(zonedDateTime)
+                .build();
+        assertThat(cd.toString(), is(equalTo(template)));
     }
 }

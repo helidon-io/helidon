@@ -174,7 +174,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     static WebClientRequestBuilder create(WebClientRequestImpl clientRequest) {
         WebClientRequestBuilderImpl builder = new WebClientRequestBuilderImpl(NettyClient.eventGroup(),
                                                                               clientRequest.configuration(),
-                                                                              clientRequest.method());
+                                                                              Http.Method.GET);
         builder.headers(clientRequest.headers());
         builder.queryParams(clientRequest.queryParams());
         builder.uri = clientRequest.uri();
@@ -349,6 +349,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     @Override
     public WebClientRequestBuilder contentType(MediaType contentType) {
         this.headers.contentType(contentType);
+        this.writerContext.contentType(contentType);
         return this;
     }
 

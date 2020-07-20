@@ -76,6 +76,8 @@ public final class WriteableBodyPart implements BodyPart {
 
         private WriteableBodyPartHeaders headers;
         private WriteableBodyPartContent content;
+        private String name;
+        private String fileName;
 
         private Builder() {
             headers = WriteableBodyPartHeaders.create();
@@ -125,8 +127,40 @@ public final class WriteableBodyPart implements BodyPart {
             return this;
         }
 
+        /**
+         * Name which will be used in {@link ContentDisposition}.
+         *
+         * This value will be ignored if an actual instance of {@link WriteableBodyPartHeaders} is set.
+         *
+         * @param name content disposition name parameter
+         * @return this builder instance
+         */
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+
+        /**
+         * Filename which will be used in {@link ContentDisposition}.
+         *
+         * This value will be ignored if an actual instance of {@link WriteableBodyPartHeaders} is set.
+         *
+         * @param fileName content disposition filename parameter
+         * @return this builder instance
+         */
+        public Builder filename(String fileName) {
+            this.fileName = fileName;
+            return this;
+        }
+
         @Override
         public WriteableBodyPart build() {
+            if (headers.toMap().size() == 0 && name != null) {
+                headers = WriteableBodyPartHeaders.builder()
+                        .name(name)
+                        .filename(fileName)
+                        .build();
+            }
             return new WriteableBodyPart(content, headers);
         }
     }

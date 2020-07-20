@@ -27,6 +27,7 @@ import javax.json.JsonBuilderFactory;
 import javax.json.JsonException;
 import javax.json.JsonObject;
 
+import io.helidon.common.http.FormParams;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.security.SecurityContext;
@@ -78,6 +79,7 @@ public class GreetService implements Service {
                 .get("/redirect", this::redirect)
                 .get("/redirectPath", this::redirectPath)
                 .get("/redirect/infinite", this::redirectInfinite)
+                .post("/form", this::form)
                 .get("/secure/basic", this::basicAuth)
                 .get("/secure/basic/outbound", this::basicAuthOutbound)
                 .put("/greeting", this::updateGreetingHandler);
@@ -145,6 +147,12 @@ public class GreetService implements Service {
     private void redirectInfinite(ServerRequest serverRequest, ServerResponse response) {
         response.headers().add(Http.Header.LOCATION, "http://localhost:" + Main.serverPort + "/greet/redirect/infinite");
         response.status(Http.Status.MOVED_PERMANENTLY_301).send();
+    }
+
+    private void form(ServerRequest req, ServerResponse res) {
+        req.content().as(FormParams.class)
+                .thenApply(form -> "Hi " + form.first("name").orElse("unknown"))
+                .thenAccept(res::send);
     }
 
     /**
