@@ -98,7 +98,7 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
         ServerConfiguration serverConfig = webServer.configuration();
         HttpRequestDecoder requestDecoder = new HttpRequestDecoder(soConfig.maxInitialLineLength(),
                                                                    soConfig.maxHeaderSize(),
-                                                                   8192,
+                                                                   soConfig.maxChunkSize(),
                                                                    soConfig.validateHeaders(),
                                                                    soConfig.initialBufferSize());
         if (serverConfig.isHttp2Enabled()) {
