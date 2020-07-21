@@ -62,6 +62,8 @@ A flexible configuration framework with support for multiple sources and
 --
 Add support for CORS to your application using a Helidon module.
 --
+
+
 //CDI Extensions
 .Extensions
 [icon=extension,link=mp/extensions/01_overview.adoc]
