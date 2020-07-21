@@ -65,6 +65,7 @@ Add support for CORS to your application using a Helidon module.
 
 
 //CDI Extensions
+[CARD]
 .Extensions
 [icon=extension,link=mp/extensions/01_overview.adoc]
 --
