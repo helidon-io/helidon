@@ -36,9 +36,6 @@ class RedirectInterceptor implements HttpInterceptor {
     public void handleInterception(HttpResponse httpResponse,
                                    WebClientRequestImpl clientRequest,
                                    CompletableFuture<WebClientResponse> responseFuture) {
-        if (clientRequest.method() != Http.Method.GET) {
-            throw new WebClientException("Redirecting is currently supported only for GET method.");
-        }
         if (httpResponse.headers().contains(Http.Header.LOCATION)) {
             String newUri = httpResponse.headers().get(Http.Header.LOCATION);
             LOGGER.fine(() -> "Redirecting to " + newUri);

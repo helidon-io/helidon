@@ -162,7 +162,10 @@ class NettyWebServer implements WebServer {
                 bootstrap.option(ChannelOption.SO_RCVBUF, soConfig.receiveBufferSize());
             }
 
-            HttpInitializer childHandler = new HttpInitializer(sslContext, namedRoutings.getOrDefault(name, routing), this);
+            HttpInitializer childHandler = new HttpInitializer(soConfig,
+                                                               sslContext,
+                                                               namedRoutings.getOrDefault(name, routing),
+                                                               this);
             initializers.add(childHandler);
             bootstrap.group(bossGroup, workerGroup)
                      .channel(NioServerSocketChannel.class)

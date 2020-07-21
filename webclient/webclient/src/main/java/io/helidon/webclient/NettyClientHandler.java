@@ -115,9 +115,12 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
 
             for (HttpInterceptor interceptor : HTTP_INTERCEPTORS) {
                 if (interceptor.shouldIntercept(response.status(), requestConfiguration)) {
-                    interceptor.handleInterception(response, clientRequest, ctx.channel().attr(RESULT).get());
-                    if (!interceptor.continueAfterInterception()) {
+                    boolean continueAfter = !interceptor.continueAfterInterception();
+                    if (continueAfter) {
                         responseCloser.close().thenAccept(future -> LOGGER.finest(() -> "Response closed due to redirection"));
+                    }
+                    interceptor.handleInterception(response, clientRequest, ctx.channel().attr(RESULT).get());
+                    if (continueAfter) {
                         return;
                     }
                 }

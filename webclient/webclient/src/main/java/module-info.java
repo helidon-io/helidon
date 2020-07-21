@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-import io.helidon.webclient.spi.WebClientServiceProvider;
-
 /**
  * Helidon WebClient.
  */

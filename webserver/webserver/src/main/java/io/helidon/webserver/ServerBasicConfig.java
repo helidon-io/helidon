@@ -105,6 +105,31 @@ class ServerBasicConfig implements ServerConfiguration {
     }
 
     @Override
+    public int maxHeaderSize() {
+        return socketConfig.maxHeaderSize();
+    }
+
+    @Override
+    public int maxInitialLineLength() {
+        return socketConfig.maxInitialLineLength();
+    }
+
+    @Override
+    public int maxChunkSize() {
+        return socketConfig.maxChunkSize();
+    }
+
+    @Override
+    public boolean validateHeaders() {
+        return socketConfig.validateHeaders();
+    }
+
+    @Override
+    public int initialBufferSize() {
+        return socketConfig.initialBufferSize();
+    }
+
+    @Override
     public Tracer tracer() {
         return tracer;
     }
@@ -141,6 +166,11 @@ class ServerBasicConfig implements ServerConfiguration {
         private final String name;
         private final boolean enabled;
         private final ClientAuthentication clientAuth;
+        private final int maxHeaderSize;
+        private final int maxInitialLineLength;
+        private final int maxChunkSize;
+        private final boolean validateHeaders;
+        private final int initialBufferSize;
 
         /**
          * Creates new instance.
@@ -153,6 +183,12 @@ class ServerBasicConfig implements ServerConfiguration {
             this.backlog = builder.backlog() < 0 ? DEFAULT_BACKLOG_SIZE : builder.backlog();
             this.timeoutMillis = Math.max(builder.timeoutMillis(), 0);
             this.receiveBufferSize = Math.max(builder.receiveBufferSize(), 0);
+            this.maxHeaderSize = builder.maxHeaderSize();
+            this.maxInitialLineLength = builder.maxInitialLineLength();
+            this.maxChunkSize = builder.maxChunkSize();
+            this.validateHeaders = builder.validateHeaders();
+            this.initialBufferSize = builder.initialBufferSize();
+
             WebServerTls webServerTls = builder.tlsConfig();
             if (webServerTls.enabled()) {
                 this.sslContext = webServerTls.sslContext();
@@ -213,6 +249,31 @@ class ServerBasicConfig implements ServerConfiguration {
         @Override
         public boolean enabled() {
             return enabled;
+        }
+
+        @Override
+        public int maxHeaderSize() {
+            return maxHeaderSize;
+        }
+
+        @Override
+        public int maxInitialLineLength() {
+            return maxInitialLineLength;
+        }
+
+        @Override
+        public int maxChunkSize() {
+            return maxChunkSize;
+        }
+
+        @Override
+        public boolean validateHeaders() {
+            return validateHeaders;
+        }
+
+        @Override
+        public int initialBufferSize() {
+            return initialBufferSize;
         }
     }
 }

@@ -45,17 +45,14 @@ public final class RegistryFactory {
     private static final RegistryFactory INSTANCE = create();
 
     private final EnumMap<Type, Registry> registries = new EnumMap<>(Type.class);
-    private final EnumMap<Type, Registry> publicRegistries = new EnumMap<>(Type.class);
     private final AtomicReference<Config> config;
 
     private RegistryFactory(Config config) {
         Registry registry = Registry.create(Type.APPLICATION);
         registries.put(Type.APPLICATION, registry);
-        publicRegistries.put(Type.APPLICATION, registry);
 
         registry = Registry.create(Type.VENDOR);
         registries.put(Type.VENDOR, registry);
-        publicRegistries.put(Type.VENDOR, registry);
 
         this.config = new AtomicReference<>(config);
     }
@@ -124,7 +121,7 @@ public final class RegistryFactory {
         if (type == Type.BASE) {
             ensureBase();
         }
-        return publicRegistries.get(type);
+        return registries.get(type);
     }
 
     private void update(Config config) {
@@ -135,7 +132,6 @@ public final class RegistryFactory {
         if (null == registries.get(Type.BASE)) {
             Registry registry = BaseRegistry.create(config.get());
             registries.put(Type.BASE, registry);
-            publicRegistries.put(Type.BASE, FinalRegistry.create(registry));
         }
     }
 }

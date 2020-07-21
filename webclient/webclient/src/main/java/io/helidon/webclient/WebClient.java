@@ -388,6 +388,18 @@ public interface WebClient {
             return this;
         }
 
+        /**
+         * Whether to validate header names.
+         * Defaults to {@code true}.
+         *
+         * @param validate whether to validate the header name contains only allowed characters
+         * @return updated builder instance
+         */
+        public Builder validateHeaders(boolean validate) {
+            configuration.validateHeaders(validate);
+            return this;
+        }
+
         WebClientConfiguration configuration() {
             configuration.clientServices(services());
             return configuration.build();

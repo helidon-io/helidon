@@ -136,6 +136,42 @@ public interface SocketConfiguration {
     }
 
     /**
+     * Maximal size of all headers combined.
+     *
+     * @return size in bytes
+     */
+    int maxHeaderSize();
+
+    /**
+     * Maximal length of the initial HTTP line.
+     *
+     * @return length
+     */
+    int maxInitialLineLength();
+
+    /**
+     * Maximal size of a single chunk of received data.
+     *
+     * @return chunk size
+     */
+    int maxChunkSize();
+
+    /**
+     * Whether to validate HTTP header names.
+     * When set to {@code true}, we make sure the header name is a valid string
+     *
+     * @return {@code true} if headers should be validated
+     */
+    boolean validateHeaders();
+
+    /**
+     * Initial size of the buffer used to parse HTTP line and headers.
+     *
+     * @return initial size of the buffer
+     */
+    int initialBufferSize();
+
+    /**
      * Creates a builder of {@link SocketConfiguration} class.
      *
      * @return a builder
@@ -259,6 +295,28 @@ public interface SocketConfiguration {
         }
 
         /**
+         * Maximal number of bytes of all header values combined. When a bigger value is received, a
+         * {@link io.helidon.common.http.Http.Status#BAD_REQUEST_400}
+         * is returned.
+         * <p>
+         * Default is {@code 8192}
+         *
+         * @param size maximal number of bytes of combined header values
+         * @return this builder
+         */
+        B maxHeaderSize(int size);
+
+        /**
+         * Maximal number of characters in the initial HTTP line.
+         * <p>
+         * Default is {@code 4096}
+         *
+         * @param length maximal number of characters
+         * @return this builder
+         */
+        B maxInitialLineLength(int length);
+
+        /**
          * Update this socket configuration from a {@link io.helidon.config.Config}.
          *
          * @param config configuration on the node of a socket
@@ -269,6 +327,8 @@ public interface SocketConfiguration {
             config.get("port").asInt().ifPresent(this::port);
             config.get("bind-address").asString().ifPresent(this::host);
             config.get("backlog").asInt().ifPresent(this::backlog);
+            config.get("max-header-size").asInt().ifPresent(this::maxHeaderSize);
+            config.get("max-initial-line-length").asInt().ifPresent(this::maxInitialLineLength);
 
             DeprecatedConfig.get(config, "timeout-millis", "timeout")
                     .asInt()
@@ -319,6 +379,12 @@ public interface SocketConfiguration {
         // methods with `name` are removed from server builder (for adding sockets)
         private String name = UNCONFIGURED_NAME;
         private boolean enabled = true;
+        // these values are as defined in Netty implementation
+        private int maxHeaderSize = 8192;
+        private int maxInitialLineLength = 4096;
+        private int maxChunkSize = 8192;
+        private boolean validateHeaders = true;
+        private int initialBufferSize = 128;
 
         private Builder() {
         }
@@ -474,6 +540,18 @@ public interface SocketConfiguration {
             return this;
         }
 
+        @Override
+        public Builder maxHeaderSize(int size) {
+            this.maxHeaderSize = size;
+            return this;
+        }
+
+        @Override
+        public Builder maxInitialLineLength(int length) {
+            this.maxInitialLineLength = length;
+            return this;
+        }
+
         /**
          * Configure a socket name, to bind named routings to.
          *
@@ -496,12 +574,51 @@ public interface SocketConfiguration {
             return this;
         }
 
+        /**
+         * Configure maximal size of a chunk to be read from incoming requests.
+         * Defaults to {@code 8192}.
+         *
+         * @param size maximal chunk size
+         * @return updated builder instance
+         */
+        public Builder maxChunkSize(int size) {
+            this.maxChunkSize = size;
+            return this;
+        }
+
+        /**
+         * Configure whether to validate header names.
+         * Defaults to {@code true} to make sure header names are valid strings.
+         *
+         * @param validate set to {@code false} to ignore header validation
+         * @return updated builder instance
+         */
+        public Builder validateHeaders(boolean validate) {
+            this.validateHeaders = validate;
+            return this;
+        }
+
+        /**
+         * Configure initial size of the buffer used to parse HTTP line and headers.
+         * Defaults to {@code 128}.
+         *
+         * @param size initial buffer size
+         * @return updated builder instance
+         */
+        public Builder initialBufferSize(int size) {
+            this.initialBufferSize = size;
+            return this;
+        }
+
         @Override
         public Builder config(Config config) {
             SocketConfigurationBuilder.super.config(config);
 
             config.get("name").asString().ifPresent(this::name);
             config.get("enabled").asBoolean().ifPresent(this::enabled);
+            config.get("max-chunk-size").asInt().ifPresent(this::maxChunkSize);
+            config.get("validate-headers").asBoolean().ifPresent(this::validateHeaders);
+            config.get("initial-buffer-size").asInt().ifPresent(this::initialBufferSize);
 
             return this;
         }
@@ -530,20 +647,32 @@ public interface SocketConfiguration {
             return webServerTls;
         }
 
-        private static InetAddress string2InetAddress(String address) {
-            try {
-                return InetAddress.getByName(address);
-            } catch (UnknownHostException e) {
-                throw new ConfigException("Illegal value of 'bind-address' configuration key. Expecting host or ip address!", e);
-            }
-        }
-
         String name() {
             return name;
         }
 
-        public boolean enabled() {
+        boolean enabled() {
             return enabled;
+        }
+
+        int maxHeaderSize() {
+            return maxHeaderSize;
+        }
+
+        int maxInitialLineLength() {
+            return maxInitialLineLength;
+        }
+
+        int maxChunkSize() {
+            return maxChunkSize;
+        }
+
+        boolean validateHeaders() {
+            return validateHeaders;
+        }
+
+        int initialBufferSize() {
+            return initialBufferSize;
         }
     }
 }

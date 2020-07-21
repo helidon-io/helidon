@@ -79,6 +79,7 @@ class WebClientConfiguration {
     private final MessageBodyWriterContext writerContext;
     private final WebClientTls webClientTls;
     private final URI uri;
+    private final boolean validateHeaders;
 
     /**
      * Creates a new instance of client configuration.
@@ -107,6 +108,7 @@ class WebClientConfiguration {
         this.clientServices = Collections.unmodifiableList(builder.clientServices);
         this.uri = builder.uri;
         this.keepAlive = builder.keepAlive;
+        this.validateHeaders = builder.validateHeaders;
     }
 
     /**
@@ -267,6 +269,10 @@ class WebClientConfiguration {
         return keepAlive;
     }
 
+    boolean validateHeaders() {
+        return validateHeaders;
+    }
+
     /**
      * A fluent API builder for {@link WebClientConfiguration}.
      */
@@ -295,6 +301,7 @@ class WebClientConfiguration {
         private MessageBodyReaderContext readerContext;
         private MessageBodyWriterContext writerContext;
         private List<WebClientService> clientServices;
+        private boolean validateHeaders = true;
         @SuppressWarnings("unchecked")
         private B me = (B) this;
 
@@ -483,6 +490,18 @@ class WebClientConfiguration {
          */
         public B uri(URI uri) {
             this.uri = uri;
+            return me;
+        }
+
+        /**
+         * Whether to validate header names.
+         * Defaults to {@code true}.
+         *
+         * @param validate whether to validate the header name contains only allowed characters
+         * @return updated builder instance
+         */
+        B validateHeaders(boolean validate) {
+            this.validateHeaders = validate;
             return me;
         }
 

@@ -362,6 +362,18 @@ public interface ServerConfiguration extends SocketConfiguration {
             return this;
         }
 
+        @Override
+        public Builder maxHeaderSize(int size) {
+            defaultSocketBuilder.maxHeaderSize(size);
+            return this;
+        }
+
+        @Override
+        public Builder maxInitialLineLength(int length) {
+            defaultSocketBuilder.maxInitialLineLength(length);
+            return this;
+        }
+
         /**
          * Adds an additional named server socket configuration. As a result, the server will listen
          * on multiple ports.
