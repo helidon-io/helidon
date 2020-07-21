@@ -104,9 +104,9 @@ public class MultiPartDecoder implements Processor<DataChunk, ReadableBodyPart> 
             @Override
             public void request(long n) {
                 long curr = n <= 0
-                        ? partsRequested.getAndSet(-1)
-                        : partsRequested.getAndUpdate(v -> Long.MAX_VALUE - v > n
-                        ? v + n : v < 0 ? v : Long.MAX_VALUE);
+                            ? partsRequested.getAndSet(-1)
+                            : partsRequested.getAndUpdate(v -> Long.MAX_VALUE - v > n
+                            ? v + n : v < 0 ? v : Long.MAX_VALUE);
                 if (curr == 0) {
                     drain();
                 }
@@ -426,9 +426,9 @@ public class MultiPartDecoder implements Processor<DataChunk, ReadableBodyPart> 
                     // Illegal n makes chunksRequested negative, which interacts with drain() to drain the
                     // entire bufferEntryIterator, and signal onError
                     long curr = n <= 0
-                            ? chunksRequested.getAndSet(-1)
-                            : chunksRequested.getAndUpdate(v -> Long.MAX_VALUE - v > n
-                            ? v + n : v < 0 ? v == Long.MIN_VALUE ? n : v : Long.MAX_VALUE);
+                                ? chunksRequested.getAndSet(-1)
+                                : chunksRequested.getAndUpdate(v -> Long.MAX_VALUE - v > n
+                                ? v + n : v < 0 ? v == Long.MIN_VALUE ? n : v : Long.MAX_VALUE);
                     if (curr == 0) {
                         MultiPartDecoder.this.drain();
                     }
