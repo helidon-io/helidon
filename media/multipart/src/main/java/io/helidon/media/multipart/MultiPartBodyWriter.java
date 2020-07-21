@@ -15,10 +15,12 @@
  */
 package io.helidon.media.multipart;
 
+import java.util.Optional;
 import java.util.concurrent.Flow.Publisher;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
+import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.mapper.Mapper;
 import io.helidon.common.reactive.Multi;
@@ -44,15 +46,24 @@ public final class MultiPartBodyWriter implements MessageBodyWriter<WriteableMul
 
     @Override
     public PredicateResult accept(GenericType<?> type, MessageBodyWriterContext context) {
-        return PredicateResult.supports(WriteableMultiPart.class, type);
+        return context.contentType()
+                .or(() -> Optional.of(MediaType.MULTIPART_FORM_DATA))
+                .filter(mediaType -> mediaType == MediaType.MULTIPART_FORM_DATA)
+                .map(it -> PredicateResult.supports(WriteableMultiPart.class, type))
+                .orElse(PredicateResult.NOT_SUPPORTED);
     }
 
     @Override
     public Publisher<DataChunk> write(Single<? extends WriteableMultiPart> content,
                                       GenericType<? extends WriteableMultiPart> type,
                                       MessageBodyWriterContext context) {
-
-        context.contentType(MediaType.MULTIPART_FORM_DATA);
+        MediaType mediaType = MediaType.MULTIPART_FORM_DATA;
+        MediaType mediaWithBoundary = MediaType.builder()
+                .type(mediaType.type())
+                .subtype(mediaType.subtype())
+                .addParameter("boundary", "\"" + boundary + "\"")
+                .build();
+        context.headers().put(Http.Header.CONTENT_TYPE, mediaWithBoundary.toString());
         return content.flatMap(new MultiPartToChunks(boundary, context));
     }
 

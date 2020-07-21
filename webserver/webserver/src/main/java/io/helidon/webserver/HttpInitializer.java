@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,10 +57,15 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
 
     private final SslContext sslContext;
     private final NettyWebServer webServer;
+    private final SocketConfiguration soConfig;
     private final Routing routing;
     private final Queue<ReferenceHoldingQueue<DataChunk>> queues = new ConcurrentLinkedQueue<>();
 
-    HttpInitializer(SslContext sslContext, Routing routing, NettyWebServer webServer) {
+    HttpInitializer(SocketConfiguration soConfig,
+                    SslContext sslContext,
+                    Routing routing,
+                    NettyWebServer webServer) {
+        this.soConfig = soConfig;
         this.routing = routing;
         this.sslContext = sslContext;
         this.webServer = webServer;
@@ -91,7 +96,11 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
 
         // Set up HTTP/2 pipeline if feature is enabled
         ServerConfiguration serverConfig = webServer.configuration();
-        HttpRequestDecoder requestDecoder = new HttpRequestDecoder();
+        HttpRequestDecoder requestDecoder = new HttpRequestDecoder(soConfig.maxInitialLineLength(),
+                                                                   soConfig.maxHeaderSize(),
+                                                                   soConfig.maxChunkSize(),
+                                                                   soConfig.validateHeaders(),
+                                                                   soConfig.initialBufferSize());
         if (serverConfig.isHttp2Enabled()) {
             ExperimentalConfiguration experimental = serverConfig.experimental();
             Http2Configuration http2Config = experimental.http2();
