@@ -72,7 +72,7 @@ public class CircuitBreakerTest extends FaultToleranceTest {
         CircuitBreakerBean bean = newBean(CircuitBreakerBean.class);
 
         // Iterate a few times to test circuit
-        for (int i = 0; i < bean.REQUEST_VOLUME_THRESHOLD; i++) {
+        for (int i = 0; i < bean.REQUEST_VOLUME_THRESHOLD - 1; i++) {
             assertThrows(TimeoutException.class, () -> bean.openOnTimeouts());
         }
 

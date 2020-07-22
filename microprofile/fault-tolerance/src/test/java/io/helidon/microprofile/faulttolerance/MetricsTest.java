@@ -212,7 +212,7 @@ public class MetricsTest extends FaultToleranceTest {
     public void testBreakerTrip() throws Exception {
         MetricsBean bean = newBean(MetricsBean.class);
 
-        for (int i = 0; i < CircuitBreakerBean.REQUEST_VOLUME_THRESHOLD; i++) {
+        for (int i = 0; i < CircuitBreakerBean.REQUEST_VOLUME_THRESHOLD - 1; i++) {
             assertThrows(RuntimeException.class, () -> bean.exerciseBreaker(false));
         }
         assertThrows(CircuitBreakerOpenException.class, () -> bean.exerciseBreaker(false));
@@ -225,7 +225,7 @@ public class MetricsTest extends FaultToleranceTest {
                    is(0L));
         assertThat(getCounter(bean, "exerciseBreaker",
                                 BREAKER_CALLS_FAILED_TOTAL, boolean.class),
-                   is((long)CircuitBreakerBean.REQUEST_VOLUME_THRESHOLD));
+                   is((long) CircuitBreakerBean.REQUEST_VOLUME_THRESHOLD - 1));
         assertThat(getCounter(bean, "exerciseBreaker",
                                    BREAKER_CALLS_PREVENTED_TOTAL, boolean.class),
                    is(1L));
