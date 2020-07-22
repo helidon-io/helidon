@@ -24,74 +24,160 @@
 :keywords: helidon, java, SE, microservices, Netty
 :h1Prefix: SE
 
-Helidon is a collection of Java libraries for writing microservices. Helidon
-offers two programming models: Helidion SE and Helidon MP.
-
-== About Helidon SE Components
-
 Helidon SE is a compact toolkit that embraces the latest Java SE features:
 reactive streams, asynchrous and functional programming, and fluent-style
 APIs.
 
-The REST framework for Helidon SE is the Helidon WebServer. It's built on top
-of Netty and uses a straight forward request routing API and supports a
-number of additional Helidon features:
+== About Helidon SE Components
 
-[cols="2,6"]
-|=======
-| Reactive Web Server 
-|  WebServer provides an asynchonous and reactive API for creating web applications. The API is inspired by popular NodeJS and Java frameworks.
-<<se/webserver/01_introduction.adoc, Learn more>>.
+The REST framework for Helidon SE is the Helidon WebServer. It is built on top of Netty and uses a straight forward request routing API. 
 
-| Health Checks 
-|  The health check API combines the statuses of all the dependencies that affect availability and the ability to perform correctly such as network latency and storage. <<se/health/01_health.adoc, Learn more>>.
+Helidon SE supports a number of additional Helidon features:
 
-| gRPC 
-|  Helidon gRPC Server provides a framework for creating gRPC (general-purpose Remote Procedure Calls) applications.
-<<se/grpc/01_introduction.adoc, Learn more>>.
 
-|Configuration  
-| The Config component provides a Java API to load and process configuration properties in key/value form into a Config object which the application can use to retrieve config data.
-<<se/config/01_introduction.adoc, Learn more>>. 
+== Components
 
-| Metrics 
-|  Heldion supports both a base set and a Helidon-specific set of metrics that expose information in JSON format (as specified by the MicroProfile Metrics specification) or in plain text (for Prometheus metrics). 
-<<se/metrics/01_metrics.adoc, Learn more>>.
+[PILLARS]
+====
+//aot
+[CARD]
+.Ahead-of-Time Compilation (AOT)
+[icon=save,link=se/aot/01_introduction.adoc]
+--
+Use GraalVM native image to compile Helidon applications into a native executable. 
+--
+//config
+[CARD]
+.Config
+[icon=settings,link=se/config/01_introduction.adoc]
+--
+A flexible configuration framework with support for multiple sources and
+ formats.
+--
 
-| Helidon DB Client 
-|  The new Helidon SE DB Client for Helidon 2.0 provides a unified, reactive API for working with databases in non-blocking way. 
-<<se/dbclient/01_introduction.adoc, Learn more>>.
+//CORS
+[CARD]
+.CORS
+[icon=share,link=se/cors/01_introduction.adoc]
+--
+Add support for CORS to your application using a Helidon module.
+--
+//DBClient
+[CARD]
+.DB Client
+[icon=storage,link=se/dbclient/01_introduction.adoc]
+--
+Provides a unified, reactive API for working with databases in non-blocking way.
+--
 
-| Security 
-|  The security modules modules support authentication, authorization, outbound security and audits for your applications.
-<<se/security/01_introduction.adoc, Learn more>>.
+//gRPC
+[CARD]
+.gRPC
+[icon=swap_horiz,link=se/grpc/01_introduction.adoc]
+--
+Build gRPC servers and clients.
+--
+//Health Checks
+[CARD]
+.Health Checks
+[icon=favorite_outline,link=se/health/01_health.adoc]
+--
+Expose health statuses of your applications.
+--
+//Metrics
+[CARD]
+.Metrics
+[icon=av_timer,link=se/metrics/01_metrics.adoc]
+--
+Instrumentation to expose metrics of your applications.
+--
+//Openapi
+[CARD]
+.OpenAPI
+[icon=donut_large,link=se/openapi/01_openapi.adoc]
+--
+Support OpenAPI from your application.
+--
 
-|  CORS Support
-|  Although it is possible for any Helidon application to implement its own support for CORS, there are common tasks (such as processing preflight requests) that can be provided in a Helidon module. <<se/cors/01_introduction.adoc, Learn more>>. 
+//Reactive Messaging
+[CARD]
+.Reactive Messaging
+[icon=message,link=se/reactivemessaging/01_introduction.adoc]
+--
+Use prepared tools for repetitive use case scenarios.
+--
 
-| OpenTracing 
-|  Helidon includes support for tracing through the OpenTracing APIs. Tracing is integrated with WebServer, gRPC Server, and Security.
-<<se/tracing/01_tracing.adoc, Learn more>>.
+//Reactive Streams
+[CARD]
+.Reactive Streams
+[icon=waves,link=se/reactivestreams/01_overview.adoc]
+--
+APIs to work with reactive streams in Helidon.
+--
+//Security
+[CARD]
+.Security
+[icon=security,link=se/security/01_introduction.adoc]
+--
+A tool-chain to handle authentication, authorization and context propagation.
+--
+//Tracing
+[CARD]
+.Tracing
+[icon=timeline,link=se/tracing/01_tracing.adoc]
+--
+Profile and monitor your applications across multiple services.
+--
+//WebClient
+[CARD]
+.WebClient
+[icon=http,link=se/webclient/01_introduction.adoc]
+--
+HTTP client that handles responses to the HTTP requests in a reactive way.
+--
 
-| Helidon Web Client 
-|  The new Helidon WebClient for Helidon SE 2.0 allows you to perform any HTTP requests to the target endpoint (via GET, PUT, etc.), and handle the provided response in a reactive way.
-<<se/webclient/01_introduction.adoc, Learn more>>.
+//WebServer
+[CARD]
+.WebServer
+[icon=settings_ethernet,link=se/webserver/01_introduction.adoc]
+--
+A programmatic HTTP API with reactive features, powered by Netty.
+--
+//WebSocket
+[CARD]
+.WebSocket
+[icon=timeline,link=se/websocket/01_overview.adoc]
+--
+Enables Java applications to participate in WebSocket interactions as both servers and clients. 
+--
 
-|OpenAPI  
-|  The OpenAPI in Helidon SE allows your Helidon SE application to serve an OpenAPI document that describes your application’s endpoints.
-<<se/openapi/01_openapi.adoc, Learn more>>.
 
-| GraalVM Native Image support 
-|  Helidon SE supports GraalVM native images for small footprint and lightening fast startup. <<se/guides/36_graalnative.adoc,Learn more>>.
 
-| Netty I/O Client-Server Framework 
-|  Helidon runs on top of Netty so there is no need for an application server. It is not derived from a Java EE application server. That means your cloud native application is compact and efficient without unnecessary overhead or bloat.
 
-|JSON-P and JSON-B  
-|  Helidon supports both JSON processing (JSON-P) and JSON binding (JSON-B) APIs.
-|=======
+
+
+====
+
 
 == Next Steps
 
-Try the <<se/guides/02_quickstart.adoc,Helidon SE quickstart>> to get your
+Try the Helidon SE quickstart guides to get your
 first Helidon SE application up and running in minutes.
+
+[PILLARS]
+====
+[CARD]
+.Guides
+[icon=explore,link=se/guides/01_overview.adoc]
+--
+Follow step-by-step guides to build your applications using Helidon SE.
+
+--
+
+[CARD]
+.Javadocs
+[icon=library_books,link=apidocs/index.html?overview-summary.html,link-type=url]
+--
+Browse the Helidon Javadocs.
+--
+====
