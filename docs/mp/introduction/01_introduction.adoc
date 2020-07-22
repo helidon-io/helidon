@@ -55,6 +55,16 @@ A flexible configuration framework with support for multiple sources and
  formats.
 --
 
+
+//CDI Extensions
+[CARD]
+.CDI Extensions
+[icon=extension,link=mp/extensions/01_overview.adoc]
+--
+In addition to MicroProfile support, Helidon MP provides additional CDI extensions to address areas not covered by MicroProfile.
+--
+
+
 //CORS
 [CARD]
 .CORS
@@ -64,13 +74,7 @@ Add support for CORS to your application using a Helidon module.
 --
 
 
-//CDI Extensions
-[CARD]
-.Extensions
-[icon=extension,link=mp/extensions/01_overview.adoc]
---
-In addition to MicroProfile support, Helidon MP provides additional CDI extensions to address areas not covered by MicroProfile.
---
+
 
 
 //Fault Tolerance
@@ -118,7 +122,7 @@ Work with JPA in Helidon MP in all the ways that you’re familiar with.
 //JWAuth
 [CARD]
 .JWT Authentication
-[icon=dns,link=mp/jwtauth/01_introduction.adoc]
+[icon=verified_user,link=mp/jwtauth/01_introduction.adoc]
 --
 Defines a compact and self-contained way for securely transmitting information between parties as a JSON object.
 --
@@ -183,7 +187,7 @@ Profile and monitor your applications across multiple services.
 //WebSocket
 [CARD]
 .WebSocket
-[icon=timeline,link=mp/websocket/01_overview.adoc]
+[icon=sync_alt,link=mp/websocket/01_overview.adoc]
 --
 Enables Java applications to participate in WebSocket interactions as both servers and clients. 
 --
