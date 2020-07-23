@@ -141,4 +141,41 @@ public interface Bulkhead extends FtHandler {
         }
     }
 
+    interface Stats {
+
+        /**
+         * Number of concurrent executions at this time.
+         *
+         * @return concurrent executions.
+         */
+        long concurrentExecutions();
+
+        /**
+         * Number of calls accepted on the bulkhead.
+         *
+         * @return calls accepted.
+         */
+        long callsAccepted();
+
+        /**
+         * Number of calls rejected on the bulkhead.
+         *
+         * @return calls rejected.
+         */
+        long callsRejected();
+
+        /**
+         * Size of waiting queue at this time.
+         *
+         * @return size of waiting queue.
+         */
+        long waitingQueueSize();
+    }
+
+    /**
+     * Provides access to internal stats for this bulkhead.
+     *
+     * @return internal stats.
+     */
+    Stats stats();
 }

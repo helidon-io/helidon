@@ -36,7 +36,6 @@ import io.helidon.faulttolerance.FaultTolerance;
 import io.helidon.faulttolerance.FtHandlerTyped;
 import io.helidon.faulttolerance.Retry;
 import io.helidon.faulttolerance.Timeout;
-
 import static io.helidon.microprofile.faulttolerance.FaultToleranceExtension.isFaultToleranceMetricsEnabled;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BREAKER_CALLS_FAILED_TOTAL;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BREAKER_CALLS_PREVENTED_TOTAL;
@@ -45,6 +44,12 @@ import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BREAK
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BREAKER_HALF_OPEN_TOTAL;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BREAKER_OPENED_TOTAL;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BREAKER_OPEN_TOTAL;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BULKHEAD_CALLS_ACCEPTED_TOTAL;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BULKHEAD_CALLS_REJECTED_TOTAL;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BULKHEAD_CONCURRENT_EXECUTIONS;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BULKHEAD_EXECUTION_DURATION;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BULKHEAD_WAITING_DURATION;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BULKHEAD_WAITING_QUEUE_POPULATION;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.INVOCATIONS_FAILED_TOTAL;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.INVOCATIONS_TOTAL;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.RETRY_CALLS_FAILED_TOTAL;
@@ -81,8 +86,9 @@ public class CommandRunner implements FtSupplier<Object> {
 
     private static class MethodState {
         FtHandlerTyped<Object> handler;
-        CircuitBreaker breaker;
         Retry retry;
+        Bulkhead bulkhead;
+        CircuitBreaker breaker;
         State lastBreakerState;
         long breakerTimerOpen;
         long breakerTimerClosed;
@@ -117,20 +123,29 @@ public class CommandRunner implements FtSupplier<Object> {
             return methodState;
         });
 
-        // Special initialization for methods with breakers
-        if (isFaultToleranceMetricsEnabled() && introspector.hasCircuitBreaker()) {
-            registerGauge(introspector.getMethod(),
-                    BREAKER_OPEN_TOTAL,
-                    "Amount of time the circuit breaker has spent in open state",
-                    () -> methodState.breakerTimerOpen);
-            registerGauge(introspector.getMethod(),
-                    BREAKER_HALF_OPEN_TOTAL,
-                    "Amount of time the circuit breaker has spent in half-open state",
-                    () -> methodState.breakerTimerHalfOpen);
-            registerGauge(introspector.getMethod(),
-                    BREAKER_CLOSED_TOTAL,
-                    "Amount of time the circuit breaker has spent in closed state",
-                    () -> methodState.breakerTimerClosed);
+        // Registration of gauges for bulkhead and circuit breakers
+        if (isFaultToleranceMetricsEnabled()) {
+            if (introspector.hasCircuitBreaker()) {
+                registerGauge(method, BREAKER_OPEN_TOTAL,
+                        "Amount of time the circuit breaker has spent in open state",
+                        () -> methodState.breakerTimerOpen);
+                registerGauge(method, BREAKER_HALF_OPEN_TOTAL,
+                        "Amount of time the circuit breaker has spent in half-open state",
+                        () -> methodState.breakerTimerHalfOpen);
+                registerGauge(method, BREAKER_CLOSED_TOTAL,
+                        "Amount of time the circuit breaker has spent in closed state",
+                        () -> methodState.breakerTimerClosed);
+            }
+            if (introspector.hasBulkhead()) {
+                registerGauge(method, BULKHEAD_CONCURRENT_EXECUTIONS,
+                        "Number of currently running executions",
+                        () -> methodState.bulkhead.stats().concurrentExecutions());
+                if (introspector.isAsynchronous()) {
+                    registerGauge(method, BULKHEAD_WAITING_QUEUE_POPULATION,
+                            "Number of executions currently waiting in the queue",
+                            () -> methodState.bulkhead.stats().waitingQueueSize());
+                }
+            }
         }
     }
 
@@ -246,6 +261,7 @@ public class CommandRunner implements FtSupplier<Object> {
                     .async(introspector.isAsynchronous())
                     .build();
             builder.addBulkhead(bulkhead);
+            methodState.bulkhead = bulkhead;
         }
 
         // Create and add timeout handler -- parent of breaker or bulkhead
@@ -310,7 +326,7 @@ public class CommandRunner implements FtSupplier<Object> {
     /**
      * Collects information necessary to update metrics before method is called.
      */
-    private synchronized void updateMetricsBefore() {
+    private void updateMetricsBefore() {
         timerStart = System.currentTimeMillis();
     }
 
@@ -319,98 +335,126 @@ public class CommandRunner implements FtSupplier<Object> {
      *
      * @param cause Exception cause or {@code null} if execution successful.
      */
-    private synchronized void updateMetricsAfter(Throwable cause) {
+    private void updateMetricsAfter(Throwable cause) {
         if (!isFaultToleranceMetricsEnabled()) {
             return;
         }
 
-        // Calculate execution time
-        long executionTime = System.currentTimeMillis() - timerStart;
+        synchronized (method) {
+            // Calculate execution time
+            long executionTime = System.currentTimeMillis() - timerStart;
 
-        // Metrics for retries
-        if (introspector.hasRetry()) {
-            Counter counter = getCounter(method, RETRY_RETRIES_TOTAL);
-            long oldCounter = counter.getCount();
-            long newCounter = methodState.retry.retryCounter();
-
-            // Have retried the last call?
-            if (newCounter > oldCounter) {
-                counter.inc(newCounter - oldCounter);       // akin to a set
-                if (cause == null) {
-                    getCounter(method, RETRY_CALLS_SUCCEEDED_RETRIED_TOTAL).inc();
-                }
-            } else {
-                getCounter(method, RETRY_CALLS_SUCCEEDED_NOT_RETRIED_TOTAL).inc();
-            }
-
-            // Update failed calls
-            if (cause != null) {
-                getCounter(method, RETRY_CALLS_FAILED_TOTAL).inc();
-            }
-        }
-
-        // Timeout
-        if (introspector.hasTimeout()) {
-            getHistogram(method, TIMEOUT_EXECUTION_DURATION).update(executionTime);
-            getCounter(method, cause instanceof TimeoutException
-                    ? TIMEOUT_CALLS_TIMED_OUT_TOTAL
-                    : TIMEOUT_CALLS_NOT_TIMED_OUT_TOTAL).inc();
-        }
-
-        // Circuit breaker
-        if (introspector.hasCircuitBreaker()) {
-            Objects.requireNonNull(methodState.breaker);
-
-            // Update counters based on state changes
-            if (methodState.lastBreakerState != State.CLOSED) {
-                getCounter(method, BREAKER_CALLS_PREVENTED_TOTAL).inc();
-            } else if (methodState.breaker.state() == State.OPEN) {     // closed -> open
-                getCounter(method, BREAKER_OPENED_TOTAL).inc();
-            }
-
-            // Update succeeded and failed
-            if (cause == null) {
-                getCounter(method, BREAKER_CALLS_SUCCEEDED_TOTAL).inc();
-            } else if (!(cause instanceof CircuitBreakerOpenException)) {
-                boolean failure = false;
-                Class<? extends Throwable>[] failOn = introspector.getCircuitBreaker().failOn();
-                for (Class<? extends Throwable> c : failOn) {
-                    if (c.isAssignableFrom(cause.getClass())) {
-                        failure = true;
-                        break;
+            // Metrics for retries
+            if (introspector.hasRetry()) {
+                // Have retried the last call?
+                long newValue = methodState.retry.retryCounter();
+                if (updateCounter(method, RETRY_RETRIES_TOTAL, newValue)) {
+                    if (cause == null) {
+                        getCounter(method, RETRY_CALLS_SUCCEEDED_RETRIED_TOTAL).inc();
                     }
+                } else {
+                    getCounter(method, RETRY_CALLS_SUCCEEDED_NOT_RETRIED_TOTAL).inc();
                 }
 
-                System.out.println("### failure " + failure + " " + cause);
-
-                getCounter(method, failure ? BREAKER_CALLS_FAILED_TOTAL
-                        : BREAKER_CALLS_SUCCEEDED_TOTAL).inc();
+                // Update failed calls
+                if (cause != null) {
+                    getCounter(method, RETRY_CALLS_FAILED_TOTAL).inc();
+                }
             }
 
-            // Update times for gauges
-            switch (methodState.lastBreakerState) {
-                case OPEN:
-                    methodState.breakerTimerOpen += System.nanoTime() - methodState.startNanos;
-                    break;
-                case CLOSED:
-                    methodState.breakerTimerClosed += System.nanoTime() - methodState.startNanos;
-                    break;
-                case HALF_OPEN:
-                    methodState.breakerTimerHalfOpen += System.nanoTime() - methodState.startNanos;
-                    break;
-                default:
-                    throw new IllegalStateException("Unknown breaker state " + methodState.lastBreakerState);
+            // Timeout
+            if (introspector.hasTimeout()) {
+                getHistogram(method, TIMEOUT_EXECUTION_DURATION).update(executionTime);
+                getCounter(method, cause instanceof TimeoutException
+                        ? TIMEOUT_CALLS_TIMED_OUT_TOTAL
+                        : TIMEOUT_CALLS_NOT_TIMED_OUT_TOTAL).inc();
             }
 
-            // Update internal state
-            methodState.lastBreakerState = methodState.breaker.state();
-            methodState.startNanos = System.nanoTime();
-        }
+            // Circuit breaker
+            if (introspector.hasCircuitBreaker()) {
+                Objects.requireNonNull(methodState.breaker);
 
-        // Global method counters
-        getCounter(method, INVOCATIONS_TOTAL).inc();
-        if (cause != null) {
-            getCounter(method, INVOCATIONS_FAILED_TOTAL).inc();
+                // Update counters based on state changes
+                if (methodState.lastBreakerState != State.CLOSED) {
+                    getCounter(method, BREAKER_CALLS_PREVENTED_TOTAL).inc();
+                } else if (methodState.breaker.state() == State.OPEN) {     // closed -> open
+                    getCounter(method, BREAKER_OPENED_TOTAL).inc();
+                }
+
+                // Update succeeded and failed
+                if (cause == null) {
+                    getCounter(method, BREAKER_CALLS_SUCCEEDED_TOTAL).inc();
+                } else if (!(cause instanceof CircuitBreakerOpenException)) {
+                    boolean failure = false;
+                    Class<? extends Throwable>[] failOn = introspector.getCircuitBreaker().failOn();
+                    for (Class<? extends Throwable> c : failOn) {
+                        if (c.isAssignableFrom(cause.getClass())) {
+                            failure = true;
+                            break;
+                        }
+                    }
+
+                    getCounter(method, failure ? BREAKER_CALLS_FAILED_TOTAL
+                            : BREAKER_CALLS_SUCCEEDED_TOTAL).inc();
+                }
+
+                // Update times for gauges
+                switch (methodState.lastBreakerState) {
+                    case OPEN:
+                        methodState.breakerTimerOpen += System.nanoTime() - methodState.startNanos;
+                        break;
+                    case CLOSED:
+                        methodState.breakerTimerClosed += System.nanoTime() - methodState.startNanos;
+                        break;
+                    case HALF_OPEN:
+                        methodState.breakerTimerHalfOpen += System.nanoTime() - methodState.startNanos;
+                        break;
+                    default:
+                        throw new IllegalStateException("Unknown breaker state " + methodState.lastBreakerState);
+                }
+
+                // Update internal state
+                methodState.lastBreakerState = methodState.breaker.state();
+                methodState.startNanos = System.nanoTime();
+            }
+
+            // Bulkhead
+            if (introspector.hasBulkhead()) {
+                Objects.requireNonNull(methodState.bulkhead);
+                Bulkhead.Stats stats = methodState.bulkhead.stats();
+                updateCounter(method, BULKHEAD_CALLS_ACCEPTED_TOTAL, stats.callsAccepted());
+                updateCounter(method, BULKHEAD_CALLS_REJECTED_TOTAL, stats.callsRejected());
+
+                // TODO: compute these durations properly
+                getHistogram(method, BULKHEAD_EXECUTION_DURATION).update(executionTime);
+                if (introspector.isAsynchronous()) {
+                    getHistogram(method, BULKHEAD_WAITING_DURATION).update(executionTime);
+                }
+            }
+
+            // Global method counters
+            getCounter(method, INVOCATIONS_TOTAL).inc();
+            if (cause != null) {
+                getCounter(method, INVOCATIONS_FAILED_TOTAL).inc();
+            }
         }
+    }
+
+    /**
+     * Sets the value of a monotonically increasing counter using {@code inc()}.
+     *
+     * @param method the method.
+     * @param name the counter's name.
+     * @param newValue the new value.
+     * @return A value of {@code true} if counter updated, {@code false} otherwise.
+     */
+    private static boolean updateCounter(Method method, String name, long newValue) {
+        Counter counter = getCounter(method, name);
+        long oldValue = counter.getCount();
+        if (newValue > oldValue) {
+            counter.inc(newValue - oldValue);
+            return true;
+        }
+        return false;
     }
 }
