@@ -36,6 +36,11 @@ import io.helidon.faulttolerance.FaultTolerance;
 import io.helidon.faulttolerance.FtHandlerTyped;
 import io.helidon.faulttolerance.Retry;
 import io.helidon.faulttolerance.Timeout;
+
+import org.eclipse.microprofile.faulttolerance.exceptions.CircuitBreakerOpenException;
+import org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException;
+import org.eclipse.microprofile.metrics.Counter;
+
 import static io.helidon.microprofile.faulttolerance.FaultToleranceExtension.isFaultToleranceMetricsEnabled;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BREAKER_CALLS_FAILED_TOTAL;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BREAKER_CALLS_PREVENTED_TOTAL;
@@ -63,26 +68,41 @@ import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.getCo
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.getHistogram;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.registerGauge;
 import static io.helidon.microprofile.faulttolerance.ThrowableMapper.map;
-import org.eclipse.microprofile.faulttolerance.exceptions.CircuitBreakerOpenException;
-import org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException;
-import org.eclipse.microprofile.metrics.Counter;
 
 /**
  * Runs a FT method.
  */
 public class CommandRunner implements FtSupplier<Object> {
 
+    /**
+     * The method being intercepted.
+     */
     private final Method method;
 
+    /**
+     * Invocation context for the interception.
+     */
     private final InvocationContext context;
 
+    /**
+     * Helper class to extract information about th emethod.
+     */
     private final MethodIntrospector introspector;
 
+    /**
+     * Map of methods to their internal state.
+     */
     private static final ConcurrentHashMap<Method, MethodState> ftHandlers = new ConcurrentHashMap<>();
 
-    private boolean retried = false;
+    /**
+     * Start system nanos when handler is called.
+     */
+    private long handlerStartNanos;
 
-    private long timerStart;
+    /**
+     * Start system nanos when method {@code proceed()} is called.
+     */
+    private long invocationStartNanos;
 
     private static class MethodState {
         FtHandlerTyped<Object> handler;
@@ -292,7 +312,6 @@ public class CommandRunner implements FtSupplier<Object> {
             Fallback<Object> fallback = Fallback.builder()
                     .fallback(throwable -> {
                         CommandFallback cfb = new CommandFallback(context, introspector, throwable);
-                        // getCounter(method, FALLBACK_CALLS_TOTAL).inc();
                         return toCompletionStageSupplier(cfb::execute).get();
                     })
                     .build();
@@ -311,9 +330,10 @@ public class CommandRunner implements FtSupplier<Object> {
      * @return The new supplier.
      */
     @SuppressWarnings("unchecked")
-    static Supplier<? extends CompletionStage<Object>> toCompletionStageSupplier(FtSupplier<Object> supplier) {
+    Supplier<? extends CompletionStage<Object>> toCompletionStageSupplier(FtSupplier<Object> supplier) {
         return () -> {
             try {
+                invocationStartNanos = System.nanoTime();
                 Object result = supplier.get();
                 return result instanceof CompletionStage<?> ? (CompletionStage<Object>) result
                         : CompletableFuture.completedFuture(result);
@@ -327,7 +347,7 @@ public class CommandRunner implements FtSupplier<Object> {
      * Collects information necessary to update metrics before method is called.
      */
     private void updateMetricsBefore() {
-        timerStart = System.currentTimeMillis();
+        handlerStartNanos = System.nanoTime();
     }
 
     /**
@@ -342,7 +362,7 @@ public class CommandRunner implements FtSupplier<Object> {
 
         synchronized (method) {
             // Calculate execution time
-            long executionTime = System.currentTimeMillis() - timerStart;
+            long executionTime = System.nanoTime() - handlerStartNanos;
 
             // Metrics for retries
             if (introspector.hasRetry()) {
@@ -424,11 +444,10 @@ public class CommandRunner implements FtSupplier<Object> {
                 Bulkhead.Stats stats = methodState.bulkhead.stats();
                 updateCounter(method, BULKHEAD_CALLS_ACCEPTED_TOTAL, stats.callsAccepted());
                 updateCounter(method, BULKHEAD_CALLS_REJECTED_TOTAL, stats.callsRejected());
-
-                // TODO: compute these durations properly
-                getHistogram(method, BULKHEAD_EXECUTION_DURATION).update(executionTime);
+                long waitingTime = invocationStartNanos - handlerStartNanos;
+                getHistogram(method, BULKHEAD_EXECUTION_DURATION).update(executionTime - waitingTime);
                 if (introspector.isAsynchronous()) {
-                    getHistogram(method, BULKHEAD_WAITING_DURATION).update(executionTime);
+                    getHistogram(method, BULKHEAD_WAITING_DURATION).update(waitingTime);
                 }
             }
 
