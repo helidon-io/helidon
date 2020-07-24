@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,8 +25,6 @@ import javax.interceptor.InvocationContext;
 import org.eclipse.microprofile.faulttolerance.ExecutionContext;
 import org.eclipse.microprofile.faulttolerance.Fallback;
 import org.eclipse.microprofile.faulttolerance.FallbackHandler;
-
-import static io.helidon.microprofile.faulttolerance.ExceptionUtil.toException;
 
 /**
  * Class CommandFallback.
@@ -112,7 +110,7 @@ class CommandFallback {
             if (t instanceof InvocationTargetException) {
                 t = t.getCause();
             }
-            throw toException(t);
+            throw t instanceof Exception ? (Exception) t : new RuntimeException(t);
         }
 
         updateMetrics(null);

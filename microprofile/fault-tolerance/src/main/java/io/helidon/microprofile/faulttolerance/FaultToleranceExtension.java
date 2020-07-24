@@ -155,8 +155,8 @@ public class FaultToleranceExtension implements Extension {
                 new AnnotatedTypeWrapper<>(bm.createAnnotatedType(Fallback.class),
                         LiteralCommandBinding.getInstance()));
 
-        discovery.addAnnotatedType(bm.createAnnotatedType(CommandInterceptor2.class),
-                CommandInterceptor2.class.getName());
+        discovery.addAnnotatedType(bm.createAnnotatedType(CommandInterceptor.class),
+                CommandInterceptor.class.getName());
     }
 
     /**
@@ -164,7 +164,7 @@ public class FaultToleranceExtension implements Extension {
      *
      * @param event Process annotated event.
      */
-    void updatePriorityMaybe(@Observes final ProcessAnnotatedType<CommandInterceptor2> event) {
+    void updatePriorityMaybe(@Observes final ProcessAnnotatedType<CommandInterceptor> event) {
         final Config config = ConfigProvider.getConfig();
         Optional<Integer> priority = config.getOptionalValue(MP_FT_INTERCEPTOR_PRIORITY, Integer.class);
         priority.ifPresent(v -> event.configureAnnotatedType()

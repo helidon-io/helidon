@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,14 @@
 
 package io.helidon.microprofile.faulttolerance;
 
-import java.util.logging.Logger;
-
 import javax.annotation.Priority;
 import javax.interceptor.AroundInvoke;
 import javax.interceptor.Interceptor;
 import javax.interceptor.InvocationContext;
+import java.util.logging.Logger;
 
 /**
- * Class CommandInterceptor.
+ * Intercepts calls to FT methods and implements annotation semantics.
  */
 @Interceptor
 @CommandBinding
@@ -48,10 +47,10 @@ public class CommandInterceptor {
                         + "::" + context.getMethod().getName() + "'");
 
             // Create method introspector and executer retrier
-            final MethodIntrospector introspector = new MethodIntrospector(
-                    context.getTarget().getClass(), context.getMethod());
-            final CommandRetrier retrier = new CommandRetrier(context, introspector);
-            return retrier.execute();
+            MethodIntrospector introspector = new MethodIntrospector(context.getTarget().getClass(),
+                    context.getMethod());
+            CommandRunner runner = new CommandRunner(context, introspector);
+            return runner.get();
         } catch (Throwable t) {
             LOGGER.fine("Throwable caught by interceptor '" + t.getMessage() + "'");
             throw t;
