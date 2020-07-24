@@ -648,6 +648,16 @@
             </dependency>
             <dependency>
                 <groupId>org.eclipse.microprofile.metrics</groupId>
+                <artifactId>microprofile-metrics-optional-tck</artifactId>
+                <version>${version.lib.microprofile-metrics-api}</version><exclusions>
+                <exclusion>
+                    <groupId>org.jboss.arquillian.junit</groupId>
+                    <artifactId>arquillian-junit-container</artifactId>
+                </exclusion>
+            </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.microprofile.metrics</groupId>
                 <artifactId>microprofile-metrics-api-tck</artifactId>
                 <version>${version.lib.microprofile-metrics-api}</version>
                 <exclusions>

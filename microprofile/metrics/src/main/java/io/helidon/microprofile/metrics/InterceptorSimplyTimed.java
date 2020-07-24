@@ -27,6 +27,11 @@ import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
 
 /**
  * Interceptor for {@link SimplyTimed} annotation.
+ * <p>
+ *     Note that this interceptor fires only for explicit {@code SimplyTimed} annotations.
+ *     The CDI extension adds synthetic {@code SimplyTimed} annotations to each JAX-RS
+ *     method, and the separate {@link InterceptorInferredSimplyTimed} interceptor deals with those.
+ * </p>
  */
 @SimplyTimed
 @Interceptor
@@ -36,12 +41,12 @@ final class InterceptorSimplyTimed extends InterceptorBase<SimpleTimer, SimplyTi
     @Inject
     InterceptorSimplyTimed(MetricRegistry registry) {
         super(registry,
-              SimplyTimed.class,
-              SimplyTimed::name,
-              SimplyTimed::tags,
-              SimplyTimed::absolute,
-              "simpletimer",
-              SimpleTimer.class);
+                SimplyTimed.class,
+                SimplyTimed::name,
+                SimplyTimed::tags,
+                SimplyTimed::absolute,
+                "simpletimer",
+                SimpleTimer.class);
     }
 
     @Override

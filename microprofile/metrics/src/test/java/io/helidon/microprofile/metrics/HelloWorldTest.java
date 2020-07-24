@@ -21,6 +21,9 @@ import java.util.stream.IntStream;
 import javax.json.JsonObject;
 import javax.ws.rs.core.MediaType;
 
+import org.eclipse.microprofile.metrics.SimpleTimer;
+import org.eclipse.microprofile.metrics.Tag;
+import org.hamcrest.core.Is;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -45,6 +48,17 @@ public class HelloWorldTest extends MetricsMpServiceTest {
                         .path("helloworld").request().accept(MediaType.TEXT_PLAIN_TYPE)
                         .get(String.class));
         assertThat(getCounter("helloCounter").getCount(), is(5L));
+        SimpleTimer inferredSimpleTimer = getInferredSimpleTimer(HelloWorldResource.class,
+                "message");
+        assertThat(inferredSimpleTimer.getCount(), Is.is(5L));
+    }
+
+    private static SimpleTimer getInferredSimpleTimer(Class<?> clazz, String methodName) {
+        Tag[] tags = new Tag[] {new Tag("class", clazz.getName()),
+                new Tag("method", methodName)};
+        SimpleTimer inferredSimpleTimer = registry.simpleTimer(
+                MetricsCdiExtension.INFERRED_SIMPLE_TIMER_METADATA, tags);
+        return inferredSimpleTimer;
     }
 
     @AfterEach

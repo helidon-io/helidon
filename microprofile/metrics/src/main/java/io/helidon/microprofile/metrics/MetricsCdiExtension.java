@@ -32,6 +32,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import javax.annotation.Priority;
 import javax.enterprise.context.ApplicationScoped;
@@ -39,7 +40,10 @@ import javax.enterprise.context.RequestScoped;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Default;
 import javax.enterprise.inject.spi.AfterDeploymentValidation;
+import javax.enterprise.inject.spi.AnnotatedConstructor;
+import javax.enterprise.inject.spi.AnnotatedField;
 import javax.enterprise.inject.spi.AnnotatedMember;
+import javax.enterprise.inject.spi.AnnotatedMethod;
 import javax.enterprise.inject.spi.AnnotatedType;
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
@@ -110,7 +114,7 @@ public class MetricsCdiExtension implements Extension {
 
     private static final String INFERRED_SIMPLE_TIMER_METRIC_NAME = "REST.request";
 
-    private static final Metadata INFERRED_SIMPLE_TIMER_METADATA = Metadata.builder()
+    static final Metadata INFERRED_SIMPLE_TIMER_METADATA = Metadata.builder()
             .withName(INFERRED_SIMPLE_TIMER_METRIC_NAME)
             .withDisplayName(INFERRED_SIMPLE_TIMER_METRIC_NAME + " for all REST endpoints")
             .withDescription("The number of invocations and total response time of RESTful resource methods since the start" +
@@ -300,14 +304,17 @@ public class MetricsCdiExtension implements Extension {
         discovery.addAnnotatedType(InterceptorTimed.class, "InterceptorTimed");
         discovery.addAnnotatedType(InterceptorConcurrentGauge.class, "InterceptorConcurrentGauge");
         discovery.addAnnotatedType(InterceptorSimplyTimed.class, "InterceptorSimplyTimed");
+        discovery.addAnnotatedType(InterceptorInferredSimplyTimed.class, "InterceptorInferredSimplyTimed");
 
         /*
          * We need to arrange for CDI to intercept methods annotated with our synthetic {@code SimplyTimed}
          * annotation.
          */
-        // TODO - the following two lines are not triggering what we need
-        discovery.addAnnotatedType(SyntheticSimplyTimed.class, "SyntheticSimplyTimed");
-        discovery.addInterceptorBinding(beanManager.createAnnotatedType(SyntheticSimplyTimed.class));
+        for (Class<? extends Annotation> aClass : JAX_RS_ANNOTATIONS) {
+            discovery.addInterceptorBinding(
+                    new AnnotatedTypeWrapper<>(beanManager.createAnnotatedType(aClass),
+                            LiteralSyntheticSimplyTimedBinding.getInstance()));
+        }
     }
 
     /**
@@ -318,8 +325,7 @@ public class MetricsCdiExtension implements Extension {
      * @param pat annotated type instance being processed
      */
     private void registerMetrics(@Observes @WithAnnotations({Counted.class, Metered.class, Timed.class,
-            ConcurrentGauge.class, SimplyTimed.class,
-            GET.class, PUT.class, POST.class, HEAD.class, OPTIONS.class, DELETE.class, PATCH.class})
+            ConcurrentGauge.class, SimplyTimed.class})
                                          ProcessAnnotatedType<?> pat) {
         // Filter out interceptors
         AnnotatedType<?> type = pat.getAnnotatedType();
@@ -378,73 +384,63 @@ public class MetricsCdiExtension implements Extension {
         }
     }
 
-    /**
-     * Adds a synthetic {@code SimplyTimed} annotation to each JAX-RS endpoint method.
-     * <p>
-     *     The priority must be such that CDI invokes this observer before {@link #registerMetrics} so that
-     *     method will see the newly-added synthetic annotation.
-     * </p>
-     * @param pat the {@code ProcessAnnotatedType} for the type containing the JAX-RS annotated methods
-     */
-    private void addSimplyTimedToRestResources(@Observes @Priority(Interceptor.Priority.LIBRARY_BEFORE)
-            @WithAnnotations({GET.class, PUT.class, POST.class, HEAD.class, OPTIONS.class, DELETE.class, PATCH.class})
-            ProcessAnnotatedType<?> pat) {
-
-        // Filter out interceptors
-        AnnotatedType<?> type = pat.getAnnotatedType();
-        Interceptor annot = type.getAnnotation(Interceptor.class);
-        if (annot != null) {
-            return;
-        }
-
-        LOGGER.log(Level.FINE,
-                () -> "Processing inferred SimplyTimed annotation(s) for " + pat.getAnnotatedType()
-                        .getJavaClass()
-                        .getName());
-
-        // Register metrics based on annotations
-        AnnotatedTypeConfigurator<?> configurator = pat.configureAnnotatedType();
-        Class<?> clazz = configurator.getAnnotated().getJavaClass();
-
-        // If abstract class, then handled by concrete subclasses
-        if (Modifier.isAbstract(clazz.getModifiers())) {
-            return;
-        }
-
-        // Process methods keeping non-private declared on this class
-        configurator.filterMethods(method -> !Modifier.isPrivate(method.getJavaMember()
-                .getModifiers()))
-                .forEach(method -> {
-                    JAX_RS_ANNOTATIONS.forEach(annotation -> {
-                        Method m = method.getAnnotated()
-                                .getJavaMember();
-                        LookupResult<? extends Annotation> lookupResult
-                                = lookupAnnotation(m, annotation, clazz);
-                        // For methods, add the SimplyTimed annotation only on the declaring
-                        // class, not subclasses.
-                        if (lookupResult != null
-                                && (
-                                lookupResult.getType() != MetricUtil.MatchingType.METHOD
-                                        || clazz.equals(m.getDeclaringClass()))) {
-                            LOGGER.log(Level.FINE, () -> String.format("Adding @SimplyTimed to %s#%s", clazz.getName(),
-                                    m.getName()));
-                            SimplyTimed simplyTimed = new SyntheticSimplyTimed(clazz.getName(), m.getName());
-                            method.add(simplyTimed);
-                        }
-                    });
-                });
-    }
-
-    private static <E extends Member & AnnotatedElement> void registerSimpleTimerMetric(String className, String methodName) {
-        MetricRegistry registry = getMetricRegistry();
-
-        registry.simpleTimer(INFERRED_SIMPLE_TIMER_METADATA, tagsForSimpleTimer(className, methodName));
-        LOGGER.log(Level.FINE, () -> "Registered inferred simple timer for class " + className + ", method " + methodName);
-    }
-
-    private static Tag[] tagsForSimpleTimer(String className, String methodName) {
-        return new Tag[] {new Tag("class", className), new Tag("method", methodName)};
-    }
+//    /**
+//     * Adds a synthetic {@code SimplyTimed} annotation to each JAX-RS endpoint method.
+//     * <p>
+//     *     The priority must be such that CDI invokes this observer before {@link #registerMetrics} so that
+//     *     method will see the newly-added synthetic annotation.
+//     * </p>
+//     * @param pat the {@code ProcessAnnotatedType} for the type containing the JAX-RS annotated methods
+//     */
+//    private void addSimplyTimedToRestResources(@Observes @Priority(Interceptor.Priority.LIBRARY_BEFORE)
+//            @WithAnnotations({GET.class, PUT.class, POST.class, HEAD.class, OPTIONS.class, DELETE.class, PATCH.class})
+//            ProcessAnnotatedType<?> pat) {
+//
+//        // Filter out interceptors
+//        AnnotatedType<?> type = pat.getAnnotatedType();
+//        Interceptor annot = type.getAnnotation(Interceptor.class);
+//        if (annot != null) {
+//            return;
+//        }
+//
+//        LOGGER.log(Level.FINE,
+//                () -> "Processing inferred SimplyTimed annotation(s) for " + pat.getAnnotatedType()
+//                        .getJavaClass()
+//                        .getName());
+//
+//        // Register metrics based on annotations
+//        AnnotatedTypeConfigurator<?> configurator = pat.configureAnnotatedType();
+//        Class<?> clazz = configurator.getAnnotated().getJavaClass();
+//
+//        // If abstract class, then handled by concrete subclasses
+//        if (Modifier.isAbstract(clazz.getModifiers())) {
+//            return;
+//        }
+//
+//        // Process methods keeping non-private declared on this class
+//        configurator.filterMethods(method -> !Modifier.isPrivate(method.getJavaMember()
+//                .getModifiers()))
+//                .forEach(method -> {
+//                    JAX_RS_ANNOTATIONS.forEach(annotation -> {
+//                        Method m = method.getAnnotated()
+//                                .getJavaMember();
+//                        LookupResult<? extends Annotation> lookupResult
+//                                = lookupAnnotation(m, annotation, clazz);
+//                        // For methods, add the SimplyTimed annotation only on the declaring
+//                        // class, not subclasses.
+//                        if (lookupResult != null
+//                                && (
+//                                lookupResult.getType() != MetricUtil.MatchingType.METHOD
+//                                        || clazz.equals(m.getDeclaringClass()))) {
+//                            LOGGER.log(Level.FINE, () -> String.format("Adding @SimplyTimed to %s#%s", clazz.getName(),
+//                                    m.getName()));
+//                            SyntheticSimplyTimedBinding syntheticallySimplyTimed =
+//                                    new LiteralSyntheticSimplyTimedBinding(clazz.getName(), m.getName());
+//                            method.add(syntheticallySimplyTimed);
+//                        }
+//                    });
+//                });
+//    }
 
     /**
      * Records metric producer fields defined by the application. Ignores producers
@@ -768,6 +764,96 @@ public class MetricsCdiExtension implements Extension {
         @Override
         public boolean isSynthetic() {
             return annotatedMember.getJavaMember().isSynthetic();
+        }
+    }
+
+    /**
+     * Wraps an annotated type for the purpose of adding and/or overriding
+     * some annotations.
+     *
+     * @param <T> Underlying type.
+     */
+    static class AnnotatedTypeWrapper<T> implements AnnotatedType<T> {
+
+        private final AnnotatedType<T> delegate;
+
+        private final Set<Annotation> annotationSet;
+
+        /**
+         * Constructor.
+         *
+         * @param delegate Wrapped annotated type.
+         * @param annotations New set of annotations possibly overriding existing ones.
+         */
+        public AnnotatedTypeWrapper(AnnotatedType<T> delegate, Annotation... annotations) {
+            this.delegate = delegate;
+            this.annotationSet = new HashSet<>(Arrays.asList(annotations));
+
+            // Include only those annotations not overridden
+            for (Annotation da : delegate.getAnnotations()) {
+                boolean overridden = false;
+                for (Annotation na : annotationSet) {
+                    if (da.annotationType().isAssignableFrom(na.annotationType())) {
+                        overridden = true;
+                        break;
+                    }
+                }
+                if (!overridden) {
+                    this.annotationSet.add(da);
+                }
+            }
+        }
+
+        public Class<T> getJavaClass() {
+            return delegate.getJavaClass();
+        }
+
+        public Type getBaseType() {
+            return delegate.getBaseType();
+        }
+
+        public Set<Type> getTypeClosure() {
+            return delegate.getTypeClosure();
+        }
+
+        public Set<AnnotatedConstructor<T>> getConstructors() {
+            return delegate.getConstructors();
+        }
+
+        public Set<AnnotatedMethod<? super T>> getMethods() {
+            return delegate.getMethods();
+        }
+
+        public Set<AnnotatedField<? super T>> getFields() {
+            return delegate.getFields();
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public <R extends Annotation> R getAnnotation(Class<R> annotationType) {
+            Optional<Annotation> optional = annotationSet.stream()
+                    .filter(a -> annotationType.isAssignableFrom(a.annotationType()))
+                    .findFirst();
+            return optional.isPresent() ? (R) optional.get() : null;
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public <T extends Annotation> Set<T> getAnnotations(Class<T> annotationType) {
+            return (Set<T>) annotationSet.stream()
+                    .filter(a -> annotationType.isAssignableFrom(a.annotationType()))
+                    .collect(Collectors.toSet());
+        }
+
+        @Override
+        public Set<Annotation> getAnnotations() {
+            return annotationSet;
+        }
+
+        @Override
+        public boolean isAnnotationPresent(Class<? extends Annotation> annotationType) {
+            Annotation annotation = getAnnotation(annotationType);
+            return annotation != null;
         }
     }
 }
