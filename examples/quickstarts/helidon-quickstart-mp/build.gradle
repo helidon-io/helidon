@@ -16,7 +16,7 @@
 
 plugins {
     id 'java'
-    //id 'org.kordamp.gradle.jandex' version '0.5.0'
+    id 'org.kordamp.gradle.jandex' version '0.5.0'
 }
 
 group = 'io.helidon.examples'
@@ -53,16 +53,6 @@ dependencies {
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
 }
 
-
-sourceSets {
-    main {
-        output.resourcesDir = "build/classes/java/main"
-    }
-    test {
-        output.resourcesDir = "build/classes/java/test"
-    }
-}
-
 test {
     useJUnitPlatform()
 }
@@ -74,7 +64,6 @@ task copyLibs(type: Copy) {
   from configurations.runtimeClasspath
   into 'build/libs/libs'
 }
-
 
 // add it as a dependency of built-in task 'assemble'
 copyLibs.dependsOn jar
@@ -91,3 +80,17 @@ jar {
                )
   }
 }
+
+// This is a work-around for running unit tests.
+// Gradle places resource files under ${buildDir}/resources. In order for
+// beans.xml to get picked up by CDI it must be co-located with the classes.
+// So we move it before running tests.
+// In either case it ends up AOK in the final jar artifact
+task moveBeansXML {
+    doLast {
+        ant.move file: "${buildDir}/resources/main/META-INF/beans.xml",
+                 todir: "${buildDir}/classes/java/main/META-INF"
+    }
+}
+test.dependsOn moveBeansXML
+
