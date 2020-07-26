@@ -38,7 +38,7 @@ import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
  *     Explicit annotations using {@code SimplyTimed} are handled by {@link InterceptorSimplyTimed}.
  * </p>
  */
-@SyntheticSimplyTimedBinding
+@SyntheticSimplyTimed
 @Interceptor
 @Priority(Interceptor.Priority.PLATFORM_BEFORE + 10)
 final class InterceptorInferredSimplyTimed {

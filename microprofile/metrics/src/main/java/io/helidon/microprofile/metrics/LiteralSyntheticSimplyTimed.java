@@ -16,17 +16,22 @@
  */
 package io.helidon.microprofile.metrics;
 
-import javax.interceptor.InterceptorBinding;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Inherited;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import javax.enterprise.util.AnnotationLiteral;
 
-@Inherited
-@InterceptorBinding
-@Retention(RetentionPolicy.RUNTIME)
-@Target({ ElementType.TYPE, ElementType.METHOD })
+/**
+ * Binding to associate the JAX-RS annotations with the interceptor for defining
+ * the inferred {@code REST.request} {@code SimpleTimer} metric.
+ */
+class LiteralSyntheticSimplyTimed extends AnnotationLiteral<SyntheticSimplyTimed> implements SyntheticSimplyTimed {
 
-public @interface SyntheticSimplyTimedBinding {
+    private static final long serialVersionUID = 1L;
+
+    private static final LiteralSyntheticSimplyTimed INSTANCE = new LiteralSyntheticSimplyTimed();
+
+    static LiteralSyntheticSimplyTimed getInstance() {
+        return INSTANCE;
+    }
+
+    LiteralSyntheticSimplyTimed() {
+    }
 }

@@ -147,8 +147,7 @@ public class MetricsCdiExtension implements Extension {
     @Deprecated
     public static <E extends Member & AnnotatedElement>
     void registerMetric(E element, Class<?> clazz, LookupResult<? extends Annotation> lookupResult) {
-//        MetricRegistry registry = getMetricRegistry();
-        MetricRegistry registry = chooseMetricRegistry(lookupResult.getAnnotation());
+        MetricRegistry registry = getMetricRegistry();
         Annotation annotation = lookupResult.getAnnotation();
 
         if (annotation instanceof Counted) {
@@ -260,29 +259,8 @@ public class MetricsCdiExtension implements Extension {
         return RegistryProducer.getDefaultRegistry();
     }
 
-    static MetricRegistry chooseMetricRegistry(Annotation annotation) {
-        MetricRegistry result;
-        if (annotation instanceof SyntheticMetric) {
-            switch (((SyntheticMetric) annotation).registryType()) {
-                case APPLICATION:
-                    result = RegistryProducer.getApplicationRegistry();
-                    break;
-
-                case BASE:
-                    result = RegistryProducer.getBaseRegistry();
-                    break;
-
-                case VENDOR:
-                    result = RegistryProducer.getVendorRegistry();
-                    break;
-
-                default:
-                    result = RegistryProducer.getDefaultRegistry();
-            }
-        } else {
-            result = RegistryProducer.getDefaultRegistry();
-        }
-        return result;
+    static MetricRegistry getApplicationRegistry() {
+        return RegistryProducer.getApplicationRegistry();
     }
 
     /**
@@ -307,13 +285,12 @@ public class MetricsCdiExtension implements Extension {
         discovery.addAnnotatedType(InterceptorInferredSimplyTimed.class, "InterceptorInferredSimplyTimed");
 
         /*
-         * We need to arrange for CDI to intercept methods annotated with our synthetic {@code SimplyTimed}
-         * annotation.
+         * Have CDI use our interceptor that updates the inferred synthetic REST.request SimpleTimer metrics.
          */
         for (Class<? extends Annotation> aClass : JAX_RS_ANNOTATIONS) {
             discovery.addInterceptorBinding(
                     new AnnotatedTypeWrapper<>(beanManager.createAnnotatedType(aClass),
-                            LiteralSyntheticSimplyTimedBinding.getInstance()));
+                            LiteralSyntheticSimplyTimed.getInstance()));
         }
     }
 
@@ -384,63 +361,65 @@ public class MetricsCdiExtension implements Extension {
         }
     }
 
-//    /**
-//     * Adds a synthetic {@code SimplyTimed} annotation to each JAX-RS endpoint method.
-//     * <p>
-//     *     The priority must be such that CDI invokes this observer before {@link #registerMetrics} so that
-//     *     method will see the newly-added synthetic annotation.
-//     * </p>
-//     * @param pat the {@code ProcessAnnotatedType} for the type containing the JAX-RS annotated methods
-//     */
-//    private void addSimplyTimedToRestResources(@Observes @Priority(Interceptor.Priority.LIBRARY_BEFORE)
-//            @WithAnnotations({GET.class, PUT.class, POST.class, HEAD.class, OPTIONS.class, DELETE.class, PATCH.class})
-//            ProcessAnnotatedType<?> pat) {
-//
-//        // Filter out interceptors
-//        AnnotatedType<?> type = pat.getAnnotatedType();
-//        Interceptor annot = type.getAnnotation(Interceptor.class);
-//        if (annot != null) {
-//            return;
-//        }
-//
-//        LOGGER.log(Level.FINE,
-//                () -> "Processing inferred SimplyTimed annotation(s) for " + pat.getAnnotatedType()
-//                        .getJavaClass()
-//                        .getName());
-//
-//        // Register metrics based on annotations
-//        AnnotatedTypeConfigurator<?> configurator = pat.configureAnnotatedType();
-//        Class<?> clazz = configurator.getAnnotated().getJavaClass();
-//
-//        // If abstract class, then handled by concrete subclasses
-//        if (Modifier.isAbstract(clazz.getModifiers())) {
-//            return;
-//        }
-//
-//        // Process methods keeping non-private declared on this class
-//        configurator.filterMethods(method -> !Modifier.isPrivate(method.getJavaMember()
-//                .getModifiers()))
-//                .forEach(method -> {
-//                    JAX_RS_ANNOTATIONS.forEach(annotation -> {
-//                        Method m = method.getAnnotated()
-//                                .getJavaMember();
-//                        LookupResult<? extends Annotation> lookupResult
-//                                = lookupAnnotation(m, annotation, clazz);
-//                        // For methods, add the SimplyTimed annotation only on the declaring
-//                        // class, not subclasses.
-//                        if (lookupResult != null
-//                                && (
-//                                lookupResult.getType() != MetricUtil.MatchingType.METHOD
-//                                        || clazz.equals(m.getDeclaringClass()))) {
-//                            LOGGER.log(Level.FINE, () -> String.format("Adding @SimplyTimed to %s#%s", clazz.getName(),
-//                                    m.getName()));
-//                            SyntheticSimplyTimedBinding syntheticallySimplyTimed =
-//                                    new LiteralSyntheticSimplyTimedBinding(clazz.getName(), m.getName());
-//                            method.add(syntheticallySimplyTimed);
-//                        }
-//                    });
-//                });
-//    }
+    /**
+     * Adds a synthetic {@code SimplyTimed} annotation to each JAX-RS endpoint method.
+     * <p>
+     *     The priority must be such that CDI invokes this observer before {@link #registerMetrics} so that
+     *     method will see the newly-added synthetic annotation.
+     * </p>
+     * @param pat the {@code ProcessAnnotatedType} for the type containing the JAX-RS annotated methods
+     */
+    private void registerSyntheticSimplyTimedForRestResources(@Observes
+            @WithAnnotations({GET.class, PUT.class, POST.class, HEAD.class, OPTIONS.class, DELETE.class, PATCH.class})
+            ProcessAnnotatedType<?> pat) {
+
+        // Filter out interceptors
+        AnnotatedType<?> type = pat.getAnnotatedType();
+        Interceptor annot = type.getAnnotation(Interceptor.class);
+        if (annot != null) {
+            return;
+        }
+
+        LOGGER.log(Level.FINE,
+                () -> "Processing inferred SimplyTimed annotation(s) for " + pat.getAnnotatedType()
+                        .getJavaClass()
+                        .getName());
+
+        // Register metrics based on annotations
+        AnnotatedTypeConfigurator<?> configurator = pat.configureAnnotatedType();
+        Class<?> clazz = configurator.getAnnotated().getJavaClass();
+
+        // If abstract class, then handled by concrete subclasses
+        if (Modifier.isAbstract(clazz.getModifiers())) {
+            return;
+        }
+
+        // Process methods keeping non-private declared on this class
+        configurator.filterMethods(method -> !Modifier.isPrivate(method.getJavaMember()
+                .getModifiers()))
+                .forEach(method -> {
+                    JAX_RS_ANNOTATIONS.forEach(annotation -> {
+                        Method m = method.getAnnotated()
+                                .getJavaMember();
+                        LookupResult<? extends Annotation> lookupResult
+                                = lookupAnnotation(m, annotation, clazz);
+                        // For methods, add the SyntheticSimplyTimed annotation only on the declaring
+                        // class, not subclasses.
+                        if (lookupResult != null
+                                && (
+                                lookupResult.getType() != MetricUtil.MatchingType.METHOD
+                                        || clazz.equals(m.getDeclaringClass()))) {
+                            LOGGER.log(Level.FINE, () -> String.format("Adding @SyntheticSimplyTimed to %s#%s", clazz.getName(),
+                                    m.getName()));
+
+                            // Register the inferred REST.request metric for this class/method.
+                            getApplicationRegistry().simpleTimer(INFERRED_SIMPLE_TIMER_METADATA,
+                                    new Tag[] {new Tag("class", m.getDeclaringClass().getName()),
+                                               new Tag("method", m.getName())});
+                        }
+                    });
+                });
+    }
 
     /**
      * Records metric producer fields defined by the application. Ignores producers

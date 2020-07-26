@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.eclipse.microprofile.metrics.Metadata;
@@ -113,22 +114,12 @@ public final class MetricUtil {
 
     private static <A extends Annotation>  List<LookupResult<A>> lookupAnnotations(Annotated annotated,
             Class<A> annotClass) {
-        ArrayList<LookupResult<A>> result = new ArrayList<>();
         // We have to filter by annotation class ourselves, because annotatedMethod.getAnnotations(Class) delegates
         // to the Java method. That would bypass any annotations that had been added dynamically to the configurator.
-        for (Annotation annotation : annotated.getAnnotations()) {
-            if (annotClass.isInstance(annotation)) {
-                A a = annotClass.cast(annotation);
-                result.add(new LookupResult<>(matchingType(annotated), a));
-            }
-        }
-        return result;
-    }
-
-    static <E extends Member & AnnotatedElement>
-    MetricID getMetricID(E element, Class<?> clazz, MatchingType matchingType, String explicitName, String[] tags,
-                         boolean absolute) {
-        return new MetricID(getMetricName(element, clazz, matchingType, explicitName, absolute), tags(tags));
+        return annotated.getAnnotations().stream()
+                .filter(annotClass::isInstance)
+                .map(annotation -> new LookupResult<>(matchingType(annotated), annotClass.cast(annotation)))
+                .collect(Collectors.toList());
     }
 
     /**
@@ -204,7 +195,7 @@ public final class MetricUtil {
      * @param <E> the annotated element type
      */
     public static <E extends Member & AnnotatedElement>
-    void registerMetric(E element, Class<?> clazz, Annotation annotation, MatchingType type) {
+    void    registerMetric(E element, Class<?> clazz, Annotation annotation, MatchingType type) {
         MetricRegistry registry = getMetricRegistry();
 
         if (annotation instanceof Counted) {
