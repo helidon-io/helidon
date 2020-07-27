@@ -40,9 +40,9 @@ The state is described by:
 - error: for errors that need to be signalled to both inner and outer `Subscriber` (produced by the parser or upstream)
 - cancelled: for cancellations signalled by outer `Subscriber`
 - parser: a helper object to capture parser state across multiple `DataChunk`
-- iterator: parser iterator that holds `ParserEvents` and transition parser state
+- iterator: parser iterator that holds `ParserEvents` and is used to transition parser state
 - partsRequested: for outer `Subscriber` to indicate demand for MIME parts
-- demand for DataChunks by inner `Subscriber`
+- demand for DataChunks by inner `Subscriber` (exposed by DataChunkPublisher through API)
 
 Whenever any of these change, `drain()` is called to enter `drainBoth()` or demand to re-do it again, if
 a thread already inside `drainBoth()` is detected.
@@ -106,9 +106,9 @@ Both `MultiPartDecoder` and `DataChunkPublisher` share a similar approach: they 
 - can be transitioned into "subscribed" state once and only once in its lifetime
 - is finally transitioned into initialized state only after `onSubscribe` has returned.
 
-This allows to ensure that no more than one `Subscriber` is associated with the `Publisher` (concurrent cases are
-commonly omitted), and enforce the rule that all on* signals get delivered only after `onSubscribe` and none
-during `onSubscribe`.
+This allows to ensure that no more than one `Subscriber` is associated with the `Publisher` and enforce the rule that
+ all on* signals get delivered only after `onSubscribe` and none during `onSubscribe`. Concurrent cases are commonly
+ omitted, but here we do take care of them - hence it looks a little more complex than others.
 
 `DataChunkPublisher` is pretty much done at that stage. `MultiPartDecoder` needs a bit more explanation, as it
 has two ends that need initializing:
@@ -116,26 +116,26 @@ has two ends that need initializing:
   empty upstream
 - downstream outer `Subscriber` being attached by `subscribe()`
 
-The use of contenders atomic counter allows to synchronize all these.
+The use of `contenders` atomic counter allows to synchronize all these.
 
 The partial order of possible events is:
 
 ```
                                                       uninitialized
                                                        |         |
-                       .-------------------------------'         `----------------------.
-                       |                                                                |
-                       V                                                                V
+                       .-------------------------------'         `----------------------------.
+                       |                                                                      |
+                       V                                                                      V
 subscribe(...) --> halfInit(UPSTREAM_INIT) --> deferredInit()          deferredInit() <-- halfInit(DOWNSTREAM_INIT) <-- onSubscribe(...)
-                       |                     |                             |            |
-                       V                     |   onError / onComplete      |            V
-subscribe(...) --> !halfInit(UPSTREAM_INIT)  |           |                 |       !halfInit(DOWNSTREAM_INIT) <-- onSubscribe(...)
-                       |                     |           |  request        |            |
-                       V                     |           |     |           |            V
-subscribe(...) --> !halfInit(UPSTREAM_INIT)  `--.        |     |        .--'       !halfInit(DOWNSTREAM_INIT) <-- onSubscribe(...)
-                       |                        |        |     |        |               |
-                       V                        V        V     V        V               V
-                      ...                      atomic update of contenders             ...
+                       |                     |                             |                  |
+                       V                     |   onError / onComplete      |                  V
+subscribe(...) --> !halfInit(UPSTREAM_INIT)  |           |                 |             !halfInit(DOWNSTREAM_INIT) <-- onSubscribe(...)
+                       |                     |           |  request        |                  |
+                       V                     |           |     |           |                  V
+subscribe(...) --> !halfInit(UPSTREAM_INIT)  `--.        |     |        .--'             !halfInit(DOWNSTREAM_INIT) <-- onSubscribe(...)
+                       |                        |        |     |        |                     |
+                       V                        V        V     V        V                     V
+                      ...                      atomic update of contenders                   ...
                                                            |
                                                            V
                                                      contenders >= 0
@@ -149,7 +149,7 @@ subscribe(...) --> !halfInit(UPSTREAM_INIT)  `--.        |     |        .--'    
 
 Of all atomic updates of contenders counter only the updates by `deferredInit()` are able to turn the value
 into a non-negative. All other updates observe they are "locked out" from entering `drainBoth()`. The second
-`deferredInit()` can witness if any of `onError`/`onComplete`/request happened, and enter `drainBoth()` on their
+`deferredInit()` can witness if any of `onError`/`onComplete`/`request` happened, and enter `drainBoth()` on their
 behalf.
 
 Uninitialized state is represented by `Integer.MIN_VALUE` (`0b1000`). Each end attempts to transition to

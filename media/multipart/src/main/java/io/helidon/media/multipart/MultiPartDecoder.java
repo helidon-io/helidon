@@ -180,9 +180,9 @@ public class MultiPartDecoder implements Processor<DataChunk, ReadableBodyPart> 
 
     private void deferredInit() {
         // deferredInit is invoked twice: onSubscribe and subscribe
-        // after onSubscribe and subscribe three top bits are set (0b11100000)
-        // adding SUBSCRIPTION_LOCK for the first time sets the fourth bit (0b11110000)
-        // adding SUBSCRIPTION_LOCK for the second time clears all top bits (0b00000000)
+        // after onSubscribe and subscribe three top bits are set
+        // adding SUBSCRIPTION_LOCK for the first time sets the fourth bit
+        // adding SUBSCRIPTION_LOCK for the second time clears all top bits
         // making the contenders counter 0,
         // unless there were onError, onComplete, request for parts or downstream cancellation
         if (contenders.addAndGet(SUBSCRIPTION_LOCK) > 0) {
@@ -203,6 +203,8 @@ public class MultiPartDecoder implements Processor<DataChunk, ReadableBodyPart> 
         error = null;
         downstream = null; // after cleanup no uses of downstream are reachable
         cancelled = true; // after cleanup the processor appears as cancelled
+        bodyPartHeaderBuilder = null;
+        bodyPartBuilder = null;
         partsRequested.set(-1);
         releaseChunks();
         parser.cleanup();
@@ -286,6 +288,8 @@ public class MultiPartDecoder implements Processor<DataChunk, ReadableBodyPart> 
                     case END_HEADERS:
                         bodyPartPublisher = new DataChunkPublisher();
                         downstream.onNext(createPart());
+                        bodyPartHeaderBuilder = null;
+                        bodyPartBuilder = null;
                         // exit the parser iterator loop
                         // the parser events processing will resume upon inner Subscriber demand
                         return;
@@ -300,8 +304,6 @@ public class MultiPartDecoder implements Processor<DataChunk, ReadableBodyPart> 
                         break;
                     case END_PART:
                         bodyPartPublisher.complete(null);
-                        bodyPartHeaderBuilder = null;
-                        bodyPartBuilder = null;
                         bodyPartPublisher = null;
                         requested = partsRequested.updateAndGet(v -> v == Long.MAX_VALUE || v < 0 ? v : v - 1);
                         break;
