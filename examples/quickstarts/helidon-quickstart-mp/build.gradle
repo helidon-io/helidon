@@ -16,7 +16,7 @@
 
 plugins {
     id 'java'
-    id 'org.kordamp.gradle.jandex' version '0.5.0'
+    id 'org.kordamp.gradle.jandex' version '0.6.0'
 }
 
 group = 'io.helidon.examples'
