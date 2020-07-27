@@ -47,7 +47,7 @@ public class MultiPartDecoder implements Processor<DataChunk, ReadableBodyPart> 
     private static final Iterator<BufferEntry> EMPTY_BUFFER_ENTRY_ITERATOR = new EmptyIterator<>();
     private static final Iterator<MimeParser.ParserEvent> EMPTY_PARSER_ITERATOR = new EmptyIterator<>();
 
-    private Subscription upstream;
+    private volatile Subscription upstream;
     private Subscriber<? super ReadableBodyPart> downstream;
     private ReadableBodyPart.Builder bodyPartBuilder;
     private ReadableBodyPartHeaders.Builder bodyPartHeaderBuilder;
@@ -156,9 +156,10 @@ public class MultiPartDecoder implements Processor<DataChunk, ReadableBodyPart> 
     @Override
     public void onError(Throwable throwable) {
         Objects.requireNonNull(throwable);
+        error = throwable;
         if (upstream != SubscriptionHelper.CANCELED) {
             upstream = SubscriptionHelper.CANCELED;
-            drain(throwable);
+            drain();
         }
     }
 
@@ -324,27 +325,26 @@ public class MultiPartDecoder implements Processor<DataChunk, ReadableBodyPart> 
 
             // ordering the delivery of errors after the delivery of all signals that precede it
             // in the order of events emitted by the parser
-            if (error != null) {
-                if (bodyPartPublisher != null) {
-                    bodyPartPublisher.complete(error);
-                    bodyPartPublisher = null;
+            if (upstream == SubscriptionHelper.CANCELED || error != null) {
+                if (error != null) {
+                    if (bodyPartPublisher != null) {
+                        bodyPartPublisher.complete(error);
+                        bodyPartPublisher = null;
+                    }
+                    upstream.cancel();
+                    downstream.onError(error);
+                } else {
+                    // parser will throw, if we attempt to close it before it finished parsing the message
+                    // and onError will be delivered
+                    parser.close();
+                    downstream.onComplete();
                 }
-                upstream.cancel();
-                downstream.onError(error);
                 cleanup();
                 return;
             }
 
             // parserIterator is drained, drop the reference to it, but keep it safe for any later invocations
             parserIterator = EMPTY_PARSER_ITERATOR;
-            if (upstream == SubscriptionHelper.CANCELED) {
-                // parser will throw if we attempt to close it before it finished parsing the message,
-                // and onError will be delivered
-                parser.close();
-                downstream.onComplete();
-                cleanup();
-                return;
-            }
 
             if (requested > 0) {
                 upstream.request(1);
@@ -468,18 +468,20 @@ public class MultiPartDecoder implements Processor<DataChunk, ReadableBodyPart> 
          * @param th throwable, if not {@code null} signals {@code onError}, otherwise signals {@code onComplete}
          */
         void complete(Throwable th) {
-            if (cancelled) {
-                subscriber = null;
-                return;
+            if (chunksRequested.get() < 0) {
+                if (cancelled) {
+                    subscriber = null;
+                    return;
+                }
+                th = new IllegalArgumentException("Expecting only positive requests");
             }
             cancelled = true;
+            chunksRequested.set(-1);
 
             // bufferEntryIterator is drained because complete() is invoked only by drain() which proceeds past
             // state == BODY only when drain() returned true
             if (th != null) {
                 subscriber.onError(th);
-            } else if (chunksRequested.get() < 0) {
-                subscriber.onError(new IllegalArgumentException("Expecting only positive requests"));
             } else {
                 subscriber.onComplete();
             }
