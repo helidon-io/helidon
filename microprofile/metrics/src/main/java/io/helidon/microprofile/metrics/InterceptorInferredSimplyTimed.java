@@ -27,15 +27,13 @@ import javax.interceptor.InvocationContext;
 
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.SimpleTimer;
-import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
 
 /**
  * Interceptor for synthetic {@link SimplyTimed} annotations.
  * <p>
- *     This interceptor handles only synthetic {@code SimplyTimed} annotations, virtually
- *     inserted for each JAX-RS endpoint (as denoted by the JAX-RS annotations such as {@code @GET}, etc.
- *     Explicit annotations using {@code SimplyTimed} are handled by {@link InterceptorSimplyTimed}.
+ *     This interceptor handles each JAX-RS endpoint (as denoted by the JAX-RS annotations such as {@code @GET}, etc.
+ *     and updates the metric for the corresponding inferred {@code SimplyTimed} annotation.
  * </p>
  */
 @SyntheticSimplyTimed
@@ -53,7 +51,7 @@ final class InterceptorInferredSimplyTimed {
     }
 
     /**
-     * Intercepts a call to bean method annotated by the {@code SimplyTimed} annotation.
+     * Intercepts a call to bean method annotated by a JAX-RS annotation.
      *
      * @param context invocation context
      * @return the intercepted method's return value
@@ -62,7 +60,7 @@ final class InterceptorInferredSimplyTimed {
     @AroundInvoke
     public Object interceptRestEndpoint(InvocationContext context) throws Throwable {
         try {
-            LOGGER.fine("Interceptor called for '" + context.getTarget().getClass()
+            LOGGER.fine("Interceptor of synthetic SimplyTimed called for '" + context.getTarget().getClass()
                     + "::" + context.getMethod().getName() + "'");
 
             Method timedMethod = context.getMethod();
@@ -76,14 +74,8 @@ final class InterceptorInferredSimplyTimed {
     }
 
     private SimpleTimer findSimpleTimer(Method timedMethod) {
-        Tag[] tags = new Tag[] {new Tag("class", timedMethod.getDeclaringClass().getName()),
-                                new Tag("method", timedMethod.getName())};
-
-        return metricRegistry.simpleTimer(MetricsCdiExtension.INFERRED_SIMPLE_TIMER_METADATA, tags);
+        return MetricsCdiExtension.syntheticSimpleTimer(metricRegistry, timedMethod);
     }
-
-    private static String UNIT_DEFAULT = getSimplyTimedDefaultValue("unit", String.class);
-    private static boolean REUSABLE_DEFAULT = getSimplyTimedDefaultValue("reusable", Boolean.class);
 
     private static <T> T getSimplyTimedDefaultValue(String methodName, Class<? extends T> type) {
         try {
@@ -92,6 +84,4 @@ final class InterceptorInferredSimplyTimed {
             throw new RuntimeException(e);
         }
     }
-
-
 }

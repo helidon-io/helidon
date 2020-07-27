@@ -21,6 +21,7 @@ import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -34,7 +35,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import javax.annotation.Priority;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.RequestScoped;
 import javax.enterprise.event.Observes;
@@ -84,8 +84,8 @@ import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
-import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.SimpleTimer;
+import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
 import org.eclipse.microprofile.metrics.annotation.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.annotation.Counted;
@@ -117,8 +117,8 @@ public class MetricsCdiExtension implements Extension {
     static final Metadata INFERRED_SIMPLE_TIMER_METADATA = Metadata.builder()
             .withName(INFERRED_SIMPLE_TIMER_METRIC_NAME)
             .withDisplayName(INFERRED_SIMPLE_TIMER_METRIC_NAME + " for all REST endpoints")
-            .withDescription("The number of invocations and total response time of RESTful resource methods since the start" +
-                    " of the server.")
+            .withDescription("The number of invocations and total response time of RESTful resource methods since the start"
+                    + " of the server.")
             .withType(MetricType.SIMPLE_TIMER)
             .withUnit(MetricUnits.NANOSECONDS)
             .notReusable()
@@ -337,7 +337,8 @@ public class MetricsCdiExtension implements Extension {
                                 registerMetric(m, clazz, lookupResult);
                             }
                         }
-                    });});
+                    });
+                });
 
         // Process constructors
         configurator.filterConstructors(constructor -> !Modifier.isPrivate(constructor.getJavaMember().getModifiers()))
@@ -413,12 +414,23 @@ public class MetricsCdiExtension implements Extension {
                                     m.getName()));
 
                             // Register the inferred REST.request metric for this class/method.
-                            getApplicationRegistry().simpleTimer(INFERRED_SIMPLE_TIMER_METADATA,
-                                    new Tag[] {new Tag("class", m.getDeclaringClass().getName()),
-                                               new Tag("method", m.getName())});
+                            syntheticSimpleTimer(getApplicationRegistry(), m);
                         }
                     });
                 });
+    }
+
+    static SimpleTimer syntheticSimpleTimer(MetricRegistry registry, Method method) {
+        String className = method.getDeclaringClass().getName();
+        StringBuilder methodTagValue = new StringBuilder(method.getName());
+        for (Parameter p : method.getParameters()) {
+            methodTagValue.append("_").append(p.getType().getName());
+            if (p.getType().isArray() || p.isVarArgs()) {
+                methodTagValue.append("[]");
+            }
+        }
+        return registry.simpleTimer(INFERRED_SIMPLE_TIMER_METADATA,
+                new Tag[] {new Tag("class", className), new Tag("method", methodTagValue.toString())});
     }
 
     /**
@@ -764,7 +776,7 @@ public class MetricsCdiExtension implements Extension {
          * @param delegate Wrapped annotated type.
          * @param annotations New set of annotations possibly overriding existing ones.
          */
-        public AnnotatedTypeWrapper(AnnotatedType<T> delegate, Annotation... annotations) {
+        AnnotatedTypeWrapper(AnnotatedType<T> delegate, Annotation... annotations) {
             this.delegate = delegate;
             this.annotationSet = new HashSet<>(Arrays.asList(annotations));
 
