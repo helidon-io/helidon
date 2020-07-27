@@ -16,7 +16,6 @@
 
 package io.helidon.microprofile.metrics;
 
-import java.lang.reflect.Method;
 import java.util.stream.IntStream;
 
 import javax.json.JsonObject;
@@ -53,22 +52,22 @@ public class HelloWorldTest extends MetricsMpServiceTest {
     }
 
     @Test
-    public void testInferredSimpleTimer() {
+    public void testSyntheticSimpleTimer() {
         IntStream.range(0, 6).forEach(
                 i -> client.target(baseUri())
                         .path("helloworld/withArgs").request(MediaType.TEXT_PLAIN_TYPE)
                         .put(Entity.text("Joe")).readEntity(String.class));
 
-        SimpleTimer inferredSimpleTimer = getInferredSimpleTimer();
-        assertThat(inferredSimpleTimer.getCount(), Is.is(6L));
+        SimpleTimer syntheticSimpleTimer = getSyntheticSimpleTimer();
+        assertThat(syntheticSimpleTimer.getCount(), Is.is(6L));
     }
 
-    private static SimpleTimer getInferredSimpleTimer() {
+    private static SimpleTimer getSyntheticSimpleTimer() {
         Tag[] tags = new Tag[] {new Tag("class", HelloWorldResource.class.getName()),
                 new Tag("method", "messageWithArg_java.lang.String")};
-        SimpleTimer inferredSimpleTimer = registry.simpleTimer(
-                MetricsCdiExtension.INFERRED_SIMPLE_TIMER_METADATA, tags);
-        return inferredSimpleTimer;
+        SimpleTimer syntheticSimpleTimer = registry.simpleTimer(
+                MetricsCdiExtension.SYNTHETIC_SIMPLE_TIMER_METADATA, tags);
+        return syntheticSimpleTimer;
     }
 
     @AfterEach

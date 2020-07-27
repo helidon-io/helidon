@@ -190,7 +190,7 @@ public final class MetricUtil {
      * @param <E> the annotated element type
      */
     public static <E extends Member & AnnotatedElement>
-    void    registerMetric(E element, Class<?> clazz, Annotation annotation, MatchingType type) {
+    void registerMetric(E element, Class<?> clazz, Annotation annotation, MatchingType type) {
         MetricRegistry registry = getMetricRegistry();
 
         if (annotation instanceof Counted) {

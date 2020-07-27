@@ -20,7 +20,7 @@ import javax.enterprise.util.AnnotationLiteral;
 
 /**
  * Binding to associate the JAX-RS annotations with the interceptor for defining
- * the inferred {@code REST.request} {@code SimpleTimer} metric.
+ * the synthetic {@code REST.request} {@code SimpleTimer} metric {@link SyntheticSimplyTimed}.
  */
 class LiteralSyntheticSimplyTimed extends AnnotationLiteral<SyntheticSimplyTimed> implements SyntheticSimplyTimed {
 
@@ -32,6 +32,6 @@ class LiteralSyntheticSimplyTimed extends AnnotationLiteral<SyntheticSimplyTimed
         return INSTANCE;
     }
 
-    LiteralSyntheticSimplyTimed() {
+    private LiteralSyntheticSimplyTimed() {
     }
 }

@@ -32,21 +32,21 @@ import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
 /**
  * Interceptor for synthetic {@link SimplyTimed} annotations.
  * <p>
- *     This interceptor handles each JAX-RS endpoint (as denoted by the JAX-RS annotations such as {@code @GET}, etc.
- *     and updates the metric for the corresponding inferred {@code SimplyTimed} annotation.
+ *     This interceptor handles each JAX-RS endpoint (as denoted by the JAX-RS annotations such as {@code @GET}, etc.)
+ *     and updates the metric for the corresponding {@code SyntheticSimplyTimed} annotation.
  * </p>
  */
 @SyntheticSimplyTimed
 @Interceptor
 @Priority(Interceptor.Priority.PLATFORM_BEFORE + 10)
-final class InterceptorInferredSimplyTimed {
+final class InterceptorSyntheticSimplyTimed {
 
-    private static final Logger LOGGER = Logger.getLogger(InterceptorInferredSimplyTimed.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(InterceptorSyntheticSimplyTimed.class.getName());
 
     private final MetricRegistry metricRegistry;
 
     @Inject
-    InterceptorInferredSimplyTimed(MetricRegistry registry) {
+    InterceptorSyntheticSimplyTimed(MetricRegistry registry) {
         metricRegistry = registry;
     }
 
@@ -64,24 +64,11 @@ final class InterceptorInferredSimplyTimed {
                     + "::" + context.getMethod().getName() + "'");
 
             Method timedMethod = context.getMethod();
-
-            SimpleTimer simpleTimer = findSimpleTimer(timedMethod);
+            SimpleTimer simpleTimer = MetricsCdiExtension.syntheticSimpleTimer(metricRegistry, timedMethod);
             return simpleTimer.time(context::proceed);
         } catch (Throwable t) {
             LOGGER.fine("Throwable caught by interceptor '" + t.getMessage() + "'");
             throw t;
-        }
-    }
-
-    private SimpleTimer findSimpleTimer(Method timedMethod) {
-        return MetricsCdiExtension.syntheticSimpleTimer(metricRegistry, timedMethod);
-    }
-
-    private static <T> T getSimplyTimedDefaultValue(String methodName, Class<? extends T> type) {
-        try {
-            return type.cast(SimplyTimed.class.getMethod(methodName).getDefaultValue());
-        } catch (NoSuchMethodException e) {
-            throw new RuntimeException(e);
         }
     }
 }

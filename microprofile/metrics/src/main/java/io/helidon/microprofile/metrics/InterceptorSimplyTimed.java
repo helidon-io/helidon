@@ -30,7 +30,7 @@ import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
  * <p>
  *     Note that this interceptor fires only for explicit {@code SimplyTimed} annotations.
  *     The CDI extension adds synthetic {@code SimplyTimed} annotations to each JAX-RS
- *     method, and the separate {@link InterceptorInferredSimplyTimed} interceptor deals with those.
+ *     method, and the separate {@link InterceptorSyntheticSimplyTimed} interceptor deals with those.
  * </p>
  */
 @SimplyTimed

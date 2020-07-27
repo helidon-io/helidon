@@ -29,5 +29,8 @@ import javax.interceptor.InterceptorBinding;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.TYPE, ElementType.METHOD })
 
+/**
+ * Marker interface indicating that the corresponding method should have an automatic {@link SimpleTimer} created for it.
+ */
 @interface SyntheticSimplyTimed {
 }
