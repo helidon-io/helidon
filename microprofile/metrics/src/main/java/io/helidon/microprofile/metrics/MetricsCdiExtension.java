@@ -280,7 +280,7 @@ public class MetricsCdiExtension implements Extension {
         discovery.addAnnotatedType(InterceptorSimplyTimed.class, InterceptorSimplyTimed.class.getName());
 
         // Telling CDI about our private SyntheticSimplyTimed annotation and its interceptor
-        // is enough for it to intercept invocations of methods so annotated.
+        // is enough for CDI to intercept invocations of methods so annotated.
         discovery.addAnnotatedType(InterceptorSyntheticSimplyTimed.class, InterceptorSyntheticSimplyTimed.class.getName());
         discovery.addAnnotatedType(SyntheticSimplyTimed.class, SyntheticSimplyTimed.class.getName());
     }
@@ -353,6 +353,7 @@ public class MetricsCdiExtension implements Extension {
 
     /**
      * Adds a {@code SyntheticSimplyTimed} annotation to each JAX-RS endpoint method.
+     *
      * @param pat the {@code ProcessAnnotatedType} for the type containing the JAX-RS annotated methods
      */
     private void registerSimplyTimedForRestResources(@Observes
@@ -404,15 +405,22 @@ public class MetricsCdiExtension implements Extension {
                             // annotations will not trigger the @ProcessAnnotatedType invocation that would normally do the
                             // metric registration because CDI has already decided which classes have annotations that trigger
                             // those invocations.
-                            syntheticSimpleTimer(getApplicationRegistry(), m);
+                            syntheticSimpleTimer(m);
                         }
                     });
                 });
     }
 
-    static SimpleTimer syntheticSimpleTimer(MetricRegistry registry, Method method) {
+    /**
+     * Creates or looks up the synthetic {@code SimpleTimer} instance for a JAX-RS method.
+     *
+     * @param method the {@code Method} for which the synthetic SimpleTimer instance is needed
+     * @return the located or created {@code SimpleTimer}
+     */
+    static SimpleTimer syntheticSimpleTimer(Method method) {
         String classTagValue = method.getDeclaringClass().getName();
-        return syntheticSimpleTimer(registry, classTagValue, methodTagValueForSyntheticSimpleTimer(method));
+        // By spec, the synthetic SimpleTimers are always in the application registry.
+        return syntheticSimpleTimer(getApplicationRegistry(), classTagValue, methodTagValueForSyntheticSimpleTimer(method));
     }
 
     private static SimpleTimer syntheticSimpleTimer(MetricRegistry registry, String classTagValue, String methodTagValue) {

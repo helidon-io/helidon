@@ -27,10 +27,9 @@ import javax.interceptor.InvocationContext;
 
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.SimpleTimer;
-import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
 
 /**
- * Interceptor for synthetic {@link SimplyTimed} annotations.
+ * Interceptor for synthetic {@link SyntheticSimplyTimed} annotations.
  * <p>
  *     This interceptor handles each JAX-RS endpoint (as denoted by the JAX-RS annotations such as {@code @GET}, etc.)
  *     and updates the metric for the corresponding {@code SyntheticSimplyTimed} annotation.
@@ -60,11 +59,11 @@ final class InterceptorSyntheticSimplyTimed {
     @AroundInvoke
     public Object interceptRestEndpoint(InvocationContext context) throws Throwable {
         try {
-            LOGGER.fine("Interceptor of synthetic SimplyTimed called for '" + context.getTarget().getClass()
+            LOGGER.fine("Interceptor of SyntheticSimplyTimed called for '" + context.getTarget().getClass()
                     + "::" + context.getMethod().getName() + "'");
 
             Method timedMethod = context.getMethod();
-            SimpleTimer simpleTimer = MetricsCdiExtension.syntheticSimpleTimer(metricRegistry, timedMethod);
+            SimpleTimer simpleTimer = MetricsCdiExtension.syntheticSimpleTimer(timedMethod);
             return simpleTimer.time(context::proceed);
         } catch (Throwable t) {
             LOGGER.fine("Throwable caught by interceptor '" + t.getMessage() + "'");

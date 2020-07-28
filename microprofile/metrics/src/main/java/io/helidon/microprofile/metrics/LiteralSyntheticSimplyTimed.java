@@ -19,8 +19,7 @@ package io.helidon.microprofile.metrics;
 import javax.enterprise.util.AnnotationLiteral;
 
 /**
- * Binding to associate the JAX-RS annotations with the interceptor for defining
- * the synthetic {@code REST.request} {@code SimpleTimer} metric {@link SyntheticSimplyTimed}.
+ * Implementation of the synthetic {@code REST.request} {@code SimpleTimer} metric {@link SyntheticSimplyTimed}.
  */
 class LiteralSyntheticSimplyTimed extends AnnotationLiteral<SyntheticSimplyTimed> implements SyntheticSimplyTimed {
 
