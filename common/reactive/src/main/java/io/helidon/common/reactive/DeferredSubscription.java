@@ -42,6 +42,10 @@ class DeferredSubscription extends AtomicReference<Flow.Subscription>
 
     @Override
     public void request(long n) {
+        if (n <= 0L && this.compareAndSet(null, SubscriptionHelper.CANCELED)) {
+            //subscription ref is not null, deferredRequest wont increment any more
+            requested.set(-1L);
+        }
         SubscriptionHelper.deferredRequest(this, requested, n);
     }
 
@@ -51,7 +55,16 @@ class DeferredSubscription extends AtomicReference<Flow.Subscription>
     }
 
     void setSubscription(Flow.Subscription s) {
-        SubscriptionHelper.deferredSetOnce(this, requested, s);
+        long requested = this.requested.getAndSet(0L);
+        if (SubscriptionHelper.setOnce(this, s)) {
+            if (requested != 0L) {
+                s.request(requested);
+            }
+        } else {
+            if (requested <= 0L) {
+                //Cancelled by bad request
+                s.request(requested);
+            }
+        }
     }
-
 }

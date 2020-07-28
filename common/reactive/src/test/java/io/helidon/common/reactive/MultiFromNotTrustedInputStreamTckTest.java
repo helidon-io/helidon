@@ -20,6 +20,7 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Flow;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -60,5 +61,21 @@ public class MultiFromNotTrustedInputStreamTckTest extends MultiFromTrustedInput
                 .executor(executorService)
                 .byteBufferSize(BUFFER_SIZE)
                 .build();
+    }
+
+    @Test
+    public void testCumulativeDeferredBadRequest() {
+        Flow.Publisher<ByteBuffer> pub = createFlowPublisher(3);
+        TestSubscriber<ByteBuffer> sub = new TestSubscriber<>() {
+            @Override
+            public void onSubscribe(final Flow.Subscription s) {
+                super.onSubscribe(s);
+                s.request(10);
+                s.request(-1L);
+            }
+        };
+        pub.subscribe(sub);
+        sub.awaitDone(100, TimeUnit.MILLISECONDS);
+        sub.assertError(IllegalArgumentException.class);
     }
 }
