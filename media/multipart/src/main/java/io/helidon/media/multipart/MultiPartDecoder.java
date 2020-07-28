@@ -201,6 +201,7 @@ public class MultiPartDecoder implements Processor<DataChunk, ReadableBodyPart> 
         // drop the reference to parserIterator, but keep it safe for any later invocation of parserIterator
         parserIterator = EMPTY_PARSER_ITERATOR;
         error = null;
+        upstream = SubscriptionHelper.CANCELED;
         downstream = null; // after cleanup no uses of downstream are reachable
         cancelled = true; // after cleanup the processor appears as cancelled
         bodyPartHeaderBuilder = null;
