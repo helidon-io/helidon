@@ -34,6 +34,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.RequestScoped;
 import javax.enterprise.event.Observes;
@@ -53,6 +54,7 @@ import javax.enterprise.inject.spi.ProcessProducerMethod;
 import javax.enterprise.inject.spi.WithAnnotations;
 import javax.enterprise.inject.spi.configurator.AnnotatedMethodConfigurator;
 import javax.enterprise.inject.spi.configurator.AnnotatedTypeConfigurator;
+import javax.inject.Inject;
 import javax.inject.Qualifier;
 import javax.inject.Singleton;
 import javax.interceptor.Interceptor;
@@ -108,6 +110,9 @@ public class MetricsCdiExtension implements Extension {
     private static final List<Class<? extends Annotation>> JAX_RS_ANNOTATIONS
             = Arrays.asList(GET.class, PUT.class, POST.class, HEAD.class, OPTIONS.class, DELETE.class, PATCH.class);
 
+    static final String REST_ENDPOINTS_METRIC_ENABLED_PROPERTY_NAME = "rest-endpoints-enabled";
+    private static final boolean REST_ENDPOINTS_METRIC_ENABLED_DEFAULT_VALUE = false;
+
     private static final String SYNTHETIC_SIMPLE_TIMER_METRIC_NAME = "REST.request";
 
     static final Metadata SYNTHETIC_SIMPLE_TIMER_METADATA = Metadata.builder()
@@ -125,6 +130,8 @@ public class MetricsCdiExtension implements Extension {
     private final Map<MetricID, AnnotatedMethodConfigurator<?>> annotatedGaugeSites = new HashMap<>();
 
     private Errors.Collector errors = Errors.collector();
+
+    private final List<Method> methodsForSyntheticSimplyTimed = new ArrayList<>();
 
     @SuppressWarnings("unchecked")
     private static <T> T getReference(BeanManager bm, Type type, Bean<?> bean) {
@@ -283,6 +290,10 @@ public class MetricsCdiExtension implements Extension {
         // is enough for CDI to intercept invocations of methods so annotated.
         discovery.addAnnotatedType(InterceptorSyntheticSimplyTimed.class, InterceptorSyntheticSimplyTimed.class.getName());
         discovery.addAnnotatedType(SyntheticSimplyTimed.class, SyntheticSimplyTimed.class.getName());
+
+        // Config might disable the MP synthetic SimpleTimer feature for JAX-RS endpoints.
+        // For efficiency, prepare to consult config only once rather than from each interceptor instance.
+        discovery.addAnnotatedType(RestEndpointMetricsInfo.class, RestEndpointMetricsInfo.class.getName());
     }
 
     /**
@@ -352,11 +363,11 @@ public class MetricsCdiExtension implements Extension {
     }
 
     /**
-     * Adds a {@code SyntheticSimplyTimed} annotation to each JAX-RS endpoint method.
+     * Records the need to add a {@code SyntheticSimplyTimed} annotation to each JAX-RS endpoint method.
      *
      * @param pat the {@code ProcessAnnotatedType} for the type containing the JAX-RS annotated methods
      */
-    private void registerSimplyTimedForRestResources(@Observes
+    private void recordSimplyTimedForRestResources(@Observes
             @WithAnnotations({GET.class, PUT.class, POST.class, HEAD.class, OPTIONS.class, DELETE.class, PATCH.class})
             ProcessAnnotatedType<?> pat) {
 
@@ -405,7 +416,7 @@ public class MetricsCdiExtension implements Extension {
                             // annotations will not trigger the @ProcessAnnotatedType invocation that would normally do the
                             // metric registration because CDI has already decided which classes have annotations that trigger
                             // those invocations.
-                            syntheticSimpleTimer(m);
+                            methodsForSyntheticSimplyTimed.add(m);
                         }
                     });
                 });
@@ -532,6 +543,26 @@ public class MetricsCdiExtension implements Extension {
         registerWithServer(bm);
     }
 
+    private void registerSyntheticSimplyTimedMetrics(@Observes AfterDeploymentValidation adv) {
+        if (restEndpointsMetricEnabledFromConfig()) {
+            LOGGER.log(Level.FINE, () -> "Registering synthetic REST SimpleTimer metrics for JAX-RS endpoints");
+            methodsForSyntheticSimplyTimed.forEach(MetricsCdiExtension::syntheticSimpleTimer);
+        } else {
+            LOGGER.log(Level.FINE, "Skipping registration of synthetic REST SimpleTimer metrics due to configuration");
+        }
+    }
+
+    static boolean restEndpointsMetricEnabledFromConfig() {
+        try {
+            return ((Config) (ConfigProvider.getConfig()))
+                    .get("metrics")
+                    .get(REST_ENDPOINTS_METRIC_ENABLED_PROPERTY_NAME)
+                    .asBoolean().orElse(REST_ENDPOINTS_METRIC_ENABLED_DEFAULT_VALUE);
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
     private void registerWithServer(BeanManager bm) {
         Set<String> vendorMetricsAdded = new HashSet<>();
         Config config = ((Config) ConfigProvider.getConfig()).get("metrics");
@@ -567,6 +598,22 @@ public class MetricsCdiExtension implements Extension {
                         vendorMetricsAdded.add(routeName);
                     }
                 });
+    }
+
+    private static boolean chooseRestEndpointsSetting(Config metricsConfig) {
+        ConfigValue<Boolean> explicitRestEndpointsSetting =
+                metricsConfig.get(REST_ENDPOINTS_METRIC_ENABLED_PROPERTY_NAME).asBoolean();
+        boolean result = explicitRestEndpointsSetting.orElse(REST_ENDPOINTS_METRIC_ENABLED_DEFAULT_VALUE);
+        if (explicitRestEndpointsSetting.isPresent()) {
+            LOGGER.log(Level.FINE, () -> String.format(
+                    "Support for MP REST.reqeust metric and annotation handling explicitly set to %b in configuration",
+                    explicitRestEndpointsSetting.get()));
+        } else {
+            LOGGER.log(Level.FINE, () -> String.format(
+                    "Support for MP REST.reqeust metric and annotation handling explicitly defaulted to %b",
+                    REST_ENDPOINTS_METRIC_ENABLED_DEFAULT_VALUE));
+        }
+        return result;
     }
 
     private static <T extends org.eclipse.microprofile.metrics.Metric> MetricType getMetricType(T metric) {

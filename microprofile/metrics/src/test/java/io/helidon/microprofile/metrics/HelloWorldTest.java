@@ -16,16 +16,21 @@
 
 package io.helidon.microprofile.metrics;
 
+import java.util.Properties;
 import java.util.stream.IntStream;
 
 import javax.json.JsonObject;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.MediaType;
 
+import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
+import io.helidon.microprofile.server.Server;
 import org.eclipse.microprofile.metrics.SimpleTimer;
 import org.eclipse.microprofile.metrics.Tag;
 import org.hamcrest.core.Is;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -36,6 +41,21 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * Class HelloWorldTest.
  */
 public class HelloWorldTest extends MetricsMpServiceTest {
+
+    @BeforeAll
+    public static void initializeServer() {
+        Properties configProperties = new Properties();
+        configProperties.setProperty("metrics." + MetricsCdiExtension.REST_ENDPOINTS_METRIC_ENABLED_PROPERTY_NAME,
+                "true");
+        initializeServer(configProperties);
+    }
+
+    static void initializeServer(Properties configProperties) {
+        Server.Builder builder = MetricsMpServiceTest.prepareServerBuilder();
+        Config config = Config.create(ConfigSources.create(configProperties));
+        builder.config(config);
+        MetricsMpServiceTest.finishServerInitialization(builder);
+    }
 
     @BeforeEach
     public void registerCounter() {
@@ -53,16 +73,20 @@ public class HelloWorldTest extends MetricsMpServiceTest {
 
     @Test
     public void testSyntheticSimpleTimer() {
+        testSyntheticSimpleTimer(6L);
+    }
+
+    public void testSyntheticSimpleTimer(long expectedSyntheticSimpleTimerCount) {
         IntStream.range(0, 6).forEach(
                 i -> client.target(baseUri())
                         .path("helloworld/withArgs").request(MediaType.TEXT_PLAIN_TYPE)
                         .put(Entity.text("Joe")).readEntity(String.class));
 
         SimpleTimer syntheticSimpleTimer = getSyntheticSimpleTimer();
-        assertThat(syntheticSimpleTimer.getCount(), Is.is(6L));
+        assertThat(syntheticSimpleTimer.getCount(), Is.is(expectedSyntheticSimpleTimerCount));
     }
 
-    private static SimpleTimer getSyntheticSimpleTimer() {
+    static SimpleTimer getSyntheticSimpleTimer() {
         Tag[] tags = new Tag[] {new Tag("class", HelloWorldResource.class.getName()),
                 new Tag("method", "messageWithArg_java.lang.String")};
         SimpleTimer syntheticSimpleTimer = registry.simpleTimer(

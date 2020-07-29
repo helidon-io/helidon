@@ -43,10 +43,12 @@ final class InterceptorSyntheticSimplyTimed {
     private static final Logger LOGGER = Logger.getLogger(InterceptorSyntheticSimplyTimed.class.getName());
 
     private final MetricRegistry metricRegistry;
+    private final boolean isEnabled;
 
     @Inject
-    InterceptorSyntheticSimplyTimed(MetricRegistry registry) {
+    InterceptorSyntheticSimplyTimed(MetricRegistry registry, RestEndpointMetricsInfo restEndpointMetricsInfo) {
         metricRegistry = registry;
+        isEnabled = restEndpointMetricsInfo.isEnabled();
     }
 
     /**
@@ -58,6 +60,9 @@ final class InterceptorSyntheticSimplyTimed {
      */
     @AroundInvoke
     public Object interceptRestEndpoint(InvocationContext context) throws Throwable {
+        if (!isEnabled) {
+            return context.proceed();
+        }
         try {
             LOGGER.fine("Interceptor of SyntheticSimplyTimed called for '" + context.getTarget().getClass()
                     + "::" + context.getMethod().getName() + "'");
