@@ -34,7 +34,6 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.RequestScoped;
 import javax.enterprise.event.Observes;
@@ -54,7 +53,6 @@ import javax.enterprise.inject.spi.ProcessProducerMethod;
 import javax.enterprise.inject.spi.WithAnnotations;
 import javax.enterprise.inject.spi.configurator.AnnotatedMethodConfigurator;
 import javax.enterprise.inject.spi.configurator.AnnotatedTypeConfigurator;
-import javax.inject.Inject;
 import javax.inject.Qualifier;
 import javax.inject.Singleton;
 import javax.interceptor.Interceptor;
@@ -271,7 +269,7 @@ public class MetricsCdiExtension implements Extension {
      *
      * @param discovery bean discovery event
      */
-    void before(@Observes BeforeBeanDiscovery discovery, BeanManager beanManager) {
+    void before(@Observes BeforeBeanDiscovery discovery) {
         LOGGER.log(Level.FINE, () -> "Before bean discovery " + discovery);
 
         // Initialize our implementation
@@ -288,12 +286,12 @@ public class MetricsCdiExtension implements Extension {
 
         // Telling CDI about our private SyntheticSimplyTimed annotation and its interceptor
         // is enough for CDI to intercept invocations of methods so annotated.
-        discovery.addAnnotatedType(InterceptorSyntheticSimplyTimed.class, InterceptorSyntheticSimplyTimed.class.getName());
-        discovery.addAnnotatedType(SyntheticSimplyTimed.class, SyntheticSimplyTimed.class.getName());
+        discovery.addAnnotatedType(InterceptorSyntheticSimplyTimed.class, InterceptorSyntheticSimplyTimed.class.getSimpleName());
+        discovery.addAnnotatedType(SyntheticSimplyTimed.class, SyntheticSimplyTimed.class.getSimpleName());
 
         // Config might disable the MP synthetic SimpleTimer feature for JAX-RS endpoints.
         // For efficiency, prepare to consult config only once rather than from each interceptor instance.
-        discovery.addAnnotatedType(RestEndpointMetricsInfo.class, RestEndpointMetricsInfo.class.getName());
+        discovery.addAnnotatedType(RestEndpointMetricsInfo.class, RestEndpointMetricsInfo.class.getSimpleName());
     }
 
     /**
@@ -559,6 +557,8 @@ public class MetricsCdiExtension implements Extension {
                     .get(REST_ENDPOINTS_METRIC_ENABLED_PROPERTY_NAME)
                     .asBoolean().orElse(REST_ENDPOINTS_METRIC_ENABLED_DEFAULT_VALUE);
         } catch (Throwable t) {
+            LOGGER.log(Level.WARNING, "Error looking up config setting for enabling REST endpoints SimpleTimer metrics;"
+                    + " reporting 'false'", t);
             return false;
         }
     }

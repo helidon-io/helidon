@@ -76,7 +76,7 @@ public class HelloWorldTest extends MetricsMpServiceTest {
         testSyntheticSimpleTimer(6L);
     }
 
-    public void testSyntheticSimpleTimer(long expectedSyntheticSimpleTimerCount) {
+    void testSyntheticSimpleTimer(long expectedSyntheticSimpleTimerCount) {
         IntStream.range(0, 6).forEach(
                 i -> client.target(baseUri())
                         .path("helloworld/withArgs").request(MediaType.TEXT_PLAIN_TYPE)

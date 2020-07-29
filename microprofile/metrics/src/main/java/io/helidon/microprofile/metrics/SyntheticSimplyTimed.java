@@ -30,7 +30,8 @@ import javax.interceptor.InterceptorBinding;
 @Target({ ElementType.TYPE, ElementType.METHOD })
 
 /**
- * Marker interface indicating that the corresponding method should have an automatic {@link SimpleTimer} created for it.
+ * Marker interface indicating that the corresponding method should have an automatic {@link SimpleTimer} created for it
+ * and updated when the method is invoked.
  */
 @interface SyntheticSimplyTimed {
 }

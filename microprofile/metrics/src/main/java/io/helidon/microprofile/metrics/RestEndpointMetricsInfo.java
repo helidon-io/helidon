@@ -19,6 +19,11 @@ package io.helidon.microprofile.metrics;
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 
+/**
+ * Captures whether configuration enables or disables synthetic {@code SimplyMetric} annotation
+ * behavior efficiently so interceptor instances know efficiently whether to find and update
+ * the corresponding metrics or not.
+ */
 @ApplicationScoped
 class RestEndpointMetricsInfo {
 
