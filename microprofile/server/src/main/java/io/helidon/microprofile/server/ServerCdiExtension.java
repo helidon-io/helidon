@@ -27,6 +27,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
@@ -108,10 +109,34 @@ public class ServerCdiExtension implements Extension {
 
         // make sure all configuration is in place
         if (null == jaxRsExecutorService) {
-            jaxRsExecutorService = ServerThreadPoolSupplier.builder()
+            Config serverConfig = config.get("server");
+            final java.lang.reflect.Method m;
+            if (serverConfig.get("virtual-threads").asBoolean().isPresent()) {
+                java.lang.reflect.Method temp = null;
+                try {
+                    temp = Executors.class.getDeclaredMethod("newVirtualThreadExecutor");
+                } catch (final ReflectiveOperationException notLoomEarlyAccess) {
+                    temp = null;
+                } finally {
+                    m = temp;
+                }
+            } else {
+                m = null;
+            }
+            if (m != null) {
+                jaxRsExecutorService = () -> {
+                    try {
+                        return (ExecutorService) m.invoke(null);
+                    } catch (final ReflectiveOperationException reflectiveOperationException) {
+                        throw new IllegalStateException(reflectiveOperationException.getMessage(), reflectiveOperationException);
+                    }
+                };
+            } else {
+                jaxRsExecutorService = ServerThreadPoolSupplier.builder()
                     .name("server")
-                    .config(config.get("server.executor-service"))
+                    .config(serverConfig.get("executor-service"))
                     .build();
+            }
         }
 
         // redirect to the first page when root is accessed (if configured)

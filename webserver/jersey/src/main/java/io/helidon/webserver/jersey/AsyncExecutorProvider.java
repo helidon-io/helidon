@@ -16,7 +16,9 @@
 
 package io.helidon.webserver.jersey;
 
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.Supplier;
 
 import io.helidon.common.configurable.ThreadPoolSupplier;
@@ -30,21 +32,49 @@ class AsyncExecutorProvider implements ExecutorServiceProvider {
     private final Supplier<ExecutorService> executorServiceSupplier;
 
     AsyncExecutorProvider(Supplier<ExecutorService> supplier) {
-        this.executorServiceSupplier = supplier;
+        this.executorServiceSupplier = Objects.requireNonNull(supplier);
     }
 
     static ExecutorServiceProvider create(Config config) {
-        return new AsyncExecutorProvider(ThreadPoolSupplier.builder()
+        Config asyncExecutorServiceConfig = config.get("async-executor-service");
+        final java.lang.reflect.Method m;
+        if (asyncExecutorServiceConfig.get("virtual-threads").asBoolean().isPresent()) {
+            java.lang.reflect.Method temp = null;
+            try {
+                temp = Executors.class.getDeclaredMethod("newVirtualThreadExecutor");
+            } catch (final ReflectiveOperationException notLoom) {
+                temp = null;
+            } finally {
+                m = temp;
+            }
+        } else {
+            m = null;
+        }
+        if (m != null) {
+            return new AsyncExecutorProvider(() -> {
+                try {
+                    return (ExecutorService) m.invoke(null);
+                } catch (final ReflectiveOperationException reflectiveOperationException) {
+                    throw new IllegalStateException(reflectiveOperationException.getMessage(), reflectiveOperationException);
+                }
+            });
+        } else {
+            return new AsyncExecutorProvider(ThreadPoolSupplier.builder()
                                                  .corePoolSize(1)
                                                  .maxPoolSize(10)
                                                  .prestart(false)
                                                  .threadNamePrefix("helidon-jersey-async")
-                                                 .config(config.get("async-executor-service"))
+                                                 .config(asyncExecutorServiceConfig)
                                                  .build());
+        }
     }
 
     static ExecutorServiceProvider create(ExecutorService executor) {
         return new AsyncExecutorProvider(() -> executor);
+    }
+
+    static ExecutorServiceProvider create(Supplier<ExecutorService> executorServiceSupplier) {
+        return new AsyncExecutorProvider(executorServiceSupplier);
     }
 
     @Override
