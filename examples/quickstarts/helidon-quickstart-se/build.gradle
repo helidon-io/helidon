@@ -32,6 +32,10 @@ ext {
     helidonversion = '1.4.6-SNAPSHOT'
 }
 
+test {
+    useJUnitPlatform()
+}
+
 repositories {
     mavenCentral()
     mavenLocal()
@@ -39,14 +43,15 @@ repositories {
 
 dependencies {
     // import Helidon BOM
-    implementation platform("io.helidon:helidon-dependencies:${project.helidonversion}")
+    implementation enforcedPlatform("io.helidon:helidon-dependencies:${project.helidonversion}")
     implementation 'io.helidon.bundles:helidon-bundles-webserver'
     implementation 'io.helidon.config:helidon-config-yaml'
     implementation 'io.helidon.health:helidon-health'
     implementation 'io.helidon.health:helidon-health-checks'
     implementation 'io.helidon.metrics:helidon-metrics'
 
-    testCompileOnly 'org.junit.jupiter:junit-jupiter-api'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
 }
 
 // define a custom task to copy all dependencies in the runtime classpath
