@@ -111,7 +111,7 @@ public class ServerCdiExtension implements Extension {
         if (null == jaxRsExecutorService) {
             Config serverConfig = config.get("server");
             final java.lang.reflect.Method m;
-            if (serverConfig.get("virtual-threads").asBoolean().isPresent()) {
+            if (serverConfig.get("virtual-threads").asBoolean().orElse(false)) {
                 java.lang.reflect.Method temp = null;
                 try {
                     temp = Executors.class.getDeclaredMethod("newVirtualThreadExecutor");

@@ -38,7 +38,7 @@ class AsyncExecutorProvider implements ExecutorServiceProvider {
     static ExecutorServiceProvider create(Config config) {
         Config asyncExecutorServiceConfig = config.get("async-executor-service");
         final java.lang.reflect.Method m;
-        if (asyncExecutorServiceConfig.get("virtual-threads").asBoolean().isPresent()) {
+        if (asyncExecutorServiceConfig.get("virtual-threads").asBoolean().orElse(false)) {
             java.lang.reflect.Method temp = null;
             try {
                 temp = Executors.class.getDeclaredMethod("newVirtualThreadExecutor");
