@@ -15,10 +15,12 @@
  */
 package io.helidon.media.common;
 
+import java.net.URLDecoder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.concurrent.Flow;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -47,7 +49,7 @@ class FormParamsBodyReader implements MessageBodyReader<FormParams> {
     }
 
     private static Pattern preparePattern(String assignmentSeparator) {
-        return Pattern.compile(String.format("([^=]+)=([^%1$s]+)%1$s?", assignmentSeparator));
+        return Pattern.compile(String.format("([^=]+)=?([^%1$s]+)?%1$s?", assignmentSeparator));
     }
 
     @Override
@@ -66,23 +68,33 @@ class FormParamsBodyReader implements MessageBodyReader<FormParams> {
                                                  MessageBodyReaderContext context) {
         MediaType mediaType = context.contentType().orElseThrow();
         Charset charset = mediaType.charset().map(Charset::forName).orElse(StandardCharsets.UTF_8);
+        Function<String, String> decoder = decoder(mediaType, charset);
 
-        Single<String> result = mediaType.equals(MediaType.APPLICATION_FORM_URLENCODED)
-                ? ContentReaders.readURLEncodedString(publisher, charset)
-                : ContentReaders.readString(publisher, charset);
-
-        return (Single<U>) result.map(formStr -> create(formStr, mediaType));
+        return (Single<U>) ContentReaders.readString(publisher, charset)
+                .map(formStr -> create(formStr, mediaType, decoder));
     }
 
-    private FormParams create(String paramAssignments, MediaType mediaType) {
+    private FormParams create(String paramAssignments, MediaType mediaType, Function<String, String> decoder) {
         FormParams.Builder builder = FormParams.builder();
         Matcher m = PATTERNS.get(mediaType).matcher(paramAssignments);
         while (m.find()) {
             final String key = m.group(1);
             final String value = m.group(2);
-            builder.add(key, value);
+            if (value == null) {
+                builder.add(decoder.apply(key));
+            } else {
+                builder.add(decoder.apply(key), decoder.apply(value));
+            }
         }
         return builder.build();
+    }
+
+    private Function<String, String> decoder(MediaType mediaType, Charset charset) {
+        if (mediaType == MediaType.TEXT_PLAIN) {
+            return (s) -> s;
+        } else {
+            return (s) -> URLDecoder.decode(s, charset);
+        }
     }
 
 }

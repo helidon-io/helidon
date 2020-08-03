@@ -33,6 +33,17 @@ public class FormTest extends TestParent {
             .add("name", "David Tester")
             .build();
 
+    private static final String SPECIAL = "special";
+    private static final String MULTIPLE = "multiple";
+    private static final String NO_VALUE = "noValue";
+    private static final String SPECIAL_VALUE = "some &@#/ special value";
+
+    private static final FormParams ADVANCED_TEST_FORM = FormParams.builder()
+            .add(SPECIAL, SPECIAL_VALUE)
+            .add(MULTIPLE, "value1", "value2")
+            .add(NO_VALUE)
+            .build();
+
     @Test
     public void testHelloWorld() {
         webClient.post()
@@ -61,5 +72,17 @@ public class FormTest extends TestParent {
 
         assertThat(ex.getCause().getMessage(),
                    is("No writer found for type: class io.helidon.common.http.FormParamsImpl"));
+    }
+
+    @Test
+    public void testFormContent() {
+        FormParams received = webClient.post()
+                .path("/form/content")
+                .submit(ADVANCED_TEST_FORM, FormParams.class)
+                .await();
+
+        assertThat(received.all(SPECIAL), is(ADVANCED_TEST_FORM.all(SPECIAL)));
+        assertThat(received.all(MULTIPLE), is(ADVANCED_TEST_FORM.all(MULTIPLE)));
+        assertThat(received.all(NO_VALUE).size(), is(0));
     }
 }
