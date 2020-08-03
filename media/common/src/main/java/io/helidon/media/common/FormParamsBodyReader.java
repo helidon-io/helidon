@@ -49,7 +49,7 @@ class FormParamsBodyReader implements MessageBodyReader<FormParams> {
     }
 
     private static Pattern preparePattern(String assignmentSeparator) {
-        return Pattern.compile(String.format("([^=]+)=?([^%1$s]+)?%1$s?", assignmentSeparator));
+        return Pattern.compile(String.format("([^=%1$s]+)=?([^%1$s]+)?%1$s?", assignmentSeparator));
     }
 
     @Override

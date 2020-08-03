@@ -29,7 +29,6 @@ import javax.json.JsonObject;
 
 import io.helidon.common.http.FormParams;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
 import io.helidon.security.SecurityContext;
 import io.helidon.webclient.WebClient;
@@ -159,10 +158,6 @@ public class GreetService implements Service {
 
     private void formContent(ServerRequest req, ServerResponse res) {
         req.content().as(FormParams.class)
-                .thenApply(formParams -> {
-                    res.writerContext().contentType(MediaType.APPLICATION_FORM_URLENCODED);
-                    return formParams;
-                })
                 .thenAccept(res::send);
     }
 

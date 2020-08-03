@@ -15,10 +15,14 @@
  */
 package io.helidon.common.http;
 
+import java.net.URLDecoder;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -48,14 +52,28 @@ class FormParamsImpl extends ReadOnlyParameters implements FormParams {
     }
 
     static FormParams create(String paramAssignments, MediaType mediaType) {
+        Charset charset = mediaType.charset().map(Charset::forName).orElse(StandardCharsets.UTF_8);
+        Function<String, String> decoder = decoder(mediaType, charset);
         final Map<String, List<String>> params = new HashMap<>();
         Matcher m = PATTERNS.get(mediaType).matcher(paramAssignments);
         while (m.find()) {
-            final String key = m.group(1);
+            final String key = decoder.apply(m.group(1));
             final String value = m.group(2);
-            params.computeIfAbsent(key, k -> new ArrayList<>()).add(value);
+            if (value == null) {
+                params.computeIfAbsent(key, k -> new ArrayList<>());
+            } else {
+                params.computeIfAbsent(key, k -> new ArrayList<>()).add(decoder.apply(value));
+            }
         }
         return new FormParamsImpl(params);
+    }
+
+    private static Function<String, String> decoder(MediaType mediaType, Charset charset) {
+        if (mediaType == MediaType.TEXT_PLAIN) {
+            return (s) -> s;
+        } else {
+            return (s) -> URLDecoder.decode(s, charset);
+        }
     }
 
 }

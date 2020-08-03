@@ -17,12 +17,9 @@ package io.helidon.webserver;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.Flow.Publisher;
 
-import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.FormParams;
 import io.helidon.common.http.MediaType;
-import io.helidon.common.reactive.Single;
 import io.helidon.media.common.ContentReaders;
 import io.helidon.media.common.DefaultMediaSupport;
 
@@ -61,7 +58,7 @@ public class FormParamsSupport implements Service, Handler {
         Charset charset = reqMediaType.charset().map(Charset::forName).orElse(StandardCharsets.UTF_8);
 
         req.content().registerReader(FormParams.class,
-                (chunks, type) -> readContent(reqMediaType, charset, chunks)
+                (chunks, type) -> ContentReaders.readString(chunks, charset)
                         .map(s -> FormParams.create(s, reqMediaType)).toStage());
 
         req.next();
@@ -75,10 +72,4 @@ public class FormParamsSupport implements Service, Handler {
         return INSTANCE;
     }
 
-    private static Single<String> readContent(MediaType mediaType, Charset charset,
-            Publisher<DataChunk> chunks) {
-        return mediaType.equals(MediaType.APPLICATION_FORM_URLENCODED)
-                ? ContentReaders.readURLEncodedString(chunks, charset)
-                : ContentReaders.readString(chunks, charset);
-    }
 }
