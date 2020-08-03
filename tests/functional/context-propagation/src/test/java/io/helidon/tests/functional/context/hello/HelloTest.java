@@ -73,7 +73,7 @@ class HelloTest {
     }
 
     @Test
-    void testRemoteAAddress() {
+    void testRemoteAddress() {
         WebTarget target = baseTarget.path("/remoteAddress");
         assertThat(target.request().get().getStatus(), is(200));
     }
