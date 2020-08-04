@@ -23,7 +23,7 @@
       - system like those in our CI/CD pipeline.
       - No longer commented out - use 'tck-ft' profile to run these tests
       -->
-    <test name="microprofile-fault-tolerance 2.0 TCK">
+    <test name="microprofile-fault-tolerance 2.1 TCK">
         <packages>
             <package name="org.eclipse.microprofile.fault.tolerance.tck.*"/>
         </packages>

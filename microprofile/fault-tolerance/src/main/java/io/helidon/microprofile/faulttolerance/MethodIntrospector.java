@@ -18,7 +18,6 @@ package io.helidon.microprofile.faulttolerance;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
-import java.util.logging.Logger;
 
 import io.helidon.microprofile.faulttolerance.MethodAntn.LookupResult;
 
@@ -29,14 +28,13 @@ import org.eclipse.microprofile.faulttolerance.Fallback;
 import org.eclipse.microprofile.faulttolerance.Retry;
 import org.eclipse.microprofile.faulttolerance.Timeout;
 
-import static io.helidon.microprofile.faulttolerance.MethodAntn.lookupAnnotation;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceParameter.getParameter;
+import static io.helidon.microprofile.faulttolerance.MethodAntn.lookupAnnotation;
 
 /**
  * Class MethodIntrospector.
  */
 class MethodIntrospector {
-    private static final Logger LOGGER = Logger.getLogger(MethodIntrospector.class.getName());
 
     private final Method method;
 

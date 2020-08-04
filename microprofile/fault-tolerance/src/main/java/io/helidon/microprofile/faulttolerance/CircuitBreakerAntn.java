@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,13 +59,6 @@ public class CircuitBreakerAntn extends MethodAntn implements CircuitBreaker {
     }
 
     @Override
-    public Class<? extends Throwable>[] failOn() {
-        LookupResult<CircuitBreaker> lookupResult = lookupAnnotation(CircuitBreaker.class);
-        final String override = getParamOverride("failOn", lookupResult.getType());
-        return override != null ? parseThrowableArray(override) : lookupResult.getAnnotation().failOn();
-    }
-
-    @Override
     public long delay() {
         LookupResult<CircuitBreaker> lookupResult = lookupAnnotation(CircuitBreaker.class);
         final String override = getParamOverride("delay", lookupResult.getType());
@@ -98,5 +91,19 @@ public class CircuitBreakerAntn extends MethodAntn implements CircuitBreaker {
         LookupResult<CircuitBreaker> lookupResult = lookupAnnotation(CircuitBreaker.class);
         final String override = getParamOverride("successThreshold", lookupResult.getType());
         return override != null ? Integer.parseInt(override) : lookupResult.getAnnotation().successThreshold();
+    }
+
+    @Override
+    public Class<? extends Throwable>[] failOn() {
+        LookupResult<CircuitBreaker> lookupResult = lookupAnnotation(CircuitBreaker.class);
+        final String override = getParamOverride("failOn", lookupResult.getType());
+        return override != null ? parseThrowableArray(override) : lookupResult.getAnnotation().failOn();
+    }
+
+    @Override
+    public Class<? extends Throwable>[] skipOn() {
+        LookupResult<CircuitBreaker> lookupResult = lookupAnnotation(CircuitBreaker.class);
+        final String override = getParamOverride("skipOn", lookupResult.getType());
+        return override != null ? parseThrowableArray(override) : lookupResult.getAnnotation().skipOn();
     }
 }

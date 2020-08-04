@@ -16,11 +16,12 @@
 
 package io.helidon.microprofile.faulttolerance;
 
+import java.util.logging.Logger;
+
 import javax.annotation.Priority;
 import javax.interceptor.AroundInvoke;
 import javax.interceptor.Interceptor;
 import javax.interceptor.InvocationContext;
-import java.util.logging.Logger;
 
 /**
  * Intercepts calls to FT methods and implements annotation semantics.

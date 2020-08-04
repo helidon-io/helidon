@@ -15,7 +15,6 @@
  */
 package io.helidon.microprofile.faulttolerance;
 
-import javax.interceptor.InvocationContext;
 import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.Objects;
@@ -25,6 +24,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.function.Supplier;
+
+import javax.interceptor.InvocationContext;
 
 import io.helidon.common.reactive.Single;
 import io.helidon.faulttolerance.Async;
@@ -92,7 +93,7 @@ public class CommandRunner implements FtSupplier<Object> {
     /**
      * Map of methods to their internal state.
      */
-    private static final ConcurrentHashMap<Method, MethodState> ftHandlers = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<Method, MethodState> FT_HANDLERS = new ConcurrentHashMap<>();
 
     /**
      * Start system nanos when handler is called.
@@ -105,15 +106,15 @@ public class CommandRunner implements FtSupplier<Object> {
     private long invocationStartNanos;
 
     private static class MethodState {
-        FtHandlerTyped<Object> handler;
-        Retry retry;
-        Bulkhead bulkhead;
-        CircuitBreaker breaker;
-        State lastBreakerState;
-        long breakerTimerOpen;
-        long breakerTimerClosed;
-        long breakerTimerHalfOpen;
-        long startNanos;
+        private FtHandlerTyped<Object> handler;
+        private Retry retry;
+        private Bulkhead bulkhead;
+        private CircuitBreaker breaker;
+        private State lastBreakerState;
+        private long breakerTimerOpen;
+        private long breakerTimerClosed;
+        private long breakerTimerHalfOpen;
+        private long startNanos;
     }
 
     private final MethodState methodState;
@@ -130,7 +131,7 @@ public class CommandRunner implements FtSupplier<Object> {
         this.method = context.getMethod();
 
         // Get or initialize new state for this method
-        this.methodState = ftHandlers.computeIfAbsent(method, method -> {
+        this.methodState = FT_HANDLERS.computeIfAbsent(method, method -> {
             MethodState methodState = new MethodState();
             initMethodStateHandler(methodState);
             methodState.lastBreakerState = State.CLOSED;
@@ -173,7 +174,7 @@ public class CommandRunner implements FtSupplier<Object> {
      * Clears ftHandlers map of any cached handlers.
      */
     static void clearFtHandlersMap() {
-        ftHandlers.clear();
+        FT_HANDLERS.clear();
     }
 
     /**
@@ -203,8 +204,7 @@ public class CommandRunner implements FtSupplier<Object> {
                         Future<?> delegate = null;
                         if (o instanceof CompletionStage<?>) {
                             delegate = ((CompletionStage<?>) o).toCompletableFuture();
-                        }
-                        else if (o instanceof Future<?>) {
+                        } else if (o instanceof Future<?>) {
                             delegate = (Future<?>) o;
                         }
                         if (delegate != null) {
