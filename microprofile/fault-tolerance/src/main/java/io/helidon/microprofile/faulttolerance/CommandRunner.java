@@ -298,10 +298,13 @@ public class CommandRunner implements FtSupplier<Object> {
             Retry retry = Retry.builder()
                     .retryPolicy(Retry.JitterRetryPolicy.builder()
                             .calls(introspector.getRetry().maxRetries() + 1)
-                            .delay(Duration.ofMillis(introspector.getRetry().delay()))
-                            .jitter(Duration.ofMillis(introspector.getRetry().jitter()))
+                            .delay(Duration.of(introspector.getRetry().delay(),
+                                               introspector.getRetry().delayUnit()))
+                            .jitter(Duration.of(introspector.getRetry().jitter(),
+                                                introspector.getRetry().jitterDelayUnit()))
                             .build())
-                    .overallTimeout(Duration.ofNanos(Long.MAX_VALUE))       // not used
+                    .overallTimeout(Duration.of(introspector.getRetry().maxDuration(),
+                                                introspector.getRetry().durationUnit()))
                     .build();
             builder.addRetry(retry);
             methodState.retry = retry;
