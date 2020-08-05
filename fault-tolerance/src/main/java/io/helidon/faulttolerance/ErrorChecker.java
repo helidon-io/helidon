@@ -22,25 +22,21 @@ import java.util.Set;
 interface ErrorChecker {
     boolean shouldSkip(Throwable throwable);
 
+    /**
+     * Returns ErrorChecker that skips if throwable is in skipOnSet or if applyOnSet
+     * is not empty and throwable is not in it. Note that if applyOnSet is empty, then
+     * it is equivalent to it containing {@code Throwable.class}.
+     *
+     * @param skipOnSet set of throwables to skip logic on.
+     * @param applyOnSet set of throwables to apply logic on.
+     * @return An error checker.
+     */
     static ErrorChecker create(Set<Class<? extends Throwable>> skipOnSet, Set<Class<? extends Throwable>> applyOnSet) {
-        Set<Class<? extends Throwable>> skipOn = Set.copyOf(skipOnSet);
-        Set<Class<? extends Throwable>> applyOn = Set.copyOf(applyOnSet);
+        return throwable -> containsThrowable(skipOnSet, throwable)
+                || !applyOnSet.isEmpty() && !containsThrowable(applyOnSet, throwable);
+    }
 
-        if (skipOn.isEmpty()) {
-            if (applyOn.isEmpty()) {
-                return throwable -> false;
-            } else {
-                return throwable -> applyOn.stream().filter(t -> t.isAssignableFrom(throwable.getClass())).count() == 0;
-            }
-        } else {
-            if (applyOn.isEmpty()) {
-                return throwable -> skipOn.stream().filter(t -> t.isAssignableFrom(throwable.getClass())).count() > 0;
-            } else {
-                throw new IllegalArgumentException("You have defined both skip and apply set of exception classes. "
-                                                           + "This cannot be correctly handled; skipOn: " + skipOn
-                                                           + " applyOn: " + applyOn);
-            }
-
-        }
+    private static boolean containsThrowable(Set<Class<? extends Throwable>> set, Throwable throwable) {
+        return set.stream().filter(t -> t.isAssignableFrom(throwable.getClass())).count() > 0;
     }
 }

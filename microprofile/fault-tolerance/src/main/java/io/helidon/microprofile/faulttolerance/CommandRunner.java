@@ -181,7 +181,7 @@ public class CommandRunner implements FtSupplier<Object> {
             requestContext = requestScope.current();
         } catch (Exception e) {
             requestScope = null;
-            LOGGER.info(() -> "Request context not active for method " + method
+            LOGGER.fine(() -> "Request context not active for method " + method
                     + " on thread " + Thread.currentThread().getName());
         }
 
@@ -351,6 +351,7 @@ public class CommandRunner implements FtSupplier<Object> {
                     .errorRatio((int) (introspector.getCircuitBreaker().failureRatio() * 100))
                     .volume(introspector.getCircuitBreaker().requestVolumeThreshold())
                     .applyOn(introspector.getCircuitBreaker().failOn())
+                    .skipOn(introspector.getCircuitBreaker().skipOn())
                     .build();
             builder.addBreaker(circuitBreaker);
             methodState.breaker = circuitBreaker;
@@ -388,6 +389,8 @@ public class CommandRunner implements FtSupplier<Object> {
                             .build())
                     .overallTimeout(Duration.of(introspector.getRetry().maxDuration(),
                                                 introspector.getRetry().durationUnit()))
+                    .applyOn(introspector.getRetry().retryOn())
+                    .skipOn(introspector.getRetry().abortOn())
                     .build();
             builder.addRetry(retry);
             methodState.retry = retry;
@@ -400,6 +403,8 @@ public class CommandRunner implements FtSupplier<Object> {
                         CommandFallback cfb = new CommandFallback(context, introspector, throwable);
                         return toCompletionStageSupplier(cfb::execute).get();
                     })
+                    .applyOn(introspector.getFallback().applyOn())
+                    .skipOn(introspector.getFallback().skipOn())
                     .build();
             builder.addFallback(fallback);
         }
