@@ -18,15 +18,21 @@ package io.helidon.microprofile.faulttolerance;
 import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.Objects;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.function.Supplier;
+import java.util.logging.Logger;
 
+import javax.enterprise.context.control.RequestContextController;
+import javax.enterprise.inject.spi.CDI;
 import javax.interceptor.InvocationContext;
 
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
 import io.helidon.common.reactive.Single;
 import io.helidon.faulttolerance.Async;
 import io.helidon.faulttolerance.Bulkhead;
@@ -41,6 +47,8 @@ import io.helidon.faulttolerance.Timeout;
 import org.eclipse.microprofile.faulttolerance.exceptions.CircuitBreakerOpenException;
 import org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException;
 import org.eclipse.microprofile.metrics.Counter;
+import org.glassfish.jersey.process.internal.RequestContext;
+import org.glassfish.jersey.process.internal.RequestScope;
 
 import static io.helidon.microprofile.faulttolerance.FaultToleranceExtension.isFaultToleranceMetricsEnabled;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BREAKER_CALLS_FAILED_TOTAL;
@@ -74,6 +82,7 @@ import static io.helidon.microprofile.faulttolerance.ThrowableMapper.map;
  * Runs a FT method.
  */
 public class CommandRunner implements FtSupplier<Object> {
+    private static final Logger LOGGER = Logger.getLogger(CommandRunner.class.getName());
 
     /**
      * The method being intercepted.
@@ -105,6 +114,26 @@ public class CommandRunner implements FtSupplier<Object> {
      */
     private long invocationStartNanos;
 
+    /**
+     * Helidon context in which to run business method.
+     */
+    private final Context helidonContext;
+
+    /**
+     * Jersey's request scope object. Will be non-null if request scope is active.
+     */
+    private RequestScope requestScope;
+
+    /**
+     * Jersey's request scope object.
+     */
+    private RequestContext requestContext;
+
+    /**
+     * CDI's request scope controller used for activation/deactivation.
+     */
+    private RequestContextController requestController;
+
     private static class MethodState {
         private FtHandlerTyped<Object> handler;
         private Retry retry;
@@ -129,6 +158,7 @@ public class CommandRunner implements FtSupplier<Object> {
         this.context = context;
         this.introspector = introspector;
         this.method = context.getMethod();
+        this.helidonContext = Contexts.context().orElseGet(Context::create);
 
         // Get or initialize new state for this method
         this.methodState = FT_HANDLERS.computeIfAbsent(method, method -> {
@@ -143,6 +173,17 @@ public class CommandRunner implements FtSupplier<Object> {
             }
             return methodState;
         });
+
+        // Gather information about current request scope if active
+        try {
+            requestController = CDI.current().select(RequestContextController.class).get();
+            requestScope = CDI.current().select(RequestScope.class).get();
+            requestContext = requestScope.current();
+        } catch (Exception e) {
+            requestScope = null;
+            LOGGER.info(() -> "Request context not active for method " + method
+                    + " on thread " + Thread.currentThread().getName());
+        }
 
         // Registration of gauges for bulkhead and circuit breakers
         if (isFaultToleranceMetricsEnabled()) {
@@ -185,13 +226,54 @@ public class CommandRunner implements FtSupplier<Object> {
     @Override
     public Object get() throws Throwable {
         Single<Object> single;
+
         if (introspector.isAsynchronous()) {
             if (introspector.isReturnType(CompletionStage.class) || introspector.isReturnType(Future.class)) {
-                // Invoke method in new thread and call get() to unwrap singles
-                single = Async.create().invoke(() -> {
+                // Wrap method call with Helidon context
+                Supplier<Object> callMethod = () -> {
                     updateMetricsBefore();
-                    return methodState.handler.invoke(toCompletionStageSupplier(context::proceed));
-                });
+                    try {
+                        return Contexts.runInContextWithThrow(helidonContext,
+                                () -> methodState.handler.invoke(toCompletionStageSupplier(context::proceed)));
+                    } catch (Exception e) {
+                        return Single.error(e);
+                    }
+                };
+
+                /*
+                 * Call method preserving request scope if active. This is required for
+                 * @Inject and @Context to work properly. Note that it's possible for only
+                 * CDI's request scope to be active at this time (e.g. in TCKs).
+                 */
+                if (requestScope != null) {                     // Jersey and CDI
+                    single = Async.create().invoke(() -> {
+                        try {
+                            return requestScope.runInScope(requestContext, (Callable<Object>) (() -> {
+                                try {
+                                    requestController.activate();
+                                    return callMethod.get();
+                                } finally {
+                                    requestController.deactivate();
+                                }
+                            }));
+                        } catch (Exception e) {
+                            return Single.error(e);
+                        }
+                    });
+                } else if (requestController != null) {         // CDI only
+                    single = Async.create().invoke(() -> {
+                        try {
+                            requestController.activate();
+                            return callMethod.get();
+                        } catch (Exception e) {
+                            return Single.error(e);
+                        } finally {
+                            requestController.deactivate();
+                        }
+                    });
+                } else {
+                    single = Async.create().invoke(callMethod);
+                }
 
                 // Unwrap nested futures and map exceptions on complete
                 CompletableFuture<Object> future = new CompletableFuture<>();
@@ -233,7 +315,8 @@ public class CommandRunner implements FtSupplier<Object> {
             Object result = null;
             Throwable cause = null;
 
-            single = methodState.handler.invoke(toCompletionStageSupplier(context::proceed));
+            single = Contexts.runInContextWithThrow(helidonContext,
+                        () -> methodState.handler.invoke(toCompletionStageSupplier(context::proceed)));
             try {
                 // Need to allow completion with no value (null) for void methods
                 CompletableFuture<Object> future = single.toStage(true).toCompletableFuture();

@@ -40,6 +40,7 @@ import javax.enterprise.inject.spi.ProcessAnnotatedType;
 import javax.enterprise.inject.spi.ProcessManagedBean;
 import javax.enterprise.inject.spi.ProcessSyntheticBean;
 import javax.enterprise.util.AnnotationLiteral;
+import javax.inject.Inject;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
@@ -49,6 +50,7 @@ import org.eclipse.microprofile.faulttolerance.CircuitBreaker;
 import org.eclipse.microprofile.faulttolerance.Fallback;
 import org.eclipse.microprofile.faulttolerance.Retry;
 import org.eclipse.microprofile.faulttolerance.Timeout;
+import org.glassfish.jersey.process.internal.RequestScope;
 
 /**
  * Class FaultToleranceExtension.
@@ -157,6 +159,21 @@ public class FaultToleranceExtension implements Extension {
 
         discovery.addAnnotatedType(bm.createAnnotatedType(CommandInterceptor.class),
                 CommandInterceptor.class.getName());
+        discovery.addAnnotatedType(bm.createAnnotatedType(JerseyRequestScopeAsCdiBean.class),
+                JerseyRequestScopeAsCdiBean.class.getName());
+    }
+
+    /**
+     * We require access to {@link org.glassfish.jersey.process.internal.RequestScope}
+     * via CDI to propagate request contexts to newly created threads, but Jersey
+     * only registers this type as a bean if it can find an injection point (see
+     * org.glassfish.jersey.ext.cdi1x.internal.CdiComponentProvider#afterDiscoveryObserver).
+     * Here we define a dummy bean with such an injection point for Jersey to
+     * create and register a CDI bean for RequestScope.
+     */
+    private static class JerseyRequestScopeAsCdiBean {
+        @Inject
+        private RequestScope requestScope;
     }
 
     /**
@@ -220,26 +237,26 @@ public class FaultToleranceExtension implements Extension {
                 // Metrics depending on the annotationSet present
                 if (MethodAntn.isAnnotationPresent(beanClass, method, Retry.class)) {
                     FaultToleranceMetrics.registerRetryMetrics(method);
-                    new RetryAntn(beanClass, method).validate();
+                    // new RetryAntn(beanClass, method).validate();
                 }
                 if (MethodAntn.isAnnotationPresent(beanClass, method, CircuitBreaker.class)) {
                     FaultToleranceMetrics.registerCircuitBreakerMetrics(method);
-                    new CircuitBreakerAntn(beanClass, method).validate();
+                    // new CircuitBreakerAntn(beanClass, method).validate();
                 }
                 if (MethodAntn.isAnnotationPresent(beanClass, method, Timeout.class)) {
                     FaultToleranceMetrics.registerTimeoutMetrics(method);
-                    new TimeoutAntn(beanClass, method).validate();
+                    // new TimeoutAntn(beanClass, method).validate();
                 }
                 if (MethodAntn.isAnnotationPresent(beanClass, method, Bulkhead.class)) {
                     FaultToleranceMetrics.registerBulkheadMetrics(method);
-                    new BulkheadAntn(beanClass, method).validate();
+                    // new BulkheadAntn(beanClass, method).validate();
                 }
                 if (MethodAntn.isAnnotationPresent(beanClass, method, Fallback.class)) {
                     FaultToleranceMetrics.registerFallbackMetrics(method);
-                    new FallbackAntn(beanClass, method).validate();
+                    // new FallbackAntn(beanClass, method).validate();
                 }
                 if (MethodAntn.isAnnotationPresent(beanClass, method, Asynchronous.class)) {
-                    new AsynchronousAntn(beanClass, method).validate();
+                    // new AsynchronousAntn(beanClass, method).validate();
                 }
             });
         }
