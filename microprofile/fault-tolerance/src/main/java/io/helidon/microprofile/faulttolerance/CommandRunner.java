@@ -415,7 +415,7 @@ public class CommandRunner implements FtSupplier<Object> {
 
     /**
      * Maps an {@link FtSupplier} to a supplier of {@link CompletionStage}. Avoids
-     * unnecessary wrapping of stages.
+     * unnecessary wrapping of stages when method is asynchronous only.
      *
      * @param supplier The supplier.
      * @return The new supplier.
@@ -426,7 +426,8 @@ public class CommandRunner implements FtSupplier<Object> {
             try {
                 invocationStartNanos = System.nanoTime();
                 Object result = supplier.get();
-                return result instanceof CompletionStage<?> ? (CompletionStage<Object>) result
+                return introspector.isAsynchronous() && result instanceof CompletionStage<?>
+                        ? (CompletionStage<Object>) result
                         : CompletableFuture.completedFuture(result);
             } catch (Throwable e) {
                 return CompletableFuture.failedFuture(e);
