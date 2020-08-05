@@ -72,6 +72,12 @@ class HelloTest {
         assertOk(target.request().get(), "Hello World");
     }
 
+    @Test
+    void testRemoteAddress() {
+        WebTarget target = baseTarget.path("/remoteAddress");
+        assertThat(target.request().get().getStatus(), is(200));
+    }
+
     private void assertOk(Response response, String expectedMessage) {
         assertThat(response.getStatus(), is(200));
         assertThat(response.readEntity(String.class), is(expectedMessage));

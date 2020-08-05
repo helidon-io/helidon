@@ -90,13 +90,21 @@ class FormParamsBodyWriter implements MessageBodyWriter<FormParams> {
             Function<String, String> encoder = encoder();
             StringBuilder result = new StringBuilder();
             for (Map.Entry<String, List<String>> entry : formParams.toMap().entrySet()) {
-                for (String value : entry.getValue()) {
+                List<String> values = entry.getValue();
+                if (values.size() == 0) {
                     if (result.length() > 0) {
                         result.append(separator);
                     }
                     result.append(encoder.apply(entry.getKey()));
-                    result.append("=");
-                    result.append(encoder.apply(value));
+                } else {
+                    for (String value : values) {
+                        if (result.length() > 0) {
+                            result.append(separator);
+                        }
+                        result.append(encoder.apply(entry.getKey()));
+                        result.append("=");
+                        result.append(encoder.apply(value));
+                    }
                 }
             }
             return result.toString();

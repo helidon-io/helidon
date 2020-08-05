@@ -225,7 +225,11 @@ public class Registry extends MetricRegistry {
      */
     @Override
     public synchronized boolean remove(String name) {
-        final boolean result = allMetricIDsByName.get(name).stream()
+        final List<MetricID> metricIDs = allMetricIDsByName.get(name);
+        if (metricIDs == null) {
+            return false;
+        }
+        final boolean result = metricIDs.stream()
                 .map(metricID -> allMetrics.remove(metricID) != null)
                 .reduce((a, b) -> a || b)
                 .orElse(false);
@@ -242,9 +246,12 @@ public class Registry extends MetricRegistry {
      */
     @Override
     public synchronized boolean remove(MetricID metricID) {
-        final List<MetricID> likeNamedMetrics = allMetricIDsByName.get(metricID.getName());
-        likeNamedMetrics.remove(metricID);
-        if (likeNamedMetrics.isEmpty()) {
+        final List<MetricID> metricIDS = allMetricIDsByName.get(metricID.getName());
+        if (metricIDS == null) {
+            return false;
+        }
+        metricIDS.remove(metricID);
+        if (metricIDS.isEmpty()) {
             allMetricIDsByName.remove(metricID.getName());
             allMetadata.remove(metricID.getName());
         }

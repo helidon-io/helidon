@@ -80,6 +80,7 @@ public class GreetService implements Service {
                 .get("/redirectPath", this::redirectPath)
                 .get("/redirect/infinite", this::redirectInfinite)
                 .post("/form", this::form)
+                .post("/form/content", this::formContent)
                 .get("/secure/basic", this::basicAuth)
                 .get("/secure/basic/outbound", this::basicAuthOutbound)
                 .put("/greeting", this::updateGreetingHandler);
@@ -139,7 +140,7 @@ public class GreetService implements Service {
     }
 
     private void redirectPath(ServerRequest request,
-                          ServerResponse response) {
+                              ServerResponse response) {
         response.headers().add(Http.Header.LOCATION, "/greet");
         response.status(Http.Status.MOVED_PERMANENTLY_301).send();
     }
@@ -152,6 +153,11 @@ public class GreetService implements Service {
     private void form(ServerRequest req, ServerResponse res) {
         req.content().as(FormParams.class)
                 .thenApply(form -> "Hi " + form.first("name").orElse("unknown"))
+                .thenAccept(res::send);
+    }
+
+    private void formContent(ServerRequest req, ServerResponse res) {
+        req.content().as(FormParams.class)
                 .thenAccept(res::send);
     }
 

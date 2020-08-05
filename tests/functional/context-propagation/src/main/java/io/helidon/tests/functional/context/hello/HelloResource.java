@@ -20,6 +20,9 @@ import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 
+import io.helidon.webserver.ServerRequest;
+import org.eclipse.microprofile.faulttolerance.Retry;
+
 /**
  * HelloResource class.
  */
@@ -27,6 +30,9 @@ import javax.ws.rs.Path;
 public class HelloResource {
 
     private HelloBean helloBean;
+
+    @Inject
+    private ServerRequestSupplier supplier;
 
     /**
      * Constructor.
@@ -45,6 +51,7 @@ public class HelloResource {
      */
     @GET
     @Path("/hello")
+    @Retry
     public String getHello() {
         return helloBean.getHello();
     }
@@ -56,6 +63,7 @@ public class HelloResource {
      */
     @GET
     @Path("/helloTimeout")
+    @Retry
     public String getHelloTimeout() {
         return helloBean.getHelloTimeout();
     }
@@ -68,7 +76,16 @@ public class HelloResource {
      */
     @GET
     @Path("/helloAsync")
+    @Retry
     public String getHelloAsync() throws Exception {
         return helloBean.getHelloAsync().toCompletableFuture().get();
+    }
+
+    @GET
+    @Path("/remoteAddress")
+    @Retry
+    public String getRemoteAddress() {
+        ServerRequest serverRequest = supplier.get();
+        return serverRequest.remoteAddress();
     }
 }

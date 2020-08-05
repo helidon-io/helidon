@@ -301,7 +301,7 @@ class WebClientConfiguration {
         private MessageBodyReaderContext readerContext;
         private MessageBodyWriterContext writerContext;
         private List<WebClientService> clientServices;
-        private boolean validateHeaders = true;
+        private boolean validateHeaders;
         @SuppressWarnings("unchecked")
         private B me = (B) this;
 
@@ -675,6 +675,7 @@ class WebClientConfiguration {
             writerContextParent(configuration.writerContext);
             context(configuration.context);
             keepAlive(configuration.keepAlive);
+            validateHeaders(configuration.validateHeaders);
             configuration.cookieManager.defaultCookies().forEach(this::defaultCookie);
             config = configuration.config;
 

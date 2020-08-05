@@ -33,6 +33,7 @@
             <property name="eclipselink.target-database" value="org.eclipse.persistence.platform.database.H2Platform"/>
             <property name="eclipselink.target-server" value="io.helidon.integrations.cdi.eclipselink.CDISEPlatform"/>
             <property name="eclipselink.weaving" value="false"/>
+            <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect"/>
         </properties>
     </persistence-unit>
 
@@ -50,6 +51,7 @@
             <property name="eclipselink.target-database" value="org.eclipse.persistence.platform.database.H2Platform"/>
             <property name="eclipselink.target-server" value="io.helidon.integrations.cdi.eclipselink.CDISEPlatform"/>
             <property name="eclipselink.weaving" value="false"/>
+            <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect"/>
         </properties>
     </persistence-unit>
 

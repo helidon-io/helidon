@@ -56,7 +56,7 @@
         <version.lib.guava>28.1-jre</version.lib.guava>
         <version.lib.h2>1.4.199</version.lib.h2>
         <version.lib.hamcrest>1.3</version.lib.hamcrest>
-        <version.lib.hibernate>5.4.4.Final</version.lib.hibernate>
+        <version.lib.hibernate>5.4.18.Final</version.lib.hibernate>
         <version.lib.hikaricp>3.4.1</version.lib.hikaricp>
         <version.lib.hystrix>1.5.18</version.lib.hystrix>
         <version.lib.inject>1.0</version.lib.inject>
@@ -95,7 +95,7 @@
         <version.lib.oracle.ojdbc10>19.3.0.0</version.lib.oracle.ojdbc10>
         <version.lib.mysql-connector-java>8.0.11</version.lib.mysql-connector-java>
         <version.lib.narayana>5.9.3.Final</version.lib.narayana>
-        <version.lib.netty>4.1.45.Final</version.lib.netty>
+        <version.lib.netty>4.1.51.Final</version.lib.netty>
         <version.lib.oci-java-sdk-objectstorage>1.10.0</version.lib.oci-java-sdk-objectstorage>
         <version.lib.ojdbc8>19.6.0.0</version.lib.ojdbc8>
         <version.lib.opentracing>0.33.0</version.lib.opentracing>
@@ -311,6 +311,16 @@
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-buffer</artifactId>
+                <version>${version.lib.netty}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport</artifactId>
+                <version>${version.lib.netty}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-common</artifactId>
                 <version>${version.lib.netty}</version>
             </dependency>
             <dependency>

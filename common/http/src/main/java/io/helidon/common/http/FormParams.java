@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Provides access to any form parameters present in the request entity.
@@ -68,6 +69,7 @@ public interface FormParams extends Parameters {
 
         @Override
         public Builder add(String name, String... values) {
+            Objects.requireNonNull(name);
             params.computeIfAbsent(name, k -> new ArrayList<>()).addAll(Arrays.asList(values));
             return this;
         }

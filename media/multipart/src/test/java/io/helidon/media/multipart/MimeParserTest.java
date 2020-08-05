@@ -16,6 +16,7 @@
 package io.helidon.media.multipart;
 
 import java.nio.ByteBuffer;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ArrayList;
@@ -383,26 +384,6 @@ public class MimeParserTest {
     }
 
     @Test
-    public void testBoundaryAcrossChunksDataRequired() {
-        String boundary = "boundary";
-        final byte[] chunk1 = ("--" + boundary + "\n"
-                + "Content-Id: part1\n"
-                + "\n"
-                + "this-is-the-body-of-part1\n"
-                + "--" + boundary.substring(0, 3)).getBytes();
-
-        ParserEventProcessor processor = new ParserEventProcessor();
-        MimeParser parser = new MimeParser(boundary, processor);
-        parser.offer(ByteBuffer.wrap(chunk1));
-        parser.parse();
-
-        assertThat(processor.partContent, is(notNullValue()));
-        assertThat(new String(processor.partContent), is(equalTo("this-is-the-body-of-")));
-        assertThat(processor.lastEvent, is(notNullValue()));
-        assertThat(processor.lastEvent.type(), is(equalTo(MimeParser.EventType.DATA_REQUIRED)));
-    }
-
-    @Test
     public void testBoundaryAcrossChunks() {
         String boundary = "boundary";
         final byte[] chunk1 = ("--" + boundary + "\n"
@@ -637,11 +618,9 @@ public class MimeParserTest {
     @Test
     public void testParserClosed() {
         try {
-            ParserEventProcessor processor = new ParserEventProcessor();
-            MimeParser parser = new MimeParser("boundary", processor);
+            MimeParser parser = new MimeParser("boundary");
             parser.close();
             parser.offer(ByteBuffer.wrap("foo".getBytes()));
-            parser.parse();
             fail("exception should be thrown");
         } catch (MimeParser.ParsingException ex) {
             assertThat(ex.getMessage(), is(equalTo("Parser is closed")));
@@ -673,9 +652,9 @@ public class MimeParserTest {
      *
      * @param boundary boundary string
      * @param data for the chunks to parse
-     * @return test parser event processor
+     * @return parser result
      */
-    static ParserEventProcessor parse(String boundary, byte[] data) {
+    static ParserResult parse(String boundary, byte[] data) {
         return parse(boundary, List.of(data));
     }
 
@@ -684,67 +663,78 @@ public class MimeParserTest {
      *
      * @param boundary boundary string
      * @param data for the chunks to parse
-     * @return test parser event processor
+     * @return parser result
      */
-    static ParserEventProcessor parse(String boundary, List<byte[]> data) {
-        ParserEventProcessor processor = new ParserEventProcessor();
-        MimeParser parser = new MimeParser(boundary, processor);
-        for (byte[] bytes : data) {
-            parser.offer(ByteBuffer.wrap(bytes));
-            parser.parse();
-        }
-        parser.close();
-        return processor;
-    }
-
-    /**
-     * Test parser event processor.
-     */
-    static final class ParserEventProcessor implements MimeParser.EventProcessor {
-
+    static ParserResult parse(String boundary, List<byte[]> data) {
+        MimeParser parser = new MimeParser(boundary);
         List<MimePart> parts = new LinkedList<>();
         Map<String, List<String>> partHeaders = new HashMap<>();
         byte[] partContent = null;
         MimeParser.ParserEvent lastEvent = null;
-
-        @Override
-        public void process(MimeParser.ParserEvent event) {
-            switch (event.type()) {
-                case START_PART:
-                    partHeaders = new HashMap<>();
-                    partContent = null;
-                    break;
-
-                case HEADER:
-                    MimeParser.HeaderEvent headerEvent = event.asHeaderEvent();
-                    String name = headerEvent.name();
-                    String value = headerEvent.value();
-                    assertThat(name, notNullValue());
-                    assertThat(name.length(), not(equalTo(0)));
-                    assertThat(value, notNullValue());
-                    List<String> values = partHeaders.get(name);
-                    if (values == null) {
-                        values = new ArrayList<>();
-                        partHeaders.put(name, values);
-                    }
-                    values.add(value);
-                    break;
-
-                case CONTENT:
-                    ByteBuffer content = event.asContentEvent().content().buffer();
-                    assertThat(content, is(notNullValue()));
-                    if (partContent == null) {
-                        partContent = Utils.toByteArray(content);
-                    } else {
-                        partContent = concat(partContent, Utils.toByteArray(content));
-                    }
-                    break;
-
-                case END_PART:
-                    parts.add(new MimePart(partHeaders, partContent));
-                    break;
+        for (byte[] bytes : data) {
+            parser.offer(ByteBuffer.wrap(bytes));
+            Iterator<MimeParser.ParserEvent> it = parser.parseIterator();
+            while(it.hasNext()) {
+                MimeParser.ParserEvent event = it.next();
+                switch (event.type()) {
+                    case START_PART:
+                        partHeaders = new HashMap<>();
+                        partContent = null;
+                        break;
+                    case HEADER:
+                        MimeParser.HeaderEvent headerEvent = event.asHeaderEvent();
+                        String name = headerEvent.name();
+                        String value = headerEvent.value();
+                        assertThat(name, notNullValue());
+                        assertThat(name.length(), not(equalTo(0)));
+                        assertThat(value, notNullValue());
+                        List<String> values = partHeaders.get(name);
+                        if (values == null) {
+                            values = new ArrayList<>();
+                            partHeaders.put(name, values);
+                        }
+                        values.add(value);
+                        break;
+                    case BODY:
+                        for (VirtualBuffer.BufferEntry content : event.asBodyEvent().body()) {
+                            ByteBuffer buffer = content.buffer();
+                            assertThat(buffer, is(notNullValue()));
+                            if (partContent == null) {
+                                partContent = Utils.toByteArray(buffer);
+                            } else {
+                                partContent = concat(partContent, Utils.toByteArray(buffer));
+                            }
+                        }
+                        break;
+                    case END_PART:
+                        parts.add(new MimePart(partHeaders, partContent));
+                        break;
+                }
+                lastEvent = event;
             }
-            lastEvent = event;
+        }
+        parser.close();
+        return new ParserResult(parts, partHeaders, partContent, lastEvent);
+    }
+
+    /**
+     * Parser result.
+     */
+    static final class ParserResult {
+
+        final List<MimePart> parts;
+        final Map<String, List<String>> partHeaders;
+        final byte[] partContent;
+        final MimeParser.ParserEvent lastEvent;
+
+        ParserResult(List<MimePart> parts,
+                            Map<String, List<String>> partHeaders,
+                            byte[] partContent,
+                            MimeParser.ParserEvent lastEvent) {
+            this.parts = parts;
+            this.partHeaders = partHeaders;
+            this.partContent = partContent;
+            this.lastEvent = lastEvent;
         }
     }
 
