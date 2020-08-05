@@ -18,6 +18,9 @@ package io.helidon.metrics;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.Metric;
+import org.eclipse.microprofile.metrics.MetricFilter;
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
@@ -26,8 +29,11 @@ import org.hamcrest.core.IsSame;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.util.Map;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -147,5 +153,64 @@ public class RegistryTest {
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> registry.counter(metadata2, tag1));
         assertThat(ex.getMessage(), containsString("conflicts with"));
+    }
+
+    @Test
+    void testRemovalOfExistingMetricByName() {
+        Metadata metadata = Metadata.builder()
+                .withName("counter6")
+                .withType(MetricType.COUNTER)
+                .build();
+        registry.counter(metadata);
+        registry.counter(metadata, tag1);
+        // Removing by name should remove all metrics with that name, regardless of tags.
+        boolean result = registry.remove(metadata.getName());
+        assertThat(result, is(true));
+        Map<MetricID, Counter> counters = registry.getCounters(new MetricNameFilter(metadata.getName()));
+        assertThat(counters.size(), is(0));
+    }
+
+    @Test
+    void testRemovalOfExistingMetricByMetricID() {
+        Metadata metadata = Metadata.builder()
+                .withName("counter7")
+                .withType(MetricType.COUNTER)
+                .build();
+
+        registry.counter(metadata);
+        registry.counter(metadata, tag1);
+        MetricID metricID = new MetricID(metadata.getName(), tag1);
+        // Removing by MetricID should leave other like-named metrics intact.
+        boolean result = registry.remove(metricID);
+        assertThat(result, is(true));
+        Map<MetricID, Counter> counters = registry.getCounters(new MetricNameFilter(metadata.getName()));
+        assertThat(counters.size(), is(1));
+    }
+
+    @Test
+    void testRemovalOfMissingMetricByName() {
+        boolean result = registry.remove("NOT_THERE");
+        assertThat(result, is(false));
+    }
+
+    @Test
+    void testRemovalOfMissingMetricByID() {
+        MetricID metricID = new MetricID("NOT_THERE");
+        boolean result = registry.remove(metricID);
+        assertThat(result, is(false));
+    }
+
+    private static class MetricNameFilter implements MetricFilter {
+
+        private final String name;
+
+        private MetricNameFilter(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public boolean matches(MetricID metricID, Metric metric) {
+            return metricID.getName().equals(name);
+        }
     }
 }
