@@ -225,12 +225,12 @@ public class Registry extends MetricRegistry {
      */
     @Override
     public synchronized boolean remove(MetricID metricID) {
-        final List<MetricID> likeNamedMetrics = allMetricIDsByName.get(metricID.getName());
-        if (likeNamedMetrics == null) {
+        final List<MetricID> metricIDS = allMetricIDsByName.get(metricID.getName());
+        if (metricIDS == null) {
             return false;
         }
-        likeNamedMetrics.remove(metricID);
-        if (likeNamedMetrics.isEmpty()) {
+        metricIDS.remove(metricID);
+        if (metricIDS.isEmpty()) {
             allMetricIDsByName.remove(metricID.getName());
             allMetadata.remove(metricID.getName());
         }
