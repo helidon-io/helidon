@@ -290,7 +290,6 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
                 WebClientServiceResponse clientServiceResponse = channel.attr(SERVICE_RESPONSE).get();
                 CompletableFuture<WebClientServiceResponse> requestComplete = channel.attr(COMPLETED).get();
                 requestComplete.complete(clientServiceResponse);
-                channel.config().setAutoRead(true);
                 WebClientResponse response = channel.attr(RESPONSE).get();
                 String connection = response.headers().first(Http.Header.CONNECTION)
                         .orElseGet(HttpHeaderValues.CLOSE::toString);
@@ -298,7 +297,7 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
                     ctx.close()
                             .addListener(future -> {
                                 if (future.isSuccess()) {
-                                    LOGGER.finest(() -> "Response from has been closed.");
+                                    LOGGER.finest(() -> "Response from the server has been closed.");
                                     cf.complete(null);
                                 } else {
                                     LOGGER.log(Level.SEVERE,
@@ -310,6 +309,7 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
                 } else {
                     channel.attr(IN_USE).get().set(false);
                     cf.complete(null);
+                    channel.read();
                 }
                 publisher.complete();
             }
