@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -100,11 +100,15 @@ final class HelidonConcurrentGauge extends MetricImpl implements ConcurrentGauge
         sb.append(nameCurrent).append(prometheusTags(metricID.getTags()))
                 .append(" ").append(prometheusValue()).append('\n');
         final String nameMin = name + "_min";
-        prometheusType(sb, nameMin, metadata().getType());
+        if (withHelpType) {
+            prometheusType(sb, nameMin, metadata().getType());
+        }
         sb.append(nameMin).append(prometheusTags(metricID.getTags()))
                 .append(" ").append(getMin()).append('\n');
         final String nameMax = name + "_max";
-        prometheusType(sb, nameMax, metadata().getType());
+        if (withHelpType) {
+            prometheusType(sb, nameMax, metadata().getType());
+        }
         sb.append(nameMax).append(prometheusTags(metricID.getTags()))
                 .append(" ").append(getMax()).append('\n');
     }
