@@ -81,7 +81,7 @@
         <version.lib.mockito>2.23.4</version.lib.mockito>
         <version.lib.mysql-connector-java>8.0.11</version.lib.mysql-connector-java>
         <version.lib.narayana>5.9.3.Final</version.lib.narayana>
-        <version.lib.netty>4.1.45.Final</version.lib.netty>
+        <version.lib.netty>4.1.51.Final</version.lib.netty>
         <version.lib.oci-java-sdk-objectstorage>1.10.0</version.lib.oci-java-sdk-objectstorage>
         <version.lib.ojdbc8>19.3.0.0</version.lib.ojdbc8>
         <version.lib.opentracing>0.32.0</version.lib.opentracing>
@@ -233,6 +233,11 @@
             </dependency>
             <dependency>
                 <groupId>io.netty</groupId>
+                <artifactId>netty-handler-proxy</artifactId>
+                <version>${version.lib.netty}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
                 <artifactId>netty-codec-dns</artifactId>
                 <version>${version.lib.netty}</version>
             </dependency>
@@ -249,6 +254,21 @@
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-codec-http2</artifactId>
+                <version>${version.lib.netty}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-buffer</artifactId>
+                <version>${version.lib.netty}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport</artifactId>
+                <version>${version.lib.netty}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-common</artifactId>
                 <version>${version.lib.netty}</version>
             </dependency>
             <dependency>
