@@ -17,13 +17,16 @@ package io.helidon.media.multipart;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Subscriber;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.LongStream;
 
-import io.helidon.common.http.MediaType;
 import io.helidon.common.http.DataChunk;
+import io.helidon.common.http.MediaType;
 import io.helidon.common.reactive.Multi;
 import io.helidon.media.common.ContentReaders;
 import io.helidon.media.multipart.MultiPartDecoderTest.DataChunkSubscriber;
@@ -55,7 +58,7 @@ public class MultiPartEncoderTest {
         assertThat(message, is(equalTo(
                 "--" + boundary + "\r\n"
                 + "\r\n"
-                + "part1\n"
+                + "part1\r\n"
                 + "--" + boundary + "--")));
     }
 
@@ -73,7 +76,7 @@ public class MultiPartEncoderTest {
                 "--" + boundary + "\r\n"
                 + "Content-Type:text/plain\r\n"
                 + "\r\n"
-                + "part1\n"
+                + "part1\r\n"
                 + "--" + boundary + "--")));
     }
 
@@ -90,10 +93,10 @@ public class MultiPartEncoderTest {
         assertThat(message, is(equalTo(
                 "--" + boundary + "\r\n"
                 + "\r\n"
-                + "part1\n"
+                + "part1\r\n"
                 + "--" + boundary + "\r\n"
                 + "\r\n"
-                + "part2\n"
+                + "part2\r\n"
                 + "--" + boundary + "--")));
     }
 
