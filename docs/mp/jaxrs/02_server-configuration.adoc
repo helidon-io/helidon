@@ -52,9 +52,9 @@ server.receive-buffer=256
 server.timeout=30000
 # Defaults to Runtime.availableProcessors()
 server.workers=4
-# Default is not to use SSL
-ssl.private-key.keystore-resource-path=certificate.p12
-ssl.private-key.keystore-passphrase="abcd"
+# Default is not to use TLS
+server.tls.private-key.keystore.resource.resource-path=certificate.p12
+server.tls.private-key.keystore.passphrase="abcd"
 ----
 
 == Configuring additional ports
