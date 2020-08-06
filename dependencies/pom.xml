@@ -252,6 +252,16 @@
                 <version>${version.lib.netty}</version>
             </dependency>
             <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport</artifactId>
+                <version>${version.lib.netty}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-common</artifactId>
+                <version>${version.lib.netty}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.eclipse</groupId>
                 <artifactId>yasson</artifactId>
                 <version>${version.lib.yasson}</version>
