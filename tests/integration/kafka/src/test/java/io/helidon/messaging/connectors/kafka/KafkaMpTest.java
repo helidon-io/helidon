@@ -276,6 +276,18 @@ class KafkaMpTest extends AbstractKafkaTest{
     }
 
     @Test
+    void multipleTopicsWithPattern() {
+        LOGGER.fine(() -> "==========> test multipleTopicsWithPattern()");
+        Map<String, String> p = Map.of("topic.pattern", "topic[1-2]");
+        Config config = Config.builder().sources(ConfigSources.create(p)).build();
+        KafkaConfig kafkaConfig = KafkaConfig.create(config);
+        assertTrue(kafkaConfig.topicPattern().isPresent());
+        assertTrue(kafkaConfig.topicPattern().get().matcher("topic1").matches());
+        assertTrue(kafkaConfig.topicPattern().get().matcher("topic2").matches());
+        assertFalse(kafkaConfig.topicPattern().get().matcher("topic3").matches());
+    }
+
+    @Test
     void incomingKafkaOk() {
         LOGGER.fine(() -> "==========> test incomingKafkaOk()");
         List<String> testData = IntStream.range(0, 99).mapToObj(i -> "test" + i).collect(Collectors.toList());
