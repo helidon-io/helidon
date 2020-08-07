@@ -143,6 +143,6 @@ public class MultiPartEncoder implements Processor<WriteableBodyPart, DataChunk>
                 // Part body
                 bodyPart.content().init(context)),
                 // Part postfix
-                Single.just(DataChunk.create("\n".getBytes(StandardCharsets.UTF_8))));
+                Single.just(DataChunk.create("\r\n".getBytes(StandardCharsets.UTF_8))));
     }
 }

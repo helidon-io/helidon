@@ -399,7 +399,7 @@ public final class MetricsSupport implements Service {
                     String type = registry.type();
 
                     rules.get(context + "/" + type, (req, res) -> getAll(req, res, registry))
-                            .get(context + "/" + type + "/{metric}", (req, res) -> getOne(req, res, registry))
+                            .get(context + "/" + type + "/{metric}", (req, res) -> getByName(req, res, registry))
                             .options(context + "/" + type, (req, res) -> optionsAll(req, res, registry))
                             .options(context + "/" + type + "/{metric}", (req, res) -> optionsOne(req, res, registry));
                 });
@@ -472,20 +472,16 @@ public final class MetricsSupport implements Service {
         return restResource(service.getClass().getName(), methodName);
     }
 
-    private void getOne(ServerRequest req, ServerResponse res, Registry registry) {
+    private void getByName(ServerRequest req, ServerResponse res, Registry registry) {
         String metricName = req.path().param("metric");
 
         registry.getOptionalMetricEntry(metricName)
                 .ifPresentOrElse(entry -> {
                     MediaType mediaType = findBestAccepted(req.headers());
                     if (mediaType == MediaType.APPLICATION_JSON) {
-                        JsonObjectBuilder builder = JSON.createObjectBuilder();
-                        entry.getValue().jsonData(builder, entry.getKey());
-                        sendJson(res, builder.build());
+                        sendJson(res, jsonDataByName(registry, metricName));
                     } else if (mediaType == MediaType.TEXT_PLAIN) {
-                        final StringBuilder sb = new StringBuilder();
-                        entry.getValue().prometheusData(sb, entry.getKey(), true);
-                        res.send(sb.toString());
+                        res.send(prometheusDataByName(registry, metricName));
                     } else {
                         res.status(Http.Status.NOT_ACCEPTABLE_406);
                         res.send();
@@ -494,6 +490,26 @@ public final class MetricsSupport implements Service {
                     res.status(Http.Status.NOT_FOUND_404);
                     res.send();
                 });
+    }
+
+    static JsonObject jsonDataByName(Registry registry, String metricName) {
+        JsonObjectBuilder builder = new MetricsSupport.MergingJsonObjectBuilder(JSON.createObjectBuilder());
+        for (Map.Entry<MetricID, HelidonMetric> metricEntry : registry.getMetricsByName(metricName)) {
+            metricEntry.getValue()
+                    .jsonData(builder, metricEntry.getKey());
+        }
+        return builder.build();
+    }
+
+    static String prometheusDataByName(Registry registry, String metricName) {
+        final StringBuilder sb = new StringBuilder();
+        boolean isFirst = true;
+        for (Map.Entry<MetricID, HelidonMetric> metricEntry : registry.getMetricsByName(metricName)) {
+            metricEntry.getValue()
+                    .prometheusData(sb, metricEntry.getKey(), isFirst);
+            isFirst = false;
+        }
+        return sb.toString();
     }
 
     private static void sendJson(ServerResponse res, JsonObject object) {

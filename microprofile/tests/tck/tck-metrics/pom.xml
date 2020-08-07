@@ -103,6 +103,10 @@
                     <environmentVariables>
                         <MP_METRICS_TAGS>tier=integration</MP_METRICS_TAGS>
                     </environmentVariables>
+                    <systemPropertyVariables>
+                        <context.root/> <!-- Suppress the TCK's default of /optionalTCK -->
+                        <metrics.rest-endpoints-enabled>true</metrics.rest-endpoints-enabled> <!-- off by default -->
+                    </systemPropertyVariables>
                 </configuration>
                 <dependencies>
                     <dependency>

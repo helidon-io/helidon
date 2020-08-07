@@ -27,12 +27,14 @@ import java.util.Set;
 import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonBuilderFactory;
+import javax.json.JsonNumber;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 
+import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
@@ -42,6 +44,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -57,6 +60,12 @@ class MetricsSupportTest {
 
     private static final MetricID METRIC_USED_HEAP = new MetricID("memory.usedHeap");
 
+    private static final String CONCURRENT_GAUGE_NAME = "appConcurrentGauge";
+    private static final int RED_CONCURRENT_GAUGE_COUNT = 1;
+    private static final int BLUE_CONCURRENT_GAUGE_COUNT = 2;
+
+    private static String globalTagsJsonSuffix;
+
     @BeforeAll
     static void initClass() {
         RegistryFactory rf = RegistryFactory.getInstance();
@@ -67,6 +76,23 @@ class MetricsSupportTest {
         Counter counter = app.counter("appCounter",
                 new Tag("color", "blue"), new Tag("brightness", "dim"));
         counter.inc();
+
+        ConcurrentGauge concurrentGauge = app.concurrentGauge(CONCURRENT_GAUGE_NAME, new Tag("color", "blue"));
+        for (int i = 0; i < BLUE_CONCURRENT_GAUGE_COUNT; i++) {
+            concurrentGauge.inc();
+        }
+
+        concurrentGauge = app.concurrentGauge(CONCURRENT_GAUGE_NAME, new Tag("color", "red"));
+        for (int i = 0; i < RED_CONCURRENT_GAUGE_COUNT; i++) {
+            concurrentGauge.inc();
+        }
+
+        String globalTags = System.getenv("MP_METRICS_TAGS");
+        if (globalTags == null) {
+            globalTagsJsonSuffix = "";
+        } else {
+            globalTagsJsonSuffix = ";" + globalTags.replaceAll(",", ";");
+        }
     }
 
     @Test
@@ -170,5 +196,20 @@ class MetricsSupportTest {
                 }
             }
         }
+    }
+
+    @Test
+    void testJsonDataMultipleMetricsSameName() {
+        // Make sure the JSON format for all metrics matching a name lists the name once with tagged instances as children.
+        JsonObject multiple = MetricsSupport.jsonDataByName(app, CONCURRENT_GAUGE_NAME);
+        assertNotNull(multiple);
+        JsonObject top = multiple.getJsonObject(CONCURRENT_GAUGE_NAME);
+        assertNotNull(top);
+        JsonNumber blueNumber = top.getJsonNumber("current;color=blue" + globalTagsJsonSuffix);
+        assertNotNull(blueNumber);
+        assertEquals(BLUE_CONCURRENT_GAUGE_COUNT, blueNumber.longValue());
+        JsonNumber redNumber = top.getJsonNumber("current;color=red" + globalTagsJsonSuffix);
+        assertNotNull(redNumber);
+        assertEquals(RED_CONCURRENT_GAUGE_COUNT, redNumber.longValue());
     }
 }

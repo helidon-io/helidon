@@ -25,7 +25,9 @@ import javax.ws.rs.core.MediaType;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.metrics.RegistryFactory;
 import io.helidon.microprofile.server.Server;
+import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.SimpleTimer;
 import org.eclipse.microprofile.metrics.Tag;
 import org.hamcrest.core.Is;
@@ -42,8 +44,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 public class HelloWorldTest extends MetricsMpServiceTest {
 
+    private static MetricRegistry syntheticSimpleTimerRegistry;
+
     @BeforeAll
     public static void initializeServer() {
+        System.setProperty("jersey.config.server.logging.verbosity", "FINE");
         Properties configProperties = new Properties();
         configProperties.setProperty("metrics." + MetricsCdiExtension.REST_ENDPOINTS_METRIC_ENABLED_PROPERTY_NAME,
                 "true");
@@ -51,10 +56,17 @@ public class HelloWorldTest extends MetricsMpServiceTest {
     }
 
     static void initializeServer(Properties configProperties) {
+        syntheticSimpleTimerRegistry = initSyntheticSimpleTimerRegistry();
         Server.Builder builder = MetricsMpServiceTest.prepareServerBuilder();
         Config config = Config.create(ConfigSources.create(configProperties));
         builder.config(config);
         MetricsMpServiceTest.finishServerInitialization(builder);
+    }
+
+    private static MetricRegistry initSyntheticSimpleTimerRegistry() {
+        MetricRegistry result = RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.BASE);
+        result.remove(MetricsCdiExtension.SYNTHETIC_SIMPLE_TIMER_METRIC_NAME);
+        return result;
     }
 
     @BeforeEach
@@ -89,7 +101,7 @@ public class HelloWorldTest extends MetricsMpServiceTest {
     static SimpleTimer getSyntheticSimpleTimer() {
         Tag[] tags = new Tag[] {new Tag("class", HelloWorldResource.class.getName()),
                 new Tag("method", "messageWithArg_java.lang.String")};
-        SimpleTimer syntheticSimpleTimer = registry.simpleTimer(
+        SimpleTimer syntheticSimpleTimer = syntheticSimpleTimerRegistry.simpleTimer(
                 MetricsCdiExtension.SYNTHETIC_SIMPLE_TIMER_METADATA, tags);
         return syntheticSimpleTimer;
     }

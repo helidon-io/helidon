@@ -16,8 +16,6 @@
 
 package io.helidon.metrics;
 
-import java.time.Duration;
-
 /**
  * Clock interface to allow replacing system clock with
  * a custom one (e.g. for unit testing).

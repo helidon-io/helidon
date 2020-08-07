@@ -16,19 +16,20 @@
  */
 package io.helidon.metrics;
 
+import java.time.Duration;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import javax.json.JsonObjectBuilder;
+
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.SimpleTimer;
-
-import javax.json.JsonObjectBuilder;
-import java.time.Duration;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.concurrent.Callable;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Implementation of {@link SimpleTimer}.
@@ -105,6 +106,7 @@ final class HelidonSimpleTimer extends MetricImpl implements SimpleTimer {
             // By spec, no help for the elapsedTime part of SimpleTimer.
         }
         sb.append(promName)
+                .append(tags)
                 .append(" ")
                 .append(elapsedTimeInSeconds())
                 .append("\n");
@@ -124,7 +126,7 @@ final class HelidonSimpleTimer extends MetricImpl implements SimpleTimer {
     }
 
     private double elapsedTimeInSeconds() {
-        return getElapsedTime().toNanos()/(1000*1000*1000);
+        return getElapsedTime().toNanos() / (1000.0 * 1000.0 * 1000.0);
     }
 
     private static final class ContextImpl implements Context {

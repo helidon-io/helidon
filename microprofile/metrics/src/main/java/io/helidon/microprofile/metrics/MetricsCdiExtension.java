@@ -111,7 +111,7 @@ public class MetricsCdiExtension implements Extension {
     static final String REST_ENDPOINTS_METRIC_ENABLED_PROPERTY_NAME = "rest-endpoints-enabled";
     private static final boolean REST_ENDPOINTS_METRIC_ENABLED_DEFAULT_VALUE = false;
 
-    private static final String SYNTHETIC_SIMPLE_TIMER_METRIC_NAME = "REST.request";
+    static final String SYNTHETIC_SIMPLE_TIMER_METRIC_NAME = "REST.request";
 
     static final Metadata SYNTHETIC_SIMPLE_TIMER_METADATA = Metadata.builder()
             .withName(SYNTHETIC_SIMPLE_TIMER_METRIC_NAME)
@@ -260,8 +260,8 @@ public class MetricsCdiExtension implements Extension {
         return RegistryProducer.getDefaultRegistry();
     }
 
-    static MetricRegistry getApplicationRegistry() {
-        return RegistryProducer.getApplicationRegistry();
+    static MetricRegistry getRegistryForSyntheticSimpleTimers() {
+        return RegistryProducer.getBaseRegistry();
     }
 
     /**
@@ -292,6 +292,8 @@ public class MetricsCdiExtension implements Extension {
         // Config might disable the MP synthetic SimpleTimer feature for JAX-RS endpoints.
         // For efficiency, prepare to consult config only once rather than from each interceptor instance.
         discovery.addAnnotatedType(RestEndpointMetricsInfo.class, RestEndpointMetricsInfo.class.getSimpleName());
+
+        discovery.addAnnotatedType(ArrayParamConverterProvider.class, ArrayParamConverterProvider.class.getSimpleName());
     }
 
     /**
@@ -408,12 +410,13 @@ public class MetricsCdiExtension implements Extension {
                             LOGGER.log(Level.FINE, () -> String.format("Adding @SyntheticSimplyTimed to %s#%s", clazz.getName(),
                                     m.getName()));
 
+                            // Add the synthetic annotation to this method's configurator.
                             method.add(LiteralSyntheticSimplyTimed.getInstance());
 
-                            // Register the synthetic REST.request metric for this class/method. These dynamically-added
-                            // annotations will not trigger the @ProcessAnnotatedType invocation that would normally do the
-                            // metric registration because CDI has already decided which classes have annotations that trigger
-                            // those invocations.
+                            // Record the need to register the synthetic REST.request metric for this class/method. These
+                            // dynamically-added annotations will not trigger the @ProcessAnnotatedType invocation that would
+                            // normally do the metric registration because CDI has already decided which classes have annotations
+                            // that trigger those invocations.
                             methodsForSyntheticSimplyTimed.add(m);
                         }
                     });
@@ -429,23 +432,26 @@ public class MetricsCdiExtension implements Extension {
     static SimpleTimer syntheticSimpleTimer(Method method) {
         String classTagValue = method.getDeclaringClass().getName();
         // By spec, the synthetic SimpleTimers are always in the application registry.
-        return syntheticSimpleTimer(getApplicationRegistry(), classTagValue, methodTagValueForSyntheticSimpleTimer(method));
+        return syntheticSimpleTimer(getRegistryForSyntheticSimpleTimers(), classTagValue, methodTagValueForSyntheticSimpleTimer(method));
     }
 
     private static SimpleTimer syntheticSimpleTimer(MetricRegistry registry, String classTagValue, String methodTagValue) {
         return registry.simpleTimer(SYNTHETIC_SIMPLE_TIMER_METADATA,
-                new Tag[] {new Tag("class", classTagValue), new Tag("method", methodTagValue.toString())});
+                new Tag[] {new Tag("class", classTagValue), new Tag("method", methodTagValue)});
     }
 
     private static String methodTagValueForSyntheticSimpleTimer(Method method) {
         StringBuilder methodTagValue = new StringBuilder(method.getName());
         for (Parameter p : method.getParameters()) {
-            methodTagValue.append("_").append(p.getType().getName());
-            if (p.getType().isArray() || p.isVarArgs()) {
-                methodTagValue.append("[]");
-            }
+            methodTagValue.append("_").append(prettyParamType(p));
         }
         return methodTagValue.toString();
+    }
+
+    private static String prettyParamType(Parameter parameter) {
+        return parameter.getType().isArray() || parameter.isVarArgs()
+                ? parameter.getType().getComponentType().getName() + "[]"
+                : parameter.getType().getName();
     }
 
     /**

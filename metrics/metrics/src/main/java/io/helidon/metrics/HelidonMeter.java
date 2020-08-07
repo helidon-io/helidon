@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -93,7 +93,9 @@ final class HelidonMeter extends MetricImpl implements Meter {
                 .append("\n");
 
         nameUnits = prometheusNameWithUnits(name, Optional.empty()) + "_rate_per_second";
-        prometheusType(sb, nameUnits, "gauge");
+        if (withHelpType) {
+            prometheusType(sb, nameUnits, "gauge");
+        }
         sb.append(nameUnits)
                 .append(tags)
                 .append(" ")
@@ -101,7 +103,9 @@ final class HelidonMeter extends MetricImpl implements Meter {
                 .append("\n");
 
         nameUnits = prometheusNameWithUnits(name, Optional.empty()) + "_one_min_rate_per_second";
-        prometheusType(sb, nameUnits, "gauge");
+        if (withHelpType) {
+            prometheusType(sb, nameUnits, "gauge");
+        }
         sb.append(nameUnits)
                 .append(tags)
                 .append(" ")
@@ -109,7 +113,9 @@ final class HelidonMeter extends MetricImpl implements Meter {
                 .append("\n");
 
         nameUnits = prometheusNameWithUnits(name, Optional.empty()) + "_five_min_rate_per_second";
-        prometheusType(sb, nameUnits, "gauge");
+        if (withHelpType) {
+            prometheusType(sb, nameUnits, "gauge");
+        }
         sb.append(nameUnits)
                 .append(tags)
                 .append(" ")
@@ -117,7 +123,9 @@ final class HelidonMeter extends MetricImpl implements Meter {
                 .append("\n");
 
         nameUnits = prometheusNameWithUnits(name, Optional.empty()) + "_fifteen_min_rate_per_second";
-        prometheusType(sb, nameUnits, "gauge");
+        if (withHelpType) {
+            prometheusType(sb, nameUnits, "gauge");
+        }
         sb.append(nameUnits)
                 .append(tags)
                 .append(" ")
