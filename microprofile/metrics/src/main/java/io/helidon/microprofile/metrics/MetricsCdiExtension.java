@@ -292,8 +292,6 @@ public class MetricsCdiExtension implements Extension {
         // Config might disable the MP synthetic SimpleTimer feature for JAX-RS endpoints.
         // For efficiency, prepare to consult config only once rather than from each interceptor instance.
         discovery.addAnnotatedType(RestEndpointMetricsInfo.class, RestEndpointMetricsInfo.class.getSimpleName());
-
-        discovery.addAnnotatedType(ArrayParamConverterProvider.class, ArrayParamConverterProvider.class.getSimpleName());
     }
 
     /**

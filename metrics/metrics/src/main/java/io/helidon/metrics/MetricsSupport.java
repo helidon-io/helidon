@@ -423,7 +423,6 @@ public final class MetricsSupport implements Service {
         configureEndpoint(rules);
     }
 
-    private void getByName(ServerRequest req, ServerResponse res, Registry registry) {
     /**
      * Creates a {@link Handler} that measures endpoint invocations using a {@link SimpleTimer} metric.
      * <p>

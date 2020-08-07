@@ -14,8 +14,11 @@
  * limitations under the License.
  *
  */
-package io.helidon.microprofile.metrics;
+package io.helidon.microprofile.metrics.tck;
 
+import javax.ws.rs.ext.ParamConverter;
+import javax.ws.rs.ext.ParamConverterProvider;
+import javax.ws.rs.ext.Provider;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.lang.reflect.Type;
@@ -23,10 +26,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
-
-import javax.ws.rs.ext.ParamConverter;
-import javax.ws.rs.ext.ParamConverterProvider;
-import javax.ws.rs.ext.Provider;
 
 /**
  * Temporary workaround for MP Metrics 2.3 TCK, which uses non-standard array parameters in endpoint definitions.

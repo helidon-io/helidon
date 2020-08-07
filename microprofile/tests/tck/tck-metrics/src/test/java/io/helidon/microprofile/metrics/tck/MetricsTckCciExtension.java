@@ -12,22 +12,17 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
-
 package io.helidon.microprofile.metrics.tck;
 
-import org.jboss.arquillian.container.test.impl.enricher.resource.URLResourceProvider;
-import org.jboss.arquillian.core.spi.LoadableExtension;
-import org.jboss.arquillian.test.spi.enricher.resource.ResourceProvider;
+import javax.enterprise.event.Observes;
+import javax.enterprise.inject.spi.BeforeBeanDiscovery;
+import javax.enterprise.inject.spi.Extension;
 
-import javax.enterprise.inject.spi.CDI;
+public class MetricsTckCciExtension implements Extension {
 
-/**
- * LoadableExtension that will load the UrlResourceProvider.
- */
-public class MetricsExtension implements LoadableExtension {
-    @Override
-    public void register(ExtensionBuilder extensionBuilder) {
-        extensionBuilder.override(ResourceProvider.class, URLResourceProvider.class, UrlResourceProvider.class);
+    void before(@Observes BeforeBeanDiscovery discovery) {
+        discovery.addAnnotatedType(ArrayParamConverterProvider.class, ArrayParamConverterProvider.class.getSimpleName());
     }
 }

@@ -370,18 +370,6 @@ public class Registry extends MetricRegistry {
         return getOptionalMetricEntry(metricName).map(Map.Entry::getValue);
     }
 
-    List<Map.Entry<MetricID, HelidonMetric>> getMetricsByName(String metricName) {
-        List<MetricID> metricIDs = allMetricIDsByName.get(metricName);
-        if (metricIDs == null) {
-            return Collections.EMPTY_LIST;
-        }
-        List<Map.Entry<MetricID, HelidonMetric>> result = new ArrayList<>();
-        for (MetricID metricID : metricIDs) {
-            result.add(new AbstractMap.SimpleEntry<>(metricID, allMetrics.get(metricID)));
-        }
-        return result;
-    }
-
     // -- Public not overridden -----------------------------------------------
 
     /**
