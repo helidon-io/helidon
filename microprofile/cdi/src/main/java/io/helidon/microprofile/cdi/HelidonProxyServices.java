@@ -70,20 +70,20 @@ class HelidonProxyServices implements ProxyServices {
     public Class<?> defineClass(Class<?> originalClass, String className, byte[] classBytes, int off, int len)
             throws ClassFormatError {
 
-        if (samePackage(originalClass, className)) {
-            // when we need to define a class in the same package (to see package local fields and methods)
-            // we cannot use a classloader, as the new class would be in the same package, but in a different
-            // classloader, preventing it from seeing these fields/methods
-            return defineClassSamePackage(originalClass, className, classBytes, off, len);
-        } else {
-            // try to use same package approach (maybe in same module?) to support package local methods
-            try {
-                return defineClassSamePackage(originalClass, className, classBytes, off, len);
-            } catch (Exception e) {
+        // always try to define in private lookup, if fails (and not same package), try using a different classloader
+        try {
+            return defineClassPrivateLookup(originalClass, className, classBytes, off, len);
+        } catch (Exception e) {
+            if (samePackage(originalClass, className)) {
+                // when same package, we must use private lookup (as we may use package local)
+                throw e;
+            } else {
                 LOGGER.log(Level.FINEST,
                            "Failed to create class " + className + " in same classloader. Will use a different one",
                            e);
-                // use a custom classloader to define classes in a new package
+
+                // other cases (except for a few edge cases, such as producer in a different package and usage
+                // of bean in the same package) we can live with a different classloader to hold the proxy class
                 return wrapCl(originalClass.getClassLoader())
                         .doDefineClass(originalClass, className, classBytes, off, len);
             }
@@ -98,17 +98,20 @@ class HelidonProxyServices implements ProxyServices {
                                 int len,
                                 ProtectionDomain protectionDomain) throws ClassFormatError {
 
-        if (samePackage(originalClass, className)) {
-            return defineClassSamePackage(originalClass, className, classBytes, off, len);
-        } else {
-            // try to use same package approach (maybe in same module?) to support package local methods
-            try {
-                return defineClassSamePackage(originalClass, className, classBytes, off, len);
-            } catch (Exception e) {
+        // always try to define in private lookup, if fails (and not same package), try using a different classloader
+        try {
+            return defineClassPrivateLookup(originalClass, className, classBytes, off, len);
+        } catch (Exception e) {
+            if (samePackage(originalClass, className)) {
+                // when same package, we must use private lookup (as we may use package local)
+                throw e;
+            } else {
                 LOGGER.log(Level.FINEST,
                            "Failed to create class " + className + " in same classloader. Will use a different one",
                            e);
 
+                // other cases (except for a few edge cases, such as producer in a different package and usage
+                // of bean in the same package) we can live with a different classloader to hold the proxy class
                 return wrapCl(originalClass.getClassLoader())
                         .doDefineClass(originalClass, className, classBytes, off, len, protectionDomain);
             }
@@ -120,7 +123,7 @@ class HelidonProxyServices implements ProxyServices {
         return wrapCl(originalClass.getClassLoader()).loadClass(classBinaryName);
     }
 
-    private Class<?> defineClassSamePackage(Class<?> originalClass, String className, byte[] classBytes, int off, int len) {
+    private Class<?> defineClassPrivateLookup(Class<?> originalClass, String className, byte[] classBytes, int off, int len) {
         if (NativeImageHelper.isRuntime()) {
             throw new IllegalStateException("Cannot define class in native image. Class name: " + className + ", original "
                                                     + "class: " + originalClass
