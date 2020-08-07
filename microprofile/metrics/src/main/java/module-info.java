@@ -32,8 +32,6 @@ module io.helidon.microprofile.metrics {
 
     requires transitive microprofile.config.api;
     requires microprofile.metrics.api;
-    requires jersey.server;
-
 
     exports io.helidon.microprofile.metrics;
 
