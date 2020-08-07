@@ -430,6 +430,18 @@ public class Registry extends MetricRegistry {
         return getOptionalMetric(new MetricID(metricName, tags), clazz);
     }
 
+    List<Map.Entry<MetricID, HelidonMetric>> getMetricsByName(String metricName) {
+        List<MetricID> metricIDs = allMetricIDsByName.get(metricName);
+        if (metricIDs == null) {
+            return Collections.EMPTY_LIST;
+        }
+        List<Map.Entry<MetricID, HelidonMetric>> result = new ArrayList<>();
+        for (MetricID metricID : metricIDs) {
+            result.add(new AbstractMap.SimpleEntry<>(metricID, allMetrics.get(metricID)));
+        }
+        return result;
+    }
+
     /**
      * Get internal map entry given a metric name. Synchronized for atomic access of more than
      * one internal map.
