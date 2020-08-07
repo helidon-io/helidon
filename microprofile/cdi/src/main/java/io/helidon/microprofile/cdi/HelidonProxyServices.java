@@ -23,6 +23,7 @@ import java.security.ProtectionDomain;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.common.NativeImageHelper;
@@ -75,8 +76,17 @@ class HelidonProxyServices implements ProxyServices {
             // classloader, preventing it from seeing these fields/methods
             return defineClassSamePackage(originalClass, className, classBytes, off, len);
         } else {
-            // use a custom classloader to define classes in a new package
-            return wrapCl(originalClass.getClassLoader()).doDefineClass(originalClass, className, classBytes, off, len);
+            // try to use same package approach (maybe in same module?) to support package local methods
+            try {
+                return defineClassSamePackage(originalClass, className, classBytes, off, len);
+            } catch (Exception e) {
+                LOGGER.log(Level.FINEST,
+                           "Failed to create class " + className + " in same classloader. Will use a different one",
+                           e);
+                // use a custom classloader to define classes in a new package
+                return wrapCl(originalClass.getClassLoader())
+                        .doDefineClass(originalClass, className, classBytes, off, len);
+            }
         }
     }
 
@@ -91,8 +101,17 @@ class HelidonProxyServices implements ProxyServices {
         if (samePackage(originalClass, className)) {
             return defineClassSamePackage(originalClass, className, classBytes, off, len);
         } else {
-            return wrapCl(originalClass.getClassLoader())
-                    .doDefineClass(originalClass, className, classBytes, off, len, protectionDomain);
+            // try to use same package approach (maybe in same module?) to support package local methods
+            try {
+                return defineClassSamePackage(originalClass, className, classBytes, off, len);
+            } catch (Exception e) {
+                LOGGER.log(Level.FINEST,
+                           "Failed to create class " + className + " in same classloader. Will use a different one",
+                           e);
+
+                return wrapCl(originalClass.getClassLoader())
+                        .doDefineClass(originalClass, className, classBytes, off, len, protectionDomain);
+            }
         }
     }
 
@@ -117,8 +136,20 @@ class HelidonProxyServices implements ProxyServices {
                 // it also needs to open the package we are doing the lookup in
                 myModule.addReads(classModule);
             }
+
+            // I would like to create a private lookup in the same package as the proxied class, so let's
+            // try to load it
+            String proxiedClassName = className.substring(0, className.indexOf('$'));
+            Class<?> lookupClass;
+            try {
+                lookupClass = originalClass.getClassLoader().loadClass(proxiedClassName);
+            } catch (Throwable e) {
+                LOGGER.log(Level.FINEST, "Cannot load proxied class: " + proxiedClassName, e);
+                lookupClass = originalClass;
+            }
+
             // next line would fail if the module does not open its package, with a very meaningful error message
-            MethodHandles.Lookup lookup = MethodHandles.privateLookupIn(originalClass, MethodHandles.lookup());
+            MethodHandles.Lookup lookup = MethodHandles.privateLookupIn(lookupClass, MethodHandles.lookup());
             if (classBytes.length == len) {
                 return lookup.defineClass(classBytes);
             } else {
