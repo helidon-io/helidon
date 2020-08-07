@@ -33,6 +33,7 @@ module io.helidon.microprofile.metrics {
     requires transitive microprofile.config.api;
     requires microprofile.metrics.api;
 
+
     exports io.helidon.microprofile.metrics;
 
     // this is needed for CDI extensions that use non-public observer methods
