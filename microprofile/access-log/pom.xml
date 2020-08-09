@@ -23,7 +23,7 @@
     <parent>
         <artifactId>helidon-microprofile-project</artifactId>
         <groupId>io.helidon.microprofile</groupId>
-        <version>1.4.6-SNAPSHOT</version>
+        <version>1.4.7-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
