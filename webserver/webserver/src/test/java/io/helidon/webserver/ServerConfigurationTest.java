@@ -62,6 +62,8 @@ public class ServerConfigurationTest {
         assertThat(config.workersCount() > 0, is(true));
         assertThat(config.tracer(), IsInstanceOf.instanceOf(GlobalTracer.class));
         assertThat(config.bindAddress(), nullValue());
+        assertThat(config.maxHeaderSize(), is(8192  ));
+        assertThat(config.validateHeaders(), is(true));
     }
 
     @Test

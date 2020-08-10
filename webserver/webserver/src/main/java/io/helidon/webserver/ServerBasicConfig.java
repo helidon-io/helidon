@@ -19,6 +19,7 @@ package io.helidon.webserver;
 import java.net.InetAddress;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -103,6 +104,31 @@ class ServerBasicConfig implements ServerConfiguration {
     }
 
     @Override
+    public int maxHeaderSize() {
+        return socketConfig.maxHeaderSize();
+    }
+
+    @Override
+    public int maxInitialLineLength() {
+        return socketConfig.maxInitialLineLength();
+    }
+
+    @Override
+    public int maxChunkSize() {
+        return socketConfig.maxChunkSize();
+    }
+
+    @Override
+    public boolean validateHeaders() {
+        return socketConfig.validateHeaders();
+    }
+
+    @Override
+    public int initialBufferSize() {
+        return socketConfig.initialBufferSize();
+    }
+
+    @Override
     public Tracer tracer() {
         return tracer;
     }
@@ -132,41 +158,34 @@ class ServerBasicConfig implements ServerConfiguration {
         private final SSLContext sslContext;
         private final Set<String> enabledSslProtocols;
         private final ClientAuthentication clientAuth;
+        private final int maxHeaderSize;
+        private final int maxInitialLineLength;
+        private final int maxChunkSize;
+        private final boolean validateHeaders;
+        private final int initialBufferSize;
 
         /**
          * Creates new instance.
          *
-         * @param port              a server port - ff port is {@code 0} or less then any available ephemeral port will be used
-         * @param bindAddress       an address to bind the server or {@code null} for all local addresses
-         * @param sslContext        the ssl context to associate with this socket configuration
-         * @param backlog           a maximum length of the queue of incoming connections
-         * @param timeoutMillis     a socket timeout in milliseconds or {@code 0} for infinite
-         * @param receiveBufferSize proposed TCP receive window size in bytes
-         * @param clientAuth        whether client authentication is required
+         * Used only from builder {@link io.helidon.webserver.SocketConfiguration.Builder}
+         *
+         * @param builder a builder instance
          */
-        SocketConfig(int port,
-                     InetAddress bindAddress,
-                     SSLContext sslContext,
-                     Set<String> sslProtocols,
-                     int backlog,
-                     int timeoutMillis,
-                     int receiveBufferSize,
-                     ClientAuthentication clientAuth) {
-            this.port = port <= 0 ? 0 : port;
-            this.bindAddress = bindAddress;
-            this.backlog = backlog <= 0 ? DEFAULT_BACKLOG_SIZE : backlog;
-            this.timeoutMillis = timeoutMillis <= 0 ? 0 : timeoutMillis;
-            this.receiveBufferSize = receiveBufferSize <= 0 ? 0 : receiveBufferSize;
-            this.sslContext = sslContext;
-            this.enabledSslProtocols = sslProtocols;
-            this.clientAuth = clientAuth;
-        }
+        SocketConfig(Builder builder) {
+            this.port = Math.max(0, builder.port());
+            this.bindAddress = builder.bindAddress();
+            this.backlog = builder.backlog() <= 0 ? DEFAULT_BACKLOG_SIZE : builder.backlog();
+            this.timeoutMillis = Math.max(builder.timeoutMillis(), 0);
+            this.receiveBufferSize = Math.max(builder.receiveBufferSize(), 0);
+            this.maxHeaderSize = builder.maxHeaderSize();
+            this.maxInitialLineLength = builder.maxInitialLineLength();
+            this.maxChunkSize = builder.maxChunkSize();
+            this.validateHeaders = builder.validateHeaders();
+            this.initialBufferSize = builder.initialBufferSize();
+            this.clientAuth = builder.clientAuth();
+            this.sslContext = builder.sslContext();
+            this.enabledSslProtocols = new HashSet<>(builder.enabledSslProtocols());
 
-        /**
-         * Creates default values instance.
-         */
-        SocketConfig() {
-            this(0, null, null, null, 0, 0, 0, ClientAuthentication.NONE);
         }
 
         @Override
@@ -207,6 +226,31 @@ class ServerBasicConfig implements ServerConfiguration {
         @Override
         public ClientAuthentication clientAuth() {
             return clientAuth;
+        }
+
+        @Override
+        public int maxHeaderSize() {
+            return maxHeaderSize;
+        }
+
+        @Override
+        public int maxInitialLineLength() {
+            return maxInitialLineLength;
+        }
+
+        @Override
+        public int maxChunkSize() {
+            return maxChunkSize;
+        }
+
+        @Override
+        public boolean validateHeaders() {
+            return validateHeaders;
+        }
+
+        @Override
+        public int initialBufferSize() {
+            return initialBufferSize;
         }
     }
 }
