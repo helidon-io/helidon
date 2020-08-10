@@ -17,12 +17,14 @@ package io.helidon.tests.integration.nativeimage.se1;
 
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.Set;
 import java.util.logging.LogManager;
 
 import io.helidon.config.Config;
 import io.helidon.config.FileSystemWatcher;
 import io.helidon.health.HealthSupport;
 import io.helidon.health.checks.HealthChecks;
+import io.helidon.media.jsonb.JsonbSupport;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.metrics.MetricsSupport;
 import io.helidon.security.integration.webserver.WebSecurity;
@@ -40,6 +42,7 @@ import static io.helidon.config.ConfigSources.file;
  * Main class of this integration test.
  */
 public final class Se1Main {
+
     /**
      * Cannot be instantiated.
      */
@@ -75,6 +78,7 @@ public final class Se1Main {
                 .config(config.get("server"))
                 .tracer(TracerBuilder.create(config.get("tracing")).build())
                 .addMediaSupport(JsonpSupport.create())
+                .addMediaSupport(JsonbSupport.create())
                 .printFeatureDetails(true)
                 .build();
 
@@ -119,6 +123,8 @@ public final class Se1Main {
 
         MetricsSupport metrics = MetricsSupport.create();
         GreetService greetService = new GreetService(config);
+        MockZipkinService zipkinService = new MockZipkinService(Set.of("helidon-webclient"));
+        WebClientService webClientService = new WebClientService(config, zipkinService);
         HealthSupport health = HealthSupport.builder()
                 .addLiveness(HealthChecks.healthChecks())   // Adds a convenient set of checks
                 .addLiveness(() -> HealthCheckResponse.named("custom") // a custom health check
@@ -135,6 +141,8 @@ public final class Se1Main {
                 .register(health)                   // Health at "/health"
                 .register(metrics)                  // Metrics at "/metrics"
                 .register("/greet", greetService)
+                .register("/wc", webClientService)
+                .register("/zipkin", zipkinService)
                 .build();
     }
 
