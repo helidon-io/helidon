@@ -16,13 +16,14 @@
 
 package io.helidon.messaging.connectors.kafka;
 
+import java.util.regex.Pattern;
+
 import io.helidon.messaging.ConnectorConfigBuilder;
 
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serializer;
 import org.eclipse.microprofile.reactive.messaging.spi.ConnectorFactory;
 
-import java.util.regex.Pattern;
 
 /**
  * Build Kafka specific config.
