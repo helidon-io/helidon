@@ -429,7 +429,7 @@ public class MetricsCdiExtension implements Extension {
      */
     static SimpleTimer syntheticSimpleTimer(Method method) {
         String classTagValue = method.getDeclaringClass().getName();
-        // By spec, the synthetic SimpleTimers are always in the application registry.
+        // By spec, the synthetic SimpleTimers are always in the base registry.
         return syntheticSimpleTimer(getRegistryForSyntheticSimpleTimers(), classTagValue, methodTagValueForSyntheticSimpleTimer(method));
     }
 
