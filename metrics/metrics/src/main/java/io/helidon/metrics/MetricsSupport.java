@@ -44,6 +44,8 @@ import javax.json.JsonObjectBuilder;
 import javax.json.JsonStructure;
 import javax.json.JsonValue;
 
+import io.helidon.common.HelidonFeatures;
+import io.helidon.common.HelidonFlavor;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
@@ -104,6 +106,22 @@ import static io.helidon.webserver.cors.CorsEnabledServiceHelper.CORS_CONFIG_KEY
  */
 public final class MetricsSupport implements Service {
 
+    static final String REST_ENDPOINTS_METRIC_ENABLED_PROPERTY_NAME = "metrics.rest-request.enabled";
+
+    static final String SYNTHETIC_SIMPLE_TIMER_METRIC_NAME = "REST.request";
+
+    static final Metadata SYNTHETIC_SIMPLE_TIMER_METADATA = Metadata.builder()
+            .withName(SYNTHETIC_SIMPLE_TIMER_METRIC_NAME)
+            .withDisplayName(SYNTHETIC_SIMPLE_TIMER_METRIC_NAME + " for all REST endpoints")
+            .withDescription("The number of invocations and total response time of RESTful resource methods since the start"
+                    + " of the server.")
+            .withType(MetricType.SIMPLE_TIMER)
+            .withUnit(MetricUnits.NANOSECONDS)
+            .notReusable()
+            .build();
+
+    private static final boolean REST_ENDPOINTS_METRIC_ENABLED_DEFAULT_VALUE = false;
+
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
     private static final String DEFAULT_CONTEXT = "/metrics";
     private static final String SERVICE_NAME = "Metrics";
@@ -113,6 +131,9 @@ public final class MetricsSupport implements Service {
     private final String context;
     private final RegistryFactory rf;
     private final CorsEnabledServiceHelper corsEnabledServiceHelper;
+    private final boolean isRestEndpointsMetricEnabled;
+
+    private final Map<String, SimpleTimer> restRequestSimpleTimers = new HashMap<>();
 
     private static final Logger LOGGER = Logger.getLogger(MetricsSupport.class.getName());
 
@@ -120,6 +141,7 @@ public final class MetricsSupport implements Service {
         this.rf = builder.registryFactory.get();
         this.context = builder.context;
         corsEnabledServiceHelper = CorsEnabledServiceHelper.create(SERVICE_NAME, builder.crossOriginConfig);
+        isRestEndpointsMetricEnabled = builder.isRestRequestMetricEnabled;
     }
 
     /**
@@ -426,29 +448,24 @@ public final class MetricsSupport implements Service {
     /**
      * Creates a {@link Handler} that measures endpoint invocations using a {@link SimpleTimer} metric.
      * <p>
-     * A frequent use is by callers needing to add {@code SimpleTimer} measurement around a service endpoint:
+     * A frequent use is by callers needing to add {@code SimpleTimer} measurement around a service endpoint from the service
+     * class {@code update} method:
      * <pre>{@code
      *     .get("/",
-     *         MetricsSupport.restResource(this.getClass().getName(), "getDefaultMessageHandler"),
-     *         this::getDefaultMessageHandler)
+     *         MetricsSupport.restResource(this.getClass().getName(), "getDefaultMessageHandler"), this::getDefaultMessageHandler)
      * }</pre>
      * </p>
+     * @see #restRequestMetricHandler(Object, String)
      * @param className name of the class to use in the {@code SimpleMetric}'s tags
      * @param methodName name of the method to use in the {@code SimpleMetric}'s tags
      * @return {@code Handler} that uses a {@code SimpleTimer} around the rest of the endpoint request processing
      */
-    public Handler restResource(String className, String methodName) {
-        Tag[] tags = {new Tag("class", className), new Tag("method", methodName)};
-        Registry app = rf.getARegistry(MetricRegistry.Type.APPLICATION);
-        Metadata metadata = Metadata.builder()
-                .withName("REST_request")
-                .withDisplayName("REST request simple timer")
-                .withDescription("REST request metric for invocations and elapsed time for " + className + "#" + methodName)
-                .withType(MetricType.SIMPLE_TIMER)
-                .withUnit(MetricUnits.NONE) // by spec, units for SimpleTimer applies to the count
-                .notReusable()
-                .build();
-        SimpleTimer simpleTimer = app.simpleTimer(metadata, tags);
+    public Handler restRequestMetricHandler(String className, String methodName) {
+        if (!isRestEndpointsMetricEnabled) {
+            return (ServerRequest request, ServerResponse response) -> request.next();
+        }
+        // Register the simple timer now, so it always appears in the metrics output whether or not the endpoint is ever called.
+        SimpleTimer simpleTimer = restRequestSimpleTimer(className, methodName);
         return (ServerRequest request, ServerResponse response) -> {
             simpleTimer.time((Runnable) request::next);
         };
@@ -457,19 +474,28 @@ public final class MetricsSupport implements Service {
     /**
      * Creates a {@link Handler} that measures endpoint invocations using a {@link SimpleTimer} metric.
      * <p>
-     * A frequent use is by callers needing to add {@code SimpleTimer} measurement around a service endpoint:
+     * A frequent use is by callers wanting to add {@code SimpleTimer} measurement around a service endpoint from the service
+     * class {@code update} method:
      * <pre>{@code
      *     .get("/",
-     *         MetricsSupport.restResource(this.getClass().getName(), "getDefaultMessageHandler"),
-     *         this::getDefaultMessageHandler)
+     *         MetricsSupport.restResource(this, "getDefaultMessageHandler"), this::getDefaultMessageHandler)
      * }</pre>
      * </p>
+     * @see #restRequestMetricHandler(String, String)
      * @param service the service object; its class name is used as the class name in the {@code SimpleMetric} tag
      * @param methodName name of the method to use in the {@code SimpleMetric}'s tags
      * @return {@code Handler} that uses a {@code SimpleTimer} around the rest of the endpoint request processing
      */
-    public Handler restResource(Object service, String methodName) {
-        return restResource(service.getClass().getName(), methodName);
+    public Handler restRequestMetricHandler(Object service, String methodName) {
+        return restRequestMetricHandler(service.getClass().getName(), methodName);
+    }
+
+    private SimpleTimer restRequestSimpleTimer(String className, String methodName){
+        return restRequestSimpleTimers.computeIfAbsent(className + "#" + methodName, k -> {
+            Tag[] tags = {new Tag("class", className), new Tag("method", methodName)};
+            Registry reg = rf.getARegistry(MetricRegistry.Type.APPLICATION); // use APPLICATION registry for SE
+            return reg.simpleTimer(SYNTHETIC_SIMPLE_TIMER_METADATA, tags);
+        });
     }
 
     private void getByName(ServerRequest req, ServerResponse res, Registry registry) {
@@ -565,6 +591,7 @@ public final class MetricsSupport implements Service {
         private String context = DEFAULT_CONTEXT;
         private Config config = Config.empty();
         private CrossOriginConfig crossOriginConfig = null;
+        private boolean isRestRequestMetricEnabled = HelidonFeatures.flavor() != HelidonFlavor.MP;
 
         private Builder() {
 
@@ -596,6 +623,10 @@ public final class MetricsSupport implements Service {
             config.get(CORS_CONFIG_KEY)
                     .as(CrossOriginConfig::create)
                     .ifPresent(this::crossOriginConfig);
+
+            config.get(REST_ENDPOINTS_METRIC_ENABLED_PROPERTY_NAME)
+                    .asBoolean()
+                    .ifPresent(this::restRequestMetricEnabled);
 
             if (!config.get(BaseRegistry.BASE_ENABLED_KEY).asBoolean().orElse(true)) {
                 LOGGER.finest("Metrics support for base metrics is disabled in configuration");
@@ -648,6 +679,18 @@ public final class MetricsSupport implements Service {
         public Builder crossOriginConfig(CrossOriginConfig crossOriginConfig) {
             Objects.requireNonNull(crossOriginConfig, "CrossOriginConfig must be non-null");
             this.crossOriginConfig = crossOriginConfig;
+            return this;
+        }
+
+        /**
+         * Sets whether the REST.request {@code SimpleTimer} metric should be applied when the developer has specified the
+         * built-in handler for it.
+         *
+         * @param value new setting
+         * @return updated builder instance
+         */
+        public Builder restRequestMetricEnabled(boolean value) {
+            this.isRestRequestMetricEnabled = value;
             return this;
         }
     }
