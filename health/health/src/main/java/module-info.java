@@ -26,6 +26,7 @@ module io.helidon.health {
     requires io.helidon.webserver.cors;
     requires io.helidon.media.jsonp;
     requires java.json;
+    requires io.helidon.faulttolerance;
 
     exports io.helidon.health;
     provides org.eclipse.microprofile.health.spi.HealthCheckResponseProvider with io.helidon.health.HealthCheckResponseProviderImpl;
