@@ -108,7 +108,7 @@ public class MetricsCdiExtension implements Extension {
     private static final List<Class<? extends Annotation>> JAX_RS_ANNOTATIONS
             = Arrays.asList(GET.class, PUT.class, POST.class, HEAD.class, OPTIONS.class, DELETE.class, PATCH.class);
 
-    static final String REST_ENDPOINTS_METRIC_ENABLED_PROPERTY_NAME = "rest-endpoints-enabled";
+    static final String REST_ENDPOINTS_METRIC_ENABLED_PROPERTY_NAME = "rest-request.enabled";
     private static final boolean REST_ENDPOINTS_METRIC_ENABLED_DEFAULT_VALUE = false;
 
     static final String SYNTHETIC_SIMPLE_TIMER_METRIC_NAME = "REST.request";
