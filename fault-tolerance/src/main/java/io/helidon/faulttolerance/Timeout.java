@@ -18,6 +18,7 @@ package io.helidon.faulttolerance;
 
 import java.time.Duration;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.Consumer;
 
 import io.helidon.common.LazyValue;
 
@@ -53,13 +54,14 @@ public interface Timeout extends FtHandler {
         private Duration timeout = Duration.ofSeconds(10);
         private LazyValue<? extends ScheduledExecutorService> executor = FaultTolerance.scheduledExecutor();
         private boolean async = true;
+        private Consumer<Thread> listener;
 
         private Builder() {
         }
 
         @Override
         public Timeout build() {
-            return new TimeoutImpl(this, async);
+            return new TimeoutImpl(this);
         }
 
         /**
@@ -95,6 +97,17 @@ public interface Timeout extends FtHandler {
             return this;
         }
 
+        /**
+         * Listener that will be called when a thread is interrupted.
+         *
+         * @param listener the listener
+         * @return updated build instance
+         */
+        public Builder interruptListener(Consumer<Thread> listener) {
+            this.listener = listener;
+            return this;
+        }
+
         Duration timeout() {
             return timeout;
         }
@@ -105,6 +118,10 @@ public interface Timeout extends FtHandler {
 
         boolean async() {
             return async;
+        }
+
+        Consumer<Thread> interruptListener() {
+            return listener;
         }
     }
 }

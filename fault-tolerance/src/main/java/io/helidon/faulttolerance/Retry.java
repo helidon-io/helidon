@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
@@ -58,9 +59,9 @@ public interface Retry extends FtHandler {
                 .jitter(Duration.ofMillis(50))
                 .build();
 
-
         private Duration overallTimeout = Duration.ofSeconds(1);
         private LazyValue<? extends ScheduledExecutorService> scheduledExecutor = FaultTolerance.scheduledExecutor();
+        private Consumer<Integer> retryListener;
 
         private Builder() {
         }
@@ -165,6 +166,18 @@ public interface Retry extends FtHandler {
             return this;
         }
 
+        /**
+         * A listener that is called every time there is a retry. The parameter
+         * to the listener is a retry count.
+         *
+         * @param retryListener a retry listener
+         * @return updated builder instance
+         */
+        public Builder retryListener(Consumer<Integer> retryListener) {
+            this.retryListener = retryListener;
+            return this;
+        }
+
         Set<Class<? extends Throwable>> applyOn() {
             return applyOn;
         }
@@ -183,6 +196,10 @@ public interface Retry extends FtHandler {
 
         LazyValue<? extends ScheduledExecutorService> scheduledExecutor() {
             return scheduledExecutor;
+        }
+
+        Consumer<Integer> retryListener() {
+            return retryListener;
         }
     }
 

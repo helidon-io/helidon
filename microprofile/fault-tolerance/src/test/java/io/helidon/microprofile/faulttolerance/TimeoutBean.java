@@ -59,6 +59,17 @@ public class TimeoutBean {
         return "success";
     }
 
+    @Timeout(value=1000, unit=ChronoUnit.MILLIS)
+    public String forceTimeoutWithCatch() {
+        try {
+            FaultToleranceTest.printStatus("TimeoutBean::forceTimeoutWithCatch()", "failure");
+            Thread.sleep(1500);
+        } catch (InterruptedException e) {
+            // falls through
+        }
+        return null;    // tests special null case
+    }
+
     // See class annotation @Retry(maxRetries = 2)
     @Timeout(value=1000, unit=ChronoUnit.MILLIS)
     public String timeoutWithRetries() throws InterruptedException {

@@ -23,7 +23,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
@@ -79,10 +82,18 @@ import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.regis
 import static io.helidon.microprofile.faulttolerance.ThrowableMapper.map;
 
 /**
- * Runs a FT method.
+ * Invokes a FT method applying semantics based on method annotations. An instance
+ * of this class is created for each method invocation. Some state is shared across
+ * all invocations of the method, including for circuit breakers and bulkheads.
  */
-public class CommandRunner implements FtSupplier<Object> {
-    private static final Logger LOGGER = Logger.getLogger(CommandRunner.class.getName());
+public class MethodInvoker implements FtSupplier<Object> {
+    private static final Logger LOGGER = Logger.getLogger(MethodInvoker.class.getName());
+
+    /**
+     * How long to wait to see if a method that returns normally was actually
+     * interrupted but caught {@link InterruptedException} before returning.
+     */
+    private static final long TIMEOUT_INTERRUPT_WAIT_MILLIS = 10L;
 
     /**
      * The method being intercepted.
@@ -95,7 +106,7 @@ public class CommandRunner implements FtSupplier<Object> {
     private final InvocationContext context;
 
     /**
-     * Helper class to extract information about th emethod.
+     * Helper class to extract information about the method.
      */
     private final MethodIntrospector introspector;
 
@@ -103,6 +114,11 @@ public class CommandRunner implements FtSupplier<Object> {
      * Map of methods to their internal state.
      */
     private static final ConcurrentHashMap<Method, MethodState> FT_HANDLERS = new ConcurrentHashMap<>();
+
+    /**
+     * Executor service shared by instances of this class.
+     */
+    private static final ScheduledExecutorService EXECUTOR_SERVICE = Executors.newScheduledThreadPool(16);
 
     /**
      * Start system nanos when handler is called.
@@ -134,9 +150,13 @@ public class CommandRunner implements FtSupplier<Object> {
      */
     private RequestContextController requestController;
 
+    /**
+     * This future will be completed with 'true' if this invocation is interrupted due
+     * to a timeout.
+     */
+    private CompletableFuture<Boolean> timeoutInterrupt;
+
     private static class MethodState {
-        private FtHandlerTyped<Object> handler;
-        private Retry retry;
         private Bulkhead bulkhead;
         private CircuitBreaker breaker;
         private State lastBreakerState;
@@ -146,7 +166,22 @@ public class CommandRunner implements FtSupplier<Object> {
         private long startNanos;
     }
 
+    /**
+     * State associated with a method instead of an invocation. Includes bulkhead
+     * and breaker handlers that are shared across all invocations of same method.
+     */
     private final MethodState methodState;
+
+    /**
+     * The handler for this invocation. Will share bulkhead an breaker
+     * sub-handlers across all invocations for the same method.
+     */
+    private FtHandlerTyped<Object> handler;
+
+    /**
+     * Handler for retries. Will be {@code null} if no retry specified in method.
+     */
+    private Retry retry;
 
     /**
      * Constructor.
@@ -154,25 +189,27 @@ public class CommandRunner implements FtSupplier<Object> {
      * @param context The invocation context.
      * @param introspector The method introspector.
      */
-    public CommandRunner(InvocationContext context, MethodIntrospector introspector) {
+    public MethodInvoker(InvocationContext context, MethodIntrospector introspector) {
         this.context = context;
         this.introspector = introspector;
         this.method = context.getMethod();
         this.helidonContext = Contexts.context().orElseGet(Context::create);
 
-        // Get or initialize new state for this method
-        this.methodState = FT_HANDLERS.computeIfAbsent(method, method -> {
-            MethodState methodState = new MethodState();
-            initMethodStateHandler(methodState);
-            methodState.lastBreakerState = State.CLOSED;
-            if (introspector.hasCircuitBreaker()) {
-                methodState.breakerTimerOpen = 0L;
-                methodState.breakerTimerClosed = 0L;
-                methodState.breakerTimerHalfOpen = 0L;
-                methodState.startNanos = System.nanoTime();
-            }
-            return methodState;
-        });
+        // Initialize method state and created handler for it
+        synchronized (method) {
+            this.methodState = FT_HANDLERS.computeIfAbsent(method, method -> {
+                MethodState methodState = new MethodState();
+                methodState.lastBreakerState = State.CLOSED;
+                if (introspector.hasCircuitBreaker()) {
+                    methodState.breakerTimerOpen = 0L;
+                    methodState.breakerTimerClosed = 0L;
+                    methodState.breakerTimerHalfOpen = 0L;
+                    methodState.startNanos = System.nanoTime();
+                }
+                return methodState;
+            });
+            handler = createMethodHandler();
+        }
 
         // Gather information about current request scope if active
         try {
@@ -211,6 +248,19 @@ public class CommandRunner implements FtSupplier<Object> {
         }
     }
 
+    @Override
+    public String toString() {
+        String s = super.toString();
+        StringBuilder sb = new StringBuilder();
+        sb.append(s.substring(s.lastIndexOf('.') + 1))
+                .append(" ")
+                .append(method.getDeclaringClass().getSimpleName())
+                .append(".")
+                .append(method.getName())
+                .append("()");
+        return sb.toString();
+    }
+
     /**
      * Clears ftHandlers map of any cached handlers.
      */
@@ -234,7 +284,7 @@ public class CommandRunner implements FtSupplier<Object> {
                     updateMetricsBefore();
                     try {
                         return Contexts.runInContextWithThrow(helidonContext,
-                                () -> methodState.handler.invoke(toCompletionStageSupplier(context::proceed)));
+                                () -> handler.invoke(toCompletionStageSupplier(context::proceed)));
                     } catch (Exception e) {
                         return Single.error(e);
                     }
@@ -316,7 +366,7 @@ public class CommandRunner implements FtSupplier<Object> {
             Throwable cause = null;
 
             single = Contexts.runInContextWithThrow(helidonContext,
-                        () -> methodState.handler.invoke(toCompletionStageSupplier(context::proceed)));
+                        () -> handler.invoke(toCompletionStageSupplier(context::proceed)));
             try {
                 // Need to allow completion with no value (null) for void methods
                 CompletableFuture<Object> future = single.toStage(true).toCompletableFuture();
@@ -337,35 +387,38 @@ public class CommandRunner implements FtSupplier<Object> {
     }
 
     /**
-     * Creates a FT handler for a given method by inspecting annotations.
+     * Creates a FT handler for an invocation by inspecting annotations. Circuit breakers
+     * and bulkheads are shared across all invocations --associated with methods.
      */
-    private void initMethodStateHandler(MethodState methodState) {
+    private FtHandlerTyped<Object> createMethodHandler() {
         FaultTolerance.TypedBuilder<Object> builder = FaultTolerance.typedBuilder();
 
         // Create and add circuit breaker
         if (introspector.hasCircuitBreaker()) {
-            CircuitBreaker circuitBreaker = CircuitBreaker.builder()
-                    .delay(Duration.of(introspector.getCircuitBreaker().delay(),
-                            introspector.getCircuitBreaker().delayUnit()))
-                    .successThreshold(introspector.getCircuitBreaker().successThreshold())
-                    .errorRatio((int) (introspector.getCircuitBreaker().failureRatio() * 100))
-                    .volume(introspector.getCircuitBreaker().requestVolumeThreshold())
-                    .applyOn(introspector.getCircuitBreaker().failOn())
-                    .skipOn(introspector.getCircuitBreaker().skipOn())
-                    .build();
-            builder.addBreaker(circuitBreaker);
-            methodState.breaker = circuitBreaker;
+            if (methodState.breaker == null) {
+                methodState.breaker = CircuitBreaker.builder()
+                                .delay(Duration.of(introspector.getCircuitBreaker().delay(),
+                                        introspector.getCircuitBreaker().delayUnit()))
+                                .successThreshold(introspector.getCircuitBreaker().successThreshold())
+                                .errorRatio((int) (introspector.getCircuitBreaker().failureRatio() * 100))
+                                .volume(introspector.getCircuitBreaker().requestVolumeThreshold())
+                                .applyOn(introspector.getCircuitBreaker().failOn())
+                                .skipOn(introspector.getCircuitBreaker().skipOn())
+                                .build();
+            }
+            builder.addBreaker(methodState.breaker);
         }
 
         // Create and add bulkhead
         if (introspector.hasBulkhead()) {
-            Bulkhead bulkhead = Bulkhead.builder()
-                    .limit(introspector.getBulkhead().value())
-                    .queueLength(introspector.getBulkhead().waitingTaskQueue())
-                    .async(introspector.isAsynchronous())
-                    .build();
-            builder.addBulkhead(bulkhead);
-            methodState.bulkhead = bulkhead;
+            if (methodState.bulkhead == null) {
+                methodState.bulkhead = Bulkhead.builder()
+                                .limit(introspector.getBulkhead().value())
+                                .queueLength(introspector.getBulkhead().waitingTaskQueue())
+                                .async(introspector.isAsynchronous())
+                                .build();
+            }
+            builder.addBulkhead(methodState.bulkhead);
         }
 
         // Create and add timeout handler -- parent of breaker or bulkhead
@@ -373,7 +426,10 @@ public class CommandRunner implements FtSupplier<Object> {
             Timeout timeout = Timeout.builder()
                     .timeout(Duration.of(introspector.getTimeout().value(), introspector.getTimeout().unit()))
                     .async(false)   // no async here
-                    .build();
+                    .executor(EXECUTOR_SERVICE)
+                    .interruptListener(t -> {
+                        timeoutInterrupt = CompletableFuture.completedFuture(true);        // captures 'this' in closure
+                    }).build();
             builder.addTimeout(timeout);
         }
 
@@ -391,15 +447,19 @@ public class CommandRunner implements FtSupplier<Object> {
                                                 introspector.getRetry().durationUnit()))
                     .applyOn(introspector.getRetry().retryOn())
                     .skipOn(introspector.getRetry().abortOn())
+                    .retryListener(c -> {
+                        timeoutInterrupt = null;        // ignore on retry
+                    })
                     .build();
             builder.addRetry(retry);
-            methodState.retry = retry;
+            this.retry = retry;
         }
 
         // Create and add fallback handler -- parent of retry
         if (introspector.hasFallback()) {
             Fallback<Object> fallback = Fallback.builder()
                     .fallback(throwable -> {
+                        timeoutInterrupt = null;        // ignore with fallback
                         CommandFallback cfb = new CommandFallback(context, introspector, throwable);
                         return toCompletionStageSupplier(cfb::execute).get();
                     })
@@ -409,13 +469,12 @@ public class CommandRunner implements FtSupplier<Object> {
             builder.addFallback(fallback);
         }
 
-        // Set handler in method state
-        methodState.handler = builder.build();
+        return builder.build();
     }
 
     /**
      * Maps an {@link FtSupplier} to a supplier of {@link CompletionStage}. Avoids
-     * unnecessary wrapping of stages when method is asynchronous only.
+     * unnecessary wrapping of stages only when method is asynchronous.
      *
      * @param supplier The supplier.
      * @return The new supplier.
@@ -425,7 +484,28 @@ public class CommandRunner implements FtSupplier<Object> {
         return () -> {
             try {
                 invocationStartNanos = System.nanoTime();
+
+                // This is the actual method invocation
                 Object result = supplier.get();
+
+                // Check if the method was interrupted
+                boolean interrupted = false;
+                if (timeoutInterrupt != null) {
+                    try {
+                        interrupted = timeoutInterrupt.get(TIMEOUT_INTERRUPT_WAIT_MILLIS, TimeUnit.MILLISECONDS);
+                    } catch (java.util.concurrent.TimeoutException e) {
+                        // falls through
+                    } finally {
+                        timeoutInterrupt = null;
+                    }
+                }
+
+                // If interrupted, even if it returned normally, it is an exception
+                if (interrupted) {
+                    return CompletableFuture.failedFuture(new TimeoutException("Method interrupted"));
+                }
+
+                // Return value without additional wrapping
                 return introspector.isAsynchronous() && result instanceof CompletionStage<?>
                         ? (CompletionStage<Object>) result
                         : CompletableFuture.completedFuture(result);
@@ -459,7 +539,7 @@ public class CommandRunner implements FtSupplier<Object> {
             // Metrics for retries
             if (introspector.hasRetry()) {
                 // Have retried the last call?
-                long newValue = methodState.retry.retryCounter();
+                long newValue = retry.retryCounter();
                 if (updateCounter(method, RETRY_RETRIES_TOTAL, newValue)) {
                     if (cause == null) {
                         getCounter(method, RETRY_CALLS_SUCCEEDED_RETRIED_TOTAL).inc();

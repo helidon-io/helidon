@@ -53,6 +53,12 @@ public class TimeoutTest extends FaultToleranceTest {
     }
 
     @Test
+    public void testForceTimeoutWithCatch() {
+        TimeoutBean bean = newBean(TimeoutBean.class);
+        assertThrows(TimeoutException.class, bean::forceTimeoutWithCatch);
+    }
+
+    @Test
     public void testTimeoutWithRetries() throws Exception {
         TimeoutBean bean = newBean(TimeoutBean.class);
         assertThat(bean.timeoutWithRetries(), is("success"));

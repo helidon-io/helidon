@@ -50,7 +50,7 @@ public class CommandInterceptor {
             // Create method introspector and executer retrier
             MethodIntrospector introspector = new MethodIntrospector(context.getTarget().getClass(),
                     context.getMethod());
-            CommandRunner runner = new CommandRunner(context, introspector);
+            MethodInvoker runner = new MethodInvoker(context, introspector);
             return runner.get();
         } catch (Throwable t) {
             LOGGER.fine("Throwable caught by interceptor '" + t.getMessage() + "'");

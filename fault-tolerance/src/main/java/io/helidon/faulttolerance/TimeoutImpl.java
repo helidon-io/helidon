@@ -17,11 +17,13 @@
 package io.helidon.faulttolerance;
 
 import java.time.Duration;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
@@ -29,14 +31,18 @@ import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
 
 class TimeoutImpl implements Timeout {
+    private static final long MONITOR_THREAD_TIMEOUT = 100L;
+
     private final long timeoutMillis;
     private final LazyValue<? extends ScheduledExecutorService> executor;
     private final boolean async;
+    private final Consumer<Thread> interruptListener;
 
-    TimeoutImpl(Timeout.Builder builder, boolean async) {
+    TimeoutImpl(Timeout.Builder builder) {
         this.timeoutMillis = builder.timeout().toMillis();
         this.executor = builder.executor();
-        this.async = async;
+        this.async = builder.async();
+        this.interruptListener = builder.interruptListener();
     }
 
     @Override
@@ -51,21 +57,43 @@ class TimeoutImpl implements Timeout {
     @Override
     public <T> Single<T> invoke(Supplier<? extends CompletionStage<T>> supplier) {
         if (async) {
-            return Single.create(supplier.get())
+            return Single.create(supplier.get(), true)
                     .timeout(timeoutMillis, TimeUnit.MILLISECONDS, executor.get());
         } else {
             Thread currentThread = Thread.currentThread();
-            AtomicBoolean called = new AtomicBoolean();
-            Timeout.create(Duration.ofMillis(timeoutMillis))
-                    .invoke(Single::never)
+            CompletableFuture<Void> monitorStarted = new CompletableFuture<>();
+            AtomicBoolean callReturned = new AtomicBoolean(false);
+
+            // Startup monitor thread that can interrupt current thread after timeout
+            Timeout.builder()
+                    .executor(executor.get())       // propagate executor
+                    .async(true)
+                    .timeout(Duration.ofMillis(timeoutMillis))
+                    .build()
+                    .invoke(() -> {
+                        monitorStarted.complete(null);
+                        return Single.never();
+                    })
                     .exceptionally(it -> {
-                        if (called.compareAndSet(false, true)) {
+                        if (callReturned.compareAndSet(false, true)) {
                             currentThread.interrupt();
+                            if (interruptListener != null) {
+                                interruptListener.accept(currentThread);
+                            }
                         }
                         return null;
                     });
-            Single<T> single = Single.create(supplier.get());       // runs in current thread
-            called.set(true);
+
+            // Ensure monitor thread has started
+            try {
+                monitorStarted.get(MONITOR_THREAD_TIMEOUT, TimeUnit.MILLISECONDS);
+            } catch (Exception e) {
+                return Single.error(new IllegalStateException("Timeout monitor thread failed to start"));
+            }
+
+            // Run invocation in current thread
+            Single<T> single = Single.create(supplier.get(), true);
+            callReturned.set(true);
             return single;
         }
     }

@@ -19,8 +19,6 @@ package io.helidon.microprofile.faulttolerance;
 import javax.enterprise.inject.literal.NamedLiteral;
 import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.spi.CDI;
-import java.util.Arrays;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
@@ -30,7 +28,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.helidon.microprofile.cdi.HelidonContainer;
@@ -78,7 +75,7 @@ public abstract class FaultToleranceTest {
      */
     @BeforeEach
     public void resetHandlers() {
-        CommandRunner.clearFtHandlersMap();
+        MethodInvoker.clearFtHandlersMap();
     }
 
     protected static <T> T newBean(Class<T> beanClass) {
