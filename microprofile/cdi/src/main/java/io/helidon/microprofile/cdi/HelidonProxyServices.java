@@ -141,13 +141,15 @@ class HelidonProxyServices implements ProxyServices {
             }
 
             // I would like to create a private lookup in the same package as the proxied class, so let's
-            // try to load it
-            String proxiedClassName = className.substring(0, className.indexOf('$'));
+            // try to load it - I load the enclosing class (or the proxied class if not inner) to have
+            // a lookup in the correct package/class
+            String lookupClassName = className.substring(0, className.indexOf('$'));
             Class<?> lookupClass;
             try {
-                lookupClass = originalClass.getClassLoader().loadClass(proxiedClassName);
+                lookupClass = originalClass.getClassLoader().loadClass(lookupClassName);
             } catch (Throwable e) {
-                LOGGER.log(Level.FINEST, "Cannot load proxied class: " + proxiedClassName, e);
+                LOGGER.log(Level.FINEST, "Cannot load class to create private lookup: " + lookupClassName, e);
+                // fallback to the producer class, as we cannot load the enclosing class of the proxy
                 lookupClass = originalClass;
             }
 
