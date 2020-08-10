@@ -70,9 +70,12 @@ public class GreetService implements Service {
     @Override
     public void update(Routing.Rules rules) {
         rules
-            .get("/", this::getDefaultMessageHandler)
-            .get("/{name}", this::getMessageHandler)
-            .put("/greeting", this::updateGreetingHandler);
+                .get("/", Main.metrics.restRequestMetricHandler(this, "getDefaultMessage"),
+                        this::getDefaultMessageHandler)
+                .get("/{name}", Main.metrics.restRequestMetricHandler(this, "getMessageHandler"),
+                        this::getMessageHandler)
+                .put("/greeting", Main.metrics.restRequestMetricHandler(this, "updateGreetingHandler"),
+                        this::updateGreetingHandler);
     }
 
     /**

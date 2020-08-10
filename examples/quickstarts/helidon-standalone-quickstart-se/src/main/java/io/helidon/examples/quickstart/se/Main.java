@@ -33,6 +33,8 @@ import io.helidon.webserver.WebServer;
  */
 public final class Main {
 
+    static MetricsSupport metrics;
+
     /**
      * Cannot be instantiated.
      */
@@ -95,7 +97,7 @@ public final class Main {
      */
     private static Routing createRouting(Config config) {
 
-        MetricsSupport metrics = MetricsSupport.create();
+        metrics = MetricsSupport.create();
         GreetService greetService = new GreetService(config);
         HealthSupport health = HealthSupport.builder()
                 .addLiveness(HealthChecks.healthChecks())   // Adds a convenient set of checks
