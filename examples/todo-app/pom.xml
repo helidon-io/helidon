@@ -25,7 +25,7 @@
     <groupId>io.helidon.examples.todos</groupId>
     <artifactId>example-todo-app-project</artifactId>
     <packaging>pom</packaging>
-    <version>1.4.6-SNAPSHOT</version>
+    <version>1.4.7-SNAPSHOT</version>
     <name>Helidon Examples TODO Demo</name>
 
     <description>
