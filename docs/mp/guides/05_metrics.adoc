@@ -82,6 +82,15 @@ curl http://localhost:8080/metrics
 [source,text]
 .Text response:
 ----
+# TYPE base_REST_request_total counter
+# HELP base_REST_request_total The number of invocations and total response time of RESTful resource methods since the start of the server.
+base_REST_request_total{class="io.helidon.examples.quickstart.mp.GreetResource",method="getDefaultMessage"} 0
+# TYPE base_REST_request_elapsedTime_seconds gauge
+base_REST_request_elapsedTime_seconds{class="io.helidon.examples.quickstart.mp.GreetResource",method="getDefaultMessage"} 0.0
+base_REST_request_total{class="io.helidon.examples.quickstart.mp.GreetResource",method="getMessage_java.lang.String"} 0
+base_REST_request_elapsedTime_seconds{class="io.helidon.examples.quickstart.mp.GreetResource",method="getMessage_java.lang.String"} 0.0
+base_REST_request_total{class="io.helidon.examples.quickstart.mp.GreetResource",method="updateGreeting_javax.json.JsonObject"} 0
+base_REST_request_elapsedTime_seconds{class="io.helidon.examples.quickstart.mp.GreetResource",method="updateGreeting_javax.json.JsonObject"} 0.0
 # TYPE base:classloader_current_loaded_class_count counter
 # HELP base:classloader_current_loaded_class_count Displays the number of classes that are currently loaded in the Java virtual machine.
 base:classloader_current_loaded_class_count 7511
@@ -104,6 +113,15 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics
 ----
 {
   "base": {
+    "REST.request":
+      {
+        "count;class=io.helidon.examples.quickstart.mp.GreetResource;method=getDefaultMessage":0,
+        "elapsedTime;class=io.helidon.examples.quickstart.mp.GreetResource;method=getDefaultMessage":0.0,
+        "count;class=io.helidon.examples.quickstart.mp.GreetResource;method=getMessage_java.lang.String":0,
+        "elapsedTime;class=io.helidon.examples.quickstart.mp.GreetResource;method=getMessage_java.lang.String":0.0,
+        "count;class=io.helidon.examples.quickstart.mp.GreetResource;method=updateGreeting_javax.json.JsonObject":0,
+        "elapsedTime;class=io.helidon.examples.quickstart.mp.GreetResource;method=updateGreeting_javax.json.JsonObject":0.0
+      },
     "classloader.currentLoadedClass.count": 7534,
     "classloader.totalLoadedClass.count": 7538,
     "classloader.totalUnloadedClass.count": 1,
@@ -166,6 +184,19 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics/vendor/grpc.re
 
 NOTE: You cannot get the individual fields of a metric. For example, you cannot target http://localhost:8080/metrics/vendor/grpc.requests.meter.count.
 
+==== Controlling `REST.request` metrics
+Helidon implements the optional family of metrics, all with the name `REST.request`, as described in the
+MicroProfile Metrics specification.
+Each instance is a `SimpleTimer` with tags `class` and `method` identifying exactly which REST endpoint Java
+method that instance measures.
+
+By default, Helidon MP does _not_ enable this feature.
+Enable it by editing your application configuration to set `metrics.rest-request.enabled` to `true`.
+
+Note that the applications you generate using the full Helidon archetype _do_ enable this feature in the
+generated config file.
+You can see the results in the sample output shown in earlier example runs.
+
 === Metrics metadata
 
 Each metric has associated metadata that describes:
@@ -222,11 +253,12 @@ Each metric annotation has mandatory and optional fields. The name field, for ex
 
 ==== Method level metrics
 
-There are three metrics that you can use by annotating a method:
+There are four metrics that you can use by annotating a method:
 
 1. `@Counted` - Register a `Counter` metric
 2. `@Timed` - Register a `Timer` metric
 3. `@Metered` - Register a `Meter` metric
+4. `@SimplyTimed` - Register a `SimpleTimer` metric
 
 The following example will demonstrate how to use the `@Counted` annotation to track the number of times
 the `/cards` endpoint is called.
@@ -312,8 +344,13 @@ You must use  `absolute=false` for class-level annotations.
 
 ==== Additional method-level metrics
 
-The `@Timed` and `@Metered` annotations can also be used with a method.  For the following example. you can just annotate the same method with these metrics.
-When using multiple annoations on a method, you *must* give the metrics different names as shown below.
+The `@Timed`, `@Metered`, and `@SimplyTimed` annotations can also be used with a method.  For the following example.
+you can just annotate the same method with `@Metered` and `@Timed`. These metrics collect significant
+information about the measured methods, but at a cost of some overhead and more complicated output.
+Use `@SimplyTimed` in cases where capturing the invocation count and the total elapsed time
+spent in a block of code is sufficient.
+
+Note that when using multiple annotations on a method, you *must* give the metrics different names as shown below.
 
 [source,java]
 .Update the `GreetingCards` class with the following code:
