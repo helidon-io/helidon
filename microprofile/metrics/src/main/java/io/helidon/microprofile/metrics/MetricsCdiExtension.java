@@ -282,7 +282,7 @@ public class MetricsCdiExtension implements Extension {
         discovery.addAnnotatedType(InterceptorMetered.class, "InterceptorMetered");
         discovery.addAnnotatedType(InterceptorTimed.class, "InterceptorTimed");
         discovery.addAnnotatedType(InterceptorConcurrentGauge.class, "InterceptorConcurrentGauge");
-        discovery.addAnnotatedType(InterceptorSimplyTimed.class, InterceptorSimplyTimed.class.getName());
+        discovery.addAnnotatedType(InterceptorSimplyTimed.class, InterceptorSimplyTimed.class.getSimpleName());
 
         // Telling CDI about our private SyntheticSimplyTimed annotation and its interceptor
         // is enough for CDI to intercept invocations of methods so annotated.
