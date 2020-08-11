@@ -591,7 +591,7 @@ public final class MetricsSupport implements Service {
         private String context = DEFAULT_CONTEXT;
         private Config config = Config.empty();
         private CrossOriginConfig crossOriginConfig = null;
-        private boolean isRestRequestMetricEnabled = HelidonFeatures.flavor() != HelidonFlavor.MP;
+        private boolean isRestRequestMetricEnabled = false;
 
         private Builder() {
 

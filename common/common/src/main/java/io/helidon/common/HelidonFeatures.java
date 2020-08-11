@@ -302,18 +302,6 @@ public final class HelidonFeatures {
     }
 
     /**
-     * Set the current Helidon flavor. Features will only be printed for the
-     * flavor configured.
-     *
-     * The first flavor configured wins.
-     *
-     * @param flavor current flavor
-     */
-    public static void flavor(HelidonFlavor flavor) {
-        CURRENT_FLAVOR.compareAndSet(null, flavor);
-    }
-
-    /**
      * Returns the current Helidon flavor.
      *
      * @return current flavor
