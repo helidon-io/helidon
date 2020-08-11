@@ -277,6 +277,16 @@ public final class FaultTolerance {
 
                 return Single.create(next.get(), true);
             }
+
+            @Override
+            public String toString() {
+                StringBuilder sb = new StringBuilder();
+                for (int i = validFts.size() - 1; i >= 0; i--) {
+                    sb.append(validFts.get(i).toString());
+                    sb.append("\n");
+                }
+                return sb.toString();
+            }
         }
 
         private class TypedWrapper implements FtHandlerTyped<T> {
@@ -294,6 +304,11 @@ public final class FaultTolerance {
             @Override
             public Multi<T> invokeMulti(Supplier<? extends Flow.Publisher<T>> supplier) {
                 return handler.invokeMulti(supplier);
+            }
+
+            @Override
+            public String toString() {
+                return handler.getClass().getSimpleName();
             }
         }
     }
