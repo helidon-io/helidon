@@ -86,5 +86,5 @@ Available socket configuration options:
 |`max-chunk-size` | `8192` |int |Maximal size of a chunk to read from incoming requests
 |`validate-headers` |`true` |boolean |Whether to validate header names, if they contain illegal characters.
 |`initial-buffer-size` |`128` |int |Initial size of buffer used to parse HTTP line and headers
-|`tls` |{nbsp} |Object |Configuration of SSL, please see our SSL example in repository
+|`tls` |{nbsp} |Object |Configuration of TLS, please see our TLS example in repository
 |===
