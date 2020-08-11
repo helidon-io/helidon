@@ -149,7 +149,10 @@ class NettyWebServer implements WebServer {
                 bootstrap.option(ChannelOption.SO_RCVBUF, soConfig.receiveBufferSize());
             }
 
-            HttpInitializer childHandler = new HttpInitializer(sslContext, namedRoutings.getOrDefault(name, routing), this);
+            HttpInitializer childHandler = new HttpInitializer(soConfig,
+                                                               sslContext,
+                                                               namedRoutings.getOrDefault(name, routing),
+                                                               this);
             initializers.add(childHandler);
             bootstrap.group(bossGroup, workerGroup)
                      .channel(NioServerSocketChannel.class)
@@ -192,7 +195,7 @@ class NettyWebServer implements WebServer {
                     throw new IllegalStateException(
                             "no socket configuration found for name: " + name);
                 }
-                int port = socketConfig.port() <= 0 ? 0 : socketConfig.port();
+                int port = Math.max(socketConfig.port(), 0);
                 if (channelsUpFuture.isCompletedExceptionally()) {
                     // break because one of the previous channels already failed
                     break;

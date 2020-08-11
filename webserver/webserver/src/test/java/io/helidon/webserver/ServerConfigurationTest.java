@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,6 +62,8 @@ public class ServerConfigurationTest {
         assertThat(config.workersCount() > 0, is(true));
         assertThat(config.tracer(), IsInstanceOf.instanceOf(GlobalTracer.class));
         assertThat(config.bindAddress(), nullValue());
+        assertThat(config.maxHeaderSize(), is(8192  ));
+        assertThat(config.validateHeaders(), is(true));
     }
 
     @Test
