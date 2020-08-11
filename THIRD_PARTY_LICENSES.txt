@@ -4436,7 +4436,7 @@ License Identifier: Apache-2.0
 
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-netty 4.1.45.Final The Netty Project
+netty 4.1.51.Final The Netty Project
 Apache 2.0
 Used by: [helidon-webserver]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=

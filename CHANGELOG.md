@@ -5,6 +5,64 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.7-SNAPSHOT]
+
+This is a bug fix release of Helidon.
+
+### Fixes
+
+- Correctly handle invalid requests and custom configuration for HTTP [2244](https://github.com/oracle/helidon/pull/2244)
+- Upgrade Netty to 4.1.51.Final [2236](https://github.com/oracle/helidon/pull/2236)
+- Update build.gradle files to correct dep mgmt and enable tests [2226](https://github.com/oracle/helidon/pull/2226)
+
+## [1.4.6]
+
+This is a bug fix release of Helidon.
+
+### Fixes
+
+- WebServer: Mutual TLS support backport [2166](https://github.com/oracle/helidon/pull/2166)
+- Security: Security can now be disabled. [2156](https://github.com/oracle/helidon/pull/2156)
+- Security: Boolean values of secure & httpOnly are ignored. [2049](https://github.com/oracle/helidon/pull/2049)
+
+### Thanks
+
+Thanks to community member BenjaminBuick for contributing to this release.
+
+## [1.4.5]
+
+This is a bug fix release of Helidon. It includes key bug and performance fixes.
+
+### Fixes
+
+- Decrypt AES method made visible [2005](https://github.com/oracle/helidon/pull/2005)
+- Correctly validate mandatory JWT claims. [2012](https://github.com/oracle/helidon/pull/2012)
+- Add tolerance to several metrics tests; change tolerance used in pipeline jobs [2001](https://github.com/oracle/helidon/pull/2001)
+- Allows proxying of ServerRequest [1750](https://github.com/oracle/helidon/pull/1750)
+- Minor gRPC fixes [1950](https://github.com/oracle/helidon/pull/1950)
+- gRPC client API improvements [1850](https://github.com/oracle/helidon/pull/1850)
+- Wait for thread completion only if interrupted flag set [1845](https://github.com/oracle/helidon/pull/1845)
+- Add JSONB support to gRPC [1834](https://github.com/oracle/helidon/pull/1834)
+- Fix #1711 StaticContentHandler fails with encoded URLs (#1811) [1817](https://github.com/oracle/helidon/pull/1817)
+- Fix so we pick up 19.3.1 version of graalvm docker image. Pick up new… [1703](https://github.com/oracle/helidon/pull/1703)
+- New implementation of PublisherInputStream that improves performance and fixes race conditions [1695](https://github.com/oracle/helidon/pull/1695)
+- Upgrade yasson to 1.0.6 [1661](https://github.com/oracle/helidon/pull/1661)
+- Executor service for Jersey managed async executor is now configurabl… [1645](https://github.com/oracle/helidon/pull/1645)
+- Fix for #1618 - Unable to initialize gRPC service when using helidon-… [1638](https://github.com/oracle/helidon/pull/1638)
+- Fixed static content handling bug [1641](https://github.com/oracle/helidon/pull/1641)
+- Fix for prioritized custom MP config sources in Helidon config. [1620](https://github.com/oracle/helidon/pull/1620)
+- Support for OpenTracing contrib's TracerResolver. [1610](https://github.com/oracle/helidon/pull/1610)
+- Fix javadoc and injection in reactive service. [1609](https://github.com/oracle/helidon/pull/1609)
+- Improve metrics interceptor performance; avoid MetricID creations - 1.x [1604](https://github.com/oracle/helidon/pull/1604)
+- Fix keys and certs used in gRPC TLS/SSL tests [1611](https://github.com/oracle/helidon/pull/1611)
+- Removed use of Java 9 API. [1580](https://github.com/oracle/helidon/pull/1580)
+- Removed unnecessary synchronization in metrics registry [1581](https://github.com/oracle/helidon/pull/1581)
+- Removes assertions that do not hold when alternatives and specialization are in play [1557](https://github.com/oracle/helidon/pull/1557)
+- Openapi custom context root [1524](https://github.com/oracle/helidon/pull/1524)
+- Update Dockerfiles to use mvn 3.6 and JDK 11 to build. [1724](https://github.com/oracle/helidon/pull/1724)
+- 3rd party attribution updates: [2025](https://github.com/oracle/helidon/pull/2025) [2009](https://github.com/oracle/helidon/pull/2009)
+- New pipeline infra [1958](https://github.com/oracle/helidon/pull/1958) [1994](https://github.com/oracle/helidon/pull/1994)
+
 ## [1.4.4]
 ### Notes
 
@@ -640,6 +698,9 @@ for details.
 ### Notes
 - Initial source drop on Github
 
+[1.4.7-SNAPSHOT]: https://github.com/oracle/helidon/compare/1.4.6..helidon-1.x
+[1.4.6]: https://github.com/oracle/helidon/compare/1.4.5..1.4.6
+[1.4.5]: https://github.com/oracle/helidon/compare/1.4.4..1.4.5
 [1.4.4]: https://github.com/oracle/helidon/compare/1.4.3..1.4.4
 [1.4.3]: https://github.com/oracle/helidon/compare/1.4.2..1.4.3
 [1.4.2]: https://github.com/oracle/helidon/compare/1.4.1..1.4.2
