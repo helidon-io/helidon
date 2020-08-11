@@ -35,8 +35,8 @@ class HelidonProxyServices implements ProxyServices {
     private static final Logger LOGGER = Logger.getLogger(HelidonProxyServices.class.getName());
     private static final String CLIENT_PROXY_SUFFIX = "$$Proxy$_$$_WeldClientProxy";
     private static final String PROXY_SUFFIX = "$$Proxy$_$$_Weld$Proxy$";
-    private static final String WELDX_PACKAGE_PREFIX = "org.jboss.weldx";
-    private static final String WELD_LANG_PACKAGE_PREFIX = "org.jboss.weld.lang";
+    private static final String WELD_JAVAX_PREFIX = "org.jboss.weldx.";
+    private static final String WELD_JAVA_PREFIX = "org.jboss.weld.";
 
     // a cache of all classloaders (this should be empty in most cases, as we use a single class loader in Helidon)
     private final Map<ClassLoader, ClassDefiningCl> classLoaders = Collections.synchronizedMap(new IdentityHashMap<>());
@@ -123,7 +123,7 @@ class HelidonProxyServices implements ProxyServices {
     }
 
     private boolean weldInternalProxyClassName(String className) {
-        return className.startsWith(WELDX_PACKAGE_PREFIX) || className.startsWith(WELD_LANG_PACKAGE_PREFIX);
+        return className.startsWith(WELD_JAVAX_PREFIX) || className.startsWith(WELD_JAVA_PREFIX);
     }
 
     private Class<?> defineClassPrivateLookup(Class<?> originalClass, String className, byte[] classBytes, int off, int len) {
