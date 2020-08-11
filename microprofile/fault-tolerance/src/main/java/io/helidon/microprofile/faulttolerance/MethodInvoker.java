@@ -26,7 +26,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
@@ -90,12 +89,6 @@ public class MethodInvoker implements FtSupplier<Object> {
     private static final Logger LOGGER = Logger.getLogger(MethodInvoker.class.getName());
 
     /**
-     * How long to wait to see if a method that returns normally was actually
-     * interrupted but caught {@link InterruptedException} before returning.
-     */
-    private static final long TIMEOUT_INTERRUPT_WAIT_MILLIS = 10L;
-
-    /**
      * The method being intercepted.
      */
     private final Method method;
@@ -149,12 +142,6 @@ public class MethodInvoker implements FtSupplier<Object> {
      * CDI's request scope controller used for activation/deactivation.
      */
     private RequestContextController requestController;
-
-    /**
-     * This future will be completed with 'true' if this invocation is interrupted due
-     * to a timeout.
-     */
-    private CompletableFuture<Boolean> timeoutInterrupt;
 
     private static class MethodState {
         private Bulkhead bulkhead;
@@ -275,101 +262,60 @@ public class MethodInvoker implements FtSupplier<Object> {
      */
     @Override
     public Object get() throws Throwable {
-        Single<Object> single;
+        // Wrap method call with Helidon context and init metrics
+        Supplier<Single<Object>> supplier = () -> {
+            try {
+                return Contexts.runInContextWithThrow(helidonContext,
+                        () -> handler.invoke(toCompletionStageSupplier(context::proceed)));
+            } catch (Exception e) {
+                return Single.error(e);
+            }
+        };
 
-        if (introspector.isAsynchronous()) {
-            if (introspector.isReturnType(CompletionStage.class) || introspector.isReturnType(Future.class)) {
-                // Wrap method call with Helidon context
-                Supplier<Object> callMethod = () -> {
-                    updateMetricsBefore();
-                    try {
-                        return Contexts.runInContextWithThrow(helidonContext,
-                                () -> handler.invoke(toCompletionStageSupplier(context::proceed)));
-                    } catch (Exception e) {
-                        return Single.error(e);
-                    }
-                };
-
-                /*
-                 * Call method preserving request scope if active. This is required for
-                 * @Inject and @Context to work properly. Note that it's possible for only
-                 * CDI's request scope to be active at this time (e.g. in TCKs).
-                 */
-                if (requestScope != null) {                     // Jersey and CDI
-                    single = Async.create().invoke(() -> {
-                        try {
-                            return requestScope.runInScope(requestContext, (Callable<Object>) (() -> {
-                                try {
-                                    requestController.activate();
-                                    return callMethod.get();
-                                } finally {
-                                    requestController.deactivate();
-                                }
-                            }));
-                        } catch (Exception e) {
-                            return Single.error(e);
-                        }
-                    });
-                } else if (requestController != null) {         // CDI only
-                    single = Async.create().invoke(() -> {
+        /*
+         * Call method preserving request scope if active. This is required for
+         * @Inject and @Context to work properly. Note that it's possible for only
+         * CDI's request scope to be active at this time (e.g. in TCKs).
+         */
+        Supplier<Single<Object>> wrappedSupplier;
+        if (requestScope != null) {                     // Jersey and CDI
+            wrappedSupplier = () -> {
+                try {
+                    return requestScope.runInScope(requestContext, (() -> {
                         try {
                             requestController.activate();
-                            return callMethod.get();
-                        } catch (Exception e) {
-                            return Single.error(e);
+                            return supplier.get();
                         } finally {
                             requestController.deactivate();
                         }
-                    });
-                } else {
-                    single = Async.create().invoke(callMethod);
+                    }));
+                } catch (Exception e) {
+                    return Single.error(e);
                 }
-
-                // Unwrap nested futures and map exceptions on complete
-                CompletableFuture<Object> future = new CompletableFuture<>();
-                single.whenComplete((o, t) -> {
-                    Throwable cause = null;
-
-                    // Update future to return
-                    if (t == null) {
-                        // If future whose value is a future, then unwrap them
-                        Future<?> delegate = null;
-                        if (o instanceof CompletionStage<?>) {
-                            delegate = ((CompletionStage<?>) o).toCompletableFuture();
-                        } else if (o instanceof Future<?>) {
-                            delegate = (Future<?>) o;
-                        }
-                        if (delegate != null) {
-                            try {
-                                future.complete(delegate.get());
-                            } catch (Exception e) {
-                                cause = map(e);
-                                future.completeExceptionally(cause);
-                            }
-                        } else {
-                            future.complete(o);
-                        }
-                    } else {
-                        cause = map(t);
-                        future.completeExceptionally(cause);
-                    }
-
-                    updateMetricsAfter(cause);
-                });
-                return future;
-            }
-
-            // Oops, something went wrong during validation
-            throw new InternalError("Validation failed, return type must be Future or CompletionStage");
+            };
+        } else if (requestController != null) {         // CDI only
+            wrappedSupplier = () -> {
+                try {
+                    requestController.activate();
+                    return supplier.get();
+                } catch (Exception e) {
+                    return Single.error(e);
+                } finally {
+                    requestController.deactivate();
+                }
+            };
         } else {
+            wrappedSupplier = supplier;
+        }
+
+        // Final supplier that handles metrics and maps exceptions
+        FtSupplier<Object> finalSupplier = () -> {
             Object result = null;
             Throwable cause = null;
-
-            single = Contexts.runInContextWithThrow(helidonContext,
-                        () -> handler.invoke(toCompletionStageSupplier(context::proceed)));
             try {
                 // Need to allow completion with no value (null) for void methods
-                CompletableFuture<Object> future = single.toStage(true).toCompletableFuture();
+                CompletableFuture<Object> future = wrappedSupplier.get()
+                        .toStage(true).toCompletableFuture();
                 updateMetricsBefore();
                 result = future.get();
             } catch (ExecutionException e) {
@@ -377,12 +323,31 @@ public class MethodInvoker implements FtSupplier<Object> {
             } catch (Throwable t) {
                 cause = map(t);
             }
-
             updateMetricsAfter(cause);
             if (cause != null) {
                 throw cause;
             }
             return result;
+        };
+
+        // Special cases for sync and async invocations
+        if (introspector.isAsynchronous()) {
+            if (introspector.isReturnType(CompletionStage.class) || introspector.isReturnType(Future.class)) {
+                CompletableFuture<Object> finalResult = new CompletableFuture<>();
+                Async.create().invoke(() -> {
+                    try {
+                        return finalResult.complete(finalSupplier.get());
+                    } catch (Throwable t) {
+                        return finalResult.completeExceptionally(t);
+                    }
+                });
+                return finalResult;
+            }
+
+            // Oops, something went wrong during validation
+            throw new InternalError("Validation failed, return type must be Future or CompletionStage");
+        } else {
+            return finalSupplier.get();
         }
     }
 
@@ -427,9 +392,7 @@ public class MethodInvoker implements FtSupplier<Object> {
                     .timeout(Duration.of(introspector.getTimeout().value(), introspector.getTimeout().unit()))
                     .async(false)   // no async here
                     .executor(EXECUTOR_SERVICE)
-                    .interruptListener(t -> {
-                        timeoutInterrupt = CompletableFuture.completedFuture(true);        // captures 'this' in closure
-                    }).build();
+                    .build();
             builder.addTimeout(timeout);
         }
 
@@ -447,9 +410,6 @@ public class MethodInvoker implements FtSupplier<Object> {
                                                 introspector.getRetry().durationUnit()))
                     .applyOn(introspector.getRetry().retryOn())
                     .skipOn(introspector.getRetry().abortOn())
-                    .retryListener(c -> {
-                        timeoutInterrupt = null;        // ignore on retry
-                    })
                     .build();
             builder.addRetry(retry);
             this.retry = retry;
@@ -459,7 +419,6 @@ public class MethodInvoker implements FtSupplier<Object> {
         if (introspector.hasFallback()) {
             Fallback<Object> fallback = Fallback.builder()
                     .fallback(throwable -> {
-                        timeoutInterrupt = null;        // ignore with fallback
                         CommandFallback cfb = new CommandFallback(context, introspector, throwable);
                         return toCompletionStageSupplier(cfb::execute).get();
                     })
@@ -469,7 +428,9 @@ public class MethodInvoker implements FtSupplier<Object> {
             builder.addFallback(fallback);
         }
 
-        return builder.build();
+        FtHandlerTyped<Object> result = builder.build();
+        System.out.println("\n### tree \n" + result);
+        return result;
     }
 
     /**
@@ -487,23 +448,6 @@ public class MethodInvoker implements FtSupplier<Object> {
 
                 // This is the actual method invocation
                 Object result = supplier.get();
-
-                // Check if the method was interrupted
-                boolean interrupted = false;
-                if (timeoutInterrupt != null) {
-                    try {
-                        interrupted = timeoutInterrupt.get(TIMEOUT_INTERRUPT_WAIT_MILLIS, TimeUnit.MILLISECONDS);
-                    } catch (java.util.concurrent.TimeoutException e) {
-                        // falls through
-                    } finally {
-                        timeoutInterrupt = null;
-                    }
-                }
-
-                // If interrupted, even if it returned normally, it is an exception
-                if (interrupted) {
-                    return CompletableFuture.failedFuture(new TimeoutException("Method interrupted"));
-                }
 
                 // Return value without additional wrapping
                 return introspector.isAsynchronous() && result instanceof CompletionStage<?>

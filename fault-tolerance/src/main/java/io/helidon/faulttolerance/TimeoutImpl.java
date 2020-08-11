@@ -22,6 +22,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -65,6 +66,7 @@ class TimeoutImpl implements Timeout {
             AtomicBoolean callReturned = new AtomicBoolean(false);
 
             // Startup monitor thread that can interrupt current thread after timeout
+            CompletableFuture<T> future = new CompletableFuture<>();
             Timeout.builder()
                     .executor(executor.get())       // propagate executor
                     .async(true)
@@ -76,6 +78,8 @@ class TimeoutImpl implements Timeout {
                     })
                     .exceptionally(it -> {
                         if (callReturned.compareAndSet(false, true)) {
+                            System.out.println("### completing future on timeout");
+                            future.completeExceptionally(new TimeoutException("Method interrupted by timeout"));
                             currentThread.interrupt();
                             if (interruptListener != null) {
                                 interruptListener.accept(currentThread);
@@ -94,7 +98,18 @@ class TimeoutImpl implements Timeout {
             // Run invocation in current thread
             Single<T> single = Single.create(supplier.get(), true);
             callReturned.set(true);
-            return single;
+            single.whenComplete((o, t) -> {
+                if (t != null) {
+                    future.completeExceptionally(t);
+                } else {
+                    future.complete(o);
+                }
+            });
+
+            // Clear interrupted flag here -- required for uninterruptible busy loops
+            Thread.interrupted();
+
+            return Single.create(future, true);
         }
     }
 }

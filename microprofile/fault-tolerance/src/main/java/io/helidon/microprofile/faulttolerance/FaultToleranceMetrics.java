@@ -289,6 +289,12 @@ class FaultToleranceMetrics {
                           BULKHEAD_EXECUTION_DURATION),
             "Histogram of method execution times. This does not include any "
             + "time spent waiting in the bulkhead queue.");
+        registerHistogram(
+                String.format(METRIC_NAME_TEMPLATE,
+                        method.getDeclaringClass().getName(),
+                        method.getName(),
+                        BULKHEAD_WAITING_DURATION),
+                "Histogram of the time executions spend waiting in the queue.");
     }
 
     // -- Utility methods ----------------------------------------------------
