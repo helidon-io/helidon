@@ -186,7 +186,7 @@ NOTE: You cannot get the individual fields of a metric. For example, you cannot 
 
 ==== Controlling `REST.request` metrics
 Helidon implements the optional family of metrics, all with the name `REST.request`, as described in the
-MicroProfile Metrics specification.
+link:https://download.eclipse.org/microprofile/microprofile-metrics-2.3/microprofile-metrics-spec-2.3.html#_optional_rest[MicroProfile Metrics specification].
 Each instance is a `SimpleTimer` with tags `class` and `method` identifying exactly which REST endpoint Java
 method that instance measures.
 
