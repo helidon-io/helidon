@@ -37,6 +37,7 @@ import io.helidon.media.common.MessageBodyWriterContext;
 import io.helidon.tracing.config.SpanTracingConfig;
 import io.helidon.tracing.config.TracingConfigUtil;
 
+import io.netty.handler.codec.http.HttpHeaderNames;
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
@@ -45,6 +46,9 @@ import io.opentracing.Tracer;
  * The basic implementation of {@link ServerResponse}.
  */
 abstract class Response implements ServerResponse {
+
+    static final String STREAM_STATUS = "stream-status";
+    static final String STREAM_RESULT = "stream-result";
 
     private static final String TRACING_CONTENT_WRITE = "content-write";
 
@@ -244,7 +248,7 @@ abstract class Response implements ServerResponse {
 
     @Override
     public Response registerFilter(Function<Publisher<DataChunk>, Publisher<DataChunk>> function) {
-        writerContext.registerFilter(p -> function.apply(p));
+        writerContext.registerFilter(function::apply);
         return this;
     }
 
@@ -291,6 +295,17 @@ abstract class Response implements ServerResponse {
         private Span span;
         private volatile boolean sent;
 
+        private synchronized void sendErrorHeadersIfNeeded() {
+            if (headers != null && !sent) {
+                status(500);
+                //We are not using CombinedHttpHeaders
+                headers()
+                        .add(HttpHeaderNames.TRAILER.toString(), STREAM_STATUS + "," + STREAM_RESULT);
+                sent = true;
+                headers.send();
+            }
+        }
+
         private synchronized void sendHeadersIfNeeded() {
             if (headers != null && !sent) {
                 sent = true;
@@ -313,6 +328,9 @@ abstract class Response implements ServerResponse {
                     break;
                 case BEFORE_ONNEXT:
                     sendHeadersIfNeeded();
+                    break;
+                case BEFORE_ONERROR:
+                    sendErrorHeadersIfNeeded();
                     break;
                 case AFTER_ONERROR:
                     if (span != null) {
