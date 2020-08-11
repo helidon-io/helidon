@@ -33,6 +33,11 @@ import org.jboss.weld.serialization.spi.ProxyServices;
 
 class HelidonProxyServices implements ProxyServices {
     private static final Logger LOGGER = Logger.getLogger(HelidonProxyServices.class.getName());
+    private static final String CLIENT_PROXY_SUFFIX = "$$Proxy$_$$_WeldClientProxy";
+    private static final String PROXY_SUFFIX = "$$Proxy$_$$_Weld$Proxy$";
+    private static final String WELDX_PACKAGE_PREFIX = "org.jboss.weldx";
+    private static final String WELD_LANG_PACKAGE_PREFIX = "org.jboss.weld.lang";
+
     // a cache of all classloaders (this should be empty in most cases, as we use a single class loader in Helidon)
     private final Map<ClassLoader, ClassDefiningCl> classLoaders = Collections.synchronizedMap(new IdentityHashMap<>());
     private final ClassLoader contextCl;
@@ -70,23 +75,20 @@ class HelidonProxyServices implements ProxyServices {
     public Class<?> defineClass(Class<?> originalClass, String className, byte[] classBytes, int off, int len)
             throws ClassFormatError {
 
-        // always try to define in private lookup, if fails (and not same package), try using a different classloader
+        if (weldInternalProxyClassName(className)) {
+            // this is special case - these classes are defined in a non-existent package
+            // and we need to use a classloader (public lookup will not allow this, and private lookup is not
+            // possible for an empty package)
+            return wrapCl(originalClass.getClassLoader())
+                    .doDefineClass(originalClass, className, classBytes, off, len);
+        }
+        // any other class should be defined using a private lookup
         try {
             return defineClassPrivateLookup(originalClass, className, classBytes, off, len);
         } catch (Exception e) {
-            if (samePackage(originalClass, className)) {
-                // when same package, we must use private lookup (as we may use package local)
-                throw e;
-            } else {
-                LOGGER.log(Level.FINEST,
-                           "Failed to create class " + className + " in same classloader. Will use a different one",
-                           e);
+            LOGGER.log(Level.FINEST, "Failed to create class " + className + " using private lookup", e);
 
-                // other cases (except for a few edge cases, such as producer in a different package and usage
-                // of bean in the same package) we can live with a different classloader to hold the proxy class
-                return wrapCl(originalClass.getClassLoader())
-                        .doDefineClass(originalClass, className, classBytes, off, len);
-            }
+            throw e;
         }
     }
 
@@ -98,29 +100,30 @@ class HelidonProxyServices implements ProxyServices {
                                 int len,
                                 ProtectionDomain protectionDomain) throws ClassFormatError {
 
-        // always try to define in private lookup, if fails (and not same package), try using a different classloader
+        if (weldInternalProxyClassName(className)) {
+            // this is special case - these classes are defined in a non-existent package
+            // and we need to use a classloader (public lookup will not allow this, and private lookup is not
+            // possible for an empty package)
+            return wrapCl(originalClass.getClassLoader())
+                    .doDefineClass(originalClass, className, classBytes, off, len, protectionDomain);
+        }
+        // any other class should be defined using a private lookup
         try {
             return defineClassPrivateLookup(originalClass, className, classBytes, off, len);
         } catch (Exception e) {
-            if (samePackage(originalClass, className)) {
-                // when same package, we must use private lookup (as we may use package local)
-                throw e;
-            } else {
-                LOGGER.log(Level.FINEST,
-                           "Failed to create class " + className + " in same classloader. Will use a different one",
-                           e);
+            LOGGER.log(Level.FINEST, "Failed to create class " + className + " using private lookup", e);
 
-                // other cases (except for a few edge cases, such as producer in a different package and usage
-                // of bean in the same package) we can live with a different classloader to hold the proxy class
-                return wrapCl(originalClass.getClassLoader())
-                        .doDefineClass(originalClass, className, classBytes, off, len, protectionDomain);
-            }
+            throw e;
         }
     }
 
     @Override
     public Class<?> loadClass(Class<?> originalClass, String classBinaryName) throws ClassNotFoundException {
         return wrapCl(originalClass.getClassLoader()).loadClass(classBinaryName);
+    }
+
+    private boolean weldInternalProxyClassName(String className) {
+        return className.startsWith(WELDX_PACKAGE_PREFIX) || className.startsWith(WELD_LANG_PACKAGE_PREFIX);
     }
 
     private Class<?> defineClassPrivateLookup(Class<?> originalClass, String className, byte[] classBytes, int off, int len) {
@@ -132,6 +135,8 @@ class HelidonProxyServices implements ProxyServices {
 
         LOGGER.finest("Defining class " + className + " original class: " + originalClass.getName());
 
+        MethodHandles.Lookup lookup;
+
         try {
             Module classModule = originalClass.getModule();
             if (!myModule.canRead(classModule)) {
@@ -140,45 +145,81 @@ class HelidonProxyServices implements ProxyServices {
                 myModule.addReads(classModule);
             }
 
+            // lookup class name based on full class name (e.g. for inner classes)
+            String lookupClassName;
+            // lookup class name based on the first class in the name
+            String fallbackLookupClassName;
+
+            if (className.contains("$")) {
+                // fallback is the package + first name in the compound proxy class name
+                fallbackLookupClassName = className.substring(0, className.indexOf('$'));
+            } else {
+                fallbackLookupClassName = className;
+            }
+
+            // Let's try to get the actual class of the proxy
+            // the name ends with $$Proxy$_$$_WeldClientProxy or $$Proxy$_$$_Weld$Proxy$
+            if (className.endsWith(CLIENT_PROXY_SUFFIX)) {
+                lookupClassName = className.substring(0, className.length() - CLIENT_PROXY_SUFFIX.length());
+            } else if (className.endsWith(PROXY_SUFFIX)) {
+                lookupClassName = className.substring(0, className.length() - PROXY_SUFFIX.length());
+            } else {
+                lookupClassName = fallbackLookupClassName;
+            }
+
             // I would like to create a private lookup in the same package as the proxied class, so let's
-            // try to load it - I load the enclosing class (or the proxied class if not inner) to have
-            // a lookup in the correct package/class
-            String lookupClassName = className.substring(0, className.indexOf('$'));
-            Class<?> lookupClass;
-            try {
-                lookupClass = originalClass.getClassLoader().loadClass(lookupClassName);
-            } catch (Throwable e) {
-                LOGGER.log(Level.FINEST, "Cannot load class to create private lookup: " + lookupClassName, e);
-                // fallback to the producer class, as we cannot load the enclosing class of the proxy
+
+            // first if the producer class and the lookup class name is the same, just use the existing class
+            Class<?> lookupClass = lookupClassName.equals(originalClass.getName()) ? originalClass : null;
+
+            ClassLoader cl = originalClass.getClassLoader();
+
+            if (null == lookupClass) {
+                // try to load the full class name (may contain additional interfaces, so easily invalid)
+                lookupClass = tryLoading(cl, lookupClassName);
+            }
+            if (null == lookupClass && !lookupClassName.equals(fallbackLookupClassName)) {
+                // fallback to the simple class name until the first $ sign
+                lookupClass = tryLoading(cl, fallbackLookupClassName);
+            }
+            if (null == lookupClass) {
+                // and if that fails, just use the bean producer class
                 lookupClass = originalClass;
             }
 
             // next line would fail if the module does not open its package, with a very meaningful error message
-            MethodHandles.Lookup lookup = MethodHandles.privateLookupIn(lookupClass, MethodHandles.lookup());
-            if (classBytes.length == len) {
-                return lookup.defineClass(classBytes);
-            } else {
-                byte[] bytes = new byte[len];
-                System.arraycopy(classBytes, off, bytes, 0, len);
-                return lookup.defineClass(bytes);
-            }
+            lookup = MethodHandles.privateLookupIn(lookupClass, MethodHandles.lookup());
         } catch (IllegalAccessException e) {
             throw new RuntimeException("Failed to define class " + className, e);
         }
+
+        return defineClass(lookup, className, classBytes, off, len);
     }
 
-    private boolean samePackage(Class<?> originalClass, String className) {
-        String origPackage = originalClass.getPackageName();
-        String newPackage = packageName(className);
-        return newPackage.equals(origPackage);
-    }
-
-    private String packageName(String className) {
-        int index = className.lastIndexOf('.');
-        if (index > 0) {
-            return className.substring(0, index);
+    private Class<?> tryLoading(ClassLoader cl, String className) {
+        try {
+            return cl.loadClass(className);
+        } catch (Exception e) {
+            LOGGER.log(Level.FINEST, "Attempt to load class " + className + " failed.", e);
         }
-        return "";
+        return null;
+    }
+
+    private Class<?> defineClass(MethodHandles.Lookup lookup, String className, byte[] classBytes, int off, int len) {
+        try {
+            byte[] definitionBytes;
+
+            if (classBytes.length == len) {
+                definitionBytes = classBytes;
+            } else {
+                definitionBytes = new byte[len];
+                System.arraycopy(classBytes, off, definitionBytes, 0, len);
+            }
+
+            return lookup.defineClass(definitionBytes);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException("Failed to define class " + className, e);
+        }
     }
 
     private ClassDefiningCl wrapCl(ClassLoader origCl) {
