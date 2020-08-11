@@ -138,13 +138,6 @@ class HelidonProxyServices implements ProxyServices {
         MethodHandles.Lookup lookup;
 
         try {
-            Module classModule = originalClass.getModule();
-            if (!myModule.canRead(classModule)) {
-                // we need to read the module to be able to create a private lookup in it
-                // it also needs to open the package we are doing the lookup in
-                myModule.addReads(classModule);
-            }
-
             // lookup class name based on full class name (e.g. for inner classes)
             String lookupClassName;
             // lookup class name based on the first class in the name
@@ -185,6 +178,13 @@ class HelidonProxyServices implements ProxyServices {
             if (null == lookupClass) {
                 // and if that fails, just use the bean producer class
                 lookupClass = originalClass;
+            }
+
+            Module lookupClassModule = lookupClass.getModule();
+            if (!myModule.canRead(lookupClassModule)) {
+                // we need to read the module to be able to create a private lookup in it
+                // it also needs to open the package we are doing the lookup in
+                myModule.addReads(lookupClassModule);
             }
 
             // next line would fail if the module does not open its package, with a very meaningful error message

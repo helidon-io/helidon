@@ -36,7 +36,7 @@ module io.helidon.microprofile.tyrus {
     exports io.helidon.microprofile.tyrus;
 
     // this is needed for CDI extensions that use non-public observer methods
-    opens io.helidon.microprofile.tyrus to weld.core.impl;
+    opens io.helidon.microprofile.tyrus to weld.core.impl, io.helidon.microprofile.cdi;
 
     provides javax.enterprise.inject.spi.Extension with io.helidon.microprofile.tyrus.WebSocketCdiExtension;
 }
