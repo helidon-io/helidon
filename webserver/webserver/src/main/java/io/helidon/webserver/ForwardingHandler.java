@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpContent;
@@ -96,6 +97,12 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
             ctx.channel().config().setAutoRead(false);
 
             HttpRequest request = (HttpRequest) msg;
+            try {
+                checkDecoderResult(request);
+            } catch (Throwable e) {
+                send400BadRequest(ctx, e.getMessage());
+                return;
+            }
             ReferenceHoldingQueue<DataChunk> queue = new ReferenceHoldingQueue<>();
             queues.add(queue);
             requestContext = new RequestContext(new HttpRequestScopedPublisher(ctx, queue), request);
@@ -213,5 +220,15 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
             requestContext.publisher().error(cause);
         }
         ctx.close();
+    }
+
+    private static void checkDecoderResult(HttpRequest request) {
+        DecoderResult decoderResult = request.decoderResult();
+        if (decoderResult.isFailure()) {
+            LOGGER.info(String.format("Request %s to %s rejected: %s", request.method()
+                    .asciiName(), request.uri(), decoderResult.cause().getMessage()));
+            throw new BadRequestException(String.format("Request was rejected: %s", decoderResult.cause().getMessage()),
+                                          decoderResult.cause());
+        }
     }
 }

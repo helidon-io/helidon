@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,10 +50,15 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
 
     private final SslContext sslContext;
     private final NettyWebServer webServer;
+    private final SocketConfiguration soConfig;
     private final Routing routing;
     private final Queue<ReferenceHoldingQueue<DataChunk>> queues = new ConcurrentLinkedQueue<>();
 
-    HttpInitializer(SslContext sslContext, Routing routing, NettyWebServer webServer) {
+    HttpInitializer(SocketConfiguration soConfig,
+                    SslContext sslContext,
+                    Routing routing,
+                    NettyWebServer webServer) {
+        this.soConfig = soConfig;
         this.routing = routing;
         this.sslContext = sslContext;
         this.webServer = webServer;
@@ -100,7 +105,12 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
             p.addLast(cleartextHttp2ServerUpgradeHandler);
             p.addLast(new HelidonEventLogger());
         } else {
-            p.addLast(new HttpRequestDecoder());
+            // explicit configuration of http handling
+            p.addLast(new HttpRequestDecoder(soConfig.maxInitialLineLength(),
+                                             soConfig.maxHeaderSize(),
+                                             soConfig.maxChunkSize(),
+                                             soConfig.validateHeaders(),
+                                             soConfig.initialBufferSize()));
             // Uncomment the following line if you don't want to handle HttpChunks.
             //        p.addLast(new HttpObjectAggregator(1048576));
             p.addLast(new HttpResponseEncoder());

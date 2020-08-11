@@ -106,6 +106,42 @@ public interface SocketConfiguration {
     ClientAuthentication clientAuth();
 
     /**
+     * Maximal size of all headers combined.
+     *
+     * @return size in bytes
+     */
+    int maxHeaderSize();
+
+    /**
+     * Maximal length of the initial HTTP line.
+     *
+     * @return length
+     */
+    int maxInitialLineLength();
+
+    /**
+     * Maximal size of a single chunk of received data.
+     *
+     * @return chunk size
+     */
+    int maxChunkSize();
+
+    /**
+     * Whether to validate HTTP header names.
+     * When set to {@code true}, we make sure the header name is a valid string
+     *
+     * @return {@code true} if headers should be validated
+     */
+    boolean validateHeaders();
+
+    /**
+     * Initial size of the buffer used to parse HTTP line and headers.
+     *
+     * @return initial size of the buffer
+     */
+    int initialBufferSize();
+
+    /**
      * Creates a builder of {@link SocketConfiguration} class.
      *
      * @return a builder
@@ -125,6 +161,12 @@ public interface SocketConfiguration {
         private int timeoutMillis = 0;
         private int receiveBufferSize = 0;
         private ClientAuthentication clientAuth = ClientAuthentication.NONE;
+        // these values are as defined in Netty implementation
+        private int maxHeaderSize = 8192;
+        private int maxInitialLineLength = 4096;
+        private int maxChunkSize = 8192;
+        private boolean validateHeaders = true;
+        private int initialBufferSize = 128;
 
         private Builder() {
         }
@@ -255,11 +297,151 @@ public interface SocketConfiguration {
             return this;
         }
 
+        /**
+         * Maximal number of bytes of all header values combined. When a bigger value is received, a
+         * {@link io.helidon.common.http.Http.Status#BAD_REQUEST_400}
+         * is returned.
+         * <p>
+         * Default is {@code 8192}
+         *
+         * @param size maximal number of bytes of combined header values
+         * @return this builder
+         */
+        public Builder maxHeaderSize(int size) {
+            this.maxHeaderSize = size;
+            return this;
+        }
+
+        /**
+         * Maximal number of characters in the initial HTTP line.
+         * <p>
+         * Default is {@code 4096}
+         *
+         * @param length maximal number of characters
+         * @return this builder
+         */
+        public Builder maxInitialLineLength(int length) {
+            this.maxInitialLineLength = length;
+            return this;
+        }
+
+        /**
+         * Configure maximal size of a chunk to be read from incoming requests.
+         * Defaults to {@code 8192}.
+         *
+         * @param size maximal chunk size
+         * @return updated builder instance
+         */
+        public Builder maxChunkSize(int size) {
+            this.maxChunkSize = size;
+            return this;
+        }
+
+        /**
+         * Configure whether to validate header names.
+         * Defaults to {@code true} to make sure header names are valid strings.
+         *
+         * @param validate set to {@code false} to ignore header validation
+         * @return updated builder instance
+         */
+        public Builder validateHeaders(boolean validate) {
+            this.validateHeaders = validate;
+            return this;
+        }
+
+        /**
+         * Configure initial size of the buffer used to parse HTTP line and headers.
+         * Defaults to {@code 128}.
+         *
+         * @param size initial buffer size
+         * @return updated builder instance
+         */
+        public Builder initialBufferSize(int size) {
+            this.initialBufferSize = size;
+            return this;
+        }
+
         @Override
         public SocketConfiguration build() {
-            return new ServerBasicConfig.SocketConfig(port, bindAddress,
-                    sslContext, enabledSslProtocols, backlog, timeoutMillis,
-                    receiveBufferSize, clientAuth);
+            return new ServerBasicConfig.SocketConfig(this);
+        }
+
+        int port() {
+            return port;
+        }
+
+        InetAddress bindAddress() {
+            return bindAddress;
+        }
+
+        SSLContext sslContext() {
+            return sslContext;
+        }
+
+        Set<String> enabledSslProtocols() {
+            return enabledSslProtocols;
+        }
+
+        int backlog() {
+            return backlog;
+        }
+
+        int timeoutMillis() {
+            return timeoutMillis;
+        }
+
+        int receiveBufferSize() {
+            return receiveBufferSize;
+        }
+
+        ClientAuthentication clientAuth() {
+            return clientAuth;
+        }
+
+        /**
+         * Maximal size of all headers combined.
+         *
+         * @return size in bytes
+         */
+        int maxHeaderSize() {
+            return maxHeaderSize;
+        }
+
+        /**
+         * Maximal length of the initial HTTP line.
+         *
+         * @return length
+         */
+        int maxInitialLineLength() {
+            return maxInitialLineLength;
+        }
+
+        /**
+         * Maximal size of a single chunk of received data.
+         *
+         * @return chunk size
+         */
+        int maxChunkSize() {
+            return maxChunkSize;
+        }
+
+        /**
+         * Whether to validate HTTP header names.
+         * When set to {@code true}, we make sure the header name is a valid string
+         *
+         * @return {@code true} if headers should be validated
+         */
+        boolean validateHeaders() {
+            return validateHeaders;
+        }
+
+        /**
+         * Initial size of the buffer used to parse HTTP line and headers.
+         *
+         * @return initial size of the buffer
+         */
+        int initialBufferSize() {
+            return initialBufferSize;
         }
     }
 }

@@ -336,6 +336,28 @@ public interface ServerConfiguration extends SocketConfiguration {
         }
 
         /**
+         * Configure maximal header size (all headers combined) in number of characters for default socket.
+         *
+         * @param size header size
+         * @return an updated builder
+         */
+        public Builder maxHeaderSize(int size) {
+            defaultSocketBuilder.maxHeaderSize(size);
+            return this;
+        }
+
+        /**
+         * Configure maximal length of the initial HTTP line for default socket.
+         *
+         * @param length line length
+         * @return an updated buidler
+         */
+        public Builder maxInitialLineLength(int length) {
+            defaultSocketBuilder.maxInitialLineLength(length);
+            return this;
+        }
+
+        /**
          * Adds an additional named server socket configuration. As a result, the server will listen
          * on multiple ports.
          * <p>
@@ -535,6 +557,11 @@ public interface ServerConfiguration extends SocketConfiguration {
             config.get("timeout").asInt().ifPresent(soConfigBuilder::timeoutMillis);
             config.get("receive-buffer").asInt().ifPresent(soConfigBuilder::receiveBufferSize);
             config.get("ssl-protocols").asList(String.class).ifPresent(soConfigBuilder::enabledSSlProtocols);
+            config.get("max-header-size").asInt().ifPresent(soConfigBuilder::maxHeaderSize);
+            config.get("max-initial-line-length").asInt().ifPresent(soConfigBuilder::maxInitialLineLength);
+            config.get("max-chunk-size").asInt().ifPresent(soConfigBuilder::maxChunkSize);
+            config.get("validate-headers").asBoolean().ifPresent(soConfigBuilder::validateHeaders);
+            config.get("initial-buffer-size").asInt().ifPresent(soConfigBuilder::initialBufferSize);
 
             // ssl
             Config sslConfig = config.get("ssl");
