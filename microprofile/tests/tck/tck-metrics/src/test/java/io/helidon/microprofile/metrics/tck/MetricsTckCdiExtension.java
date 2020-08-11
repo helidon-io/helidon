@@ -20,7 +20,7 @@ import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.BeforeBeanDiscovery;
 import javax.enterprise.inject.spi.Extension;
 
-public class MetricsTckCciExtension implements Extension {
+public class MetricsTckCdiExtension implements Extension {
 
     void before(@Observes BeforeBeanDiscovery discovery) {
         discovery.addAnnotatedType(ArrayParamConverterProvider.class, ArrayParamConverterProvider.class.getSimpleName());

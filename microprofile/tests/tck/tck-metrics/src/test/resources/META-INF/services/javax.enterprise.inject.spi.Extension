@@ -14,4 +14,4 @@
 # limitations under the License.
 #
 
-io.helidon.microprofile.metrics.tck.MetricsTckCciExtension
+io.helidon.microprofile.metrics.tck.MetricsTckCdiExtension
