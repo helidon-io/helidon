@@ -102,7 +102,7 @@
         <version.lib.zipkin>2.11.1</version.lib.zipkin>
         <version.lib.hystrix>1.5.18</version.lib.hystrix>
         <version.lib.failsafe>2.3.1</version.lib.failsafe>
-        <version.lib.yasson>1.0.6</version.lib.yasson>
+        <version.lib.yasson>1.0.8</version.lib.yasson>
     </properties>
 
     <dependencyManagement>
