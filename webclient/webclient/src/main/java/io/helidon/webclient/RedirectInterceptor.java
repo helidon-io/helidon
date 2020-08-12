@@ -37,8 +37,9 @@ class RedirectInterceptor implements HttpInterceptor {
                                    WebClientRequestImpl clientRequest,
                                    CompletableFuture<WebClientResponse> responseFuture) {
         if (httpResponse.headers().contains(Http.Header.LOCATION)) {
+            long requestId = clientRequest.configuration().requestId();
             String newUri = httpResponse.headers().get(Http.Header.LOCATION);
-            LOGGER.fine(() -> "Redirecting to " + newUri);
+            LOGGER.finest(() -> "(client reqID: " + requestId + ") Redirecting to " + newUri);
             WebClientRequestBuilder requestBuilder = WebClientRequestBuilderImpl
                     .create(clientRequest);
             if (URI.create(newUri).getHost() == null) {

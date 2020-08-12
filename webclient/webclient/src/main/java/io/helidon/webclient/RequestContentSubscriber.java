@@ -33,6 +33,7 @@ import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 
 import static io.helidon.webclient.WebClientRequestBuilderImpl.REQUEST;
+import static io.helidon.webclient.WebClientRequestBuilderImpl.REQUEST_ID;
 
 /**
  * Subscriber which handles entity sending.
@@ -46,6 +47,7 @@ class RequestContentSubscriber implements Flow.Subscriber<DataChunk> {
     private final CompletableFuture<WebClientServiceRequest> sent;
     private final DefaultHttpRequest request;
     private final Channel channel;
+    private final long requestId;
 
     private volatile Flow.Subscription subscription;
     private volatile DataChunk firstDataChunk;
@@ -59,13 +61,14 @@ class RequestContentSubscriber implements Flow.Subscriber<DataChunk> {
         this.channel = channel;
         this.responseFuture = responseFuture;
         this.sent = sent;
+        this.requestId = channel.attr(REQUEST_ID).get();
     }
 
     @Override
     public void onSubscribe(Flow.Subscription subscription) {
         this.subscription = subscription;
         subscription.request(1);
-        LOGGER.finest(() -> "Writing sending request and its content to the server.");
+        LOGGER.finest(() -> "(client reqID: " + requestId + ") Writing sending request and its content to the server.");
     }
 
     @Override
@@ -103,7 +106,8 @@ class RequestContentSubscriber implements Flow.Subscriber<DataChunk> {
     @Override
     public void onComplete() {
         if (lengthOptimization) {
-            LOGGER.finest(() -> "Message body contains only one data chunk. Setting chunked encoding to false.");
+            LOGGER.finest(() -> "(client reqID: " + requestId + ") "
+                    + "Message body contains only one data chunk. Setting chunked encoding to false.");
             HttpUtil.setTransferEncodingChunked(request, false);
             if (firstDataChunk != null) {
                 HttpUtil.setContentLength(request, firstDataChunk.remaining());
@@ -113,26 +117,28 @@ class RequestContentSubscriber implements Flow.Subscriber<DataChunk> {
                 sendData(firstDataChunk);
             }
         }
-        LOGGER.finest(() -> "Sending last http content");
+        LOGGER.finest(() -> "(client reqID: " + requestId + ") Sending last http content");
         channel.writeAndFlush(LAST_HTTP_CONTENT)
-                .addListener(completeOnFailureListener("An exception occurred when writing last http content."))
+                .addListener(completeOnFailureListener("(client reqID: " + requestId + ") "
+                                                               + "An exception occurred when writing last http content."))
                 .addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
 
         WebClientRequestImpl clientRequest = channel.attr(REQUEST).get();
         WebClientServiceRequest serviceRequest = clientRequest.configuration().clientServiceRequest();
         sent.complete(serviceRequest);
+        LOGGER.finest(() -> "(client reqID: " + requestId + ") Request sent");
     }
 
     private void sendData(DataChunk data) {
-        LOGGER.finest(() -> "Sending data chunk");
+        LOGGER.finest(() -> "(client reqID: " + requestId + ") Sending data chunk");
         DefaultHttpContent httpContent = new DefaultHttpContent(Unpooled.wrappedBuffer(data.data()));
         channel.writeAndFlush(httpContent)
                 .addListener(future -> {
                     data.release();
                     subscription.request(1);
-                    LOGGER.finest(() -> "Data chunk sent with result: " + future.isSuccess());
+                    LOGGER.finest(() -> "(client reqID: " + requestId + ") Data chunk sent with result: " + future.isSuccess());
                 })
-                .addListener(completeOnFailureListener("Failure when sending a content!"))
+                .addListener(completeOnFailureListener("(client reqID: " + requestId + ") Failure when sending a content!"))
                 .addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
     }
 
