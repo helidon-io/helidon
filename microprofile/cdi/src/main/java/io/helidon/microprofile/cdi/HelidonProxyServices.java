@@ -33,8 +33,6 @@ import org.jboss.weld.serialization.spi.ProxyServices;
 
 class HelidonProxyServices implements ProxyServices {
     private static final Logger LOGGER = Logger.getLogger(HelidonProxyServices.class.getName());
-    private static final String CLIENT_PROXY_SUFFIX = "$$Proxy$_$$_WeldClientProxy";
-    private static final String PROXY_SUFFIX = "$$Proxy$_$$_Weld$Proxy$";
     private static final String WELD_JAVAX_PREFIX = "org.jboss.weldx.";
     private static final String WELD_JAVA_PREFIX = "org.jboss.weld.";
 
@@ -138,43 +136,27 @@ class HelidonProxyServices implements ProxyServices {
         MethodHandles.Lookup lookup;
 
         try {
-            // lookup class name based on full class name (e.g. for inner classes)
+            // lookup class name "guessed" from the class name of the proxy
             String lookupClassName;
-            // lookup class name based on the first class in the name
-            String fallbackLookupClassName;
 
             if (className.contains("$")) {
-                // fallback is the package + first name in the compound proxy class name
-                fallbackLookupClassName = className.substring(0, className.indexOf('$'));
+                // package + first name in the compound proxy class name
+                lookupClassName = className.substring(0, className.indexOf('$'));
             } else {
-                fallbackLookupClassName = className;
+                lookupClassName = className;
             }
 
-            // Let's try to get the actual class of the proxy
-            // the name ends with $$Proxy$_$$_WeldClientProxy or $$Proxy$_$$_Weld$Proxy$
-            if (className.endsWith(CLIENT_PROXY_SUFFIX)) {
-                lookupClassName = className.substring(0, className.length() - CLIENT_PROXY_SUFFIX.length());
-            } else if (className.endsWith(PROXY_SUFFIX)) {
-                lookupClassName = className.substring(0, className.length() - PROXY_SUFFIX.length());
-            } else {
-                lookupClassName = fallbackLookupClassName;
-            }
-
-            // I would like to create a private lookup in the same package as the proxied class, so let's
-
+            // I would like to create a private lookup in the same package as the proxied class, so let's do it
             // first if the producer class and the lookup class name is the same, just use the existing class
             Class<?> lookupClass = lookupClassName.equals(originalClass.getName()) ? originalClass : null;
 
             ClassLoader cl = originalClass.getClassLoader();
 
             if (null == lookupClass) {
-                // try to load the full class name (may contain additional interfaces, so easily invalid)
+                // try to load the full class name
                 lookupClass = tryLoading(cl, lookupClassName);
             }
-            if (null == lookupClass && !lookupClassName.equals(fallbackLookupClassName)) {
-                // fallback to the simple class name until the first $ sign
-                lookupClass = tryLoading(cl, fallbackLookupClassName);
-            }
+
             if (null == lookupClass) {
                 // and if that fails, just use the bean producer class
                 lookupClass = originalClass;
