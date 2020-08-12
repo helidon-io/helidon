@@ -17,10 +17,17 @@
 package io.helidon.microprofile.metrics;
 
 import javax.enterprise.context.RequestScoped;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static io.helidon.microprofile.metrics.MetricsMpServiceTest.getCounter;
 
@@ -36,5 +43,13 @@ public class HelloWorldResource {
     public String message() {
         getCounter("helloCounter").inc();
         return "Hello World";
+    }
+
+    @PUT
+    @Path("withArg")
+    @Produces(MediaType.TEXT_PLAIN)
+    @Consumes(MediaType.TEXT_PLAIN)
+    public String messageWithArg(String input){
+        return "Hello World, " + input;
     }
 }

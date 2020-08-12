@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+# Copyright (c) 2020 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,12 +14,4 @@
 # limitations under the License.
 #
 
-# Application properties. This is the default greeting
-app.greeting=Hello
-
-# Microprofile server properties
-server.port=8080
-server.host=0.0.0.0
-
-# Enable the optional MicroProfile Metrics REST.request metrics
-metrics.rest-request.enabled=true
+io.helidon.microprofile.metrics.tck.MetricsTckCdiExtension
