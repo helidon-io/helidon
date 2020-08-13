@@ -22,6 +22,9 @@ import io.helidon.microprofile.server.Server;
  */
 public class Main {
 
+    private Main() {
+    }
+
     /**
      * Main method.
      *
