@@ -137,29 +137,18 @@ class HelidonProxyServices implements ProxyServices {
 
         try {
             // lookup class name "guessed" from the class name of the proxy
-            String lookupClassName;
+            // proxy name must contain the $ - if it does not, we just use the originalClass as that is safe
+            int index = className.indexOf('$');
 
-            if (className.contains("$")) {
-                // package + first name in the compound proxy class name
-                lookupClassName = className.substring(0, className.indexOf('$'));
-            } else {
-                lookupClassName = className;
-            }
-
-            // I would like to create a private lookup in the same package as the proxied class, so let's do it
-            // first if the producer class and the lookup class name is the same, just use the existing class
-            Class<?> lookupClass = lookupClassName.equals(originalClass.getName()) ? originalClass : null;
-
-            ClassLoader cl = originalClass.getClassLoader();
-
-            if (null == lookupClass) {
-                // try to load the full class name
-                lookupClass = tryLoading(cl, lookupClassName);
-            }
-
-            if (null == lookupClass) {
-                // and if that fails, just use the bean producer class
+            Class<?> lookupClass;
+            if (index < 0) {
+                LOGGER.finest(() -> "Attempt to define a proxy class without a $ in its name. Class name: " + className + ","
+                                      + " original class name: " + originalClass.getName());
                 lookupClass = originalClass;
+            } else {
+                // I would like to create a private lookup in the same package as the proxied class, so let's do it
+                // use the "extracted" lookup class name, if that fails, use the original class
+                lookupClass = tryLoading(originalClass, className.substring(0, className.indexOf('$')));
             }
 
             Module lookupClassModule = lookupClass.getModule();
@@ -178,13 +167,14 @@ class HelidonProxyServices implements ProxyServices {
         return defineClass(lookup, className, classBytes, off, len);
     }
 
-    private Class<?> tryLoading(ClassLoader cl, String className) {
+    private Class<?> tryLoading(Class<?> originalClass, String className) {
         try {
+            ClassLoader cl = originalClass.getClassLoader();
             return cl.loadClass(className);
         } catch (Exception e) {
             LOGGER.log(Level.FINEST, "Attempt to load class " + className + " failed.", e);
+            return originalClass;
         }
-        return null;
     }
 
     private Class<?> defineClass(MethodHandles.Lookup lookup, String className, byte[] classBytes, int off, int len) {
