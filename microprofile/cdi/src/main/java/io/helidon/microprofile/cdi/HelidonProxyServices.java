@@ -143,12 +143,12 @@ class HelidonProxyServices implements ProxyServices {
             Class<?> lookupClass;
             if (index < 0) {
                 LOGGER.finest(() -> "Attempt to define a proxy class without a $ in its name. Class name: " + className + ","
-                                      + " original class name: " + originalClass.getName());
+                        + " original class name: " + originalClass.getName());
                 lookupClass = originalClass;
             } else {
                 // I would like to create a private lookup in the same package as the proxied class, so let's do it
                 // use the "extracted" lookup class name, if that fails, use the original class
-                lookupClass = tryLoading(originalClass, className.substring(0, className.indexOf('$')));
+                lookupClass = tryLoading(originalClass, className.substring(0, index));
             }
 
             Module lookupClassModule = lookupClass.getModule();
@@ -169,8 +169,7 @@ class HelidonProxyServices implements ProxyServices {
 
     private Class<?> tryLoading(Class<?> originalClass, String className) {
         try {
-            ClassLoader cl = originalClass.getClassLoader();
-            return cl.loadClass(className);
+            return originalClass.getClassLoader().loadClass(className);
         } catch (Exception e) {
             LOGGER.log(Level.FINEST, "Attempt to load class " + className + " failed.", e);
             return originalClass;
