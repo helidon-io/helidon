@@ -35,7 +35,7 @@ KeyConfig keyConfig = KeyConfig.keystoreBuilder()
                 //Whether this keystore is also trust store
                 .trustStore()
                 //Keystore location/name
-                .keystore(Resource.create("client.p12"))
+                .keystore(Resource.create("keystore.p12"))
                 //Password to the keystore
                 .keystorePassphrase("password")
                 .build();
@@ -57,17 +57,19 @@ It is also possible to configure TLS via the config file.
 ----
 server:
   tls:
+    #Truststore setup
     trust:
       keystore:
         passphrase: "password"
         trust-store: true
         resource:
-          resource-path: "server.p12"
+          resource-path: "keystore.p12"
+    #Keystore with private key and server certificate
     private-key:
       keystore:
         passphrase: "password"
         resource:
-          resource-path: "server.p12"
+          resource-path: "keystore.p12"
 ----
 Then, in your application code, load the configuration from that file.
 

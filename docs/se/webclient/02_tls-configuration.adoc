@@ -63,13 +63,13 @@ webclient:
         passphrase: "password"
         trust-store: true
         resource:
-          resource-path: "client.p12"
+          resource-path: "keystore.p12"
     #Client part defines access to the keystore with client private key or certificate
     client:
       keystore:
         passphrase: "password"
         resource:
-          resource-path: "client.p12"
+          resource-path: "keystore.p12"
 ----
 Then, in your application code, load the configuration from that file.
 
