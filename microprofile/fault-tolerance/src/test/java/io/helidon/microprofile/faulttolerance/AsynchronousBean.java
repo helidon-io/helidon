@@ -60,7 +60,7 @@ public class AsynchronousBean {
     public Future<String> asyncWithFallback() {
         called = true;
         FaultToleranceTest.printStatus("AsynchronousBean::asyncWithFallback", "failure");
-        throw new RuntimeException("Oops");
+        return CompletableFuture.failedFuture(new RuntimeException("Oops"));
     }
 
     public CompletableFuture<String> onFailure() {
@@ -101,7 +101,7 @@ public class AsynchronousBean {
     public CompletionStage<String> asyncCompletionStageWithFallback() {
         called = true;
         FaultToleranceTest.printStatus("AsynchronousBean::asyncCompletionStageWithFallback", "failure");
-        throw new RuntimeException("Oops");
+        return CompletableFuture.failedFuture(new RuntimeException("Oops"));
     }
 
     /**
