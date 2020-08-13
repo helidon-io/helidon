@@ -18,7 +18,6 @@ package io.helidon.microprofile.faulttolerance;
 import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.Objects;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
@@ -26,6 +25,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
@@ -87,6 +87,8 @@ import static io.helidon.microprofile.faulttolerance.ThrowableMapper.map;
  */
 public class MethodInvoker implements FtSupplier<Object> {
     private static final Logger LOGGER = Logger.getLogger(MethodInvoker.class.getName());
+
+    private static final long AWAIT_FUTURE_MILLIS = 5L;
 
     /**
      * The method being intercepted.
@@ -256,14 +258,14 @@ public class MethodInvoker implements FtSupplier<Object> {
     }
 
     /**
-     * Invokes the FT method.
+     * Invokes a method with one or more FT annotations.
      *
-     * @return Value returned by method.
+     * @return value returned by method.
      */
     @Override
     public Object get() throws Throwable {
-        // Wrap method call with Helidon context and init metrics
-        Supplier<Single<Object>> supplier = () -> {
+        // Wrap method call with Helidon context
+        Supplier<Single<?>> supplier = () -> {
             try {
                 return Contexts.runInContextWithThrow(helidonContext,
                         () -> handler.invoke(toCompletionStageSupplier(context::proceed)));
@@ -272,12 +274,72 @@ public class MethodInvoker implements FtSupplier<Object> {
             }
         };
 
-        /*
-         * Call method preserving request scope if active. This is required for
-         * @Inject and @Context to work properly. Note that it's possible for only
-         * CDI's request scope to be active at this time (e.g. in TCKs).
-         */
-        Supplier<Single<Object>> wrappedSupplier;
+        updateMetricsBefore();
+
+        if (introspector.isAsynchronous()) {
+            // Wrap supplier with request context setup
+            Supplier<Single<?>> wrappedSupplier = requestContextSupplier(supplier);
+
+            // Invoke wrapped supplier on a different thread
+            Single<Single<?>> asyncSingle = Async.create().invoke(wrappedSupplier);
+            CompletableFuture<Single<?>> asyncFuture = asyncSingle.toStage(true).toCompletableFuture();
+
+            // Register handler to process result and map exceptions
+            CompletableFuture<Object> resultFuture = new CompletableFuture<>();
+            asyncFuture.whenComplete((single, throwable) -> {
+                Throwable cause = null;
+                if (throwable != null) {
+                    if (throwable instanceof ExecutionException) {
+                        cause = map(throwable.getCause());
+                    } else {
+                        cause = map(throwable);
+                    }
+                    updateMetricsAfter(cause);
+                    resultFuture.completeExceptionally(cause);
+                } else {
+                    try {
+                        Object result = single.get();
+                        resultFuture.complete(result);
+                    } catch (ExecutionException e) {
+                        cause = map(e.getCause());
+                    } catch (Throwable t) {
+                        cause = map(t);
+                    }
+                    updateMetricsAfter(cause);
+                    if (cause != null) {
+                        resultFuture.completeExceptionally(cause);
+                    }
+                }
+            });
+            return resultFuture;
+        } else {
+            Object result = null;
+            Throwable cause = null;
+            try {
+                // Invoke supplier on same thread
+                CompletableFuture<?> future = supplier.get().toStage(true).toCompletableFuture();
+                result = future.get();
+            } catch (ExecutionException e) {
+                cause = map(e.getCause());
+            } catch (Throwable t) {
+                cause = map(t);
+            }
+            updateMetricsAfter(cause);
+            if (cause != null) {
+                throw cause;
+            }
+            return result;
+        }
+    }
+
+    /**
+     * Wraps a supplier with additional code to preserve request context (if active)
+     * when running in a different thread. This is required for {@code @Inject} and
+     * {@code @Context} to work properly. Note that it is possible for only CDI's
+     * request scope to be active at this time (e.g. in TCKs).
+     */
+    private Supplier<Single<?>> requestContextSupplier(Supplier<Single<?>> supplier) {
+        Supplier<Single<?>> wrappedSupplier;
         if (requestScope != null) {                     // Jersey and CDI
             wrappedSupplier = () -> {
                 try {
@@ -307,48 +369,7 @@ public class MethodInvoker implements FtSupplier<Object> {
         } else {
             wrappedSupplier = supplier;
         }
-
-        // Final supplier that handles metrics and maps exceptions
-        FtSupplier<Object> finalSupplier = () -> {
-            Object result = null;
-            Throwable cause = null;
-            try {
-                // Need to allow completion with no value (null) for void methods
-                CompletableFuture<Object> future = wrappedSupplier.get()
-                        .toStage(true).toCompletableFuture();
-                updateMetricsBefore();
-                result = future.get();
-            } catch (ExecutionException e) {
-                cause = map(e.getCause());
-            } catch (Throwable t) {
-                cause = map(t);
-            }
-            updateMetricsAfter(cause);
-            if (cause != null) {
-                throw cause;
-            }
-            return result;
-        };
-
-        // Special cases for sync and async invocations
-        if (introspector.isAsynchronous()) {
-            if (introspector.isReturnType(CompletionStage.class) || introspector.isReturnType(Future.class)) {
-                CompletableFuture<Object> finalResult = new CompletableFuture<>();
-                Async.create().invoke(() -> {
-                    try {
-                        return finalResult.complete(finalSupplier.get());
-                    } catch (Throwable t) {
-                        return finalResult.completeExceptionally(t);
-                    }
-                });
-                return finalResult;
-            }
-
-            // Oops, something went wrong during validation
-            throw new InternalError("Validation failed, return type must be Future or CompletionStage");
-        } else {
-            return finalSupplier.get();
-        }
+        return wrappedSupplier;
     }
 
     /**
@@ -434,8 +455,7 @@ public class MethodInvoker implements FtSupplier<Object> {
     }
 
     /**
-     * Maps an {@link FtSupplier} to a supplier of {@link CompletionStage}. Avoids
-     * unnecessary wrapping of stages only when method is asynchronous.
+     * Maps an {@link FtSupplier} to a supplier of {@link CompletionStage}.
      *
      * @param supplier The supplier.
      * @return The new supplier.
@@ -449,10 +469,20 @@ public class MethodInvoker implements FtSupplier<Object> {
                 // This is the actual method invocation
                 Object result = supplier.get();
 
-                // Return value without additional wrapping
-                return introspector.isAsynchronous() && result instanceof CompletionStage<?>
-                        ? (CompletionStage<Object>) result
-                        : CompletableFuture.completedFuture(result);
+                if (introspector.isAsynchronous()) {
+                    if (result instanceof CompletionStage<?>) {         // true also for CompletableFuture<?>
+                        return (CompletionStage<Object>) result;
+                    } else if (result instanceof Future<?>) {
+                        Future<Object> future = (Future<Object>) result;
+                        CompletableFuture<Object> completableFuture = new CompletableFuture<>();
+                        awaitFuture(future, completableFuture);
+                        return completableFuture;
+                    } else {
+                        throw new IllegalStateException("Return type not allowed in async method " + method);
+                    }
+                } else {
+                    return CompletableFuture.completedFuture(result);
+                }
             } catch (Throwable e) {
                 return CompletableFuture.failedFuture(e);
             }
@@ -591,5 +621,32 @@ public class MethodInvoker implements FtSupplier<Object> {
             return true;
         }
         return false;
+    }
+
+    /**
+     * Waits for a Future to produce an outcome and updates a CompletableFuture based on
+     * it. Effectively converts a Future into a CompletableFuture.
+     *
+     * @param future the future.
+     * @param completableFuture the completable future.
+     */
+    private static void awaitFuture(Future<Object> future, CompletableFuture<Object> completableFuture) {
+        System.out.println("Awaiting on future " + future);
+        if (future.isDone()) {
+            try {
+                completableFuture.complete(future.get());
+            } catch (InterruptedException e) {
+                completableFuture.completeExceptionally(e);
+            } catch (ExecutionException e) {
+                completableFuture.completeExceptionally(e.getCause());
+            }
+            return;
+        }
+        if (future.isCancelled()) {
+            completableFuture.cancel(true);
+        } else {
+            EXECUTOR_SERVICE.schedule(() -> awaitFuture(future, completableFuture),
+                    AWAIT_FUTURE_MILLIS, TimeUnit.MILLISECONDS);
+        }
     }
 }
