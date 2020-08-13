@@ -79,13 +79,16 @@ import static org.jboss.weld.util.reflection.Reflections.cast;
 
 /*
  * This class is copied from Weld sources.
- * The only modified method is createCompoundProxyName.
+ * Modified methods:
+ *     - getProxyName
+ *     - createCompoundProxyName
+ *
  * Why?
  * In original Weld, the name is generated with bean identifier that is based on identity hashCode - and that is OK as
  * long as you run in a single JVM (which is the case with hotspot).
  * When running in native image, we go through the process of generating proxies at build time (in GraalVM when building the
  * native image) and then running them from the native image.
- * As these are two separate instances of JVM, we get different identity has codes, and as a result different class names
+ * As these are two separate instances of JVM, we get different identity hash codes, and as a result different class names
  * at compile time and at runtime. The Helidon change ensures these names are equal and we can reuse the generated proxy
  * classes.
  *
@@ -271,8 +274,14 @@ public class ProxyFactory<T> implements PrivilegedAction<T> {
 
         if (typeInfo.getSuperClass() == Object.class) {
             final StringBuilder name = new StringBuilder();
-            //interface only bean.
-            className = createCompoundProxyName(contextId, bean, typeInfo, name) + PROXY_SUFFIX;
+
+            // for classes that do not have an enclosing class, we want the super interface to be first
+            if (proxiedBeanType.getEnclosingClass() == null) {
+                return createProxyName(typeInfo) + PROXY_SUFFIX;
+            } else {
+                //interface only bean.
+                className = createCompoundProxyName(contextId, bean, typeInfo, name) + PROXY_SUFFIX;
+            }
         } else {
             boolean typeModified = false;
             for (Class<?> iface : typeInfo.getInterfaces()) {
@@ -308,6 +317,33 @@ public class ProxyFactory<T> implements PrivilegedAction<T> {
 
     /*
      * Helidon modification
+     *
+     * This is used when there is no enclosing type and we may have multiple interfaces
+     * This method ensures the superinterface is the base of the name
+     */
+    private static String createProxyName(TypeInfo typeInfo) {
+        Class<?> superInterface = typeInfo.getSuperInterface();
+        StringBuilder name = new StringBuilder();
+        List<String> interfaces = new ArrayList<String>();
+        for (Class<?> type : typeInfo.getInterfaces()) {
+            if (!type.equals(superInterface)) {
+                interfaces.add(uniqueName(type));
+            }
+        }
+
+        Collections.sort(interfaces);
+        for (final String iface : interfaces) {
+            name.append(iface);
+            name.append('$');
+        }
+
+        return superInterface.getName() + '$' + name;
+    }
+
+    /*
+     * Helidon modification
+     *
+     * Compound name is used when more than one interface needs to be proxied.
      */
     private static String createCompoundProxyName(String contextId, Bean<?> bean, TypeInfo typeInfo, StringBuilder name) {
         final List<String> interfaces = new ArrayList<String>();

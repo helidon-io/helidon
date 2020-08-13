@@ -14,14 +14,23 @@
  * limitations under the License.
  */
 
-/**
- * Helidon Bookstore test app common code
- */
-module io.helidon.tests.apps.bookstore.common {
+package io.helidon.tests.integration.nativeimage.mp1.other;
 
-    requires jakarta.enterprise.cdi.api;
+public final class BeanProcessor {
 
-    opens io.helidon.tests.apps.bookstore.common to weld.core.impl, io.helidon.microprofile.cdi;
+    public static String getProducedName(ProducedBean bean) {
+        Class<?> sampleClass = ProducedBean.class;
+        Class<?> proxyClass = bean.getClass();
 
-    exports io.helidon.tests.apps.bookstore.common;
+        Package samplePackage = sampleClass.getPackage();
+        Package proxyPackage = proxyClass.getPackage();
+
+        System.out.println(samplePackage);
+        System.out.println(proxyPackage);
+        System.out.println("Equals: " + samplePackage.equals(proxyPackage));
+
+        String name = bean.getName();
+        return name;
+    }
+
 }
