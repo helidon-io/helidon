@@ -42,5 +42,6 @@
         <module>websocket</module>
         <module>messaging-sse</module>
         <module>cors</module>
+        <module>tls</module>
     </modules>
 </project>
