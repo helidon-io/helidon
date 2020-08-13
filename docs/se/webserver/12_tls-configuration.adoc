@@ -27,7 +27,7 @@ Configure the TLS either programmatically, or by the Helidon configuration frame
 
 == Configuring the TLS in your code
 
-The easiest way to configure the TLS in WebServer is in your application code.
+The one to configure the TLS in WebServer is in your application code.
 
 [source,java]
 ----
@@ -79,7 +79,7 @@ Then, in your application code, load the configuration from that file.
 Config config = Config.create();
 WebServer webClient = WebServer.create(routing, config.get("server"));
 ----
-Or you can only create WebServerTls instance base on the config file.
+Or you can only create WebServerTls instance based on the config file.
 
 [source,java]
 .WebServerTls instance based on `application.yaml` file located on the classpath

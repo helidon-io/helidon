@@ -27,7 +27,7 @@ Configure the TLS either programmatically, or by the Helidon configuration frame
 
 == Configuring the TLS in your code
 
-The easiest way to configure the TLS in WebClient is in your application code.
+The one way to configure the TLS in WebClient is in your application code.
 
 [source,java]
 ----
@@ -79,7 +79,7 @@ Then, in your application code, load the configuration from that file.
 Config config = Config.create();
 WebClient webClient = WebClient.create(config.get("webclient"));
 ----
-Or you can only create WebClientTls instance base on the config file.
+Or you can only create WebClientTls instance based on the config file.
 
 [source,java]
 .WebClientTls instance based on `application.yaml` file located on the classpath
