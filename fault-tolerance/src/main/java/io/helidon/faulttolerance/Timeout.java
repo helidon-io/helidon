@@ -53,7 +53,7 @@ public interface Timeout extends FtHandler {
     class Builder implements io.helidon.common.Builder<Timeout> {
         private Duration timeout = Duration.ofSeconds(10);
         private LazyValue<? extends ScheduledExecutorService> executor = FaultTolerance.scheduledExecutor();
-        private boolean async = true;
+        private boolean currentThread = false;
         private Consumer<Thread> listener;
 
         private Builder() {
@@ -76,13 +76,14 @@ public interface Timeout extends FtHandler {
         }
 
         /**
-         * Async flag. If async, code will execute in another thread. Default is {@code true}.
+         * Flag to indicate that code should be executed in current thread instead
+         * of in an executor's thread for ease of monitoring.
          *
-         * @param async async setting for this timeout;
+         * @param currentThread setting for this timeout
          * @return updated builder instance
          */
-        public Builder async(boolean async) {
-            this.async = async;
+        public Builder currentThread(boolean currentThread) {
+            this.currentThread = currentThread;
             return this;
         }
 
@@ -116,8 +117,8 @@ public interface Timeout extends FtHandler {
             return executor;
         }
 
-        boolean async() {
-            return async;
+        boolean currentThread() {
+            return currentThread;
         }
 
         Consumer<Thread> interruptListener() {

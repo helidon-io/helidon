@@ -411,7 +411,7 @@ public class MethodInvoker implements FtSupplier<Object> {
         if (introspector.hasTimeout()) {
             Timeout timeout = Timeout.builder()
                     .timeout(Duration.of(introspector.getTimeout().value(), introspector.getTimeout().unit()))
-                    .async(false)   // no async here
+                    .currentThread(true)
                     .executor(EXECUTOR_SERVICE)
                     .build();
             builder.addTimeout(timeout);
@@ -631,7 +631,6 @@ public class MethodInvoker implements FtSupplier<Object> {
      * @param completableFuture the completable future.
      */
     private static void awaitFuture(Future<Object> future, CompletableFuture<Object> completableFuture) {
-        System.out.println("Awaiting on future " + future);
         if (future.isDone()) {
             try {
                 completableFuture.complete(future.get());

@@ -36,20 +36,20 @@ class TimeoutImpl implements Timeout {
 
     private final long timeoutMillis;
     private final LazyValue<? extends ScheduledExecutorService> executor;
-    private final boolean async;
+    private final boolean currentThread;
     private final Consumer<Thread> interruptListener;
 
     TimeoutImpl(Timeout.Builder builder) {
         this.timeoutMillis = builder.timeout().toMillis();
         this.executor = builder.executor();
-        this.async = builder.async();
+        this.currentThread = builder.currentThread();
         this.interruptListener = builder.interruptListener();
     }
 
     @Override
     public <T> Multi<T> invokeMulti(Supplier<? extends Flow.Publisher<T>> supplier) {
-        if (!async) {
-            throw new UnsupportedOperationException("Timeout with Publisher<T> must be async");
+        if (currentThread) {
+            throw new UnsupportedOperationException("Unsupported currentThread flag with Multi");
         }
         return Multi.create(supplier.get())
                 .timeout(timeoutMillis, TimeUnit.MILLISECONDS, executor.get());
@@ -57,11 +57,11 @@ class TimeoutImpl implements Timeout {
 
     @Override
     public <T> Single<T> invoke(Supplier<? extends CompletionStage<T>> supplier) {
-        if (async) {
+        if (!currentThread) {
             return Single.create(supplier.get(), true)
                     .timeout(timeoutMillis, TimeUnit.MILLISECONDS, executor.get());
         } else {
-            Thread currentThread = Thread.currentThread();
+            Thread thisThread = Thread.currentThread();
             CompletableFuture<Void> monitorStarted = new CompletableFuture<>();
             AtomicBoolean callReturned = new AtomicBoolean(false);
 
@@ -69,7 +69,7 @@ class TimeoutImpl implements Timeout {
             CompletableFuture<T> future = new CompletableFuture<>();
             Timeout.builder()
                     .executor(executor.get())       // propagate executor
-                    .async(true)
+                    .currentThread(false)
                     .timeout(Duration.ofMillis(timeoutMillis))
                     .build()
                     .invoke(() -> {
@@ -78,11 +78,10 @@ class TimeoutImpl implements Timeout {
                     })
                     .exceptionally(it -> {
                         if (callReturned.compareAndSet(false, true)) {
-                            System.out.println("### completing future on timeout");
                             future.completeExceptionally(new TimeoutException("Method interrupted by timeout"));
-                            currentThread.interrupt();
+                            thisThread.interrupt();
                             if (interruptListener != null) {
-                                interruptListener.accept(currentThread);
+                                interruptListener.accept(thisThread);
                             }
                         }
                         return null;
