@@ -15,12 +15,10 @@
  */
 package io.helidon.microprofile.faulttolerance;
 
-import javax.enterprise.context.control.RequestContextController;
-import javax.enterprise.inject.spi.CDI;
-import javax.interceptor.InvocationContext;
 import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.Objects;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
@@ -31,6 +29,10 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
+
+import javax.enterprise.context.control.RequestContextController;
+import javax.enterprise.inject.spi.CDI;
+import javax.interceptor.InvocationContext;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
@@ -45,9 +47,9 @@ import io.helidon.faulttolerance.FtHandlerTyped;
 import io.helidon.faulttolerance.Retry;
 import io.helidon.faulttolerance.Timeout;
 
-import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.faulttolerance.exceptions.CircuitBreakerOpenException;
 import org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException;
+import org.eclipse.microprofile.metrics.Counter;
 import org.glassfish.jersey.process.internal.RequestContext;
 import org.glassfish.jersey.process.internal.RequestScope;
 
@@ -148,7 +150,7 @@ public class MethodInvoker implements FtSupplier<Object> {
     private RequestContextController requestController;
 
     private static class MethodState {
-        FtHandlerTyped<Object> handler;
+        private FtHandlerTyped<Object> handler;
         private Retry retry;
         private Bulkhead bulkhead;
         private CircuitBreaker breaker;
@@ -268,12 +270,8 @@ public class MethodInvoker implements FtSupplier<Object> {
         updateMetricsBefore();
 
         if (introspector.isAsynchronous()) {
-            // Wrap supplier with request context setup
-            Supplier<Single<?>> wrappedSupplier = requestContextSupplier(supplier);
-
-            CompletableFuture<?> asyncFuture = wrappedSupplier.get().toStage(true).toCompletableFuture();
-
-            // Register handler to process result and map exceptions
+            CompletableFuture<?> asyncFuture = supplier.get()
+                    .toStage(true).toCompletableFuture();
             CompletableFuture<Object> resultFuture = new CompletableFuture<>();
             asyncFuture.whenComplete((result, throwable) -> {
                 if (throwable != null) {
@@ -295,8 +293,8 @@ public class MethodInvoker implements FtSupplier<Object> {
             Object result = null;
             Throwable cause = null;
             try {
-                // Invoke supplier on same thread
-                CompletableFuture<?> future = supplier.get().toStage(true).toCompletableFuture();
+                CompletableFuture<?> future = supplier.get()
+                        .toStage(true).toCompletableFuture();
                 result = future.get();
             } catch (ExecutionException e) {
                 cause = map(e.getCause());
@@ -317,30 +315,25 @@ public class MethodInvoker implements FtSupplier<Object> {
      * {@code @Context} to work properly. Note that it is possible for only CDI's
      * request scope to be active at this time (e.g. in TCKs).
      */
-    private Supplier<Single<?>> requestContextSupplier(Supplier<Single<?>> supplier) {
-        Supplier<Single<?>> wrappedSupplier;
+    private FtSupplier<Object> requestContextSupplier(FtSupplier<Object> supplier) {
+        FtSupplier<Object> wrappedSupplier;
         if (requestScope != null) {                     // Jersey and CDI
-            wrappedSupplier = () -> {
-                try {
-                    return requestScope.runInScope(requestContext, (() -> {
+            wrappedSupplier = () -> requestScope.runInScope(requestContext,
+                    (Callable<?>) (() -> {
                         try {
                             requestController.activate();
                             return supplier.get();
+                        } catch (Throwable t) {
+                            throw t instanceof Exception ? ((Exception) t) : new RuntimeException(t);
                         } finally {
                             requestController.deactivate();
                         }
                     }));
-                } catch (Exception e) {
-                    return Single.error(e);
-                }
-            };
         } else if (requestController != null) {         // CDI only
             wrappedSupplier = () -> {
                 try {
                     requestController.activate();
                     return supplier.get();
-                } catch (Exception e) {
-                    return Single.error(e);
                 } finally {
                     requestController.deactivate();
                 }
@@ -442,10 +435,13 @@ public class MethodInvoker implements FtSupplier<Object> {
 
             CompletableFuture<Object> resultFuture = new CompletableFuture<>();
             if (introspector.isAsynchronous()) {
+                // Wrap supplier with request context setup
+                FtSupplier wrappedSupplier = requestContextSupplier(supplier);
+
                 // Invoke supplier in a new thread
                 Single<Object> single = Async.create().invoke(() -> {
                     try {
-                        return supplier.get();      // Future<?>, CompletableFuture<?> or CompletionStage<?>
+                        return wrappedSupplier.get();      // Future<?>, CompletableFuture<?> or CompletionStage<?>
                     } catch (Throwable t) {
                         return CompletableFuture.failedFuture(t);
                     }
