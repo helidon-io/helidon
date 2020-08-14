@@ -11,6 +11,10 @@ For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.co
 
 ### Changes
 
+- WebServer: to enable netty log handler output, please use logger `io.helidon.webserver.NettyWebServer$NettyLog` and set it to `FINEST` level
+- WebClient: to enable netty log handler output, please use logger `io.helidon.webclient.NettyClientInitializer$ClientNettyLog` and set it to `FINEST` level
+ 
+
 ## [2.0.1]
 
 2.0.1 is a minor bug fix release to Helidon 2.0.0. This release fixes a
