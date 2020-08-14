@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.integrations.cdi</groupId>
         <artifactId>helidon-integrations-cdi-common-project</artifactId>
-        <version>1.4.7-SNAPSHOT</version>
+        <version>1.4.7</version>
     </parent>
     <artifactId>helidon-integrations-cdi-delegates</artifactId>
     <name>Helidon CDI Integrations Common Delegates</name>

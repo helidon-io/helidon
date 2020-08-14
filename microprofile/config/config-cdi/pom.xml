@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.microprofile.config</groupId>
         <artifactId>helidon-microprofile-config-project</artifactId>
-        <version>1.4.7-SNAPSHOT</version>
+        <version>1.4.7</version>
     </parent>
     <artifactId>helidon-microprofile-config-cdi</artifactId>
     <name>Helidon Microprofile Config CDI</name>

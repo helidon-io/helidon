@@ -26,7 +26,7 @@
     <parent>
         <artifactId>helidon-project</artifactId>
         <groupId>io.helidon</groupId>
-        <version>1.4.7-SNAPSHOT</version>
+        <version>1.4.7</version>
     </parent>
 
     <groupId>io.helidon.grpc</groupId>

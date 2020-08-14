@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.security.providers</groupId>
         <artifactId>helidon-security-providers-project</artifactId>
-        <version>1.4.7-SNAPSHOT</version>
+        <version>1.4.7</version>
     </parent>
     <artifactId>helidon-security-providers-common</artifactId>
     <name>Helidon Security Providers Common</name>

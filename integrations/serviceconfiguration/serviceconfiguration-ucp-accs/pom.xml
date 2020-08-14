@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.serviceconfiguration</groupId>
         <artifactId>helidon-serviceconfiguration-project</artifactId>
-        <version>1.4.7-SNAPSHOT</version>
+        <version>1.4.7</version>
     </parent>
     <artifactId>helidon-serviceconfiguration-ucp-accs</artifactId>
     <name>Helidon ServiceConfiguration UCP ACCS</name>
