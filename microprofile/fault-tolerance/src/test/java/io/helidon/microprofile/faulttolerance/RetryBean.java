@@ -72,12 +72,15 @@ public class RetryBean {
     @Asynchronous
     @Retry(maxRetries = 2)
     public Future<String> retryAsync() {
+        CompletableFuture<String> future = new CompletableFuture<>();
         if (invocations.incrementAndGet() <= 2) {
             printStatus("RetryBean::retryAsync()", "failure");
-            throw new RuntimeException("Oops");
+            future.completeExceptionally(new RuntimeException("Oops"));
+        } else {
+            printStatus("RetryBean::retryAsync()", "success");
+            future.complete("success");
         }
-        printStatus("RetryBean::retryAsync()", "success");
-        return CompletableFuture.completedFuture("success");
+        return future;
     }
 
     @Retry(maxRetries = 4, delay = 100L, jitter = 50L)
@@ -111,13 +114,13 @@ public class RetryBean {
     @Asynchronous
     @Retry(maxRetries = 2)
     public CompletionStage<String> retryWithUltimateSuccess() {
-        if (invocations.incrementAndGet() < 3) {
-        // fails twice
-            throw new RuntimeException("Simulated error");
-        }
-
         CompletableFuture<String> future = new CompletableFuture<>();
-        future.complete("Success");
+        if (invocations.incrementAndGet() < 3) {
+            // fails twice
+            future.completeExceptionally(new RuntimeException("Simulated error"));
+        } else {
+            future.complete("Success");
+        }
         return future;
     }
 }
