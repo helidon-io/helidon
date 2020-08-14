@@ -15,6 +15,9 @@
  */
 package io.helidon.microprofile.faulttolerance;
 
+import javax.enterprise.context.control.RequestContextController;
+import javax.enterprise.inject.spi.CDI;
+import javax.interceptor.InvocationContext;
 import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.Objects;
@@ -29,10 +32,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
-import javax.enterprise.context.control.RequestContextController;
-import javax.enterprise.inject.spi.CDI;
-import javax.interceptor.InvocationContext;
-
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.reactive.Single;
@@ -46,9 +45,9 @@ import io.helidon.faulttolerance.FtHandlerTyped;
 import io.helidon.faulttolerance.Retry;
 import io.helidon.faulttolerance.Timeout;
 
+import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.faulttolerance.exceptions.CircuitBreakerOpenException;
 import org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException;
-import org.eclipse.microprofile.metrics.Counter;
 import org.glassfish.jersey.process.internal.RequestContext;
 import org.glassfish.jersey.process.internal.RequestScope;
 
@@ -88,6 +87,9 @@ import static io.helidon.microprofile.faulttolerance.ThrowableMapper.map;
 public class MethodInvoker implements FtSupplier<Object> {
     private static final Logger LOGGER = Logger.getLogger(MethodInvoker.class.getName());
 
+    /**
+     * Waiting millis to convert {@code Future} into {@code CompletableFuture}.
+     */
     private static final long AWAIT_FUTURE_MILLIS = 5L;
 
     /**
@@ -146,6 +148,8 @@ public class MethodInvoker implements FtSupplier<Object> {
     private RequestContextController requestController;
 
     private static class MethodState {
+        FtHandlerTyped<Object> handler;
+        private Retry retry;
         private Bulkhead bulkhead;
         private CircuitBreaker breaker;
         private State lastBreakerState;
@@ -156,21 +160,10 @@ public class MethodInvoker implements FtSupplier<Object> {
     }
 
     /**
-     * State associated with a method instead of an invocation. Includes bulkhead
-     * and breaker handlers that are shared across all invocations of same method.
+     * State associated with a method instead of an invocation. Shared by all
+     * invocations of same method.
      */
     private final MethodState methodState;
-
-    /**
-     * The handler for this invocation. Will share bulkhead an breaker
-     * sub-handlers across all invocations for the same method.
-     */
-    private FtHandlerTyped<Object> handler;
-
-    /**
-     * Handler for retries. Will be {@code null} if no retry specified in method.
-     */
-    private Retry retry;
 
     /**
      * Constructor.
@@ -184,21 +177,19 @@ public class MethodInvoker implements FtSupplier<Object> {
         this.method = context.getMethod();
         this.helidonContext = Contexts.context().orElseGet(Context::create);
 
-        // Initialize method state and created handler for it
-        synchronized (method) {
-            this.methodState = FT_HANDLERS.computeIfAbsent(method, method -> {
-                MethodState methodState = new MethodState();
-                methodState.lastBreakerState = State.CLOSED;
-                if (introspector.hasCircuitBreaker()) {
-                    methodState.breakerTimerOpen = 0L;
-                    methodState.breakerTimerClosed = 0L;
-                    methodState.breakerTimerHalfOpen = 0L;
-                    methodState.startNanos = System.nanoTime();
-                }
-                return methodState;
-            });
-            handler = createMethodHandler();
-        }
+        // Initialize method state and create handler for it
+        this.methodState = FT_HANDLERS.computeIfAbsent(method, method -> {
+            MethodState methodState = new MethodState();
+            methodState.lastBreakerState = State.CLOSED;
+            if (introspector.hasCircuitBreaker()) {
+                methodState.breakerTimerOpen = 0L;
+                methodState.breakerTimerClosed = 0L;
+                methodState.breakerTimerHalfOpen = 0L;
+                methodState.startNanos = System.nanoTime();
+            }
+            methodState.handler = createMethodHandler(methodState);
+            return methodState;
+        });
 
         // Gather information about current request scope if active
         try {
@@ -268,7 +259,7 @@ public class MethodInvoker implements FtSupplier<Object> {
         Supplier<Single<?>> supplier = () -> {
             try {
                 return Contexts.runInContextWithThrow(helidonContext,
-                        () -> handler.invoke(toCompletionStageSupplier(context::proceed)));
+                        () -> methodState.handler.invoke(toCompletionStageSupplier(context::proceed)));
             } catch (Exception e) {
                 return Single.error(e);
             }
@@ -280,15 +271,13 @@ public class MethodInvoker implements FtSupplier<Object> {
             // Wrap supplier with request context setup
             Supplier<Single<?>> wrappedSupplier = requestContextSupplier(supplier);
 
-            // Invoke wrapped supplier on a different thread
-            Single<Single<?>> asyncSingle = Async.create().invoke(wrappedSupplier);
-            CompletableFuture<Single<?>> asyncFuture = asyncSingle.toStage(true).toCompletableFuture();
+            CompletableFuture<?> asyncFuture = wrappedSupplier.get().toStage(true).toCompletableFuture();
 
             // Register handler to process result and map exceptions
             CompletableFuture<Object> resultFuture = new CompletableFuture<>();
-            asyncFuture.whenComplete((single, throwable) -> {
-                Throwable cause = null;
+            asyncFuture.whenComplete((result, throwable) -> {
                 if (throwable != null) {
+                    Throwable cause;
                     if (throwable instanceof ExecutionException) {
                         cause = map(throwable.getCause());
                     } else {
@@ -297,18 +286,8 @@ public class MethodInvoker implements FtSupplier<Object> {
                     updateMetricsAfter(cause);
                     resultFuture.completeExceptionally(cause);
                 } else {
-                    try {
-                        Object result = single.get();
-                        resultFuture.complete(result);
-                    } catch (ExecutionException e) {
-                        cause = map(e.getCause());
-                    } catch (Throwable t) {
-                        cause = map(t);
-                    }
-                    updateMetricsAfter(cause);
-                    if (cause != null) {
-                        resultFuture.completeExceptionally(cause);
-                    }
+                    updateMetricsAfter(null);
+                    resultFuture.complete(result);
                 }
             });
             return resultFuture;
@@ -373,37 +352,35 @@ public class MethodInvoker implements FtSupplier<Object> {
     }
 
     /**
-     * Creates a FT handler for an invocation by inspecting annotations. Circuit breakers
-     * and bulkheads are shared across all invocations --associated with methods.
+     * Creates a FT handler for an invocation by inspecting annotations.
+     *
+     * @param methodState State related to this invocation's method.
      */
-    private FtHandlerTyped<Object> createMethodHandler() {
+    private FtHandlerTyped<Object> createMethodHandler(MethodState methodState) {
         FaultTolerance.TypedBuilder<Object> builder = FaultTolerance.typedBuilder();
 
         // Create and add circuit breaker
         if (introspector.hasCircuitBreaker()) {
-            if (methodState.breaker == null) {
-                methodState.breaker = CircuitBreaker.builder()
-                                .delay(Duration.of(introspector.getCircuitBreaker().delay(),
-                                        introspector.getCircuitBreaker().delayUnit()))
-                                .successThreshold(introspector.getCircuitBreaker().successThreshold())
-                                .errorRatio((int) (introspector.getCircuitBreaker().failureRatio() * 100))
-                                .volume(introspector.getCircuitBreaker().requestVolumeThreshold())
-                                .applyOn(introspector.getCircuitBreaker().failOn())
-                                .skipOn(introspector.getCircuitBreaker().skipOn())
-                                .build();
-            }
+            methodState.breaker = CircuitBreaker.builder()
+                    .delay(Duration.of(introspector.getCircuitBreaker().delay(),
+                            introspector.getCircuitBreaker().delayUnit()))
+                    .successThreshold(introspector.getCircuitBreaker().successThreshold())
+                    .errorRatio((int) (introspector.getCircuitBreaker().failureRatio() * 100))
+                    .volume(introspector.getCircuitBreaker().requestVolumeThreshold())
+                    .applyOn(introspector.getCircuitBreaker().failOn())
+                    .skipOn(introspector.getCircuitBreaker().skipOn())
+                    .build();
             builder.addBreaker(methodState.breaker);
         }
 
         // Create and add bulkhead
         if (introspector.hasBulkhead()) {
-            if (methodState.bulkhead == null) {
-                methodState.bulkhead = Bulkhead.builder()
-                                .limit(introspector.getBulkhead().value())
-                                .queueLength(introspector.getBulkhead().waitingTaskQueue())
-                                .async(introspector.isAsynchronous())
-                                .build();
-            }
+            methodState.bulkhead = Bulkhead.builder()
+                    .limit(introspector.getBulkhead().value())
+                    .queueLength(introspector.getBulkhead().waitingTaskQueue())
+                    .async(introspector.isAsynchronous())
+                    .build();
+
             builder.addBulkhead(methodState.bulkhead);
         }
 
@@ -411,7 +388,7 @@ public class MethodInvoker implements FtSupplier<Object> {
         if (introspector.hasTimeout()) {
             Timeout timeout = Timeout.builder()
                     .timeout(Duration.of(introspector.getTimeout().value(), introspector.getTimeout().unit()))
-                    .currentThread(true)
+                    .currentThread(!introspector.isAsynchronous())
                     .executor(EXECUTOR_SERVICE)
                     .build();
             builder.addTimeout(timeout);
@@ -433,7 +410,7 @@ public class MethodInvoker implements FtSupplier<Object> {
                     .skipOn(introspector.getRetry().abortOn())
                     .build();
             builder.addRetry(retry);
-            this.retry = retry;
+            methodState.retry = retry;      // keep reference to Retry
         }
 
         // Create and add fallback handler -- parent of retry
@@ -449,9 +426,7 @@ public class MethodInvoker implements FtSupplier<Object> {
             builder.addFallback(fallback);
         }
 
-        FtHandlerTyped<Object> result = builder.build();
-        System.out.println("\n### tree \n" + result);
-        return result;
+        return builder.build();
     }
 
     /**
@@ -463,29 +438,53 @@ public class MethodInvoker implements FtSupplier<Object> {
     @SuppressWarnings("unchecked")
     Supplier<? extends CompletionStage<Object>> toCompletionStageSupplier(FtSupplier<Object> supplier) {
         return () -> {
-            try {
-                invocationStartNanos = System.nanoTime();
+            invocationStartNanos = System.nanoTime();
 
-                // This is the actual method invocation
-                Object result = supplier.get();
-
-                if (introspector.isAsynchronous()) {
-                    if (result instanceof CompletionStage<?>) {         // true also for CompletableFuture<?>
-                        return (CompletionStage<Object>) result;
-                    } else if (result instanceof Future<?>) {
-                        Future<Object> future = (Future<Object>) result;
-                        CompletableFuture<Object> completableFuture = new CompletableFuture<>();
-                        awaitFuture(future, completableFuture);
-                        return completableFuture;
-                    } else {
-                        throw new IllegalStateException("Return type not allowed in async method " + method);
+            CompletableFuture<Object> resultFuture = new CompletableFuture<>();
+            if (introspector.isAsynchronous()) {
+                // Invoke supplier in a new thread
+                Single<Object> single = Async.create().invoke(() -> {
+                    try {
+                        return supplier.get();      // Future<?>, CompletableFuture<?> or CompletionStage<?>
+                    } catch (Throwable t) {
+                        return CompletableFuture.failedFuture(t);
                     }
-                } else {
-                    return CompletableFuture.completedFuture(result);
+                });
+
+                // The result must be Future<?>, CompletableFuture<?> or CompletionStage<?>
+                single.whenComplete((result, throwable) -> {
+                    if (throwable != null) {
+                        resultFuture.completeExceptionally(throwable);
+                    } else {
+                        try {
+                            if (result instanceof CompletionStage<?>) {     // also CompletableFuture<?>
+                                CompletionStage<Object> cs = (CompletionStage<Object>) result;
+                                cs.whenComplete((o, t) -> {
+                                    if (t != null) {
+                                        resultFuture.completeExceptionally(t);
+                                    } else {
+                                        resultFuture.complete(o);
+                                    }
+                                });
+                            } else if (result instanceof Future<?>){
+                                awaitFuture((Future<Object>) result, resultFuture);
+                            } else {
+                                throw new InternalError("Return type validation failed for method " + method);
+                            }
+                        } catch (Throwable t) {
+                            resultFuture.completeExceptionally(t);
+                        }
+                    }
+                });
+            } else {
+                try {
+                    resultFuture.complete(supplier.get());
+                    return resultFuture;
+                } catch (Throwable t) {
+                    resultFuture.completeExceptionally(t);
                 }
-            } catch (Throwable e) {
-                return CompletableFuture.failedFuture(e);
             }
+            return resultFuture;
         };
     }
 
@@ -513,7 +512,7 @@ public class MethodInvoker implements FtSupplier<Object> {
             // Metrics for retries
             if (introspector.hasRetry()) {
                 // Have retried the last call?
-                long newValue = retry.retryCounter();
+                long newValue = methodState.retry.retryCounter();
                 if (updateCounter(method, RETRY_RETRIES_TOTAL, newValue)) {
                     if (cause == null) {
                         getCounter(method, RETRY_CALLS_SUCCEEDED_RETRIED_TOTAL).inc();
@@ -608,9 +607,9 @@ public class MethodInvoker implements FtSupplier<Object> {
     /**
      * Sets the value of a monotonically increasing counter using {@code inc()}.
      *
-     * @param method the method.
-     * @param name the counter's name.
-     * @param newValue the new value.
+     * @param method The method.
+     * @param name The counter's name.
+     * @param newValue The new value.
      * @return A value of {@code true} if counter updated, {@code false} otherwise.
      */
     private static boolean updateCounter(Method method, String name, long newValue) {
@@ -627,8 +626,8 @@ public class MethodInvoker implements FtSupplier<Object> {
      * Waits for a Future to produce an outcome and updates a CompletableFuture based on
      * it. Effectively converts a Future into a CompletableFuture.
      *
-     * @param future the future.
-     * @param completableFuture the completable future.
+     * @param future The future.
+     * @param completableFuture The completable future.
      */
     private static void awaitFuture(Future<Object> future, CompletableFuture<Object> completableFuture) {
         if (future.isDone()) {
