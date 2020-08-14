@@ -34,6 +34,7 @@ import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpUtil;
@@ -211,7 +212,13 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
         FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, BAD_REQUEST, Unpooled.wrappedBuffer(entity));
         response.headers().add(HttpHeaderNames.CONTENT_TYPE, "text/plain");
         response.headers().add(HttpHeaderNames.CONTENT_LENGTH, entity.length);
-        ctx.write(response);
+        response.headers().add(HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE);
+
+        ctx.write(response)
+            .addListener(future -> {
+                ctx.flush();
+                ctx.close();
+            });
     }
 
     @Override
@@ -225,7 +232,8 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
     private static void checkDecoderResult(HttpRequest request) {
         DecoderResult decoderResult = request.decoderResult();
         if (decoderResult.isFailure()) {
-            LOGGER.info(String.format("Request %s to %s rejected: %s", request.method()
+            // changed from info to fine, as this may be a vector of attack
+            LOGGER.fine(String.format("Request %s to %s rejected: %s", request.method()
                     .asciiName(), request.uri(), decoderResult.cause().getMessage()));
             throw new BadRequestException(String.format("Request was rejected: %s", decoderResult.cause().getMessage()),
                                           decoderResult.cause());

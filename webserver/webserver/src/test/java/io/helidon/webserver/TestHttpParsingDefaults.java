@@ -78,6 +78,7 @@ class TestHttpParsingDefaults {
     @Test
     void testLongHeader() {
         testHeader(target, 8900, false);
+        testHeader(target, 8900, false);
     }
 
     @Test
@@ -89,6 +90,7 @@ class TestHttpParsingDefaults {
     void testLongInitialLine() {
         // now test with big initial line
         testInitialLine(target, 5000, false);
+        testInitialLine(target, 5000, false);
     }
 
     @Test
@@ -98,6 +100,7 @@ class TestHttpParsingDefaults {
 
     @Test
     void testBadHeaderName() {
+        testHeaderName(target, BAD_HEADER_NAME, false);
         testHeaderName(target, BAD_HEADER_NAME, false);
     }
 
