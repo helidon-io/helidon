@@ -261,6 +261,7 @@ public interface WebClientRequestBuilder {
      * Set new request id. This id is used in logging messages.
      *
      * @param requestId new request id
+     * @return updated builder instance
      */
     WebClientRequestBuilder requestId(long requestId);
 
