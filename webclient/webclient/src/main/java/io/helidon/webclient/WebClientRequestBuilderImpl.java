@@ -114,7 +114,6 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     private final AtomicBoolean handled;
     private final MessageBodyReaderContext readerContext;
     private final MessageBodyWriterContext writerContext;
-    private final long requestId;
 
     private URI uri;
     private Http.Version httpVersion;
@@ -130,6 +129,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     private Duration readTimeout;
     private Duration connectTimeout;
     private boolean keepAlive;
+    private Long requestId;
 
     private WebClientRequestBuilderImpl(LazyValue<NioEventLoopGroup> eventGroup,
                                         WebClientConfiguration configuration,
@@ -149,7 +149,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         this.services = configuration.clientServices();
         this.readerContext = MessageBodyReaderContext.create(configuration.readerContext());
         this.writerContext = MessageBodyWriterContext.create(configuration.writerContext(), headers);
-        this.requestId = REQUEST_NUMBER.incrementAndGet();
+        this.requestId = null;
         Context.Builder contextBuilder = Context.builder().id("webclient-" + requestId);
         configuration.context().ifPresentOrElse(contextBuilder::parent,
                                                 () -> Contexts.context().ifPresent(contextBuilder::parent));
@@ -369,6 +369,12 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     }
 
     @Override
+    public WebClientRequestBuilder requestId(long requestId) {
+        this.requestId = requestId;
+        return this;
+    }
+
+    @Override
     public <T> Single<T> request(Class<T> responseType) {
         return request(GenericType.create(responseType));
     }
@@ -428,6 +434,10 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         return writerContext;
     }
 
+    long requestId() {
+        return requestId;
+    }
+
     Http.RequestMethod method() {
         return method;
     }
@@ -484,6 +494,9 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
 
     private Single<WebClientResponse> invoke(Flow.Publisher<DataChunk> requestEntity) {
         this.uri = prepareFinalURI();
+        if (requestId == null) {
+            requestId = REQUEST_NUMBER.incrementAndGet();
+        }
 //        LOGGER.finest(() -> "(client reqID: " + requestId + ") Request final URI: " + uri);
         CompletableFuture<WebClientServiceRequest> sent = new CompletableFuture<>();
         CompletableFuture<WebClientServiceResponse> responseReceived = new CompletableFuture<>();
@@ -502,6 +515,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         }
 
         return Single.create(rcs.thenCompose(serviceRequest -> {
+            requestId = serviceRequest.requestId();
             HttpHeaders headers = toNettyHttpHeaders();
             DefaultHttpRequest request = new DefaultHttpRequest(toNettyHttpVersion(httpVersion),
                                                                 toNettyMethod(method),

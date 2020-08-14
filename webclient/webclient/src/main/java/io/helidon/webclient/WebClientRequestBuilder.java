@@ -258,6 +258,13 @@ public interface WebClientRequestBuilder {
     WebClientRequestBuilder keepAlive(boolean keepAlive);
 
     /**
+     * Set new request id. This id is used in logging messages.
+     *
+     * @param requestId new request id
+     */
+    WebClientRequestBuilder requestId(long requestId);
+
+    /**
      * Performs prepared request and transforms response to requested type.
      *
      * When transformation is done the returned {@link CompletionStage} is notified.

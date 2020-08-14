@@ -52,7 +52,7 @@ class RequestConfiguration extends WebClientConfiguration {
         return services;
     }
 
-    public long requestId() {
+    long requestId() {
         return requestId;
     }
 
