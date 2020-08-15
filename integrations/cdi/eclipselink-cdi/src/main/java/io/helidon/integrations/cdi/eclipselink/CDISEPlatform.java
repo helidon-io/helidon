@@ -199,9 +199,9 @@ public class CDISEPlatform extends JMXServerPlatformBase {
      *
      * @see ServerPlatformBase#initializeExternalTransactionController()
      *
-     * @see DatabaseSession#getLogin()
+     * @see Session#getDatasourceLogin()
      *
-     * @see DatabaseLogin#getConnector()
+     * @see DatasourceLogin#getConnector()
      *
      * @see JNDIConnector
      *
