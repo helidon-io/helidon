@@ -80,7 +80,7 @@
         <version.lib.junit>5.6.2</version.lib.junit>
         <version.lib.maven-wagon>2.10</version.lib.maven-wagon>
         <version.lib.microprofile-config>1.4</version.lib.microprofile-config>
-        <version.lib.microprofile-health>2.1</version.lib.microprofile-health>
+        <version.lib.microprofile-health>2.2</version.lib.microprofile-health>
         <version.lib.microprofile-jwt>1.1.1</version.lib.microprofile-jwt>
         <version.lib.microprofile-metrics-api>2.3.2</version.lib.microprofile-metrics-api>
         <version.lib.microprofile-openapi-api>1.1.2</version.lib.microprofile-openapi-api>

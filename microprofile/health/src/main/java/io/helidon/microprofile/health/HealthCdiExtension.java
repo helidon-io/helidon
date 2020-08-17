@@ -56,20 +56,6 @@ public class HealthCdiExtension implements Extension {
         }
     };
 
-    private static final Readiness READINESS_LITERAL = new Readiness() {
-        @Override
-        public Class<? extends Annotation> annotationType() {
-            return Readiness.class;
-        }
-    };
-
-    private static final Liveness LIVENESS_LITERAL = new Liveness() {
-        @Override
-        public Class<? extends Annotation> annotationType() {
-            return Liveness.class;
-        }
-    };
-
     private static final BuiltInHealthCheck BUILT_IN_HEALTH_CHECK_LITERAL = new BuiltInHealthCheck() {
         @Override
         public Class<? extends Annotation> annotationType() {
@@ -115,12 +101,12 @@ public class HealthCdiExtension implements Extension {
                 .filter(hc -> !builtInHealthChecks.contains(hc))
                 .forEach(builder::add);
 
-        cdi.select(HealthCheck.class, LIVENESS_LITERAL)
+        cdi.select(HealthCheck.class, Liveness.Literal.INSTANCE)
                 .stream()
                 .filter(hc -> !builtInHealthChecks.contains(hc))
                 .forEach(builder::addLiveness);
 
-        cdi.select(HealthCheck.class, READINESS_LITERAL)
+        cdi.select(HealthCheck.class, Readiness.Literal.INSTANCE)
                 .stream()
                 .filter(hc -> !builtInHealthChecks.contains(hc))
                 .forEach(builder::addReadiness);
