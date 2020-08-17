@@ -7,13 +7,66 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
-## [Unreleased]
+## [2.0.2-SNAPSHOT]
+
+2.0.2 is a minor bug fix release to Helidon 2.0. It contains bug fixes and minor enhancements.
 
 ### Changes
 
+- WebServer: Use all configured fields. [2192](https://github.com/oracle/helidon/pull/2192)
+- WebServer: Upgrade to Netty 4.1.51 [2204](https://github.com/oracle/helidon/pull/2204)
+- WebServer: Form params ampersand and no value fix [2227](https://github.com/oracle/helidon/pull/2227)
+- WebServer: Fix failures caused by memory leak when sending bad requests. [2260](https://github.com/oracle/helidon/pull/2260)
+- WebServer: Configuration of server socket(s) [2189](https://github.com/oracle/helidon/pull/2189)
 - WebServer: to enable netty log handler output, please use logger `io.helidon.webserver.NettyWebServer$NettyLog` and set it to `FINEST` level
+- WebClient: Native smoke test for webclient [2112](https://github.com/oracle/helidon/pull/2112)
+- WebClient: Intermittent test failure with keep-alive enabled fix [2238](https://github.com/oracle/helidon/pull/2238)
+- WebClient: redirection to path fix [2150](https://github.com/oracle/helidon/pull/2150)
+- WebClient: support keep-alive [2139](https://github.com/oracle/helidon/pull/2139)
 - WebClient: to enable netty log handler output, please use logger `io.helidon.webclient.NettyClientInitializer$ClientNettyLog` and set it to `FINEST` level
- 
+- Tests: Removed unnecessary plugin versions, now inherited. [2181](https://github.com/oracle/helidon/pull/2181)
+- Security injection in application scope. [2154](https://github.com/oracle/helidon/pull/2154)
+- Security can now be disabled. [2157](https://github.com/oracle/helidon/pull/2157)
+- Reactive: Single add forSingle and exceptionallyAccept [2121](https://github.com/oracle/helidon/pull/2121)
+- Reactive: Kafka connector topic pattern [2242](https://github.com/oracle/helidon/pull/2242)
+- Reactive: Buffer single-byte writes in MultiFromOutputStream for better performance [2133](https://github.com/oracle/helidon/pull/2133)
+- Reactive: Backpressure counter race condition fix [2250](https://github.com/oracle/helidon/pull/2250)
+- Native image update [2078](https://github.com/oracle/helidon/pull/2078)
+- Metrics: Remove FinalRegistry and its use for the base registry; part of move to MP metrics 2.3 [2188](https://github.com/oracle/helidon/pull/2188)
+- Metrics: Missing metric [2235](https://github.com/oracle/helidon/pull/2235)
+- Metrics: Fixes a few problems in metrics [2240](https://github.com/oracle/helidon/pull/2240)
+- Metrics: Add support for MP Metrics 2.3 [2245](https://github.com/oracle/helidon/pull/2245)
+- Media Support: Upgrade Jackson to 2.11.1 [2162](https://github.com/oracle/helidon/pull/2162)
+- Meida Support: Upgrade Yasson to 1.0.8 [2254](https://github.com/oracle/helidon/pull/2254)
+- Media Support: Multipart postfix fix [2233](https://github.com/oracle/helidon/pull/2233)
+- Media Support: Multipart decoder rework [2193](https://github.com/oracle/helidon/pull/2193)
+- Media Support: Media support for forms improved [2144](https://github.com/oracle/helidon/pull/2144)
+- Media Support: Flush streamed datachunk one by one [2129](https://github.com/oracle/helidon/pull/2129)
+- JPA: Upgrading to the latest version of the Eclipselink Maven plugin and aligning Eclipselink version to correspond with it. [2138](https://github.com/oracle/helidon/pull/2138)
+- JPA: Upgrade Hibernate to 5.4.18.Final [2212](https://github.com/oracle/helidon/pull/2212)
+- Health: Health check now non-blocking using fault tolerance async and timeout [2237](https://github.com/oracle/helidon/pull/2237)
+- Fault tolerance for SE (experimental) [2120](https://github.com/oracle/helidon/pull/2120)
+- Fault Tolerance: Location of the default value for header validation changed [2228](https://github.com/oracle/helidon/pull/2228)
+- Fault Tolerance: Make sure request scope is propagated to newly created threads in FT [2229](https://github.com/oracle/helidon/pull/2229)
+- Examples: Add app.yaml to quickstart archetypes. Update k8s support in docs. [2141](https://github.com/oracle/helidon/pull/2141)
+- Examples: Update microprofile examples to use microprofile-config.properties [2163](https://github.com/oracle/helidon/pull/2163)
+- Examples: Swapped ports in mutual TLS example [2184](https://github.com/oracle/helidon/pull/2184)
+- Examples: Quickstart gradle fixes [2214](https://github.com/oracle/helidon/pull/2214)
+- Examples: Change Dockerfiles to use maven.test.skip (not skipTests) [2135](https://github.com/oracle/helidon/pull/2135)
+- Examples: Add -Declipselink.weave.skip to quickstart Dockerfiles [2146](https://github.com/oracle/helidon/pull/2146)
+- Docs: update MP tutorial to be correct for Helidon 2.0 [2152](https://github.com/oracle/helidon/pull/2152)
+- Docs: replaced table with new cards/icons [2185](https://github.com/oracle/helidon/pull/2185)
+- Docs: fix minor issues #2081 #427 [2119](https://github.com/oracle/helidon/pull/2119)
+- Docs: Move CLI documentation to a single page under About [2148](https://github.com/oracle/helidon/pull/2148)
+- Docs: Minor doc fixes #2093 #2086 #2085 [2118](https://github.com/oracle/helidon/pull/2118)
+- Docs: Migration Guides: add section for Getters returning Optional. Fix code blocks. [2217](https://github.com/oracle/helidon/pull/2217)
+- Docs: Corrected dependency information in the JPA guide for MP. [2198](https://github.com/oracle/helidon/pull/2198)
+- Docs: #2221 Fixes API reference in Metrics docs [2232](https://github.com/oracle/helidon/pull/2232)
+- CLI: Create cli-data for snapshot builds [2137](https://github.com/oracle/helidon/pull/2137)
+- CDI: Upgrade Weld to 3.1.4 [2177](https://github.com/oracle/helidon/pull/2177)
+- CDI: Support for bean producers in different package than beans that have … [2241](https://github.com/oracle/helidon/pull/2241)
+- Archetypes: Properly use path() when creating invocations [2116](https://github.com/oracle/helidon/pull/2116)
+- Archetypes: Added <relativePath/> to avoid warnings  [2117](https://github.com/oracle/helidon/pull/2117)
 
 ## [2.0.1]
 
@@ -964,7 +1017,7 @@ If there is no authorization provider configured, ABAC provider will be configur
       otherwise they are ignored
 
 
-[Unreleased]: https://github.com/oracle/helidon/compare/2.0.0...HEAD
+[2.0.2-SNAPSHOT]: https://github.com/oracle/helidon/compare/2.0.1...HEAD
 [2.0.1]: https://github.com/oracle/helidon/compare/2.0.0...2.0.1
 [2.0.0]: https://github.com/oracle/helidon/compare/2.0.0-RC2...2.0.0
 [2.0.0-RC2]: https://github.com/oracle/helidon/compare/2.0.0-RC1...2.0.0-RC2
