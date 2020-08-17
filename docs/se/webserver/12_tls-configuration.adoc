@@ -23,11 +23,11 @@
 
 = WebServer TLS configuration
 
-Configure the TLS either programmatically, or by the Helidon configuration framework.
+Configure TLS either programmatically, or by the Helidon configuration framework.
 
-== Configuring the TLS in your code
+== Configuring TLS in your code
 
-The one to configure the TLS in WebServer is in your application code.
+To configure TLS in WebServer programmatically create your keystore configuration and pass it to the WebServer builder.
 
 [source,java]
 ----
@@ -48,7 +48,7 @@ WebServer.builder()
          .build();
 ----
 
-== Configuring the TLS in the config file
+== Configuring TLS in the config file
 
 It is also possible to configure TLS via the config file.
 

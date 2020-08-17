@@ -23,11 +23,11 @@
 
 = WebClient TLS configuration
 
-Configure the TLS either programmatically, or by the Helidon configuration framework.
+Configure TLS either programmatically or by the Helidon configuration framework.
 
-== Configuring the TLS in your code
+== Configuring TLS in your code
 
-The one way to configure the TLS in WebClient is in your application code.
+The one way to configure TLS in WebClient is in your application code.
 
 [source,java]
 ----
@@ -48,7 +48,7 @@ WebClient.builder()
          .build();
 ----
 
-== Configuring the TLS in the config file
+== Configuring TLS in the config file
 
 It is also possible to configure TLS via the config file.
 
