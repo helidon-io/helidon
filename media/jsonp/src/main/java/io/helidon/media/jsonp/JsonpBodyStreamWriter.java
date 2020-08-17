@@ -26,7 +26,6 @@ import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.reactive.Multi;
-import io.helidon.common.reactive.Single;
 import io.helidon.media.common.MessageBodyStreamWriter;
 import io.helidon.media.common.MessageBodyWriterContext;
 import io.helidon.media.jsonp.JsonpBodyWriter.JsonStructureToChunks;
@@ -61,21 +60,21 @@ class JsonpBodyStreamWriter implements MessageBodyStreamWriter<JsonStructure> {
         // we do not have join operator
         AtomicBoolean first = new AtomicBoolean(true);
 
-        JsonStructureToChunks jsonToChunks = new JsonStructureToChunks(jsonWriterFactory,
-                                                                       context.charset());
+        JsonStructureToChunks jsonToChunks = new JsonStructureToChunks(true,
+                jsonWriterFactory,
+                context.charset());
 
-        return Single.just(DataChunk.create(ARRAY_JSON_BEGIN_BYTES))
-                .onCompleteResumeWith(Multi.create(publisher)
-                                              .map(jsonToChunks)
-                                              .flatMap(it -> {
-                                                  if (first.getAndSet(false)) {
-                                                      // first record, do not prepend a comma
-                                                      return Single.just(it);
-                                                  } else {
-                                                      // any subsequent record starts with a comma
-                                                      return Multi.just(DataChunk.create(COMMA_BYTES), it);
-                                                  }
-                                              }))
+        return Multi.create(publisher)
+                .map(jsonToChunks)
+                .flatMap(it -> {
+                    if (first.getAndSet(false)) {
+                        // first record, do not prepend a comma
+                        return Multi.just(DataChunk.create(ARRAY_JSON_BEGIN_BYTES), it);
+                    } else {
+                        // any subsequent record starts with a comma
+                        return Multi.just(DataChunk.create(COMMA_BYTES), it);
+                    }
+                })
                 .onCompleteResume(DataChunk.create(ARRAY_JSON_END_BYTES));
     }
 }

@@ -18,10 +18,12 @@ For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.co
 - WebServer: Form params ampersand and no value fix [2227](https://github.com/oracle/helidon/pull/2227)
 - WebServer: Fix failures caused by memory leak when sending bad requests. [2260](https://github.com/oracle/helidon/pull/2260)
 - WebServer: Configuration of server socket(s) [2189](https://github.com/oracle/helidon/pull/2189)
+- WebServer: to enable netty log handler output, please use logger `io.helidon.webserver.NettyWebServer$NettyLog` and set it to `FINEST` level
 - WebClient: Native smoke test for webclient [2112](https://github.com/oracle/helidon/pull/2112)
 - WebClient: Intermittent test failure with keep-alive enabled fix [2238](https://github.com/oracle/helidon/pull/2238)
 - WebClient: redirection to path fix [2150](https://github.com/oracle/helidon/pull/2150)
 - WebClient: support keep-alive [2139](https://github.com/oracle/helidon/pull/2139)
+- WebClient: to enable netty log handler output, please use logger `io.helidon.webclient.NettyClientInitializer$ClientNettyLog` and set it to `FINEST` level
 - Tests: Removed unnecessary plugin versions, now inherited. [2181](https://github.com/oracle/helidon/pull/2181)
 - Security injection in application scope. [2154](https://github.com/oracle/helidon/pull/2154)
 - Security can now be disabled. [2157](https://github.com/oracle/helidon/pull/2157)

@@ -66,6 +66,7 @@ public class KafkaSeTest extends AbstractKafkaTest {
     private static final String TEST_SE_TOPIC_5 = "special-se-topic-4";
     private static final String TEST_SE_TOPIC_6 = "special-se-topic-6";
     private static final String TEST_SE_TOPIC_7 = "special-se-topic-7";
+    private static final String TEST_SE_TOPIC_PATTERN_34 = "special-se-topic-[3-4]";
 
 
     @BeforeAll
@@ -187,6 +188,61 @@ public class KafkaSeTest extends AbstractKafkaTest {
                         .bootstrapServers(KAFKA_SERVER)
                         .groupId("test-group")
                         .topic(TEST_SE_TOPIC_3, TEST_SE_TOPIC_4)
+                        .autoOffsetReset(KafkaConfigBuilder.AutoOffsetReset.EARLIEST)
+                        .enableAutoCommit(false)
+                        .keyDeserializer(StringDeserializer.class)
+                        .valueDeserializer(StringDeserializer.class)
+                        .build()
+                )
+                .build();
+
+        KafkaConnector kafkaConnector = KafkaConnector.create();
+
+        Messaging messaging = Messaging.builder()
+                .connector(kafkaConnector)
+                .listener(fromKafka, payload -> {
+                    LOGGER.info("Kafka says: value=" + payload);
+                    result.add(payload);
+                    countDownLatch.countDown();
+                })
+                .build();
+
+        try {
+            messaging.start();
+
+            Map<byte[], byte[]> rawTestData1 = testData1.stream()
+                    .map(s -> s.getBytes(StandardCharsets.UTF_8))
+                    .collect(Collectors.toMap(Function.identity(), Function.identity()));
+            Map<byte[], byte[]> rawTestData2 = testData2.stream()
+                    .map(s -> s.getBytes(StandardCharsets.UTF_8))
+                    .collect(Collectors.toMap(Function.identity(), Function.identity()));
+            kafkaResource.getKafkaTestUtils().produceRecords(rawTestData1, TEST_SE_TOPIC_3, 1);
+            kafkaResource.getKafkaTestUtils().produceRecords(rawTestData2, TEST_SE_TOPIC_4, 1);
+
+            assertThat(countDownLatch.await(20, TimeUnit.SECONDS), is(true));
+            assertThat(result, containsInAnyOrder(expected.toArray()));
+        } finally {
+            messaging.stop();
+        }
+    }
+
+    @Test
+    void consumeKafkaMultipleTopicsWithPattern() throws InterruptedException {
+        Set<String> testData1 = Set.of("0", "2", "3", "4", "5");
+        Set<String> testData2 = Set.of("6", "7", "8", "9", "10");
+
+        Set<String> expected = new HashSet<>(testData1);
+        expected.addAll(testData2);
+
+        CountDownLatch countDownLatch = new CountDownLatch(expected.size());
+        HashSet<String> result = new HashSet<>();
+
+        Channel<String> fromKafka = Channel.<String>builder()
+                .name("from-kafka")
+                .publisherConfig(KafkaConnector.configBuilder()
+                        .bootstrapServers(KAFKA_SERVER)
+                        .groupId("test-group")
+                        .topicPattern(TEST_SE_TOPIC_PATTERN_34)
                         .autoOffsetReset(KafkaConfigBuilder.AutoOffsetReset.EARLIEST)
                         .enableAutoCommit(false)
                         .keyDeserializer(StringDeserializer.class)

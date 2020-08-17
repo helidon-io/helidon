@@ -42,7 +42,7 @@ module io.helidon.microprofile.faulttolerance {
     exports io.helidon.microprofile.faulttolerance;
 
     // needed when running with modules - to make private methods accessible
-    opens io.helidon.microprofile.faulttolerance to weld.core.impl;
+    opens io.helidon.microprofile.faulttolerance to weld.core.impl, io.helidon.microprofile.cdi;
 
     provides javax.enterprise.inject.spi.Extension with io.helidon.microprofile.faulttolerance.FaultToleranceExtension;
 }

@@ -37,4 +37,7 @@ curl -i http://localhost:7076/health
 
 # Should return 200 code and JSON response with metrics
 curl -i -H "Accept: application/json" http://localhost:7076/metrics
+
+# Should return ALL TESTS PASSED! after passing all webclient tests
+curl -i http://localhost:7076/wc/test
 ```

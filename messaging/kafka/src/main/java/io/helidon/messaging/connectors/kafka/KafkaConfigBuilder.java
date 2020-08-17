@@ -16,11 +16,14 @@
 
 package io.helidon.messaging.connectors.kafka;
 
+import java.util.regex.Pattern;
+
 import io.helidon.messaging.ConnectorConfigBuilder;
 
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serializer;
 import org.eclipse.microprofile.reactive.messaging.spi.ConnectorFactory;
+
 
 /**
  * Build Kafka specific config.
@@ -74,6 +77,28 @@ public final class KafkaConfigBuilder extends ConnectorConfigBuilder {
      */
     public KafkaConfigBuilder topic(String... topics) {
         super.property("topic", String.join(",", topics));
+        return this;
+    }
+
+    /**
+     * Pattern for topic names to consume from.
+     *
+     * @param topicPattern topic name regex pattern
+     * @return this builder
+     */
+    public KafkaConfigBuilder topicPattern(Pattern topicPattern) {
+        super.property("topic.pattern", topicPattern.pattern());
+        return this;
+    }
+
+    /**
+     * Regex pattern for topic names to consume from.
+     *
+     * @param topicPattern topic name regex pattern
+     * @return this builder
+     */
+    public KafkaConfigBuilder topicPattern(String topicPattern) {
+        super.property("topic.pattern", topicPattern);
         return this;
     }
 

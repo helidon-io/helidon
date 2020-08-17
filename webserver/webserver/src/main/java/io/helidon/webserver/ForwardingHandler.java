@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,7 @@ import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpRequestDecoder;
@@ -282,7 +283,14 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
         FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, BAD_REQUEST, Unpooled.wrappedBuffer(entity));
         response.headers().add(HttpHeaderNames.CONTENT_TYPE, "text/plain");
         response.headers().add(HttpHeaderNames.CONTENT_LENGTH, entity.length);
-        ctx.write(response);
+        response.headers().add(HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE);
+
+        ctx.write(response)
+                .addListener(future -> {
+                    ctx.flush();
+                    ctx.close();
+                });
+
     }
 
     @Override

@@ -43,14 +43,33 @@ public class MetricsMpServiceTest {
 
     @BeforeAll
     public static void initializeServer() throws Exception {
-        server = Server.builder()
+        finishServerInitialization(prepareServerBuilder());
+    }
+
+    /**
+     * Initializes a server builder.
+     * <p>
+     *     Splitting this code from the finish code allows a subclass to refine the builder before
+     *     using it to construct the builder.
+     * </p>
+     * @return {@code Server.Builder}
+     */
+    static Server.Builder prepareServerBuilder() {
+        return Server.builder()
                 .addResourceClass(HelloWorldResource.class)
                 .host("localhost")
                 // choose a random available port
-                .port(-1)
-                .build();
-        server.start();
+                .port(-1);
+    }
 
+    /**
+     * Completes the set-up of the server, using the (possibly refined) builder.
+     *
+     * @param builder the {@code Server.Builder} to use in constructing the server
+     */
+    static void finishServerInitialization(Server.Builder builder) {
+        server = builder.build();
+        server.start();
         registry = RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.APPLICATION);
 
         port = server.port();

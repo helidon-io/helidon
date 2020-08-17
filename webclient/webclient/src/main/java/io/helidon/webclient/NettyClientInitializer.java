@@ -104,7 +104,7 @@ class NettyClientInitializer extends ChannelInitializer<SocketChannel> {
             });
         }
 
-        pipeline.addLast("logger", new LoggingHandler(LogLevel.TRACE));
+        pipeline.addLast("logger", new LoggingHandler(ClientNettyLog.class, LogLevel.TRACE));
         pipeline.addLast("httpCodec", new HttpClientCodec());
         pipeline.addLast("httpDecompressor", new HttpContentDecompressor());
         pipeline.addLast("idleStateHandler", new IdleStateHandler(0, 0, 50));
@@ -136,5 +136,9 @@ class NettyClientInitializer extends ChannelInitializer<SocketChannel> {
             }
             super.channelInactive(ctx);
         }
+    }
+
+    // this class is only used to create a log handler in NettyLogHandler, to distinguish from webserver
+    private static final class ClientNettyLog {
     }
 }

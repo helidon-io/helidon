@@ -16,17 +16,25 @@
 
 package io.helidon.webserver;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
+import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
+import io.helidon.common.reactive.Multi;
 import io.helidon.webserver.utils.SocketHttpClient;
 
+import org.hamcrest.collection.IsIterableWithSize;
 import org.hamcrest.collection.IsMapContaining;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -38,6 +46,7 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.collection.IsMapContaining.hasEntry;
 
 /**
@@ -46,7 +55,7 @@ import static org.hamcrest.collection.IsMapContaining.hasEntry;
 public class PlainTest {
 
     private static final Logger LOGGER = Logger.getLogger(PlainTest.class.getName());
-
+    private static final RuntimeException TEST_EXCEPTION = new RuntimeException("BOOM!");
     private static WebServer webServer;
 
     /**
@@ -56,7 +65,7 @@ public class PlainTest {
      *             the port is dynamically selected
      * @throws Exception in case of an error
      */
-    private static void startServer(int port) throws Exception {
+    private static void startServer(int port) {
         webServer = WebServer.builder()
                 .port(port)
                 .routing(Routing.builder().any((req, res) -> {
@@ -81,14 +90,42 @@ public class PlainTest {
                            res.headers().put(Http.Header.TRANSFER_ENCODING, "chunked");
                            res.send("abcd");
                        })
+                        .get("/multi", (req, res) -> {
+                            res.send(Multi.just("test 1", "test 2", "test 3")
+                                    .map(String::getBytes)
+                                    .map(DataChunk::create));
+                        })
+                        .get("/multiFirstError", (req, res) -> {
+                            res.send(Multi.error(TEST_EXCEPTION));
+                        })
+                        .get("/multiSecondError", (req, res) -> {
+                            res.send(Multi.concat(Multi.just("test1\n").map(s -> DataChunk.create(s.getBytes())),
+                                    Multi.error(TEST_EXCEPTION)));
+                        })
+                        .get("/multiThirdError", (req, res) -> {
+                            res.send(Multi.concat(Multi.just("test1\n").map(s -> DataChunk.create(s.getBytes())),
+                                    Multi.error(TEST_EXCEPTION)));
+                        })
+                        .get("/multiDelayedThirdError", (req, res) -> {
+                            res.send(Multi.interval(100, 100, TimeUnit.MILLISECONDS,
+                                    Executors.newSingleThreadScheduledExecutor())
+                                    .peek(i -> {
+                                        if (i > 2) {
+                                            throw TEST_EXCEPTION;
+                                        }
+                                    })
+                                    .map(i -> DataChunk.create(("test " + i).getBytes())));
+                        })
+                        .get("/multi", (req, res) -> {
+                            res.send(Multi.just("test1","test2").map(i -> DataChunk.create(String.valueOf(i).getBytes())));
+                        })
                        .any(Handler.create(String.class, (req, res, entity) -> {
                             res.send("It works! Payload: " + entity);
                        }))
                        .build())
                 .build()
                 .start()
-                .toCompletableFuture()
-                .get(10, TimeUnit.SECONDS);
+                .await(10, TimeUnit.SECONDS);
 
         LOGGER.info("Started server at: https://localhost:" + webServer.port());
     }
@@ -271,9 +308,10 @@ public class PlainTest {
         try (SocketHttpClient s = new SocketHttpClient(webServer)) {
             // get
             s.request(Http.Method.POST, "/unconsumed", "not-consumed-payload");
-
+            String received = s.receive();
+            System.out.println(received);
             // assert
-            assertThat(cutPayloadAndCheckHeadersFormat(s.receive()), is("15\nPayload not consumed!\n0\n\n"));
+            assertThat(cutPayloadAndCheckHeadersFormat(received), is("15\nPayload not consumed!\n0\n\n"));
             SocketHttpClient.assertConnectionIsOpen(s);
         }
     }
@@ -391,6 +429,105 @@ public class PlainTest {
         Map<String, String> headers = cutHeaders(s);
         assertThat(headers, IsMapContaining.hasKey("content-type"));
         assertThat(headers, IsMapContaining.hasKey("content-length"));
+    }
+
+
+    @Test
+    public void testMulti() throws Exception {
+        String s = SocketHttpClient.sendAndReceive("/multi",
+                Http.Method.GET,
+                null, webServer);
+        assertThat(s, startsWith("HTTP/1.1 200 OK\n"));
+        List<String> chunks = Arrays.stream(s.split("\\n[0-9]\\n?\\s*"))
+                .skip(1)
+                .collect(Collectors.toList());
+        assertThat(chunks, contains("test 1", "test 2", "test 3"));
+        Map<String, String> trailerHeaders = cutTrailerHeaders(s);
+        assertThat(trailerHeaders.entrySet(), IsIterableWithSize.iterableWithSize(0));
+    }
+
+    /**
+     * HTTP/1.1 500 Internal Server Error
+     * Date: Thu, 9 Jul 2020 14:01:14 +0200
+     * trailer: stream-status,stream-result
+     * transfer-encoding: chunked
+     * connection: keep-alive
+     *
+     * 0
+     * stream-status: 500
+     * stream-result: java.lang.RuntimeException: BOOM!
+     */
+    @Test
+    public void testMultiFirstError() throws Exception {
+        String s = SocketHttpClient.sendAndReceive("/multiFirstError",
+                Http.Method.GET,
+                null, webServer);
+        System.out.println(s);
+
+        assertThat(s, startsWith("HTTP/1.1 500 Internal Server Error\n"));
+        assertThat(cutHeaders(s), not(IsMapContaining.hasKey(Http.Header.TRAILER)));
+        Map<String, String> trailerHeaders = cutTrailerHeaders(s);
+        assertThat(trailerHeaders, IsMapContaining.hasEntry("stream-status", "500"));
+        assertThat(trailerHeaders, IsMapContaining.hasEntry("stream-result", TEST_EXCEPTION.toString()));
+    }
+
+    @Test
+    public void testMultiSecondError() throws Exception {
+        String s = SocketHttpClient.sendAndReceive("/multiSecondError",
+                Http.Method.GET,
+                null, webServer);
+        assertThat(s, startsWith("HTTP/1.1 200 OK\n"));
+        Map<String, String> trailerHeaders = cutTrailerHeaders(s);
+        assertThat(trailerHeaders, IsMapContaining.hasEntry("stream-status", "500"));
+        assertThat(trailerHeaders, IsMapContaining.hasEntry("stream-result", TEST_EXCEPTION.toString()));
+    }
+
+    @Test
+    public void testMultiThirdError() throws Exception {
+        String s = SocketHttpClient.sendAndReceive("/multiThirdError",
+                Http.Method.GET,
+                null, webServer);
+        assertThat(s, startsWith("HTTP/1.1 200 OK\n"));
+        Map<String, String> trailerHeaders = cutTrailerHeaders(s);
+        assertThat(trailerHeaders, IsMapContaining.hasEntry("stream-status", "500"));
+        assertThat(trailerHeaders, IsMapContaining.hasEntry("stream-result", TEST_EXCEPTION.toString()));
+    }
+
+    /**
+     * HTTP/1.1 200 OK
+     * Date: Thu, 9 Jul 2020 13:57:27 +0200
+     * transfer-encoding: chunked
+     * connection: keep-alive
+     *
+     * 6
+     * test 0
+     * 6
+     * test 1
+     * 6
+     * test 2
+     * 0
+     * stream-status: 500
+     * stream-result: java.lang.RuntimeException: BOOM!
+     */
+    @Test
+    public void testMultiDelayedThirdError() throws Exception {
+        String s = SocketHttpClient.sendAndReceive("/multiDelayedThirdError",
+                Http.Method.GET,
+                null, webServer);
+        assertThat(s, startsWith("HTTP/1.1 200 OK\n"));
+        Map<String, String> headers = cutTrailerHeaders(s);
+        assertThat(headers, IsMapContaining.hasEntry("stream-status", "500"));
+        assertThat(headers, IsMapContaining.hasEntry("stream-result", TEST_EXCEPTION.toString()));
+    }
+
+    private Map<String, String> cutTrailerHeaders(String response) {
+        Pattern trailerHeaderPattern = Pattern.compile("([^\\t,\\n,\\f,\\r, ,;,:,=]+)\\:\\s?([^\\n]+)");
+        assertThat(response, notNullValue());
+        int index = response.indexOf("\n0\n");
+        return Arrays.stream(response.substring(index).split("\n"))
+                .map(trailerHeaderPattern::matcher)
+                .filter(Matcher::matches)
+                .collect(HashMap::new, (map, matcher) -> map.put(matcher.group(1), matcher.group(2)), (m1, m2) -> {});
     }
 
     private Map<String, String> cutHeaders(String response) {

@@ -76,7 +76,7 @@ public abstract class MessageBodyContext implements MessageBodyFilters {
         AFTER_ONNEXT,
 
         /**
-         * Emitted after {@link Subscriber#onError(Throwable)}.
+         * Emitted before {@link Subscriber#onError(Throwable)}.
          */
         BEFORE_ONERROR,
 

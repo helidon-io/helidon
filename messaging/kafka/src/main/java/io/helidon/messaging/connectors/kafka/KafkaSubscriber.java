@@ -103,16 +103,19 @@ public class KafkaSubscriber<K, V> implements Subscriber<Message<V>> {
             });
         }
         CompletableFuture.allOf(futureList.toArray(new CompletableFuture[0]))
-        .whenComplete((success, exception) -> {
-            if (exception == null) {
-                message.ack().whenComplete((a, b) -> {
-                    if (backpressureCounter.incrementAndGet() == backpressure) {
-                        backpressureCounter.set(0);
-                        subscription.request(backpressure);
+                .whenComplete((success, exception) -> {
+                    if (exception == null) {
+                        message.ack().whenComplete((a, b) -> {
+                            // Atomically increment
+                            // or reset backpressureCounter if incrementing would reach threshold
+                            if (backpressureCounter.getAndUpdate(n -> ++n == backpressure ? 0 : n)
+                                    >= backpressure - 1) {
+                                // configured backpressure threshold reached
+                                subscription.request(backpressure);
+                            }
+                        });
                     }
                 });
-            }
-        });
     }
 
     @Override

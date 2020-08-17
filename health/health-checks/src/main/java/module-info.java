@@ -33,5 +33,5 @@ module io.helidon.health.checks {
     exports io.helidon.health.checks;
 
     // required for CDI
-    opens io.helidon.health.checks to weld.core.impl;
+    opens io.helidon.health.checks to weld.core.impl, io.helidon.microprofile.cdi;
 }

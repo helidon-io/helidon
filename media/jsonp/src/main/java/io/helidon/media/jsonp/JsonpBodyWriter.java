@@ -60,10 +60,17 @@ class JsonpBodyWriter implements MessageBodyWriter<JsonStructure> {
     static final class JsonStructureToChunks implements Mapper<JsonStructure, DataChunk> {
         private final JsonWriterFactory factory;
         private final Charset charset;
+        private boolean flush = false;
 
         JsonStructureToChunks(JsonWriterFactory factory, Charset charset) {
             this.factory = factory;
             this.charset = charset;
+        }
+
+        JsonStructureToChunks(boolean flush, JsonWriterFactory factory, Charset charset) {
+            this.factory = factory;
+            this.charset = charset;
+            this.flush = flush;
         }
 
         @Override
@@ -71,7 +78,7 @@ class JsonpBodyWriter implements MessageBodyWriter<JsonStructure> {
             CharBuffer buffer = new CharBuffer();
             try (JsonWriter writer = factory.createWriter(buffer)) {
                 writer.write(item);
-                return DataChunk.create(false, buffer.encode(charset));
+                return DataChunk.create(flush, buffer.encode(charset));
             }
         }
     }

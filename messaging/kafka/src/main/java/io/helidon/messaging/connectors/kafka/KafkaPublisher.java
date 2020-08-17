@@ -37,6 +37,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
@@ -79,6 +80,7 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
     private final AtomicLong requests = new AtomicLong();
     private final EmittingPublisher<KafkaMessage<K, V>> emitter = EmittingPublisher.create();
     private final List<String> topics;
+    private final Pattern topicPattern;
     private final long periodExecutions;
     private final long pollTimeout;
     private final boolean autoCommit;
@@ -90,10 +92,11 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
     private boolean stopped;
 
     private KafkaPublisher(ScheduledExecutorService scheduler, Supplier<Consumer<K, V>> consumerSupplier,
-            List<String> topics, long pollTimeout, long periodExecutions, boolean autoCommit,
+            List<String> topics, Pattern topicPattern, long pollTimeout, long periodExecutions, boolean autoCommit,
             long ackTimeout, int limitNoAck) {
         this.scheduler = scheduler;
         this.topics = topics;
+        this.topicPattern = topicPattern;
         this.periodExecutions = periodExecutions;
         this.pollTimeout = pollTimeout;
         this.autoCommit = autoCommit;
@@ -113,7 +116,11 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
         LOGGER.fine(() -> String.format("%s Start to consume", topics));
         try {
             kafkaConsumer = consumerSupplier.get();
-            kafkaConsumer.subscribe(topics, partitionsAssignedLatch);
+            if (topicPattern != null) {
+                kafkaConsumer.subscribe(topicPattern, partitionsAssignedLatch);
+            } else {
+                kafkaConsumer.subscribe(topics, partitionsAssignedLatch);
+            }
             // This thread reads from Kafka topics and push in kafkaBufferedEvents
             scheduler.scheduleAtFixedRate(() -> {
                 try {
@@ -339,6 +346,7 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
         private long ackTimeout = Long.MAX_VALUE;
         private int limitNoAck = Integer.MAX_VALUE;
         private List<String> topics;
+        private Pattern topicPattern;
         private ScheduledExecutorService scheduler;
         private Supplier<Consumer<K, V>> consumerSupplier;
 
@@ -355,6 +363,7 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
             KafkaConfig kafkaConfig = KafkaConfig.create(config);
             consumerSupplier(() -> new KafkaConsumer<>(kafkaConfig.asMap()));
             topics(kafkaConfig.topics());
+            kafkaConfig.topicPattern().ifPresent(this::topicPattern);
             config.get(POLL_TIMEOUT).asLong().ifPresent(this::pollTimeout);
             config.get(PERIOD_EXECUTIONS).asLong().ifPresent(this::periodExecutions);
             config.get(ENABLE_AUTOCOMMIT).asBoolean().ifPresent(this::autoCommit);
@@ -380,13 +389,26 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
         /**
          * The list of topics to subscribe to.
          *
-         * This is a mandatory parameter.
+         * This is a mandatory parameter if topicPattern is empty.
          *
          * @param topics
          * @return updated builder instance
          */
         public Builder<K, V> topics(List<String> topics) {
             this.topics = topics;
+            return this;
+        }
+
+        /**
+         * The list of topics to subscribe to.
+         *
+         * This is a mandatory parameter if topics is empty.
+         *
+         * @param topicPattern
+         * @return updated builder instance
+         */
+        public Builder<K, V> topicPattern(Pattern topicPattern) {
+            this.topicPattern = topicPattern;
             return this;
         }
 
@@ -480,7 +502,7 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
 
         @Override
         public KafkaPublisher<K, V> build() {
-            if (Objects.isNull(topics) || topics.isEmpty()) {
+            if (Objects.isNull(topicPattern) && (Objects.isNull(topics) || topics.isEmpty())) {
                 throw new IllegalArgumentException("The topic is a required value");
             }
             if (Objects.isNull(autoCommit)) {
@@ -494,7 +516,7 @@ public class KafkaPublisher<K, V> implements Publisher<KafkaMessage<K, V>> {
             if (Objects.isNull(consumerSupplier)) {
                 throw new IllegalArgumentException("The kafkaConsumerSupplier is a required value");
             }
-            KafkaPublisher<K, V> publisher = new KafkaPublisher<>(scheduler, consumerSupplier, topics,
+            KafkaPublisher<K, V> publisher = new KafkaPublisher<>(scheduler, consumerSupplier, topics, topicPattern,
                     pollTimeout, periodExecutions, autoCommit, ackTimeout, limitNoAck);
             return publisher;
         }

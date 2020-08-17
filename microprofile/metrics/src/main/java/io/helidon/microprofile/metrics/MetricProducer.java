@@ -38,11 +38,13 @@ import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
+import org.eclipse.microprofile.metrics.SimpleTimer;
 import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Metered;
 import org.eclipse.microprofile.metrics.annotation.Metric;
+import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
 /**
@@ -77,6 +79,10 @@ class MetricProducer {
 
             case TIMER:
                 result = MetricUnits.NANOSECONDS;
+                break;
+
+            case SIMPLE_TIMER:
+                result = MetricUnits.SECONDS;
                 break;
 
             default:
@@ -154,6 +160,18 @@ class MetricProducer {
     @VendorDefined
     private Timer produceTimer(MetricRegistry registry, InjectionPoint ip) {
         return produceMetric(registry, ip, Timed.class, registry::getTimers, registry::timer, Timer.class);
+    }
+
+    @Produces
+    @VendorDefined
+    private SimpleTimer produceSimpleTimer(MetricRegistry registry, InjectionPoint ip) {
+        return produceMetric(registry, ip, SimplyTimed.class, registry::getSimpleTimers, registry::simpleTimer,
+                SimpleTimer.class);
+    }
+
+    @Produces
+    private SimpleTimer produceSimpleTimerDefault(MetricRegistry registry, InjectionPoint ip) {
+        return produceSimpleTimer(registry, ip);
     }
 
     @Produces

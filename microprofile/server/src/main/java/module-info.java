@@ -46,5 +46,5 @@ module io.helidon.microprofile.server {
             io.helidon.microprofile.server.JaxRsCdiExtension;
 
     // needed when running with modules - to make private methods accessible
-    opens io.helidon.microprofile.server to weld.core.impl;
+    opens io.helidon.microprofile.server to weld.core.impl, io.helidon.microprofile.cdi;
 }

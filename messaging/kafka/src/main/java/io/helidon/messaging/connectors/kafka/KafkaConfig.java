@@ -19,19 +19,22 @@ package io.helidon.messaging.connectors.kafka;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.regex.Pattern;
 
 import io.helidon.config.Config;
 
 class KafkaConfig {
 
     private static final String TOPIC_NAME = "topic";
+    private static final String TOPIC_PATTERN = "topic.pattern";
 
     private final Map<String, Object> kafkaConfig;
-    private final List<String> topics;
+    private List<String> topics;
+    private Pattern topicPattern;
 
-    private KafkaConfig(Map<String, Object> kafkaConfig, List<String> topics) {
+    private KafkaConfig(Map<String, Object> kafkaConfig) {
         this.kafkaConfig = kafkaConfig;
-        this.topics = topics;
     }
 
     Map<String, Object> asMap(){
@@ -42,9 +45,15 @@ class KafkaConfig {
         return topics;
     }
 
+    Optional<Pattern> topicPattern(){
+        return Optional.ofNullable(topicPattern);
+    }
+
     static KafkaConfig create(Config config) {
         Map<String, Object> kafkaConfig = new HashMap<>(config.detach().asMap().orElseGet(Map::of));
-        List<String> topics = config.get(TOPIC_NAME).asList(String.class).orElseGet(List::of);
-        return new KafkaConfig(kafkaConfig, topics);
+        KafkaConfig kc = new KafkaConfig(kafkaConfig);
+        kc.topics = config.get(TOPIC_NAME).asList(String.class).orElseGet(List::of);
+        kc.topicPattern = config.get(TOPIC_PATTERN).asString().map(Pattern::compile).orElse(null);
+        return kc;
     }
 }

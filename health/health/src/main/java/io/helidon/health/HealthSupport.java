@@ -15,6 +15,7 @@
  */
 package io.helidon.health;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -26,6 +27,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -38,7 +40,10 @@ import javax.json.JsonObjectBuilder;
 import javax.json.JsonStructure;
 
 import io.helidon.common.http.Http;
+import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
+import io.helidon.faulttolerance.Async;
+import io.helidon.faulttolerance.Timeout;
 import io.helidon.media.common.MessageBodyWriter;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.webserver.Routing;
@@ -80,6 +85,8 @@ public final class HealthSupport implements Service {
     private final boolean backwardCompatible;
     private final CorsEnabledServiceHelper corsEnabledServiceHelper;
     private final MessageBodyWriter<JsonStructure> jsonpWriter = JsonpSupport.writer();
+    private final Timeout timeout;
+    private final Async async;
 
     private HealthSupport(Builder builder) {
         this.enabled = builder.enabled;
@@ -112,6 +119,10 @@ public final class HealthSupport implements Service {
             this.includedHealthChecks = Collections.emptySet();
             this.excludedHealthChecks = Collections.emptySet();
         }
+
+
+        this.timeout = Timeout.create(Duration.ofMillis(builder.timeoutMillis));
+        this.async = Async.create();
     }
 
     @Override
@@ -127,20 +138,33 @@ public final class HealthSupport implements Service {
     }
 
     private void callAll(ServerRequest req, ServerResponse res) {
-        send(res, callHealthChecks(allChecks));
+        invoke(res, allChecks);
     }
 
     private void callLiveness(ServerRequest req, ServerResponse res) {
-        send(res, callHealthChecks(livenessChecks));
+        invoke(res, livenessChecks);
     }
 
     private void callReadiness(ServerRequest req, ServerResponse res) {
-        send(res, callHealthChecks(readinessChecks));
+        invoke(res, readinessChecks);
     }
 
-    private void send(ServerResponse res, HealthResponse hres) {
-        res.status(hres.status());
-        res.send(jsonpWriter.marshall(hres.json));
+    void invoke(ServerResponse res, List<HealthCheck> healthChecks) {
+        // timeout on the asynchronous execution
+        Single<HealthResponse> result = timeout.invoke(() -> async.invoke(() -> callHealthChecks(healthChecks)));
+
+        // handle timeouts and failures in execution
+        result = result.onErrorResume(throwable -> {
+            LOGGER.log(Level.SEVERE, "Failed to call health checks", throwable);
+            HcResponse response = new HcResponse(HealthCheckResponse.down("InternalError"), true);
+            return new HealthResponse(Http.Status.INTERNAL_SERVER_ERROR_500, toJson(State.DOWN, List.of(response)));
+        });
+
+        result.thenAccept(hres -> {
+            res.status(hres.status());
+            res.send(jsonpWriter.marshall(hres.json));
+        });
+
     }
 
     HealthResponse callHealthChecks(List<HealthCheck> healthChecks) {
@@ -251,6 +275,8 @@ public final class HealthSupport implements Service {
      * Fluent API builder for {@link io.helidon.health.HealthSupport}.
      */
     public static final class Builder implements io.helidon.common.Builder<HealthSupport> {
+        // 10 seconds
+        private static final long DEFAULT_TIMEOUT_MILLIS = 10 * 1000;
         private final List<HealthCheck> allChecks = new LinkedList<>();
         private final List<HealthCheck> livenessChecks = new LinkedList<>();
         private final List<HealthCheck> readinessChecks = new LinkedList<>();
@@ -262,6 +288,7 @@ public final class HealthSupport implements Service {
         private boolean enabled = true;
         private boolean backwardCompatible = true;
         private CrossOriginConfig crossOriginConfig;
+        private long timeoutMillis = DEFAULT_TIMEOUT_MILLIS;
 
         private Builder() {
         }
@@ -371,9 +398,26 @@ public final class HealthSupport implements Service {
             config.get("exclude").asList(String.class).ifPresent(list -> list.forEach(this::addExcluded));
             config.get("exclude-classes").asList(Class.class).ifPresent(list -> list.forEach(this::addExcludedClass));
             config.get("backward-compatible").asBoolean().ifPresent(this::backwardCompatible);
+            config.get("timeout-millis").asLong().ifPresent(this::timeoutMillis);
             config.get(CORS_CONFIG_KEY)
                     .as(CrossOriginConfig::create)
                     .ifPresent(this::crossOriginConfig);
+            return this;
+        }
+
+        private void timeoutMillis(long aLong) {
+            this.timeoutMillis = aLong;
+        }
+
+        /**
+         * Configure overall timeout of health check call.
+         *
+         * @param timeout timeout value
+         * @param unit timeout time unit
+         * @return updated builder instance
+         */
+        public Builder timeout(long timeout, TimeUnit unit) {
+            timeoutMillis(unit.toMillis(timeout));
             return this;
         }
 
