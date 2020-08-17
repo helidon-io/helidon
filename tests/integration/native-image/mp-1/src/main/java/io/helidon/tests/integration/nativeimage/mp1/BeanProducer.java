@@ -14,14 +14,20 @@
  * limitations under the License.
  */
 
-/**
- * Helidon Bookstore test app common code
- */
-module io.helidon.tests.apps.bookstore.common {
+package io.helidon.tests.integration.nativeimage.mp1;
 
-    requires jakarta.enterprise.cdi.api;
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Produces;
 
-    opens io.helidon.tests.apps.bookstore.common to weld.core.impl, io.helidon.microprofile.cdi;
+import io.helidon.tests.integration.nativeimage.mp1.other.ProducedBean;
 
-    exports io.helidon.tests.apps.bookstore.common;
+@ApplicationScoped
+public class BeanProducer {
+    public static final String VALUE = "hi there";
+
+    @Produces
+    @ApplicationScoped
+    public ProducedBean produceBean() {
+        return new ProducedBean(VALUE);
+    }
 }

@@ -13,15 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 /**
- * Helidon Bookstore test app common code
+ * This package exists to make sure we can do proxies that have working
+ * package local
  */
-module io.helidon.tests.apps.bookstore.common {
-
-    requires jakarta.enterprise.cdi.api;
-
-    opens io.helidon.tests.apps.bookstore.common to weld.core.impl, io.helidon.microprofile.cdi;
-
-    exports io.helidon.tests.apps.bookstore.common;
-}
+package io.helidon.tests.integration.nativeimage.mp1.other;

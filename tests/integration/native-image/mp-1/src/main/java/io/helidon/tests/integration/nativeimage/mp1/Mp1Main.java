@@ -177,6 +177,9 @@ public final class Mp1Main {
         // CDI - (tested indirectly by other tests)
         // Server - capability to start JAX-RS (tested indirectly by other tests)
 
+        // produce a bean with package local method
+        invoke(collector, "Produced bean", BeanProducer.VALUE, aBean::produced);
+
         // Configuration
         invoke(collector, "Config injection", "Properties message", aBean::config);
 

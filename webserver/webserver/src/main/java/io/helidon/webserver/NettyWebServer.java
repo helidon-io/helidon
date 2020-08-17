@@ -169,7 +169,7 @@ class NettyWebServer implements WebServer {
             initializers.add(childHandler);
             bootstrap.group(bossGroup, workerGroup)
                      .channel(NioServerSocketChannel.class)
-                     .handler(new LoggingHandler(LogLevel.DEBUG))
+                     .handler(new LoggingHandler(NettyLog.class, LogLevel.DEBUG))
                      .childHandler(childHandler);
 
             bootstraps.put(name, bootstrap);
@@ -407,5 +407,9 @@ class NettyWebServer implements WebServer {
         }
         SocketAddress address = channel.localAddress();
         return address instanceof InetSocketAddress ? ((InetSocketAddress) address).getPort() : -1;
+    }
+
+    // this class is only used to create a log handler in NettyLogHandler, to distinguish from webclient
+    private static final class NettyLog {
     }
 }
