@@ -5,14 +5,22 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.4.7-SNAPSHOT]
+## [1.4.8-SNAPSHOT]
 
 This is a bug fix release of Helidon.
 
 ### Fixes
 
-- Correctly handle invalid requests and custom configuration for HTTP [2244](https://github.com/oracle/helidon/pull/2244)
+## [1.4.7]
+
+This is a bug fix release of Helidon.
+
+### Fixes
+
+- WebServer: Fix hangs when bad request was sent [2261](https://github.com/oracle/helidon/pull/2261)
+- WebServer: Correctly handle invalid requests and custom configuration for HTTP [2244](https://github.com/oracle/helidon/pull/2244)
 - Upgrade Netty to 4.1.51.Final [2236](https://github.com/oracle/helidon/pull/2236)
+- Upgrade Yasson to 1.0.8 [2255](https://github.com/oracle/helidon/pull/2255)
 - Update build.gradle files to correct dep mgmt and enable tests [2226](https://github.com/oracle/helidon/pull/2226)
 
 ## [1.4.6]
@@ -698,7 +706,8 @@ for details.
 ### Notes
 - Initial source drop on Github
 
-[1.4.7-SNAPSHOT]: https://github.com/oracle/helidon/compare/1.4.6..helidon-1.x
+[1.4.8-SNAPSHOT]: https://github.com/oracle/helidon/compare/1.4.7..helidon-1.x
+[1.4.7]: https://github.com/oracle/helidon/compare/1.4.6..1.4.7
 [1.4.6]: https://github.com/oracle/helidon/compare/1.4.5..1.4.6
 [1.4.5]: https://github.com/oracle/helidon/compare/1.4.4..1.4.5
 [1.4.4]: https://github.com/oracle/helidon/compare/1.4.3..1.4.4
