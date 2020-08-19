@@ -16,20 +16,48 @@
 package io.helidon.microprofile.cdi;
 
 import java.util.Collection;
-
 import java.util.concurrent.Callable;
 
 import org.jboss.weld.executor.CommonForkJoinPoolExecutorServices;
 
-final class ExecutorServices extends CommonForkJoinPoolExecutorServices {
-    
-    ExecutorServices() {
+/**
+ * A {@link CommonForkJoinPoolExecutorServices} whose {@link
+ * #wrap(Collection)} method simply returns the supplied {@link
+ * Collection} of {@link Callable}s unchanged.
+ *
+ * <p>This class exists to work around <a
+ * href="https://issues.redhat.com/browse/WELD-2494"
+ * target="_parent">WELD-2494</a>, which, in turn, was working around
+ * <a href="https://bugs.openjdk.java.net/browse/JDK-8184335"
+ * target="_parent">JDK-8184335</a>.</p>
+ *
+ * @see #wrap(Collection)
+ */
+public final class ExecutorServices extends CommonForkJoinPoolExecutorServices {
+
+    /**
+     * Creates a new {@link ExecutorServices}.
+     *
+     * <p>There is no reason for users to call this constructor.</p>
+     */
+    public ExecutorServices() {
         super();
     }
 
+    /**
+     * Returns the supplied {@code tasks} argument unchanged when invoked.
+     *
+     * @param tasks a {@link Collection} of {@link Callable}s
+     * representing tasks that Weld needs to do; may be {@code null}
+     *
+     * @return the supplied {@code tasks} argument
+     *
+     * @see <a href="https://issues.redhat.com/browse/WELD-2494"
+     * target="_parent">WELD-2494</a>
+     */
     @Override
-    public final <T> Collection<? extends Callable<T>> wrap(Collection<? extends Callable<T>> tasks) {
+    public <T> Collection<? extends Callable<T>> wrap(Collection<? extends Callable<T>> tasks) {
         return tasks;
     }
-  
+
 }
