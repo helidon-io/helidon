@@ -19,6 +19,7 @@ import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
@@ -27,6 +28,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
@@ -47,6 +50,7 @@ import io.helidon.faulttolerance.FtHandlerTyped;
 import io.helidon.faulttolerance.Retry;
 import io.helidon.faulttolerance.Timeout;
 
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.faulttolerance.exceptions.CircuitBreakerOpenException;
 import org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException;
 import org.eclipse.microprofile.metrics.Counter;
@@ -88,6 +92,11 @@ import static io.helidon.microprofile.faulttolerance.ThrowableMapper.map;
  */
 public class MethodInvoker implements FtSupplier<Object> {
     private static final Logger LOGGER = Logger.getLogger(MethodInvoker.class.getName());
+
+    /**
+     * Config key to disable method state caching in FT.
+     */
+    private static final String DISABLE_CACHING = "fault-tolerance.disableCaching";
 
     /**
      * Waiting millis to convert {@code Future} into {@code CompletableFuture}.
@@ -149,6 +158,17 @@ public class MethodInvoker implements FtSupplier<Object> {
      */
     private RequestContextController requestController;
 
+    /**
+     * Record thread interruption request for later use.
+     */
+    private final AtomicBoolean mayInterruptIfRunning = new AtomicBoolean(false);
+
+    /**
+     * Async thread in used by this invocation. May be {@code null}. We use this
+     * reference for thread interruptions.
+     */
+    private Thread asyncInterruptThread;
+
     private static class MethodState {
         private FtHandlerTyped<Object> handler;
         private Retry retry;
@@ -168,6 +188,67 @@ public class MethodInvoker implements FtSupplier<Object> {
     private final MethodState methodState;
 
     /**
+     * Future returned by this method invoker. Some special logic to handle async
+     * cancellations and methods returning {@code Future}.
+     *
+     * @param <T> result type of future
+     */
+    @SuppressWarnings("unchecked")
+    class InvokerCompletableFuture<T> extends CompletableFuture<T> {
+
+        /**
+         * If method returns {@code Future}, we let that value pass through
+         * without further processing. See Section 5.2.1 of spec.
+         *
+         * @return value from this future
+         * @throws ExecutionException if this future completed exceptionally
+         * @throws InterruptedException if the current thread was interrupted
+         */
+        @Override
+        public T get() throws InterruptedException, ExecutionException {
+            T value = super.get();
+            if (method.getReturnType() == Future.class) {
+                return ((Future<T>) value).get();
+            }
+            return value;
+        }
+
+        /**
+         * If method returns {@code Future}, we let that value pass through
+         * without further processing. See Section 5.2.1 of spec.
+         *
+         * @param timeout the timeout
+         * @param unit the timeout unit
+         * @return value from this future
+         * @throws CancellationException if this future was cancelled
+         * @throws ExecutionException if this future completed exceptionally
+         * @throws InterruptedException if the current thread was interrupted
+         */
+        @Override
+        public T get(long timeout, TimeUnit unit) throws InterruptedException,
+                ExecutionException, java.util.concurrent.TimeoutException {
+            T value = super.get();
+            if (method.getReturnType() == Future.class) {
+                return ((Future<T>) value).get(timeout, unit);
+            }
+            return value;
+        }
+
+        /**
+         * Overridden to record {@code mayInterruptIfRunning} flag. This flag
+         * is not currently not propagated over a chain of {@code Single<?>}'s.
+         *
+         * @param mayInterruptIfRunning Interrupt flag.
+         * @@return {@code true} if this task is now cancelled.
+         */
+        @Override
+        public boolean cancel(boolean mayInterruptIfRunning) {
+            MethodInvoker.this.mayInterruptIfRunning.set(mayInterruptIfRunning);
+            return super.cancel(mayInterruptIfRunning);
+        }
+    }
+
+    /**
      * Constructor.
      *
      * @param context The invocation context.
@@ -179,8 +260,8 @@ public class MethodInvoker implements FtSupplier<Object> {
         this.method = context.getMethod();
         this.helidonContext = Contexts.context().orElseGet(Context::create);
 
-        // Initialize method state and create handler for it
-        this.methodState = FT_HANDLERS.computeIfAbsent(method, method -> {
+        // Initialize method state for this method
+        Function<Method, MethodState> createState = method -> {
             MethodState methodState = new MethodState();
             methodState.lastBreakerState = State.CLOSED;
             if (introspector.hasCircuitBreaker()) {
@@ -191,7 +272,12 @@ public class MethodInvoker implements FtSupplier<Object> {
             }
             methodState.handler = createMethodHandler(methodState);
             return methodState;
-        });
+        };
+        boolean disableCaching = ConfigProvider.getConfig()
+                .getOptionalValue(DISABLE_CACHING, Boolean.class).orElse(false);
+        this.methodState = disableCaching ? createState.apply(method)
+                : FT_HANDLERS.computeIfAbsent(method, createState);
+        LOGGER.fine(() -> "Caching of MethodState objects is " + (disableCaching ? "disabled" : "enabled"));
 
         // Gather information about current request scope if active
         try {
@@ -267,14 +353,26 @@ public class MethodInvoker implements FtSupplier<Object> {
             }
         };
 
+        // Update metrics before calling method
         updateMetricsBefore();
 
         if (introspector.isAsynchronous()) {
-            CompletableFuture<?> asyncFuture = supplier.get()
-                    .toStage(true).toCompletableFuture();
-            CompletableFuture<Object> resultFuture = new CompletableFuture<>();
+            // Obtain single from supplier
+            Single<?> single = supplier.get();
+
+            // Convert single to CompletableFuture
+            CompletableFuture<?> asyncFuture = single.toStage(true).toCompletableFuture();
+
+            // Create CompletableFuture that is returned to caller
+            CompletableFuture<Object> resultFuture = new InvokerCompletableFuture<>();
+
+            // Update resultFuture based on outcome of asyncFuture
             asyncFuture.whenComplete((result, throwable) -> {
                 if (throwable != null) {
+                    if (throwable instanceof CancellationException) {
+                        single.cancel();
+                        return;
+                    }
                     Throwable cause;
                     if (throwable instanceof ExecutionException) {
                         cause = map(throwable.getCause());
@@ -288,13 +386,23 @@ public class MethodInvoker implements FtSupplier<Object> {
                     resultFuture.complete(result);
                 }
             });
+
+            // Propagate cancellation of resultFuture to asyncFuture
+            resultFuture.whenComplete((result, throwable) -> {
+                if (throwable instanceof CancellationException) {
+                    asyncFuture.cancel(true);
+                }
+            });
             return resultFuture;
         } else {
             Object result = null;
             Throwable cause = null;
             try {
-                CompletableFuture<?> future = supplier.get()
-                        .toStage(true).toCompletableFuture();
+                // Obtain single from supplier and map to CompletableFuture to handle void methods
+                Single<?> single = supplier.get();
+                CompletableFuture<?> future = single.toStage(true).toCompletableFuture();
+
+                // Synchronously way for result
                 result = future.get();
             } catch (ExecutionException e) {
                 cause = map(e.getCause());
@@ -441,35 +549,49 @@ public class MethodInvoker implements FtSupplier<Object> {
                 // Invoke supplier in a new thread
                 Single<Object> single = Async.create().invoke(() -> {
                     try {
-                        return wrappedSupplier.get();      // Future<?>, CompletableFuture<?> or CompletionStage<?>
+                        asyncInterruptThread = Thread.currentThread();
+                        return wrappedSupplier.get();
                     } catch (Throwable t) {
-                        return CompletableFuture.failedFuture(t);
+                        return new InvokerAsyncException(t);        // wraps Throwable
                     }
                 });
 
-                // The result must be Future<?>, CompletableFuture<?> or CompletionStage<?>
-                single.whenComplete((result, throwable) -> {
-                    if (throwable != null) {
-                        resultFuture.completeExceptionally(throwable);
-                    } else {
-                        try {
-                            if (result instanceof CompletionStage<?>) {     // also CompletableFuture<?>
-                                CompletionStage<Object> cs = (CompletionStage<Object>) result;
-                                cs.whenComplete((o, t) -> {
-                                    if (t != null) {
-                                        resultFuture.completeExceptionally(t);
-                                    } else {
-                                        resultFuture.complete(o);
-                                    }
-                                });
-                            } else if (result instanceof Future<?>){
-                                awaitFuture((Future<Object>) result, resultFuture);
-                            } else {
-                                throw new InternalError("Return type validation failed for method " + method);
-                            }
-                        } catch (Throwable t) {
-                            resultFuture.completeExceptionally(t);
+                // Handle async cancellations
+                resultFuture.whenComplete((result, throwable) -> {
+                    if (throwable instanceof CancellationException) {
+                        single.cancel();        // will not interrupt by default
+
+                        // If interrupt was requested, do it manually here
+                        if (mayInterruptIfRunning.get() && asyncInterruptThread != null) {
+                            asyncInterruptThread.interrupt();
+                            asyncInterruptThread = null;
                         }
+                    }
+                });
+
+                // The result must be Future<?>, {Completable}Future<?> or InvokerAsyncException
+                single.thenAccept(result -> {
+                    try {
+                        // Handle exceptions thrown by an async method
+                        if (result instanceof InvokerAsyncException) {
+                            resultFuture.completeExceptionally(((Exception) result).getCause());
+                        } else if (method.getReturnType() == Future.class) {
+                            // If method returns Future, pass it without further processing
+                            resultFuture.complete(result);
+                        } else if (result instanceof CompletionStage<?>) {     // also CompletableFuture<?>
+                            CompletionStage<Object> cs = (CompletionStage<Object>) result;
+                            cs.whenComplete((o, t) -> {
+                                if (t != null) {
+                                    resultFuture.completeExceptionally(t);
+                                } else {
+                                    resultFuture.complete(o);
+                                }
+                            });
+                        } else {
+                            throw new InternalError("Return type validation failed for method " + method);
+                        }
+                    } catch (Throwable t) {
+                        resultFuture.completeExceptionally(t);
                     }
                 });
             } else {
@@ -616,31 +738,5 @@ public class MethodInvoker implements FtSupplier<Object> {
             return true;
         }
         return false;
-    }
-
-    /**
-     * Waits for a Future to produce an outcome and updates a CompletableFuture based on
-     * it. Effectively converts a Future into a CompletableFuture.
-     *
-     * @param future The future.
-     * @param completableFuture The completable future.
-     */
-    private static void awaitFuture(Future<Object> future, CompletableFuture<Object> completableFuture) {
-        if (future.isDone()) {
-            try {
-                completableFuture.complete(future.get());
-            } catch (InterruptedException e) {
-                completableFuture.completeExceptionally(e);
-            } catch (ExecutionException e) {
-                completableFuture.completeExceptionally(e.getCause());
-            }
-            return;
-        }
-        if (future.isCancelled()) {
-            completableFuture.cancel(true);
-        } else {
-            EXECUTOR_SERVICE.schedule(() -> awaitFuture(future, completableFuture),
-                    AWAIT_FUTURE_MILLIS, TimeUnit.MILLISECONDS);
-        }
     }
 }
