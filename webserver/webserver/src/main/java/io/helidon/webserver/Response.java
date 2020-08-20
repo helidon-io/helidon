@@ -189,8 +189,18 @@ abstract class Response implements ServerResponse {
 
     @Override
     public Single<ServerResponse> send(Publisher<DataChunk> content) {
+        return send(content, true);
+    }
+
+    @Override
+    public Single<ServerResponse> send(Publisher<DataChunk> content, boolean applyFilters) {
         try {
-            Publisher<DataChunk> sendPublisher = writerContext.applyFilters(content);
+            final Publisher<DataChunk> sendPublisher;
+            if (applyFilters) {
+                sendPublisher = writerContext.applyFilters(content);
+            } else {
+                sendPublisher = content;
+            }
             sendLockSupport.execute(() -> {
                 sendLockSupport.contentSend = true;
                 sendPublisher.subscribe(bareResponse);
@@ -225,7 +235,7 @@ abstract class Response implements ServerResponse {
 
     @Override
     public Single<ServerResponse> send(Function<MessageBodyWriterContext, Publisher<DataChunk>> function) {
-        return send(function.apply(writerContext));
+        return send(function.apply(writerContext), false);
     }
 
     @Override

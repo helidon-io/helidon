@@ -149,15 +149,15 @@ public interface ServerResponse extends MessageBodyFilters, MessageBodyWriters {
     <T> Single<ServerResponse> send(Publisher<T> content, Class<T> clazz);
 
     /**
-     * Send a message as is without any other marshalling. The response is completed when publisher send
+     * Send a message as is without any other marshalling, registered filters are applied.
+     * The response is completed when publisher send
      * {@link Subscriber#onComplete()} method to its subscriber.
      * <p>
      * A single {@link Subscription Subscriber} subscribes to the provided {@link Publisher Publisher} during
      * the method execution.
      *
      * <h3>Blocking</h3>
-     * The method blocks only during marshalling. It means until {@code registered writer} produce a {@code Publisher} and
-     * subscribe HTTP IO implementation on it. If the thread is used for publishing is up to HTTP IO and generated Publisher
+     * If the thread is used for publishing is up to HTTP IO and generated Publisher
      * implementations. Use returned {@link io.helidon.common.reactive.Single} to monitor and react on finished sending process.
      *
      * @param content a response content publisher
@@ -165,6 +165,25 @@ public interface ServerResponse extends MessageBodyFilters, MessageBodyWriters {
      * @throws IllegalStateException if any {@code send(...)} method was already called
      */
     Single<ServerResponse> send(Publisher<DataChunk> content);
+
+
+    /**
+     * Send a message as is without any other marshalling. The response is completed when publisher send
+     * {@link Subscriber#onComplete()} method to its subscriber.
+     * <p>
+     * A single {@link Subscription Subscriber} subscribes to the provided {@link Publisher Publisher} during
+     * the method execution.
+     *
+     * <h3>Blocking</h3>
+     * If the thread is used for publishing is up to HTTP IO and generated Publisher
+     * implementations. Use returned {@link io.helidon.common.reactive.Single} to monitor and react on finished sending process.
+     *
+     * @param content a response content publisher
+     * @param applyFilters if true all registered filters are applied
+     * @return a completion stage of the response - completed when response is transferred
+     * @throws IllegalStateException if any {@code send(...)} method was already called
+     */
+    Single<ServerResponse> send(Publisher<DataChunk> content, boolean applyFilters);
 
     /**
      * Send a message using the given marshalling function.
