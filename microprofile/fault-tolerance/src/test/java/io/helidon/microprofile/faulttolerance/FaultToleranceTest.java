@@ -99,12 +99,12 @@ public abstract class FaultToleranceTest {
     }
 
     @SuppressWarnings("unchecked")
-    static <T> Future<T>[] getAsyncConcurrentCalls(Supplier<Future<T>> supplier, int size) {
-        return Stream.generate(supplier::get).limit(size).toArray(Future[]::new);
+    static <T> CompletableFuture<T>[] getAsyncConcurrentCalls(Supplier<CompletableFuture<T>> supplier, int size) {
+        return Stream.generate(supplier::get).limit(size).toArray(CompletableFuture[]::new);
     }
 
-    static void waitFor(Future<String>[] calls) {
-        for (Future<String> c : calls) {
+    static void waitFor(CompletableFuture<String>[] calls) {
+        for (CompletableFuture<String> c : calls) {
             try {
                 c.get();
             } catch (Exception e) {

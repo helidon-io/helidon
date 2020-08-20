@@ -17,7 +17,6 @@
 package io.helidon.microprofile.faulttolerance;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
 
 import javax.enterprise.context.Dependent;
 
@@ -70,7 +69,7 @@ public class BulkheadBean {
 
     @Asynchronous
     @Bulkhead(value = CONCURRENT_CALLS, waitingTaskQueue = WAITING_TASK_QUEUE)
-    public Future<String> execute(long sleepMillis) {
+    public CompletableFuture<String> execute(long sleepMillis) {
         try {
             counter.increment();
             FaultToleranceTest.printStatus("BulkheadBean::execute", "success");
@@ -87,7 +86,7 @@ public class BulkheadBean {
 
     @Asynchronous
     @Bulkhead(value = CONCURRENT_CALLS + 1, waitingTaskQueue = WAITING_TASK_QUEUE + 1)
-    public Future<String> executePlusOne(long sleepMillis) {
+    public CompletableFuture<String> executePlusOne(long sleepMillis) {
         try {
             counter.increment();
             FaultToleranceTest.printStatus("BulkheadBean::executePlusOne", "success");
@@ -104,7 +103,7 @@ public class BulkheadBean {
 
     @Asynchronous
     @Bulkhead(value = 2, waitingTaskQueue = 1)
-    public Future<String> executeNoQueue(long sleepMillis) {
+    public CompletableFuture<String> executeNoQueue(long sleepMillis) {
         try {
             counter.increment();
             FaultToleranceTest.printStatus("BulkheadBean::executeNoQueue", "success");
@@ -122,7 +121,7 @@ public class BulkheadBean {
     @Asynchronous
     @Fallback(fallbackMethod = "onFailure")
     @Bulkhead(value = 2, waitingTaskQueue = 1)
-    public Future<String> executeNoQueueWithFallback(long sleepMillis) {
+    public CompletableFuture<String> executeNoQueueWithFallback(long sleepMillis) {
         try {
             counter.increment();
             FaultToleranceTest.printStatus("BulkheadBean::executeNoQueue", "success");
@@ -144,7 +143,7 @@ public class BulkheadBean {
 
     @Asynchronous
     @Bulkhead(value = 1, waitingTaskQueue = 1)
-    public Future<String> executeCancelInQueue(long sleepMillis) {
+    public CompletableFuture<String> executeCancelInQueue(long sleepMillis) {
         FaultToleranceTest.printStatus("BulkheadBean::executeCancelInQueue " + sleepMillis, "success");
         try {
             Thread.sleep(sleepMillis);

@@ -18,7 +18,6 @@ package io.helidon.microprofile.faulttolerance;
 
 import java.time.temporal.ChronoUnit;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.enterprise.context.Dependent;
@@ -170,7 +169,7 @@ public class MetricsBean {
 
     @Asynchronous
     @Bulkhead(value = 3, waitingTaskQueue = 3)
-    public Future<String> concurrent(long sleepMillis) {
+    public CompletableFuture<String> concurrent(long sleepMillis) {
         FaultToleranceTest.printStatus("MetricsBean::concurrent()", "success");
         try {
             assertThat(getGauge(this,
@@ -185,7 +184,7 @@ public class MetricsBean {
 
     @Asynchronous
     @Bulkhead(value = 3, waitingTaskQueue = 3)
-    public Future<String> concurrentAsync(long sleepMillis) {
+    public CompletableFuture<String> concurrentAsync(long sleepMillis) {
         FaultToleranceTest.printStatus("MetricsBean::concurrentAsync()", "success");
         try {
             assertThat((long) getGauge(this, "concurrentAsync",

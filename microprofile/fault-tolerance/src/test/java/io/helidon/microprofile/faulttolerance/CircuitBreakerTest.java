@@ -16,10 +16,10 @@
 
 package io.helidon.microprofile.faulttolerance;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import org.eclipse.microprofile.faulttolerance.exceptions.BulkheadException;
@@ -72,7 +72,7 @@ public class CircuitBreakerTest extends FaultToleranceTest {
         CircuitBreakerBean bean = newBean(CircuitBreakerBean.class);
 
         // Iterate a few times to test circuit
-        for (int i = 0; i < bean.REQUEST_VOLUME_THRESHOLD - 1; i++) {
+        for (int i = 0; i < bean.REQUEST_VOLUME_THRESHOLD; i++) {
             assertThrows(TimeoutException.class, () -> bean.openOnTimeouts());
         }
 
@@ -132,7 +132,7 @@ public class CircuitBreakerTest extends FaultToleranceTest {
         assertFalse(started.await(1000, TimeUnit.MILLISECONDS));
 
         assertThrows(ExecutionException.class, () -> {
-            Future<?> future = bean.withBulkhead(new CountDownLatch(1));
+            CompletableFuture<?> future = bean.withBulkhead(new CountDownLatch(1));
             future.get();
         });
     }

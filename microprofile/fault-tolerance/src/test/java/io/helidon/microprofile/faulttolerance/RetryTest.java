@@ -17,8 +17,8 @@
 package io.helidon.microprofile.faulttolerance;
 
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.Future;;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.params.ParameterizedTest;
@@ -60,7 +60,7 @@ public class RetryTest extends FaultToleranceTest {
     @ParameterizedTest(name = "{1}")
     @MethodSource("createBeans")
     public void testRetryAsync(RetryBean bean, String unused) throws Exception {
-        Future<String> future = bean.retryAsync();
+        CompletableFuture<String> future = bean.retryAsync();
         future.get();
         assertThat(bean.getInvocations(), is(3));
     }

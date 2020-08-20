@@ -19,7 +19,6 @@ package io.helidon.microprofile.faulttolerance;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.enterprise.context.Dependent;
@@ -71,7 +70,7 @@ public class RetryBean {
 
     @Asynchronous
     @Retry(maxRetries = 2)
-    public Future<String> retryAsync() {
+    public CompletableFuture<String> retryAsync() {
         CompletableFuture<String> future = new CompletableFuture<>();
         if (invocations.incrementAndGet() <= 2) {
             printStatus("RetryBean::retryAsync()", "failure");

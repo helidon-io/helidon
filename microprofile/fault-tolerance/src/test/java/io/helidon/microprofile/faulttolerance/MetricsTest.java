@@ -17,16 +17,15 @@
 package io.helidon.microprofile.faulttolerance;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
 
 import org.eclipse.microprofile.faulttolerance.exceptions.CircuitBreakerOpenException;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
-import static org.hamcrest.Matchers.greaterThan;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.Matchers.greaterThan;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BREAKER_CALLS_FAILED_TOTAL;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BREAKER_CALLS_PREVENTED_TOTAL;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BREAKER_CALLS_SUCCEEDED_TOTAL;
@@ -213,7 +212,7 @@ public class MetricsTest extends FaultToleranceTest {
     public void testBreakerTrip() throws Exception {
         MetricsBean bean = newBean(MetricsBean.class);
 
-        for (int i = 0; i < CircuitBreakerBean.REQUEST_VOLUME_THRESHOLD - 1; i++) {
+        for (int i = 0; i < CircuitBreakerBean.REQUEST_VOLUME_THRESHOLD ; i++) {
             assertThrows(RuntimeException.class, () -> bean.exerciseBreaker(false));
         }
         assertThrows(CircuitBreakerOpenException.class, () -> bean.exerciseBreaker(false));
@@ -226,7 +225,7 @@ public class MetricsTest extends FaultToleranceTest {
                    is(0L));
         assertThat(getCounter(bean, "exerciseBreaker",
                                 BREAKER_CALLS_FAILED_TOTAL, boolean.class),
-                   is((long) CircuitBreakerBean.REQUEST_VOLUME_THRESHOLD - 1));
+                   is((long) CircuitBreakerBean.REQUEST_VOLUME_THRESHOLD));
         assertThat(getCounter(bean, "exerciseBreaker",
                                    BREAKER_CALLS_PREVENTED_TOTAL, boolean.class),
                    is(1L));
@@ -289,12 +288,12 @@ public class MetricsTest extends FaultToleranceTest {
                 is(2L));
         assertThat(getCounter(bean, "exerciseBreakerException",
                 BREAKER_OPENED_TOTAL, boolean.class),
-                is(1L));
+                is(0L));
 
         assertThrows(Exception.class, () -> bean.exerciseBreakerException(true));  // failure
         assertThat(getCounter(bean, "exerciseBreakerException",
                 BREAKER_CALLS_SUCCEEDED_TOTAL, boolean.class),
-                is(0L));
+                is(1L));
 
         // Sleep longer than circuit breaker delay
         Thread.sleep(1500);
@@ -311,7 +310,7 @@ public class MetricsTest extends FaultToleranceTest {
         // Check counters after successful calls
         assertThat(getCounter(bean, "exerciseBreakerException",
                 BREAKER_CALLS_SUCCEEDED_TOTAL, boolean.class),
-                is(2L));
+                is(3L));
 
         try {
             bean.exerciseBreakerException(true);    // success
@@ -322,7 +321,7 @@ public class MetricsTest extends FaultToleranceTest {
         // Check counters after successful calls
         assertThat(getCounter(bean, "exerciseBreakerException",
                 BREAKER_CALLS_SUCCEEDED_TOTAL, boolean.class),
-                is(3L));
+                is(4L));
     }
 
     @Test
@@ -336,7 +335,7 @@ public class MetricsTest extends FaultToleranceTest {
     @Test
     public void testBulkheadMetrics() throws Exception {
         MetricsBean bean = newBean(MetricsBean.class);
-        Future<String>[] calls = getAsyncConcurrentCalls(
+        CompletableFuture<String>[] calls = getAsyncConcurrentCalls(
             () -> bean.concurrent(200), BulkheadBean.TOTAL_CALLS);
         waitFor(calls);
         assertThat(getGauge(bean, "concurrent",

@@ -16,7 +16,7 @@
 
 package io.helidon.microprofile.faulttolerance;
 
-import java.util.concurrent.Future;
+import java.util.concurrent.CompletableFuture;
 
 import org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException;
 
@@ -42,7 +42,7 @@ public class TimeoutTest extends FaultToleranceTest {
     @Test
     public void testForceTimeoutAsync() throws Exception {
         TimeoutBean bean = newBean(TimeoutBean.class);
-        Future<String> future = bean.forceTimeoutAsync();
+        CompletableFuture<String> future = bean.forceTimeoutAsync();
         assertCompleteExceptionally(future, TimeoutException.class);
     }
 
