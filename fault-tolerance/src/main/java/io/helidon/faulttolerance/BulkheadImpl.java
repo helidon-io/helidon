@@ -96,6 +96,7 @@ class BulkheadImpl implements Bulkhead {
     private <R> R invokeTask(DelayedTask<R> task) {
         if (inProgress.tryAcquire()) {
             LOGGER.finest(() -> name + " invoke immediate: " + task);
+
             // free permit, we can invoke
             execute(task);
             return task.result();
@@ -103,9 +104,16 @@ class BulkheadImpl implements Bulkhead {
             // no free permit, let's try to enqueue in async mode
             if (async && queue.offer(task)) {
                 LOGGER.finest(() -> name + " enqueue: " + task);
-                return task.result();
+
+                R result = task.result();
+                if (result instanceof Single<?>) {
+                    Single<Object> single = (Single<Object>) result;
+                    return (R) single.onCancel(queue::remove);
+                }
+                return result;
             } else {
                 LOGGER.finest(() -> name + " reject: " + task);
+
                 callsRejected.incrementAndGet();
                 return task.error(new BulkheadException("Bulkhead queue \"" + name + "\" is full"));
             }
@@ -117,7 +125,6 @@ class BulkheadImpl implements Bulkhead {
         callsAccepted.incrementAndGet();
         concurrentExecutions.incrementAndGet();
 
-        long startNanos = System.nanoTime();
         task.execute()
                 .handle((it, throwable) -> {
                     concurrentExecutions.decrementAndGet();
@@ -127,10 +134,12 @@ class BulkheadImpl implements Bulkhead {
                     DelayedTask<?> polled = queue.poll();
                     if (polled != null) {
                         LOGGER.finest(() -> name + " invoke in executor: " + polled);
+
                         // chain executions from queue until all are executed
                         executor.get().submit(() -> execute(polled));
                     } else {
                         LOGGER.finest(() -> name + " permit released after: " + task);
+
                         // nothing in the queue, release permit
                         inProgress.release();
                     }

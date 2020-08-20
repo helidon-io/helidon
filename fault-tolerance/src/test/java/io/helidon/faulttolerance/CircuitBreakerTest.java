@@ -55,6 +55,7 @@ class CircuitBreakerTest {
 
         // should open the breaker
         bad(breaker);
+        bad(breaker);
 
         breakerOpen(breaker);
         breakerOpenMulti(breaker);
@@ -78,6 +79,7 @@ class CircuitBreakerTest {
         assertThat(breaker.state(), is(CircuitBreaker.State.CLOSED));
 
         // should open the breaker
+        bad(breaker);
         bad(breaker);
         bad(breaker);
 

@@ -18,6 +18,7 @@ package io.helidon.faulttolerance;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
@@ -35,14 +36,17 @@ class AsyncImpl implements Async {
         CompletableFuture<T> future = new CompletableFuture<>();
         AsyncTask<T> task = new AsyncTask<>(supplier, future);
 
+        Future<?> taskFuture;
         try {
-            executor.get().submit(task);
+            taskFuture = executor.get().submit(task);
         } catch (Throwable e) {
             // rejected execution and other executor related issues
             return Single.error(e);
         }
 
-        return Single.create(future, true);
+        Single<T> single = Single.create(future, true);
+        single.onCancel(() -> taskFuture.cancel(false));     // cancel task
+        return single;
     }
 
     private static class AsyncTask<T> implements Runnable {

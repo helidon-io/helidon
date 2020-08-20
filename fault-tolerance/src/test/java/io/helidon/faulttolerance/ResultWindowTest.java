@@ -31,14 +31,16 @@ class ResultWindowTest {
         window.update(ResultWindow.Result.SUCCESS);
         assertThat("Only success should not open", window.shouldOpen(), is(false));
         window.update(ResultWindow.Result.FAILURE);
-        assertThat("Should open on first failure (10% of 10 size)", window.shouldOpen(), is(true));
+        window.update(ResultWindow.Result.FAILURE);
+        assertThat("Should open on first failure (> 10%)", window.shouldOpen(), is(true));
         //now cycle through window and replace all with success
         for (int i = 0; i < 10; i++) {
              window.update(ResultWindow.Result.SUCCESS);
         }
         assertThat("All success should not open", window.shouldOpen(), is(false));
         window.update(ResultWindow.Result.FAILURE);
-        assertThat("Should open on first failure (10% of 10 size)", window.shouldOpen(), is(true));
+        window.update(ResultWindow.Result.FAILURE);
+        assertThat("Should open on first failure (> 10%)", window.shouldOpen(), is(true));
         window.reset();
         assertThat("Should not open after reset", window.shouldOpen(), is(false));
     }
