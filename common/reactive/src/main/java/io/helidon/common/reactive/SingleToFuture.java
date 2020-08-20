@@ -28,8 +28,10 @@ final class SingleToFuture<T> extends CompletableFuture<T> implements Subscriber
 
     private final AtomicReference<Subscription> ref = new AtomicReference<>();
     private final boolean completeWithoutValue;
+    private final Single<T> source;
 
-    SingleToFuture(boolean completeWithoutValue) {
+    SingleToFuture(Single<T> source, boolean completeWithoutValue) {
+        this.source = source;
         this.completeWithoutValue = completeWithoutValue;
     }
 
@@ -41,6 +43,7 @@ final class SingleToFuture<T> extends CompletableFuture<T> implements Subscriber
             if (s != null) {
                 s.cancel();
             }
+            source.cancel();
         }
         return cancelled;
     }

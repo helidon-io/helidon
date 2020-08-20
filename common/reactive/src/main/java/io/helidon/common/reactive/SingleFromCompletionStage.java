@@ -37,4 +37,11 @@ final class SingleFromCompletionStage<T> extends CompletionSingle<T> {
     public void subscribe(Flow.Subscriber<? super T> subscriber) {
         MultiFromCompletionStage.subscribe(subscriber, source, nullMeansEmpty);
     }
+
+    @Override
+    public Single<T> cancel() {
+        Single<T> single = super.cancel();
+        source.toCompletableFuture().cancel(true);
+        return single;
+    }
 }
