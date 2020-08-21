@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!--
   ~ Copyright (c)  2020 Oracle and/or its affiliates.
   ~
@@ -36,6 +36,7 @@
 
     <modules>
         <module>kafka-websocket-mp</module>
+        <module>jms-websocket-mp</module>
         <module>kafka-websocket-se</module>
     </modules>
 </project>
