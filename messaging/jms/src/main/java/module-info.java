@@ -29,8 +29,8 @@ module io.helidon.messaging.connectors.jms {
     requires io.helidon.common.configurable;
     requires io.helidon.messaging;
     requires microprofile.config.api;
-    requires aqapi;
     requires javax.jms.api;
+    requires java.naming;
 
     exports io.helidon.messaging.connectors.jms;
 }

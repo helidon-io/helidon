@@ -43,11 +43,11 @@ public class MsgProcessingBean {
     private final SubmissionPublisher<String> emitter = new SubmissionPublisher<>();
     private final SubmissionPublisher<String> broadCaster = new SubmissionPublisher<>();
 
-    @Produces
-    @ApplicationScoped
-    public ConnectionFactory connectionFactory() {
-        return new ActiveMQConnectionFactory("tcp://localhost:61616");
-    }
+//    @Produces
+//    @ApplicationScoped
+//    public ConnectionFactory connectionFactory() {
+//        return new ActiveMQConnectionFactory("tcp://localhost:61616");
+//    }
 
     /**
      * Create a publisher for the emitter.

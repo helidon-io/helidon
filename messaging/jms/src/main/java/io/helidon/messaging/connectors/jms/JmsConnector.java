@@ -12,7 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *  
+ *
  */
 
 package io.helidon.messaging.connectors.jms;
@@ -78,17 +78,15 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
 
     @Override
     public PublisherBuilder<? extends Message<?>> getPublisherBuilder(final Config config) {
-        ConnectionFactory connectionFactory = connectionFactories.stream()
-                //.filter(cf -> config.getValue("connection-factory", Class.class).isAssignableFrom(cf.getClass()))
-                .findFirst()
-                .get();
+        ConnectionFactoryLocator factoryLocator = ConnectionFactoryLocator.create(config, connectionFactories);
 
-        Connection connection = null;
+        Connection connection;
         try {
+            ConnectionFactory connectionFactory = factoryLocator.connectionFactory();
             connection = connectionFactory.createConnection();
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
-            MessageConsumer consumer = session.createConsumer(createDestination(session, config));
+            MessageConsumer consumer = session.createConsumer(factoryLocator.createDestination(session));
             BufferedEmittingPublisher<Message<?>> emittingPublisher = BufferedEmittingPublisher.create();
             scheduler.scheduleAtFixedRate(() -> {
                 try {
@@ -111,14 +109,12 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
 
     @Override
     public SubscriberBuilder<? extends Message<?>, Void> getSubscriberBuilder(final Config config) {
-        ConnectionFactory connectionFactory = connectionFactories.stream()
-                //.filter(cf -> config.getValue("connection-factory", Class.class).isAssignableFrom(cf.getClass()))
-                .findFirst()
-                .get();
+        ConnectionFactoryLocator factoryLocator = ConnectionFactoryLocator.create(config, connectionFactories);
         try {
+            ConnectionFactory connectionFactory = factoryLocator.connectionFactory();
             Connection connection = connectionFactory.createConnection();
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-            Destination destination = createDestination(session, config);
+            Destination destination = factoryLocator.createDestination(session);
             MessageProducer producer = session.createProducer(destination);
             return ReactiveStreams.<Message<?>>builder()
                     .onTerminate(() -> {
@@ -126,7 +122,7 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
                     })
                     .forEach((Object m) -> {
                         try {
-                            Object payload = ((Message<?>)m).getPayload();
+                            Object payload = ((Message<?>) m).getPayload();
                             if (payload instanceof String) {
                                 TextMessage textMessage = session.createTextMessage((String) payload);
                                 producer.send(textMessage);
@@ -144,24 +140,5 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
         }
     }
 
-    private Destination createDestination(Session session, Config config) {
-        return config.getOptionalValue("queue", String.class)
-                .map(s -> {
-                    try {
-                        return session.createQueue(s);
-                    } catch (JMSException e) {
-                        throw new RuntimeException(e);
-                    }
-                })
-                .map(queue -> (Destination) queue)
-                .orElse(config.getOptionalValue("topic", String.class)
-                        .map(topicName -> {
-                            try {
-                                return session.createTopic(topicName);
-                            } catch (JMSException e) {
-                                throw new RuntimeException(e);
-                            }
-                        }).orElse(null));
 
-    }
 }
