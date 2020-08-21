@@ -835,6 +835,16 @@
                 <artifactId>helidon-messaging-kafka</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.messaging.jms</groupId>
+                <artifactId>helidon-messaging-jms</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.messaging.aq</groupId>
+                <artifactId>helidon-messaging-aq</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
             <!-- Testing -->
             <dependency>
                 <groupId>io.helidon.microprofile.tests</groupId>

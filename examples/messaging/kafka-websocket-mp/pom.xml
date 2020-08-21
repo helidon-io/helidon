@@ -26,10 +26,10 @@
         <version>2.1.1-SNAPSHOT</version>
         <relativePath>../../../applications/mp/pom.xml</relativePath>
     </parent>
-    <groupId>io.helidon.messaging.mp.example</groupId>
-    <artifactId>mp-example</artifactId>
+    <groupId>io.helidon.examples.messaging.mp</groupId>
+    <artifactId>kafka-websocket-mp</artifactId>
     <version>1.0-SNAPSHOT</version>
-    <name>mp-messaging-example</name>
+    <name>kafka-websocket-mp</name>
 
     <dependencies>
         <dependency>

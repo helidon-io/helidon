@@ -35,5 +35,7 @@
     <modules>
         <module>messaging</module>
         <module>kafka</module>
+        <module>jms</module>
+        <module>aq</module>
     </modules>
 </project>
