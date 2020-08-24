@@ -268,11 +268,21 @@ public final class ModelHelper {
      */
     public static Class<?> getGenericType(Type type) {
         if (type instanceof Class) {
-            return (Class) type;
+            return (Class<?>) type;
         } else if (type instanceof ParameterizedType) {
             ParameterizedType parameterizedType = (ParameterizedType) type;
             if (parameterizedType.getRawType() instanceof Class) {
-                return (Class) parameterizedType.getActualTypeArguments()[0];
+                Type t = parameterizedType.getActualTypeArguments()[0];
+                if (t instanceof Class) {
+                    return (Class<?>) t;
+                } else if (t instanceof ParameterizedType) {
+                    // the type is a nested generic e.g. List<Map<String, Integer>>
+                    // we're only interested in the outer type, in the example above List
+                    return (Class<?>) ((ParameterizedType) t).getRawType();
+                } else {
+                    throw new IllegalArgumentException("Type parameter " + type.toString() + " not a class or "
+                            + "parameterized type whose raw type is a class");
+                }
             }
         } else if (type instanceof GenericArrayType) {
             GenericArrayType array = (GenericArrayType) type;

@@ -16,6 +16,10 @@
 
 package io.helidon.microprofile.grpc.server;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
 import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.inject.Singleton;
@@ -64,6 +68,13 @@ public class GrpcServiceBuilderTest {
         ServiceDescriptor descriptor = modeller.build();
 
         assertThat(descriptor.name(), is("ServiceOne/foo"));
+    }
+
+    @Test
+    public void shouldCreateDescriptorFoServiceWithNestedGenericParameters() {
+        GrpcServiceBuilder modeller = GrpcServiceBuilder.create(ServiceSix.class, beanManager);
+        ServiceDescriptor descriptor = modeller.build();
+        assertThat(descriptor.name(), is(ServiceSix.class.getSimpleName()));
     }
 
     @Test
@@ -305,6 +316,14 @@ public class GrpcServiceBuilderTest {
         public void unary(String param, StreamObserver<ServiceFive> observer) {
             observer.onNext(this);
             observer.onCompleted();
+        }
+    }
+
+    @Grpc
+    public static class ServiceSix {
+        @GrpcMethod(type = io.grpc.MethodDescriptor.MethodType.UNARY)
+        public List<Map<Integer, String>> unary(List<Map<Integer, String>> param) {
+            return Collections.singletonList(Collections.singletonMap(1, "One"));
         }
     }
 }
