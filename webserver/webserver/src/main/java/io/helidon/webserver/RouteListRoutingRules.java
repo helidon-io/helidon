@@ -243,6 +243,21 @@ class RouteListRoutingRules implements Routing.Rules {
     }
 
     @Override
+    public RouteListRoutingRules patch(Handler... requestHandlers) {
+        return addSingle(Http.Method.PATCH, requestHandlers);
+    }
+
+    @Override
+    public RouteListRoutingRules patch(String pathPattern, Handler... requestHandlers) {
+        return addSingle(Http.Method.PATCH, pathPattern, requestHandlers);
+    }
+
+    @Override
+    public RouteListRoutingRules patch(PathMatcher pathMatcher, Handler... requestHandlers) {
+        return addSingle(Http.Method.PATCH, pathMatcher, requestHandlers);
+    }
+
+    @Override
     public RouteListRoutingRules delete(Handler... requestHandlers) {
         return addSingle(Http.Method.DELETE, requestHandlers);
     }
