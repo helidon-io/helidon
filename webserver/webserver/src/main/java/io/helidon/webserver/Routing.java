@@ -241,7 +241,7 @@ public interface Routing {
          * @param requestHandlers handlers to process HTTP request
          * @return an updated routing configuration
          */
-        Rules patch (PathMatcher pathMatcher, Handler... requestHandlers);
+        Rules patch(PathMatcher pathMatcher, Handler... requestHandlers);
 
         /**
          * Routes all DELETE requests to provided handler(s). Request handler can call {@link ServerRequest#next()}
