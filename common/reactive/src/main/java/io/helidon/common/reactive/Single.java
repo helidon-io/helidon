@@ -649,7 +649,7 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
      */
     default CompletionStage<T> toStage() {
         try {
-            SingleToFuture<T> subscriber = new SingleToFuture<>(false);
+            SingleToFuture<T> subscriber = new SingleToFuture<>(this, false);
             this.subscribe(subscriber);
             return subscriber;
         } catch (Throwable ex) {
