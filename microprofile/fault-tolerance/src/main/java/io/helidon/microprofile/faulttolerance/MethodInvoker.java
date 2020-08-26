@@ -94,16 +94,6 @@ public class MethodInvoker implements FtSupplier<Object> {
     private static final Logger LOGGER = Logger.getLogger(MethodInvoker.class.getName());
 
     /**
-     * Config key to disable method state caching in FT.
-     */
-    private static final String DISABLE_CACHING = "fault-tolerance.disableCaching";
-
-    /**
-     * Waiting millis to convert {@code Future} into {@code CompletableFuture}.
-     */
-    private static final long AWAIT_FUTURE_MILLIS = 5L;
-
-    /**
      * The method being intercepted.
      */
     private final Method method;
@@ -119,9 +109,12 @@ public class MethodInvoker implements FtSupplier<Object> {
     private final MethodIntrospector introspector;
 
     /**
-     * Map of methods to their internal state.
+     * Map of a class loader and a method into a method state. Class loaders are needed
+     * when running TCKs where each test is considered a different application (with
+     * potentially different configurations).
      */
-    private static final ConcurrentHashMap<Method, MethodState> FT_HANDLERS = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<ClassLoader, ConcurrentHashMap<Method, MethodState>>
+            FT_HANDLERS = new ConcurrentHashMap<>();
 
     /**
      * Executor service shared by instances of this class.
@@ -260,8 +253,12 @@ public class MethodInvoker implements FtSupplier<Object> {
         this.method = context.getMethod();
         this.helidonContext = Contexts.context().orElseGet(Context::create);
 
-        // Initialize method state for this method
-        Function<Method, MethodState> createState = method -> {
+        // Create method state using CCL to support multiples apps (TCKs)
+        ClassLoader ccl = Thread.currentThread().getContextClassLoader();
+        Objects.requireNonNull(ccl);
+        ConcurrentHashMap<Method, MethodState> methodStates =
+                FT_HANDLERS.computeIfAbsent(ccl, cl -> new ConcurrentHashMap<>());
+        this.methodState = methodStates.computeIfAbsent(method, method -> {
             MethodState methodState = new MethodState();
             methodState.lastBreakerState = State.CLOSED;
             if (introspector.hasCircuitBreaker()) {
@@ -272,12 +269,7 @@ public class MethodInvoker implements FtSupplier<Object> {
             }
             methodState.handler = createMethodHandler(methodState);
             return methodState;
-        };
-        boolean disableCaching = ConfigProvider.getConfig()
-                .getOptionalValue(DISABLE_CACHING, Boolean.class).orElse(false);
-        this.methodState = disableCaching ? createState.apply(method)
-                : FT_HANDLERS.computeIfAbsent(method, createState);
-        LOGGER.fine(() -> "Caching of MethodState objects is " + (disableCaching ? "disabled" : "enabled"));
+        });
 
         // Gather information about current request scope if active
         try {

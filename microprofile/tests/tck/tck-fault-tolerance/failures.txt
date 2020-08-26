@@ -1,0 +1,133 @@
+ Failed tests:
+   AsyncCancellationTest>Arquillian.run:138->testCancelledButRemainsInBulkhead:155 Task started unexpectedly
+   AsyncCancellationTest>Arquillian.run:138->testCancelledWhileQueued:176 Task started unexpectedly
+   CircuitBreakerBulkheadTest>Arquillian.run:138->testCircuitBreaker:229 Task started unexpectedly
+   CircuitBreakerBulkheadTest>Arquillian.run:138->testCircuitBreakerAroundBulkheadAsync:113 Task started unexpectedly
+   CircuitBreakerBulkheadTest>Arquillian.run:138->testCircuitBreakerAroundBulkheadSync:173 Task did not finish within 2 seconds
+   CircuitBreakerExceptionHierarchyTest>Arquillian.run:138->serviceAthrowsE0:86 expected [OPEN] but found [CLOSED]
+   CircuitBreakerExceptionHierarchyTest>Arquillian.run:138->serviceAthrowsE0S:116 expected [OPEN] but found [CLOSED]
+   CircuitBreakerExceptionHierarchyTest>Arquillian.run:138->serviceBthrowsException:136 expected [OPEN] but found [CLOSED]
+   CircuitBreakerExceptionHierarchyTest>Arquillian.run:138->serviceBthrowsRuntimeException:178 expected [OPEN] but found [CLOSED]
+   CircuitBreakerInitialSuccessTest>Arquillian.run:138->testCircuitInitialSuccessDefaultSuccessThreshold:97 serviceA should throw an Exception in testCircuitDefaultSuccessThreshold on iteration 5
+   CircuitBreakerLateSuccessTest>Arquillian.run:138->testCircuitLateSuccessDefaultSuccessThreshold:98 serviceA should throw an Exception in testCircuitLateSuccessDefaultSuccessThreshold on iteration 5
+   CircuitBreakerRetryTest>Arquillian.run:138->testCircuitOpenWithMultiTimeouts:275 serviceC should retry or throw a CircuitBreakerOpenException in testCircuitOpenWithMultiTimeouts on iteration 1, caught exception: org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException: Method interrupted by timeout
+   CircuitBreakerRetryTest>Arquillian.run:138->testCircuitOpenWithMultiTimeoutsAsync:480 Thrown exception is the wrong type
+ Expected: an instance of org.eclipse.microprofile.faulttolerance.exceptions.CircuitBreakerOpenException
+      but: <org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException> is a org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException
+   CircuitBreakerRetryTest>Arquillian.run:138->testNoRetriesIfAbortOnAsync:589 Execution exception not thrown from Future
+   CircuitBreakerRetryTest>Arquillian.run:138->testNoRetriesIfNotRetryOnAsync:563 Execution exception not thrown from Future
+   CircuitBreakerRetryTest>Arquillian.run:138->testRetriesSucceedWhenCircuitCloses:311 Call was successful but did not take the expected time
+ Expected: Duration within <PT0.25S> of <PT1S>
+      but: <PT0.000519601S> which is <PT0.999480399S> from <PT1S>
+   CircuitBreakerRetryTest>Arquillian.run:138->testRetriesSucceedWhenCircuitClosesAsync:538 Call was successful but did not take the expected time
+ Expected: Duration within <PT0.25S> of <PT1S>
+      but: <PT0.000666539S> which is <PT0.999333461S> from <PT1S>
+   CircuitBreakerTest>Arquillian.run:138->testCircuitClosedThenOpen:122 The number of executions should be 4 expected [4] but found [7]
+   CircuitBreakerTest>Arquillian.run:138->testCircuitDefaultSuccessThreshold:222 serviceA should throw an Exception in testCircuitDefaultSuccessThreshold on iteration 5
+   CircuitBreakerTest>Arquillian.run:138->testCircuitHighSuccessThreshold:309 serviceA should not have thrown a RuntimeException in testCircuitHighSuccessThreshold on iteration 7
+   CircuitBreakerTest>Arquillian.run:138->testClassLevelCircuitBase:372 The number of executions should be 4 expected [4] but found [7]
+   CircuitBreakerTest>Arquillian.run:138->testClassLevelCircuitOverride:411 serviceC should not throw a RuntimeException on iteration 3
+   CircuitBreakerTest>Arquillian.run:138->testRollingWindowCircuitOpen:528 The CircuitBreaker exception in testRollingWindowCircuitOpen was not thrown correctly. expected [true] but found [false]
+   CircuitBreakerTest>Arquillian.run:138->testRollingWindowCircuitOpen2:576 The CircuitBreaker exception in testRollingWindowCircuitOpen2 was not thrown correctly. expected [true] but found [false]
+   CircuitBreakerTimeoutTest>Arquillian.run:138->testTimeout:74 Unexpected exception thrown
+   RetryTimeoutTest>Arquillian.run:138->testRetryWithAbortOn:151 The execution count should be 1 (no retries) expected [1] but found [2]
+   TimeoutUninterruptableTest>Arquillian.run:138->testTimeoutAsyncBulkhead:185 Execution count after second call expected [1] but found [2]
+   BulkheadAsynchRetryTest>Arquillian.run:138->testBulkheadClassAsynchronous55RetryOverload:282 Failure count should be non-zero
+ Expected: a value greater than <0>
+      but: <0> was equal to <0>
+   BulkheadAsynchRetryTest>Arquillian.run:138->testBulkheadClassAsynchronousPassiveRetry55:161  Bulkhead appears to have been breeched 10 workers, expected 5.  expected [true] but found [false]
+   BulkheadAsynchRetryTest>Arquillian.run:138->testBulkheadMethodAsynchronous55RetryOverload:251 Failure count should be non-zero
+ Expected: a value greater than <0>
+      but: <0> was equal to <0>
+   BulkheadAsynchRetryTest>Arquillian.run:138->testBulkheadMethodAsynchronousRetry55:177  Bulkhead appears to have been breeched 10 workers, expected 5.  expected [true] but found [false]
+   BulkheadAsynchRetryTest>Arquillian.run:138->testBulkheadMethodAsynchronousRetry55Trip:208 Task 0 is running. expected [false] but found [true]
+   BulkheadAsynchRetryTest>Arquillian.run:138->testBulkheadPassiveRetryMethodAsynchronous55:295  Bulkhead appears to have been breeched 10 workers, expected 5.  expected [true] but found [false]
+   BulkheadAsynchRetryTest>Arquillian.run:138->testBulkheadQueReplacesDueToClassRetryFailures:346  Bulkhead appears to have been breeched 10 workers, expected 5.  expected [true] but found [false]
+   BulkheadAsynchRetryTest>Arquillian.run:138->testBulkheadRetryClassAsynchronous55:310  Bulkhead appears to have been breeched 10 workers, expected 5.  expected [true] but found [false]
+   BulkheadAsynchRetryTest>Arquillian.run:138->testNoRetriesWithAbortOn:477 Task started unexpectedly
+   BulkheadAsynchRetryTest>Arquillian.run:138->testNoRetriesWithoutRetryOn:451 Task started unexpectedly
+   BulkheadAsynchRetryTest>Arquillian.run:138->testRetriesJoinBackOfQueue:411 Task started unexpectedly
+   BulkheadAsynchRetryTest>Arquillian.run:138->testRetriesReenterBulkhead:381 Task started unexpectedly
+   BulkheadAsynchTest>Arquillian.run:138->testBulkheadClassAsynchronous3:162  Bulkhead appears to have been breeched 10 workers, expected 3.  expected [true] but found [false]
+   BulkheadAsynchTest>Arquillian.run:138->testBulkheadCompletionStage:290 Timed out waiting for future to throw BulkheadException
+   BulkheadAsynchTest>Arquillian.run:138->testBulkheadExceptionThrownWhenQueueFullAsync:260 When a task is rejected from the bulkhead, the returned future should report as done expected [true] but found [false]
+   BulkheadAsynchTest>Arquillian.run:138->testBulkheadMethodAsynchronous3:174  Bulkhead appears to have been breeched 10 workers, expected 3.  expected [true] but found [false]
+   BulkheadSynchConfigTest>Arquillian.run:138->testBulkheadClassSemaphore3:83  Bulkhead appears to have been breeched 10 workers, expected 5.  expected [true] but found [false]
+   BulkheadSynchRetryTest.afterClass:139 Unable to clean up all tasks
+ org.eclipse.microprofile.fault.tolerance.tck.bulkhead.BulkheadSynchRetryTest.afterMethod(org.eclipse.microprofile.fault.tolerance.tck.bulkhead.BulkheadSynchRetryTest)
+   Run 1: BulkheadSynchRetryTest.afterMethod:134 Unable to clean up all tasks
+   Run 2: BulkheadSynchRetryTest.afterMethod:134 Unable to clean up all tasks
+   Run 3: BulkheadSynchRetryTest.afterMethod:134 Unable to clean up all tasks
+
+   BulkheadSynchRetryTest>Arquillian.run:138->testBulkheadMethodSynchronousRetry55:231  Bulkhead appears to have been breeched 10 workers, expected 5.  expected [true] but found [false]
+   BulkheadSynchRetryTest>Arquillian.run:138->testBulkheadRetryClassSynchronous55:261  Bulkhead appears to have been breeched 10 workers, expected 5.  expected [true] but found [false]
+   BulkheadSynchRetryTest>Arquillian.run:138->testIgnoreWaitingTaskQueueBulkhead:290  Bulkhead appears to have been breeched 10 workers, expected 5.  expected [true] but found [false]
+   BulkheadSynchRetryTest>Arquillian.run:138->testNoRetriesBulkhead:275  Bulkhead appears to have been breeched 10 workers, expected 5.  expected [true] but found [false]
+   BulkheadSynchRetryTest>Arquillian.run:138->testNoRetriesWithAbortOn:358 Timed out waiting for future to throw BulkheadException
+   BulkheadSynchRetryTest>Arquillian.run:138->testNoRetriesWithoutRetryOn:338 Timed out waiting for future to throw BulkheadException
+   BulkheadSynchRetryTest>Arquillian.run:138->testRetriesReenterBulkhead:317 Unexpected exception thrown from Future
+   BulkheadSynchTest>Arquillian.run:138->testBulkheadClassSemaphore3:114  Bulkhead appears to have been breeched 10 workers, expected 3.  expected [true] but found [false]
+   BulkheadSynchTest>Arquillian.run:138->testBulkheadExceptionThrownWhenQueueFullSemaphore:199 Unable to clean up all tasks
+   BulkheadSynchTest>Arquillian.run:138->testBulkheadMethodSemaphore3:152  Bulkhead appears to have been breeched 10 workers, expected 3.  expected [true] but found [false]
+   CircuitBreakerConfigGlobalTest>Arquillian.run:138->testCircuitDefaultSuccessThreshold:75 serviceA should throw an Exception in testCircuitDefaultSuccessThreshold on iteration 5
+   CircuitBreakerConfigOnMethodTest>Arquillian.run:138->testCircuitDefaultSuccessThreshold:77 serviceA should throw an Exception in testCircuitDefaultSuccessThreshold on iteration 5
+   DisableAnnotationGloballyEnableOnClassTest>Arquillian.run:138->testBulkhead:174 Expected BulkheadException to be thrown, but nothing was thrown
+   DisableAnnotationGloballyEnableOnClassTest>Arquillian.run:138->testCircuitBreaker:125 Expected CircuitBreakerOpenException to be thrown, but TestException was thrown
+   DisableAnnotationGloballyEnableOnMethodTest>Arquillian.run:138->testBulkhead:177 Expected BulkheadException to be thrown, but nothing was thrown
+   DisableAnnotationGloballyEnableOnMethodTest>Arquillian.run:138->testCircuitBreaker:126 Expected CircuitBreakerOpenException to be thrown, but TestException was thrown
+   DisableAnnotationOnClassEnableOnMethodTest>Arquillian.run:138->testBulkhead:175 Expected BulkheadException to be thrown, but nothing was thrown
+   DisableAnnotationOnClassEnableOnMethodTest>Arquillian.run:138->testCircuitBreaker:126 Expected CircuitBreakerOpenException to be thrown, but TestException was thrown
+   DisableFTEnableGloballyTest>Arquillian.run:138->testBulkhead:169 Expected BulkheadException to be thrown, but nothing was thrown
+   DisableFTEnableGloballyTest>Arquillian.run:138->testCircuitBreaker:120 Expected CircuitBreakerOpenException to be thrown, but TestException was thrown
+   DisableFTEnableOnClassTest>Arquillian.run:138->testBulkhead:169 Expected BulkheadException to be thrown, but nothing was thrown
+   DisableFTEnableOnClassTest>Arquillian.run:138->testCircuitBreaker:120 Expected CircuitBreakerOpenException to be thrown, but TestException was thrown
+   DisableFTEnableOnMethodTest>Arquillian.run:138->testBulkhead:156 Expected BulkheadException to be thrown, but nothing was thrown
+   DisableFTEnableOnMethodTest>Arquillian.run:138->testCircuitBreaker:107 Expected CircuitBreakerOpenException to be thrown, but TestException was thrown
+   FallbackMethodOutOfPackageTest>Arquillian.arquillianBeforeClass:96 ? Runtime E...
+   FallbackMethodSubclassTest>Arquillian.arquillianBeforeClass:96 ? Runtime Expec...
+   FallbackMethodSuperclassPrivateTest>Arquillian.arquillianBeforeClass:96 ? Runtime
+   FallbackMethodWildcardNegativeTest>Arquillian.arquillianBeforeClass:96 ? Runtime
+   IncompatibleFallbackMethodTest>Arquillian.arquillianBeforeClass:96 ? Runtime E...
+   IncompatibleFallbackMethodWithArgsTest>Arquillian.arquillianBeforeClass:96 ? Runtime
+   IncompatibleFallbackPolicies>Arquillian.arquillianBeforeClass:96 ? Runtime Exp...
+   IncompatibleFallbackTest>Arquillian.arquillianBeforeClass:96 ? Runtime Expecte...
+   InvalidAsynchronousClassTest>Arquillian.arquillianBeforeClass:96 ? Runtime Exp...
+   InvalidAsynchronousMethodTest>Arquillian.arquillianBeforeClass:96 ? Runtime Ex...
+   InvalidBulkheadAsynchQueueTest>Arquillian.arquillianBeforeClass:96 ? Runtime E...
+   InvalidBulkheadValueTest>Arquillian.arquillianBeforeClass:96 ? Runtime Expecte...
+   InvalidCircuitBreakerDelayTest>Arquillian.arquillianBeforeClass:96 ? Runtime E...
+   InvalidCircuitBreakerFailureRatioNegTest>Arquillian.arquillianBeforeClass:96 ? Runtime
+   InvalidCircuitBreakerFailureRatioPosTest>Arquillian.arquillianBeforeClass:96 ? Runtime
+   InvalidCircuitBreakerFailureReqVol0Test>Arquillian.arquillianBeforeClass:96 ? Runtime
+   InvalidCircuitBreakerFailureReqVolNegTest>Arquillian.arquillianBeforeClass:96 ? Runtime
+   InvalidCircuitBreakerFailureSuccess0Test>Arquillian.arquillianBeforeClass:96 ? Runtime
+   InvalidCircuitBreakerFailureSuccessNegTest>Arquillian.arquillianBeforeClass:96 ? Runtime
+   InvalidRetryDelayDurationTest>Arquillian.arquillianBeforeClass:96 ? Runtime Ex...
+   InvalidRetryDelayTest>Arquillian.arquillianBeforeClass:96 ? Runtime Expected e...
+   InvalidRetryJitterTest>Arquillian.arquillianBeforeClass:96 ? Runtime Expected ...
+   InvalidRetryMaxRetriesTest>Arquillian.arquillianBeforeClass:96 ? Runtime Expec...
+   InvalidTimeoutValueTest>Arquillian.arquillianBeforeClass:96 ? Runtime Expected...
+   BulkheadMetricTest>Arquillian.run:138->bulkheadMetricAsyncTest:219 Unexpected exception thrown from Future
+   BulkheadMetricTest>Arquillian.run:138->bulkheadMetricHistogramTest:173 Unexpected exception thrown from Future
+   BulkheadMetricTest>Arquillian.run:138->bulkheadMetricRejectionTest:142 Unexpected exception thrown from Future
+   BulkheadMetricTest>Arquillian.run:138->bulkheadMetricTest:110 concurrent executions
+ Expected: is <2L>
+      but: was <0L>
+   CircuitBreakerMetricTest>Arquillian.run:138->testCircuitBreakerMetric:116 circuit breaker times opened
+ Expected: is <1L>
+      but: was <0L>
+   ClassLevelMetricTest>Arquillian.run:138->testRetryMetricUnsuccessful:98 calls succeeded without retry
+ Expected: is <0L>
+      but: was <1L>
+   FallbackMetricTest>Arquillian.run:138->fallbackMetricHandlerTest:93 failed invocations
+ Expected: is <0L>
+      but: was <-1L>
+   FallbackMetricTest>Arquillian.run:138->fallbackMetricMethodTest:67 failed invocations
+ Expected: is <0L>
+      but: was <-1L>
+   RetryMetricTest>Arquillian.run:138->testRetryMetricUnsuccessful:92 calls succeeded without retry
+ Expected: is <0L>
+      but: was <1L>
+
+ Tests run: 457, Failures: 103, Errors: 0, Skipped: 48
+

@@ -27,5 +27,51 @@
         <packages>
             <package name="org.eclipse.microprofile.fault.tolerance.tck.*"/>
         </packages>
+        <!--classes>
+            <class name="org.eclipse.microprofile.fault.tolerance.tck.CircuitBreakerTest">
+                <methods>
+                    <include name="testCircuitClosedThenOpen"/>
+                </methods>
+            </class>
+        </classes -->
+        <!-- classes>
+            <class name="org.eclipse.microprofile.fault.tolerance.tck.disableEnv.DisableAnnotationGloballyEnableOnClassTest">
+            </class>
+            <class name="org.eclipse.microprofile.fault.tolerance.tck.disableEnv.DisableAnnotationGloballyEnableOnClassDisableOnMethod">
+            </class>
+        </classes -->
+        <!-- classes>
+            <class name="org.eclipse.microprofile.fault.tolerance.tck.AsyncFallbackTest">
+            </class>
+        </classes -->
+        <!-- classes>
+            Passing
+            <class name="org.eclipse.microprofile.fault.tolerance.tck.RetryTest"/>
+            <class name="org.eclipse.microprofile.fault.tolerance.tck.RetryConditionTest"/>
+            <class name="org.eclipse.microprofile.fault.tolerance.tck.RetryExceptionHierarchyTest"/>
+
+            <class name="org.eclipse.microprofile.fault.tolerance.tck.FallbackTest"/>
+            <class name="org.eclipse.microprofile.fault.tolerance.tck.FallbackExceptionHierarchyTest"/>
+
+            <class name="org.eclipse.microprofile.fault.tolerance.tck.AsynchronousTest"/>
+
+            <class name="org.eclipse.microprofile.fault.tolerance.tck.ConfigTest"/>
+
+            <class name="org.eclipse.microprofile.fault.tolerance.tck.TimeoutGlobalConfigTest"/>
+            <class name="org.eclipse.microprofile.fault.tolerance.tck.TimeoutMethodConfigTest"/>
+            <class name="org.eclipse.microprofile.fault.tolerance.tck.TimeoutTest"/>
+
+
+            <class name="org.eclipse.microprofile.fault.tolerance.tck.TimeoutUninterruptableTest">
+                <methods>
+                    <include name="testTimeoutAsyncBulkhead"/>
+                </methods>
+            </class>
+
+            Failing
+            <class name="org.eclipse.microprofile.fault.tolerance.tck.TimeoutUninterruptableTest"/>
+            <class name="org.eclipse.microprofile.fault.tolerance.tck.CircuitBreakerTest"/>
+            <class name="org.eclipse.microprofile.fault.tolerance.tck.CircuitBreakerBulkheadTest"/>
+        </classes -->
     </test>
 </suite>
