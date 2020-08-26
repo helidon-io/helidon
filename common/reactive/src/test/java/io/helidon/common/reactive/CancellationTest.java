@@ -58,7 +58,6 @@ public class CancellationTest {
         Single<Object> single = Single.create(new CompletableFuture<>());
         CompletableFuture<Object> future = single.toStage().toCompletableFuture();
         single.onCancel(() -> cancelled.set(true));
-        single.cancel();
         future.cancel(true);        // should cancel single
         assertThat(cancelled.get(), is(true));
     }
