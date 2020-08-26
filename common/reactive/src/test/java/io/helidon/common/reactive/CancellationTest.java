@@ -57,11 +57,7 @@ public class CancellationTest {
         AtomicBoolean cancelled = new AtomicBoolean(false);
         Single<Object> single = Single.create(new CompletableFuture<>());
         CompletableFuture<Object> future = single.toStage().toCompletableFuture();
-        single.whenComplete((o, t) -> {
-            if (t instanceof CancellationException) {
-                cancelled.set(true);
-            }
-        });
+        single.onCancel(() -> cancelled.set(true));
         single.cancel();
         future.cancel(true);        // should cancel single
         assertThat(cancelled.get(), is(true));
