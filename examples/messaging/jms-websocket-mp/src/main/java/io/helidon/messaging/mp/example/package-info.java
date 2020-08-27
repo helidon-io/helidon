@@ -16,4 +16,7 @@
  *
  */
 
+/**
+ * Reactive Messaging JMS example.
+ */
 package io.helidon.messaging.mp.example;

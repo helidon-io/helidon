@@ -12,23 +12,26 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
-package io.helidon.messaging.mp.example;
+package io.helidon.messaging.connectors.jms;
 
+enum AcknowledgeMode {
+    AUTO_ACKNOWLEDGE(1),
+    CLIENT_ACKNOWLEDGE(2),
+    DUPS_OK_ACKNOWLEDGE(3);
 
-import io.helidon.microprofile.server.Server;
+    private int ackMode;
 
-/**
- * Convenience runner.
- */
-public class Main {
-
-    private Main() {
+    AcknowledgeMode(int ackMode) {
+        this.ackMode = ackMode;
     }
 
-    public static void main(String[] args) {
-        Server.create().start();
+    static AcknowledgeMode parse(String name){
+        return AcknowledgeMode.valueOf(name.trim().toUpperCase());
+    }
+
+    public int getAckMode() {
+        return ackMode;
     }
 }

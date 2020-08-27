@@ -33,7 +33,7 @@ import io.helidon.messaging.MessagingException;
 
 import org.eclipse.microprofile.config.Config;
 
-public class ConnectionFactoryLocator {
+class ConnectionFactoryLocator {
     private final io.helidon.config.Config helidonConfig;
     private InitialContext ctx;
     private ConnectionFactory connectionFactory;
@@ -42,7 +42,7 @@ public class ConnectionFactoryLocator {
         return new ConnectionFactoryLocator(config, factoryInstance);
     }
 
-    public ConnectionFactoryLocator(Config config, Instance<ConnectionFactory> factoryInstance) {
+    ConnectionFactoryLocator(Config config, Instance<ConnectionFactory> factoryInstance) {
         helidonConfig = MpConfig.toHelidonConfig(config);
         if (isJndi()) {
             Properties props = new Properties();

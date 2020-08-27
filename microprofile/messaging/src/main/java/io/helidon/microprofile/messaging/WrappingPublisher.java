@@ -24,7 +24,7 @@ import org.reactivestreams.Subscription;
 
 class WrappingPublisher implements Publisher<Object> {
 
-    private Publisher<?> source;
+    private final Publisher<?> source;
 
     WrappingPublisher(Publisher<?> source) {
         this.source = source;
@@ -39,7 +39,7 @@ class WrappingPublisher implements Publisher<Object> {
 
         private Subscriber<Object> sourceSubscriber;
 
-        public WrappingSubscriber(Subscriber<Object> sourceSubscriber) {
+        WrappingSubscriber(Subscriber<Object> sourceSubscriber) {
             this.sourceSubscriber = sourceSubscriber;
         }
 

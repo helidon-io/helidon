@@ -15,20 +15,7 @@
  *
  */
 
-package io.helidon.messaging.mp.example;
-
-
-import io.helidon.microprofile.server.Server;
-
 /**
- * Convenience runner.
+ * Microprofile messaging JMS connector.
  */
-public class Main {
-
-    private Main() {
-    }
-
-    public static void main(String[] args) {
-        Server.create().start();
-    }
-}
+package io.helidon.messaging.connectors.jms;

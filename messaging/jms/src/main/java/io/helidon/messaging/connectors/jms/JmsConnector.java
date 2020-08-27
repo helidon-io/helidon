@@ -17,11 +17,18 @@
 
 package io.helidon.messaging.connectors.jms;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.BeforeDestroyed;
+import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
 import javax.jms.BytesMessage;
@@ -49,6 +56,9 @@ import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.eclipse.microprofile.reactive.streams.operators.SubscriberBuilder;
 import org.reactivestreams.FlowAdapters;
 
+/**
+ * MicroProfile Reactive Messaging JMS connector.
+ */
 @ApplicationScoped
 @Connector(JmsConnector.CONNECTOR_NAME)
 public class JmsConnector implements IncomingConnectorFactory, OutgoingConnectorFactory, Stoppable {
@@ -60,7 +70,14 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
     static final String CONNECTOR_NAME = "helidon-jms";
     private final Instance<ConnectionFactory> connectionFactories;
     private final ScheduledExecutorService scheduler;
+    private final Map<String, SessionMetadata> sessionRegister = new HashMap<>();
 
+    /**
+     * Create new JmsConnector.
+     *
+     * @param connectionFactories pre-prepared connection factories, jndi config takes precedence
+     * @param config              channel related config
+     */
     @Inject
     public JmsConnector(Instance<ConnectionFactory> connectionFactories, io.helidon.config.Config config) {
         this.connectionFactories = connectionFactories;
@@ -73,36 +90,53 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
 
     @Override
     public void stop() {
+        scheduler.shutdown();
+        for (SessionMetadata e : sessionRegister.values()) {
+            try {
+                e.getSession().close();
+                e.getConnection().close();
+            } catch (JMSException jmsException) {
+                LOGGER.log(Level.SEVERE, jmsException, () -> "Error when stopping JMS sessions.");
+            }
+        }
+        LOGGER.info("JMS Connector gracefully stopped.");
+    }
 
+    /**
+     * Called when container is terminated. If it is not running in a container {@link #stop()} must be explicitly invoked
+     * to terminate the messaging and release JMS connections.
+     *
+     * @param event termination event
+     */
+    void terminate(@Observes @BeforeDestroyed(ApplicationScoped.class) Object event) {
+        stop();
     }
 
     @Override
     public PublisherBuilder<? extends Message<?>> getPublisherBuilder(final Config config) {
         ConnectionFactoryLocator factoryLocator = ConnectionFactoryLocator.create(config, connectionFactories);
 
-        Connection connection;
         try {
-            ConnectionFactory connectionFactory = factoryLocator.connectionFactory();
-            connection = connectionFactory.createConnection();
-            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-
-            MessageConsumer consumer = session.createConsumer(factoryLocator.createDestination(session));
+            SessionMetadata sessionEntry = prepareSession(config, factoryLocator);
+            MessageConsumer consumer = sessionEntry
+                    .getSession()
+                    .createConsumer(factoryLocator.createDestination(sessionEntry.getSession()));
             BufferedEmittingPublisher<Message<?>> emittingPublisher = BufferedEmittingPublisher.create();
             scheduler.scheduleAtFixedRate(() -> {
-                try {
-                    javax.jms.Message message = consumer.receive();
-                    LOGGER.info("Received message: " + message.toString());
-                    emittingPublisher.emit(JmsMessage.of(message));
-                } catch (Throwable e) {
-                    emittingPublisher.fail(e);
-                }
-            }, 0, 500, TimeUnit.MILLISECONDS);
-            connection.start();
-            return ReactiveStreams.fromPublisher(FlowAdapters.toPublisher(Multi.create(emittingPublisher).onCancel(() -> {
-                System.out.println("Cancelled!!!");
-            })));
+                        try {
+                            javax.jms.Message message = consumer.receive();
+                            LOGGER.fine(() -> "Received message: " + message.toString());
+                            emittingPublisher.emit(JmsMessage.of(message, sessionEntry));
+                        } catch (Throwable e) {
+                            emittingPublisher.fail(e);
+                        }
+                    }, 0,
+                    config.getOptionalValue("period-executions", Long.class).orElse(200L),
+                    TimeUnit.MILLISECONDS);
+            sessionEntry.getConnection().start();
+            return ReactiveStreams.fromPublisher(FlowAdapters.toPublisher(Multi.create(emittingPublisher)));
         } catch (JMSException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, e, () -> "Error during JMS publisher preparation");
             return ReactiveStreams.failed(e);
         }
     }
@@ -111,15 +145,13 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
     public SubscriberBuilder<? extends Message<?>, Void> getSubscriberBuilder(final Config config) {
         ConnectionFactoryLocator factoryLocator = ConnectionFactoryLocator.create(config, connectionFactories);
         try {
-            ConnectionFactory connectionFactory = factoryLocator.connectionFactory();
-            Connection connection = connectionFactory.createConnection();
-            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            SessionMetadata sessionEntry = prepareSession(config, factoryLocator);
+            Session session = sessionEntry.getSession();
             Destination destination = factoryLocator.createDestination(session);
             MessageProducer producer = session.createProducer(destination);
             return ReactiveStreams.<Message<?>>builder()
-                    .onTerminate(() -> {
-                        System.out.println("TERMINATION");
-                    })
+                    .onError(t -> LOGGER.log(Level.SEVERE, t, () -> "Error intercepted from channel "
+                            + config.getValue(CHANNEL_NAME_ATTRIBUTE, String.class)))
                     .forEach((Object m) -> {
                         try {
                             Object payload = ((Message<?>) m).getPayload();
@@ -140,5 +172,32 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
         }
     }
 
+    private SessionMetadata prepareSession(final Config config,
+                                           ConnectionFactoryLocator factoryLocator) throws JMSException {
+        Optional<String> sessionGroupId = config.getOptionalValue("session-group-id", String.class);
+        if (sessionGroupId.isPresent() && sessionRegister.containsKey(sessionGroupId.get())) {
+            return sessionRegister.get(sessionGroupId.get());
+        } else {
+            ConnectionFactory connectionFactory = factoryLocator.connectionFactory();
+            Optional<String> user = config.getOptionalValue("user", String.class);
+            Optional<String> password = config.getOptionalValue("password", String.class);
+            Connection connection;
+            if (user.isPresent() && password.isPresent()) {
+                connection = connectionFactory.createConnection(user.get(), password.get());
+            } else {
+                connection = connectionFactory.createConnection();
+            }
+            boolean transacted = config.getOptionalValue("transacted", Boolean.class)
+                    .orElse(false);
+            int acknowledgeMode = config.getOptionalValue("acknowledge-mode", String.class)
+                    .map(AcknowledgeMode::parse)
+                    .orElse(AcknowledgeMode.AUTO_ACKNOWLEDGE)
+                    .getAckMode();
+            Session session = connection.createSession(transacted, acknowledgeMode);
+            SessionMetadata sharedSessionEntry = new SessionMetadata(session, connection, connectionFactory);
+            sessionRegister.put(sessionGroupId.orElseGet(() -> UUID.randomUUID().toString()), sharedSessionEntry);
+            return sharedSessionEntry;
+        }
+    }
 
 }
