@@ -91,7 +91,7 @@ public class GraphQLEndpointIT
         // see https://github.com/eclipse/microprofile-graphql/issues/202
         // add text/plain
         WebTarget webTarget = getGraphQLWebTarget().path(GRAPHQL).path(SCHEMA_URL);
-        Response response = webTarget.request().get();
+        Response response = webTarget.request(MediaType.TEXT_PLAIN).get();
         assertThat(response, is(notNullValue()));
         assertThat(response.getStatus(), is(Response.Status.OK.getStatusCode()));
     }

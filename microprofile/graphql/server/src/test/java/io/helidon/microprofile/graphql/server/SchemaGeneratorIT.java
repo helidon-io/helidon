@@ -339,8 +339,6 @@ public class SchemaGeneratorIT
         assertThat(mapResults.size(), is(1));
         mapResults2 = (Map<String, Object>) mapResults.get("createSimpleContactWithNumberFormats");
         assertThat(mapResults2, is(notNullValue()));
-
-
     }
 
     @Test

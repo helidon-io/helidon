@@ -72,11 +72,8 @@ public class GraphQLResource {
 
     @Path(SCHEMA_URL)
     @GET
-    //  @Produces({ MediaType.TEXT_PLAIN })
-    //  @Consumes({ MediaType.TEXT_PLAIN })
-    // see https://github.com/eclipse/microprofile-graphql/issues/202
-    @Produces("plain/text")
-    @Consumes("plain/text")
+    @Produces({ MediaType.TEXT_PLAIN })
+    @Consumes({ MediaType.TEXT_PLAIN })
     public Response getGraphQLSchema() {
         return Response.ok(schemaPrinter.print(context.getGraphQLSchema())).build();
     }

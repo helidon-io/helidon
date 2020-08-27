@@ -33,7 +33,6 @@ import javax.enterprise.inject.spi.CDI;
 
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.PropertyDataFetcher;
-
 import graphql.GraphQLException;
 import graphql.schema.DataFetcher;
 import graphql.schema.PropertyDataFetcherHelper;
@@ -162,9 +161,6 @@ public class DataFetcherUtils {
             return originalResult != null ? numberFormat.format(originalResult) : null;
         }
 
-        /**
-         * {@inheritDoc}
-         */
         @Override
         public NumberFormat getNumberFormat() {
             return numberFormat;
@@ -174,7 +170,8 @@ public class DataFetcherUtils {
     /**
      * An implementation of a {@link PropertyDataFetcher} which returns a formatted date.
      */
-    public static class DateFormattingDataFetcher extends PropertyDataFetcher {
+    public static class DateFormattingDataFetcher
+            extends PropertyDataFetcher implements DateFormattingProvider {
 
         /**
          * {@link DateTimeFormatter} to format with.
@@ -199,6 +196,11 @@ public class DataFetcherUtils {
             return originalResult instanceof TemporalAccessor
                     ? dateTimeFormatter.format((TemporalAccessor) originalResult) : null;
             }
+
+        @Override
+        public DateTimeFormatter getDateTimeFormat() {
+            return dateTimeFormatter;
+        }
     }
 
     /**

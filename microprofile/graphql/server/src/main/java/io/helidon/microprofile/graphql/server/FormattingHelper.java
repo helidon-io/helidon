@@ -32,6 +32,7 @@ import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.BIG_D
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.BIG_DECIMAL_CLASS;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.BIG_INTEGER;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.BIG_INTEGER_CLASS;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.BYTE_CLASS;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.DEFAULT_LOCALE;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.DOUBLE_CLASS;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.DOUBLE_PRIMITIVE_CLASS;
@@ -48,6 +49,7 @@ import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.LONG_
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.LONG_PRIMITIVE_CLASS;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.OFFSET_DATE_TIME_CLASS;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.OFFSET_TIME_CLASS;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.SHORT_CLASS;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.SUPPORTED_SCALARS;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ZONED_DATE_TIME_CLASS;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ensureRuntimeException;
@@ -128,6 +130,8 @@ public class FormattingHelper {
                 || INTEGER_CLASS.equals(type)
                 || INTEGER_PRIMITIVE_CLASS.equals(type)
                 || BIG_INTEGER_CLASS.equals(type)
+                || BYTE_CLASS.equals(type)
+                || SHORT_CLASS.equals(type)
                 || LONG_CLASS.equals(type)
                 || DOUBLE_CLASS.equals(type)
                 || DOUBLE_PRIMITIVE_CLASS.equals(type)

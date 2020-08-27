@@ -52,9 +52,8 @@
         <version.lib.google-api-client>1.30.11</version.lib.google-api-client>
         <version.lib.google-error-prone>2.3.3</version.lib.google-error-prone>
         <version.lib.graalvm>20.1.0</version.lib.graalvm>
-        <version.lib.graphql-java>14.0</version.lib.graphql-java>
+        <version.lib.graphql-java>14.1</version.lib.graphql-java>
         <version.lib.graphql-java.extended.scalars>1.0.1</version.lib.graphql-java.extended.scalars>
-        <version.lib.graalvm>19.2.0</version.lib.graalvm>
         <version.lib.grpc>1.32.1</version.lib.grpc>
         <version.lib.guava>28.1-jre</version.lib.guava>
         <version.lib.h2>1.4.199</version.lib.h2>
@@ -87,7 +86,7 @@
         <version.lib.microprofile-config>1.4</version.lib.microprofile-config>
         <version.lib.microprofile-health>2.2</version.lib.microprofile-health>
         <version.lib.microprofile-graphql>1.0.2</version.lib.microprofile-graphql>
-        <version.lib.microprofile-graphql-tck>1.0.1</version.lib.microprofile-graphql-tck>
+        <version.lib.microprofile-graphql-tck>1.0.2</version.lib.microprofile-graphql-tck>
         <version.lib.microprofile-jwt>1.1.1</version.lib.microprofile-jwt>
         <version.lib.microprofile-metrics-api>2.3.2</version.lib.microprofile-metrics-api>
         <version.lib.microprofile-openapi-api>1.1.2</version.lib.microprofile-openapi-api>

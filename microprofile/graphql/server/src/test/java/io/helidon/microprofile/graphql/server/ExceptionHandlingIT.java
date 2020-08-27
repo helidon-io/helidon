@@ -17,14 +17,14 @@
 package io.helidon.microprofile.graphql.server;
 
 import java.io.IOException;
+
 import java.util.List;
 import java.util.Map;
 
-import io.helidon.config.Config;
-import io.helidon.config.ConfigSources;
-
+import io.helidon.config.mp.MpConfigSources;
 import io.helidon.microprofile.graphql.server.test.exception.ExceptionQueries;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
+import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 
 import org.hamcrest.Matchers;
@@ -57,7 +57,7 @@ public class ExceptionHandlingIT
     @Test
     public void testDifferentMessage() throws IOException {
         Config config = setupConfig("config/config1.properties");
-        assertThat(config.get("mp").get("graphql").get("defaultErrorMessage").asString().get(), is("new message"));
+        assertThat(config.getValue("mp.graphql.defaultErrorMessage", String.class), is("new message"));
 
         setupIndex(indexFileName);
 
@@ -235,9 +235,15 @@ public class ExceptionHandlingIT
     }
 
     protected Config setupConfig(String propertiesFile) {
-        Config config = propertiesFile == null ? Config.create() : Config.create(ConfigSources.classpath(propertiesFile));
+        Config config = propertiesFile == null
+                ? ConfigProviderResolver.instance().getBuilder().build()
+                : ConfigProviderResolver.instance()
+                 .getBuilder()
+                 .withSources(MpConfigSources.create(ExceptionHandlingIT.class.getClassLoader().getResource(propertiesFile)))
+                 .build();
+
         ConfigProviderResolver.instance()
-                .registerConfig((org.eclipse.microprofile.config.Config) config, Thread.currentThread().getContextClassLoader());
+                .registerConfig(config, Thread.currentThread().getContextClassLoader());
 
         return config;
     }
