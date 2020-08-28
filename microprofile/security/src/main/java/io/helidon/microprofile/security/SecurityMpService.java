@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@ package io.helidon.microprofile.security;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 
+import javax.annotation.Priority;
+
 import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
 import io.helidon.microprofile.server.spi.MpService;
@@ -36,6 +38,7 @@ import io.helidon.security.providers.abac.AbacProvider;
  * You can configure security using application.yaml (or any other default
  * configuration for helidon config).
  */
+@Priority(15) // priority lower than tracing, higher than routing of services
 public class SecurityMpService implements MpService {
     private static final Logger LOGGER = Logger.getLogger(SecurityMpService.class.getName());
 
