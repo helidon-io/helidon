@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -151,7 +151,13 @@ public final class JwkKeys {
             JsonArray keyArray = jsonObject.getJsonArray("keys");
             keyArray.forEach(it -> {
                 JsonObject aKey = (JsonObject) it;
-                addKey(Jwk.create(aKey));
+                try {
+                    addKey(Jwk.create(aKey));
+                } catch (Exception e) {
+                    LOGGER.log(Level.WARNING,
+                               "Could not process a key from JWK JSON, this key will not be available",
+                               e);
+                }
             });
         }
     }
