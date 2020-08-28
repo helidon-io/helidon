@@ -61,7 +61,7 @@ public class JwkEC extends JwkPki {
      */
     public static final String ALG_ES384 = "ES384";
     /**
-     * ECDSA using P-512 and SHA-512.
+     * ECDSA using {@value #CURVE_P521} and SHA-512.
      * See <a href="https://www.rfc-editor.org/rfc/rfc7518.txt">RFC 7518</a>, section 7.1.2.
      */
     public static final String ALG_ES512 = "ES512";
@@ -76,7 +76,7 @@ public class JwkEC extends JwkPki {
      */
     public static final String CURVE_P384 = "P-384";
     /**
-     * P-512 Curve.
+     * P-521 Curve.
      * See <a href="https://www.rfc-editor.org/rfc/rfc7518.txt">RFC 7518</a>, section 7.6.2.
      */
     public static final String CURVE_P521 = "P-521";
