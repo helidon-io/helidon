@@ -51,7 +51,7 @@ import org.jboss.jandex.IndexReader;
 import org.jboss.jandex.IndexView;
 import org.jboss.jandex.Indexer;
 
-import static javax.interceptor.Interceptor.Priority.PLATFORM_AFTER;
+import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 
 /**
  * Portable extension to allow construction of a Jandex index (to pass to
@@ -102,7 +102,7 @@ public class OpenApiCdiExtension implements Extension {
         this.config = config;
     }
 
-    void registerOpenApi(@Observes @Priority(PLATFORM_AFTER) @Initialized(ApplicationScoped.class) Object event, BeanManager bm) {
+    void registerOpenApi(@Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class) Object event, BeanManager bm) {
         try {
             Config openapiNode = config.get(OpenAPISupport.Builder.CONFIG_KEY);
             OpenAPISupport openApiSupport = new MPOpenAPIBuilder()

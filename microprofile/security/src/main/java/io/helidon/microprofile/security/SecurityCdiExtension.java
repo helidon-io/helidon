@@ -43,7 +43,7 @@ import io.helidon.security.providers.abac.AbacProvider;
 import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.AuthorizationProvider;
 
-import static javax.interceptor.Interceptor.Priority.PLATFORM_AFTER;
+import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 import static javax.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
 
 /**
@@ -69,7 +69,9 @@ public class SecurityCdiExtension implements Extension {
         securityBuilder.config(config.get("security"));
     }
 
-    private void registerSecurity(@Observes @Initialized(ApplicationScoped.class) @Priority(PLATFORM_AFTER) Object adv,
+    // security must have priority higher than metrics, openapi and healt
+    // so we can protect these endpoints
+    private void registerSecurity(@Observes @Priority(LIBRARY_BEFORE) @Initialized(ApplicationScoped.class) Object adv,
                                   BeanManager bm) {
 
         if (securityBuilder.noProvider(AuthenticationProvider.class)) {

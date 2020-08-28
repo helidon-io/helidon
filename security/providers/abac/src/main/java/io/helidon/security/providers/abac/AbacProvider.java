@@ -151,8 +151,10 @@ public final class AbacProvider extends SynchronousProvider implements Authoriza
             if (customObject.isPresent()) {
                 attributes.add(new RuntimeAttribute(validator, customObject.get()));
             } else {
-                abacConfig.map(it -> it.get(configKey)).ifPresentOrElse(
-                        attribConfig -> {
+                // only configure this validator if its config key exists
+                // or it has a supported annotation
+                abacConfig.flatMap(it -> it.get(configKey).asNode().asOptional())
+                        .ifPresentOrElse(attribConfig -> {
                             attributes.add(new RuntimeAttribute(validator, validator.fromConfig(attribConfig)));
                         },
                         () -> {
