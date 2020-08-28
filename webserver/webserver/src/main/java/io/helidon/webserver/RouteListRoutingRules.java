@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -240,6 +240,21 @@ class RouteListRoutingRules implements Routing.Rules {
     @Override
     public RouteListRoutingRules post(PathMatcher pathMatcher, Handler... requestHandlers) {
         return addSingle(Http.Method.POST, pathMatcher, requestHandlers);
+    }
+
+    @Override
+    public RouteListRoutingRules patch(Handler... requestHandlers) {
+        return addSingle(Http.Method.PATCH, requestHandlers);
+    }
+
+    @Override
+    public RouteListRoutingRules patch(String pathPattern, Handler... requestHandlers) {
+        return addSingle(Http.Method.PATCH, pathPattern, requestHandlers);
+    }
+
+    @Override
+    public RouteListRoutingRules patch(PathMatcher pathMatcher, Handler... requestHandlers) {
+        return addSingle(Http.Method.PATCH, pathMatcher, requestHandlers);
     }
 
     @Override

@@ -399,6 +399,15 @@ public final class Http {
         PUT,
 
         /**
+         * The PATCH method as described in RFC 5789 is used to perform an update to an existing resource, where the request
+         * payload only has to contain the instructions on how to perform the update. This is in contrast to PUT which
+         * requires that the payload contains the new version of the resource.
+         * If an existing resource is modified, either the 200 (OK) or 204 (No Content) response codes SHOULD be sent to indicate
+         * successful completion of the request.
+         */
+        PATCH,
+
+        /**
          * The DELETE method requests that the origin server delete the resource identified by the Request-URI.
          * This method MAY be overridden by human intervention (or other means) on the origin server. The client cannot
          * be guaranteed that the operation has been carried out, even if the status code returned from the origin server
