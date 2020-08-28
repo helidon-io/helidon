@@ -35,7 +35,6 @@ import javax.annotation.Priority;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
-import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.DeploymentException;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessAnnotatedType;
@@ -102,7 +101,7 @@ public class OpenApiCdiExtension implements Extension {
         this.config = config;
     }
 
-    void registerOpenApi(@Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class) Object event, BeanManager bm) {
+    void registerOpenApi(@Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class) Object event) {
         try {
             Config openapiNode = config.get(OpenAPISupport.Builder.CONFIG_KEY);
             OpenAPISupport openApiSupport = new MPOpenAPIBuilder()
