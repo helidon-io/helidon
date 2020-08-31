@@ -30,7 +30,7 @@ import io.helidon.common.http.Http;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.RepeatedTest;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -45,11 +45,20 @@ class TestHttpParsingDefaults {
 
     @BeforeAll
     static void initClass() throws InterruptedException, ExecutionException, TimeoutException {
-        client = ClientBuilder.newClient();
+        client = ClientBuilder.newBuilder()
+                .connectTimeout(5, TimeUnit.SECONDS)
+                .readTimeout(10, TimeUnit.SECONDS)
+                .build();
+
+        ServerConfiguration serverConfig = ServerConfiguration.builder()
+                // a timeout of 10 seconds, to prevent infinite hangs
+                .timeout(10000)
+                .build();
 
         webServer = WebServer.builder(Routing.builder()
                                               .any(TestHttpParsingDefaults::handleRequest)
                                               .build())
+                .config(serverConfig)
                 .build()
                 .start()
                 .toCompletableFuture()
@@ -70,35 +79,41 @@ class TestHttpParsingDefaults {
         }
     }
 
-    @Test
+//    @Test
+    @RepeatedTest(10000)
     void testOkHeader() {
         testHeader(target, 8000, true);
     }
 
-    @Test
+//    @Test
+@RepeatedTest(10000)
     void testLongHeader() {
         testHeader(target, 8900, false);
         testHeader(target, 8900, false);
     }
 
-    @Test
+//    @Test
+@RepeatedTest(10000)
     void testOkInitialLine() {
         testInitialLine(target, 10, true);
     }
 
-    @Test
+//    @Test
+@RepeatedTest(10000)
     void testLongInitialLine() {
         // now test with big initial line
         testInitialLine(target, 5000, false);
         testInitialLine(target, 5000, false);
     }
 
-    @Test
+//    @Test
+    @RepeatedTest(10000)
     void testGoodHeaderName() {
         testHeaderName(target, GOOD_HEADER_NAME, true);
     }
 
-    @Test
+//    @Test
+    @RepeatedTest(10000)
     void testBadHeaderName() {
         testHeaderName(target, BAD_HEADER_NAME, false);
         testHeaderName(target, BAD_HEADER_NAME, false);
@@ -152,6 +167,7 @@ class TestHttpParsingDefaults {
                        response.getStatus(),
                        is(Http.Status.BAD_REQUEST_400.code()));
         }
+        response.close();
     }
 
     static void testHeader(WebTarget target, int size, boolean success) {

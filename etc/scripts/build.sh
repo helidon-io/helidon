@@ -41,9 +41,14 @@ source ${WS_DIR}/etc/scripts/pipeline-env.sh
 
 mvn ${MAVEN_ARGS} --version
 
-mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml \
-    clean install -e \
-    -Dmaven.test.failure.ignore=true \
-    -Pexamples,archetypes,spotbugs,javadoc,docs,sources,tck,tests,pipeline
+#mvn ${MAVEN_ARGS} -f ${WS_DIR}/pom.xml \
+#    clean install -e \
+#    -Dmaven.test.failure.ignore=true \
+#    -Pexamples,archetypes,spotbugs,javadoc,docs,sources,tck,tests,pipeline
 
-examples/quickstarts/archetypes/test-archetypes.sh
+# examples/quickstarts/archetypes/test-archetypes.sh
+
+# temporary changed to trigger failed webserver tests asap (to reproduce #2248)
+cd ${WS_DIR}
+mvn clean install -pl webserver/webserver -am -DskipTests
+mvn test -pl webserver/webserver

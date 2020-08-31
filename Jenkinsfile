@@ -39,16 +39,6 @@ pipeline {
             }
           }
         }
-        stage('copyright'){
-          steps {
-            sh './etc/scripts/copyright.sh'
-          }
-        }
-        stage('checkstyle'){
-          steps {
-            sh './etc/scripts/checkstyle.sh'
-          }
-        }
       }
     }
     stage('release') {
