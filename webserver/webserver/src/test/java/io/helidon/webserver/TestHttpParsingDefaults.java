@@ -31,6 +31,7 @@ import io.helidon.common.http.Http;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.RepeatedTest;
+import org.junit.jupiter.api.Timeout;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -81,12 +82,14 @@ class TestHttpParsingDefaults {
 
     //    @Test
     @RepeatedTest(5000)
+    @Timeout(20)
     void testOkHeader() {
         testHeader(target, 8000, true);
     }
 
     //    @Test
     @RepeatedTest(5000)
+    @Timeout(20)
     void testLongHeader() {
         testHeader(target, 8900, false);
         testHeader(target, 8900, false);
@@ -94,12 +97,14 @@ class TestHttpParsingDefaults {
 
     //    @Test
     @RepeatedTest(5000)
+    @Timeout(20)
     void testOkInitialLine() {
         testInitialLine(target, 10, true);
     }
 
     //    @Test
     @RepeatedTest(5000)
+    @Timeout(20)
     void testLongInitialLine() {
         // now test with big initial line
         testInitialLine(target, 5000, false);
@@ -108,12 +113,14 @@ class TestHttpParsingDefaults {
 
     //    @Test
     @RepeatedTest(5000)
+    @Timeout(20)
     void testGoodHeaderName() {
         testHeaderName(target, GOOD_HEADER_NAME, true);
     }
 
     //    @Test
     @RepeatedTest(5000)
+    @Timeout(20)
     void testBadHeaderName() {
         testHeaderName(target, BAD_HEADER_NAME, false);
         testHeaderName(target, BAD_HEADER_NAME, false);
