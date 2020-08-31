@@ -34,7 +34,9 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.annotation.Priority;
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.Initialized;
 import javax.enterprise.context.RequestScoped;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Default;
@@ -94,6 +96,7 @@ import org.eclipse.microprofile.metrics.annotation.Timed;
 import static io.helidon.microprofile.metrics.MetricUtil.LookupResult;
 import static io.helidon.microprofile.metrics.MetricUtil.getMetricName;
 import static io.helidon.microprofile.metrics.MetricUtil.lookupAnnotation;
+import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 
 /**
  * MetricsCdiExtension class.
@@ -117,7 +120,7 @@ public class MetricsCdiExtension implements Extension {
             .withName(SYNTHETIC_SIMPLE_TIMER_METRIC_NAME)
             .withDisplayName(SYNTHETIC_SIMPLE_TIMER_METRIC_NAME + " for all REST endpoints")
             .withDescription("The number of invocations and total response time of RESTful resource methods since the start"
-                    + " of the server.")
+                                     + " of the server.")
             .withType(MetricType.SIMPLE_TIMER)
             .withUnit(MetricUnits.NANOSECONDS)
             .notReusable()
@@ -157,13 +160,13 @@ public class MetricsCdiExtension implements Extension {
                                               counted.absolute());
             String displayName = counted.displayName().trim();
             Metadata meta = Metadata.builder()
-                .withName(metricName)
-                .withDisplayName(displayName.isEmpty() ? metricName : displayName)
-                .withDescription(counted.description().trim())
-                .withType(MetricType.COUNTER)
-                .withUnit(counted.unit().trim())
-                .reusable(counted.reusable())
-                .build();
+                    .withName(metricName)
+                    .withDisplayName(displayName.isEmpty() ? metricName : displayName)
+                    .withDescription(counted.description().trim())
+                    .withType(MetricType.COUNTER)
+                    .withUnit(counted.unit().trim())
+                    .reusable(counted.reusable())
+                    .build();
             registry.counter(meta, tags(counted.tags()));
             LOGGER.log(Level.FINE, () -> "Registered counter " + metricName);
         } else if (annotation instanceof Metered) {
@@ -172,13 +175,13 @@ public class MetricsCdiExtension implements Extension {
                                               metered.absolute());
             String displayName = metered.displayName().trim();
             Metadata meta = Metadata.builder()
-                .withName(metricName)
-                .withDisplayName(displayName.isEmpty() ? metricName : displayName)
-                .withDescription(metered.description().trim())
-                .withType(MetricType.METERED)
-                .withUnit(metered.unit().trim())
-                .reusable(metered.reusable())
-                .build();
+                    .withName(metricName)
+                    .withDisplayName(displayName.isEmpty() ? metricName : displayName)
+                    .withDescription(metered.description().trim())
+                    .withType(MetricType.METERED)
+                    .withUnit(metered.unit().trim())
+                    .reusable(metered.reusable())
+                    .build();
             registry.meter(meta, tags(metered.tags()));
             LOGGER.log(Level.FINE, () -> "Registered meter " + metricName);
         } else if (annotation instanceof Timed) {
@@ -187,34 +190,34 @@ public class MetricsCdiExtension implements Extension {
                                               timed.absolute());
             String displayName = timed.displayName().trim();
             Metadata meta = Metadata.builder()
-                .withName(metricName)
-                .withDisplayName(displayName.isEmpty() ? metricName : displayName)
-                .withDescription(timed.description().trim())
-                .withType(MetricType.TIMER)
-                .withUnit(timed.unit().trim())
-                .reusable(timed.reusable())
-                .build();
+                    .withName(metricName)
+                    .withDisplayName(displayName.isEmpty() ? metricName : displayName)
+                    .withDescription(timed.description().trim())
+                    .withType(MetricType.TIMER)
+                    .withUnit(timed.unit().trim())
+                    .reusable(timed.reusable())
+                    .build();
             registry.timer(meta, tags(timed.tags()));
             LOGGER.log(Level.FINE, () -> "Registered timer " + metricName);
         } else if (annotation instanceof ConcurrentGauge) {
             ConcurrentGauge concurrentGauge = (ConcurrentGauge) annotation;
             String metricName = getMetricName(element, clazz, lookupResult.getType(), concurrentGauge.name().trim(),
-                    concurrentGauge.absolute());
+                                              concurrentGauge.absolute());
             String displayName = concurrentGauge.displayName().trim();
             Metadata meta = Metadata.builder()
-                .withName(metricName)
-                .withDisplayName(displayName.isEmpty() ? metricName : displayName)
-                .withDescription(concurrentGauge.description().trim())
-                .withType(MetricType.CONCURRENT_GAUGE)
-                .withUnit(concurrentGauge.unit().trim())
-                .reusable(concurrentGauge.reusable())
-                .build();
+                    .withName(metricName)
+                    .withDisplayName(displayName.isEmpty() ? metricName : displayName)
+                    .withDescription(concurrentGauge.description().trim())
+                    .withType(MetricType.CONCURRENT_GAUGE)
+                    .withUnit(concurrentGauge.unit().trim())
+                    .reusable(concurrentGauge.reusable())
+                    .build();
             registry.concurrentGauge(meta, tags(concurrentGauge.tags()));
             LOGGER.log(Level.FINE, () -> "Registered concurrent gauge " + metricName);
         } else if (annotation instanceof SimplyTimed) {
             SimplyTimed simplyTimed = (SimplyTimed) annotation;
             String metricName = getMetricName(element, clazz, lookupResult.getType(), simplyTimed.name().trim(),
-                    simplyTimed.absolute());
+                                              simplyTimed.absolute());
             String displayName = simplyTimed.displayName().trim();
             Metadata meta = Metadata.builder()
                     .withName(metricName)
@@ -300,7 +303,7 @@ public class MetricsCdiExtension implements Extension {
      * @param pat annotated type instance being processed
      */
     private void registerMetrics(@Observes @WithAnnotations({Counted.class, Metered.class, Timed.class,
-            ConcurrentGauge.class, SimplyTimed.class})
+                                                                    ConcurrentGauge.class, SimplyTimed.class})
                                          ProcessAnnotatedType<?> pat) {
         // Filter out interceptors
         AnnotatedType<?> type = pat.getAnnotatedType();
@@ -366,8 +369,9 @@ public class MetricsCdiExtension implements Extension {
      * @param pat the {@code ProcessAnnotatedType} for the type containing the JAX-RS annotated methods
      */
     private void recordSimplyTimedForRestResources(@Observes
-            @WithAnnotations({GET.class, PUT.class, POST.class, HEAD.class, OPTIONS.class, DELETE.class, PATCH.class})
-            ProcessAnnotatedType<?> pat) {
+                                                   @WithAnnotations({GET.class, PUT.class, POST.class, HEAD.class, OPTIONS.class,
+                                                                            DELETE.class, PATCH.class})
+                                                           ProcessAnnotatedType<?> pat) {
 
         // Filter out interceptors
         AnnotatedType<?> type = pat.getAnnotatedType();
@@ -377,9 +381,9 @@ public class MetricsCdiExtension implements Extension {
         }
 
         LOGGER.log(Level.FINE,
-                () -> "Processing SyntheticSimplyTimed annotation for " + pat.getAnnotatedType()
-                        .getJavaClass()
-                        .getName());
+                   () -> "Processing SyntheticSimplyTimed annotation for " + pat.getAnnotatedType()
+                           .getJavaClass()
+                           .getName());
 
         // Register metrics based on annotations
         AnnotatedTypeConfigurator<?> configurator = pat.configureAnnotatedType();
@@ -392,7 +396,7 @@ public class MetricsCdiExtension implements Extension {
 
         // Process methods keeping non-private declared on this class
         configurator.filterMethods(method -> !Modifier.isPrivate(method.getJavaMember()
-                .getModifiers()))
+                                                                         .getModifiers()))
                 .forEach(method -> {
                     JAX_RS_ANNOTATIONS.forEach(annotation -> {
                         Method m = method.getAnnotated()
@@ -406,7 +410,7 @@ public class MetricsCdiExtension implements Extension {
                                 lookupResult.getType() != MetricUtil.MatchingType.METHOD
                                         || clazz.equals(m.getDeclaringClass()))) {
                             LOGGER.log(Level.FINE, () -> String.format("Adding @SyntheticSimplyTimed to %s#%s", clazz.getName(),
-                                    m.getName()));
+                                                                       m.getName()));
 
                             // Add the synthetic annotation to this method's configurator.
                             method.add(LiteralSyntheticSimplyTimed.getInstance());
@@ -430,12 +434,14 @@ public class MetricsCdiExtension implements Extension {
     static SimpleTimer syntheticSimpleTimer(Method method) {
         String classTagValue = method.getDeclaringClass().getName();
         // By spec, the synthetic SimpleTimers are always in the base registry.
-        return syntheticSimpleTimer(getRegistryForSyntheticSimpleTimers(), classTagValue, methodTagValueForSyntheticSimpleTimer(method));
+        return syntheticSimpleTimer(getRegistryForSyntheticSimpleTimers(),
+                                    classTagValue,
+                                    methodTagValueForSyntheticSimpleTimer(method));
     }
 
     private static SimpleTimer syntheticSimpleTimer(MetricRegistry registry, String classTagValue, String methodTagValue) {
         return registry.simpleTimer(SYNTHETIC_SIMPLE_TIMER_METADATA,
-                new Tag[] {new Tag("class", classTagValue), new Tag("method", methodTagValue)});
+                                    new Tag[] {new Tag("class", classTagValue), new Tag("method", methodTagValue)});
     }
 
     private static String methodTagValueForSyntheticSimpleTimer(Method method) {
@@ -529,20 +535,17 @@ public class MetricsCdiExtension implements Extension {
                                                   metric.name(), metric.absolute());
                 T instance = getReference(bm, entry.getValue().getBaseType(), entry.getKey());
                 Metadata md = Metadata.builder()
-                    .withName(metricName)
-                    .withDisplayName(metric.displayName())
-                    .withDescription(metric.description())
-                    .withType(getMetricType(instance))
-                    .withUnit(metric.unit())
-                    .reusable(false)
-                    .build();
+                        .withName(metricName)
+                        .withDisplayName(metric.displayName())
+                        .withDescription(metric.description())
+                        .withType(getMetricType(instance))
+                        .withUnit(metric.unit())
+                        .reusable(false)
+                        .build();
                 registry.register(md, instance);
             }
         });
         producers.clear();
-
-        // and now configure webserver features
-        registerWithServer(bm);
     }
 
     private void registerSyntheticSimplyTimedMetrics(@Observes AfterDeploymentValidation adv) {
@@ -567,7 +570,10 @@ public class MetricsCdiExtension implements Extension {
         }
     }
 
-    private void registerWithServer(BeanManager bm) {
+    // register metrics with server after security and when
+    // application scope is initialized
+    void registerMetrics(@Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class) Object adv,
+                         BeanManager bm) {
         Set<String> vendorMetricsAdded = new HashSet<>();
         Config config = ((Config) ConfigProvider.getConfig()).get("metrics");
 
@@ -702,13 +708,13 @@ public class MetricsCdiExtension implements Extension {
                                           bm);
                 Gauge gaugeAnnotation = site.getAnnotated().getAnnotation(Gauge.class);
                 Metadata md = Metadata.builder()
-                    .withName(gaugeID.getName())
-                    .withDisplayName(gaugeAnnotation.displayName())
-                    .withDescription(gaugeAnnotation.description())
-                    .withType(MetricType.GAUGE)
-                    .withUnit(gaugeAnnotation.unit())
-                    .reusable(false)
-                    .build();
+                        .withName(gaugeID.getName())
+                        .withDisplayName(gaugeAnnotation.displayName())
+                        .withDescription(gaugeAnnotation.description())
+                        .withType(MetricType.GAUGE)
+                        .withUnit(gaugeAnnotation.unit())
+                        .reusable(false)
+                        .build();
                 LOGGER.log(Level.FINE, () -> String.format("Registering gauge with metadata %s", md.toString()));
                 registry.register(md, dg, gaugeID.getTagsAsList().toArray(new Tag[0]));
             } catch (Throwable t) {

@@ -23,6 +23,7 @@ import java.util.ServiceLoader;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import javax.annotation.Priority;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
@@ -42,6 +43,8 @@ import org.eclipse.microprofile.health.Health;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.Liveness;
 import org.eclipse.microprofile.health.Readiness;
+
+import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 
 /**
  * Health extension.
@@ -70,7 +73,7 @@ public class HealthCdiExtension implements Extension {
                 .add(ApplicationScoped.Literal.INSTANCE);
     }
 
-    void registerHealth(@Observes @Initialized(ApplicationScoped.class) Object adv) {
+    void registerHealth(@Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class) Object adv) {
         org.eclipse.microprofile.config.Config config = ConfigProvider.getConfig();
         Config helidonConfig = MpConfig.toHelidonConfig(config).get("health");
 
