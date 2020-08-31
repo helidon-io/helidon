@@ -52,7 +52,7 @@ mvn ${MAVEN_ARGS} --version
 cd ${WS_DIR}
 mvn clean install -pl webserver/webserver -am -DskipTests
 
-for i in 1 2 3 4 5 6 7 8 9 10
+for i in {1..100}
 do
   echo "********************************"
   echo "** Running cycle $i"
