@@ -41,6 +41,20 @@ public interface WebClientServiceRequest extends HttpRequest {
     Context context();
 
     /**
+     * Request id which will be used in logging messages.
+     *
+     * @return current request id
+     */
+    long requestId();
+
+    /**
+     * Set new request id. This id is used in logging messages.
+     *
+     * @param requestId new request id
+     */
+    void requestId(long requestId);
+
+    /**
      * Completes when the request part of this request is done (e.g. we have sent all headers and bytes).
      *
      * @return completion stage that finishes when we fully send request (including entity) to server

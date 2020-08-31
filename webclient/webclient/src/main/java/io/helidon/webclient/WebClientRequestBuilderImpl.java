@@ -94,6 +94,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     static final AttributeKey<AtomicBoolean> IN_USE = AttributeKey.valueOf("inUse");
     static final AttributeKey<WebClientResponse> RESPONSE = AttributeKey.valueOf("response");
     static final AttributeKey<ConnectionIdent> CONNECTION_IDENT = AttributeKey.valueOf("connectionIdent");
+    static final AttributeKey<Long> REQUEST_ID = AttributeKey.valueOf("requestID");
 
     private static final AtomicLong REQUEST_NUMBER = new AtomicLong(0);
     private static final String DEFAULT_TRANSPORT_PROTOCOL = "http";
@@ -128,6 +129,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     private Duration readTimeout;
     private Duration connectTimeout;
     private boolean keepAlive;
+    private Long requestId;
 
     private WebClientRequestBuilderImpl(LazyValue<NioEventLoopGroup> eventGroup,
                                         WebClientConfiguration configuration,
@@ -147,7 +149,8 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         this.services = configuration.clientServices();
         this.readerContext = MessageBodyReaderContext.create(configuration.readerContext());
         this.writerContext = MessageBodyWriterContext.create(configuration.writerContext(), headers);
-        Context.Builder contextBuilder = Context.builder().id("webclient-" + REQUEST_NUMBER.incrementAndGet());
+        this.requestId = null;
+        Context.Builder contextBuilder = Context.builder().id("webclient-" + requestId);
         configuration.context().ifPresentOrElse(contextBuilder::parent,
                                                 () -> Contexts.context().ifPresent(contextBuilder::parent));
         this.context = contextBuilder.build();
@@ -366,6 +369,12 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     }
 
     @Override
+    public WebClientRequestBuilder requestId(long requestId) {
+        this.requestId = requestId;
+        return this;
+    }
+
+    @Override
     public <T> Single<T> request(Class<T> responseType) {
         return request(GenericType.create(responseType));
     }
@@ -425,6 +434,10 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         return writerContext;
     }
 
+    long requestId() {
+        return requestId;
+    }
+
     Http.RequestMethod method() {
         return method;
     }
@@ -481,6 +494,10 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
 
     private Single<WebClientResponse> invoke(Flow.Publisher<DataChunk> requestEntity) {
         this.uri = prepareFinalURI();
+        if (requestId == null) {
+            requestId = REQUEST_NUMBER.incrementAndGet();
+        }
+//        LOGGER.finest(() -> "(client reqID: " + requestId + ") Request final URI: " + uri);
         CompletableFuture<WebClientServiceRequest> sent = new CompletableFuture<>();
         CompletableFuture<WebClientServiceResponse> responseReceived = new CompletableFuture<>();
         CompletableFuture<WebClientServiceResponse> complete = new CompletableFuture<>();
@@ -498,6 +515,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         }
 
         return Single.create(rcs.thenCompose(serviceRequest -> {
+            requestId = serviceRequest.requestId();
             HttpHeaders headers = toNettyHttpHeaders();
             DefaultHttpRequest request = new DefaultHttpRequest(toNettyHttpVersion(httpVersion),
                                                                 toNettyMethod(method),
@@ -517,6 +535,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
                     .context(context)
                     .proxy(proxy)
                     .keepAlive(keepAlive)
+                    .requestId(requestId)
                     .build();
             WebClientRequestImpl clientRequest = new WebClientRequestImpl(this);
 
@@ -535,12 +554,13 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
                     : bootstrap.connect(uri.getHost(), uri.getPort());
 
             channelFuture.addListener((ChannelFutureListener) future -> {
-                LOGGER.finest(() -> "ChannelFuture hashcode -> " + channelFuture.hashCode());
-                LOGGER.finest(() -> "Channel hashcode -> " + channelFuture.channel().hashCode());
+                LOGGER.finest(() -> "(client reqID: " + requestId + ") "
+                        + "Channel hashcode -> " + channelFuture.channel().hashCode());
                 channelFuture.channel().attr(REQUEST).set(clientRequest);
                 channelFuture.channel().attr(RECEIVED).set(responseReceived);
                 channelFuture.channel().attr(COMPLETED).set(complete);
                 channelFuture.channel().attr(RESULT).set(result);
+                channelFuture.channel().attr(REQUEST_ID).set(requestId);
                 Throwable cause = future.cause();
                 if (null == cause) {
                     RequestContentSubscriber requestContentSubscriber = new RequestContentSubscriber(request,

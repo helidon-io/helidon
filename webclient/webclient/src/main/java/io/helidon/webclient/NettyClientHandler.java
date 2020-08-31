@@ -49,6 +49,7 @@ import static io.helidon.webclient.WebClientRequestBuilderImpl.COMPLETED;
 import static io.helidon.webclient.WebClientRequestBuilderImpl.IN_USE;
 import static io.helidon.webclient.WebClientRequestBuilderImpl.RECEIVED;
 import static io.helidon.webclient.WebClientRequestBuilderImpl.REQUEST;
+import static io.helidon.webclient.WebClientRequestBuilderImpl.REQUEST_ID;
 import static io.helidon.webclient.WebClientRequestBuilderImpl.RESPONSE;
 import static io.helidon.webclient.WebClientRequestBuilderImpl.RESULT;
 
@@ -69,6 +70,7 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
 
     private HttpResponsePublisher publisher;
     private ResponseCloser responseCloser;
+    private long requestId;
 
     /**
      * Creates new instance.
@@ -87,10 +89,13 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, HttpObject msg) throws IOException {
         if (msg instanceof HttpResponse) {
-            ctx.channel().config().setAutoRead(false);
+            Channel channel = ctx.channel();
+            channel.config().setAutoRead(false);
             HttpResponse response = (HttpResponse) msg;
-            WebClientRequestImpl clientRequest = ctx.channel().attr(REQUEST).get();
+            this.requestId = channel.attr(REQUEST_ID).get();
+            WebClientRequestImpl clientRequest = channel.attr(REQUEST).get();
             RequestConfiguration requestConfiguration = clientRequest.configuration();
+            LOGGER.finest(() -> "(client reqID: " + requestId + ") Initial http response message received.");
 
             this.publisher = new HttpResponsePublisher(ctx);
             this.responseCloser = new ResponseCloser(ctx);
@@ -111,7 +116,7 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
             // we got a response, we can safely complete the future
             // all errors are now fed only to the publisher
             WebClientResponse clientResponse = responseBuilder.build();
-            ctx.channel().attr(RESPONSE).set(clientResponse);
+            channel.attr(RESPONSE).set(clientResponse);
 
             for (HttpInterceptor interceptor : HTTP_INTERCEPTORS) {
                 if (interceptor.shouldIntercept(response.status(), requestConfiguration)) {
@@ -119,7 +124,7 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
                     if (continueAfter) {
                         responseCloser.close().thenAccept(future -> LOGGER.finest(() -> "Response closed due to redirection"));
                     }
-                    interceptor.handleInterception(response, clientRequest, ctx.channel().attr(RESULT).get());
+                    interceptor.handleInterception(response, clientRequest, channel.attr(RESULT).get());
                     if (continueAfter) {
                         return;
                     }
@@ -134,7 +139,7 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
                                                      clientResponse.headers(),
                                                      clientResponse.status());
 
-            ctx.channel().attr(SERVICE_RESPONSE).set(clientServiceResponse);
+            channel.attr(SERVICE_RESPONSE).set(clientServiceResponse);
 
             List<WebClientService> services = requestConfiguration.services();
             CompletionStage<WebClientServiceResponse> csr = CompletableFuture.completedFuture(clientServiceResponse);
@@ -143,8 +148,8 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
                 csr = csr.thenCompose(clientSerResponse -> service.response(clientRequest, clientSerResponse));
             }
 
-            CompletableFuture<WebClientServiceResponse> responseReceived = ctx.channel().attr(RECEIVED).get();
-            CompletableFuture<WebClientResponse> responseFuture = ctx.channel().attr(RESULT).get();
+            CompletableFuture<WebClientServiceResponse> responseReceived = channel.attr(RECEIVED).get();
+            CompletableFuture<WebClientResponse> responseFuture = channel.attr(RESULT).get();
             csr.whenComplete((clientSerResponse, throwable) -> {
                 if (throwable != null) {
                     responseReceived.completeExceptionally(throwable);
@@ -176,6 +181,7 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
         }
 
         if (msg instanceof LastHttpContent) {
+            LOGGER.finest(() -> "(client reqID: " + requestId + ") Last http content received.");
             responseCloser.close();
         }
     }
@@ -286,6 +292,7 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
          */
         Single<Void> close() {
             if (closed.compareAndSet(false, true)) {
+                LOGGER.finest(() -> "(client reqID: " + requestId + ") Closing the response from the server.");
                 Channel channel = ctx.channel();
                 WebClientServiceResponse clientServiceResponse = channel.attr(SERVICE_RESPONSE).get();
                 CompletableFuture<WebClientServiceResponse> requestComplete = channel.attr(COMPLETED).get();
@@ -297,7 +304,8 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
                     ctx.close()
                             .addListener(future -> {
                                 if (future.isSuccess()) {
-                                    LOGGER.finest(() -> "Response from the server has been closed.");
+                                    LOGGER.finest(() -> "(client reqID: " + requestId + ") "
+                                            + "Response from the server has been closed.");
                                     cf.complete(null);
                                 } else {
                                     LOGGER.log(Level.SEVERE,
@@ -307,6 +315,7 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
                                 }
                             });
                 } else {
+                    LOGGER.finest(() -> "(client reqID: " + requestId + ") Returning channel to the cache.");
                     channel.attr(IN_USE).get().set(false);
                     cf.complete(null);
                     channel.read();

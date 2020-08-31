@@ -43,6 +43,8 @@ class WebClientServiceRequestImpl implements WebClientServiceRequest {
     private final Single<WebClientServiceResponse> responseReceived;
     private final Single<WebClientServiceResponse> complete;
 
+    private long requestId;
+
     WebClientServiceRequestImpl(WebClientRequestBuilderImpl requestBuilder,
                                 Single<WebClientServiceRequest> sent,
                                 Single<WebClientServiceResponse> responseReceived,
@@ -58,6 +60,7 @@ class WebClientServiceRequestImpl implements WebClientServiceRequest {
         this.path = requestBuilder.path();
         this.fragment = requestBuilder.fragment();
         this.parameters = new HashMap<>(requestBuilder.properties());
+        this.requestId = requestBuilder.requestId();
         this.sent = sent;
         this.complete = complete;
     }
@@ -70,6 +73,16 @@ class WebClientServiceRequestImpl implements WebClientServiceRequest {
     @Override
     public Context context() {
         return context;
+    }
+
+    @Override
+    public long requestId() {
+        return requestId;
+    }
+
+    @Override
+    public void requestId(long requestId) {
+        this.requestId = requestId;
     }
 
     @Override
