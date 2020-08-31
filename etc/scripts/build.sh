@@ -51,4 +51,14 @@ mvn ${MAVEN_ARGS} --version
 # temporary changed to trigger failed webserver tests asap (to reproduce #2248)
 cd ${WS_DIR}
 mvn clean install -pl webserver/webserver -am -DskipTests
-mvn test -pl webserver/webserver
+
+for i in 1 2 3 4 5 6 7 8 9 10
+do
+  echo "********************************"
+  echo "** Running cycle $i"
+  echo "********************************"
+
+  mvn test -pl webserver/webserver -Dtest=TestHttpParsingDefaults
+  # sleeping for 10 seconds to free resources (sockets)
+  sleep 10
+done

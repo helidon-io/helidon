@@ -79,41 +79,41 @@ class TestHttpParsingDefaults {
         }
     }
 
-//    @Test
-    @RepeatedTest(10000)
+    //    @Test
+    @RepeatedTest(5000)
     void testOkHeader() {
         testHeader(target, 8000, true);
     }
 
-//    @Test
-@RepeatedTest(10000)
+    //    @Test
+    @RepeatedTest(5000)
     void testLongHeader() {
         testHeader(target, 8900, false);
         testHeader(target, 8900, false);
     }
 
-//    @Test
-@RepeatedTest(10000)
+    //    @Test
+    @RepeatedTest(5000)
     void testOkInitialLine() {
         testInitialLine(target, 10, true);
     }
 
-//    @Test
-@RepeatedTest(10000)
+    //    @Test
+    @RepeatedTest(5000)
     void testLongInitialLine() {
         // now test with big initial line
         testInitialLine(target, 5000, false);
         testInitialLine(target, 5000, false);
     }
 
-//    @Test
-    @RepeatedTest(10000)
+    //    @Test
+    @RepeatedTest(5000)
     void testGoodHeaderName() {
         testHeaderName(target, GOOD_HEADER_NAME, true);
     }
 
-//    @Test
-    @RepeatedTest(10000)
+    //    @Test
+    @RepeatedTest(5000)
     void testBadHeaderName() {
         testHeaderName(target, BAD_HEADER_NAME, false);
         testHeaderName(target, BAD_HEADER_NAME, false);
