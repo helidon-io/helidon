@@ -47,7 +47,8 @@
         <version.plugin.dependency>3.1.2</version.plugin.dependency>
         <version.plugin.exec>1.6.0</version.plugin.exec>
         <version.plugin.failsafe>2.19.1</version.plugin.failsafe>
-        <version.plugin.helidon>2.0.2</version.plugin.helidon>
+        <version.plugin.helidon>2.1.0</version.plugin.helidon>
+        <version.plugin.helidon-cli>2.1.0</version.plugin.helidon-cli>
         <version.plugin.jar>3.0.2</version.plugin.jar>
         <version.plugin.os>1.5.0.Final</version.plugin.os>
         <version.plugin.protobuf>0.5.1</version.plugin.protobuf>
@@ -171,6 +172,11 @@
                     <groupId>io.helidon.build-tools</groupId>
                     <artifactId>helidon-maven-plugin</artifactId>
                     <version>${version.plugin.helidon}</version>
+                </plugin>
+                <plugin>
+                    <groupId>io.helidon.build-tools</groupId>
+                    <artifactId>helidon-cli-maven-plugin</artifactId>
+                    <version>${version.plugin.helidon-cli}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.xolstice.maven.plugins</groupId>
