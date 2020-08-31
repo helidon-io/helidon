@@ -1080,12 +1080,12 @@ public class SchemaGenerator {
                 argument.setDescription(argumentDescription);
                 if (argumentFormat[0] != null) {
                     argument.setFormat(new String[] {argumentFormat[1], argumentFormat[2] });
-                    // TODO: Need to set return type
+                    argument.setArgumentType(String.class.getName());
                 }
 
                 Source sourceAnnotation = parameter.getAnnotation(Source.class);
                 if (sourceAnnotation != null) {
-                    // set the method name to the correct property name as it will be currently be incorrect
+                    // set the method name to the correct property name as it will currently be incorrect
                     discoveredMethod.setName(annotatedName != null ? annotatedName : stripMethodName(method, false));
                     discoveredMethod.setSource(returnType.getReturnClass());
                     discoveredMethod.setQueryAnnotated(method.getAnnotation(Query.class) != null);

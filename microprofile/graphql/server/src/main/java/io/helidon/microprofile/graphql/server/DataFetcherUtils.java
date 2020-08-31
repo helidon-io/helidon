@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.graphql.server;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.text.DateFormat;
@@ -31,16 +32,18 @@ import java.util.logging.Logger;
 
 import javax.enterprise.inject.spi.CDI;
 
+import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.PropertyDataFetcher;
-import graphql.GraphQLException;
-import graphql.schema.DataFetcher;
 import graphql.schema.PropertyDataFetcherHelper;
+
+import graphql.GraphQLException;
 
 import static io.helidon.microprofile.graphql.server.FormattingHelper.getCorrectDateFormatter;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.getCorrectNumberFormat;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ID;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ensureRuntimeException;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.isDateTimeScalar;
 
 /**
  * Utilities for working with {@link DataFetcher}s.
@@ -104,7 +107,29 @@ public class DataFetcherUtils {
                             // convert back to original data type
                             listArgumentValues.add(getOriginalValue(originalType, (String) key));
                         } else {
-                            listArgumentValues.add(key);
+                            // check the format and convert it from a string to the original format
+                            String[] format = argument.getFormat();
+                            if (format != null && format.length == 2) {
+                                if (isDateTimeScalar(argument.getArgumentType())) {
+                                    DateTimeFormatter dateFormatter = getCorrectDateFormatter(originalType.getName(),
+                                                                                              format[1], format[0]);
+                                    listArgumentValues.add(dateFormatter.parse(key.toString()));
+                                } else {
+                                    NumberFormat numberFormat = getCorrectNumberFormat(originalType.getName(),
+                                                                                       format[1], format[0]);
+                                    if (numberFormat != null) {
+                                        // convert to the original type
+                                        Number parsedValue = numberFormat.parse(key.toString());
+                                        Constructor<?> constructor = argument.getOriginalType()
+                                                .getDeclaredConstructor(String.class);
+                                        listArgumentValues.add(constructor.newInstance(parsedValue.toString()));
+                                    } else {
+                                       listArgumentValues.add(key);
+                                    }
+                                }
+                            } else {
+                                listArgumentValues.add(key);
+                            }
                         }
                     }
                 }

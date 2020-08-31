@@ -18,6 +18,7 @@ package io.helidon.microprofile.graphql.server;
 
 import java.beans.IntrospectionException;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -319,30 +320,30 @@ public class SchemaGeneratorIT
         
         mapResults = getAndAssertResult(executionContext.execute("query { echoBigDecimalUsingFormat(param1: \"BD-123\") }"));
         assertThat(mapResults, is(notNullValue()));
-        assertThat(mapResults.get("echoBigDecimalUsingFormat"), is(123));
+        assertThat(mapResults.get("echoBigDecimalUsingFormat"), is(BigDecimal.valueOf(123)));
 
         // create a new contact
-        String contactInput =
-                "contact: {"
-                        + "id: \"1 id\" "
-                        + "name: \"Tim\" "
-                        + "age: \"20 years old\" "
-                        + "bankBalance: \"$ 1000.01\" "
-                        + "value: \"9 value\" "
-                        + "longValue: 12345"
-                        + "bigDecimal: \"BigDecimal-12345\""
-                        + " } ";
-
-        mapResults = getAndAssertResult(
-                executionContext.execute("mutation { createSimpleContactWithNumberFormats (" + contactInput +
-                                                 ") { id name } }"));
-        assertThat(mapResults.size(), is(1));
-        mapResults2 = (Map<String, Object>) mapResults.get("createSimpleContactWithNumberFormats");
-        assertThat(mapResults2, is(notNullValue()));
+//        String contactInput =
+//                "contact: {"
+//                        + "id: \"1 id\" "
+//                        + "name: \"Tim\" "
+//                        + "age: \"20 years old\" "
+//                        + "bankBalance: \"$ 1000.01\" "
+//                        + "value: \"9 value\" "
+//                        + "longValue: 12345"
+//                        + "bigDecimal: \"BigDecimal-12345\""
+//                        + " } ";
+//
+//        mapResults = getAndAssertResult(
+//                executionContext.execute("mutation { createSimpleContactWithNumberFormats (" + contactInput +
+//                                                 ") { id name } }"));
+//        assertThat(mapResults.size(), is(1));
+//        mapResults2 = (Map<String, Object>) mapResults.get("createSimpleContactWithNumberFormats");
+//        assertThat(mapResults2, is(notNullValue()));
     }
 
     @Test
-    @Disabled
+  //  @Disabled
     public void testDateAndTime() throws IOException {
         setupIndex(indexFileName, DateTimePojo.class, SimpleQueriesNoArgs.class);
         ExecutionContext executionContext =  new ExecutionContext(defaultContext);
@@ -390,7 +391,6 @@ public class SchemaGeneratorIT
         assertThat(mapResults2.get("localDate2"), is("08/04/1970"));
         assertThat(mapResults2.get("localTime"), is("10:10:20"));
         assertThat(mapResults2.get("offsetTime"), is("08:10:01+0000"));
-
     }
 
     @Test

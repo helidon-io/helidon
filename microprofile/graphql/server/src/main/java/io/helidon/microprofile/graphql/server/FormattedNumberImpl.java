@@ -21,7 +21,8 @@ import java.text.NumberFormat;
 /**
  * An implementation of a {@link FormattedNumber}.
  */
-public class FormattedNumberImpl implements FormattedNumber {
+public class FormattedNumberImpl
+        implements FormattedNumber {
     /**
      * The {@link NumberFormat} used to format the value.
      */
