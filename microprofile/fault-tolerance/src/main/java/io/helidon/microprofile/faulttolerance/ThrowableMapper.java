@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.faulttolerance;
 
+import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 
 import org.eclipse.microprofile.faulttolerance.exceptions.BulkheadException;
@@ -30,6 +31,13 @@ class ThrowableMapper {
     private ThrowableMapper() {
     }
 
+    /**
+     * Maps a {@code Throwable} in Helidon to its corresponding type in the MP
+     * FT API.
+     *
+     * @param t throwable to map.
+     * @return mapped throwable.
+     */
     static Throwable map(Throwable t) {
         if (t instanceof ExecutionException) {
             t = t.getCause();
@@ -47,5 +55,32 @@ class ThrowableMapper {
             return new TimeoutException(t.getMessage(), t.getCause());
         }
         return t;
+    }
+
+    /**
+     * Maps exception types in MP FT to internal ones used by Helidon. Allocates
+     * new array for the purpose of mapping.
+     *
+     * @param types array of {@code Throwable}'s type to map.
+     * @return mapped array.
+     */
+    static Class<? extends Throwable>[] mapTypes(Class<? extends Throwable>[] types) {
+        if (types.length == 0) {
+            return types;
+        }
+        Class<? extends Throwable>[] result = Arrays.copyOf(types, types.length);
+        for (int i = 0; i < types.length; i++) {
+            Class<? extends Throwable> t = types[i];
+            if (t == BulkheadException.class) {
+                result[i] = io.helidon.faulttolerance.BulkheadException.class;
+            } else if (t == CircuitBreakerOpenException.class) {
+                result[i] = io.helidon.faulttolerance.CircuitBreakerOpenException.class;
+            } else if (t == TimeoutException.class) {
+                result[i] = java.util.concurrent.TimeoutException.class;
+            } else {
+                result[i] = t;
+            }
+        }
+        return result;
     }
 }

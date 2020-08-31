@@ -29,7 +29,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
@@ -50,13 +49,13 @@ import io.helidon.faulttolerance.FtHandlerTyped;
 import io.helidon.faulttolerance.Retry;
 import io.helidon.faulttolerance.Timeout;
 
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.faulttolerance.exceptions.CircuitBreakerOpenException;
 import org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException;
 import org.eclipse.microprofile.metrics.Counter;
 import org.glassfish.jersey.process.internal.RequestContext;
 import org.glassfish.jersey.process.internal.RequestScope;
 
+import static io.helidon.microprofile.faulttolerance.ThrowableMapper.mapTypes;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceExtension.isFaultToleranceMetricsEnabled;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BREAKER_CALLS_FAILED_TOTAL;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BREAKER_CALLS_PREVENTED_TOTAL;
@@ -460,8 +459,8 @@ public class MethodInvoker implements FtSupplier<Object> {
                     .successThreshold(introspector.getCircuitBreaker().successThreshold())
                     .errorRatio((int) (introspector.getCircuitBreaker().failureRatio() * 100))
                     .volume(introspector.getCircuitBreaker().requestVolumeThreshold())
-                    .applyOn(introspector.getCircuitBreaker().failOn())
-                    .skipOn(introspector.getCircuitBreaker().skipOn())
+                    .applyOn(mapTypes(introspector.getCircuitBreaker().failOn()))
+                    .skipOn(mapTypes(introspector.getCircuitBreaker().skipOn()))
                     .build();
             builder.addBreaker(methodState.breaker);
         }
@@ -473,7 +472,6 @@ public class MethodInvoker implements FtSupplier<Object> {
                     .queueLength(introspector.getBulkhead().waitingTaskQueue())
                     .async(introspector.isAsynchronous())
                     .build();
-
             builder.addBulkhead(methodState.bulkhead);
         }
 
@@ -499,8 +497,8 @@ public class MethodInvoker implements FtSupplier<Object> {
                             .build())
                     .overallTimeout(Duration.of(introspector.getRetry().maxDuration(),
                                                 introspector.getRetry().durationUnit()))
-                    .applyOn(introspector.getRetry().retryOn())
-                    .skipOn(introspector.getRetry().abortOn())
+                    .applyOn(mapTypes(introspector.getRetry().retryOn()))
+                    .skipOn(mapTypes(introspector.getRetry().abortOn()))
                     .build();
             builder.addRetry(retry);
             methodState.retry = retry;      // keep reference to Retry
@@ -513,8 +511,8 @@ public class MethodInvoker implements FtSupplier<Object> {
                         CommandFallback cfb = new CommandFallback(context, introspector, throwable);
                         return toCompletionStageSupplier(cfb::execute).get();
                     })
-                    .applyOn(introspector.getFallback().applyOn())
-                    .skipOn(introspector.getFallback().skipOn())
+                    .applyOn(mapTypes(introspector.getFallback().applyOn()))
+                    .skipOn(mapTypes(introspector.getFallback().skipOn()))
                     .build();
             builder.addFallback(fallback);
         }
