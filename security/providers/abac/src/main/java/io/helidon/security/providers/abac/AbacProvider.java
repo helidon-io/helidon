@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -151,18 +151,21 @@ public final class AbacProvider extends SynchronousProvider implements Authoriza
             if (customObject.isPresent()) {
                 attributes.add(new RuntimeAttribute(validator, customObject.get()));
             } else {
-                OptionalHelper.from(abacConfig.map(it -> it.get(configKey))).ifPresentOrElse(
-                        attribConfig -> {
-                            attributes.add(new RuntimeAttribute(validator, validator.fromConfig(attribConfig)));
-                        },
-                        () -> {
-                            List<Annotation> annotationConfig = new ArrayList<>();
-                            for (SecurityLevel securityLevel : epConfig.securityLevels()) {
-                                for (Class<? extends Annotation> annotation : annotations) {
-                                    List<? extends Annotation> list = securityLevel
-                                            .combineAnnotations(annotation,
-                                                                EndpointConfig.AnnotationScope.values());
-                                    annotationConfig.addAll(list);
+                // we should only configure this validator if
+                // - configuration for its key exists in abacConfig
+                // - or we have an annotation configured that it supports
+                OptionalHelper.from(abacConfig.flatMap(it -> it.get(configKey).asNode().asOptional()))
+                        .ifPresentOrElse(attribConfig -> {
+                                             attributes.add(new RuntimeAttribute(validator, validator.fromConfig(attribConfig)));
+                                         },
+                                         () -> {
+                                             List<Annotation> annotationConfig = new ArrayList<>();
+                                             for (SecurityLevel securityLevel : epConfig.securityLevels()) {
+                                                 for (Class<? extends Annotation> annotation : annotations) {
+                                                     List<? extends Annotation> list = securityLevel
+                                                             .combineAnnotations(annotation,
+                                                                                 EndpointConfig.AnnotationScope.values());
+                                                     annotationConfig.addAll(list);
                                 }
                             }
 
