@@ -24,6 +24,7 @@ import io.helidon.config.ConfigSources;
 import io.helidon.security.SecurityContext;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientRequestBuilder;
+import io.helidon.webclient.security.WebClientSecurity;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
@@ -33,7 +34,9 @@ import io.helidon.webserver.WebServer;
  * Example utilities.
  */
 public final class OutboundOverrideUtil {
-    private static final WebClient CLIENT = WebClient.create();
+    private static final WebClient CLIENT = WebClient.builder()
+            .addService(WebClientSecurity.create())
+            .build();
 
     private OutboundOverrideUtil() {
     }
