@@ -203,7 +203,7 @@ Configuration has been updated to use the new `Resource` approach:
 == WebServer Configuration
 
 === SSL/TLS
-There is a new class `io.helidon.webserver.TlsConfig` that can be used
+There is a new class `io.helidon.webserver.WebServerTls` that can be used
 to configure TLS for a WebServer socket.
 Class `io.helidon.webserver.SSLContextBuilder` has been deprecated and will
 be removed.
@@ -211,7 +211,7 @@ be removed.
 The class uses a `Builder` pattern:
 [source,java]
 ----
-TlsConfig.builder()
+WebServerTls.builder()
    .privateKey(KeyConfig.keystoreBuilder()
    .keystore(Resource.create("certificate.p12"))
    .keystorePassphrase("helidon")
@@ -223,7 +223,7 @@ including the `WebServer.Builder` itself:
 [source,java]
 ----
 WebServer.builder(routing())
-                .tls(tlsConfig)
+                .tls(webServerTls)
                 .build();
 ----
 
@@ -291,6 +291,6 @@ WebServer.builder()
 - `io.helidon.webserver.Routing.createServer(ServerConfiguration)` - please use `WebServer.builder()`
 - `io.helidon.webserver.Routing.createServer()` - please use `WebServer.builder()`
 - `io.helidon.webserver.SocketConfiguration.DEFAULT` - use a builder to create a named configuration
-- `io.helidon.webserver.SocketConfiguration.Builder.ssl(SSLContext) - use `TlsConfig` instead
-- `io.helidon.webserver.SocketConfiguration.Builder.enabledSSlProtocols(String...) - use `TlsConfig` instead
+- `io.helidon.webserver.SocketConfiguration.Builder.ssl(SSLContext) - use `WebServerTls` instead
+- `io.helidon.webserver.SocketConfiguration.Builder.enabledSSlProtocols(String...) - use `WebServerTls` instead
 
