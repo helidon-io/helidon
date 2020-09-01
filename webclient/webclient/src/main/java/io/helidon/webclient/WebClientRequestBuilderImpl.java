@@ -634,18 +634,26 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     }
 
     private URI prepareRelativeURI() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(this.uri.getPath());
-        String query = this.uri.getQuery();
-        String fragment = this.uri.getFragment();
-        if (query != null) {
-            sb.append('?');
-            sb.append(query);
-        } else if (fragment != null) {
-            sb.append('#');
-            sb.append(fragment);
+        try {
+            String path = this.path.toString();
+            String query = this.uri.getQuery();
+            String fragment = this.uri.getFragment();
+            if (skipUriEncoding) {
+                StringBuilder sb = new StringBuilder();
+                sb.append(path);
+                if (query != null) {
+                    sb.append('?');
+                    sb.append(query);
+                } else if (fragment != null) {
+                    sb.append('#');
+                    sb.append(fragment);
+                }
+                return URI.create(sb.toString());
+            }
+            return new URI(null, null, null, -1, path, query, fragment);
+        } catch (URISyntaxException e) {
+            throw new WebClientException("Could not create URI instance for the request.", e);
         }
-        return URI.create(sb.toString());
     }
 
     private String resolveQuery() {
