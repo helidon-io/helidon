@@ -88,6 +88,7 @@
                     <artifactId>maven-failsafe-plugin</artifactId>
                     <version>${version.plugin.failsafe}</version>
                     <configuration>
+                        <useModulePath>false</useModulePath>
                         <redirectTestOutputToFile>true</redirectTestOutputToFile>
                     </configuration>
                 </plugin>
@@ -148,6 +149,11 @@
                     <groupId>io.helidon.build-tools</groupId>
                     <artifactId>helidon-maven-plugin</artifactId>
                     <version>${version.plugin.helidon}</version>
+                </plugin>
+                <plugin>
+                    <groupId>io.helidon.build-tools</groupId>
+                    <artifactId>helidon-cli-maven-plugin</artifactId>
+                    <version>${version.plugin.helidon-cli}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.xolstice.maven.plugins</groupId>
