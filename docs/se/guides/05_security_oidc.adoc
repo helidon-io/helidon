@@ -1,0 +1,160 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2020 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Helidon SE OIDC Security Provider Guide
+:h1Prefix: SE
+:description: Helidon OIDC Security Provider
+:keywords: helidon, security, guide, oidc, provider
+
+This guide describes how to set up Keycloak and Helidon
+to secure your application with OIDC security provider.
+
+== What you need
+
+[width=50%,role="flex, sm7"]
+|===
+|About 20 minutes
+|<<about/03_prerequisites.adoc,Helidon Prerequisites>>
+|===
+
+=== Set up Keycloak
+
+If Keycloak is not installed, please read its documentation. It is highly recommended following
+the getting started guide.
+This guide will describe the settings needed to secure your application
+with Helidon OIDC security provider.
+
+Once Keycloak is installed, navigate to the admin console. In the left column, click on `Clients`.
+A table display all your clients. Push the `Create` button to create a new client.
+
+Enter `myClientID` in the client ID field for testing purpose and make sure
+the value of client protocol is `openid-connect`.
+Choose `Valid Redirect URIs` according to your application settings.
+If you do not have an application ready yet, enter `http://localhost:7987/*`. Press "+"
+to add your choice and click on the `Save` button at the bottom of the page.
+
+=== Set up Helidon
+
+Use the Helidon SE Maven archetype to create a simple project. It will be used as an example
+to show how to set up Helidon.
+
+[source,bash,subs="attributes+"]
+.Run the Maven archetype
+----
+mvn -U archetype:generate -DinteractiveMode=false \
+    -DarchetypeGroupId=io.helidon.archetypes \
+    -DarchetypeArtifactId=helidon-quickstart-se \
+    -DarchetypeVersion={helidon-version} \
+    -DgroupId=io.helidon.examples \
+    -DartifactId=helidon-quickstart-se \
+    -Dpackage=io.helidon.examples.quickstart.se
+----
+
+[source,bash]
+.The project will be built and run from the helidon-quickstart-se directory:
+----
+cd helidon-quickstart-se
+----
+
+==== Update project dependencies
+
+Update the pom.xml file and add the following Helidon dependency to the `<dependencies>` section.
+
+[source,xml]
+.Add the following dependency to `pom.xml`
+----
+<dependency>
+    <groupId>io.helidon.security.providers</groupId>
+    <artifactId>helidon-security-providers-oidc</artifactId>
+</dependency>
+----
+
+==== Add OIDC security properties
+
+The OIDC security provider properties can be joined to helidon property file.
+So it can be easily used to configure the web server without modifying application code.
+
+[source,yaml]
+.Add the following line to application.yaml
+----
+security:
+  providers:
+  - abac:
+      # Adds ABAC Provider - it does not require any configuration
+  - oidc:
+      client-id: "myClientID" // <1>
+      client-secret: "secret"
+      identity-uri: "http://localhost:8080/auth/realms/myrealm" // <2>
+      audience: "account"
+      # proxy-host should be defined if you operate behind a proxy, can be removed otherwise
+      proxy-host: ""
+      frontend-uri: "http://localhost:7987" // <3>
+      server-type: "oidc"
+  web-server:
+    # protected paths on the web server
+    paths:  // <4>
+      - path: "/greet"
+        methods: ["get"]
+        authenticate: true
+----
+<1> `client-id` must be the same as the one configure in keycloak.
+<2> `identity-uri` is used to redirect the user to keycloak.
+<3> `frontend-uri` will direct you back to the application.
+<4> `paths` section defines the protected application's path.
+
+==== Configure web server
+
+Once the properties are added, the web server must be set up.
+The `Main.createRouting` method gather all configuration properties.
+
+[source,java]
+.Add the following to `Main.createRouting` method
+----
+import io.helidon.security.Security;
+import io.helidon.security.integration.webserver.WebSecurity;
+import io.helidon.security.providers.oidc.OidcSupport;
+...
+Security security = Security.create(config.get("security"));    // <1>
+
+return Routing.builder()
+                .register(WebSecurity.create(security,config.get("security"))) // <2>
+                .register(OidcSupport.create(config))   // <3>
+                ...
+----
+<1> Create the Helidon `Security` instance using configuration.
+<2> Register Helidon `WebSecurity` instance using security instance and configuration.
+<3> Register Helidon `OidcSupport` instance.
+
+That code is extracting security properties from application.yaml into two steps.
+First the Security instance is used to bootstrap security, so the WebSecurity instance
+can integrate security into Web Server.
+Then, OidcSupport instance registers the endpoint to which OIDC redirects browser after a successful login.
+
+Helidon sample is now set up and ready.
+
+==== Try it !
+
+[source,bash]
+.Build the application, skipping unit tests, then run it:
+----
+mvn package -DskipTests=true
+java -jar target/helidon-quickstart-se.jar
+----
+
+The tests must be skipped, otherwise it produces test failure. As the `/greet` path is
+now protected, its access is limited and the tests are not built to take oidc security in account.
