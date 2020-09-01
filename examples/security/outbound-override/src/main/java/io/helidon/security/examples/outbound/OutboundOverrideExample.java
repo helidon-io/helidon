@@ -40,8 +40,8 @@ import static io.helidon.security.examples.outbound.OutboundOverrideUtil.webTarg
  * Uses basic authentication both to authenticate users and to propagate identity.
  */
 public final class OutboundOverrideExample {
-    private static volatile int clientPort;
-    private static volatile int servingPort;
+    static volatile int clientPort;
+    static volatile int servingPort;
 
     private OutboundOverrideExample() {
     }
@@ -52,8 +52,8 @@ public final class OutboundOverrideExample {
      * @param args ignored
      */
     public static void main(String[] args) {
-        CompletionStage<Void> first = startClientService();
-        CompletionStage<Void> second = startServingService();
+        CompletionStage<Void> first = startClientService(8080);
+        CompletionStage<Void> second = startServingService(9080);
 
         first.toCompletableFuture().join();
         second.toCompletableFuture().join();
@@ -66,7 +66,7 @@ public final class OutboundOverrideExample {
         System.out.println("http://localhost:" + servingPort + "/hello");
     }
 
-    private static CompletionStage<Void> startServingService() {
+    static CompletionStage<Void> startServingService(int port) {
         Config config = createConfig("serving-service");
 
         Routing routing = Routing.builder()
@@ -75,10 +75,10 @@ public final class OutboundOverrideExample {
                     res.send(req.context().get(SecurityContext.class).flatMap(SecurityContext::user).map(
                             Subject::principal).map(Principal::getName).orElse("Anonymous"));
                 }).build();
-        return startServer(routing, 9080, server -> servingPort = server.port());
+        return startServer(routing, port, server -> servingPort = server.port());
     }
 
-    private static CompletionStage<Void> startClientService() {
+    static CompletionStage<Void> startClientService(int port) {
         Config config = createConfig("client-service");
 
         Routing routing = Routing.builder()
@@ -86,7 +86,7 @@ public final class OutboundOverrideExample {
                 .get("/override", OutboundOverrideExample::override)
                 .get("/propagate", OutboundOverrideExample::propagate)
                 .build();
-        return startServer(routing, 8080, server -> clientPort = server.port());
+        return startServer(routing, port, server -> clientPort = server.port());
     }
 
     private static void override(ServerRequest req, ServerResponse res) {
