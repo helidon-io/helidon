@@ -40,8 +40,8 @@ import static io.helidon.security.examples.outbound.OutboundOverrideUtil.webTarg
  * Uses basic authentication both to authenticate users and to propagate identity.
  */
 public final class OutboundOverrideExample {
-    static volatile int clientPort;
-    static volatile int servingPort;
+    private static volatile int clientPort;
+    private static volatile int servingPort;
 
     private OutboundOverrideExample() {
     }
@@ -110,4 +110,9 @@ public final class OutboundOverrideExample {
                                                        + ", backend service returned: " + result + "\n"))
                 .exceptionally(throwable -> sendError(throwable, res));
     }
+
+    static int clientPort() {
+        return clientPort;
+    }
+
 }

@@ -51,7 +51,7 @@ public class OutboundOverrideExampleTest {
                 .build();
 
         webClient = WebClient.builder()
-                .baseUri("http://localhost:" + clientPort)
+                .baseUri("http://localhost:" + clientPort())
                 .addService(WebClientSecurity.create(security))
                 .build();
     }
