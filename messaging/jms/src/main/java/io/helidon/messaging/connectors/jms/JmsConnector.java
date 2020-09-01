@@ -124,7 +124,8 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
             SessionMetadata sessionEntry = prepareSession(config, factoryLocator);
             MessageConsumer consumer = sessionEntry
                     .getSession()
-                    .createConsumer(factoryLocator.createDestination(sessionEntry.getSession()));
+                    .createConsumer(factoryLocator.createDestination(sessionEntry.getSession()),
+                            config.getOptionalValue("message-selector", String.class).orElse(null));
             BufferedEmittingPublisher<Message<?>> emittingPublisher = BufferedEmittingPublisher.create();
             Long pollTimeout = config.getOptionalValue("poll-timeout", Long.class).orElse(50L);
             scheduler.scheduleAtFixedRate(() -> {
@@ -166,7 +167,10 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
                             + config.getValue(CHANNEL_NAME_ATTRIBUTE, String.class)))
                     .forEach(m -> {
                         try {
-                            mapper.compareAndSet(null, MessageMappers.getJmsMessageMapper(m));
+                            //lookup mapper only the first time
+                            if (mapper.get() == null) {
+                                mapper.set(MessageMappers.getJmsMessageMapper(m));
+                            }
                             producer.send(mapper.get().apply(session, m));
                         } catch (JMSException e) {
                             throw new RuntimeException(e);

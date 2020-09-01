@@ -17,7 +17,6 @@
 
 package io.helidon.messaging.connectors.jms;
 
-import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -26,12 +25,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.se.SeContainerInitializer;
 import javax.jms.Connection;
@@ -41,6 +40,7 @@ import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
+import javax.jms.TextMessage;
 
 import io.helidon.config.mp.MpConfigProviderResolver;
 import io.helidon.config.mp.MpConfigSources;
@@ -67,6 +67,7 @@ class JmsMpTest {
     private static final String TEST_TOPIC_3 = "topic-3";
     private static final String TEST_TOPIC_4 = "topic-4";
     private static final String TEST_TOPIC_5 = "topic-5";
+    private static final String TEST_TOPIC_6 = "topic-6";
     private static final String TEST_QUEUE_ACK = "queue-ack";
     private static final String TEST_TOPIC_ERROR = "topic-error";
 
@@ -123,6 +124,12 @@ class JmsMpTest {
                 "mp.messaging.incoming.test-channel-ack-1.type", "queue",
                 "mp.messaging.incoming.test-channel-ack-1.destination", "dynamicQueues/" + TEST_QUEUE_ACK
         ));
+        p.putAll(Map.of(
+                "mp.messaging.incoming.test-channel-selector.connector", JmsConnector.CONNECTOR_NAME,
+                "mp.messaging.incoming.test-channel-selector.message-selector", "source IN ('helidon','voyager')",
+                "mp.messaging.incoming.test-channel-selector.type", "topic",
+                "mp.messaging.incoming.test-channel-selector.destination", "dynamicTopics/" + TEST_TOPIC_6
+        ));
 
         return p;
     }
@@ -150,6 +157,7 @@ class JmsMpTest {
         classes.add(AbstractSampleBean.Channel4.class);
         classes.add(AbstractSampleBean.Channel5.class);
         classes.add(AbstractSampleBean.ChannelAck.class);
+        classes.add(AbstractSampleBean.ChannelSelector.class);
         classes.add(AbstractSampleBean.ChannelError.class);
         classes.add(AbstractSampleBean.ChannelProcessor.class);
         classes.add(MessagingCdiExtension.class);
@@ -164,8 +172,16 @@ class JmsMpTest {
                                  final List<String> testData,
                                  final String topic,
                                  final List<String> expected) {
+        produceAndCheck(consumingBean, testData, topic, expected, message -> {
+        });
+    }
+
+    private void produceAndCheck(final AbstractSampleBean consumingBean,
+                                 final List<String> testData,
+                                 final String topic,
+                                 final List<String> expected, Consumer<TextMessage> messageConsumer) {
         consumingBean.expectedRequests(expected.size());
-        produce(topic, testData);
+        produce(topic, testData, messageConsumer);
         if (expected.size() > 0) {
             // Wait till records are delivered
             boolean done = consumingBean.await();
@@ -177,14 +193,16 @@ class JmsMpTest {
         }
     }
 
-    void produce(String topic, final List<String> testData) {
+    void produce(String topic, final List<String> testData, Consumer<TextMessage> messageConsumer) {
         try {
             Destination dest = topic.startsWith("topic")
                     ? session.createTopic(topic)
                     : session.createQueue(topic);
             MessageProducer producer = session.createProducer(dest);
             for (String s : testData) {
-                producer.send(session.createTextMessage(s));
+                TextMessage textMessage = session.createTextMessage(s);
+                messageConsumer.accept(textMessage);
+                producer.send(textMessage);
             }
         } catch (JMSException e) {
             throw new RuntimeException(e);
@@ -229,6 +247,27 @@ class JmsMpTest {
         } finally {
             //cleanup not acked messages
             consumeAllCurrent(TEST_QUEUE_ACK).map(JmsMessage::of).forEach(JmsMessage::ack);
+        }
+    }
+
+    @Test
+    void messageSelector() {
+        List<String> testData = List.of(
+                "enterprise",
+                "helidon",
+                "defiant",
+                "voyager",
+                "reliant");
+        //configured selector: source IN ('helidon','voyager')
+        AbstractSampleBean kafkaConsumingBean = cdiContainer.select(AbstractSampleBean.ChannelSelector.class).get();
+        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_6, List.of("helidon", "voyager"), this::setSourceProperty);
+    }
+
+    private void setSourceProperty(TextMessage m) {
+        try {
+            m.setStringProperty("source", m.getText());
+        } catch (JMSException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -279,10 +318,6 @@ class JmsMpTest {
         bean.restart();
         testData = Collections.singletonList("not a number");
         produceAndCheck(bean, testData, TEST_TOPIC_5, Collections.singletonList("error"));
-    }
-
-    private static <T> Instance<T> getInstance(Class<T> beanType, Annotation annotation) {
-        return cdiContainer.select(beanType, annotation);
     }
 
     private static SeContainer startCdiContainer(Map<String, String> p, Set<Class<?>> beanClasses) {

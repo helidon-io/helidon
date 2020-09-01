@@ -88,9 +88,9 @@ abstract class AbstractSampleBean {
         public CompletionStage<String> channelAck(Message<String> msg) {
             LOGGER.fine(() -> String.format("Received %s", msg.getPayload()));
             consumed().add(msg.getPayload());
-            if(msg.getPayload().startsWith("NO_ACK")){
+            if (msg.getPayload().startsWith("NO_ACK")) {
                 LOGGER.fine(() -> String.format("NOT Acked %s", msg.getPayload()));
-            }else{
+            } else {
                 LOGGER.fine(() -> String.format("Acked %s", msg.getPayload()));
                 msg.ack();
             }
@@ -145,6 +145,21 @@ abstract class AbstractSampleBean {
             } finally {
                 msg.ack().whenComplete((a, b) -> countDown("error()"));
             }
+            return CompletableFuture.completedFuture(null);
+        }
+    }
+
+
+    @ApplicationScoped
+    public static class ChannelSelector extends AbstractSampleBean {
+
+        @Incoming("test-channel-selector")
+        @Acknowledgment(Acknowledgment.Strategy.MANUAL)
+        public CompletionStage<String> selector(Message<String> msg) {
+            LOGGER.fine(() -> String.format("Received %s", msg.getPayload()));
+            consumed().add(msg.getPayload());
+            msg.ack();
+            countDown("selector()");
             return CompletableFuture.completedFuture(null);
         }
     }
