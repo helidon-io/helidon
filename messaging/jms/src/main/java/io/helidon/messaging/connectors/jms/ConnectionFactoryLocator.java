@@ -36,7 +36,7 @@ import org.eclipse.microprofile.config.Config;
 class ConnectionFactoryLocator {
     private final io.helidon.config.Config helidonConfig;
     private InitialContext ctx;
-    private ConnectionFactory connectionFactory;
+    private final ConnectionFactory connectionFactory;
 
     static ConnectionFactoryLocator create(Config config, Instance<ConnectionFactory> factoryInstance) {
         return new ConnectionFactoryLocator(config, factoryInstance);

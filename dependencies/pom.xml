@@ -124,6 +124,8 @@
         <version.lib.reactive-streams-tck>1.0.3</version.lib.reactive-streams-tck>
         <version.lib.scala>2.12.10</version.lib.scala>
         <version.lib.zookeeper>3.5.7</version.lib.zookeeper>
+        <version.lib.activemq>5.16.0</version.lib.activemq>
+        <version.lib.jms-api>2.0</version.lib.jms-api>
     </properties>
 
     <dependencyManagement>
@@ -267,6 +269,11 @@
                 <groupId>jakarta.activation</groupId>
                 <artifactId>jakarta.activation-api</artifactId>
                 <version>${version.lib.activation-api}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.jms</groupId>
+                <artifactId>javax.jms-api</artifactId>
+                <version>${version.lib.jms-api}</version>
             </dependency>
             <dependency>
                 <groupId>org.glassfish</groupId>
@@ -1092,6 +1099,16 @@
                 <groupId>org.reactivestreams</groupId>
                 <artifactId>reactive-streams-tck</artifactId>
                 <version>${version.lib.reactive-streams-tck}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.activemq</groupId>
+                <artifactId>activemq-client</artifactId>
+                <version>${version.lib.activemq}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.activemq</groupId>
+                <artifactId>activemq-kahadb-store</artifactId>
+                <version>${version.lib.activemq}</version>
             </dependency>
             <!-- imported boms -->
             <dependency>

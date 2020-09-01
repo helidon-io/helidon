@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -31,7 +32,6 @@ import javax.enterprise.context.BeforeDestroyed;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
-import javax.jms.BytesMessage;
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.Destination;
@@ -39,7 +39,6 @@ import javax.jms.JMSException;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
-import javax.jms.TextMessage;
 
 import io.helidon.common.configurable.ScheduledThreadPoolSupplier;
 import io.helidon.common.reactive.BufferedEmittingPublisher;
@@ -91,6 +90,11 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
     @Override
     public void stop() {
         scheduler.shutdown();
+        try {
+            scheduler.awaitTermination(100, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            LOGGER.log(Level.SEVERE, e, () -> "Error when awaiting scheduler termination.");
+        }
         for (SessionMetadata e : sessionRegister.values()) {
             try {
                 e.getSession().close();
@@ -122,16 +126,23 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
                     .getSession()
                     .createConsumer(factoryLocator.createDestination(sessionEntry.getSession()));
             BufferedEmittingPublisher<Message<?>> emittingPublisher = BufferedEmittingPublisher.create();
+            Long pollTimeout = config.getOptionalValue("poll-timeout", Long.class).orElse(50L);
             scheduler.scheduleAtFixedRate(() -> {
+                        if (!emittingPublisher.hasRequests()) {
+                            return;
+                        }
                         try {
-                            javax.jms.Message message = consumer.receive();
+                            javax.jms.Message message = consumer.receive(pollTimeout);
+                            if (message == null) {
+                                return;
+                            }
                             LOGGER.fine(() -> "Received message: " + message.toString());
                             emittingPublisher.emit(JmsMessage.of(message, sessionEntry));
                         } catch (Throwable e) {
                             emittingPublisher.fail(e);
                         }
                     }, 0,
-                    config.getOptionalValue("period-executions", Long.class).orElse(200L),
+                    config.getOptionalValue("period-executions", Long.class).orElse(100L),
                     TimeUnit.MILLISECONDS);
             sessionEntry.getConnection().start();
             return ReactiveStreams.fromPublisher(FlowAdapters.toPublisher(Multi.create(emittingPublisher)));
@@ -149,20 +160,14 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
             Session session = sessionEntry.getSession();
             Destination destination = factoryLocator.createDestination(session);
             MessageProducer producer = session.createProducer(destination);
+            AtomicReference<MessageMappers.MessageMapper> mapper = new AtomicReference<>();
             return ReactiveStreams.<Message<?>>builder()
                     .onError(t -> LOGGER.log(Level.SEVERE, t, () -> "Error intercepted from channel "
                             + config.getValue(CHANNEL_NAME_ATTRIBUTE, String.class)))
-                    .forEach((Object m) -> {
+                    .forEach(m -> {
                         try {
-                            Object payload = ((Message<?>) m).getPayload();
-                            if (payload instanceof String) {
-                                TextMessage textMessage = session.createTextMessage((String) payload);
-                                producer.send(textMessage);
-                            } else if (payload instanceof byte[]) {
-                                BytesMessage bytesMessage = session.createBytesMessage();
-                                bytesMessage.writeBytes((byte[]) payload);
-                                producer.send(bytesMessage);
-                            }
+                            mapper.compareAndSet(null, MessageMappers.getJmsMessageMapper(m));
+                            producer.send(mapper.get().apply(session, m));
                         } catch (JMSException e) {
                             throw new RuntimeException(e);
                         }

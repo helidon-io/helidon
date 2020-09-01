@@ -98,6 +98,11 @@ public class MsgProcessingBean {
         }
     }
 
+    /**
+     * Same JMS session, different connector.
+     *
+     * @param msg Message to broadcast
+     */
     @Incoming("fromJmsSameSession")
     public void sameSession(JmsMessage<String> msg) {
         // Broadcast to all subscribers

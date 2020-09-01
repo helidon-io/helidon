@@ -35,9 +35,9 @@ class WrappingPublisher implements Publisher<Object> {
         source.subscribe(new WrappingSubscriber(s));
     }
 
-    private class WrappingSubscriber implements Subscriber<Object> {
+    private static class WrappingSubscriber implements Subscriber<Object> {
 
-        private Subscriber<Object> sourceSubscriber;
+        private final Subscriber<Object> sourceSubscriber;
 
         WrappingSubscriber(Subscriber<Object> sourceSubscriber) {
             this.sourceSubscriber = sourceSubscriber;

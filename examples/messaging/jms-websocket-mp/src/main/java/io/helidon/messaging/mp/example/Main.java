@@ -28,6 +28,11 @@ public class Main {
     private Main() {
     }
 
+    /**
+     * Convenience runner.
+     *
+     * @param args std args
+     */
     public static void main(String[] args) {
         Server.create().start();
     }

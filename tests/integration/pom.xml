@@ -42,6 +42,7 @@
         <module>security</module>
         <module>mp-gh-1538</module>
         <module>kafka</module>
+        <module>jms</module>
     </modules>
 
     <profiles>
