@@ -16,6 +16,7 @@
 
 package io.helidon.common.http;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -30,7 +31,7 @@ import java.util.function.Predicate;
  */
 public final class MediaType implements AcceptPredicate<MediaType> {
     // must be first, as this is used to create instances of media types
-    private static final Map<MediaType, MediaType> KNOWN_TYPES = new HashMap<>();
+    private static final Map<String, MediaType> KNOWN_TYPES = new HashMap<>();
 
     /**
      * The media type {@value CHARSET_PARAMETER} parameter name.
@@ -153,16 +154,21 @@ public final class MediaType implements AcceptPredicate<MediaType> {
     private static final String CHARSET_ATTRIBUTE = "charset";
     private final String type;
     private final String subtype;
-    private final Map<String, String> parameters = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    private final Map<String, String> parameters;
 
     private MediaType(Builder builder) {
-
         this.type = builder.type;
         this.subtype = builder.subtype;
-        this.parameters.putAll(builder.parameters);
-
-        if ((builder.charset != null) && !builder.charset.isEmpty()) {
-            this.parameters.put(CHARSET_PARAMETER, builder.charset);
+        boolean charsetParam = builder.charset != null && !builder.charset.isEmpty();
+        if (builder.parameters.isEmpty() && !charsetParam) {
+            this.parameters = Map.of();
+        } else {
+            Map<String, String> parameters = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+            parameters.putAll(builder.parameters);
+            if (charsetParam) {
+                parameters.put(CHARSET_PARAMETER, builder.charset);
+            }
+            this.parameters = Collections.unmodifiableMap(parameters);
         }
     }
 
@@ -240,13 +246,13 @@ public final class MediaType implements AcceptPredicate<MediaType> {
 
     private static MediaType createMediaType() {
         MediaType mediaType = MediaType.builder().build();
-        KNOWN_TYPES.put(mediaType, mediaType);
+        KNOWN_TYPES.put("", mediaType);
         return mediaType;
     }
 
     private static MediaType createMediaType(String type, String subtype) {
         MediaType mediaType = MediaType.create(type, subtype);
-        KNOWN_TYPES.put(mediaType, mediaType);
+        KNOWN_TYPES.put(type + '/' + subtype, mediaType);
         return mediaType;
     }
 
@@ -274,15 +280,13 @@ public final class MediaType implements AcceptPredicate<MediaType> {
             builder.put(attribute, normalizeParameterValue(attribute, entry.getValue()));
         }
 
-        MediaType mediaType = MediaType.builder()
-                .type(normalizedType)
-                .subtype(normalizedSubtype)
-                .parameters(builder)
-                .build();
-
         // Return one of the constants if the media type is a known type.
-        //TODO or else get?
-        return Optional.ofNullable(KNOWN_TYPES.get(mediaType)).orElse(mediaType);
+        return Optional.ofNullable(builder.isEmpty() ? KNOWN_TYPES.get(normalizedType + '/' + normalizedSubtype) : null)
+                .orElseGet(() -> MediaType.builder()
+                        .type(normalizedType)
+                        .subtype(normalizedSubtype)
+                        .parameters(builder)
+                        .build());
     }
 
     /**
