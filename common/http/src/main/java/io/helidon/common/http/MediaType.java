@@ -337,9 +337,7 @@ public final class MediaType implements AcceptPredicate<MediaType> {
         return CHARSET_ATTRIBUTE.equals(attribute) ? Ascii.toLowerCase(value) : value;
     }
 
-    private static MediaType create(String type, String subtype,
-            Map<String, String> parameters) {
-
+    private static MediaType create(String type, String subtype, Map<String, String> parameters) {
         Objects.requireNonNull(type, "Parameter 'type' is null!");
         Objects.requireNonNull(subtype, "Parameter 'subtype' is null!");
         Objects.requireNonNull(parameters, "Parameter 'parameters' is null!");
@@ -351,24 +349,27 @@ public final class MediaType implements AcceptPredicate<MediaType> {
             throw new IllegalStateException(
                     "A wildcard type cannot be used with a non-wildcard subtype");
         }
-        Map<String, String> normalizedParameters = new HashMap<>();
-        for (Map.Entry<String, String> entry : parameters.entrySet()) {
-            String attribute = Tokenizer.normalize(TOKEN_MATCHER, entry.getKey());
-            normalizedParameters.put(attribute, normalizeParameterValue(attribute, entry.getValue()));
-        }
 
         MediaType mediaType = null;
-
-        // Return one of the constants if the media type is a known type.
-        if (normalizedParameters.isEmpty()) {
+        Map<String, String> normalizedParameters = null;
+        if (parameters.isEmpty()) {
+            // Return one of the constants if the media type is a known type.
             mediaType = KNOWN_TYPES.get(normalizedType + '/' + normalizedSubtype);
+        } else {
+            normalizedParameters = new HashMap<>();
+            for (Map.Entry<String, String> entry : parameters.entrySet()) {
+                String attribute = Tokenizer.normalize(TOKEN_MATCHER, entry.getKey());
+                normalizedParameters.put(attribute, normalizeParameterValue(attribute, entry.getValue()));
+            }
         }
         if (mediaType == null) {
-            mediaType = MediaType.builder()
+            MediaType.Builder builder = MediaType.builder()
                     .type(normalizedType)
-                    .subtype(normalizedSubtype)
-                    .parameters(normalizedParameters)
-                    .build();
+                    .subtype(normalizedSubtype);
+            if (normalizedParameters != null) {
+                builder.parameters(normalizedParameters);
+            }
+            mediaType = builder.build();
         }
         return mediaType;
     }
