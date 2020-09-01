@@ -370,6 +370,7 @@
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${version.plugin.surefire}</version>
                     <configuration>
+                        <useModulePath>false</useModulePath>
                         <trimStackTrace>false</trimStackTrace>
                         <!-- DO NOT override argLine instead use surefire.argLine -->
                         <argLine>${surefire.argLine} ${surefire.coverage.argline}</argLine>
@@ -381,6 +382,7 @@
                     <artifactId>maven-failsafe-plugin</artifactId>
                     <version>${version.plugin.failsafe}</version>
                     <configuration>
+                        <useModulePath>false</useModulePath>
                         <!-- DO NOT override argLine instead use failsafe.argLine -->
                         <argLine>${failsafe.argLine} ${failsafe.coverage.argline}</argLine>
                         <redirectTestOutputToFile>true</redirectTestOutputToFile>
