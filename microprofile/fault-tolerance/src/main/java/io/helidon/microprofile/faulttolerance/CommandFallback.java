@@ -104,7 +104,7 @@ class CommandFallback {
                 result = fallbackMethod.invoke(context.getTarget(), context.getParameters());
             }
         } catch (Throwable t) {
-            updateMetrics(t);
+            updateMetrics();
 
             // If InvocationTargetException, then unwrap underlying cause
             if (t instanceof InvocationTargetException) {
@@ -113,21 +113,15 @@ class CommandFallback {
             throw t instanceof Exception ? (Exception) t : new RuntimeException(t);
         }
 
-        updateMetrics(null);
+        updateMetrics();
         return result;
     }
 
     /**
-     * Updates fallback metrics and adjust failed invocations based on outcome of fallback.
+     * Updates fallback metrics.
      */
-    private void updateMetrics(Throwable throwable) {
-        final Method method = context.getMethod();
+    private void updateMetrics() {
+        Method method = context.getMethod();
         FaultToleranceMetrics.getCounter(method, FaultToleranceMetrics.FALLBACK_CALLS_TOTAL).inc();
-
-        // If fallback was successful, it is not a failed invocation
-        if (throwable == null) {
-            // Since metrics 2.0, countes should only be incrementing, so we cheat here
-            FaultToleranceMetrics.getCounter(method, FaultToleranceMetrics.INVOCATIONS_FAILED_TOTAL).inc(-1L);
-        }
     }
 }

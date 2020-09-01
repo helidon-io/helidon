@@ -600,10 +600,17 @@ public class MethodInvoker implements FtSupplier<Object> {
     }
 
     /**
-     * Collects information necessary to update metrics before method is called.
+     * Collects information necessary to update metrics after method is called.
      */
     private void updateMetricsBefore() {
         handlerStartNanos = System.nanoTime();
+
+        if (introspector.hasCircuitBreaker()) {
+            synchronized (method) {
+                // Breaker state may have changed since we recorded it last
+                methodState.lastBreakerState = methodState.breaker.state();
+            }
+        }
     }
 
     /**
@@ -651,7 +658,7 @@ public class MethodInvoker implements FtSupplier<Object> {
                 Objects.requireNonNull(methodState.breaker);
 
                 // Update counters based on state changes
-                if (methodState.lastBreakerState != State.CLOSED) {
+                if (methodState.lastBreakerState == State.OPEN) {
                     getCounter(method, BREAKER_CALLS_PREVENTED_TOTAL).inc();
                 } else if (methodState.breaker.state() == State.OPEN) {     // closed -> open
                     getCounter(method, BREAKER_OPENED_TOTAL).inc();
