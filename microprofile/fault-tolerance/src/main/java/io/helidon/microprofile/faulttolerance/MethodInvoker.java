@@ -446,10 +446,22 @@ public class MethodInvoker implements FtSupplier<Object> {
     /**
      * Creates a FT handler for an invocation by inspecting annotations.
      *
+     * - fallback(retry(bulkhead(circuitbreaker(timeout(method)))))
+     *
      * @param methodState State related to this invocation's method.
      */
     private FtHandlerTyped<Object> createMethodHandler(MethodState methodState) {
         FaultTolerance.TypedBuilder<Object> builder = FaultTolerance.typedBuilder();
+
+        // Create and add timeout handler
+        if (introspector.hasTimeout()) {
+            Timeout timeout = Timeout.builder()
+                    .timeout(Duration.of(introspector.getTimeout().value(), introspector.getTimeout().unit()))
+                    .currentThread(!introspector.isAsynchronous())
+                    .executor(EXECUTOR_SERVICE)
+                    .build();
+            builder.addTimeout(timeout);
+        }
 
         // Create and add circuit breaker
         if (introspector.hasCircuitBreaker()) {
@@ -475,17 +487,8 @@ public class MethodInvoker implements FtSupplier<Object> {
             builder.addBulkhead(methodState.bulkhead);
         }
 
-        // Create and add timeout handler -- parent of breaker or bulkhead
-        if (introspector.hasTimeout()) {
-            Timeout timeout = Timeout.builder()
-                    .timeout(Duration.of(introspector.getTimeout().value(), introspector.getTimeout().unit()))
-                    .currentThread(!introspector.isAsynchronous())
-                    .executor(EXECUTOR_SERVICE)
-                    .build();
-            builder.addTimeout(timeout);
-        }
 
-        // Create and add retry handler -- parent of timeout
+        // Create and add retry handler
         if (introspector.hasRetry()) {
             Retry retry = Retry.builder()
                     .retryPolicy(Retry.JitterRetryPolicy.builder()
@@ -504,7 +507,7 @@ public class MethodInvoker implements FtSupplier<Object> {
             methodState.retry = retry;      // keep reference to Retry
         }
 
-        // Create and add fallback handler -- parent of retry
+        // Create and add fallback handler
         if (introspector.hasFallback()) {
             Fallback<Object> fallback = Fallback.builder()
                     .fallback(throwable -> {
