@@ -494,6 +494,8 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
 
     private Single<WebClientResponse> invoke(Flow.Publisher<DataChunk> requestEntity) {
         this.uri = prepareFinalURI();
+        //Relative URI is used in request if no proxy set
+        URI requestURI = proxy == Proxy.noProxy() ? prepareRelativeURI() : uri;
         if (requestId == null) {
             requestId = REQUEST_NUMBER.incrementAndGet();
         }
@@ -519,7 +521,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
             HttpHeaders headers = toNettyHttpHeaders();
             DefaultHttpRequest request = new DefaultHttpRequest(toNettyHttpVersion(httpVersion),
                                                                 toNettyMethod(method),
-                                                                uri.toASCIIString(),
+                                                                requestURI.toASCIIString(),
                                                                 headers);
             HttpUtil.isKeepAlive(request);
 
@@ -629,6 +631,21 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
             }
         }
         return this.uri;
+    }
+
+    private URI prepareRelativeURI() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(this.uri.getPath());
+        String query = this.uri.getQuery();
+        String fragment = this.uri.getFragment();
+        if (query != null) {
+            sb.append('?');
+            sb.append(query);
+        } else if (fragment != null) {
+            sb.append('#');
+            sb.append(fragment);
+        }
+        return URI.create(sb.toString());
     }
 
     private String resolveQuery() {
