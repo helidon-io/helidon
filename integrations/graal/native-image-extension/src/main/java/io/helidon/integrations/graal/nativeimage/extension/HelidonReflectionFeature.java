@@ -77,6 +77,20 @@ public class HelidonReflectionFeature implements Feature {
     private static final String AT_ENTITY = "javax.persistence.Entity";
     private static final String AT_REGISTER_REST_CLIENT = "org.eclipse.microprofile.rest.client.inject.RegisterRestClient";
 
+    private static final Map<Class<?>, Class<?>> PRIMITIVES_TO_OBJECT = new HashMap<>();
+
+    static {
+        PRIMITIVES_TO_OBJECT.put(byte.class, Byte.class);
+        PRIMITIVES_TO_OBJECT.put(char.class, Character.class);
+        PRIMITIVES_TO_OBJECT.put(double.class, Double.class);
+        PRIMITIVES_TO_OBJECT.put(float.class, Float.class);
+        PRIMITIVES_TO_OBJECT.put(int.class, Integer.class);
+        PRIMITIVES_TO_OBJECT.put(long.class, Long.class);
+        PRIMITIVES_TO_OBJECT.put(short.class, Short.class);
+        PRIMITIVES_TO_OBJECT.put(boolean.class, Boolean.class);
+        PRIMITIVES_TO_OBJECT.put(void.class, Void.class);
+    }
+
     @Override
     public boolean isInConfiguration(IsInConfigurationAccess access) {
         return ENABLED;
@@ -223,7 +237,6 @@ public class HelidonReflectionFeature implements Feature {
                 .filter(Objects::nonNull)
                 .forEach(allTypes::add);
 
-
         // now let's find all static methods `valueOf` and `fromString`
         for (Class<?> type : allTypes) {
             try {
@@ -289,35 +302,13 @@ public class HelidonReflectionFeature implements Feature {
     }
 
     private static Class<?> toObjectType(Class<?> primitiveClass) {
-        if (primitiveClass == byte.class) {
-            return Byte.class;
+        Class<?> type = PRIMITIVES_TO_OBJECT.get(primitiveClass);
+
+        if (type == null) {
+            traceParsing(() -> "Failed to understand primitive type: " + primitiveClass);
+            type = Object.class;
         }
-        if (primitiveClass == char.class) {
-            return Character.class;
-        }
-        if (primitiveClass == double.class) {
-            return Double.class;
-        }
-        if (primitiveClass == float.class) {
-            return Float.class;
-        }
-        if (primitiveClass == int.class) {
-            return Integer.class;
-        }
-        if (primitiveClass == long.class) {
-            return Long.class;
-        }
-        if (primitiveClass == short.class) {
-            return Short.class;
-        }
-        if (primitiveClass == boolean.class) {
-            return Boolean.class;
-        }
-        if (primitiveClass == void.class) {
-            return Void.class;
-        }
-        traceParsing(() -> "Failed to understand primitive type: " + primitiveClass);
-        return Object.class;
+        return type;
     }
 
     private void addAnnotatedWithReflected(BeforeAnalysisContext context) {
