@@ -31,7 +31,7 @@ import java.util.function.Predicate;
  */
 public final class MediaType implements AcceptPredicate<MediaType> {
 
-    private static final Map<String, MediaType> KNOWN_TYPES = new HashMap<>();
+    private static final Map<String, MediaType> KNOWN_TYPES;
 
     /**
      * The media type {@value CHARSET_PARAMETER} parameter name.
@@ -143,65 +143,68 @@ public final class MediaType implements AcceptPredicate<MediaType> {
     public static final MediaType APPLICATION_JAVASCRIPT;
 
     static {
+        Map<String, MediaType> knownTypes = new HashMap<>();
         WILDCARD = new MediaType(AcceptPredicate.WILDCARD_VALUE, AcceptPredicate.WILDCARD_VALUE);
-        KNOWN_TYPES.put(AcceptPredicate.WILDCARD_VALUE + '/' + AcceptPredicate.WILDCARD_VALUE, WILDCARD);
+        knownTypes.put(AcceptPredicate.WILDCARD_VALUE + '/' + AcceptPredicate.WILDCARD_VALUE, WILDCARD);
 
         APPLICATION_XML = new MediaType("application", "xml");
-        KNOWN_TYPES.put("application/xml", APPLICATION_XML);
+        knownTypes.put("application/xml", APPLICATION_XML);
 
         APPLICATION_ATOM_XML = new MediaType("application", "atom+xml");
-        KNOWN_TYPES.put("application/atom+xml", APPLICATION_ATOM_XML);
+        knownTypes.put("application/atom+xml", APPLICATION_ATOM_XML);
 
         APPLICATION_XHTML_XML = new MediaType("application", "xhtml+xml");
-        KNOWN_TYPES.put("application/xhtml+xml", APPLICATION_XHTML_XML);
+        knownTypes.put("application/xhtml+xml", APPLICATION_XHTML_XML);
 
         APPLICATION_SVG_XML = new MediaType("application", "svg+xml");
-        KNOWN_TYPES.put("application/svg+xml", APPLICATION_SVG_XML);
+        knownTypes.put("application/svg+xml", APPLICATION_SVG_XML);
 
         APPLICATION_JSON = new MediaType("application", "json");
-        KNOWN_TYPES.put("application/json", APPLICATION_JSON);
+        knownTypes.put("application/json", APPLICATION_JSON);
 
         APPLICATION_STREAM_JSON = new MediaType("application", "stream+json");
-        KNOWN_TYPES.put("application/stream+json", APPLICATION_STREAM_JSON);
+        knownTypes.put("application/stream+json", APPLICATION_STREAM_JSON);
 
         APPLICATION_FORM_URLENCODED = new MediaType("application", "x-www-form-urlencoded");
-        KNOWN_TYPES.put("application/x-www-form-urlencoded", APPLICATION_FORM_URLENCODED);
+        knownTypes.put("application/x-www-form-urlencoded", APPLICATION_FORM_URLENCODED);
 
         MULTIPART_FORM_DATA = new MediaType("multipart", "form-data");
-        KNOWN_TYPES.put("multipart/form-data", MULTIPART_FORM_DATA);
+        knownTypes.put("multipart/form-data", MULTIPART_FORM_DATA);
 
         APPLICATION_OCTET_STREAM = new MediaType("application", "octet-stream");
-        KNOWN_TYPES.put("application/octet-stream", APPLICATION_OCTET_STREAM);
+        knownTypes.put("application/octet-stream", APPLICATION_OCTET_STREAM);
 
         TEXT_PLAIN = new MediaType("text", "plain");
-        KNOWN_TYPES.put("text/plain", TEXT_PLAIN);
+        knownTypes.put("text/plain", TEXT_PLAIN);
 
         TEXT_XML = new MediaType("text", "xml");
-        KNOWN_TYPES.put("text/xml", TEXT_XML);
+        knownTypes.put("text/xml", TEXT_XML);
 
         TEXT_HTML = new MediaType("text", "html");
-        KNOWN_TYPES.put("text/html", TEXT_HTML);
+        knownTypes.put("text/html", TEXT_HTML);
 
         APPLICATION_OPENAPI_YAML = new MediaType("application", "vnd.oai.openapi");
-        KNOWN_TYPES.put("application/vnd.oai.openapi", APPLICATION_OPENAPI_YAML);
+        knownTypes.put("application/vnd.oai.openapi", APPLICATION_OPENAPI_YAML);
 
         APPLICATION_OPENAPI_JSON = new MediaType("application", "vnd.oai.openapi+json");
-        KNOWN_TYPES.put("application/vnd.oai.openapi+json", APPLICATION_OPENAPI_JSON);
+        knownTypes.put("application/vnd.oai.openapi+json", APPLICATION_OPENAPI_JSON);
 
         APPLICATION_X_YAML = new MediaType("application", "x-yaml");
-        KNOWN_TYPES.put("application/x-yaml", APPLICATION_X_YAML);
+        knownTypes.put("application/x-yaml", APPLICATION_X_YAML);
 
         APPLICATION_YAML = new MediaType("application", "yaml");
-        KNOWN_TYPES.put("application/yaml", APPLICATION_YAML);
+        knownTypes.put("application/yaml", APPLICATION_YAML);
 
         TEXT_X_YAML = new MediaType("text", "x-yaml");
-        KNOWN_TYPES.put("text-x-yaml", TEXT_X_YAML);
+        knownTypes.put("text-x-yaml", TEXT_X_YAML);
 
         TEXT_YAML = new MediaType("text", "yaml");
-        KNOWN_TYPES.put("text-yaml", TEXT_YAML);
+        knownTypes.put("text-yaml", TEXT_YAML);
 
         APPLICATION_JAVASCRIPT = new MediaType("application", "javascript");
-        KNOWN_TYPES.put("application/javascript", APPLICATION_JAVASCRIPT);
+        knownTypes.put("application/javascript", APPLICATION_JAVASCRIPT);
+
+        KNOWN_TYPES = knownTypes;
     }
 
     // Common predicates
