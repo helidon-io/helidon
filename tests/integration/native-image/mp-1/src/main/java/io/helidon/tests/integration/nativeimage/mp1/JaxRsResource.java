@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import javax.json.JsonObject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.container.ResourceContext;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Configuration;
@@ -160,5 +161,17 @@ public class JaxRsResource {
     @Produces(MediaType.APPLICATION_JSON)
     public TestDto jsonBinding() {
         return new TestDto("json-b");
+    }
+
+    @GET
+    @Path("/queryparam")
+    public String queryParam(@QueryParam("long") Long longParam) {
+        return String.valueOf(longParam);
+    }
+
+    @GET
+    @Path("/queryparam2")
+    public String queryParam(@QueryParam("boolean") Boolean booleanParam) {
+        return String.valueOf(booleanParam);
     }
 }

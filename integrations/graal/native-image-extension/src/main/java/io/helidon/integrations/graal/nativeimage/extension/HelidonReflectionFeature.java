@@ -36,6 +36,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.json.Json;
 import javax.json.JsonArray;
@@ -50,9 +51,16 @@ import io.helidon.config.mp.MpConfigProviderResolver;
 
 import com.oracle.svm.core.jdk.Resources;
 import com.oracle.svm.core.jdk.proxy.DynamicProxyRegistry;
+import io.github.classgraph.BaseTypeSignature;
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ClassInfo;
+import io.github.classgraph.ClassRefTypeSignature;
+import io.github.classgraph.FieldInfo;
+import io.github.classgraph.MethodParameterInfo;
+import io.github.classgraph.ReferenceTypeSignature;
 import io.github.classgraph.ScanResult;
+import io.github.classgraph.TypeArgument;
+import io.github.classgraph.TypeSignature;
 import org.graalvm.nativeimage.ImageSingletons;
 import org.graalvm.nativeimage.hosted.Feature;
 import org.graalvm.nativeimage.hosted.RuntimeReflection;
@@ -68,6 +76,20 @@ public class HelidonReflectionFeature implements Feature {
 
     private static final String AT_ENTITY = "javax.persistence.Entity";
     private static final String AT_REGISTER_REST_CLIENT = "org.eclipse.microprofile.rest.client.inject.RegisterRestClient";
+
+    private static final Map<Class<?>, Class<?>> PRIMITIVES_TO_OBJECT = new HashMap<>();
+
+    static {
+        PRIMITIVES_TO_OBJECT.put(byte.class, Byte.class);
+        PRIMITIVES_TO_OBJECT.put(char.class, Character.class);
+        PRIMITIVES_TO_OBJECT.put(double.class, Double.class);
+        PRIMITIVES_TO_OBJECT.put(float.class, Float.class);
+        PRIMITIVES_TO_OBJECT.put(int.class, Integer.class);
+        PRIMITIVES_TO_OBJECT.put(long.class, Long.class);
+        PRIMITIVES_TO_OBJECT.put(short.class, Short.class);
+        PRIMITIVES_TO_OBJECT.put(boolean.class, Boolean.class);
+        PRIMITIVES_TO_OBJECT.put(void.class, Void.class);
+    }
 
     @Override
     public boolean isInConfiguration(IsInConfigurationAccess access) {
@@ -118,6 +140,9 @@ public class HelidonReflectionFeature implements Feature {
 
         // all classes, fields and methods annotated with @Reflected
         addAnnotatedWithReflected(context);
+
+        // JAX-RS types required for headers, query params etc.
+        addJaxRsConversions(context);
 
         // and finally register with native image
         registerForReflection(context);
@@ -178,6 +203,112 @@ public class HelidonReflectionFeature implements Feature {
                 })
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
+    }
+
+    private void addJaxRsConversions(BeforeAnalysisContext context) {
+        addJaxRsConversions(context, "javax.ws.rs.QueryParam");
+        addJaxRsConversions(context, "javax.ws.rs.PathParam");
+        addJaxRsConversions(context, "javax.ws.rs.HeaderParam");
+    }
+
+    private void addJaxRsConversions(BeforeAnalysisContext context, String annotation) {
+        traceParsing(() -> "Looking up annotated by " + annotation);
+
+        Set<Class<?>> allTypes = new HashSet<>();
+
+        // we need fields and method parameters
+        context.scan()
+                .getClassesWithFieldAnnotation(annotation)
+                .stream()
+                .flatMap(theClass -> theClass.getFieldInfo().stream())
+                .filter(field -> field.hasAnnotation(annotation))
+                .map(fieldInfo -> getSimpleType(context, fieldInfo))
+                .filter(Objects::nonNull)
+                .forEach(allTypes::add);
+
+        // method annotations
+        context.scan()
+                .getClassesWithMethodParameterAnnotation(annotation)
+                .stream()
+                .flatMap(theClass -> theClass.getMethodInfo().stream())
+                .flatMap(theMethod -> Stream.of(theMethod.getParameterInfo()))
+                .filter(param -> param.hasAnnotation(annotation))
+                .map(param -> getSimpleType(context, param))
+                .filter(Objects::nonNull)
+                .forEach(allTypes::add);
+
+        // now let's find all static methods `valueOf` and `fromString`
+        for (Class<?> type : allTypes) {
+            try {
+                Method valueOf = type.getDeclaredMethod("valueOf", String.class);
+                RuntimeReflection.register(valueOf);
+                traceParsing(() -> "Registering " + valueOf);
+            } catch (NoSuchMethodException ignored) {
+                try {
+                    Method fromString = type.getDeclaredMethod("fromString", String.class);
+                    RuntimeReflection.register(fromString);
+                    traceParsing(() -> "Registering " + fromString);
+                } catch (NoSuchMethodException ignored2) {
+                }
+            }
+        }
+    }
+
+    private Class<?> getSimpleType(BeforeAnalysisContext context, MethodParameterInfo paramInfo) {
+        return getSimpleType(context, paramInfo::getTypeSignature, paramInfo::getTypeDescriptor);
+    }
+
+    private Class<?> getSimpleType(BeforeAnalysisContext context, FieldInfo fieldInfo) {
+        return getSimpleType(context, fieldInfo::getTypeSignature, fieldInfo::getTypeDescriptor);
+    }
+
+    private Class<?> getSimpleType(BeforeAnalysisContext context,
+                                   Supplier<TypeSignature> typeSignatureSupplier,
+                                   Supplier<TypeSignature> typeDescriptorSupplier) {
+        TypeSignature typeSignature = typeSignatureSupplier.get();
+        if (typeSignature == null) {
+            // not a generic type
+            TypeSignature typeDescriptor = typeDescriptorSupplier.get();
+            return getSimpleType(context, typeDescriptor);
+        }
+        ClassRefTypeSignature refType = (ClassRefTypeSignature) typeSignature;
+        List<TypeArgument> typeArguments = refType.getTypeArguments();
+        if (typeArguments.size() != 1) {
+            return getSimpleType(context, typeSignature);
+        }
+
+        TypeArgument typeArgument = typeArguments.get(0);
+        ReferenceTypeSignature ref = typeArgument.getTypeSignature();
+        if (ref == null) {
+            return Object.class;
+        }
+        return getSimpleType(context, ref);
+    }
+
+    private Class<?> getSimpleType(BeforeAnalysisContext context, TypeSignature typeSignature) {
+        // this is the type used
+        // may be: array, primitive type
+        if (typeSignature instanceof BaseTypeSignature) {
+            // primitive types
+            BaseTypeSignature bts = (BaseTypeSignature) typeSignature;
+            return toObjectType(bts.getType());
+        }
+        if (typeSignature instanceof ClassRefTypeSignature) {
+            ClassRefTypeSignature crts = (ClassRefTypeSignature) typeSignature;
+            return context.access().findClassByName(crts.getFullyQualifiedClassName());
+        }
+
+        return Object.class;
+    }
+
+    private static Class<?> toObjectType(Class<?> primitiveClass) {
+        Class<?> type = PRIMITIVES_TO_OBJECT.get(primitiveClass);
+
+        if (type == null) {
+            traceParsing(() -> "Failed to understand primitive type: " + primitiveClass);
+            type = Object.class;
+        }
+        return type;
     }
 
     private void addAnnotatedWithReflected(BeforeAnalysisContext context) {
