@@ -26,6 +26,14 @@ final class AtomicCycle {
         this.maxIndex = maxIndex + 1;
     }
 
+    int get() {
+        return atomicInteger.get();
+    }
+
+    void set(int n) {
+        atomicInteger.set(n);
+    }
+
     int incrementAndGet() {
         return atomicInteger.accumulateAndGet(maxIndex, (current, max) -> (current + 1) % max);
     }

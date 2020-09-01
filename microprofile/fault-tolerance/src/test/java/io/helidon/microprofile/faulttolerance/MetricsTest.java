@@ -288,12 +288,12 @@ public class MetricsTest extends FaultToleranceTest {
                 is(2L));
         assertThat(getCounter(bean, "exerciseBreakerException",
                 BREAKER_OPENED_TOTAL, boolean.class),
-                is(0L));
+                is(1L));
 
         assertThrows(Exception.class, () -> bean.exerciseBreakerException(true));  // failure
         assertThat(getCounter(bean, "exerciseBreakerException",
                 BREAKER_CALLS_SUCCEEDED_TOTAL, boolean.class),
-                is(1L));
+                is(0L));
 
         // Sleep longer than circuit breaker delay
         Thread.sleep(1500);
@@ -310,7 +310,7 @@ public class MetricsTest extends FaultToleranceTest {
         // Check counters after successful calls
         assertThat(getCounter(bean, "exerciseBreakerException",
                 BREAKER_CALLS_SUCCEEDED_TOTAL, boolean.class),
-                is(3L));
+                is(2L));
 
         try {
             bean.exerciseBreakerException(true);    // success
@@ -321,7 +321,7 @@ public class MetricsTest extends FaultToleranceTest {
         // Check counters after successful calls
         assertThat(getCounter(bean, "exerciseBreakerException",
                 BREAKER_CALLS_SUCCEEDED_TOTAL, boolean.class),
-                is(4L));
+                is(3L));
     }
 
     @Test

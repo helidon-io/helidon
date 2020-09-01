@@ -29,6 +29,7 @@ final class ResultWindow {
     private final AtomicInteger currentSum = new AtomicInteger();
     private final AtomicCycle index;
     private final AtomicInteger[] results;
+    private final AtomicInteger totalResults = new AtomicInteger();
     private final int thresholdSum;
 
     ResultWindow(int size, int ratio) {
@@ -44,17 +45,18 @@ final class ResultWindow {
     }
 
     void update(Result resultEnum) {
+        // update total number of results
+        totalResults.incrementAndGet();
+
         // success is zero, failure is 1
         int result = resultEnum.ordinal();
 
         AtomicInteger mine = results[index.incrementAndGet()];
         int origValue = mine.getAndSet(result);
-
         if (origValue == result) {
             // no change
             return;
         }
-
         if (origValue == 1) {
             currentSum.decrementAndGet();
         } else {
@@ -62,15 +64,22 @@ final class ResultWindow {
         }
     }
 
+    /**
+     * Open if we have seen enough results and we are at or over the threshold.
+     *
+     * @return outcome of test.
+     */
     boolean shouldOpen() {
-        return currentSum.get() > thresholdSum;
+        return totalResults.get() >= results.length && currentSum.get() >= thresholdSum;
     }
 
     void reset() {
-        // "soft" reset - send in success equal to window size
         for (int i = 0; i < results.length; i++) {
-            update(Result.SUCCESS);
+            results[i].set(Result.SUCCESS.ordinal());
         }
+        currentSum.set(0);
+        index.set(results.length - 1);
+        totalResults.set(0);
     }
 
     // order is significant, do not change
