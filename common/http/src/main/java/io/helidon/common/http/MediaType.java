@@ -30,7 +30,7 @@ import java.util.function.Predicate;
  * @see <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec3.html#sec3.7">HTTP/1.1 section 3.7</a>
  */
 public final class MediaType implements AcceptPredicate<MediaType> {
-    // must be first, as this is used to create instances of media types
+
     private static final Map<String, MediaType> KNOWN_TYPES = new HashMap<>();
 
     /**
@@ -41,113 +41,168 @@ public final class MediaType implements AcceptPredicate<MediaType> {
     /**
      * A {@link MediaType} constant representing wildcard media type.
      */
-    public static final MediaType WILDCARD = KNOWN_TYPES.put(
-            AcceptPredicate.WILDCARD_VALUE + '/' + AcceptPredicate.WILDCARD_VALUE,
-            new MediaType(AcceptPredicate.WILDCARD_VALUE, AcceptPredicate.WILDCARD_VALUE));
+    public static final MediaType WILDCARD;
 
     // Common media type constants
+
     /**
      * A {@link MediaType} constant representing {@code application/xml} media type.
      */
-    public static final MediaType APPLICATION_XML = KNOWN_TYPES.put("application/xml",
-            new MediaType("application", "xml"));
+    public static final MediaType APPLICATION_XML;
+
     /**
      * A {@link MediaType} constant representing {@code application/atom+xml} media type.
      */
-    public static final MediaType APPLICATION_ATOM_XML = KNOWN_TYPES.put("application/atom+xml",
-            new MediaType("application", "atom+xml"));
+    public static final MediaType APPLICATION_ATOM_XML;
+
     /**
      * A {@link MediaType} constant representing {@code application/xhtml+xml} media type.
      */
-    public static final MediaType APPLICATION_XHTML_XML = KNOWN_TYPES.put("application/xhtml+xml",
-            new MediaType("application", "xhtml+xml"));
+    public static final MediaType APPLICATION_XHTML_XML;
+
     /**
      * A {@link MediaType} constant representing {@code application/svg+xml} media type.
      */
-    public static final MediaType APPLICATION_SVG_XML = KNOWN_TYPES.put("application/svg+xml",
-            new MediaType("application", "svg+xml"));
+    public static final MediaType APPLICATION_SVG_XML;
+
     /**
      * A {@link MediaType} constant representing {@code application/json} media type.
      */
-    public static final MediaType APPLICATION_JSON = KNOWN_TYPES.put("application/json",
-            new MediaType("application", "json"));
+    public static final MediaType APPLICATION_JSON;
+
     /**
      * A {@link MediaType} constant representing {@code application/stream+json} media type.
      */
-    public static final MediaType APPLICATION_STREAM_JSON = KNOWN_TYPES.put("application/stream+json",
-            new MediaType("application", "stream+json"));
+    public static final MediaType APPLICATION_STREAM_JSON;
+
     /**
      * A {@link MediaType} constant representing {@code application/x-www-form-urlencoded} media type.
      */
-    public static final MediaType APPLICATION_FORM_URLENCODED = KNOWN_TYPES.put("application/x-www-form-urlencoded",
-            new MediaType("application", "x-www-form-urlencoded"));
+    public static final MediaType APPLICATION_FORM_URLENCODED;
+
     /**
      * A {@link MediaType} constant representing {@code multipart/form-data} media type.
      */
-    public static final MediaType MULTIPART_FORM_DATA = KNOWN_TYPES.put("multipart/form-data",
-            new MediaType("multipart", "form-data"));
+    public static final MediaType MULTIPART_FORM_DATA;
+
     /**
      * A {@link MediaType} constant representing {@code application/octet-stream} media type.
      */
-    public static final MediaType APPLICATION_OCTET_STREAM = KNOWN_TYPES.put("application/octet-stream",
-            new MediaType("application", "octet-stream"));
+    public static final MediaType APPLICATION_OCTET_STREAM;
+
     /**
      * A {@link MediaType} constant representing {@code text/plain} media type.
      */
-    public static final MediaType TEXT_PLAIN = KNOWN_TYPES.put("text/plain",
-            new MediaType("text", "plain"));
+    public static final MediaType TEXT_PLAIN;
+
     /**
      * A {@link MediaType} constant representing {@code text/xml} media type.
      */
-    public static final MediaType TEXT_XML = KNOWN_TYPES.put("text/xml",
-            new MediaType("text", "xml"));
+    public static final MediaType TEXT_XML;
+
     /**
      * A {@link MediaType} constant representing {@code text/html} media type.
      */
-    public static final MediaType TEXT_HTML = KNOWN_TYPES.put("text/html",
-            new MediaType("text", "html"));
+    public static final MediaType TEXT_HTML;
+
     /**
      * A {@link MediaType} constant representing OpenAPI yaml.
      * <p>
      * See https://github.com/opengeospatial/WFS_FES/issues/117#issuecomment-402188280
      */
-    public static final MediaType APPLICATION_OPENAPI_YAML = KNOWN_TYPES.put("application/vnd.oai.openapi",
-            new MediaType("application", "vnd.oai.openapi"));
+    public static final MediaType APPLICATION_OPENAPI_YAML;
+
     /**
      * A {@link MediaType} constant representing OpenAPI json.
      */
-    public static final MediaType APPLICATION_OPENAPI_JSON = KNOWN_TYPES.put("application/vnd.oai.openapi+json",
-            new MediaType("application", "vnd.oai.openapi+json"));
+    public static final MediaType APPLICATION_OPENAPI_JSON;
 
     /**
      * A {@link MediaType} constant representing "x" YAML as application.
      */
-    public static final MediaType APPLICATION_X_YAML = KNOWN_TYPES.put("application/x-yaml",
-            new MediaType("application", "x-yaml"));
+    public static final MediaType APPLICATION_X_YAML;
 
     /**
      * A {@link MediaType} constant representing pseudo-registered YAML. (It is not actually registered.)
      */
-    public static final MediaType APPLICATION_YAML = KNOWN_TYPES.put("application/yaml",
-            new MediaType("application", "yaml"));
+    public static final MediaType APPLICATION_YAML;
 
     /**
      * A {@link MediaType} constant representing "x" YAML as text.
      */
-    public static final MediaType TEXT_X_YAML = KNOWN_TYPES.put("text-x-yaml",
-            new MediaType("text", "x-yaml"));
+    public static final MediaType TEXT_X_YAML;
 
     /**
      * A {@link MediaType} constant representing pseudo-registered YAML as text.
      */
-    public static final MediaType TEXT_YAML = KNOWN_TYPES.put("text-yaml",
-            new MediaType("text", "yaml"));
+    public static final MediaType TEXT_YAML;
 
     /**
      * A {@link MediaType} constant representing {@code application/javascript} media type.
      */
-    public static final MediaType APPLICATION_JAVASCRIPT = KNOWN_TYPES.put("application/javascript",
-            new MediaType("application", "javascript"));
+    public static final MediaType APPLICATION_JAVASCRIPT;
+
+    static {
+        WILDCARD = new MediaType(AcceptPredicate.WILDCARD_VALUE, AcceptPredicate.WILDCARD_VALUE);
+        KNOWN_TYPES.put(AcceptPredicate.WILDCARD_VALUE + '/' + AcceptPredicate.WILDCARD_VALUE, WILDCARD);
+
+        APPLICATION_XML = new MediaType("application", "xml");
+        KNOWN_TYPES.put("application/xml", APPLICATION_XML);
+
+        APPLICATION_ATOM_XML = new MediaType("application", "atom+xml");
+        KNOWN_TYPES.put("application/atom+xml", APPLICATION_ATOM_XML);
+
+        APPLICATION_XHTML_XML = new MediaType("application", "xhtml+xml");
+        KNOWN_TYPES.put("application/xhtml+xml", APPLICATION_XHTML_XML);
+
+        APPLICATION_SVG_XML = new MediaType("application", "svg+xml");
+        KNOWN_TYPES.put("application/svg+xml", APPLICATION_SVG_XML);
+
+        APPLICATION_JSON = new MediaType("application", "json");
+        KNOWN_TYPES.put("application/json", APPLICATION_JSON);
+
+        APPLICATION_STREAM_JSON = new MediaType("application", "stream+json");
+        KNOWN_TYPES.put("application/stream+json", APPLICATION_STREAM_JSON);
+
+        APPLICATION_FORM_URLENCODED = new MediaType("application", "x-www-form-urlencoded");
+        KNOWN_TYPES.put("application/x-www-form-urlencoded", APPLICATION_FORM_URLENCODED);
+
+        MULTIPART_FORM_DATA = new MediaType("multipart", "form-data");
+        KNOWN_TYPES.put("multipart/form-data", MULTIPART_FORM_DATA);
+
+        APPLICATION_OCTET_STREAM = new MediaType("application", "octet-stream");
+        KNOWN_TYPES.put("application/octet-stream", APPLICATION_OCTET_STREAM);
+
+        TEXT_PLAIN = new MediaType("text", "plain");
+        KNOWN_TYPES.put("text/plain", TEXT_PLAIN);
+
+        TEXT_XML = new MediaType("text", "xml");
+        KNOWN_TYPES.put("text/xml", TEXT_XML);
+
+        TEXT_HTML = new MediaType("text", "html");
+        KNOWN_TYPES.put("text/html", TEXT_HTML);
+
+        APPLICATION_OPENAPI_YAML = new MediaType("application", "vnd.oai.openapi");
+        KNOWN_TYPES.put("application/vnd.oai.openapi", APPLICATION_OPENAPI_YAML);
+
+        APPLICATION_OPENAPI_JSON = new MediaType("application", "vnd.oai.openapi+json");
+        KNOWN_TYPES.put("application/vnd.oai.openapi+json", APPLICATION_OPENAPI_JSON);
+
+        APPLICATION_X_YAML = new MediaType("application", "x-yaml");
+        KNOWN_TYPES.put("application/x-yaml", APPLICATION_X_YAML);
+
+        APPLICATION_YAML = new MediaType("application", "yaml");
+        KNOWN_TYPES.put("application/yaml", APPLICATION_YAML);
+
+        TEXT_X_YAML = new MediaType("text", "x-yaml");
+        KNOWN_TYPES.put("text-x-yaml", TEXT_X_YAML);
+
+        TEXT_YAML = new MediaType("text", "yaml");
+        KNOWN_TYPES.put("text-yaml", TEXT_YAML);
+
+        APPLICATION_JAVASCRIPT = new MediaType("application", "javascript");
+        KNOWN_TYPES.put("application/javascript", APPLICATION_JAVASCRIPT);
+    }
 
     // Common predicates
     /**
@@ -299,8 +354,9 @@ public final class MediaType implements AcceptPredicate<MediaType> {
         }
 
         MediaType mediaType = null;
+
         // Return one of the constants if the media type is a known type.
-        if (!normalizedParameters.isEmpty()) {
+        if (normalizedParameters.isEmpty()) {
             mediaType = KNOWN_TYPES.get(normalizedType + '/' + normalizedSubtype);
         }
         if (mediaType == null) {
