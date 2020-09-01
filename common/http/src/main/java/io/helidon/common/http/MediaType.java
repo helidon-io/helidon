@@ -144,6 +144,7 @@ public final class MediaType implements AcceptPredicate<MediaType> {
 
     static {
         Map<String, MediaType> knownTypes = new HashMap<>();
+
         WILDCARD = new MediaType(AcceptPredicate.WILDCARD_VALUE, AcceptPredicate.WILDCARD_VALUE);
         knownTypes.put(AcceptPredicate.WILDCARD_VALUE + '/' + AcceptPredicate.WILDCARD_VALUE, WILDCARD);
 
@@ -204,7 +205,7 @@ public final class MediaType implements AcceptPredicate<MediaType> {
         APPLICATION_JAVASCRIPT = new MediaType("application", "javascript");
         knownTypes.put("application/javascript", APPLICATION_JAVASCRIPT);
 
-        KNOWN_TYPES = knownTypes;
+        KNOWN_TYPES = Collections.unmodifiableMap(knownTypes);
     }
 
     // Common predicates
