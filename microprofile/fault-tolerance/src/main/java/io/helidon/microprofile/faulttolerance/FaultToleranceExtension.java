@@ -237,26 +237,26 @@ public class FaultToleranceExtension implements Extension {
                 // Metrics depending on the annotationSet present
                 if (MethodAntn.isAnnotationPresent(beanClass, method, Retry.class)) {
                     FaultToleranceMetrics.registerRetryMetrics(method);
-                    // new RetryAntn(beanClass, method).validate();
+                    new RetryAntn(beanClass, method).validate();
                 }
                 if (MethodAntn.isAnnotationPresent(beanClass, method, CircuitBreaker.class)) {
                     FaultToleranceMetrics.registerCircuitBreakerMetrics(method);
-                    // new CircuitBreakerAntn(beanClass, method).validate();
+                    new CircuitBreakerAntn(beanClass, method).validate();
                 }
                 if (MethodAntn.isAnnotationPresent(beanClass, method, Timeout.class)) {
                     FaultToleranceMetrics.registerTimeoutMetrics(method);
-                    // new TimeoutAntn(beanClass, method).validate();
+                    new TimeoutAntn(beanClass, method).validate();
                 }
                 if (MethodAntn.isAnnotationPresent(beanClass, method, Bulkhead.class)) {
                     FaultToleranceMetrics.registerBulkheadMetrics(method);
-                    // new BulkheadAntn(beanClass, method).validate();
+                    new BulkheadAntn(beanClass, method).validate();
                 }
                 if (MethodAntn.isAnnotationPresent(beanClass, method, Fallback.class)) {
                     FaultToleranceMetrics.registerFallbackMetrics(method);
-                    // new FallbackAntn(beanClass, method).validate();
+                    new FallbackAntn(beanClass, method).validate();
                 }
                 if (MethodAntn.isAnnotationPresent(beanClass, method, Asynchronous.class)) {
-                    // new AsynchronousAntn(beanClass, method).validate();
+                    new AsynchronousAntn(beanClass, method).validate();
                 }
             });
         }
