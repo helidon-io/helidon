@@ -41,89 +41,113 @@ public final class MediaType implements AcceptPredicate<MediaType> {
     /**
      * A {@link MediaType} constant representing wildcard media type.
      */
-    public static final MediaType WILDCARD = createMediaType();
+    public static final MediaType WILDCARD = KNOWN_TYPES.put(
+            AcceptPredicate.WILDCARD_VALUE + '/' + AcceptPredicate.WILDCARD_VALUE,
+            new MediaType(AcceptPredicate.WILDCARD_VALUE, AcceptPredicate.WILDCARD_VALUE));
 
     // Common media type constants
     /**
      * A {@link MediaType} constant representing {@code application/xml} media type.
      */
-    public static final MediaType APPLICATION_XML = createMediaType("application", "xml");
+    public static final MediaType APPLICATION_XML = KNOWN_TYPES.put("application/xml",
+            new MediaType("application", "xml"));
     /**
      * A {@link MediaType} constant representing {@code application/atom+xml} media type.
      */
-    public static final MediaType APPLICATION_ATOM_XML = createMediaType("application", "atom+xml");
+    public static final MediaType APPLICATION_ATOM_XML = KNOWN_TYPES.put("application/atom+xml",
+            new MediaType("application", "atom+xml"));
     /**
      * A {@link MediaType} constant representing {@code application/xhtml+xml} media type.
      */
-    public static final MediaType APPLICATION_XHTML_XML = createMediaType("application", "xhtml+xml");
+    public static final MediaType APPLICATION_XHTML_XML = KNOWN_TYPES.put("application/xhtml+xml",
+            new MediaType("application", "xhtml+xml"));
     /**
      * A {@link MediaType} constant representing {@code application/svg+xml} media type.
      */
-    public static final MediaType APPLICATION_SVG_XML = createMediaType("application", "svg+xml");
+    public static final MediaType APPLICATION_SVG_XML = KNOWN_TYPES.put("application/svg+xml",
+            new MediaType("application", "svg+xml"));
     /**
      * A {@link MediaType} constant representing {@code application/json} media type.
      */
-    public static final MediaType APPLICATION_JSON = createMediaType("application", "json");
+    public static final MediaType APPLICATION_JSON = KNOWN_TYPES.put("application/json",
+            new MediaType("application", "json"));
     /**
      * A {@link MediaType} constant representing {@code application/stream+json} media type.
      */
-    public static final MediaType APPLICATION_STREAM_JSON = createMediaType("application", "stream+json");
+    public static final MediaType APPLICATION_STREAM_JSON = KNOWN_TYPES.put("application/stream+json",
+            new MediaType("application", "stream+json"));
     /**
      * A {@link MediaType} constant representing {@code application/x-www-form-urlencoded} media type.
      */
-    public static final MediaType APPLICATION_FORM_URLENCODED = createMediaType("application", "x-www-form-urlencoded");
+    public static final MediaType APPLICATION_FORM_URLENCODED = KNOWN_TYPES.put("application/x-www-form-urlencoded",
+            new MediaType("application", "x-www-form-urlencoded"));
     /**
      * A {@link MediaType} constant representing {@code multipart/form-data} media type.
      */
-    public static final MediaType MULTIPART_FORM_DATA = createMediaType("multipart", "form-data");
+    public static final MediaType MULTIPART_FORM_DATA = KNOWN_TYPES.put("multipart/form-data",
+            new MediaType("multipart", "form-data"));
     /**
      * A {@link MediaType} constant representing {@code application/octet-stream} media type.
      */
-    public static final MediaType APPLICATION_OCTET_STREAM = createMediaType("application", "octet-stream");
+    public static final MediaType APPLICATION_OCTET_STREAM = KNOWN_TYPES.put("application/octet-stream",
+            new MediaType("application", "octet-stream"));
     /**
      * A {@link MediaType} constant representing {@code text/plain} media type.
      */
-    public static final MediaType TEXT_PLAIN = createMediaType("text", "plain");
+    public static final MediaType TEXT_PLAIN = KNOWN_TYPES.put("text/plain",
+            new MediaType("text", "plain"));
     /**
      * A {@link MediaType} constant representing {@code text/xml} media type.
      */
-    public static final MediaType TEXT_XML = createMediaType("text", "xml");
+    public static final MediaType TEXT_XML = KNOWN_TYPES.put("text/xml",
+            new MediaType("text", "xml"));
     /**
      * A {@link MediaType} constant representing {@code text/html} media type.
      */
-    public static final MediaType TEXT_HTML = createMediaType("text", "html");
+    public static final MediaType TEXT_HTML = KNOWN_TYPES.put("text/html",
+            new MediaType("text", "html"));
     /**
      * A {@link MediaType} constant representing OpenAPI yaml.
      * <p>
      * See https://github.com/opengeospatial/WFS_FES/issues/117#issuecomment-402188280
      */
-    public static final MediaType APPLICATION_OPENAPI_YAML = createMediaType("application", "vnd.oai.openapi");
+    public static final MediaType APPLICATION_OPENAPI_YAML = KNOWN_TYPES.put("application/vnd.oai.openapi",
+            new MediaType("application", "vnd.oai.openapi"));
     /**
      * A {@link MediaType} constant representing OpenAPI json.
      */
-    public static final MediaType APPLICATION_OPENAPI_JSON = createMediaType("application", "vnd.oai.openapi+json");
+    public static final MediaType APPLICATION_OPENAPI_JSON = KNOWN_TYPES.put("application/vnd.oai.openapi+json",
+            new MediaType("application", "vnd.oai.openapi+json"));
 
     /**
      * A {@link MediaType} constant representing "x" YAML as application.
      */
-    public static final MediaType APPLICATION_X_YAML = createMediaType("application", "x-yaml");
+    public static final MediaType APPLICATION_X_YAML = KNOWN_TYPES.put("application/x-yaml",
+            new MediaType("application", "x-yaml"));
 
     /**
      * A {@link MediaType} constant representing pseudo-registered YAML. (It is not actually registered.)
      */
-    public static final MediaType APPLICATION_YAML = createMediaType("application", "yaml");
+    public static final MediaType APPLICATION_YAML = KNOWN_TYPES.put("application/yaml",
+            new MediaType("application", "yaml"));
 
     /**
      * A {@link MediaType} constant representing "x" YAML as text.
      */
-    public static final MediaType TEXT_X_YAML = createMediaType("text", "x-yaml");
+    public static final MediaType TEXT_X_YAML = KNOWN_TYPES.put("text-x-yaml",
+            new MediaType("text", "x-yaml"));
 
     /**
      * A {@link MediaType} constant representing pseudo-registered YAML as text.
      */
-    public static final MediaType TEXT_YAML = createMediaType("text", "yaml");
+    public static final MediaType TEXT_YAML = KNOWN_TYPES.put("text-yaml",
+            new MediaType("text", "yaml"));
 
-    private static final MediaType APPLICATION_JAVASCRIPT = createMediaType("application", "javascript");
+    /**
+     * A {@link MediaType} constant representing {@code application/javascript} media type.
+     */
+    public static final MediaType APPLICATION_JAVASCRIPT = KNOWN_TYPES.put("application/javascript",
+            new MediaType("application", "javascript"));
 
     // Common predicates
     /**
@@ -155,6 +179,12 @@ public final class MediaType implements AcceptPredicate<MediaType> {
     private final String type;
     private final String subtype;
     private final Map<String, String> parameters;
+
+    private MediaType(String type, String subtype) {
+        this.type = type;
+        this.subtype = subtype;
+        this.parameters = Map.of();
+    }
 
     private MediaType(Builder builder) {
         this.type = builder.type;
@@ -244,18 +274,6 @@ public final class MediaType implements AcceptPredicate<MediaType> {
         return new Builder();
     }
 
-    private static MediaType createMediaType() {
-        MediaType mediaType = MediaType.builder().build();
-        KNOWN_TYPES.put("", mediaType);
-        return mediaType;
-    }
-
-    private static MediaType createMediaType(String type, String subtype) {
-        MediaType mediaType = MediaType.create(type, subtype);
-        KNOWN_TYPES.put(type + '/' + subtype, mediaType);
-        return mediaType;
-    }
-
     private static String normalizeParameterValue(String attribute, String value) {
         return CHARSET_ATTRIBUTE.equals(attribute) ? Ascii.toLowerCase(value) : value;
     }
@@ -274,19 +292,25 @@ public final class MediaType implements AcceptPredicate<MediaType> {
             throw new IllegalStateException(
                     "A wildcard type cannot be used with a non-wildcard subtype");
         }
-        Map<String, String> builder = new HashMap<>();
+        Map<String, String> normalizedParameters = new HashMap<>();
         for (Map.Entry<String, String> entry : parameters.entrySet()) {
             String attribute = Tokenizer.normalize(TOKEN_MATCHER, entry.getKey());
-            builder.put(attribute, normalizeParameterValue(attribute, entry.getValue()));
+            normalizedParameters.put(attribute, normalizeParameterValue(attribute, entry.getValue()));
         }
 
+        MediaType mediaType = null;
         // Return one of the constants if the media type is a known type.
-        return Optional.ofNullable(builder.isEmpty() ? KNOWN_TYPES.get(normalizedType + '/' + normalizedSubtype) : null)
-                .orElseGet(() -> MediaType.builder()
-                        .type(normalizedType)
-                        .subtype(normalizedSubtype)
-                        .parameters(builder)
-                        .build());
+        if (!normalizedParameters.isEmpty()) {
+            mediaType = KNOWN_TYPES.get(normalizedType + '/' + normalizedSubtype);
+        }
+        if (mediaType == null) {
+            mediaType = MediaType.builder()
+                    .type(normalizedType)
+                    .subtype(normalizedSubtype)
+                    .parameters(normalizedParameters)
+                    .build();
+        }
+        return mediaType;
     }
 
     /**
