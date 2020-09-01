@@ -40,6 +40,7 @@ import io.helidon.security.integration.webserver.WebSecurity;
 import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
+import io.helidon.webclient.security.WebClientSecurity;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
@@ -160,7 +161,9 @@ public class SecureServer {
         private WebClient client;
 
         private GreetService() {
-            client = WebClient.create();
+            client = WebClient.builder()
+                    .addService(WebClientSecurity.create())
+                    .build();
         }
 
         @Override
