@@ -75,7 +75,7 @@ public abstract class FaultToleranceTest {
      */
     @BeforeEach
     public void resetHandlers() {
-        MethodInvoker.clearFtHandlersMap();
+        MethodInvoker.clearMethodStatesMap();
     }
 
     protected static <T> T newBean(Class<T> beanClass) {

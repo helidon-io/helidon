@@ -90,7 +90,7 @@ import static io.helidon.microprofile.faulttolerance.ThrowableMapper.map;
 /**
  * Invokes a FT method applying semantics based on method annotations. An instance
  * of this class is created for each method invocation. Some state is shared across
- * all invocations of the method, including for circuit breakers and bulkheads.
+ * all invocations of a method, including for circuit breakers and bulkheads.
  */
 public class MethodInvoker implements FtSupplier<Object> {
     private static final Logger LOGGER = Logger.getLogger(MethodInvoker.class.getName());
@@ -111,12 +111,11 @@ public class MethodInvoker implements FtSupplier<Object> {
     private final MethodIntrospector introspector;
 
     /**
-     * Map of a class loader and a method into a method state. Class loaders are needed
-     * when running TCKs where each test is considered a different application (with
-     * potentially different configurations).
+     * Maps a {@code MethodStateKey} to a {@code MethodState}. The method state returned
+     * caches the FT handler as well as some additional variables. This mapping must
+     * be shared by all instances of this class.
      */
-    private static final ConcurrentHashMap<ClassLoader, ConcurrentHashMap<Method, MethodState>>
-            FT_HANDLERS = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<MethodStateKey, MethodState> METHOD_STATES = new ConcurrentHashMap<>();
 
     /**
      * Executor service shared by instances of this class.
@@ -164,6 +163,10 @@ public class MethodInvoker implements FtSupplier<Object> {
      */
     private Thread asyncInterruptThread;
 
+    /**
+     * State associated with a method in {@code METHOD_STATES}. This include the
+     * FT handler created for the method.
+     */
     private static class MethodState {
         private FtHandlerTyped<Object> handler;
         private Retry retry;
@@ -174,6 +177,44 @@ public class MethodInvoker implements FtSupplier<Object> {
         private long breakerTimerClosed;
         private long breakerTimerHalfOpen;
         private long startNanos;
+    }
+
+    /**
+     * A key used to lookup {@code MethodState} instances, which include FT handlers.
+     * A class loader is necessary to support multiple applications as seen in the TCKs.
+     * The method class in necessary given that the same method can inherited by different
+     * classes with different FT annotations and should not share handlers. Finally, the
+     * method is main part of the key.
+     */
+    private static class MethodStateKey {
+        private final ClassLoader classLoader;
+        private final Class<?> methodClass;
+        private final Method method;
+
+        MethodStateKey(ClassLoader classLoader, Class<?> methodClass, Method method) {
+            this.classLoader = classLoader;
+            this.methodClass = methodClass;
+            this.method = method;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            MethodStateKey that = (MethodStateKey) o;
+            return classLoader.equals(that.classLoader) &&
+                    methodClass.equals(that.methodClass) &&
+                    method.equals(that.method);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(classLoader, methodClass, method);
+        }
     }
 
     /**
@@ -255,12 +296,11 @@ public class MethodInvoker implements FtSupplier<Object> {
         this.method = context.getMethod();
         this.helidonContext = Contexts.context().orElseGet(Context::create);
 
-        // Create method state using CCL to support multiples apps (TCKs)
+        // Create method state using CCL to support multiples apps (like in TCKs)
         ClassLoader ccl = Thread.currentThread().getContextClassLoader();
         Objects.requireNonNull(ccl);
-        ConcurrentHashMap<Method, MethodState> methodStates =
-                FT_HANDLERS.computeIfAbsent(ccl, cl -> new ConcurrentHashMap<>());
-        this.methodState = methodStates.computeIfAbsent(method, method -> {
+        MethodStateKey methodStateKey = new MethodStateKey(ccl, context.getTarget().getClass(), method);
+        this.methodState = METHOD_STATES.computeIfAbsent(methodStateKey, key -> {
             MethodState methodState = new MethodState();
             methodState.lastBreakerState = State.CLOSED;
             if (introspector.hasCircuitBreaker()) {
@@ -284,7 +324,7 @@ public class MethodInvoker implements FtSupplier<Object> {
                     + " on thread " + Thread.currentThread().getName());
         }
 
-        // Registration of gauges for bulkhead and circuit breakers
+        // Gauges and other metrics for bulkhead and circuit breakers
         if (isFaultToleranceMetricsEnabled()) {
             if (introspector.hasCircuitBreaker()) {
                 registerGauge(method, BREAKER_OPEN_TOTAL,
@@ -330,10 +370,10 @@ public class MethodInvoker implements FtSupplier<Object> {
     }
 
     /**
-     * Clears ftHandlers map of any cached handlers.
+     * Clears {@code METHOD_STATES} map.
      */
-    static void clearFtHandlersMap() {
-        FT_HANDLERS.clear();
+    static void clearMethodStatesMap() {
+        METHOD_STATES.clear();
     }
 
     /**

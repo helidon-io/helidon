@@ -27,10 +27,11 @@
         <packages>
             <package name="org.eclipse.microprofile.fault.tolerance.tck.*"/>
         </packages>
-        <!--classes>
-            <class name="org.eclipse.microprofile.fault.tolerance.tck.CircuitBreakerTest">
+        <!--- classes>
+            <class name="org.eclipse.microprofile.fault.tolerance.tck.visibility.retry.RetryVisibilityTest">
                 <methods>
-                    <include name="testCircuitClosedThenOpen"/>
+                    <include name="baseRetryServiceUsesDefaults"/>
+                    <include name="serviceOverrideClassLevelUsesClassLevelAnnotation"/>
                 </methods>
             </class>
         </classes -->
