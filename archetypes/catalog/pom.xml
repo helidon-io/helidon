@@ -70,7 +70,7 @@
 
     <properties>
         <!-- support command-line overrides -->
-        <cli.build.tools.version>${version.plugin.helidon-build-tools}</cli.build.tools.version>
+        <cli.build.tools.version>${version.helidon-cli}</cli.build.tools.version>
     </properties>
     <build>
         <plugins>
