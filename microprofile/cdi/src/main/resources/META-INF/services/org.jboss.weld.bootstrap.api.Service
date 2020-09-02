@@ -14,4 +14,4 @@
 # limitations under the License.
 #
 
-io.helidon.microprofile.weld.ExecutorServices
+io.helidon.microprofile.cdi.ExecutorServices
