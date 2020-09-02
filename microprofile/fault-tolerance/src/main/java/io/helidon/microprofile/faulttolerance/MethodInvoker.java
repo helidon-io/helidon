@@ -49,6 +49,7 @@ import io.helidon.faulttolerance.FtHandlerTyped;
 import io.helidon.faulttolerance.Retry;
 import io.helidon.faulttolerance.Timeout;
 
+import org.eclipse.microprofile.faulttolerance.exceptions.BulkheadException;
 import org.eclipse.microprofile.faulttolerance.exceptions.CircuitBreakerOpenException;
 import org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException;
 import org.eclipse.microprofile.metrics.Counter;
@@ -57,6 +58,8 @@ import org.glassfish.jersey.process.internal.RequestScope;
 
 import static io.helidon.microprofile.faulttolerance.ThrowableMapper.mapTypes;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceExtension.isFaultToleranceMetricsEnabled;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.METRIC_NAME_TEMPLATE;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.registerHistogram;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BREAKER_CALLS_FAILED_TOTAL;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BREAKER_CALLS_PREVENTED_TOTAL;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BREAKER_CALLS_SUCCEEDED_TOTAL;
@@ -302,6 +305,12 @@ public class MethodInvoker implements FtSupplier<Object> {
                     registerGauge(method, BULKHEAD_WAITING_QUEUE_POPULATION,
                             "Number of executions currently waiting in the queue",
                             () -> methodState.bulkhead.stats().waitingQueueSize());
+                    registerHistogram(
+                            String.format(METRIC_NAME_TEMPLATE,
+                                    method.getDeclaringClass().getName(),
+                                    method.getName(),
+                                    BULKHEAD_WAITING_DURATION),
+                            "Histogram of the time executions spend waiting in the queue.");
                 }
             }
         }
@@ -707,10 +716,14 @@ public class MethodInvoker implements FtSupplier<Object> {
                 Bulkhead.Stats stats = methodState.bulkhead.stats();
                 updateCounter(method, BULKHEAD_CALLS_ACCEPTED_TOTAL, stats.callsAccepted());
                 updateCounter(method, BULKHEAD_CALLS_REJECTED_TOTAL, stats.callsRejected());
-                long waitingTime = invocationStartNanos - handlerStartNanos;
-                getHistogram(method, BULKHEAD_EXECUTION_DURATION).update(executionTime - waitingTime);
-                if (introspector.isAsynchronous()) {
-                    getHistogram(method, BULKHEAD_WAITING_DURATION).update(waitingTime);
+
+                // Update histograms if task accepted
+                if (!(cause instanceof BulkheadException)) {
+                    long waitingTime = invocationStartNanos - handlerStartNanos;
+                    getHistogram(method, BULKHEAD_EXECUTION_DURATION).update(executionTime - waitingTime);
+                    if (introspector.isAsynchronous()) {
+                        getHistogram(method, BULKHEAD_WAITING_DURATION).update(waitingTime);
+                    }
                 }
             }
 
