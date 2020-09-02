@@ -7,6 +7,9 @@
             "pattern": "META-INF/jandex.idx"
         },
         {
+            "pattern": "META-INF/services/org.jboss.weld.bootstrap.api.Service"
+        },
+        {
             "pattern": "weld-build.properties"
         }
     ]
