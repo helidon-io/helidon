@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.microprofile.grpc</groupId>
         <artifactId>helidon-microprofile-grpc</artifactId>
-        <version>2.0.2-SNAPSHOT</version>
+        <version>2.0.2</version>
     </parent>
 
     <artifactId>helidon-microprofile-grpc-client</artifactId>
