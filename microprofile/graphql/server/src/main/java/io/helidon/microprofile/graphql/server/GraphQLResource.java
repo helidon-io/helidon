@@ -57,7 +57,6 @@ public class GraphQLResource {
      */
     private static final SchemaPrinter.Options OPTIONS = SchemaPrinter.Options
             .defaultOptions().includeDirectives(false)
-            .includeExtendedScalarTypes(true)
             .includeScalarTypes(true);
 
     /**

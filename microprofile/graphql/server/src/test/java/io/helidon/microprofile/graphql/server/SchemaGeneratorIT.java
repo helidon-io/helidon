@@ -29,6 +29,7 @@ import java.util.UUID;
 
 import io.helidon.microprofile.graphql.server.test.queries.DuplicateNameQueries;
 import io.helidon.microprofile.graphql.server.test.queries.PropertyNameQueries;
+import io.helidon.microprofile.graphql.server.test.queries.SimpleQueryDateTest;
 import io.helidon.microprofile.graphql.server.test.types.InvalidNamedTypes;
 import io.helidon.microprofile.graphql.server.test.types.TypeWithNameAndJsonbProperty;
 
@@ -343,7 +344,22 @@ public class SchemaGeneratorIT
     }
 
     @Test
-  //  @Disabled
+    public void interimTest() throws IOException {
+       setupIndex(indexFileName, SimpleQueryDateTest.class);
+        ExecutionContext executionContext =  new ExecutionContext(defaultContext);
+
+        Schema schema = executionContext.getSchema();
+
+        Map<String, Object> mapResults = getAndAssertResult(
+                executionContext.execute("query { localDateListFormat }"));
+        assertThat(mapResults, is(notNullValue()));
+        List<String>  listDates = (ArrayList<String>) mapResults.get("localDateListFormat");
+        assertThat(listDates.size(),is(2));
+        assertThat(listDates.get(0), is("17/02/1968"));
+        assertThat(listDates.get(1), is("04/08/1970"));
+    }
+
+    @Test
     public void testDateAndTime() throws IOException {
         setupIndex(indexFileName, DateTimePojo.class, SimpleQueriesNoArgs.class);
         ExecutionContext executionContext =  new ExecutionContext(defaultContext);
@@ -373,6 +389,7 @@ public class SchemaGeneratorIT
         assertDefaultFormat(type, "offsetDateTime", "yyyy-MM-dd'T'HH:mm:ssZ");
         assertDefaultFormat(type, "zonedDateTime", "yyyy-MM-dd'T'HH:mm:ssZ'['VV']'");
         assertDefaultFormat(type, "localDateNoFormat", "yyyy-MM-dd");
+        assertDefaultFormat(type, "significantDates", "yyyy-MM-dd");
 
         fd = getFieldDefinition(type, "localDateTime");
         assertThat(fd, is(notNullValue()));
@@ -381,16 +398,30 @@ public class SchemaGeneratorIT
 
         Map<String, Object> mapResults = getAndAssertResult(
                 executionContext.execute("query { dateAndTimePOJOQuery { offsetDateTime offsetTime zonedDateTime "
-                                             + "localDate localDate2 localTime localDateTime } }"));
+                                             + "localDate localDate2 localTime localDateTime significantDates } }"));
         assertThat(mapResults.size(), is(1));
         Map<String, Object> mapResults2 = (Map<String, Object>) mapResults.get("dateAndTimePOJOQuery");
         assertThat(mapResults2, is(notNullValue()));
-        assertThat(mapResults2.size(), is(7));
+        assertThat(mapResults2.size(), is(8));
 
         assertThat(mapResults2.get("localDate"), is("02/17/1968"));
         assertThat(mapResults2.get("localDate2"), is("08/04/1970"));
         assertThat(mapResults2.get("localTime"), is("10:10:20"));
         assertThat(mapResults2.get("offsetTime"), is("08:10:01+0000"));
+        Object significantDates = mapResults2.get("significantDates");
+        assertThat(significantDates, is(notNullValue()));
+        List<String> listDates = (ArrayList<String>) mapResults2.get("significantDates");
+        assertThat(listDates.size(),is(2));
+        assertThat(listDates.get(0), is("1968-02-17"));
+        assertThat(listDates.get(1), is("1970-08-04"));
+
+        mapResults = getAndAssertResult(
+                executionContext.execute("query { localDateListFormat }"));
+        assertThat(mapResults, is(notNullValue()));
+        listDates = (ArrayList<String>) mapResults.get("localDateListFormat");
+        assertThat(listDates.size(),is(2));
+        assertThat(listDates.get(0), is("17/02/1968"));
+        assertThat(listDates.get(1), is("04/08/1970"));
     }
 
     @Test
@@ -418,7 +449,7 @@ public class SchemaGeneratorIT
         assertReturnTypeMandatory(type, "testInputOnly", false);
         assertArrayReturnTypeMandatory(type, "testInputOnly", false);
         assertReturnTypeMandatory(type, "testOutputOnly", false);
-        assertArrayReturnTypeMandatory(type, "testOutputOnly", true);
+        assertArrayReturnTypeMandatory(type, "testOutputOnly", false);
 
         SchemaType query = schema.getTypeByName("Query");
         assertReturnTypeMandatory(query, "method1NotNull", true);

@@ -20,6 +20,9 @@ import java.lang.reflect.AnnotatedElement;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAccessor;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Locale;
 import java.util.logging.Logger;
 
@@ -27,6 +30,9 @@ import javax.json.bind.annotation.JsonbDateFormat;
 import javax.json.bind.annotation.JsonbNumberFormat;
 
 import org.eclipse.microprofile.graphql.DateFormat;
+ 
+import org.jboss.jandex.AnnotationInstance;
+import org.jboss.jandex.AnnotationValue;
 
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.BIG_DECIMAL;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.BIG_DECIMAL_CLASS;
@@ -82,8 +88,28 @@ public class FormattingHelper {
     /**
      * Indicates no formatting applied.
      */
-    private static final String[] NO_FORMATTING = new String[] {null, null, null };
+    protected static final String[] NO_FORMATTING = new String[] {null, null, null };
 
+    /**
+     * JsonbDateFormat class name.
+     */
+    private static final String JSONB_DATE_FORMAT = JsonbDateFormat.class.getName();
+
+    /**
+     * DateFormat class name.
+     */
+    private static final String DATE_FORMAT = org.eclipse.microprofile.graphql.DateFormat.class.getName();
+
+    /**
+     * JsonBNumberFormat class name.
+     */
+    private static final String JSONB_NUMBER_FORMAT = JsonbNumberFormat.class.getName();
+
+    /**
+     * NumberFormat class name.
+     */
+    private static final String NUMBER_FORMAT = org.eclipse.microprofile.graphql.NumberFormat.class.getName();
+    
     /**
      * No-args constructor.
      */
@@ -198,7 +224,7 @@ public class FormattingHelper {
 
     /**
      * Return formatting annotation details for the {@link AnnotatedElement}. The array returned contains three elements: [0] =
-     * either DATE,NUMBER or null if no formatting applied: [1][2] = if formatting applied then the format and locale.
+     * either DATE, NUMBER or null if no formatting applied: [1][2] = if formatting applied then the format and locale.
      *
      * @param annotatedElement the {@link AnnotatedElement} to check
      * @return formatting annotation details or array with three nulls if no formatting
@@ -218,6 +244,86 @@ public class FormattingHelper {
         return dateFormat.length == 2
                 ? new String[] {DATE, dateFormat[0], dateFormat[1] }
                 : new String[] {NUMBER, numberFormat[0], numberFormat[1] };
+    }
+
+    /**
+     * Return the method parameter format using Jandex.
+     *
+     * @param jandexUtils     {@link JandexUtils} to use 
+     * @param clazz           {@link Class} to check for annotation
+     * @param methodName      method name to check
+     * @param paramNumber     parameter number to check
+     * @return
+     */
+    protected static String[] getMethodParameterFormat(JandexUtils jandexUtils, String clazz, String methodName,
+                                                       int paramNumber) {
+
+        if (jandexUtils.hasIndex()) {
+            AnnotationInstance dateFormat1 =
+                    jandexUtils.getMethodParameterAnnotation(clazz, methodName, paramNumber, JSONB_DATE_FORMAT);
+            AnnotationInstance dateFormat2 =
+                    jandexUtils.getMethodParameterAnnotation(clazz, methodName, paramNumber, DATE_FORMAT);
+            AnnotationInstance numberFormat1 =
+                    jandexUtils.getMethodParameterAnnotation(clazz, methodName, paramNumber, JSONB_NUMBER_FORMAT);
+            AnnotationInstance numberFormat2 =
+                    jandexUtils.getMethodParameterAnnotation(clazz, methodName, paramNumber, NUMBER_FORMAT);
+
+            return getFormatFromAnnotationInstance(dateFormat1, dateFormat2, numberFormat1, numberFormat2);
+        }
+        return NO_FORMATTING;
+    }
+
+    /**
+     * Return a format given a {@link AnnotationInstance}.
+     * @param dateFormat1    {@link AnnotationInstance} date format from {@link JsonbDateFormat}
+     * @param dateFormat2    {@link AnnotationInstance} date format from {@link DateFormat}
+     * @param numberFormat1  {@link AnnotationInstance} number format from {@link JsonbNumberFormat}
+     * @param numberFormat2  {@link AnnotationInstance} number format from {@link org.eclipse.microprofile.graphql.NumberFormat}
+     * @return a String[] representing the format and locale
+     */
+    private static String[] getFormatFromAnnotationInstance(AnnotationInstance dateFormat1,
+                                                            AnnotationInstance dateFormat2,
+                                                            AnnotationInstance numberFormat1,
+                                                            AnnotationInstance numberFormat2) {
+        // ensure that both date and number formatting are not present
+        if (dateFormat1 != null || dateFormat2 != null &&
+                numberFormat1 != null || numberFormat2 != null) {
+            ensureRuntimeException(LOGGER, "Cannot have date and number formatting on the same method");
+        }
+        AnnotationInstance formatInstance = dateFormat1 != null ? dateFormat1
+                : dateFormat2 != null ? dateFormat2
+                        : numberFormat1 != null ? numberFormat1
+                                : numberFormat2;
+        if (formatInstance == null) {
+            return NO_FORMATTING;
+        }
+
+        String type = dateFormat1 != null || dateFormat2 != null ? DATE
+                : NUMBER;
+
+        AnnotationValue format = formatInstance.value("value");
+        AnnotationValue locale = formatInstance.value("locale");
+        return new String[] {type, format.asString(), locale == null ? DEFAULT_LOCALE : locale.asString() };
+    }
+
+    /**
+     * Return the method format using Jandex.
+     *
+     * @param jandexUtils     {@link JandexUtils} to use
+     * @param clazz           {@link Class} to check for annotation
+     * @param methodName      method name to check
+     * @return
+     */
+    protected static String[] getMethodFormat(JandexUtils jandexUtils, String clazz, String methodName) {
+        if (jandexUtils.hasIndex()) {
+            AnnotationInstance dateFormat1 = jandexUtils.getMethodAnnotation(clazz, methodName, JSONB_DATE_FORMAT);
+            AnnotationInstance dateFormat2 = jandexUtils.getMethodAnnotation(clazz, methodName, DATE_FORMAT);
+            AnnotationInstance numberFormat1 = jandexUtils.getMethodAnnotation(clazz, methodName, JSONB_NUMBER_FORMAT);
+            AnnotationInstance numberFormat2 = jandexUtils.getMethodAnnotation(clazz, methodName, NUMBER_FORMAT);
+
+            return getFormatFromAnnotationInstance(dateFormat1, dateFormat2, numberFormat1, numberFormat2);
+        }
+        return NO_FORMATTING;
     }
 
     /**
@@ -280,6 +386,59 @@ public class FormattingHelper {
             return new String[] {jsonbDateFormat.value(), jsonbDateFormat.locale() };
         }
         return new String[0];
+    }
+
+    /**
+     * Format a date value given a {@link DateTimeFormatter}.
+     * @param originalResult    original result
+     * @param dateTimeFormatter {@link DateTimeFormatter} to format with
+     * @return formatted value
+     */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public static Object formatDate(Object originalResult, DateTimeFormatter dateTimeFormatter) {
+        if (originalResult == null) {
+            return null;
+        }
+        if (originalResult instanceof Collection) {
+            Collection formattedResult = new ArrayList();
+            Collection originalCollection = (Collection) originalResult;
+            originalCollection.forEach(e -> formattedResult.add(e instanceof TemporalAccessor ? dateTimeFormatter
+                                                       .format((TemporalAccessor) e) : e)
+            );
+            return formattedResult;
+
+        } else {
+            return originalResult instanceof TemporalAccessor
+                    ? dateTimeFormatter.format((TemporalAccessor) originalResult) : originalResult;
+        }
+    }
+
+    /**
+     * Format a number value with a a given {@link NumberFormat}.
+     * @param originalResult  original result
+     * @param isScalar        indicates if it is a scalar value
+     * @param numberFormat    {@link NumberFormat} to format with
+     * @return formatted value
+     */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public static Object formatNumber(Object originalResult, boolean isScalar, NumberFormat numberFormat) {
+        if (originalResult == null) {
+            return null;
+        }
+        if (originalResult instanceof Collection) {
+            Collection formattedResult = new ArrayList();
+            Collection originalCollection = (Collection) originalResult;
+            originalCollection.forEach(e -> {
+                if (isScalar) {
+                    formattedResult.add(new FormattedNumberImpl(numberFormat, numberFormat.format(originalResult)));
+                } else {
+                    formattedResult.add(numberFormat.format(originalResult));
+                }
+            });
+            return formattedResult;
+        }
+        return isScalar ? new FormattedNumberImpl(numberFormat, numberFormat.format(originalResult))
+                :  numberFormat.format(originalResult);
     }
 
 }

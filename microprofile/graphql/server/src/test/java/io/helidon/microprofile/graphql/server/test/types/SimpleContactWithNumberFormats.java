@@ -18,9 +18,12 @@ package io.helidon.microprofile.graphql.server.test.types;
 
 import javax.json.bind.annotation.JsonbNumberFormat;
 
+import org.eclipse.microprofile.graphql.DateFormat;
 import org.eclipse.microprofile.graphql.NumberFormat;
 import org.eclipse.microprofile.graphql.Type;
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
 
 /**
  * Defines a simple contact which contains number formats.
@@ -44,6 +47,8 @@ public class SimpleContactWithNumberFormats {
 
     @NumberFormat("BigDecimal-##########")
     private BigDecimal bigDecimal;
+
+    private List<@DateFormat("DD-MM-YYYY") LocalDate> listDates;
 
     public Integer getFormatMethod(@NumberFormat("0 'years old'") int age) {
         return age;

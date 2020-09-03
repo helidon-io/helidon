@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -42,6 +43,7 @@ import io.helidon.microprofile.graphql.server.test.types.ObjectWithIgnorableFiel
 import io.helidon.microprofile.graphql.server.test.types.Person;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContactWithSelf;
 import io.helidon.microprofile.graphql.server.test.types.TypeWithIDs;
+import org.eclipse.microprofile.graphql.DateFormat;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Id;
 import org.eclipse.microprofile.graphql.Name;
@@ -157,6 +159,12 @@ public class SimpleQueriesNoArgs {
                                 LocalDate.of(1970,8,4),
                                 LocalTime.of(10,10,20),
                                 OffsetTime.of(8, 10, 1, 0, ZoneOffset.UTC),
-                                LocalDateTime.now(), OffsetDateTime.now(), ZonedDateTime.now(), LocalDate.now());
+                                LocalDateTime.now(), OffsetDateTime.now(), ZonedDateTime.now(), LocalDate.now(),
+                                List.of(LocalDate.of(1968,2,17), LocalDate.of(1970,8,4)));
+    }
+
+    @Query("localDateListFormat")
+    public List<@DateFormat("dd/MM/yyyy") LocalDate> getLocalDateListFormat() {
+        return List.of(LocalDate.of(1968,2,17), LocalDate.of(1970,8,4));
     }
 }

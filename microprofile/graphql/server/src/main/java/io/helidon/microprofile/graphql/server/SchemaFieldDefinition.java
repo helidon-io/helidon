@@ -71,9 +71,14 @@ public class SchemaFieldDefinition
     private DataFetcher dataFetcher;
 
     /**
-     * Original argument type before it was converted to a GraphQL representation.
+     * Original type before it was converted to a GraphQL representation.
      */
     private Class<?> originalType;
+
+    /**
+     * Original array inner type if it is array type.
+     */
+    private Class<?> originalArrayType;
 
     /**
      * Defines the format for a number or date.
@@ -301,6 +306,24 @@ public class SchemaFieldDefinition
     }
 
     /**
+     * Sets the original array type.
+     *
+     * @param originalArrayType the original array type
+     */
+    public void setOriginalArrayType(Class <?> originalArrayType) {
+        this.originalArrayType = originalArrayType;
+    }
+
+    /**
+     * Returns the original array type.
+     *
+     * @return the original array type
+     */
+    public Class<?> getOriginalArrayType() {
+        return originalArrayType;
+    }
+
+    /**
      * Return if the array return type is mandatory.
      * @return if the array return type is mandatory
      */
@@ -327,6 +350,7 @@ public class SchemaFieldDefinition
                 + ", listArguments=" + listSchemaArguments
                 + ", arrayLevels=" + arrayLevels
                 + ", originalType=" + originalType
+                + ", originalArrayType=" + originalArrayType
                 + ", format=" + Arrays.toString(format)
                 + ", description='" + getDescription() + '\'' + '}';
     }

@@ -22,6 +22,9 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.OffsetTime;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 import javax.json.bind.annotation.JsonbDateFormat;
 
@@ -50,6 +53,8 @@ public class DateTimePojo {
     @Description("description")
     private LocalDate localDateNoFormat;
 
+    private List<LocalDate> significantDates;
+
     public DateTimePojo(LocalDate localDate,
                         LocalDate localDate2,
                         LocalTime localTime,
@@ -57,7 +62,8 @@ public class DateTimePojo {
                         LocalDateTime localDateTime,
                         OffsetDateTime offsetDateTime,
                         ZonedDateTime zonedDateTime,
-                        LocalDate localDateNoFormat) {
+                        LocalDate localDateNoFormat,
+                        List<LocalDate> significantDates) {
         this.localDate = localDate;
         this.localDate2 = localDate2;
         this.localTime = localTime;
@@ -66,6 +72,7 @@ public class DateTimePojo {
         this.offsetDateTime = offsetDateTime;
         this.zonedDateTime = zonedDateTime;
         this.localDateNoFormat = localDateNoFormat;
+        this.significantDates = significantDates;
     }
 
     public LocalDate getLocalDate() {
@@ -130,5 +137,13 @@ public class DateTimePojo {
 
     public void setLocalDateNoFormat(LocalDate localDateNoFormat) {
         this.localDateNoFormat = localDateNoFormat;
+    }
+
+    public void setSignificantDates(List<LocalDate> significantDates) {
+        this.significantDates = significantDates;
+    }
+
+    public List<LocalDate> getSignificantDates() {
+        return this.significantDates;
     }
 }

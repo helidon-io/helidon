@@ -134,7 +134,6 @@ public abstract class AbstractGraphQLTest {
         if (schemaPrinter == null) {
             SchemaPrinter.Options options = SchemaPrinter.Options
                     .defaultOptions().includeDirectives(false)
-                    .includeExtendedScalarTypes(true)
                     .includeScalarTypes(true);
             schemaPrinter = new SchemaPrinter(options);
         }

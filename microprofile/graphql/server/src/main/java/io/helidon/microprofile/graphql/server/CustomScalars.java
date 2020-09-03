@@ -20,12 +20,16 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.NumberFormat;
 import java.text.ParseException;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.OffsetTime;
 
 import static graphql.Scalars.GraphQLBigInteger;
 import static graphql.Scalars.GraphQLFloat;
 import static graphql.Scalars.GraphQLInt;
 
 import graphql.Scalars;
+import graphql.scalars.ExtendedScalars;
 import graphql.schema.Coercing;
 import graphql.schema.CoercingParseLiteralException;
 import graphql.schema.CoercingParseValueException;
@@ -47,6 +51,89 @@ public class CustomScalars {
     public static final GraphQLScalarType CUSTOM_INT_SCALAR = newCustomGraphQLInt();
     public static final GraphQLScalarType CUSTOM_FLOAT_SCALAR = newCustomGraphQLFloat();
     public static final GraphQLScalarType CUSTOM_BIGINTEGER_SCALAR = newCustomGraphQLBigInteger();
+    public static final GraphQLScalarType CUSTOM_DATE_TIME_SCALAR = newDateTimeScalar();
+    public static final GraphQLScalarType CUSTOM_TIME_SCALAR = newTimeScalar();
+    public static final GraphQLScalarType CUSTOM_DATE_SCALAR = newDateScalar();
+
+    public static GraphQLScalarType newDateTimeScalar() {
+        GraphQLScalarType originalScalar = ExtendedScalars.DateTime;
+        Coercing<OffsetDateTime, String> originalCoercing = originalScalar.getCoercing();
+        return GraphQLScalarType.newScalar().coercing(new Coercing<OffsetDateTime, String>() {
+            public String serialize(Object dataFetcherResult) throws CoercingSerializeException {
+                if (dataFetcherResult instanceof String) {
+                    return (String) dataFetcherResult;
+                } else {
+                    return originalCoercing.serialize(dataFetcherResult);
+                }
+            }
+
+            @Override
+            public OffsetDateTime parseValue(Object input) throws CoercingParseValueException {
+                return null;
+            }
+
+
+            @Override
+            public OffsetDateTime parseLiteral(Object input) throws CoercingParseLiteralException {
+                return null;
+            }
+        })
+                .name("DateTime")
+                .description("A Custom RFC-3339 compliant DateTime Scalar")
+        .build();
+    }
+
+    public static GraphQLScalarType newTimeScalar() {
+        GraphQLScalarType originalScalar = ExtendedScalars.Time;
+        Coercing<OffsetDateTime, String> originalCoercing = originalScalar.getCoercing();
+        return GraphQLScalarType.newScalar().coercing(new Coercing<OffsetTime, String>() {
+            public String serialize(Object dataFetcherResult) throws CoercingSerializeException {
+                return dataFetcherResult instanceof String
+                        ? (String) dataFetcherResult
+                        : originalCoercing.serialize(dataFetcherResult);
+            }
+
+            @Override
+            public OffsetTime parseValue(Object input) throws CoercingParseValueException {
+                return null;
+            }
+
+
+            @Override
+            public OffsetTime parseLiteral(Object input) throws CoercingParseLiteralException {
+                return null;
+            }
+        })
+                .name("Time")
+                .description("A Custom RFC-3339 compliant Time Scalar")
+        .build();
+    }
+
+    public static GraphQLScalarType newDateScalar() {
+        GraphQLScalarType originalScalar = ExtendedScalars.Date;
+        Coercing<OffsetDateTime, String> originalCoercing = originalScalar.getCoercing();
+        return GraphQLScalarType.newScalar().coercing(new Coercing<LocalDate, String>() {
+            public String serialize(Object dataFetcherResult) throws CoercingSerializeException {
+                return dataFetcherResult instanceof String
+                        ? (String) dataFetcherResult
+                        : originalCoercing.serialize(dataFetcherResult);
+            }
+
+            @Override
+            public LocalDate parseValue(Object input) throws CoercingParseValueException {
+                return null;
+            }
+
+
+            @Override
+            public LocalDate parseLiteral(Object input) throws CoercingParseLiteralException {
+                return null;
+            }
+        })
+                .name("Date")
+                .description("A Custom RFC-3339 compliant Date Scalar")
+        .build();
+    }
 
     /**
      * Creates a custom BigDecimalScalar which will parse a formatted value which was originally formatted using a {@link
@@ -62,11 +149,9 @@ public class CustomScalars {
         Coercing<BigDecimal, Object> formattingCoercing = new Coercing<>() {
             @Override
             public Object serialize(Object dataFetcherResult) throws CoercingSerializeException {
-                Object finalDataFetcherResult = dataFetcherResult;
-                if (dataFetcherResult instanceof FormattedNumber) {
-                    return ((FormattedNumber) finalDataFetcherResult).getFormattedValue();
-                }
-                return originalCoercing.serialize(finalDataFetcherResult);
+                return dataFetcherResult instanceof String
+                        ? (String) dataFetcherResult
+                        : originalCoercing.serialize(dataFetcherResult);
             }
 
             @Override

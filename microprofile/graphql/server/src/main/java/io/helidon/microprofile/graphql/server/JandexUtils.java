@@ -23,9 +23,12 @@ import java.net.URL;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
+import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.ClassType;
 import org.jboss.jandex.DotName;
@@ -132,15 +135,33 @@ public class JandexUtils {
      * @return true if the given class, method and parameter has the specified annotation class name
      */
     protected boolean methodParameterHasAnnotation(String clazz, String methodName, int paramNumber, String annotationClazz) {
-        ClassInfo classByName = index.getClassByName(DotName.createSimple(clazz));
-        if (classByName != null) {
-            MethodInfo methodInfo = classByName.firstMethod(methodName);
-            if (methodInfo != null) {
-                ClassType classType = retrieveInnerMostType(methodInfo.parameters().get(paramNumber));
-                return classType != null && classType.hasAnnotation(DotName.createSimple(annotationClazz));
+        return getMethodParameterAnnotation(clazz, methodName, paramNumber, annotationClazz) != null;
+    }
+
+    /**
+     * Return the {@link AnnotationInstance} for the given class, method and parameter has the specified annotation class name for a generic type.
+     *
+     * @param clazz           {@link Class} to check for annotation
+     * @param methodName      method name to check
+     * @param paramNumber     parameter number to check
+     * @param annotationClazz the annotation {@link Class} to check
+     * @return {@link AnnotationInstance} or null if none present
+     */
+    protected AnnotationInstance getMethodParameterAnnotation(String clazz, String methodName,
+                                                              int paramNumber, String annotationClazz) {
+        if (hasIndex()) {
+            ClassInfo classByName = index.getClassByName(DotName.createSimple(clazz));
+            if (classByName != null) {
+                MethodInfo methodInfo = classByName.firstMethod(methodName);
+                if (methodInfo != null) {
+                    ClassType classType = retrieveInnerMostType(methodInfo.parameters().get(paramNumber));
+                     return classType.annotations().stream()
+                            .filter(a -> a.name().equals(DotName.createSimple(annotationClazz)))
+                            .findFirst().orElse(null);
+                }
             }
         }
-        return false;
+        return null;
     }
 
     /**
@@ -152,18 +173,33 @@ public class JandexUtils {
      * @return true if the given class, method and parameter has the specified annotation class name
      */
     protected boolean fieldHasAnnotation(String clazz, String fieldName, String annotationClazz) {
-        if (!hasIndex()) {
-            return false;
-        }
-        ClassInfo classByName = index.getClassByName(DotName.createSimple(clazz));
-        if (classByName != null) {
-            FieldInfo field = classByName.field(fieldName);
-            if (field != null) {
-                ClassType classType = retrieveInnerMostType(field.type());
-                return classType != null && classType.hasAnnotation(DotName.createSimple(annotationClazz));
+        return getFieldAnnotation(clazz, fieldName, annotationClazz) != null;
+    }
+
+    /**
+     * Return the {@link AnnotationInstance} for the given field in a class has the specified annotation class name for a generic type.
+     *
+     * @param clazz           {@link Class} to check for annotation
+     * @param fieldName       field name to check
+     * @param annotationClazz the annotation {@link Class} to check
+     * @return {@link AnnotationInstance} or null if none present
+     */
+    protected AnnotationInstance getFieldAnnotation(String clazz, String fieldName, String annotationClazz) {
+        if (hasIndex()) {
+            ClassInfo classByName = index.getClassByName(DotName.createSimple(clazz));
+            if (classByName != null) {
+                FieldInfo field = classByName.field(fieldName);
+                if (field != null) {
+                    ClassType classType = retrieveInnerMostType(field.type());
+                    if (classType != null) {
+                        return classType.annotations().stream()
+                                .filter(a -> a.name().equals(DotName.createSimple(annotationClazz)))
+                                .findFirst().orElse(null);
+                    }
+                }
             }
         }
-        return false;
+        return null;
     }
 
     /**
@@ -175,18 +211,34 @@ public class JandexUtils {
      * @return true if the given class, method and parameter has the specified annotation class name
      */
     protected boolean methodHasAnnotation(String clazz, String methodName, String annotationClazz) {
-        if (!hasIndex()) {
-            return false;
-        }
-        ClassInfo classByName = index.getClassByName(DotName.createSimple(clazz));
-        if (classByName != null) {
-            MethodInfo method = classByName.firstMethod(methodName);
-            if (method != null) {
-                ClassType classType = retrieveInnerMostType(method.returnType());
-                return classType != null && classType.hasAnnotation(DotName.createSimple(annotationClazz));
+        return getMethodAnnotation(clazz, methodName, annotationClazz) != null;
+    }
+
+    /**
+     * Return the {@link AnnotationInstance} for the given method in a class has the specified annotation class name or a generic.
+     *
+     * @param clazz           {@link Class} to check for annotation
+     * @param methodName      method name to check
+     * @param annotationClazz the annotation {@link Class} to check
+     * @return {@link AnnotationInstance} or null if none present
+     */
+    protected AnnotationInstance getMethodAnnotation(String clazz, String methodName, String annotationClazz) {
+        if (hasIndex()) {
+            ClassInfo classByName = index.getClassByName(DotName.createSimple(clazz));
+            if (classByName != null) {
+                MethodInfo method = classByName.firstMethod(methodName);
+                if (method != null) {
+                    ClassType classType = retrieveInnerMostType(method.returnType());
+                        if (classType == null) {
+                            return null;
+                        }
+                        return classType.annotations().stream()
+                                .filter(a -> a.name().equals(DotName.createSimple(annotationClazz)))
+                                .findFirst().orElse(null);
+                }
             }
         }
-        return false;
+        return null;
     }
 
     /**

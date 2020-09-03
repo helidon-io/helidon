@@ -191,8 +191,7 @@ public class ExecutionContext {
             SchemaPrinter.Options options = SchemaPrinter.Options
                     .defaultOptions()
                     .includeDirectives(false)
-                    .includeScalarTypes(true)
-                    .includeExtendedScalarTypes(true);
+                    .includeScalarTypes(true);
             SchemaPrinter schemaPrinter = new SchemaPrinter(options);
 
             GraphQL.Builder builder = GraphQL.newGraphQL(this.graphQLSchema)

@@ -45,6 +45,7 @@ import java.util.stream.Stream;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetcherFactories;
 import graphql.schema.PropertyDataFetcher;
+
 import org.eclipse.microprofile.graphql.Description;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Id;
@@ -56,9 +57,13 @@ import org.eclipse.microprofile.graphql.NonNull;
 import org.eclipse.microprofile.graphql.Query;
 import org.eclipse.microprofile.graphql.Source;
 import org.eclipse.microprofile.graphql.Type;
+import org.jboss.jandex.AnnotationInstance;
 
 import static io.helidon.microprofile.graphql.server.FormattingHelper.DATE;
+import static io.helidon.microprofile.graphql.server.FormattingHelper.NO_FORMATTING;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.NUMBER;
+import static io.helidon.microprofile.graphql.server.FormattingHelper.formatDate;
+import static io.helidon.microprofile.graphql.server.FormattingHelper.formatNumber;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.getCorrectDateFormatter;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.getCorrectNumberFormat;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.getFormattingAnnotation;
@@ -143,6 +148,8 @@ public class SchemaGenerator {
 
     /**
      * Construct a {@link SchemaGenerator} instance.
+     *
+     * @param context the {@link Context} to use
      */
     public SchemaGenerator(Context context) {
         this.context = context;
@@ -236,7 +243,7 @@ public class SchemaGenerator {
                     addTypeToSchema(schema, type);
 
                     if (type.isInterface()) {
-                        // is an interface so check for any implementors and add them to
+                        // is an interface so check for any implementors and add them too
                         jandexUtils.getKnownImplementors(clazz.getName()).forEach(c -> setUnresolvedTypes.add(c.getName()));
                     }
                 } else if (inputAnnotation != null) {
@@ -338,17 +345,32 @@ public class SchemaGenerator {
                 // as default formatting has already been dealt with
                 if (isDateTimeScalar(returnType) && fd.getDataFetcher() == null) {
                     String[] existingFormat = fd.getFormat();
-                    String[] newFormat = ensureFormat(returnType, fd.getOriginalType().getName(), existingFormat);
+                    // check if this type is an array type and if so then get the actual original type
+                    Class<?> clazzOriginalType = fd.getOriginalArrayType() != null
+                            ? fd.getOriginalArrayType() : fd.getOriginalType();
+                    String[] newFormat = ensureFormat(returnType, clazzOriginalType.getName(), existingFormat);
                     if (!Arrays.equals(newFormat, existingFormat) && newFormat.length == 2) {
                         // formats differ so set the new format and DataFetcher
                         fd.setFormat(newFormat);
                         // create the raw array to pass to the retrieveFormattingDataFetcher method
                         DataFetcher dataFetcher = retrieveFormattingDataFetcher(new String[] {DATE, newFormat[0], newFormat[1] },
-                                                                        fd.getName(), fd.getOriginalType().getName());
+                                                                        fd.getName(), clazzOriginalType.getName());
                         fd.setDataFetcher(dataFetcher);
                         // context.addFormatter(null, fd.getName(), (FormattingProvider) dataFetcher);
                     }
                 }
+
+                // check the SchemaArguments
+                fd.getArguments().forEach(a -> {
+                    String argumentType = a.getArgumentType();
+                    if (isDateTimeScalar(argumentType)) {
+                        String[] existingArgFormat = a.getFormat();
+                        String[] newArgFormat = ensureFormat(argumentType, a.getOriginalType().getName(), existingArgFormat);
+                        if (!Arrays.equals(newArgFormat, existingArgFormat) && newArgFormat.length == 2) {
+                            a.setFormat(newArgFormat);
+                        }
+                    }
+                });
             });
         });
     }
@@ -517,39 +539,37 @@ public class SchemaGenerator {
 
                 // if the type is a Date/Time/DateTime scalar and there is currently no format,
                 // then use the default format if there is one
-                if (format.length != 3 && isDateTimeScalar(discoveredMethod.getReturnType())) {
+                if (format != null && format.length != 3 && isDateTimeScalar(discoveredMethod.getReturnType())) {
                     String[] newFormat = ensureFormat(discoveredMethod.getReturnType(),
                                                       fd.getOriginalType().getName(), new String[0]);
                     if (newFormat.length == 2) {
-                        format = new String[] { DATE, newFormat[0], newFormat[1] };
+                        format = new String[] {DATE, newFormat[0], newFormat[1] };
                     }
                 }
-                if (format.length == 3) {
+                if (format != null && format.length == 3) {
                     // a format exists on the method return type so format it after returning the value
                     final String graphQLType = getGraphQLType(fd.getReturnType());
                     final DataFetcher methodDataFetcher = DataFetcherUtils.newMethodDataFetcher(clazz, method, null,
                                                                                                 fd.getArguments().toArray(
                                                                                                         new SchemaArgument[0]));
                     final String[] newFormat = new String[] {format[0], format[1], format[2] };
-                    if (isDateTimeScalar(discoveredMethod.getReturnType())) {
+                    SchemaScalar dateScalar = getScalar(discoveredMethod.getReturnType());
+                    if (dateScalar != null && isDateTimeScalar(dateScalar.getName())) {
                         dataFetcher = DataFetcherFactories.wrapDataFetcher(methodDataFetcher,
-                                                                           (e, v) -> {
-                                                                               DateTimeFormatter dateTimeFormatter =
-                                                                                       getCorrectDateFormatter(
-                                                                                       graphQLType, newFormat[2], newFormat[1]);
-                                                                               return v instanceof TemporalAccessor
-                                                                                       ? dateTimeFormatter
-                                                                                       .format((TemporalAccessor) v) : null;
-                                                                           });
+                           (e, v) -> {
+                               DateTimeFormatter dateTimeFormatter =
+                                       getCorrectDateFormatter(
+                                       graphQLType, newFormat[2], newFormat[1]);
+                               return formatDate(v, dateTimeFormatter);
+                           });
                     } else {
                         dataFetcher = DataFetcherFactories.wrapDataFetcher(methodDataFetcher,
-                                                                           (e, v) -> {
-                                                                               NumberFormat numberFormat = getCorrectNumberFormat(
-                                                                                       graphQLType, newFormat[2], newFormat[1]);
-                                                                               return v != null && numberFormat != null
-                                                                                       ? numberFormat.format(v)
-                                                                                       : null;
-                                                                           });
+                           (e, v) -> {
+                               NumberFormat numberFormat = getCorrectNumberFormat(
+                                       graphQLType, newFormat[2], newFormat[1]);
+                               boolean isScalar = SchemaGeneratorHelper.getScalar(discoveredMethod.getReturnType()) != null;
+                               return formatNumber(v, isScalar, numberFormat);
+                           });
                         fd.setReturnType(STRING);
                     }
                 } else {
@@ -728,6 +748,7 @@ public class SchemaGenerator {
         fd.setDataFetcher(dataFetcher);
         fd.setOriginalType(discoveredMethod.getMethod().getReturnType());
         fd.setArrayReturnTypeMandatory(discoveredMethod.isArrayReturnTypeMandatory());
+        fd.setOriginalArrayType(isArrayReturnType ? discoveredMethod.getOriginalArrayType() : null);
 
         if (format != null && format.length == 3) {
             fd.setFormat(new String[] { format[1], format[2] });
@@ -798,7 +819,7 @@ public class SchemaGenerator {
      * @throws IntrospectionException if there were errors introspecting classes
      */
     protected Map<String, DiscoveredMethod> retrieveAllAnnotatedBeanMethods(Class<?> clazz)
-            throws IntrospectionException {
+            throws IntrospectionException, ClassNotFoundException {
         Map<String, DiscoveredMethod> mapDiscoveredMethods = new HashMap<>();
         for (Method m : getAllMethods(clazz)) {
             boolean isQuery = m.getAnnotation(Query.class) != null;
@@ -833,7 +854,7 @@ public class SchemaGenerator {
      */
     protected Map<String, DiscoveredMethod> retrieveGetterBeanMethods(Class<?> clazz,
                                                                       boolean isInputType)
-            throws IntrospectionException {
+            throws IntrospectionException, ClassNotFoundException {
         Map<String, DiscoveredMethod> mapDiscoveredMethods = new HashMap<>();
 
         for (Method m : getAllMethods(clazz)) {
@@ -888,7 +909,7 @@ public class SchemaGenerator {
      */
     private DiscoveredMethod generateDiscoveredMethod(Method method, Class<?> clazz,
                                                       PropertyDescriptor pd, boolean isInputType,
-                                                      boolean isQueryOrMutation) {
+                                                      boolean isQueryOrMutation) throws ClassNotFoundException {
         String[] format = new String[0];
         String description = null;
         boolean isReturnTypeMandatory = false;
@@ -1023,7 +1044,15 @@ public class SchemaGenerator {
             discoveredMethod.setArrayReturnType(realReturnType.isArrayType());
             discoveredMethod.setCollectionType(realReturnType.getCollectionType());
             discoveredMethod.setMap(realReturnType.isMap());
+            SchemaScalar dateScalar = getScalar(realReturnType.getReturnClass());
+            if (dateScalar != null && isDateTimeScalar(dateScalar.getName())) {
+                // only set the original array type if it's a date/time
+                discoveredMethod.setOriginalArrayType(Class.forName(realReturnType.returnClass));
+            }
             discoveredMethod.setReturnType(realReturnType.getReturnClass());
+            if (realReturnType.getFormat() != null) {
+                discoveredMethod.setFormat(realReturnType.format);
+            }
         } else {
             discoveredMethod.setName(varName);
             discoveredMethod.setReturnType(returnClazzName);
@@ -1159,6 +1188,7 @@ public class SchemaGenerator {
             }
             actualReturnType.setArrayLevels(arrayLevels);
             actualReturnType.setReturnTypeMandatory(rootTypeResult.isArrayReturnTypeMandatory());
+            actualReturnType.setFormat(rootTypeResult.format);
         } else if (!returnClazzName.isEmpty() && returnClazzName.startsWith("[")) {
             // return type is array of either primitives or Objects/Interface/Enum.
             actualReturnType.setArrayType(true);
@@ -1186,6 +1216,8 @@ public class SchemaGenerator {
         int level = 1;
         boolean isParameter = parameterNumber != -1;
         String nonNullClazz = NonNull.class.getName();
+        String[] format = NO_FORMATTING;
+
         boolean isReturnTypeMandatory;
         if (genericReturnType instanceof ParameterizedType) {
             ParameterizedType paramReturnType = (ParameterizedType) genericReturnType;
@@ -1196,26 +1228,32 @@ public class SchemaGenerator {
                 ParameterizedType parameterizedType2 = (ParameterizedType) actualTypeArgument;
                 actualTypeArgument = parameterizedType2.getActualTypeArguments()[index];
             }
+
             Class<?> clazz = actualTypeArgument.getClass();
             boolean hasAnnotation = false;
+            AnnotationInstance formatInstance = null;
+            String clazzName = method.getDeclaringClass().getName();
+            String methodName = method.getName();
             if (jandexUtils.hasIndex()) {
                 if (isParameter) {
                     hasAnnotation = jandexUtils
-                            .methodParameterHasAnnotation(method.getDeclaringClass().getName(), method.getName(),
-                                                          parameterNumber, nonNullClazz);
+                            .methodParameterHasAnnotation(clazzName, methodName, parameterNumber, nonNullClazz);
+                    format = FormattingHelper.getMethodParameterFormat(jandexUtils, clazzName, methodName,
+                                                                              parameterNumber);
                 } else {
-                    hasAnnotation = jandexUtils.methodHasAnnotation(method.getDeclaringClass().getName(),
-                                                                    method.getName(), nonNullClazz);
+                    hasAnnotation = jandexUtils.methodHasAnnotation(clazzName, methodName, nonNullClazz);
+                    format = FormattingHelper.getMethodFormat(jandexUtils, clazzName, methodName);
                 }
             }
 
             isReturnTypeMandatory = hasAnnotation || isPrimitive(clazz.getName());
-            return new RootTypeResult(((Class<?>) actualTypeArgument).getName(), level, isReturnTypeMandatory);
+            return new RootTypeResult(((Class<?>) actualTypeArgument).getName(), level, isReturnTypeMandatory, format);
         } else {
             Class<?> clazz = genericReturnType.getClass();
             isReturnTypeMandatory = clazz.getAnnotation(NonNull.class) != null
                     || isPrimitive(clazz.getName());
-            return new RootTypeResult(((Class<?>) genericReturnType).getName(), level, isReturnTypeMandatory);
+//            format = FormattingHelper.getMethodFormat(jandexUtils, clazzName, methodName);
+            return new RootTypeResult(((Class<?>) genericReturnType).getName(), level, isReturnTypeMandatory, format);
         }
     }
 
@@ -1321,6 +1359,11 @@ public class SchemaGenerator {
          * If the return type is an array then indicates if the value in the array is mandatory.
          */
         private boolean isArrayReturnTypeMandatory;
+
+        /**
+         * Original array inner type if it is array type.
+         */
+        private Class<?> originalArrayType;
 
         /**
          * Default constructor.
@@ -1643,6 +1686,24 @@ public class SchemaGenerator {
             isArrayReturnTypeMandatory = arrayReturnTypeMandatory;
         }
 
+        /**
+         * Sets the original array type.
+         *
+         * @param originalArrayType the original array type
+         */
+        public void setOriginalArrayType(Class <?> originalArrayType) {
+            this.originalArrayType = originalArrayType;
+        }
+
+        /**
+         * Returns the original array type.
+         *
+         * @return the original array type
+         */
+        public Class<?> getOriginalArrayType() {
+            return originalArrayType;
+        }
+
         @Override
         public String toString() {
             return "DiscoveredMethod{"
@@ -1659,6 +1720,7 @@ public class SchemaGenerator {
                     + ", isReturnTypeMandatory=" + isReturnTypeMandatory
                     + ", isArrayReturnTypeMandatory=" + isArrayReturnTypeMandatory
                     + ", description=" + description
+                    + ", originalArrayType=" + originalArrayType
                     + ", defaultValue=" + defaultValue
                     + ", method=" + method + '}';
         }
@@ -1730,6 +1792,11 @@ public class SchemaGenerator {
          * Indicates id the return type is mandatory.
          */
         private boolean isReturnTypeMandatory;
+
+        /**
+         * The format of the return type if any.
+         */
+        private String[] format;
 
         /**
          * Default constructor.
@@ -1844,6 +1911,22 @@ public class SchemaGenerator {
         public void setReturnTypeMandatory(boolean returnTypeMandatory) {
             isReturnTypeMandatory = returnTypeMandatory;
         }
+
+        /**
+         * Return the format of the result class.
+         * @return the format of the result class
+         */
+        public String[] getFormat() {
+            return format;
+        }
+
+        /**
+         * Set the format of the result class.
+         * @param format  the format of the result class
+         */
+        public void setFormat(String[] format) {
+            this.format = format;
+        }
     }
 
     /**
@@ -1867,16 +1950,23 @@ public class SchemaGenerator {
         private boolean isArrayReturnTypeMandatory;
 
         /**
+         * The format of the result class.
+         */
+        private final String[] format;
+
+        /**
          * Construct a root type result.
          *
          * @param rootTypeName               root type of the {@link Collection} or {@link Map}
          * @param isArrayReturnTypeMandatory indicates if the return type is mandatory
          * @param levels                     number of levels in total
+         * @param format                     format of the result class
          */
-        public RootTypeResult(String rootTypeName, int levels, boolean isArrayReturnTypeMandatory) {
+        public RootTypeResult(String rootTypeName, int levels, boolean isArrayReturnTypeMandatory, String[] format) {
             this.rootTypeName = rootTypeName;
             this.levels = levels;
             this.isArrayReturnTypeMandatory = isArrayReturnTypeMandatory;
+            this.format = format;
         }
 
         /**
@@ -1913,6 +2003,14 @@ public class SchemaGenerator {
          */
         public void setArrayReturnTypeMandatory(boolean arrayReturnTypeMandatory) {
             isArrayReturnTypeMandatory = arrayReturnTypeMandatory;
+        }
+
+        /**
+         * Return the format of the result class.
+         * @return the format of the result class
+         */
+        public String[] getFormat() {
+            return format;
         }
     }
 }

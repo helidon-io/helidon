@@ -27,7 +27,7 @@ import org.eclipse.microprofile.graphql.NonNull;
 import org.eclipse.microprofile.graphql.Query;
 
 /**
- * Class that holds queries that also have Mut.
+ * Class that holds queries that also have Null.
  */
 @GraphQLApi
 @ApplicationScoped

@@ -25,6 +25,7 @@ import java.text.SimpleDateFormat;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAccessor;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
@@ -39,6 +40,8 @@ import graphql.schema.PropertyDataFetcherHelper;
 
 import graphql.GraphQLException;
 
+import static io.helidon.microprofile.graphql.server.FormattingHelper.formatDate;
+import static io.helidon.microprofile.graphql.server.FormattingHelper.formatNumber;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.getCorrectDateFormatter;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.getCorrectNumberFormat;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ID;
@@ -110,6 +113,7 @@ public class DataFetcherUtils {
                             // check the format and convert it from a string to the original format
                             String[] format = argument.getFormat();
                             if (format != null && format.length == 2) {
+                                // TODO: This always returns false, need to fix
                                 if (isDateTimeScalar(argument.getArgumentType())) {
                                     DateTimeFormatter dateFormatter = getCorrectDateFormatter(originalType.getName(),
                                                                                               format[1], format[0]);
@@ -180,10 +184,7 @@ public class DataFetcherUtils {
         @Override
         public Object get(DataFetchingEnvironment environment) {
             Object originalResult = super.get(environment);
-            if (isScalar) {
-                return new FormattedNumberImpl(numberFormat, originalResult != null ? numberFormat.format(originalResult) : null);
-            }
-            return originalResult != null ? numberFormat.format(originalResult) : null;
+            return formatNumber(super.get(environment), isScalar, numberFormat);
         }
 
         @Override
@@ -195,8 +196,10 @@ public class DataFetcherUtils {
     /**
      * An implementation of a {@link PropertyDataFetcher} which returns a formatted date.
      */
+    @SuppressWarnings({"unchecked", "rawtypes"})
     public static class DateFormattingDataFetcher
-            extends PropertyDataFetcher implements DateFormattingProvider {
+            extends PropertyDataFetcher
+            implements DateFormattingProvider {
 
         /**
          * {@link DateTimeFormatter} to format with.
@@ -217,16 +220,15 @@ public class DataFetcherUtils {
 
         @Override
         public Object get(DataFetchingEnvironment environment) {
-            Object originalResult = super.get(environment);
-            return originalResult instanceof TemporalAccessor
-                    ? dateTimeFormatter.format((TemporalAccessor) originalResult) : null;
-            }
+            return formatDate(super.get(environment), dateTimeFormatter);
+        }
 
         @Override
         public DateTimeFormatter getDateTimeFormat() {
             return dateTimeFormatter;
         }
     }
+
 
     /**
      * Create a new {@link DataFetcher} which formats a date/time.
