@@ -16,7 +16,6 @@
  */
 package io.helidon.microprofile.openapi;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
