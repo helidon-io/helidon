@@ -76,10 +76,10 @@ public class TyrusSupport implements Service {
     }
 
     TyrusSupport(
-			WebSocketEngine engine,
-			Set<Class<?>> endpointClasses,
-			Set<ServerEndpointConfig> endpointConfigs,
-			Set<Extension> extensions) {
+            WebSocketEngine engine,
+            Set<Class<?>> endpointClasses,
+            Set<ServerEndpointConfig> endpointConfigs,
+            Set<Extension> extensions) {
         this.engine = engine;
         this.endpointClasses = endpointClasses;
         this.endpointConfigs = endpointConfigs;

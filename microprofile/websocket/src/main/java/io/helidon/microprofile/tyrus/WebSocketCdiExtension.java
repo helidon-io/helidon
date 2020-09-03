@@ -122,8 +122,8 @@ public class WebSocketCdiExtension implements Extension {
             javax.websocket.Extension instance = cls.getConstructor().newInstance();
             appBuilder.extension(instance);
         } catch (NoSuchMethodException e) {
-			LOGGER.warning(() -> "Extension does not have no-args constructor for " +
-					extension.getAnnotatedType().getJavaClass() + "! Skppping.");
+            LOGGER.warning(() -> "Extension does not have no-args constructor for "
+                    + extension.getAnnotatedType().getJavaClass() + "! Skppping.");
         } catch (ReflectiveOperationException e) {
             throw new IllegalStateException("Unable to load WebSocket extension", e);
         }
