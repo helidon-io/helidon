@@ -488,7 +488,7 @@ public class MethodInvoker implements FtSupplier<Object> {
     /**
      * Creates a FT handler for an invocation by inspecting annotations.
      *
-     * - fallback(retry(bulkhead(circuitbreaker(timeout(method)))))
+     * - fallback(retry(circuitbreaker(bulkhead(timeout(method)))))
      *
      * @param methodState State related to this invocation's method.
      */
@@ -504,6 +504,16 @@ public class MethodInvoker implements FtSupplier<Object> {
             builder.addTimeout(timeout);
         }
 
+        // Create and add bulkhead
+        if (introspector.hasBulkhead()) {
+            methodState.bulkhead = Bulkhead.builder()
+                    .limit(introspector.getBulkhead().value())
+                    .queueLength(introspector.isAsynchronous() ? introspector.getBulkhead().waitingTaskQueue() : 0)
+                    .async(introspector.isAsynchronous())
+                    .build();
+            builder.addBulkhead(methodState.bulkhead);
+        }
+
         // Create and add circuit breaker
         if (introspector.hasCircuitBreaker()) {
             methodState.breaker = CircuitBreaker.builder()
@@ -517,17 +527,6 @@ public class MethodInvoker implements FtSupplier<Object> {
                     .build();
             builder.addBreaker(methodState.breaker);
         }
-
-        // Create and add bulkhead
-        if (introspector.hasBulkhead()) {
-            methodState.bulkhead = Bulkhead.builder()
-                    .limit(introspector.getBulkhead().value())
-                    .queueLength(introspector.isAsynchronous() ? introspector.getBulkhead().waitingTaskQueue() : 0)
-                    .async(introspector.isAsynchronous())
-                    .build();
-            builder.addBulkhead(methodState.bulkhead);
-        }
-
 
         // Create and add retry handler
         if (introspector.hasRetry()) {
