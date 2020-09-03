@@ -26,6 +26,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import javax.enterprise.inject.spi.CDI;
+import javax.enterprise.inject.spi.Unmanaged;
 import javax.ws.rs.core.Application;
 
 import io.helidon.microprofile.server.JaxRsApplication;
@@ -172,14 +173,11 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder {
     }
 
     private static Optional<? extends Application> instantiate(Class<? extends Application> appClass) {
-        try {
-            return Optional.of(appClass.getConstructor().newInstance());
-        } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
-            throw new RuntimeException(e);
-        } catch (NoSuchMethodException e) {
-            // Wrapper app does not have a no-args constructor so we canont instantiate it.
-            return Optional.empty();
-        }
+        Unmanaged<? extends Application> unmanagedApp = new Unmanaged<>(appClass);
+        Unmanaged.UnmanagedInstance<? extends Application> unmanagedInstance = unmanagedApp.newInstance();
+        Application app = unmanagedInstance.produce().inject().postConstruct().get();
+        unmanagedInstance.preDestroy().dispose();
+        return Optional.of(app);
     }
 
     /**
