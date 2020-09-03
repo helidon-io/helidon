@@ -24,9 +24,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
@@ -116,11 +114,6 @@ public class MethodInvoker implements FtSupplier<Object> {
      * be shared by all instances of this class.
      */
     private static final ConcurrentHashMap<MethodStateKey, MethodState> METHOD_STATES = new ConcurrentHashMap<>();
-
-    /**
-     * Executor service shared by instances of this class.
-     */
-    private static final ScheduledExecutorService EXECUTOR_SERVICE = Executors.newScheduledThreadPool(16);
 
     /**
      * Start system nanos when handler is called.
@@ -507,7 +500,6 @@ public class MethodInvoker implements FtSupplier<Object> {
             Timeout timeout = Timeout.builder()
                     .timeout(Duration.of(introspector.getTimeout().value(), introspector.getTimeout().unit()))
                     .currentThread(!introspector.isAsynchronous())
-                    .executor(EXECUTOR_SERVICE)
                     .build();
             builder.addTimeout(timeout);
         }
@@ -530,7 +522,7 @@ public class MethodInvoker implements FtSupplier<Object> {
         if (introspector.hasBulkhead()) {
             methodState.bulkhead = Bulkhead.builder()
                     .limit(introspector.getBulkhead().value())
-                    .queueLength(introspector.getBulkhead().waitingTaskQueue())
+                    .queueLength(introspector.isAsynchronous() ? introspector.getBulkhead().waitingTaskQueue() : 0)
                     .async(introspector.isAsynchronous())
                     .build();
             builder.addBulkhead(methodState.bulkhead);

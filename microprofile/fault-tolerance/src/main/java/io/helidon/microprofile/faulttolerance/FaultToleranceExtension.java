@@ -42,6 +42,10 @@ import javax.enterprise.inject.spi.ProcessSyntheticBean;
 import javax.enterprise.util.AnnotationLiteral;
 import javax.inject.Inject;
 
+import io.helidon.common.configurable.ScheduledThreadPoolSupplier;
+import io.helidon.common.configurable.ThreadPoolSupplier;
+import io.helidon.faulttolerance.FaultTolerance;
+
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
@@ -221,11 +225,11 @@ public class FaultToleranceExtension implements Extension {
     }
 
     /**
-     * Registers metrics for all FT methods.
+     * Registers metrics for all FT methods and init executors.
      *
      * @param validation Event information.
      */
-    void registerFaultToleranceMetrics(@Observes AfterDeploymentValidation validation) {
+    void registerMetricsAndInitExecutors(@Observes AfterDeploymentValidation validation) {
         if (FaultToleranceMetrics.enabled()) {
             getRegisteredMethods().stream().forEach(beanMethod -> {
                 final Method method = beanMethod.method();
@@ -260,6 +264,19 @@ public class FaultToleranceExtension implements Extension {
                 }
             });
         }
+
+        // Initialize executors for MP FT - default size of 16
+        io.helidon.config.Config config = io.helidon.config.Config.create();
+        FaultTolerance.scheduledExecutor(ScheduledThreadPoolSupplier.builder()
+                .threadNamePrefix("ft-mp-schedule-")
+                .corePoolSize(16)
+                .config(config.get("scheduled-executor"))
+                .build());
+        FaultTolerance.executor(ThreadPoolSupplier.builder()
+                .threadNamePrefix("ft-mp-")
+                .corePoolSize(16)
+                .config(config.get("executor"))
+                .build());
     }
 
     /**
