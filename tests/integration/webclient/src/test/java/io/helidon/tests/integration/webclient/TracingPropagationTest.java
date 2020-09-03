@@ -81,7 +81,7 @@ class TracingPropagationTest {
         assertThat(wsSpan.operationName(), is("HTTP Request"));
         tags = wsSpan.tags();
         assertThat(tags.get(Tags.HTTP_METHOD.getKey()), is("GET"));
-        assertThat(tags.get(Tags.HTTP_URL.getKey()), is(uri));
+        assertThat(tags.get(Tags.HTTP_URL.getKey()), is("/greet"));
         assertThat(tags.get(Tags.HTTP_STATUS.getKey()), is(200));
         assertThat(tags.get(Tags.COMPONENT.getKey()), is("helidon-webserver"));
 
