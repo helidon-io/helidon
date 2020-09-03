@@ -7,6 +7,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [2.0.3-SNAPSHOT]
+
+### Changes
+
 ## [2.0.2]
 
 2.0.2 is a bug fix release to Helidon 2.0. It contains bug fixes and minor enhancements.
