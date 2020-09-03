@@ -579,9 +579,11 @@ public class MethodInvoker implements FtSupplier<Object> {
                 // Wrap supplier with request context setup
                 FtSupplier wrappedSupplier = requestContextSupplier(supplier);
 
-                // Invoke supplier in a new thread
+                // Invoke supplier in new thread and propagate ccl for config
+                ClassLoader ccl = Thread.currentThread().getContextClassLoader();
                 Single<Object> single = Async.create().invoke(() -> {
                     try {
+                        Thread.currentThread().setContextClassLoader(ccl);
                         asyncInterruptThread = Thread.currentThread();
                         return wrappedSupplier.get();
                     } catch (Throwable t) {

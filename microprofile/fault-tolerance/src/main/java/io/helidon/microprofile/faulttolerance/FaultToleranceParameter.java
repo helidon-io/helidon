@@ -53,7 +53,8 @@ class FaultToleranceParameter {
      */
     private static String getProperty(String name) {
         try {
-            String value = ConfigProvider.getConfig().getValue(name, String.class);
+            ClassLoader ccl = Thread.currentThread().getContextClassLoader();
+            String value = ConfigProvider.getConfig(ccl).getValue(name, String.class);
             LOGGER.fine(() -> "Found config property '" + name + "' value '" + value + "'");
             return value;
         } catch (NoSuchElementException e) {
