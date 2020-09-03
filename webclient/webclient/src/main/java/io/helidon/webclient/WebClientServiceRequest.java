@@ -15,6 +15,8 @@
  */
 package io.helidon.webclient;
 
+import java.net.URI;
+import java.net.URL;
 import java.util.Map;
 
 import io.helidon.common.context.Context;
@@ -78,9 +80,44 @@ public interface WebClientServiceRequest extends HttpRequest {
     /**
      * Properties configured by user when creating this client request.
      *
-     * @return properties that were configured
+     * @return properties that were configured (mutable)
      * @see WebClientRequestBuilder#property(String, String)
      */
     Map<String, String> properties();
+
+    /**
+     * Set the new base uri of the request.
+     *
+     * @param uri new request baseuri
+     */
+    void uri(URI uri);
+
+    /**
+     * Set the new base url of the request.
+     *
+     * @param url new request base url
+     */
+    void uri(URL url);
+
+    /**
+     * Set the new base uri of the request.
+     *
+     * @param uri new request base uri
+     */
+    void uri(String uri);
+
+    /**
+     * Set the new path of the request.
+     *
+     * @param path new request path
+     */
+    void path(String path);
+
+    /**
+     * Set the new fragment of the request.
+     *
+     * @param fragment new request fragment
+     */
+    void fragment(String fragment);
 
 }

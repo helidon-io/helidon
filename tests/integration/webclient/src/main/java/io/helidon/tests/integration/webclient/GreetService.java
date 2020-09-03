@@ -83,6 +83,7 @@ public class GreetService implements Service {
                 .post("/form/content", this::formContent)
                 .get("/secure/basic", this::basicAuth)
                 .get("/secure/basic/outbound", this::basicAuthOutbound)
+                .get("/valuesPropagated", this::valuesPropagated)
                 .put("/greeting", this::updateGreetingHandler);
     }
 
@@ -104,6 +105,13 @@ public class GreetService implements Service {
                     return null;
                 });
 
+    }
+
+    private void valuesPropagated(ServerRequest serverRequest, ServerResponse serverResponse) {
+        String queryParam = serverRequest.queryParams().first("param").orElse("Query param not present");
+        String fragment = serverRequest.fragment();
+        serverResponse.status(Http.Status.OK_200);
+        serverResponse.send(queryParam + " " + fragment);
     }
 
     private void basicAuth(ServerRequest serverRequest, ServerResponse response) {

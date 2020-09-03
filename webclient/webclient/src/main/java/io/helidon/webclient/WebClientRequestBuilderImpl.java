@@ -458,6 +458,17 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         return uri.getQuery() == null ? "" : uri.getQuery();
     }
 
+    String queryFromParams() {
+        String queries = "";
+        for (Map.Entry<String, List<String>> entry : queryParams.toMap().entrySet()) {
+            for (String value : entry.getValue()) {
+                String query = entry.getKey() + "=" + value;
+                queries = queries.isEmpty() ? query : queries + "&" + query;
+            }
+        }
+        return queries;
+    }
+
     String fragment() {
         return fragment;
     }
@@ -493,9 +504,6 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     }
 
     private Single<WebClientResponse> invoke(Flow.Publisher<DataChunk> requestEntity) {
-        this.uri = prepareFinalURI();
-        //Relative URI is used in request if no proxy set
-        URI requestURI = proxy == Proxy.noProxy() ? prepareRelativeURI() : uri;
         if (requestId == null) {
             requestId = REQUEST_NUMBER.incrementAndGet();
         }
@@ -517,6 +525,9 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         }
 
         return Single.create(rcs.thenCompose(serviceRequest -> {
+            this.uri = prepareFinalURI();
+            //Relative URI is used in request if no proxy set
+            URI requestURI = proxy == Proxy.noProxy() ? prepareRelativeURI() : uri;
             requestId = serviceRequest.requestId();
             HttpHeaders headers = toNettyHttpHeaders();
             DefaultHttpRequest request = new DefaultHttpRequest(toNettyHttpVersion(httpVersion),
@@ -657,13 +668,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     }
 
     private String resolveQuery() {
-        String queries = "";
-        for (Map.Entry<String, List<String>> entry : queryParams.toMap().entrySet()) {
-            for (String value : entry.getValue()) {
-                String query = entry.getKey() + "=" + value;
-                queries = queries.isEmpty() ? query : queries + "&" + query;
-            }
-        }
+        String queries = queryFromParams();
         if (queries.isEmpty()) {
             queries = uri.getQuery();
         } else if (uri.getQuery() != null) {
@@ -676,7 +681,6 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
                     .map(s -> s.split("="))
                     .forEach(keyValue -> queryParam(keyValue[0], keyValue[1]));
         }
-
         return queries;
     }
 

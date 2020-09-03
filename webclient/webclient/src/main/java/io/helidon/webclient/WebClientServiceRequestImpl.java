@@ -16,7 +16,7 @@
 package io.helidon.webclient;
 
 import java.net.URI;
-import java.util.HashMap;
+import java.net.URL;
 import java.util.Map;
 
 import io.helidon.common.context.Context;
@@ -30,39 +30,26 @@ import io.helidon.common.reactive.Single;
 class WebClientServiceRequestImpl implements WebClientServiceRequest {
 
     private final WebClientRequestHeaders headers;
-    private final Context context;
     private final Http.RequestMethod method;
     private final Http.Version version;
-    private final URI uri;
-    private final String query;
-    private final Parameters queryParams;
-    private final Path path;
-    private final String fragment;
     private final Map<String, String> parameters;
     private final Single<WebClientServiceRequest> sent;
     private final Single<WebClientServiceResponse> responseReceived;
     private final Single<WebClientServiceResponse> complete;
-
-    private long requestId;
+    private final WebClientRequestBuilderImpl requestBuilder;
 
     WebClientServiceRequestImpl(WebClientRequestBuilderImpl requestBuilder,
                                 Single<WebClientServiceRequest> sent,
                                 Single<WebClientServiceResponse> responseReceived,
                                 Single<WebClientServiceResponse> complete) {
         this.headers = requestBuilder.headers();
-        this.context = requestBuilder.context();
         this.method = requestBuilder.method();
         this.version = requestBuilder.httpVersion();
-        this.uri = requestBuilder.uri();
-        this.query = requestBuilder.query();
         this.responseReceived = responseReceived;
-        this.queryParams = queryParams();
-        this.path = requestBuilder.path();
-        this.fragment = requestBuilder.fragment();
-        this.parameters = new HashMap<>(requestBuilder.properties());
-        this.requestId = requestBuilder.requestId();
+        this.parameters = requestBuilder.properties();
         this.sent = sent;
         this.complete = complete;
+        this.requestBuilder = requestBuilder;
     }
 
     @Override
@@ -72,17 +59,17 @@ class WebClientServiceRequestImpl implements WebClientServiceRequest {
 
     @Override
     public Context context() {
-        return context;
+        return requestBuilder.context();
     }
 
     @Override
     public long requestId() {
-        return requestId;
+        return requestBuilder.requestId();
     }
 
     @Override
     public void requestId(long requestId) {
-        this.requestId = requestId;
+        requestBuilder.requestId(requestId);
     }
 
     @Override
@@ -106,6 +93,31 @@ class WebClientServiceRequestImpl implements WebClientServiceRequest {
     }
 
     @Override
+    public void uri(URI uri) {
+        requestBuilder.uri(uri);
+    }
+
+    @Override
+    public void uri(URL url) {
+        requestBuilder.uri(url);
+    }
+
+    @Override
+    public void uri(String uri) {
+        requestBuilder.uri(uri);
+    }
+
+    @Override
+    public void path(String path) {
+        requestBuilder.path(path);
+    }
+
+    @Override
+    public void fragment(String fragment) {
+        requestBuilder.fragment(fragment);
+    }
+
+    @Override
     public Http.RequestMethod method() {
         return method;
     }
@@ -117,26 +129,26 @@ class WebClientServiceRequestImpl implements WebClientServiceRequest {
 
     @Override
     public URI uri() {
-        return uri;
+        return requestBuilder.uri();
     }
 
     @Override
     public String query() {
-        return query;
+        return requestBuilder.queryFromParams();
     }
 
     @Override
     public Parameters queryParams() {
-        return queryParams;
+        return requestBuilder.queryParams();
     }
 
     @Override
     public Path path() {
-        return path;
+        return requestBuilder.path();
     }
 
     @Override
     public String fragment() {
-        return fragment;
+        return requestBuilder.fragment();
     }
 }
