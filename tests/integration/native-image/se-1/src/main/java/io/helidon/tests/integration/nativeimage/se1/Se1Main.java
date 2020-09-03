@@ -32,8 +32,11 @@ import io.helidon.tracing.TracerBuilder;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.StaticContentSupport;
 import io.helidon.webserver.WebServer;
+import io.helidon.webserver.tyrus.TyrusSupport;
 
 import org.eclipse.microprofile.health.HealthCheckResponse;
+
+import javax.websocket.server.ServerEndpointConfig;
 
 import static io.helidon.config.ConfigSources.classpath;
 import static io.helidon.config.ConfigSources.file;
@@ -42,7 +45,6 @@ import static io.helidon.config.ConfigSources.file;
  * Main class of this integration test.
  */
 public final class Se1Main {
-
     /**
      * Cannot be instantiated.
      */
@@ -143,6 +145,12 @@ public final class Se1Main {
                 .register("/greet", greetService)
                 .register("/wc", webClientService)
                 .register("/zipkin", zipkinService)
+                .register("/ws",
+                        TyrusSupport.builder().register(
+                                ServerEndpointConfig.Builder.create(
+                                        WebSocketEndpoint.class, "/messages")
+                                        .build())
+                                .build())
                 .build();
     }
 

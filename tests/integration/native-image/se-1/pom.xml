@@ -35,6 +35,7 @@
             JSON-P
             Classpath static content
             File static content
+            Tyrus(web sockets)
         Config (with change support)
             File watch
             Classpath
@@ -63,6 +64,10 @@
         <dependency>
             <groupId>io.helidon.webserver</groupId>
             <artifactId>helidon-webserver</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-tyrus</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.media</groupId>
