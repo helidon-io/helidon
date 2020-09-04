@@ -5241,7 +5241,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-jackson-databind 2.10.0 FasterXML, LLC
+jackson-databind 2.11.1 FasterXML, LLC
 Apache 2.0
 Used by: [helidon-media-jackson, helidon-security-providers-google-login]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -5260,7 +5260,7 @@ It is currently developed by a community of developers, as well as supported
 commercially by FasterXML.com.
 
 ## Licensing
------------------jackson-core 2.9.9 -----------------------
+-----------------jackson-core -----------------------
 COPYRIGHT: Copyright (c) 2007- Tatu Saloranta, tatu.saloranta@iki.fi
 LICENSE: Apache 2.0
 License Identifier: Apache-2.0
@@ -5274,7 +5274,7 @@ FasterXML.com (http://fasterxml.com).
 A list of contributors may be found from CREDITS file, which is included
 in some artifacts (usually source distributions); but is always available
 from the source code management (SCM) system project uses.
------------------jackson-annotations 2.9.9 -----------------------
+-----------------jackson-annotations  -----------------------
 COPYRIGHT: Copyright (c) 2007- Tatu Saloranta, tatu.saloranta@iki.fi
 LICENSE: Apache 2.0
 License Identifier: Apache-2.0
