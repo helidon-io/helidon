@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -41,6 +42,7 @@ import javax.enterprise.inject.spi.ProcessAnnotatedType;
 
 import io.helidon.config.Config;
 import io.helidon.microprofile.cdi.RuntimeStart;
+import io.helidon.microprofile.server.JaxRsApplication;
 import io.helidon.microprofile.server.RoutingBuilders;
 import io.helidon.openapi.OpenAPISupport;
 
@@ -175,9 +177,10 @@ public class OpenApiCdiExtension implements Extension {
          * Some apps might be added dynamically, not via annotation processing. Add those classes to the index if they are not
          * already present.
          */
-        MPOpenAPIBuilder.appInstancesToRun().stream()
-                .filter(c -> !annotatedTypes.contains(c))
-                .forEach(app -> addClassToIndexer(indexer, app.getClass()));
+        MPOpenAPIBuilder.jaxRsApplicationsToRun().stream()
+                .map(JaxRsApplication::applicationClass)
+                .filter(Optional::isPresent)
+                .forEach(appClassOpt -> addClassToIndexer(indexer, appClassOpt.get()));
 
         LOGGER.log(Level.CONFIG, "Using internal Jandex index created from CDI bean discovery");
         Index result = indexer.complete();
