@@ -16,10 +16,10 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Helidon SE Migration Guide
+= Helidon SE Upgrade Guide
 :h1Prefix: SE
-:description: Helidon Migration Guide
-:keywords: helidon, porting, migration, incompatibilities
+:description: Helidon Upgrade Guide
+:keywords: helidon, porting, migration, upgrade, incompatibilities
 :helidon-uc-flavor: SE
 :helidon-lc-flavor: se
 
