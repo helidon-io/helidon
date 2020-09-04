@@ -64,7 +64,7 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
 
     private static final Logger LOGGER = Logger.getLogger(JmsConnector.class.getName());
     /**
-     * Microprofile messaging Kafka connector name.
+     * Microprofile messaging JMS connector name.
      */
     static final String CONNECTOR_NAME = "helidon-jms";
     private final Instance<ConnectionFactory> connectionFactories;
@@ -75,7 +75,7 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
      * Create new JmsConnector.
      *
      * @param connectionFactories pre-prepared connection factories, jndi config takes precedence
-     * @param config              channel related config
+     * @param config              root config for thread context
      */
     @Inject
     public JmsConnector(Instance<ConnectionFactory> connectionFactories, io.helidon.config.Config config) {
@@ -116,6 +116,10 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
         stop();
     }
 
+    protected Message<?> createMessage(javax.jms.Message message, SessionMetadata sessionMetadata){
+        return JmsMessage.of(message, sessionMetadata);
+    }
+
     @Override
     public PublisherBuilder<? extends Message<?>> getPublisherBuilder(final Config config) {
         ConnectionFactoryLocator factoryLocator = ConnectionFactoryLocator.create(config, connectionFactories);
@@ -138,7 +142,7 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
                                 return;
                             }
                             LOGGER.fine(() -> "Received message: " + message.toString());
-                            emittingPublisher.emit(JmsMessage.of(message, sessionEntry));
+                            emittingPublisher.emit(createMessage(message, sessionEntry));
                         } catch (Throwable e) {
                             emittingPublisher.fail(e);
                         }
