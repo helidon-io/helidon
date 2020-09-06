@@ -527,6 +527,9 @@ public class SchemaGenerator {
                         }
                         a.setArgumentType(inputType.getName());
                     }
+
+                    // in either case, get the argument format
+                    
                 }
                 if (fd != null) {
                     fd.addArgument(a);
@@ -536,24 +539,26 @@ public class SchemaGenerator {
             if (fd != null) {
                 DataFetcher dataFetcher = null;
                 String[] format = discoveredMethod.getFormat();
+                SchemaScalar dateScalar = getScalar(discoveredMethod.getReturnType());
 
                 // if the type is a Date/Time/DateTime scalar and there is currently no format,
                 // then use the default format if there is one
-                if (format != null && format.length != 3 && isDateTimeScalar(discoveredMethod.getReturnType())) {
-                    String[] newFormat = ensureFormat(discoveredMethod.getReturnType(),
-                                                      fd.getOriginalType().getName(), new String[0]);
+                if ((dateScalar != null && isDateTimeScalar(dateScalar.getName()) && isFormatEmpty(format))) {
+                    Class<?> originalType = fd.isArrayReturnType() ? fd.getOriginalArrayType() : fd.getOriginalType();
+                    String[] newFormat = ensureFormat(dateScalar.getName(),
+                                                      originalType.getName(), new String[2]);
                     if (newFormat.length == 2) {
                         format = new String[] {DATE, newFormat[0], newFormat[1] };
                     }
                 }
-                if (format != null && format.length == 3) {
+                if (!isFormatEmpty(format)) {
                     // a format exists on the method return type so format it after returning the value
                     final String graphQLType = getGraphQLType(fd.getReturnType());
                     final DataFetcher methodDataFetcher = DataFetcherUtils.newMethodDataFetcher(clazz, method, null,
                                                                                                 fd.getArguments().toArray(
                                                                                                         new SchemaArgument[0]));
                     final String[] newFormat = new String[] {format[0], format[1], format[2] };
-                    SchemaScalar dateScalar = getScalar(discoveredMethod.getReturnType());
+
                     if (dateScalar != null && isDateTimeScalar(dateScalar.getName())) {
                         dataFetcher = DataFetcherFactories.wrapDataFetcher(methodDataFetcher,
                            (e, v) -> {
@@ -594,6 +599,24 @@ public class SchemaGenerator {
                 }
             }
         }
+    }
+
+    /**
+     * Returns true if the format is empty or undefined.
+     * @param format format to check
+     * @return true if the format is empty or undefined
+     */
+    protected static boolean isFormatEmpty(String[] format) {
+        if (format == null || format.length == 0) {
+            return true;
+        }
+        // now check that each value is not null
+        for (String entry : format) {
+            if (entry == null) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -726,7 +749,7 @@ public class SchemaGenerator {
         // check for format on the property
         // note: currently the format will be an array of [3] as defined by FormattingHelper.getFormattingAnnotation
         String[] format = discoveredMethod.getFormat();
-        if (propertyName != null && format != null && format.length == 3 && format[0] != null) {
+        if (propertyName != null && !isFormatEmpty(format)) {
             if (!isGraphQLType(valueClassName)) {
                 dataFetcher = retrieveFormattingDataFetcher(format, propertyName, graphQLType);
                 context.addFormatter(discoveredMethod.method, propertyName, (FormattingProvider) dataFetcher);

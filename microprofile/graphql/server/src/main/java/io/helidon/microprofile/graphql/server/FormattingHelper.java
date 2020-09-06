@@ -428,17 +428,10 @@ public class FormattingHelper {
         if (originalResult instanceof Collection) {
             Collection formattedResult = new ArrayList();
             Collection originalCollection = (Collection) originalResult;
-            originalCollection.forEach(e -> {
-                if (isScalar) {
-                    formattedResult.add(new FormattedNumberImpl(numberFormat, numberFormat.format(originalResult)));
-                } else {
-                    formattedResult.add(numberFormat.format(originalResult));
-                }
-            });
+            originalCollection.forEach(e -> formattedResult.add(numberFormat.format(originalResult)));
             return formattedResult;
         }
-        return isScalar ? new FormattedNumberImpl(numberFormat, numberFormat.format(originalResult))
-                :  numberFormat.format(originalResult);
+        return numberFormat.format(originalResult);
     }
 
 }

@@ -155,9 +155,10 @@ public class JandexUtils {
                 MethodInfo methodInfo = classByName.firstMethod(methodName);
                 if (methodInfo != null) {
                     ClassType classType = retrieveInnerMostType(methodInfo.parameters().get(paramNumber));
-                     return classType.annotations().stream()
-                            .filter(a -> a.name().equals(DotName.createSimple(annotationClazz)))
-                            .findFirst().orElse(null);
+                    return classType == null ? null
+                            : classType.annotations().stream()
+                                    .filter(a -> a.name().equals(DotName.createSimple(annotationClazz)))
+                                    .findFirst().orElse(null);
                 }
             }
         }
@@ -191,11 +192,10 @@ public class JandexUtils {
                 FieldInfo field = classByName.field(fieldName);
                 if (field != null) {
                     ClassType classType = retrieveInnerMostType(field.type());
-                    if (classType != null) {
-                        return classType.annotations().stream()
+                    return classType == null ? null
+                            : classType.annotations().stream()
                                 .filter(a -> a.name().equals(DotName.createSimple(annotationClazz)))
                                 .findFirst().orElse(null);
-                    }
                 }
             }
         }

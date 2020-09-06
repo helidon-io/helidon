@@ -44,6 +44,7 @@ import static io.helidon.microprofile.graphql.server.FormattingHelper.formatDate
 import static io.helidon.microprofile.graphql.server.FormattingHelper.formatNumber;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.getCorrectDateFormatter;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.getCorrectNumberFormat;
+import static io.helidon.microprofile.graphql.server.SchemaGenerator.isFormatEmpty;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ID;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ensureRuntimeException;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.isDateTimeScalar;
@@ -112,7 +113,7 @@ public class DataFetcherUtils {
                         } else {
                             // check the format and convert it from a string to the original format
                             String[] format = argument.getFormat();
-                            if (format != null && format.length == 2) {
+                            if (!isFormatEmpty(format)) {
                                 // TODO: This always returns false, need to fix
                                 if (isDateTimeScalar(argument.getArgumentType())) {
                                     DateTimeFormatter dateFormatter = getCorrectDateFormatter(originalType.getName(),

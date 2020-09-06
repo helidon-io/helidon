@@ -38,7 +38,6 @@ import java.util.logging.Logger;
 import javax.json.bind.annotation.JsonbProperty;
 import javax.json.bind.annotation.JsonbTransient;
 
-import graphql.Scalars;
 import graphql.scalars.ExtendedScalars;
 import org.eclipse.microprofile.graphql.DefaultValue;
 import org.eclipse.microprofile.graphql.Description;

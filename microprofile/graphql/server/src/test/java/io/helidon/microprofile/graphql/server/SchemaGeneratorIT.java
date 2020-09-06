@@ -29,7 +29,7 @@ import java.util.UUID;
 
 import io.helidon.microprofile.graphql.server.test.queries.DuplicateNameQueries;
 import io.helidon.microprofile.graphql.server.test.queries.PropertyNameQueries;
-import io.helidon.microprofile.graphql.server.test.queries.SimpleQueryDateTest;
+
 import io.helidon.microprofile.graphql.server.test.types.InvalidNamedTypes;
 import io.helidon.microprofile.graphql.server.test.types.TypeWithNameAndJsonbProperty;
 
@@ -74,7 +74,7 @@ import io.helidon.microprofile.graphql.server.test.types.Vehicle;
 import io.helidon.microprofile.graphql.server.test.types.VehicleIncident;
 
 import org.eclipse.microprofile.graphql.NonNull;
-import org.junit.jupiter.api.Disabled;
+
 import org.junit.jupiter.api.Test;
 import org.opentest4j.AssertionFailedError;
 
@@ -344,22 +344,6 @@ public class SchemaGeneratorIT
     }
 
     @Test
-    public void interimTest() throws IOException {
-       setupIndex(indexFileName, SimpleQueryDateTest.class);
-        ExecutionContext executionContext =  new ExecutionContext(defaultContext);
-
-        Schema schema = executionContext.getSchema();
-
-        Map<String, Object> mapResults = getAndAssertResult(
-                executionContext.execute("query { localDateListFormat }"));
-        assertThat(mapResults, is(notNullValue()));
-        List<String>  listDates = (ArrayList<String>) mapResults.get("localDateListFormat");
-        assertThat(listDates.size(),is(2));
-        assertThat(listDates.get(0), is("17/02/1968"));
-        assertThat(listDates.get(1), is("04/08/1970"));
-    }
-
-    @Test
     public void testDateAndTime() throws IOException {
         setupIndex(indexFileName, DateTimePojo.class, SimpleQueriesNoArgs.class);
         ExecutionContext executionContext =  new ExecutionContext(defaultContext);
@@ -449,7 +433,7 @@ public class SchemaGeneratorIT
         assertReturnTypeMandatory(type, "testInputOnly", false);
         assertArrayReturnTypeMandatory(type, "testInputOnly", false);
         assertReturnTypeMandatory(type, "testOutputOnly", false);
-        assertArrayReturnTypeMandatory(type, "testOutputOnly", false);
+        assertArrayReturnTypeMandatory(type, "testOutputOnly", true);
 
         SchemaType query = schema.getTypeByName("Query");
         assertReturnTypeMandatory(query, "method1NotNull", true);
@@ -840,7 +824,7 @@ public class SchemaGeneratorIT
     @SuppressWarnings("unchecked")
     public void testSimpleQueryGenerationWithArgs() throws IOException {
         setupIndex(indexFileName, SimpleQueriesWithArgs.class, Car.class, AbstractVehicle.class);
-        ExecutionContext executionContext =  new ExecutionContext(defaultContext);
+        ExecutionContext executionContext = new ExecutionContext(defaultContext);
 
         Map<String, Object> mapResults = getAndAssertResult(executionContext.execute("query { hero(heroType: \"human\") }"));
         assertThat(mapResults.size(), is(1));
