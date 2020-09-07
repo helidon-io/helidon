@@ -48,7 +48,7 @@ public class Proxy {
     /**
      * No proxy instance.
      */
-    private static final Proxy NO_PROXY = builder().build();
+    private static final Proxy NO_PROXY = new Proxy(builder().type(ProxyType.NONE));
 
     private static final Pattern PORT_PATTERN = Pattern.compile(".*:(\\d+)");
     private static final Pattern IP_V4 = Pattern.compile("^(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)(\\."

@@ -111,7 +111,6 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     private final Http.RequestMethod method;
     private final WebClientRequestHeaders headers;
     private final Parameters queryParams;
-    private final AtomicBoolean handled;
     private final MessageBodyReaderContext readerContext;
     private final MessageBodyWriterContext writerContext;
 
@@ -154,7 +153,6 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         configuration.context().ifPresentOrElse(contextBuilder::parent,
                                                 () -> Contexts.context().ifPresent(contextBuilder::parent));
         this.context = contextBuilder.build();
-        this.handled = new AtomicBoolean();
         this.followRedirects = configuration.followRedirects();
         this.readTimeout = configuration.readTimout();
         this.connectTimeout = configuration.connectTimeout();
@@ -458,6 +456,17 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         return uri.getQuery() == null ? "" : uri.getQuery();
     }
 
+    String queryFromParams() {
+        String queries = "";
+        for (Map.Entry<String, List<String>> entry : queryParams.toMap().entrySet()) {
+            for (String value : entry.getValue()) {
+                String query = entry.getKey() + "=" + value;
+                queries = queries.isEmpty() ? query : queries + "&" + query;
+            }
+        }
+        return queries;
+    }
+
     String fragment() {
         return fragment;
     }
@@ -494,8 +503,6 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
 
     private Single<WebClientResponse> invoke(Flow.Publisher<DataChunk> requestEntity) {
         this.uri = prepareFinalURI();
-        //Relative URI is used in request if no proxy set
-        URI requestURI = proxy == Proxy.noProxy() ? prepareRelativeURI() : uri;
         if (requestId == null) {
             requestId = REQUEST_NUMBER.incrementAndGet();
         }
@@ -513,10 +520,17 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         CompletionStage<WebClientServiceRequest> rcs = CompletableFuture.completedFuture(completedRequest);
 
         for (WebClientService service : services) {
-            rcs = rcs.thenCompose(service::request);
+            rcs = rcs.thenCompose(service::request)
+                    .thenApply(servReq -> {
+                        this.uri = recreateURI(servReq);
+                        return servReq;
+                    });
         }
 
         return Single.create(rcs.thenCompose(serviceRequest -> {
+            this.uri = recreateURI(serviceRequest);
+            //Relative URI is used in request if no proxy set
+            URI requestURI = proxy == Proxy.noProxy() ? prepareRelativeURI() : uri;
             requestId = serviceRequest.requestId();
             HttpHeaders headers = toNettyHttpHeaders();
             DefaultHttpRequest request = new DefaultHttpRequest(toNettyHttpVersion(httpVersion),
@@ -589,48 +603,60 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         return response.content();
     }
 
-    private URI prepareFinalURI() {
-        if (handled.compareAndSet(false, true)) {
-            if (uri == null) {
-                throw new WebClientException("There is no specified uri for the request.");
-            } else if (uri.getHost() == null) {
-                throw new WebClientException("Invalid uri " + uri + ". Uri.getHost() returned null.");
-            }
-            String scheme = Optional.ofNullable(uri.getScheme())
-                    .orElseThrow(() -> new WebClientException("Transport protocol has be to be specified in uri: "
-                                                                      + uri.toString()));
-            if (!DEFAULT_SUPPORTED_PROTOCOLS.containsKey(scheme)) {
-                throw new WebClientException(scheme + " transport protocol is not supported!");
-            }
-            int port = uri.getPort() > -1 ? uri.getPort() : DEFAULT_SUPPORTED_PROTOCOLS.getOrDefault(scheme, -1);
-            if (port == -1) {
-                throw new WebClientException("Client could not get port for schema " + scheme + ". "
-                                                     + "Please specify correct port to use.");
-            }
-            String path = resolvePath();
-            this.path = ClientPath.create(null, path, new HashMap<>());
-            //We need null values for query and fragment if we dont want to have trailing ?# chars
-            String query = resolveQuery();
-            fragment = fragment == null ? uri.getFragment() : fragment;
-            try {
-                if (skipUriEncoding) {
-                    StringBuilder sb = new StringBuilder();
-                    sb.append(scheme).append("://").append(uri.getHost()).append(":").append(port).append(path);
-                    if (query != null) {
-                        sb.append('?');
-                        sb.append(query);
-                    } else if (fragment != null) {
-                        sb.append('#');
-                        sb.append(fragment);
-                    }
-                    return URI.create(sb.toString());
-                }
-                return new URI(scheme, null, uri.getHost(), port, path, query, fragment);
-            } catch (URISyntaxException e) {
-                throw new WebClientException("Could not create URI instance for the request.", e);
-            }
+    private URI recreateURI(WebClientServiceRequest request) {
+        try {
+            this.uri = new URI(request.schema(),
+                               null,
+                               request.host(),
+                               request.port(),
+                               null,
+                               null,
+                               null);
+        } catch (URISyntaxException e) {
+            throw new WebClientException("Could not create URI!", e);
         }
-        return this.uri;
+        return prepareFinalURI();
+    }
+
+    private URI prepareFinalURI() {
+        if (uri == null) {
+            throw new WebClientException("There is no specified uri for the request.");
+        } else if (uri.getHost() == null) {
+            throw new WebClientException("Invalid uri " + uri + ". Uri.getHost() returned null.");
+        }
+        String scheme = Optional.ofNullable(uri.getScheme())
+                .orElseThrow(() -> new WebClientException("Transport protocol has be to be specified in uri: "
+                                                                  + uri.toString()));
+        if (!DEFAULT_SUPPORTED_PROTOCOLS.containsKey(scheme)) {
+            throw new WebClientException(scheme + " transport protocol is not supported!");
+        }
+        int port = uri.getPort() > -1 ? uri.getPort() : DEFAULT_SUPPORTED_PROTOCOLS.getOrDefault(scheme, -1);
+        if (port == -1) {
+            throw new WebClientException("Client could not get port for schema " + scheme + ". "
+                                                 + "Please specify correct port to use.");
+        }
+        String path = resolvePath();
+        this.path = ClientPath.create(null, path, new HashMap<>());
+        //We need null values for query and fragment if we dont want to have trailing ?# chars
+        String query = resolveQuery();
+        fragment = fragment == null ? uri.getFragment() : fragment;
+        try {
+            if (skipUriEncoding) {
+                StringBuilder sb = new StringBuilder();
+                sb.append(scheme).append("://").append(uri.getHost()).append(":").append(port).append(path);
+                if (query != null) {
+                    sb.append('?');
+                    sb.append(query);
+                } else if (fragment != null) {
+                    sb.append('#');
+                    sb.append(fragment);
+                }
+                return URI.create(sb.toString());
+            }
+            return new URI(scheme, null, uri.getHost(), port, path, query, fragment);
+        } catch (URISyntaxException e) {
+            throw new WebClientException("Could not create URI instance for the request.", e);
+        }
     }
 
     private URI prepareRelativeURI() {
@@ -657,13 +683,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     }
 
     private String resolveQuery() {
-        String queries = "";
-        for (Map.Entry<String, List<String>> entry : queryParams.toMap().entrySet()) {
-            for (String value : entry.getValue()) {
-                String query = entry.getKey() + "=" + value;
-                queries = queries.isEmpty() ? query : queries + "&" + query;
-            }
-        }
+        String queries = queryFromParams();
         if (queries.isEmpty()) {
             queries = uri.getQuery();
         } else if (uri.getQuery() != null) {
@@ -676,7 +696,6 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
                     .map(s -> s.split("="))
                     .forEach(keyValue -> queryParam(keyValue[0], keyValue[1]));
         }
-
         return queries;
     }
 
