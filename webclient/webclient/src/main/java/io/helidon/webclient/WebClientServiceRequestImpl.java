@@ -16,7 +16,6 @@
 package io.helidon.webclient;
 
 import java.net.URI;
-import java.net.URL;
 import java.util.Map;
 
 import io.helidon.common.context.Context;
@@ -37,6 +36,9 @@ class WebClientServiceRequestImpl implements WebClientServiceRequest {
     private final Single<WebClientServiceResponse> responseReceived;
     private final Single<WebClientServiceResponse> complete;
     private final WebClientRequestBuilderImpl requestBuilder;
+    private String schema;
+    private String host;
+    private int port;
 
     WebClientServiceRequestImpl(WebClientRequestBuilderImpl requestBuilder,
                                 Single<WebClientServiceRequest> sent,
@@ -50,6 +52,10 @@ class WebClientServiceRequestImpl implements WebClientServiceRequest {
         this.sent = sent;
         this.complete = complete;
         this.requestBuilder = requestBuilder;
+        URI uri = requestBuilder.uri();
+        this.schema = uri.getScheme();
+        this.host = uri.getHost();
+        this.port = uri.getPort();
     }
 
     @Override
@@ -93,18 +99,18 @@ class WebClientServiceRequestImpl implements WebClientServiceRequest {
     }
 
     @Override
-    public void uri(URI uri) {
-        requestBuilder.uri(uri);
+    public void schema(String schema) {
+        this.schema = schema;
     }
 
     @Override
-    public void uri(URL url) {
-        requestBuilder.uri(url);
+    public void host(String host) {
+        this.host = host;
     }
 
     @Override
-    public void uri(String uri) {
-        requestBuilder.uri(uri);
+    public void port(int port) {
+        this.port = port;
     }
 
     @Override
@@ -151,4 +157,20 @@ class WebClientServiceRequestImpl implements WebClientServiceRequest {
     public String fragment() {
         return requestBuilder.fragment();
     }
+
+    @Override
+    public String host() {
+        return this.host;
+    }
+
+    @Override
+    public String schema() {
+        return this.schema;
+    }
+
+    @Override
+    public int port() {
+        return this.port;
+    }
+
 }

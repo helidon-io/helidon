@@ -15,6 +15,8 @@
  */
 package io.helidon.tests.integration.webclient;
 
+import java.util.concurrent.CompletionException;
+
 import io.helidon.common.reactive.Single;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientServiceRequest;
@@ -24,6 +26,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests propagation of the request parts defined in WebClientService.
@@ -45,14 +48,39 @@ public class WebclientServiceValuePropagationTest extends TestParent {
         assertThat(response, is("Hi Test"));
     }
 
+    @Test
+    public void testInvalidSchema() {
+        WebClient webClient = WebClient.builder()
+                .baseUri("http://localhost:80")
+                .addService(new InvalidSchemaService())
+                .build();
+
+        CompletionException exception = assertThrows(CompletionException.class,
+                                                     () -> webClient.get().request(String.class).await());
+
+        assertThat(exception.getCause().getMessage(), is("invalid transport protocol is not supported!"));
+
+    }
+
     private static final class UriChangingService implements WebClientService {
 
         @Override
         public Single<WebClientServiceRequest> request(WebClientServiceRequest request) {
-            request.uri("http://localhost:" + webServer.port() + "/greet");
-            request.path("valuesPropagated");
+            request.schema("http");
+            request.host("localhost");
+            request.port(webServer.port());
+            request.path("/greet/valuesPropagated");
             request.queryParams().add("param", "Hi");
             request.fragment("Test");
+            return Single.just(request);
+        }
+    }
+
+    private static final class InvalidSchemaService implements WebClientService {
+
+        @Override
+        public Single<WebClientServiceRequest> request(WebClientServiceRequest request) {
+            request.schema("invalid");
             return Single.just(request);
         }
     }

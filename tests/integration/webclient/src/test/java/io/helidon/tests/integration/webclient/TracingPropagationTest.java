@@ -60,6 +60,8 @@ class TracingPropagationTest {
                 .build();
 
         client.get()
+                .queryParam("some", "value")
+                .fragment("fragment")
                 .request()
                 .thenCompose(WebClientResponse::close)
                 .toCompletableFuture()
@@ -81,7 +83,7 @@ class TracingPropagationTest {
         assertThat(wsSpan.operationName(), is("HTTP Request"));
         tags = wsSpan.tags();
         assertThat(tags.get(Tags.HTTP_METHOD.getKey()), is("GET"));
-        assertThat(tags.get(Tags.HTTP_URL.getKey()), is("/greet"));
+        assertThat(tags.get(Tags.HTTP_URL.getKey()), is("/greet?some=value#fragment"));
         assertThat(tags.get(Tags.HTTP_STATUS.getKey()), is(200));
         assertThat(tags.get(Tags.COMPONENT.getKey()), is("helidon-webserver"));
 

@@ -15,8 +15,6 @@
  */
 package io.helidon.webclient;
 
-import java.net.URI;
-import java.net.URL;
 import java.util.Map;
 
 import io.helidon.common.context.Context;
@@ -86,25 +84,55 @@ public interface WebClientServiceRequest extends HttpRequest {
     Map<String, String> properties();
 
     /**
-     * Set the new base uri of the request.
+     * Schema of the request uri.
      *
-     * @param uri new request baseuri
+     * This will not match schema returned by {@link WebClientServiceRequest#uri()}
+     * if changed by {@link WebClientServiceRequest#schema(String schema)}
+     *
+     * @return schema of the request
      */
-    void uri(URI uri);
+    String schema();
 
     /**
-     * Set the new base url of the request.
+     * Set new schema of the request.
      *
-     * @param url new request base url
+     * @param schema new request schema
      */
-    void uri(URL url);
+    void schema(String schema);
 
     /**
-     * Set the new base uri of the request.
+     * Host of the request uri.
      *
-     * @param uri new request base uri
+     * This will not match host returned by {@link WebClientServiceRequest#uri()}
+     * if changed by {@link WebClientServiceRequest#host(String host)}
+     *
+     * @return host of the request
      */
-    void uri(String uri);
+    String host();
+
+    /**
+     * Set new host of the request.
+     *
+     * @param host new request host
+     */
+    void host(String host);
+
+    /**
+     * Port of the request uri.
+     *
+     * This will not match port returned by {@link WebClientServiceRequest#uri()}
+     * if changed by {@link WebClientServiceRequest#port(int port)}
+     *
+     * @return port of the request
+     */
+    int port();
+
+    /**
+     * Set new port of the request.
+     *
+     * @param port new request port
+     */
+    void port(int port);
 
     /**
      * Set the new path of the request.
