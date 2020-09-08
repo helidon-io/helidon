@@ -62,7 +62,7 @@ final class SingleTimeout<T> extends CompletionSingle<T> {
         source.subscribe(parent);
     }
 
-    static final class TimeoutSubscriber<T> extends DeferredScalarSubscription<T>
+    final class TimeoutSubscriber<T> extends DeferredScalarSubscription<T>
     implements Flow.Subscriber<T>, Callable<Void> {
 
         private final Single<T> fallback;
@@ -128,6 +128,7 @@ final class SingleTimeout<T> extends CompletionSingle<T> {
             if (once.compareAndSet(false, true)) {
                 future.lazySet(TerminatedFuture.FINISHED);
                 SubscriptionHelper.cancel(upstream);
+                source.cancel();
                 if (fallback == null) {
                     error(new TimeoutException());
                 } else {
@@ -141,7 +142,7 @@ final class SingleTimeout<T> extends CompletionSingle<T> {
             TerminatedFuture.setFuture(future, f);
         }
 
-        static final class FallbackSubscriber<T>
+        final class FallbackSubscriber<T>
         extends AtomicReference<Flow.Subscription>
         implements Flow.Subscriber<T> {
 
