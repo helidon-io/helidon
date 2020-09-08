@@ -66,7 +66,7 @@ public interface WebClientResponse {
     URI lastEndpointURI();
 
     /**
-     * Asynchronous close of the response.
+     * Asynchronous close of the response. Needs to be called if entity is not automatically handled.
      *
      * @return single of the closing process
      */

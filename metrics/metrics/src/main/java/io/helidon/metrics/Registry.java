@@ -46,6 +46,7 @@ import org.eclipse.microprofile.metrics.MetricFilter;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
+import org.eclipse.microprofile.metrics.SimpleTimer;
 import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
 
@@ -196,6 +197,26 @@ public class Registry extends MetricRegistry {
         return getOrRegisterMetric(metadata, HelidonConcurrentGauge::create, HelidonConcurrentGauge.class, tags);
     }
 
+    @Override
+    public SimpleTimer simpleTimer(String name) {
+        return simpleTimer(name, NO_TAGS);
+    }
+
+    @Override
+    public SimpleTimer simpleTimer(Metadata metadata) {
+        return simpleTimer(metadata, NO_TAGS);
+    }
+
+    @Override
+    public SimpleTimer simpleTimer(String name, Tag... tags) {
+        return getOrRegisterMetric(name, HelidonSimpleTimer::create, HelidonSimpleTimer.class, tags);
+    }
+
+    @Override
+    public SimpleTimer simpleTimer(Metadata metadata, Tag... tags) {
+        return getOrRegisterMetric(metadata, HelidonSimpleTimer::create, HelidonSimpleTimer.class, tags);
+    }
+
     /**
      * Removes a metric by name. Synchronized for atomic update of more than one internal map.
      *
@@ -204,7 +225,11 @@ public class Registry extends MetricRegistry {
      */
     @Override
     public synchronized boolean remove(String name) {
-        final boolean result = allMetricIDsByName.get(name).stream()
+        final List<MetricID> metricIDs = allMetricIDsByName.get(name);
+        if (metricIDs == null) {
+            return false;
+        }
+        final boolean result = metricIDs.stream()
                 .map(metricID -> allMetrics.remove(metricID) != null)
                 .reduce((a, b) -> a || b)
                 .orElse(false);
@@ -221,9 +246,12 @@ public class Registry extends MetricRegistry {
      */
     @Override
     public synchronized boolean remove(MetricID metricID) {
-        final List<MetricID> likeNamedMetrics = allMetricIDsByName.get(metricID.getName());
-        likeNamedMetrics.remove(metricID);
-        if (likeNamedMetrics.isEmpty()) {
+        final List<MetricID> metricIDS = allMetricIDsByName.get(metricID.getName());
+        if (metricIDS == null) {
+            return false;
+        }
+        metricIDS.remove(metricID);
+        if (metricIDS.isEmpty()) {
             allMetricIDsByName.remove(metricID.getName());
             allMetadata.remove(metricID.getName());
         }
@@ -313,6 +341,16 @@ public class Registry extends MetricRegistry {
     }
 
     @Override
+    public SortedMap<MetricID, SimpleTimer> getSimpleTimers() {
+        return getSimpleTimers(MetricFilter.ALL);
+    }
+
+    @Override
+    public SortedMap<MetricID, SimpleTimer> getSimpleTimers(MetricFilter filter) {
+        return getSortedMetrics(filter, SimpleTimer.class);
+    }
+
+    @Override
     public Map<String, Metadata> getMetadata() {
         return Collections.unmodifiableMap(allMetadata);
     }
@@ -378,6 +416,18 @@ public class Registry extends MetricRegistry {
 
     <T extends HelidonMetric> Optional<T> getOptionalMetric(String metricName, Class<T> clazz, Tag... tags) {
         return getOptionalMetric(new MetricID(metricName, tags), clazz);
+    }
+
+    List<Map.Entry<MetricID, HelidonMetric>> getMetricsByName(String metricName) {
+        List<MetricID> metricIDs = allMetricIDsByName.get(metricName);
+        if (metricIDs == null) {
+            return Collections.EMPTY_LIST;
+        }
+        List<Map.Entry<MetricID, HelidonMetric>> result = new ArrayList<>();
+        for (MetricID metricID : metricIDs) {
+            result.add(new AbstractMap.SimpleEntry<>(metricID, allMetrics.get(metricID)));
+        }
+        return result;
     }
 
     /**
@@ -685,6 +735,8 @@ public class Registry extends MetricRegistry {
                 return HelidonMeter.create(type.getName(), metadata, (Meter) metric);
             case TIMER:
                 return HelidonTimer.create(type.getName(), metadata, (Timer) metric);
+            case SIMPLE_TIMER:
+                return HelidonSimpleTimer.create(type.getName(), metadata, (SimpleTimer) metric);
             case CONCURRENT_GAUGE:
                 return HelidonConcurrentGauge.create(type.getName(), metadata, (ConcurrentGauge) metric);
             case INVALID:
@@ -710,10 +762,6 @@ public class Registry extends MetricRegistry {
                 .orElse(MetricType.INVALID);
     }
 
-    private static <T extends Metric> Metadata toMetadata(String name, T metric) {
-        return Metadata.builder().withName(name).withType(toType(metric)).build();
-    }
-
     private static MetricType toType(Metric metric) {
         // Find subtype of Metric, needed for user-defined metrics
         Class<?> clazz = metric.getClass();
@@ -732,6 +780,11 @@ public class Registry extends MetricRegistry {
 
     private static <T extends HelidonMetric> MetricType toType(Class<T> clazz) {
         return METRIC_TO_TYPE_MAP.getOrDefault(clazz, MetricType.INVALID);
+    }
+
+    // For testing
+    static Map<Class<? extends HelidonMetric>, MetricType> metricToTypeMap() {
+        return METRIC_TO_TYPE_MAP;
     }
 
     /**
@@ -768,6 +821,7 @@ public class Registry extends MetricRegistry {
         result.put(HelidonHistogram.class, MetricType.HISTOGRAM);
         result.put(HelidonMeter.class, MetricType.METERED);
         result.put(HelidonTimer.class, MetricType.TIMER);
+        result.put(HelidonSimpleTimer.class, MetricType.SIMPLE_TIMER);
         return result;
     }
 }

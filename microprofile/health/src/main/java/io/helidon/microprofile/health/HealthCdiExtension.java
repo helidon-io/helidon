@@ -23,6 +23,7 @@ import java.util.ServiceLoader;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import javax.annotation.Priority;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
@@ -43,6 +44,8 @@ import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.Liveness;
 import org.eclipse.microprofile.health.Readiness;
 
+import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
+
 /**
  * Health extension.
  */
@@ -53,20 +56,6 @@ public class HealthCdiExtension implements Extension {
         @Override
         public Class<? extends Annotation> annotationType() {
             return Health.class;
-        }
-    };
-
-    private static final Readiness READINESS_LITERAL = new Readiness() {
-        @Override
-        public Class<? extends Annotation> annotationType() {
-            return Readiness.class;
-        }
-    };
-
-    private static final Liveness LIVENESS_LITERAL = new Liveness() {
-        @Override
-        public Class<? extends Annotation> annotationType() {
-            return Liveness.class;
         }
     };
 
@@ -84,7 +73,7 @@ public class HealthCdiExtension implements Extension {
                 .add(ApplicationScoped.Literal.INSTANCE);
     }
 
-    void registerHealth(@Observes @Initialized(ApplicationScoped.class) Object adv) {
+    void registerHealth(@Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class) Object adv) {
         org.eclipse.microprofile.config.Config config = ConfigProvider.getConfig();
         Config helidonConfig = MpConfig.toHelidonConfig(config).get("health");
 
@@ -115,12 +104,12 @@ public class HealthCdiExtension implements Extension {
                 .filter(hc -> !builtInHealthChecks.contains(hc))
                 .forEach(builder::add);
 
-        cdi.select(HealthCheck.class, LIVENESS_LITERAL)
+        cdi.select(HealthCheck.class, Liveness.Literal.INSTANCE)
                 .stream()
                 .filter(hc -> !builtInHealthChecks.contains(hc))
                 .forEach(builder::addLiveness);
 
-        cdi.select(HealthCheck.class, READINESS_LITERAL)
+        cdi.select(HealthCheck.class, Readiness.Literal.INSTANCE)
                 .stream()
                 .filter(hc -> !builtInHealthChecks.contains(hc))
                 .forEach(builder::addReadiness);

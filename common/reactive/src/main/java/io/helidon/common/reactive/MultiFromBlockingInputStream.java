@@ -54,7 +54,9 @@ class MultiFromBlockingInputStream extends MultiFromInputStream {
                 inputStream,
                 bufferSizeSupplier.getAsInt(),
                 executorService);
-        subscriber.onSubscribe(subscription);
+        DeferredSubscription ds = new DeferredSubscription();
+        subscriber.onSubscribe(ds);
+        ds.setSubscription(subscription);
     }
 
     @Override

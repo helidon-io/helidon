@@ -37,9 +37,11 @@ module helidon.tests.nimage.mp {
     requires io.helidon.health.checks;
 
     exports io.helidon.tests.integration.nativeimage.mp1;
+    exports io.helidon.tests.integration.nativeimage.mp1.other;
 
     // opens is needed to inject private fields, create classes in the same package (proxy)
     opens io.helidon.tests.integration.nativeimage.mp1 to weld.core.impl, hk2.utils, io.helidon.microprofile.cdi;
+    opens io.helidon.tests.integration.nativeimage.mp1.other to weld.core.impl, io.helidon.microprofile.cdi;
 
     // we need to open the static resource on classpath directory to everybody, as otherwise
     // static content will not see it

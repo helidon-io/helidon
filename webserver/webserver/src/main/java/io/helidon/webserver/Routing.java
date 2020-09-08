@@ -215,6 +215,35 @@ public interface Routing {
         Rules post(PathMatcher pathMatcher, Handler... requestHandlers);
 
         /**
+         * Routes all RFC 5789 PATCH requests to provided handler(s). Request handler can call {@link ServerRequest#next()}
+         * to continue processing on the next registered handler.
+         *
+         * @param requestHandlers handlers to process HTTP request
+         * @return an updated routing configuration
+         */
+        Rules patch(Handler... requestHandlers);
+
+        /**
+         * Routes RFC 5789 PATCH requests with corresponding path to provided handler(s). Request handler can call
+         * {@link ServerRequest#next()} to continue processing on the next registered handler.
+         *
+         * @param pathPattern     a URI path pattern. See {@link PathMatcher} for pattern syntax reference.
+         * @param requestHandlers handlers to process HTTP request
+         * @return an updated routing configuration
+         */
+        Rules patch(String pathPattern, Handler... requestHandlers);
+
+        /**
+         * Routes RFC 5789 PATCH requests with corresponding path to provided handler(s). Request handler can call
+         * {@link ServerRequest#next()} to continue processing on the next registered handler.
+         *
+         * @param pathMatcher     define path for registered router
+         * @param requestHandlers handlers to process HTTP request
+         * @return an updated routing configuration
+         */
+        Rules patch(PathMatcher pathMatcher, Handler... requestHandlers);
+
+        /**
          * Routes all DELETE requests to provided handler(s). Request handler can call {@link ServerRequest#next()}
          * to continue processing on the next registered handler.
          *
@@ -499,6 +528,24 @@ public interface Routing {
         @Override
         public Builder post(PathMatcher pathMatcher, Handler... requestHandlers) {
             delegate.post(pathMatcher, requestHandlers);
+            return this;
+        }
+
+        @Override
+        public Builder patch(Handler... requestHandlers) {
+            delegate.patch(requestHandlers);
+            return this;
+        }
+
+        @Override
+        public Builder patch(String pathPattern, Handler... requestHandlers) {
+            delegate.patch(pathPattern, requestHandlers);
+            return this;
+        }
+
+        @Override
+        public Builder patch(PathMatcher pathMatcher, Handler... requestHandlers) {
+            delegate.patch(pathMatcher, requestHandlers);
             return this;
         }
 

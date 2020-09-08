@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import io.helidon.common.http.Http;
@@ -92,6 +93,7 @@ public final class WebSecurity implements Service {
      */
     public static final String CONTEXT_ADD_HEADERS = "security.addHeaders";
 
+    private static final Logger LOGGER = Logger.getLogger(WebSecurity.class.getName());
     private static final AtomicInteger SECURITY_COUNTER = new AtomicInteger();
 
     private final Security security;
@@ -318,6 +320,10 @@ public final class WebSecurity implements Service {
 
     @Override
     public void update(Routing.Rules routing) {
+        if (!security.enabled()) {
+            LOGGER.info("Security is disabled. Not registering any security handlers");
+            return;
+        }
         routing.any(this::registerContext);
 
         if (null != config) {

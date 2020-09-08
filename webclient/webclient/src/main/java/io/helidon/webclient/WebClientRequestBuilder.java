@@ -250,6 +250,22 @@ public interface WebClientRequestBuilder {
     WebClientRequestBuilder accept(MediaType... mediaTypes);
 
     /**
+     * Whether connection should be kept alive after request.
+     *
+     * @param keepAlive keep alive
+     * @return updated builder instance
+     */
+    WebClientRequestBuilder keepAlive(boolean keepAlive);
+
+    /**
+     * Set new request id. This id is used in logging messages.
+     *
+     * @param requestId new request id
+     * @return updated builder instance
+     */
+    WebClientRequestBuilder requestId(long requestId);
+
+    /**
      * Performs prepared request and transforms response to requested type.
      *
      * When transformation is done the returned {@link CompletionStage} is notified.

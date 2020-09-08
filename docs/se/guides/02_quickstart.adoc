@@ -143,7 +143,7 @@ Then you can try the application as you did before.
 == Deploy the application to Kubernetes
 
 If you don't have access to a Kubernetes cluster, you can
-<<getting-started/05_kubernetes.adoc,install one on your desktop>>.
+<<about/05_kubernetes.adoc,install one on your desktop>>.
 Then deploy the example:
 
 [source,bash]
@@ -190,3 +190,9 @@ Runtime Images. For more information see:
 
 * <<se/guides/36_graalnative.adoc,GraalVM Native Images>>
 * <<se/guides/37_jlink_image.adoc,Custom Runtime Images using `jlink`>>
+
+== The Helidon CLI
+
+With the Helidon CLI you can create additional types of Helidon applications and
+use the "dev loop" to do fast, iterative development.
+<<about/05_cli.adoc,Try it now>>.

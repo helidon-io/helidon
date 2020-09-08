@@ -99,6 +99,8 @@ public final class WriteableBodyPartHeaders extends HashParameters implements Bo
          * The headers map.
          */
         private final Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        private String name;
+        private String fileName;
 
         /**
          * Force the use of {@link WriteableBodyPartHeaders#builder() }.
@@ -114,12 +116,7 @@ public final class WriteableBodyPartHeaders extends HashParameters implements Bo
          * @return this builder
          */
         public Builder header(String name, String value) {
-            List<String> values = headers.get(name);
-            if (values == null) {
-                values = new ArrayList<>();
-                headers.put(name, values);
-            }
-            values.add(value);
+            headers.computeIfAbsent(name, k -> new ArrayList<>()).add(value);
             return this;
         }
 
@@ -141,9 +138,47 @@ public final class WriteableBodyPartHeaders extends HashParameters implements Bo
             return header(Http.Header.CONTENT_DISPOSITION, contentDisp.toString());
         }
 
+        /**
+         * Name which will be used in {@link ContentDisposition}.
+         *
+         * This value will be ignored if an actual instance of {@link ContentDisposition} is set.
+         *
+         * @param name content disposition name parameter
+         * @return this builder
+         */
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+
+        /**
+         * Filename which will be used in {@link ContentDisposition}.
+         *
+         * This value will be ignored if an actual instance of {@link ContentDisposition} is set.
+         *
+         * @param fileName content disposition filename parameter
+         * @return this builder
+         */
+        public Builder filename(String fileName) {
+            this.fileName = fileName;
+            return this;
+        }
+
         @Override
         public WriteableBodyPartHeaders build() {
+            if (!headers.containsKey(Http.Header.CONTENT_DISPOSITION) && name != null) {
+                ContentDisposition.Builder builder = ContentDisposition.builder().name(this.name);
+                if (fileName != null) {
+                    builder.filename(fileName);
+                    if (!headers.containsKey(Http.Header.CONTENT_TYPE)) {
+                        contentType(MediaType.APPLICATION_OCTET_STREAM);
+                    }
+                }
+                contentDisposition(builder.build());
+            }
+
             return new WriteableBodyPartHeaders(headers);
         }
+
     }
 }

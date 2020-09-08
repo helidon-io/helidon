@@ -391,7 +391,7 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
     }
 
     /**
-     * Executes given {@link java.lang.Runnable} when onError signal is received.
+     * Executes given {@link java.util.function.Consumer} when onError signal is received.
      *
      * @param onErrorConsumer {@link java.util.function.Consumer} to be executed.
      * @return Single
@@ -673,6 +673,16 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
     }
 
     /**
+     * Terminal stage, invokes provided consumer when Single is completed.
+     *
+     * @param consumer consumer to be invoked
+     * @return Single completed when the stream terminates
+     */
+    default CompletionAwaitable<Void> forSingle(Consumer<T> consumer) {
+        return this.thenAccept(consumer);
+    }
+
+    /**
      * Cancel upstream.
      *
      * @return new {@link Single} for eventually received single value.
@@ -806,4 +816,17 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
 
     @Override
     CompletionAwaitable<T> exceptionally(Function<Throwable, ? extends T> fn);
+
+    /**
+     * Returns a new CompletionAwaitable that, when this stage completes
+     * exceptionally, is executed with this stage's exception as the
+     * argument to the supplied consumer. Otherwise, if this stage
+     * completes normally, then the returned stage also completes
+     * normally with the same value.
+     *
+     * @param consumer the consumer to invoke if this CompletionAwaitable completed
+     *                 exceptionally
+     * @return the new CompletionAwaitable
+     */
+    CompletionAwaitable<T> exceptionallyAccept(Consumer<Throwable> consumer);
 }

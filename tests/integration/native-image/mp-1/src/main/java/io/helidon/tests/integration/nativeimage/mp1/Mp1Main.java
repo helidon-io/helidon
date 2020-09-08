@@ -177,6 +177,9 @@ public final class Mp1Main {
         // CDI - (tested indirectly by other tests)
         // Server - capability to start JAX-RS (tested indirectly by other tests)
 
+        // produce a bean with package local method
+        invoke(collector, "Produced bean", BeanProducer.VALUE, aBean::produced);
+
         // Configuration
         invoke(collector, "Config injection", "Properties message", aBean::config);
 
@@ -187,6 +190,9 @@ public final class Mp1Main {
         invoke(collector, "Rest client JSON-P", "json-p", aBean::restClientJsonP);
         // + JSON-B
         invoke(collector, "Rest client JSON-B", "json-b", aBean::restClientJsonB);
+        // + query params
+        invoke(collector, "Rest client Query param long", "1020", () -> aBean.restClientQuery(1020L));
+        invoke(collector, "Rest client Query param boolean", "true", () -> aBean.restClientQuery(true));
 
         // Message from rest client, originating in BeanClass.BeanType
         invoke(collector, "Rest client bean type", "Properties message", aBean::restClientBeanType);

@@ -557,6 +557,18 @@ public interface WebServer {
             return this;
         }
 
+        @Override
+        public Builder maxHeaderSize(int size) {
+            configurationBuilder.maxHeaderSize(size);
+            return this;
+        }
+
+        @Override
+        public Builder maxInitialLineLength(int length) {
+            configurationBuilder.maxInitialLineLength(length);
+            return this;
+        }
+
         /**
          * Configure experimental features.
          * @param experimental experimental configuration

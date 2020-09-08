@@ -41,6 +41,7 @@ import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.util.concurrent.Future;
@@ -59,7 +60,6 @@ class BareResponseImpl implements BareResponse {
     // See HttpConversionUtil.ExtensionHeaderNames
     private static final String HTTP_2_HEADER_PREFIX = "x-http2";
     private static final SocketClosedException CLOSED = new SocketClosedException("Response channel is closed!");
-    private static final LastHttpContent LAST_HTTP_CONTENT = new DefaultLastHttpContent(Unpooled.EMPTY_BUFFER);
 
     private final boolean keepAlive;
     private final ChannelHandlerContext ctx;
@@ -245,14 +245,37 @@ class BareResponseImpl implements BareResponse {
      * @param closeAction Close action listener.
      */
     private void writeLastContent(final Throwable throwable, final ChannelFutureListener closeAction) {
+        boolean chunked = true;
         if (lengthOptimization) {
             if (firstChunk != null) {
-                HttpUtil.setTransferEncodingChunked(response, false);
-                HttpUtil.setContentLength(response, firstChunk.remaining());
+                if (throwable == null) {
+                    HttpUtil.setTransferEncodingChunked(response, false);
+                    HttpUtil.setContentLength(response, firstChunk.remaining());
+                    chunked = false;
+                } else {
+                    //headers not sent yet
+                    response.setStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
+                    //We are not using CombinedHttpHeaders
+                    response.headers()
+                            .set(HttpHeaderNames.TRAILER, Response.STREAM_STATUS + "," + Response.STREAM_RESULT);
+                }
             }
             initWriteResponse();
         }
-        ctx.writeAndFlush(LAST_HTTP_CONTENT)
+
+        LastHttpContent lastHttpContent = new DefaultLastHttpContent(Unpooled.EMPTY_BUFFER);
+
+        if (chunked) {
+            if (throwable != null) {
+                lastHttpContent.trailingHeaders()
+                        .set(Response.STREAM_STATUS, 500)
+                        .set(Response.STREAM_RESULT, throwable);
+                LOGGER.log(Level.SEVERE, throwable, () -> log("Upstream error while sending response."));
+            }
+
+        }
+
+        ctx.writeAndFlush(lastHttpContent)
                 .addListener(completeOnFailureListener("An exception occurred when writing last http content."))
                 .addListener(completeOnSuccessListener(throwable))
                 .addListener(closeAction);

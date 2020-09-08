@@ -18,6 +18,7 @@ package io.helidon.messaging.connectors.kafka;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
 
@@ -118,7 +119,7 @@ public interface KafkaMessage<K, V> extends Message<V> {
      */
     static <K, V> KafkaMessage<K, V> of(K key, V payload) {
         Objects.requireNonNull(payload);
-        return new KafkaProducerMessage<>(key, payload, null);
+        return new KafkaProducerMessage<>(key, payload, () -> CompletableFuture.completedFuture(null));
     }
 
     /**
@@ -131,6 +132,6 @@ public interface KafkaMessage<K, V> extends Message<V> {
      */
     static <K, V> KafkaMessage<K, V> of(V payload) {
         Objects.requireNonNull(payload);
-        return new KafkaProducerMessage<>(null, payload, null);
+        return new KafkaProducerMessage<>(null, payload, () -> CompletableFuture.completedFuture(null));
     }
 }

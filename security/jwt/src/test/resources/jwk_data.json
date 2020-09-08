@@ -106,7 +106,7 @@
             "kty": "EC",
             "d": "AYfcRP8OnbC7eF-RDOidIrUGbEVWAfgmfZmgJxfosVtyu77RHUW8BuSWxWUU29X24UHjxBV6igmhyH_4wf9narND",
             "use": "sig",
-            "crv": "P-512",
+            "crv": "P-521",
             "kid": "ES_512",
             "x": "AC4rzjCs1AUDbnB9Pnl34UeDELKMVXLKmkglj1gMTD5oc_ojAWWEm8R5wV9Wv0npVsLIbv-0HkzRl3kcJbdvSu6J",
             "y": "ASGrYEsbOo5htvp8UEjIpSaDge0NowViZp3SIiV0sBTvHzqC6YxKhp81RU7qsQvLcSJFMseBnsDGGQ3MThFeyj8a",

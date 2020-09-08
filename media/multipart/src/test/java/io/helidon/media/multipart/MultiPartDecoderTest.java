@@ -17,11 +17,13 @@ package io.helidon.media.multipart;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.Flow.Subscription;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
@@ -53,6 +55,8 @@ public class MultiPartDecoderTest {
                 + "--" + boundary + "--").getBytes();
 
         final CountDownLatch latch = new CountDownLatch(2);
+        final CompletableFuture<Void> testDone = new CompletableFuture<>();
+
         Consumer<BodyPart> consumer = (part) -> {
             latch.countDown();
             assertThat(part.headers().values("Content-Id"),
@@ -60,16 +64,26 @@ public class MultiPartDecoderTest {
             DataChunkSubscriber subscriber = new DataChunkSubscriber();
             part.content().subscribe(subscriber);
             subscriber.content().thenAccept(body -> {
-                latch.countDown();
                 assertThat(body, is(equalTo("body 1")));
+                latch.countDown();
+                if (latch.getCount() == 0) {
+                    testDone.complete(null);
+                }
+            }).exceptionally((ex) -> {
+                testDone.completeExceptionally(ex);
+                return null;
             });
         };
         BodyPartSubscriber testSubscriber = new BodyPartSubscriber(
                 SUBSCRIBER_TYPE.INFINITE, consumer);
         partsPublisher(boundary, chunk1).subscribe(testSubscriber);
-        waitOnLatch(latch);
-        assertThat(testSubscriber.error, is(nullValue()));
-        assertThat(testSubscriber.complete, is(equalTo(true)));
+        testDone.orTimeout(5, TimeUnit.SECONDS).join();
+        try {
+            boolean b = testSubscriber.complete.orTimeout(200, TimeUnit.MILLISECONDS).join();
+            assertThat(b, is(equalTo(true)));
+        } catch(CompletionException error) {
+            assertThat(error, is(nullValue()));
+        }
     }
 
     @Test
@@ -108,9 +122,13 @@ public class MultiPartDecoderTest {
         };
         BodyPartSubscriber testSubscriber = new BodyPartSubscriber(SUBSCRIBER_TYPE.INFINITE, consumer);
         partsPublisher(boundary, chunk1).subscribe(testSubscriber);
+        try {
+            boolean b = testSubscriber.complete.orTimeout(200, TimeUnit.MILLISECONDS).join();
+            assertThat(b, is(equalTo(true)));
+        } catch(CompletionException error) {
+            assertThat(error, is(nullValue()));
+        }
         waitOnLatch(latch);
-        assertThat(testSubscriber.error, is(nullValue()));
-        assertThat(testSubscriber.complete, is(equalTo(true)));
     }
 
     @Test
@@ -138,9 +156,53 @@ public class MultiPartDecoderTest {
         };
         BodyPartSubscriber testSubscriber = new BodyPartSubscriber(SUBSCRIBER_TYPE.INFINITE, consumer);
         partsPublisher(boundary, List.of(chunk1, chunk2)).subscribe(testSubscriber);
+        try {
+            boolean b = testSubscriber.complete.orTimeout(200, TimeUnit.MILLISECONDS).join();
+            assertThat(b, is(equalTo(true)));
+        } catch(CompletionException error) {
+            assertThat(error, is(nullValue()));
+        }
         waitOnLatch(latch);
-        assertThat(testSubscriber.error, is(nullValue()));
-        assertThat(testSubscriber.complete, is(equalTo(true)));
+    }
+
+    @Test
+    public void testContentAcrossChunksAsyncRequest() {
+        String boundary = "boundary";
+        final byte[] chunk1 = ("--" + boundary + "\n"
+                + "Content-Id: part1\n"
+                + "\n"
+                + "thi").getBytes();
+        final byte[] chunk11 = ("s-is-the-1st-slice-of-the-body\n").getBytes();
+        final byte[] chunk12 = ("t").getBytes();
+        final byte[] chunk2 = ("his-is-the-2nd-slice-of-the-body\n"
+                + "--" + boundary + "--").getBytes();
+
+        final CountDownLatch latch = new CountDownLatch(2);
+        Consumer<BodyPart> consumer = (part) -> {
+            latch.countDown();
+            assertThat(part.headers().values("Content-Id"), hasItems("part1"));
+            DataChunkSubscriber subscriber = new DataChunkSubscriber();
+            part.content().subscribe(subscriber);
+            subscriber.content().thenAccept(body -> {
+                assertThat(body, is(equalTo(
+                        "this-is-the-1st-slice-of-the-body\n"
+                        + "this-is-the-2nd-slice-of-the-body")));
+            }).exceptionally((ex) -> {
+                System.out.println("UH-OH... " + ex);
+                return null;
+            }).thenAccept((_i) -> {
+                latch.countDown();
+            });
+        };
+        BodyPartSubscriber testSubscriber = new BodyPartSubscriber(SUBSCRIBER_TYPE.ONE_BY_ONE, consumer);
+        partsPublisher(boundary, List.of(chunk1, chunk11, chunk12, chunk2)).subscribe(testSubscriber);
+        try {
+            boolean b = testSubscriber.complete.orTimeout(200, TimeUnit.MILLISECONDS).join();
+            assertThat(b, is(equalTo(true)));
+        } catch(CompletionException error) {
+            assertThat(error, is(nullValue()));
+        }
+        waitOnLatch(latch);
     }
 
     @Test
@@ -170,9 +232,13 @@ public class MultiPartDecoderTest {
         };
         BodyPartSubscriber testSubscriber = new BodyPartSubscriber(SUBSCRIBER_TYPE.INFINITE, consumer);
         partsPublisher(boundary, List.of(chunk1, chunk2, chunk3, chunk4, chunk5)).subscribe(testSubscriber);
+        try {
+            boolean b = testSubscriber.complete.orTimeout(200, TimeUnit.MILLISECONDS).join();
+            assertThat(b, is(equalTo(true)));
+        } catch(CompletionException error) {
+            assertThat(error, is(nullValue()));
+        }
         waitOnLatch(latch);
-        assertThat(testSubscriber.error, is(nullValue()));
-        assertThat(testSubscriber.complete, is(equalTo(true)));
     }
 
     @Test
@@ -211,9 +277,13 @@ public class MultiPartDecoderTest {
         };
         BodyPartSubscriber testSubscriber = new BodyPartSubscriber(SUBSCRIBER_TYPE.ONE_BY_ONE, consumer);
         partsPublisher(boundary, chunk1).subscribe(testSubscriber);
+        try {
+            boolean b = testSubscriber.complete.orTimeout(200, TimeUnit.MILLISECONDS).join();
+            assertThat(b, is(equalTo(true)));
+        } catch(CompletionException error) {
+            assertThat(error, is(nullValue()));
+        }
         waitOnLatch(latch);
-        assertThat(testSubscriber.error, is(nullValue()));
-        assertThat(testSubscriber.complete, is(equalTo(true)));
     }
 
     @Test
@@ -257,12 +327,34 @@ public class MultiPartDecoderTest {
                 + "\n"
                 + "<foo>bar</foo>\n").getBytes();
 
-        BodyPartSubscriber testSubscriber = new BodyPartSubscriber(SUBSCRIBER_TYPE.CANCEL_AFTER_ONE, null);
+        DataChunkSubscriber s1 = new DataChunkSubscriber();
+        BodyPartSubscriber testSubscriber = new BodyPartSubscriber(SUBSCRIBER_TYPE.ONE_BY_ONE, p -> p.content().subscribe(s1));
         partsPublisher(boundary, chunk1).subscribe(testSubscriber);
-        assertThat(testSubscriber.complete, is(equalTo(false)));
-        assertThat(testSubscriber.error, is(notNullValue()));
-        assertThat(testSubscriber.error.getClass(), is(equalTo(MimeParser.ParsingException.class)));
-        assertThat(testSubscriber.error.getMessage(), is(equalTo("No closing MIME boundary")));
+        try {
+            s1.future.orTimeout(100, TimeUnit.MILLISECONDS).join();
+            throw new IllegalStateException("Should have terminated exceptionally");
+        } catch(CompletionException e) {
+            Throwable error = e.getCause();
+            assertThat(error.getClass(), is(equalTo(MimeParser.ParsingException.class)));
+            assertThat(error.getMessage(), is(equalTo("No closing MIME boundary")));
+        }
+
+        // CANCEL_AFTER_ONE emits cancel as soon as the first part is arrived.
+        // Once testSubscriber notified it is cancelled, no signals are guaranteed to arrive to it, so one cannot
+        // expect error to be signalled to it.
+        //
+        // One should expect the error to arrive to the inner subscriber, but here it is not set at all - the
+        // inner subscriber does not request the body, so the absence of any content after what has been published
+        // is not guaranteed. (Subscribers are required to eventually either issue a request, or cancel)
+        try {
+            testSubscriber.complete.orTimeout(200, TimeUnit.MILLISECONDS).join();
+            throw new IllegalStateException("Not expecting to terminate normally");
+        } catch(CompletionException e) {
+            Throwable error = e.getCause();
+            assertThat(error, is(notNullValue()));
+            assertThat(error.getClass(), is(equalTo(MimeParser.ParsingException.class)));
+            assertThat(error.getMessage(), is(equalTo("No closing MIME boundary")));
+        }
     }
 
     @Test
@@ -312,8 +404,14 @@ public class MultiPartDecoderTest {
         partsPublisher(boundary, List.of(chunk1, chunk2, chunk3, chunk4)).subscribe(testSubscriber);
         waitOnLatchNegative(latch, "the 2nd part should not be processed");
         assertThat(latch.getCount(), is(equalTo(1L)));
-        assertThat(testSubscriber.error, is(nullValue()));
-        assertThat(testSubscriber.complete, is(equalTo(false)));
+        try {
+            testSubscriber.complete.orTimeout(200, TimeUnit.MILLISECONDS).join();
+            throw new IllegalStateException("Not expecting to make progress, unless the part is consumed");
+        } catch(CompletionException e) {
+            Throwable error = e.getCause();
+            // This is the expected outcome - the testSubcriber is not making progress
+            assertThat(error.getClass(), is(equalTo(TimeoutException.class)));
+        }
     }
 
     @Test
@@ -322,9 +420,14 @@ public class MultiPartDecoderTest {
         BodyPartSubscriber testSubscriber = new BodyPartSubscriber(SUBSCRIBER_TYPE.INFINITE, null);
         decoder.subscribe(testSubscriber);
         Multi.<DataChunk>error(new IllegalStateException("oops")).subscribe(decoder);
-        assertThat(testSubscriber.complete, is(equalTo(false)));
-        assertThat(testSubscriber.error, is(notNullValue()));
-        assertThat(testSubscriber.error.getMessage(), is(equalTo("oops")));
+        try {
+            testSubscriber.complete.orTimeout(200, TimeUnit.MILLISECONDS).join();
+            throw new IllegalStateException("Normal termination is not expected");
+        } catch(CompletionException e) {
+            Throwable error = e.getCause();
+            assertThat(error, is(notNullValue()));
+            assertThat(error.getMessage(), is(equalTo("oops")));
+        }
     }
 
     @Test
@@ -355,9 +458,9 @@ public class MultiPartDecoderTest {
 
         private final SUBSCRIBER_TYPE subscriberType;
         private final Consumer<BodyPart> consumer;
-        private Subscription subcription;
-        private Throwable error;
-        private boolean complete;
+        private Subscription subscription;
+        public CompletableFuture<Boolean> complete = new CompletableFuture<>();
+        public CompletableFuture<Void> cancelled = new CompletableFuture<>();
 
         BodyPartSubscriber(SUBSCRIBER_TYPE subscriberType, Consumer<BodyPart> consumer) {
             this.subscriberType = subscriberType;
@@ -366,7 +469,7 @@ public class MultiPartDecoderTest {
 
         @Override
         public void onSubscribe(Subscription subscription) {
-            this.subcription = subscription;
+            this.subscription = subscription;
             if (subscriberType == SUBSCRIBER_TYPE.INFINITE) {
                 subscription.request(Long.MAX_VALUE);
             } else {
@@ -381,20 +484,21 @@ public class MultiPartDecoderTest {
             }
             consumer.accept(item);
             if (subscriberType == SUBSCRIBER_TYPE.ONE_BY_ONE) {
-                subcription.request(1);
+                subscription.request(1);
             } else if (subscriberType == SUBSCRIBER_TYPE.CANCEL_AFTER_ONE) {
-                subcription.cancel();
+                subscription.cancel();
+                cancelled.complete(null);
             }
         }
 
         @Override
         public void onError(Throwable ex) {
-            error = ex;
+            complete.completeExceptionally(ex);
         }
 
         @Override
         public void onComplete() {
-            complete = true;
+            complete.complete(true);
         }
     }
 
@@ -482,16 +586,26 @@ public class MultiPartDecoderTest {
     static class DataChunkSubscriber implements Subscriber<DataChunk> {
 
         private final StringBuilder sb = new StringBuilder();
-        private final CompletableFuture<String> future = new CompletableFuture<>();
+        public final CompletableFuture<String> future = new CompletableFuture<>();
+        private Subscription subscription;
 
         @Override
         public void onSubscribe(Subscription subscription) {
-            subscription.request(Long.MAX_VALUE);
+            this.subscription = subscription;
+            subscription.request(1);
         }
 
         @Override
         public void onNext(DataChunk item) {
-            sb.append(item.bytes());
+            sb.append(new String(item.bytes()));
+            CompletableFuture.supplyAsync(() -> {
+               try {
+                  Thread.sleep(10);
+               } catch(Exception e) {
+               }
+               subscription.request(1);
+               return 0;
+            });
         }
 
         @Override

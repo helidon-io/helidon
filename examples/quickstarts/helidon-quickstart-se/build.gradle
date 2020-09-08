@@ -28,7 +28,11 @@ tasks.withType(JavaCompile) {
 }
 
 ext {
-    helidonversion = '2.0.2-SNAPSHOT'
+    helidonversion = '2.0.3-SNAPSHOT'
+}
+
+test {
+    useJUnitPlatform()
 }
 
 repositories {
@@ -38,14 +42,17 @@ repositories {
 
 dependencies {
     // import Helidon BOM
-    implementation platform("io.helidon:helidon-dependencies:${project.helidonversion}")
-    implementation 'io.helidon.bundles:helidon-bundles-webserver'
+    implementation enforcedPlatform("io.helidon:helidon-dependencies:${project.helidonversion}")
+    implementation 'io.helidon.webserver:helidon-webserver'
+    implementation 'io.helidon.media:helidon-media-jsonp'
     implementation 'io.helidon.config:helidon-config-yaml'
     implementation 'io.helidon.health:helidon-health'
     implementation 'io.helidon.health:helidon-health-checks'
     implementation 'io.helidon.metrics:helidon-metrics'
 
-    testCompileOnly 'org.junit.jupiter:junit-jupiter-api'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api'
+    testImplementation 'io.helidon.webclient:helidon-webclient'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
 }
 
 // define a custom task to copy all dependencies in the runtime classpath

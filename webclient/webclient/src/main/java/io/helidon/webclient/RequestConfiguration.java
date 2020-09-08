@@ -28,6 +28,7 @@ import io.helidon.webclient.spi.WebClientService;
 class RequestConfiguration extends WebClientConfiguration {
 
     private final URI requestURI;
+    private final long requestId;
     private final WebClientServiceRequest clientServiceRequest;
     private final List<WebClientService> services;
 
@@ -36,6 +37,7 @@ class RequestConfiguration extends WebClientConfiguration {
         requestURI = builder.requestURI;
         clientServiceRequest = builder.clientServiceRequest;
         services = builder.services;
+        requestId = builder.requestId;
     }
 
     URI requestURI() {
@@ -50,6 +52,10 @@ class RequestConfiguration extends WebClientConfiguration {
         return services;
     }
 
+    long requestId() {
+        return requestId;
+    }
+
     static Builder builder(URI requestURI) {
         return new Builder(requestURI);
     }
@@ -57,6 +63,7 @@ class RequestConfiguration extends WebClientConfiguration {
     static final class Builder extends WebClientConfiguration.Builder<Builder, RequestConfiguration> {
 
         private final URI requestURI;
+        private long requestId = -1;
         private WebClientServiceRequest clientServiceRequest;
         private List<WebClientService> services = new ArrayList<>();
 
@@ -71,6 +78,11 @@ class RequestConfiguration extends WebClientConfiguration {
 
         Builder services(List<WebClientService> services) {
             this.services = Collections.unmodifiableList(services);
+            return this;
+        }
+
+        Builder requestId(long requestId) {
+            this.requestId = requestId;
             return this;
         }
 

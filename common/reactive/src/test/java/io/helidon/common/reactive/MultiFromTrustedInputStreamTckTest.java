@@ -71,4 +71,9 @@ public class MultiFromTrustedInputStreamTckTest extends FlowPublisherVerificatio
         };
         return getPublisher(is);
     }
+
+    @Override @Test(invocationCount = 1000)
+    public void stochastic_spec103_mustSignalOnMethodsSequentially() throws Throwable {
+        super.stochastic_spec103_mustSignalOnMethodsSequentially();
+    }
 }

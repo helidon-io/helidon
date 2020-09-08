@@ -1,0 +1,80 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2020 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Helidon CLI
+:description: Helidon CLI
+:keywords: helidon cli
+
+== Introduction
+
+The Helidon CLI lets you easily create a Helidon project by picking from a
+set of archetypes. It also supports a developer loop that performs continuous
+compilation and application restart, so you can easily iterate over source
+code changes.
+
+The CLI is distributed as a standalone executable (compiled using GraalVM) for
+ease of installation. It is currently available as download for Linux and Mac.
+Simply download the binary, install it at a location accessible from your PATH
+and you’re ready to go.
+
+== Installation
+
+[source,bash]
+.MacOS
+----
+curl -O https://helidon.io/cli/latest/darwin/helidon
+chmod +x ./helidon
+sudo mv ./helidon /usr/local/bin/
+----
+
+[source,bash]
+.Linux
+----
+curl -O https://helidon.io/cli/latest/linux/helidon
+chmod +x ./helidon
+sudo mv ./helidon /usr/local/bin/
+----
+
+Windows builds to come.
+
+
+== Create a New Project
+
+[source,bash]
+----
+helidon init
+----
+
+Then answer the questions.
+
+== Developer Loop
+
+[source,bash]
+----
+cd myproject
+helidon dev
+----
+
+As you make source code changes the project will automatically recompile and restart your
+application.
+
+
+== Demo
+
+image::cli/Helidon_cli.gif[CLI Demo, align="center"]
+

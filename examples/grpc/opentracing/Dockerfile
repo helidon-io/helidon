@@ -24,10 +24,10 @@ WORKDIR /helidon
 # the pom
 RUN mkdir common
 ADD common/pom.xml common/pom.xml
-RUN mvn -f common/pom.xml install -DskipTests
+RUN mvn -f common/pom.xml install -Dmaven.test.skip
 RUN mkdir opentracing
 ADD opentracing/pom.xml opentracing/pom.xml
-RUN mvn -f opentracing/pom.xml package -DskipTests
+RUN mvn -f opentracing/pom.xml package -Dmaven.test.skip
 
 # Do the Maven build!
 # Incremental docker builds will resume here when you change sources

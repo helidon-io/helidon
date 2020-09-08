@@ -45,18 +45,59 @@ server.port=7011
 # Helidon configuration (optional)
 
 # Length of queue for incoming connections. Default is 1024
-server.backlog: 512
+server.backlog=512
 # TCP receive window. Default is 0 to use implementation default
-server.receive-buffer: 256
+server.receive-buffer=256
 # Socket timeout milliseconds - defaults to 0 (infinite)
-server.timeout: 30000
+server.timeout=30000
 # Defaults to Runtime.availableProcessors()
 server.workers=4
-# Default is not to use SSL
-ssl:
- private-key:
-    keystore-resource-path: "certificate.p12"
-    keystore-passphrase: "abcd"
+----
+
+== Configuring TLS
+
+Helidon MP also supports custom TLS configuration.
+
+User is able to set following properties:
+
+* Server truststore
+    - Keystore with trusted certificates
+* Private key and certificate
+    - Server certificate which will be used in TLS handshake
+
+[source,properties]
+.META-INF/microprofile-config.properties - Server configuration
+----
+#Truststore setup
+server.tls.trust.keystore.resource.resource-path=server.p12
+server.tls.trust.keystore.passphrase=password
+server.tls.trust.keystore.trust-store=true
+
+#Keystore with private key and server certificate
+server.tls.private-key.keystore.resource.resource-path=server.p12
+server.tls.private-key.keystore.passphrase=password
+----
+
+Or the same configuration done in application.yaml file.
+
+[source,yaml]
+.application.yaml - Server configuration
+----
+server:
+  tls:
+    #Truststore setup
+    trust:
+      keystore:
+        passphrase: "password"
+        trust-store: true
+        resource:
+          resource-path: "keystore.p12"
+    #Keystore with private key and server certificate
+    private-key:
+      keystore:
+        passphrase: "password"
+        resource:
+          resource-path: "keystore.p12"
 ----
 
 == Configuring additional ports

@@ -73,11 +73,13 @@ class WebClientConfiguration {
     private final List<WebClientService> clientServices;
     private final Proxy proxy;
     private final boolean followRedirects;
+    private final boolean keepAlive;
     private final int maxRedirects;
     private final MessageBodyReaderContext readerContext;
     private final MessageBodyWriterContext writerContext;
     private final WebClientTls webClientTls;
     private final URI uri;
+    private final boolean validateHeaders;
 
     /**
      * Creates a new instance of client configuration.
@@ -105,6 +107,8 @@ class WebClientConfiguration {
         this.writerContext = builder.writerContext;
         this.clientServices = Collections.unmodifiableList(builder.clientServices);
         this.uri = builder.uri;
+        this.keepAlive = builder.keepAlive;
+        this.validateHeaders = builder.validateHeaders;
     }
 
     /**
@@ -261,6 +265,14 @@ class WebClientConfiguration {
         return uri;
     }
 
+    boolean keepAlive() {
+        return keepAlive;
+    }
+
+    boolean validateHeaders() {
+        return validateHeaders;
+    }
+
     /**
      * A fluent API builder for {@link WebClientConfiguration}.
      */
@@ -283,11 +295,13 @@ class WebClientConfiguration {
         private LazyValue<String> userAgent;
         private Proxy proxy;
         private boolean enableAutomaticCookieStore;
+        private boolean keepAlive;
         private WebClientTls webClientTls;
         private URI uri;
         private MessageBodyReaderContext readerContext;
         private MessageBodyWriterContext writerContext;
         private List<WebClientService> clientServices;
+        private boolean validateHeaders;
         @SuppressWarnings("unchecked")
         private B me = (B) this;
 
@@ -479,6 +493,18 @@ class WebClientConfiguration {
             return me;
         }
 
+        /**
+         * Whether to validate header names.
+         * Defaults to {@code true}.
+         *
+         * @param validate whether to validate the header name contains only allowed characters
+         * @return updated builder instance
+         */
+        B validateHeaders(boolean validate) {
+            this.validateHeaders = validate;
+            return me;
+        }
+
         @Override
         public B addReader(MessageBodyReader<?> reader) {
             this.readerContext.registerReader(reader);
@@ -540,6 +566,11 @@ class WebClientConfiguration {
             return me;
         }
 
+        B keepAlive(boolean keepAlive) {
+            this.keepAlive = keepAlive;
+            return me;
+        }
+
         /**
          * Configures this {@link WebClientConfiguration.Builder} from the supplied {@link Config}.
          * <table class="config">
@@ -573,6 +604,10 @@ class WebClientConfiguration {
          *     <td>Name of the user agent which should be used</td>
          * </tr>
          * <tr>
+         *     <td>keep-alive</td>
+         *     <td>Whether connection should be kept alive</td>
+         * </tr>
+         * <tr>
          *     <td>cookies</td>
          *     <td>Default cookies which should be used</td>
          * </tr>
@@ -602,6 +637,7 @@ class WebClientConfiguration {
             config.get("follow-redirects").asBoolean().ifPresent(this::followRedirects);
             config.get("max-redirects").asInt().ifPresent(this::maxRedirects);
             config.get("user-agent").asString().ifPresent(this::userAgent);
+            config.get("keep-alive").asBoolean().ifPresent(this::keepAlive);
             config.get("cookies").asNode().ifPresent(this::cookies);
             config.get("headers").asNode().ifPresent(this::headers);
             DeprecatedConfig.get(config, "tls", "ssl")
@@ -638,6 +674,8 @@ class WebClientConfiguration {
             readerContextParent(configuration.readerContext);
             writerContextParent(configuration.writerContext);
             context(configuration.context);
+            keepAlive(configuration.keepAlive);
+            validateHeaders(configuration.validateHeaders);
             configuration.cookieManager.defaultCookies().forEach(this::defaultCookie);
             config = configuration.config;
 

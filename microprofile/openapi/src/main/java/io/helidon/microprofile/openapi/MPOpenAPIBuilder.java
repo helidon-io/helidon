@@ -16,7 +16,8 @@
  */
 package io.helidon.microprofile.openapi;
 
-import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -26,6 +27,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import javax.enterprise.inject.spi.CDI;
+import javax.enterprise.inject.spi.Unmanaged;
 import javax.ws.rs.core.Application;
 
 import io.helidon.microprofile.server.JaxRsApplication;
@@ -62,22 +64,21 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder {
     }
 
     /**
-     * Returns those {@code Application} instances that are runnable, according to the server which accepts
-     * dynamically-registered apps as well as ones discovered using annotations.
+     * Returns the {@code JaxRsApplication} instances that should be run, according to the JAX-RS CDI extension.
      *
-     * @return List of Application instances that are runnable
+     * This excludes synthetic applications that are ad hoc collections of otherwise unassociated JAX-RS resources.
+     *
+     * @return List of JaxRsApplication instances that should be run
      */
-    static List<Application> appInstancesToRun() {
+    static List<JaxRsApplication> jaxRsApplicationsToRun() {
         JaxRsCdiExtension ext = CDI.current()
                 .getBeanManager()
                 .getExtension(JaxRsCdiExtension.class);
 
-        List<JaxRsApplication> appsToRun = ext.applicationsToRun();
+        List<JaxRsApplication> jaxRsAppsToRun = ext.applicationsToRun();
 
-        return appsToRun.stream()
+        return jaxRsAppsToRun.stream()
                 .filter(MPOpenAPIBuilder::isNonSynthetic)
-                .map(MPOpenAPIBuilder::appInstance)
-                .flatMap(Optional::stream)
                 .collect(Collectors.toList());
     }
 
@@ -97,9 +98,12 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder {
          * Sort the stream by the Application class name to help keep the list of endpoints in the OpenAPI document in a stable
          * order.
          */
-        List<Set<Class<?>>> appClassesToScan = appInstancesToRun().stream()
-                .sorted(Comparator.comparing(app -> app.getClass().getName()))
-                .map(this::classesToScanForApp)
+        List<Set<Class<?>>> appClassesToScan = jaxRsApplicationsToRun().stream()
+                .filter(jaxRsApplication -> jaxRsApplication.applicationClass().isPresent())
+                .sorted(Comparator.comparing(jaxRsApplication -> jaxRsApplication.applicationClass()
+                        .get()
+                        .getName()))
+                .map(this::classesToScanForJaxRsApp)
                 .collect(Collectors.toList());
 
         if (appClassesToScan.size() <= 1) {
@@ -118,20 +122,50 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder {
         return !jaxRsApp.synthetic();
     }
 
-    private static Optional<? extends Application> appInstance(JaxRsApplication jaxRsApp) {
-        Application preexistingApp = jaxRsApp.resourceConfig().getApplication();
-        return preexistingApp != null ? Optional.of(preexistingApp)
-                : jaxRsApp.applicationClass()
-                        .flatMap(MPOpenAPIBuilder::instantiate);
+    /**
+     * Returns the classes that should be scanned for the given JAX-RS application.
+     * <p>
+     *     If there is already a pre-existing {@code Application} instance for the JAX-RS application, then
+     *     use it to invoke {@code getClasses} and {@code getSingletons}. Otherwise use CDI to create
+     *     an unmanaged instance of the {@code Application}, then invoke those methods, then dispose of the unmanaged instance.
+     * </p>
+     * @param jaxRsApplication
+     * @return Set of classes to be scanned for annotations related to OpenAPI
+     */
+    private Set<Class<?>> classesToScanForJaxRsApp(JaxRsApplication jaxRsApplication) {
+        if (jaxRsApplication.synthetic()) {
+            return Collections.emptySet();
+        }
+        Set<Class<?>> result = new HashSet<>();
+        Class<? extends Application> appClass = jaxRsApplication.applicationClass()
+                .get(); // known to be present because of how this method is invoked
+        result.add(appClass);
+        Application app = jaxRsApplication.resourceConfig().getApplication();
+
+        if (app != null) {
+            result.addAll(classesToScanForAppInstance(app));
+        } else {
+            Unmanaged<? extends Application> unmanagedApp = new Unmanaged<>(appClass);
+            Unmanaged.UnmanagedInstance<? extends Application> unmanagedInstance = unmanagedApp.newInstance();
+            app = unmanagedInstance.produce()
+                    .inject()
+                    .postConstruct()
+                    .get();
+            result.addAll(classesToScanForAppInstance(app));
+            unmanagedInstance.preDestroy()
+                    .dispose();
+        }
+        return result;
     }
 
-    private <T extends Application> Set<Class<?>> classesToScanForApp(Application app) {
-        Set<Class<?>> result = new HashSet<>();
-        result.add(app.getClass());
+    private List<Class<?>> classesToScanForAppInstance(Application app) {
+        List<Class<?>> result = new ArrayList<>();
+
         result.addAll(app.getClasses());
         app.getSingletons().stream()
                 .map(Object::getClass)
                 .forEach(result::add);
+
         return result;
     }
 
@@ -169,17 +203,6 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder {
         this.mpConfig = mpConfig;
         openAPIConfig(new OpenApiConfigImpl(mpConfig));
         return this;
-    }
-
-    private static Optional<? extends Application> instantiate(Class<? extends Application> appClass) {
-        try {
-            return Optional.of(appClass.getConstructor().newInstance());
-        } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
-            throw new RuntimeException(e);
-        } catch (NoSuchMethodException e) {
-            // Wrapper app does not have a no-args constructor so we canont instantiate it.
-            return Optional.empty();
-        }
     }
 
     /**

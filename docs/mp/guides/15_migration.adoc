@@ -16,10 +16,10 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Helidon MP Migration Guide
+= Helidon MP Upgrade Guide
 :h1Prefix: MP
-:description: Helidon MP Migration Guide
-:keywords: helidon, porting, migration, incompatibilities
+:description: Helidon MP Upgrade Guide
+:keywords: helidon, porting, migration, upgrade, incompatibilities
 :helidon-uc-flavor: MP
 :helidon-lc-flavor: mp
 
@@ -103,18 +103,20 @@ in groupId `jakarta` (Jakarta EE modules).
 In case you declared a dependency on a javax module, you should change it to a jakarta one.
 
 Example:
-```xml
+[source,xml]
+----
 <dependency>
     <groupId>javax.activation</groupId>
     <artifactId>javax.activation-api</artifactId>
 </dependency>
-```
+----
 
 should be changed to
-```xml
+[source,xml]
+----
 <dependency>
     <groupId>jakarta.activation</groupId>
     <artifactId>jakarta.activation-api</artifactId>
 </dependency>
-```
+----
 As the `javax` module is no longer in dependency management of Helidon parent pom files.

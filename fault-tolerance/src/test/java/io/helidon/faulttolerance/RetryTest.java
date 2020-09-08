@@ -36,6 +36,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.isOneOf;
 import static org.hamcrest.Matchers.contains;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -133,9 +134,9 @@ class RetryTest {
         Single<Integer> result = retry.invoke(req::invoke);
         FaultToleranceTest.completionException(result, TimeoutException.class);
         // first time: immediate call
-        // second time: delayed invocation
+        // second time: delayed invocation or timeout in very slow system
         // third attempt to retry fails on timeout
-        assertThat("Should have been called twice", req.call.get(), is(2));
+        assertThat("Should have been called twice", req.call.get(), isOneOf(1, 2));
     }
 
     @Test

@@ -102,7 +102,7 @@ for native image.
 |✅ |{nbsp} |JSON-P |{nbsp}
 |✅ |{nbsp} |Multi-part |{nbsp}
 |❓ |{nbsp} |Prometheus |Not yet tested.
-|❓ |{nbsp} |Websocket |Not yet tested.
+|✅ |{nbsp} |Websocket |Server only.
 |❓ |gRPC Server |gRPC Server |Not yet tested.
 |✅ |{nbsp} |Metrics |{nbsp}
 |❓ |gRPC Client |gRPC Client |Not yet tested.

@@ -16,10 +16,10 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Helidon SE Migration Guide
+= Helidon SE Upgrade Guide
 :h1Prefix: SE
-:description: Helidon Migration Guide
-:keywords: helidon, porting, migration, incompatibilities
+:description: Helidon Upgrade Guide
+:keywords: helidon, porting, migration, upgrade, incompatibilities
 :helidon-uc-flavor: SE
 :helidon-lc-flavor: se
 
@@ -27,6 +27,36 @@ In Helidon 2 we have made some changes to APIs and runtime behavior. This guide
 will help you migrate a Helidon SE 1.x application to 2.x.
 
 include::../../common/guides/migration.adoc[]
+
+== Getters
+
+Some methods that act as getters of type `T` have been modified to return `Optional<T>`. You will
+need to change your code to handle the `Optional` return type. For example `ServerRequest.spanContext()`
+in 1.x had a return type of `SpanContext`. In 2.x it has a return type of `Optional<SpanContext>`.
+So if you had code like:
+
+[source,java]
+.Helidon 1.x Code
+----
+Span myNewSpan = GlobalTracer.get()
+        .buildSpan(“my-operation”)
+        .asChildOf(serverRequest.spanContext())
+        .start();
+----
+
+you will need to change it to something like:
+
+[source,java]
+.Helidon 2.x Code
+----
+Tracer.SpanBuilder spanBuilder = serverRequest.tracer()
+        .buildSpan("my-operation");
+serverRequest.spanContext().ifPresent(spanBuilder::asChildOf);
+Span myNewSpan = spanBuilder.start();
+----
+
+Note the use of `ifPresent()` on the returned `Optional<SpanContext>`.
+
 
 == Configuration
 
@@ -51,7 +81,8 @@ include::../../common/guides/migration.adoc[]
     `Config` `Builder`
 
 Example of advanced configuration of config:
-```java
+[source,java]
+----
 Config.builder()
        // system properties with a polling strategy of 10 seconds
        .addSource(ConfigSources.systemProperties()
@@ -67,7 +98,7 @@ Config.builder()
        // map config source (also supports polling strategy)
        .addSource(ConfigSources.create(Map.of("key", "value")))
        .build();
-```
+----
 
 
 == Resource class when loaded from Config
@@ -86,11 +117,12 @@ In Helidon 1.x support for JSON and other media types was configured when constr
 refactored so that it can be shared between the Helidon `WebServer` and `WebClient`.
 You now specify media support as part of the WebServer build:
 
-```java
+[source,java]
+----
 WebServer.builder()
     .addMediaSupport(JsonpSupport.create()) //registers reader and writer for Json-P
     .build()
-```
+----
 
 This replaces `Routing.builder().register(JsonSupport.create())...`
 
@@ -128,33 +160,36 @@ Configuration has been updated to use the new `Resource` approach:
 The configuration has been updated to have a nicer tree structure:
 
 Example of a public key from keystore:
-```yaml
+[source,yaml]
+----
 keystore:
    cert.alias: "service_cert"
    resource.path: "/conf/keystore.p12"
    type: "PKCS12"
    passphrase: "password"
-```
+----
 
 Example of a private key from keystore:
-```yaml
+[source,yaml]
+----
 keystore:
   key:
     alias: "myPrivateKey"
     passphrase: "password"
   resource.resource-path: "keystore/keystore.p12"
   passphrase: "password"
-```
+----
 
 Example of a pem resource with private key and certificate chain:
-```yaml
+[source,yaml]
+----
 pem:
   key:
     passphrase: "password"
     resource.resource-path: "keystore/id_rsa.p8"
   cert-chain:
     resource.resource-path: "keystore/public_key_cert.pem"
-```
+----
 
 
 == GrpcTlsDescriptor
@@ -168,27 +203,29 @@ Configuration has been updated to use the new `Resource` approach:
 == WebServer Configuration
 
 === SSL/TLS
-There is a new class `io.helidon.webserver.TlsConfig` that can be used
+There is a new class `io.helidon.webserver.WebServerTls` that can be used
 to configure TLS for a WebServer socket.
 Class `io.helidon.webserver.SSLContextBuilder` has been deprecated and will
 be removed.
 
 The class uses a `Builder` pattern:
-```java
-TlsConfig.builder()
+[source,java]
+----
+WebServerTls.builder()
    .privateKey(KeyConfig.keystoreBuilder()
    .keystore(Resource.create("certificate.p12"))
    .keystorePassphrase("helidon")
-```
+----
 
 The builder or built instance can be registered with a socket configuration builder
 including the `WebServer.Builder` itself:
 
-```java
+[source,java]
+----
 WebServer.builder(routing())
-                .tls(tlsConfig)
+                .tls(webServerTls)
                 .build();
-```
+----
 
 === Additional Sockets
 
@@ -196,7 +233,8 @@ Additional socket configuration has changed both in config
 and in API.
 
 The configuration now accepts following structure:
-```yaml
+[source,yaml]
+----
 server:
    port: 8000
    sockets:
@@ -205,7 +243,7 @@ server:
      - name: "static"
        port: 8002
        enabled: false
-```
+----
 
 Socket name is now a value of a property, allowing more freedom in naming.
 The default socket name is implicit (and set to `@default`).
@@ -214,12 +252,13 @@ We have added the `enabled` flag to support disabling sockets through configurat
 
 To add socket using a builder, you can use:
 
-```java
+[source,java]
+----
 WebServer.builder()
    .addSocket(SocketConfigurationBuidler.builder()
       .port(8001)
       .name("admin")));
-```
+----
 
 There is also a specialized method to add a socket and routing
 together, to remove mapping through a name.
@@ -233,13 +272,14 @@ Most methods from this class have been moved to `WebServer.Builder` or deprecate
 
 Example of a simple WebServer setup:
 
-```java
+[source,java]
+----
 WebServer.builder()
    .port(8001)
    .host("localhost")
    .routing(createRouting())
    .build();
-```
+----
 
 === Other significant WebServer deprecations
 
@@ -251,6 +291,6 @@ WebServer.builder()
 - `io.helidon.webserver.Routing.createServer(ServerConfiguration)` - please use `WebServer.builder()`
 - `io.helidon.webserver.Routing.createServer()` - please use `WebServer.builder()`
 - `io.helidon.webserver.SocketConfiguration.DEFAULT` - use a builder to create a named configuration
-- `io.helidon.webserver.SocketConfiguration.Builder.ssl(SSLContext) - use `TlsConfig` instead
-- `io.helidon.webserver.SocketConfiguration.Builder.enabledSSlProtocols(String...) - use `TlsConfig` instead
+- `io.helidon.webserver.SocketConfiguration.Builder.ssl(SSLContext) - use `WebServerTls` instead
+- `io.helidon.webserver.SocketConfiguration.Builder.enabledSSlProtocols(String...) - use `WebServerTls` instead
 

@@ -15,6 +15,7 @@
  */
 package io.helidon.webclient;
 
+import java.net.URI;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.logging.Logger;
@@ -35,16 +36,20 @@ class RedirectInterceptor implements HttpInterceptor {
     public void handleInterception(HttpResponse httpResponse,
                                    WebClientRequestImpl clientRequest,
                                    CompletableFuture<WebClientResponse> responseFuture) {
-        if (clientRequest.method() != Http.Method.GET) {
-            throw new WebClientException("Redirecting is currently supported only for GET method.");
-        }
         if (httpResponse.headers().contains(Http.Header.LOCATION)) {
+            long requestId = clientRequest.configuration().requestId();
             String newUri = httpResponse.headers().get(Http.Header.LOCATION);
-            LOGGER.fine(() -> "Redirecting to " + newUri);
-            CompletionStage<WebClientResponse> redirectResponse = WebClientRequestBuilderImpl
-                    .create(clientRequest)
-                    .uri(newUri)
-                    .request();
+            LOGGER.finest(() -> "(client reqID: " + requestId + ") Redirecting to " + newUri);
+            WebClientRequestBuilder requestBuilder = WebClientRequestBuilderImpl
+                    .create(clientRequest);
+            if (URI.create(newUri).getHost() == null) {
+                URI uri = clientRequest.uri();
+                requestBuilder.uri(uri.getScheme() + "://" + uri.getAuthority());
+                requestBuilder.path(newUri);
+            } else {
+                requestBuilder.uri(newUri);
+            }
+            CompletionStage<WebClientResponse> redirectResponse = requestBuilder.request();
             redirectResponse.whenComplete((clResponse, throwable) -> {
                 if (throwable == null) {
                     responseFuture.complete(clResponse);

@@ -56,9 +56,7 @@ public final class WebClientTracing implements WebClientService {
         Optional<Tracer> optionalTracer = request.context().get(Tracer.class);
         Tracer tracer = optionalTracer.orElseGet(GlobalTracer::get);
 
-        Tracer.SpanBuilder spanBuilder = tracer.buildSpan(method
-                                                                  + "-"
-                                                                  + request.uri());
+        Tracer.SpanBuilder spanBuilder = tracer.buildSpan(composeName(method, request));
 
         request.context().get(SpanContext.class).ifPresent(spanBuilder::asChildOf);
 
@@ -90,5 +88,14 @@ public final class WebClientTracing implements WebClientService {
         });
 
         return Single.just(request);
+    }
+
+    private String composeName(String method, WebClientServiceRequest request) {
+        return method
+                + "-"
+                + request.schema() + "://"
+                + request.host() + ":"
+                + request.port()
+                + request.path().toString();
     }
 }

@@ -15,6 +15,7 @@
  */
 package io.helidon.media.multipart;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -22,11 +23,11 @@ import java.util.List;
 /**
  * Writeable multipart entity.
  */
-public final class WriteableMultiPart implements MultiPart<WriteableBodyPart> {
+public class WriteableMultiPart implements MultiPart<WriteableBodyPart> {
 
     private final List<WriteableBodyPart> parts;
 
-    private WriteableMultiPart(List<WriteableBodyPart> parts) {
+    WriteableMultiPart(List<WriteableBodyPart> parts) {
         this.parts = parts;
     }
 
@@ -67,9 +68,10 @@ public final class WriteableMultiPart implements MultiPart<WriteableBodyPart> {
 
     /**
      * Create a new builder instance.
+     *
      * @return Builder
      */
-    public static Builder builder(){
+    public static Builder builder() {
         return new Builder();
     }
 
@@ -88,6 +90,7 @@ public final class WriteableMultiPart implements MultiPart<WriteableBodyPart> {
 
         /**
          * Add a body part.
+         *
          * @param bodyPart body part to add
          * @return this builder instance
          */
@@ -97,7 +100,58 @@ public final class WriteableMultiPart implements MultiPart<WriteableBodyPart> {
         }
 
         /**
+         * Add a new body part based on the name entity.
+         *
+         * @param name body part name
+         * @param entity body part entity
+         * @return this builder instance
+         */
+        public Builder bodyPart(String name, Object entity) {
+            return bodyPart(WriteableBodyPart.builder()
+                                    .name(name)
+                                    .entity(entity)
+                                    .build());
+        }
+
+        /**
+         * Add a new body part based on the name, filename and {@link Path} to the file.
+         *
+         * @param name body part name
+         * @param filename body part filename
+         * @param file file path
+         * @return this builder instance
+         */
+        public Builder bodyPart(String name, String filename, Path file) {
+            bodyPart(WriteableBodyPart.builder()
+                             .name(name)
+                             .filename(filename)
+                             .entity(file)
+                             .build());
+            return this;
+        }
+
+        /**
+         * Add a new body part based on the name and {@link Path} to the files.
+         *
+         * Filename for each file is set as actual file name.
+         *
+         * @param name body part name
+         * @param files file path
+         * @return this builder instance
+         */
+        public Builder bodyPart(String name, Path... files) {
+            for (Path file : files) {
+                Path fileName = file.getFileName();
+                if (fileName != null) {
+                    bodyPart(name, fileName.toString(), file);
+                }
+            }
+            return this;
+        }
+
+        /**
          * Add body parts.
+         *
          * @param bodyParts body parts to add
          * @return this builder instance
          */

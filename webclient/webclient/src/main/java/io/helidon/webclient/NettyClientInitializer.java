@@ -17,13 +17,15 @@ package io.helidon.webclient;
 
 import java.net.URI;
 import java.time.Duration;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
 
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelDuplexHandler;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
@@ -33,8 +35,14 @@ import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.proxy.ProxyHandler;
 import io.netty.handler.ssl.SslHandler;
+import io.netty.handler.timeout.IdleStateEvent;
+import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.util.concurrent.FutureListener;
+
+import static io.helidon.webclient.WebClientRequestBuilderImpl.CONNECTION_IDENT;
+import static io.helidon.webclient.WebClientRequestBuilderImpl.IN_USE;
+import static io.helidon.webclient.WebClientRequestBuilderImpl.RESULT;
 
 /**
  * Helidon Web Client initializer which is used for netty channel initialization.
@@ -42,26 +50,14 @@ import io.netty.util.concurrent.FutureListener;
 class NettyClientInitializer extends ChannelInitializer<SocketChannel> {
 
     private final RequestConfiguration configuration;
-    private final CompletableFuture<WebClientResponse> future;
-    private final CompletableFuture<WebClientServiceResponse> responseReceived;
-    private final CompletableFuture<WebClientServiceResponse> requestComplete;
 
     /**
      * Creates new instance.
      *
-     *  @param configuration   request configuration
-     * @param future          response completable future
-     * @param responseReceived future indicating recerved response headers
-     * @param requestComplete future indicating completed request
+     * @param configuration request configuration
      */
-    NettyClientInitializer(RequestConfiguration configuration,
-                           CompletableFuture<WebClientResponse> future,
-                           CompletableFuture<WebClientServiceResponse> responseReceived,
-                           CompletableFuture<WebClientServiceResponse> requestComplete) {
+    NettyClientInitializer(RequestConfiguration configuration) {
         this.configuration = configuration;
-        this.future = future;
-        this.responseReceived = responseReceived;
-        this.requestComplete = requestComplete;
     }
 
     @Override
@@ -101,16 +97,48 @@ class NettyClientInitializer extends ChannelInitializer<SocketChannel> {
                     //Check if ssl handshake has been successful. Without this check will this exception be replaced by
                     //netty and therefore it will be lost.
                     if (channelFuture.cause() != null) {
-                        future.completeExceptionally(channelFuture.cause());
+                        channel.attr(RESULT).get().completeExceptionally(channelFuture.cause());
                         channel.close();
                     }
                 });
             });
         }
 
-        pipeline.addLast("logger", new LoggingHandler(LogLevel.TRACE));
+        pipeline.addLast("logger", new LoggingHandler(ClientNettyLog.class, LogLevel.TRACE));
         pipeline.addLast("httpCodec", new HttpClientCodec());
         pipeline.addLast("httpDecompressor", new HttpContentDecompressor());
-        pipeline.addLast("helidonHandler", new NettyClientHandler(future, responseReceived, requestComplete));
+        pipeline.addLast("idleStateHandler", new IdleStateHandler(0, 0, 50));
+        pipeline.addLast("idleConnectionHandler", new IdleConnectionHandler());
+        pipeline.addLast("helidonHandler", new NettyClientHandler());
+    }
+
+    private static class IdleConnectionHandler extends ChannelDuplexHandler {
+
+        private static final Logger LOGGER = Logger.getLogger(IdleConnectionHandler.class.getName());
+
+        @Override
+        public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+            if (evt instanceof IdleStateEvent) {
+                if (ctx.channel().attr(IN_USE).get().compareAndSet(false, true)) {
+                    ctx.close();
+                }
+            }
+            super.userEventTriggered(ctx, evt);
+        }
+
+        @Override
+        public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+            Channel channel = ctx.channel();
+            WebClientRequestBuilderImpl.ConnectionIdent key = channel.attr(CONNECTION_IDENT).get();
+            LOGGER.finest(() -> "Channel closed -> " + channel.hashCode());
+            if (key != null) {
+                WebClientRequestBuilderImpl.removeChannelFromCache(key, channel);
+            }
+            super.channelInactive(ctx);
+        }
+    }
+
+    // this class is only used to create a log handler in NettyLogHandler, to distinguish from webserver
+    private static final class ClientNettyLog {
     }
 }

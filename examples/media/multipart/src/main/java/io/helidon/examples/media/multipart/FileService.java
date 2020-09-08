@@ -126,7 +126,9 @@ public final class FileService implements Service {
                 }).forEach((part) -> {
                     if ("file[]".equals(part.name())) {
                         final ByteChannel channel = newByteChannel(storage, part.filename());
-                        Multi.create(part.content()).forEach(chunk -> writeChunk(channel, chunk));
+                        Multi.create(part.content())
+                                .forEach(chunk -> writeChunk(channel, chunk))
+                                .thenAccept(it -> closeChannel(channel));
                     }
                 });
     }
@@ -170,6 +172,14 @@ public final class FileService implements Service {
             throw new RuntimeException(ex);
         } finally {
             chunk.release();
+        }
+    }
+
+    private void closeChannel(ByteChannel channel) {
+        try {
+            channel.close();
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
         }
     }
 

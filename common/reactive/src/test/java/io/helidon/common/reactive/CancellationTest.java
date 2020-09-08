@@ -25,6 +25,9 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 
+/**
+ * Tests cancellation of {@code Future} and {@code Single}.
+ */
 public class CancellationTest {
 
     /**
@@ -53,12 +56,8 @@ public class CancellationTest {
     public void testSingleCancel() {
         AtomicBoolean cancelled = new AtomicBoolean(false);
         Single<Object> single = Single.create(new CompletableFuture<>());
-        CompletableFuture<Object> future = single.toStage(true).toCompletableFuture();
-        single.whenComplete((o, t) -> {
-            if (t instanceof CancellationException) {
-                cancelled.set(true);
-            }
-        });
+        CompletableFuture<Object> future = single.toStage().toCompletableFuture();
+        single.onCancel(() -> cancelled.set(true));
         future.cancel(true);        // should cancel single
         assertThat(cancelled.get(), is(true));
     }

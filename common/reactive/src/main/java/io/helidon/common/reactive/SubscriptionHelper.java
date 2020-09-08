@@ -30,7 +30,11 @@ public enum SubscriptionHelper implements Flow.Subscription {
     /**
      * The singleton instance indicating a canceled subscription.
      */
-    CANCELED;
+    CANCELED,
+    /**
+     * The singleton instance indicating a subscription requested with non-positive.
+     */
+    BAD_REQUEST;
 
     @Override
     public void request(long n) {
@@ -103,6 +107,9 @@ public enum SubscriptionHelper implements Flow.Subscription {
             if (current == CANCELED) {
                 upstream.cancel();
                 return false;
+            }
+            if (current == BAD_REQUEST) {
+                return true;
             }
             if (current != null) {
                 upstream.cancel();
@@ -179,6 +186,16 @@ public enum SubscriptionHelper implements Flow.Subscription {
             }
         }
         return false;
+    }
+
+    /**
+     * Atomically swap in the {@link #BAD_REQUEST} instance, if and only if previous value is null.
+     *
+     * @param subscriptionField the target field to swap atomically.
+     * @return true if swap was successful
+     */
+    public static boolean badRequest(AtomicReference<Flow.Subscription> subscriptionField) {
+        return subscriptionField.compareAndSet(null, SubscriptionHelper.BAD_REQUEST);
     }
 
     /**

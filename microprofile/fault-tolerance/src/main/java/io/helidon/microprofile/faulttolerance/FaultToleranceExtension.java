@@ -93,7 +93,7 @@ public class FaultToleranceExtension implements Extension {
     }
 
     /**
-     * Class to mimic a {@link Priority} annotation for the purpuse of changing
+     * Class to mimic a {@link Priority} annotation for the purpose of changing
      * its value dynamically.
      */
     private static class LiteralPriority extends AnnotationLiteral<Priority> implements Priority {

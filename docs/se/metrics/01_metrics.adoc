@@ -67,7 +67,7 @@ import org.eclipse.microprofile.metrics.MetricRegistry;
 
 public class MyService implements Service {
 
-    private final MetricRegistry registry = RegistryFactory.getRegistryFactory().get()
+    private final MetricRegistry registry = RegistryFactory.getInstance()
         .getRegistry(MetricRegistry.Type.APPLICATION); <1>
     private final Counter accessCtr = registry.counter("accessctr"); <2>
 

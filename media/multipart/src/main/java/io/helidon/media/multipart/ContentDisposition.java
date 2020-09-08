@@ -15,9 +15,9 @@
  */
 package io.helidon.media.multipart;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.HashMap;
@@ -112,16 +112,10 @@ public final class ContentDisposition {
      * @return {@code Optional<String>}, never {@code null}
      */
     public Optional<String> filename() {
-        String filename;
-        try {
-            String value = parameters.get(FILENAME_PARAMETER);
-            if (value != null) {
-                filename = URLDecoder.decode(value, "UTF-8");
-            } else {
-                filename = null;
-            }
-        } catch (UnsupportedEncodingException ex) {
-            filename = null;
+        String filename = null;
+        String value = parameters.get(FILENAME_PARAMETER);
+        if (value != null) {
+            filename = URLDecoder.decode(value, StandardCharsets.UTF_8);
         }
         return Optional.ofNullable(filename);
     }
@@ -191,7 +185,13 @@ public final class ContentDisposition {
             sb.append(";");
             sb.append(param.getKey());
             sb.append("=");
-            sb.append(param.getValue());
+            if (SIZE_PARAMETER.equals(param.getKey())) {
+                sb.append(param.getValue());
+            } else {
+                sb.append("\"");
+                sb.append(param.getValue());
+                sb.append("\"");
+            }
         }
         return sb.toString();
     }
@@ -261,7 +261,7 @@ public final class ContentDisposition {
      */
     public static final class Builder implements io.helidon.common.Builder<ContentDisposition> {
 
-        private String type;
+        private String type = "form-data";
         private final Map<String, String> params = new HashMap<>();
 
         /**
@@ -280,7 +280,7 @@ public final class ContentDisposition {
          * @return this builder
          */
         public Builder name(String name) {
-            params.put("name", name);
+            params.put(NAME_PARAMETER, name);
             return this;
         }
 
@@ -288,16 +288,9 @@ public final class ContentDisposition {
          * Set the content disposition {@code filename} parameter.
          * @param filename filename parameter
          * @return this builder
-         * @throws IllegalStateException if an
-         * {@link UnsupportedEncodingException} exception is thrown for
-         * {@code UTF-8}
          */
         public Builder filename(String filename) {
-            try {
-                params.put("filename", URLEncoder.encode(filename, "UTF-8"));
-            } catch (UnsupportedEncodingException ex) {
-                throw new IllegalStateException(ex);
-            }
+            params.put(FILENAME_PARAMETER, URLEncoder.encode(filename, StandardCharsets.UTF_8));
             return this;
         }
 
@@ -307,7 +300,7 @@ public final class ContentDisposition {
          * @return this builder
          */
         public Builder creationDate(ZonedDateTime date) {
-            params.put("creation-date", date.format(Http.DateTime.RFC_1123_DATE_TIME));
+            params.put(CREATION_DATE_PARAMETER, date.format(Http.DateTime.RFC_1123_DATE_TIME));
             return this;
         }
 
@@ -317,7 +310,7 @@ public final class ContentDisposition {
          * @return this builder
          */
         public Builder modificationDate(ZonedDateTime date) {
-            params.put("modification-date", date.format(Http.DateTime.RFC_1123_DATE_TIME));
+            params.put(MODIFICATION_DATE_PARAMETER, date.format(Http.DateTime.RFC_1123_DATE_TIME));
             return this;
         }
 
@@ -327,7 +320,7 @@ public final class ContentDisposition {
          * @return this builder
          */
         public Builder readDate(ZonedDateTime date) {
-            params.put("read-date", date.format(Http.DateTime.RFC_1123_DATE_TIME));
+            params.put(READ_DATE_PARAMETER, date.format(Http.DateTime.RFC_1123_DATE_TIME));
             return this;
         }
 
@@ -337,7 +330,7 @@ public final class ContentDisposition {
          * @return this builder
          */
         public Builder size(long size) {
-            params.put("size", Long.toString(size));
+            params.put(SIZE_PARAMETER, Long.toString(size));
             return this;
         }
 

@@ -13,5 +13,8 @@ Then try the endpoints:
 
 ```
 curl -X GET http://localhost:7001/helloworld
-curl -X GET http://localhost:7001/helloworld/another
+curl -X GET http://localhost:7001/helloworld/earth
 ```
+
+By default the server will use a dynamic port, see the messages displayed
+when the application starts.

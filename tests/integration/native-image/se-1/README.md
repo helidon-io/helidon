@@ -37,4 +37,24 @@ curl -i http://localhost:7076/health
 
 # Should return 200 code and JSON response with metrics
 curl -i -H "Accept: application/json" http://localhost:7076/metrics
+
+# Should return ALL TESTS PASSED! after passing all webclient tests
+curl -i http://localhost:7076/wc/test
+
+# Should return: Upgrade: websocket
+curl \
+    --include \
+    --no-buffer \
+    --header "Connection: Upgrade" \
+    --header "Upgrade: websocket" \
+    --header "Host: localhost:7076" \
+    --header "Origin: http://localhost:7076" \
+    --header "Sec-WebSocket-Key: SGVsbG8sIHdvcmxkIQ==" \
+    --header "Sec-WebSocket-Version: 13" \
+    http://localhost:7076/ws/messages
+
+# Bi-directional test is possible with websocat tool
+# should return 'part1 part2'
+for msg in "part1" "part2" "SEND"; do echo $msg; done \
+| websocat ws://127.0.0.1:7076/ws/messages
 ```

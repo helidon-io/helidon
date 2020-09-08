@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
+import io.helidon.common.http.FormParams;
 import io.helidon.common.reactive.RetrySchema;
 import io.helidon.config.Config;
 
@@ -89,6 +90,15 @@ public class DefaultMediaSupport implements MediaSupport {
     }
 
     /**
+     * Return {@link CharSequence} stream writer instance.
+     *
+     * @return {@link CharSequence} writer
+     */
+    public static MessageBodyStreamWriter<CharSequence> charSequenceStreamWriter() {
+        return CharSequenceBodyStreamWriter.create();
+    }
+
+    /**
      * Create a new instance of {@link ReadableByteChannel} writer.
      *
      * @return {@link ReadableByteChannel} writer
@@ -126,6 +136,24 @@ public class DefaultMediaSupport implements MediaSupport {
     }
 
     /**
+     * Return {@link FormParams} writer instance.
+     *
+     * @return {@link FormParams} writer
+     */
+    public static MessageBodyWriter<FormParams> formParamWriter() {
+        return FormParamsBodyWriter.create();
+    }
+
+    /**
+     * Return {@link FormParams} reader instance.
+     *
+     * @return {@link FormParams} reader
+     */
+    public static MessageBodyReader<FormParams> formParamReader() {
+        return FormParamsBodyReader.create();
+    }
+
+    /**
      * Return {@link Throwable} writer instance.
      *
      * @param includeStackTraces whether stack traces are to be written
@@ -138,7 +166,8 @@ public class DefaultMediaSupport implements MediaSupport {
     @Override
     public Collection<MessageBodyReader<?>> readers() {
         return List.of(stringReader(),
-                       inputStreamReader());
+                       inputStreamReader(),
+                       formParamReader());
     }
 
     @Override
@@ -147,7 +176,13 @@ public class DefaultMediaSupport implements MediaSupport {
                        byteChannelBodyWriter,
                        pathWriter(),
                        fileWriter(),
-                       throwableBodyWriter);
+                       throwableBodyWriter,
+                       formParamWriter());
+    }
+
+    @Override
+    public Collection<MessageBodyStreamWriter<?>> streamWriters() {
+        return List.of(charSequenceStreamWriter());
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,7 +61,7 @@ public class JwkEC extends JwkPki {
      */
     public static final String ALG_ES384 = "ES384";
     /**
-     * ECDSA using P-512 and SHA-512.
+     * ECDSA using {@value #CURVE_P521} and SHA-512.
      * See <a href="https://www.rfc-editor.org/rfc/rfc7518.txt">RFC 7518</a>, section 7.1.2.
      */
     public static final String ALG_ES512 = "ES512";
@@ -76,10 +76,10 @@ public class JwkEC extends JwkPki {
      */
     public static final String CURVE_P384 = "P-384";
     /**
-     * P-512 Curve.
+     * P-521 Curve.
      * See <a href="https://www.rfc-editor.org/rfc/rfc7518.txt">RFC 7518</a>, section 7.6.2.
      */
-    public static final String CURVE_P512 = "P-512";
+    public static final String CURVE_P521 = "P-521";
 
     /**
      * JWK parameter for EC curve.
@@ -87,7 +87,7 @@ public class JwkEC extends JwkPki {
      *
      * @see #CURVE_P256
      * @see #CURVE_P384
-     * @see #CURVE_P512
+     * @see #CURVE_P521
      */
     public static final String PARAM_CURVE = "crv";
     /**
@@ -154,7 +154,7 @@ public class JwkEC extends JwkPki {
                                 + "3554433653942643"),
                 1));
 
-        CURVE_MAP.put(CURVE_P512, new ECParameterSpec(
+        CURVE_MAP.put(CURVE_P521, new ECParameterSpec(
                 new EllipticCurve(
                         new ECFieldFp(new BigInteger(
                                 "68647976601306097149819007990813932172694353001433054093944634591855431833976560521225596406"
@@ -307,7 +307,7 @@ public class JwkEC extends JwkPki {
             case CURVE_P384:
                 this.defaultAlg = ALG_ES384;
                 break;
-            case CURVE_P512:
+            case CURVE_P521:
                 this.defaultAlg = ALG_ES512;
                 break;
             default:
