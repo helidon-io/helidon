@@ -54,10 +54,7 @@ import org.eclipse.microprofile.metrics.Counter;
 import org.glassfish.jersey.process.internal.RequestContext;
 import org.glassfish.jersey.process.internal.RequestScope;
 
-import static io.helidon.microprofile.faulttolerance.ThrowableMapper.mapTypes;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceExtension.isFaultToleranceMetricsEnabled;
-import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.METRIC_NAME_TEMPLATE;
-import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.registerHistogram;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BREAKER_CALLS_FAILED_TOTAL;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BREAKER_CALLS_PREVENTED_TOTAL;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BREAKER_CALLS_SUCCEEDED_TOTAL;
@@ -73,6 +70,7 @@ import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BULKH
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BULKHEAD_WAITING_QUEUE_POPULATION;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.INVOCATIONS_FAILED_TOTAL;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.INVOCATIONS_TOTAL;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.METRIC_NAME_TEMPLATE;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.RETRY_CALLS_FAILED_TOTAL;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.RETRY_CALLS_SUCCEEDED_NOT_RETRIED_TOTAL;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.RETRY_CALLS_SUCCEEDED_RETRIED_TOTAL;
@@ -83,7 +81,9 @@ import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.TIMEO
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.getCounter;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.getHistogram;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.registerGauge;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.registerHistogram;
 import static io.helidon.microprofile.faulttolerance.ThrowableMapper.map;
+import static io.helidon.microprofile.faulttolerance.ThrowableMapper.mapTypes;
 
 /**
  * Invokes a FT method applying semantics based on method annotations. An instance
@@ -199,9 +199,9 @@ public class MethodInvoker implements FtSupplier<Object> {
                 return false;
             }
             MethodStateKey that = (MethodStateKey) o;
-            return classLoader.equals(that.classLoader) &&
-                    methodClass.equals(that.methodClass) &&
-                    method.equals(that.method);
+            return classLoader.equals(that.classLoader)
+                    && methodClass.equals(that.methodClass)
+                    && method.equals(that.method);
         }
 
         @Override

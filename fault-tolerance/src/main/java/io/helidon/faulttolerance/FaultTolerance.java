@@ -124,6 +124,7 @@ public final class FaultTolerance {
     /**
      * A typed builder to configure a customized sequence of fault tolerance handlers.
      *
+     * @param <T> type of result
      * @return a new builder
      */
     public static <T> TypedBuilder<T> typedBuilder() {
