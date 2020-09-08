@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -112,9 +112,10 @@ public final class OutboundConfig {
         String transport = env.transport();
         String host = env.targetUri().getHost();
         String path = env.path().orElse(null);
+        String method = env.method();
 
         for (OutboundTarget outboundTarget : targets) {
-            if (outboundTarget.matches(transport, host, path)) {
+            if (outboundTarget.matches(transport, host, path, method)) {
                 return Optional.of(outboundTarget);
             }
         }
