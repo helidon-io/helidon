@@ -28,6 +28,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
+import io.helidon.common.reactive.CompletionSingle;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
 
@@ -74,7 +75,7 @@ class TimeoutImpl implements Timeout {
                     .build()
                     .invoke(() -> {
                         monitorStarted.complete(null);
-                        return Single.never();
+                        return new TimeoutSingleNever();        // new instance
                     })
                     .exceptionally(it -> {
                         if (callReturned.compareAndSet(false, true)) {
@@ -109,6 +110,29 @@ class TimeoutImpl implements Timeout {
             Thread.interrupted();
 
             return Single.create(future, true);
+        }
+    }
+
+    /**
+     * Similar to {@link io.helidon.common.reactive.SingleNever} but not a singleton.
+     * When running multiple tests over the same thread, and old timeout that expires
+     * can interrupt a new task if using the same instance of this class.
+     */
+    private static class TimeoutSingleNever extends CompletionSingle<Object> {
+
+        TimeoutSingleNever() {
+        }
+
+        @Override
+        public void subscribe(Flow.Subscriber<? super Object> subscriber) {
+            subscriber.onSubscribe(new Flow.Subscription() {
+                @Override
+                public void request(long n) {
+                }
+                @Override
+                public void cancel() {
+                }
+            });
         }
     }
 }
