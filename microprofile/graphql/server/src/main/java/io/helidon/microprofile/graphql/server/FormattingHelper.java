@@ -258,6 +258,7 @@ public class FormattingHelper {
     protected static String[] getMethodParameterFormat(JandexUtils jandexUtils, String clazz, String methodName,
                                                        int paramNumber) {
 
+        LOGGER.finest("getMethodParameterFormat(): Class = " + clazz + ", method = " + methodName + ", paramNumber = " + paramNumber);
         if (jandexUtils.hasIndex()) {
             AnnotationInstance dateFormat1 =
                     jandexUtils.getMethodParameterAnnotation(clazz, methodName, paramNumber, JSONB_DATE_FORMAT);
@@ -286,8 +287,8 @@ public class FormattingHelper {
                                                             AnnotationInstance numberFormat1,
                                                             AnnotationInstance numberFormat2) {
         // ensure that both date and number formatting are not present
-        if (dateFormat1 != null || dateFormat2 != null &&
-                numberFormat1 != null || numberFormat2 != null) {
+        if ((dateFormat1 != null || dateFormat2 != null)
+            && (numberFormat1 != null || numberFormat2 != null)) {
             ensureRuntimeException(LOGGER, "Cannot have date and number formatting on the same method");
         }
         AnnotationInstance formatInstance = dateFormat1 != null ? dateFormat1

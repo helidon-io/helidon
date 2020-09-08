@@ -20,12 +20,16 @@ package io.helidon.microprofile.graphql.server.test.queries;
 import javax.enterprise.context.ApplicationScoped;
 
 import io.helidon.microprofile.graphql.server.test.types.SimpleContactWithNumberFormats;
+import javax.json.bind.annotation.JsonbNumberFormat;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Mutation;
 import org.eclipse.microprofile.graphql.Name;
 import org.eclipse.microprofile.graphql.NumberFormat;
 import org.eclipse.microprofile.graphql.Query;
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Class that holds queries and mutations that have various formatting types.
@@ -61,5 +65,16 @@ public class NumberFormatQueriesAndMutations {
     @Query
     public BigDecimal echoBigDecimalUsingFormat(@Name("param1") @NumberFormat("BD-####") BigDecimal param1) {
         return param1;
+    }
+
+    @Query
+    public List<String> getListAsString(@Name("arg1")
+                                        @JsonbNumberFormat("ignore 00.0000000")
+                                        List<List<@NumberFormat("value 00.0000000") BigDecimal>> values) {
+        if (values != null) {
+            return values.stream().map(Object::toString).collect(Collectors.toList());
+        }
+
+        return new ArrayList<>();
     }
 }

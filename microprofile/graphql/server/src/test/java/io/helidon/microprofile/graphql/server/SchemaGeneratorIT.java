@@ -323,6 +323,10 @@ public class SchemaGeneratorIT
         assertThat(mapResults, is(notNullValue()));
         assertThat(mapResults.get("echoBigDecimalUsingFormat"), is(BigDecimal.valueOf(123)));
 
+        // COH-21891
+        mapResults = getAndAssertResult(executionContext.execute("query { listAsString(arg1: [ [ \"value 12.12\", \"value 33.33\"] ] ) }"));
+        assertThat(mapResults, is(notNullValue()));
+
         // create a new contact
 //        String contactInput =
 //                "contact: {"

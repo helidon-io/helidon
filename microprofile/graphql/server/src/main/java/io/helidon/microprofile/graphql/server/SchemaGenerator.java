@@ -27,7 +27,7 @@ import java.lang.reflect.Parameter;
 import java.lang.reflect.ParameterizedType;
 import java.text.NumberFormat;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.TemporalAccessor;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -1104,6 +1104,7 @@ public class SchemaGenerator {
             java.lang.reflect.Type[] genericParameterTypes = method.getGenericParameterTypes();
             int i = 0;
             for (Parameter parameter : parameters) {
+                boolean isID = false;
                 Name paramNameAnnotation = parameter.getAnnotation(Name.class);
                 String parameterName = paramNameAnnotation != null
                         && !paramNameAnnotation.value().isBlank()
@@ -1117,6 +1118,7 @@ public class SchemaGenerator {
                 if (parameter.getAnnotation(Id.class) != null) {
                     validateIDClass(returnType.getReturnClass());
                     returnType.setReturnClass(ID);
+                    isID = true;
                 }
 
                 String argumentDefaultValue = getDefaultValueAnnotationValue(parameter);
@@ -1142,6 +1144,17 @@ public class SchemaGenerator {
                     discoveredMethod.setSource(returnType.getReturnClass());
                     discoveredMethod.setQueryAnnotated(method.getAnnotation(Query.class) != null);
                     argument.setSourceArgument(true);
+                }
+
+                if (!isID) {
+                    SchemaScalar dateScalar = getScalar(returnType.getReturnClass());
+                    if (dateScalar != null && isDateTimeScalar(dateScalar.getName())) {
+                        // only set the original array type if it's a date/time
+                     //   discoveredMethod.setOriginalArrayType(Class.forName(returnType.returnClass));
+                    }
+                    argument.setArrayReturnTypeMandatory(returnType.isReturnTypeMandatory);
+                    argument.setArrayReturnType(returnType.isArrayType);
+                    argument.setArrayLevels(returnType.getArrayLevels());
                 }
 
                 discoveredMethod.addArgument(argument);
@@ -1212,12 +1225,12 @@ public class SchemaGenerator {
             actualReturnType.setArrayLevels(arrayLevels);
             actualReturnType.setReturnTypeMandatory(rootTypeResult.isArrayReturnTypeMandatory());
             actualReturnType.setFormat(rootTypeResult.format);
+            actualReturnType.setArrayType(true);
         } else if (!returnClazzName.isEmpty() && returnClazzName.startsWith("[")) {
             // return type is array of either primitives or Objects/Interface/Enum.
             actualReturnType.setArrayType(true);
             actualReturnType.setArrayLevels(getArrayLevels(returnClazzName));
             actualReturnType.setReturnClass(getRootArrayClass(returnClazzName));
-
         } else {
             // primitive or type
             actualReturnType.setReturnClass(returnClazzName);

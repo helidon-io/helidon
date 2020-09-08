@@ -22,10 +22,14 @@ import java.lang.reflect.Method;
 import java.text.DateFormat;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+
 import java.time.temporal.TemporalAccessor;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
@@ -114,11 +118,12 @@ public class DataFetcherUtils {
                             // check the format and convert it from a string to the original format
                             String[] format = argument.getFormat();
                             if (!isFormatEmpty(format)) {
-                                // TODO: This always returns false, need to fix
+                                // TODO: This always returns false, need to fix ??
                                 if (isDateTimeScalar(argument.getArgumentType())) {
                                     DateTimeFormatter dateFormatter = getCorrectDateFormatter(originalType.getName(),
                                                                                               format[1], format[0]);
-                                    listArgumentValues.add(dateFormatter.parse(key.toString()));
+                                    listArgumentValues.add(
+                                            getOriginalDateTimeValue(originalType, dateFormatter.parse(key.toString())));
                                 } else {
                                     NumberFormat numberFormat = getCorrectNumberFormat(originalType.getName(),
                                                                                        format[1], format[0]);
@@ -230,35 +235,6 @@ public class DataFetcherUtils {
         }
     }
 
-
-    /**
-     * Create a new {@link DataFetcher} which formats a date/time.
-     *
-     * @param propertyName property to extract
-     * @param valueFormat  formatting value
-     * @param locale       formatting locale
-     * @param <S>          type of the source
-     * @return a new {@link DataFetcher}
-     */
-    public static <S> DataFetcher<String> newDateFormatPropertyDataFetcher(String propertyName,
-                                                                           String valueFormat, String locale) {
-        Locale actualLocale = SchemaGeneratorHelper.DEFAULT_LOCALE.equals(locale)
-                ? Locale.getDefault()
-                : Locale.forLanguageTag(locale);
-        DateFormat dateFormat = new SimpleDateFormat(valueFormat, actualLocale);
-
-        return environment -> {
-            S source = environment.getSource();
-            if (source == null) {
-                return null;
-            }
-            Object rawValue = PropertyDataFetcherHelper
-                    .getPropertyValue(propertyName, source, environment.getFieldType(), environment);
-
-            return rawValue != null ? dateFormat.format(rawValue) : null;
-        };
-    }
-
     /**
      * Convert the ID type back to the original type for the method call.
      *
@@ -275,6 +251,27 @@ public class DataFetcherUtils {
             return UUID.fromString(key);
         } else {
             return key;
+        }
+    }
+
+    /**
+     * Return the original date/time value.
+     *
+     * @param originalType original type
+     * @param value        the {@link TemporalAccessor} value
+     * @return the original date/time value
+     */
+    private static TemporalAccessor getOriginalDateTimeValue(Class<?> originalType, TemporalAccessor value) {
+        if (originalType.equals(LocalDateTime.class)) {
+            return LocalDateTime.from(value);
+        } else if (originalType.equals(LocalDate.class)) {
+            return LocalDate.from(value);
+        } else if (originalType.equals(ZonedDateTime.class)) {
+            return ZonedDateTime.from(value);
+        } else if (originalType.equals(OffsetDateTime.class)) {
+            return OffsetDateTime.from(value);
+        } else {
+            return null;
         }
     }
 }

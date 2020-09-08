@@ -20,7 +20,6 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.NumberFormat;
 import java.text.ParseException;
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.OffsetTime;
 
@@ -29,6 +28,7 @@ import static graphql.Scalars.GraphQLFloat;
 import static graphql.Scalars.GraphQLInt;
 
 import graphql.Scalars;
+import graphql.language.StringValue;
 import graphql.scalars.ExtendedScalars;
 import graphql.schema.Coercing;
 import graphql.schema.CoercingParseLiteralException;
@@ -47,14 +47,46 @@ public class CustomScalars {
     private CustomScalars() {
     }
 
+    /**
+     * An instance of a custome BigDecimal Scalar.
+     */
     public static final GraphQLScalarType CUSTOM_BIGDECIMAL_SCALAR = newCustomBigDecimalScalar();
+
+    /**
+     * An instance of a custom Int scalar.
+     */
     public static final GraphQLScalarType CUSTOM_INT_SCALAR = newCustomGraphQLInt();
+
+    /**
+     * An instance of a custom Float scalar.
+     */
     public static final GraphQLScalarType CUSTOM_FLOAT_SCALAR = newCustomGraphQLFloat();
+
+    /**
+     * An instance of a custom BigInteger scalar.
+     */
     public static final GraphQLScalarType CUSTOM_BIGINTEGER_SCALAR = newCustomGraphQLBigInteger();
+
+    /**
+     * An instance of a custom date/time scalar.
+     */
     public static final GraphQLScalarType CUSTOM_DATE_TIME_SCALAR = newDateTimeScalar();
+
+    /**
+     * An instance of a custom time scalar.
+     */
     public static final GraphQLScalarType CUSTOM_TIME_SCALAR = newTimeScalar();
+
+    /**
+     * An instance of a custom date scalar.
+     */
     public static final GraphQLScalarType CUSTOM_DATE_SCALAR = newDateScalar();
 
+    /**
+     * Return a new custom date/time scalar.
+     *
+     * @return a new custom date/time scalar
+     */
     public static GraphQLScalarType newDateTimeScalar() {
         GraphQLScalarType originalScalar = ExtendedScalars.DateTime;
         Coercing<OffsetDateTime, String> originalCoercing = originalScalar.getCoercing();
@@ -72,17 +104,21 @@ public class CustomScalars {
                 return null;
             }
 
-
             @Override
             public OffsetDateTime parseLiteral(Object input) throws CoercingParseLiteralException {
                 return null;
             }
         })
-                .name("DateTime")
-                .description("A Custom RFC-3339 compliant DateTime Scalar")
+        .name(originalScalar.getName())
+        .description("Custom: " + originalScalar.getDescription())
         .build();
     }
 
+    /**
+     * Return a new custom time scalar.
+     *
+     * @return a new custom time scalar
+     */
     public static GraphQLScalarType newTimeScalar() {
         GraphQLScalarType originalScalar = ExtendedScalars.Time;
         Coercing<OffsetDateTime, String> originalCoercing = originalScalar.getCoercing();
@@ -104,15 +140,21 @@ public class CustomScalars {
                 return null;
             }
         })
-                .name("Time")
-                .description("A Custom RFC-3339 compliant Time Scalar")
+        .name(originalScalar.getName())
+        .description("Custom: " + originalScalar.getDescription())
         .build();
     }
 
+    /**
+     * Return a new custom date scalar.
+     *
+     * @return a new custom date scalar
+     */
+    @SuppressWarnings("unchecked")
     public static GraphQLScalarType newDateScalar() {
         GraphQLScalarType originalScalar = ExtendedScalars.Date;
         Coercing<OffsetDateTime, String> originalCoercing = originalScalar.getCoercing();
-        return GraphQLScalarType.newScalar().coercing(new Coercing<LocalDate, String>() {
+        return GraphQLScalarType.newScalar().coercing(new Coercing<Object, String>() {
             public String serialize(Object dataFetcherResult) throws CoercingSerializeException {
                 return dataFetcherResult instanceof String
                         ? (String) dataFetcherResult
@@ -120,33 +162,33 @@ public class CustomScalars {
             }
 
             @Override
-            public LocalDate parseValue(Object input) throws CoercingParseValueException {
-                return null;
+            public Object parseValue(Object input) throws CoercingParseValueException {
+                return input instanceof StringValue ? ((StringValue) input).getValue()
+                        : originalCoercing.parseValue(input);
             }
-
 
             @Override
-            public LocalDate parseLiteral(Object input) throws CoercingParseLiteralException {
-                return null;
+            public Object parseLiteral(Object input) throws CoercingParseLiteralException {
+                return input instanceof StringValue ? ((StringValue) input).getValue()
+                        : originalCoercing.parseLiteral(input);
             }
         })
-                .name("Date")
-                .description("A Custom RFC-3339 compliant Date Scalar")
+        .name(originalScalar.getName())
+        .description("Custom: " + originalScalar.getDescription())
         .build();
     }
 
     /**
-     * Creates a custom BigDecimalScalar which will parse a formatted value which was originally formatted using a {@link
-     * NumberFormat}.
+     * Return a new custom BigDecimal scalar.
      *
-     * @return a custom BigDecimalScalar
+     * @return a new custom BigDecimal scalar
      */
     @SuppressWarnings("unchecked")
     private static GraphQLScalarType newCustomBigDecimalScalar() {
         GraphQLScalarType originalScalar = Scalars.GraphQLBigDecimal;
         Coercing<BigDecimal, BigDecimal> originalCoercing = originalScalar.getCoercing();
 
-        Coercing<BigDecimal, Object> formattingCoercing = new Coercing<>() {
+        return GraphQLScalarType.newScalar().coercing(new Coercing<>() {
             @Override
             public Object serialize(Object dataFetcherResult) throws CoercingSerializeException {
                 return dataFetcherResult instanceof String
@@ -163,27 +205,27 @@ public class CustomScalars {
             public BigDecimal parseLiteral(Object input) throws CoercingParseLiteralException {
                 return originalCoercing.parseLiteral(input);
             }
-        };
-
-        return GraphQLScalarType.newScalar()
-                .description("Custom: " + originalScalar.getDescription())
-                .definition(originalScalar.getDefinition())
-                .name(originalScalar.getName())
-                .coercing(formattingCoercing)
-                .build();
+        })
+        .name(originalScalar.getName())
+        .description("Custom: " + originalScalar.getDescription())
+        .build();
     }
 
+    /**
+     * Return a new custom Int scalar.
+     *
+     * @return a new custom Int scalar
+     */
+    @SuppressWarnings("unchecked")
     private static GraphQLScalarType newCustomGraphQLInt() {
-        GraphQLScalarType intScalar = GraphQLInt;
-        Coercing<Integer, Integer> originalCoercing = intScalar.getCoercing();
-        Coercing<Integer, Object> formattingCoercing = new Coercing<>() {
+        GraphQLScalarType originalScalar = GraphQLInt;
+        Coercing<Integer, Integer> originalCoercing = originalScalar.getCoercing();
+        return GraphQLScalarType.newScalar().coercing(new Coercing<>() {
             @Override
             public Object serialize(Object dataFetcherResult) throws CoercingSerializeException {
-                Object finalDataFetcherResult = dataFetcherResult;
-                if (dataFetcherResult instanceof FormattedNumber) {
-                    return ((FormattedNumber) finalDataFetcherResult).getFormattedValue();
-                }
-                return originalCoercing.serialize(finalDataFetcherResult);
+                return dataFetcherResult instanceof String
+                        ? (String) dataFetcherResult
+                        : originalCoercing.serialize(dataFetcherResult);
             }
 
             @Override
@@ -195,27 +237,27 @@ public class CustomScalars {
             public Integer parseLiteral(Object input) throws CoercingParseLiteralException {
                 return originalCoercing.parseLiteral(input);
             }
-        };
-
-        return GraphQLScalarType.newScalar()
-                .description("Custom: " + intScalar.getDescription())
-                .definition(intScalar.getDefinition())
-                .name(intScalar.getName())
-                .coercing(formattingCoercing)
-                .build();
+        })
+        .name(originalScalar.getName())
+        .description("Custom: " + originalScalar.getDescription())
+        .build();
     }
 
+    /**
+     * Return a new custom Float scalar.
+     *
+     * @return a new custom Float scalar
+     */
+    @SuppressWarnings("unchecked")
     private static GraphQLScalarType newCustomGraphQLFloat() {
-        GraphQLScalarType floatScalar = GraphQLFloat;
-        Coercing<Double, Double> originalCoercing = floatScalar.getCoercing();
-        Coercing<Double, Object> formattingCoercing = new Coercing<>() {
+        GraphQLScalarType originalScalar = GraphQLFloat;
+        Coercing<Double, Double> originalCoercing = originalScalar.getCoercing();
+        return GraphQLScalarType.newScalar().coercing(new Coercing<>() {
             @Override
             public Object serialize(Object dataFetcherResult) throws CoercingSerializeException {
-                Object finalDataFetcherResult = dataFetcherResult;
-                if (dataFetcherResult instanceof FormattedNumber) {
-                    return ((FormattedNumber) finalDataFetcherResult).getFormattedValue();
-                }
-                return originalCoercing.serialize(finalDataFetcherResult);
+                return dataFetcherResult instanceof String
+                        ? (String) dataFetcherResult
+                        : originalCoercing.serialize(dataFetcherResult);
             }
 
             @Override
@@ -227,27 +269,27 @@ public class CustomScalars {
             public Double parseLiteral(Object input) throws CoercingParseLiteralException {
                 return originalCoercing.parseLiteral(input);
             }
-        };
-
-        return GraphQLScalarType.newScalar()
-                .description("Custom: " + floatScalar.getDescription())
-                .definition(floatScalar.getDefinition())
-                .name(floatScalar.getName())
-                .coercing(formattingCoercing)
-                .build();
+        })
+        .name(originalScalar.getName())
+        .description("Custom: " + originalScalar.getDescription())
+        .build();
     }
 
+    /**
+     * Return a new custom BigInteger scalar.
+     *
+     * @return a new custom BigInteger scalar
+     */
+    @SuppressWarnings("unchecked")
     private static GraphQLScalarType newCustomGraphQLBigInteger() {
-        GraphQLScalarType bigIntegerScalar = GraphQLBigInteger;
-        Coercing<BigInteger, BigInteger> originalCoercing = bigIntegerScalar.getCoercing();
-        Coercing<BigInteger, Object> formattingCoercing = new Coercing<>() {
+        GraphQLScalarType originalScalar = GraphQLBigInteger;
+        Coercing<BigInteger, BigInteger> originalCoercing = originalScalar.getCoercing();
+        return GraphQLScalarType.newScalar().coercing(new Coercing<>() {
             @Override
             public Object serialize(Object dataFetcherResult) throws CoercingSerializeException {
-                Object finalDataFetcherResult = dataFetcherResult;
-                if (dataFetcherResult instanceof FormattedNumber) {
-                    return ((FormattedNumber) finalDataFetcherResult).getFormattedValue();
-                }
-                return originalCoercing.serialize(finalDataFetcherResult);
+                return dataFetcherResult instanceof String
+                        ? (String) dataFetcherResult
+                        : originalCoercing.serialize(dataFetcherResult);
             }
 
             @Override
@@ -259,14 +301,10 @@ public class CustomScalars {
             public BigInteger parseLiteral(Object input) throws CoercingParseLiteralException {
                 return originalCoercing.parseLiteral(input);
             }
-        };
-
-        return GraphQLScalarType.newScalar()
-                .description("Custom: " + bigIntegerScalar.getDescription())
-                .definition(bigIntegerScalar.getDefinition())
-                .name(bigIntegerScalar.getName())
-                .coercing(formattingCoercing)
-                .build();
+        })
+        .name(originalScalar.getName())
+        .description("Custom: " + originalScalar.getDescription())
+        .build();
     }
 
     private static Object parserNumberFormat(Object dataFetcherResult) {

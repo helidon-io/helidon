@@ -74,6 +74,14 @@ class SchemaArgumentTest {
     }
 
     @Test
+    public void testSchemaArgumentArrayTypes() {
+        SchemaArgument schemaArgument = new SchemaArgument("name", "Int", true, null, INTEGER);
+        assertThat(schemaArgument.isArrayReturnType(), is(false));
+        assertThat(schemaArgument.isArrayReturnTypeMandatory(), is(false));
+        assertThat(schemaArgument.getArrayLevels(), is(0));
+    }
+
+    @Test
     public void testSchemaGeneration() {
         SchemaArgument schemaArgument = new SchemaArgument("name", "Int", true, null, INTEGER);
         assertThat(schemaArgument.getSchemaAsString(), is("name: Int!"));
@@ -96,5 +104,27 @@ class SchemaArgumentTest {
         schemaArgument = new SchemaArgument("name", "Int", false, 10, INTEGER);
         schemaArgument.setDescription("Description");
         assertThat(schemaArgument.getSchemaAsString(), is("\"Description\"\nname: Int = 10"));
+
+        // test array return types
+        schemaArgument = new SchemaArgument("name", "Int", false, null, INTEGER);
+        schemaArgument.setArrayReturnType(true);
+        schemaArgument.setArrayLevels(1);
+        assertThat(schemaArgument.getSchemaAsString(), is("name: [Int]"));
+
+        schemaArgument.setArrayReturnTypeMandatory(true);
+        assertThat(schemaArgument.getSchemaAsString(), is("name: [Int!]"));
+
+        schemaArgument = new SchemaArgument("name", "Int", true, null, INTEGER);
+        schemaArgument.setArrayReturnType(true);
+        schemaArgument.setArrayLevels(1);
+        schemaArgument.setArrayReturnTypeMandatory(true);
+        assertThat(schemaArgument.getSchemaAsString(), is("name: [Int!]!"));
+
+        schemaArgument = new SchemaArgument("name", "String", true, "Hello", STRING);
+        schemaArgument.setArrayReturnType(true);
+        schemaArgument.setArrayLevels(3);
+        schemaArgument.setArrayReturnTypeMandatory(true);
+        assertThat(schemaArgument.getSchemaAsString(), is("name: [[[String!]]]! = \"Hello\""));
+
     }
 }

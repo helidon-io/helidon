@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.graphql.server;
 
+import java.util.Arrays;
 import java.util.Objects;
 
 
@@ -61,6 +62,21 @@ public class SchemaArgument
     private String[] format;
 
     /**
+     * Indicates if the return type is an array type such as a native array([]) or a List, Collection, etc.
+     */
+    private boolean isArrayReturnType;
+
+    /**
+     * The number of array levels if return type is an array.
+     */
+    private int arrayLevels;
+
+    /**
+     * Indicates if the return type is mandatory.
+     */
+    private boolean isArrayReturnTypeMandatory;
+
+    /**
      * Construct a {@link SchemaArgument} instance.
      *
      * @param argumentName name of the argument
@@ -87,9 +103,17 @@ public class SchemaArgument
     public String getSchemaAsString() {
         StringBuilder sb = new StringBuilder(getSchemaElementDescription(getFormat()))
                 .append(getArgumentName())
-                .append(COLON)
-                .append(SPACER)
-                .append(getArgumentType());
+                .append(COLON);
+
+         if (isArrayReturnType()) {
+            int count = getArrayLevels();
+            sb.append(SPACER).append(repeat(count, OPEN_SQUARE))
+                    .append(getArgumentType())
+                    .append(isArrayReturnTypeMandatory() ? MANDATORY : NOTHING)
+                    .append(repeat(count, CLOSE_SQUARE));
+        } else {
+            sb.append(SPACER).append(getArgumentType());
+        }
 
         if (isMandatory) {
             sb.append(MANDATORY);
@@ -201,6 +225,56 @@ public class SchemaArgument
         this.format = format;
     }
 
+    /**
+     * Set the number of array levels if return type is an array.
+     *
+     * @param arrayLevels the number of array levels if return type is an array
+     */
+    public void setArrayLevels(int arrayLevels) {
+       this.arrayLevels = arrayLevels;
+    }
+
+    /**
+     * Return the number of array levels if return type is an array.
+     *
+     * @return the number of array levels if return type is an array
+     */
+    public int getArrayLevels() {
+        return arrayLevels;
+    }
+
+    /**
+     * Set if the return type is an array type.
+     * @param isArrayReturnType if the return type is an array type
+     */
+    public void setArrayReturnType(boolean isArrayReturnType) {
+        this.isArrayReturnType = isArrayReturnType;
+    }
+
+    /**
+     * Indicates if the return type is an array type.
+     *
+     * @return if the return type is an array type
+     */
+    public boolean isArrayReturnType() {
+        return isArrayReturnType;
+    }
+    
+    /**
+     * Indicates if the array return type is mandatory.
+     * @return if the array return type is mandatory
+     */
+    public boolean isArrayReturnTypeMandatory() {
+        return isArrayReturnTypeMandatory;
+    }
+
+    /**
+     * Sets if the array return type is mandatory.
+     * @param arrayReturnTypeMandatory if the array return type is mandatory
+     */
+    public void setArrayReturnTypeMandatory(boolean arrayReturnTypeMandatory) {
+        isArrayReturnTypeMandatory = arrayReturnTypeMandatory;
+    }
     @Override
     public String toString() {
         return "Argument{"
@@ -210,7 +284,10 @@ public class SchemaArgument
                 + ", defaultValue=" + defaultValue
                 + ", originalType=" + originalType
                 + ", sourceArgument=" + sourceArgument
-                + ", format=" + format
+                + ", isReturnTypeMandatory=" + isArrayReturnTypeMandatory
+                + ", isArrayReturnType=" + isArrayReturnType
+                + ", arrayLevels=" + arrayLevels
+                + ", format=" + Arrays.toString(format)
                 + ", description='" + getDescription() + '\'' + '}';
     }
 

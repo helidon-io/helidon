@@ -65,4 +65,15 @@ public interface DescriptiveElement {
         }
         return NOTHING;
     }
+
+    /**
+     * Repeat a {@link String} with the value repeated the requested number of times.
+     *
+     * @param count  number of times to repeat
+     * @param string {@link String} to repeat
+     * @return a new {@link String}
+     */
+    default String repeat(int count, String string) {
+        return new String(new char[count]).replace("\0", string);
+    }
 }
