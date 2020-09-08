@@ -15,6 +15,11 @@
  */
 package io.helidon.tests.integration.jpa.appl;
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import javax.enterprise.context.ApplicationScoped;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -25,7 +30,10 @@ import javax.persistence.criteria.Root;
 
 import io.helidon.tests.integration.jpa.dao.Create;
 import io.helidon.tests.integration.jpa.dao.Delete;
+import io.helidon.tests.integration.jpa.model.City;
 import io.helidon.tests.integration.jpa.model.Pokemon;
+import io.helidon.tests.integration.jpa.model.Stadium;
+import io.helidon.tests.integration.jpa.model.Trainer;
 
 /**
  * Verify update operations of ORM (server side).
@@ -46,6 +54,7 @@ public class UpdateIT {
     @MPTest
     public TestResult setup(TestResult result) {
         Create.dbInsertBrock(em);
+        Create.dbInsertSaffron(em);
         return result;
     }
 
@@ -58,6 +67,7 @@ public class UpdateIT {
     @MPTest
     public TestResult destroy(TestResult result) {
         Delete.dbDeleteBrock(em);
+        Delete.dbDeleteSaffron(em);
         return result;
     }
 
@@ -138,5 +148,58 @@ public class UpdateIT {
         return result;
     }
 
+    /**
+     * Update Saffron City data structure.
+     * Replace stadium trainer with new guy who will get all pokemons from previous trainer.
+     * Also Alakazam evolves to Mega Alakazam at the same time.
+     *
+     * @param result test execution result
+     * @return test execution result
+     */
+    @MPTest
+    public TestResult testUpdateSaffron(TestResult result) {
+        City[] cities = new City[1];
+        Set<String> pokemonNames = new HashSet<>(6);
+        cities[0] = em.createQuery(
+                "SELECT c FROM City c WHERE c.name = :name", City.class)
+                .setParameter("name", "Saffron City")
+                .getSingleResult();
+        Stadium stadium = cities[0].getStadium();
+        Trainer sabrina = stadium.getTrainer();
+        Trainer janine = new Trainer("Janine", 24);
+        stadium.setTrainer(janine);
+        List<Pokemon> pokemons = sabrina.getPokemons();
+        janine.setPokemons(pokemons);
+        sabrina.setPokemons(Collections.EMPTY_LIST);
+        em.remove(sabrina);
+        em.persist(janine);
+        for (Pokemon pokemon : pokemons) {
+            pokemon.setTrainer(janine);
+            pokemonNames.add(pokemon.getName());
+            em.persist(pokemon);
+        }
+        em.persist(stadium);
+        Pokemon alkazam = DbUtils.findPokemonByName(pokemons, "Alakazam");
+        // Update pokemon by query
+        em.createQuery(
+                "UPDATE Pokemon p SET p.name = :newName, p.cp = :newCp WHERE p.id = :id")
+                .setParameter("newName", "Mega Alakazam")
+                .setParameter("newCp", 4348)
+                .setParameter("id", alkazam.getId())
+                .executeUpdate();
+        pokemonNames.remove("Alakazam");
+        pokemonNames.add("Mega Alakazam");
+        DbUtils.cleanEm(em);
+        City city = em.find(City.class, cities[0].getId());
+        stadium = city.getStadium();
+        Trainer trainer = stadium.getTrainer();
+        em.refresh(trainer);
+        pokemons = trainer.getPokemons();
+        result.assertEquals(trainer.getName(), "Janine");
+        for (Pokemon pokemon : pokemons) {
+            result.assertTrue(pokemonNames.remove(pokemon.getName()), "Pokemon " + pokemon.getName() + " is missing");
+        }
+        return result;
+    }
 
 }

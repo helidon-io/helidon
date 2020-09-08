@@ -26,6 +26,7 @@ import javax.persistence.criteria.Root;
 
 import io.helidon.tests.integration.jpa.dao.Create;
 import io.helidon.tests.integration.jpa.dao.Delete;
+import io.helidon.tests.integration.jpa.model.City;
 import io.helidon.tests.integration.jpa.model.Pokemon;
 import io.helidon.tests.integration.jpa.model.Trainer;
 
@@ -49,6 +50,7 @@ public class QueryIT {
     @MPTest
     public TestResult setup(TestResult result) {
         ASH_ID = Create.dbInsertAsh(em);
+        Create.dbInsertCeladon(em);
         return result;
     }
 
@@ -61,6 +63,7 @@ public class QueryIT {
     @MPTest
     public TestResult destroy(TestResult result) {
         Delete.dbDeleteAsh(em);
+        Delete.dbDeleteCeladon(em);
         return result;
     }
 
@@ -114,6 +117,50 @@ public class QueryIT {
         List<Pokemon> pokemons = ash.getPokemons();
         result.assertNotNull(ash);
         result.assertFalse(pokemons.isEmpty());
+        return result;
+    }
+
+    /**
+     * Query Celadon city using JPQL.
+     *
+     * @param result test execution result
+     * @return test execution result
+     */
+    @MPTest
+    public TestResult testQueryCeladonJPQL(TestResult result) {
+        City city = em.createQuery(
+                "SELECT c FROM City c "
+                + "JOIN FETCH c.stadium s "
+                + "JOIN FETCH s.trainer t "
+                + "WHERE c.name = :name", City.class)
+                .setParameter("name", "Celadon City")
+                .getSingleResult();
+        result.assertEquals(city.getName(), "Celadon City");
+        result.assertEquals(city.getStadium().getName(), "Celadon Gym");
+        result.assertEquals(city.getStadium().getTrainer().getName(), "Erika");
+        return result;
+    }
+
+    /**
+     * Query Celadon city using CriteriaQuery.
+     *
+     * @param result test execution result
+     * @return test execution result
+    */
+    @MPTest
+    public TestResult testQueryCeladonCriteria(TestResult result) {
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<City> cq = cb.createQuery(City.class);
+        Root<City> cityRoot = cq.from(City.class);
+        cityRoot
+                .fetch("stadium")
+                .fetch("trainer");
+        cq.select(cityRoot)
+                .where(cb.equal(cityRoot.get("name"), "Celadon City"));
+        City city = em.createQuery(cq).getSingleResult();
+        result.assertEquals(city.getName(), "Celadon City");
+        result.assertEquals(city.getStadium().getName(), "Celadon Gym");
+        result.assertEquals(city.getStadium().getTrainer().getName(), "Erika");
         return result;
     }
 

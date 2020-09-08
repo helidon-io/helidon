@@ -17,9 +17,12 @@ package io.helidon.tests.integration.jpa.dao;
 
 import java.util.Arrays;
 import java.util.List;
+
 import javax.persistence.EntityManager;
 
 import io.helidon.tests.integration.jpa.model.Pokemon;
+import io.helidon.tests.integration.jpa.model.Stadium;
+import io.helidon.tests.integration.jpa.model.City;
 import io.helidon.tests.integration.jpa.model.Trainer;
 import io.helidon.tests.integration.jpa.model.Type;
 
@@ -115,7 +118,7 @@ public class Create {
 
     /**
      * Create Misty and her pokemons.
-     * Misty and her pokemons are used for update tests only.
+     * Misty and her pokemons are used for delete tests only.
      *
      * @param em Entity manager instance
      */
@@ -135,6 +138,72 @@ public class Create {
         em.flush();
         em.clear();
         em.getEntityManagerFactory().getCache().evictAll();
+    }
+
+    /**
+     * Create Celadon City with stadium and trainer.
+     * Used for query tests only.
+     */
+    public static void dbInsertCeladon(final EntityManager em) {
+        Type poison = em.find(Type.class, 4);
+        Type grass = em.find(Type.class, 12);
+        Type psychic = em.find(Type.class, 14);
+        Trainer trainer = new Trainer("Erika", 16);
+        Stadium stadium = new Stadium("Celadon Gym", trainer);
+        City city = new City("Celadon City", "Madam Celadon", stadium);
+        em.persist(trainer);
+        em.persist(new Pokemon(trainer, "Gloom", 651, Arrays.asList(grass, poison)));
+        em.persist(new Pokemon(trainer, "Victreebel", 751, Arrays.asList(grass, poison)));
+        em.persist(new Pokemon(trainer, "Tangela", 234, Arrays.asList(grass)));
+        em.persist(new Pokemon(trainer, "Vileplume", 1571, Arrays.asList(grass, poison)));
+        em.persist(new Pokemon(trainer, "Weepinbell", 1923, Arrays.asList(grass, poison)));
+        em.persist(new Pokemon(trainer, "Exeggcute", 317, Arrays.asList(grass, psychic)));
+        //em.persist(stadium);
+        em.persist(city);
+    }
+
+    /**
+     * Create Saffron City with stadium and trainer.
+     * Used for update tests only.
+     */
+    public static void dbInsertSaffron(final EntityManager em) {
+        Type fighting = em.find(Type.class, 2);
+        Type psychic = em.find(Type.class, 14);
+        Type ice = em.find(Type.class, 15);
+        Trainer trainer = new Trainer("Sabrina", 23);
+        Stadium stadium = new Stadium("Saffron Gym", trainer);
+        City city = new City("Saffron City", "Koichi", stadium);
+        em.persist(trainer);
+        em.persist(new Pokemon(trainer, "Alakazam", 2178, Arrays.asList(psychic)));
+        em.persist(new Pokemon(trainer, "Espeon", 2745, Arrays.asList(psychic)));
+        em.persist(new Pokemon(trainer, "Mr. Mime", 1478, Arrays.asList(psychic)));
+        em.persist(new Pokemon(trainer, "Jynx", 2471, Arrays.asList(psychic, ice)));
+        em.persist(new Pokemon(trainer, "Wobbuffet", 1478, Arrays.asList(psychic)));
+        em.persist(new Pokemon(trainer, "Gallade", 2147, Arrays.asList(psychic, fighting)));
+        //em.persist(stadium);
+        em.persist(city);
+    }
+
+    /**
+     * Create Viridian City with stadium and trainer.
+     * Used for delete tests only.
+     */
+    public static void dbInsertViridian(final EntityManager em) {
+        Type poison = em.find(Type.class, 4);
+        Type ground = em.find(Type.class, 5);
+        Type rock = em.find(Type.class, 6);
+        Trainer trainer = new Trainer("Giovanni", 37);
+        Stadium stadium = new Stadium("Viridian Gym", trainer);
+        City city = new City("Viridian City", "Koichi", stadium);
+        em.persist(trainer);
+        em.persist(new Pokemon(trainer, "Rhyperior", 3841, Arrays.asList(ground, rock)));
+        em.persist(new Pokemon(trainer, "Golem", 3651, Arrays.asList(ground, rock)));
+        em.persist(new Pokemon(trainer, "Nidoking", 2451, Arrays.asList(ground, poison)));
+        em.persist(new Pokemon(trainer, "Marowak", 2249, Arrays.asList(ground)));
+        em.persist(new Pokemon(trainer, "Sandslash", 1953, Arrays.asList(ground)));
+        em.persist(new Pokemon(trainer, "Nidoqueen", 3147, Arrays.asList(ground)));
+        //em.persist(stadium);
+        em.persist(city);
     }
 
 }

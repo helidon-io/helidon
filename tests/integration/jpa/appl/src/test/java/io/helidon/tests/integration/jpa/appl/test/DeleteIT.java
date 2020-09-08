@@ -62,4 +62,12 @@ public class DeleteIT {
         ClientUtils.callTest("/test/DeleteIT.testDeleteCriteria");
     }
 
+    /**
+     * Delete Viridian City.
+     */
+    @Test
+    public void testDeleteViridianCity() {
+        ClientUtils.callTest("/test/DeleteIT.testDeleteViridianCity");
+    }
+
 }

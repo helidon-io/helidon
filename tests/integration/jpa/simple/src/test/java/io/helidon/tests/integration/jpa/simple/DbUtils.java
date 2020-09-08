@@ -42,32 +42,13 @@ public class DbUtils {
      * @param pu persistence unit context
      */
     public static void dbInit(PU pu) {
-        dbInsertTypes(pu);
-        dbInsertAsh(pu);
+        Create.dbInsertTypes(pu.getEm());
+        ASH_ID = Create.dbInsertAsh(pu.getEm());
+        Create.dbInsertCeladon(pu.getEm());
         pu.getEm().flush();
         pu.getEm().clear();
         pu.getEm().getEntityManagerFactory().getCache().evictAll();
         
-    }
-
-    /**
-     * Insert pokemon types.
-     *
-     * @param pu persistence unit context
-     */
-    public static void dbInsertTypes(PU pu) {
-        final EntityManager em = pu.getEm();
-        Create.dbInsertTypes(em);
-    }
-
-    /**
-     * Insert trainer Ash and his pokemons.
-     *
-     * @param pu persistence unit context
-     */
-    public static void dbInsertAsh(PU pu) {
-        final EntityManager em = pu.getEm();
-        ASH_ID = Create.dbInsertAsh(em);
     }
 
     /**
@@ -106,6 +87,24 @@ public class DbUtils {
         TypedQuery<Pokemon> q = em.createQuery("SELECT p FROM Pokemon p WHERE p.trainer.id = :id", Pokemon.class);
         q.setParameter("id", trainer.getId());
         return q.getResultList();
+    }
+
+    /**
+     * Find pokemon by name from pokemon List.
+     *
+     * @param pokemons List to search
+     * @param name name of pokemon
+     * @return found pokemon or null when no such pokemon exists
+     */
+    public static Pokemon findPokemonByName(List<Pokemon> pokemons, String name) {
+        if (pokemons != null && !pokemons.isEmpty()) {
+            for (Pokemon pokemon : pokemons) {
+                if (pokemon.getName().equals(name)) {
+                    return pokemon;
+                }
+            }
+        }
+        return null;
     }
 
 }

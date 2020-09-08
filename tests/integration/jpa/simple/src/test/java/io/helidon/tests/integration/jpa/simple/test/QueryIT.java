@@ -20,9 +20,12 @@ import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Join;
 import javax.persistence.criteria.Root;
 
+import io.helidon.tests.integration.jpa.model.City;
 import io.helidon.tests.integration.jpa.model.Pokemon;
+import io.helidon.tests.integration.jpa.model.Stadium;
 import io.helidon.tests.integration.jpa.model.Trainer;
 import io.helidon.tests.integration.jpa.simple.DbUtils;
 import io.helidon.tests.integration.jpa.simple.PU;
@@ -31,6 +34,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -83,7 +87,7 @@ public class QueryIT {
     }
 
     /**
-     * Query trainer Ash and his pokemons using JPQL.
+     * Query trainer Ash and his pokemons using CriteriaQuery.
      */
     @Test
     public void testQueryCriteria() {
@@ -98,6 +102,48 @@ public class QueryIT {
             List<Pokemon> pokemons = ash.getPokemons();
             assertNotNull(ash);
             assertFalse(pokemons.isEmpty());
+        });
+    }
+
+    /**
+     * Query Celadon city using JPQL.
+     */
+    @Test
+    public void testQueryCeladonJPQL() {
+        pu.tx(pu -> {
+            final EntityManager em = pu.getCleanEm();
+            City city = em.createQuery(
+                    "SELECT c FROM City c "
+                    + "JOIN FETCH c.stadium s "
+                    + "JOIN FETCH s.trainer t "
+                    + "WHERE c.name = :name", City.class)
+                    .setParameter("name", "Celadon City")
+                    .getSingleResult();
+            assertEquals(city.getName(), "Celadon City");
+            assertEquals(city.getStadium().getName(), "Celadon Gym");
+            assertEquals(city.getStadium().getTrainer().getName(), "Erika");
+        });
+    }
+
+    /**
+     * Query Celadon city using CriteriaQuery.
+     */
+    @Test
+    public void testQueryCeladonCriteria() {
+        pu.tx(pu -> {
+            final EntityManager em = pu.getCleanEm();
+            CriteriaBuilder cb = em.getCriteriaBuilder();
+            CriteriaQuery<City> cq = cb.createQuery(City.class);
+            Root<City> cityRoot = cq.from(City.class);
+            cityRoot
+                    .fetch("stadium")
+                    .fetch("trainer");
+            cq.select(cityRoot)
+                    .where(cb.equal(cityRoot.get("name"), "Celadon City"));
+            City city = em.createQuery(cq).getSingleResult();
+            assertEquals(city.getName(), "Celadon City");
+            assertEquals(city.getStadium().getName(), "Celadon Gym");
+            assertEquals(city.getStadium().getTrainer().getName(), "Erika");
         });
     }
 

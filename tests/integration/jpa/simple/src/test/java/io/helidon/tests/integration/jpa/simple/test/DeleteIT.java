@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (city) 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,10 @@ import javax.persistence.criteria.Root;
 
 import io.helidon.tests.integration.jpa.dao.Create;
 import io.helidon.tests.integration.jpa.dao.Delete;
+import io.helidon.tests.integration.jpa.model.City;
 import io.helidon.tests.integration.jpa.model.Pokemon;
+import io.helidon.tests.integration.jpa.model.Stadium;
+import io.helidon.tests.integration.jpa.model.Trainer;
 import io.helidon.tests.integration.jpa.simple.PU;
 
 import org.junit.jupiter.api.AfterAll;
@@ -48,6 +51,7 @@ public class DeleteIT {
         pu.tx(pu -> {
             final EntityManager em = pu.getEm();
             Create.dbInsertMisty(em);
+            Create.dbInsertViridian(em);
         });
     }
 
@@ -56,6 +60,7 @@ public class DeleteIT {
         pu.tx(pu -> {
             final EntityManager em = pu.getEm();
             Delete.dbDeleteMisty(em);
+            Delete.dbDeleteViridian(em);
         });
     }
 
@@ -142,6 +147,34 @@ public class DeleteIT {
                     .where(cb.equal(pokemonRoot.get("name"), "Corsola"));
             List<Pokemon> pokemons = em.createQuery(cq).getResultList();
             assertTrue(pokemons.isEmpty());
+        });
+    }
+
+    /**
+     * Delete Viridian City.
+     */
+    @Test
+    public void testDeleteViridianCity() {
+        pu.tx(pu -> {
+            final EntityManager em = pu.getEm();
+            City city = em.createQuery(
+                    "SELECT c FROM City c WHERE c.name = :name", City.class)
+                    .setParameter("name", "Viridian City")
+                    .getSingleResult();
+            Stadium stadium = city.getStadium();
+            Trainer trainer = stadium.getTrainer();
+            List<Pokemon> pokemons = trainer.getPokemons();
+            em.remove(city);
+            em.remove(trainer);
+            pokemons.forEach(poklemon -> em.remove(poklemon));
+        });
+        pu.tx(pu -> {
+            final EntityManager em = pu.getCleanEm();
+            List<City> cities = em.createQuery(
+                    "SELECT c FROM City c WHERE c.name = :name", City.class)
+                    .setParameter("name", "Viridian City")
+                    .getResultList();
+            assertTrue(cities.isEmpty());
         });
     }
 
