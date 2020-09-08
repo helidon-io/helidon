@@ -486,23 +486,18 @@ public class MethodInvoker implements FtSupplier<Object> {
     }
 
     /**
-     * Creates a FT handler for an invocation by inspecting annotations.
+     * Creates a FT handler for an invocation by inspecting annotations. Handlers
+     * are composed as follows:
      *
-     * - fallback(retry(circuitbreaker(bulkhead(timeout(method)))))
+     *  fallback(retry(circuitbreaker(timeout(bulkhead(method)))))
+     *
+     * Note that timeout includes the time an invocation may be queued in a
+     * bulkhead, so it needs to be before the bulkhead call.
      *
      * @param methodState State related to this invocation's method.
      */
     private FtHandlerTyped<Object> createMethodHandler(MethodState methodState) {
         FaultTolerance.TypedBuilder<Object> builder = FaultTolerance.typedBuilder();
-
-        // Create and add timeout handler
-        if (introspector.hasTimeout()) {
-            Timeout timeout = Timeout.builder()
-                    .timeout(Duration.of(introspector.getTimeout().value(), introspector.getTimeout().unit()))
-                    .currentThread(!introspector.isAsynchronous())
-                    .build();
-            builder.addTimeout(timeout);
-        }
 
         // Create and add bulkhead
         if (introspector.hasBulkhead()) {
@@ -512,6 +507,15 @@ public class MethodInvoker implements FtSupplier<Object> {
                     .async(introspector.isAsynchronous())
                     .build();
             builder.addBulkhead(methodState.bulkhead);
+        }
+
+        // Create and add timeout handler
+        if (introspector.hasTimeout()) {
+            Timeout timeout = Timeout.builder()
+                    .timeout(Duration.of(introspector.getTimeout().value(), introspector.getTimeout().unit()))
+                    .currentThread(!introspector.isAsynchronous())
+                    .build();
+            builder.addTimeout(timeout);
         }
 
         // Create and add circuit breaker
