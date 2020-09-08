@@ -23,56 +23,9 @@
       - system like those in our CI/CD pipeline.
       - No longer commented out - use 'tck-ft' profile to run these tests
       -->
-    <test name="microprofile-fault-tolerance 2.1 TCK">
+    <test name="microprofile-fault-tolerance 2.1.1 TCK">
         <packages>
             <package name="org.eclipse.microprofile.fault.tolerance.tck.*"/>
         </packages>
-        <!--- classes>
-            <class name="org.eclipse.microprofile.fault.tolerance.tck.visibility.retry.RetryVisibilityTest">
-                <methods>
-                    <include name="baseRetryServiceUsesDefaults"/>
-                    <include name="serviceOverrideClassLevelUsesClassLevelAnnotation"/>
-                </methods>
-            </class>
-        </classes -->
-        <!-- classes>
-            <class name="org.eclipse.microprofile.fault.tolerance.tck.disableEnv.DisableAnnotationGloballyEnableOnClassTest">
-            </class>
-            <class name="org.eclipse.microprofile.fault.tolerance.tck.disableEnv.DisableAnnotationGloballyEnableOnClassDisableOnMethod">
-            </class>
-        </classes -->
-        <!-- classes>
-            <class name="org.eclipse.microprofile.fault.tolerance.tck.AsyncFallbackTest">
-            </class>
-        </classes -->
-        <!-- classes>
-            Passing
-            <class name="org.eclipse.microprofile.fault.tolerance.tck.RetryTest"/>
-            <class name="org.eclipse.microprofile.fault.tolerance.tck.RetryConditionTest"/>
-            <class name="org.eclipse.microprofile.fault.tolerance.tck.RetryExceptionHierarchyTest"/>
-
-            <class name="org.eclipse.microprofile.fault.tolerance.tck.FallbackTest"/>
-            <class name="org.eclipse.microprofile.fault.tolerance.tck.FallbackExceptionHierarchyTest"/>
-
-            <class name="org.eclipse.microprofile.fault.tolerance.tck.AsynchronousTest"/>
-
-            <class name="org.eclipse.microprofile.fault.tolerance.tck.ConfigTest"/>
-
-            <class name="org.eclipse.microprofile.fault.tolerance.tck.TimeoutGlobalConfigTest"/>
-            <class name="org.eclipse.microprofile.fault.tolerance.tck.TimeoutMethodConfigTest"/>
-            <class name="org.eclipse.microprofile.fault.tolerance.tck.TimeoutTest"/>
-
-
-            <class name="org.eclipse.microprofile.fault.tolerance.tck.TimeoutUninterruptableTest">
-                <methods>
-                    <include name="testTimeoutAsyncBulkhead"/>
-                </methods>
-            </class>
-
-            Failing
-            <class name="org.eclipse.microprofile.fault.tolerance.tck.TimeoutUninterruptableTest"/>
-            <class name="org.eclipse.microprofile.fault.tolerance.tck.CircuitBreakerTest"/>
-            <class name="org.eclipse.microprofile.fault.tolerance.tck.CircuitBreakerBulkheadTest"/>
-        </classes -->
     </test>
 </suite>
