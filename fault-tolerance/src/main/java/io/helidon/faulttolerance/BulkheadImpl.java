@@ -102,7 +102,6 @@ class BulkheadImpl implements Bulkhead {
             // no free permit, let's try to enqueue
             if (queue.offer(task)) {
                 LOGGER.finest(() -> name + " enqueue: " + task);
-
                 R result = task.result();
                 if (result instanceof Single<?>) {
                     Single<Object> single = (Single<Object>) result;
@@ -111,7 +110,6 @@ class BulkheadImpl implements Bulkhead {
                 return result;
             } else {
                 LOGGER.finest(() -> name + " reject: " + task);
-
                 callsRejected.incrementAndGet();
                 return task.error(new BulkheadException("Bulkhead queue \"" + name + "\" is full"));
             }
@@ -132,12 +130,10 @@ class BulkheadImpl implements Bulkhead {
                     DelayedTask<?> polled = queue.poll();
                     if (polled != null) {
                         LOGGER.finest(() -> name + " invoke in executor: " + polled);
-
                         // chain executions from queue until all are executed
                         executor.get().submit(() -> execute(polled));
                     } else {
                         LOGGER.finest(() -> name + " permit released after: " + task);
-
                         // nothing in the queue, release permit
                         inProgress.release();
                     }

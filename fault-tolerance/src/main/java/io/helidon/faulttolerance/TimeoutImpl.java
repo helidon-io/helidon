@@ -24,7 +24,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
@@ -38,13 +37,11 @@ class TimeoutImpl implements Timeout {
     private final long timeoutMillis;
     private final LazyValue<? extends ScheduledExecutorService> executor;
     private final boolean currentThread;
-    private final Consumer<Thread> interruptListener;
 
     TimeoutImpl(Timeout.Builder builder) {
         this.timeoutMillis = builder.timeout().toMillis();
         this.executor = builder.executor();
         this.currentThread = builder.currentThread();
-        this.interruptListener = builder.interruptListener();
     }
 
     @Override
@@ -81,9 +78,6 @@ class TimeoutImpl implements Timeout {
                         if (callReturned.compareAndSet(false, true)) {
                             future.completeExceptionally(new TimeoutException("Method interrupted by timeout"));
                             thisThread.interrupt();
-                            if (interruptListener != null) {
-                                interruptListener.accept(thisThread);
-                            }
                         }
                         return null;
                     });
