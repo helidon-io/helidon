@@ -42,7 +42,7 @@ final class MultiFromCompletionStage<T> implements Multi<T> {
 
     static <T> void subscribe(Flow.Subscriber<? super T> subscriber, CompletionStage<T> source, boolean nullMeansEmpty) {
         AtomicBiConsumer<T> watcher = new AtomicBiConsumer<>();
-        CompletionStageSubscription<T> css = new CompletionStageSubscription<>(subscriber, nullMeansEmpty, watcher);
+        CompletionStageSubscription<T> css = new CompletionStageSubscription<>(subscriber, nullMeansEmpty, watcher, source);
         watcher.lazySet(css);
 
         subscriber.onSubscribe(css);
@@ -55,10 +55,12 @@ final class MultiFromCompletionStage<T> implements Multi<T> {
 
         private final AtomicBiConsumer<T> watcher;
 
-        CompletionStageSubscription(Flow.Subscriber<? super T> downstream, boolean nullMeansEmpty, AtomicBiConsumer<T> watcher) {
+        private CompletionStage<T> source;
+        CompletionStageSubscription(Flow.Subscriber<? super T> downstream, boolean nullMeansEmpty, AtomicBiConsumer<T> watcher,CompletionStage<T> source) {
             super(downstream);
             this.nullMeansEmpty = nullMeansEmpty;
             this.watcher = watcher;
+            this.source = source;
         }
 
         @Override
@@ -77,6 +79,7 @@ final class MultiFromCompletionStage<T> implements Multi<T> {
         @Override
         public void cancel() {
             super.cancel();
+            source.toCompletableFuture().cancel(true);
             watcher.getAndSet(null);
         }
     }
