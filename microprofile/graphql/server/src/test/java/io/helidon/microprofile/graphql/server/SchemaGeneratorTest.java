@@ -132,12 +132,12 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
         assertDiscoveredMethod(mapMethods.get("homeAddress"), "homeAddress", ADDRESS, null, false, false, false);
         assertDiscoveredMethod(mapMethods.get("workAddress"), "workAddress", ADDRESS, null, false, false, false);
         assertDiscoveredMethod(mapMethods.get("creditLimit"), "creditLimit", BIGDECIMAL, null, false, false, false);
-        assertDiscoveredMethod(mapMethods.get("listQualifications"), "listQualifications", STRING, COLLECTION, false, true,
+        assertDiscoveredMethod(mapMethods.get("listQualifications"), "listQualifications", STRING, COLLECTION, true, true,
                                false);
-        assertDiscoveredMethod(mapMethods.get("previousAddresses"), "previousAddresses", ADDRESS, LIST, false, true, false);
+        assertDiscoveredMethod(mapMethods.get("previousAddresses"), "previousAddresses", ADDRESS, LIST, true, true, false);
         assertDiscoveredMethod(mapMethods.get("intArray"), "intArray", "int", null, true, false, false);
         assertDiscoveredMethod(mapMethods.get("stringArray"), "stringArray", STRING, null, true, false, false);
-        assertDiscoveredMethod(mapMethods.get("addressMap"), "addressMap", ADDRESS, null, false, false, true);
+        assertDiscoveredMethod(mapMethods.get("addressMap"), "addressMap", ADDRESS, null, true, false, true);
         assertDiscoveredMethod(mapMethods.get("localDate"), "localDate", LOCALDATE, null, false, false, false);
         assertDiscoveredMethod(mapMethods.get("longValue"), "longValue", long.class.getName(), null, false, false, false);
         assertDiscoveredMethod(mapMethods.get("bigDecimal"), "bigDecimal", BigDecimal.class.getName(), null, false, false, false);
@@ -196,7 +196,7 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
         assertDiscoveredMethod(mapMethods.get("model"), "model", STRING, null, false, false, false);
         assertDiscoveredMethod(mapMethods.get("numberOfWheels"), "numberOfWheels", "int", null, false, false, false);
         assertDiscoveredMethod(mapMethods.get("manufactureYear"), "manufactureYear", "int", null, false, false, false);
-        assertDiscoveredMethod(mapMethods.get("incidents"), "incidents", VehicleIncident.class.getName(), COLLECTION, false, true,
+        assertDiscoveredMethod(mapMethods.get("incidents"), "incidents", VehicleIncident.class.getName(), COLLECTION, true, true,
                                false);
     }
 
@@ -211,7 +211,7 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
         assertDiscoveredMethod(mapMethods.get("numberOfWheels"), "numberOfWheels", "int", null, false, false, false);
         assertDiscoveredMethod(mapMethods.get("manufactureYear"), "manufactureYear", "int", null, false, false, false);
         assertDiscoveredMethod(mapMethods.get("numberOfDoors"), "numberOfDoors", "int", null, false, false, false);
-        assertDiscoveredMethod(mapMethods.get("incidents"), "incidents", VehicleIncident.class.getName(), COLLECTION, false, true,
+        assertDiscoveredMethod(mapMethods.get("incidents"), "incidents", VehicleIncident.class.getName(), COLLECTION, true, true,
                                false);
     }
 
@@ -226,7 +226,7 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
         assertDiscoveredMethod(mapMethods.get("numberOfWheels"), "numberOfWheels", "int", null, false, false, false);
         assertDiscoveredMethod(mapMethods.get("manufactureYear"), "manufactureYear", "int", null, false, false, false);
         assertDiscoveredMethod(mapMethods.get("hasSideCar"), "hasSideCar", "boolean", null, false, false, false);
-        assertDiscoveredMethod(mapMethods.get("incidents"), "incidents", VehicleIncident.class.getName(), COLLECTION, false, true,
+        assertDiscoveredMethod(mapMethods.get("incidents"), "incidents", VehicleIncident.class.getName(), COLLECTION, true, true,
                                false);
     }
 
@@ -289,7 +289,7 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
         assertDiscoveredMethod(mapMethods.get("episodeCount"), "episodeCount", "int", null, false, false, false);
         assertDiscoveredMethod(mapMethods.get("numberOfStars"), "numberOfStars", Long.class.getName(), null, false, false, false);
         assertDiscoveredMethod(mapMethods.get("badGuy"), "badGuy", STRING, null, false, false, false);
-        assertDiscoveredMethod(mapMethods.get("allPeople"), "allPeople", Person.class.getName(), COLLECTION, false, true, false);
+        assertDiscoveredMethod(mapMethods.get("allPeople"), "allPeople", Person.class.getName(), COLLECTION, true, true, false);
         assertDiscoveredMethod(mapMethods.get("returnCurrentDate"), "returnCurrentDate", LocalDate.class.getName(), null, false,
                                false, false);
         assertDiscoveredMethod(mapMethods.get("returnMediumSize"), "returnMediumSize", EnumTestWithEnumName.class.getName(), null,
