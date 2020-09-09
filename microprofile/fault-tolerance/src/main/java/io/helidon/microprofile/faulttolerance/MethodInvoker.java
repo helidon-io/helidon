@@ -504,7 +504,6 @@ public class MethodInvoker implements FtSupplier<Object> {
             methodState.bulkhead = Bulkhead.builder()
                     .limit(introspector.getBulkhead().value())
                     .queueLength(introspector.isAsynchronous() ? introspector.getBulkhead().waitingTaskQueue() : 0)
-                    .async(introspector.isAsynchronous())
                     .build();
             builder.addBulkhead(methodState.bulkhead);
         }

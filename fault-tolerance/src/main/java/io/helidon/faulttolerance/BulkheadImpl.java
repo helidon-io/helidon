@@ -38,7 +38,6 @@ class BulkheadImpl implements Bulkhead {
     private final Queue<DelayedTask<?>> queue;
     private final Semaphore inProgress;
     private final String name;
-    private final boolean async;
 
     private final AtomicLong concurrentExecutions = new AtomicLong(0L);
     private final AtomicLong callsAccepted = new AtomicLong(0L);
@@ -48,7 +47,6 @@ class BulkheadImpl implements Bulkhead {
         this.executor = builder.executor();
         this.inProgress = new Semaphore(builder.limit(), true);
         this.name = builder.name();
-        this.async = builder.async();
 
         if (builder.queueLength() == 0) {
             queue = new NoQueue();
@@ -102,13 +100,13 @@ class BulkheadImpl implements Bulkhead {
             return task.result();
         } else {
             // no free permit, let's try to enqueue in async mode
-            if (async && queue.offer(task)) {
+            if (queue.offer(task)) {
                 LOGGER.finest(() -> name + " enqueue: " + task);
 
                 R result = task.result();
                 if (result instanceof Single<?>) {
                     Single<Object> single = (Single<Object>) result;
-                    return (R) single.onCancel(queue::remove);
+                    return (R) single.onCancel(() -> queue.remove(task));
                 }
                 return result;
             } else {
