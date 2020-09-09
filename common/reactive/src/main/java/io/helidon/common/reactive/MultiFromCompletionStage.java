@@ -56,7 +56,8 @@ final class MultiFromCompletionStage<T> implements Multi<T> {
         private final AtomicBiConsumer<T> watcher;
 
         private CompletionStage<T> source;
-        CompletionStageSubscription(Flow.Subscriber<? super T> downstream, boolean nullMeansEmpty, AtomicBiConsumer<T> watcher,CompletionStage<T> source) {
+        CompletionStageSubscription(Flow.Subscriber<? super T> downstream, boolean nullMeansEmpty,
+                                    AtomicBiConsumer<T> watcher, CompletionStage<T> source) {
             super(downstream);
             this.nullMeansEmpty = nullMeansEmpty;
             this.watcher = watcher;
