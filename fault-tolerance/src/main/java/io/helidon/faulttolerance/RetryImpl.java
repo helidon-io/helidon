@@ -39,14 +39,12 @@ class RetryImpl implements Retry {
     private final long maxTimeNanos;
     private final Retry.RetryPolicy retryPolicy;
     private final AtomicLong retryCounter = new AtomicLong(0L);
-    private final Consumer<Integer> retryListener;
 
     RetryImpl(Retry.Builder builder) {
         this.scheduledExecutor = builder.scheduledExecutor();
         this.errorChecker = ErrorChecker.create(builder.skipOn(), builder.applyOn());
         this.maxTimeNanos = builder.overallTimeout().toNanos();
         this.retryPolicy = builder.retryPolicy();
-        this.retryListener = builder.retryListener();
     }
 
     @Override
@@ -97,9 +95,6 @@ class RetryImpl implements Retry {
                     if (errorChecker.shouldSkip(cause)) {
                         return Single.error(context.throwable());
                     }
-                    if (retryListener != null) {
-                        retryListener.accept(currentCallIndex);
-                    }
                     return retrySingle(context);
                 });
     }
@@ -141,9 +136,6 @@ class RetryImpl implements Retry {
                     context.thrown.add(cause);
                     if (task.hadData() || errorChecker.shouldSkip(cause)) {
                         return Multi.error(context.throwable());
-                    }
-                    if (retryListener != null) {
-                        retryListener.accept(currentCallIndex);
                     }
                     return retryMulti(context);
                 });
