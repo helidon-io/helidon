@@ -653,7 +653,7 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
 
     /**
      * Exposes this {@link Single} instance as a {@link CompletionStage}.
-     * Note that if this {@link Single} completes without a value and {@cdoe completeWithoutValue}
+     * Note that if this {@link Single} completes without a value and {@code completeWithoutValue}
      * is set to {@code false}, the resulting {@link CompletionStage} will be completed
      * exceptionally with an {@link IllegalStateException}
      *
