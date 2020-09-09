@@ -19,6 +19,7 @@ package io.helidon.tests.integration.webclient;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.context.Context;
 import io.helidon.config.Config;
@@ -67,6 +68,7 @@ class TracingPropagationTest {
                 .toCompletableFuture()
                 .get();
 
+        TimeUnit.MILLISECONDS.sleep(1);
         List<MockSpan> mockSpans = mockTracer.finishedSpans();
         assertThat("At least one client and one server span expected", mockSpans.size(), greaterThanOrEqualTo(2));
 
