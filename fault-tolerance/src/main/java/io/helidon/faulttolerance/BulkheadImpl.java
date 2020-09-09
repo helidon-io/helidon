@@ -99,7 +99,7 @@ class BulkheadImpl implements Bulkhead {
             execute(task);
             return task.result();
         } else {
-            // no free permit, let's try to enqueue in async mode
+            // no free permit, let's try to enqueue
             if (queue.offer(task)) {
                 LOGGER.finest(() -> name + " enqueue: " + task);
 
