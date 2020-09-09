@@ -20,6 +20,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.FileSystem;
@@ -29,15 +30,20 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.spi.CDI;
@@ -86,6 +92,7 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
      * The configuration for this container.
      */
     private HelidonContainerConfiguration containerConfig;
+    private Pattern excludedLibrariesPattern;
 
     /**
      * Run contexts - kept for each deployment.
@@ -102,6 +109,12 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
     @Override
     public void setup(HelidonContainerConfiguration configuration) {
         this.containerConfig = configuration;
+        String excludeArchivePattern = configuration.getExcludeArchivePattern();
+        if (excludeArchivePattern == null || excludeArchivePattern.isBlank()) {
+            this.excludedLibrariesPattern = null;
+        } else {
+            this.excludedLibrariesPattern = Pattern.compile(excludeArchivePattern);
+        }
     }
 
     @Override
@@ -179,7 +192,7 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
             // there is no server running
         }
 
-        context.classLoader = new MyClassloader(new URLClassLoader(toUrls(classPath)));
+        context.classLoader = new MyClassloader(excludedLibrariesPattern, new URLClassLoader(toUrls(classPath), null));
 
         context.oldClassLoader = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(context.classLoader);
@@ -408,11 +421,45 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
     }
 
     static class MyClassloader extends ClassLoader implements Closeable {
+        private final Pattern excludedLibrariesPattern;
         private final URLClassLoader wrapped;
 
-        MyClassloader(URLClassLoader wrapped) {
-            super(wrapped);
+        MyClassloader(Pattern excludedLibrariesPattern, URLClassLoader wrapped) {
+            super(Thread.currentThread().getContextClassLoader());
+
+            this.excludedLibrariesPattern = excludedLibrariesPattern;
             this.wrapped = wrapped;
+        }
+
+        @Override
+        public Enumeration<URL> getResources(String name) throws IOException {
+            Set<URL> result = new LinkedHashSet<>();
+
+            Enumeration<URL> resources = wrapped.getResources(name);
+            while (resources.hasMoreElements()) {
+                URL url = resources.nextElement();
+                result.add(url);
+            }
+
+            resources = super.getResources(name);
+            while (resources.hasMoreElements()) {
+                URL url = resources.nextElement();
+
+                if (excludedLibrariesPattern == null) {
+                    result.add(url);
+                } else {
+                    try {
+                        String path = url.toURI().toString().replace('\\', '/');
+                        if (!excludedLibrariesPattern.matcher(path).matches()) {
+                            result.add(url);
+                        }
+                    } catch (URISyntaxException e) {
+                        result.add(url);
+                    }
+                }
+            }
+
+            return Collections.enumeration(result);
         }
 
         @Override

@@ -27,7 +27,6 @@ import java.lang.reflect.Parameter;
 import java.lang.reflect.ParameterizedType;
 import java.text.NumberFormat;
 import java.time.format.DateTimeFormatter;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -42,10 +41,11 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.enterprise.inject.spi.CDI;
+
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetcherFactories;
 import graphql.schema.PropertyDataFetcher;
-
 import org.eclipse.microprofile.graphql.Description;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Id;
@@ -169,17 +169,12 @@ public class SchemaGenerator {
      * @return a {@link Schema}
      */
     public Schema generateSchema() throws IntrospectionException, ClassNotFoundException {
-        if (!jandexUtils.hasIndex()) {
-            return generateSchemaFromClasses();
-        }
+        Class[] classes = CDI.current()
+                .getBeanManager()
+                .getExtension(GraphQLCdiExtension.class)
+                .collectedApis();
 
-        List<Class<?>> listClasses = jandexUtils.getIndex()
-                .getKnownClasses()
-                .stream()
-                .map(ci -> getSafeClass(ci.toString()))
-                .collect(Collectors.toList());
-
-        return generateSchemaFromClasses(listClasses.toArray(new Class<?>[0]));
+        return generateSchemaFromClasses(classes);
     }
 
     /**

@@ -16,7 +16,24 @@
 
 package io.helidon.microprofile.graphql.server;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.Extension;
+import javax.enterprise.inject.spi.ProcessAnnotatedType;
+import javax.enterprise.inject.spi.WithAnnotations;
+
+import org.eclipse.microprofile.graphql.GraphQLApi;
 
 public class GraphQLCdiExtension implements Extension {
+    private final List<Class<?>> collectedApis = new ArrayList<>();
+
+    void collectApis(@Observes @WithAnnotations(GraphQLApi.class) ProcessAnnotatedType<?> processAnnotatedType) {
+        this.collectedApis.add(processAnnotatedType.getAnnotatedType().getJavaClass());
+    }
+
+    public Class[] collectedApis() {
+        return collectedApis.toArray(new Class[0]);
+    }
 }
