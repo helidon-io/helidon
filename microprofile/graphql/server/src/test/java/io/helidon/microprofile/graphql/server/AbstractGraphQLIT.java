@@ -16,36 +16,25 @@
 
 package io.helidon.microprofile.graphql.server;
 
-import javax.enterprise.inject.se.SeContainer;
-import javax.enterprise.inject.se.SeContainerInitializer;
-import org.junit.jupiter.api.AfterAll;
+import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+
+import java.beans.IntrospectionException;
 import java.io.File;
 import java.io.IOException;
+
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Common functionality for integration tests.
  */
-public abstract class AbstractGraphQLIT
-        extends AbstractGraphQLTest {
+public abstract class AbstractGraphQLIT extends AbstractGraphQLTest {
 
     protected String indexFileName = null;
     protected File indexFile = null;
     protected Context defaultContext;
-
-    private static SeContainer container;
-
-    @BeforeAll
-    public static void initialize() {
-        container = SeContainerInitializer.newInstance().initialize();
-    }
-
-    @AfterAll
-    public static void teardown() {
-        container.close();
-    }
 
     @BeforeEach
     public void setupTest() throws IOException {
@@ -60,5 +49,21 @@ public abstract class AbstractGraphQLIT
         if (indexFile != null) {
             indexFile.delete();
         }
+    }
+
+    
+    protected void assertInterfaceResults() throws IntrospectionException, ClassNotFoundException {
+        SchemaGenerator schemaGenerator = new SchemaGenerator(defaultContext);
+        Schema schema = schemaGenerator.generateSchema();
+        assertThat(schema, CoreMatchers.is(notNullValue()));
+        schema.getTypes().forEach(t -> System.out.println(t.getName()));
+        assertThat(schema.getTypes().size(), CoreMatchers.is(6));
+        assertThat(schema.getTypeByName("Vehicle"), CoreMatchers.is(notNullValue()));
+        assertThat(schema.getTypeByName("Car"), CoreMatchers.is(notNullValue()));
+        assertThat(schema.getTypeByName("Motorbike"), CoreMatchers.is(notNullValue()));
+        assertThat(schema.getTypeByName("Incident"), CoreMatchers.is(notNullValue()));
+        assertThat(schema.getTypeByName("Query"), CoreMatchers.is(notNullValue()));
+        assertThat(schema.getTypeByName("Mutation"), CoreMatchers.is(notNullValue()));
+        generateGraphQLSchema(schema);
     }
 }

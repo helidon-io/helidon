@@ -16,28 +16,14 @@
 
 package io.helidon.microprofile.graphql.server.test.mutations;
 
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
-
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import javax.json.bind.annotation.JsonbProperty;
 
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
-import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithNameAnnotation;
-import io.helidon.microprofile.graphql.server.test.types.ContactRelationship;
-import io.helidon.microprofile.graphql.server.test.types.Person;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
 import org.eclipse.microprofile.graphql.GraphQLApi;
-import org.eclipse.microprofile.graphql.Id;
 import org.eclipse.microprofile.graphql.Mutation;
 import org.eclipse.microprofile.graphql.Name;
-import org.eclipse.microprofile.graphql.Query;
 
 /**
  * Class that holds simple mutations definitions with various numbers of arguments.
@@ -77,5 +63,4 @@ public class SimpleMutations {
     public SimpleContact createNewContact(@Name("newContact") SimpleContact contact) {
         return contact;
     }
-
 }

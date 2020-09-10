@@ -25,14 +25,33 @@ import javax.enterprise.inject.spi.ProcessAnnotatedType;
 import javax.enterprise.inject.spi.WithAnnotations;
 
 import org.eclipse.microprofile.graphql.GraphQLApi;
+import org.eclipse.microprofile.graphql.Input;
+import org.eclipse.microprofile.graphql.Interface;
+import org.eclipse.microprofile.graphql.Type;
 
+/**
+ * A CDI {@link Extension} to collect the classes that are of interest Microprofile GraphQL.
+ */
 public class GraphQLCdiExtension implements Extension {
     private final List<Class<?>> collectedApis = new ArrayList<>();
 
-    void collectApis(@Observes @WithAnnotations(GraphQLApi.class) ProcessAnnotatedType<?> processAnnotatedType) {
+    /**
+     * Collect the classes that have the following Microprofile GraphQL annotations.
+     *
+     * @param processAnnotatedType annotation types to process
+     */
+    void collectApis(@Observes @WithAnnotations({GraphQLApi.class,
+                                                        Type.class,
+                                                        Input.class,
+                                                        Interface.class }) ProcessAnnotatedType<?> processAnnotatedType) {
         this.collectedApis.add(processAnnotatedType.getAnnotatedType().getJavaClass());
     }
 
+    /**
+     * Returns the collected API's.
+     *
+     * @return the collected API's
+     */
     public Class[] collectedApis() {
         return collectedApis.toArray(new Class[0]);
     }

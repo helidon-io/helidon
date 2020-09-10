@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 /**
- * Abstact implementation of a {@link Vehicle}.
+ * Abstract implementation of a {@link Vehicle}.
  */
 public abstract class AbstractVehicle implements Vehicle {
     private String plate;

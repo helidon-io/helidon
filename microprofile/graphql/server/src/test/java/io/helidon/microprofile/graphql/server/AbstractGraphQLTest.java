@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.graphql.server;
 
+import java.beans.IntrospectionException;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -30,6 +31,7 @@ import graphql.ExecutionResult;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.SchemaPrinter;
 
+import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
 import org.hamcrest.CoreMatchers;
 import org.jboss.jandex.Index;
 import org.jboss.jandex.IndexWriter;
@@ -208,4 +210,77 @@ public abstract class AbstractGraphQLTest {
         }
         return (Map<String, Object>) result.get(ExecutionContext.DATA);
     }
+
+    protected String getContactAsQueryInput(SimpleContact contact) {
+        return new StringBuilder("{")
+                .append("id: \"").append(contact.getId()).append("\" ")
+                .append("name: \"").append(contact.getName()).append("\" ")
+                .append("age: ").append(contact.getAge())
+                .append("} ").toString();
+    }
+    
+    protected void assertDefaultFormat(SchemaType type, String fdName, String defaultFormat) {
+        assertThat(type, CoreMatchers.is(notNullValue()));
+        SchemaFieldDefinition fd = getFieldDefinition(type, fdName);
+        assertThat(fd, CoreMatchers.is(notNullValue()));
+        String[] format = fd.getFormat();
+        assertThat(format, CoreMatchers.is(notNullValue()));
+        assertThat(format.length == 2, CoreMatchers.is(notNullValue()));
+        assertThat(format[0], CoreMatchers.is(defaultFormat));
+    }
+
+    protected SchemaFieldDefinition getFieldDefinition(SchemaType type, String name) {
+        for (SchemaFieldDefinition fd : type.getFieldDefinitions()) {
+            if (fd.getName().equals(name)) {
+                return fd;
+            }
+        }
+        return null;
+    }
+
+    protected SchemaArgument getArgument(SchemaFieldDefinition fd, String name) {
+        assertThat(fd, CoreMatchers.is(notNullValue()));
+        for (SchemaArgument argument : fd.getArguments()) {
+            if (argument.getArgumentName().equals(name)) {
+                return argument;
+            }
+        }
+        return null;
+    }
+
+    protected void assertReturnTypeDefaultValue(SchemaType type, String fdName, String defaultValue) {
+        assertThat(type, CoreMatchers.is(notNullValue()));
+        SchemaFieldDefinition fd = getFieldDefinition(type, fdName);
+        assertThat(fd, CoreMatchers.is(notNullValue()));
+        assertThat("Default value for " + fdName + " should be " + defaultValue +
+                           " but is " + fd.getDefaultValue(), fd.getDefaultValue(), CoreMatchers.is(defaultValue));
+    }
+
+    protected void assertReturnTypeMandatory(SchemaType type, String fdName, boolean mandatory) {
+        assertThat(type, CoreMatchers.is(notNullValue()));
+        SchemaFieldDefinition fd = getFieldDefinition(type, fdName);
+        assertThat(fd, CoreMatchers.is(notNullValue()));
+        assertThat("Return type for " + fdName + " should be mandatory=" + mandatory +
+                           " but is " + fd.isReturnTypeMandatory(), fd.isReturnTypeMandatory(), CoreMatchers.is(mandatory));
+    }
+
+    protected void assertArrayReturnTypeMandatory(SchemaType type, String fdName, boolean mandatory) {
+        assertThat(type, CoreMatchers.is(notNullValue()));
+        SchemaFieldDefinition fd = getFieldDefinition(type, fdName);
+        assertThat(fd, CoreMatchers.is(notNullValue()));
+        assertThat("Array return type for " + fdName + " should be mandatory=" + mandatory +
+                           " but is " + fd.isArrayReturnTypeMandatory(), fd.isArrayReturnTypeMandatory(), CoreMatchers
+                           .is(mandatory));
+    }
+
+    protected void assertReturnTypeArgumentMandatory(SchemaType type, String fdName, String argumentName, boolean mandatory) {
+        assertThat(type, CoreMatchers.is(notNullValue()));
+        SchemaFieldDefinition fd = getFieldDefinition(type, fdName);
+        assertThat(fd, CoreMatchers.is(notNullValue()));
+        SchemaArgument argument = getArgument(fd, argumentName);
+        assertThat(argument, CoreMatchers.is(notNullValue()));
+        assertThat("Return type for argument " + argumentName + " should be mandatory="
+                           + mandatory + " but is " + argument.isMandatory(), argument.isMandatory(), CoreMatchers.is(mandatory));
+    }
+    
 }
