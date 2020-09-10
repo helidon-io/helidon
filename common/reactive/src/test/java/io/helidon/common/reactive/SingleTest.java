@@ -158,6 +158,22 @@ public class SingleTest {
     }
 
     @Test
+    public void testNeverIsNotSingleton() throws InterruptedException, TimeoutException, ExecutionException {
+        CompletableFuture<Void> cf1 = new CompletableFuture<>();
+        CompletableFuture<Void> cf2 = new CompletableFuture<>();
+        Single<Object> never1 = Single.never();
+        Single<Object> never2 = Single.never();
+
+        never1.onCancel(() -> cf1.complete(null));
+        never2.onCancel(() -> cf2.complete(null));
+        never1.cancel();
+
+        cf1.get(100, TimeUnit.MILLISECONDS);
+        assertThat("First Single.never should be cancelled!", cf1.isDone());
+        assertThat("Other Single.never should NOT be cancelled!", !cf2.isDone());
+    }
+
+    @Test
     public void testMap() {
         SingleTestSubscriber<String> subscriber = new SingleTestSubscriber<>();
         Single.just("foo").map(String::toUpperCase).subscribe(subscriber);

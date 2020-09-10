@@ -228,7 +228,7 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
      * @return Single
      */
     static <T> Single<T> never() {
-        return SingleNever.instance();
+        return new SingleNever<T>();
     }
 
     /**
