@@ -21,24 +21,16 @@ import java.util.concurrent.Flow.Subscriber;
  * Implementation of {@link Single} that never invokes
  * {@link Subscriber#onComplete()} or
  * {@link Subscriber#onError(java.lang.Throwable)}.
+ *
+ * @param <T> item type
  */
-final class SingleNever extends CompletionSingle<Object> {
+final class SingleNever<T> extends CompletionSingle<T> {
 
-    /**
-     * Singleton instance.
-     */
-    private static final SingleNever INSTANCE = new SingleNever();
-
-    private SingleNever() {
+    SingleNever() {
     }
 
     @Override
-    public void subscribe(Subscriber<? super Object> actual) {
+    public void subscribe(Subscriber<? super T> actual) {
         actual.onSubscribe(EmptySubscription.INSTANCE);
-    }
-
-    @SuppressWarnings("unchecked")
-    static <T> Single<T> instance() {
-        return (Single<T>) INSTANCE;
     }
 }

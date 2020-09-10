@@ -67,7 +67,7 @@
         <!-- 2.x versions used http (not https) to access maven central -->
         <version.lib.shrinkwrap-resolver>3.0.1</version.lib.shrinkwrap-resolver>
         <version.lib.spotbugs-annotations>3.1.12</version.lib.spotbugs-annotations>
-        <version.lib.surefire.testng>3.0.0-M3</version.lib.surefire.testng>
+        <version.lib.surefire.testng>3.0.0-M5</version.lib.surefire.testng>
         <version.lib.testng>6.13.1</version.lib.testng>
         <version.lib.zipkin.junit>2.12.5</version.lib.zipkin.junit>
         <version.lib.bedrock>5.0.11</version.lib.bedrock>
@@ -94,7 +94,7 @@
         <version.plugin.eclipselink>2.7.5.1</version.plugin.eclipselink>
         <version.plugin.enforcer>3.0.0-M1</version.plugin.enforcer>
         <version.plugin.exec>1.6.0</version.plugin.exec>
-        <version.plugin.failsafe>2.19.1</version.plugin.failsafe>
+        <version.plugin.failsafe>3.0.0-M5</version.plugin.failsafe>
         <version.plugin.glassfish-copyright>2.3</version.plugin.glassfish-copyright>
         <version.plugin.helidon-build-tools>2.1.1</version.plugin.helidon-build-tools>
         <version.plugin.hibernate-enhance>${version.lib.hibernate}</version.plugin.hibernate-enhance>
@@ -112,8 +112,7 @@
         <version.plugin.shade>3.0.0</version.plugin.shade>
         <version.plugin.source>3.0.1</version.plugin.source>
         <version.plugin.spotbugs>3.1.12</version.plugin.spotbugs>
-        <version.plugin.surefire.provider.junit>1.0.3</version.plugin.surefire.provider.junit>
-        <version.plugin.surefire>2.19.1</version.plugin.surefire>
+        <version.plugin.surefire>3.0.0-M5</version.plugin.surefire>
         <version.plugin.toolchains>1.1</version.plugin.toolchains>
         <version.plugin.version-plugin>2.3</version.plugin.version-plugin>
         <version.plugin.buildnumber>1.4</version.plugin.buildnumber>
@@ -150,6 +149,7 @@
         <javadoc.link.narayana>http://narayana.io/docs/api/</javadoc.link.narayana>
         <javadoc.link.eclipselink>https://www.eclipse.org/eclipselink/api/2.7/</javadoc.link.eclipselink>
 
+        <!--suppress UnresolvedMavenProperty -->
         <javadoc.packagelist.dir>${top.parent.basedir}/etc/javadoc</javadoc.packagelist.dir>
         <site.output.dir>${project.build.directory}/docs</site.output.dir>
     </properties>
@@ -373,45 +373,23 @@
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${version.plugin.surefire}</version>
                     <configuration>
+                        <useModulePath>false</useModulePath>
                         <trimStackTrace>false</trimStackTrace>
                         <!-- DO NOT override argLine instead use surefire.argLine -->
                         <argLine>${surefire.argLine} ${surefire.coverage.argline}</argLine>
                         <redirectTestOutputToFile>true</redirectTestOutputToFile>
                     </configuration>
-                    <dependencies>
-                        <dependency>
-                            <groupId>org.junit.platform</groupId>
-                            <artifactId>junit-platform-surefire-provider</artifactId>
-                            <version>${version.plugin.surefire.provider.junit}</version>
-                        </dependency>
-                        <dependency>
-                            <groupId>org.junit.jupiter</groupId>
-                            <artifactId>junit-jupiter-engine</artifactId>
-                            <version>${version.lib.junit}</version>
-                        </dependency>
-                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-failsafe-plugin</artifactId>
                     <version>${version.plugin.failsafe}</version>
                     <configuration>
+                        <useModulePath>false</useModulePath>
                         <!-- DO NOT override argLine instead use failsafe.argLine -->
                         <argLine>${failsafe.argLine} ${failsafe.coverage.argline}</argLine>
                         <redirectTestOutputToFile>true</redirectTestOutputToFile>
                     </configuration>
-                    <dependencies>
-                        <dependency>
-                            <groupId>org.junit.platform</groupId>
-                            <artifactId>junit-platform-surefire-provider</artifactId>
-                            <version>${version.plugin.surefire.provider.junit}</version>
-                        </dependency>
-                        <dependency>
-                            <groupId>org.junit.jupiter</groupId>
-                            <artifactId>junit-jupiter-engine</artifactId>
-                            <version>${version.lib.junit}</version>
-                        </dependency>
-                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>org.commonjava.maven.plugins</groupId>
@@ -464,7 +442,9 @@
                     <artifactId>glassfish-copyright-maven-plugin</artifactId>
                     <version>${version.plugin.glassfish-copyright}</version>
                     <configuration>
+                        <!--suppress UnresolvedMavenProperty -->
                         <templateFile>${copyright.template}</templateFile>
+                        <!--suppress UnresolvedMavenProperty -->
                         <excludeFile>${copyright.exclude}</excludeFile>
                         <scm>git</scm>
                         <debug>false</debug>
@@ -505,6 +485,7 @@
                     <configuration>
                         <skip>${spotbugs.skip}</skip>
                         <threshold>${spotbugs.threshold}</threshold>
+                        <!--suppress UnresolvedMavenProperty -->
                         <excludeFilterFile>${spotbugs.exclude}</excludeFilterFile>
                         <xmlOutput>true</xmlOutput>
                     </configuration>
@@ -671,6 +652,7 @@
                             <outputDirectory>${project.build.outputDirectory}</outputDirectory>
                             <resources>
                                 <resource>
+                                    <!--suppress UnresolvedMavenProperty -->
                                     <directory>${top.parent.basedir}</directory>
                                     <targetPath>META-INF/</targetPath>
                                     <filtering>true</filtering>
@@ -1178,7 +1160,9 @@ helidon-parent,helidon-dependencies,helidon-bom,helidon-se,helidon-mp,io.grpc,he
                                 </goals>
                                 <phase>validate</phase>
                                 <configuration>
+                                    <!--suppress UnresolvedMavenProperty -->
                                     <configLocation>${top.parent.basedir}/etc/checkstyle.xml</configLocation>
+                                    <!--suppress UnresolvedMavenProperty -->
                                     <suppressionsLocation>${top.parent.basedir}/etc/checkstyle-suppressions.xml</suppressionsLocation>
                                 </configuration>
                             </execution>
@@ -1202,7 +1186,9 @@ helidon-parent,helidon-dependencies,helidon-bom,helidon-se,helidon-mp,io.grpc,he
                                 </goals>
                                 <phase>validate</phase>
                                 <configuration>
+                                    <!--suppress UnresolvedMavenProperty -->
                                     <templateFile>${top.parent.basedir}/etc/copyright.txt</templateFile>
+                                    <!--suppress UnresolvedMavenProperty -->
                                     <excludeFile>${top.parent.basedir}/etc/copyright-exclude.txt</excludeFile>
                                 </configuration>
                             </execution>
@@ -1213,7 +1199,9 @@ helidon-parent,helidon-dependencies,helidon-bom,helidon-se,helidon-mp,io.grpc,he
                                 </goals>
                                 <phase>validate</phase>
                                 <configuration>
+                                    <!--suppress UnresolvedMavenProperty -->
                                     <templateFile>${top.parent.basedir}/etc/copyright.txt</templateFile>
+                                    <!--suppress UnresolvedMavenProperty -->
                                     <excludeFile>${top.parent.basedir}/etc/copyright-exclude.txt</excludeFile>
                                 </configuration>
                             </execution>
@@ -1227,11 +1215,14 @@ helidon-parent,helidon-dependencies,helidon-bom,helidon-se,helidon-mp,io.grpc,he
             <properties>
                 <jacoco.report-missing.force-zere>true</jacoco.report-missing.force-zere>
                 <!-- top.parent.basedir is generated by directory:highest-basedir -->
+                <!--suppress UnresolvedMavenProperty -->
                 <jacoco.outputDir>${top.parent.basedir}/target</jacoco.outputDir>
                 <jacoco.report.path>${jacoco.outputDir}/jacoco.exec</jacoco.report.path>
                 <jacoco.report.it.path>${jacoco.outputDir}/jacoco-it.exec</jacoco.report.it.path>
                 <!-- jacoco.agent.*.arg properties are generated by jacoco:prepare-agent -->
+                <!--suppress UnresolvedMavenProperty -->
                 <surefire.coverage.argline>${jacoco.agent.ut.arg}</surefire.coverage.argline>
+                <!--suppress UnresolvedMavenProperty -->
                 <failsafe.coverage.argline>${jacoco.agent.it.arg}</failsafe.coverage.argline>
                 <maven.test.failure.ignore>true</maven.test.failure.ignore>
             </properties>

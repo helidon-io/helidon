@@ -33,7 +33,7 @@ class MpEnvironmentVariablesSource implements ConfigSource {
     private final Map<String, Cached> cache = new ConcurrentHashMap<>();
 
     MpEnvironmentVariablesSource() {
-        this.env = System.getenv();
+        this.env = Map.copyOf(System.getenv());
     }
 
     @Override
