@@ -45,8 +45,7 @@ class AsyncImpl implements Async {
         }
 
         Single<T> single = Single.create(future, true);
-        single.onCancel(() -> taskFuture.cancel(false));     // cancel task
-        return single;
+        return single.onCancel(() -> taskFuture.cancel(false));     // cancel task
     }
 
     private static class AsyncTask<T> implements Runnable {

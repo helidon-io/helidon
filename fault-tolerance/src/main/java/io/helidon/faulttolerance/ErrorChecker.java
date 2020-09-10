@@ -37,6 +37,6 @@ interface ErrorChecker {
     }
 
     private static boolean containsThrowable(Set<Class<? extends Throwable>> set, Throwable throwable) {
-        return set.stream().filter(t -> t.isAssignableFrom(throwable.getClass())).count() > 0;
+        return set.stream().anyMatch(t -> t.isAssignableFrom(throwable.getClass()));
     }
 }
