@@ -27,7 +27,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
-import io.helidon.common.reactive.CompletionSingle;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
 
