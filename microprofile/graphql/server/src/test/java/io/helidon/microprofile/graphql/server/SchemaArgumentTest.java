@@ -82,6 +82,15 @@ class SchemaArgumentTest {
     }
 
     @Test
+    public void testSchemaGenerationWithArrays() {
+       SchemaArgument schemaArgument = new SchemaArgument("name", "String", false, null, STRING);
+       schemaArgument.setArrayLevels(1);
+       schemaArgument.setArrayReturnTypeMandatory(true);
+       schemaArgument.setArrayReturnType(true);
+       assertThat(schemaArgument.getSchemaAsString(), is("name: [String!]"));
+    }
+
+    @Test
     public void testSchemaGeneration() {
         SchemaArgument schemaArgument = new SchemaArgument("name", "Int", true, null, INTEGER);
         assertThat(schemaArgument.getSchemaAsString(), is("name: Int!"));

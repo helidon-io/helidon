@@ -21,6 +21,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.DATETIME_SCALAR;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.DATE_SCALAR;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.FORMATTED_DATE_SCALAR;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.FORMATTED_TIME_SCALAR;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.TIME_SCALAR;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -59,30 +64,51 @@ public class DateTimeIT extends AbstractGraphQLIT {
         assertThat(fd, is(notNullValue()));
         assertThat(fd.getFormat()[0], is("MM/dd/yyyy"));
         assertThat(fd.getDescription(), is(nullValue()));
+        assertThat(fd.isDefaultFormatApplied(), is(false));
+        assertThat(fd.getReturnType(), is(FORMATTED_DATE_SCALAR));
 
         fd = getFieldDefinition(type, "localTime");
         assertThat(fd, is(notNullValue()));
         assertThat(fd.getFormat()[0], is("hh:mm:ss"));
         assertThat(fd.getDescription(), is(nullValue()));
+        assertThat(fd.isDefaultFormatApplied(), is(false));
+        assertThat(fd.getReturnType(), is(FORMATTED_TIME_SCALAR));
 
         fd = getFieldDefinition(type, "localDate2");
         assertThat(fd, is(notNullValue()));
         assertThat(fd.getFormat()[0], is("MM/dd/yyyy"));
         assertThat(fd.getDescription(), is(nullValue()));
+        assertThat(fd.isDefaultFormatApplied(), is(false));
+        assertThat(fd.getReturnType(), is(FORMATTED_DATE_SCALAR));
 
         // test default values for date and time
-        assertDefaultFormat(type, "offsetTime", "HH:mm:ssZ");
-        assertDefaultFormat(type, "localTime", "hh:mm:ss");
-        assertDefaultFormat(type, "localDateTime", "yyyy-MM-dd'T'HH:mm:ss");
-        assertDefaultFormat(type, "offsetDateTime", "yyyy-MM-dd'T'HH:mm:ssZ");
-        assertDefaultFormat(type, "zonedDateTime", "yyyy-MM-dd'T'HH:mm:ssZ'['VV']'");
-        assertDefaultFormat(type, "localDateNoFormat", "yyyy-MM-dd");
-        assertDefaultFormat(type, "significantDates", "yyyy-MM-dd");
+        assertDefaultFormat(type, "offsetTime", "HH:mm:ssZ", true);
+        assertDefaultFormat(type, "localTime", "hh:mm:ss", false);
+        assertDefaultFormat(type, "localDateTime", "yyyy-MM-dd'T'HH:mm:ss", true);
+        assertDefaultFormat(type, "offsetDateTime", "yyyy-MM-dd'T'HH:mm:ssZ", true);
+        assertDefaultFormat(type, "zonedDateTime", "yyyy-MM-dd'T'HH:mm:ssZ'['VV']'", true);
+        assertDefaultFormat(type, "localDateNoFormat", "yyyy-MM-dd", true);
+        assertDefaultFormat(type, "significantDates", "yyyy-MM-dd", true);
+
+        // testing the conversion of the following scalars when they have default formatting applied
+        // FormattedDate -> Date
+        // FormattedTime -> Time
+        // FormattedDateTime -> DateTime
 
         fd = getFieldDefinition(type, "localDateTime");
         assertThat(fd, is(notNullValue()));
-        assertThat(fd.getDescription(), is(nullValue()));
-        assertThat(fd.getFormat()[0], is("yyyy-MM-dd'T'HH:mm:ss"));
+        assertThat(fd.isDefaultFormatApplied(), is(true));
+        assertThat(fd.getReturnType(), is(DATETIME_SCALAR));
+
+        fd = getFieldDefinition(type, "localDateNoFormat");
+        assertThat(fd, is(notNullValue()));
+        assertThat(fd.isDefaultFormatApplied(), is(true));
+        assertThat(fd.getReturnType(), is(DATE_SCALAR));
+
+        fd = getFieldDefinition(type, "localTimeNoFormat");
+        assertThat(fd, is(notNullValue()));
+        assertThat(fd.isDefaultFormatApplied(), is(true));
+        assertThat(fd.getReturnType(), is(TIME_SCALAR));
 
         Map<String, Object> mapResults = getAndAssertResult(
                 executionContext.execute("query { dateAndTimePOJOQuery { offsetDateTime offsetTime zonedDateTime "
@@ -110,6 +136,15 @@ public class DateTimeIT extends AbstractGraphQLIT {
         assertThat(listDates.size(), is(2));
         assertThat(listDates.get(0), is("17/02/1968"));
         assertThat(listDates.get(1), is("04/08/1970"));
+
+        // test formats on queries
+        SchemaType typeQuery = schema.getTypeByName("Query");
+        fd = getFieldDefinition(typeQuery, "localDateNoFormat");
+        assertThat(fd, is(notNullValue()));
+        assertThat(fd.getFormat()[0], is("yyyy-MM-dd"));
+        assertThat(fd.getDescription(), is(nullValue()));
+        assertThat(fd.isDefaultFormatApplied(), is(true));
+        assertThat(fd.getReturnType(), is(DATE_SCALAR));
     }
 
 }

@@ -52,6 +52,7 @@ public class DateTimePojo {
     private ZonedDateTime zonedDateTime;
     @Description("description")
     private LocalDate localDateNoFormat;
+    private LocalTime localTimeNoFormat;
 
     private List<LocalDate> significantDates;
 
@@ -73,6 +74,14 @@ public class DateTimePojo {
         this.zonedDateTime = zonedDateTime;
         this.localDateNoFormat = localDateNoFormat;
         this.significantDates = significantDates;
+    }
+
+    public LocalTime getLocalTimeNoFormat() {
+        return localTimeNoFormat;
+    }
+
+    public void setLocalTimeNoFormat(LocalTime localTimeNoFormat) {
+        this.localTimeNoFormat = localTimeNoFormat;
     }
 
     public LocalDate getLocalDate() {

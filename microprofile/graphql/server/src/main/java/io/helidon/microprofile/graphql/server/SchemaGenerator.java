@@ -41,6 +41,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import graphql.schema.GraphQLScalarType;
 import javax.enterprise.inject.spi.CDI;
 
 import graphql.schema.DataFetcher;
@@ -59,6 +60,9 @@ import org.eclipse.microprofile.graphql.Source;
 import org.eclipse.microprofile.graphql.Type;
 import org.jboss.jandex.AnnotationInstance;
 
+import static io.helidon.microprofile.graphql.server.CustomScalars.CUSTOM_DATE_SCALAR;
+import static io.helidon.microprofile.graphql.server.CustomScalars.CUSTOM_DATE_TIME_SCALAR;
+import static io.helidon.microprofile.graphql.server.CustomScalars.CUSTOM_TIME_SCALAR;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.DATE;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.NO_FORMATTING;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.NUMBER;
@@ -69,8 +73,14 @@ import static io.helidon.microprofile.graphql.server.FormattingHelper.getCorrect
 import static io.helidon.microprofile.graphql.server.FormattingHelper.getFormattingAnnotation;
 import static io.helidon.microprofile.graphql.server.SchemaGenerator.DiscoveredMethod.MUTATION_TYPE;
 import static io.helidon.microprofile.graphql.server.SchemaGenerator.DiscoveredMethod.QUERY_TYPE;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.DATETIME_SCALAR;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.DATE_SCALAR;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.FORMATTED_DATETIME_SCALAR;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.FORMATTED_DATE_SCALAR;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.FORMATTED_TIME_SCALAR;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ID;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.STRING;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.TIME_SCALAR;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.checkScalars;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ensureFormat;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ensureRuntimeException;
@@ -334,11 +344,12 @@ public class SchemaGenerator {
         Stream streamInputTypes = schema.getInputTypes().stream().map(it -> (SchemaType) it);
         Stream<SchemaType> streamAll = Stream.concat(streamInputTypes, schema.getTypes().stream());
         streamAll.forEach(t -> {
+            System.out.println(t);
             t.getFieldDefinitions().forEach(fd -> {
                 String returnType = fd.getReturnType();
-                // only check Date/Time/DateTime scalars that don't have data fetchers already
+                // only check Date/Time/DateTime scalars that are not Queries or don't have data fetchers
                 // as default formatting has already been dealt with
-                if (isDateTimeScalar(returnType) && fd.getDataFetcher() == null) {
+                if (isDateTimeScalar(returnType) && (t.getName().equals(Schema.QUERY) || fd.getDataFetcher() == null)) {
                     String[] existingFormat = fd.getFormat();
                     // check if this type is an array type and if so then get the actual original type
                     Class<?> clazzOriginalType = fd.getOriginalArrayType() != null
@@ -347,11 +358,33 @@ public class SchemaGenerator {
                     if (!Arrays.equals(newFormat, existingFormat) && newFormat.length == 2) {
                         // formats differ so set the new format and DataFetcher
                         fd.setFormat(newFormat);
-                        // create the raw array to pass to the retrieveFormattingDataFetcher method
-                        DataFetcher dataFetcher = retrieveFormattingDataFetcher(new String[] {DATE, newFormat[0], newFormat[1] },
-                                                                        fd.getName(), clazzOriginalType.getName());
-                        fd.setDataFetcher(dataFetcher);
-                        // context.addFormatter(null, fd.getName(), (FormattingProvider) dataFetcher);
+                        if (fd.getDataFetcher() == null) {
+                            // create the raw array to pass to the retrieveFormattingDataFetcher method
+                            DataFetcher dataFetcher = retrieveFormattingDataFetcher(
+                                    new String[] { DATE, newFormat[0], newFormat[1] },
+                                    fd.getName(), clazzOriginalType.getName());
+                            fd.setDataFetcher(dataFetcher);
+                        }
+                        fd.setDefaultFormatApplied(true);
+                        SchemaScalar scalar = schema.getScalarByName(fd.getReturnType());
+                        GraphQLScalarType newScalarType = null;
+                        if (fd.getReturnType().equals(FORMATTED_DATE_SCALAR)) {
+                            fd.setReturnType(DATE_SCALAR);
+                            newScalarType = CUSTOM_DATE_SCALAR;
+                        } else if (fd.getReturnType().equals(FORMATTED_TIME_SCALAR)) {
+                            fd.setReturnType(TIME_SCALAR);
+                            newScalarType = CUSTOM_TIME_SCALAR;
+                        } else if (fd.getReturnType().equals(FORMATTED_DATETIME_SCALAR)) {
+                            fd.setReturnType(DATETIME_SCALAR);
+                            newScalarType = CUSTOM_DATE_TIME_SCALAR;
+                        }
+
+                        // clone the scalar with the new scalar name
+                        SchemaScalar newScalar = new SchemaScalar(fd.getReturnType(), scalar.getActualClass(),
+                                                                  newScalarType, scalar.getDefaultFormat());
+                        if (!schema.containsScalarWithName(newScalar.getName())) {
+                            schema.addScalar(newScalar);
+                        }
                     }
                 }
 
@@ -524,7 +557,7 @@ public class SchemaGenerator {
                     }
 
                     // in either case, get the argument format
-                    
+
                 }
                 if (fd != null) {
                     fd.addArgument(a);
@@ -543,7 +576,7 @@ public class SchemaGenerator {
                     String[] newFormat = ensureFormat(dateScalar.getName(),
                                                       originalType.getName(), new String[2]);
                     if (newFormat.length == 2) {
-                        format = new String[] {DATE, newFormat[0], newFormat[1] };
+                        format = new String[] { DATE, newFormat[0], newFormat[1] };
                     }
                 }
                 if (!isFormatEmpty(format)) {
@@ -552,24 +585,26 @@ public class SchemaGenerator {
                     final DataFetcher methodDataFetcher = DataFetcherUtils.newMethodDataFetcher(clazz, method, null,
                                                                                                 fd.getArguments().toArray(
                                                                                                         new SchemaArgument[0]));
-                    final String[] newFormat = new String[] {format[0], format[1], format[2] };
+                    final String[] newFormat = new String[] { format[0], format[1], format[2] };
 
                     if (dateScalar != null && isDateTimeScalar(dateScalar.getName())) {
                         dataFetcher = DataFetcherFactories.wrapDataFetcher(methodDataFetcher,
-                           (e, v) -> {
-                               DateTimeFormatter dateTimeFormatter =
-                                       getCorrectDateFormatter(
-                                       graphQLType, newFormat[2], newFormat[1]);
-                               return formatDate(v, dateTimeFormatter);
-                           });
+                                                                           (e, v) -> {
+                                                                               DateTimeFormatter dateTimeFormatter =
+                                                                                       getCorrectDateFormatter(
+                                                                                               graphQLType, newFormat[2],
+                                                                                               newFormat[1]);
+                                                                               return formatDate(v, dateTimeFormatter);
+                                                                           });
                     } else {
                         dataFetcher = DataFetcherFactories.wrapDataFetcher(methodDataFetcher,
-                           (e, v) -> {
-                               NumberFormat numberFormat = getCorrectNumberFormat(
-                                       graphQLType, newFormat[2], newFormat[1]);
-                               boolean isScalar = SchemaGeneratorHelper.getScalar(discoveredMethod.getReturnType()) != null;
-                               return formatNumber(v, isScalar, numberFormat);
-                           });
+                                                                           (e, v) -> {
+                                                                               NumberFormat numberFormat = getCorrectNumberFormat(
+                                                                                       graphQLType, newFormat[2], newFormat[1]);
+                                                                               boolean isScalar = SchemaGeneratorHelper.getScalar(
+                                                                                       discoveredMethod.getReturnType()) != null;
+                                                                               return formatNumber(v, isScalar, numberFormat);
+                                                                           });
                         fd.setReturnType(STRING);
                     }
                 } else {
@@ -598,6 +633,7 @@ public class SchemaGenerator {
 
     /**
      * Returns true if the format is empty or undefined.
+     *
      * @param format format to check
      * @return true if the format is empty or undefined
      */
@@ -1128,7 +1164,7 @@ public class SchemaGenerator {
                 String[] argumentFormat = FormattingHelper.getFormattingAnnotation(parameter);
                 argument.setDescription(argumentDescription);
                 if (argumentFormat[0] != null) {
-                    argument.setFormat(new String[] {argumentFormat[1], argumentFormat[2] });
+                    argument.setFormat(new String[] { argumentFormat[1], argumentFormat[2] });
                     argument.setArgumentType(String.class.getName());
                 }
 
@@ -1145,7 +1181,7 @@ public class SchemaGenerator {
                     SchemaScalar dateScalar = getScalar(returnType.getReturnClass());
                     if (dateScalar != null && isDateTimeScalar(dateScalar.getName())) {
                         // only set the original array type if it's a date/time
-                     //   discoveredMethod.setOriginalArrayType(Class.forName(returnType.returnClass));
+                        //   discoveredMethod.setOriginalArrayType(Class.forName(returnType.returnClass));
                     }
                     argument.setArrayReturnTypeMandatory(returnType.isReturnTypeMandatory);
                     argument.setArrayReturnType(returnType.isArrayType);
@@ -1270,7 +1306,7 @@ public class SchemaGenerator {
                     hasAnnotation = jandexUtils
                             .methodParameterHasAnnotation(clazzName, methodName, parameterNumber, nonNullClazz);
                     format = FormattingHelper.getMethodParameterFormat(jandexUtils, clazzName, methodName,
-                                                                              parameterNumber);
+                                                                       parameterNumber);
                 } else {
                     hasAnnotation = jandexUtils.methodHasAnnotation(clazzName, methodName, nonNullClazz);
                     format = FormattingHelper.getMethodFormat(jandexUtils, clazzName, methodName);
@@ -1283,7 +1319,7 @@ public class SchemaGenerator {
             Class<?> clazz = genericReturnType.getClass();
             isReturnTypeMandatory = clazz.getAnnotation(NonNull.class) != null
                     || isPrimitive(clazz.getName());
-//            format = FormattingHelper.getMethodFormat(jandexUtils, clazzName, methodName);
+            //            format = FormattingHelper.getMethodFormat(jandexUtils, clazzName, methodName);
             return new RootTypeResult(((Class<?>) genericReturnType).getName(), level, isReturnTypeMandatory, format);
         }
     }
@@ -1722,7 +1758,7 @@ public class SchemaGenerator {
          *
          * @param originalArrayType the original array type
          */
-        public void setOriginalArrayType(Class <?> originalArrayType) {
+        public void setOriginalArrayType(Class<?> originalArrayType) {
             this.originalArrayType = originalArrayType;
         }
 
@@ -1945,6 +1981,7 @@ public class SchemaGenerator {
 
         /**
          * Return the format of the result class.
+         *
          * @return the format of the result class
          */
         public String[] getFormat() {
@@ -1953,7 +1990,8 @@ public class SchemaGenerator {
 
         /**
          * Set the format of the result class.
-         * @param format  the format of the result class
+         *
+         * @param format the format of the result class
          */
         public void setFormat(String[] format) {
             this.format = format;
@@ -2038,6 +2076,7 @@ public class SchemaGenerator {
 
         /**
          * Return the format of the result class.
+         *
          * @return the format of the result class
          */
         public String[] getFormat() {

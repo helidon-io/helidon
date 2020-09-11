@@ -167,4 +167,9 @@ public class SimpleQueriesNoArgs {
     public List<@DateFormat("dd/MM/yyyy") LocalDate> getLocalDateListFormat() {
         return List.of(LocalDate.of(1968,2,17), LocalDate.of(1970,8,4));
     }
+
+    @Query("localDateNoFormat")
+    public LocalDate localDateNoFormat() {
+        return LocalDate.of(1968,02,17);
+    }
 }

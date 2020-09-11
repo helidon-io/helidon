@@ -53,11 +53,11 @@ import org.eclipse.microprofile.graphql.Type;
 
 import static io.helidon.microprofile.graphql.server.CustomScalars.CUSTOM_BIGDECIMAL_SCALAR;
 import static io.helidon.microprofile.graphql.server.CustomScalars.CUSTOM_BIGINTEGER_SCALAR;
-import static io.helidon.microprofile.graphql.server.CustomScalars.CUSTOM_DATE_SCALAR;
-import static io.helidon.microprofile.graphql.server.CustomScalars.CUSTOM_DATE_TIME_SCALAR;
+import static io.helidon.microprofile.graphql.server.CustomScalars.FORMATTED_CUSTOM_DATE_SCALAR;
+import static io.helidon.microprofile.graphql.server.CustomScalars.FORMATTED_CUSTOM_DATE_TIME_SCALAR;
 import static io.helidon.microprofile.graphql.server.CustomScalars.CUSTOM_FLOAT_SCALAR;
 import static io.helidon.microprofile.graphql.server.CustomScalars.CUSTOM_INT_SCALAR;
-import static io.helidon.microprofile.graphql.server.CustomScalars.CUSTOM_TIME_SCALAR;
+import static io.helidon.microprofile.graphql.server.CustomScalars.FORMATTED_CUSTOM_TIME_SCALAR;
 import static io.helidon.microprofile.graphql.server.ElementGenerator.OPEN_SQUARE;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.getDefaultDateTimeFormat;
 import static io.helidon.microprofile.graphql.server.SchemaGenerator.GET;
@@ -170,19 +170,35 @@ public final class SchemaGeneratorHelper {
     protected static final String SHORT_PRIMITIVE_CLASS = short.class.getName();
 
     /**
-     * Date scalar.
+     * Formatted Date scalar.
      */
-    protected static final String DATE_SCALAR = "Date";
+    public static final String FORMATTED_DATE_SCALAR = "FormattedDate";
 
     /**
-     * DateTime scalar.
+     * Formatted DateTime scalar.
      */
-    protected static final String DATETIME_SCALAR = "DateTime";
+    public static final String FORMATTED_DATETIME_SCALAR = "FormattedDateTime";
 
     /**
-     * Time Scalar.
+     * Formatted Time Scalar.
      */
-    protected static final String TIME_SCALAR = "Time";
+    public static final String FORMATTED_TIME_SCALAR = "FormattedTime";
+
+    /**
+     * Date scalar (with default formatting).
+     */
+    public static final String DATE_SCALAR = "Date";
+
+    /**
+     * DateTime scalar (with default formatting).
+     */
+    public static final String DATETIME_SCALAR = "DateTime";
+
+    /**
+     * Time Scalar (with default formatting).
+     */
+    public static final String TIME_SCALAR = "Time";
+
 
      /**
      * Defines a {@link BigDecimal} type.
@@ -238,22 +254,22 @@ public final class SchemaGeneratorHelper {
 
         // Time scalars
         put(OffsetTime.class.getName(),
-            new SchemaScalar(TIME_SCALAR, OFFSET_TIME_CLASS, CUSTOM_TIME_SCALAR, "HH:mm:ssZ"));
+            new SchemaScalar(FORMATTED_TIME_SCALAR, OFFSET_TIME_CLASS, FORMATTED_CUSTOM_TIME_SCALAR, "HH:mm:ssZ"));
         put(LocalTime.class.getName(),
-            new SchemaScalar(TIME_SCALAR, LOCAL_TIME_CLASS, CUSTOM_TIME_SCALAR, "HH:mm:ss"));
+            new SchemaScalar(FORMATTED_TIME_SCALAR, LOCAL_TIME_CLASS, FORMATTED_CUSTOM_TIME_SCALAR, "HH:mm:ss"));
 
         // DateTime scalars
         put(OFFSET_DATE_TIME_CLASS,
-            new SchemaScalar(DATETIME_SCALAR, OFFSET_DATE_TIME_CLASS, CUSTOM_DATE_TIME_SCALAR,
+            new SchemaScalar(FORMATTED_DATETIME_SCALAR, OFFSET_DATE_TIME_CLASS, FORMATTED_CUSTOM_DATE_TIME_SCALAR,
                              "yyyy-MM-dd'T'HH:mm:ssZ"));
         put(ZONED_DATE_TIME_CLASS,
-            new SchemaScalar(DATETIME_SCALAR, ZONED_DATE_TIME_CLASS, CUSTOM_DATE_TIME_SCALAR,
+            new SchemaScalar(FORMATTED_DATETIME_SCALAR, ZONED_DATE_TIME_CLASS, FORMATTED_CUSTOM_DATE_TIME_SCALAR,
                              "yyyy-MM-dd'T'HH:mm:ssZ'['VV']'"));
         put(LOCAL_DATE_TIME_CLASS,
-            new SchemaScalar(DATETIME_SCALAR, LOCAL_DATE_TIME_CLASS, CUSTOM_DATE_TIME_SCALAR, "yyyy-MM-dd'T'HH:mm:ss"));
+            new SchemaScalar(FORMATTED_DATETIME_SCALAR, LOCAL_DATE_TIME_CLASS, FORMATTED_CUSTOM_DATE_TIME_SCALAR, "yyyy-MM-dd'T'HH:mm:ss"));
 
         // Date scalar
-        put(LOCAL_DATE_CLASS, new SchemaScalar(DATE_SCALAR, LOCAL_DATE_CLASS, CUSTOM_DATE_SCALAR, "yyyy-MM-dd"));
+        put(LOCAL_DATE_CLASS, new SchemaScalar(FORMATTED_DATE_SCALAR, LOCAL_DATE_CLASS, FORMATTED_CUSTOM_DATE_SCALAR, "yyyy-MM-dd"));
 
         // BigDecimal scalars
         put(BIG_DECIMAL_CLASS, new SchemaScalar(BIG_DECIMAL, BIG_DECIMAL_CLASS, CUSTOM_BIGDECIMAL_SCALAR, null));
@@ -430,9 +446,9 @@ public final class SchemaGeneratorHelper {
      * @return rue of the name is a Date, DateTime, or Time scalar
      */
     protected static boolean isDateTimeScalar(String scalarName) {
-        return DATE_SCALAR.equals(scalarName)
-                || TIME_SCALAR.equals(scalarName)
-                || DATETIME_SCALAR.equals(scalarName);
+        return FORMATTED_DATE_SCALAR.equals(scalarName)
+                || FORMATTED_TIME_SCALAR.equals(scalarName)
+                || FORMATTED_DATETIME_SCALAR.equals(scalarName);
     }
     /**
      * Return true if the type type is a native GraphQLType.

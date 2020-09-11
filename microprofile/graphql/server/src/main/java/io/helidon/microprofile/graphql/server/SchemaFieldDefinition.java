@@ -91,6 +91,11 @@ public class SchemaFieldDefinition
     private Object defaultValue;
 
     /**
+     * Indicates if the field has a default format applied (such as default date format) rather than a specific format supplied.
+     */
+    private boolean defaultFormatApplied;
+
+    /**
      * Construct a {@link SchemaFieldDefinition}.
      *
      * @param name                  field definition name
@@ -328,6 +333,22 @@ public class SchemaFieldDefinition
         isArrayReturnTypeMandatory = arrayReturnTypeMandatory;
     }
 
+    /**
+     * Set if the field has a default format applied.
+     * @param defaultFormatApplied if the field has a default format applied
+     */
+    public void setDefaultFormatApplied(boolean defaultFormatApplied) {
+        this.defaultFormatApplied = defaultFormatApplied;
+    }
+
+    /**
+     * Return if the field has a default format applied.
+     * @return if the field has a default format applied
+     */
+    public boolean isDefaultFormatApplied() {
+        return defaultFormatApplied;
+    }
+
     @Override
     public String toString() {
         return "FieldDefinition{"
@@ -339,6 +360,7 @@ public class SchemaFieldDefinition
                 + ", listArguments=" + listSchemaArguments
                 + ", arrayLevels=" + arrayLevels
                 + ", originalType=" + originalType
+                + ", defaultFormatApplied=" + defaultFormatApplied
                 + ", originalArrayType=" + originalArrayType
                 + ", format=" + Arrays.toString(format)
                 + ", description='" + getDescription() + '\'' + '}';

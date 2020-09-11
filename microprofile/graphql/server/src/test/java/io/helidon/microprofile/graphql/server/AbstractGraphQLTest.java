@@ -219,10 +219,11 @@ public abstract class AbstractGraphQLTest {
                 .append("} ").toString();
     }
     
-    protected void assertDefaultFormat(SchemaType type, String fdName, String defaultFormat) {
+    protected void assertDefaultFormat(SchemaType type, String fdName, String defaultFormat, boolean isDefaultFormatApplied) {
         assertThat(type, CoreMatchers.is(notNullValue()));
         SchemaFieldDefinition fd = getFieldDefinition(type, fdName);
         assertThat(fd, CoreMatchers.is(notNullValue()));
+        assertThat(fd.isDefaultFormatApplied(), is(isDefaultFormatApplied));
         String[] format = fd.getFormat();
         assertThat(format, CoreMatchers.is(notNullValue()));
         assertThat(format.length == 2, CoreMatchers.is(notNullValue()));

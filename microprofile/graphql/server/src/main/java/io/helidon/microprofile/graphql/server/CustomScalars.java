@@ -23,10 +23,6 @@ import java.text.ParseException;
 import java.time.OffsetDateTime;
 import java.time.OffsetTime;
 
-import static graphql.Scalars.GraphQLBigInteger;
-import static graphql.Scalars.GraphQLFloat;
-import static graphql.Scalars.GraphQLInt;
-
 import graphql.Scalars;
 import graphql.language.StringValue;
 import graphql.scalars.ExtendedScalars;
@@ -35,6 +31,16 @@ import graphql.schema.CoercingParseLiteralException;
 import graphql.schema.CoercingParseValueException;
 import graphql.schema.CoercingSerializeException;
 import graphql.schema.GraphQLScalarType;
+
+import static graphql.Scalars.GraphQLBigInteger;
+import static graphql.Scalars.GraphQLFloat;
+import static graphql.Scalars.GraphQLInt;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.DATETIME_SCALAR;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.DATE_SCALAR;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.FORMATTED_DATETIME_SCALAR;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.FORMATTED_DATE_SCALAR;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.FORMATTED_TIME_SCALAR;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.TIME_SCALAR;
 
 /**
  * Custom scalars.
@@ -68,27 +74,44 @@ public class CustomScalars {
     public static final GraphQLScalarType CUSTOM_BIGINTEGER_SCALAR = newCustomGraphQLBigInteger();
 
     /**
-     * An instance of a custom date/time scalar.
+     * An instance of a custom formatted date/time scalar.
      */
-    public static final GraphQLScalarType CUSTOM_DATE_TIME_SCALAR = newDateTimeScalar();
+    public static final GraphQLScalarType FORMATTED_CUSTOM_DATE_TIME_SCALAR = newDateTimeScalar(FORMATTED_DATETIME_SCALAR);
 
     /**
-     * An instance of a custom time scalar.
+     * An instance of a custom formatted time scalar.
      */
-    public static final GraphQLScalarType CUSTOM_TIME_SCALAR = newTimeScalar();
+    public static final GraphQLScalarType FORMATTED_CUSTOM_TIME_SCALAR = newTimeScalar(FORMATTED_TIME_SCALAR);
 
     /**
-     * An instance of a custom date scalar.
+     * An instance of a custom formatted date scalar.
      */
-    public static final GraphQLScalarType CUSTOM_DATE_SCALAR = newDateScalar();
+    public static final GraphQLScalarType FORMATTED_CUSTOM_DATE_SCALAR = newDateScalar(FORMATTED_DATE_SCALAR);
+
+    /**
+     * An instance of a custom date/time scalar (with default formatting).
+     */
+    public static final GraphQLScalarType CUSTOM_DATE_TIME_SCALAR = newDateTimeScalar(DATETIME_SCALAR);
+
+    /**
+     * An instance of a custom time scalar (with default formatting).
+     */
+    public static final GraphQLScalarType CUSTOM_TIME_SCALAR = newTimeScalar(TIME_SCALAR);
+
+    /**
+     * An instance of a custom date scalar (with default formatting).
+     */
+    public static final GraphQLScalarType CUSTOM_DATE_SCALAR = newDateScalar(DATE_SCALAR);
 
     /**
      * Return a new custom date/time scalar.
      *
+     * @param name the name of the scalar
+     *
      * @return a new custom date/time scalar
      */
     @SuppressWarnings("unchecked")
-    public static GraphQLScalarType newDateTimeScalar() {
+    public static GraphQLScalarType newDateTimeScalar(String name) {
         GraphQLScalarType originalScalar = ExtendedScalars.DateTime;
         Coercing<OffsetDateTime, String> originalCoercing = originalScalar.getCoercing();
         return GraphQLScalarType.newScalar().coercing(new Coercing<OffsetDateTime, String>() {
@@ -110,7 +133,7 @@ public class CustomScalars {
                 return null;
             }
         })
-        .name(originalScalar.getName())
+        .name(name)
         .description("Custom: " + originalScalar.getDescription())
         .build();
     }
@@ -118,10 +141,11 @@ public class CustomScalars {
     /**
      * Return a new custom time scalar.
      *
+     * @param name the name of the scalar
      * @return a new custom time scalar
      */
     @SuppressWarnings("unchecked")
-    public static GraphQLScalarType newTimeScalar() {
+    public static GraphQLScalarType newTimeScalar(String name) {
         GraphQLScalarType originalScalar = ExtendedScalars.Time;
         Coercing<OffsetDateTime, String> originalCoercing = originalScalar.getCoercing();
         return GraphQLScalarType.newScalar().coercing(new Coercing<OffsetTime, String>() {
@@ -142,7 +166,7 @@ public class CustomScalars {
                 return null;
             }
         })
-        .name(originalScalar.getName())
+        .name(name)
         .description("Custom: " + originalScalar.getDescription())
         .build();
     }
@@ -150,10 +174,12 @@ public class CustomScalars {
     /**
      * Return a new custom date scalar.
      *
+     * @param name the name of the scalar
+     *
      * @return a new custom date scalar
      */
     @SuppressWarnings("unchecked")
-    public static GraphQLScalarType newDateScalar() {
+    public static GraphQLScalarType newDateScalar(String name) {
         GraphQLScalarType originalScalar = ExtendedScalars.Date;
         Coercing<OffsetDateTime, String> originalCoercing = originalScalar.getCoercing();
         return GraphQLScalarType.newScalar().coercing(new Coercing<Object, String>() {
@@ -175,7 +201,7 @@ public class CustomScalars {
                         : originalCoercing.parseLiteral(input);
             }
         })
-        .name(originalScalar.getName())
+        .name(name)
         .description("Custom: " + originalScalar.getDescription())
         .build();
     }

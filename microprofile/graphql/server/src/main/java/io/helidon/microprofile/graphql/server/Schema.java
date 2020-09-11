@@ -331,6 +331,21 @@ public class Schema
     }
 
     /**
+     * Returns a {@link SchemaScalar} which matches the provided scalar name.
+     *
+     * @param scalarName the scalar name to match
+     * @return {@link SchemaScalar} or null if none found
+     */
+    public SchemaScalar getScalarByName(String scalarName) {
+        for (SchemaScalar schemaScalar : getScalars()) {
+            if (schemaScalar.getName().equals(scalarName)) {
+                return schemaScalar;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Returns true of the {@link SchemaType} with the the given name is present for this {@link Schema}.
      *
      * @param type type name to search for

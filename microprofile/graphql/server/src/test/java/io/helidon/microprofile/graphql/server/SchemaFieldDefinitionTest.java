@@ -75,6 +75,10 @@ class SchemaFieldDefinitionTest {
         assertThat(schemaFieldDefinition.isArrayReturnTypeMandatory(), is(false));
         schemaFieldDefinition.setArrayReturnTypeMandatory(true);
         assertThat(schemaFieldDefinition.isArrayReturnTypeMandatory(), is(true));
+
+        assertThat(schemaFieldDefinition.isDefaultFormatApplied(), is(false));
+        schemaFieldDefinition.setDefaultFormatApplied(true);
+        assertThat(schemaFieldDefinition.isDefaultFormatApplied(), is(true));
     }
 
     @Test
@@ -129,6 +133,13 @@ class SchemaFieldDefinitionTest {
         SchemaFieldDefinition schemaFieldDefinition = new SchemaFieldDefinition("person", "Person", true, true, 1);
         schemaFieldDefinition.addArgument(new SchemaArgument("filter", "String", false, null, STRING));
         assertThat(schemaFieldDefinition.getSchemaAsString(), is("person(\nfilter: String\n): [Person]!"));
+    }
+
+    @Test
+    public void testFieldDefinitionWithNoArgumentsAndMandatoryArrayType() {
+        SchemaFieldDefinition schemaFieldDefinition = new SchemaFieldDefinition("superPowers", "String", true, false, 1);
+        schemaFieldDefinition.setArrayReturnTypeMandatory(true);
+        assertThat(schemaFieldDefinition.getSchemaAsString(), is("superPowers: [String!]"));
     }
 
     @Test
