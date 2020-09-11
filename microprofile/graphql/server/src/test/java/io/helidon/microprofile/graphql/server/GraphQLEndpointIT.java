@@ -28,7 +28,9 @@ import javax.ws.rs.core.Response;
 import io.helidon.microprofile.graphql.server.test.types.Person;
 
 import org.hamcrest.CoreMatchers;
+
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.microprofile.graphql.server.GraphQLResource.SCHEMA_URL;
@@ -39,8 +41,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Integration tests for microprofile-graphql implementation via /graphql endpoint.
  */
-public class GraphQLEndpointIT
-        extends AbstractGraphQLEndpointIT {
+public class GraphQLEndpointIT extends AbstractGraphQLEndpointIT {
 
     @BeforeAll
     public static void setup() throws IOException {
@@ -48,6 +49,7 @@ public class GraphQLEndpointIT
     }
 
     @Test
+    @Disabled("COH-21920")
     public void basicEndpointTests() throws UnsupportedEncodingException {
         // test /graphql endpoint
         WebTarget webTarget = getGraphQLWebTarget().path(GRAPHQL);
@@ -87,6 +89,7 @@ public class GraphQLEndpointIT
     }
 
     @Test
+    @Disabled("COH-21920")
     public void testGetSchema() {
         // see https://github.com/eclipse/microprofile-graphql/issues/202
         // add text/plain

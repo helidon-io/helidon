@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2020 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.helidon.microprofile.graphql.server;
 
 import java.io.IOException;
@@ -20,6 +36,9 @@ import org.jboss.weld.junit5.WeldSetup;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+/**
+ * Tests for default values.
+ */
 @ExtendWith(WeldJunit5Extension.class)
 public class DefaultValuesIT extends AbstractGraphQLIT {
 
@@ -33,6 +52,7 @@ public class DefaultValuesIT extends AbstractGraphQLIT {
 
 
     @Test
+    @SuppressWarnings("unchecked")
     public void setOddNamedQueriesAndMutations() throws IOException {
         setupIndex(indexFileName, DefaultValuePOJO.class, OddNamedQueriesAndMutations.class);
         ExecutionContext executionContext =  new ExecutionContext(defaultContext);
@@ -48,6 +68,7 @@ public class DefaultValuesIT extends AbstractGraphQLIT {
 
 
     @Test
+    @SuppressWarnings("unchecked")
     public void testDefaultValues() throws IOException {
         setupIndex(indexFileName, DefaultValuePOJO.class, DefaultValueQueries.class);
         ExecutionContext executionContext =  new ExecutionContext(defaultContext);
@@ -103,6 +124,4 @@ public class DefaultValuesIT extends AbstractGraphQLIT {
         assertThat(fd, is(notNullValue()));
         assertThat(fd.getDefaultValue(), is("111222"));
     }
-
-
 }

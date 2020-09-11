@@ -87,6 +87,7 @@ public class CustomScalars {
      *
      * @return a new custom date/time scalar
      */
+    @SuppressWarnings("unchecked")
     public static GraphQLScalarType newDateTimeScalar() {
         GraphQLScalarType originalScalar = ExtendedScalars.DateTime;
         Coercing<OffsetDateTime, String> originalCoercing = originalScalar.getCoercing();
@@ -119,6 +120,7 @@ public class CustomScalars {
      *
      * @return a new custom time scalar
      */
+    @SuppressWarnings("unchecked")
     public static GraphQLScalarType newTimeScalar() {
         GraphQLScalarType originalScalar = ExtendedScalars.Time;
         Coercing<OffsetDateTime, String> originalCoercing = originalScalar.getCoercing();

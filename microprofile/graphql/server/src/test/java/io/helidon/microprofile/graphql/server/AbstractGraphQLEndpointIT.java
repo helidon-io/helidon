@@ -23,6 +23,8 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.helidon.microprofile.graphql.server.test.types.Person;
+import io.helidon.microprofile.server.Server;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
@@ -32,6 +34,7 @@ import io.helidon.microprofile.cdi.Main;
 
 import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.logging.LoggingFeature;
+
 import org.junit.jupiter.api.AfterAll;
 
 import static org.hamcrest.CoreMatchers.is;

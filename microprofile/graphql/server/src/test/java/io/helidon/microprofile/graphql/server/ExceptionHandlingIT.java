@@ -22,13 +22,19 @@ import java.util.List;
 import java.util.Map;
 
 import io.helidon.config.mp.MpConfigSources;
+
+import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.exception.ExceptionQueries;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 
 import org.hamcrest.Matchers;
+import org.jboss.weld.junit5.WeldInitiator;
+import org.jboss.weld.junit5.WeldJunit5Extension;
+import org.jboss.weld.junit5.WeldSetup;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -39,15 +45,22 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * Integration tests for testing exception handing in {@link SchemaGeneratorTest}.
  */
 @SuppressWarnings("unchecked")
-public class ExceptionHandlingIT
-        extends AbstractGraphQLIT {
+@ExtendWith(WeldJunit5Extension.class)
+public class ExceptionHandlingIT extends AbstractGraphQLIT {
+
+    @WeldSetup
+    private final WeldInitiator weld = WeldInitiator.of(WeldInitiator.createWeld()
+                                                     .addBeanClass(ExceptionQueries.class)
+                                                     .addBeanClass(SimpleContact.class)
+                                                     .addBeanClass(TestDB.class)
+                                                     .addExtension(new GraphQLCdiExtension()));
 
     @Test
     public void testAllDefaultsForConfig() throws IOException {
         setupConfig(null);
 
         setupIndex(indexFileName);
-        ExecutionContext executionContext =  new ExecutionContext(defaultContext);
+        ExecutionContext executionContext = new ExecutionContext(defaultContext);
         assertThat(executionContext, is(notNullValue()));
         assertThat(executionContext.getDefaultErrorMessage(), is("Server Error"));
         assertThat(executionContext.getExceptionBlacklist().size(), is(0));
@@ -61,7 +74,7 @@ public class ExceptionHandlingIT
 
         setupIndex(indexFileName);
 
-        ExecutionContext executionContext =  new ExecutionContext(defaultContext);
+        ExecutionContext executionContext = new ExecutionContext(defaultContext);
         assertThat(executionContext.getDefaultErrorMessage(), is("new message"));
     }
 
@@ -71,7 +84,7 @@ public class ExceptionHandlingIT
 
         setupIndex(indexFileName);
 
-        ExecutionContext executionContext =  new ExecutionContext(defaultContext);
+        ExecutionContext executionContext = new ExecutionContext(defaultContext);
         assertThat(executionContext.getDefaultErrorMessage(), is("Server Error"));
         assertThat(executionContext.getExceptionBlacklist().size(), is(2));
         assertThat(executionContext.getExceptionWhitelist().size(), is(1));
@@ -85,7 +98,7 @@ public class ExceptionHandlingIT
     @Test
     public void testEmptyErrorPayloads() throws IOException {
         setupIndex(indexFileName, ExceptionQueries.class);
-        ExecutionContext executionContext =  new ExecutionContext(new DefaultContext());
+        ExecutionContext executionContext = new ExecutionContext(new DefaultContext());
 
         Map<String, Object> errorMap = executionContext.newErrorPayload();
         assertPayload(errorMap);
@@ -98,7 +111,7 @@ public class ExceptionHandlingIT
     @Test
     public void testErrorPayLoadWithMessages() throws IOException {
         setupIndex(indexFileName, ExceptionQueries.class);
-        ExecutionContext executionContext =  new ExecutionContext(new DefaultContext());
+        ExecutionContext executionContext = new ExecutionContext(new DefaultContext());
 
         Map<String, Object> errorMap = executionContext.newErrorPayload();
         assertPayload(errorMap);
@@ -119,7 +132,7 @@ public class ExceptionHandlingIT
     @Test
     public void testErrorPayLoadWithMessagesAndLocations() throws IOException {
         setupIndex(indexFileName, ExceptionQueries.class);
-        ExecutionContext executionContext =  new ExecutionContext(new DefaultContext());
+        ExecutionContext executionContext = new ExecutionContext(new DefaultContext());
 
         Map<String, Object> errorMap = executionContext.newErrorPayload();
         assertPayload(errorMap);
@@ -151,7 +164,7 @@ public class ExceptionHandlingIT
     @Test
     public void testErrorPayLoadWithMessagesLocationsAndExtensions() throws IOException {
         setupIndex(indexFileName, ExceptionQueries.class);
-        ExecutionContext executionContext =  new ExecutionContext(new DefaultContext());
+        ExecutionContext executionContext = new ExecutionContext(new DefaultContext());
 
         Map<String, Object> errorMap = executionContext.newErrorPayload();
         assertPayload(errorMap);
@@ -186,8 +199,8 @@ public class ExceptionHandlingIT
         setupConfig(null);
         setupIndex(indexFileName, ExceptionQueries.class, SimpleContact.class);
         assertMessageValue("query { defaultContact { invalidField } }",
-                "Validation error of type FieldUndefined: Field 'invalidField' in" +
-                        " type 'SimpleContact' is undefined @ 'defaultContact/invalidField'", true);
+                           "Validation error of type FieldUndefined: Field 'invalidField' in" +
+                                   " type 'SimpleContact' is undefined @ 'defaultContact/invalidField'", true);
     }
 
     @Test
@@ -213,7 +226,7 @@ public class ExceptionHandlingIT
     }
 
     private void assertMessageValue(String query, String expectedMessage, boolean dataExpected) {
-        ExecutionContext executionContext =  new ExecutionContext(new DefaultContext());
+        ExecutionContext executionContext = new ExecutionContext(new DefaultContext());
         Map<String, Object> mapResults = executionContext.execute(query);
         if (dataExpected && mapResults.size() != 2) {
             System.out.println(JsonUtils.convertMapToJson(mapResults));
@@ -238,9 +251,10 @@ public class ExceptionHandlingIT
         Config config = propertiesFile == null
                 ? ConfigProviderResolver.instance().getBuilder().build()
                 : ConfigProviderResolver.instance()
-                 .getBuilder()
-                 .withSources(MpConfigSources.create(ExceptionHandlingIT.class.getClassLoader().getResource(propertiesFile)))
-                 .build();
+                        .getBuilder()
+                        .withSources(
+                                MpConfigSources.create(ExceptionHandlingIT.class.getClassLoader().getResource(propertiesFile)))
+                        .build();
 
         ConfigProviderResolver.instance()
                 .registerConfig(config, Thread.currentThread().getContextClassLoader());

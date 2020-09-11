@@ -1,6 +1,21 @@
+/*
+ * Copyright (c) 2020 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.helidon.microprofile.graphql.server;
 
-import java.beans.IntrospectionException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,17 +26,10 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import io.helidon.microprofile.graphql.server.AbstractGraphQLIT;
-import io.helidon.microprofile.graphql.server.ExecutionContext;
-import io.helidon.microprofile.graphql.server.GraphQLCdiExtension;
-import io.helidon.microprofile.graphql.server.Schema;
-import io.helidon.microprofile.graphql.server.SchemaFieldDefinition;
-import io.helidon.microprofile.graphql.server.SchemaGenerator;
-import io.helidon.microprofile.graphql.server.SchemaType;
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesNoArgs;
 import io.helidon.microprofile.graphql.server.test.types.DateTimePojo;
-import io.helidon.microprofile.graphql.server.test.types.Person;
+
 import org.jboss.weld.junit5.WeldInitiator;
 import org.jboss.weld.junit5.WeldJunit5Extension;
 import org.jboss.weld.junit5.WeldSetup;
@@ -38,10 +46,11 @@ public class DateTimeIT extends AbstractGraphQLIT {
                                                                 .addBeanClass(TestDB.class)
                                                                 .addExtension(new GraphQLCdiExtension()));
 
- @Test
+    @Test
+    @SuppressWarnings("unchecked")
     public void testDateAndTime() throws IOException {
         setupIndex(indexFileName, DateTimePojo.class, SimpleQueriesNoArgs.class);
-        ExecutionContext executionContext =  new ExecutionContext(defaultContext);
+        ExecutionContext executionContext = new ExecutionContext(defaultContext);
 
         Schema schema = executionContext.getSchema();
         SchemaType type = schema.getTypeByName("DateTimePojo");
@@ -77,7 +86,7 @@ public class DateTimeIT extends AbstractGraphQLIT {
 
         Map<String, Object> mapResults = getAndAssertResult(
                 executionContext.execute("query { dateAndTimePOJOQuery { offsetDateTime offsetTime zonedDateTime "
-                                             + "localDate localDate2 localTime localDateTime significantDates } }"));
+                                                 + "localDate localDate2 localTime localDateTime significantDates } }"));
         assertThat(mapResults.size(), is(1));
         Map<String, Object> mapResults2 = (Map<String, Object>) mapResults.get("dateAndTimePOJOQuery");
         assertThat(mapResults2, is(notNullValue()));
@@ -90,7 +99,7 @@ public class DateTimeIT extends AbstractGraphQLIT {
         Object significantDates = mapResults2.get("significantDates");
         assertThat(significantDates, is(notNullValue()));
         List<String> listDates = (ArrayList<String>) mapResults2.get("significantDates");
-        assertThat(listDates.size(),is(2));
+        assertThat(listDates.size(), is(2));
         assertThat(listDates.get(0), is("1968-02-17"));
         assertThat(listDates.get(1), is("1970-08-04"));
 
@@ -98,7 +107,7 @@ public class DateTimeIT extends AbstractGraphQLIT {
                 executionContext.execute("query { localDateListFormat }"));
         assertThat(mapResults, is(notNullValue()));
         listDates = (ArrayList<String>) mapResults.get("localDateListFormat");
-        assertThat(listDates.size(),is(2));
+        assertThat(listDates.size(), is(2));
         assertThat(listDates.get(0), is("17/02/1968"));
         assertThat(listDates.get(1), is("04/08/1970"));
     }
