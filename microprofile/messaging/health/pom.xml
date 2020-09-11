@@ -20,18 +20,25 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon.microprofile</groupId>
-        <artifactId>helidon-microprofile-project</artifactId>
+        <groupId>io.helidon.microprofile.messaging</groupId>
+        <artifactId>helidon-microprofile-messaging-project</artifactId>
         <version>2.0.3-SNAPSHOT</version>
     </parent>
 
-    <groupId>io.helidon.microprofile.messaging</groupId>
-    <artifactId>helidon-microprofile-messaging-project</artifactId>
-    <name>Helidon MicroProfile Reactive Messaging Parent</name>
-    <packaging>pom</packaging>
+    <artifactId>helidon-microprofile-messaging-health</artifactId>
+    <name>Helidon MicroProfile Reactive Messaging Health</name>
+    <description>
+        Helidon MicroProfile Reactive Messaging Health
+    </description>
 
-    <modules>
-        <module>core</module>
-        <module>health</module>
-    </modules>
+    <dependencies>
+        <dependency>
+            <groupId>io.helidon.microprofile.messaging</groupId>
+            <artifactId>helidon-microprofile-messaging</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.health</groupId>
+            <artifactId>helidon-microprofile-health</artifactId>
+        </dependency>
+    </dependencies>
 </project>

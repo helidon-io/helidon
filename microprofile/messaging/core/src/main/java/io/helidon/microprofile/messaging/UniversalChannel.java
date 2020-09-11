@@ -18,6 +18,7 @@
 package io.helidon.microprofile.messaging;
 
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
 import io.helidon.config.Config;
@@ -40,6 +41,7 @@ class UniversalChannel {
     private final Config config;
     private final ChannelRouter router;
     private UniversalChannel upstreamChannel;
+    private AtomicBoolean up;
 
     UniversalChannel(ChannelRouter router) {
         this.router = router;
@@ -65,6 +67,10 @@ class UniversalChannel {
     void setOutgoing(OutgoingMethod outgoingMethod) {
         this.name = outgoingMethod.getOutgoingChannelName();
         this.outgoingMethod = outgoingMethod;
+    }
+
+    public AtomicBoolean isUp() {
+        return up;
     }
 
     void connect() {
@@ -97,21 +103,21 @@ class UniversalChannel {
         if (incomingMethod != null) {
             subscriber1 = incomingMethod.getSubscriber();
             connectMessage.append(incomingMethod.getMethod().getName());
-            publisher.subscribe(subscriber1);
+            up = ChannelHealth.connect(publisher,subscriber1);
             //Continue connecting processor chain
             optUpstreamChannel.ifPresent(UniversalChannel::connect);
 
         } else if (incomingProcessorMethod != null) {
             subscriber1 = incomingProcessorMethod.getProcessor();
             connectMessage.append(incomingProcessorMethod.getMethod().getName());
-            publisher.subscribe(subscriber1);
+            up = ChannelHealth.connect(publisher,subscriber1);
             //Continue connecting processor chain
             optUpstreamChannel.ifPresent(UniversalChannel::connect);
 
         } else if (incomingConnector != null) {
             subscriber1 = incomingConnector.getSubscriber(name);
             connectMessage.append(incomingConnector.getConnectorName());
-            publisher.subscribe(subscriber1);
+            up = ChannelHealth.connect(publisher,subscriber1);
             //Continue connecting processor chain
             optUpstreamChannel.ifPresent(UniversalChannel::connect);
 

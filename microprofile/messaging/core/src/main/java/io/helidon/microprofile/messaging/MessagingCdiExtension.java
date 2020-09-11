@@ -16,7 +16,9 @@
 
 package io.helidon.microprofile.messaging;
 
+import java.util.Map;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import javax.annotation.Priority;
 import javax.enterprise.context.ApplicationScoped;
@@ -45,6 +47,13 @@ public class MessagingCdiExtension implements Extension {
     private static final Logger LOGGER = Logger.getLogger(MessagingCdiExtension.class.getName());
 
     private final ChannelRouter channelRouter = new ChannelRouter();
+
+    public Map<String, Boolean> channelsHealth() {
+        return channelRouter.getChannelMap()
+                .entrySet()
+                .stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().isUp().get()));
+    }
 
     private void registerChannelMethods(
             @Observes
