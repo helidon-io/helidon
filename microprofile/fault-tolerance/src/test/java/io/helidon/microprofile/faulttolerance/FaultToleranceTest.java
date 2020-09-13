@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,6 @@
 
 package io.helidon.microprofile.faulttolerance;
 
-import javax.enterprise.inject.literal.NamedLiteral;
-import javax.enterprise.inject.se.SeContainer;
-import javax.enterprise.inject.spi.CDI;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
@@ -30,20 +27,23 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import io.helidon.microprofile.cdi.HelidonContainer;
+import javax.enterprise.inject.literal.NamedLiteral;
+import javax.enterprise.inject.se.SeContainer;
+import javax.enterprise.inject.spi.CDI;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+import io.helidon.microprofile.tests.junit5.HelidonTest;
+
 import org.junit.jupiter.api.BeforeEach;
 
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Class FaultToleranceTest.
  */
+@HelidonTest
 public abstract class FaultToleranceTest {
 
     private static final long TIMEOUT = 5000;
@@ -54,18 +54,6 @@ public abstract class FaultToleranceTest {
     private static final int NUMBER_OF_THREADS = 20;
 
     private static Executor executor = Executors.newFixedThreadPool(NUMBER_OF_THREADS);
-
-    @BeforeAll
-    public static void startCdiContainer() {
-        cdiContainer = HelidonContainer.instance().start();
-    }
-
-    @AfterAll
-    public static void shutDownCdiContainer() {
-        if (cdiContainer != null) {
-            cdiContainer.close();
-        }
-    }
 
     /**
      * Clears all internal handlers before running each test. Latest FT spec has
@@ -88,13 +76,13 @@ public abstract class FaultToleranceTest {
 
     public static void printStatus(String message, String status) {
         System.out.println(message + " -> " + status + " [Thread: "
-                           + Thread.currentThread().getName() + "]");
+                                   + Thread.currentThread().getName() + "]");
     }
 
     @SuppressWarnings("unchecked")
     static <T> CompletableFuture<T>[] getConcurrentCalls(Supplier<T> supplier, int size) {
         return Stream.generate(
-            () -> CompletableFuture.supplyAsync(supplier, executor)
+                () -> CompletableFuture.supplyAsync(supplier, executor)
         ).limit(size).toArray(CompletableFuture[]::new);
     }
 

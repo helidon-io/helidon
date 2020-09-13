@@ -13,28 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.microprofile.security;
 
+package io.helidon.microprofile.tests.junit5;
+
+import javax.enterprise.inject.spi.BeanManager;
 import javax.inject.Inject;
 
-import io.helidon.microprofile.tests.junit5.AddBean;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
-import io.helidon.security.Security;
-
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @HelidonTest
-@AddBean(TestBean.class)
-class InjectionTest {
+class TestDefaults {
+    static final String PROPERTY_NAME = "helidon-junit-extension-test-property";
+    static final String DEFAULT_VALUE = "this-should-not-be-in-config";
+
     @Inject
-    private TestBean testBean;
+    private BeanManager beanManager;
+
+    @Inject
+    @ConfigProperty(name = PROPERTY_NAME, defaultValue = DEFAULT_VALUE)
+    private String shouldNotExist;
 
     @Test
-    void testInjection() {
-        Security security = testBean.getSecurity();
-        assertThat(security, notNullValue());
+    void testIt() {
+        assertThat(beanManager, notNullValue());
+        assertThat(shouldNotExist, is(DEFAULT_VALUE));
     }
 }

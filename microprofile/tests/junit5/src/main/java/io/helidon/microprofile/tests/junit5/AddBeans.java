@@ -13,20 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.microprofile.security;
+package io.helidon.microprofile.tests.junit5;
 
-import javax.inject.Inject;
-
-import io.helidon.security.Security;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * Test bean.
+ * A repeatable container for {@link io.helidon.microprofile.tests.junit5.AddBean}.
+ * No need to use this annotation, just repeat {@link io.helidon.microprofile.tests.junit5.AddBean} annotation
+ * on test class.
  */
-public class TestBean {
-    @Inject
-    private Security security;
-
-    Security getSecurity() {
-        return security;
-    }
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+public @interface AddBeans {
+    /**
+     * Beans to be added.
+     * @return add bean annotations
+     */
+    AddBean[] value();
 }
