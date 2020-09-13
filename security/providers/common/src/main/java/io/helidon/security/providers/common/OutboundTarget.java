@@ -101,7 +101,13 @@ public final class OutboundTarget {
         }
     }
 
-    static OutboundTarget create(Config c) {
+    /**
+     * Create a target from configuration.
+     *
+     * @param c configuration on the node of a single outbound target
+     * @return a new target from config, requires at least {@value CONFIG_NAME}
+     */
+    public static OutboundTarget create(Config c) {
         Builder builder = new Builder();
 
         builder.config(c);

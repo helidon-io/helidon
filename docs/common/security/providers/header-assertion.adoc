@@ -1,0 +1,119 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+=== Header Authentication Provider
+:description: Helidon Security Header Provider
+:keywords: helidon, security, header
+
+Asserts user or service identity based on a value of a header.
+
+==== Setup
+
+[source,xml]
+.Maven dependency
+----
+<dependency>
+    <groupId>io.helidon.security.providers</groupId>
+    <artifactId>helidon-security-providers-header</artifactId>
+</dependency>
+----
+
+.Provider class name
+----
+io.helidon.security.providers.header.HeaderAtnProvider
+----
+
+.Provider configuration key
+----
+header-atn
+----
+
+==== Example code
+
+[source,yaml]
+.Configuration example
+----
+security:
+  providers:
+    header-atn:
+      atn-token:
+        header: "X-AUTH-USER"
+      outbound:
+        - name: "internal-services"
+          hosts: ["*.example.org"]
+          # propagates the current user or service id using the same header as authentication
+        - name: "partner-service"
+          hosts: ["*.partner.org"]
+          # propagates an explicit username in a custom header
+          username: "service-27"
+          outbound-token:
+            header: "X-Service-Auth"
+----
+
+==== Configuration options
+The following table shows all configuration options of the provider and their default values
+
+[cols="2,2,5"]
+
+|===
+|key |default value |description
+
+|`optional` |`false` |If set to `true`, provider will abstain rather than fail if the header is not available
+|`authenticate` |`true` |If set to `false`, authentication will not be attempted (outbound security can still be used)
+|`propagate` |`false` |If explicitly set to `false`, identity propagation will not be done. Otherwise it is done if an `outbound`
+                section is configured
+|`principal-type` |`USER` |Can be `USER` or `SERVICE`
+|`atn-token` |`none` | Token extraction and propagation, you can define which header to use and how to extract it
+|`outbound` |{nbsp} |A list of outbound configurations
+|`outbound.*.name` |{nbsp} |Required name of outbound configuration
+|`outbound.*.username` |{nbsp} |Optional username used for outbound security; if not provided, current identity is propagated
+|`outbound.*.transports` |any transport |An array of transports this outbound configuration should be used for
+|`outbound.*.hosts` |any host |An array of hosts this outbound configuration should be used for, can be a regular expression
+|`outbound.*.paths` |any path |An array of paths this outbound configuration should be used for (such as `/greet`), can be a regular expression
+|`outbound.*.methods` |any method |An array of HTTP methods this outbound configuration should be used for
+|`outbound.*.outbound-token` |same as `atn-token` |Configuration of outbound header used to propagate
+|`outbound.*.outbound-token.header` |{nbsp} |Name of the header used to propagate the token
+|`outbound.*.outbound-token.prefix` |{nbsp} |Prefix for the header value, such as `"username "` (only one of `prefix`, `regexp` and `format` should be defined, `regexp` wins over `prefix`, `format` wins over `regexp`)
+|`outbound.*.outbound-token.format` |{nbsp} |String format with a single parameter to create the header value, such as `"username %1s"`
+|`outbound.*.outbound-token.regexp` |{nbsp} |Regular expression to create the header value, such as `"username (.*)"`
+|===
+
+==== How does it work?
+This provider inspects a specified request header and extracts the username/service name from it and
+asserts it as current subject's principal.
+
+This can be used when we use perimeter authentication (e.g. there is a gateway that takes
+care of authentication and propagates the user in a header).
+
+*Identity propagation*
+
+Identity is propagated only if an outbound target matches the target service.
+
+The following options exist when propagating identity:
+1. We propagate the current username using the configured header
+2. We use username associated with an outbound target (see example configuration above)
+
+
+*Caution*
+
+When using this provider, you must be sure the header cannot be explicitly configured by a user or another service.
+All requests should go through a gateway that removes this header from inbound traffic, and only configures it for
+authenticated users/services.
+Another option is to use this with fully trusted parties (such as services within a single company, on a single
+protected network not accessible to any users), and of course for testing and demo purposes.
+
