@@ -26,7 +26,7 @@ import org.eclipse.microprofile.faulttolerance.exceptions.FaultToleranceDefiniti
 /**
  * Class AsynchronousAntn.
  */
-public class AsynchronousAntn extends MethodAntn implements Asynchronous {
+class AsynchronousAntn extends MethodAntn implements Asynchronous {
 
     /**
      * Constructor.

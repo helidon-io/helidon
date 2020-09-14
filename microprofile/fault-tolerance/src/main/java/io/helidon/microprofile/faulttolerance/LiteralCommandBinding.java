@@ -21,7 +21,7 @@ import javax.enterprise.util.AnnotationLiteral;
 /**
  * Class LiteralCommandBinding.
  */
-public class LiteralCommandBinding extends AnnotationLiteral<CommandBinding> implements CommandBinding {
+class LiteralCommandBinding extends AnnotationLiteral<CommandBinding> implements CommandBinding {
     private static final long serialVersionUID = 1L;
 
     private static final CommandBinding INSTANCE = new LiteralCommandBinding();

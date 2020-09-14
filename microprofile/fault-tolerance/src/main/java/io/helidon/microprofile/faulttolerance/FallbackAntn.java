@@ -26,7 +26,7 @@ import org.eclipse.microprofile.faulttolerance.exceptions.FaultToleranceDefiniti
 /**
  * Class FallbackAntn.
  */
-public class FallbackAntn extends MethodAntn implements Fallback {
+class FallbackAntn extends MethodAntn implements Fallback {
 
     /**
      * Constructor.

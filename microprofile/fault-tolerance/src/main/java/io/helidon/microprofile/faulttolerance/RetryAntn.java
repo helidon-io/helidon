@@ -25,7 +25,7 @@ import org.eclipse.microprofile.faulttolerance.exceptions.FaultToleranceDefiniti
 /**
  * Class RetryAntn.
  */
-public class RetryAntn extends MethodAntn implements Retry {
+class RetryAntn extends MethodAntn implements Retry {
 
     /**
      * Constructor.

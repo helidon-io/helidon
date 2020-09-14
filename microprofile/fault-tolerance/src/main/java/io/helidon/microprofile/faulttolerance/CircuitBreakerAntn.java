@@ -25,7 +25,7 @@ import org.eclipse.microprofile.faulttolerance.exceptions.FaultToleranceDefiniti
 /**
  * Class CircuitBreakerAntn.
  */
-public class CircuitBreakerAntn extends MethodAntn implements CircuitBreaker {
+class CircuitBreakerAntn extends MethodAntn implements CircuitBreaker {
 
     /**
      * Constructor.

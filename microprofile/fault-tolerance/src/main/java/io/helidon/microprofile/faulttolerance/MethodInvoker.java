@@ -90,7 +90,7 @@ import static io.helidon.microprofile.faulttolerance.ThrowableMapper.mapTypes;
  * of this class is created for each method invocation. Some state is shared across
  * all invocations of a method, including for circuit breakers and bulkheads.
  */
-public class MethodInvoker implements FtSupplier<Object> {
+class MethodInvoker implements FtSupplier<Object> {
     private static final Logger LOGGER = Logger.getLogger(MethodInvoker.class.getName());
 
     /**

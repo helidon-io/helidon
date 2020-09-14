@@ -25,7 +25,7 @@ import org.eclipse.microprofile.faulttolerance.exceptions.FaultToleranceDefiniti
 /**
  * Class TimeoutAntn.
  */
-public class TimeoutAntn extends MethodAntn implements Timeout {
+class TimeoutAntn extends MethodAntn implements Timeout {
 
     /**
      * Constructor.

@@ -24,7 +24,7 @@ import org.eclipse.microprofile.faulttolerance.exceptions.FaultToleranceDefiniti
 /**
  * Class BulkheadAntn.
  */
-public class BulkheadAntn extends MethodAntn implements Bulkhead {
+class BulkheadAntn extends MethodAntn implements Bulkhead {
 
     /**
      * Constructor.

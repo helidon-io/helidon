@@ -29,7 +29,7 @@ import javax.interceptor.InvocationContext;
 @Interceptor
 @CommandBinding
 @Priority(Interceptor.Priority.PLATFORM_AFTER + 10)
-public class CommandInterceptor {
+class CommandInterceptor {
 
     private static final Logger LOGGER = Logger.getLogger(CommandInterceptor.class.getName());
 
