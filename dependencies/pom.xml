@@ -110,7 +110,7 @@
         <version.lib.snakeyaml>1.24</version.lib.snakeyaml>
         <version.lib.transaction-api>1.3.3</version.lib.transaction-api>
         <version.lib.typesafe-config>1.4.0</version.lib.typesafe-config>
-        <version.lib.tyrus>1.15</version.lib.tyrus>
+        <version.lib.tyrus>1.17</version.lib.tyrus>
         <version.lib.ucp>${version.lib.ojdbc8}</version.lib.ucp>
         <version.lib.validation-api>2.0.2</version.lib.validation-api>
         <version.lib.websockets-api>1.1.2</version.lib.websockets-api>

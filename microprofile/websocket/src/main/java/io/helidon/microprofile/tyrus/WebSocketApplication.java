@@ -22,6 +22,7 @@ import java.util.Set;
 import java.util.logging.Logger;
 
 import javax.websocket.Endpoint;
+import javax.websocket.Extension;
 import javax.websocket.server.ServerApplicationConfig;
 
 /**
@@ -32,11 +33,13 @@ public final class WebSocketApplication {
     private Class<? extends ServerApplicationConfig> applicationClass;
     private Set<Class<?>> annotatedEndpoints;
     private Set<Class<? extends Endpoint>> programmaticEndpoints;
+    private Set<Extension> extensions;
 
     private WebSocketApplication(Builder builder) {
         this.applicationClass = builder.applicationClass;
         this.annotatedEndpoints = builder.annotatedEndpoints;
         this.programmaticEndpoints = builder.programmaticEndpoints;
+        this.extensions = builder.extensions;
     }
 
     /**
@@ -76,6 +79,15 @@ public final class WebSocketApplication {
     }
 
     /**
+     * Get list of installed extensions.
+     *
+     * @return List of installed extensions.
+     */
+    public Set<Extension> extensions() {
+        return extensions;
+    }
+
+    /**
      * Fluent API builder to create {@link WebSocketApplication} instances.
      */
     public static class Builder {
@@ -84,6 +96,7 @@ public final class WebSocketApplication {
         private Class<? extends ServerApplicationConfig> applicationClass;
         private Set<Class<?>> annotatedEndpoints = new HashSet<>();
         private Set<Class<? extends Endpoint>> programmaticEndpoints = new HashSet<>();
+        private Set<Extension> extensions = new HashSet<>();
 
         /**
          * Updates an application class in the builder. Clears all results from scanning.
@@ -132,6 +145,17 @@ public final class WebSocketApplication {
          */
         public Builder annotatedEndpoint(Class<?> annotatedEndpoint) {
             annotatedEndpoints.add(annotatedEndpoint);
+            return this;
+        }
+
+        /**
+         * Add single extension.
+         *
+         * @param extension Extension.
+         * @return The builder.
+         */
+        public Builder extension(Extension extension) {
+            extensions.add(extension);
             return this;
         }
 

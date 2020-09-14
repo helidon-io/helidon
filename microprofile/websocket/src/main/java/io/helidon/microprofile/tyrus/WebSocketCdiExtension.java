@@ -100,13 +100,33 @@ public class WebSocketCdiExtension implements Extension {
     }
 
     /**
-     * Collects programmatic endpoints .
+     * Collects programmatic endpoints.
      *
      * @param endpoint The endpoint.
      */
     private void endpointConfig(@Observes ProcessAnnotatedType<? extends Endpoint> endpoint) {
         LOGGER.finest(() -> "Programmatic endpoint found " + endpoint.getAnnotatedType().getJavaClass());
         appBuilder.programmaticEndpoint(endpoint.getAnnotatedType().getJavaClass());
+    }
+
+    /**
+     * Collects extensions.
+     *
+     * @param extension The extension.
+     */
+    private void extension(@Observes ProcessAnnotatedType<? extends javax.websocket.Extension> extension) {
+        LOGGER.finest(() -> "Extension found " + extension.getAnnotatedType().getJavaClass());
+
+        Class<? extends javax.websocket.Extension> cls = extension.getAnnotatedType().getJavaClass();
+        try {
+            javax.websocket.Extension instance = cls.getConstructor().newInstance();
+            appBuilder.extension(instance);
+        } catch (NoSuchMethodException e) {
+            LOGGER.warning(() -> "Extension does not have no-args constructor for "
+                    + extension.getAnnotatedType().getJavaClass() + "! Skppping.");
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException("Unable to load WebSocket extension", e);
+        }
     }
 
     /**
@@ -165,6 +185,7 @@ public class WebSocketCdiExtension implements Extension {
                 // Direct registration without calling application class
                 app.annotatedEndpoints().forEach(builder::register);
                 app.programmaticEndpoints().forEach(builder::register);
+                app.extensions().forEach(builder::register);
 
                 // Create routing builder
                 routing = serverCdiExtension.serverRoutingBuilder();
