@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ public class AsynchronousTest extends FaultToleranceTest {
     public void testAsync() throws Exception {
         AsynchronousBean bean = newBean(AsynchronousBean.class);
         assertThat(bean.wasCalled(), is(false));
-        Future<String> future = bean.async();
+        CompletableFuture<String> future = bean.async();
         future.get();
         assertThat(bean.wasCalled(), is(true));
     }
@@ -43,17 +43,24 @@ public class AsynchronousTest extends FaultToleranceTest {
     public void testAsyncWithFallback() throws Exception {
         AsynchronousBean bean = newBean(AsynchronousBean.class);
         assertThat(bean.wasCalled(), is(false));
-        Future<String> future = bean.asyncWithFallback();
+        CompletableFuture<String> future = bean.asyncWithFallback();
         String value = future.get();
         assertThat(bean.wasCalled(), is(true));
         assertThat(value, is("fallback"));
     }
 
     @Test
+    public void testAsyncWithFallbackFuture() {
+        AsynchronousBean bean = newBean(AsynchronousBean.class);
+        Future<String> future = bean.asyncWithFallbackFuture();     // fallback ignored with Future
+        assertCompleteExceptionally(future, RuntimeException.class);
+    }
+
+    @Test
     public void testAsyncNoGet() throws Exception {
         AsynchronousBean bean = newBean(AsynchronousBean.class);
         assertThat(bean.wasCalled(), is(false));
-        Future<String> future = bean.async();
+        CompletableFuture<String> future = bean.async();
         while (!future.isDone()) {
             Thread.sleep(100);
         }
@@ -64,7 +71,7 @@ public class AsynchronousTest extends FaultToleranceTest {
     public void testNotAsync() throws Exception {
         AsynchronousBean bean = newBean(AsynchronousBean.class);
         assertThat(bean.wasCalled(), is(false));
-        Future<String> future = bean.notAsync();
+        CompletableFuture<String> future = bean.notAsync();
         assertThat(bean.wasCalled(), is(true));
         future.get();
     }

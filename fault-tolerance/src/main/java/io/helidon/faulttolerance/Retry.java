@@ -58,7 +58,6 @@ public interface Retry extends FtHandler {
                 .jitter(Duration.ofMillis(50))
                 .build();
 
-
         private Duration overallTimeout = Duration.ofSeconds(1);
         private LazyValue<? extends ScheduledExecutorService> scheduledExecutor = FaultTolerance.scheduledExecutor();
 
@@ -422,4 +421,12 @@ public interface Retry extends FtHandler {
             }
         }
     }
+
+    /**
+     * Number of times a method called has been retried. This is a monotonically
+     * increasing counter over the lifetime of the handler.
+     *
+     * @return number ot times a method is retried.
+     */
+    long retryCounter();
 }

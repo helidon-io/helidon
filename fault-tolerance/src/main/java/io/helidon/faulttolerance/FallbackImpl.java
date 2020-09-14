@@ -76,6 +76,6 @@ class FallbackImpl<T> implements Fallback<T> {
                     return null;
                 });
 
-        return Single.create(future);
+        return Single.create(future, true);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package io.helidon.microprofile.faulttolerance;
 
 import java.time.temporal.ChronoUnit;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.enterprise.context.Dependent;
@@ -170,7 +169,7 @@ public class MetricsBean {
 
     @Asynchronous
     @Bulkhead(value = 3, waitingTaskQueue = 3)
-    public Future<String> concurrent(long sleepMillis) {
+    public CompletableFuture<String> concurrent(long sleepMillis) {
         FaultToleranceTest.printStatus("MetricsBean::concurrent()", "success");
         try {
             assertThat(getGauge(this,
@@ -185,7 +184,7 @@ public class MetricsBean {
 
     @Asynchronous
     @Bulkhead(value = 3, waitingTaskQueue = 3)
-    public Future<String> concurrentAsync(long sleepMillis) {
+    public CompletableFuture<String> concurrentAsync(long sleepMillis) {
         FaultToleranceTest.printStatus("MetricsBean::concurrentAsync()", "success");
         try {
             assertThat((long) getGauge(this, "concurrentAsync",

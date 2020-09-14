@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,12 +22,9 @@ import java.lang.reflect.Method;
 import javax.enterprise.inject.spi.CDI;
 import javax.interceptor.InvocationContext;
 
-import net.jodah.failsafe.event.ExecutionAttemptedEvent;
 import org.eclipse.microprofile.faulttolerance.ExecutionContext;
 import org.eclipse.microprofile.faulttolerance.Fallback;
 import org.eclipse.microprofile.faulttolerance.FallbackHandler;
-
-import static io.helidon.microprofile.faulttolerance.ExceptionUtil.toException;
 
 /**
  * Class CommandFallback.
@@ -47,11 +44,11 @@ class CommandFallback {
      *
      * @param context Invocation context.
      * @param introspector Method introspector.
-     * @param event ExecutionAttemptedEvent representing the failure causing the fallback invocation
+     * @param throwable Throwable that caused execution of fallback
      */
-    CommandFallback(InvocationContext context, MethodIntrospector introspector, ExecutionAttemptedEvent<?> event) {
+    CommandFallback(InvocationContext context, MethodIntrospector introspector, Throwable throwable) {
         this.context = context;
-        this.throwable = event.getLastFailure();
+        this.throwable = throwable;
 
         // Establish fallback strategy
         final Fallback fallback = introspector.getFallback();
@@ -107,30 +104,24 @@ class CommandFallback {
                 result = fallbackMethod.invoke(context.getTarget(), context.getParameters());
             }
         } catch (Throwable t) {
-            updateMetrics(t);
+            updateMetrics();
 
             // If InvocationTargetException, then unwrap underlying cause
             if (t instanceof InvocationTargetException) {
                 t = t.getCause();
             }
-            throw toException(t);
+            throw t instanceof Exception ? (Exception) t : new RuntimeException(t);
         }
 
-        updateMetrics(null);
+        updateMetrics();
         return result;
     }
 
     /**
-     * Updates fallback metrics and adjust failed invocations based on outcome of fallback.
+     * Updates fallback metrics.
      */
-    private void updateMetrics(Throwable throwable) {
-        final Method method = context.getMethod();
+    private void updateMetrics() {
+        Method method = context.getMethod();
         FaultToleranceMetrics.getCounter(method, FaultToleranceMetrics.FALLBACK_CALLS_TOTAL).inc();
-
-        // If fallback was successful, it is not a failed invocation
-        if (throwable == null) {
-            // Since metrics 2.0, countes should only be incrementing, so we cheat here
-            FaultToleranceMetrics.getCounter(method, FaultToleranceMetrics.INVOCATIONS_FAILED_TOTAL).inc(-1L);
-        }
     }
 }

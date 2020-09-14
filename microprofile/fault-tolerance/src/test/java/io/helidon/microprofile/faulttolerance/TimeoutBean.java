@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,12 @@
 package io.helidon.microprofile.faulttolerance;
 
 import java.time.temporal.ChronoUnit;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.enterprise.context.Dependent;
 
+import org.eclipse.microprofile.faulttolerance.Asynchronous;
 import org.eclipse.microprofile.faulttolerance.Fallback;
 import org.eclipse.microprofile.faulttolerance.Retry;
 import org.eclipse.microprofile.faulttolerance.Timeout;
@@ -41,11 +43,30 @@ public class TimeoutBean {
         return "failure";
     }
 
+    @Asynchronous
+    @Timeout(value=1000, unit=ChronoUnit.MILLIS)
+    public CompletableFuture<String> forceTimeoutAsync() throws InterruptedException {
+        FaultToleranceTest.printStatus("TimeoutBean::forceTimeoutAsync()", "failure");
+        Thread.sleep(1500);
+        return CompletableFuture.completedFuture("failure");
+    }
+
     @Timeout(value=1000, unit=ChronoUnit.MILLIS)
     public String noTimeout() throws InterruptedException {
         FaultToleranceTest.printStatus("TimeoutBean::noTimeout()", "success");
         Thread.sleep(500);
         return "success";
+    }
+
+    @Timeout(value=1000, unit=ChronoUnit.MILLIS)
+    public String forceTimeoutWithCatch() {
+        try {
+            FaultToleranceTest.printStatus("TimeoutBean::forceTimeoutWithCatch()", "failure");
+            Thread.sleep(1500);
+        } catch (InterruptedException e) {
+            // falls through
+        }
+        return null;    // tests special null case
     }
 
     // See class annotation @Retry(maxRetries = 2)
@@ -54,7 +75,7 @@ public class TimeoutBean {
         FaultToleranceTest.printStatus("TimeoutBean::timeoutWithRetries()",
                     duration.get() < 1000 ? "success" : "failure");
         Thread.sleep(duration.getAndAdd(-400));     // needs 2 retries
-        return "success";
+        return duration.get() < 1000 ? "success" : "failure";
     }
 
     @Fallback(fallbackMethod = "onFailure")

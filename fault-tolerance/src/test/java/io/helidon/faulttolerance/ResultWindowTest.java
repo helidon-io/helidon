@@ -22,24 +22,66 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class ResultWindowTest {
+
     @Test
-    void test() {
-        ResultWindow window = new ResultWindow(10, 10);
+    void testNotOpenBeforeCompleteWindow() {
+        ResultWindow window = new ResultWindow(5, 20);
+        assertThat("Empty should not open", window.shouldOpen(), is(false));
+        window.update(ResultWindow.Result.FAILURE);
+        window.update(ResultWindow.Result.FAILURE);
+        window.update(ResultWindow.Result.FAILURE);
+        window.update(ResultWindow.Result.FAILURE);
+        assertThat("Should not open before complete window", window.shouldOpen(), is(false));
+    }
+
+    @Test
+    void testOpenAfterCompleteWindow1() {
+        ResultWindow window = new ResultWindow(5, 20);
+        assertThat("Empty should not open", window.shouldOpen(), is(false));
+        window.update(ResultWindow.Result.FAILURE);
+        window.update(ResultWindow.Result.FAILURE);
+        window.update(ResultWindow.Result.SUCCESS);
+        window.update(ResultWindow.Result.SUCCESS);
+        window.update(ResultWindow.Result.SUCCESS);
+        assertThat("Should open after complete window > 20%", window.shouldOpen(), is(true));
+    }
+
+    @Test
+    void testOpenAfterCompleteWindow2() {
+        ResultWindow window = new ResultWindow(5, 20);
+        assertThat("Empty should not open", window.shouldOpen(), is(false));
+        window.update(ResultWindow.Result.SUCCESS);
+        window.update(ResultWindow.Result.FAILURE);
+        window.update(ResultWindow.Result.SUCCESS);
+        window.update(ResultWindow.Result.FAILURE);
+        window.update(ResultWindow.Result.SUCCESS);
+        assertThat("Should open after complete window > 20%", window.shouldOpen(), is(true));
+    }
+
+    @Test
+    void testOpenAfterCompleteWindow3() {
+        ResultWindow window = new ResultWindow(5, 20);
         assertThat("Empty should not open", window.shouldOpen(), is(false));
         window.update(ResultWindow.Result.SUCCESS);
         window.update(ResultWindow.Result.SUCCESS);
         window.update(ResultWindow.Result.SUCCESS);
-        assertThat("Only success should not open", window.shouldOpen(), is(false));
+        window.update(ResultWindow.Result.SUCCESS);
         window.update(ResultWindow.Result.FAILURE);
-        assertThat("Should open on first failure (10% of 10 size)", window.shouldOpen(), is(true));
-        //now cycle through window and replace all with success
-        for (int i = 0; i < 10; i++) {
-             window.update(ResultWindow.Result.SUCCESS);
-        }
-        assertThat("All success should not open", window.shouldOpen(), is(false));
         window.update(ResultWindow.Result.FAILURE);
-        assertThat("Should open on first failure (10% of 10 size)", window.shouldOpen(), is(true));
+        assertThat("Should open after complete window > 20%", window.shouldOpen(), is(true));
+    }
+
+    @Test
+    void testOpenAfterCompleteWindowReset() {
+        ResultWindow window = new ResultWindow(5, 20);
+        assertThat("Empty should not open", window.shouldOpen(), is(false));
+        window.update(ResultWindow.Result.FAILURE);
+        window.update(ResultWindow.Result.FAILURE);
+        window.update(ResultWindow.Result.FAILURE);
+        window.update(ResultWindow.Result.FAILURE);
+        window.update(ResultWindow.Result.FAILURE);
+        assertThat("Should open after complete window > 20%", window.shouldOpen(), is(true));
         window.reset();
-        assertThat("Should not open after reset", window.shouldOpen(), is(false));
+        assertThat("Empty should not open", window.shouldOpen(), is(false));
     }
 }

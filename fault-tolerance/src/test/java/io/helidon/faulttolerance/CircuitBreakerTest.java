@@ -47,14 +47,14 @@ class CircuitBreakerTest {
 
         good(breaker);
         good(breaker);
-
         bad(breaker);
-
         good(breaker);
         goodMulti(breaker);
-
-        // should open the breaker
+        good(breaker);
+        good(breaker);
+        good(breaker);
         bad(breaker);
+        bad(breaker);       // should open - window complete
 
         breakerOpen(breaker);
         breakerOpenMulti(breaker);
@@ -77,23 +77,19 @@ class CircuitBreakerTest {
 
         assertThat(breaker.state(), is(CircuitBreaker.State.CLOSED));
 
-        // should open the breaker
-        bad(breaker);
-        bad(breaker);
-
-        assertThat(breaker.state(), is(CircuitBreaker.State.OPEN));
-
-        // need to wait until half open
-        count = 0;
-        while (count++ < 10) {
-            Thread.sleep(50);
-            if (breaker.state() == CircuitBreaker.State.HALF_OPEN) {
-                break;
-            }
-        }
-
         good(breaker);
-        badMulti(breaker);
+        good(breaker);
+        bad(breaker);
+        good(breaker);
+        goodMulti(breaker);
+        good(breaker);
+        good(breaker);
+        good(breaker);
+        bad(breaker);
+        bad(breaker);       // should open - window complete
+
+        breakerOpen(breaker);
+        breakerOpenMulti(breaker);
 
         assertThat(breaker.state(), is(CircuitBreaker.State.OPEN));
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package io.helidon.microprofile.faulttolerance;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Future;
 
 import javax.enterprise.context.Dependent;
 
@@ -95,7 +94,7 @@ public class CircuitBreakerBean {
             failureRatio = 1.0,
             delay = 50000,
             failOn = UnitTestException.class)
-    public Future<?> withBulkhead(CountDownLatch started) throws InterruptedException {
+    public CompletableFuture<?> withBulkhead(CountDownLatch started) throws InterruptedException {
         started.countDown();
         FaultToleranceTest.printStatus("CircuitBreakerBean::withBulkhead", "success");
         Thread.sleep(3 * DELAY);

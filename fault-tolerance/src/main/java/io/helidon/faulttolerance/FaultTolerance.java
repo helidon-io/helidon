@@ -121,6 +121,16 @@ public final class FaultTolerance {
         return new Builder();
     }
 
+    /**
+     * A typed builder to configure a customized sequence of fault tolerance handlers.
+     *
+     * @param <T> type of result
+     * @return a new builder
+     */
+    public static <T> TypedBuilder<T> typedBuilder() {
+        return new TypedBuilder<>();
+    }
+
     static Config config() {
         return CONFIG.get();
     }
@@ -266,7 +276,17 @@ public final class FaultTolerance {
                     next = () -> validFt.invoke(finalNext);
                 }
 
-                return Single.create(next.get());
+                return Single.create(next.get(), true);
+            }
+
+            @Override
+            public String toString() {
+                StringBuilder sb = new StringBuilder();
+                for (int i = validFts.size() - 1; i >= 0; i--) {
+                    sb.append(validFts.get(i).toString());
+                    sb.append("\n");
+                }
+                return sb.toString();
             }
         }
 
@@ -285,6 +305,11 @@ public final class FaultTolerance {
             @Override
             public Multi<T> invokeMulti(Supplier<? extends Flow.Publisher<T>> supplier) {
                 return handler.invokeMulti(supplier);
+            }
+
+            @Override
+            public String toString() {
+                return handler.getClass().getSimpleName();
             }
         }
     }
@@ -350,7 +375,7 @@ public final class FaultTolerance {
                     next = () -> validFt.invoke(finalNext);
                 }
 
-                return Single.create(next.get());
+                return Single.create(next.get(), true);
             }
         }
     }

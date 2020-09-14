@@ -66,5 +66,9 @@
             <artifactId>junit</artifactId>
             <version>${version.lib.junit4}</version>
         </dependency>
+        <dependency>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
+        </dependency>
     </dependencies>
 </project>

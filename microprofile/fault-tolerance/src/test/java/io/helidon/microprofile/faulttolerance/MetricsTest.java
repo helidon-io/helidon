@@ -17,7 +17,6 @@
 package io.helidon.microprofile.faulttolerance;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
 
 import org.eclipse.microprofile.faulttolerance.exceptions.CircuitBreakerOpenException;
 import org.eclipse.microprofile.metrics.Metadata;
@@ -26,6 +25,7 @@ import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.Matchers.greaterThan;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BREAKER_CALLS_FAILED_TOTAL;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BREAKER_CALLS_PREVENTED_TOTAL;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BREAKER_CALLS_SUCCEEDED_TOTAL;
@@ -212,7 +212,7 @@ public class MetricsTest extends FaultToleranceTest {
     public void testBreakerTrip() throws Exception {
         MetricsBean bean = newBean(MetricsBean.class);
 
-        for (int i = 0; i < CircuitBreakerBean.REQUEST_VOLUME_THRESHOLD; i++) {
+        for (int i = 0; i < CircuitBreakerBean.REQUEST_VOLUME_THRESHOLD ; i++) {
             assertThrows(RuntimeException.class, () -> bean.exerciseBreaker(false));
         }
         assertThrows(CircuitBreakerOpenException.class, () -> bean.exerciseBreaker(false));
@@ -225,7 +225,7 @@ public class MetricsTest extends FaultToleranceTest {
                    is(0L));
         assertThat(getCounter(bean, "exerciseBreaker",
                                 BREAKER_CALLS_FAILED_TOTAL, boolean.class),
-                   is((long)CircuitBreakerBean.REQUEST_VOLUME_THRESHOLD));
+                   is((long) CircuitBreakerBean.REQUEST_VOLUME_THRESHOLD));
         assertThat(getCounter(bean, "exerciseBreaker",
                                    BREAKER_CALLS_PREVENTED_TOTAL, boolean.class),
                    is(1L));
@@ -335,21 +335,21 @@ public class MetricsTest extends FaultToleranceTest {
     @Test
     public void testBulkheadMetrics() throws Exception {
         MetricsBean bean = newBean(MetricsBean.class);
-        Future<String>[] calls = getAsyncConcurrentCalls(
-            () -> bean.concurrent(100), BulkheadBean.MAX_CONCURRENT_CALLS);
-        getThreadNames(calls);
+        CompletableFuture<String>[] calls = getAsyncConcurrentCalls(
+            () -> bean.concurrent(200), BulkheadBean.TOTAL_CALLS);
+        waitFor(calls);
         assertThat(getGauge(bean, "concurrent",
                               BULKHEAD_CONCURRENT_EXECUTIONS, long.class).getValue(),
                    is(0L));
         assertThat(getCounter(bean, "concurrent",
                                 BULKHEAD_CALLS_ACCEPTED_TOTAL, long.class),
-                   is((long) BulkheadBean.MAX_CONCURRENT_CALLS));
+                   is((long) BulkheadBean.TOTAL_CALLS));
         assertThat(getCounter(bean, "concurrent",
                                 BULKHEAD_CALLS_REJECTED_TOTAL, long.class),
                    is(0L));
         assertThat(getHistogram(bean, "concurrent",
                                   BULKHEAD_EXECUTION_DURATION, long.class).getCount(),
-                   is((long)BulkheadBean.MAX_CONCURRENT_CALLS));
+                   is(greaterThan(0L)));
     }
 
     @Test
@@ -358,14 +358,14 @@ public class MetricsTest extends FaultToleranceTest {
         CompletableFuture<String>[] calls = getConcurrentCalls(
             () -> {
                 try {
-                    return bean.concurrentAsync(100).get();
+                    return bean.concurrentAsync(200).get();
                 } catch (Exception e) {
                     return "failure";
                 }
-            }, BulkheadBean.MAX_CONCURRENT_CALLS);
+            }, BulkheadBean.TOTAL_CALLS);
         CompletableFuture.allOf(calls).get();
         assertThat(getHistogram(bean, "concurrentAsync",
                                   BULKHEAD_EXECUTION_DURATION, long.class).getCount(),
-                   is((long)BulkheadBean.MAX_CONCURRENT_CALLS));
+                   is(greaterThan(0L)));
     }
 }

@@ -37,6 +37,7 @@ class RetryImpl implements Retry {
     private final ErrorChecker errorChecker;
     private final long maxTimeNanos;
     private final Retry.RetryPolicy retryPolicy;
+    private final AtomicLong retryCounter = new AtomicLong(0L);
 
     RetryImpl(Retry.Builder builder) {
         this.scheduledExecutor = builder.scheduledExecutor();
@@ -75,6 +76,10 @@ class RetryImpl implements Retry {
                                                              + TimeUnit.NANOSECONDS.toMillis(maxTimeNanos) + " ms."));
         }
 
+        if (currentCallIndex > 0) {
+            retryCounter.getAndIncrement();
+        }
+
         DelayedTask<Single<T>> task = DelayedTask.createSingle(context.supplier);
         if (delay == 0) {
             task.execute();
@@ -94,7 +99,6 @@ class RetryImpl implements Retry {
     }
 
     private <T> Multi<T> retryMulti(RetryContext<? extends Flow.Publisher<T>> context) {
-
         long delay = 0;
         int currentCallIndex = context.count.getAndIncrement();
         if (currentCallIndex != 0) {
@@ -114,6 +118,10 @@ class RetryImpl implements Retry {
                                                              + TimeUnit.NANOSECONDS.toMillis(maxTimeNanos) + " ms."));
         }
 
+        if (currentCallIndex > 0) {
+            retryCounter.getAndIncrement();
+        }
+
         DelayedTask<Multi<T>> task = DelayedTask.createMulti(context.supplier);
         if (delay == 0) {
             task.execute();
@@ -130,6 +138,11 @@ class RetryImpl implements Retry {
                     }
                     return retryMulti(context);
                 });
+    }
+
+    @Override
+    public long retryCounter() {
+        return retryCounter.get();
     }
 
     private static class RetryContext<U> {

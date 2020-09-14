@@ -51,8 +51,8 @@ public class FtService implements Service {
                 .name("helidon-example-bulkhead")
                 .build();
         this.breaker = CircuitBreaker.builder()
-                .volume(10)
-                .errorRatio(20)
+                .volume(4)
+                .errorRatio(40)
                 .successThreshold(1)
                 .delay(Duration.ofSeconds(5))
                 .build();

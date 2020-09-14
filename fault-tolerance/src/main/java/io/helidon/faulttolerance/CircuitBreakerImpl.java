@@ -77,21 +77,18 @@ class CircuitBreakerImpl implements CircuitBreaker {
         if (state.get() == State.CLOSED) {
             // run it!
             CompletionStage<Void> completion = task.execute();
-
             completion.handle((it, throwable) -> {
                 Throwable exception = FaultTolerance.cause(throwable);
                 if (exception == null || errorChecker.shouldSkip(exception)) {
-                    // success
                     results.update(SUCCESS);
                 } else {
                     results.update(FAILURE);
-                    if (results.shouldOpen() && state.compareAndSet(State.CLOSED, State.OPEN)) {
-                        results.reset();
-                        // if we successfully switch to open, we need to schedule switch to half-open
-                        scheduleHalf();
-                    }
                 }
-
+                if (results.shouldOpen() && state.compareAndSet(State.CLOSED, State.OPEN)) {
+                    results.reset();
+                    // if we successfully switch to open, we need to schedule switch to half-open
+                    scheduleHalf();
+                }
                 return it;
             });
             return task.result();
@@ -111,18 +108,15 @@ class CircuitBreakerImpl implements CircuitBreaker {
                             // transition to closed
                             successCounter.set(0);
                             state.compareAndSet(State.HALF_OPEN, State.CLOSED);
-                            halfOpenInProgress.set(false);
                         }
-                        halfOpenInProgress.set(false);
                     } else {
                         // failure
                         successCounter.set(0);
                         state.set(State.OPEN);
-                        halfOpenInProgress.set(false);
                         // if we successfully switch to open, we need to schedule switch to half-open
                         scheduleHalf();
                     }
-
+                    halfOpenInProgress.set(false);
                     return it;
                 });
                 return task.result();

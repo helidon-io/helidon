@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package io.helidon.microprofile.faulttolerance;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.enterprise.context.Dependent;
@@ -71,13 +70,16 @@ public class RetryBean {
 
     @Asynchronous
     @Retry(maxRetries = 2)
-    public Future<String> retryAsync() {
+    public CompletableFuture<String> retryAsync() {
+        CompletableFuture<String> future = new CompletableFuture<>();
         if (invocations.incrementAndGet() <= 2) {
             printStatus("RetryBean::retryAsync()", "failure");
-            throw new RuntimeException("Oops");
+            future.completeExceptionally(new RuntimeException("Oops"));
+        } else {
+            printStatus("RetryBean::retryAsync()", "success");
+            future.complete("success");
         }
-        printStatus("RetryBean::retryAsync()", "success");
-        return CompletableFuture.completedFuture("success");
+        return future;
     }
 
     @Retry(maxRetries = 4, delay = 100L, jitter = 50L)
@@ -111,13 +113,13 @@ public class RetryBean {
     @Asynchronous
     @Retry(maxRetries = 2)
     public CompletionStage<String> retryWithUltimateSuccess() {
-        if (invocations.incrementAndGet() < 3) {
-        // fails twice
-            throw new RuntimeException("Simulated error");
-        }
-
         CompletableFuture<String> future = new CompletableFuture<>();
-        future.complete("Success");
+        if (invocations.incrementAndGet() < 3) {
+            // fails twice
+            future.completeExceptionally(new RuntimeException("Simulated error"));
+        } else {
+            future.complete("Success");
+        }
         return future;
     }
 }

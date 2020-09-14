@@ -25,15 +25,12 @@ module io.helidon.microprofile.faulttolerance {
 
     requires io.helidon.common.context;
     requires io.helidon.common.configurable;
+    requires io.helidon.faulttolerance;
     requires io.helidon.microprofile.config;
     requires io.helidon.microprofile.server;
     requires io.helidon.microprofile.metrics;
 
     requires jakarta.enterprise.cdi.api;
-    requires hystrix.core;
-    requires archaius.core;
-    requires commons.configuration;
-    requires failsafe;
 
     requires microprofile.config.api;
     requires microprofile.metrics.api;

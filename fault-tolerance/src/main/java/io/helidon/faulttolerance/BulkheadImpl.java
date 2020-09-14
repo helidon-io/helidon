@@ -23,6 +23,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Flow;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
@@ -37,6 +38,10 @@ class BulkheadImpl implements Bulkhead {
     private final Queue<DelayedTask<?>> queue;
     private final Semaphore inProgress;
     private final String name;
+
+    private final AtomicLong concurrentExecutions = new AtomicLong(0L);
+    private final AtomicLong callsAccepted = new AtomicLong(0L);
+    private final AtomicLong callsRejected = new AtomicLong(0L);
 
     BulkheadImpl(Bulkhead.Builder builder) {
         this.executor = builder.executor();
@@ -60,10 +65,36 @@ class BulkheadImpl implements Bulkhead {
         return invokeTask(DelayedTask.createMulti(supplier));
     }
 
+    @Override
+    public Stats stats() {
+        return new Stats() {
+            @Override
+            public long concurrentExecutions() {
+                return concurrentExecutions.get();
+            }
+
+            @Override
+            public long callsAccepted() {
+                return callsAccepted.get();
+            }
+
+            @Override
+            public long callsRejected() {
+                return callsRejected.get();
+            }
+
+            @Override
+            public long waitingQueueSize() {
+                return queue.size();
+            }
+        };
+    }
+
     // this method must be called while NOT holding a permit
     private <R> R invokeTask(DelayedTask<R> task) {
         if (inProgress.tryAcquire()) {
             LOGGER.finest(() -> name + " invoke immediate: " + task);
+
             // free permit, we can invoke
             execute(task);
             return task.result();
@@ -71,9 +102,15 @@ class BulkheadImpl implements Bulkhead {
             // no free permit, let's try to enqueue
             if (queue.offer(task)) {
                 LOGGER.finest(() -> name + " enqueue: " + task);
-                return task.result();
+                R result = task.result();
+                if (result instanceof Single<?>) {
+                    Single<Object> single = (Single<Object>) result;
+                    return (R) single.onCancel(() -> queue.remove(task));
+                }
+                return result;
             } else {
                 LOGGER.finest(() -> name + " reject: " + task);
+                callsRejected.incrementAndGet();
                 return task.error(new BulkheadException("Bulkhead queue \"" + name + "\" is full"));
             }
         }
@@ -81,8 +118,12 @@ class BulkheadImpl implements Bulkhead {
 
     // this method must be called while holding a permit
     private void execute(DelayedTask<?> task) {
+        callsAccepted.incrementAndGet();
+        concurrentExecutions.incrementAndGet();
+
         task.execute()
                 .handle((it, throwable) -> {
+                    concurrentExecutions.decrementAndGet();
                     // we do not care about execution, but let's record it in debug
                     LOGGER.finest(() -> name + " finished execution: " + task
                             + " (" + (throwable == null ? "success" : "failure") + ")");

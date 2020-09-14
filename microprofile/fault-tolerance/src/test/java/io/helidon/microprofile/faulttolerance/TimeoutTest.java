@@ -16,15 +16,17 @@
 
 package io.helidon.microprofile.faulttolerance;
 
+import java.util.concurrent.CompletableFuture;
+
 import org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException;
 
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.lessThan;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 
 /**
  * Class TimeoutTest.
@@ -38,9 +40,22 @@ public class TimeoutTest extends FaultToleranceTest {
     }
 
     @Test
+    public void testForceTimeoutAsync() throws Exception {
+        TimeoutBean bean = newBean(TimeoutBean.class);
+        CompletableFuture<String> future = bean.forceTimeoutAsync();
+        assertCompleteExceptionally(future, TimeoutException.class);
+    }
+
+    @Test
     public void testNoTimeout() throws Exception {
         TimeoutBean bean = newBean(TimeoutBean.class);
         assertThat(bean.noTimeout(), is("success"));
+    }
+
+    @Test
+    public void testForceTimeoutWithCatch() {
+        TimeoutBean bean = newBean(TimeoutBean.class);
+        assertThrows(TimeoutException.class, bean::forceTimeoutWithCatch);
     }
 
     @Test
@@ -79,7 +94,7 @@ public class TimeoutTest extends FaultToleranceTest {
         try {
             bean.forceTimeoutLoop();        // cannot interrupt
         } catch (TimeoutException e) {
-            assertThat(System.currentTimeMillis() - start, is(greaterThan(2000L)));
+            assertThat(System.currentTimeMillis() - start, is(greaterThanOrEqualTo(2000L)));
         }
     }
 }

@@ -140,15 +140,6 @@ class RetryTest {
     }
 
     @Test
-    void testBadConfiguration() {
-        Retry.Builder builder = Retry.builder()
-                .applyOn(RetryException.class)
-                .skipOn(TerminalException.class);
-
-        assertThrows(IllegalArgumentException.class, builder::build);
-    }
-
-    @Test
     void testMultiRetriesNoFailure() throws InterruptedException {
         Retry retry = Retry.builder()
                 .retryPolicy(Retry.DelayingRetryPolicy.noDelay(3))
