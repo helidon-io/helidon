@@ -459,7 +459,7 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
          * Realm to use for challenging inbound requests that do not have "Authorization" header
          * in case header is {@link HttpSignHeader#AUTHORIZATION} and singatures are not optional.
          *
-         * @param realm realm to challenge with, defautls to "prime"
+         * @param realm realm to challenge with, defautls to "helidon"
          * @return updated builder instance
          */
         public Builder realm(String realm) {

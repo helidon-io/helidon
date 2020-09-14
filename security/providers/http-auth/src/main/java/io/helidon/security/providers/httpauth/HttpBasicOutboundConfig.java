@@ -32,7 +32,7 @@ public class HttpBasicOutboundConfig {
     public static final char[] EMPTY_PASSWORD = new char[0];
     /**
      * Default token handler for HTTP basic authentication - uses {@code Authorization} header
-     * and {@code basic } prefix
+     * and {@code basic } prefix.
      */
     public static final TokenHandler DEFAULT_TOKEN_HANDLER = TokenHandler.builder()
             .tokenHeader("Authorization")
@@ -51,20 +51,44 @@ public class HttpBasicOutboundConfig {
         this.explicitPassword = (builder.explicitPassword == null) ? EMPTY_PASSWORD : builder.explicitPassword.toCharArray();
     }
 
+    /**
+     * Fluent API builder to create basic outbound configuration.
+     *
+     * @return a new builder
+     */
     public static Builder builder() {
         return new Builder();
     }
 
+    /**
+     * Create a default basic outbound configuration.
+     * This configuration is to propagate current identity.
+     *
+     * @return a new configuration
+     */
     public static HttpBasicOutboundConfig create() {
         return builder().build();
     }
 
+    /**
+     * Create basic outbound configuration from config.
+     *
+     * @param config configuration for outbound config
+     * @return a new configuration
+     */
     public static HttpBasicOutboundConfig create(Config config) {
         return builder()
                 .config(config)
                 .build();
     }
 
+    /**
+     * Create basic outbound configuration for an explicit user and password.
+     *
+     * @param user username
+     * @param password password
+     * @return a new configuration
+     */
     public static HttpBasicOutboundConfig create(String user, String password) {
         return HttpBasicOutboundConfig.builder()
                 .explicitUser(user)
@@ -72,6 +96,12 @@ public class HttpBasicOutboundConfig {
                 .build();
     }
 
+    /**
+     * Create basic outbound configuration from an outbound target.
+     *
+     * @param outboundTarget outbound target
+     * @return a new basic outbound config from custom object, configuration, or the default one
+     */
     public static HttpBasicOutboundConfig create(OutboundTarget outboundTarget) {
         return outboundTarget.customObject(HttpBasicOutboundConfig.class)
                 .map(HttpBasicOutboundConfig.class::cast)
@@ -116,6 +146,12 @@ public class HttpBasicOutboundConfig {
             return new HttpBasicOutboundConfig(this);
         }
 
+        /**
+         * Updated this configuration from the config instance.
+         *
+         * @param config configuration
+         * @return updated builder instance
+         */
         public Builder config(Config config) {
             config.get("outbound-token").as(TokenHandler::create)
                     .ifPresent(this::tokenHandler);
@@ -125,17 +161,35 @@ public class HttpBasicOutboundConfig {
             return this;
         }
 
+        /**
+         * Token handler to add the outbound basic authentication to headers.
+         *
+         * @param tokenHandler handler for outbound headers
+         * @return updated builder instance
+         */
         public Builder tokenHandler(TokenHandler tokenHandler) {
             this.tokenHandler = requireNonNull(tokenHandler);
             return this;
         }
 
+        /**
+         * Configure explicit user to use for this outbound target.
+         *
+         * @param explicitUser username to use
+         * @return updated builder instance
+         */
         public Builder explicitUser(String explicitUser) {
             this.explicitUser = requireNonNull(explicitUser);
             this.hasExplicitUser = true;
             return this;
         }
 
+        /**
+         * Configure explicit password to use for this outbound target.
+         *
+         * @param explicitPassword password to use
+         * @return updated builder instance
+         */
         public Builder explicitPassword(String explicitPassword) {
             this.explicitPassword = explicitPassword;
             return this;

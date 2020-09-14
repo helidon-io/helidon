@@ -148,7 +148,7 @@ public class HeaderAtnProvider extends SynchronousProvider implements Authentica
             if (outboundTokenHandler != null) {
                 return toPropagate.map(Subject::principal)
                         .map(Principal::id)
-                        .map(id -> respond(outboundTokenHandler, id))
+                        .map(id -> respond(outboundEnv, outboundTokenHandler, id))
                         .orElseGet(OutboundSecurityResponse::abstain);
             }
             return OutboundSecurityResponse.abstain();
@@ -162,13 +162,15 @@ public class HeaderAtnProvider extends SynchronousProvider implements Authentica
         return outboundConfig.explicitUser()
                 .or(() -> toPropagate.map(Subject::principal)
                         .map(Principal::id))
-                .map(id -> respond(tokenHandler, id))
+                .map(id -> respond(outboundEnv, tokenHandler, id))
                 .orElseGet(OutboundSecurityResponse::abstain);
     }
 
-    private OutboundSecurityResponse respond(TokenHandler handler, String username) {
+    private OutboundSecurityResponse respond(SecurityEnvironment outboundEnv,
+                                             TokenHandler handler,
+                                             String username) {
         // This is for backward compatibility
-        Map<String, List<String>> headers = new HashMap<>();
+        Map<String, List<String>> headers = new HashMap<>(outboundEnv.headers());
         handler.header(headers, username);
         return OutboundSecurityResponse.withHeaders(headers);
     }
@@ -304,6 +306,12 @@ public class HeaderAtnProvider extends SynchronousProvider implements Authentica
             return this;
         }
 
+        /**
+         * Configure outbound target for identity propagation.
+         *
+         * @param target outbound target
+         * @return updated builder instance
+         */
         public Builder addOutboundTarget(OutboundTarget target) {
             this.outboundBuilder.addTarget(target);
             return this;

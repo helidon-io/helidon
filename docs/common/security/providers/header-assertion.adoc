@@ -33,11 +33,13 @@ Asserts user or service identity based on a value of a header.
 </dependency>
 ----
 
+[source,text]
 .Provider class name
 ----
 io.helidon.security.providers.header.HeaderAtnProvider
 ----
 
+[source,text]
 .Provider configuration key
 ----
 header-atn

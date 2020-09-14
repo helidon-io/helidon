@@ -1,0 +1,235 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2020 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+=== ABAC Provider
+:description: Helidon Security ABAC Provider
+:keywords: helidon, security, authorization, abac
+
+Attribute based access control authorization provider.
+
+==== Setup
+
+[source,xml]
+.Maven dependency
+----
+<dependency>
+    <groupId>io.helidon.security.providers</groupId>
+    <artifactId>helidon-security-providers-abac</artifactId>
+</dependency>
+----
+
+[source,text]
+.Provider class name
+----
+io.helidon.security.providers.abac.AbacProvider
+----
+
+[source,text]
+.Provider configuration key
+----
+abac
+----
+
+==== Example code
+https://github.com/oracle/helidon/tree/master/examples/security/attribute-based-access-control[]
+
+[source,yaml]
+.Configuration example
+----
+security:
+  providers:
+    - abac:
+----
+
+==== Configuration options
+The following table shows all configuration options of the provider and their default values
+
+[cols="2,2,5"]
+
+|===
+|key |default value |description
+
+|`fail-on-unvalidated` |`true` |"Unvalidated" means: an attribute is defined, but there is no validator available for it
+|`fail-if-none-validated` |`true` |"None validated" means: there was not a single attribute that was validated
+|===
+
+==== How does it work?
+ABAC uses available validators and validates them against attributes of the authenticated
+ user.
+
+Combinations of `fail-on-unvalidated` and `fail-if-none-validated`:
+
+1. `true` & `true`: Will fail if any attribute is not validated and if any has failed validation
+2. `false` & `true`: Will fail if there is one or more attributes present and NONE of them is validated or if any has failed validation,
+        Will NOT fail if there is at least one validated attribute and any number of not validated attributes (and NONE failed)
+3. `false` & `false`: Will fail if there is any attribute that failed validation,
+        Will NOT fail if there are no failed validation or if there are NONE validated
+
+
+Any attribute of the following objects can be used:
+
+- environment (such as time of request) - e.g. env.time.year
+- subject (user) - e.g. subject.principal.id
+- subject (service) - e.g. service.principal.id
+- object (must be explicitly invoked by developer in code, as object cannot be automatically added to security context) - e.g. object.owner
+
+This provider checks that all defined ABAC validators are validated.
+If there is a definition for a validator that is not checked,
+the request is denied (depending on configuration as mentioned above).
+
+ABAC provider also allows an object to be used in authorization process, such
+as when evaluating if an object's owner is the current user.
+The following example uses the Expression language validator to demonstrate the point
+in a JAX-RS resource:
+
+[source,java]
+.Example of using an object
+----
+@Authenticated
+@Path("/abac")
+public class AbacResource {
+  @GET
+  @Authorized(explicit = true)
+  @PolicyStatement("${env.time.year >= 2017 && object.owner == subject.principal.id}")
+  public Response process(@Context SecurityContext context) {
+      // probably looked up from a database
+      SomeResource res = new SomeResource("user");
+      AuthorizationResponse atzResponse = context.authorize(res);
+
+      if (atzResponse.isPermitted()) {
+          //do the update
+          return Response.ok().entity("fine, sir").build();
+      } else {
+          return Response.status(Response.Status.FORBIDDEN)
+                  .entity(atzResponse.getDescription().orElse("Access not granted"))
+                  .build();
+      }
+  }
+}
+----
+
+
+*The following validators are implemented:*
+
+* <<Role Validator,Roles>>
+* <<Scope Validator,Scopes>>
+* <<Expression Language Policy Validator,EL Policy>>
+* <<Time Validator,Time>>
+
+==== Role Validator
+Checks whether user/service is in either of the required role(s).
+
+Configuration Key: `role-validator`
+
+Annotations: `@RolesAllowed`, `@RoleValidator.Roles`
+
+[source,yaml]
+.Configuration example for `WebServer`
+----
+security:
+  web-server.paths:
+    - path: "/user[/{*}]"
+      roles-allowed: ["user"]
+----
+
+[source,java]
+.JAX-RS example
+----
+@RolesAllowed("user")
+@RoleValidator.Roles(value = "service_role", subjectType = SubjectType.SERVICE)
+@Authenticated
+@Path("/abac")
+public class AbacResource {
+}
+----
+
+===== Interaction with JAX-RS sub-resource locators
+When using sub-resource locators in JAX-RS, the roles allowed are collected from each "level" of
+execution:
+- Application class annotations
+- Resource class annotations + resource method annotations
+- Sub-resource class annotations + sub-resource method annotations
+- Sub-resource class annotations + sub-resource method annotations (for every sub-resource on the path)
+
+The `RolesAllowed` or `Roles` annotation to be used is the last one in the path as defined above.
+
+_Example 1:_
+There is a `RolesAllowed("admin")` defined on a sub-resource locator resource class.
+In this case the required role is `admin`.
+
+_Example 2:_
+There is a `RolesAllowed("admin")` defined on a sub-resource locator resource class and
+a `RolesAllowed("user")` defined on the method of the sub-resource that provides the response.
+In this case the required role is `user`.
+
+==== Scope Validator
+Checks whether user has all the required scopes.
+
+Configuration Key: `scope-validator`
+
+Annotations: `@Scope`
+
+[source,yaml]
+.Configuration example for `WebServer`
+----
+security:
+  web-server.paths:
+    - path: "/user[/{*}]"
+      abac.scopes:
+        ["calendar_read", "calendar_edit"]
+----
+
+[source,java]
+.JAX-RS example
+----
+@Scope("calendar_read")
+@Scope("calendar_edit")
+@Authenticated
+@Path("/abac")
+public class AbacResource {
+}
+----
+
+==== Expression Language Policy Validator
+Policy executor using Java EE policy expression language (EL)
+
+Configuration Key: `policy-javax-el`
+
+Annotations: `@PolicyStatement`
+
+Example of a policy statement: `${env.time.year >= 2017}`
+
+[source,yaml]
+.Configuration example for `WebServer`
+----
+security:
+  web-server.paths:
+    - path: "/user[/{*}]"
+      policy:
+        statement: "hasScopes('calendar_read','calendar_edit') AND timeOfDayBetween('8:15', '17:30')"
+----
+
+[source,java]
+.JAX-RS example
+----
+@PolicyStatement("${env.time.year >= 2017}")
+@Authenticated
+@Path("/abac")
+public class AbacResource {
+}
+----

@@ -16,28 +16,16 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-=== OIDC Provider
 :description: Helidon Security OIDC Provider
 :keywords: helidon, security, oidc
 
-Open ID Connect security provider.
-
-==== Setup
-
-[source,xml]
-.Maven dependency
-----
-<dependency>
-    <groupId>io.helidon.security.providers</groupId>
-    <artifactId>helidon-security-providers-oidc</artifactId>
-</dependency>
-----
-
+[source,text]
 .Provider class name
 ----
 io.helidon.security.providers.oidc.OidcProvider
 ----
 
+[source,text]
 .Provider configuration key
 ----
 oidc

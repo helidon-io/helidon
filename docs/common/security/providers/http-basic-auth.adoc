@@ -33,11 +33,13 @@ HTTP Basic authentication support
 </dependency>
 ----
 
+[source,text]
 .Provider class name
 ----
 io.helidon.security.providers.httpauth.HttpBasicAuthProvider
 ----
 
+[source,text]
 .Provider configuration key
 ----
 http-basic-auth

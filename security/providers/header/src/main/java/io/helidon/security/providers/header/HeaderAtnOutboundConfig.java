@@ -36,20 +36,44 @@ public class HeaderAtnOutboundConfig {
         this.explicitUser = Optional.ofNullable(builder.explicitUser);
     }
 
+    /**
+     * Fluent API builder to create header outbound configuration.
+     *
+     * @return a new builder
+     */
     public static Builder builder() {
         return new Builder();
     }
 
+    /**
+     * Create a default header outbound configuration.
+     * This configuration is to propagate current identity.
+     *
+     * @return a new configuration
+     */
     public static HeaderAtnOutboundConfig create() {
         return builder().build();
     }
 
+    /**
+     * Create header outbound configuration from config.
+     *
+     * @param config configuration for outbound config
+     * @return a new configuration
+     */
     public static HeaderAtnOutboundConfig create(Config config) {
         return builder()
                 .config(config)
                 .build();
     }
 
+    /**
+     * Create header outbound configuration from a token handler and username.
+     *
+     * @param tokenHandler token handler to update outbound headers
+     * @param user username to propagate
+     * @return a new header outbound config
+     */
     public static HeaderAtnOutboundConfig create(TokenHandler tokenHandler, String user) {
         return builder()
                 .tokenHandler(tokenHandler)
@@ -57,6 +81,12 @@ public class HeaderAtnOutboundConfig {
                 .build();
     }
 
+    /**
+     * Create header outbound configuration from an outbound target.
+     *
+     * @param outboundTarget outbound target
+     * @return a new header outbound config from custom object, configuration, or the default one
+     */
     public static HeaderAtnOutboundConfig create(OutboundTarget outboundTarget) {
         return outboundTarget.customObject(HeaderAtnOutboundConfig.class)
                 .map(HeaderAtnOutboundConfig.class::cast)
@@ -87,6 +117,12 @@ public class HeaderAtnOutboundConfig {
             return new HeaderAtnOutboundConfig(this);
         }
 
+        /**
+         * Update this builder from configuration.
+         *
+         * @param config configuration
+         * @return updated builder instance
+         */
         public Builder config(Config config) {
             config.get("outbound-token").as(TokenHandler::create)
                     .ifPresent(this::tokenHandler);
@@ -95,11 +131,23 @@ public class HeaderAtnOutboundConfig {
             return this;
         }
 
+        /**
+         * Configuration of the outbound header the identity will be propagated.
+         *
+         * @param tokenHandler handler to update outbound headers
+         * @return updated builder instance
+         */
         public Builder tokenHandler(TokenHandler tokenHandler) {
             this.tokenHandler = requireNonNull(tokenHandler);
             return this;
         }
 
+        /**
+         * Username to propagate. If not configured, the current identity is propagated.
+         *
+         * @param explicitUser username to propagate
+         * @return updated builder instance
+         */
         public Builder explicitUser(String explicitUser) {
             this.explicitUser = requireNonNull(explicitUser);
             return this;

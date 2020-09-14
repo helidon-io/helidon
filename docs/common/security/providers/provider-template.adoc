@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+    Copyright (c) 2020 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -33,11 +33,13 @@ Short description
 </dependency>
 ----
 
+[source,text]
 .Provider class name
 ----
 io.helidon.security.providers.
 ----
 
+[source,text]
 .Provider configuration key
 ----
 provider-config-key
@@ -51,8 +53,8 @@ https://github.com/oracle/helidon/tree/master/examples/security/[]
 ----
 security:
   providers:
-    provider:
-      key: "value"
+    - provider:
+        key: "value"
 ----
 
 ==== Configuration options

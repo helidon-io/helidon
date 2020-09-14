@@ -304,6 +304,7 @@ public interface EvictableCache<K, V> {
         public Builder<K, V> config(Config config) {
             config.get("cache-enabled").asBoolean().ifPresent(this::cacheEnabled);
             if (cacheEnabled) {
+                config.get("max-size").asInt().ifPresent(this::maxSize);
                 config.get("cache-timeout-millis").asLong().ifPresent(timeout -> timeout(timeout, TimeUnit.MILLISECONDS));
                 long evictDelay = config.get("cache-evict-delay-millis").asLong()
                         .orElse(cacheEvictTimeUnit.toMillis(cacheEvictDelay));

@@ -494,7 +494,7 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
                 boolean enabled = target.propagate;
 
                 if (enabled) {
-                    Map<String, List<String>> headers = new HashMap<>();
+                    Map<String, List<String>> headers = new HashMap<>(outboundEnv.headers());
                     target.tokenHandler.header(headers, tokenContent);
                     return OutboundSecurityResponse.withHeaders(headers);
                 }

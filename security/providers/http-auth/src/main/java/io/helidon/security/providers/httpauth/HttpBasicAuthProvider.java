@@ -105,14 +105,15 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
         return builder().config(config).build();
     }
 
-    private static OutboundSecurityResponse toBasicAuthOutbound(TokenHandler tokenHandler,
+    private static OutboundSecurityResponse toBasicAuthOutbound(SecurityEnvironment outboundEnv,
+                                                                TokenHandler tokenHandler,
                                                                 String username,
                                                                 char[] password) {
         String b64 = Base64.getEncoder()
                 .encodeToString((username + ":" + new String(password)).getBytes(StandardCharsets.UTF_8));
         String basicAuthB64 = "basic " + b64;
 
-        Map<String, List<String>> headers = new HashMap<>();
+        Map<String, List<String>> headers = new HashMap<>(outboundEnv.headers());
         tokenHandler.addHeader(headers, basicAuthB64);
         return OutboundSecurityResponse
                 .withHeaders(headers);
@@ -142,13 +143,16 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
             String username = maybeUsername.get().toString();
             char[] password = passwordFromEndpoint(outboundEp);
 
-            return toBasicAuthOutbound(HttpBasicOutboundConfig.DEFAULT_TOKEN_HANDLER, username, password);
+            return toBasicAuthOutbound(outboundEnv,
+                                       HttpBasicOutboundConfig.DEFAULT_TOKEN_HANDLER,
+                                       username,
+                                       password);
         }
 
         var target = outboundConfig.findTargetCustomObject(outboundEnv,
-                                              HttpBasicOutboundConfig.class,
-                                              HttpBasicOutboundConfig::create,
-                                              HttpBasicOutboundConfig::create);
+                                                           HttpBasicOutboundConfig.class,
+                                                           HttpBasicOutboundConfig::create,
+                                                           HttpBasicOutboundConfig::create);
 
         if (target.isEmpty()) {
             return OutboundSecurityResponse.abstain();
@@ -158,7 +162,8 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
 
         if (outboundConfig.hasExplicitUser()) {
             // use configured user
-            return toBasicAuthOutbound(outboundConfig.tokenHandler(),
+            return toBasicAuthOutbound(outboundEnv,
+                                       outboundConfig.tokenHandler(),
                                        outboundConfig.explicitUser(),
                                        outboundConfig.explicitPassword());
         } else {
@@ -179,7 +184,10 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
 
             return creds.map(credentials -> {
                 char[] password = overridePassword.orElse(credentials.password);
-                return toBasicAuthOutbound(outboundConfig.tokenHandler(), credentials.username, password);
+                return toBasicAuthOutbound(outboundEnv,
+                                           outboundConfig.tokenHandler(),
+                                           credentials.username,
+                                           password);
             }).orElseGet(OutboundSecurityResponse::abstain);
         }
     }
@@ -402,6 +410,12 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
             return this;
         }
 
+        /**
+         * Add a new outbound target to configure identity propagation or explicit username/password.
+         *
+         * @param target outbound target
+         * @return updated builder instance
+         */
         public Builder addOutboundTarget(OutboundTarget target) {
             this.outboundBuilder.addTarget(target);
             return this;

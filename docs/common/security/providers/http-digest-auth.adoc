@@ -33,11 +33,13 @@ HTTP Digest authentication support
 </dependency>
 ----
 
+[source,text]
 .Provider class name
 ----
 io.helidon.security.providers.httpauth.HttpDigestAuthProvider
 ----
 
+[source,text]
 .Provider configuration key
 ----
 http-digest-auth
