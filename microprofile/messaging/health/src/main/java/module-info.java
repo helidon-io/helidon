@@ -23,6 +23,7 @@ module io.helidon.microprofile.messaging.health {
     requires static jakarta.enterprise.cdi.api;
     requires static jakarta.inject.api;
     requires io.helidon.microprofile.messaging;
+    requires io.helidon.microprofile.health;
     requires microprofile.health.api;
 
     exports io.helidon.microprofile.messaging.health;
