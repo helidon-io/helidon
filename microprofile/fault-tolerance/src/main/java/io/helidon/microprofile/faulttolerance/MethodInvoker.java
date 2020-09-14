@@ -283,7 +283,7 @@ class MethodInvoker implements FtSupplier<Object> {
      * @param context The invocation context.
      * @param introspector The method introspector.
      */
-    public MethodInvoker(InvocationContext context, MethodIntrospector introspector) {
+    MethodInvoker(InvocationContext context, MethodIntrospector introspector) {
         this.context = context;
         this.introspector = introspector;
         this.method = context.getMethod();

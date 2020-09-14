@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ class TimeoutAntn extends MethodAntn implements Timeout {
      * @param beanClass Bean class.
      * @param method The method.
      */
-    public TimeoutAntn(Class<?> beanClass, Method method) {
+    TimeoutAntn(Class<?> beanClass, Method method) {
         super(beanClass, method);
     }
 

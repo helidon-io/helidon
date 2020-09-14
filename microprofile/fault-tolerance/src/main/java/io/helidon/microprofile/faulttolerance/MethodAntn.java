@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import static io.helidon.microprofile.faulttolerance.FaultToleranceParameter.get
 /**
  * Class MethodAntn.
  */
-public abstract class MethodAntn {
+abstract class MethodAntn {
     private static final Logger LOGGER = Logger.getLogger(MethodAntn.class.getName());
 
     private final Method method;
@@ -72,7 +72,7 @@ public abstract class MethodAntn {
      * @param beanClass Bean class.
      * @param method The method.
      */
-    public MethodAntn(Class<?> beanClass, Method method) {
+    MethodAntn(Class<?> beanClass, Method method) {
         this.beanClass = beanClass;
         this.method = method;
     }
