@@ -69,7 +69,7 @@ class UniversalChannel {
         this.outgoingMethod = outgoingMethod;
     }
 
-    public AtomicBoolean isUp() {
+    AtomicBoolean isUp() {
         return up;
     }
 
@@ -103,21 +103,21 @@ class UniversalChannel {
         if (incomingMethod != null) {
             subscriber1 = incomingMethod.getSubscriber();
             connectMessage.append(incomingMethod.getMethod().getName());
-            up = ChannelHealth.connect(publisher,subscriber1);
+            up = ChannelHealthProbe.connect(publisher, subscriber1);
             //Continue connecting processor chain
             optUpstreamChannel.ifPresent(UniversalChannel::connect);
 
         } else if (incomingProcessorMethod != null) {
             subscriber1 = incomingProcessorMethod.getProcessor();
             connectMessage.append(incomingProcessorMethod.getMethod().getName());
-            up = ChannelHealth.connect(publisher,subscriber1);
+            up = ChannelHealthProbe.connect(publisher, subscriber1);
             //Continue connecting processor chain
             optUpstreamChannel.ifPresent(UniversalChannel::connect);
 
         } else if (incomingConnector != null) {
             subscriber1 = incomingConnector.getSubscriber(name);
             connectMessage.append(incomingConnector.getConnectorName());
-            up = ChannelHealth.connect(publisher,subscriber1);
+            up = ChannelHealthProbe.connect(publisher, subscriber1);
             //Continue connecting processor chain
             optUpstreamChannel.ifPresent(UniversalChannel::connect);
 

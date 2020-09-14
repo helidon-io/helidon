@@ -1,5 +1,5 @@
 /*
- * Copyright (c)  2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,29 +16,30 @@
 
 package io.helidon.microprofile.messaging.health;
 
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+
+import io.helidon.microprofile.messaging.MessagingCdiExtension;
 
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
 import org.eclipse.microprofile.health.Liveness;
 
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import io.helidon.health.common.BuiltInHealthCheck;
-import io.helidon.microprofile.messaging.MessagingCdiExtension;
-
+/**
+ * MicroProfile Reactive Messaging Health check.
+ */
 @Liveness
 @ApplicationScoped
-@BuiltInHealthCheck
 public class MessagingHealth implements HealthCheck {
 
     private final MessagingCdiExtension messagingCdiExtension;
 
     @Inject
-    public MessagingHealth(MessagingCdiExtension messagingCdiExtension) {
+    MessagingHealth(MessagingCdiExtension messagingCdiExtension) {
         this.messagingCdiExtension = messagingCdiExtension;
     }
 
@@ -46,7 +47,7 @@ public class MessagingHealth implements HealthCheck {
     public HealthCheckResponse call() {
         Map<String, Boolean> channelsHealth = messagingCdiExtension.channelsHealth();
         HealthCheckResponseBuilder b = HealthCheckResponse.builder()
-                .name("messaging-channels");
+                .name("messaging");
         AtomicBoolean isUp = new AtomicBoolean(true);
         channelsHealth.forEach((channelName, up) -> {
             isUp.compareAndSet(true, up);

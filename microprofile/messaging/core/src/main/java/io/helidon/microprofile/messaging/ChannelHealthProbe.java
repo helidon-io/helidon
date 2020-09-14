@@ -1,5 +1,5 @@
 /*
- * Copyright (c)  2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,13 @@ import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
-class ChannelHealth extends AtomicBoolean {
+/**
+ * Tap between publisher and subscriber to register if onError or cancel has been intercepted.
+ */
+class ChannelHealthProbe {
+
+    private ChannelHealthProbe() {
+    }
 
     static AtomicBoolean connect(Publisher<?> pub, Subscriber<? super Object> sub) {
         AtomicBoolean up = new AtomicBoolean(true);

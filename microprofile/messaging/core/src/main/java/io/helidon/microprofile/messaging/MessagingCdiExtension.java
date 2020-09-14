@@ -48,6 +48,11 @@ public class MessagingCdiExtension implements Extension {
 
     private final ChannelRouter channelRouter = new ChannelRouter();
 
+    /**
+     * Get names of all channels accompanied by boolean if cancel or onError signal has been intercepted in it.
+     *
+     * @return map of channels
+     */
     public Map<String, Boolean> channelsHealth() {
         return channelRouter.getChannelMap()
                 .entrySet()
