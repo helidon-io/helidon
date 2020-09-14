@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import org.eclipse.microprofile.faulttolerance.exceptions.FaultToleranceDefiniti
 /**
  * Class RetryAntn.
  */
-public class RetryAntn extends MethodAntn implements Retry {
+class RetryAntn extends MethodAntn implements Retry {
 
     /**
      * Constructor.
@@ -33,7 +33,7 @@ public class RetryAntn extends MethodAntn implements Retry {
      * @param beanClass Bean class.
      * @param method The method.
      */
-    public RetryAntn(Class<?> beanClass, Method method) {
+    RetryAntn(Class<?> beanClass, Method method) {
         super(beanClass, method);
     }
 
