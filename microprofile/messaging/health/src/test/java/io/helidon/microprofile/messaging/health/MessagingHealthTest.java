@@ -47,26 +47,24 @@ import org.opentest4j.AssertionFailedError;
  * Tests for messaging health:
  * <pre>{@code
  * {
- *   "outcome": "UP",
- *   "status": "UP",
- *   "checks": [
- *     {
- *       "name": "messaging",
- *       "state": "UP",
- *       "status": "UP",
- *       "data": {
- *         "test-channel-1": "UP",
- *         "test-channel-2": "UP"
- *       }
- *     }
- *   ]
- * }
+ *     "outcome": "UP",
+ *     "status": "UP",
+ *     "checks": [
+ *         {
+ *             "name": "messaging",
+ *             "state": "UP",
+ *             "status": "UP",
+ *             "data": {
+ *                 "test-channel-1": "UP",
+ *                 "test-channel-2": "UP"
+ *             }
+ *         }
+ *     ]
  * }</pre>
  */
 public class MessagingHealthTest {
 
     private SeContainer container;
-    private ServerCdiExtension server;
     private WebClient client;
 
     @BeforeEach
@@ -84,7 +82,7 @@ public class MessagingHealthTest {
         final SeContainerInitializer initializer = SeContainerInitializer.newInstance();
         initializer.addBeanClasses(TestMessagingBean.class);
         container = initializer.initialize();
-        server = CDI.current().select(ServerCdiExtension.class).get();
+        ServerCdiExtension server = CDI.current().select(ServerCdiExtension.class).get();
         client = WebClient.builder()
                 .baseUri("http://localhost:" + server.port())
                 .addReader(JsonpSupport.reader())

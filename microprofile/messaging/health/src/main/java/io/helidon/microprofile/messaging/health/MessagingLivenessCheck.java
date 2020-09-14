@@ -30,22 +30,23 @@ import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
 import org.eclipse.microprofile.health.Liveness;
 
 /**
- * MicroProfile Reactive Messaging Health check.
+ * MicroProfile Reactive Messaging liveness check.
+ * If any of the channels go down, messaging is considered to be down.
  */
 @Liveness
 @ApplicationScoped
-public class MessagingHealth implements HealthCheck {
+public class MessagingLivenessCheck implements HealthCheck {
 
     private final MessagingCdiExtension messagingCdiExtension;
 
     @Inject
-    MessagingHealth(MessagingCdiExtension messagingCdiExtension) {
+    MessagingLivenessCheck(MessagingCdiExtension messagingCdiExtension) {
         this.messagingCdiExtension = messagingCdiExtension;
     }
 
     @Override
     public HealthCheckResponse call() {
-        Map<String, Boolean> channelsHealth = messagingCdiExtension.channelsHealth();
+        Map<String, Boolean> channelsHealth = messagingCdiExtension.channelsLiveness();
         HealthCheckResponseBuilder b = HealthCheckResponse.builder()
                 .name("messaging");
         AtomicBoolean isUp = new AtomicBoolean(true);

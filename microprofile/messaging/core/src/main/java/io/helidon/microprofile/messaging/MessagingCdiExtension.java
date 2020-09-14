@@ -53,7 +53,7 @@ public class MessagingCdiExtension implements Extension {
      *
      * @return map of channels
      */
-    public Map<String, Boolean> channelsHealth() {
+    public Map<String, Boolean> channelsLiveness() {
         return channelRouter.getChannelMap()
                 .entrySet()
                 .stream()
