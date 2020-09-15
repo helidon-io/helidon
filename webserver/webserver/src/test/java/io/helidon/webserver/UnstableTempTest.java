@@ -17,7 +17,6 @@
 package io.helidon.webserver;
 
 import java.io.BufferedOutputStream;
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -29,7 +28,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.Flow;
 import java.util.function.Function;
 import java.util.jar.Attributes;
@@ -46,7 +44,7 @@ import io.helidon.media.common.MessageBodyWriterContext;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.equalTo;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -112,13 +110,16 @@ public class UnstableTempTest {
         assertThat(contents, containsInAnyOrder(FILE_CONTENT, FILE_CONTENT));
     }
 
-    private void deleteTmpFiles() {
-        LOGGER.fine(() -> "Temp dir: " + TEMP_DIR);
-        //Delete all temp files
-        for (File file : Objects.requireNonNull(TEMP_DIR.toFile().listFiles((dir, name) -> name.endsWith(".je")))) {
-            assertThat("Unable to delete " + file.getName(), file.delete(), equalTo(Boolean.TRUE));
-            LOGGER.fine("File " + file.getName() + " deleted.");
-        }
+    private void deleteTmpFiles() throws IOException {
+        LOGGER.fine(() -> "Cleaning temp dir: " + TEMP_DIR);
+        Files.list(TEMP_DIR)
+                .forEach(path -> {
+                    try {
+                        Files.deleteIfExists(path);
+                    } catch (IOException e) {
+                        fail("Unable to delete " + path.getFileName(), e);
+                    }
+                });
     }
 
     private Path createJar() {
