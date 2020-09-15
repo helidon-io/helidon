@@ -79,6 +79,15 @@ public final class ScheduledThreadPoolSupplier implements Supplier<ScheduledExec
         return builder().build();
     }
 
+    /**
+     * Returns size of core pool.
+     *
+     * @return size of core pool.
+     */
+    public int corePoolSize() {
+        return corePoolSize;
+    }
+
     ScheduledThreadPoolExecutor getThreadPool() {
         ScheduledThreadPoolExecutor result;
         result = new ScheduledThreadPoolExecutor(corePoolSize,

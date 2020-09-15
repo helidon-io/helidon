@@ -70,6 +70,10 @@ public class FaultToleranceExtension implements Extension {
 
     private Set<BeanMethod> registeredMethods;
 
+    private ThreadPoolSupplier threadPoolSupplier;
+
+    private ScheduledThreadPoolSupplier scheduledThreadPoolSupplier;
+
     /**
      * A bean method class that pairs a class and a method.
      */
@@ -267,16 +271,18 @@ public class FaultToleranceExtension implements Extension {
 
         // Initialize executors for MP FT - default size of 16
         io.helidon.config.Config config = io.helidon.config.Config.create();
-        FaultTolerance.scheduledExecutor(ScheduledThreadPoolSupplier.builder()
+        scheduledThreadPoolSupplier = ScheduledThreadPoolSupplier.builder()
                 .threadNamePrefix("ft-mp-schedule-")
                 .corePoolSize(16)
                 .config(config.get("scheduled-executor"))
-                .build());
-        FaultTolerance.executor(ThreadPoolSupplier.builder()
+                .build();
+        FaultTolerance.scheduledExecutor(scheduledThreadPoolSupplier);
+        threadPoolSupplier = ThreadPoolSupplier.builder()
                 .threadNamePrefix("ft-mp-")
                 .corePoolSize(16)
                 .config(config.get("executor"))
-                .build());
+                .build();
+        FaultTolerance.executor(threadPoolSupplier);
     }
 
     /**
@@ -320,6 +326,24 @@ public class FaultToleranceExtension implements Extension {
                 || MethodAntn.isAnnotationPresent(beanClass, method, Timeout.class)
                 || MethodAntn.isAnnotationPresent(beanClass, method, Asynchronous.class)
                 || MethodAntn.isAnnotationPresent(beanClass, method, Fallback.class);
+    }
+
+    /**
+     * Access {@code ThreadPoolSupplier} configured by this extension.
+     *
+     * @return a thread pool supplier.
+     */
+    public ThreadPoolSupplier threadPoolSupplier() {
+        return threadPoolSupplier;
+    }
+
+    /**
+     * Access {@code ScheduledThreadPoolSupplier} configured by this extension.
+     *
+     * @return a scheduled thread pool supplier.
+     */
+    public ScheduledThreadPoolSupplier scheduledThreadPoolSupplier() {
+        return scheduledThreadPoolSupplier;
     }
 
     /**

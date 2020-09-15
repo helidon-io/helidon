@@ -22,6 +22,8 @@
 :description: Fault Tolerance Introduction
 :keywords: helidon, webserver, faulttolerance, mp
 :fault-tolerance-spec-url: https://github.com/eclipse/microprofile-fault-tolerance
+:scheduled-executor-config: https://helidon.io/docs/v2/apidocs/io.helidon.common.configurable/io/helidon/common/configurable/ScheduledThreadPoolSupplier.Builder.html#config(io.helidon.config.Config)
+:executor-config: https://helidon.io/docs/v2/apidocs/io.helidon.common.configurable/io/helidon/common/configurable/ThreadPoolSupplier.Builder.html#config(io.helidon.config.Config)
 
 Fault Tolerance is part of the MicroProfile set of {fault-tolerance-spec-url}[specifications]. This API defines mostly
 annotations that improve application robustness by providing support to conveniently handle
@@ -30,30 +32,27 @@ service restarts, network delays, temporal infrastructure instabilities, etc.
 
 == Fault Tolerance in Helidon
 
-Fault Tolerance method annotations are internally implemented using _commands_.
-Essentially, each Fault Tolerance method invocation runs under the supervision
-of one of these commands. Command execution can be affected by certain properties:
-some defined by the Fault Tolerance specification and others internal to Helidon.
+The latest implementation of MP Fault Tolerance is built on top of Helidon's SE
+Fault Tolerance. Thus, some configuration for Helidon SE Fault
+Tolerance also applies to MP. The next section describes some
+configuration properties that are of particular interest to MP applications.
 
-== Fault Tolerance Configuration
-This section describes a few configuration parameters that are specific to Helidon's Fault
-Tolerance implementation. See the {fault-tolerance-spec-url}[Fault Tolerance MicroProfile API] for more information.
+=== Configuration
 
-The following is a list of config properties supported by Helidon that are
-_not_ part of the Fault Tolerance specification:
+Helidon's implementation uses two types of thread pools: normal and scheduled. The default
+core size of these executors is 16; however, that can be configured using an `application.yaml`
+file as follows:
 
-- `fault-tolerance.commandThreadPoolSize`: Asynchronous commands require the use of a
-separate thread pool. Threads created in this pool are named `helidon-ft-async-<N>`.
-This config property controls the size of such a pool. The default size is 8.
+[source,yaml]
+----
+executor:
+  core-pool-size: 8
 
-- `fault-tolerance.threadWaitingPeriod`: A thread that has been interrupted but
-is still running (e.g. in a busy loop) has to be waited for. This config property
-controls the maximum waiting time in milliseconds. Default value is 2000 milliseconds.
+scheduled-executor:
+  core-pool-size: 8
+----
 
-- `fault-tolerance.bulkheadTaskQueueingPeriod`: Time to wait
-for a task to be queued on a bulkhead. Default value is 2000 milliseconds.
+The complete set of properties available to configure these executors is in
+{executor-config}[ServerThreadPoolSupplier] and
+{scheduled-executor-config}[ScheduledThreadPoolSupplier].
 
-- `fault-tolerance.delayCorrection`: This is an internal correction applied to
-a `@Retry` delay that accounts for the execution of some internal logic in
-Helidon. This value will be subtracted from the actual delay. Default is
-250 milliseconds.
