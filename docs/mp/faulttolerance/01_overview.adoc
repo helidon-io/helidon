@@ -22,8 +22,8 @@
 :description: Fault Tolerance Introduction
 :keywords: helidon, webserver, faulttolerance, mp
 :fault-tolerance-spec-url: https://github.com/eclipse/microprofile-fault-tolerance
-:scheduled-executor-config: https://helidon.io/docs/v2/apidocs/io.helidon.common.configurable/io/helidon/common/configurable/ScheduledThreadPoolSupplier.Builder.html#config(io.helidon.config.Config)
-:executor-config: https://helidon.io/docs/v2/apidocs/io.helidon.common.configurable/io/helidon/common/configurable/ThreadPoolSupplier.Builder.html#config(io.helidon.config.Config)
+:scheduled-executor-config: {javadoc-base-url}io.helidon.common.configurable/io/helidon/common/configurable/ScheduledThreadPoolSupplier.Builder.html#config(io.helidon.config.Config)
+:executor-config: {javadoc-base-url}io.helidon.common.configurable/io/helidon/common/configurable/ThreadPoolSupplier.Builder.html#config(io.helidon.config.Config)
 
 Fault Tolerance is part of the MicroProfile set of {fault-tolerance-spec-url}[specifications]. This API defines mostly
 annotations that improve application robustness by providing support to conveniently handle
@@ -51,6 +51,9 @@ executor:
 scheduled-executor:
   core-pool-size: 8
 ----
+
+NOTE: There is currently _no support_ to configure these executor properties via a
+`microprofile-config.properties` file.
 
 The complete set of properties available to configure these executors is in
 {executor-config}[ServerThreadPoolSupplier] and
