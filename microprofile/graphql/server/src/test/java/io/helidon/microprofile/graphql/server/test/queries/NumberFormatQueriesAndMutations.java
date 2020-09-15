@@ -16,7 +16,6 @@
 
 package io.helidon.microprofile.graphql.server.test.queries;
 
-
 import javax.enterprise.context.ApplicationScoped;
 
 import io.helidon.microprofile.graphql.server.test.types.SimpleContactWithNumberFormats;
@@ -70,11 +69,34 @@ public class NumberFormatQueriesAndMutations {
     @Query
     public List<String> getListAsString(@Name("arg1")
                                         @JsonbNumberFormat("ignore 00.0000000")
-                                        List<List<@NumberFormat("value 00.0000000") BigDecimal>> values) {
+                                                List<List<@NumberFormat("value 00.0000000") BigDecimal>> values) {
         if (values != null) {
             return values.stream().map(Object::toString).collect(Collectors.toList());
         }
 
         return new ArrayList<>();
+    }
+
+    @Mutation
+    public Double echoBankBalance(@JsonbNumberFormat(value = "¤ ###,###.##", locale = "en-US")
+                                  @Name("bankBalance") Double bankBalance) {
+        return bankBalance;
+    }
+
+    @Mutation
+    public float echoFloat(@Name("size") float size) {
+        return size;
+    }
+
+    @Mutation
+    @NumberFormat(value = "number #", locale = "en-GB")
+    public Integer transformedNumber(Integer input) {
+        return input;
+    }
+
+    @Mutation
+    public String idNumber(@Name("name") String name,
+                           @Name("id") Long idNumber) {
+       return name + "-" + idNumber;
     }
 }

@@ -114,7 +114,7 @@ public class CustomScalars {
     public static GraphQLScalarType newDateTimeScalar(String name) {
         GraphQLScalarType originalScalar = ExtendedScalars.DateTime;
         Coercing<OffsetDateTime, String> originalCoercing = originalScalar.getCoercing();
-        return GraphQLScalarType.newScalar().coercing(new Coercing<OffsetDateTime, String>() {
+        return GraphQLScalarType.newScalar().coercing(new Coercing<Object, String>() {
             public String serialize(Object dataFetcherResult) throws CoercingSerializeException {
                 if (dataFetcherResult instanceof String) {
                     return (String) dataFetcherResult;
@@ -124,13 +124,15 @@ public class CustomScalars {
             }
 
             @Override
-            public OffsetDateTime parseValue(Object input) throws CoercingParseValueException {
-                return null;
+            public Object parseValue(Object input) throws CoercingParseValueException {
+                return input instanceof StringValue ? ((StringValue) input).getValue()
+                        : originalCoercing.parseValue(input);
             }
 
             @Override
-            public OffsetDateTime parseLiteral(Object input) throws CoercingParseLiteralException {
-                return null;
+            public Object parseLiteral(Object input) throws CoercingParseLiteralException {
+                return input instanceof StringValue ? ((StringValue) input).getValue()
+                        : originalCoercing.parseLiteral(input);
             }
         })
         .name(name)
@@ -147,8 +149,8 @@ public class CustomScalars {
     @SuppressWarnings("unchecked")
     public static GraphQLScalarType newTimeScalar(String name) {
         GraphQLScalarType originalScalar = ExtendedScalars.Time;
-        Coercing<OffsetDateTime, String> originalCoercing = originalScalar.getCoercing();
-        return GraphQLScalarType.newScalar().coercing(new Coercing<OffsetTime, String>() {
+        Coercing<OffsetTime, String> originalCoercing = originalScalar.getCoercing();
+        return GraphQLScalarType.newScalar().coercing(new Coercing<Object, String>() {
             public String serialize(Object dataFetcherResult) throws CoercingSerializeException {
                 return dataFetcherResult instanceof String
                         ? (String) dataFetcherResult
@@ -156,14 +158,16 @@ public class CustomScalars {
             }
 
             @Override
-            public OffsetTime parseValue(Object input) throws CoercingParseValueException {
-                return null;
+            public Object parseValue(Object input) throws CoercingParseValueException {
+                return input instanceof StringValue ? ((StringValue) input).getValue()
+                        : originalCoercing.parseValue(input);
             }
 
 
             @Override
-            public OffsetTime parseLiteral(Object input) throws CoercingParseLiteralException {
-                return null;
+            public Object parseLiteral(Object input) throws CoercingParseLiteralException {
+                return input instanceof StringValue ? ((StringValue) input).getValue()
+                        : originalCoercing.parseLiteral(input);
             }
         })
         .name(name)

@@ -35,7 +35,7 @@ import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithEnumName;
 import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithNameAndNameAnnotation;
 import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithNameAnnotation;
 import io.helidon.microprofile.graphql.server.test.queries.OddNamedQueriesAndMutations;
-import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesNoArgs;
+import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesAndMutations;
 import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesWithSource;
 import io.helidon.microprofile.graphql.server.test.types.Address;
 import io.helidon.microprofile.graphql.server.test.types.Car;
@@ -282,7 +282,7 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
     @Test
     public void testAllMethods() throws IntrospectionException, ClassNotFoundException {
         Map<String, SchemaGenerator.DiscoveredMethod> mapMethods = schemaGenerator
-                .retrieveAllAnnotatedBeanMethods(SimpleQueriesNoArgs.class);
+                .retrieveAllAnnotatedBeanMethods(SimpleQueriesAndMutations.class);
         assertThat(mapMethods, is(notNullValue()));
 
         assertDiscoveredMethod(mapMethods.get("hero"), "hero", STRING, null, false, false, false);

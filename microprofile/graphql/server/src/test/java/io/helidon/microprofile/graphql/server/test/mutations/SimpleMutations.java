@@ -21,6 +21,7 @@ import javax.inject.Inject;
 
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
+import javax.json.bind.annotation.JsonbNumberFormat;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Mutation;
 import org.eclipse.microprofile.graphql.Name;

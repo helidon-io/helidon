@@ -21,8 +21,11 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Map;
 
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.INT;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.STRING;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
@@ -48,15 +51,16 @@ public class NumberFormatIT extends AbstractGraphQLIT {
                                                                 .addBeanClass(TestDB.class)
                                                                 .addExtension(new GraphQLCdiExtension()));
 
-
     @Test
+    @SuppressWarnings("unchecked")
     public void testNumberFormats() throws IOException {
         setupIndex(indexFileName, SimpleContactWithNumberFormats.class, NumberFormatQueriesAndMutations.class);
-        ExecutionContext executionContext =  new ExecutionContext(defaultContext);
+        ExecutionContext executionContext = new ExecutionContext(defaultContext);
 
         Map<String, Object> mapResults = getAndAssertResult(executionContext
                                                                     .execute("query { simpleFormattingQuery { id name age "
-                                                                             + "bankBalance value longValue bigDecimal } }"));
+                                                                                     + "bankBalance value longValue bigDecimal "
+                                                                                     + "} }"));
         assertThat(mapResults.size(), is(1));
 
         Map<String, Object> mapResults2 = (Map<String, Object>) mapResults.get("simpleFormattingQuery");
@@ -73,32 +77,90 @@ public class NumberFormatIT extends AbstractGraphQLIT {
         assertThat(mapResults, is(notNullValue()));
         assertThat(mapResults.get("generateDoubleValue"), is("Double-123456789"));
 
+        mapResults = getAndAssertResult(executionContext.execute("mutation { transformedNumber(arg0: 123) }"));
+        assertThat(mapResults, is(notNullValue()));
+        assertThat(mapResults.get("transformedNumber"), is("number 123"));
+
         mapResults = getAndAssertResult(executionContext.execute("query { echoBigDecimalUsingFormat(param1: \"BD-123\") }"));
         assertThat(mapResults, is(notNullValue()));
         assertThat(mapResults.get("echoBigDecimalUsingFormat"), is(BigDecimal.valueOf(123)));
 
+        mapResults = getAndAssertResult(executionContext.execute("mutation { echoBankBalance(bankBalance: \"$ 106,963.87\") }"));
+        assertThat(mapResults, is(notNullValue()));
+        assertThat(mapResults.get("echoBankBalance"), is(Double.valueOf("106963.87")));
+
+        mapResults = getAndAssertResult(executionContext.execute("mutation { echoFloat(size: 10.0123) }"));
+        assertThat(mapResults, is(notNullValue()));
+        assertThat(mapResults.get("echoFloat"), is(Double.valueOf("10.0123")));
+
+        mapResults = getAndAssertResult(executionContext.execute("mutation { idNumber(name: \"Tim\", id: 123) }"));
+        assertThat(mapResults, is(notNullValue()));
+        assertThat(mapResults.get("idNumber"), is("Tim-123"));
+
+
+
         // COH-21891
-        mapResults = getAndAssertResult(executionContext.execute("query { listAsString(arg1: [ [ \"value 12.12\", \"value 33.33\"] ] ) }"));
+        mapResults = getAndAssertResult(
+                executionContext.execute("query { listAsString(arg1: [ [ \"value 12.12\", \"value 33.33\"] ] ) }"));
         assertThat(mapResults, is(notNullValue()));
 
         // create a new contact
-//        String contactInput =
-//                "contact: {"
-//                        + "id: \"1 id\" "
-//                        + "name: \"Tim\" "
-//                        + "age: \"20 years old\" "
-//                        + "bankBalance: \"$ 1000.01\" "
-//                        + "value: \"9 value\" "
-//                        + "longValue: 12345"
-//                        + "bigDecimal: \"BigDecimal-12345\""
-//                        + " } ";
-//
+        String contactInput =
+                "contact: {"
+                        + "id: 1 "
+                        + "name: \"Tim\" "
+                        + "age: \"20 years old\" "
+                        + "bankBalance: \"$ 1000.01\" "
+                        + "value: \"9 value\" "
+                        + "longValue: \"LongValue-123\""
+                        + "bigDecimal: \"BigDecimal-12345\""
+                        + " } ";
+
 //        mapResults = getAndAssertResult(
 //                executionContext.execute("mutation { createSimpleContactWithNumberFormats (" + contactInput +
 //                                                 ") { id name } }"));
 //        assertThat(mapResults.size(), is(1));
 //        mapResults2 = (Map<String, Object>) mapResults.get("createSimpleContactWithNumberFormats");
 //        assertThat(mapResults2, is(notNullValue()));
+   }
+
+    @Test
+    public void testCorrectNumberScalarTypesAndFormats() throws IOException {
+        setupIndex(indexFileName, SimpleContactWithNumberFormats.class, NumberFormatQueriesAndMutations.class);
+        ExecutionContext executionContext = new ExecutionContext(defaultContext);
+        Schema schema = executionContext.getSchema();
+
+        // validate the formats on the type
+        SchemaType type = schema.getTypeByName("SimpleContactWithNumberFormats");
+        assertThat(type, is(notNullValue()));
+
+        SchemaFieldDefinition fd = getFieldDefinition(type, "id");
+        assertThat(fd, is(notNullValue()));
+        assertThat(fd.getFormat()[0], is("0 'id'"));
+        assertThat(fd.getReturnType(), is(STRING));
+
+        fd = getFieldDefinition(type, "age");
+        assertThat(fd, is(notNullValue()));
+        assertThat(fd.getFormat()[0], is("0 'years old'"));
+        assertThat(fd.getReturnType(), is(STRING));
+
+        // validate the formats on the Input Type
+        SchemaType inputType = schema.getInputTypeByName("SimpleContactWithNumberFormatsInput");
+        assertThat(inputType, is(notNullValue()));
+        fd = getFieldDefinition(inputType, "id");
+        assertThat(fd, is(notNullValue()));
+        assertThat(fd.getFormat()[0], is(nullValue()));
+        assertThat(fd.getReturnType(), is(INT));
+
+        fd = getFieldDefinition(inputType, "longValue");
+        assertThat(fd, is(notNullValue()));
+        assertThat(fd.getFormat()[0], is("LongValue-##########"));
+        assertThat(fd.getReturnType(), is(STRING));
+
+        fd = getFieldDefinition(inputType, "age");
+        assertThat(fd, is(notNullValue()));
+        assertThat(fd.getFormat()[0], is("0 'years old'"));
+        assertThat(fd.getReturnType(), is(STRING));
     }
 
 }

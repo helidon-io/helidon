@@ -56,6 +56,8 @@ public class DateTimePojo {
 
     private List<LocalDate> significantDates;
 
+    private List<LocalDate> formattedListOfDates;
+
     public DateTimePojo(LocalDate localDate,
                         LocalDate localDate2,
                         LocalTime localTime,
@@ -64,7 +66,8 @@ public class DateTimePojo {
                         OffsetDateTime offsetDateTime,
                         ZonedDateTime zonedDateTime,
                         LocalDate localDateNoFormat,
-                        List<LocalDate> significantDates) {
+                        List<LocalDate> significantDates,
+                        List<LocalDate> formattedListOfDates) {
         this.localDate = localDate;
         this.localDate2 = localDate2;
         this.localTime = localTime;
@@ -74,6 +77,7 @@ public class DateTimePojo {
         this.zonedDateTime = zonedDateTime;
         this.localDateNoFormat = localDateNoFormat;
         this.significantDates = significantDates;
+        this.formattedListOfDates = formattedListOfDates;
     }
 
     public LocalTime getLocalTimeNoFormat() {
@@ -154,5 +158,13 @@ public class DateTimePojo {
 
     public List<LocalDate> getSignificantDates() {
         return this.significantDates;
+    }
+
+    public List<@DateFormat("dd/MM")  LocalDate> getFormattedListOfDates() {
+        return formattedListOfDates;
+    }
+
+    public void setFormattedListOfDates(List<LocalDate> formattedListOfDates) {
+        this.formattedListOfDates = formattedListOfDates;
     }
 }

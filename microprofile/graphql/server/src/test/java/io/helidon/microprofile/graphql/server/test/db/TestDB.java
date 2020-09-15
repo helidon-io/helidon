@@ -18,6 +18,12 @@ package io.helidon.microprofile.graphql.server.test.db;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.OffsetTime;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -27,6 +33,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 
+import io.helidon.microprofile.graphql.server.test.types.DateTimePojo;
 import io.helidon.microprofile.graphql.server.test.types.TypeWithNameAndJsonbProperty;
 import javax.enterprise.context.ApplicationScoped;
 
@@ -184,5 +191,15 @@ public class TestDB {
 
     public TypeWithNameAndJsonbProperty getTypeWithNameAndJsonbProperty() {
         return new TypeWithNameAndJsonbProperty("name1", "name2", "name3", "name4", "name5", "name6");
+    }
+
+    public DateTimePojo getDateTimePOJO() {
+        return new DateTimePojo(LocalDate.of(1968, 2, 17),
+                                LocalDate.of(1970, 8, 4),
+                                LocalTime.of(10, 10, 20),
+                                OffsetTime.of(8, 10, 1, 0, ZoneOffset.UTC),
+                                LocalDateTime.now(), OffsetDateTime.now(), ZonedDateTime.now(), LocalDate.now(),
+                                List.of(LocalDate.of(1968, 2, 17), LocalDate.of(1970, 8, 4)),
+                                List.of(LocalDate.of(1968, 2, 17), LocalDate.of(1970, 8, 4)));
     }
 }

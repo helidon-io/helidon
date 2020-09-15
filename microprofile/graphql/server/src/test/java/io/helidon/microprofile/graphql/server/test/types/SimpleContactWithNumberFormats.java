@@ -26,13 +26,14 @@ import java.time.LocalDate;
 import java.util.List;
 
 /**
- * Defines a simple contact which contains number formats.
+ * Defines a simple contact which contains a number formats.
  */
 @Type
 public class SimpleContactWithNumberFormats {
     private Integer id;
     private String name;
 
+    // this formatting will apply to both Input and standard type
     @NumberFormat("0 'years old'")
     private Integer age;
 
@@ -70,6 +71,7 @@ public class SimpleContactWithNumberFormats {
         this.bigDecimal = bigDecimal;
     }
 
+    // this format should only apply to the standard type and not Input Type
     @NumberFormat("0 'id'")
     public Integer getId() {
         return id;
@@ -119,6 +121,8 @@ public class SimpleContactWithNumberFormats {
         return longValue;
     }
 
+    // this format should only be applied to the InputType and not the Type
+    @NumberFormat("LongValue-##########")
     public void setLongValue(Long longValue) {
         this.longValue = longValue;
     }

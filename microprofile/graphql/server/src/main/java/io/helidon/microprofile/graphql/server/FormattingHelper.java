@@ -133,7 +133,7 @@ public class FormattingHelper {
     }
 
     /**
-     * Returna {@link NumberFormat} for the given type, locale and format.
+     * Returns a {@link NumberFormat} for the given type, locale and format.
      *
      * @param type   the GraphQL type or scalar
      * @param locale the locale, either "" or the correct locale
@@ -150,6 +150,8 @@ public class FormattingHelper {
                 || BIG_DECIMAL_CLASS.equals(type)
                 || FLOAT_CLASS.equals(type)
                 || FLOAT_PRIMITIVE_CLASS.equals(type)
+                || DOUBLE_CLASS.equals(type)
+                || DOUBLE_PRIMITIVE_CLASS.equals(type)
         ) {
             numberFormat = NumberFormat.getNumberInstance(actualLocale);
         } else if (INT.equals(type)
@@ -159,8 +161,6 @@ public class FormattingHelper {
                 || BYTE_CLASS.equals(type)
                 || SHORT_CLASS.equals(type)
                 || LONG_CLASS.equals(type)
-                || DOUBLE_CLASS.equals(type)
-                || DOUBLE_PRIMITIVE_CLASS.equals(type)
                 || LONG_PRIMITIVE_CLASS.equals(type)
                 || BIG_INTEGER.equals(type)) {
             numberFormat = NumberFormat.getIntegerInstance(actualLocale);
@@ -400,14 +400,15 @@ public class FormattingHelper {
         if (originalResult == null) {
             return null;
         }
+        LOGGER.info("Formatting date value of " + originalResult + " with date formatter: " + dateTimeFormatter);
         if (originalResult instanceof Collection) {
             Collection formattedResult = new ArrayList();
             Collection originalCollection = (Collection) originalResult;
             originalCollection.forEach(e -> formattedResult.add(e instanceof TemporalAccessor ? dateTimeFormatter
                                                        .format((TemporalAccessor) e) : e)
             );
+            LOGGER.info("Formatted result = " + formattedResult);
             return formattedResult;
-
         } else {
             return originalResult instanceof TemporalAccessor
                     ? dateTimeFormatter.format((TemporalAccessor) originalResult) : originalResult;
@@ -430,6 +431,7 @@ public class FormattingHelper {
             Collection formattedResult = new ArrayList();
             Collection originalCollection = (Collection) originalResult;
             originalCollection.forEach(e -> formattedResult.add(numberFormat.format(originalResult)));
+            LOGGER.info("Formatted result = " + formattedResult);
             return formattedResult;
         }
         return numberFormat.format(originalResult);

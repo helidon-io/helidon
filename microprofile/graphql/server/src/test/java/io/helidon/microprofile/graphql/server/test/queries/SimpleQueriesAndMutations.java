@@ -33,6 +33,7 @@ import java.util.UUID;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import javax.json.bind.annotation.JsonbDateFormat;
 import javax.json.bind.annotation.JsonbProperty;
 
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
@@ -44,8 +45,10 @@ import io.helidon.microprofile.graphql.server.test.types.Person;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContactWithSelf;
 import io.helidon.microprofile.graphql.server.test.types.TypeWithIDs;
 import org.eclipse.microprofile.graphql.DateFormat;
+import org.eclipse.microprofile.graphql.Description;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Id;
+import org.eclipse.microprofile.graphql.Mutation;
 import org.eclipse.microprofile.graphql.Name;
 import org.eclipse.microprofile.graphql.Query;
 
@@ -54,12 +57,12 @@ import org.eclipse.microprofile.graphql.Query;
  */
 @GraphQLApi
 @ApplicationScoped
-public class SimpleQueriesNoArgs {
+public class SimpleQueriesAndMutations {
 
     @Inject
     private TestDB testDB;
 
-    public SimpleQueriesNoArgs() {
+    public SimpleQueriesAndMutations() {
     }
 
     @Query
@@ -155,21 +158,40 @@ public class SimpleQueriesNoArgs {
 
     @Query("dateAndTimePOJOQuery")
     public DateTimePojo dateTimePojo() {
-        return new DateTimePojo(LocalDate.of(1968,2,17),
-                                LocalDate.of(1970,8,4),
-                                LocalTime.of(10,10,20),
-                                OffsetTime.of(8, 10, 1, 0, ZoneOffset.UTC),
-                                LocalDateTime.now(), OffsetDateTime.now(), ZonedDateTime.now(), LocalDate.now(),
-                                List.of(LocalDate.of(1968,2,17), LocalDate.of(1970,8,4)));
+        return testDB.getDateTimePOJO();
     }
 
     @Query("localDateListFormat")
     public List<@DateFormat("dd/MM/yyyy") LocalDate> getLocalDateListFormat() {
-        return List.of(LocalDate.of(1968,2,17), LocalDate.of(1970,8,4));
+        return List.of(LocalDate.of(1968, 2, 17), LocalDate.of(1970, 8, 4));
+    }
+
+    @Query
+    @DateFormat(value = "dd MMM yyyy")
+    public LocalDate transformedDate() {
+        String date = "2016-08-16";
+        return LocalDate.parse(date);
     }
 
     @Query("localDateNoFormat")
     public LocalDate localDateNoFormat() {
-        return LocalDate.of(1968,02,17);
+        return LocalDate.of(1968, 02, 17);
     }
+
+    @Mutation
+    public DateTimePojo dateTimePojoMutation() {
+        return testDB.getDateTimePOJO();
+    }
+
+    @Mutation
+    public LocalDate echoLocalDate(@DateFormat("dd/MM/yyyy") @Name("dateArgument") LocalDate date) {
+        return date;
+    }
+
+    @Mutation
+    @JsonbDateFormat("HH:mm:ss dd-MM-yyyy")
+    public LocalDateTime testDefaultFormatLocalDateTime(@Name("dateTime") LocalDateTime localDateTime) {
+        return localDateTime;
+    }
+
 }

@@ -17,6 +17,7 @@
 package io.helidon.microprofile.graphql.server;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -32,7 +33,7 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
-import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesNoArgs;
+import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesAndMutations;
 import io.helidon.microprofile.graphql.server.test.types.DateTimePojo;
 
 import org.jboss.weld.junit5.WeldInitiator;
@@ -46,7 +47,7 @@ public class DateTimeIT extends AbstractGraphQLIT {
 
     @WeldSetup
     private final WeldInitiator weld = WeldInitiator.of(WeldInitiator.createWeld()
-                                                                .addBeanClass(SimpleQueriesNoArgs.class)
+                                                                .addBeanClass(SimpleQueriesAndMutations.class)
                                                                 .addBeanClass(DateTimePojo.class)
                                                                 .addBeanClass(TestDB.class)
                                                                 .addExtension(new GraphQLCdiExtension()));
@@ -54,7 +55,7 @@ public class DateTimeIT extends AbstractGraphQLIT {
     @Test
     @SuppressWarnings("unchecked")
     public void testDateAndTime() throws IOException {
-        setupIndex(indexFileName, DateTimePojo.class, SimpleQueriesNoArgs.class);
+        setupIndex(indexFileName, DateTimePojo.class, SimpleQueriesAndMutations.class);
         ExecutionContext executionContext = new ExecutionContext(defaultContext);
 
         Schema schema = executionContext.getSchema();
@@ -89,6 +90,7 @@ public class DateTimeIT extends AbstractGraphQLIT {
         assertDefaultFormat(type, "zonedDateTime", "yyyy-MM-dd'T'HH:mm:ssZ'['VV']'", true);
         assertDefaultFormat(type, "localDateNoFormat", "yyyy-MM-dd", true);
         assertDefaultFormat(type, "significantDates", "yyyy-MM-dd", true);
+        assertDefaultFormat(type, "formattedListOfDates", "dd/MM", false);
 
         // testing the conversion of the following scalars when they have default formatting applied
         // FormattedDate -> Date
@@ -112,11 +114,12 @@ public class DateTimeIT extends AbstractGraphQLIT {
 
         Map<String, Object> mapResults = getAndAssertResult(
                 executionContext.execute("query { dateAndTimePOJOQuery { offsetDateTime offsetTime zonedDateTime "
-                                                 + "localDate localDate2 localTime localDateTime significantDates } }"));
+                                                 + "localDate localDate2 localTime localDateTime significantDates "
+                                                 + "formattedListOfDates } }"));
         assertThat(mapResults.size(), is(1));
         Map<String, Object> mapResults2 = (Map<String, Object>) mapResults.get("dateAndTimePOJOQuery");
         assertThat(mapResults2, is(notNullValue()));
-        assertThat(mapResults2.size(), is(8));
+        assertThat(mapResults2.size(), is(9));
 
         assertThat(mapResults2.get("localDate"), is("02/17/1968"));
         assertThat(mapResults2.get("localDate2"), is("08/04/1970"));
@@ -128,6 +131,12 @@ public class DateTimeIT extends AbstractGraphQLIT {
         assertThat(listDates.size(), is(2));
         assertThat(listDates.get(0), is("1968-02-17"));
         assertThat(listDates.get(1), is("1970-08-04"));
+
+        listDates = (List<String>) mapResults2.get("formattedListOfDates");
+        assertThat(listDates, is(notNullValue()));
+        assertThat(listDates.size(), is(2));
+        assertThat(listDates.get(0), is("17/02"));
+        assertThat(listDates.get(1), is("04/08"));
 
         mapResults = getAndAssertResult(
                 executionContext.execute("query { localDateListFormat }"));
@@ -145,6 +154,48 @@ public class DateTimeIT extends AbstractGraphQLIT {
         assertThat(fd.getDescription(), is(nullValue()));
         assertThat(fd.isDefaultFormatApplied(), is(true));
         assertThat(fd.getReturnType(), is(DATE_SCALAR));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testDatesAndMutations() throws IOException {
+        setupIndex(indexFileName, DateTimePojo.class, SimpleQueriesAndMutations.class);
+        ExecutionContext executionContext = new ExecutionContext(defaultContext);
+
+        Map<String, Object> mapResults = getAndAssertResult(
+                executionContext.execute("mutation { dateTimePojoMutation { formattedListOfDates } }"));
+        assertThat(mapResults.size(), is(1));
+        Map<String, Object> mapResults2 = (Map<String, Object>) mapResults.get("dateTimePojoMutation");
+        assertThat(mapResults2, is(notNullValue()));
+
+        List<String> listDates = (List<String>) mapResults2.get("formattedListOfDates");
+        assertThat(listDates, is(notNullValue()));
+        assertThat(listDates.size(), is(2));
+        assertThat(listDates.get(0), is("17/02"));
+        assertThat(listDates.get(1), is("04/08"));
+
+        mapResults = getAndAssertResult(executionContext.execute("mutation { echoLocalDate(dateArgument: \"17/02/1968\") }"));
+        assertThat(mapResults.size(), is(1));
+        String result = (String) mapResults.get("echoLocalDate");
+        assertThat(result, is("1968-02-17"));
+
+        Map<String, Object> results = executionContext.execute("mutation { echoLocalDate(dateArgument: \"Today\") }");
+        List<Map<String, Object>> listErrors = (List<Map<String, Object>>) results.get(ExecutionContext.ERRORS);
+        assertThat(listErrors, is(notNullValue()));
+        assertThat(listErrors.size(), is(1));
+
+        mapResults = getAndAssertResult(
+                executionContext.execute("mutation { testDefaultFormatLocalDateTime(dateTime: \"2020-01-12T10:00:00\") }"));
+        assertThat(mapResults.size(), is(1));
+        assertThat(mapResults.get("testDefaultFormatLocalDateTime"), is( "10:00:00 12-01-2020"));
+
+
+        mapResults = getAndAssertResult(
+                executionContext.execute("query { transformedDate }"));
+        assertThat(mapResults, is(notNullValue()));
+        result = (String) mapResults.get("transformedDate");
+        assertThat(result, is("16 Aug 2016"));
+
     }
 
 }

@@ -19,18 +19,16 @@ package io.helidon.microprofile.graphql.server;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.text.DateFormat;
+import java.math.BigInteger;
 import java.text.NumberFormat;
-import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-
 import java.time.temporal.TemporalAccessor;
+
 import java.util.ArrayList;
-import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Logger;
@@ -40,8 +38,6 @@ import javax.enterprise.inject.spi.CDI;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.PropertyDataFetcher;
-import graphql.schema.PropertyDataFetcherHelper;
-
 import graphql.GraphQLException;
 
 import static io.helidon.microprofile.graphql.server.FormattingHelper.formatDate;
@@ -51,7 +47,7 @@ import static io.helidon.microprofile.graphql.server.FormattingHelper.getCorrect
 import static io.helidon.microprofile.graphql.server.SchemaGenerator.isFormatEmpty;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ID;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ensureRuntimeException;
-import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.isDateTimeScalar;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.isDateTimeClass;
 
 /**
  * Utilities for working with {@link DataFetcher}s.
@@ -113,13 +109,12 @@ public class DataFetcherUtils {
                             listArgumentValues.add(Enum.valueOf(enumClass, key.toString()));
                         } else if (argument.getArgumentType().equals(ID)) {
                             // convert back to original data type
-                            listArgumentValues.add(getOriginalValue(originalType, (String) key));
+                            listArgumentValues.add(getOriginalIDValue(originalType, (String) key));
                         } else {
                             // check the format and convert it from a string to the original format
                             String[] format = argument.getFormat();
                             if (!isFormatEmpty(format)) {
-                                // TODO: This always returns false, need to fix ??
-                                if (isDateTimeScalar(argument.getArgumentType())) {
+                                if (isDateTimeClass(argument.getOriginalType())) {
                                     DateTimeFormatter dateFormatter = getCorrectDateFormatter(originalType.getName(),
                                                                                               format[1], format[0]);
                                     listArgumentValues.add(
@@ -138,7 +133,8 @@ public class DataFetcherUtils {
                                     }
                                 }
                             } else {
-                                listArgumentValues.add(key);
+                                // process value in case we have to convert between say a Double/Float as they are interchangeable
+                                listArgumentValues.add(getOriginalValue(originalType, key));
                             }
                         }
                     }
@@ -189,7 +185,6 @@ public class DataFetcherUtils {
 
         @Override
         public Object get(DataFetchingEnvironment environment) {
-            Object originalResult = super.get(environment);
             return formatNumber(super.get(environment), isScalar, numberFormat);
         }
 
@@ -242,7 +237,7 @@ public class DataFetcherUtils {
      * @param key          the key value passed in
      * @return the value as the original type
      */
-    private static Object getOriginalValue(Class<?> originalType, String key) {
+    private static Object getOriginalIDValue(Class<?> originalType, String key) {
         if (originalType.equals(Long.class) || originalType.equals(long.class)) {
             return Long.parseLong(key);
         } else if (originalType.equals(Integer.class) || originalType.equals(int.class)) {
@@ -252,6 +247,25 @@ public class DataFetcherUtils {
         } else {
             return key;
         }
+    }
+
+    /**
+     * Convert the Object back to the original type for the method call.
+     *
+     * @param originalType original type
+     * @param key          the key value passed in
+     * @return the value as the original type
+     */
+    private static Object getOriginalValue(Class<?> originalType, Object key) {
+        if (originalType.equals(Float.class) || originalType.equals(float.class)) {
+            // key could be a float or double
+            return key instanceof Double ? Float.valueOf(key.toString()) : (Float) key;
+        } else if (originalType.equals(Long.class) || originalType.equals(long.class)) {
+            // key could be BigInteger or long
+            return Long.valueOf(key.toString());
+        }
+
+        return key;
     }
 
     /**

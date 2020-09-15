@@ -344,7 +344,6 @@ public class SchemaGenerator {
         Stream streamInputTypes = schema.getInputTypes().stream().map(it -> (SchemaType) it);
         Stream<SchemaType> streamAll = Stream.concat(streamInputTypes, schema.getTypes().stream());
         streamAll.forEach(t -> {
-            System.out.println(t);
             t.getFieldDefinitions().forEach(fd -> {
                 String returnType = fd.getReturnType();
                 // only check Date/Time/DateTime scalars that are not Queries or don't have data fetchers
@@ -783,7 +782,13 @@ public class SchemaGenerator {
         if (propertyName != null && !isFormatEmpty(format)) {
             if (!isGraphQLType(valueClassName)) {
                 dataFetcher = retrieveFormattingDataFetcher(format, propertyName, graphQLType);
-                context.addFormatter(discoveredMethod.method, propertyName, (FormattingProvider) dataFetcher);
+                // TODO: Is the following required after refactor?
+                // context.addFormatter(discoveredMethod.method, propertyName, (FormattingProvider) dataFetcher);
+
+                // if the format is a number format then set teh return type to String
+                if (NUMBER.equals(format[0])) {
+                    graphQLType = STRING;
+                }
             }
         } else {
             // Add a PropertyDataFetcher if the name has been changed via annotation
@@ -1035,6 +1040,14 @@ public class SchemaGenerator {
                         if (isSetArrayMandatory && !isArrayReturnTypeMandatory) {
                             isArrayReturnTypeMandatory = true;
                         }
+
+                        // if the set method has a format then this should overwrite any formatting
+                        // as this is an InputType
+                        String[] writeMethodFormat = getFormattingAnnotation(writeMethod);
+                        if (writeMethodFormat[0] != null) {
+                            format = writeMethodFormat;
+                        }
+
                     }
                 } else {
                     NonNull methodAnnotation = method.getAnnotation(NonNull.class);
@@ -1051,6 +1064,7 @@ public class SchemaGenerator {
                         || nonNullAnnotation != null && defaultValue == null;
 
             } catch (NoSuchFieldException e) {
+                // TODO: ?
             }
 
             if (fieldHasIdAnnotation || method.getAnnotation(Id.class) != null) {
@@ -1058,8 +1072,8 @@ public class SchemaGenerator {
                 returnClazzName = ID;
             }
 
-            // check for format on the property
-            if (field != null) {
+            // check for format on the property but only override if it is null
+            if (field != null && (format.length == 0 || format[0] == null)) {
                 format = getFormattingAnnotation(field);
             }
         } else {
@@ -1075,7 +1089,7 @@ public class SchemaGenerator {
 
         // check for method return type number format
         String[] methodFormat = getFormattingAnnotation(method);
-        if (methodFormat[0] != null) {
+        if (methodFormat[0] != null && !isInputType) {
             format = methodFormat;
         }
 

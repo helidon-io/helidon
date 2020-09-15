@@ -185,6 +185,10 @@ public final class SchemaGeneratorHelper {
     public static final String FORMATTED_TIME_SCALAR = "FormattedTime";
 
     /**
+     * Formatted Int.
+     */
+
+    /**
      * Date scalar (with default formatting).
      */
     public static final String DATE_SCALAR = "Date";
@@ -198,7 +202,6 @@ public final class SchemaGeneratorHelper {
      * Time Scalar (with default formatting).
      */
     public static final String TIME_SCALAR = "Time";
-
 
      /**
      * Defines a {@link BigDecimal} type.
@@ -218,27 +221,27 @@ public final class SchemaGeneratorHelper {
     /**
      * GraphQL Int.
      */
-    protected static final String INT = "Int";
+    public static final String INT = "Int";
 
     /**
      * GraphQL Float.
      */
-    protected static final String FLOAT = "Float";
+    public static final String FLOAT = "Float";
 
     /**
      * GraphQL String.
      */
-    protected static final String STRING = "String";
+    public static final String STRING = "String";
 
     /**
      * GraphQL ID.
      */
-    protected static final String ID = "ID";
+    public static final String ID = "ID";
 
     /**
      * GraphQL Boolean.
      */
-    protected static final String BOOLEAN = "Boolean";
+    public static final String BOOLEAN = "Boolean";
 
     /**
      * Logger.
@@ -527,6 +530,21 @@ public final class SchemaGeneratorHelper {
         } catch (ClassNotFoundException e) {
             return null;
         }
+    }
+
+    /**
+     * Return true if the class is a date, time or date/time.
+     *
+     * @param clazz the {@link Class} to check
+     * @return true if the class is a date, time or date/time
+     */
+    protected static boolean isDateTimeClass(Class<?> clazz) {
+        return clazz != null && (
+                clazz.equals(LocalDate.class)
+                        || clazz.equals(LocalTime.class)
+                        || clazz.equals(LocalDateTime.class)
+                        || clazz.equals(OffsetTime.class)
+                        || clazz.equals(OffsetDateTime.class));
     }
 
     /**

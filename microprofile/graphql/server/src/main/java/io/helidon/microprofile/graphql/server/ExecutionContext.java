@@ -292,14 +292,12 @@ public class ExecutionContext {
                         ExceptionWhileDataFetching e = (ExceptionWhileDataFetching) error;
                         Throwable cause = e.getException().getCause();
                         hasErrors = true;
-                        if (cause != null) {
-                            if (cause instanceof Error || cause instanceof RuntimeException) {
-                                // unchecked
-                                addErrorPayload(mapErrors, getUncheckedMessage(cause), error);
-                            } else {
-                                // checked
-                                addErrorPayload(mapErrors, getCheckedMessage(cause), error);
-                            }
+                        if (cause instanceof Error || cause instanceof RuntimeException) {
+                            // unchecked
+                            addErrorPayload(mapErrors, getUncheckedMessage(cause), error);
+                        } else {
+                            // checked
+                            addErrorPayload(mapErrors, cause == null ? e.getMessage() : getCheckedMessage(cause), error);
                         }
                     } else if (error instanceof ValidationError) {
                         addErrorPayload(mapErrors, error.getMessage(), error);
