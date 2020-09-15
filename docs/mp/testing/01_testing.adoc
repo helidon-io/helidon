@@ -35,7 +35,7 @@ Helidon provides built-in test support for CDI testing in JUnit5.
 </dependency>
 ----
 
-== Usage
+== Usage - default
 A test can be annotated with `io.helidon.microprofile.tests.junit5.HelidonTest` annotation to mark it as a
 CDI test. This annotation will start the CDI container before any test method is invoked, and stop it after
 the last method is invoked. This annotation also enables injection into the test class itself.
@@ -52,7 +52,8 @@ In addition to this simplification, the following annotations are supported:
 [source,java]
 .Code sample
 ----
-@HelidonTest(discovery = false)
+@HelidonTest
+@DisableDiscovery
 @AddBean(MyBean.class)
 @AddExtension(ConfigCdiExtension.class)
 @AddConfig(key = "app.greeting", value = "TestHello")
@@ -67,3 +68,25 @@ class TestNoDiscovery {
     }
 }
 ----
+
+== Usage - per method CDI container
+A test can be annotated as follows:
+
+`@HelidonTest(resetPerTest = true)`
+
+This will change the behavior as follows:
+
+- A new CDI container is created for each test method invocation
+- annotations to add config, beans and extension can be added for each method in addition to the class
+- you cannot inject fields or constructor parameters of the test class itself (as a single instance is shared by more containers)
+- you can add `SeContainer` as a method parameter of any test method and you will get the current container
+
+== Usage - configuration
+In addition to the `@AddConfig` annotation, you can also use
+ `@Configuration`.
+
+This allows you to do the following:
+
+- when `useExisting` is set to `true`, the configuration will not be changed
+        and current MP configuration will be sued
+- you can configure additional classpath properties config sources using `configSources`

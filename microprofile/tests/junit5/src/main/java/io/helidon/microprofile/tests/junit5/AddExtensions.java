@@ -26,7 +26,7 @@ import java.lang.annotation.Target;
  * on test class.
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
+@Target({ElementType.TYPE, ElementType.METHOD})
 public @interface AddExtensions {
     /**
      * Extensions to be added.

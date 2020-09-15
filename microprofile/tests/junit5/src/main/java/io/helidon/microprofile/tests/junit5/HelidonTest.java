@@ -29,22 +29,24 @@ import org.junit.jupiter.api.extension.ExtendWith;
  * from all tests), instead use {@link io.helidon.microprofile.tests.junit5.AddBean},
  * {@link io.helidon.microprofile.tests.junit5.AddExtension}, and {@link io.helidon.microprofile.tests.junit5.AddConfig}
  * annotations to control the shape of the container.
+ * <p>
+ * To disable automated bean and extension discovery, annotate the class with
+ * {@link io.helidon.microprofile.tests.junit5.DisableDiscovery}.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 @ExtendWith(HelidonJunitExtension.class)
 public @interface HelidonTest {
     /**
-     * Whether discovery is automated or disabled.
-     * <p>
-     * When discovery is enabled, the whole classpath is scanned for bean archives (jar files containing
-     * {@code META-INF/beans.xml}) and all beans and extensions are added automatically.
-     * <p>
-     * When discovery is disabled, CDI would only contain the CDI implementation itself and beans and extensions added
-     * through annotations {@link io.helidon.microprofile.tests.junit5.AddBean} and
-     * {@link io.helidon.microprofile.tests.junit5.AddExtension}
+     * By default, CDI container is created once before the class is initialized and shut down
+     * after. All test methods run within the same container.
      *
-     * @return whether to do discovery, defaults to {@code true}
+     * If this is set to {@code true}, a container is created per test method invocation.
+     * This restricts the test in the following way:
+     * 1. No injection into fields
+     * 2. No injection into constructor
+     *
+     * @return whether to reset container per test method
      */
-    boolean discovery() default true;
+    boolean resetPerTest() default false;
 }

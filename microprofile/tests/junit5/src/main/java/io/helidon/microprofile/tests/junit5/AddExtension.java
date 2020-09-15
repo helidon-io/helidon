@@ -28,7 +28,7 @@ import javax.enterprise.inject.spi.Extension;
  * This annotation can be repeated.
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
+@Target({ElementType.TYPE, ElementType.METHOD})
 @Repeatable(AddExtensions.class)
 public @interface AddExtension {
     /**

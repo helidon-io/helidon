@@ -13,31 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.helidon.microprofile.tests.junit5;
 
 import java.lang.annotation.ElementType;
-import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Add a configuration key/value pair to MicroProfile configuration.
- * This annotation can be repeated.
+ * Whether discovery is automated or disabled. If discovery is desired, do not annotate test
+ * class with this annotation.
+ * <p>
+ * When discovery is enabled, the whole classpath is scanned for bean archives (jar files containing
+ * {@code META-INF/beans.xml}) and all beans and extensions are added automatically.
+ * <p>
+ * When discovery is disabled, CDI would only contain the CDI implementation itself and beans and extensions added
+ * through annotations {@link io.helidon.microprofile.tests.junit5.AddBean} and
+ * {@link io.helidon.microprofile.tests.junit5.AddExtension}
+ *
+ * If discovery is disabled on class level and desired on method level,
+ * the value can be set to {@code false}.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD})
-@Repeatable(AddConfigs.class)
-public @interface AddConfig {
-    /**
-     * Configuration property key.
-     * @return key
-     */
-    String key();
-
-    /**
-     * Configuration property value.
-     * @return value
-     */
-    String value();
+public @interface DisableDiscovery {
+    boolean value() default true;
 }

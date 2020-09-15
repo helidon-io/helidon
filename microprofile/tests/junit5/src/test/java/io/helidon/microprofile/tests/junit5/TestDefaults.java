@@ -20,6 +20,8 @@ import javax.enterprise.inject.spi.BeanManager;
 import javax.inject.Inject;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -38,9 +40,29 @@ class TestDefaults {
     @ConfigProperty(name = PROPERTY_NAME, defaultValue = DEFAULT_VALUE)
     private String shouldNotExist;
 
+    private static boolean beforeAllCalled;
+    private boolean beforeEachCalled;
+
+    @BeforeAll
+    static void initClass() {
+        beforeAllCalled = true;
+    }
+
+    @BeforeEach
+    void beforeEach() {
+        beforeEachCalled = true;
+    }
+
     @Test
     void testIt() {
         assertThat(beanManager, notNullValue());
         assertThat(shouldNotExist, is(DEFAULT_VALUE));
+    }
+
+    @Test
+    void testLifecycleMethodsCalled() {
+        // this is to validate we can still use the usual junit methods
+        assertThat("Before all should have been called", beforeAllCalled, is(true));
+        assertThat("Before each should have been called", beforeEachCalled, is(true));
     }
 }

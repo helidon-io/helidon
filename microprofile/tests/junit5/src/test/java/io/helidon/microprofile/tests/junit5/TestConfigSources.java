@@ -13,31 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.helidon.microprofile.tests.junit5;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Repeatable;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import javax.inject.Inject;
 
-/**
- * Add a configuration key/value pair to MicroProfile configuration.
- * This annotation can be repeated.
- */
-@Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.TYPE, ElementType.METHOD})
-@Repeatable(AddConfigs.class)
-public @interface AddConfig {
-    /**
-     * Configuration property key.
-     * @return key
-     */
-    String key();
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.junit.jupiter.api.Test;
 
-    /**
-     * Configuration property value.
-     * @return value
-     */
-    String value();
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+
+@HelidonTest
+@Configuration(configSources = "testConfigSources.properties")
+public class TestConfigSources {
+    @Inject
+    @ConfigProperty(name = "some.key")
+    private String someKey;
+
+    @Test
+    void testValue() {
+        assertThat(someKey, is("some.value"));
+    }
 }

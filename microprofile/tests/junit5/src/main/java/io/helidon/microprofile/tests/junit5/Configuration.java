@@ -13,31 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.helidon.microprofile.tests.junit5;
 
 import java.lang.annotation.ElementType;
-import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Add a configuration key/value pair to MicroProfile configuration.
- * This annotation can be repeated.
+ * Additional configuration of config itself.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD})
-@Repeatable(AddConfigs.class)
-public @interface AddConfig {
+public @interface Configuration {
     /**
-     * Configuration property key.
-     * @return key
+     * You can configure the {@link org.eclipse.microprofile.config.Config} a
+     * @return
      */
-    String key();
-
-    /**
-     * Configuration property value.
-     * @return value
-     */
-    String value();
+    boolean useExisting() default false;
+    String[] configSources() default {};
 }

@@ -33,7 +33,7 @@ import javax.enterprise.context.ApplicationScoped;
  * This annotation can be repeated.
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
+@Target({ElementType.TYPE, ElementType.METHOD})
 @Repeatable(AddBeans.class)
 public @interface AddBean {
     /**
