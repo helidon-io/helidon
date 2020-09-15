@@ -20,6 +20,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -28,7 +29,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -321,23 +321,25 @@ class HelidonJunitExtension implements BeforeAllCallback,
     public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext)
             throws ParameterResolutionException {
 
+        Executable executable = parameterContext.getParameter().getDeclaringExecutable();
+
         if (resetPerTest) {
-            Optional<AnnotatedElement> element = extensionContext.getElement();
-            if (element.isEmpty()) {
-                return false;
-            }
-            AnnotatedElement annotatedElement = element.get();
-            if (annotatedElement instanceof Constructor) {
+            if (executable instanceof Constructor) {
                 throw new ParameterResolutionException(
                         "When a test class is annotated with @HelidonTest(resetPerMethod=true), constructor must not have "
                                 + "parameters.");
-            } else if (annotatedElement instanceof Method) {
+            } else if (executable instanceof Method) {
                 if (parameterContext.getParameter().getType().equals(SeContainer.class)) {
                     return true;
                 }
             }
         }
-        return !container.select(parameterContext.getParameter().getType()).isUnsatisfied();
+
+        if (executable instanceof Constructor) {
+            return !container.select(parameterContext.getParameter().getType()).isUnsatisfied();
+        }
+
+        return false;
     }
 
     @Override

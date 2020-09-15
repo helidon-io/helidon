@@ -28,7 +28,6 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import javax.enterprise.inject.literal.NamedLiteral;
-import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.spi.CDI;
 
 import io.helidon.microprofile.tests.junit5.HelidonTest;
@@ -48,9 +47,6 @@ public abstract class FaultToleranceTest {
 
     private static final long TIMEOUT = 5000;
     private static final TimeUnit TIMEOUT_UNITS = TimeUnit.MILLISECONDS;
-
-    private static SeContainer cdiContainer;
-
     private static final int NUMBER_OF_THREADS = 20;
 
     private static Executor executor = Executors.newFixedThreadPool(NUMBER_OF_THREADS);
