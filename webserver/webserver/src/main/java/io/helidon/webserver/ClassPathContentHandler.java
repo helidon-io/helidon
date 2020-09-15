@@ -240,7 +240,7 @@ class ClassPathContentHandler extends StaticContentHandler {
 
             // Extract JAR entry to file
             try (InputStream is = jarFile.getInputStream(jarEntry)) {
-                Path tempFile = Files.createTempFile(tempDir,"ws", ".je");
+                Path tempFile = createTempFile("ws", ".je");
                 Files.copy(is, tempFile, StandardCopyOption.REPLACE_EXISTING);
                 return new ExtractedJarEntry(tempFile, lastModified, jarEntry.getName());
             } finally {
@@ -250,6 +250,22 @@ class ClassPathContentHandler extends StaticContentHandler {
             }
         } catch (IOException ioe) {
             throw new HttpException("Cannot load JAR file!", Http.Status.INTERNAL_SERVER_ERROR_500, ioe);
+        }
+    }
+
+    /**
+     * Create temp file in provided temp folder, or default one.
+     *
+     * @param prefix string to be used in generating the file's name.
+     * @param suffix string to be used in generating the file's name.
+     * @return the path to the newly created file
+     * @throws IOException
+     */
+    private Path createTempFile(String prefix, String suffix) throws IOException {
+        if (tempDir != null) {
+            return Files.createTempFile(tempDir, prefix, suffix);
+        } else {
+            return Files.createTempFile(prefix, suffix);
         }
     }
 
