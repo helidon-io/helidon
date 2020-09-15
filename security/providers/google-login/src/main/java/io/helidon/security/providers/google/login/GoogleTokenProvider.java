@@ -94,7 +94,7 @@ public final class GoogleTokenProvider extends SynchronousProvider implements Au
         this.optional = builder.optional;
         this.realm = builder.realm;
         this.tokenHandler = builder.tokenHandler;
-        this.outboundConfig = builder.outboundConfig;
+        this.outboundConfig = (builder.outboundConfig == null) ? OutboundConfig.builder().build() : builder.outboundConfig;
         this.jsonFactory = JacksonFactory.getDefaultInstance();
 
         if (null == builder.verifier) {

@@ -101,7 +101,10 @@ public class WebClientSecurity implements WebClientService {
         OutboundSecurityClientBuilder clientBuilder;
 
         try {
-            SecurityEnvironment.Builder outboundEnv = context.env().derive();
+            SecurityEnvironment.Builder outboundEnv = context.env()
+                    .derive()
+                    .clearHeaders();
+
             outboundEnv.method(request.method().name())
                     .path(request.path().toString())
                     .targetUri(request.uri())
@@ -127,7 +130,7 @@ public class WebClientSecurity implements WebClientService {
         }
 
         return Single.create(clientBuilder.submit()
-                .thenApply(providerResponse -> processResponse(request, span, providerResponse)));
+                                     .thenApply(providerResponse -> processResponse(request, span, providerResponse)));
     }
 
     private WebClientServiceRequest processResponse(WebClientServiceRequest request,

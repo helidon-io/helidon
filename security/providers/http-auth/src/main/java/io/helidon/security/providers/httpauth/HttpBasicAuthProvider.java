@@ -111,10 +111,9 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
                                                                 char[] password) {
         String b64 = Base64.getEncoder()
                 .encodeToString((username + ":" + new String(password)).getBytes(StandardCharsets.UTF_8));
-        String basicAuthB64 = "basic " + b64;
 
         Map<String, List<String>> headers = new HashMap<>(outboundEnv.headers());
-        tokenHandler.addHeader(headers, basicAuthB64);
+        tokenHandler.addHeader(headers, b64);
         return OutboundSecurityResponse
                 .withHeaders(headers);
     }

@@ -42,22 +42,10 @@ security:
           - login: "john"
             password: "${CLEAR=password}"
             roles: []
+        outbound:
+          - name: "propagate-all"
     # only configured for outbound security
     - http-signatures:
-        inbound:
-          keys:
-            - key-id: "service1-hmac"
-              principal-name: "Service1 - HMAC signature"
-              hmac.secret: "${CLEAR=somePasswordForHmacShouldBeEncrypted}"
-            - key-id: "service1-rsa"
-              principal-name: "Service1 - RSA signature"
-              public-key:
-                # path to keystore
-                keystore:
-                  resource.path: "src/main/resources/keystore.p12"
-                  passphrase: "password"
-                  # alias of the certificate to get public key from
-                  cert.alias: "service_cert"
         outbound:
           - name: "service2"
             hosts: ["localhost"]

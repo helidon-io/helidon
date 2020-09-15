@@ -473,7 +473,12 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
     public boolean isOutboundSupported(ProviderRequest providerRequest,
                                        SecurityEnvironment outboundEnv,
                                        EndpointConfig outboundConfig) {
-        return propagate;
+        if (!propagate) {
+            return false;
+        }
+
+        return this.outboundConfig.findTarget(outboundEnv)
+                .propagate;
     }
 
     @Override

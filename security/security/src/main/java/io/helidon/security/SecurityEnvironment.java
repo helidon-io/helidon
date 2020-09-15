@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -259,6 +259,17 @@ public class SecurityEnvironment implements AbacSupport {
          */
         public Builder headers(Map<String, List<String>> headers) {
             this.headers.putAll(headers);
+            return this;
+        }
+
+        /**
+         * We may want to clear existing headers, such as when deriving an environment
+         * for outbound calls.
+         *
+         * @return this instance
+         */
+        public Builder clearHeaders() {
+            this.headers.clear();
             return this;
         }
 

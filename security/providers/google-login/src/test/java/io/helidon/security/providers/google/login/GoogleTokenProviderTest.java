@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.security.providers.google.login;
 
 import java.io.IOException;
+import java.net.URI;
 import java.security.GeneralSecurityException;
 import java.time.Instant;
 import java.util.List;
@@ -35,6 +36,8 @@ import io.helidon.security.SecurityContext;
 import io.helidon.security.SecurityEnvironment;
 import io.helidon.security.SecurityResponse;
 import io.helidon.security.Subject;
+import io.helidon.security.providers.common.OutboundConfig;
+import io.helidon.security.providers.common.OutboundTarget;
 import io.helidon.security.providers.common.TokenCredential;
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
@@ -94,6 +97,11 @@ public class GoogleTokenProviderTest {
                 .clientId("clientId")
                 .verifier(verifier)
                 .tokenParser(parser)
+                .outboundConfig(OutboundConfig.builder()
+                                        .addTarget(OutboundTarget.builder("localhost")
+                                                           .addHost("localhost")
+                                                           .build())
+                                        .build())
                 .build();
     }
 
@@ -180,7 +188,11 @@ public class GoogleTokenProviderTest {
     @Test
     public void testOutbound() {
         ProviderRequest outboundRequest = buildOutboundRequest();
-        SecurityEnvironment outboundEnv = SecurityEnvironment.create();
+        SecurityEnvironment outboundEnv = SecurityEnvironment.builder()
+                .targetUri(URI.create("http://localhost:8080/path"))
+                .method("GET")
+                .build();
+
         EndpointConfig outboundEp = EndpointConfig.create();
 
         assertThat("Outbound should be supported",

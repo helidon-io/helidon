@@ -196,7 +196,8 @@ public class SignatureExampleBuilderMain {
                                                  .build())
                 .addProvider(HttpBasicAuthProvider.builder()
                                      .realm("mic")
-                                     .userStore(users()),
+                                     .userStore(users())
+                                     .addOutboundTarget(OutboundTarget.builder("propagate-all").build()),
                              "basic-auth")
                 .addProvider(HttpSignProvider.builder()
                                      .outbound(OutboundConfig.builder()

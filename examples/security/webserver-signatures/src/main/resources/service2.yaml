@@ -53,7 +53,7 @@ security:
                   cert.alias: "service_cert"
     # Security provider - basic authentication (supports roles)
     - http-basic-auth:
-        realm: "mic"
+        realm: "helidon"
         users:
           - login: "jack"
             password: "${CLEAR=password}"
