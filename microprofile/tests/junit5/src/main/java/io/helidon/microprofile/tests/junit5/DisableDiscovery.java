@@ -38,5 +38,13 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD})
 public @interface DisableDiscovery {
+    /**
+     * By default if you annotate a class or a method, discovery gets disabled.
+     * If you want to override configuration on method to differ from class, you
+     * can configure the value to {@code false}, effectively enabling discovery.
+     *
+     * @return whether to disable discovery ({@code true}), or enable it ({@code false}). If this
+     * annotation is not present, discovery is enabled
+     */
     boolean value() default true;
 }

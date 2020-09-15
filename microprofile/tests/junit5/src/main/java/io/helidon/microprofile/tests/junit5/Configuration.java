@@ -28,9 +28,18 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE, ElementType.METHOD})
 public @interface Configuration {
     /**
-     * You can configure the {@link org.eclipse.microprofile.config.Config} a
-     * @return
+     * If set to {@code true}, the existing (or default) MicroProfile configuration would be used.
+     * By default uses a configuration constructed using all {@link io.helidon.microprofile.tests.junit5.AddConfig}
+     * annotations and {@link #configSources()}.
+     *
+     * @return whether to use existing (or default) configuration, or customized one
      */
     boolean useExisting() default false;
+
+    /**
+     * Class path properties config sources to add to configuration of this test class or method.
+     *
+     * @return config sources to add
+     */
     String[] configSources() default {};
 }

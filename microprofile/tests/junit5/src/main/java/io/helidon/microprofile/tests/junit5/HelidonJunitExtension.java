@@ -71,7 +71,6 @@ class HelidonJunitExtension implements BeforeAllCallback,
     private static final Set<Class<? extends Annotation>> HELIDON_TEST_ANNOTATIONS =
             Set.of(AddBean.class, AddConfig.class, AddExtension.class, Configuration.class);
 
-
     private final List<AddExtension> classLevelExtensions = new ArrayList<>();
     private final List<AddBean> classLevelBeans = new ArrayList<>();
     private final ConfigMeta classLevelConfigMeta = new ConfigMeta();
@@ -123,13 +122,12 @@ class HelidonJunitExtension implements BeforeAllCallback,
 
     @Override
     public void beforeEach(ExtensionContext context) throws Exception {
-        if(resetPerTest) {
+        if (resetPerTest) {
             Method method = context.getRequiredTestMethod();
             AddConfig[] configs = method.getAnnotationsByType(AddConfig.class);
             ConfigMeta methodLevelConfigMeta = classLevelConfigMeta.nextMethod();
             methodLevelConfigMeta.addConfig(configs);
             methodLevelConfigMeta.configuration(method.getAnnotation(Configuration.class));
-
 
             configure(methodLevelConfigMeta);
 
