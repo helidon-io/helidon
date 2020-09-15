@@ -71,6 +71,13 @@ public class SimpleMutationsIT extends AbstractGraphQLIT {
         mapResults = getAndAssertResult(executionContext.execute("mutation { echoStringValue(value: \"echo\") }"));
         assertThat(mapResults.size(), is(1));
         assertThat(mapResults.get("echoStringValue"), is("echo"));
+
+        mapResults = getAndAssertResult(executionContext.execute(
+                "mutation { testStringArrays(places: [\"place1\", \"place2\", \"place3\"]) }"));
+        assertThat(mapResults.size(), is(1));
+        assertThat(mapResults.get("testStringArrays"), is("place1place2place3"));
+
+
     }
 
 }

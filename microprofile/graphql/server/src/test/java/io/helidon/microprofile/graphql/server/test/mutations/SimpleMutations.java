@@ -25,6 +25,7 @@ import javax.json.bind.annotation.JsonbNumberFormat;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Mutation;
 import org.eclipse.microprofile.graphql.Name;
+import java.util.Set;
 
 /**
  * Class that holds simple mutations definitions with various numbers of arguments.
@@ -63,5 +64,12 @@ public class SimpleMutations {
     @Mutation("createAndReturnNewContact")
     public SimpleContact createNewContact(@Name("newContact") SimpleContact contact) {
         return contact;
+    }
+
+    @Mutation
+    public String testStringArrays(@Name("places") Set<String> places) {
+        StringBuilder sb = new StringBuilder();
+        places.forEach(sb::append);
+        return sb.toString();
     }
 }
