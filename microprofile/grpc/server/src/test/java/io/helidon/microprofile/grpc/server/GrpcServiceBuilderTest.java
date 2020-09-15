@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,10 @@
  */
 
 package io.helidon.microprofile.grpc.server;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.spi.BeanManager;
@@ -64,6 +68,13 @@ public class GrpcServiceBuilderTest {
         ServiceDescriptor descriptor = modeller.build();
 
         assertThat(descriptor.name(), is("ServiceOne/foo"));
+    }
+
+    @Test
+    public void shouldCreateDescriptorFoServiceWithNestedGenericParameters() {
+        GrpcServiceBuilder modeller = GrpcServiceBuilder.create(ServiceSix.class, beanManager);
+        ServiceDescriptor descriptor = modeller.build();
+        assertThat(descriptor.name(), is(ServiceSix.class.getSimpleName()));
     }
 
     @Test
@@ -305,6 +316,14 @@ public class GrpcServiceBuilderTest {
         public void unary(String param, StreamObserver<ServiceFive> observer) {
             observer.onNext(this);
             observer.onCompleted();
+        }
+    }
+
+    @RpcService
+    public static class ServiceSix {
+        @RpcMethod(type = io.grpc.MethodDescriptor.MethodType.UNARY)
+        public List<Map<Integer, String>> unary(List<Map<Integer, String>> param) {
+            return Collections.singletonList(Collections.singletonMap(1, "One"));
         }
     }
 }
