@@ -177,6 +177,27 @@ public class TestResult {
     }
 
     /**
+     * Test result check: boolean true
+     *
+     * @param value actual value to be checked
+     */
+    public void assertTrue(Boolean value, String header) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(header);
+        sb.append(" Expected: true");
+        sb.append(" Actual: ");
+        sb.append(Boolean.toString(value));
+        sb.append(" :: ");
+        sb.append(value ? "EQUAL" : "NOT EQUAL");
+        String message = sb.toString();
+        msg.add(message);
+        if (!value) {
+            ob.add("error", message);
+            failed = true;
+        }
+    }
+
+    /**
      * Test result check: boolean false
      *
      * @param value actual value to be checked

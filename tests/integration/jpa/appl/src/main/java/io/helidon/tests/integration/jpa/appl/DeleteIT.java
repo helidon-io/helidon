@@ -27,7 +27,10 @@ import javax.persistence.criteria.Root;
 
 import io.helidon.tests.integration.jpa.dao.Create;
 import io.helidon.tests.integration.jpa.dao.Delete;
+import io.helidon.tests.integration.jpa.model.City;
 import io.helidon.tests.integration.jpa.model.Pokemon;
+import io.helidon.tests.integration.jpa.model.Stadium;
+import io.helidon.tests.integration.jpa.model.Trainer;
 
 /**
  * Verify delete operations of ORM (server side).
@@ -47,6 +50,7 @@ public class DeleteIT {
     @MPTest
     public TestResult setup(TestResult result) {
         Create.dbInsertMisty(em);
+        Create.dbInsertViridian(em);
         return result;
     }
 
@@ -59,6 +63,7 @@ public class DeleteIT {
     @MPTest
     public TestResult destroy(TestResult result) {
         Delete.dbDeleteMisty(em);
+        Delete.dbDeleteViridian(em);
         return result;
     }
 
@@ -129,6 +134,33 @@ public class DeleteIT {
                 .where(cb.equal(pokemonRoot.get("name"), "Corsola"));
         List<Pokemon> pokemons = em.createQuery(cq).getResultList();
         result.assertTrue(pokemons.isEmpty());
+        return result;
+    }
+
+    /**
+     * Delete Viridian City.
+     *
+     * @param result test execution result
+     * @return test execution result
+     */
+    @MPTest
+    public TestResult testDeleteViridianCity(TestResult result) {
+        City city = em.createQuery(
+                "SELECT c FROM City c WHERE c.name = :name", City.class)
+                .setParameter("name", "Viridian City")
+                .getSingleResult();
+        Stadium stadium = city.getStadium();
+        Trainer trainer = stadium.getTrainer();
+        List<Pokemon> pokemons = trainer.getPokemons();
+        em.remove(city);
+        em.remove(trainer);
+        pokemons.forEach(poklemon -> em.remove(poklemon));
+        DbUtils.cleanEm(em);
+        List<City> cities = em.createQuery(
+                "SELECT c FROM City c WHERE c.name = :name", City.class)
+                .setParameter("name", "Viridian City")
+                .getResultList();
+        result.assertTrue(cities.isEmpty());
         return result;
     }
 

@@ -61,4 +61,14 @@ public class UpdateIT {
         ClientUtils.callTest("/test/UpdateIT.testUpdateCriteria");
     }
 
+    /**
+     * Update Saffron City data structure.
+     * Replace stadium trainer with new guy who will get all pokemons from previous trainer.
+     * Also Alakazam evolves to Mega Alakazam at the same time.
+     */
+    @Test
+    public void testUpdateSaffron() {
+        ClientUtils.callTest("/test/UpdateIT.testUpdateSaffron");
+    }
+
 }

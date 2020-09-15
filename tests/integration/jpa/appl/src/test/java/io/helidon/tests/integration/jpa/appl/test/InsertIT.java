@@ -32,7 +32,7 @@ public class InsertIT {
      * Verify simple create operation (persist) on a single database row.
      */
     @Test
-    public void testUpdateEntity() {
+    public void testInsertType() {
         ClientUtils.callTest("/test/InsertIT.testInsertType");
     }
 
@@ -41,8 +41,16 @@ public class InsertIT {
      * Relations are not marked for cascade persist operation so every entity instance has to be persisted separately.
      */
     @Test
-    public void testUpdateJPQL() {
+    public void testInsertTrainerWithPokemons() {
         ClientUtils.callTest("/test/InsertIT.testInsertTrainerWithPokemons");
+    }
+
+    /**
+     * Verify complex create operation (persist) on a full ORM model (Lt. Surge in Vermilion City).
+     */
+    @Test
+    public void testInsertTownWithStadium() {
+        ClientUtils.callTest("/test/InsertIT.testInsertTownWithStadium");
     }
 
 }

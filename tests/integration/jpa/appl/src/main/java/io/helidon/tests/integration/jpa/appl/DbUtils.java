@@ -15,7 +15,11 @@
  */
 package io.helidon.tests.integration.jpa.appl;
 
+import java.util.List;
+
 import javax.persistence.EntityManager;
+
+import io.helidon.tests.integration.jpa.model.Pokemon;
 
 /**
  * Database utilities.
@@ -35,6 +39,24 @@ public class DbUtils {
         em.flush();
         em.clear();
         em.getEntityManagerFactory().getCache().evictAll();
+    }
+
+    /**
+     * Find pokemon by name from pokemon List.
+     *
+     * @param pokemons List to search
+     * @param name name of pokemon
+     * @return found pokemon or null when no such pokemon exists
+     */
+    public static Pokemon findPokemonByName(List<Pokemon> pokemons, String name) {
+        if (pokemons != null && !pokemons.isEmpty()) {
+            for (Pokemon pokemon : pokemons) {
+                if (pokemon.getName().equals(name)) {
+                    return pokemon;
+                }
+            }
+        }
+        return null;
     }
 
 }

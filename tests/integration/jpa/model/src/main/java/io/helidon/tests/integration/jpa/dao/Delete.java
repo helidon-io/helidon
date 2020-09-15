@@ -19,7 +19,9 @@ import java.util.List;
 
 import javax.persistence.EntityManager;
 
+import io.helidon.tests.integration.jpa.model.City;
 import io.helidon.tests.integration.jpa.model.Pokemon;
+import io.helidon.tests.integration.jpa.model.Stadium;
 import io.helidon.tests.integration.jpa.model.Trainer;
 
 /**
@@ -62,6 +64,60 @@ public class Delete {
     }
 
     /**
+     * Delete Celadon City.
+     * Celadon City is used for query tests only.
+     *
+     * @param em Entity manager instance
+     */
+    public static void dbDeleteCeladon(final EntityManager em) {
+        dbDeleteCity(em, "Celadon City");
+    }
+
+    /**
+     * Delete Saffron City.
+     * Saffron City is used for update tests only.
+     *
+     * @param em Entity manager instance
+     */
+    public static void dbDeleteSaffron(final EntityManager em) {
+        dbDeleteCity(em, "Saffron City");
+    }
+
+    /**
+     * Delete Viridian City.
+     * Viridian City is used for update tests only.
+     *
+     * @param em Entity manager instance
+     */
+    public static void dbDeleteViridian(final EntityManager em) {
+        dbDeleteCity(em, "Viridian City");
+    }
+
+    /**
+     * Delete city.
+     *
+     * @param em Entity manager instance
+     * @param name name of city to delete
+     */
+    public static void dbDeleteCity(final EntityManager em, final String name) {
+        List<City> cities = em.createQuery(
+                "SELECT c FROM City c WHERE c.name = :name", City.class)
+                .setParameter("name", name)
+                .getResultList();
+        if (!cities.isEmpty()) {
+            cities.forEach((city) -> {
+                Stadium stadium = city.getStadium();
+                Trainer trainer = stadium.getTrainer();
+                List<Pokemon> pokemons = trainer.getPokemons();
+                em.remove(city);
+                //em.remove(stadium);
+                pokemons.forEach((pokemon) -> em.remove(pokemon));
+                em.remove(trainer);
+            });
+        }
+    }
+
+    /**
      * Delete trainer and his pokemons.
      * Trainer is identified by his name.
      *
@@ -69,16 +125,20 @@ public class Delete {
      * @param name name of trainer to delete
      */
     public static void dbDeleteTrainerAndHisPokemons(final EntityManager em, final String name) {
-        Trainer trainer = em.createQuery(
+        List<Trainer> trainers = em.createQuery(
                 "SELECT t FROM Trainer t WHERE t.name = :name", Trainer.class)
                 .setParameter("name", name)
-                .getSingleResult();
-        List<Pokemon> pokemons = em.createQuery(
-                "SELECT p FROM Pokemon p INNER JOIN p.trainer t WHERE t.name = :name", Pokemon.class)
-                .setParameter("name", name)
                 .getResultList();
-        pokemons.forEach((pokemon) -> em.remove(pokemon));
-        em.remove(trainer);
+        if (!trainers.isEmpty()) {
+            trainers.forEach((trainer) -> {
+                List<Pokemon> pokemons = em.createQuery(
+                        "SELECT p FROM Pokemon p INNER JOIN p.trainer t WHERE t.name = :name", Pokemon.class)
+                        .setParameter("name", name)
+                        .getResultList();
+                pokemons.forEach((pokemon) -> em.remove(pokemon));
+                em.remove(trainer);
+            });
+        }
     }
 
     /**
@@ -109,11 +169,31 @@ public class Delete {
     }
 
     /**
+     * Delete all cities.
+     *
+     * @param em Entity manager instance
+     */
+    public static void deleteCities(final EntityManager em) {
+        em.createQuery("DELETE FROM City").executeUpdate();
+    }
+
+    /**
+     * Delete all stadiums.
+     *
+     * @param em Entity manager instance
+     */
+    public static void deleteStadiums(final EntityManager em) {
+        em.createQuery("DELETE FROM Stadium").executeUpdate();
+    }
+
+    /**
      * Delete all database records.
      *
      * @param em Entity manager instance
      */
     public static void dbCleanup(final EntityManager em) {
+        deleteCities(em);
+        deleteStadiums(em);
         deletePokemons(em);
         deleteTrainers(em);
         deleteTypes(em);

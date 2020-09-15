@@ -15,6 +15,11 @@
  */
 package io.helidon.tests.integration.jpa.simple.test;
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import javax.persistence.EntityManager;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
@@ -23,7 +28,11 @@ import javax.persistence.criteria.Root;
 
 import io.helidon.tests.integration.jpa.dao.Create;
 import io.helidon.tests.integration.jpa.dao.Delete;
+import io.helidon.tests.integration.jpa.model.City;
 import io.helidon.tests.integration.jpa.model.Pokemon;
+import io.helidon.tests.integration.jpa.model.Stadium;
+import io.helidon.tests.integration.jpa.model.Trainer;
+import io.helidon.tests.integration.jpa.simple.DbUtils;
 import io.helidon.tests.integration.jpa.simple.PU;
 
 import org.junit.jupiter.api.AfterAll;
@@ -31,6 +40,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Verify update operations on ORM.
@@ -39,32 +49,24 @@ public class UpdateIT {
     
     private static PU pu;
 
-    // Brock and his pokemons are used for update tests only
-    private static void dbInsertBrock() {
-        pu.tx(pu -> {
-            final EntityManager em = pu.getEm();
-            Create.dbInsertBrock(em);
-        });
-    }
-
-    // Delete Brock and his pokemons after update tests
-    private static void dbDeleteBrock() {
-        pu.tx(pu -> {
-            final EntityManager em = pu.getEm();
-            Delete.dbDeleteBrock(em);
-        });
-    }
-
     @BeforeAll
     public static void setup() {
         pu = PU.getInstance();
-        dbInsertBrock();
+        pu.tx(pu -> {
+            final EntityManager em = pu.getEm();
+            Create.dbInsertBrock(em);
+            Create.dbInsertSaffron(em);
+        });
     }
 
     @AfterAll
     public static void destroy() {
-        dbDeleteBrock();
-        pu = null;
+        pu.tx(pu -> {
+            final EntityManager em = pu.getEm();
+            Delete.dbDeleteBrock(em);
+            Delete.dbDeleteSaffron(em);
+            pu = null;
+        });
     }
 
     /**
@@ -146,6 +148,61 @@ public class UpdateIT {
             assertEquals(1568, dbUrsaring.getCp());
         });
     }
-    
-    
+
+    /**
+     * Update Saffron City data structure.
+     * Replace stadium trainer with new guy who will get all pokemons from previous trainer.
+     * Also Alakazam evolves to Mega Alakazam at the same time.
+     */
+    @Test
+    public void testUpdateSaffron() {
+        City[] cities = new City[1];
+        Set<String> pokemonNames = new HashSet<>(6);
+        pu.tx(pu -> {
+            final EntityManager em = pu.getEm();
+            cities[0] = em.createQuery(
+                    "SELECT c FROM City c WHERE c.name = :name", City.class)
+                    .setParameter("name", "Saffron City")
+                    .getSingleResult();
+            Stadium stadium = cities[0].getStadium();
+            Trainer sabrina = stadium.getTrainer();
+            Trainer janine = new Trainer("Janine", 24);
+            stadium.setTrainer(janine);
+            List<Pokemon> pokemons = sabrina.getPokemons();
+            janine.setPokemons(pokemons);
+            sabrina.setPokemons(Collections.EMPTY_LIST);
+            em.remove(sabrina);
+            em.persist(janine);
+            for (Pokemon pokemon : pokemons) {
+                pokemon.setTrainer(janine);
+                pokemonNames.add(pokemon.getName());
+                em.persist(pokemon);
+            }
+            em.persist(stadium);
+            Pokemon alkazam = DbUtils.findPokemonByName(pokemons, "Alakazam");
+            System.out.println("TRAINER: "+alkazam.getTrainer().getName());
+            // Update pokemon by query
+            em.createQuery(
+                    "UPDATE Pokemon p SET p.name = :newName, p.cp = :newCp WHERE p.id = :id")
+                    .setParameter("newName", "Mega Alakazam")
+                    .setParameter("newCp", 4348)
+                    .setParameter("id", alkazam.getId())
+                    .executeUpdate();
+            pokemonNames.remove("Alakazam");
+            pokemonNames.add("Mega Alakazam");
+        });
+        pu.tx(pu -> {
+            final EntityManager em = pu.getCleanEm();
+            City city = em.find(City.class, cities[0].getId());
+            Stadium stadium = city.getStadium();
+            Trainer trainer = stadium.getTrainer();
+            em.refresh(trainer);
+            List<Pokemon> pokemons = trainer.getPokemons();
+            assertEquals(trainer.getName(), "Janine");
+            for (Pokemon pokemon : pokemons) {
+                assertTrue(pokemonNames.remove(pokemon.getName()), "Pokemon " + pokemon.getName() + " is missing");
+            }
+        });
+    }
+
 }

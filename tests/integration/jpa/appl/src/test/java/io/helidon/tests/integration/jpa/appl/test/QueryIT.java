@@ -59,4 +59,20 @@ public class QueryIT {
         ClientUtils.callTest("/test/QueryIT.testQueryCriteria");
     }
 
+    /**
+     * Query Celadon city using JPQL.
+     */
+    @Test
+    public void testQueryCeladonJPQL() {
+        ClientUtils.callTest("/test/QueryIT.testQueryCeladonJPQL");
+    }
+
+    /**
+     * Query Celadon city using CriteriaQuery.
+     */
+    @Test
+    public void testQueryCeladonCriteria() {
+        ClientUtils.callTest("/test/QueryIT.testQueryCeladonCriteria");
+    }
+
 }

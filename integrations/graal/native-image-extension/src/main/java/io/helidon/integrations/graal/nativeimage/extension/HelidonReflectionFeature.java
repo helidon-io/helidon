@@ -75,6 +75,7 @@ public class HelidonReflectionFeature implements Feature {
     private static final boolean TRACE = NativeConfig.option("reflection.trace", false);
 
     private static final String AT_ENTITY = "javax.persistence.Entity";
+    private static final String AT_MAPPED_SUPERCLASS = "javax.persistence.MappedSuperclass";
     private static final String AT_REGISTER_REST_CLIENT = "org.eclipse.microprofile.rest.client.inject.RegisterRestClient";
 
     private static final Map<Class<?>, Class<?>> PRIMITIVES_TO_OBJECT = new HashMap<>();
@@ -379,23 +380,35 @@ public class HelidonReflectionFeature implements Feature {
 
     @SuppressWarnings("unchecked")
     private void processEntity(BeforeAnalysisContext context) {
-        final Class<? extends Annotation> annotation = (Class<? extends Annotation>) context.access()
+        final Class<? extends Annotation> entityAnnotation = (Class<? extends Annotation>) context.access()
                 .findClassByName(AT_ENTITY);
-        if (annotation == null) {
+        final Class<? extends Annotation> superclassAnnotation = (Class<? extends Annotation>) context.access()
+                .findClassByName(AT_MAPPED_SUPERCLASS);
+        Set<Class<?>> annotatedSet = null;
+        traceParsing(() -> "Looking up annotated by " + AT_ENTITY);
+        if (entityAnnotation != null) {
+            annotatedSet = new HashSet<>(findAnnotated(context, AT_ENTITY));
+        }
+        traceParsing(() -> "Looking up annotated by " + AT_MAPPED_SUPERCLASS);
+        if (superclassAnnotation != null) {
+            if (annotatedSet == null) {
+                annotatedSet = new HashSet<>(findAnnotated(context, AT_MAPPED_SUPERCLASS));
+            } else {
+                annotatedSet.addAll(findAnnotated(context, AT_MAPPED_SUPERCLASS));
+            }
+        }
+        if (annotatedSet == null || annotatedSet.isEmpty()) {
             return;
         }
-        traceParsing(() -> "Looking up annotated by " + AT_ENTITY);
-        final List<Class<?>> annotatedList = findAnnotated(context, AT_ENTITY);
-        annotatedList.forEach(aClass -> {
+        annotatedSet.forEach(aClass -> {
+            traceParsing(() -> "Processing annotated class " + aClass.getName());
             String resourceName = aClass.getName().replace('.', '/') + ".class";
             InputStream resourceStream = aClass.getClassLoader().getResourceAsStream(resourceName);
             Resources.registerResource(resourceName, resourceStream);
             for (Field declaredField : aClass.getDeclaredFields()) {
                 if (!Modifier.isPublic(declaredField.getModifiers()) && declaredField.getAnnotations().length == 0) {
                     RuntimeReflection.register(declaredField);
-                    if (TRACE) {
-                        System.out.println("    non annotated field " + declaredField);
-                    }
+                    traceParsing(() -> "    added non annotated field " + declaredField);
                 }
             }
         });

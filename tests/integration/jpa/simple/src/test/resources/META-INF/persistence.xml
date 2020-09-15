@@ -25,6 +25,8 @@
         <class>io.helidon.tests.integration.jpa.model.Type</class>
         <class>io.helidon.tests.integration.jpa.model.Trainer</class>
         <class>io.helidon.tests.integration.jpa.model.Pokemon</class>
+        <class>io.helidon.tests.integration.jpa.model.Stadium</class>
+        <class>io.helidon.tests.integration.jpa.model.City</class>
         <properties>
             <property name="javax.persistence.schema-generation.database.action" value="drop-and-create"/>
             <property name="javax.persistence.schema-generation.create-source" value="metadata"/>
