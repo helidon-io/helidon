@@ -146,15 +146,16 @@ class ClassPathContentHandler extends StaticContentHandler {
         return true;
     }
 
-    private boolean sendJar(Http.RequestMethod method,
-                            String requestedResource,
-                            URL url,
-                            ServerRequest request,
-                            ServerResponse response) {
+    boolean sendJar(Http.RequestMethod method,
+                    String requestedResource,
+                    URL url,
+                    ServerRequest request,
+                    ServerResponse response) {
 
         LOGGER.fine(() -> "Sending static content from classpath: " + url);
 
-        ExtractedJarEntry extrEntry = extracted.computeIfAbsent(requestedResource, thePath -> extractJarEntry(url));
+        ExtractedJarEntry extrEntry = extracted
+                .compute(requestedResource, (key, entry) -> existOrCreate(url, entry));
         if (extrEntry.tempFile == null) {
             return false;
         }
@@ -177,6 +178,13 @@ class ClassPathContentHandler extends StaticContentHandler {
         }
 
         return true;
+    }
+
+    private ExtractedJarEntry existOrCreate(URL url, ExtractedJarEntry entry) {
+        if (entry == null) return extractJarEntry(url);
+        if (entry.tempFile == null) return entry;
+        if (Files.notExists(entry.tempFile)) return extractJarEntry(url);
+        return entry;
     }
 
     private void sendUrlStream(Http.RequestMethod method, URL url, ServerRequest request, ServerResponse response)
