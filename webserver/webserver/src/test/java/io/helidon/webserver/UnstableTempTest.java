@@ -23,7 +23,9 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -49,6 +51,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -59,6 +62,13 @@ public class UnstableTempTest {
     private static final String JAR_NAME = "test.jar";
     private static final String FILE_NAME = "test.js";
     private static final String FILE_CONTENT = "alert(\"Hello, World!\");";
+    private static Path TEMP_DIR;
+
+    @BeforeAll
+    static void beforeAll() throws IOException, URISyntaxException {
+        TEMP_DIR = Paths.get(UnstableTempTest.class.getResource("").toURI()).resolve("tmp");
+        Files.createDirectories(TEMP_DIR);
+    }
 
     @Test
     void cleanedTmpDuringRuntime() throws IOException {
@@ -66,11 +76,12 @@ public class UnstableTempTest {
 
         Path jar = createJar();
         URL jarUrl = new URL("jar:file:" + jar.toUri().getPath() + "!/" + FILE_NAME);
-        LOGGER.info("Generated test jar url: " + jarUrl.toString());
+        LOGGER.fine(() -> "Generated test jar url: " + jarUrl.toString());
         ClassPathContentHandler classPathContentHandler =
-                new ClassPathContentHandler("index.html",
+                new ClassPathContentHandler(null,
                         new ContentTypeSelector(null),
                         "/",
+                        TEMP_DIR,
                         Thread.currentThread().getContextClassLoader());
 
         // Empty headers
@@ -101,13 +112,12 @@ public class UnstableTempTest {
         assertThat(contents, containsInAnyOrder(FILE_CONTENT, FILE_CONTENT));
     }
 
-    private void deleteTmpFiles() throws IOException {
-        File tempDir = File.createTempFile("tempLocator", "je").getParentFile();
-        LOGGER.info("Temp dir: " + tempDir.getAbsolutePath());
+    private void deleteTmpFiles() {
+        LOGGER.fine(() -> "Temp dir: " + TEMP_DIR);
         //Delete all temp files
-        for (File file : Objects.requireNonNull(tempDir.listFiles((dir, name) -> name.endsWith(".je")))) {
+        for (File file : Objects.requireNonNull(TEMP_DIR.toFile().listFiles((dir, name) -> name.endsWith(".je")))) {
             assertThat("Unable to delete " + file.getName(), file.delete(), equalTo(Boolean.TRUE));
-            LOGGER.info("File " + file.getName() + " deleted.");
+            LOGGER.fine("File " + file.getName() + " deleted.");
         }
     }
 

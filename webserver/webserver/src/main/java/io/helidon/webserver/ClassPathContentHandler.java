@@ -49,14 +49,17 @@ class ClassPathContentHandler extends StaticContentHandler {
     private final Map<String, ExtractedJarEntry> extracted = new ConcurrentHashMap<>();
     private final String root;
     private final String rootWithTrailingSlash;
+    private final Path tempDir;
 
     ClassPathContentHandler(String welcomeFilename,
                             ContentTypeSelector contentTypeSelector,
                             String root,
+                            Path tempDir,
                             ClassLoader classLoader) {
         super(welcomeFilename, contentTypeSelector);
 
         this.classLoader = (classLoader == null) ? this.getClass().getClassLoader() : classLoader;
+        this.tempDir = tempDir;
         this.root = root;
         this.rootWithTrailingSlash = root + '/';
     }
@@ -64,6 +67,7 @@ class ClassPathContentHandler extends StaticContentHandler {
     public static StaticContentHandler create(String welcomeFileName,
                                               ContentTypeSelector selector,
                                               String clRoot,
+                                              Path tempDir,
                                               ClassLoader classLoader) {
         ClassLoader contentClassloader = (classLoader == null)
                 ? ClassPathContentHandler.class.getClassLoader()
@@ -79,7 +83,7 @@ class ClassPathContentHandler extends StaticContentHandler {
             throw new IllegalArgumentException("Cannot serve full classpath, please configure a classpath prefix");
         }
 
-        return new ClassPathContentHandler(welcomeFileName, selector, clRoot, contentClassloader);
+        return new ClassPathContentHandler(welcomeFileName, selector, clRoot, tempDir, contentClassloader);
     }
 
     @SuppressWarnings("checkstyle:RegexpSinglelineJava")
@@ -236,7 +240,7 @@ class ClassPathContentHandler extends StaticContentHandler {
 
             // Extract JAR entry to file
             try (InputStream is = jarFile.getInputStream(jarEntry)) {
-                Path tempFile = Files.createTempFile("ws", ".je");
+                Path tempFile = Files.createTempFile(tempDir,"ws", ".je");
                 Files.copy(is, tempFile, StandardCopyOption.REPLACE_EXISTING);
                 return new ExtractedJarEntry(tempFile, lastModified, jarEntry.getName());
             } finally {
