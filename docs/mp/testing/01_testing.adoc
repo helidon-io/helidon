@@ -89,5 +89,5 @@ In addition to the `@AddConfig` annotation, you can also use
 This allows you to do the following:
 
 - when `useExisting` is set to `true`, the configuration will not be changed
-        and current MP configuration will be sued
+        and current MP configuration will be used
 - you can configure additional classpath properties config sources using `configSources`
