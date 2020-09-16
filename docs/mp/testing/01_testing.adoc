@@ -1,0 +1,93 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2020 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Testing with JUnit5
+:h1Prefix: MP
+:pagename: testing
+:description: Helidon Testing
+:keywords: helidon, mp, test, testing
+
+Helidon provides built-in test support for CDI testing in JUnit5.
+
+== Dependency
+
+[source,xml]
+.Maven dependency
+----
+<dependency>
+    <groupId>io.helidon.microprofile.tests</groupId>
+    <artifactId>helidon-microprofile-tests-junit5</artifactId>
+    <scope>test</scope>
+</dependency>
+----
+
+== Usage - default
+A test can be annotated with `io.helidon.microprofile.tests.junit5.HelidonTest` annotation to mark it as a
+CDI test. This annotation will start the CDI container before any test method is invoked, and stop it after
+the last method is invoked. This annotation also enables injection into the test class itself.
+
+In addition to this simplification, the following annotations are supported:
+
+- `io.helidon.microprofile.tests.junit5.AddBean` - to add one or more beans to the container
+        (if not part of a bean archive, or when discovery is disabled)
+- `io.helidon.microprofile.tests.junit5.AddExtension` - to add one or more CDI extensions to the container
+        (if not added through service loader, or when discovery is disabled)
+- `io.helidon.microprofile.tests.junit5.AddConfig` - to add one or more configuration properties to MicroProfile config
+        without the need of creating a `microprofile-config.properties` file
+
+[source,java]
+.Code sample
+----
+@HelidonTest
+@DisableDiscovery
+@AddBean(MyBean.class)
+@AddExtension(ConfigCdiExtension.class)
+@AddConfig(key = "app.greeting", value = "TestHello")
+class TestNoDiscovery {
+    @Inject
+    private MyBean myBean;
+
+    @Test
+    void testGreeting() {
+        assertThat(myBean, notNullValue());
+        assertThat(myBean.greeting(), is("TestHello"));
+    }
+}
+----
+
+== Usage - per method CDI container
+A test can be annotated as follows:
+
+`@HelidonTest(resetPerTest = true)`
+
+This will change the behavior as follows:
+
+- A new CDI container is created for each test method invocation
+- annotations to add config, beans and extension can be added for each method in addition to the class
+- you cannot inject fields or constructor parameters of the test class itself (as a single instance is shared by more containers)
+- you can add `SeContainer` as a method parameter of any test method and you will get the current container
+
+== Usage - configuration
+In addition to the `@AddConfig` annotation, you can also use
+ `@Configuration`.
+
+This allows you to do the following:
+
+- when `useExisting` is set to `true`, the configuration will not be changed
+        and current MP configuration will be used
+- you can configure additional classpath properties config sources using `configSources`

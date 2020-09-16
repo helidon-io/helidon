@@ -13,20 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.microprofile.security;
-
-import javax.inject.Inject;
-
-import io.helidon.security.Security;
 
 /**
- * Test bean.
+ * JUnit5 extension to run CDI tests.
+ *
+ * @see io.helidon.microprofile.tests.junit5.HelidonTest
  */
-public class TestBean {
-    @Inject
-    private Security security;
-
-    Security getSecurity() {
-        return security;
-    }
-}
+package io.helidon.microprofile.tests.junit5;

@@ -13,20 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.microprofile.security;
+
+package io.helidon.microprofile.tests.junit5;
 
 import javax.inject.Inject;
 
-import io.helidon.security.Security;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.junit.jupiter.api.Test;
 
-/**
- * Test bean.
- */
-public class TestBean {
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+
+@HelidonTest
+@Configuration(configSources = "testConfigSources.properties")
+public class TestConfigSources {
     @Inject
-    private Security security;
+    @ConfigProperty(name = "some.key")
+    private String someKey;
 
-    Security getSecurity() {
-        return security;
+    @Test
+    void testValue() {
+        assertThat(someKey, is("some.value"));
     }
 }

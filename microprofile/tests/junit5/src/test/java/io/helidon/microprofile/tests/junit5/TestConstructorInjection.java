@@ -13,28 +13,42 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.microprofile.security;
 
+package io.helidon.microprofile.tests.junit5;
+
+import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
-
-import io.helidon.microprofile.tests.junit5.AddBean;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
-import io.helidon.security.Security;
+import javax.inject.Named;
 
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+/**
+ * Test when discovery is disabled.
+ */
 @HelidonTest
-@AddBean(TestBean.class)
-class InjectionTest {
+@DisableDiscovery
+@AddBean(TestConstructorInjection.MyBean.class)
+public class TestConstructorInjection {
+    private final int currentPort;
+
     @Inject
-    private TestBean testBean;
+    public TestConstructorInjection(@Named("port") int currentPort) {
+        this.currentPort = currentPort;
+    }
 
     @Test
-    void testInjection() {
-        Security security = testBean.getSecurity();
-        assertThat(security, notNullValue());
+    void testIt() {
+        assertThat(currentPort, is(423));
+    }
+
+    public static class MyBean {
+        @Produces
+        @Named("port")
+        public int currentPort() {
+            return 423;
+        }
     }
 }
