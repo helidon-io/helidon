@@ -53,6 +53,7 @@
         <module>reactive-streams</module>
         <module>messaging</module>
         <module>cors</module>
+		<module>cloud</module>
         <module>graphql</module>
     </modules>
 </project>

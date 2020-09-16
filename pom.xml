@@ -121,6 +121,7 @@
         <version.plugin.version-plugin>2.3</version.plugin.version-plugin>
         <version.plugin.buildnumber>1.4</version.plugin.buildnumber>
         <version.plugin.wiremock>2.14.0</version.plugin.wiremock>
+        <version.plugin.azure-functions>1.8.0</version.plugin.azure-functions>
 
         <version.helidon-cli>2.1.2</version.helidon-cli>
 
