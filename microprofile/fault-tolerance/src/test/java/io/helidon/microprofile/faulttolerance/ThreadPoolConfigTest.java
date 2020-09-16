@@ -16,7 +16,7 @@
 
 package io.helidon.microprofile.faulttolerance;
 
-import javax.enterprise.inject.spi.CDI;
+import javax.inject.Inject;
 
 import org.junit.jupiter.api.Test;
 
@@ -30,22 +30,19 @@ import static org.hamcrest.CoreMatchers.is;
  *
  * See {@code test/resources/application.yaml}.
  */
-public class ThreadPoolConfigTest extends FaultToleranceTest {
+class ThreadPoolConfigTest extends FaultToleranceTest {
 
-    private final FaultToleranceExtension extension;
-
-    public ThreadPoolConfigTest() {
-        extension = CDI.current().getBeanManager().getExtension(FaultToleranceExtension.class);
-    }
+    @Inject
+    private FaultToleranceExtension extension;
 
     @Test
-    public void testThreadPoolDefaultSize() {
+    void testThreadPoolDefaultSize() {
         assertThat(extension.threadPoolSupplier().corePoolSize(), is(8));
 
     }
 
     @Test
-    public void testScheduledThreadPool() {
+    void testScheduledThreadPool() {
         assertThat(extension.scheduledThreadPoolSupplier().corePoolSize(), is(8));
     }
 }

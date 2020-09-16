@@ -22,21 +22,22 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import javax.enterprise.context.Dependent;
-
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
 import org.eclipse.microprofile.faulttolerance.Fallback;
 
 /**
- * Class AsynchronousBean.
+ * A stateful bean that defines some async methods.
  */
-@Dependent
-public class AsynchronousBean {
+class AsynchronousBean {
 
     private AtomicBoolean called = new AtomicBoolean(false);
 
-    public boolean wasCalled() {
+    boolean wasCalled() {
         return called.get();
+    }
+
+    void reset() {
+        called.set(false);
     }
 
     /**
@@ -45,7 +46,7 @@ public class AsynchronousBean {
      * @return A future.
      */
     @Asynchronous
-    public CompletableFuture<String> async() {
+    CompletableFuture<String> async() {
         called.set(true);
         FaultToleranceTest.printStatus("AsynchronousBean::async", "success");
         return CompletableFuture.completedFuture("success");
@@ -58,13 +59,13 @@ public class AsynchronousBean {
      */
     @Asynchronous
     @Fallback(fallbackMethod = "onFailure")
-    public CompletableFuture<String> asyncWithFallback() {
+    CompletableFuture<String> asyncWithFallback() {
         called.set(true);
         FaultToleranceTest.printStatus("AsynchronousBean::asyncWithFallback", "failure");
         return CompletableFuture.failedFuture(new RuntimeException("Oops"));
     }
 
-    public CompletableFuture<String> onFailure() {
+    CompletableFuture<String> onFailure() {
         FaultToleranceTest.printStatus("AsynchronousBean::onFailure", "success");
         return CompletableFuture.completedFuture("fallback");
     }
@@ -76,13 +77,13 @@ public class AsynchronousBean {
      */
     @Asynchronous
     @Fallback(fallbackMethod = "onFailureFuture")
-    public Future<String> asyncWithFallbackFuture() {
+    Future<String> asyncWithFallbackFuture() {
         called.set(true);
         FaultToleranceTest.printStatus("AsynchronousBean::asyncWithFallbackFuture", "failure");
         return CompletableFuture.failedFuture(new RuntimeException("Oops"));
     }
 
-    public Future<String> onFailureFuture() {
+    Future<String> onFailureFuture() {
         FaultToleranceTest.printStatus("AsynchronousBean::onFailure", "success");
         return CompletableFuture.completedFuture("fallback");
     }
@@ -93,7 +94,7 @@ public class AsynchronousBean {
      *
      * @return A future.
      */
-    public CompletableFuture<String> notAsync() {
+    CompletableFuture<String> notAsync() {
         called.set(true);
         FaultToleranceTest.printStatus("AsynchronousBean::notAsync", "success");
         return CompletableFuture.completedFuture("success");
@@ -105,7 +106,7 @@ public class AsynchronousBean {
      * @return A completion stage.
      */
     @Asynchronous
-    public CompletionStage<String> asyncCompletionStage() {
+    CompletionStage<String> asyncCompletionStage() {
         called.set(true);
         FaultToleranceTest.printStatus("AsynchronousBean::asyncCompletionStage", "success");
         return CompletableFuture.completedFuture("success");
@@ -118,7 +119,7 @@ public class AsynchronousBean {
      */
     @Asynchronous
     @Fallback(fallbackMethod = "onFailure")
-    public CompletionStage<String> asyncCompletionStageWithFallback() {
+    CompletionStage<String> asyncCompletionStageWithFallback() {
         called.set(true);
         FaultToleranceTest.printStatus("AsynchronousBean::asyncCompletionStageWithFallback", "failure");
         return CompletableFuture.failedFuture(new RuntimeException("Oops"));
@@ -130,7 +131,7 @@ public class AsynchronousBean {
      * @return A completable future.
      */
     @Asynchronous
-    public CompletableFuture<String> asyncCompletableFuture() {
+    CompletableFuture<String> asyncCompletableFuture() {
         called.set(true);
         FaultToleranceTest.printStatus("AsynchronousBean::asyncCompletableFuture", "success");
         return CompletableFuture.completedFuture("success");
@@ -143,7 +144,7 @@ public class AsynchronousBean {
      */
     @Asynchronous
     @Fallback(fallbackMethod = "onFailure")
-    public CompletableFuture<String> asyncCompletableFutureWithFallback() {
+    CompletableFuture<String> asyncCompletableFutureWithFallback() {
         called.set(true);
         FaultToleranceTest.printStatus("AsynchronousBean::asyncCompletableFutureWithFallback", "success");
         return CompletableFuture.completedFuture("success");
@@ -157,7 +158,7 @@ public class AsynchronousBean {
      */
     @Asynchronous
     @Fallback(fallbackMethod = "onFailure")
-    public CompletableFuture<String> asyncCompletableFutureWithFallbackFailure() {
+    CompletableFuture<String> asyncCompletableFutureWithFallbackFailure() {
         called.set(true);
         FaultToleranceTest.printStatus("AsynchronousBean::asyncCompletableFutureWithFallbackFailure", "failure");
         CompletableFuture<String> future = new CompletableFuture<>();

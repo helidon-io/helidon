@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,23 +24,22 @@ import javax.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
 
 /**
- * Class AsynchronousCallerBean.
+ * A bean that invokes a {@code Callable} in another thread by using the
+ * {@code @Asynchronous} annotation.
  */
 @ApplicationScoped
-public class AsynchronousCallerBean {
+class AsynchronousCallerBean {
 
     @Asynchronous
-    public <T> CompletableFuture<T> submit(Callable<T> callable) {
+    <T> CompletableFuture<T> submit(Callable<T> callable) {
+        CompletableFuture<T> future = new CompletableFuture<>();
         try {
             T o = callable.call();
-            CompletableFuture<T> f = CompletableFuture.completedFuture(o);
-            return f;
+            future.complete(o);
         }
-        catch (Exception e) {
-            CompletableFuture<T> f = new CompletableFuture<T>();
-            f.completeExceptionally(e);
-            return f;
+        catch (Throwable t) {
+            future.completeExceptionally(t);
         }
+        return future;
     }
-
 }

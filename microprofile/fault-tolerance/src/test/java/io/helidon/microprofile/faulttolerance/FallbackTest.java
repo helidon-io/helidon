@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,30 @@
 
 package io.helidon.microprofile.faulttolerance;
 
+import javax.inject.Inject;
+
+import io.helidon.microprofile.tests.junit5.AddBean;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 /**
- * Class FallbackTest.
+ * Test fallback methods and handlers.
  */
-public class FallbackTest extends FaultToleranceTest {
+@AddBean(FallbackBean.class)
+class FallbackTest extends FaultToleranceTest {
+
+    @Inject
+    private FallbackBean bean;
+
+    @Override
+    void reset() {
+        bean.reset();
+    }
 
     @Test
-    public void testFallback() {
-        FallbackBean bean = newBean(FallbackBean.class);
+    void testFallback() {
         assertThat(bean.getCalled(), is(false));
         String value = bean.fallback();
         assertThat(bean.getCalled(), is(true));
@@ -36,8 +47,7 @@ public class FallbackTest extends FaultToleranceTest {
     }
 
     @Test
-    public void testFallbackBase() {
-        FallbackBean bean = newBean(FallbackBean.class);
+    void testFallbackBase() {
         assertThat(bean.getCalled(), is(false));
         String value = bean.fallbackBase();
         assertThat(bean.getCalled(), is(true));
@@ -45,8 +55,7 @@ public class FallbackTest extends FaultToleranceTest {
     }
 
     @Test
-    public void testFallbackHandler() {
-        FallbackBean bean = newBean(FallbackBean.class);
+    void testFallbackHandler() {
         assertThat(bean.getCalled(), is(false));
         String value = bean.fallbackHandler("someValue");
         assertThat(bean.getCalled(), is(true));

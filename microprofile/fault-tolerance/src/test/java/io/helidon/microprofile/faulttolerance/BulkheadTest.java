@@ -16,11 +16,13 @@
 
 package io.helidon.microprofile.faulttolerance;
 
+import javax.inject.Inject;
 import java.util.Arrays;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 
+import io.helidon.microprofile.tests.junit5.AddBean;
 import org.eclipse.microprofile.faulttolerance.exceptions.BulkheadException;
 import org.junit.jupiter.api.Test;
 
@@ -32,13 +34,21 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Class BulkheadTest.
+ * Test for beans whose methods are protected by bulkheads.
  */
-public class BulkheadTest extends FaultToleranceTest {
+@AddBean(BulkheadBean.class)
+class BulkheadTest extends FaultToleranceTest {
+
+    @Inject
+    private BulkheadBean bean;
+
+    @Override
+    void reset() {
+        bean.reset();
+    }
 
     @Test
-    public void testBulkhead() {
-        BulkheadBean bean = newBean(BulkheadBean.class);
+    void testBulkhead() {
         CompletableFuture<String>[] calls = getAsyncConcurrentCalls(
             () -> bean.execute(100), BulkheadBean.TOTAL_CALLS);
         waitFor(calls);
@@ -47,8 +57,7 @@ public class BulkheadTest extends FaultToleranceTest {
     }
 
     @Test
-    public void testBulkheadPlusOne() {
-        BulkheadBean bean = newBean(BulkheadBean.class);
+    void testBulkheadPlusOne() {
         CompletableFuture<String>[] calls = getAsyncConcurrentCalls(
             () -> bean.executePlusOne(100), BulkheadBean.TOTAL_CALLS + 2);
         waitFor(calls);
@@ -57,8 +66,7 @@ public class BulkheadTest extends FaultToleranceTest {
     }
 
     @Test
-    public void testBulkheadNoQueue() {
-        BulkheadBean bean = newBean(BulkheadBean.class);
+    void testBulkheadNoQueue() {
         CompletableFuture<String>[] calls = getAsyncConcurrentCalls(
             () -> bean.executeNoQueue(2000), 10);
         RuntimeException e = assertThrows(RuntimeException.class, () -> waitFor(calls));
@@ -66,16 +74,14 @@ public class BulkheadTest extends FaultToleranceTest {
     }
 
     @Test
-    public void testBulkheadNoQueueWithFallback() {
-        BulkheadBean bean = newBean(BulkheadBean.class);
+    void testBulkheadNoQueueWithFallback() {
         CompletableFuture<String>[] calls = getAsyncConcurrentCalls(
             () -> bean.executeNoQueueWithFallback(2000), 10);
         waitFor(calls);
     }
 
     @Test
-    public void testBulkheadExecuteCancelInQueue() throws Exception {
-        BulkheadBean bean = newBean(BulkheadBean.class);
+    void testBulkheadExecuteCancelInQueue() throws Exception {
         CompletableFuture<String> f1 = bean.executeCancelInQueue(1000);
         CompletableFuture<String> f2 = bean.executeCancelInQueue(2000);    // should never run
         boolean b = f2.cancel(true);
@@ -86,9 +92,7 @@ public class BulkheadTest extends FaultToleranceTest {
     }
 
     @Test
-    public void testSynchronous() {
-        BulkheadBean bean = newBean(BulkheadBean.class);
-
+    void testSynchronous() {
         // Run 10 threads that attempt to enter bulkhead
         CompletableFuture<Integer>[] calls = FaultToleranceTest.getConcurrentCalls(
                 () -> {
@@ -113,8 +117,7 @@ public class BulkheadTest extends FaultToleranceTest {
     }
 
     @Test
-    public void testSynchronousWithAsyncCaller() throws Exception {
-        BulkheadBean bean = newBean(BulkheadBean.class);
+    void testSynchronousWithAsyncCaller() throws Exception {
         AsynchronousCallerBean callerBean = newBean(AsynchronousCallerBean.class);
         Callable<Integer> callable = () -> {
             try {

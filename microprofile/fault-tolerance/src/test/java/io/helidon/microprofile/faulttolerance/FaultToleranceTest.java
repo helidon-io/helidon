@@ -27,6 +27,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import javax.enterprise.context.Dependent;
 import javax.enterprise.inject.literal.NamedLiteral;
 import javax.enterprise.inject.spi.CDI;
 
@@ -43,13 +44,16 @@ import static org.junit.jupiter.api.Assertions.fail;
  * Class FaultToleranceTest.
  */
 @HelidonTest
-public abstract class FaultToleranceTest {
+abstract class FaultToleranceTest {
 
     private static final long TIMEOUT = 5000;
     private static final TimeUnit TIMEOUT_UNITS = TimeUnit.MILLISECONDS;
     private static final int NUMBER_OF_THREADS = 20;
 
-    private static Executor executor = Executors.newFixedThreadPool(NUMBER_OF_THREADS);
+    private static final Executor executor = Executors.newFixedThreadPool(NUMBER_OF_THREADS);
+
+    void reset() {
+    }
 
     /**
      * Clears all internal handlers before running each test. Latest FT spec has
@@ -58,7 +62,8 @@ public abstract class FaultToleranceTest {
      * independence so we clear this state before running each test.
      */
     @BeforeEach
-    public void resetHandlers() {
+    void resetHandlers() {
+        reset();
         MethodInvoker.clearMethodStatesMap();
     }
 
@@ -70,7 +75,7 @@ public abstract class FaultToleranceTest {
         return CDI.current().select(beanClass, NamedLiteral.of(beanClass.getSimpleName())).get();
     }
 
-    public static void printStatus(String message, String status) {
+    static void printStatus(String message, String status) {
         System.out.println(message + " -> " + status + " [Thread: "
                                    + Thread.currentThread().getName() + "]");
     }
