@@ -18,7 +18,7 @@ package io.helidon.microprofile.graphql.server;
 
 import java.io.IOException;
 
-import io.helidon.microprofile.graphql.server.test.queries.QueriesWithNulls;
+import io.helidon.microprofile.graphql.server.test.queries.QueriesAndMutationsWithNulls;
 import io.helidon.microprofile.graphql.server.test.types.NullPOJO;
 
 import org.eclipse.microprofile.graphql.NonNull;
@@ -35,9 +35,9 @@ public class JandexUtilsIT extends AbstractGraphQLIT {
 
     @Test
     public void testJandexUtils() throws IOException {
-        setupIndex(indexFileName, NullPOJO.class, QueriesWithNulls.class);
+        setupIndex(indexFileName, NullPOJO.class, QueriesAndMutationsWithNulls.class);
         SchemaGenerator schemaGenerator = new SchemaGenerator(defaultContext);
-        String queriesWithNulls = QueriesWithNulls.class.getName();
+        String queriesWithNulls = QueriesAndMutationsWithNulls.class.getName();
         String nullPOJO = NullPOJO.class.getName();
         String noNull = NonNull.class.getName();
 

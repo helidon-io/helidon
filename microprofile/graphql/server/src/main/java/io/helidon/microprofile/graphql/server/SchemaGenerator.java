@@ -174,7 +174,7 @@ public class SchemaGenerator {
     }
 
     /**
-     * Generate a {@link Schema} by scanning all discovered classes via the Jandex plugin.
+     * Generate a {@link Schema} by scanning all discovered classes using the {@link GraphQLCdiExtension}.
      *
      * @return a {@link Schema}
      */

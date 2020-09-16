@@ -27,6 +27,7 @@ import org.eclipse.microprofile.graphql.NumberFormat;
 import org.eclipse.microprofile.graphql.Query;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -98,5 +99,10 @@ public class NumberFormatQueriesAndMutations {
     public String idNumber(@Name("name") String name,
                            @Name("id") Long idNumber) {
        return name + "-" + idNumber;
+    }
+
+    @Mutation
+    public List<BigDecimal> echoBigDecimalList(@Name("coordinates") LinkedList<BigDecimal> coordinates) {
+        return coordinates;
     }
 }

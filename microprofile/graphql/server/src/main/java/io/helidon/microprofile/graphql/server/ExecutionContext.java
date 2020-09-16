@@ -43,7 +43,7 @@ import static graphql.ExecutionInput.newExecutionInput;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ensureRuntimeException;
 
 /**
- * Defines a content in which to execute GraphQL commands.
+ * Defines a context in which to execute GraphQL commands.
  *
  */
 public class ExecutionContext {

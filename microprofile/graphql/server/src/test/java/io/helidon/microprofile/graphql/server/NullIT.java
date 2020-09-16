@@ -17,13 +17,15 @@
 package io.helidon.microprofile.graphql.server;
 
 import java.io.IOException;
+import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
-import io.helidon.microprofile.graphql.server.test.queries.QueriesWithNulls;
+import io.helidon.microprofile.graphql.server.test.queries.QueriesAndMutationsWithNulls;
 import io.helidon.microprofile.graphql.server.test.types.NullPOJO;
 
 import org.jboss.weld.junit5.WeldInitiator;
@@ -41,13 +43,14 @@ public class NullIT extends AbstractGraphQLIT {
     @WeldSetup
     private final WeldInitiator weld = WeldInitiator.of(WeldInitiator.createWeld()
                                                                 .addBeanClass(NullPOJO.class)
-                                                                .addBeanClass(QueriesWithNulls.class)
+                                                                .addBeanClass(QueriesAndMutationsWithNulls.class)
                                                                 .addBeanClass(TestDB.class)
                                                                 .addExtension(new GraphQLCdiExtension()));
 
     @Test
+    @SuppressWarnings("unchecked")
     public void testNulls() throws IOException {
-        setupIndex(indexFileName, NullPOJO.class, QueriesWithNulls.class);
+        setupIndex(indexFileName, NullPOJO.class, QueriesAndMutationsWithNulls.class);
         ExecutionContext executionContext =  new ExecutionContext(defaultContext);
         Schema schema = executionContext.getSchema();
         assertThat(schema, is(notNullValue()));
@@ -95,6 +98,20 @@ public class NullIT extends AbstractGraphQLIT {
 
         assertReturnTypeMandatory(input, "testOutputOnly", false);
         assertArrayReturnTypeMandatory(input, "testOutputOnly", false);
+
+        Map<String, Object> mapResults = getAndAssertResult(executionContext.execute("mutation { returnNullValues { longValue stringValue } }"));
+        assertThat(mapResults, is(notNullValue()));
+        Map<String, Object> mapResults2 = (Map<String, Object>) mapResults.get("returnNullValues");
+        assertThat(mapResults2.size(), is(2));
+        assertThat(mapResults2.get("longValue"), is(nullValue()));
+
+        mapResults = getAndAssertResult(executionContext.execute("mutation { echoNullValue }"));
+        assertThat(mapResults, is(notNullValue()));
+        assertThat(mapResults.get("echoNullValue"), is(nullValue()));
+
+        mapResults = getAndAssertResult(executionContext.execute("mutation { echoNullDateValue }"));
+        assertThat(mapResults, is(notNullValue()));
+        assertThat(mapResults.get("echoNullDateValue"), is(nullValue()));
     }
 
 }

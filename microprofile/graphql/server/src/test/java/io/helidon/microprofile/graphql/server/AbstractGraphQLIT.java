@@ -30,7 +30,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Common functionality for integration tests.
  */
-public abstract class AbstractGraphQLIT extends AbstractGraphQLTest {
+public abstract class AbstractGraphQLIT
+        extends AbstractGraphQLTest {
 
     protected String indexFileName = null;
     protected File indexFile = null;
@@ -50,7 +51,6 @@ public abstract class AbstractGraphQLIT extends AbstractGraphQLTest {
             indexFile.delete();
         }
     }
-
     
     protected void assertInterfaceResults() throws IntrospectionException, ClassNotFoundException {
         SchemaGenerator schemaGenerator = new SchemaGenerator(defaultContext);

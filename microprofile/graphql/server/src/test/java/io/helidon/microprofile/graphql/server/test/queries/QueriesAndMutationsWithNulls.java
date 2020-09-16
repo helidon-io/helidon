@@ -16,24 +16,30 @@
 
 package io.helidon.microprofile.graphql.server.test.queries;
 
+import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import javax.enterprise.context.ApplicationScoped;
 
 import io.helidon.microprofile.graphql.server.test.types.NullPOJO;
+import javax.inject.Inject;
 import org.eclipse.microprofile.graphql.DefaultValue;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Mutation;
 import org.eclipse.microprofile.graphql.Name;
 import org.eclipse.microprofile.graphql.NonNull;
 import org.eclipse.microprofile.graphql.Query;
+import java.time.LocalDate;
 
 /**
  * Class that holds queries that also have Null.
  */
 @GraphQLApi
 @ApplicationScoped
-public class QueriesWithNulls {
+public class QueriesAndMutationsWithNulls {
 
-    public QueriesWithNulls() {
+    @Inject
+    private TestDB testDB;
+
+    public QueriesAndMutationsWithNulls() {
     }
 
     @Query("method1NotNull")
@@ -70,7 +76,7 @@ public class QueriesWithNulls {
         return "value";
     }
 
-    // just to generate NuklPOJOInput
+    // just to generate NullPOJOInput
     @Query
     public boolean validate(@Name("pojo") NullPOJO nullPOJO) {
         return false;
@@ -80,6 +86,21 @@ public class QueriesWithNulls {
     @Query
     public String testMandatoryArgument(@Name("arg1") int arg1) {
         return null;
+    }
+
+    @Mutation("returnNullValues")
+    public NullPOJO getNullPOJO() {
+        return testDB.getNullPOJO();
+    }
+
+    @Mutation("echoNullValue")
+    public String echoNullValue(String value) {
+        return value;
+    }
+
+    @Mutation("echoNullDateValue")
+    public LocalDate echoNullDateValue(LocalDate value) {
+        return value;
     }
     
 }

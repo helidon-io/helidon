@@ -163,7 +163,7 @@ public class DateTimeIT extends AbstractGraphQLIT {
         ExecutionContext executionContext = new ExecutionContext(defaultContext);
 
         Map<String, Object> mapResults = getAndAssertResult(
-                executionContext.execute("mutation { dateTimePojoMutation { formattedListOfDates } }"));
+                executionContext.execute("mutation { dateTimePojoMutation { formattedListOfDates localDateTime } }"));
         assertThat(mapResults.size(), is(1));
         Map<String, Object> mapResults2 = (Map<String, Object>) mapResults.get("dateTimePojoMutation");
         assertThat(mapResults2, is(notNullValue()));
@@ -189,12 +189,12 @@ public class DateTimeIT extends AbstractGraphQLIT {
         assertThat(mapResults.size(), is(1));
         assertThat(mapResults.get("testDefaultFormatLocalDateTime"), is( "10:00:00 12-01-2020"));
 
-
-        mapResults = getAndAssertResult(
-                executionContext.execute("query { transformedDate }"));
-        assertThat(mapResults, is(notNullValue()));
-        result = (String) mapResults.get("transformedDate");
-        assertThat(result, is("16 Aug 2016"));
+        // TODO: https://github.com/eclipse/microprofile-graphql/issues/306 - 1.0.3 spec most likely
+//        mapResults = getAndAssertResult(
+//                executionContext.execute("query { transformedDate }"));
+//        assertThat(mapResults, is(notNullValue()));
+//        result = (String) mapResults.get("transformedDate");
+//        assertThat(result, is("16 Aug 2016"));
 
     }
 

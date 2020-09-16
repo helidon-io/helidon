@@ -34,6 +34,7 @@ import java.util.Random;
 import java.util.UUID;
 
 import io.helidon.microprofile.graphql.server.test.types.DateTimePojo;
+import io.helidon.microprofile.graphql.server.test.types.NullPOJO;
 import io.helidon.microprofile.graphql.server.test.types.TypeWithNameAndJsonbProperty;
 import javax.enterprise.context.ApplicationScoped;
 
@@ -201,5 +202,9 @@ public class TestDB {
                                 LocalDateTime.now(), OffsetDateTime.now(), ZonedDateTime.now(), LocalDate.now(),
                                 List.of(LocalDate.of(1968, 2, 17), LocalDate.of(1970, 8, 4)),
                                 List.of(LocalDate.of(1968, 2, 17), LocalDate.of(1970, 8, 4)));
+    }
+
+    public NullPOJO getNullPOJO() {
+        return new NullPOJO(1, null, "String", List.of("Tim"));
     }
 }

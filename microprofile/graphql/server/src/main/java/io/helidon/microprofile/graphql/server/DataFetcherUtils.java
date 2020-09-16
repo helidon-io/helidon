@@ -79,7 +79,7 @@ public class DataFetcherUtils {
      * @param <V>    value type
      * @return a new {@link DataFetcher}
      */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings( { "unchecked", "rawtypes" })
     public static <V> DataFetcher<V> newMethodDataFetcher(Class<?> clazz, Method method, String source, SchemaArgument... args) {
         Object instance = CDI.current().select(clazz).get();
 
@@ -111,8 +111,8 @@ public class DataFetcherUtils {
                         // TODO: need to handle formatting
                         // ensure we preserve the order
                         listArgumentValues.add(argument.getOriginalType().equals(List.class)
-                                               ? new ArrayList((Collection) key)
-                                               : new TreeSet((Collection) key));
+                                                       ? new ArrayList((Collection) key)
+                                                       : new TreeSet((Collection) key));
                     } else {
                         // standard type or enum
                         Class<?> originalType = argument.getOriginalType();
@@ -126,22 +126,26 @@ public class DataFetcherUtils {
                             // check the format and convert it from a string to the original format
                             String[] format = argument.getFormat();
                             if (!isFormatEmpty(format)) {
-                                if (isDateTimeClass(argument.getOriginalType())) {
-                                    DateTimeFormatter dateFormatter = getCorrectDateFormatter(originalType.getName(),
-                                                                                              format[1], format[0]);
-                                    listArgumentValues.add(
-                                            getOriginalDateTimeValue(originalType, dateFormatter.parse(key.toString())));
+                                if (key == null) {
+                                    listArgumentValues.add(null);
                                 } else {
-                                    NumberFormat numberFormat = getCorrectNumberFormat(originalType.getName(),
-                                                                                       format[1], format[0]);
-                                    if (numberFormat != null) {
-                                        // convert to the original type
-                                        Number parsedValue = numberFormat.parse(key.toString());
-                                        Constructor<?> constructor = argument.getOriginalType()
-                                                .getDeclaredConstructor(String.class);
-                                        listArgumentValues.add(constructor.newInstance(parsedValue.toString()));
+                                    if (isDateTimeClass(argument.getOriginalType())) {
+                                        DateTimeFormatter dateFormatter = getCorrectDateFormatter(originalType.getName(),
+                                                                                                  format[1], format[0]);
+                                        listArgumentValues.add(
+                                                getOriginalDateTimeValue(originalType, dateFormatter.parse(key.toString())));
                                     } else {
-                                       listArgumentValues.add(key);
+                                        NumberFormat numberFormat = getCorrectNumberFormat(originalType.getName(),
+                                                                                           format[1], format[0]);
+                                        if (numberFormat != null) {
+                                            // convert to the original type
+                                            Number parsedValue = numberFormat.parse(key.toString());
+                                            Constructor<?> constructor = argument.getOriginalType()
+                                                    .getDeclaredConstructor(String.class);
+                                            listArgumentValues.add(constructor.newInstance(parsedValue.toString()));
+                                        } else {
+                                            listArgumentValues.add(key);
+                                        }
                                     }
                                 }
                             } else {
@@ -180,6 +184,7 @@ public class DataFetcherUtils {
 
         /**
          * Construct a new NumberFormattingDataFetcher.
+         *
          * @param propertyName property to extract
          * @param type         GraphQL type of the property
          * @param valueFormat  formatting value
@@ -209,7 +214,7 @@ public class DataFetcherUtils {
     /**
      * An implementation of a {@link PropertyDataFetcher} which returns a formatted date.
      */
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressWarnings( { "unchecked", "rawtypes" })
     public static class DateFormattingDataFetcher
             extends PropertyDataFetcher
             implements DateFormattingProvider {
@@ -221,6 +226,7 @@ public class DataFetcherUtils {
 
         /**
          * Construct a new NumberFormattingDataFetcher.
+         *
          * @param propertyName property to extract
          * @param type         GraphQL type of the property
          * @param valueFormat  formatting value
