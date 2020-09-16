@@ -23,6 +23,7 @@ import java.math.BigInteger;
 import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -302,6 +303,8 @@ public class DataFetcherUtils {
             return ZonedDateTime.from(value);
         } else if (originalType.equals(OffsetDateTime.class)) {
             return OffsetDateTime.from(value);
+        } else if (originalType.equals(LocalTime.class)) {
+            return LocalTime.from(value);
         } else {
             return null;
         }

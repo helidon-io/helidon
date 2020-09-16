@@ -194,4 +194,10 @@ public class SimpleQueriesAndMutations {
         return localDateTime;
     }
 
+    @Mutation
+    @JsonbDateFormat("HH:mm")
+    public LocalTime echoLocalTime(@Name("time") LocalTime localTime) {
+        return localTime;
+    }
+
 }

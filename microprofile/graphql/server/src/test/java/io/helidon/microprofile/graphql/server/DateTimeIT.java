@@ -18,6 +18,7 @@ package io.helidon.microprofile.graphql.server;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -183,6 +184,11 @@ public class DateTimeIT extends AbstractGraphQLIT {
         List<Map<String, Object>> listErrors = (List<Map<String, Object>>) results.get(ExecutionContext.ERRORS);
         assertThat(listErrors, is(notNullValue()));
         assertThat(listErrors.size(), is(1));
+
+        mapResults = getAndAssertResult(executionContext.execute("mutation { echoLocalTime(time: \"15:13:00\") }"));
+        assertThat(mapResults.size(), is(1));
+        String localTime = (String) mapResults.get("echoLocalTime");
+        assertThat(localTime, is("15:13"));
 
         mapResults = getAndAssertResult(
                 executionContext.execute("mutation { testDefaultFormatLocalDateTime(dateTime: \"2020-01-12T10:00:00\") }"));
