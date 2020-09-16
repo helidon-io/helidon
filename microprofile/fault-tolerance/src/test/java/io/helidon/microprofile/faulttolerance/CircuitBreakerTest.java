@@ -16,12 +16,14 @@
 
 package io.helidon.microprofile.faulttolerance;
 
+import javax.inject.Inject;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
+import io.helidon.microprofile.tests.junit5.AddBean;
 import org.eclipse.microprofile.faulttolerance.exceptions.BulkheadException;
 import org.eclipse.microprofile.faulttolerance.exceptions.CircuitBreakerOpenException;
 import org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException;
@@ -35,31 +37,38 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * Class CircuitBreakerTest.
+ * Test for beans whose methods are guarded by circuit breakers.
  */
-public class CircuitBreakerTest extends FaultToleranceTest {
+@AddBean(CircuitBreakerBean.class)
+class CircuitBreakerTest extends FaultToleranceTest {
+
+    @Inject
+    private CircuitBreakerBean bean;
+
+    @Override
+    void reset() {
+        bean.reset();
+    }
 
     @Test
-    public void testTripCircuit() {
+    void testTripCircuit() {
         tripCircuit();
     }
 
     @Test
-    public void testOpenAndCloseCircuit() throws Exception {
+    void testOpenAndCloseCircuit() throws Exception {
         openAndCloseCircuit();
     }
 
     @Test
-    public void testOpenAndCloseCircuitNoWait() throws Exception {
+    void testOpenAndCloseCircuitNoWait() {
         openAndCloseCircuitNoWait();
     }
 
     @Test
-    public void testNotTripCircuit() {
-        CircuitBreakerBean bean = newBean(CircuitBreakerBean.class);
-
+    void testNotTripCircuit() {
         // Iterate a few times to test circuit
-        for (int i = 0; i < bean.REQUEST_VOLUME_THRESHOLD; i++) {
+        for (int i = 0; i < CircuitBreakerBean.REQUEST_VOLUME_THRESHOLD; i++) {
             bean.exerciseBreaker(true);
         }
 
@@ -68,11 +77,9 @@ public class CircuitBreakerTest extends FaultToleranceTest {
     }
 
     @Test
-    public void testOpenOnTimeouts() {
-        CircuitBreakerBean bean = newBean(CircuitBreakerBean.class);
-
+    void testOpenOnTimeouts() {
         // Iterate a few times to test circuit
-        for (int i = 0; i < bean.REQUEST_VOLUME_THRESHOLD; i++) {
+        for (int i = 0; i < CircuitBreakerBean.REQUEST_VOLUME_THRESHOLD; i++) {
             assertThrows(TimeoutException.class, () -> bean.openOnTimeouts());
         }
 
@@ -81,29 +88,27 @@ public class CircuitBreakerTest extends FaultToleranceTest {
     }
 
     @Test
-    public void testOpenAndCloseAndOpen() throws Exception {
+    void testOpenAndCloseAndOpen() throws Exception {
         // Open circuit breaker
         CircuitBreakerBean bean = tripCircuit();
 
         // Wait for more than delay
-        Thread.sleep(bean.DELAY + 100);
+        Thread.sleep(CircuitBreakerBean.DELAY + 100);
 
         // Now a successful invocation => HALF_OPEN_MP
         bean.exerciseBreaker(true);
 
         // Now a failed invocation => OPEN_MP
-        assertThrows(RuntimeException.class, () ->bean.exerciseBreaker(false));
+        assertThrows(RuntimeException.class, () -> bean.exerciseBreaker(false));
 
         // Now it should be a circuit breaker exception
         assertThrows(CircuitBreakerOpenException.class, () -> bean.exerciseBreaker(true));
     }
 
     @Test
-    public void testNotOpenWrongException() {
-        CircuitBreakerBean bean = newBean(CircuitBreakerBean.class);
-
+    void testNotOpenWrongException() {
         // Should not trip circuit since it is a superclass exception
-        for (int i = 0; i < bean.REQUEST_VOLUME_THRESHOLD; i++) {
+        for (int i = 0; i < CircuitBreakerBean.REQUEST_VOLUME_THRESHOLD; i++) {
             assertThrows(RuntimeException.class,
                          () -> bean.exerciseBreaker(false,
                                                     new RuntimeException("Oops")));
@@ -119,11 +124,8 @@ public class CircuitBreakerTest extends FaultToleranceTest {
     }
 
     @Test
-    public void testWithBulkhead() throws Exception {
-        CountDownLatch started;
-        CircuitBreakerBean bean = newBean(CircuitBreakerBean.class);
-
-        started = new CountDownLatch(1);
+    void testWithBulkhead() throws Exception {
+        CountDownLatch started = new CountDownLatch(1);
         bean.withBulkhead(started);             // enters bulkhead
         assertTrue(started.await(1000, TimeUnit.MILLISECONDS));
 
@@ -138,11 +140,8 @@ public class CircuitBreakerTest extends FaultToleranceTest {
     }
 
     @Test
-    public void testWithBulkheadStage() throws Exception {
-        CountDownLatch started;
-        CircuitBreakerBean bean = newBean(CircuitBreakerBean.class);
-
-        started = new CountDownLatch(1);
+    void testWithBulkheadStage() throws Exception {
+        CountDownLatch started = new CountDownLatch(1);
         bean.withBulkheadStage(started);             // enters bulkhead
         assertTrue(started.await(1000, TimeUnit.MILLISECONDS));
 
@@ -162,10 +161,8 @@ public class CircuitBreakerTest extends FaultToleranceTest {
     // -- Private methods -----------------------------------------------------
 
     private CircuitBreakerBean tripCircuit() {
-        CircuitBreakerBean bean = newBean(CircuitBreakerBean.class);
-
         // Iterate a few times to test circuit
-        for (int i = 0; i < bean.REQUEST_VOLUME_THRESHOLD; i++) {
+        for (int i = 0; i < CircuitBreakerBean.REQUEST_VOLUME_THRESHOLD; i++) {
             assertThrows(RuntimeException.class, () -> bean.exerciseBreaker(false));
         }
 
@@ -174,22 +171,20 @@ public class CircuitBreakerTest extends FaultToleranceTest {
         return bean;
     }
 
-    private CircuitBreakerBean openAndCloseCircuit() throws Exception {
+    private void openAndCloseCircuit() throws Exception {
         // Open circuit breaker
         CircuitBreakerBean bean = tripCircuit();
 
         // Now sleep for longer than breaker delay and test again
-        Thread.sleep(bean.DELAY + 100);
+        Thread.sleep(CircuitBreakerBean.DELAY + 100);
         bean.exerciseBreaker(true);
-        return bean;
     }
 
-    private CircuitBreakerBean openAndCloseCircuitNoWait() throws Exception {
+    private void openAndCloseCircuitNoWait() {
         // Open circuit breaker
         CircuitBreakerBean bean = tripCircuit();
 
         // Should get exception
         assertThrows(CircuitBreakerOpenException.class, () -> bean.exerciseBreaker(true));
-        return bean;
     }
 }

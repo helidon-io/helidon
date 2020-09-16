@@ -20,58 +20,57 @@ import java.time.temporal.ChronoUnit;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 
-import javax.enterprise.context.Dependent;
-
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
 import org.eclipse.microprofile.faulttolerance.Fallback;
 import org.eclipse.microprofile.faulttolerance.Retry;
 import org.eclipse.microprofile.faulttolerance.Timeout;
 
 /**
- * Class TimeoutBean.
+ * A bean with timeout methods.
  */
-@Dependent
 @Retry(maxRetries = 2)
-public class TimeoutBean {
+class TimeoutBean {
 
-    private AtomicLong duration = new AtomicLong(1600);
+    private final AtomicLong duration = new AtomicLong(1600);
+
+    void reset() {
+        duration.set(1600);
+    }
 
     @Timeout(value=1000, unit=ChronoUnit.MILLIS)
-    public String forceTimeout() throws InterruptedException {
+    void forceTimeout() throws InterruptedException {
         FaultToleranceTest.printStatus("TimeoutBean::forceTimeout()", "failure");
         Thread.sleep(1500);
-        return "failure";
     }
 
     @Asynchronous
     @Timeout(value=1000, unit=ChronoUnit.MILLIS)
-    public CompletableFuture<String> forceTimeoutAsync() throws InterruptedException {
+    CompletableFuture<String> forceTimeoutAsync() throws InterruptedException {
         FaultToleranceTest.printStatus("TimeoutBean::forceTimeoutAsync()", "failure");
         Thread.sleep(1500);
         return CompletableFuture.completedFuture("failure");
     }
 
     @Timeout(value=1000, unit=ChronoUnit.MILLIS)
-    public String noTimeout() throws InterruptedException {
+    String noTimeout() throws InterruptedException {
         FaultToleranceTest.printStatus("TimeoutBean::noTimeout()", "success");
         Thread.sleep(500);
         return "success";
     }
 
     @Timeout(value=1000, unit=ChronoUnit.MILLIS)
-    public String forceTimeoutWithCatch() {
+    void forceTimeoutWithCatch() {
         try {
             FaultToleranceTest.printStatus("TimeoutBean::forceTimeoutWithCatch()", "failure");
             Thread.sleep(1500);
         } catch (InterruptedException e) {
             // falls through
         }
-        return null;    // tests special null case
     }
 
     // See class annotation @Retry(maxRetries = 2)
     @Timeout(value=1000, unit=ChronoUnit.MILLIS)
-    public String timeoutWithRetries() throws InterruptedException {
+    String timeoutWithRetries() throws InterruptedException {
         FaultToleranceTest.printStatus("TimeoutBean::timeoutWithRetries()",
                     duration.get() < 1000 ? "success" : "failure");
         Thread.sleep(duration.getAndAdd(-400));     // needs 2 retries
@@ -80,7 +79,7 @@ public class TimeoutBean {
 
     @Fallback(fallbackMethod = "onFailure")
     @Timeout(value=1000, unit=ChronoUnit.MILLIS)
-    public String timeoutWithFallback() throws InterruptedException {
+    String timeoutWithFallback() throws InterruptedException {
         FaultToleranceTest.printStatus("TimeoutBean::forceTimeoutWithFallback()", "failure");
         Thread.sleep(1500);
         return "failure";
@@ -89,13 +88,13 @@ public class TimeoutBean {
     // See class annotation @Retry(maxRetries = 2)
     @Fallback(fallbackMethod = "onFailure")
     @Timeout(value=1000, unit=ChronoUnit.MILLIS)
-    public String timeoutWithRetriesAndFallback() throws InterruptedException {
+    String timeoutWithRetriesAndFallback() throws InterruptedException {
         FaultToleranceTest.printStatus("TimeoutBean::timeoutWithRetriesAndFallback()", "failure");
         Thread.sleep(duration.getAndAdd(-100));     // not enough, need fallback
         return "failure";
     }
 
-    public String onFailure() {
+    String onFailure() {
         FaultToleranceTest.printStatus("TimeoutBean::onFailure()", "success");
         return "fallback";
     }

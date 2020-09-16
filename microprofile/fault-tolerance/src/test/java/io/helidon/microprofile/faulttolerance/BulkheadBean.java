@@ -18,17 +18,14 @@ package io.helidon.microprofile.faulttolerance;
 
 import java.util.concurrent.CompletableFuture;
 
-import javax.enterprise.context.Dependent;
-
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
 import org.eclipse.microprofile.faulttolerance.Bulkhead;
 import org.eclipse.microprofile.faulttolerance.Fallback;
 
 /**
- * Class BulkheadBean.
+ * A bean whose methods are protected by bulkheads.
  */
-@Dependent
-public class BulkheadBean {
+class BulkheadBean {
 
     static final int CONCURRENT_CALLS = 3;
     static final int WAITING_TASK_QUEUE = 3;
@@ -59,6 +56,12 @@ public class BulkheadBean {
         synchronized int totalCalls() {
             return totalCalls;
         }
+
+        synchronized void reset() {
+            currentCalls = 0;
+            concurrentCalls = 0;
+            totalCalls = 0;
+        }
     }
 
     private ConcurrencyCounter counter = new ConcurrencyCounter();
@@ -67,9 +70,13 @@ public class BulkheadBean {
         return counter;
     }
 
+    void reset() {
+        counter.reset();
+    }
+
     @Asynchronous
     @Bulkhead(value = CONCURRENT_CALLS, waitingTaskQueue = WAITING_TASK_QUEUE)
-    public CompletableFuture<String> execute(long sleepMillis) {
+    CompletableFuture<String> execute(long sleepMillis) {
         try {
             counter.increment();
             FaultToleranceTest.printStatus("BulkheadBean::execute", "success");
@@ -86,7 +93,7 @@ public class BulkheadBean {
 
     @Asynchronous
     @Bulkhead(value = CONCURRENT_CALLS + 1, waitingTaskQueue = WAITING_TASK_QUEUE + 1)
-    public CompletableFuture<String> executePlusOne(long sleepMillis) {
+    CompletableFuture<String> executePlusOne(long sleepMillis) {
         try {
             counter.increment();
             FaultToleranceTest.printStatus("BulkheadBean::executePlusOne", "success");
@@ -103,7 +110,7 @@ public class BulkheadBean {
 
     @Asynchronous
     @Bulkhead(value = 2, waitingTaskQueue = 1)
-    public CompletableFuture<String> executeNoQueue(long sleepMillis) {
+    CompletableFuture<String> executeNoQueue(long sleepMillis) {
         try {
             counter.increment();
             FaultToleranceTest.printStatus("BulkheadBean::executeNoQueue", "success");
@@ -121,7 +128,7 @@ public class BulkheadBean {
     @Asynchronous
     @Fallback(fallbackMethod = "onFailure")
     @Bulkhead(value = 2, waitingTaskQueue = 1)
-    public CompletableFuture<String> executeNoQueueWithFallback(long sleepMillis) {
+    CompletableFuture<String> executeNoQueueWithFallback(long sleepMillis) {
         try {
             counter.increment();
             FaultToleranceTest.printStatus("BulkheadBean::executeNoQueue", "success");
@@ -136,14 +143,14 @@ public class BulkheadBean {
         }
     }
 
-    public CompletableFuture<String> onFailure(long sleepMillis) {
+    CompletableFuture<String> onFailure(long sleepMillis) {
         FaultToleranceTest.printStatus("BulkheadBean::onFailure()", "success");
         return CompletableFuture.completedFuture(Thread.currentThread().getName());
     }
 
     @Asynchronous
     @Bulkhead(value = 1, waitingTaskQueue = 1)
-    public CompletableFuture<String> executeCancelInQueue(long sleepMillis) {
+    CompletableFuture<String> executeCancelInQueue(long sleepMillis) {
         FaultToleranceTest.printStatus("BulkheadBean::executeCancelInQueue " + sleepMillis, "success");
         try {
             Thread.sleep(sleepMillis);
@@ -154,7 +161,7 @@ public class BulkheadBean {
     }
 
     @Bulkhead(value = 1)
-    public String executeSynchronous(long sleepMillis) {
+    String executeSynchronous(long sleepMillis) {
         FaultToleranceTest.printStatus("BulkheadBean::executeSynchronous " + sleepMillis, "success");
         try {
             Thread.sleep(sleepMillis);

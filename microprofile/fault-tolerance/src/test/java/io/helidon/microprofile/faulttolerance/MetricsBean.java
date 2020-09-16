@@ -41,10 +41,10 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 
 /**
- * Class MetricsBean.
+ * A bean with methods that update metrics.
  */
 @Dependent
-public class MetricsBean {
+class MetricsBean {
 
     private AtomicInteger invocations = new AtomicInteger(0);
 
@@ -52,12 +52,12 @@ public class MetricsBean {
     @Metric(name = "counter")
     private Counter counter;
 
-    public Counter getCounter() {
+    Counter getCounter() {
         return counter;
     }
 
     @Retry(maxRetries = 5, delay = 50L)
-    public String retryOne(int number) {
+    String retryOne(int number) {
         if (invocations.incrementAndGet() <= number) {
             FaultToleranceTest.printStatus("MetricsBean::retryOne()", "failure");
             throw new RuntimeException("Oops");
@@ -67,7 +67,7 @@ public class MetricsBean {
     }
 
     @Retry(maxRetries = 5, delay = 50L)
-    public String retryTwo(int number) {
+    String retryTwo(int number) {
         if (invocations.incrementAndGet() <= number) {
             FaultToleranceTest.printStatus("MetricsBean::retryTwo()", "failure");
             throw new RuntimeException("Oops");
@@ -77,7 +77,7 @@ public class MetricsBean {
     }
 
     @Retry(maxRetries = 5, delay = 50L)
-    public String retryThree(int number) {
+    String retryThree(int number) {
         if (invocations.incrementAndGet() <= number) {
             FaultToleranceTest.printStatus("MetricsBean::retryThree()", "failure");
             throw new RuntimeException("Oops");
@@ -87,7 +87,7 @@ public class MetricsBean {
     }
 
     @Retry(maxRetries = 5, delay = 50L)
-    public String retryFour(int number) {
+    String retryFour(int number) {
         if (invocations.incrementAndGet() <= number) {
             FaultToleranceTest.printStatus("MetricsBean::retryFour()", "failure");
             throw new RuntimeException("Oops");
@@ -97,20 +97,20 @@ public class MetricsBean {
     }
 
     @Retry(maxRetries = 5, delay = 50L)
-    public String retryFive(int number) {
+    String retryFive(int number) {
         FaultToleranceTest.printStatus("MetricsBean::retryFive()", "success");
         return "success";
     }
 
     @Timeout(value = 1000, unit = ChronoUnit.MILLIS)
-    public String forceTimeout() throws InterruptedException {
+    String forceTimeout() throws InterruptedException {
         FaultToleranceTest.printStatus("MetricsBean::forceTimeout()", "failure");
         Thread.sleep(1500);
         return "failure";
     }
 
     @Timeout(value = 1000, unit = ChronoUnit.MILLIS)
-    public String noTimeout() throws InterruptedException {
+    String noTimeout() throws InterruptedException {
         FaultToleranceTest.printStatus("MetricsBean::noTimeout()", "success");
         Thread.sleep(500);
         return "success";
@@ -121,7 +121,7 @@ public class MetricsBean {
         requestVolumeThreshold = CircuitBreakerBean.REQUEST_VOLUME_THRESHOLD,
         failureRatio = CircuitBreakerBean.FAILURE_RATIO,
         delay = CircuitBreakerBean.DELAY)
-    public void exerciseBreaker(boolean success) {
+    void exerciseBreaker(boolean success) {
         if (success) {
             FaultToleranceTest.printStatus("MetricsBean::exerciseBreaker()", "success");
         } else {
@@ -135,7 +135,7 @@ public class MetricsBean {
         requestVolumeThreshold = CircuitBreakerBean.REQUEST_VOLUME_THRESHOLD,
         failureRatio = CircuitBreakerBean.FAILURE_RATIO,
         delay = CircuitBreakerBean.DELAY)
-    public void exerciseGauges(boolean success) {
+    void exerciseGauges(boolean success) {
         if (success) {
             FaultToleranceTest.printStatus("MetricsBean::exerciseGauges()", "success");
         } else {
@@ -152,24 +152,24 @@ public class MetricsBean {
             delay = 1000,
             successThreshold = 2,
             failOn = {TestException.class})
-    public void exerciseBreakerException(boolean runtime) throws Exception {
+    void exerciseBreakerException(boolean runtime) throws Exception {
         throw runtime ? new RuntimeException("oops") : new TestException();
     }
 
     @Fallback(fallbackMethod = "onFailure")
-    public String fallback() {
+    String fallback() {
         FaultToleranceTest.printStatus("MetricsBean::fallback()", "failure");
         throw new RuntimeException("Oops");
     }
 
-    public String onFailure() {
+    String onFailure() {
         FaultToleranceTest.printStatus("MetricsBean::onFailure()", "success");
         return "fallback";
     }
 
     @Asynchronous
     @Bulkhead(value = 3, waitingTaskQueue = 3)
-    public CompletableFuture<String> concurrent(long sleepMillis) {
+    CompletableFuture<String> concurrent(long sleepMillis) {
         FaultToleranceTest.printStatus("MetricsBean::concurrent()", "success");
         try {
             assertThat(getGauge(this,
@@ -184,7 +184,7 @@ public class MetricsBean {
 
     @Asynchronous
     @Bulkhead(value = 3, waitingTaskQueue = 3)
-    public CompletableFuture<String> concurrentAsync(long sleepMillis) {
+    CompletableFuture<String> concurrentAsync(long sleepMillis) {
         FaultToleranceTest.printStatus("MetricsBean::concurrentAsync()", "success");
         try {
             assertThat((long) getGauge(this, "concurrentAsync",

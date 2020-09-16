@@ -59,17 +59,17 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
- * Class MetricsTest.
+ * Tests for bean metrics.
  */
-public class MetricsTest extends FaultToleranceTest {
+class MetricsTest extends FaultToleranceTest {
 
     @Test
-    public void testEnable() {
+    void testEnable() {
         assertThat(enabled(), is(true));
     }
 
     @Test
-    public void testInjectCounter() {
+    void testInjectCounter() {
         MetricsBean bean = newBean(MetricsBean.class);
         assertThat(bean, notNullValue());
         bean.getCounter().inc();
@@ -77,7 +77,7 @@ public class MetricsTest extends FaultToleranceTest {
     }
 
     @Test
-    public void testInjectCounterProgrammatically() {
+    void testInjectCounterProgrammatically() {
         MetricRegistry metricRegistry = getMetricRegistry();
         metricRegistry.counter(Metadata.builder()
                 .withName("dcounter")
@@ -89,7 +89,7 @@ public class MetricsTest extends FaultToleranceTest {
     }
 
     @Test
-    public void testGlobalCountersSuccess() throws Exception {
+    void testGlobalCountersSuccess() throws Exception {
         MetricsBean bean = newBean(MetricsBean.class);
         bean.retryOne(5);
         assertThat(getCounter(bean, "retryOne",
@@ -101,7 +101,7 @@ public class MetricsTest extends FaultToleranceTest {
     }
 
     @Test
-    public void testGlobalCountersFailure() throws Exception {
+    void testGlobalCountersFailure() throws Exception {
         MetricsBean bean = newBean(MetricsBean.class);
         try {
             bean.retryTwo(10);
@@ -117,7 +117,7 @@ public class MetricsTest extends FaultToleranceTest {
     }
 
     @Test
-    public void testRetryCounters() throws Exception {
+    void testRetryCounters() throws Exception {
         MetricsBean bean = newBean(MetricsBean.class);
         bean.retryThree(5);
         assertThat(getCounter(bean, "retryThree",
@@ -135,7 +135,7 @@ public class MetricsTest extends FaultToleranceTest {
     }
 
     @Test
-    public void testRetryCountersFailure() throws Exception {
+    void testRetryCountersFailure() throws Exception {
         MetricsBean bean = newBean(MetricsBean.class);
         try {
             bean.retryFour(10);
@@ -157,7 +157,7 @@ public class MetricsTest extends FaultToleranceTest {
     }
 
     @Test
-    public void testRetryCountersSuccess() throws Exception {
+    void testRetryCountersSuccess() throws Exception {
         MetricsBean bean = newBean(MetricsBean.class);
         bean.retryFive(0);
         assertThat(getCounter(bean, "retryFive",
@@ -175,7 +175,7 @@ public class MetricsTest extends FaultToleranceTest {
     }
 
     @Test
-    public void testTimeoutSuccess() throws Exception {
+    void testTimeoutSuccess() throws Exception {
         MetricsBean bean = newBean(MetricsBean.class);
         bean.noTimeout();
         assertThat(getHistogram(bean, "noTimeout",
@@ -190,7 +190,7 @@ public class MetricsTest extends FaultToleranceTest {
     }
 
     @Test
-    public void testTimeoutFailure() throws Exception {
+    void testTimeoutFailure() throws Exception {
         MetricsBean bean = newBean(MetricsBean.class);
         try {
             bean.forceTimeout();
@@ -209,7 +209,7 @@ public class MetricsTest extends FaultToleranceTest {
     }
 
     @Test
-    public void testBreakerTrip() throws Exception {
+    void testBreakerTrip() throws Exception {
         MetricsBean bean = newBean(MetricsBean.class);
 
         for (int i = 0; i < CircuitBreakerBean.REQUEST_VOLUME_THRESHOLD ; i++) {
@@ -232,7 +232,7 @@ public class MetricsTest extends FaultToleranceTest {
     }
 
     @Test
-    public void testBreakerGauges() throws Exception {
+    void testBreakerGauges() throws Exception {
         MetricsBean bean = newBean(MetricsBean.class);
         for (int i = 0; i < CircuitBreakerBean.REQUEST_VOLUME_THRESHOLD - 1; i++) {
             assertThrows(RuntimeException.class, () -> bean.exerciseGauges(false));
@@ -263,7 +263,7 @@ public class MetricsTest extends FaultToleranceTest {
     }
 
     @Test
-    public void testBreakerExceptionCounters() throws Exception {
+    void testBreakerExceptionCounters() throws Exception {
         MetricsBean bean = newBean(MetricsBean.class);
 
         // First failure
@@ -325,7 +325,7 @@ public class MetricsTest extends FaultToleranceTest {
     }
 
     @Test
-    public void testFallbackMetrics() throws Exception {
+    void testFallbackMetrics() throws Exception {
         MetricsBean bean = newBean(MetricsBean.class);
         assertThat(getCounter(bean, "fallback", FALLBACK_CALLS_TOTAL), is(0L));
         bean.fallback();
@@ -333,7 +333,7 @@ public class MetricsTest extends FaultToleranceTest {
     }
 
     @Test
-    public void testBulkheadMetrics() throws Exception {
+    void testBulkheadMetrics() throws Exception {
         MetricsBean bean = newBean(MetricsBean.class);
         CompletableFuture<String>[] calls = getAsyncConcurrentCalls(
             () -> bean.concurrent(200), BulkheadBean.TOTAL_CALLS);
@@ -353,7 +353,7 @@ public class MetricsTest extends FaultToleranceTest {
     }
 
     @Test
-    public void testBulkheadMetricsAsync() throws Exception {
+    void testBulkheadMetricsAsync() throws Exception {
         MetricsBean bean = newBean(MetricsBean.class);
         CompletableFuture<String>[] calls = getConcurrentCalls(
             () -> {

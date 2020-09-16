@@ -16,8 +16,10 @@
 
 package io.helidon.microprofile.faulttolerance;
 
+import javax.inject.Inject;
 import java.util.concurrent.CompletableFuture;
 
+import io.helidon.microprofile.tests.junit5.AddBean;
 import org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException;
 
 import org.junit.jupiter.api.Test;
@@ -29,70 +31,74 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 
 /**
- * Class TimeoutTest.
+ * Test beans with timeout methods.
  */
-public class TimeoutTest extends FaultToleranceTest {
+@AddBean(TimeoutBean.class)
+@AddBean(TimeoutNoRetryBean.class)
+class TimeoutTest extends FaultToleranceTest {
 
-    @Test
-    public void testForceTimeout() {
-        TimeoutBean bean = newBean(TimeoutBean.class);
-        assertThrows(TimeoutException.class, bean::forceTimeout);
+    @Inject
+    private TimeoutBean timeoutBean;
+
+    @Inject
+    private TimeoutNoRetryBean timeoutNoRetryBean;
+
+    @Override
+    void reset() {
+        timeoutBean.reset();
     }
 
     @Test
-    public void testForceTimeoutAsync() throws Exception {
-        TimeoutBean bean = newBean(TimeoutBean.class);
-        CompletableFuture<String> future = bean.forceTimeoutAsync();
+    void testForceTimeout() {
+        assertThrows(TimeoutException.class, timeoutBean::forceTimeout);
+    }
+
+    @Test
+    void testForceTimeoutAsync() throws Exception {
+        CompletableFuture<String> future = timeoutBean.forceTimeoutAsync();
         assertCompleteExceptionally(future, TimeoutException.class);
     }
 
     @Test
-    public void testNoTimeout() throws Exception {
-        TimeoutBean bean = newBean(TimeoutBean.class);
-        assertThat(bean.noTimeout(), is("success"));
+    void testNoTimeout() throws Exception {
+        assertThat(timeoutBean.noTimeout(), is("success"));
     }
 
     @Test
-    public void testForceTimeoutWithCatch() {
-        TimeoutBean bean = newBean(TimeoutBean.class);
-        assertThrows(TimeoutException.class, bean::forceTimeoutWithCatch);
+    void testForceTimeoutWithCatch() {
+        assertThrows(TimeoutException.class, timeoutBean::forceTimeoutWithCatch);
     }
 
     @Test
-    public void testTimeoutWithRetries() throws Exception {
-        TimeoutBean bean = newBean(TimeoutBean.class);
-        assertThat(bean.timeoutWithRetries(), is("success"));
+    void testTimeoutWithRetries() throws Exception {
+        assertThat(timeoutBean.timeoutWithRetries(), is("success"));
     }
 
     @Test
-    public void testTimeoutWithFallback() throws Exception {
-        TimeoutBean bean = newBean(TimeoutBean.class);
-        assertThat(bean.timeoutWithFallback(), is("fallback"));
+    void testTimeoutWithFallback() throws Exception {
+        assertThat(timeoutBean.timeoutWithFallback(), is("fallback"));
     }
 
     @Test
-    public void testTimeoutWithRetriesAndFallback() throws Exception {
-        TimeoutBean bean = newBean(TimeoutBean.class);
-        assertThat(bean.timeoutWithRetriesAndFallback(), is("fallback"));
+    void testTimeoutWithRetriesAndFallback() throws Exception {
+        assertThat(timeoutBean.timeoutWithRetriesAndFallback(), is("fallback"));
     }
 
     @Test
-    public void testForceTimeoutSleep() {
-        TimeoutNoRetryBean bean = newBean(TimeoutNoRetryBean.class);
+    void testForceTimeoutSleep() {
         long start = System.currentTimeMillis();
         try {
-            bean.forceTimeoutSleep();       // can interrupt
+            timeoutNoRetryBean.forceTimeoutSleep();       // can interrupt
         } catch (InterruptedException | TimeoutException e) {
             assertThat(System.currentTimeMillis() - start, is(lessThan(2000L)));
         }
      }
 
     @Test
-    public void testForceTimeoutLoop() {
-        TimeoutNoRetryBean bean = newBean(TimeoutNoRetryBean.class);
+    void testForceTimeoutLoop() {
         long start = System.currentTimeMillis();
         try {
-            bean.forceTimeoutLoop();        // cannot interrupt
+            timeoutNoRetryBean.forceTimeoutLoop();        // cannot interrupt
         } catch (TimeoutException e) {
             assertThat(System.currentTimeMillis() - start, is(greaterThanOrEqualTo(2000L)));
         }
