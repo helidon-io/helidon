@@ -19,7 +19,6 @@ package io.helidon.microprofile.graphql.server;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.math.BigInteger;
 import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -28,22 +27,20 @@ import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAccessor;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
 import java.util.logging.Logger;
 
 import javax.enterprise.inject.spi.CDI;
 
+import graphql.GraphQLException;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.PropertyDataFetcher;
-import graphql.GraphQLException;
 
 import static io.helidon.microprofile.graphql.server.FormattingHelper.formatDate;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.formatNumber;
@@ -77,11 +74,13 @@ public class DataFetcherUtils {
      * @param method {@link Method} to call
      * @param source defines the source for a @Source annotation - may be null
      * @param args   optional {@link SchemaArgument}s
+     * @param schema {@link Schema} that created this {@link DataFetcher}
      * @param <V>    value type
      * @return a new {@link DataFetcher}
      */
-    @SuppressWarnings( { "unchecked", "rawtypes" })
-    public static <V> DataFetcher<V> newMethodDataFetcher(Class<?> clazz, Method method, String source, SchemaArgument... args) {
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    public static <V> DataFetcher<V> newMethodDataFetcher(Schema schema, Class<?> clazz, Method method,
+                                                          String source, SchemaArgument... args) {
         Object instance = CDI.current().select(clazz).get();
 
         return environment -> {
@@ -104,6 +103,9 @@ public class DataFetcherUtils {
                     Object key = environment.getArgument(argument.getArgumentName());
                     if (key instanceof Map) {
                         // this means the type is an input type so convert it to the correct class instance
+                        String argumentType = argument.getArgumentType();
+                        Class<?> originalType = argument.getOriginalType();
+                        SchemaInputType inputType = schema.getInputTypeByName(argumentType);
                         listArgumentValues.add(JsonUtils.convertFromJson(JsonUtils.convertMapToJson((Map) key),
                                                                          argument.getOriginalType()));
                     } else if (key instanceof Collection) {
@@ -215,7 +217,7 @@ public class DataFetcherUtils {
     /**
      * An implementation of a {@link PropertyDataFetcher} which returns a formatted date.
      */
-    @SuppressWarnings( { "unchecked", "rawtypes" })
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public static class DateFormattingDataFetcher
             extends PropertyDataFetcher
             implements DateFormattingProvider {

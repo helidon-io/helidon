@@ -308,8 +308,8 @@ public class SchemaGenerator {
 
                 // check for existing DataFetcher
                 fd.setDataFetcher(DataFetcherUtils.newMethodDataFetcher(
-                        dm.method.getDeclaringClass(), dm.method, dm.getSource(),
-                        fd.getArguments().toArray(new SchemaArgument[0])));
+                        schema, dm.method.getDeclaringClass(), dm.method,
+                        dm.getSource(), fd.getArguments().toArray(new SchemaArgument[0])));
                 type.addFieldDefinition(fd);
 
                 // we are creating this as a type so ignore any Input annotation
@@ -581,7 +581,7 @@ public class SchemaGenerator {
                 if (!isFormatEmpty(format)) {
                     // a format exists on the method return type so format it after returning the value
                     final String graphQLType = getGraphQLType(fd.getReturnType());
-                    final DataFetcher methodDataFetcher = DataFetcherUtils.newMethodDataFetcher(clazz, method, null,
+                    final DataFetcher methodDataFetcher = DataFetcherUtils.newMethodDataFetcher(schema, clazz, method, null,
                                                                                                 fd.getArguments().toArray(
                                                                                                         new SchemaArgument[0]));
                     final String[] newFormat = new String[] { format[0], format[1], format[2] };
@@ -608,7 +608,7 @@ public class SchemaGenerator {
                     }
                 } else {
                     // no formatting, just call the method
-                    dataFetcher = DataFetcherUtils.newMethodDataFetcher(clazz, method, null,
+                    dataFetcher = DataFetcherUtils.newMethodDataFetcher(schema, clazz, method, null,
                                                                         fd.getArguments().toArray(new SchemaArgument[0]));
                 }
                 fd.setDataFetcher(dataFetcher);

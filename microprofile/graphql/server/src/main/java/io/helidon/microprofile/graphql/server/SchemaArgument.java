@@ -259,7 +259,7 @@ public class SchemaArgument
     public boolean isArrayReturnType() {
         return isArrayReturnType;
     }
-    
+
     /**
      * Indicates if the array return type is mandatory.
      * @return if the array return type is mandatory

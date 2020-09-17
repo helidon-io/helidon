@@ -17,8 +17,7 @@
 package io.helidon.microprofile.graphql.server;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -177,8 +176,23 @@ public class DateTimeIT extends AbstractGraphQLIT {
 
         mapResults = getAndAssertResult(executionContext.execute("mutation { echoLocalDate(dateArgument: \"17/02/1968\") }"));
         assertThat(mapResults.size(), is(1));
-        String result = (String) mapResults.get("echoLocalDate");
-        assertThat(result, is("1968-02-17"));
+        assertThat(mapResults.get("echoLocalDate"), is("1968-02-17"));
+
+        mapResults = getAndAssertResult(executionContext.execute("mutation { echoLocalDateAU(dateArgument: \"17/02/1968\") }"));
+        assertThat(mapResults.size(), is(1));
+        assertThat(mapResults.get("echoLocalDateAU"), is("17 Feb. 1968"));
+
+        mapResults = getAndAssertResult(executionContext.execute("mutation { echoLocalDateGB(dateArgument: \"17/02/1968\") }"));
+        assertThat(mapResults.size(), is(1));
+        assertThat(mapResults.get("echoLocalDateGB"), is("17 Feb 1968"));
+
+        mapResults = getAndAssertResult(executionContext.execute("query { queryLocalDateGB }"));
+        assertThat(mapResults.size(), is(1));
+        assertThat(mapResults.get("queryLocalDateGB"), is("17 Feb 1968"));
+
+        mapResults = getAndAssertResult(executionContext.execute("query { queryLocalDateAU }"));
+        assertThat(mapResults.size(), is(1));
+        assertThat(mapResults.get("queryLocalDateAU"), is("17 Feb. 1968"));
 
         Map<String, Object> results = executionContext.execute("mutation { echoLocalDate(dateArgument: \"Today\") }");
         List<Map<String, Object>> listErrors = (List<Map<String, Object>>) results.get(ExecutionContext.ERRORS);
@@ -187,8 +201,7 @@ public class DateTimeIT extends AbstractGraphQLIT {
 
         mapResults = getAndAssertResult(executionContext.execute("mutation { echoLocalTime(time: \"15:13:00\") }"));
         assertThat(mapResults.size(), is(1));
-        String localTime = (String) mapResults.get("echoLocalTime");
-        assertThat(localTime, is("15:13"));
+        assertThat(mapResults.get("echoLocalTime"), is("15:13"));
 
         mapResults = getAndAssertResult(
                 executionContext.execute("mutation { testDefaultFormatLocalDateTime(dateTime: \"2020-01-12T10:00:00\") }"));
@@ -196,12 +209,10 @@ public class DateTimeIT extends AbstractGraphQLIT {
         assertThat(mapResults.get("testDefaultFormatLocalDateTime"), is( "10:00:00 12-01-2020"));
 
         // TODO: https://github.com/eclipse/microprofile-graphql/issues/306 - 1.0.3 spec most likely
-//        mapResults = getAndAssertResult(
-//                executionContext.execute("query { transformedDate }"));
-//        assertThat(mapResults, is(notNullValue()));
-//        result = (String) mapResults.get("transformedDate");
-//        assertThat(result, is("16 Aug 2016"));
-
+        mapResults = getAndAssertResult(
+                executionContext.execute("query { transformedDate }"));
+        assertThat(mapResults, is(notNullValue()));
+        assertThat(mapResults.get("transformedDate"), is("16 Aug. 2016"));
     }
 
 }

@@ -167,7 +167,7 @@ public class SimpleQueriesAndMutations {
     }
 
     @Query
-    @DateFormat(value = "dd MMM yyyy")
+    @DateFormat(value = "dd MMM yyyy", locale = "en-AU")
     public LocalDate transformedDate() {
         String date = "2016-08-16";
         return LocalDate.parse(date);
@@ -185,6 +185,30 @@ public class SimpleQueriesAndMutations {
 
     @Mutation
     public LocalDate echoLocalDate(@DateFormat("dd/MM/yyyy") @Name("dateArgument") LocalDate date) {
+        return date;
+    }
+
+    @Mutation
+    @DateFormat(value = "dd MMM yyyy", locale = "en-GB")
+    public LocalDate echoLocalDateGB(@DateFormat(value = "dd/MM/yyyy") @Name("dateArgument") LocalDate date) {
+        return date;
+    }
+
+    @Query
+    @DateFormat(value = "dd MMM yyyy", locale = "en-GB")
+    public LocalDate queryLocalDateGB() {
+        return LocalDate.of(1968, 2, 17);
+    }
+
+    @Query
+    @DateFormat(value = "dd MMM yyyy", locale = "en-AU")
+    public LocalDate queryLocalDateAU() {
+        return LocalDate.of(1968, 2, 17);
+    }
+
+    @Mutation
+    @DateFormat(value = "dd MMM yyyy", locale = "en-AU")
+    public LocalDate echoLocalDateAU(@DateFormat(value = "dd/MM/yyyy") @Name("dateArgument") LocalDate date) {
         return date;
     }
 

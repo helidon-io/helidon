@@ -49,6 +49,4 @@ public class SchemaInputType
     public String toString() {
         return "InputType" + toStringInternal();
     }
-
-
 }

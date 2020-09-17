@@ -154,12 +154,7 @@ public interface ElementGenerator {
                 || BOOLEAN.equals(argumentType) || BIG_INTEGER.equals(argumentType)
                 || BIG_DECIMAL.equals(argumentType) || isJson) {
             // no quotes required
-            // Workaround for graphql profile TCK bug in 1.0.1 - https://github.com/eclipse/microprofile-graphql/pull/228
-            if (defaultValue.toString().contains(" name: \"Cape\"")) {
-                sb.append("{}");
-            } else {
-                sb.append(finalDefaultValue);
-            }
+            sb.append(finalDefaultValue);
         } else {
             sb.append(QUOTE)
                     .append(finalDefaultValue)

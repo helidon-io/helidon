@@ -400,14 +400,12 @@ public class FormattingHelper {
         if (originalResult == null) {
             return null;
         }
-        LOGGER.info("Formatting date value of " + originalResult + " with date formatter: " + dateTimeFormatter);
         if (originalResult instanceof Collection) {
             Collection formattedResult = new ArrayList();
             Collection originalCollection = (Collection) originalResult;
             originalCollection.forEach(e -> formattedResult.add(e instanceof TemporalAccessor ? dateTimeFormatter
                                                        .format((TemporalAccessor) e) : e)
             );
-            LOGGER.info("Formatted result = " + formattedResult);
             return formattedResult;
         } else {
             return originalResult instanceof TemporalAccessor
