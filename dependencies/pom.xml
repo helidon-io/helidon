@@ -55,7 +55,7 @@
         <version.lib.hikaricp>3.4.1</version.lib.hikaricp>
         <version.lib.inject>1</version.lib.inject>
         <version.lib.jackson>2.10.0</version.lib.jackson>
-        <version.lib.jaegertracing>0.35.0</version.lib.jaegertracing>
+        <version.lib.jaegertracing>0.35.5</version.lib.jaegertracing>
         <version.lib.jakarta-persistence-api>2.2.2</version.lib.jakarta-persistence-api>
         <version.lib.jandex>2.1.1.Final</version.lib.jandex>
         <version.lib.jaxb-api>2.3.0</version.lib.jaxb-api>
