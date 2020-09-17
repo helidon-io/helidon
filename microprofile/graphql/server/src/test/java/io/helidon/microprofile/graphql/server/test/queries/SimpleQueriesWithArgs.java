@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import io.helidon.microprofile.graphql.server.test.types.SimpleContactWithNumberFormats;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.json.bind.annotation.JsonbProperty;
@@ -80,6 +81,11 @@ public class SimpleQueriesWithArgs {
 
     @Query
     public UUID returnUUIDAsId(@Name("param1") @Id UUID value) {
+        return value;
+    }
+
+    @Query
+    public String echoString(@Name("String") String value) {
         return value;
     }
 
@@ -147,4 +153,10 @@ public class SimpleQueriesWithArgs {
     public int addNumbers(@Name("value1") int value1, @Name("value2") int value2) {
         return value1 + value2;
     }
+
+    @Query
+    public boolean canFindSimpleContactWithNumberFormats(@Name("contact") SimpleContactWithNumberFormats contact) {
+        return false;
+    }
+
 }

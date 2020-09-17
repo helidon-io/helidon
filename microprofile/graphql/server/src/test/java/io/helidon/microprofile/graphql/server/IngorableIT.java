@@ -54,6 +54,7 @@ public class IngorableIT extends AbstractGraphQLIT {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     public void testIgnorable() throws IOException {
         setupIndex(indexFileName, QueriesWithIgnorable.class);
         ExecutionContext executionContext =  new ExecutionContext(defaultContext);

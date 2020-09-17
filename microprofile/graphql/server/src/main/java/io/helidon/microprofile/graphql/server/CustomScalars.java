@@ -339,17 +339,4 @@ public class CustomScalars {
         .description("Custom: " + originalScalar.getDescription())
         .build();
     }
-
-    private static Object parserNumberFormat(Object dataFetcherResult) {
-        FormattedNumber formattedNumber = (FormattedNumber) dataFetcherResult;
-        NumberFormat format = formattedNumber.getFormat();
-        try {
-            return format.parseObject(formattedNumber.getFormattedValue());
-        } catch (ParseException e) {
-            throw new CoercingParseValueException(
-                    "Unable to serialize value '" + dataFetcherResult + "' using format '"
-                            + format + "'.");
-        }
-    }
-
 }

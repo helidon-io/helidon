@@ -55,7 +55,9 @@ public class SimpleContactWithNumberFormats {
         return age;
     }
 
-
+    public SimpleContactWithNumberFormats() {
+    }
+    
     public SimpleContactWithNumberFormats(Integer id,
                                           String name, Integer age,
                                           Float bankBalance,

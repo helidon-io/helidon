@@ -87,7 +87,7 @@
         <version.lib.microprofile-config>1.4</version.lib.microprofile-config>
         <version.lib.microprofile-health>2.2</version.lib.microprofile-health>
         <version.lib.microprofile-graphql>1.0.2</version.lib.microprofile-graphql>
-        <version.lib.microprofile-graphql-tck>1.0.2</version.lib.microprofile-graphql-tck>
+        <version.lib.microprofile-graphql-tck>1.0.3-SNAPSHOT</version.lib.microprofile-graphql-tck>
         <version.lib.microprofile-jwt>1.1.1</version.lib.microprofile-jwt>
         <version.lib.microprofile-metrics-api>2.3.2</version.lib.microprofile-metrics-api>
         <version.lib.microprofile-openapi-api>1.1.2</version.lib.microprofile-openapi-api>
@@ -598,7 +598,7 @@
             <dependency>
                 <groupId>org.eclipse.microprofile.graphql</groupId>
                 <artifactId>microprofile-graphql-tck</artifactId>
-                <version>${version.lib.microprofile-graphql}</version>
+                <version>${version.lib.microprofile-graphql-tck}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.microprofile.jwt</groupId>

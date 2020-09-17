@@ -20,6 +20,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.text.NumberFormat;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -29,6 +30,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAccessor;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
@@ -78,7 +80,7 @@ public class DataFetcherUtils {
      * @param <V>    value type
      * @return a new {@link DataFetcher}
      */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings("unchecked")
     public static <V> DataFetcher<V> newMethodDataFetcher(Schema schema, Class<?> clazz, Method method,
                                                           String source, SchemaArgument... args) {
         Object instance = CDI.current().select(clazz).get();
@@ -96,67 +98,10 @@ public class DataFetcherUtils {
                 }
             }
 
-            Context context = environment.getContext();
-
             if (args.length > 0) {
                 for (SchemaArgument argument : args) {
-                    Object key = environment.getArgument(argument.getArgumentName());
-                    if (key instanceof Map) {
-                        // this means the type is an input type so convert it to the correct class instance
-                        String argumentType = argument.getArgumentType();
-                        Class<?> originalType = argument.getOriginalType();
-                        SchemaInputType inputType = schema.getInputTypeByName(argumentType);
-                        listArgumentValues.add(JsonUtils.convertFromJson(JsonUtils.convertMapToJson((Map) key),
-                                                                         argument.getOriginalType()));
-                    } else if (key instanceof Collection) {
-                        // handle collection type - just working on simple String type for the moment
-                        // TODO: Need to handle collections of types
-                        // TODO: need to handle formatting
-                        // ensure we preserve the order
-                        listArgumentValues.add(argument.getOriginalType().equals(List.class)
-                                                       ? new ArrayList((Collection) key)
-                                                       : new TreeSet((Collection) key));
-                    } else {
-                        // standard type or enum
-                        Class<?> originalType = argument.getOriginalType();
-                        if (originalType.isEnum()) {
-                            Class<? extends Enum> enumClass = (Class<? extends Enum>) originalType;
-                            listArgumentValues.add(Enum.valueOf(enumClass, key.toString()));
-                        } else if (argument.getArgumentType().equals(ID)) {
-                            // convert back to original data type
-                            listArgumentValues.add(getOriginalIDValue(originalType, (String) key));
-                        } else {
-                            // check the format and convert it from a string to the original format
-                            String[] format = argument.getFormat();
-                            if (!isFormatEmpty(format)) {
-                                if (key == null) {
-                                    listArgumentValues.add(null);
-                                } else {
-                                    if (isDateTimeClass(argument.getOriginalType())) {
-                                        DateTimeFormatter dateFormatter = getCorrectDateFormatter(originalType.getName(),
-                                                                                                  format[1], format[0]);
-                                        listArgumentValues.add(
-                                                getOriginalDateTimeValue(originalType, dateFormatter.parse(key.toString())));
-                                    } else {
-                                        NumberFormat numberFormat = getCorrectNumberFormat(originalType.getName(),
-                                                                                           format[1], format[0]);
-                                        if (numberFormat != null) {
-                                            // convert to the original type
-                                            Number parsedValue = numberFormat.parse(key.toString());
-                                            Constructor<?> constructor = argument.getOriginalType()
-                                                    .getDeclaredConstructor(String.class);
-                                            listArgumentValues.add(constructor.newInstance(parsedValue.toString()));
-                                        } else {
-                                            listArgumentValues.add(key);
-                                        }
-                                    }
-                                }
-                            } else {
-                                // process value in case we have to convert between say a Double/Float as they are interchangeable
-                                listArgumentValues.add(getOriginalValue(originalType, key));
-                            }
-                        }
-                    }
+                    listArgumentValues.add(generateArgumentValue(schema, argument,
+                                                                 environment.getArgument(argument.getArgumentName())));
                 }
             }
 
@@ -168,12 +113,102 @@ public class DataFetcherUtils {
         };
     }
 
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    protected static Object generateArgumentValue(Schema schema, SchemaArgument argument, Object rawValue)
+        throws Exception{
+        if (rawValue instanceof Map) {
+            // this means the type is an input type so convert it to the correct class instance
+            String argumentType = argument.getArgumentType();
+            Class<?> originalType = argument.getOriginalType();
+            SchemaInputType inputType = schema.getInputTypeByName(argumentType);
+
+            Constructor<?> constructor = argument.getOriginalType().getDeclaredConstructor();
+
+            // loop through the map and convert each entry
+            Map<String, Object> map = (Map) rawValue;
+            Map<String, Object> mapConverted = new HashMap<>();
+
+            for (Map.Entry<String, Object> entry : map.entrySet()) {
+                // retrieve the Field Definition
+                String fdName = entry.getKey();
+                Object value  = entry.getValue();
+                SchemaFieldDefinition fd = inputType.getFieldDefinitionByName(fdName);
+
+                // check to see if the Field Definition return type is an input type
+                // TODO: ^^^
+                mapConverted.put(fdName, parseArgumentValue(fd.getOriginalType(), fd.getReturnType(), value, fd.getFormat()));
+            }
+            
+            return JsonUtils.convertFromJson(JsonUtils.convertMapToJson((Map) rawValue), argument.getOriginalType());
+
+        } else if (rawValue instanceof Collection) {
+            // handle collection type - just working on simple String type for the moment
+            // TODO: Need to handle collections of types
+            // TODO: need to handle formatting
+            // ensure we preserve the order
+            return argument.getOriginalType().equals(List.class)
+                                           ? new ArrayList((Collection) rawValue)
+                                           : new TreeSet((Collection) rawValue);
+        } else {
+            return parseArgumentValue(argument.getOriginalType(), argument.getArgumentType(), rawValue, argument.getFormat());
+        }
+    }
+
+    /**
+     * Parse the given {@link SchemaArgument} and key and return the correct value to match the method argument.
+     *
+     * @param originalType original type
+     * @param argumentType argument type
+     * @param rawValue the raw value
+     * @param format format
+     * @return the parsed value or the original value if no change
+     */
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    protected static Object parseArgumentValue(Class<?> originalType, String argumentType, Object rawValue, String[] format)
+            throws Exception {
+
+        if (originalType.isEnum()) {
+            Class<? extends Enum> enumClass = (Class<? extends Enum>) originalType;
+            return Enum.valueOf(enumClass, rawValue.toString());
+        } else if (argumentType.equals(ID) && rawValue != null) {
+            // convert back to original data type
+            return getOriginalIDValue(originalType, rawValue.toString());
+        } else {
+            // check the format and convert it from a string to the original format
+            if (!isFormatEmpty(format)) {
+                if (rawValue == null) {
+                    return null;
+                } else {
+                    if (isDateTimeClass(originalType)) {
+                        DateTimeFormatter dateFormatter = getCorrectDateFormatter(originalType.getName(),
+                                                                                  format[1], format[0]);
+                        return getOriginalDateTimeValue(originalType, dateFormatter.parse(rawValue.toString()));
+                    } else {
+                        NumberFormat numberFormat = getCorrectNumberFormat(originalType.getName(),
+                                                                           format[1], format[0]);
+                        if (numberFormat != null) {
+                            // convert to the original type
+                            Number parsedValue = numberFormat.parse(rawValue.toString());
+                            Constructor<?> constructor = originalType
+                                    .getDeclaredConstructor(String.class);
+                            return constructor.newInstance(parsedValue.toString());
+                        } else {
+                            return rawValue;
+                        }
+                    }
+                }
+            } else {
+                // process value in case we have to convert between say a Double/Float as they are interchangeable
+                return getOriginalValue(originalType, rawValue);
+            }
+        }
+    }
+
     /**
      * An implementation of a {@link PropertyDataFetcher} which returns a formatted number.
      */
     public static class NumberFormattingDataFetcher
-            extends PropertyDataFetcher
-            implements NumberFormattingProvider {
+            extends PropertyDataFetcher {
 
         /**
          * {@link NumberFormat} to format with.
@@ -207,20 +242,14 @@ public class DataFetcherUtils {
         public Object get(DataFetchingEnvironment environment) {
             return formatNumber(super.get(environment), isScalar, numberFormat);
         }
-
-        @Override
-        public NumberFormat getNumberFormat() {
-            return numberFormat;
-        }
     }
 
     /**
      * An implementation of a {@link PropertyDataFetcher} which returns a formatted date.
      */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings( { "unchecked", "rawtypes" })
     public static class DateFormattingDataFetcher
-            extends PropertyDataFetcher
-            implements DateFormattingProvider {
+            extends PropertyDataFetcher {
 
         /**
          * {@link DateTimeFormatter} to format with.
@@ -243,11 +272,6 @@ public class DataFetcherUtils {
         @Override
         public Object get(DataFetchingEnvironment environment) {
             return formatDate(super.get(environment), dateTimeFormatter);
-        }
-
-        @Override
-        public DateTimeFormatter getDateTimeFormat() {
-            return dateTimeFormatter;
         }
     }
 

@@ -184,6 +184,21 @@ public class SchemaType
         listSchemaFieldDefinitions.add(schemaFieldDefinition);
     }
 
+    /**
+     * Return a {@link SchemaFieldDefinition} that matches the name.
+     *
+     * @param fdName type name to match
+     * @return a {@link SchemaType} that matches the type name or null if none found
+     */
+    public SchemaFieldDefinition getFieldDefinitionByName(String fdName) {
+        for (SchemaFieldDefinition fieldDefinition : listSchemaFieldDefinitions) {
+            if (fieldDefinition.getName().equals(fdName)) {
+                return fieldDefinition;
+            }
+        }
+        return null;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

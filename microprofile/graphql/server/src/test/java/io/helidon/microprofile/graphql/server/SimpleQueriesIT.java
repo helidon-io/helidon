@@ -57,7 +57,6 @@ public class SimpleQueriesIT extends AbstractGraphQLIT {
                                                                 .addBeanClass(SimpleContactWithSelf.class)
                                                                 .addBeanClass(AbstractVehicle.class)
                                                                 .addBeanClass(TestDB.class)
-
                                                                 .addExtension(new GraphQLCdiExtension()));
 
     @Test
