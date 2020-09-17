@@ -17,15 +17,23 @@
 package io.helidon.microprofile.messaging.health;
 
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
+import io.helidon.common.reactive.Single;
+
 public class TestSubscriber<T> implements Subscriber<T> {
     private Subscription subscription;
+    private final CompletableFuture<Throwable> error = new CompletableFuture<>();
 
     public void cancel() {
         Optional.ofNullable(subscription).ifPresent(Subscription::cancel);
+    }
+
+    Single<Throwable> error(){
+        return Single.create(error);
     }
 
     @Override
@@ -40,7 +48,7 @@ public class TestSubscriber<T> implements Subscriber<T> {
 
     @Override
     public void onError(final Throwable t) {
-
+        error.complete(t);
     }
 
     @Override

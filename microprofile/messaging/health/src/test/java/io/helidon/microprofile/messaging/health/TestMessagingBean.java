@@ -16,6 +16,11 @@
 
 package io.helidon.microprofile.messaging.health;
 
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Named;
+
+import io.helidon.common.reactive.BufferedEmittingPublisher;
+
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
 import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
@@ -23,36 +28,34 @@ import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.eclipse.microprofile.reactive.streams.operators.SubscriberBuilder;
 import org.reactivestreams.FlowAdapters;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Named;
-
-import io.helidon.common.reactive.BufferedEmittingPublisher;
-
 @ApplicationScoped
 @Named("testBean")
 public class TestMessagingBean {
-    private BufferedEmittingPublisher<String> emitter1 = BufferedEmittingPublisher.create();
-    private BufferedEmittingPublisher<String> emitter2 = BufferedEmittingPublisher.create();
-    private TestSubscriber<String> subscriber1 = new TestSubscriber<>();
-    private TestSubscriber<String> subscriber2 = new TestSubscriber<>();
 
-    @Outgoing("test-channel-1")
-    public PublisherBuilder<String> channel1Out(){
-        return ReactiveStreams.fromPublisher(FlowAdapters.toPublisher(emitter1)).onError(t -> System.out.println(t.getMessage()));
+    static final String CHANNEL_1 = "test-channel-1";
+    static final String CHANNEL_2 = "test-channel-2";
+    private final BufferedEmittingPublisher<String> emitter1 = BufferedEmittingPublisher.create();
+    private final BufferedEmittingPublisher<String> emitter2 = BufferedEmittingPublisher.create();
+    private final TestSubscriber<String> subscriber1 = new TestSubscriber<>();
+    private final TestSubscriber<String> subscriber2 = new TestSubscriber<>();
+
+    @Outgoing(CHANNEL_1)
+    public PublisherBuilder<String> channel1Out() {
+        return ReactiveStreams.fromPublisher(FlowAdapters.toPublisher(emitter1));
     }
 
-    @Incoming("test-channel-1")
-    public SubscriberBuilder<String, Void> channel1In(){
+    @Incoming(CHANNEL_1)
+    public SubscriberBuilder<String, Void> channel1In() {
         return ReactiveStreams.fromSubscriber(subscriber1);
     }
 
-    @Outgoing("test-channel-2")
-    public PublisherBuilder<String> channel2Out(){
+    @Outgoing(CHANNEL_2)
+    public PublisherBuilder<String> channel2Out() {
         return ReactiveStreams.fromPublisher(FlowAdapters.toPublisher(emitter2));
     }
 
-    @Incoming("test-channel-2")
-    public SubscriberBuilder<String, Void> channel2In(){
+    @Incoming(CHANNEL_2)
+    public SubscriberBuilder<String, Void> channel2In() {
         return ReactiveStreams.fromSubscriber(subscriber2);
     }
 
