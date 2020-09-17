@@ -76,10 +76,6 @@ abstract class SecurityFilterCommon {
             return;
         }
 
-        // The following two lines are not possible in JAX-RS or Jersey - we would have to touch
-        // underlying web server's request...
-        //.addAttribute("userIp", req.remoteAddress())
-        //.addAttribute("userPort", req.remotePort())
         URI requestUri = request.getUriInfo().getRequestUri();
         String query = requestUri.getQuery();
         String origRequest;
@@ -91,13 +87,25 @@ abstract class SecurityFilterCommon {
         Map<String, List<String>> allHeaders = new HashMap<>(filterContext.getHeaders());
         allHeaders.put(Security.HEADER_ORIG_URI, List.of(origRequest));
 
-        SecurityEnvironment env = SecurityEnvironment.builder(security.serverTime())
+        SecurityEnvironment.Builder envBuilder = SecurityEnvironment.builder(security.serverTime())
                 .path(filterContext.getResourcePath())
                 .targetUri(filterContext.getTargetUri())
                 .method(filterContext.getMethod())
                 .headers(allHeaders)
-                .addAttribute("resourceType", filterContext.getResourceName())
-                .build();
+                .addAttribute("resourceType", filterContext.getResourceName());
+
+        // The following two lines are not possible in JAX-RS or Jersey - we would have to touch
+        // underlying web server's request...
+        String remoteHost = (String) request.getProperty("io.helidon.jaxrs.remote-host");
+        Integer remotePort = (Integer) request.getProperty("io.helidon.jaxrs.remote-port");
+        if (remoteHost != null) {
+            envBuilder.addAttribute("userIp", remoteHost);
+        }
+        if (remotePort != null) {
+            envBuilder.addAttribute("userPort", remotePort);
+        }
+
+        SecurityEnvironment env = envBuilder.build();
 
         EndpointConfig ec = EndpointConfig.builder()
                 .securityLevels(filterContext.getMethodSecurity().getSecurityLevels())
