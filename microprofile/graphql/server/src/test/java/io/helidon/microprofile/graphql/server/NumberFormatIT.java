@@ -84,7 +84,7 @@ public class NumberFormatIT extends AbstractGraphQLIT {
 
         mapResults = getAndAssertResult(executionContext.execute("query { echoBigDecimalUsingFormat(param1: \"BD-123\") }"));
         assertThat(mapResults, is(notNullValue()));
-        assertThat(mapResults.get("echoBigDecimalUsingFormat"), is(BigDecimal.valueOf(123)));
+        assertThat(mapResults.get("echoBigDecimalUsingFormat"), is(BigDecimal.valueOf(123.0)));
 
         mapResults = getAndAssertResult(executionContext.execute("mutation { echoBankBalance(bankBalance: \"$ 106,963.87\") }"));
         assertThat(mapResults, is(notNullValue()));

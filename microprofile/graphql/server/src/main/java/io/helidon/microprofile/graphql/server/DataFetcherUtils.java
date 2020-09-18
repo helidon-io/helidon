@@ -19,6 +19,8 @@ package io.helidon.microprofile.graphql.server;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.text.NumberFormat;
 
 import java.time.LocalDate;
@@ -139,7 +141,7 @@ public class DataFetcherUtils {
                 mapConverted.put(fdName, parseArgumentValue(fd.getOriginalType(), fd.getReturnType(), value, fd.getFormat()));
             }
             
-            return JsonUtils.convertFromJson(JsonUtils.convertMapToJson((Map) rawValue), argument.getOriginalType());
+            return JsonUtils.convertFromJson(JsonUtils.convertMapToJson(mapConverted), argument.getOriginalType());
 
         } else if (rawValue instanceof Collection) {
             // handle collection type - just working on simple String type for the moment
@@ -187,11 +189,7 @@ public class DataFetcherUtils {
                         NumberFormat numberFormat = getCorrectNumberFormat(originalType.getName(),
                                                                            format[1], format[0]);
                         if (numberFormat != null) {
-                            // convert to the original type
-                            Number parsedValue = numberFormat.parse(rawValue.toString());
-                            Constructor<?> constructor = originalType
-                                    .getDeclaredConstructor(String.class);
-                            return constructor.newInstance(parsedValue.toString());
+                             return getOriginalValue(originalType, numberFormat.parse(rawValue.toString()));
                         } else {
                             return rawValue;
                         }
@@ -302,6 +300,37 @@ public class DataFetcherUtils {
      * @return the value as the original type
      */
     private static Object getOriginalValue(Class<?> originalType, Object key) {
+        Number numberKey = null;
+        if (key instanceof Number) {
+            // is a number that has be un-formatted
+            numberKey = (Number) key;
+        } else if (key instanceof String && originalType.isAssignableFrom(Number.class)) {
+            // Is a number that has had no format
+            try {
+                Constructor<?> constructor = originalType.getDeclaredConstructor(String.class);
+                numberKey = (Number) constructor.newInstance(key);
+            } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException eIgnore) {
+                // cannot find a constructor with String arg
+            }
+        }
+        
+        if (numberKey != null) {
+            return  originalType.equals(Float.class)  ? Float.valueOf(numberKey.floatValue())
+                  : originalType.equals(float.class)  ? numberKey.floatValue()
+                  : originalType.equals(Integer.class) ? Integer.valueOf(numberKey.intValue())
+                  : originalType.equals(int.class) ? numberKey.intValue()
+                  : originalType.equals(Long.class) ? Long.valueOf(numberKey.longValue())
+                  : originalType.equals(long.class) ? numberKey.longValue()
+                  : originalType.equals(Double.class) ? Double.valueOf(numberKey.doubleValue())
+                  : originalType.equals(double.class) ? numberKey.doubleValue()
+                  : originalType.equals(Byte.class) ? Byte.valueOf(numberKey.byteValue())
+                  : originalType.equals(byte.class) ? numberKey.byteValue()
+                  : originalType.equals(Short.class) ? Short.valueOf(numberKey.shortValue())
+                  : originalType.equals(short.class) ? numberKey.shortValue()
+                  : originalType.equals(BigDecimal.class) ? BigDecimal.valueOf(numberKey.doubleValue())
+                  : originalType.equals(BigInteger.class) ? BigInteger.valueOf(numberKey.longValue())
+                  : key;
+        }
         if (originalType.equals(Float.class) || originalType.equals(float.class)) {
             // key could be a float or double
             return key instanceof Double ? Float.valueOf(key.toString()) : (Float) key;

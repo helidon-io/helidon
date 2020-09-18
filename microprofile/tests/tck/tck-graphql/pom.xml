@@ -78,7 +78,7 @@
                                     <outputDirectory>${project.build.directory}/test-classes</outputDirectory>
                                 </artifactItem>
                             </artifactItems>
-                            <excludes>**/tests/,**/dynamic/,**/*Test.class,**/beans.xml</excludes>
+                            <excludes>**/dynamic/,**/*Test.class,**/beans.xml</excludes>
                         </configuration>
                     </execution>
                 </executions>

@@ -16,6 +16,8 @@
 
 package io.helidon.microprofile.graphql.server.test.queries;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.LocalDate;
 import java.util.ArrayList;
 
@@ -28,6 +30,7 @@ import java.util.stream.Collectors;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContactWithNumberFormats;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import javax.json.bind.annotation.JsonbNumberFormat;
 import javax.json.bind.annotation.JsonbProperty;
 
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
@@ -38,6 +41,7 @@ import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Id;
 import org.eclipse.microprofile.graphql.Name;
+import org.eclipse.microprofile.graphql.NumberFormat;
 import org.eclipse.microprofile.graphql.Query;
 
 /**
@@ -60,6 +64,21 @@ public class SimpleQueriesWithArgs {
     }
 
     @Query
+    public int returnIntPrimitiveAsId(@Name("param1") @Id int value) {
+        return value;
+    }
+
+    @Query
+    public int returnIntPrimitiveAsIdWithFormat(@JsonbNumberFormat("0 'hello'") @Name("param1") @Id int value) {
+        return value;
+    }
+
+    @Query
+    public Integer returnIntegerAsIdWithFormat(@NumberFormat("0 'format'") @Name("param1") @Id Integer value) {
+        return value;
+    }
+
+    @Query
     public Integer returnIntAsId(@Name("param1") @Id int value) {
         return value;
     }
@@ -75,7 +94,17 @@ public class SimpleQueriesWithArgs {
     }
 
     @Query
+    public Long returnLongAsIdWithFormat(@NumberFormat("#######-Long") @Name("param1") @Id Long value) {
+        return value;
+    }
+
+    @Query
     public long returnLongPrimitiveAsId(@Name("param1") @Id long value) {
+        return value;
+    }
+
+    @Query
+    public long returnLongPrimitiveAsIdWithFormat(@NumberFormat("#######-long") @Name("param1") @Id long value) {
         return value;
     }
 
@@ -86,6 +115,138 @@ public class SimpleQueriesWithArgs {
 
     @Query
     public String echoString(@Name("String") String value) {
+        return value;
+    }
+
+    @Query
+    public int echoInt(@Name("value") int value) {
+        return value;
+    }
+
+    @Query
+    public Integer echoIntegerObject(@Name("value") Integer value) {
+        return value;
+    }
+
+    @Query
+    public int echoIntWithFormat(@NumberFormat("0 'value'") @Name("value") int value) {
+        return value;
+    }
+
+    @Query
+    public Integer echoIntegerObjectWithFormat(@NumberFormat("0 'value'") @Name("value") Integer value) {
+        return value;
+    }
+
+    @Query
+    public double echoDouble(@Name("value") double value) {
+        return value;
+    }
+
+    @Query
+    public double echoDoubleWithFormat(@NumberFormat("#####-format") @Name("value") double value) {
+        return value;
+    }
+
+    @Query
+    public Double echoDoubleObjectWithFormat(@NumberFormat("#####-format") @Name("value") Double value) {
+        return value;
+    }
+
+    @Query
+    public Double echoDoubleObject(@Name("value") Double value) {
+        return value;
+    }
+
+    @Query
+    public float echoFloat(@Name("value") float value) {
+        return value;
+    }
+
+    @Query
+    public float echoFloatWithFormat(@JsonbNumberFormat(value = "¤ 000.00", locale = "en-AU")
+                                     @Name("value") float value) {
+        return value;
+    }
+
+    @Query
+    public Float echoFloatObjectWithFormat(@JsonbNumberFormat(value = "¤ 000.00", locale = "en-AU")
+                                     @Name("value") Float value) {
+        return value;
+    }
+
+    @Query
+    public Float echoFloatObject(@Name("value") Float value) {
+        return value;
+    }
+
+    @Query
+    public byte echoByte(@Name("value") byte value) {
+        return value;
+    }
+
+    @Query
+    public Byte echoByteObject(@Name("value") Byte value) {
+        return value;
+    }
+
+    @Query
+    public long echoLong(@Name("value") long value) {
+        return value;
+    }
+
+    @Query
+    public long echoLongWithFormat(@NumberFormat("Long-##########") @Name("value") long value) {
+        return value;
+    }
+
+    @Query
+    public Long echoLongObjectWithFormat(@NumberFormat("Long-##########") @Name("value") Long value) {
+        return value;
+    }
+
+    @Query
+    public Long echoLongObject(@Name("value") Long value) {
+        return value;
+    }
+
+    @Query
+    public boolean echoBoolean(@Name("value") boolean value) {
+        return value;
+    }
+
+    @Query
+    public Boolean echoBooleanObject(@Name("value") Boolean value) {
+        return value;
+    }
+
+    @Query
+    public char echoChar(@Name("value") char value) {
+        return value;
+    }
+
+    @Query
+    public Character echoCharacterObject(@Name("value") Character value) {
+        return value;
+    }
+
+    @Query
+    public BigDecimal echoBigDecimal(@Name("value") BigDecimal value) {
+        return value;
+    }
+
+    @Query
+    public BigDecimal echoBigDecimalWithFormat(@NumberFormat("######.##-BigDecimal") @Name("value") BigDecimal value) {
+        return value;
+    }
+
+    @Query
+    public BigInteger echoBigInteger(@Name("value") BigInteger value) {
+        return value;
+    }
+
+    @Query
+    public BigInteger echoBigIntegerWithFormat(@NumberFormat("######-BigInteger") @Name("value") BigInteger value) {
         return value;
     }
 

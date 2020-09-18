@@ -257,8 +257,7 @@ public class FormattingHelper {
      */
     protected static String[] getMethodParameterFormat(JandexUtils jandexUtils, String clazz, String methodName,
                                                        int paramNumber) {
-
-        LOGGER.finest("getMethodParameterFormat(): Class = " + clazz + ", method = " + methodName + ", paramNumber = " + paramNumber);
+        
         if (jandexUtils.hasIndex()) {
             AnnotationInstance dateFormat1 =
                     jandexUtils.getMethodParameterAnnotation(clazz, methodName, paramNumber, JSONB_DATE_FORMAT);

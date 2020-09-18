@@ -38,6 +38,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -102,8 +103,7 @@ class DataFetcherUtilsIT
         ExecutionContext executionContext = new ExecutionContext(defaultContext);
         Schema schema = executionContext.getSchema();
 
-        assertArgumentResult(schema, "echoString", "String", "string-value", "string-value");
-
+        // ID types
         assertArgumentResult(schema, "returnIntegerAsId", "param1", 1, 1);
 
         UUID uuid = UUID.randomUUID();
@@ -112,7 +112,75 @@ class DataFetcherUtilsIT
         assertArgumentResult(schema, "returnStringAsId", "param1", "abc", "abc");
         assertArgumentResult(schema, "returnLongAsId", "param1", 1L, 1L);
         assertArgumentResult(schema, "returnLongPrimitiveAsId", "param1", 1L, 1L);
-        assertArgumentResult(schema, "returnLongPrimitiveAsId", "param1", 1L, 1L);
+        assertArgumentResult(schema, "returnIntPrimitiveAsId", "param1", 2, 2);
+
+        // primitive types
+        assertArgumentResult(schema, "echoString", "String", "string-value", "string-value");
+        assertArgumentResult(schema, "echoInt", "value", 1, 1);
+        assertArgumentResult(schema, "echoDouble", "value", 100d, 100d);
+        assertArgumentResult(schema, "echoFloat", "value", 1.1f, 1.1f);
+        assertArgumentResult(schema, "echoByte", "value", (byte) 10, (byte) 10);
+        assertArgumentResult(schema, "echoLong", "value", 123L, 123L);
+        assertArgumentResult(schema, "echoBoolean", "value", true, true);
+        assertArgumentResult(schema, "echoBoolean", "value", false, false);
+        assertArgumentResult(schema, "echoChar", "value", 'x', 'x');
+
+        // Object types
+        assertArgumentResult(schema, "echoIntegerObject", "value", 1, 1);
+        assertArgumentResult(schema, "echoDoubleObject", "value", 100d, 100d);
+        assertArgumentResult(schema, "echoFloatObject", "value", 1.1f, 1.1f);
+        assertArgumentResult(schema, "echoFloatObject", "value", 1.1f, 1.1f);
+        assertArgumentResult(schema, "echoByteObject", "value", (byte) 10, (byte) 10);
+        assertArgumentResult(schema, "echoLongObject", "value", 123L, 123L);
+        assertArgumentResult(schema, "echoBooleanObject", "value", true, true);
+        assertArgumentResult(schema, "echoBooleanObject", "value", false, false);
+        assertArgumentResult(schema, "echoCharacterObject", "value", 'x', 'x');
+
+        assertArgumentResult(schema, "echoBigDecimal", "value", BigDecimal.valueOf(100.12), BigDecimal.valueOf(100.12));
+        assertArgumentResult(schema, "echoBigInteger", "value", BigInteger.valueOf(100), BigInteger.valueOf(100));
+
+        // Date/Time/DateTime are dealt with in DateTimeIT.java
+    }
+
+    @Test
+    public void testSimpleTypesWithFormats() throws Exception {
+        setupIndex(indexFileName, SimpleQueriesWithArgs.class, SimpleContact.class);
+        ExecutionContext executionContext = new ExecutionContext(defaultContext);
+        Schema schema = executionContext.getSchema();
+
+        // primitives
+        assertArgumentResult(schema, "echoIntWithFormat", "value", "100 value", 100);
+        assertArgumentResult(schema, "echoDoubleWithFormat", "value", "11-format", 11d);
+        assertArgumentResult(schema, "echoFloatWithFormat", "value", "$ 123.23", 123.23f);
+        assertArgumentResult(schema, "echoLongWithFormat", "value", "Long-123456", 123456L);
+
+        // objects
+        assertArgumentResult(schema, "echoIntegerObjectWithFormat", "value", "100 value", 100);
+        assertArgumentResult(schema, "echoDoubleObjectWithFormat", "value", "11-format", 11d);
+        assertArgumentResult(schema, "echoFloatObjectWithFormat", "value", "$ 123.23", 123.23f);
+        assertArgumentResult(schema, "echoLongObjectWithFormat", "value", "Long-123456", 123456L);
+
+        assertArgumentResult(schema, "echoBigDecimalWithFormat", "value", "100-BigDecimal", BigDecimal.valueOf(100.0));
+        assertArgumentResult(schema, "echoBigIntegerWithFormat", "value", "100-BigInteger", BigInteger.valueOf(100));
+
+        // ID
+        assertArgumentResult(schema, "returnIntegerAsIdWithFormat", "param1", "1 format", 1);
+        assertArgumentResult(schema, "returnLongAsIdWithFormat", "param1", "1-Long", 1L);
+        assertArgumentResult(schema, "returnLongPrimitiveAsIdWithFormat", "param1", "2-long", 2L);
+        assertArgumentResult(schema, "returnIntPrimitiveAsIdWithFormat", "param1", "3 hello", 3);
+        }
+
+    @Test
+    public void testArrays() {
+
+    }
+    @Test
+    public void testArraysAndCollections() {
+
+    }
+
+    @Test
+    public void testObjectGraphs() {
 
     }
 
