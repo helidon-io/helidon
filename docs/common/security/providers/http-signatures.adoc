@@ -108,7 +108,7 @@ The following table shows all configuration options of the provider and their de
 |`inbound.keys.*.algorithm` |according to other configuration |`hmac-sha256` or `rsa-sha256` is assumed if other configuration options for that type are set
 |`inbound.keys.*.hmac.secret` |{nbsp} |Secret shared by the service that signed the request and this service for `hmac-sha256` algorithm
 |`inbound.keys.*.public-key` |{nbsp} |Public key configuration, implies `rsa-sha256` algorithm
-|`inbound.keys.*.public-key.keystore |{nbsp} |Keystore configuration for public key - full configuration as defined by `KeyStore` class
+|`inbound.keys.*.public-key.keystore` |{nbsp} |Keystore configuration for public key - full configuration as defined by `KeyStore` class
 |`outbound` |{nbsp} |A list of outbound configurations
 |`outbound.*.name` |{nbsp} |Required name of outbound configuration
 |`outbound.*.username` |{nbsp} |Optional username used for outbound security; if not provided, current identity is propagated
@@ -118,10 +118,10 @@ The following table shows all configuration options of the provider and their de
 |`outbound.*.paths` |any path |An array of paths this outbound configuration should be used for (such as `/greet`), can be a regular expression
 |`outbound.*.methods` |any method |An array of HTTP methods this outbound configuration should be used for
 |`outbound.*.signature` |{nbsp} |Configuration related to outbound signature configuration
-|`outbound.*.signature.key-id |{nbsp} |Key id to use in the outbound signature (to map to appropriate public key in target service's configuration)
-|`outbound.*.signature.hmac.secret |{nbsp} |Shared secret for hmac
-|`outbound.*.signature.private-key |{nbsp} |Private key configuration for rsa based signatures
-|`outbound.*.signature.private-key.keystore |{nbsp} |Keystore configuration for private key - full configuration as defined by `KeyStore` class
+|`outbound.*.signature.key-id` |{nbsp} |Key id to use in the outbound signature (to map to appropriate public key in target service's configuration)
+|`outbound.*.signature.hmac.secret` |{nbsp} |Shared secret for hmac
+|`outbound.*.signature.private-key` |{nbsp} |Private key configuration for rsa based signatures
+|`outbound.*.signature.private-key.keystore` |{nbsp} |Keystore configuration for private key - full configuration as defined by `KeyStore` class
 |===
 
 ==== Signature basics

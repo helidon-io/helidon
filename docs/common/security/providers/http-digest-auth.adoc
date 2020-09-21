@@ -89,7 +89,7 @@ See https://tools.ietf.org/html/rfc7616[].
 *Authentication of request*
 
 When a request is received without the `Authorization: digest ....` header, a challenge is returned to provide such
-authentication.
+authentication using `WWW-Authenticate` header.
 
 When a request is received with the `Authorization: digest ....` header, the request is validated
 against configured users (and users obtained from custom service if any provided).
