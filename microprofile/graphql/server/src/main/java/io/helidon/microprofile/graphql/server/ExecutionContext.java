@@ -159,6 +159,11 @@ public class ExecutionContext {
     private Config config;
 
     /**
+     * Schema printer.
+     */
+    private SchemaPrinter schemaPrinter;
+
+    /**
      * Return the {@link GraphQLSchema} instance created.
      *
      * @return the {@link GraphQLSchema} instance
@@ -191,8 +196,9 @@ public class ExecutionContext {
             SchemaPrinter.Options options = SchemaPrinter.Options
                     .defaultOptions()
                     .includeDirectives(false)
+                    .useAstDefinitions(false)
                     .includeScalarTypes(true);
-            SchemaPrinter schemaPrinter = new SchemaPrinter(options);
+            schemaPrinter = new SchemaPrinter(options);
 
             GraphQL.Builder builder = GraphQL.newGraphQL(this.graphQLSchema)
                     .subscriptionExecutionStrategy(new SubscriptionExecutionStrategy());
@@ -400,6 +406,14 @@ public class ExecutionContext {
      */
     public Config getConfig() {
         return config;
+    }
+
+    /**
+     * Return the {@link SchemaPrinter} for this {@link ExecutionContext}.
+     * @return the {@link SchemaPrinter} for this {@link ExecutionContext}
+     */
+    public SchemaPrinter getSchemaPrinter() {
+        return schemaPrinter;
     }
 
     /**

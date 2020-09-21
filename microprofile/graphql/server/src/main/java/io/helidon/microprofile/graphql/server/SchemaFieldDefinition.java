@@ -96,6 +96,11 @@ public class SchemaFieldDefinition
     private boolean defaultFormatApplied;
 
     /**
+     * Indicates if the format is of type JsonB.
+     */
+    private boolean isJsonbFormat;
+
+    /**
      * Construct a {@link SchemaFieldDefinition}.
      *
      * @param name                  field definition name
@@ -349,6 +354,22 @@ public class SchemaFieldDefinition
         return defaultFormatApplied;
     }
 
+    /**
+     * Set if the format is of type JsonB.
+     * @param isJsonbFormat if the format is of type JsonB
+     */
+    public void setJsonbFormat(boolean isJsonbFormat) {
+        this.isJsonbFormat = isJsonbFormat;
+    }
+
+    /**
+     * Returns true if the format is of type JsonB.
+     * @return true if the format is of type JsonB
+     */
+    public boolean isJsonbFormat() {
+        return isJsonbFormat;
+    }
+
     @Override
     public String toString() {
         return "FieldDefinition{"
@@ -363,6 +384,7 @@ public class SchemaFieldDefinition
                 + ", defaultFormatApplied=" + defaultFormatApplied
                 + ", originalArrayType=" + originalArrayType
                 + ", format=" + Arrays.toString(format)
+                + ", isJsonbFormat=" + isJsonbFormat
                 + ", description='" + getDescription() + '\'' + '}';
     }
 }

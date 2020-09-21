@@ -326,9 +326,15 @@ public class FormattingHelper {
         return NO_FORMATTING;
     }
 
-    protected boolean isJsonBAnnotationPresent(JandexUtils jandexUtils, String clazz, String methodName) {
-        return jandexUtils.getMethodAnnotation(clazz, methodName, JSONB_DATE_FORMAT) != null
-                || jandexUtils.getMethodAnnotation(clazz, methodName, JSONB_NUMBER_FORMAT) != null
+    /**
+     * Indicates if either {@link JsonbNumberFormat} or {@link JsonbDateFormat} are present.
+     *
+     * @param annotatedElement the {@link AnnotatedElement} to check
+     * @return true if either {@link JsonbNumberFormat} or {@link JsonbDateFormat} are present
+     */
+    protected static boolean isJsonbAnnotationPresent(AnnotatedElement annotatedElement) {
+        return annotatedElement.getAnnotation(JsonbDateFormat.class) != null
+                || annotatedElement.getAnnotation(JsonbNumberFormat.class) != null;
     }
 
     /**

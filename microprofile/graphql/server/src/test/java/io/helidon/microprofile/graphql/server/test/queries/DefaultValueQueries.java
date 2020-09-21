@@ -35,11 +35,11 @@ import org.eclipse.microprofile.graphql.Query;
 @ApplicationScoped
 public class DefaultValueQueries {
 
-    private static final String DEFAULT_INPUT = "{ "
-            + " \"id\": \"ID-1\" ,"
-            + " \"value\": 1000, "
-            + " \"booleanValue\": true, "
-            + " \"dateObject\": \"1968-02-17\" "
+    private static final String DEFAULT_INPUT = "{"
+            + " \"id\": \"ID-1\","
+            + " \"value\": 1000,"
+            + " \"booleanValue\": true,"
+            + " \"dateObject\": \"1968-02-17\""
             + "}";
             
     @Inject
@@ -66,5 +66,4 @@ public class DefaultValueQueries {
     public DefaultValuePOJO echo2(@Name("input") DefaultValuePOJO input) {
         return input;
     }
-
 }

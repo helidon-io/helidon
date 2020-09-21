@@ -79,6 +79,10 @@ class SchemaFieldDefinitionTest {
         assertThat(schemaFieldDefinition.isDefaultFormatApplied(), is(false));
         schemaFieldDefinition.setDefaultFormatApplied(true);
         assertThat(schemaFieldDefinition.isDefaultFormatApplied(), is(true));
+
+        assertThat(schemaFieldDefinition.isJsonbFormat(), is(false));
+        schemaFieldDefinition.setJsonbFormat(true);
+        assertThat(schemaFieldDefinition.isJsonbFormat(), is(true));
     }
 
     @Test

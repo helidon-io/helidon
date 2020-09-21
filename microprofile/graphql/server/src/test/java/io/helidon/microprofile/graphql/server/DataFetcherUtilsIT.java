@@ -16,31 +16,28 @@
 
 package io.helidon.microprofile.graphql.server;
 
-import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesWithArgs;
-import io.helidon.microprofile.graphql.server.test.types.AbstractVehicle;
-import io.helidon.microprofile.graphql.server.test.types.Car;
-import io.helidon.microprofile.graphql.server.test.types.ObjectWithIgnorableFieldsAndMethods;
+import io.helidon.microprofile.graphql.server.test.types.ContactRelationship;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContactWithNumberFormats;
-import io.helidon.microprofile.graphql.server.test.types.SimpleContactWithSelf;
+
 import org.jboss.weld.junit5.WeldInitiator;
 import org.jboss.weld.junit5.WeldJunit5Extension;
 import org.jboss.weld.junit5.WeldSetup;
-import org.junit.jupiter.api.Disabled;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Map;
-import java.util.Optional;
+
 import java.util.UUID;
 
 /**
@@ -54,6 +51,7 @@ class DataFetcherUtilsIT
     private final WeldInitiator weld = WeldInitiator.of(WeldInitiator.createWeld()
                                                                 .addBeanClass(SimpleQueriesWithArgs.class)
                                                                 .addBeanClass(SimpleContactWithNumberFormats.class)
+                                                                .addBeanClass(ContactRelationship.class)
                                                                 .addBeanClass(SimpleContact.class)
                                                                 .addBeanClass(TestDB.class)
                                                                 .addExtension(new GraphQLCdiExtension()));
@@ -89,7 +87,7 @@ class DataFetcherUtilsIT
         //  "0 'value'"
         //  value: String!
         //}
-        Map<String, Object> mapContact = Map.of("age",  "52 years old", "bankBalance", "$ 100.00",
+        Map<String, Object> mapContact = Map.of("age", "52 years old", "bankBalance", "$ 100.00",
                                                 "bigDecimal", "BigDecimal-123", "longValue", "LongValue-321",
                                                 "name", "Tim", "value", "1 value", "id", "100");
         SimpleContactWithNumberFormats contact =
@@ -107,7 +105,7 @@ class DataFetcherUtilsIT
         assertArgumentResult(schema, "returnIntegerAsId", "param1", 1, 1);
 
         UUID uuid = UUID.randomUUID();
-        assertArgumentResult(schema,"returnUUIDAsId", "param1", uuid, uuid);
+        assertArgumentResult(schema, "returnUUIDAsId", "param1", uuid, uuid);
         assertArgumentResult(schema, "returnStringAsId", "param1", "abc", "abc");
         assertArgumentResult(schema, "returnStringAsId", "param1", "abc", "abc");
         assertArgumentResult(schema, "returnLongAsId", "param1", 1L, 1L);
@@ -168,36 +166,57 @@ class DataFetcherUtilsIT
         assertArgumentResult(schema, "returnLongAsIdWithFormat", "param1", "1-Long", 1L);
         assertArgumentResult(schema, "returnLongPrimitiveAsIdWithFormat", "param1", "2-long", 2L);
         assertArgumentResult(schema, "returnIntPrimitiveAsIdWithFormat", "param1", "3 hello", 3);
-        }
+    }
 
     @Test
     public void testArrays() {
 
     }
+
     @Test
-    public void testArraysAndCollections() {
+    public void testArraysAndObjects() {
 
     }
 
     @Test
-    public void testObjectGraphs() {
+    @SuppressWarnings("unchecked")
+    public void testObjectGraphs() throws Exception {
+        setupIndex(indexFileName, SimpleQueriesWithArgs.class, SimpleContact.class, ContactRelationship.class);
+        ExecutionContext executionContext = new ExecutionContext(defaultContext);
+        Schema schema = executionContext.getSchema();
+
+        SimpleContact contact1 = new SimpleContact("c1", "Contact 1", 50);
+        SimpleContact contact2 = new SimpleContact("c2", "Contact 2", 53);
+        ContactRelationship relationship = new ContactRelationship(contact1, contact2, "married");
+
+        Map<String, Object> contact1Map = JsonUtils.convertObjectToMap(contact1);
+        Map<String, Object> contact2Map = JsonUtils.convertObjectToMap(contact2);
+
+        // Create a map representing the above contact relationship
+        Map<String, Object> mapContactRel = Map.of("relationship", "married",
+                                                "contact1", contact1Map,
+                                                "contact2", contact2Map);
+
+        assertArgumentResult(schema, "canFindContactRelationship", "relationship", mapContactRel, relationship);
 
     }
 
     /**
      * Validate that the given argument results in the correct value.
-     * @param schema   {@link Schema}
-     * @param fdName   the name of the {@link SchemaFieldDefinition}
+     *
+     * @param schema       {@link Schema}
+     * @param fdName       the name of the {@link SchemaFieldDefinition}
      * @param argumentName the name of the {@link SchemaArgument}
-     * @param input      the input
-     * @param expected   the expected output
+     * @param input        the input
+     * @param expected     the expected output
      * @throws Exception if any errors
      */
     protected void assertArgumentResult(Schema schema, String fdName,
                                         String argumentName, Object input, Object expected) throws Exception {
         SchemaArgument argument = getArgument(schema, "Query", fdName, argumentName);
         assertThat(argument, is(notNullValue()));
-        Object result = DataFetcherUtils.generateArgumentValue(schema, argument, input);
+        Object result = DataFetcherUtils.generateArgumentValue(schema, argument.getArgumentType(),
+                                                               argument.getOriginalType(), input, argument.getFormat());
         assertThat(result, is(expected));
     }
 

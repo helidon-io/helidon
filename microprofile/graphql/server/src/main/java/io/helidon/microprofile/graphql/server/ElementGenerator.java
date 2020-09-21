@@ -16,7 +16,6 @@
 
 package io.helidon.microprofile.graphql.server;
 
-import java.util.Map;
 import java.util.logging.Logger;
 
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.BIG_DECIMAL;
@@ -46,6 +45,11 @@ public interface ElementGenerator {
      * Comma and space.
      */
     String COMMA_SPACE = ", ";
+
+    /**
+     * Comma.
+     */
+    String COMMA = ", ";
 
     /**
      * Triple quote.

@@ -71,6 +71,7 @@ import static io.helidon.microprofile.graphql.server.FormattingHelper.formatNumb
 import static io.helidon.microprofile.graphql.server.FormattingHelper.getCorrectDateFormatter;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.getCorrectNumberFormat;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.getFormattingAnnotation;
+import static io.helidon.microprofile.graphql.server.FormattingHelper.isJsonbAnnotationPresent;
 import static io.helidon.microprofile.graphql.server.SchemaGenerator.DiscoveredMethod.MUTATION_TYPE;
 import static io.helidon.microprofile.graphql.server.SchemaGenerator.DiscoveredMethod.QUERY_TYPE;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.DATETIME_SCALAR;
@@ -809,11 +810,13 @@ public class SchemaGenerator {
         fd.setArrayReturnTypeMandatory(discoveredMethod.isArrayReturnTypeMandatory());
         fd.setOriginalArrayType(isArrayReturnType ? discoveredMethod.getOriginalArrayType() : null);
 
+
         if (format != null && format.length == 3) {
             fd.setFormat(new String[] { format[1], format[2] });
         }
 
         fd.setDescription(discoveredMethod.getDescription());
+        fd.setJsonbFormat(discoveredMethod.isJsonbFormat);
         fd.setDefaultValue(discoveredMethod.getDefaultValue());
         return fd;
     }
@@ -973,6 +976,7 @@ public class SchemaGenerator {
         String description = null;
         boolean isReturnTypeMandatory = false;
         boolean isArrayReturnTypeMandatory = false;
+        boolean isJsonbFormat = false;
         String defaultValue = null;
         String className = clazz.getName();
 
@@ -1046,6 +1050,7 @@ public class SchemaGenerator {
                         String[] writeMethodFormat = getFormattingAnnotation(writeMethod);
                         if (writeMethodFormat[0] != null) {
                             format = writeMethodFormat;
+                            isJsonbFormat = isJsonbAnnotationPresent(writeMethod);
                         }
 
                     }
@@ -1075,6 +1080,7 @@ public class SchemaGenerator {
             // check for format on the property but only override if it is null
             if (field != null && (format.length == 0 || format[0] == null)) {
                 format = getFormattingAnnotation(field);
+                isJsonbFormat = isJsonbAnnotationPresent(field);
             }
         } else {
             // pd is null which means this is for query or mutation
@@ -1098,6 +1104,7 @@ public class SchemaGenerator {
         discoveredMethod.setMethod(method);
         discoveredMethod.setFormat(format);
         discoveredMethod.setDefaultValue(defaultValue);
+        discoveredMethod.setJsonbFormat(isJsonbFormat);
         discoveredMethod.setPropertyName(pd != null ? pd.getName() : null);
 
         if (description == null && !isInputType) {
@@ -1447,6 +1454,11 @@ public class SchemaGenerator {
         private Class<?> originalArrayType;
 
         /**
+         * Indicates if the format is of type JsonB.
+         */
+        private boolean isJsonbFormat;
+
+        /**
          * Default constructor.
          */
         public DiscoveredMethod() {
@@ -1785,6 +1797,22 @@ public class SchemaGenerator {
             return originalArrayType;
         }
 
+        /**
+         * Set if the format is of type JsonB.
+         * @param isJsonbFormat if the format is of type JsonB
+         */
+        public void setJsonbFormat(boolean isJsonbFormat) {
+            this.isJsonbFormat = isJsonbFormat;
+        }
+
+        /**
+         * Returns true if the format is of type JsonB.
+         * @return true if the format is of type JsonB
+         */
+        public boolean isJsonbFormat() {
+            return isJsonbFormat;
+        }
+
         @Override
         public String toString() {
             return "DiscoveredMethod{"
@@ -1803,6 +1831,7 @@ public class SchemaGenerator {
                     + ", description=" + description
                     + ", originalArrayType=" + originalArrayType
                     + ", defaultValue=" + defaultValue
+                    + ", isJsonbFormat=" + isJsonbFormat
                     + ", method=" + method + '}';
         }
 
@@ -1828,6 +1857,7 @@ public class SchemaGenerator {
                     && Objects.equals(isReturnTypeMandatory, that.isReturnTypeMandatory)
                     && Objects.equals(isArrayReturnTypeMandatory, that.isArrayReturnTypeMandatory)
                     && Objects.equals(defaultValue, that.defaultValue)
+                    && Objects.equals(isJsonbFormat, that.isJsonbFormat)
                     && Objects.equals(collectionType, that.collectionType);
         }
 
@@ -1835,7 +1865,7 @@ public class SchemaGenerator {
         public int hashCode() {
             return Objects.hash(name, returnType, methodType, method, arrayLevels, isQueryAnnotated,
                                 collectionType, isArrayReturnType, isMap, source, description,
-                                isReturnTypeMandatory, defaultValue, isArrayReturnTypeMandatory);
+                                isReturnTypeMandatory, defaultValue, isArrayReturnTypeMandatory, isJsonbFormat);
         }
     }
 

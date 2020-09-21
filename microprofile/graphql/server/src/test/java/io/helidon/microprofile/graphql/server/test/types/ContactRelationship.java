@@ -16,6 +16,8 @@
 
 package io.helidon.microprofile.graphql.server.test.types;
 
+import java.util.Objects;
+
 /**
  * Defines a relationship between two {@link SimpleContact}s. This is to test
  * generation of nested InputTypes if this type is used as a parameter.
@@ -57,5 +59,24 @@ public class ContactRelationship {
 
     public void setRelationship(String relationship) {
         this.relationship = relationship;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        ContactRelationship that = (ContactRelationship) o;
+        return Objects.equals(contact1, that.contact1) &&
+                Objects.equals(contact2, that.contact2) &&
+                Objects.equals(relationship, that.relationship);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(contact1, contact2, relationship);
     }
 }

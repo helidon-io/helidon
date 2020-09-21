@@ -24,6 +24,7 @@ import org.eclipse.microprofile.graphql.Type;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Defines a simple contact which contains a number formats.
@@ -135,5 +136,29 @@ public class SimpleContactWithNumberFormats {
 
     public void setBigDecimal(BigDecimal bigDecimal) {
         this.bigDecimal = bigDecimal;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        SimpleContactWithNumberFormats contact = (SimpleContactWithNumberFormats) o;
+        return Objects.equals(id, contact.id) &&
+                Objects.equals(name, contact.name) &&
+                Objects.equals(age, contact.age) &&
+                Objects.equals(bankBalance, contact.bankBalance) &&
+                Objects.equals(value, contact.value) &&
+                Objects.equals(longValue, contact.longValue) &&
+                bigDecimal.compareTo(contact.bigDecimal) == 0 &&
+                Objects.equals(listDates, contact.listDates);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, name, age, bankBalance, value, longValue, bigDecimal, listDates);
     }
 }

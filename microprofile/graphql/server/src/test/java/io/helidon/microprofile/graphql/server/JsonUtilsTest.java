@@ -86,16 +86,35 @@ class JsonUtilsTest extends AbstractGraphQLTest {
         Map<String, Object> map = new TreeMap<>();
         map.put("id", "ID-1");
         map.put("value", BigDecimal.valueOf(100));
-        assertThat(JsonUtils.convertJsonToGraphQLSDL(map), is("{ id: \"ID-1\" value: 100 }"));
+        assertThat(JsonUtils.convertJsonToGraphQLSDL(map), is("{ id: \"ID-1\", value: 100}"));
 
         map.clear();
         map.put("name", "This contains a quote \"");
-        assertThat(JsonUtils.convertJsonToGraphQLSDL(map), is("{ name: \"This contains a quote \\\"\" }"));
+        assertThat(JsonUtils.convertJsonToGraphQLSDL(map), is("{ name: \"This contains a quote \\\"\"}"));
         
         map.clear();
         map.put("field1", "key");
         map.put("field2", Arrays.asList("one", "two", "three"));
-        assertThat(JsonUtils.convertJsonToGraphQLSDL(map), is("{ field1: \"key\" field2: [\"one\", \"two\", \"three\"] }"));
+        assertThat(JsonUtils.convertJsonToGraphQLSDL(map), is("{ field1: \"key\", field2: [\"one\", \"two\", \"three\"]}"));
+
+        String input =    "{" +
+            "   \"id\": 1000," +
+            "   \"name\": \"Cape\","+
+            "   \"powerLevel\": 3," +
+            "   \"height\": 1.2," +
+            "   \"weight\": 0.3," +
+            "   \"supernatural\": false," +
+            "   \"dateCreated\": \"19 February 1900 at 12:00 in Africa/Johannesburg\"," +
+            "   \"dateLastUsed\": \"29 Jan 2020 at 09:45 in zone +0200\"" +
+            "}";
+
+        String output =  "{ id: 1000, name: \"Cape\", powerLevel: 3, height: 1.2, weight: 0.3, supernatural: false, "
+                + "dateCreated: \"19 February 1900 at 12:00 in Africa/Johannesburg\", dateLastUsed: \"29 Jan 2020 at 09:45 in "
+                + "zone +0200\"}";
+
+        map = JsonUtils.convertJSONtoMap(input);
+        assertThat(map.size(), is(8));
+        assertThat(JsonUtils.convertJsonToGraphQLSDL(map), is(output));
     }
 
 }

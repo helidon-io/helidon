@@ -53,13 +53,6 @@ public class GraphQLResource {
     private static final Logger LOGGER = Logger.getLogger(GraphQLResource.class.getName());
 
     /**
-     * Options for {@link SchemaPrinter}.
-     */
-    private static final SchemaPrinter.Options OPTIONS = SchemaPrinter.Options
-            .defaultOptions().includeDirectives(false)
-            .includeScalarTypes(true);
-
-    /**
      * {@link ExecutionContext} for this resource.
      */
     private ExecutionContext context;
@@ -122,7 +115,7 @@ public class GraphQLResource {
     public void init() {
         try {
             context = new ExecutionContext(new DefaultContext());
-            schemaPrinter = new SchemaPrinter(OPTIONS);
+            schemaPrinter = context.getSchemaPrinter();
         } catch (Exception e) {
             ensureRuntimeException(LOGGER, "Unable to build GraphQL Schema: ", e);
         }

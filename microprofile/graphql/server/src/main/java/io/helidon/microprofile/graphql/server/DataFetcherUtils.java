@@ -66,6 +66,11 @@ public class DataFetcherUtils {
     private static final Logger LOGGER = Logger.getLogger(DataFetcherUtils.class.getName());
 
     /**
+     * Empty format.
+     */
+    private static final String[] EMPTY_FORMAT = new String[] { null, null };
+
+    /**
      * Private constructor for utilities class.
      */
     private DataFetcherUtils() {
@@ -102,8 +107,10 @@ public class DataFetcherUtils {
 
             if (args.length > 0) {
                 for (SchemaArgument argument : args) {
-                    listArgumentValues.add(generateArgumentValue(schema, argument,
-                                                                 environment.getArgument(argument.getArgumentName())));
+                    listArgumentValues.add(generateArgumentValue(schema, argument.getArgumentType(),
+                                                                 argument.getOriginalType(),
+                                                                 environment.getArgument(argument.getArgumentName()),
+                                                                 argument.getFormat()));
                 }
             }
 
@@ -115,16 +122,24 @@ public class DataFetcherUtils {
         };
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    protected static Object generateArgumentValue(Schema schema, SchemaArgument argument, Object rawValue)
+    /**
+     * Generate an argument value with the given information. This may be called recursively.
+     *
+     * @param schema    {@link Schema} to introspect if needed
+     * @param argumentType the type of the argument
+     * @param originalType the original type of the argument as a class
+     * @param rawValue  raw value of the argument
+     * @param format argument format
+     * @return the argument value
+     * @throws Exception
+     */
+    @SuppressWarnings({"unchecked", "rawtypes" })
+    protected static Object generateArgumentValue(Schema schema, String argumentType, Class<?> originalType,
+                                                  Object rawValue, String[] format)
         throws Exception{
         if (rawValue instanceof Map) {
             // this means the type is an input type so convert it to the correct class instance
-            String argumentType = argument.getArgumentType();
-            Class<?> originalType = argument.getOriginalType();
             SchemaInputType inputType = schema.getInputTypeByName(argumentType);
-
-            Constructor<?> constructor = argument.getOriginalType().getDeclaredConstructor();
 
             // loop through the map and convert each entry
             Map<String, Object> map = (Map) rawValue;
@@ -137,22 +152,35 @@ public class DataFetcherUtils {
                 SchemaFieldDefinition fd = inputType.getFieldDefinitionByName(fdName);
 
                 // check to see if the Field Definition return type is an input type
-                // TODO: ^^^
-                mapConverted.put(fdName, parseArgumentValue(fd.getOriginalType(), fd.getReturnType(), value, fd.getFormat()));
+                SchemaInputType inputFdInputType = schema.getInputTypeByName(fd.getReturnType());
+                if (inputFdInputType != null && value instanceof Map) {
+                    Map mapInputType = (Map) value;
+                    mapConverted.put(fdName, generateArgumentValue(schema, inputFdInputType.getName(),
+                                                                   Class.forName(inputFdInputType.getValueClassName()),
+                                                                   value, EMPTY_FORMAT));
+                } else {
+                    if (fd.isJsonbFormat()) {
+                        // don't deserialize using formatting as JsonB will do this for us
+                        mapConverted.put(fdName, value);
+                    } else {
+                        mapConverted.put(fdName, parseArgumentValue(fd.getOriginalType(), fd.getReturnType(),
+                                                                    value, fd.getFormat()));
+                    }
+                }
             }
             
-            return JsonUtils.convertFromJson(JsonUtils.convertMapToJson(mapConverted), argument.getOriginalType());
+            return JsonUtils.convertFromJson(JsonUtils.convertMapToJson(mapConverted), originalType);
 
         } else if (rawValue instanceof Collection) {
             // handle collection type - just working on simple String type for the moment
             // TODO: Need to handle collections of types
             // TODO: need to handle formatting
             // ensure we preserve the order
-            return argument.getOriginalType().equals(List.class)
-                                           ? new ArrayList((Collection) rawValue)
-                                           : new TreeSet((Collection) rawValue);
+            return originalType.equals(List.class)
+                               ? new ArrayList((Collection) rawValue)
+                               : new TreeSet((Collection) rawValue);
         } else {
-            return parseArgumentValue(argument.getOriginalType(), argument.getArgumentType(), rawValue, argument.getFormat());
+            return parseArgumentValue(originalType, argumentType, rawValue, format);
         }
     }
 
@@ -245,7 +273,7 @@ public class DataFetcherUtils {
     /**
      * An implementation of a {@link PropertyDataFetcher} which returns a formatted date.
      */
-    @SuppressWarnings( { "unchecked", "rawtypes" })
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public static class DateFormattingDataFetcher
             extends PropertyDataFetcher {
 
@@ -309,7 +337,8 @@ public class DataFetcherUtils {
             try {
                 Constructor<?> constructor = originalType.getDeclaredConstructor(String.class);
                 numberKey = (Number) constructor.newInstance(key);
-            } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException eIgnore) {
+            } catch (NoSuchMethodException | InstantiationException | IllegalAccessException |
+                     InvocationTargetException eIgnore) {
                 // cannot find a constructor with String arg
             }
         }

@@ -98,6 +98,16 @@ public class DefaultValuesIT extends AbstractGraphQLIT {
         assertThat(results.get("id"), is("ID-1"));
         assertThat(results.get("value"), is(1000));
 
+        // check that the generated default value has the fields in correct order
+        Schema schema = executionContext.getSchema();
+        SchemaType query = schema.getTypeByName(Schema.QUERY);
+        assertThat(query, is(notNullValue()));
+        SchemaFieldDefinition fd = query.getFieldDefinitionByName("echoDefaultValuePOJO");
+        assertThat(fd, is(notNullValue()));
+        SchemaArgument argument = fd.getArguments().get(0);
+        assertThat(argument, is(notNullValue()));
+        assertThat(argument.getDefaultValue(), is("{ \"id\": \"ID-1\", \"value\": 1000, \"booleanValue\": true, \"dateObject\": \"1968-02-17\"}"));
+
         mapResults = getAndAssertResult(
                 executionContext.execute("query { echoDefaultValuePOJO(input: {id: \"X123\" value: 1}) { id value } }"));
         assertThat(mapResults.size(), is(1));
@@ -114,13 +124,13 @@ public class DefaultValuesIT extends AbstractGraphQLIT {
         assertThat(results.get("id"), is("ID-123"));
         assertThat(results.get("value"), is(1));
 
-        Schema schema = executionContext.getSchema();
+        schema = executionContext.getSchema();
         SchemaType type = schema.getInputTypeByName("DefaultValuePOJOInput");
         assertReturnTypeDefaultValue(type, "id", "ID-123");
         assertReturnTypeDefaultValue(type, "booleanValue", "false");
         assertReturnTypeMandatory(type, "booleanValue", false);
 
-        SchemaFieldDefinition fd = getFieldDefinition(type, "value");
+        fd = getFieldDefinition(type, "value");
         assertThat(fd, is(notNullValue()));
         assertThat(fd.getDefaultValue(), is("111222"));
     }
