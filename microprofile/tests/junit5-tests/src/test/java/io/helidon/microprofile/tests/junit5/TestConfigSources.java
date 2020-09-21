@@ -26,7 +26,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @HelidonTest
 @Configuration(configSources = "testConfigSources.properties")
-public class TestConfigSources {
+class TestConfigSources {
     @Inject
     @ConfigProperty(name = "some.key")
     private String someKey;

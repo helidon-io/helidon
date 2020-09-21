@@ -49,6 +49,7 @@ In addition to this simplification, the following annotations are supported:
         (if not added through service loader, or when discovery is disabled)
 - `io.helidon.microprofile.tests.junit5.AddConfig` - to add one or more configuration properties to MicroProfile config
         without the need of creating a `microprofile-config.properties` file
+- `io.helidon.microprofile.tests.junit5.DisableDiscovery` - to disable automated discovery of beans and extensions
 
 [source,java]
 .Code sample
@@ -84,10 +85,16 @@ This will change the behavior as follows:
 
 == Usage - configuration
 In addition to the `@AddConfig` annotation, you can also use
- `@Configuration`.
+ `@Configuration` to configure additional classpath properties config sources using `configSources`.
 
-This allows you to do the following:
+== Usage - added parameters and injection types
+The following types are available for injection (when a single CDI container is used per test class):
 
-- when `useExisting` is set to `true`, the configuration will not be changed
-        and current MP configuration will be used
-- you can configure additional classpath properties config sources using `configSources`
+- `WebTarget` - a JAX-RS client's target configured for the current hostname and port when `helidon-micorprofile-server` is on
+        the classpath
+
+The following types are available as method parameters (in any type of Helidon tests):
+
+- `WebTarget` - a JAX-RS client's target configured for the current hostname and port when `helidon-micorprofile-server` is on
+        the classpath
+- `SeContainer` - the current container instance

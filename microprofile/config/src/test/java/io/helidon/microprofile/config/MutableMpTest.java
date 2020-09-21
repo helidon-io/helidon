@@ -22,22 +22,23 @@ import java.util.function.BiConsumer;
 
 import javax.enterprise.context.Dependent;
 import javax.enterprise.inject.se.SeContainer;
-import javax.enterprise.inject.se.SeContainerInitializer;
-import javax.enterprise.inject.spi.CDI;
 import javax.inject.Inject;
+
+import io.helidon.microprofile.tests.junit5.AddBean;
+import io.helidon.microprofile.tests.junit5.HelidonTest;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.config.spi.ConfigSource;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class MutableMpTest {
-    private static SeContainer container;
+@HelidonTest
+@AddBean(value = MutableMpTest.Bean.class, scope = Dependent.class)
+class MutableMpTest {
     private static MutableSource source;
 
     @BeforeAll
@@ -50,35 +51,21 @@ public class MutableMpTest {
                                               .withSources(source)
                                               .build(),
                                       Thread.currentThread().getContextClassLoader());
-
-        // CDI container
-        container = SeContainerInitializer.newInstance()
-                .addBeanClasses(Bean.class)
-                .initialize();
-    }
-
-    @AfterAll
-    static void destroyClass() {
-        if (null != container) {
-            container.close();
-        }
-        source = null;
     }
 
     @Test
-    public void testMutable() {
-        Bean bean = CDI.current().select(Bean.class).get();
+    public void testMutable(SeContainer cdi) {
+        Bean bean = cdi.select(Bean.class).get();
 
         assertThat(bean.value, is("initial"));
 
         source.setValue("updated");
 
-        bean = CDI.current().select(Bean.class).get();
+        bean = cdi.select(Bean.class).get();
 
         assertThat(bean.value, is("updated"));
     }
 
-    @Dependent
     public static class Bean {
         @Inject
         @ConfigProperty(name = "value")

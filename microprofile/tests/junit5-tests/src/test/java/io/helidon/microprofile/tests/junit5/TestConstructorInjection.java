@@ -31,7 +31,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @HelidonTest
 @DisableDiscovery
 @AddBean(TestConstructorInjection.MyBean.class)
-public class TestConstructorInjection {
+class TestConstructorInjection {
     private final int currentPort;
 
     @Inject
