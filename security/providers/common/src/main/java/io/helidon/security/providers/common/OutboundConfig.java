@@ -42,6 +42,12 @@ public final class OutboundConfig {
      * configuration.
      */
     public static final String CONFIG_OUTBOUND = "outbound";
+    /**
+     * Property used for outbound calls with clients to disable registration/running of outbound security.
+     * This may be used from clients that set up outbound security explicitly.
+     * By default this property is assumed to be {@code false}, so outbound is enabled
+     */
+    public static final String PROPERTY_DISABLE_OUTBOUND = "io.helidon.security.client.disable";
 
     private final LinkedList<OutboundTarget> targets = new LinkedList<>();
 

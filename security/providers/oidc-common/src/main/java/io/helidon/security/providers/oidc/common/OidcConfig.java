@@ -31,6 +31,7 @@ import io.helidon.common.Errors;
 import io.helidon.common.configurable.Resource;
 import io.helidon.config.Config;
 import io.helidon.security.jwt.jwk.JwkKeys;
+import io.helidon.security.providers.common.OutboundConfig;
 import io.helidon.security.util.TokenHandler;
 
 import org.glassfish.jersey.client.ClientProperties;
@@ -736,7 +737,7 @@ public final class OidcConfig {
         public OidcConfig build() {
             if (null != serverType) {
                 // explicit server type
-                if (!"idcs".equals(serverType)) {
+                if (!"idcs".equals(serverType) && !DEFAULT_SERVER_TYPE.equals(serverType)) {
                     LOGGER.warning("OIDC server-type is configured to " + serverType + ", currently only \"idcs\", and"
                                            + " \"" + DEFAULT_SERVER_TYPE + "\" are supported");
                     serverType = DEFAULT_SERVER_TYPE;
@@ -810,6 +811,8 @@ public final class OidcConfig {
             }
 
             ClientBuilder clientBuilder = ClientBuilder.newBuilder();
+
+            clientBuilder.property(OutboundConfig.PROPERTY_DISABLE_OUTBOUND, Boolean.TRUE);
 
             if (proxyHost != null) {
                 clientBuilder.property(ClientProperties.PROXY_URI, proxyUri);

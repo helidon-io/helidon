@@ -19,6 +19,7 @@ package io.helidon.security.providers.oidc.common;
 import java.net.URI;
 
 import javax.json.JsonObject;
+import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
@@ -43,9 +44,16 @@ class IdcsSupport {
         formData.putSingle("grant_type", "client_credentials");
         formData.putSingle("scope", "urn:opc:idm:__myscopes__");
 
-        JsonObject response = tokenEndpoint.request()
-                .accept(MediaType.APPLICATION_JSON_TYPE)
-                .post(Entity.form(formData), JsonObject.class);
+        JsonObject response;
+        try {
+            response = tokenEndpoint.request()
+                    .accept(MediaType.APPLICATION_JSON_TYPE)
+                    .post(Entity.form(formData), JsonObject.class);
+        } catch (ClientErrorException e) {
+            String errorMessage = e.getMessage();
+            String entity = e.getResponse().readEntity(String.class);
+            throw new SecurityException("Failed to read JWK from IDCS: " + errorMessage + ", entity: " + entity, e);
+        }
         String accessToken = response.getString("access_token");
 
         // get the jwk from server
