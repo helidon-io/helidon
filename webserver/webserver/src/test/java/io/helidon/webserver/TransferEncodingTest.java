@@ -118,7 +118,7 @@ public class TransferEncodingTest {
         assertThat(headers, hasEntry("content-length", "9"));
     }
 
-    private Map<String, String> cutHeaders(String response) {
+    static Map<String, String> cutHeaders(String response) {
         assertThat(response, notNullValue());
         int index = response.indexOf("\n\n");
         if (index < 0) {
