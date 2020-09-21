@@ -257,7 +257,7 @@ public class FormattingHelper {
      */
     protected static String[] getMethodParameterFormat(JandexUtils jandexUtils, String clazz, String methodName,
                                                        int paramNumber) {
-        
+
         if (jandexUtils.hasIndex()) {
             AnnotationInstance dateFormat1 =
                     jandexUtils.getMethodParameterAnnotation(clazz, methodName, paramNumber, JSONB_DATE_FORMAT);
@@ -324,6 +324,11 @@ public class FormattingHelper {
             return getFormatFromAnnotationInstance(dateFormat1, dateFormat2, numberFormat1, numberFormat2);
         }
         return NO_FORMATTING;
+    }
+
+    protected boolean isJsonBAnnotationPresent(JandexUtils jandexUtils, String clazz, String methodName) {
+        return jandexUtils.getMethodAnnotation(clazz, methodName, JSONB_DATE_FORMAT) != null
+                || jandexUtils.getMethodAnnotation(clazz, methodName, JSONB_NUMBER_FORMAT) != null
     }
 
     /**
