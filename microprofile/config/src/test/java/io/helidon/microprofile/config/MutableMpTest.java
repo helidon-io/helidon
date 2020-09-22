@@ -25,6 +25,7 @@ import javax.enterprise.inject.se.SeContainer;
 import javax.inject.Inject;
 
 import io.helidon.microprofile.tests.junit5.AddBean;
+import io.helidon.microprofile.tests.junit5.Configuration;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -37,6 +38,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @HelidonTest
+@Configuration(useExisting = true)
 @AddBean(value = MutableMpTest.Bean.class, scope = Dependent.class)
 class MutableMpTest {
     private static MutableSource source;
