@@ -131,6 +131,13 @@ class HelidonJunitExtension implements BeforeAllCallback,
         validatePerClass();
 
         configure(classLevelConfigMeta);
+
+        if (!classLevelConfigMeta.useExisting) {
+            // the container startup is delayed in case we `useExisting`, so the is first set up by the user
+            // when we do not need to `useExisting`, we want to start early, so parameterized test method sources that use CDI
+            // can work
+            startContainer(classLevelBeans, classLevelExtensions, classLevelDisableDiscovery);
+        }
     }
 
     @SuppressWarnings("unchecked")
