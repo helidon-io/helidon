@@ -301,7 +301,7 @@ public class JerseySupportTest {
         doAssert(response, "abc;");
     }
 
-    // @Test
+    @Test
     public void streamingOutput() throws IOException {
         Response response = webTarget.path("jersey/first/streamingOutput")
                 .request()

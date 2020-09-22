@@ -126,6 +126,7 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
 
             // Enable compression via "Accept-Encoding" header if configured
             if (serverConfig.enableCompression()) {
+                LOGGER.fine("HTTP compression negotiation enabled (gzip, deflate)");
                 p.addLast(new HttpContentCompressor());
             }
         }
