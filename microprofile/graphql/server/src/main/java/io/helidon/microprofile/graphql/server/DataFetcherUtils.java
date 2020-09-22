@@ -107,10 +107,9 @@ public class DataFetcherUtils {
 
             if (args.length > 0) {
                 for (SchemaArgument argument : args) {
-                    Class<?> originalType = argument.isArrayReturnType() ? argument.getOriginalArrayType()
-                            : argument.getOriginalType();
                     listArgumentValues.add(generateArgumentValue(schema, argument.getArgumentType(),
-                                                                 originalType,
+                                                                 argument.getOriginalType(),
+                                                                 argument.getOriginalArrayType(),
                                                                  environment.getArgument(argument.getArgumentName()),
                                                                  argument.getFormat()));
                 }
@@ -130,6 +129,7 @@ public class DataFetcherUtils {
      * @param schema    {@link Schema} to introspect if needed
      * @param argumentType the type of the argument
      * @param originalType the original type of the argument as a class
+     * @param originalArrayType if this is non null this means the array was a Collection and this is the type in the collection
      * @param rawValue  raw value of the argument
      * @param format argument format
      * @return the argument value
@@ -137,6 +137,7 @@ public class DataFetcherUtils {
      */
     @SuppressWarnings({"unchecked", "rawtypes" })
     protected static Object generateArgumentValue(Schema schema, String argumentType, Class<?> originalType,
+                                                  Class<?> originalArrayType,
                                                   Object rawValue, String[] format)
         throws Exception{
         if (rawValue instanceof Map) {
@@ -159,6 +160,7 @@ public class DataFetcherUtils {
                     Map mapInputType = (Map) value;
                     mapConverted.put(fdName, generateArgumentValue(schema, inputFdInputType.getName(),
                                                                    Class.forName(inputFdInputType.getValueClassName()),
+                                                                   null,
                                                                    value, EMPTY_FORMAT));
                 } else {
                     if (fd.isJsonbFormat()) {
@@ -175,12 +177,14 @@ public class DataFetcherUtils {
 
         } else if (rawValue instanceof Collection) {
             SchemaInputType inputType = schema.getInputTypeByName(argumentType);
+
             Collection colResults = originalType.equals(List.class) ? new ArrayList() : new TreeSet();
             if (inputType != null) {
                 // handle complex types
                 for (Object value : (Collection) rawValue) {
                     colResults.add(generateArgumentValue(schema, inputType.getName(),
-                                                         Class.forName(inputType.getValueClassName()), value, EMPTY_FORMAT));
+                                                         originalArrayType, null,
+                                                         value, EMPTY_FORMAT));
                 }
 
                 return colResults;
@@ -188,7 +192,7 @@ public class DataFetcherUtils {
                 // standard type or scalar so ensure we preserve the order and
                 // convert any values with formats
                 for (Object value : (Collection) rawValue) {
-                    colResults.add(parseArgumentValue(originalType, argumentType, value, format));
+                    colResults.add(parseArgumentValue(originalArrayType, argumentType, value, format));
                 }
 
                 return colResults;

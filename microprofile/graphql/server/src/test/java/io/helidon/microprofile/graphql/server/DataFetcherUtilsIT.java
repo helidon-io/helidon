@@ -34,18 +34,14 @@ import io.helidon.microprofile.tests.junit5.DisableDiscovery;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-
-import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
+
 
 /**
  * Tests for {@link DataFetcherUtils} class.
@@ -280,7 +276,8 @@ class DataFetcherUtilsIT
         Class<?> originalType = argument.isArrayReturnType() ? argument.getOriginalArrayType()
                             : argument.getOriginalType();
         Object result = DataFetcherUtils.generateArgumentValue(schema, argument.getArgumentType(),
-                                                               originalType, input, argument.getFormat());
+                                                               argument.getOriginalType(), argument.getOriginalArrayType(),
+                                                               input, argument.getFormat());
 
         if (input instanceof Collection) {
             // compare each value

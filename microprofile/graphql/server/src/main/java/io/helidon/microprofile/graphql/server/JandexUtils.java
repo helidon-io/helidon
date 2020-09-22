@@ -152,7 +152,13 @@ public class JandexUtils {
         if (hasIndex()) {
             ClassInfo classByName = index.getClassByName(DotName.createSimple(clazz));
             if (classByName != null) {
-                MethodInfo methodInfo = classByName.firstMethod(methodName);
+                MethodInfo methodInfo = null;
+                for (MethodInfo info : classByName.methods()) {
+                    if (info.name().equals(methodName) && info.parameters().size() >= paramNumber + 1) {
+                        methodInfo = info;
+                        break;
+                    }
+                }
                 if (methodInfo != null) {
                     ClassType classType = retrieveInnerMostType(methodInfo.parameters().get(paramNumber));
                     return classType == null ? null

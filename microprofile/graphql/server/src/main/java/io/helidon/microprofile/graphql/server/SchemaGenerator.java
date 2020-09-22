@@ -1190,7 +1190,7 @@ public class SchemaGenerator {
 
                 String[] argumentFormat = FormattingHelper.getFormattingAnnotation(parameter);
                 String[] argumentTypeFormat = getMethodParameterFormat(jandexUtils,
-                                                              method.getDeclaringClass().getName(), method.getName(),i);
+                                                              method.getDeclaringClass().getName(), method.getName(), i);
 
                 // The argument type format overrides any argument format. E.g. NumberFormat should apply below
                 // E.g.  public List<String> getListAsString(@Name("arg1")
