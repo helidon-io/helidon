@@ -28,7 +28,7 @@ to secure an application with OIDC security provider.
 
 [width=50%,role="flex, sm7"]
 |===
-|About 10 minutes
+|About 20 minutes
 |<<about/03_prerequisites.adoc,Helidon Prerequisites>>
 |===
 
@@ -178,7 +178,7 @@ from the realm.
 . `Client ID` : `myClientID`.
 .. `Client Protocol` : `openid-connect`
 .. `Access type` : `confidential`
-.. `Valid Redirect URIs` : http;//localhost:7987/*
+.. `Valid Redirect URIs` : `http://localhost:7987/*`
 . Press `Save`
 
 A new tab named `Credentials` is created. Click on it to access this new tab.
