@@ -33,24 +33,22 @@ import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.queries.NumberFormatQueriesAndMutations;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContactWithNumberFormats;
 
-import org.jboss.weld.junit5.WeldInitiator;
-import org.jboss.weld.junit5.WeldJunit5Extension;
-import org.jboss.weld.junit5.WeldSetup;
+import io.helidon.microprofile.tests.junit5.AddBean;
+import io.helidon.microprofile.tests.junit5.AddExtension;
+import io.helidon.microprofile.tests.junit5.DisableDiscovery;
+import io.helidon.microprofile.tests.junit5.HelidonTest;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
  * Tests for NUmber formats.
  */
-@ExtendWith(WeldJunit5Extension.class)
+@HelidonTest
+@DisableDiscovery
+@AddExtension(GraphQLCdiExtension.class)
+@AddBean(SimpleContactWithNumberFormats.class)
+@AddBean(NumberFormatQueriesAndMutations.class)
+@AddBean(TestDB.class)
 public class NumberFormatIT extends AbstractGraphQLIT {
-
-    @WeldSetup
-    private final WeldInitiator weld = WeldInitiator.of(WeldInitiator.createWeld()
-                                                                .addBeanClass(SimpleContactWithNumberFormats.class)
-                                                                .addBeanClass(NumberFormatQueriesAndMutations.class)
-                                                                .addBeanClass(TestDB.class)
-                                                                .addExtension(new GraphQLCdiExtension()));
 
     @Test
     @SuppressWarnings("unchecked")

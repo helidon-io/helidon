@@ -27,22 +27,20 @@ import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.queries.DescriptionQueries;
 import io.helidon.microprofile.graphql.server.test.types.DescriptionType;
 
-import org.jboss.weld.junit5.WeldInitiator;
-import org.jboss.weld.junit5.WeldJunit5Extension;
-import org.jboss.weld.junit5.WeldSetup;
+import io.helidon.microprofile.tests.junit5.AddBean;
+import io.helidon.microprofile.tests.junit5.AddExtension;
+import io.helidon.microprofile.tests.junit5.DisableDiscovery;
+import io.helidon.microprofile.tests.junit5.HelidonTest;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
-@ExtendWith(WeldJunit5Extension.class)
+@HelidonTest
+@DisableDiscovery
+@AddExtension(GraphQLCdiExtension.class)
+@AddBean(DescriptionType.class)
+@AddBean(DescriptionQueries.class)
+@AddBean(TestDB.class)
 public class DescriptionIT extends AbstractGraphQLIT {
-
-    @WeldSetup
-    private final WeldInitiator weld = WeldInitiator.of(WeldInitiator.createWeld()
-                                                                .addBeanClass(DescriptionType.class)
-                                                                .addBeanClass(DescriptionQueries.class)
-                                                                .addBeanClass(TestDB.class)
-                                                                .addExtension(new GraphQLCdiExtension()));
-
+    
     @Test
     public void testDescriptions() throws IOException {
         setupIndex(indexFileName, DescriptionType.class, DescriptionQueries.class);

@@ -29,23 +29,23 @@ import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.queries.QueriesWithIgnorable;
 
 import io.helidon.microprofile.graphql.server.test.types.ObjectWithIgnorableFieldsAndMethods;
-import org.jboss.weld.junit5.WeldInitiator;
-import org.jboss.weld.junit5.WeldJunit5Extension;
-import org.jboss.weld.junit5.WeldSetup;
+
+import io.helidon.microprofile.tests.junit5.AddBean;
+import io.helidon.microprofile.tests.junit5.AddExtension;
+import io.helidon.microprofile.tests.junit5.DisableDiscovery;
+import io.helidon.microprofile.tests.junit5.HelidonTest;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+
 import org.opentest4j.AssertionFailedError;
 
-@ExtendWith(WeldJunit5Extension.class)
+@HelidonTest
+@DisableDiscovery
+@AddExtension(GraphQLCdiExtension.class)
+@AddBean(QueriesWithIgnorable.class)
+@AddBean(ObjectWithIgnorableFieldsAndMethods.class)
+@AddBean(TestDB.class)
 public class IngorableIT extends AbstractGraphQLIT {
 
-    @WeldSetup
-    private final WeldInitiator weld = WeldInitiator.of(WeldInitiator.createWeld()
-                                                                .addBeanClass(QueriesWithIgnorable.class)
-                                                                .addBeanClass(ObjectWithIgnorableFieldsAndMethods.class)
-                                                                .addBeanClass(TestDB.class)
-                                                                .addExtension(new GraphQLCdiExtension()));
-    
     @Test
     public void testObjectWithIgnorableFields() throws IOException {
         setupIndex(indexFileName, ObjectWithIgnorableFieldsAndMethods.class);
@@ -85,5 +85,4 @@ public class IngorableIT extends AbstractGraphQLIT {
                    is(0L));
         assertThat(inputType.getFieldDefinitions().stream().filter(fd -> fd.getName().equals("valueSetter")).count(), is(1L));
     }
-
 }

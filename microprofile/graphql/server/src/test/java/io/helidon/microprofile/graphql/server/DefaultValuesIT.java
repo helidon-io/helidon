@@ -21,36 +21,33 @@ import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.queries.DefaultValueQueries;
-import io.helidon.microprofile.graphql.server.test.queries.DescriptionQueries;
 import io.helidon.microprofile.graphql.server.test.queries.OddNamedQueriesAndMutations;
 import io.helidon.microprofile.graphql.server.test.types.DefaultValuePOJO;
-import io.helidon.microprofile.graphql.server.test.types.DescriptionType;
-import org.jboss.weld.junit5.WeldInitiator;
-import org.jboss.weld.junit5.WeldJunit5Extension;
-import org.jboss.weld.junit5.WeldSetup;
+
+import io.helidon.microprofile.tests.junit5.AddBean;
+
+import io.helidon.microprofile.tests.junit5.AddExtension;
+import io.helidon.microprofile.tests.junit5.DisableDiscovery;
+import io.helidon.microprofile.tests.junit5.HelidonTest;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+
 
 /**
  * Tests for default values.
  */
-@ExtendWith(WeldJunit5Extension.class)
+@HelidonTest
+@DisableDiscovery
+@AddExtension(GraphQLCdiExtension.class)
+@AddBean(DefaultValuePOJO.class)
+@AddBean(DefaultValueQueries.class)
+@AddBean(OddNamedQueriesAndMutations.class)
+@AddBean(TestDB.class)
 public class DefaultValuesIT extends AbstractGraphQLIT {
-
-    @WeldSetup
-    private final WeldInitiator weld = WeldInitiator.of(WeldInitiator.createWeld()
-                                                                .addBeanClass(DefaultValuePOJO.class)
-                                                                .addBeanClass(DefaultValueQueries.class)
-                                                                .addBeanClass(OddNamedQueriesAndMutations.class)
-                                                                .addBeanClass(TestDB.class)
-                                                                .addExtension(new GraphQLCdiExtension()));
-
-
+    
     @Test
     @SuppressWarnings("unchecked")
     public void setOddNamedQueriesAndMutations() throws IOException {

@@ -27,24 +27,23 @@ import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesWithSource;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
 
-import org.jboss.weld.junit5.WeldInitiator;
-import org.jboss.weld.junit5.WeldJunit5Extension;
-import org.jboss.weld.junit5.WeldSetup;
+import io.helidon.microprofile.tests.junit5.AddBean;
+import io.helidon.microprofile.tests.junit5.AddExtension;
+import io.helidon.microprofile.tests.junit5.DisableDiscovery;
+import io.helidon.microprofile.tests.junit5.HelidonTest;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+
 
 /**
  * Tests for Source annotation.
  */
-@ExtendWith(WeldJunit5Extension.class)
+@HelidonTest
+@DisableDiscovery
+@AddExtension(GraphQLCdiExtension.class)
+@AddBean(SimpleQueriesWithSource.class)
+@AddBean(SimpleContact.class)
+@AddBean(TestDB.class)
 public class SourceIT extends AbstractGraphQLIT {
-
-    @WeldSetup
-    private final WeldInitiator weld = WeldInitiator.of(WeldInitiator.createWeld()
-                                                                .addBeanClass(SimpleQueriesWithSource.class)
-                                                                .addBeanClass(SimpleContact.class)
-                                                                .addBeanClass(TestDB.class)
-                                                                .addExtension(new GraphQLCdiExtension()));
 
     @Test
     @SuppressWarnings("unchecked")

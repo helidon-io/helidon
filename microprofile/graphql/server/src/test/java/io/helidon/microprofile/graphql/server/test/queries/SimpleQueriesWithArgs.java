@@ -320,4 +320,19 @@ public class SimpleQueriesWithArgs {
         return false;
     }
 
+    @Query
+    public List<String> echoListOfStrings(@Name("value") List<String> value) {
+        return value;
+    }
+
+    @Query
+    public List<Integer> echoListOfIntegers(@Name("value") List<Integer> value) {
+        return value;
+    }
+
+    @Query
+    public List<BigInteger> echoListOfBigIntegers(@Name("value") List<BigInteger> value) {
+        return value;
+    }
+
 }

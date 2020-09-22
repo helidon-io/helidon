@@ -37,25 +37,23 @@ import io.helidon.microprofile.graphql.server.test.types.Car;
 import io.helidon.microprofile.graphql.server.test.types.ContactRelationship;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
 
-import org.jboss.weld.junit5.WeldInitiator;
-import org.jboss.weld.junit5.WeldJunit5Extension;
-import org.jboss.weld.junit5.WeldSetup;
+import io.helidon.microprofile.tests.junit5.AddBean;
+import io.helidon.microprofile.tests.junit5.AddExtension;
+import io.helidon.microprofile.tests.junit5.DisableDiscovery;
+import io.helidon.microprofile.tests.junit5.HelidonTest;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
  * Tests for simple queries with args.
  */
-@ExtendWith(WeldJunit5Extension.class)
+@HelidonTest
+@DisableDiscovery
+@AddExtension(GraphQLCdiExtension.class)
+@AddBean(SimpleQueriesWithArgs.class)
+@AddBean(Car.class)
+@AddBean(AbstractVehicle.class)
+@AddBean(TestDB.class)
 public class SimpleQueriesWithArgsIT extends AbstractGraphQLIT {
-
-    @WeldSetup
-    private final WeldInitiator weld = WeldInitiator.of(WeldInitiator.createWeld()
-                                                                .addBeanClass(SimpleQueriesWithArgs.class)
-                                                                .addBeanClass(Car.class)
-                                                                .addBeanClass(AbstractVehicle.class)
-                                                                .addBeanClass(TestDB.class)
-                                                                .addExtension(new GraphQLCdiExtension()));
 
     @Test
     @SuppressWarnings("unchecked")
@@ -160,6 +158,7 @@ public class SimpleQueriesWithArgsIT extends AbstractGraphQLIT {
                                                                          + json +
                                                                          ") }"));
         assertThat(mapResults.size(), is(1));
+        assertThat(mapResults.get("canFindContactRelationship"), is(false));
     }
 
     @Test

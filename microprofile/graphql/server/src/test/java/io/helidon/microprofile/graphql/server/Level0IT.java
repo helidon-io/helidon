@@ -7,26 +7,19 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import io.helidon.microprofile.graphql.server.AbstractGraphQLIT;
-import io.helidon.microprofile.graphql.server.GraphQLCdiExtension;
-import io.helidon.microprofile.graphql.server.Schema;
-import io.helidon.microprofile.graphql.server.SchemaGenerator;
 import io.helidon.microprofile.graphql.server.test.types.Level0;
-import io.helidon.microprofile.graphql.server.test.types.Person;
-import org.jboss.weld.junit5.WeldInitiator;
-import org.jboss.weld.junit5.WeldJunit5Extension;
-import org.jboss.weld.junit5.WeldSetup;
+import io.helidon.microprofile.tests.junit5.AddBean;
+import io.helidon.microprofile.tests.junit5.AddExtension;
+import io.helidon.microprofile.tests.junit5.DisableDiscovery;
+import io.helidon.microprofile.tests.junit5.HelidonTest;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
-@ExtendWith(WeldJunit5Extension.class)
+@HelidonTest
+@DisableDiscovery
+@AddExtension(GraphQLCdiExtension.class)
+@AddBean(Level0.class)
 public class Level0IT extends AbstractGraphQLIT {
-
-    @WeldSetup
-    private final WeldInitiator weld = WeldInitiator.of(WeldInitiator.createWeld()
-                                                                .addBeanClass(Level0.class)
-                                                                .addExtension(new GraphQLCdiExtension()));
-
+    
     @Test
     public void testLevel0() throws IOException, IntrospectionException, ClassNotFoundException {
         setupIndex(indexFileName, Level0.class);

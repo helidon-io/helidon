@@ -172,13 +172,18 @@ public class DataFetcherUtils {
             return JsonUtils.convertFromJson(JsonUtils.convertMapToJson(mapConverted), originalType);
 
         } else if (rawValue instanceof Collection) {
-            // handle collection type - just working on simple String type for the moment
-            // TODO: Need to handle collections of types
-            // TODO: need to handle formatting
-            // ensure we preserve the order
-            return originalType.equals(List.class)
-                               ? new ArrayList((Collection) rawValue)
-                               : new TreeSet((Collection) rawValue);
+            SchemaInputType inputType = schema.getInputTypeByName(argumentType);
+            if (inputType != null) {
+                // handle complex types
+                System.out.println(inputType);
+//                SchemaFieldDefinition fd = inputType.getFieldDefinitionByName(fdName);
+                throw new RuntimeException("Arg");
+            } else {
+                // ensure we preserve the order
+                return originalType.equals(List.class)
+                                   ? new ArrayList((Collection) rawValue)
+                                   : new TreeSet((Collection) rawValue);
+            }
         } else {
             return parseArgumentValue(originalType, argumentType, rawValue, format);
         }

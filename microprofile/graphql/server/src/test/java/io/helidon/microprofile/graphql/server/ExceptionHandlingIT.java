@@ -26,15 +26,17 @@ import io.helidon.config.mp.MpConfigSources;
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.exception.ExceptionQueries;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
+import io.helidon.microprofile.tests.junit5.AddBean;
+import io.helidon.microprofile.tests.junit5.AddExtension;
+import io.helidon.microprofile.tests.junit5.DisableDiscovery;
+import io.helidon.microprofile.tests.junit5.HelidonTest;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 
 import org.hamcrest.Matchers;
-import org.jboss.weld.junit5.WeldInitiator;
-import org.jboss.weld.junit5.WeldJunit5Extension;
-import org.jboss.weld.junit5.WeldSetup;
+
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -45,16 +47,15 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * Integration tests for testing exception handing in {@link SchemaGeneratorTest}.
  */
 @SuppressWarnings("unchecked")
-@ExtendWith(WeldJunit5Extension.class)
+
+@HelidonTest
+@DisableDiscovery
+@AddExtension(GraphQLCdiExtension.class)
+@AddBean(ExceptionQueries.class)
+@AddBean(SimpleContact.class)
+@AddBean(TestDB.class)
 public class ExceptionHandlingIT extends AbstractGraphQLIT {
-
-    @WeldSetup
-    private final WeldInitiator weld = WeldInitiator.of(WeldInitiator.createWeld()
-                                                     .addBeanClass(ExceptionQueries.class)
-                                                     .addBeanClass(SimpleContact.class)
-                                                     .addBeanClass(TestDB.class)
-                                                     .addExtension(new GraphQLCdiExtension()));
-
+    
     @Test
     public void testAllDefaultsForConfig() throws IOException {
         setupConfig(null);

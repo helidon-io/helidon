@@ -26,24 +26,23 @@ import io.helidon.microprofile.graphql.server.test.queries.DuplicateNameQueries;
 import io.helidon.microprofile.graphql.server.test.queries.InvalidQueries;
 import io.helidon.microprofile.graphql.server.test.queries.VoidQueries;
 import io.helidon.microprofile.graphql.server.test.types.InvalidNamedTypes;
-import org.jboss.weld.junit5.WeldInitiator;
-import org.jboss.weld.junit5.WeldJunit5Extension;
-import org.jboss.weld.junit5.WeldSetup;
+
+import io.helidon.microprofile.tests.junit5.AddBean;
+import io.helidon.microprofile.tests.junit5.AddExtension;
+import io.helidon.microprofile.tests.junit5.DisableDiscovery;
+import io.helidon.microprofile.tests.junit5.HelidonTest;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
  * Container for Error conditions tests.
  */
+
 public class ErrorConditionsTestContainer {
-
-    @ExtendWith(WeldJunit5Extension.class)
+    @HelidonTest
+    @DisableDiscovery
+    @AddExtension(GraphQLCdiExtension.class)
+    @AddBean(VoidMutations.class)
     public static class VoidMutationsIT extends AbstractGraphQLIT {
-
-        @WeldSetup
-        private final WeldInitiator weld = WeldInitiator.of(WeldInitiator.createWeld()
-                                                                    .addBeanClass(VoidMutations.class)
-                                                                    .addExtension(new GraphQLCdiExtension()));
 
         @Test
         public void testVoidMutations() throws IOException {
@@ -52,13 +51,11 @@ public class ErrorConditionsTestContainer {
         }
     }
 
-    @ExtendWith(WeldJunit5Extension.class)
+    @HelidonTest
+    @DisableDiscovery
+    @AddExtension(GraphQLCdiExtension.class)
+    @AddBean(VoidMutations.class)
     public static class VoidQueriesIT extends AbstractGraphQLIT {
-
-        @WeldSetup
-        private final WeldInitiator weld = WeldInitiator.of(WeldInitiator.createWeld()
-                                                                    .addBeanClass(VoidMutations.class)
-                                                                    .addExtension(new GraphQLCdiExtension()));
 
         @Test
         public void testVoidQueries() throws IOException {
@@ -67,13 +64,11 @@ public class ErrorConditionsTestContainer {
         }
     }
 
-    @ExtendWith(WeldJunit5Extension.class)
+    @HelidonTest
+    @DisableDiscovery
+    @AddExtension(GraphQLCdiExtension.class)
+    @AddBean(VoidMutations.class)
     public static class InvalidQueriesIT extends AbstractGraphQLIT {
-
-        @WeldSetup
-        private final WeldInitiator weld = WeldInitiator.of(WeldInitiator.createWeld()
-                                                                    .addBeanClass(VoidMutations.class)
-                                                                    .addExtension(new GraphQLCdiExtension()));
 
         @Test
         public void testInvalidQueries() throws IOException {
@@ -82,13 +77,11 @@ public class ErrorConditionsTestContainer {
         }
     }
 
-    @ExtendWith(WeldJunit5Extension.class)
+    @HelidonTest
+    @DisableDiscovery
+    @AddExtension(GraphQLCdiExtension.class)
+    @AddBean(VoidMutations.class)
     public static class DuplicateQueriesAndMutationsIT extends AbstractGraphQLIT {
-
-        @WeldSetup
-        private final WeldInitiator weld = WeldInitiator.of(WeldInitiator.createWeld()
-                                                                    .addBeanClass(VoidMutations.class)
-                                                                    .addExtension(new GraphQLCdiExtension()));
 
         @Test
         public void testDuplicateQueryOrMutationNames() throws IOException {
@@ -97,13 +90,12 @@ public class ErrorConditionsTestContainer {
         }
     }
 
-    @ExtendWith(WeldJunit5Extension.class)
-    public static class InvalidNamedTypeIT extends AbstractGraphQLIT {
 
-        @WeldSetup
-        private final WeldInitiator weld = WeldInitiator.of(WeldInitiator.createWeld()
-                                                                    .addBeanClass(InvalidNamedTypes.InvalidNamedPerson.class)
-                                                                    .addExtension(new GraphQLCdiExtension()));
+    @HelidonTest
+    @DisableDiscovery
+    @AddExtension(GraphQLCdiExtension.class)
+    @AddBean(InvalidNamedTypes.InvalidNamedPerson.class)
+    public static class InvalidNamedTypeIT extends AbstractGraphQLIT {
 
         @Test
         public void testInvalidNamedType() throws IOException {
@@ -112,13 +104,11 @@ public class ErrorConditionsTestContainer {
         }
     }
 
-    @ExtendWith(WeldJunit5Extension.class)
+    @HelidonTest
+    @DisableDiscovery
+    @AddExtension(GraphQLCdiExtension.class)
+    @AddBean(InvalidNamedTypes.InvalidNamedPerson.class)
     public static class InvalidNamedInputTypeIT extends AbstractGraphQLIT {
-
-        @WeldSetup
-        private final WeldInitiator weld = WeldInitiator.of(WeldInitiator.createWeld()
-                                                                    .addBeanClass(InvalidNamedTypes.InvalidNamedPerson.class)
-                                                                    .addExtension(new GraphQLCdiExtension()));
 
         @Test
         public void testInvalidNamedInputType() throws IOException {
@@ -127,13 +117,12 @@ public class ErrorConditionsTestContainer {
         }
     }
 
-    @ExtendWith(WeldJunit5Extension.class)
-    public static class InvalidNamedInterfaceIT extends AbstractGraphQLIT {
 
-        @WeldSetup
-        private final WeldInitiator weld = WeldInitiator.of(WeldInitiator.createWeld()
-                                                                    .addBeanClass(InvalidNamedTypes.InvalidNamedPerson.class)
-                                                                    .addExtension(new GraphQLCdiExtension()));
+    @HelidonTest
+    @DisableDiscovery
+    @AddExtension(GraphQLCdiExtension.class)
+    @AddBean(InvalidNamedTypes.InvalidNamedPerson.class)
+    public static class InvalidNamedInterfaceIT extends AbstractGraphQLIT {
 
         @Test
         public void testInvalidNamedInterface() throws IOException {
@@ -142,13 +131,12 @@ public class ErrorConditionsTestContainer {
         }
     }
 
-    @ExtendWith(WeldJunit5Extension.class)
-    public static class InvalidNamedQueryIT extends AbstractGraphQLIT {
 
-        @WeldSetup
-        private final WeldInitiator weld = WeldInitiator.of(WeldInitiator.createWeld()
-                                                                    .addBeanClass(InvalidNamedTypes.InvalidNamedPerson.class)
-                                                                    .addExtension(new GraphQLCdiExtension()));
+    @HelidonTest
+    @DisableDiscovery
+    @AddExtension(GraphQLCdiExtension.class)
+    @AddBean(InvalidNamedTypes.ClassWithInvalidQuery.class)
+    public static class InvalidNamedQueryIT extends AbstractGraphQLIT {
 
         @Test
         public void testInvalidNamedQuery() throws IOException {
@@ -157,13 +145,12 @@ public class ErrorConditionsTestContainer {
         }
     }
 
-    @ExtendWith(WeldJunit5Extension.class)
-    public static class InvalidNamedMutationIT extends AbstractGraphQLIT {
 
-        @WeldSetup
-        private final WeldInitiator weld = WeldInitiator.of(WeldInitiator.createWeld()
-                                                                    .addBeanClass(InvalidNamedTypes.InvalidNamedPerson.class)
-                                                                    .addExtension(new GraphQLCdiExtension()));
+    @HelidonTest
+    @DisableDiscovery
+    @AddExtension(GraphQLCdiExtension.class)
+    @AddBean(InvalidNamedTypes.ClassWithInvalidMutation.class)
+    public static class InvalidNamedMutationIT extends AbstractGraphQLIT {
 
         @Test
         public void testInvalidNamedMutation() throws IOException {
@@ -172,13 +159,12 @@ public class ErrorConditionsTestContainer {
         }
     }
 
-    @ExtendWith(WeldJunit5Extension.class)
-    public static class InvalidNamedEnumIT extends AbstractGraphQLIT {
 
-        @WeldSetup
-        private final WeldInitiator weld = WeldInitiator.of(WeldInitiator.createWeld()
-                                                                    .addBeanClass(InvalidNamedTypes.InvalidNamedPerson.class)
-                                                                    .addExtension(new GraphQLCdiExtension()));
+    @HelidonTest
+    @DisableDiscovery
+    @AddExtension(GraphQLCdiExtension.class)
+    @AddBean( InvalidNamedTypes.Size.class)
+    public static class InvalidNamedEnumIT extends AbstractGraphQLIT {
 
         @Test
         public void testInvalidNameEnum() throws IOException {
@@ -186,5 +172,4 @@ public class ErrorConditionsTestContainer {
             assertThrows(RuntimeException.class, () -> new ExecutionContext(defaultContext));
         }
     }
-
 }

@@ -26,24 +26,21 @@ import io.helidon.microprofile.graphql.server.test.types.SimpleContactInputTypeW
 import io.helidon.microprofile.graphql.server.test.types.SimpleContactInputTypeWithName;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContactInputTypeWithNameValue;
 
-import org.jboss.weld.junit5.WeldInitiator;
-import org.jboss.weld.junit5.WeldJunit5Extension;
-import org.jboss.weld.junit5.WeldSetup;
+import io.helidon.microprofile.tests.junit5.AddBean;
+import io.helidon.microprofile.tests.junit5.AddExtension;
+import io.helidon.microprofile.tests.junit5.DisableDiscovery;
+import io.helidon.microprofile.tests.junit5.HelidonTest;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
-@ExtendWith(WeldJunit5Extension.class)
+@HelidonTest
+@DisableDiscovery
+@AddExtension(GraphQLCdiExtension.class)
+@AddBean(SimpleContactInputType.class)
+@AddBean(SimpleContactInputTypeWithName.class)
+@AddBean(SimpleContactInputTypeWithNameValue.class)
+@AddBean(SimpleContactInputTypeWithAddress.class)
 public class InputTypeIT extends AbstractGraphQLIT {
-
-    @WeldSetup
-    private final WeldInitiator weld = WeldInitiator.of(WeldInitiator.createWeld()
-                                                                .addBeanClass(SimpleContactInputType.class)
-                                                                .addBeanClass(SimpleContactInputTypeWithName.class)
-                                                                .addBeanClass(SimpleContactInputTypeWithNameValue.class)
-                                                                .addBeanClass(SimpleContactInputTypeWithAddress.class)
-                                                                .addExtension(new GraphQLCdiExtension()));
-
-
+    
     @Test
     public void testInputType() throws IOException {
         setupIndex(indexFileName, SimpleContactInputType.class, SimpleContactInputTypeWithName.class,

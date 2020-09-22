@@ -26,16 +26,19 @@ import io.helidon.microprofile.graphql.server.test.types.ContactRelationship;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContactWithNumberFormats;
 
-import org.jboss.weld.junit5.WeldInitiator;
-import org.jboss.weld.junit5.WeldJunit5Extension;
-import org.jboss.weld.junit5.WeldSetup;
+import io.helidon.microprofile.tests.junit5.AddBean;
 
+import io.helidon.microprofile.tests.junit5.AddExtension;
+import io.helidon.microprofile.tests.junit5.DisableDiscovery;
+import io.helidon.microprofile.tests.junit5.HelidonTest;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 import java.util.UUID;
@@ -43,18 +46,17 @@ import java.util.UUID;
 /**
  * Tests for {@link DataFetcherUtils} class.
  */
-@ExtendWith(WeldJunit5Extension.class)
+
+@HelidonTest
+@DisableDiscovery
+@AddExtension(GraphQLCdiExtension.class)
+@AddBean(SimpleQueriesWithArgs.class)
+@AddBean(SimpleContactWithNumberFormats.class)
+@AddBean(ContactRelationship.class)
+@AddBean(SimpleContact.class)
+@AddBean(TestDB.class)
 class DataFetcherUtilsIT
         extends AbstractGraphQLIT {
-
-    @WeldSetup
-    private final WeldInitiator weld = WeldInitiator.of(WeldInitiator.createWeld()
-                                                                .addBeanClass(SimpleQueriesWithArgs.class)
-                                                                .addBeanClass(SimpleContactWithNumberFormats.class)
-                                                                .addBeanClass(ContactRelationship.class)
-                                                                .addBeanClass(SimpleContact.class)
-                                                                .addBeanClass(TestDB.class)
-                                                                .addExtension(new GraphQLCdiExtension()));
 
     @Test
     public void testSimpleContact() throws Exception {
@@ -180,6 +182,37 @@ class DataFetcherUtilsIT
 
     @Test
     @SuppressWarnings("unchecked")
+    public void testCollections() throws Exception {
+        setupIndex(indexFileName, SimpleQueriesWithArgs.class, SimpleContact.class);
+        ExecutionContext executionContext = new ExecutionContext(defaultContext);
+        Schema schema = executionContext.getSchema();
+
+        List<Integer> listInteger = getList(1, 2, 3);
+        List<String> listString  = getList("A", "B", "C");
+        Collection<BigInteger> colBigInteger = getList(BigInteger.valueOf(1), BigInteger.valueOf(222), BigInteger.valueOf(333));
+
+        assertArgumentResult(schema, "echoListOfIntegers", "value", listInteger, listInteger);
+        assertArgumentResult(schema, "echoListOfStrings", "value", listString, listString);
+        assertArgumentResult(schema, "echoListOfBigIntegers", "value", colBigInteger, colBigInteger);
+
+        // TODO: Test formatting
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testCollectionsAndObjects() throws IOException {
+        setupIndex(indexFileName, SimpleQueriesWithArgs.class, SimpleContact.class);
+        ExecutionContext executionContext = new ExecutionContext(defaultContext);
+        Schema schema = executionContext.getSchema();
+
+        // simple collections
+        List<SimpleContact> listContacts = getList(new SimpleContact("c1", "Contact 1", 50),
+                                                   new SimpleContact("c2", "Contact 2", 52));
+
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
     public void testObjectGraphs() throws Exception {
         setupIndex(indexFileName, SimpleQueriesWithArgs.class, SimpleContact.class, ContactRelationship.class);
         ExecutionContext executionContext = new ExecutionContext(defaultContext);
@@ -194,11 +227,19 @@ class DataFetcherUtilsIT
 
         // Create a map representing the above contact relationship
         Map<String, Object> mapContactRel = Map.of("relationship", "married",
-                                                "contact1", contact1Map,
-                                                "contact2", contact2Map);
+                                                   "contact1", contact1Map,
+                                                   "contact2", contact2Map);
 
         assertArgumentResult(schema, "canFindContactRelationship", "relationship", mapContactRel, relationship);
+    }
 
+    @SuppressWarnings({"rawtypes","unchecked"})
+    protected List getList(Object ... values) {
+        ArrayList list = new ArrayList();
+        for (Object value : values) {
+            list.add(value);
+        }
+        return list;
     }
 
     /**
