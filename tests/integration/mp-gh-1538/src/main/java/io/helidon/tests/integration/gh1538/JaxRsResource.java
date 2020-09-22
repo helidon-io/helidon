@@ -16,20 +16,25 @@
 
 package io.helidon.tests.integration.gh1538;
 
-import javax.enterprise.context.RequestScoped;
+import java.util.concurrent.ExecutorService;
+
+import javax.enterprise.context.ApplicationScoped;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
+import javax.ws.rs.core.Context;
 
-@RequestScoped
+@ApplicationScoped
 @Path("/test")
 public class JaxRsResource {
+    @Context
+    private ExecutorService executorService;
+
     @GET
     @Path("/async")
     public void asyncResponse(@Suspended AsyncResponse response) {
-        Thread thread = new Thread(() -> response.resume("result"));
-        thread.start();
+        executorService.submit(() -> response.resume("result"));
     }
 
     @GET

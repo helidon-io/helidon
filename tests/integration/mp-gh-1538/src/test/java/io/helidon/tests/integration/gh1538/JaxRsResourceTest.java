@@ -95,9 +95,11 @@ class JaxRsResourceTest {
                 countOfJerseyServerAsync++;
             } else if (threadName.startsWith("jersey-server-managed-async-executor-")) {
                 countOfDefaultJersey++;
-            } else {
-                System.out.println(threadName);
             }
+            // for troubleshooting:
+//           else {
+//                System.out.println(threadName);
+//            }
         }
 
         assertThat("We should replace default async executor with a custom one", countOfDefaultJersey, is(0));
