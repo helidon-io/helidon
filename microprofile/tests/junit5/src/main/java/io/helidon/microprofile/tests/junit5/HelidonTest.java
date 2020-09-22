@@ -16,6 +16,7 @@
 package io.helidon.microprofile.tests.junit5;
 
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
@@ -36,6 +37,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 @ExtendWith(HelidonJunitExtension.class)
+@Inherited
 public @interface HelidonTest {
     /**
      * By default, CDI container is created once before the class is initialized and shut down

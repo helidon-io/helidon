@@ -102,15 +102,15 @@ class HelidonJunitExtension implements BeforeAllCallback,
     public void beforeAll(ExtensionContext context) {
         testClass = context.getRequiredTestClass();
 
-        AddConfig[] configs = testClass.getAnnotationsByType(AddConfig.class);
+        AddConfig[] configs = getAnnotations(testClass, AddConfig.class);
         classLevelConfigMeta.addConfig(configs);
         classLevelConfigMeta.configuration(testClass.getAnnotation(Configuration.class));
         configProviderResolver = ConfigProviderResolver.instance();
 
-        AddExtension[] extensions = testClass.getAnnotationsByType(AddExtension.class);
+        AddExtension[] extensions = getAnnotations(testClass, AddExtension.class);
         classLevelExtensions.addAll(Arrays.asList(extensions));
 
-        AddBean[] beans = testClass.getAnnotationsByType(AddBean.class);
+        AddBean[] beans = getAnnotations(testClass, AddBean.class);
         classLevelBeans.addAll(Arrays.asList(beans));
 
         HelidonTest testAnnot = testClass.getAnnotation(HelidonTest.class);
@@ -131,6 +131,29 @@ class HelidonJunitExtension implements BeforeAllCallback,
         validatePerClass();
 
         configure(classLevelConfigMeta);
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T extends Annotation> T[] getAnnotations(Class<?> testClass, Class<T> annotClass) {
+        // inherited does not help, as it only returns annot from superclass if
+        // child has none
+        T[] directAnnotations = testClass.getAnnotationsByType(annotClass);
+
+        List<T> allAnnotations = new ArrayList<>(List.of(directAnnotations));
+
+        Class<?> superClass = testClass.getSuperclass();
+        while (superClass != null) {
+            directAnnotations = superClass.getAnnotationsByType(annotClass);
+            allAnnotations.addAll(List.of(directAnnotations));
+            superClass = superClass.getSuperclass();
+        }
+
+        Object result = Array.newInstance(annotClass, allAnnotations.size());
+        for (int i = 0; i < allAnnotations.size(); i++) {
+             Array.set(result, i, allAnnotations.get(i));
+        }
+
+        return (T[]) result;
     }
 
     @Override
