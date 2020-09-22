@@ -209,7 +209,7 @@ class JdbcDbClient implements DbClient {
 
     @Override
     public Single<Void> ping() {
-        return execute(exec -> exec.namedUpdate("ping"))
+        return execute(exec -> exec.namedUpdate(PING_STATEMENT_NAME))
                 .flatMapSingle(it -> Single.empty());
     }
 

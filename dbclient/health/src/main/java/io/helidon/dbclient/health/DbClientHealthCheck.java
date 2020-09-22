@@ -16,7 +16,10 @@
 package io.helidon.dbclient.health;
 
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
+import io.helidon.common.reactive.Awaitable;
 import io.helidon.dbclient.DbClient;
 
 import org.eclipse.microprofile.health.HealthCheck;
@@ -26,18 +29,29 @@ import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
 /**
  * Database health check.
  */
-public final class DbClientHealthCheck implements HealthCheck {
+public abstract class DbClientHealthCheck implements HealthCheck {
 
+    /** Local logger instance. */
+    private static final Logger LOGGER = Logger.getLogger(DbClientHealthCheck.class.getName());
+
+    /** Default hHealth check timeout in seconds (to wait for statement execution response). */
+    private static final int DEFAULT_TIMEOUT_SECONDS = 10;
+    /** Helidon database client. */
     private final DbClient dbClient;
+    /** Health check name. */
     private final String name;
+    /** Health check timeout in seconds (to wait for statement execution response). */
+    private int timeoutSeconds;
 
     private DbClientHealthCheck(Builder builder) {
         this.dbClient = builder.database;
         this.name = builder.name;
+        this.timeoutSeconds = builder.timeoutSeconds;
     }
 
     /**
-     * Create a health check for the database.
+     * Create a health check with default settings for the database.
+     * This health check will execute DML statement named {@code ping} to verify database status.
      *
      * @param dbClient A database that implements {@link io.helidon.dbclient.DbClient#ping()}
      * @return health check that can be used with
@@ -58,39 +72,204 @@ public final class DbClientHealthCheck implements HealthCheck {
         return new Builder(dbClient);
     }
 
+    /**
+     * Execute the ping statement.
+     *
+     * @return {@code Awaitable} instance to wait for
+     */
+    protected abstract Awaitable<?> execPing();
+
     @Override
     public HealthCheckResponse call() {
-        HealthCheckResponseBuilder builder = HealthCheckResponse.builder()
-                .name(name);
+        HealthCheckResponseBuilder builder = HealthCheckResponse.builder().name(name);
 
         try {
-            dbClient.ping().await(10, TimeUnit.SECONDS);
+            execPing().await(timeoutSeconds, TimeUnit.SECONDS);
             builder.up();
         } catch (Throwable e) {
             builder.down();
             builder.withData("ErrorMessage", e.getMessage());
             builder.withData("ErrorClass", e.getClass().getName());
-            e.printStackTrace();
+            // Do not process logging arguments until it makes sense.
+            if (LOGGER.isLoggable(Level.FINER)) {
+                LOGGER.log(Level.FINER, String.format(
+                        "Database %s is not responding: %s", dbClient.dbType(), e.getMessage()), e);
+            }
         }
 
         return builder.build();
     }
 
+    protected DbClient dbClient() {
+        return dbClient;
+    }
+
+    /**
+     * Database health check which calls default DBClient's {@code ping} method.
+     */
+    private static final class DbClientHealthCheckAsPing extends DbClientHealthCheck {
+
+        private DbClientHealthCheckAsPing(Builder builder) {
+            super(builder);
+            LOGGER.log(Level.FINEST, "Created an instance of DbClientHealthCheckAsPing");
+        }
+
+        @Override
+        protected Awaitable<Void> execPing() {
+            return dbClient().ping();
+        }
+
+    }
+
+    /**
+     * Database health check which calls DBClient's {@code namedDml} method.
+     */
+    private static final class DbClientHealthCheckAsNamedDml extends DbClientHealthCheck {
+
+        /** Name of the statement. */
+        private final String statementName;
+
+        private DbClientHealthCheckAsNamedDml(Builder builder) {
+            super(builder);
+            this.statementName = builder.statementName;
+            LOGGER.log(Level.FINEST, "Created an instance of DbClientHealthCheckAsNamedDml");
+        }
+
+        @Override
+        protected Awaitable<?> execPing() {
+            return dbClient().execute(exec -> exec.namedDml(statementName));
+        }
+
+    }
+
+    /**
+     * Database health check which calls DBClient's {@code dml} method.
+     */
+    private static final class DbClientHealthCheckAsDml extends DbClientHealthCheck {
+
+        /** Custom statement. */
+        private final String statement;
+
+        private DbClientHealthCheckAsDml(Builder builder) {
+            super(builder);
+            this.statement = builder.statement;
+            LOGGER.log(Level.FINEST, "Created an instance of DbClientHealthCheckAsDml");
+        }
+
+        @Override
+        protected Awaitable<?> execPing() {
+            return dbClient().execute(exec -> exec.dml(statement));
+        }
+
+    }
+
+    /**
+     * Database health check which calls DBClient's {@code namedQuery} method.
+     */
+    private static final class DbClientHealthCheckAsNamedQuery extends DbClientHealthCheck {
+
+        /** Name of the statement. */
+        private final String statementName;
+
+        private DbClientHealthCheckAsNamedQuery(Builder builder) {
+            super(builder);
+            this.statementName = builder.statementName;
+            LOGGER.log(Level.FINEST, "Created an instance of DbClientHealthCheckAsNamedQuery");
+        }
+
+        @Override
+        protected Awaitable<?> execPing() {
+            return dbClient()
+                    .execute(exec -> exec.namedQuery(statementName).forEach(it -> {}));
+        }
+
+    }
+
+    /**
+     * Database health check which calls DBClient's {@code query} method.
+     */
+    private static final class DbClientHealthCheckAsQuery extends DbClientHealthCheck {
+
+        /** Custom statement. */
+        private final String statement;
+
+        private DbClientHealthCheckAsQuery(Builder builder) {
+            super(builder);
+            this.statement = builder.statement;
+            LOGGER.log(Level.FINEST, "Created an instance of DbClientHealthCheckAsQuery");
+        }
+
+        @Override
+        protected Awaitable<?> execPing() {
+            return dbClient()
+                    .execute(exec -> exec.query(statement).forEach(it -> {}));
+        }
+
+    }
+
     /**
      * Fluent API builder for {@link DbClientHealthCheck}.
+     * Default health check setup will call named DML statement with name {@code ping}.
+     * This named DML statement shall be configured in {@code statements} section
+     * of the DBClient configuration file.
      */
     public static final class Builder implements io.helidon.common.Builder<DbClientHealthCheck> {
+
+        /** Helidon database client. */
         private final DbClient database;
+        /** Health check name. */
         private String name;
+        /** Health check timeout in seconds (to wait for statement execution response). */
+        private int timeoutSeconds;
+
+        // Those two boolean variables define 4 ways of query execution:
+        //
+        // +-----------+----------+--------+------------+-------+
+        // | DbExecute | namedDML | dml    | namedQuery | query |
+        // +-----------+----------+--------+------------+-------+
+        // | isDML     | true     | true   | false      | false |
+        // | named     | true     | faslse | true       | false |
+        // +-----------+----------+--------+------------+-------+
+        // The best performance optimized solution seems to be polymorphysm for part of check method.
+
+        /** Health check statement is DML when {@code true} and query when {@code false}. */
+        private boolean isDML;
+        /** Whether to use named statement or statement passed as an argument. */
+        private boolean isNamedstatement;
+
+        /** Name of the statement. */
+        private String statementName;
+        /** Custom statement. */
+        private String statement;
 
         private Builder(DbClient database) {
             this.database = database;
             this.name = database.dbType();
+            this.timeoutSeconds = DEFAULT_TIMEOUT_SECONDS;
+            this.isDML = true;
+            this.isNamedstatement = true;
+            this.statementName = null;
+            this.statement = null;
         }
 
+        // Defines polymorphysm for ping statement execution based on isDML and isNamedstatement values.
+        // Default health check is to call DBClient's ping method (when no customization is set).
         @Override
         public DbClientHealthCheck build() {
-            return new DbClientHealthCheck(this);
+            if (isDML) {
+                if (isNamedstatement) {
+                    return statementName == null
+                            ? new DbClientHealthCheckAsPing(this) : new DbClientHealthCheckAsNamedDml(this);
+                } else {
+                    return new DbClientHealthCheckAsDml(this);
+                }
+            } else {
+                if (isNamedstatement && statementName == null) {
+                    statementName = DbClient.PING_STATEMENT_NAME;
+                }
+                return isNamedstatement
+                        ? new DbClientHealthCheckAsNamedQuery(this) : new DbClientHealthCheckAsQuery(this);
+            }
         }
 
         /**
@@ -104,6 +283,64 @@ public final class DbClientHealthCheck implements HealthCheck {
             this.name = name;
             return this;
         }
+
+        /**
+         * Set health check statement type to query.
+         * Default health check statement type is DML.
+         *
+         * @return updated builder instance
+         */
+        public Builder query() {
+            this.isDML = false;
+            this.isNamedstatement = true;
+            return this;
+        }
+
+        /**
+         * Set custom statement name.
+         * Default statement name value is {@code ping}.
+         *
+         * @param name custom statement name.
+         * @return updated builder instance
+         */
+        public Builder statementName(String name) {
+            if (statement != null) {
+                throw new UnsupportedOperationException(
+                        "Can't use both statementName and statement methods in a single builder instance!");
+            }
+            this.isNamedstatement = true;
+            this.statementName = name;
+            return this;
+        }
+
+        /**
+         * Set custom statement.
+         *
+         * @param statement custom statement name.
+         * @return updated builder instance
+         */
+        public Builder statement(String statement) {
+            if (statementName != null) {
+                throw new UnsupportedOperationException(
+                        "Can't use both statementName and statement methods in a single builder instance!");
+            }
+            this.isNamedstatement = false;
+            this.statement = statement;
+            return this;
+        }
+
+        /**
+         * Set custom timeout to wait for statement execution response.
+         * Default value is {@code 10} seconds.
+         *
+         * @param seconds number of seconds to wait for statement execution response
+         * @return updated builder instance
+         */
+        public Builder timeout(int seconds) {
+            this.timeoutSeconds = seconds;
+            return this;
+        }
+
     }
 
 }

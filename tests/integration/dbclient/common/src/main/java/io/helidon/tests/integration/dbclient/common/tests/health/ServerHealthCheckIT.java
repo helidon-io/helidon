@@ -34,12 +34,14 @@ import javax.json.JsonValue;
 import javax.json.stream.JsonParsingException;
 
 import io.helidon.common.reactive.Multi;
+import io.helidon.config.Config;
 import io.helidon.dbclient.DbRow;
 import io.helidon.dbclient.health.DbClientHealthCheck;
 import io.helidon.health.HealthSupport;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 
+import org.eclipse.microprofile.health.HealthCheck;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -63,8 +65,13 @@ public class ServerHealthCheckIT {
     private static String URL;
 
     private static Routing createRouting() {
+        Config cfgPingDml = CONFIG.get("test.ping-dml");
+        boolean pingDml = cfgPingDml.exists() ? cfgPingDml.asBoolean().get() : true;
+        HealthCheck check = pingDml
+                ? DbClientHealthCheck.create(DB_CLIENT)
+                : DbClientHealthCheck.builder(DB_CLIENT).query().build();
         final HealthSupport health = HealthSupport.builder()
-                .addLiveness(DbClientHealthCheck.create(DB_CLIENT))
+                .addLiveness(check)
                 .build();
         return Routing.builder()
                 .register(health) // Health at "/health"
