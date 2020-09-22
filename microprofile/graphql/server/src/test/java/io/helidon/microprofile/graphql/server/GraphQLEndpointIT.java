@@ -39,7 +39,6 @@ import org.glassfish.jersey.ext.cdi1x.internal.CdiComponentProvider;
 import org.hamcrest.CoreMatchers;
 
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.microprofile.graphql.server.GraphQLResource.SCHEMA_URL;
