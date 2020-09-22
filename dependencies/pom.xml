@@ -142,6 +142,7 @@
                 <version>${version.lib.jaegertracing}</version>
             </dependency>
             <dependency>
+                <!-- Enforce higher version than jaeger-client brings in -->
                 <groupId>org.apache.thrift</groupId>
                 <artifactId>libthrift</artifactId>
                 <version>${version.lib.apache-thrift}</version>
