@@ -247,13 +247,33 @@ public class FormattingHelper {
     }
 
     /**
+     * Return any formatting on a field/
+     *
+     * @param jandexUtils     {@link JandexUtils} to use
+     * @param clazz           {@link Class} to check for annotation
+     * @param fieldName       field name to check
+     * @return a String[] representing the format and locale
+     */
+    protected static String[] getFieldFormat(JandexUtils jandexUtils, String clazz,
+                                                 String fieldName) {
+         if (jandexUtils.hasIndex()) {
+             AnnotationInstance dateFormat1 = jandexUtils.getFieldAnnotation(clazz, fieldName, JSONB_DATE_FORMAT);
+             AnnotationInstance dateFormat2 = jandexUtils.getFieldAnnotation(clazz, fieldName, DATE_FORMAT);
+             AnnotationInstance numberFormat1 = jandexUtils.getFieldAnnotation(clazz, fieldName, JSONB_NUMBER_FORMAT);
+             AnnotationInstance numberFormat2 = jandexUtils.getFieldAnnotation(clazz, fieldName, NUMBER_FORMAT);
+             return getFormatFromAnnotationInstance(dateFormat1, dateFormat2, numberFormat1, numberFormat2);
+         }
+         return NO_FORMATTING;
+    }
+
+    /**
      * Return the method parameter format using Jandex.
      *
-     * @param jandexUtils     {@link JandexUtils} to use 
+     * @param jandexUtils     {@link JandexUtils} to use
      * @param clazz           {@link Class} to check for annotation
      * @param methodName      method name to check
      * @param paramNumber     parameter number to check
-     * @return
+     * @return a String[] representing the format and locale
      */
     protected static String[] getMethodParameterFormat(JandexUtils jandexUtils, String clazz, String methodName,
                                                        int paramNumber) {

@@ -70,7 +70,9 @@ import static io.helidon.microprofile.graphql.server.FormattingHelper.formatDate
 import static io.helidon.microprofile.graphql.server.FormattingHelper.formatNumber;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.getCorrectDateFormatter;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.getCorrectNumberFormat;
+import static io.helidon.microprofile.graphql.server.FormattingHelper.getFieldFormat;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.getFormattingAnnotation;
+import static io.helidon.microprofile.graphql.server.FormattingHelper.getMethodParameterFormat;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.isJsonbAnnotationPresent;
 import static io.helidon.microprofile.graphql.server.SchemaGenerator.DiscoveredMethod.MUTATION_TYPE;
 import static io.helidon.microprofile.graphql.server.SchemaGenerator.DiscoveredMethod.QUERY_TYPE;
@@ -783,8 +785,6 @@ public class SchemaGenerator {
         if (propertyName != null && !isFormatEmpty(format)) {
             if (!isGraphQLType(valueClassName)) {
                 dataFetcher = retrieveFormattingDataFetcher(format, propertyName, graphQLType);
-                // TODO: Is the following required after refactor?
-                // context.addFormatter(discoveredMethod.method, propertyName, (FormattingProvider) dataFetcher);
 
                 // if the format is a number format then set teh return type to String
                 if (NUMBER.equals(format[0])) {
@@ -1080,6 +1080,10 @@ public class SchemaGenerator {
             // check for format on the property but only override if it is null
             if (field != null && (format.length == 0 || format[0] == null)) {
                 format = getFormattingAnnotation(field);
+                if (isFormatEmpty(format)) {
+                    // check to see format of the inner most class. E.g. List<@DateFomrat("DD/MM") String>
+                    format = getFieldFormat(jandexUtils, className, field.getName());
+                }
                 isJsonbFormat = isJsonbAnnotationPresent(field);
             }
         } else {
@@ -1125,7 +1129,7 @@ public class SchemaGenerator {
                 discoveredMethod.setOriginalArrayType(Class.forName(realReturnType.returnClass));
             }
             discoveredMethod.setReturnType(realReturnType.getReturnClass());
-            if (realReturnType.getFormat() != null) {
+            if (!isFormatEmpty(realReturnType.getFormat())) {
                 discoveredMethod.setFormat(realReturnType.format);
             }
         } else {
@@ -1165,7 +1169,7 @@ public class SchemaGenerator {
 
                 Class<?> paramType = parameter.getType();
 
-                ReturnType returnType = getReturnType(paramType, genericParameterTypes[i], i++, method);
+                ReturnType returnType = getReturnType(paramType, genericParameterTypes[i], i, method);
 
                 if (parameter.getAnnotation(Id.class) != null) {
                     validateIDClass(returnType.getReturnClass());
@@ -1182,8 +1186,18 @@ public class SchemaGenerator {
                         new SchemaArgument(parameterName, returnType.getReturnClass(),
                                            isMandatory, argumentDefaultValue, paramType);
                 String argumentDescription = getDescription(parameter.getAnnotation(Description.class));
-                String[] argumentFormat = FormattingHelper.getFormattingAnnotation(parameter);
                 argument.setDescription(argumentDescription);
+
+                String[] argumentFormat = FormattingHelper.getFormattingAnnotation(parameter);
+                String[] argumentTypeFormat = getMethodParameterFormat(jandexUtils,
+                                                              method.getDeclaringClass().getName(), method.getName(),i);
+
+                // The argument type format overrides any argument format. E.g. NumberFormat should apply below
+                // E.g.  public List<String> getListAsString(@Name("arg1")
+                //                                           @JsonbNumberFormat("ignore 00.0000000")
+                //                                           List<List<@NumberFormat("value 00.0000000") BigDecimal>> values)
+                argumentFormat = !isFormatEmpty(argumentTypeFormat) ? argumentTypeFormat : argumentFormat;
+
                 if (argumentFormat[0] != null) {
                     argument.setFormat(new String[] { argumentFormat[1], argumentFormat[2] });
                     argument.setArgumentType(String.class.getName());
@@ -1206,10 +1220,14 @@ public class SchemaGenerator {
                     }
                     argument.setArrayReturnTypeMandatory(returnType.isReturnTypeMandatory);
                     argument.setArrayReturnType(returnType.isArrayType);
+                    if (returnType.isArrayType) {
+                        argument.setOriginalArrayType(getSafeClass(returnType.returnClass));
+                    }
                     argument.setArrayLevels(returnType.getArrayLevels());
                 }
 
                 discoveredMethod.addArgument(argument);
+                i++;
             }
         }
     }
@@ -1326,7 +1344,7 @@ public class SchemaGenerator {
                 if (isParameter) {
                     hasAnnotation = jandexUtils
                             .methodParameterHasAnnotation(clazzName, methodName, parameterNumber, nonNullClazz);
-                    format = FormattingHelper.getMethodParameterFormat(jandexUtils, clazzName, methodName,
+                    format = getMethodParameterFormat(jandexUtils, clazzName, methodName,
                                                                        parameterNumber);
                 } else {
                     hasAnnotation = jandexUtils.methodHasAnnotation(clazzName, methodName, nonNullClazz);

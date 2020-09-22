@@ -335,4 +335,43 @@ public class SimpleQueriesWithArgs {
         return value;
     }
 
+    @Query
+    public List<SimpleContact> echoListOfSimpleContacts(@Name("value") List<SimpleContact> value) {
+        return value;
+    }
+
+    @Query
+    public Collection<SimpleContact> echoCollectionOfSimpleContacts(@Name("value") Collection<SimpleContact> value) {
+        return value;
+    }
+
+    @Query
+    public String[] echoStringArray(@Name("value") String[] value) {
+        return value;
+    }
+
+    @Query
+    public int[] echoIntArray(@Name("value") int[] value) {
+        return value;
+    }
+
+    @Query
+    public Boolean[] echoBooleanArray(@Name("value") Boolean[] value) {
+        return value;
+    }
+
+    @Query
+    public String[][] echoStringArray2(@Name("value") String[][] value) {
+        return value;
+    }
+
+    @Query
+    public SimpleContact[] echoSimpleContactArray(@Name("value") SimpleContact[] value) {
+        return value;
+    }
+
+    @Query
+    public List<Integer> echoFormattedListOfIntegers(@Name("value") List<@NumberFormat("0 'years old'") Integer> value) {
+        return value;
+    }
 }

@@ -21,7 +21,7 @@ import java.util.Objects;
 /**
  * Defines a simple contact.
  */
-public class SimpleContact {
+public class SimpleContact implements Comparable<SimpleContact> {
     private String id;
     private String name;
     private int age;
@@ -76,5 +76,13 @@ public class SimpleContact {
     @Override
     public int hashCode() {
         return Objects.hash(id, name, age);
+    }
+
+    @Override
+    /**
+     * Simple comparison by age.
+     */
+    public int compareTo(SimpleContact other) {
+        return Integer.valueOf(age).compareTo(Integer.valueOf(other.getAge()));
     }
 }

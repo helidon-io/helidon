@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.graphql.server;
 
+import static io.helidon.microprofile.graphql.server.JsonUtils.convertObjectToMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -38,10 +39,13 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Tests for {@link DataFetcherUtils} class.
@@ -75,20 +79,6 @@ class DataFetcherUtilsIT
         ExecutionContext executionContext = new ExecutionContext(defaultContext);
         Schema schema = executionContext.getSchema();
 
-        // input SimpleContactWithNumberFormatsInput {
-        //  "0 'years old'"
-        //  age: String
-        //  "¤ 000.00 en-AU"
-        //  bankBalance: String
-        //  "BigDecimal-##########"
-        //  bigDecimal: String
-        //  id: Int
-        //  "LongValue-##########"
-        //  longValue: String
-        //  name: String
-        //  "0 'value'"
-        //  value: String!
-        //}
         Map<String, Object> mapContact = Map.of("age", "52 years old", "bankBalance", "$ 100.00",
                                                 "bigDecimal", "BigDecimal-123", "longValue", "LongValue-321",
                                                 "name", "Tim", "value", "1 value", "id", "100");
@@ -171,44 +161,74 @@ class DataFetcherUtilsIT
     }
 
     @Test
-    public void testArrays() {
+    public void testArrays() throws Exception {
+        setupIndex(indexFileName, SimpleQueriesWithArgs.class, SimpleContact.class);
+        ExecutionContext executionContext = new ExecutionContext(defaultContext);
+        Schema schema = executionContext.getSchema();
 
-    }
+        String[] stringArray = new String[] {"A", "B", "C"};
+        assertArgumentResult(schema, "echoStringArray", "value", stringArray, stringArray);
 
-    @Test
-    public void testArraysAndObjects() {
+        int[] intArray = new int[] {1, 2, 3, 4};
+        assertArgumentResult(schema, "echoIntArray", "value", intArray, intArray);
 
+        Boolean[] booleanArray = new Boolean[] {true, false, true, true};
+        assertArgumentResult(schema, "echoBooleanArray", "value", booleanArray, booleanArray);
+
+        String[][] stringArray2 = new String[][] {
+                { "A", "B", "C"},
+                { "D", "E", "F"}
+        };
+        assertArgumentResult(schema, "echoStringArray2", "value", stringArray2, stringArray2);
+
+        SimpleContact[] contactArray = new SimpleContact[] {
+               new SimpleContact("c1", "Contact 1", 50),
+                new SimpleContact("c2", "Contact 2", 52)
+        };
+        assertArgumentResult(schema, "echoSimpleContactArray", "value", contactArray, contactArray);
+
+        // TODO: Test formatting of numbers and dates in arrays
+        
     }
 
     @Test
     @SuppressWarnings("unchecked")
-    public void testCollections() throws Exception {
+    public void testSimpleCollections() throws Exception {
         setupIndex(indexFileName, SimpleQueriesWithArgs.class, SimpleContact.class);
         ExecutionContext executionContext = new ExecutionContext(defaultContext);
         Schema schema = executionContext.getSchema();
 
         List<Integer> listInteger = getList(1, 2, 3);
-        List<String> listString  = getList("A", "B", "C");
+        List<String> listString = getList("A", "B", "C");
         Collection<BigInteger> colBigInteger = getList(BigInteger.valueOf(1), BigInteger.valueOf(222), BigInteger.valueOf(333));
 
         assertArgumentResult(schema, "echoListOfIntegers", "value", listInteger, listInteger);
         assertArgumentResult(schema, "echoListOfStrings", "value", listString, listString);
         assertArgumentResult(schema, "echoListOfBigIntegers", "value", colBigInteger, colBigInteger);
 
-        // TODO: Test formatting
+        // Test formatting for numbers and dates
+        List<String> listFormattedIntegers = List.of("1 years old", "3 years old", "53 years old");
+        assertArgumentResult(schema, "echoFormattedListOfIntegers", "value", listFormattedIntegers,
+                             List.of(1, 3, 53));
     }
 
     @Test
     @SuppressWarnings("unchecked")
-    public void testCollectionsAndObjects() throws IOException {
+    public void testCollectionsAndObjects() throws Exception {
         setupIndex(indexFileName, SimpleQueriesWithArgs.class, SimpleContact.class);
         ExecutionContext executionContext = new ExecutionContext(defaultContext);
         Schema schema = executionContext.getSchema();
 
-        // simple collections
-        List<SimpleContact> listContacts = getList(new SimpleContact("c1", "Contact 1", 50),
-                                                   new SimpleContact("c2", "Contact 2", 52));
+        SimpleContact contact1 = new SimpleContact("c1", "Contact 1", 50);
+        SimpleContact contact2 = new SimpleContact("c2", "Contact 2", 52);
 
+        Collection<SimpleContact> colContacts = List.of(contact1, contact2);
+        Collection<Map<String, Object>> listOfMaps = List.of(convertObjectToMap(contact1), convertObjectToMap(contact2));
+
+        assertArgumentResult(schema, "echoCollectionOfSimpleContacts", "value",
+                             listOfMaps, colContacts);
+
+        // test multi-level collections
     }
 
     @Test
@@ -222,8 +242,8 @@ class DataFetcherUtilsIT
         SimpleContact contact2 = new SimpleContact("c2", "Contact 2", 53);
         ContactRelationship relationship = new ContactRelationship(contact1, contact2, "married");
 
-        Map<String, Object> contact1Map = JsonUtils.convertObjectToMap(contact1);
-        Map<String, Object> contact2Map = JsonUtils.convertObjectToMap(contact2);
+        Map<String, Object> contact1Map = convertObjectToMap(contact1);
+        Map<String, Object> contact2Map = convertObjectToMap(contact2);
 
         // Create a map representing the above contact relationship
         Map<String, Object> mapContactRel = Map.of("relationship", "married",
@@ -233,8 +253,8 @@ class DataFetcherUtilsIT
         assertArgumentResult(schema, "canFindContactRelationship", "relationship", mapContactRel, relationship);
     }
 
-    @SuppressWarnings({"rawtypes","unchecked"})
-    protected List getList(Object ... values) {
+    @SuppressWarnings( { "rawtypes", "unchecked" })
+    protected List getList(Object... values) {
         ArrayList list = new ArrayList();
         for (Object value : values) {
             list.add(value);
@@ -252,13 +272,29 @@ class DataFetcherUtilsIT
      * @param expected     the expected output
      * @throws Exception if any errors
      */
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     protected void assertArgumentResult(Schema schema, String fdName,
                                         String argumentName, Object input, Object expected) throws Exception {
         SchemaArgument argument = getArgument(schema, "Query", fdName, argumentName);
         assertThat(argument, is(notNullValue()));
+        Class<?> originalType = argument.isArrayReturnType() ? argument.getOriginalArrayType()
+                            : argument.getOriginalType();
         Object result = DataFetcherUtils.generateArgumentValue(schema, argument.getArgumentType(),
-                                                               argument.getOriginalType(), input, argument.getFormat());
-        assertThat(result, is(expected));
+                                                               originalType, input, argument.getFormat());
+
+        if (input instanceof Collection) {
+            // compare each value
+            Collection colExpected = (Collection) expected;
+            Collection colResult = (Collection) result;
+            for (Object value : colExpected) {
+                if (!colResult.contains(value)) {
+                    throw new AssertionError("Cannot find expected value [" +
+                                             value + "] in result " + colResult.toString());
+                }
+            }
+        } else {
+            assertThat(result, is(expected));
+        }
     }
 
     protected SchemaArgument getArgument(Schema schema, String typeName, String fdName, String argumentName) {

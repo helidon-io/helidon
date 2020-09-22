@@ -77,6 +77,11 @@ public class SchemaArgument
     private boolean isArrayReturnTypeMandatory;
 
     /**
+     * Original array inner type if it is array type.
+     */
+    private Class<?> originalArrayType;
+
+    /**
      * Construct a {@link SchemaArgument} instance.
      *
      * @param argumentName name of the argument
@@ -275,6 +280,26 @@ public class SchemaArgument
     public void setArrayReturnTypeMandatory(boolean arrayReturnTypeMandatory) {
         isArrayReturnTypeMandatory = arrayReturnTypeMandatory;
     }
+
+    /**
+     * Sets the original array type.
+     *
+     * @param originalArrayType the original array type
+     */
+    public void setOriginalArrayType(Class <?> originalArrayType) {
+        this.originalArrayType = originalArrayType;
+    }
+
+    /**
+     * Returns the original array type.
+     *
+     * @return the original array type
+     */
+    public Class<?> getOriginalArrayType() {
+        return originalArrayType;
+    }
+
+
     @Override
     public String toString() {
         return "Argument{"
@@ -286,6 +311,7 @@ public class SchemaArgument
                 + ", sourceArgument=" + sourceArgument
                 + ", isReturnTypeMandatory=" + isArrayReturnTypeMandatory
                 + ", isArrayReturnType=" + isArrayReturnType
+                + ", originalArrayType=" + originalArrayType
                 + ", arrayLevels=" + arrayLevels
                 + ", format=" + Arrays.toString(format)
                 + ", description='" + getDescription() + '\'' + '}';
@@ -309,6 +335,7 @@ public class SchemaArgument
                 && Objects.equals(originalType, schemaArgument.originalType)
                 && Objects.equals(format, schemaArgument.format)
                 && Objects.equals(sourceArgument, schemaArgument.sourceArgument)
+                && Objects.equals(originalArrayType, schemaArgument.originalArrayType)
                 && Objects.equals(getDescription(), schemaArgument.getDescription())
                 && Objects.equals(defaultValue, schemaArgument.defaultValue);
     }
@@ -316,6 +343,6 @@ public class SchemaArgument
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), argumentName, argumentType, sourceArgument,
-                            isMandatory, defaultValue, getDescription(), originalType, format);
+                            isMandatory, defaultValue, getDescription(), originalType, format, originalArrayType);
     }
 }

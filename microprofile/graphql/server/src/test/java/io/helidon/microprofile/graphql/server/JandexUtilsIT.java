@@ -21,6 +21,7 @@ import java.io.IOException;
 import io.helidon.microprofile.graphql.server.test.queries.QueriesAndMutationsWithNulls;
 import io.helidon.microprofile.graphql.server.test.types.NullPOJO;
 
+import io.helidon.microprofile.graphql.server.test.types.SimpleContactWithNumberFormats;
 import org.eclipse.microprofile.graphql.NonNull;
 
 import org.junit.jupiter.api.Test;

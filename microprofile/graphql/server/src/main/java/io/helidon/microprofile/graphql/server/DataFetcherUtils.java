@@ -107,8 +107,10 @@ public class DataFetcherUtils {
 
             if (args.length > 0) {
                 for (SchemaArgument argument : args) {
+                    Class<?> originalType = argument.isArrayReturnType() ? argument.getOriginalArrayType()
+                            : argument.getOriginalType();
                     listArgumentValues.add(generateArgumentValue(schema, argument.getArgumentType(),
-                                                                 argument.getOriginalType(),
+                                                                 originalType,
                                                                  environment.getArgument(argument.getArgumentName()),
                                                                  argument.getFormat()));
                 }
@@ -173,16 +175,23 @@ public class DataFetcherUtils {
 
         } else if (rawValue instanceof Collection) {
             SchemaInputType inputType = schema.getInputTypeByName(argumentType);
+            Collection colResults = originalType.equals(List.class) ? new ArrayList() : new TreeSet();
             if (inputType != null) {
                 // handle complex types
-                System.out.println(inputType);
-//                SchemaFieldDefinition fd = inputType.getFieldDefinitionByName(fdName);
-                throw new RuntimeException("Arg");
+                for (Object value : (Collection) rawValue) {
+                    colResults.add(generateArgumentValue(schema, inputType.getName(),
+                                                         Class.forName(inputType.getValueClassName()), value, EMPTY_FORMAT));
+                }
+
+                return colResults;
             } else {
-                // ensure we preserve the order
-                return originalType.equals(List.class)
-                                   ? new ArrayList((Collection) rawValue)
-                                   : new TreeSet((Collection) rawValue);
+                // standard type or scalar so ensure we preserve the order and
+                // convert any values with formats
+                for (Object value : (Collection) rawValue) {
+                    colResults.add(parseArgumentValue(originalType, argumentType, value, format));
+                }
+
+                return colResults;
             }
         } else {
             return parseArgumentValue(originalType, argumentType, rawValue, format);

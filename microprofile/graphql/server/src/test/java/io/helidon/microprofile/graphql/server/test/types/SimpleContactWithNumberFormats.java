@@ -124,6 +124,14 @@ public class SimpleContactWithNumberFormats {
         return longValue;
     }
 
+    public List<LocalDate> getListDates() {
+        return listDates;
+    }
+
+    public void setListDates(List<LocalDate> listDates) {
+        this.listDates = listDates;
+    }
+
     // this format should only be applied to the InputType and not the Type
     @NumberFormat("LongValue-##########")
     public void setLongValue(Long longValue) {

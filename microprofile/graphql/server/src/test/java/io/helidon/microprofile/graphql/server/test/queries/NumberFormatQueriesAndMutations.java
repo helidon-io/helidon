@@ -69,8 +69,9 @@ public class NumberFormatQueriesAndMutations {
 
     @Query
     public List<String> getListAsString(@Name("arg1")
+                                        // this should be ignored as NumberFormat is Below
                                         @JsonbNumberFormat("ignore 00.0000000")
-                                                List<List<@NumberFormat("value 00.0000000") BigDecimal>> values) {
+                                        List<@NumberFormat("'value' 00.0000000") BigDecimal> values) {
         if (values != null) {
             return values.stream().map(Object::toString).collect(Collectors.toList());
         }

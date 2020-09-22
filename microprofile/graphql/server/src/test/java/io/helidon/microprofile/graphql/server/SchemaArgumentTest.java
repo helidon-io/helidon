@@ -71,6 +71,10 @@ class SchemaArgumentTest {
 
         schemaArgument.setDefaultValue("1");
         assertThat(schemaArgument.getDefaultValue(), is("1"));
+
+        assertThat(schemaArgument.getOriginalArrayType(), is(nullValue()));
+        schemaArgument.setOriginalArrayType(String.class);
+        assertThat(schemaArgument.getOriginalArrayType().getName(), is(String.class.getName()));
     }
 
     @Test

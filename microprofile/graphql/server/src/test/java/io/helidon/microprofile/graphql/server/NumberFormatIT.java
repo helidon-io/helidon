@@ -22,6 +22,7 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.FORMATTED_DATE_SCALAR;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.INT;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.STRING;
 import static org.hamcrest.CoreMatchers.is;
@@ -31,6 +32,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.queries.NumberFormatQueriesAndMutations;
+import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesWithArgs;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContactWithNumberFormats;
 
 import io.helidon.microprofile.tests.junit5.AddBean;
@@ -47,13 +49,15 @@ import org.junit.jupiter.api.Test;
 @AddExtension(GraphQLCdiExtension.class)
 @AddBean(SimpleContactWithNumberFormats.class)
 @AddBean(NumberFormatQueriesAndMutations.class)
+@AddBean(SimpleQueriesWithArgs.class)
 @AddBean(TestDB.class)
 public class NumberFormatIT extends AbstractGraphQLIT {
 
     @Test
     @SuppressWarnings("unchecked")
     public void testNumberFormats() throws IOException {
-        setupIndex(indexFileName, SimpleContactWithNumberFormats.class, NumberFormatQueriesAndMutations.class);
+        setupIndex(indexFileName, SimpleContactWithNumberFormats.class,
+                   NumberFormatQueriesAndMutations.class, SimpleQueriesWithArgs.class);
         ExecutionContext executionContext = new ExecutionContext(defaultContext);
 
         Map<String, Object> mapResults = getAndAssertResult(executionContext
@@ -102,11 +106,10 @@ public class NumberFormatIT extends AbstractGraphQLIT {
 //        List<BigDecimal> listBigDecimals = (List<BigDecimal>) mapResults.get("echoBigDecimalList");
 //        assertThat(mapResults.get("listBigDecimals"), is("Tim-123"));
 
-
-
-        // COH-21891
+        
+        // TODO: COH-21891
         mapResults = getAndAssertResult(
-                executionContext.execute("query { listAsString(arg1: [ [ \"value 12.12\", \"value 33.33\"] ] ) }"));
+                executionContext.execute("query { listAsString(arg1: [ \"value 12.12\", \"value 33.33\"] ) }"));
         assertThat(mapResults, is(notNullValue()));
 
         // create a new contact
@@ -121,12 +124,21 @@ public class NumberFormatIT extends AbstractGraphQLIT {
                         + "bigDecimal: \"BigDecimal-12345\""
                         + " } ";
 
-//        mapResults = getAndAssertResult(
-//                executionContext.execute("mutation { createSimpleContactWithNumberFormats (" + contactInput +
-//                                                 ") { id name } }"));
-//        assertThat(mapResults.size(), is(1));
-//        mapResults2 = (Map<String, Object>) mapResults.get("createSimpleContactWithNumberFormats");
-//        assertThat(mapResults2, is(notNullValue()));
+        mapResults = getAndAssertResult(
+                executionContext.execute("mutation { createSimpleContactWithNumberFormats (" + contactInput +
+                                                 ") { id name } }"));
+        assertThat(mapResults.size(), is(1));
+        mapResults2 = (Map<String, Object>) mapResults.get("createSimpleContactWithNumberFormats");
+        assertThat(mapResults2, is(notNullValue()));
+        assertThat(mapResults2.get("id"), is("1 id"));
+        assertThat(mapResults2.get("name"), is("Tim"));
+
+        mapResults = getAndAssertResult(executionContext.execute("query { echoFormattedListOfIntegers(value: [ \"1 years old\", \"3 "
+                                                                         + "years old\", \"53 years old\" ]) }"));
+        assertThat(mapResults, is(notNullValue()));
+
+        List<Integer> listResults = (List<Integer>) mapResults.get("echoFormattedListOfIntegers");
+        assertThat(listResults.size(), is(3));
    }
 
     @Test
@@ -166,6 +178,11 @@ public class NumberFormatIT extends AbstractGraphQLIT {
         assertThat(fd, is(notNullValue()));
         assertThat(fd.getFormat()[0], is("0 'years old'"));
         assertThat(fd.getReturnType(), is(STRING));
+
+        fd = getFieldDefinition(inputType, "listDates");
+        assertThat(fd, is(notNullValue()));
+        assertThat(fd.getFormat()[0], is("DD-MM-YYYY"));
+        assertThat(fd.getReturnType(), is(FORMATTED_DATE_SCALAR));
     }
 
 }
