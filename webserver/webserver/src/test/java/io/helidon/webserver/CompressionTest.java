@@ -77,6 +77,7 @@ public class CompressionTest {
                             res.send(payload);
                         })
                         .build())
+                .enableCompression(true)        // compression
                 .build()
                 .start()
                 .toCompletableFuture()

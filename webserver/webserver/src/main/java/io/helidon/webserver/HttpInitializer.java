@@ -123,8 +123,11 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
             // Uncomment the following line if you don't want to handle HttpChunks.
             //        p.addLast(new HttpObjectAggregator(1048576));
             p.addLast(new HttpResponseEncoder());
-            // Compresses zip or deflate encoding while respecting the "Accept-Encoding" header
-            p.addLast(new HttpContentCompressor());
+
+            // Enable compression via "Accept-Encoding" header if configured
+            if (serverConfig.enableCompression()) {
+                p.addLast(new HttpContentCompressor());
+            }
         }
 
         // Helidon's forwarding handler

@@ -752,6 +752,17 @@ public interface WebServer {
         }
 
         /**
+         * Configure whether to enable content negotiation for compression.
+         *
+         * @param value compression flag
+         * @return updated builder instance
+         */
+        public Builder enableCompression(boolean value) {
+            configurationBuilder.enableCompression(value);
+            return this;
+        }
+
+        /**
          * Set to {@code true} to print detailed feature information on startup.
          *
          * @param shouldPrint whether to print details or not
