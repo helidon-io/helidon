@@ -20,6 +20,14 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.Map;
 
+import io.helidon.microprofile.config.ConfigCdiExtension;
+import io.helidon.microprofile.server.JaxRsCdiExtension;
+import io.helidon.microprofile.server.ServerCdiExtension;
+import io.helidon.microprofile.tests.junit5.AddBean;
+import io.helidon.microprofile.tests.junit5.AddConfig;
+import io.helidon.microprofile.tests.junit5.AddExtension;
+import io.helidon.microprofile.tests.junit5.DisableDiscovery;
+import io.helidon.microprofile.tests.junit5.HelidonTest;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
@@ -27,6 +35,7 @@ import javax.ws.rs.core.Response;
 
 import io.helidon.microprofile.graphql.server.test.types.Person;
 
+import org.glassfish.jersey.ext.cdi1x.internal.CdiComponentProvider;
 import org.hamcrest.CoreMatchers;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -41,7 +50,20 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Integration tests for microprofile-graphql implementation via /graphql endpoint.
  */
-public class GraphQLEndpointIT extends AbstractGraphQLEndpointIT {
+@HelidonTest
+@DisableDiscovery
+@AddExtension(GraphQLCdiExtension.class)
+@AddExtension(ServerCdiExtension.class)
+@AddExtension(JaxRsCdiExtension.class)
+@AddExtension(ConfigCdiExtension.class)
+@AddExtension(CdiComponentProvider.class)
+@AddBean(Person.class)
+@AddBean(GraphQLResource.class)
+@AddBean(GraphQLApplication.class)
+@AddConfig(key = "server.static.classpath.context", value = "/ui")
+@AddConfig(key = "server.static.classpath.location", value = "/web")
+public class GraphQLEndpointIT
+        extends AbstractGraphQLEndpointIT {
 
     @BeforeAll
     public static void setup() throws IOException {
@@ -49,8 +71,8 @@ public class GraphQLEndpointIT extends AbstractGraphQLEndpointIT {
     }
 
     @Test
-    @Disabled("COH-21920")
-    public void basicEndpointTests() throws UnsupportedEncodingException {
+    public void basicEndpointTests()
+            throws UnsupportedEncodingException {
         // test /graphql endpoint
         WebTarget webTarget = getGraphQLWebTarget().path(GRAPHQL);
         Map<String, Object> mapRequest = generateJsonRequest(QUERY_INTROSPECT, null, null);
@@ -80,7 +102,7 @@ public class GraphQLEndpointIT extends AbstractGraphQLEndpointIT {
     }
 
     @Test
-    public void testUIEndpoint() throws InterruptedException {
+    public void testUIEndpoint() {
         // test /ui endpoint
         WebTarget webTarget = getGraphQLWebTarget().path(UI).path("index.html");
         Response response = webTarget.request().get();
@@ -89,10 +111,7 @@ public class GraphQLEndpointIT extends AbstractGraphQLEndpointIT {
     }
 
     @Test
-    @Disabled("COH-21920")
     public void testGetSchema() {
-        // see https://github.com/eclipse/microprofile-graphql/issues/202
-        // add text/plain
         WebTarget webTarget = getGraphQLWebTarget().path(GRAPHQL).path(SCHEMA_URL);
         Response response = webTarget.request(MediaType.TEXT_PLAIN).get();
         assertThat(response, is(notNullValue()));

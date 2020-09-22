@@ -44,6 +44,9 @@ public class Person {
     private long longValue;
     private BigDecimal bigDecimal;
 
+    public Person() {
+    }
+
     public Person(int personId,
                   String name,
                   Address homeAddress,
