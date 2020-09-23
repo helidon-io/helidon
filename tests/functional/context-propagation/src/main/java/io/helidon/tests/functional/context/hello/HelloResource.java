@@ -21,6 +21,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 
 import io.helidon.webserver.ServerRequest;
+import org.eclipse.microprofile.faulttolerance.CircuitBreaker;
 import org.eclipse.microprofile.faulttolerance.Retry;
 
 /**
@@ -52,6 +53,7 @@ public class HelloResource {
     @GET
     @Path("/hello")
     @Retry
+    @CircuitBreaker
     public String getHello() {
         return helloBean.getHello();
     }
@@ -64,6 +66,7 @@ public class HelloResource {
     @GET
     @Path("/helloTimeout")
     @Retry
+    @CircuitBreaker
     public String getHelloTimeout() {
         return helloBean.getHelloTimeout();
     }
@@ -77,6 +80,7 @@ public class HelloResource {
     @GET
     @Path("/helloAsync")
     @Retry
+    @CircuitBreaker
     public String getHelloAsync() throws Exception {
         return helloBean.getHelloAsync().toCompletableFuture().get();
     }
@@ -84,6 +88,7 @@ public class HelloResource {
     @GET
     @Path("/remoteAddress")
     @Retry
+    @CircuitBreaker
     public String getRemoteAddress() {
         ServerRequest serverRequest = supplier.get();
         return serverRequest.remoteAddress();
