@@ -93,7 +93,8 @@ The following table shows all configuration options of the provider and their de
 |===
 |key |default value |description
 
-|`optional` |`false` |If set to true, failure to authenticate will cause this provider to report `abstain` result, not failure
+|`optional` |`false` |If set to `true`, failure to authenticate will return `ABSTAIN` result instead of `FAILURE`. This is
+    an important distinction when more than one provider is used
 |`realm` | `helidon` |Realm used for challenge when request does not have a signature
 |`headers` | `[SIGNATURE,AUTHORIZATION]` |Headers to look for inbound signatures and to store outbound signatures
 |`sign-headers` | `always = ["date"]` |Headers to be signed

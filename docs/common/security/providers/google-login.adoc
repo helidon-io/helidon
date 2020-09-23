@@ -67,7 +67,8 @@ The following table shows all configuration options of the provider and their de
 
 |`client-id` |{nbsp} |Client id of an application. To create an application, use
     the Google developer console (https://developers.google.com/identity/sign-in/web/sign-in)
-|`optional` |`false` |If set to `true`, failure to authenticate with return an abstain result instead of failure
+|`optional` |`false` |If set to `true`, failure to authenticate will return `ABSTAIN` result instead of `FAILURE`. This is
+    an important distinction when more than one provider is used
 |`realm` |`helidon` |Realm used in the challenge when authentication is not provided and it is required
 |`proxy-host` |none |Configuration of a proxy host to use when authenticating the user
 |`proxy-port` |`80` |Proxy port

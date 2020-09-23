@@ -78,7 +78,8 @@ The following table shows all configuration options of the provider and their de
 |===
 |key |default value |description
 
-|`optional` |`false` |If set to true, the provider will return "ABSTAIN" rather than "FAILURE" if token is not present in request
+|`optional` |`false` |If set to `true`, failure to authenticate will return `ABSTAIN` result instead of `FAILURE`. This is
+        an important distinction when more than one provider is used
 |`authenticate` |`true` |Whether to attempt authentication
 |`propagate` |`true` |Whether to attempt identity propagation/JWT creation
 |`principal-type` |`USER` |Whether we authenticate a user or a service (other option is SERVICE)

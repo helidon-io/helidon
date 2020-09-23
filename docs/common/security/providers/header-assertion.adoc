@@ -75,7 +75,8 @@ The following table shows all configuration options of the provider and their de
 |===
 |key |default value |description
 
-|`optional` |`false` |If set to `true`, provider will abstain rather than fail if the header is not available
+|`optional` |`false` |If set to `true`, failure to authenticate will return `ABSTAIN` result instead of `FAILURE`. This is
+    an important distinction when more than one provider is used
 |`authenticate` |`true` |If set to `false`, authentication will not be attempted (outbound security can still be used)
 |`propagate` |`false` |If explicitly set to `false`, identity propagation will not be done. Otherwise it is done if an `outbound`
                 section is configured
