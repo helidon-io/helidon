@@ -31,23 +31,10 @@ import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
  */
 public abstract class DbClientHealthCheck implements HealthCheck {
 
-    /** Local logger instance. */
+    /* Local logger instance. */
     private static final Logger LOGGER = Logger.getLogger(DbClientHealthCheck.class.getName());
-
-    /** Default hHealth check timeout in seconds (to wait for statement execution response). */
+    /* Default hHealth check timeout in seconds (to wait for statement execution response). */
     private static final int DEFAULT_TIMEOUT_SECONDS = 10;
-    /** Helidon database client. */
-    private final DbClient dbClient;
-    /** Health check name. */
-    private final String name;
-    /** Health check timeout in seconds (to wait for statement execution response). */
-    private int timeoutSeconds;
-
-    private DbClientHealthCheck(Builder builder) {
-        this.dbClient = builder.database;
-        this.name = builder.name;
-        this.timeoutSeconds = builder.timeoutSeconds;
-    }
 
     /**
      * Create a health check with default settings for the database.
@@ -72,6 +59,22 @@ public abstract class DbClientHealthCheck implements HealthCheck {
         return new Builder(dbClient);
     }
 
+    /* Helidon database client. */
+    private final DbClient dbClient;
+    /* Health check name. */
+    private final String name;
+    /* Health check timeout length (to wait for statement execution response). */
+    private final long timeoutDuration;
+    /* Health check timeout units (to wait for statement execution response). */
+    private final TimeUnit timeoutUnit;
+
+    private DbClientHealthCheck(Builder builder) {
+        this.dbClient = builder.database;
+        this.name = builder.name;
+        this.timeoutDuration = builder.timeoutDuration;
+        this.timeoutUnit = builder.timeoutUnit;
+    }
+
     /**
      * Execute the ping statement.
      *
@@ -84,17 +87,14 @@ public abstract class DbClientHealthCheck implements HealthCheck {
         HealthCheckResponseBuilder builder = HealthCheckResponse.builder().name(name);
 
         try {
-            execPing().await(timeoutSeconds, TimeUnit.SECONDS);
+            execPing().await(timeoutDuration, timeoutUnit);
             builder.up();
         } catch (Throwable e) {
             builder.down();
             builder.withData("ErrorMessage", e.getMessage());
             builder.withData("ErrorClass", e.getClass().getName());
-            // Do not process logging arguments until it makes sense.
-            if (LOGGER.isLoggable(Level.FINER)) {
-                LOGGER.log(Level.FINER, String.format(
-                        "Database %s is not responding: %s", dbClient.dbType(), e.getMessage()), e);
-            }
+            LOGGER.log(Level.FINER, e, () -> String.format(
+                    "Database %s is not responding: %s", dbClient.dbType(), e.getMessage()));
         }
 
         return builder.build();
@@ -111,7 +111,7 @@ public abstract class DbClientHealthCheck implements HealthCheck {
 
         private DbClientHealthCheckAsPing(Builder builder) {
             super(builder);
-            LOGGER.log(Level.FINEST, "Created an instance of DbClientHealthCheckAsPing");
+            LOGGER.finest("Created an instance of DbClientHealthCheckAsPing");
         }
 
         @Override
@@ -126,13 +126,13 @@ public abstract class DbClientHealthCheck implements HealthCheck {
      */
     private static final class DbClientHealthCheckAsNamedDml extends DbClientHealthCheck {
 
-        /** Name of the statement. */
+        /* Name of the statement. */
         private final String statementName;
 
         private DbClientHealthCheckAsNamedDml(Builder builder) {
             super(builder);
             this.statementName = builder.statementName;
-            LOGGER.log(Level.FINEST, "Created an instance of DbClientHealthCheckAsNamedDml");
+            LOGGER.finest("Created an instance of DbClientHealthCheckAsNamedDml");
         }
 
         @Override
@@ -147,13 +147,13 @@ public abstract class DbClientHealthCheck implements HealthCheck {
      */
     private static final class DbClientHealthCheckAsDml extends DbClientHealthCheck {
 
-        /** Custom statement. */
+        /* Custom statement. */
         private final String statement;
 
         private DbClientHealthCheckAsDml(Builder builder) {
             super(builder);
             this.statement = builder.statement;
-            LOGGER.log(Level.FINEST, "Created an instance of DbClientHealthCheckAsDml");
+            LOGGER.finest("Created an instance of DbClientHealthCheckAsDml");
         }
 
         @Override
@@ -168,13 +168,13 @@ public abstract class DbClientHealthCheck implements HealthCheck {
      */
     private static final class DbClientHealthCheckAsNamedQuery extends DbClientHealthCheck {
 
-        /** Name of the statement. */
+        /* Name of the statement. */
         private final String statementName;
 
         private DbClientHealthCheckAsNamedQuery(Builder builder) {
             super(builder);
             this.statementName = builder.statementName;
-            LOGGER.log(Level.FINEST, "Created an instance of DbClientHealthCheckAsNamedQuery");
+            LOGGER.finest("Created an instance of DbClientHealthCheckAsNamedQuery");
         }
 
         @Override
@@ -190,13 +190,13 @@ public abstract class DbClientHealthCheck implements HealthCheck {
      */
     private static final class DbClientHealthCheckAsQuery extends DbClientHealthCheck {
 
-        /** Custom statement. */
+        /* Custom statement. */
         private final String statement;
 
         private DbClientHealthCheckAsQuery(Builder builder) {
             super(builder);
             this.statement = builder.statement;
-            LOGGER.log(Level.FINEST, "Created an instance of DbClientHealthCheckAsQuery");
+            LOGGER.finest("Created an instance of DbClientHealthCheckAsQuery");
         }
 
         @Override
@@ -215,12 +215,14 @@ public abstract class DbClientHealthCheck implements HealthCheck {
      */
     public static final class Builder implements io.helidon.common.Builder<DbClientHealthCheck> {
 
-        /** Helidon database client. */
+        /* Helidon database client. */
         private final DbClient database;
-        /** Health check name. */
+        /* Health check name. */
         private String name;
-        /** Health check timeout in seconds (to wait for statement execution response). */
-        private int timeoutSeconds;
+        /* Health check timeout length (to wait for statement execution response). */
+        private long timeoutDuration;
+        /* Health check timeout units (to wait for statement execution response). */
+        private TimeUnit timeoutUnit;
 
         // Those two boolean variables define 4 ways of query execution:
         //
@@ -232,9 +234,9 @@ public abstract class DbClientHealthCheck implements HealthCheck {
         // +-----------+----------+--------+------------+-------+
         // The best performance optimized solution seems to be polymorphysm for part of check method.
 
-        /** Health check statement is DML when {@code true} and query when {@code false}. */
+        /* Health check statement is DML when {@code true} and query when {@code false}. */
         private boolean isDML;
-        /** Whether to use named statement or statement passed as an argument. */
+        /* Whether to use named statement or statement passed as an argument. */
         private boolean isNamedstatement;
 
         /** Name of the statement. */
@@ -245,7 +247,8 @@ public abstract class DbClientHealthCheck implements HealthCheck {
         private Builder(DbClient database) {
             this.database = database;
             this.name = database.dbType();
-            this.timeoutSeconds = DEFAULT_TIMEOUT_SECONDS;
+            this.timeoutDuration = DEFAULT_TIMEOUT_SECONDS;
+            this.timeoutUnit = TimeUnit.SECONDS;
             this.isDML = true;
             this.isNamedstatement = true;
             this.statementName = null;
@@ -333,11 +336,13 @@ public abstract class DbClientHealthCheck implements HealthCheck {
          * Set custom timeout to wait for statement execution response.
          * Default value is {@code 10} seconds.
          *
-         * @param seconds number of seconds to wait for statement execution response
+         * @param duration the maximum time to wait for statement execution response
+         * @param timeUnit    the time unit of the timeout argument
          * @return updated builder instance
          */
-        public Builder timeout(int seconds) {
-            this.timeoutSeconds = seconds;
+        public Builder timeout(long duration, TimeUnit timeUnit) {
+            this.timeoutDuration = duration;
+            this.timeoutUnit = timeUnit;
             return this;
         }
 

@@ -149,12 +149,12 @@ class JdbcDbClient implements DbClient {
         @Override
         public T apply(Throwable t) {
             LOGGER.log(level,
-                       String.format("Transaction rollback: %s", t.getMessage()),
-                       t);
+                    t,
+                    () -> String.format("Transaction rollback: %s", t.getMessage()));
             execute.doRollback().exceptionally(t2 -> {
                 LOGGER.log(level,
-                           String.format("Transaction rollback failed: %s", t2.getMessage()),
-                           t2);
+                        t2,
+                        () -> String.format("Transaction rollback failed: %s", t2.getMessage()));
                 return null;
             });
             return null;
@@ -190,8 +190,8 @@ class JdbcDbClient implements DbClient {
                         execute.close();
                     }).exceptionally(throwable -> {
                 LOGGER.log(Level.WARNING,
-                           String.format("Execution failed: %s", throwable.getMessage()),
-                           throwable);
+                        throwable,
+                        () -> String.format("Execution failed: %s", throwable.getMessage()));
                 execute.close();
                 return null;
             });
@@ -199,8 +199,8 @@ class JdbcDbClient implements DbClient {
 
         result = result.onError(throwable -> {
             LOGGER.log(Level.FINEST,
-                       String.format("Execution failed: %s", throwable.getMessage()),
-                       throwable);
+                    throwable,
+                    () -> String.format("Execution failed: %s", throwable.getMessage()));
             execute.close();
         });
 
@@ -372,7 +372,7 @@ class JdbcDbClient implements DbClient {
                         try {
                             conn.close();
                         } catch (SQLException e) {
-                            LOGGER.log(Level.WARNING, String.format("Could not close connection: %s", e.getMessage()), e);
+                            LOGGER.log(Level.WARNING, e, () -> String.format("Could not close connection: %s", e.getMessage()));
                         }
                     });
         }
