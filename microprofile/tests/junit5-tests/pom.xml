@@ -25,27 +25,29 @@
         <version>2.0.3-SNAPSHOT</version>
     </parent>
 
-    <artifactId>helidon-microprofile-tests-junit5</artifactId>
-    <name>Helidon Microprofile Tests JUnit5</name>
+    <artifactId>helidon-microprofile-tests-junit5-tests</artifactId>
+    <name>Helidon Microprofile Tests Junit5 unit tests</name>
 
     <description>
-        Integration with Junit5 to support tests with CDI injection
+        Test for JUnit5 integration to prevent cyclic dependendcies,
+        so the module can be used in MP config implementation
     </description>
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.microprofile.cdi</groupId>
-            <artifactId>helidon-microprofile-cdi</artifactId>
-            <scope>provided</scope>
+            <groupId>io.helidon.microprofile.server</groupId>
+            <artifactId>helidon-microprofile-server</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.tests</groupId>
+            <artifactId>helidon-microprofile-tests-junit5</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.jersey</groupId>
-            <artifactId>helidon-jersey-client</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>
@@ -53,5 +55,4 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-
 </project>

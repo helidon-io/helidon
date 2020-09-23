@@ -17,6 +17,7 @@
 package io.helidon.microprofile.tests.junit5;
 
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
@@ -26,11 +27,16 @@ import java.lang.annotation.Target;
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD})
+@Inherited
 public @interface Configuration {
     /**
      * If set to {@code true}, the existing (or default) MicroProfile configuration would be used.
      * By default uses a configuration constructed using all {@link io.helidon.microprofile.tests.junit5.AddConfig}
      * annotations and {@link #configSources()}.
+     * When set to false and a {@link org.junit.jupiter.api.BeforeAll} method registers a custom configuration
+     * with {@link org.eclipse.microprofile.config.spi.ConfigProviderResolver}, the result is undefined, though
+     * tests have shown that the registered config may be used (as BeforeAll ordering is undefined by
+     * JUnit, it may be called after our extension)
      *
      * @return whether to use existing (or default) configuration, or customized one
      */

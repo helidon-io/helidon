@@ -25,14 +25,14 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @HelidonTest
-@Configuration(configSources = "testConfigSources.properties")
-public class TestConfigSources {
+@AddConfig(key = "key", value = "value")
+abstract class AbstractTest {
     @Inject
-    @ConfigProperty(name = "some.key")
-    private String someKey;
+    @ConfigProperty(name = "key")
+    private String key;
 
     @Test
-    void testValue() {
-        assertThat(someKey, is("some.value"));
+    void testKey() {
+        assertThat(key, is("value"));
     }
 }

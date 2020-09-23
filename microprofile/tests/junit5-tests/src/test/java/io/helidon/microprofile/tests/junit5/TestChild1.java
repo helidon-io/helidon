@@ -16,39 +16,22 @@
 
 package io.helidon.microprofile.tests.junit5;
 
-import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
-import javax.inject.Named;
 
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-/**
- * Test when discovery is disabled.
- */
-@HelidonTest
-@DisableDiscovery
-@AddBean(TestConstructorInjection.MyBean.class)
-public class TestConstructorInjection {
-    private final int currentPort;
-
+@AddConfig(key = "key1", value = "value1")
+class TestChild1 extends AbstractTest {
     @Inject
-    public TestConstructorInjection(@Named("port") int currentPort) {
-        this.currentPort = currentPort;
-    }
+    @ConfigProperty(name = "key1")
+    private String childKey;
 
     @Test
-    void testIt() {
-        assertThat(currentPort, is(423));
-    }
-
-    public static class MyBean {
-        @Produces
-        @Named("port")
-        public int currentPort() {
-            return 423;
-        }
+    void testChildKey() {
+        assertThat(childKey, is("value1"));
     }
 }

@@ -54,7 +54,7 @@ class TestPerMethod {
 
     @Test
     @AddConfig(key = "key-1", value = "value-1")
-    @AddBean(TestPerMethod.MyBean.class)
+    @AddBean(MyBean.class)
     void testWithAdditionalConfig() {
         String configured = CDI.current()
                 .select(MyBean.class)
@@ -65,7 +65,7 @@ class TestPerMethod {
     }
 
     @Test
-    @AddExtension(TestPerMethod.MyExtension.class)
+    @AddExtension(MyExtension.class)
     void testCustomExtension() {
         assertThat("Extension should have been called, as it observes application scope", MyExtension.called, is(true));
     }
