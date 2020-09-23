@@ -17,7 +17,6 @@ package io.helidon.tests.functional.mpcompression;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
-
 import javax.ws.rs.Path;
 
 @Path("/compressed")
