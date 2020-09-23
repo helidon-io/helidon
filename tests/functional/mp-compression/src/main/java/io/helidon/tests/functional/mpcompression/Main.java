@@ -18,15 +18,12 @@ package io.helidon.tests.functional.mpcompression;
 import io.helidon.microprofile.server.Server;
 
 public final class Main {
+
     private static Server server;
 
     private Main() {
     }
 
-    /**
-     * Run the MP application on multiple ports.
-     * @param args ignored
-     */
     public static void main(String[] args) {
         server = Server.builder()
                 .build()
