@@ -311,7 +311,7 @@ public class JerseySupportTest {
         try (InputStream is = response.readEntity(InputStream.class)) {
             byte[] buffer = new byte[32];
             int n = is.read(buffer);        // should read only first chunk
-            assertEquals("{ value: \"first\" }\n", new String(buffer, 0, n));
+            assertThat(new String(buffer, 0, n), is("{ value: \"first\" }\n"));
             while (is.read(buffer) > 0) {
                 // consume rest of stream
             }
