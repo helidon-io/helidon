@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 
+import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithEnumName;
 import io.helidon.microprofile.graphql.server.test.types.DateTimePojo;
 import io.helidon.microprofile.graphql.server.test.types.NullPOJO;
 import io.helidon.microprofile.graphql.server.test.types.TypeWithNameAndJsonbProperty;
@@ -135,11 +136,12 @@ public class TestDB {
     }
 
     public SimpleContact createRandomContact() {
-        return new SimpleContact(UUID.randomUUID().toString(), "Name-" + RANDOM.nextInt(10000), RANDOM.nextInt(100) + 1);
+        return new SimpleContact(UUID.randomUUID().toString(), "Name-" + RANDOM.nextInt(10000),
+                                 RANDOM.nextInt(100) + 1, EnumTestWithEnumName.XL);
     }
 
     public SimpleContact createContactWithName(String name) {
-        return new SimpleContact(UUID.randomUUID().toString(), name, RANDOM.nextInt(100) + 1);
+        return new SimpleContact(UUID.randomUUID().toString(), name, RANDOM.nextInt(100) + 1, EnumTestWithEnumName.XL);
     }
 
     /**

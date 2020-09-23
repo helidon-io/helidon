@@ -24,6 +24,7 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
+import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithEnumName;
 import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesWithSource;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
 
@@ -62,7 +63,7 @@ public class SourceIT extends AbstractGraphQLIT {
         assertThat(mapResults2.get("idAndName"), is(notNullValue()));
 
         // test the query at the top level
-        SimpleContact contact1 = new SimpleContact("c1", "Contact 1", 50);
+        SimpleContact contact1 = new SimpleContact("c1", "Contact 1", 50, EnumTestWithEnumName.XL);
 
         String json = "contact: " + getContactAsQueryInput(contact1);
 

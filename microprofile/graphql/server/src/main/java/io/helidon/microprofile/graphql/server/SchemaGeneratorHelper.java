@@ -498,22 +498,24 @@ public final class SchemaGeneratorHelper {
      * @return the field name or null if non exist
      */
     protected static String getMethodName(Method method) {
-        Query queryAnnotation = method.getAnnotation(Query.class);
-        Mutation mutationAnnotation = method.getAnnotation(Mutation.class);
-        Name nameAnnotation = method.getAnnotation(Name.class);
-        JsonbProperty jsonbPropertyAnnotation = method.getAnnotation(JsonbProperty.class);
-        if (queryAnnotation != null && !queryAnnotation.value().isBlank()) {
-            return queryAnnotation.value();
-        }
-        if (mutationAnnotation != null && !mutationAnnotation.value().isBlank()) {
-            return mutationAnnotation.value();
-        }
-        if (nameAnnotation != null && !nameAnnotation.value().isBlank()) {
-            // Name annotation is specified so use this and don't bother checking JsonbProperty
-            return nameAnnotation.value();
-        }
-        if (jsonbPropertyAnnotation != null && !jsonbPropertyAnnotation.value().isBlank()) {
-            return jsonbPropertyAnnotation.value();
+        if (method != null) {
+            Query queryAnnotation = method.getAnnotation(Query.class);
+            Mutation mutationAnnotation = method.getAnnotation(Mutation.class);
+            Name nameAnnotation = method.getAnnotation(Name.class);
+            JsonbProperty jsonbPropertyAnnotation = method.getAnnotation(JsonbProperty.class);
+            if (queryAnnotation != null && !queryAnnotation.value().isBlank()) {
+                return queryAnnotation.value();
+            }
+            if (mutationAnnotation != null && !mutationAnnotation.value().isBlank()) {
+                return mutationAnnotation.value();
+            }
+            if (nameAnnotation != null && !nameAnnotation.value().isBlank()) {
+                // Name annotation is specified so use this and don't bother checking JsonbProperty
+                return nameAnnotation.value();
+            }
+            if (jsonbPropertyAnnotation != null && !jsonbPropertyAnnotation.value().isBlank()) {
+                return jsonbPropertyAnnotation.value();
+            }
         }
         return null;
     }

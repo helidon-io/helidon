@@ -101,10 +101,11 @@ public class NumberFormatIT extends AbstractGraphQLIT {
         assertThat(mapResults.get("idNumber"), is("Tim-123"));
 
         // TODO: Fix
-//        mapResults = getAndAssertResult(executionContext.execute("mutation { echoBigDecimalList(coordinates: [ 10.0123, -23.000 ]) }"));
-//        assertThat(mapResults, is(notNullValue()));
-//        List<BigDecimal> listBigDecimals = (List<BigDecimal>) mapResults.get("echoBigDecimalList");
-//        assertThat(mapResults.get("listBigDecimals"), is("Tim-123"));
+        mapResults = getAndAssertResult(executionContext.execute("mutation { echoBigDecimalList(coordinates: [ 10.0123, -23.000 ]) }"));
+        assertThat(mapResults, is(notNullValue()));
+        List<BigDecimal> listBigDecimals = (List<BigDecimal>) mapResults.get("echoBigDecimalList");
+        assertThat(listBigDecimals.get(0), is(BigDecimal.valueOf(10.0123)));
+        assertThat(listBigDecimals.get(1), is(BigDecimal.valueOf(-23.000)));
 
         
         // TODO: COH-21891

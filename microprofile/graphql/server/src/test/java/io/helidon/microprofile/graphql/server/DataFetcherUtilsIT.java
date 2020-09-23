@@ -22,6 +22,7 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
+import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithEnumName;
 import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesWithArgs;
 import io.helidon.microprofile.graphql.server.test.types.ContactRelationship;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
@@ -36,6 +37,7 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -64,8 +66,8 @@ class DataFetcherUtilsIT
         ExecutionContext executionContext = new ExecutionContext(defaultContext);
         Schema schema = executionContext.getSchema();
 
-        Map<String, Object> mapContact = Map.of("id", "1", "name", "Tim", "age", 52);
-        SimpleContact simpleContact = new SimpleContact("1", "Tim", 52);
+        Map<String, Object> mapContact = Map.of("id", "1", "name", "Tim", "age", 52, "tShirtSize", "L");
+        SimpleContact simpleContact = new SimpleContact("1", "Tim", 52, EnumTestWithEnumName.L);
         assertArgumentResult(schema, "canFindContact", "contact", mapContact, simpleContact);
     }
 
@@ -178,8 +180,8 @@ class DataFetcherUtilsIT
         assertArgumentResult(schema, "echoStringArray2", "value", stringArray2, stringArray2);
 
         SimpleContact[] contactArray = new SimpleContact[] {
-               new SimpleContact("c1", "Contact 1", 50),
-                new SimpleContact("c2", "Contact 2", 52)
+               new SimpleContact("c1", "Contact 1", 50, EnumTestWithEnumName.XL),
+                new SimpleContact("c2", "Contact 2", 52, EnumTestWithEnumName.XL)
         };
         assertArgumentResult(schema, "echoSimpleContactArray", "value", contactArray, contactArray);
 
@@ -206,6 +208,12 @@ class DataFetcherUtilsIT
         List<String> listFormattedIntegers = List.of("1 years old", "3 years old", "53 years old");
         assertArgumentResult(schema, "echoFormattedListOfIntegers", "value", listFormattedIntegers,
                              List.of(1, 3, 53));
+
+        LocalDate localDate1 = LocalDate.of(2020, 9, 23);
+        LocalDate localDate2 = LocalDate.of(2020, 9, 22);
+        List<String> listLocalDates = List.of("23-09-2020", "22-09-2020");
+        assertArgumentResult(schema, "echoFormattedLocalDate", "value", listLocalDates,
+                     List.of(localDate1, localDate2));
     }
 
     @Test
@@ -215,8 +223,8 @@ class DataFetcherUtilsIT
         ExecutionContext executionContext = new ExecutionContext(defaultContext);
         Schema schema = executionContext.getSchema();
 
-        SimpleContact contact1 = new SimpleContact("c1", "Contact 1", 50);
-        SimpleContact contact2 = new SimpleContact("c2", "Contact 2", 52);
+        SimpleContact contact1 = new SimpleContact("c1", "Contact 1", 50, EnumTestWithEnumName.XL);
+        SimpleContact contact2 = new SimpleContact("c2", "Contact 2", 52, EnumTestWithEnumName.XXL);
 
         Collection<SimpleContact> colContacts = List.of(contact1, contact2);
         Collection<Map<String, Object>> listOfMaps = List.of(convertObjectToMap(contact1), convertObjectToMap(contact2));
@@ -234,8 +242,8 @@ class DataFetcherUtilsIT
         ExecutionContext executionContext = new ExecutionContext(defaultContext);
         Schema schema = executionContext.getSchema();
 
-        SimpleContact contact1 = new SimpleContact("c1", "Contact 1", 50);
-        SimpleContact contact2 = new SimpleContact("c2", "Contact 2", 53);
+        SimpleContact contact1 = new SimpleContact("c1", "Contact 1", 50, EnumTestWithEnumName.M);
+        SimpleContact contact2 = new SimpleContact("c2", "Contact 2", 53, EnumTestWithEnumName.L);
         ContactRelationship relationship = new ContactRelationship(contact1, contact2, "married");
 
         Map<String, Object> contact1Map = convertObjectToMap(contact1);
@@ -273,8 +281,6 @@ class DataFetcherUtilsIT
                                         String argumentName, Object input, Object expected) throws Exception {
         SchemaArgument argument = getArgument(schema, "Query", fdName, argumentName);
         assertThat(argument, is(notNullValue()));
-        Class<?> originalType = argument.isArrayReturnType() ? argument.getOriginalArrayType()
-                            : argument.getOriginalType();
         Object result = DataFetcherUtils.generateArgumentValue(schema, argument.getArgumentType(),
                                                                argument.getOriginalType(), argument.getOriginalArrayType(),
                                                                input, argument.getFormat());

@@ -223,5 +223,10 @@ public class SimpleQueriesAndMutations {
     public LocalTime echoLocalTime(@Name("time") LocalTime localTime) {
         return localTime;
     }
-
+    
+    @Query
+    @JsonbDateFormat("dd/MM")
+    public List<LocalDate> echoFormattedLocalDateWithReturnFormat(@Name("value") List<@DateFormat("dd-MM-yyyy") LocalDate> value) {
+        return value;
+    }
 }

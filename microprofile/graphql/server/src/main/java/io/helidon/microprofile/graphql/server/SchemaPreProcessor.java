@@ -18,8 +18,8 @@ package io.helidon.microprofile.graphql.server;
 
 /**
  * Describes a {@link Schema} pre-processor that will be called prior to
- * the GraphQL schema being generated. This allows for modification of the
- * {@link Schema} before it is parsed.
+ * the GraphQL schema being generated but after the {@link Schema} has been created.
+ * This allows for modification of the {@link Schema} before it is parsed.
  */
 public interface SchemaPreProcessor {
     /**

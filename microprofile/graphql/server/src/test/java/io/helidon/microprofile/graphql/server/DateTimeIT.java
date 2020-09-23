@@ -153,6 +153,14 @@ public class DateTimeIT extends AbstractGraphQLIT {
         assertThat(fd.getDescription(), is(nullValue()));
         assertThat(fd.isDefaultFormatApplied(), is(true));
         assertThat(fd.getReturnType(), is(DATE_SCALAR));
+
+        mapResults = getAndAssertResult(
+        executionContext.execute("query { echoFormattedLocalDateWithReturnFormat(value: [ \"23-09-2020\", \"22-09-2020\" ]) }"));
+        assertThat(mapResults, is(notNullValue()));
+        listDates = (ArrayList<String>) mapResults.get("echoFormattedLocalDateWithReturnFormat");
+        assertThat(listDates.size(), is(2));
+        assertThat(listDates.get(0), is("23/09"));
+        assertThat(listDates.get(1), is("22/09"));
     }
 
     @Test

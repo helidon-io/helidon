@@ -940,7 +940,8 @@ public class SchemaGenerator {
 
             if (optionalPdReadMethod.isPresent()) {
                 PropertyDescriptor propertyDescriptor = optionalPdReadMethod.get();
-                boolean ignoreWriteMethod = isInputType && shouldIgnoreMethod(propertyDescriptor.getWriteMethod(), true);
+                Method writeMethod = propertyDescriptor.getWriteMethod();
+                boolean ignoreWriteMethod = isInputType && writeMethod != null && shouldIgnoreMethod(writeMethod, true);
 
                 // only include if the field should not be ignored
                 if (!shouldIgnoreField(clazz, propertyDescriptor.getName()) && !ignoreWriteMethod) {

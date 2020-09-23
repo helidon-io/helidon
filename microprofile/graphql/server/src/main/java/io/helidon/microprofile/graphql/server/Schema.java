@@ -231,7 +231,7 @@ public class Schema
 
         // register the scalars
         getScalars().forEach(s -> {
-            LOGGER.info("Register Scalar: " + s);
+            LOGGER.finest("Register Scalar: " + s);
             builder.scalar(s.getGraphQLScalarType());
         });
 

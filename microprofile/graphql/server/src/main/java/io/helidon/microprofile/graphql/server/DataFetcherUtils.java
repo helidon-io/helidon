@@ -35,6 +35,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
 import java.util.logging.Logger;
@@ -157,7 +158,6 @@ public class DataFetcherUtils {
                 // check to see if the Field Definition return type is an input type
                 SchemaInputType inputFdInputType = schema.getInputTypeByName(fd.getReturnType());
                 if (inputFdInputType != null && value instanceof Map) {
-                    Map mapInputType = (Map) value;
                     mapConverted.put(fdName, generateArgumentValue(schema, inputFdInputType.getName(),
                                                                    Class.forName(inputFdInputType.getValueClassName()),
                                                                    null,
@@ -177,12 +177,20 @@ public class DataFetcherUtils {
 
         } else if (rawValue instanceof Collection) {
             SchemaInputType inputType = schema.getInputTypeByName(argumentType);
+            Object colResults = null;
+            Class<?> castClass;
+            if (List.class.isAssignableFrom(originalType)) {
+                colResults = new ArrayList();
+                castClass = List.class;
+            } else {
+                colResults = new TreeSet();
+                castClass = Set.class;
+            }
 
-            Collection colResults = originalType.equals(List.class) ? new ArrayList() : new TreeSet();
             if (inputType != null) {
                 // handle complex types
                 for (Object value : (Collection) rawValue) {
-                    colResults.add(generateArgumentValue(schema, inputType.getName(),
+                    ((Collection) colResults).add(generateArgumentValue(schema, inputType.getName(),
                                                          originalArrayType, null,
                                                          value, EMPTY_FORMAT));
                 }
@@ -192,10 +200,10 @@ public class DataFetcherUtils {
                 // standard type or scalar so ensure we preserve the order and
                 // convert any values with formats
                 for (Object value : (Collection) rawValue) {
-                    colResults.add(parseArgumentValue(originalArrayType, argumentType, value, format));
+                    ((Collection) colResults).add(parseArgumentValue(originalArrayType, argumentType, value, format));
                 }
 
-                return colResults;
+                return castClass.cast(colResults);
             }
         } else {
             return parseArgumentValue(originalType, argumentType, rawValue, format);
@@ -355,15 +363,15 @@ public class DataFetcherUtils {
             try {
                 Constructor<?> constructor = originalType.getDeclaredConstructor(String.class);
                 numberKey = (Number) constructor.newInstance(key);
-            } catch (NoSuchMethodException | InstantiationException | IllegalAccessException |
-                     InvocationTargetException eIgnore) {
+            } catch (NoSuchMethodException | InstantiationException | IllegalAccessException
+                     | InvocationTargetException eIgnore) {
                 // cannot find a constructor with String arg
             }
         }
-        
+
         if (numberKey != null) {
-            return  originalType.equals(Float.class)  ? Float.valueOf(numberKey.floatValue())
-                  : originalType.equals(float.class)  ? numberKey.floatValue()
+            return  originalType.equals(Float.class) ? Float.valueOf(numberKey.floatValue())
+                  : originalType.equals(float.class) ? numberKey.floatValue()
                   : originalType.equals(Integer.class) ? Integer.valueOf(numberKey.intValue())
                   : originalType.equals(int.class) ? numberKey.intValue()
                   : originalType.equals(Long.class) ? Long.valueOf(numberKey.longValue())

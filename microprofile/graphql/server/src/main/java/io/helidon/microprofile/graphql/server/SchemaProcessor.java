@@ -24,7 +24,7 @@ import java.lang.annotation.Target;
 
 /**
  * Marks a class as potentially containing a {@link SchemaPreProcessor}.
- * 
+ *
  * <br><br>
  * For example:
  * <pre>

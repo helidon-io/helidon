@@ -103,7 +103,7 @@ public class NumberFormatQueriesAndMutations {
     }
 
     @Mutation
-    public List<BigDecimal> echoBigDecimalList(@Name("coordinates") LinkedList<BigDecimal> coordinates) {
+    public List<BigDecimal> echoBigDecimalList(@Name("coordinates") List<BigDecimal> coordinates) {
         return coordinates;
     }
 }

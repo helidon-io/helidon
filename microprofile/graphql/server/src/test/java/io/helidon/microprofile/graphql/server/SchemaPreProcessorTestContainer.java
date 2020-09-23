@@ -33,6 +33,7 @@ public class SchemaPreProcessorTestContainer {
             SchemaGenerator schemaGenerator = new SchemaGenerator(defaultContext);
             Schema schema = schemaGenerator.generateSchema();
 
+            // SchemaPreProcessor should have been called and generated InputType for Person
             assertThat(schema.getInputTypeByName("PersonInput"), is(notNullValue()));
         }
     }
@@ -75,6 +76,5 @@ public class SchemaPreProcessorTestContainer {
      */
     @SchemaProcessor
     public static class InvalidSchemaPreProcessor {
-
     }
 }

@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContactWithNumberFormats;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import javax.json.bind.annotation.JsonbDateFormat;
 import javax.json.bind.annotation.JsonbNumberFormat;
 import javax.json.bind.annotation.JsonbProperty;
 
@@ -38,6 +39,7 @@ import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithNameAnnotat
 import io.helidon.microprofile.graphql.server.test.types.ContactRelationship;
 import io.helidon.microprofile.graphql.server.test.types.Person;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
+import org.eclipse.microprofile.graphql.DateFormat;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Id;
 import org.eclipse.microprofile.graphql.Name;
@@ -372,6 +374,11 @@ public class SimpleQueriesWithArgs {
 
     @Query
     public List<Integer> echoFormattedListOfIntegers(@Name("value") List<@NumberFormat("0 'years old'") Integer> value) {
+        return value;
+    }
+
+    @Query
+    public List<LocalDate> echoFormattedLocalDate(@Name("value") List<@DateFormat("dd-MM-yyyy") LocalDate> value) {
         return value;
     }
 }

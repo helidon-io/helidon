@@ -16,6 +16,8 @@
 
 package io.helidon.microprofile.graphql.server.test.types;
 
+import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithEnumName;
+import javax.json.bind.annotation.JsonbProperty;
 import java.util.Objects;
 
 /**
@@ -25,11 +27,13 @@ public class SimpleContact implements Comparable<SimpleContact> {
     private String id;
     private String name;
     private int age;
+    private EnumTestWithEnumName tShirtSize;
 
-    public SimpleContact(String id, String name, int age) {
+    public SimpleContact(String id, String name, int age, EnumTestWithEnumName tShirtSize) {
         this.id = id;
         this.name = name;
         this.age = age;
+        this.tShirtSize = tShirtSize;
     }
 
     public SimpleContact() {
@@ -59,6 +63,16 @@ public class SimpleContact implements Comparable<SimpleContact> {
         this.age = age;
     }
 
+    @JsonbProperty("tShirtSize")
+    public EnumTestWithEnumName getTShirtSize() {
+        return tShirtSize;
+    }
+
+    @JsonbProperty("tShirtSize")
+    public void setTShirtSize(EnumTestWithEnumName tShirtSize) {
+        this.tShirtSize = tShirtSize;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -67,15 +81,16 @@ public class SimpleContact implements Comparable<SimpleContact> {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        SimpleContact that = (SimpleContact) o;
-        return age == that.age
-                && Objects.equals(id, that.id)
-                && Objects.equals(name, that.name);
+        SimpleContact contact = (SimpleContact) o;
+        return age == contact.age &&
+                Objects.equals(id, contact.id) &&
+                Objects.equals(name, contact.name) &&
+                tShirtSize == contact.tShirtSize;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, age);
+        return Objects.hash(id, name, age, tShirtSize);
     }
 
     @Override

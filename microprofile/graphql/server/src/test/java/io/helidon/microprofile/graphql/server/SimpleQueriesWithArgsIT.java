@@ -30,11 +30,11 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
+import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithEnumName;
 import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithNameAnnotation;
 import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesWithArgs;
 import io.helidon.microprofile.graphql.server.test.types.AbstractVehicle;
 import io.helidon.microprofile.graphql.server.test.types.Car;
-import io.helidon.microprofile.graphql.server.test.types.ContactRelationship;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
 
 import io.helidon.microprofile.tests.junit5.AddBean;
@@ -138,16 +138,13 @@ public class SimpleQueriesWithArgsIT extends AbstractGraphQLIT {
         assertThat(mapResults.get("findPeopleFromState"), is(notNullValue()));
         ArrayList<Map<String, Object>> arrayList = (ArrayList<Map<String, Object>>) mapResults.get("findPeopleFromState");
         assertThat(arrayList, is(notNullValue()));
-        // since its random data we can't be sure if anyone was created in MA
-        assertThat(arrayList.size() >= 0, is(true));
 
         mapResults = getAndAssertResult(executionContext.execute(
                 "query { findPeopleFromState(state: \"MA\") { personId creditLimit workAddress { city state zipCode } } }"));
         assertThat(mapResults.size(), is(1));
 
-        SimpleContact contact1 = new SimpleContact("c1", "Contact 1", 50);
-        SimpleContact contact2 = new SimpleContact("c2", "Contact 2", 53);
-        ContactRelationship relationship = new ContactRelationship(contact1, contact2, "married");
+        SimpleContact contact1 = new SimpleContact("c1", "Contact 1", 50, EnumTestWithEnumName.L);
+        SimpleContact contact2 = new SimpleContact("c2", "Contact 2", 53, EnumTestWithEnumName.S);
 
         String json = "relationship: {"
                 + "   contact1: " + getContactAsQueryInput(contact1)
@@ -159,6 +156,12 @@ public class SimpleQueriesWithArgsIT extends AbstractGraphQLIT {
                                                                          ") }"));
         assertThat(mapResults.size(), is(1));
         assertThat(mapResults.get("canFindContactRelationship"), is(false));
+
+        // validate that the name for the enum for SimpleContact is correct
+        Schema schema = executionContext.getSchema();
+        SchemaType type = schema.getTypeByName("SimpleContact");
+        assertThat(type, is(notNullValue()));
+        assertThat(type.getFieldDefinitionByName("tShirtSize"), is(notNullValue()));
     }
 
     @Test
