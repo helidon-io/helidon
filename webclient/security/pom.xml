@@ -41,6 +41,10 @@
             <groupId>io.helidon.webclient</groupId>
             <artifactId>helidon-webclient</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.security.providers</groupId>
+            <artifactId>helidon-security-providers-common</artifactId>
+        </dependency>
     </dependencies>
 
 </project>
