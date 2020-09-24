@@ -79,7 +79,7 @@ The following table shows all configuration options of the provider and their de
 |`cache-config.cache-evict-delay-millis` |1 minute |How long to wait before starting the first eviction process
 |`cache-config.cache-evict-period-millis` |5 minutes |Period of running the eviction process
 |`cache-config.parallelism-threshold` |`10_000` |Threshold as used by `ConcurrentHashMap.forEachKey`
-|`cache-config.evictor-class` |`` |Implementation of `BiFunction` that receives key and value, and returns `true` for records that should be removed
+|`cache-config.evictor-class` |{nbsp} |Implementation of `BiFunction` that receives key and value, and returns `true` for records that should be removed
     from the cache. Eviction mechanism should be fast, as it is called within methods of `ConcurrentHashMap`
 |`subject-types` |`USER` |Can use `USER` and/or `SERVICE`
 |`default-idcs-subject-type` |`user` |Default subject type to use when requesting roles, can be `user` or `client`

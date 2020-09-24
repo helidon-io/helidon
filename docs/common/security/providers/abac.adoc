@@ -129,7 +129,6 @@ public class AbacResource {
 * <<Role Validator,Roles>>
 * <<Scope Validator,Scopes>>
 * <<Expression Language Policy Validator,EL Policy>>
-* <<Time Validator,Time>>
 
 ==== Role Validator
 Checks whether user/service is in either of the required role(s).
