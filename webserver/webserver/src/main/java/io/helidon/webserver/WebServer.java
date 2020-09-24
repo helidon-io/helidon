@@ -569,6 +569,12 @@ public interface WebServer {
             return this;
         }
 
+        @Override
+        public Builder enableCompression(boolean value) {
+            configurationBuilder.enableCompression(value);
+            return this;
+        }
+
         /**
          * Configure experimental features.
          * @param experimental experimental configuration
@@ -762,6 +768,5 @@ public interface WebServer {
             configurationBuilder.printFeatureDetails(shouldPrint);
             return this;
         }
-
     }
 }
