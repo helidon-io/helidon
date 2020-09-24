@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.DATETIME_SCALAR;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.DATE_SCALAR;
@@ -161,6 +162,23 @@ public class DateTimeIT extends AbstractGraphQLIT {
         assertThat(listDates.size(), is(2));
         assertThat(listDates.get(0), is("23/09"));
         assertThat(listDates.get(1), is("22/09"));
+
+        SchemaType typeMutation = schema.getTypeByName("Mutation");
+        fd = getFieldDefinition(typeMutation, "echoFormattedDateWithJsonB");
+        assertThat(fd, is(notNullValue()));
+        Optional<SchemaArgument> argument = fd.getArguments()
+                .stream().filter(a -> a.getArgumentName().equals("dates")).findFirst();
+        assertThat(argument.isPresent(), is(true));
+        SchemaArgument a = argument.get();
+        assertThat(a.getFormat()[0], is("MM/dd/yyyy"));
+//        assertThat(a.getArgumentType(), is(FORMATTED_DATE_SCALAR));
+        mapResults = getAndAssertResult(
+        executionContext.execute("mutation { echoFormattedDateWithJsonB(dates: [ \"09/22/2020\", \"09/23/2020\" ]) }"));
+        assertThat(mapResults, is(notNullValue()));
+        listDates = (ArrayList<String>) mapResults.get("echoFormattedDateWithJsonB");
+        assertThat(listDates.size(), is(2));
+        assertThat(listDates.get(0), is("22/09/2020"));
+        assertThat(listDates.get(1), is("23/09/2020"));
     }
 
     @Test

@@ -24,6 +24,7 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
+import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithEnumName;
 import io.helidon.microprofile.graphql.server.test.mutations.SimpleMutations;
 
 import io.helidon.microprofile.tests.junit5.AddBean;
@@ -74,5 +75,16 @@ public class SimpleMutationsIT extends AbstractGraphQLIT {
                 "mutation { testStringArrays(places: [\"place1\", \"place2\", \"place3\"]) }"));
         assertThat(mapResults.size(), is(1));
         assertThat(mapResults.get("testStringArrays"), is("place1place2place3"));
+
+       mapResults = getAndAssertResult(
+                executionContext.execute("mutation { createAndReturnNewContact(newContact: { name: \"tim\", age: 22, id: \"1\", tShirtSize: XL } ) { id name age tShirtSize } }"));
+        assertThat(mapResults.size(), is(1));
+        mapResults2 = (Map<String, Object>) mapResults.get("createAndReturnNewContact");
+        assertThat(mapResults2, is(notNullValue()));
+        assertThat(mapResults2.get("name"), is("tim"));
+        assertThat(mapResults2.get("age"), is(22));
+        assertThat(mapResults2.get("id"), is("1"));
+        assertThat(mapResults2.get("tShirtSize"), is("XL"));
+
     }
 }

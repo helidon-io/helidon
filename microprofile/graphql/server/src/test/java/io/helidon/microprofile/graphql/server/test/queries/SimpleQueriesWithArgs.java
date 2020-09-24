@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContactWithNumberFormats;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import javax.json.bind.annotation.JsonbDateFormat;
+
 import javax.json.bind.annotation.JsonbNumberFormat;
 import javax.json.bind.annotation.JsonbProperty;
 

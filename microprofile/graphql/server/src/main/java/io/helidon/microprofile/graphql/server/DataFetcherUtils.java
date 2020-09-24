@@ -177,7 +177,7 @@ public class DataFetcherUtils {
 
         } else if (rawValue instanceof Collection) {
             SchemaInputType inputType = schema.getInputTypeByName(argumentType);
-            Object colResults = null;
+            Object colResults;
             Class<?> castClass;
             if (List.class.isAssignableFrom(originalType)) {
                 colResults = new ArrayList();
@@ -238,6 +238,7 @@ public class DataFetcherUtils {
                     if (isDateTimeClass(originalType)) {
                         DateTimeFormatter dateFormatter = getCorrectDateFormatter(originalType.getName(),
                                                                                   format[1], format[0]);
+                        LOGGER.info("Parsing [" + rawValue + "] with " + dateFormatter + " " + format[1] + ":" + format[0]);
                         return getOriginalDateTimeValue(originalType, dateFormatter.parse(rawValue.toString()));
                     } else {
                         NumberFormat numberFormat = getCorrectNumberFormat(originalType.getName(),

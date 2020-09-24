@@ -22,7 +22,6 @@ import java.beans.MethodDescriptor;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
@@ -190,6 +189,8 @@ public class SchemaGenerator {
                 .getExtension(GraphQLCdiExtension.class);
         Class[] classes = extension.collectedApis();
         Class[] schemaProcessors = extension.collectedSchemaProcessors();
+
+        CDI<Object> current = CDI.current();
 
         Schema schema = generateSchemaFromClasses(classes);
 

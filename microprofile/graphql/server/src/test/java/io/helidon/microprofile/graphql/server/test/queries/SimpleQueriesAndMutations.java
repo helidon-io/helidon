@@ -20,15 +20,12 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.OffsetDateTime;
-import java.time.OffsetTime;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
+
 import java.util.UUID;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -40,12 +37,12 @@ import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithEnumName;
 import io.helidon.microprofile.graphql.server.test.types.DateTimePojo;
 import io.helidon.microprofile.graphql.server.test.types.MultiLevelListsAndArrays;
-import io.helidon.microprofile.graphql.server.test.types.ObjectWithIgnorableFieldsAndMethods;
+
 import io.helidon.microprofile.graphql.server.test.types.Person;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContactWithSelf;
 import io.helidon.microprofile.graphql.server.test.types.TypeWithIDs;
+
 import org.eclipse.microprofile.graphql.DateFormat;
-import org.eclipse.microprofile.graphql.Description;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Id;
 import org.eclipse.microprofile.graphql.Mutation;
@@ -228,5 +225,13 @@ public class SimpleQueriesAndMutations {
     @JsonbDateFormat("dd/MM")
     public List<LocalDate> echoFormattedLocalDateWithReturnFormat(@Name("value") List<@DateFormat("dd-MM-yyyy") LocalDate> value) {
         return value;
+    }
+
+    @Mutation
+    @DateFormat("dd/MM/yyyy")
+    public List<LocalDate> echoFormattedDateWithJsonB(@Name("dates")
+                                                      @JsonbDateFormat("yy dd MM") // should be ignored
+                                                      List<@DateFormat("MM/dd/yyyy") LocalDate> localDates) {
+        return localDates;
     }
 }
