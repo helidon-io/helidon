@@ -22,7 +22,7 @@ FROM scratch
 WORKDIR /helidon
 
 # Copy the binary built in the 1st stage
-COPY --from=build /helidon/target/h{{artifactId}} .
+COPY --from=build /helidon/target/{{artifactId}} .
 
 ENTRYPOINT ["./{{artifactId}}"]
 
