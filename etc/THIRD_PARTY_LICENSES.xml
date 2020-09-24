@@ -4917,9 +4917,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 </attribution>
         </dependency>
         <dependency>
-            <id>77273</id>
+            <id>86321</id>
             <name>grpc-java</name>
-            <version>1.27.1</version>
+            <version>1.32.1</version>
             <licensor>The gRPC Authors</licensor>
             <licenseName>Apache 2.0</licenseName>
             <consumers>
@@ -4928,7 +4928,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                 <consumer>io.grpc</consumer>
             </consumers>
             <attribution>grpc-java (io.grpc:grpc-*)
-  Copyright 2014,2019 The gRPC Authors
+  Copyright 2014,2020 The gRPC Authors
   Copyright 2018, gRPC Authors All rights reserved.
   Copyright 2014 The gRPC Authors
 
@@ -5006,8 +5006,8 @@ Fourth Party Dependencies
   Copyright (c) JSR305 expert group
   Apache License Version 2.0
 --------------------------------------------
-"Guava: Google Core Libraries for Java" (com.google.guava:*)
-  Copyright (C) 2005,2019 The Guava Authors
+"Guava: Google Libraries for Java" (com.google.guava:*)
+  Copyright (C) 2005,2020 The Guava Authors
   Copyright (C) 2018 The Guava Authors
   Apache License Version 2.0
 --------------------------------------------
@@ -5022,7 +5022,7 @@ Fourth Party Dependencies
   Apache License Version 2.0
 --------------------------------------------
 "Netty" (io.netty:netty-*)
-  Copyright 2014,2019 The Netty Project
+  Copyright 2014,2020 The Netty Project
   Copyright 2014 Twitter, Inc.
   Copyright (c) 2004-2011 QOS.ch
   Copyright 2012,2017 The Netty Project
