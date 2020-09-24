@@ -67,7 +67,7 @@ public interface DbClient {
      * Executes simple SQL query defined as {@code db.statements.ping} configuration property.
      *
      * @return stage that completes when the ping finished
-     * @deprecated Use {@link io.helidon.dbclient.health.DbClientHealthCheck} instead.
+     * @deprecated Use {@code io.helidon.dbclient.health.DbClientHealthCheck} instead.
      */
     Single<Void> ping();
 
