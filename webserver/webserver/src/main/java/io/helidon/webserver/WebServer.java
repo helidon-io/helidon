@@ -569,6 +569,12 @@ public interface WebServer {
             return this;
         }
 
+        @Override
+        public Builder enableCompression(boolean value) {
+            configurationBuilder.enableCompression(value);
+            return this;
+        }
+
         /**
          * Configure experimental features.
          * @param experimental experimental configuration
@@ -748,17 +754,6 @@ public interface WebServer {
          */
         public Builder workersCount(int workers) {
             configurationBuilder.workersCount(workers);
-            return this;
-        }
-
-        /**
-         * Configure whether to enable content negotiation for compression.
-         *
-         * @param value compression flag
-         * @return updated builder instance
-         */
-        public Builder enableCompression(boolean value) {
-            configurationBuilder.enableCompression(value);
             return this;
         }
 
