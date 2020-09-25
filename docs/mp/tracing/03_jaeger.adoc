@@ -16,10 +16,10 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Zipkin Tracing
+= Jaeger Tracing
 :description: Helidon Tracing Support
-:keywords: helidon, tracing, zipkin
-:h1Prefix: SE
-:zipkin-page: ../../shared/tracing/tracer-zipkin.adoc
+:keywords: helidon, tracing, jaeger
+:h1Prefix: MP
+:jager-page: ../../shared/tracing/tracer-jaeger.adoc
 
-include::{zipkin-page}[]
+include::{jager-page}[]

@@ -91,29 +91,7 @@ GrpcServerConfiguration serverConfig = GrpcServerConfiguration.builder().port(0)
                 .build();
 ----
 
-=== Configuration using Helidon Config [[Tracing-config]]
-
-There is a set of common configuration options that this section describes. In addition each tracer implementation
-may have additional configuration options - please see the documentation of each of them.
-
-Each implementation may provide defaults for these options.
-
-All common configuration options:
-|===
-|key |description
-
-|service |Name of the service sending the tracing information. This is usually visible in the trace data to
-                distinguish actors in a conversation (e.g. when multiple microservices are connected together)
-|protocol |Protocol of the tracing collector (e.g. `http`, `https`)
-|host |Host of the tracing collector (e.g. `localhost`)
-|port |Port of the tracing collector (e.g. `9411`)
-|path |Path of the tracing collector service that is used to send spans to
-|enabled |If set to false, tracing would be disabled
-|tags |String tags that are to be added to each span reported (object node of string-string pairs)
-|boolean-tags |Boolean tags that are to be added to each span reported (object node of string-boolean pairs)
-|int-tags |Int tags that are to be added to each span reported (object node of string-int pairs)
-
-|===
+include::../../shared/tracing/common-config.adoc[]
 
 == Creating custom spans
 

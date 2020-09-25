@@ -19,7 +19,7 @@
 = Zipkin Tracing
 :description: Helidon Tracing Support
 :keywords: helidon, tracing, zipkin
-:h1Prefix: SE
+:h1Prefix: MP
 :zipkin-page: ../../shared/tracing/tracer-zipkin.adoc
 
 include::{zipkin-page}[]
