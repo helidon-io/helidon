@@ -18,8 +18,6 @@ package io.helidon.microprofile.graphql.server;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.text.NumberFormat;
-import java.text.ParseException;
 import java.time.OffsetDateTime;
 import java.time.OffsetTime;
 
@@ -35,7 +33,6 @@ import graphql.schema.GraphQLScalarType;
 import static graphql.Scalars.GraphQLBigInteger;
 import static graphql.Scalars.GraphQLFloat;
 import static graphql.Scalars.GraphQLInt;
-
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.DATETIME_SCALAR;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.DATE_SCALAR;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.FORMATTED_DATETIME_SCALAR;

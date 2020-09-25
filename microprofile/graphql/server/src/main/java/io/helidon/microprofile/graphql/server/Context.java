@@ -16,38 +16,9 @@
 
 package io.helidon.microprofile.graphql.server;
 
-import java.lang.reflect.Method;
 
 /**
  * A Default Context to be supplied to {@link ExecutionContext}.
  */
 public interface Context {
-
-    /**
-     * Return the formatter for the given method and argument.
-     *
-     * @param method       {@link Method} method
-     * @param argumentName argument name
-     * @return the formatter for the given method and argument
-     */
-    public Object getFormatter(Method method, String argumentName);
-
-    /**
-     * Add a formatter for the given method and argument.
-     * @param method       {@link Method} method
-     * @param argumentName argument name
-     * @param formatter    formatter
-     */
-    public void addFormatter(Method method, String argumentName, FormattingProvider formatter);
-
-    /**
-     * Generate a {@link Pair} from the given method and argument.
-     * @param method       {@link Method} method
-     * @param argumentName argument name
-     * @return a new {@link Pair}
-     */
-    private Pair<String, String> generatePair(Method method, String argumentName) {
-        return new Pair<>(method.getClass() + "_" + method.getName(), argumentName);
-    }
-
 }

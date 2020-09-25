@@ -16,51 +16,10 @@
 
 package io.helidon.microprofile.graphql.server;
 
-import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * A default implementation of {@link Context} to be supplied to {@link ExecutionContext}.
  * Any other implementations should extend this.
  */
 public class DefaultContext
         implements Context {
-
-    /**
-     * Defines a {@link Map} keyed by a {@link Pair} of full method name and argument name with value the formatter.
-     */
-    private Map<Pair<String, String>, FormattingProvider> mapFormatting = new HashMap<>();
-
-    /**
-     * No-args constructor.
-     */
-    public DefaultContext() {
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public Object getFormatter(Method method, String argumentName) {
-        return mapFormatting.get(generatePair(method, argumentName));
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void addFormatter(Method method, String argumentName, FormattingProvider formatter) {
-        mapFormatting.put(generatePair(method, argumentName), formatter);
-    }
-
-    /**
-     * Generate a {@link Pair} from the given method and argument.
-     *
-     * @param method       {@link Method} method
-     * @param argumentName argument name
-     * @return a new {@link Pair}
-     */
-    private Pair<String, String> generatePair(Method method, String argumentName) {
-        return new Pair<>(method.getDeclaringClass() + "_" + method.getName(), argumentName);
-    }
 }

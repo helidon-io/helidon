@@ -286,7 +286,7 @@ public class SchemaArgument
      *
      * @param originalArrayType the original array type
      */
-    public void setOriginalArrayType(Class <?> originalArrayType) {
+    public void setOriginalArrayType(Class<?> originalArrayType) {
         this.originalArrayType = originalArrayType;
     }
 

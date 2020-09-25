@@ -24,7 +24,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
-import java.lang.reflect.ParameterizedType;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.LocalDate;
@@ -34,7 +33,6 @@ import java.time.OffsetDateTime;
 import java.time.OffsetTime;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,10 +56,10 @@ import org.eclipse.microprofile.graphql.Type;
 
 import static io.helidon.microprofile.graphql.server.CustomScalars.CUSTOM_BIGDECIMAL_SCALAR;
 import static io.helidon.microprofile.graphql.server.CustomScalars.CUSTOM_BIGINTEGER_SCALAR;
-import static io.helidon.microprofile.graphql.server.CustomScalars.FORMATTED_CUSTOM_DATE_SCALAR;
-import static io.helidon.microprofile.graphql.server.CustomScalars.FORMATTED_CUSTOM_DATE_TIME_SCALAR;
 import static io.helidon.microprofile.graphql.server.CustomScalars.CUSTOM_FLOAT_SCALAR;
 import static io.helidon.microprofile.graphql.server.CustomScalars.CUSTOM_INT_SCALAR;
+import static io.helidon.microprofile.graphql.server.CustomScalars.FORMATTED_CUSTOM_DATE_SCALAR;
+import static io.helidon.microprofile.graphql.server.CustomScalars.FORMATTED_CUSTOM_DATE_TIME_SCALAR;
 import static io.helidon.microprofile.graphql.server.CustomScalars.FORMATTED_CUSTOM_TIME_SCALAR;
 import static io.helidon.microprofile.graphql.server.ElementGenerator.OPEN_SQUARE;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.getDefaultDateTimeFormat;
@@ -279,10 +277,12 @@ public final class SchemaGeneratorHelper {
             new SchemaScalar(FORMATTED_DATETIME_SCALAR, ZONED_DATE_TIME_CLASS, FORMATTED_CUSTOM_DATE_TIME_SCALAR,
                              "yyyy-MM-dd'T'HH:mm:ssZ'['VV']'"));
         put(LOCAL_DATE_TIME_CLASS,
-            new SchemaScalar(FORMATTED_DATETIME_SCALAR, LOCAL_DATE_TIME_CLASS, FORMATTED_CUSTOM_DATE_TIME_SCALAR, "yyyy-MM-dd'T'HH:mm:ss"));
+            new SchemaScalar(FORMATTED_DATETIME_SCALAR, LOCAL_DATE_TIME_CLASS, FORMATTED_CUSTOM_DATE_TIME_SCALAR,
+                             "yyyy-MM-dd'T'HH:mm:ss"));
 
         // Date scalar
-        put(LOCAL_DATE_CLASS, new SchemaScalar(FORMATTED_DATE_SCALAR, LOCAL_DATE_CLASS, FORMATTED_CUSTOM_DATE_SCALAR, "yyyy-MM-dd"));
+        put(LOCAL_DATE_CLASS, new SchemaScalar(FORMATTED_DATE_SCALAR, LOCAL_DATE_CLASS, FORMATTED_CUSTOM_DATE_SCALAR,
+                                               "yyyy-MM-dd"));
 
         // BigDecimal scalars
         put(BIG_DECIMAL_CLASS, new SchemaScalar(BIG_DECIMAL, BIG_DECIMAL_CLASS, CUSTOM_BIGDECIMAL_SCALAR, null));

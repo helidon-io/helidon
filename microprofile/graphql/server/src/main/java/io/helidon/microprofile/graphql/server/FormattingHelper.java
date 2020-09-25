@@ -35,9 +35,6 @@ import javax.json.bind.annotation.JsonbNumberFormat;
 
 import org.eclipse.microprofile.graphql.DateFormat;
 
-import org.jboss.jandex.AnnotationInstance;
-import org.jboss.jandex.AnnotationValue;
-
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.BIG_DECIMAL;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.BIG_DECIMAL_CLASS;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.BIG_INTEGER;
@@ -96,7 +93,7 @@ public class FormattingHelper {
     /**
      * Indicates no formatting applied.
      */
-    protected static final String[] NO_FORMATTING = new String[] { null, null, null };
+    protected static final String[] NO_FORMATTING = new String[] {null, null, null };
 
     /**
      * JsonbDateFormat class name.
@@ -134,7 +131,7 @@ public class FormattingHelper {
     protected static String[] getDefaultDateTimeFormat(String scalarName, String clazzName) {
         for (SchemaScalar scalar : SUPPORTED_SCALARS.values()) {
             if (scalarName.equals(scalar.getName()) && scalar.getActualClass().equals(clazzName)) {
-                return new String[] { scalar.getDefaultFormat(), DEFAULT_LOCALE };
+                return new String[] {scalar.getDefaultFormat(), DEFAULT_LOCALE };
             }
         }
         return NO_DEFAULT_FORMAT;
@@ -250,10 +247,9 @@ public class FormattingHelper {
         }
 
         return dateFormat.length == 2
-                ? new String[] { DATE, dateFormat[0], dateFormat[1] }
-                : new String[] { NUMBER, numberFormat[0], numberFormat[1] };
+                ? new String[] {DATE, dateFormat[0], dateFormat[1] }
+                : new String[] {NUMBER, numberFormat[0], numberFormat[1] };
     }
-
 
     /**
      * Return the field format with the given index.
@@ -348,12 +344,12 @@ public class FormattingHelper {
             String type = dateFormat1 != null || dateFormat2 != null ? DATE
                     : NUMBER;
 
-            return new String[] { type, format, locale.equals("") ? DEFAULT_LOCALE : locale };
+            return new String[] {type, format, locale.equals("") ? DEFAULT_LOCALE : locale };
 
         }
         return NO_FORMATTING;
     }
-    
+
     /**
      * Indicates if either {@link JsonbNumberFormat} or {@link JsonbDateFormat} are present.
      *
@@ -388,10 +384,10 @@ public class FormattingHelper {
                                                               org.eclipse.microprofile.graphql.NumberFormat numberFormat) {
         // check @NumberFormat first as this takes precedence
         if (numberFormat != null) {
-            return new String[] { numberFormat.value(), numberFormat.locale() };
+            return new String[] {numberFormat.value(), numberFormat.locale() };
         }
         if (jsonbNumberFormat != null) {
-            return new String[] { jsonbNumberFormat.value(), jsonbNumberFormat.locale() };
+            return new String[] {jsonbNumberFormat.value(), jsonbNumberFormat.locale() };
         }
         return new String[0];
     }
@@ -419,10 +415,10 @@ public class FormattingHelper {
                                                             DateFormat dateFormat) {
         // check @DateFormat first as this takes precedence
         if (dateFormat != null) {
-            return new String[] { dateFormat.value(), dateFormat.locale() };
+            return new String[] {dateFormat.value(), dateFormat.locale() };
         }
         if (jsonbDateFormat != null) {
-            return new String[] { jsonbDateFormat.value(), jsonbDateFormat.locale() };
+            return new String[] {jsonbDateFormat.value(), jsonbDateFormat.locale() };
         }
         return new String[0];
     }
@@ -434,7 +430,7 @@ public class FormattingHelper {
      * @param dateTimeFormatter {@link DateTimeFormatter} to format with
      * @return formatted value
      */
-    @SuppressWarnings( { "unchecked", "rawtypes" })
+    @SuppressWarnings({"unchecked", "rawtypes" })
     public static Object formatDate(Object originalResult, DateTimeFormatter dateTimeFormatter) {
         if (originalResult == null) {
             return null;
@@ -460,7 +456,7 @@ public class FormattingHelper {
      * @param numberFormat   {@link NumberFormat} to format with
      * @return formatted value
      */
-    @SuppressWarnings( { "unchecked", "rawtypes" })
+    @SuppressWarnings({"unchecked", "rawtypes" })
     public static Object formatNumber(Object originalResult, boolean isScalar, NumberFormat numberFormat) {
         if (originalResult == null) {
             return null;

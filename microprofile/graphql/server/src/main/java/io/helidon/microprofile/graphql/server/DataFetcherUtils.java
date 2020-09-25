@@ -22,7 +22,6 @@ import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.NumberFormat;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -69,7 +68,7 @@ public class DataFetcherUtils {
     /**
      * Empty format.
      */
-    private static final String[] EMPTY_FORMAT = new String[] { null, null };
+    private static final String[] EMPTY_FORMAT = new String[] {null, null };
 
     /**
      * Private constructor for utilities class.
@@ -172,7 +171,7 @@ public class DataFetcherUtils {
                     }
                 }
             }
-            
+
             return JsonUtils.convertFromJson(JsonUtils.convertMapToJson(mapConverted), originalType);
 
         } else if (rawValue instanceof Collection) {
