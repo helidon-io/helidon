@@ -74,21 +74,21 @@ Routing routing = Routing.builder()
         .build();
 ----
 
-include::../../common/security/providers/oidc.adoc[]
+include::../../shared/security/providers/oidc.adoc[]
 
-include::../../common/security/providers/http-basic-auth.adoc[]
+include::../../shared/security/providers/http-basic-auth.adoc[]
 
-include::../../common/security/providers/http-digest-auth.adoc[]
+include::../../shared/security/providers/http-digest-auth.adoc[]
 
-include::../../common/security/providers/header-assertion.adoc[]
+include::../../shared/security/providers/header-assertion.adoc[]
 
-include::../../common/security/providers/http-signatures.adoc[]
+include::../../shared/security/providers/http-signatures.adoc[]
 
-include::../../common/security/providers/idcs-role-mapper.adoc[]
+include::../../shared/security/providers/idcs-role-mapper.adoc[]
 
-include::../../common/security/providers/abac.adoc[]
+include::../../shared/security/providers/abac.adoc[]
 
-include::../../common/security/providers/google-login.adoc[]
+include::../../shared/security/providers/google-login.adoc[]
 
-include::../../common/security/providers/jwt.adoc[]
+include::../../shared/security/providers/jwt.adoc[]
 
