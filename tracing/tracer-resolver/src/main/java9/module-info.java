@@ -25,7 +25,9 @@ module io.helidon.tracing.tracerresolver {
     requires java.logging;
     requires io.opentracing.util;
     requires io.opentracing.noop;
-    requires io.opentracing.contrib.tracerresolver;
+    // downgraded version does not have module name defined
+    // requires io.opentracing.contrib.tracerresolver;
+    requires opentracing.tracerresolver;
 
     exports io.helidon.tracing.tracerresolver;
 
