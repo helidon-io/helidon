@@ -20,6 +20,9 @@ import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.MethodDescriptor;
 import java.beans.PropertyDescriptor;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedParameterizedType;
+import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -71,9 +74,7 @@ import static io.helidon.microprofile.graphql.server.FormattingHelper.formatDate
 import static io.helidon.microprofile.graphql.server.FormattingHelper.formatNumber;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.getCorrectDateFormatter;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.getCorrectNumberFormat;
-import static io.helidon.microprofile.graphql.server.FormattingHelper.getFieldFormat;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.getFormattingAnnotation;
-import static io.helidon.microprofile.graphql.server.FormattingHelper.getMethodParameterFormat;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.isJsonbAnnotationPresent;
 import static io.helidon.microprofile.graphql.server.SchemaGenerator.DiscoveredMethod.MUTATION_TYPE;
 import static io.helidon.microprofile.graphql.server.SchemaGenerator.DiscoveredMethod.QUERY_TYPE;
@@ -89,12 +90,14 @@ import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.check
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ensureFormat;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ensureRuntimeException;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ensureValidName;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getAnnotationValue;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getArrayLevels;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getDefaultValueAnnotationValue;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getDescription;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getFieldName;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getGraphQLType;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getMethodName;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getParameterAnnotations;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getRootArrayClass;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getSafeClass;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getScalar;
@@ -189,8 +192,6 @@ public class SchemaGenerator {
                 .getExtension(GraphQLCdiExtension.class);
         Class[] classes = extension.collectedApis();
         Class[] schemaProcessors = extension.collectedSchemaProcessors();
-
-        CDI<Object> current = CDI.current();
 
         Schema schema = generateSchemaFromClasses(classes);
 
@@ -352,7 +353,7 @@ public class SchemaGenerator {
      *
      * @param schema {@link Schema} to update
      */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings( { "unchecked", "rawtypes" })
     private void processDefaultDateTimeValues(Schema schema) {
         // concatenate both the SchemaType and SchemaInputType
         Stream streamInputTypes = schema.getInputTypes().stream().map(it -> (SchemaType) it);
@@ -821,7 +822,6 @@ public class SchemaGenerator {
         fd.setArrayReturnTypeMandatory(discoveredMethod.isArrayReturnTypeMandatory());
         fd.setOriginalArrayType(isArrayReturnType ? discoveredMethod.getOriginalArrayType() : null);
 
-
         if (format != null && format.length == 3) {
             fd.setFormat(new String[] { format[1], format[2] });
         }
@@ -1093,8 +1093,8 @@ public class SchemaGenerator {
             if (field != null && (format.length == 0 || format[0] == null)) {
                 format = getFormattingAnnotation(field);
                 if (isFormatEmpty(format)) {
-                    // check to see format of the inner most class. E.g. List<@DateFomrat("DD/MM") String>
-                    format = getFieldFormat(jandexUtils, className, field.getName());
+                    // check to see format of the inner most class. E.g. List<@DateFormat("DD/MM") String>
+                    format = FormattingHelper.getFieldFormat(field, 0);
                 }
                 isJsonbFormat = isJsonbAnnotationPresent(field);
             }
@@ -1200,10 +1200,9 @@ public class SchemaGenerator {
                 String argumentDescription = getDescription(parameter.getAnnotation(Description.class));
                 argument.setDescription(argumentDescription);
 
-                String[] argumentFormat = FormattingHelper.getFormattingAnnotation(parameter);
-                String[] argumentTypeFormat = getMethodParameterFormat(jandexUtils,
-                                                              method.getDeclaringClass().getName(), method.getName(), i);
-
+                String[] argumentFormat = getFormattingAnnotation(parameter);
+                String[] argumentTypeFormat = FormattingHelper.getMethodParameterFormat(parameter, 0);
+                
                 // The argument type format overrides any argument format. E.g. NumberFormat should apply below
                 // E.g.  public List<String> getListAsString(@Name("arg1")
                 //                                           @JsonbNumberFormat("ignore 00.0000000")
@@ -1274,10 +1273,11 @@ public class SchemaGenerator {
      * @param returnClazz       return type
      * @param genericReturnType generic return {@link java.lang.reflect.Type} may be null
      * @param parameterNumber   the parameter number for the parameter
+     * @param method            {@link Method} to find parameter for
      * @return a {@link ReturnType}
      */
-    private ReturnType getReturnType(Class<?> returnClazz, java.lang.reflect.Type genericReturnType,
-                                     int parameterNumber, Method method) {
+    protected ReturnType getReturnType(Class<?> returnClazz, java.lang.reflect.Type genericReturnType,
+                                       int parameterNumber, Method method) {
         ReturnType actualReturnType = new ReturnType();
         RootTypeResult rootTypeResult;
         String returnClazzName = returnClazz.getName();
@@ -1333,7 +1333,6 @@ public class SchemaGenerator {
                                              int parameterNumber, Method method) {
         int level = 1;
         boolean isParameter = parameterNumber != -1;
-        String nonNullClazz = NonNull.class.getName();
         String[] format = NO_FORMATTING;
 
         boolean isReturnTypeMandatory;
@@ -1349,19 +1348,12 @@ public class SchemaGenerator {
 
             Class<?> clazz = actualTypeArgument.getClass();
             boolean hasAnnotation = false;
-            AnnotationInstance formatInstance = null;
-            String clazzName = method.getDeclaringClass().getName();
-            String methodName = method.getName();
-            if (jandexUtils.hasIndex()) {
-                if (isParameter) {
-                    hasAnnotation = jandexUtils
-                            .methodParameterHasAnnotation(clazzName, methodName, parameterNumber, nonNullClazz);
-                    format = getMethodParameterFormat(jandexUtils, clazzName, methodName,
-                                                                       parameterNumber);
-                } else {
-                    hasAnnotation = jandexUtils.methodHasAnnotation(clazzName, methodName, nonNullClazz);
-                    format = FormattingHelper.getMethodFormat(jandexUtils, clazzName, methodName);
-                }
+            if (isParameter) {
+                // check for the NonNull
+                Parameter parameter = method.getParameters()[parameterNumber];
+                hasAnnotation = getAnnotationValue(getParameterAnnotations(parameter, 0), NonNull.class) != null;
+            } else {
+                format = FormattingHelper.getMethodFormat(method, 0);
             }
 
             isReturnTypeMandatory = hasAnnotation || isPrimitive(clazz.getName());
@@ -1370,7 +1362,6 @@ public class SchemaGenerator {
             Class<?> clazz = genericReturnType.getClass();
             isReturnTypeMandatory = clazz.getAnnotation(NonNull.class) != null
                     || isPrimitive(clazz.getName());
-            //            format = FormattingHelper.getMethodFormat(jandexUtils, clazzName, methodName);
             return new RootTypeResult(((Class<?>) genericReturnType).getName(), level, isReturnTypeMandatory, format);
         }
     }
@@ -1838,6 +1829,7 @@ public class SchemaGenerator {
 
         /**
          * Set if the format is of type JsonB.
+         *
          * @param isJsonbFormat if the format is of type JsonB
          */
         public void setJsonbFormat(boolean isJsonbFormat) {
@@ -1846,6 +1838,7 @@ public class SchemaGenerator {
 
         /**
          * Returns true if the format is of type JsonB.
+         *
          * @return true if the format is of type JsonB
          */
         public boolean isJsonbFormat() {

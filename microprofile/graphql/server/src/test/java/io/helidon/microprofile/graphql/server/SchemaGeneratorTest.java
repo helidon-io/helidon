@@ -17,8 +17,10 @@
 package io.helidon.microprofile.graphql.server;
 
 import java.beans.IntrospectionException;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.lang.reflect.ParameterizedType;
 
 import java.math.BigDecimal;
@@ -59,8 +61,17 @@ import io.helidon.microprofile.graphql.server.test.types.TypeWithNameAndJsonbPro
 
 import io.helidon.microprofile.graphql.server.test.types.Vehicle;
 import io.helidon.microprofile.graphql.server.test.types.VehicleIncident;
+
+import javax.json.bind.annotation.JsonbNumberFormat;
+import org.eclipse.microprofile.graphql.DateFormat;
+import org.eclipse.microprofile.graphql.Name;
+import org.eclipse.microprofile.graphql.NonNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import static io.helidon.microprofile.graphql.server.FormattingHelper.DATE;
+import static io.helidon.microprofile.graphql.server.FormattingHelper.NUMBER;
+import static io.helidon.microprofile.graphql.server.FormattingHelper.getFieldFormat;
 
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.BIG_DECIMAL;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.BIG_INTEGER;
@@ -68,7 +79,10 @@ import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.DEFAU
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.FLOAT;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.INT;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.getNumberFormatAnnotation;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getAnnotationValue;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getDefaultDescription;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getFieldAnnotations;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getParameterAnnotations;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.stripMethodName;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -90,7 +104,14 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
 
     private List<String[]> listStringArray = new ArrayList<>();
     private List<String> listString = new ArrayList<>();
+    private List<@org.eclipse.microprofile.graphql.NumberFormat("0 'number'") Integer> listIntegerFormatted = new ArrayList<>();
+    private List<@DateFormat("dd/mm/yyyy") LocalDate> listDateFormatted = new ArrayList<>();
+    private List<@org.eclipse.microprofile.graphql.NumberFormat(value = "0 'number'", locale = "en-AU") Integer>
+            listIntegerFormattedWithLocale = new ArrayList<>();
     private List<List<List<String>>> listListString = new ArrayList<>();
+
+    @org.eclipse.microprofile.graphql.NumberFormat("0 'number'")
+    private List<Integer> listIntegerFormat2;
 
     public List<String[]> getListStringArray() {
         return listStringArray;
@@ -104,6 +125,44 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
         return listListString;
     }
 
+    @org.eclipse.microprofile.graphql.NumberFormat("0 'method'")
+    public List<Integer> getListIntegerWithFormat(
+            @Name("name") List<@org.eclipse.microprofile.graphql.NumberFormat("0 'number'") @NonNull Integer> value) {
+        return value;
+    }
+
+    public List<List<@org.eclipse.microprofile.graphql.NumberFormat("0 'number'") Integer>> getListListIntegerWithFormat(
+            @Name("name") List<List<@org.eclipse.microprofile.graphql.NumberFormat("0 'number'") @NonNull Integer>> value) {
+        return value;
+    }
+
+    @JsonbNumberFormat("0 'jsonb'")
+    @org.eclipse.microprofile.graphql.NumberFormat("0 'number'")
+    public List<List<Integer>> getListListIntegerWith2Formats(
+            @Name("name") List<List<@org.eclipse.microprofile.graphql.NumberFormat("0 'number'") @NonNull Integer>> value) {
+        return value;
+    }
+
+    public List<List<LocalDate>> getListListLocalDateWithFormat(
+            @Name("name") List<List<@org.eclipse.microprofile.graphql.DateFormat("dd/mm/yyyy") @NonNull LocalDate>> value) {
+        return value;
+    }
+
+    public List<List<LocalDate>> getListListLocalDateWithFormatAndLocale(
+            @Name("name") List<List<@org.eclipse.microprofile.graphql.DateFormat(value = "dd/mm/yyyy", locale = "en-AU") @NonNull LocalDate>> value) {
+        return value;
+    }
+
+    public Collection<List<Integer>> getCollectionListIntegerWithFormat(
+            @Name("name") Collection<List<@org.eclipse.microprofile.graphql.NumberFormat("0 'number'") @NonNull Integer>> value) {
+        return value;
+    }
+
+    @org.eclipse.microprofile.graphql.NumberFormat("0 'number'")
+    public List<Integer> getListIntegerFormatted2(List<Integer> value) {
+        return value;
+    }
+
     private SchemaGenerator schemaGenerator;
     private Context defaultContext;
 
@@ -111,6 +170,59 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
     public void beforeEach() {
         defaultContext = ExecutionContext.getDefaultContext();
         schemaGenerator = new SchemaGenerator(defaultContext);
+    }
+
+    @Test
+    public void testFieldFormats() throws NoSuchFieldException {
+       Field field = SchemaGeneratorTest.class.getDeclaredField("listString");
+       assertThat(field, is(notNullValue()));
+       Annotation[] annotations = getFieldAnnotations(field, 0);
+       assertThat(annotations, is(notNullValue()));
+
+       assertFieldFormat(SchemaGeneratorTest.class.getDeclaredField("listString"),
+                         new String[] {null, null, null});
+       assertFieldFormat(SchemaGeneratorTest.class.getDeclaredField("listIntegerFormatted"),
+                         new String[] {NUMBER, "0 'number'", DEFAULT_LOCALE});
+       assertFieldFormat(SchemaGeneratorTest.class.getDeclaredField("listIntegerFormattedWithLocale"),
+                         new String[] {NUMBER, "0 'number'", "en-AU"});
+       assertFieldFormat(SchemaGeneratorTest.class.getDeclaredField("listDateFormatted"),
+                         new String[] {DATE, "dd/mm/yyyy", DEFAULT_LOCALE});
+       assertFieldFormat(SchemaGeneratorTest.class.getDeclaredField("listIntegerFormat2"),
+                         new String[] {NUMBER, "0 'number'", DEFAULT_LOCALE});
+    }
+
+    @Test
+    public void testMethodFormats() throws NoSuchMethodException {
+       assertMethodFormat(SchemaGeneratorTest.class.getMethod("getListIntegerWithFormat", List.class),
+                          new String[] {NUMBER, "0 'method'", DEFAULT_LOCALE});
+       assertMethodFormat(SchemaGeneratorTest.class.getMethod("getListListIntegerWithFormat", List.class),
+                          new String[] {NUMBER, "0 'number'", DEFAULT_LOCALE});
+       assertMethodFormat(SchemaGeneratorTest.class.getMethod("getListListIntegerWith2Formats", List.class),
+                          new String[] {NUMBER, "0 'number'", DEFAULT_LOCALE});
+    }
+
+    @Test
+    public void testParameterFormatsAndNulls() throws NoSuchMethodException {
+        Method method = SchemaGeneratorTest.class.getMethod("getListIntegerWithFormat", List.class);
+        assertThat(method, is(notNullValue()));
+        Parameter parameter = method.getParameters()[0];
+
+        Annotation[] parameterAnnotations = getParameterAnnotations(parameter, 0);
+        assertThat(parameterAnnotations, is(notNullValue()));
+        assertThat(parameterAnnotations.length, is(2));
+        assertThat(getAnnotationValue(parameterAnnotations, NonNull.class), is(notNullValue()));
+
+        assertParameterFormat(SchemaGeneratorTest.class.getMethod("getListIntegerWithFormat", List.class), 0,
+                              new String[] { NUMBER, "0 'number'", DEFAULT_LOCALE });
+        assertParameterFormat(SchemaGeneratorTest.class.getMethod("getListListIntegerWithFormat", List.class), 0,
+                              new String[] { NUMBER, "0 'number'", DEFAULT_LOCALE });
+        assertParameterFormat(SchemaGeneratorTest.class.getMethod("getCollectionListIntegerWithFormat", Collection.class), 0,
+                              new String[] { NUMBER, "0 'number'", DEFAULT_LOCALE });
+        assertParameterFormat(SchemaGeneratorTest.class.getMethod("getListListLocalDateWithFormat", List.class), 0,
+                              new String[] { DATE, "dd/mm/yyyy", DEFAULT_LOCALE });
+        assertParameterFormat(SchemaGeneratorTest.class.getMethod("getListListLocalDateWithFormatAndLocale", List.class), 0,
+                              new String[] { DATE, "dd/mm/yyyy", "en-AU" });
+
     }
 
     @Test
@@ -188,7 +300,8 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
 
     @Test
     public void testInterfaceDiscovery() throws IntrospectionException, ClassNotFoundException {
-        Map<String, SchemaGenerator.DiscoveredMethod> mapMethods = schemaGenerator.retrieveGetterBeanMethods(Vehicle.class, false);
+        Map<String, SchemaGenerator.DiscoveredMethod> mapMethods = schemaGenerator
+                .retrieveGetterBeanMethods(Vehicle.class, false);
         assertThat(mapMethods, is(notNullValue()));
         assertThat(mapMethods.size(), is(6));
         assertDiscoveredMethod(mapMethods.get("plate"), "plate", STRING, null, false, false, false);
@@ -217,7 +330,8 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
 
     @Test
     public void testInterfaceImplementorDiscovery2() throws IntrospectionException, ClassNotFoundException {
-        Map<String, SchemaGenerator.DiscoveredMethod> mapMethods = schemaGenerator.retrieveGetterBeanMethods(Motorbike.class, false);
+        Map<String, SchemaGenerator.DiscoveredMethod> mapMethods = schemaGenerator
+                .retrieveGetterBeanMethods(Motorbike.class, false);
         assertThat(mapMethods, is(notNullValue()));
         assertThat(mapMethods.size(), is(7));
         assertDiscoveredMethod(mapMethods.get("plate"), "plate", STRING, null, false, false, false);
@@ -322,9 +436,9 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
     @Test
     public void testDefaultDescription() {
         assertThat(getDefaultDescription(null, null), is(nullValue()));
-        assertThat(getDefaultDescription(new String[] {"format","locale"} , null), is("format locale"));
+        assertThat(getDefaultDescription(new String[] { "format", "locale" }, null), is("format locale"));
         assertThat(getDefaultDescription(null, "desc"), is("desc"));
-        assertThat(getDefaultDescription(new String[] {"format","locale"}, "desc"), is("desc (format locale)"));
+        assertThat(getDefaultDescription(new String[] { "format", "locale" }, "desc"), is("desc (format locale)"));
     }
 
     @Test
@@ -389,6 +503,7 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
     @Test
     public void testGetRootType() throws NoSuchFieldException, NoSuchMethodException {
         SchemaGenerator schemaGenerator = new SchemaGenerator(ExecutionContext.getDefaultContext());
+
         ParameterizedType stringArrayListType = getParameterizedType("listStringArray");
         SchemaGenerator.RootTypeResult rootTypeName =
                 schemaGenerator.getRootTypeName(stringArrayListType.getActualTypeArguments()[0], 0,
@@ -400,15 +515,15 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
         ParameterizedType stringListType = getParameterizedType("listString");
         rootTypeName = schemaGenerator.getRootTypeName(stringListType.getActualTypeArguments()[0], 0,
                                                        -1,
-                                                        SchemaGeneratorTest.class.getMethod("getListStringArray"));
-        assertThat(rootTypeName.getRootTypeName(), is(String.class.getName()));
+                                                       SchemaGeneratorTest.class.getMethod("getListStringArray"));
+        assertThat(rootTypeName.getRootTypeName(), is(STRING));
         assertThat(rootTypeName.getLevels(), is(1));
 
         ParameterizedType listListStringType = getParameterizedType("listListString");
         rootTypeName = schemaGenerator.getRootTypeName(listListStringType.getActualTypeArguments()[0], 0,
                                                        -1,
                                                        SchemaGeneratorTest.class.getMethod("getListListString"));
-        assertThat(rootTypeName.getRootTypeName(), is(String.class.getName()));
+        assertThat(rootTypeName.getRootTypeName(), is(STRING));
         assertThat(rootTypeName.getLevels(), is(2));
     }
 
@@ -463,6 +578,31 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
         SchemaGenerator schemaGenerator = new SchemaGenerator(ExecutionContext.getDefaultContext());
         Schema schema = schemaGenerator.generateSchemaFromClasses(SimpleContactWithNumberFormats.class);
         assertThat(schema, is(notNullValue()));
+    }
+
+    private void assertParameterFormat(Method method, int paramNumber, String[] expectedFormat) {
+        assertThat(method, is(notNullValue()));
+        Parameter parameter = method.getParameters()[paramNumber];
+        String[] format = FormattingHelper.getMethodParameterFormat(parameter, 0);
+        assertThat(format, is(notNullValue()));
+        assertThat(format.length, is(3));
+        assertThat(format, is(expectedFormat));
+    }
+
+    private void assertFieldFormat(Field field, String[] expectedFormat) {
+        assertThat(field, is(notNullValue()));
+        String[] format = getFieldFormat(field, 0);
+        assertThat(format, is(notNullValue()));
+        assertThat(format.length, is(3));
+        assertThat(format, is(expectedFormat));
+    }
+
+    private void assertMethodFormat(Method method, String[] expectedFormat) {
+        assertThat(method, is(notNullValue()));
+        String[] format = FormattingHelper.getMethodFormat(method, 0);
+        assertThat(format, is(notNullValue()));
+        assertThat(format.length, is(3));
+        assertThat(format, is(expectedFormat));
     }
 
     /**

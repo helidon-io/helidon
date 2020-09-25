@@ -99,8 +99,7 @@ public class NumberFormatIT extends AbstractGraphQLIT {
         mapResults = getAndAssertResult(executionContext.execute("mutation { idNumber(name: \"Tim\", id: 123) }"));
         assertThat(mapResults, is(notNullValue()));
         assertThat(mapResults.get("idNumber"), is("Tim-123"));
-
-        // TODO: Fix
+        
         mapResults = getAndAssertResult(executionContext.execute("mutation { echoBigDecimalList(coordinates: [ 10.0123, -23.000 ]) }"));
         assertThat(mapResults, is(notNullValue()));
         List<BigDecimal> listBigDecimals = (List<BigDecimal>) mapResults.get("echoBigDecimalList");
@@ -140,6 +139,7 @@ public class NumberFormatIT extends AbstractGraphQLIT {
 
         List<Integer> listResults = (List<Integer>) mapResults.get("echoFormattedListOfIntegers");
         assertThat(listResults.size(), is(3));
+
    }
 
     @Test

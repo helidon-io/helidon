@@ -16,11 +16,15 @@
 
 package io.helidon.microprofile.graphql.server;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.AnnotatedParameterizedType;
+import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
+import java.lang.reflect.ParameterizedType;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.LocalDate;
@@ -30,6 +34,7 @@ import java.time.OffsetDateTime;
 import java.time.OffsetTime;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -249,6 +254,11 @@ public final class SchemaGeneratorHelper {
     private static final Logger LOGGER = Logger.getLogger(SchemaGeneratorHelper.class.getName());
 
     /**
+     * Indicates empty annotations.
+     */
+    private static final Annotation[] EMPTY_ANNOTATIONS = new Annotation[0];
+
+    /**
      * List of supported scalars keyed by the full class name.
      */
     static final Map<String, SchemaScalar> SUPPORTED_SCALARS = new HashMap<>() {{
@@ -380,7 +390,7 @@ public final class SchemaGeneratorHelper {
      */
     protected static boolean isPrimitive(String clazz) {
         return JAVA_PRIMITIVE_TYPES.contains(clazz)
-                || PRIMITIVE_ARRAY_MAP.values().stream().filter(v -> v.contains(clazz)).count() > 0L;
+                || PRIMITIVE_ARRAY_MAP.values().stream().anyMatch(v -> v.contains(clazz));
     }
 
     /**
@@ -688,6 +698,89 @@ public final class SchemaGeneratorHelper {
      */
     protected static String getTypeName(Class<?> clazz) {
         return getTypeName(clazz, false);
+    }
+
+    /**
+     * Return the array of {@link Annotation}s on a {@link Parameter} that are parameterized types.
+     * @param field  {@link Field} to introspect
+     * @param index  index of type generic type. 0 = List/Collection 1 = Map
+     * @return the array of {@link Annotation}s on a {@link Parameter}
+     */
+    protected static Annotation[] getFieldAnnotations(Field field, int index) {
+        if (field.getAnnotatedType() instanceof AnnotatedParameterizedType) {
+            return getAnnotationsFromType((AnnotatedParameterizedType) field.getAnnotatedType(), index);
+        }
+
+        return EMPTY_ANNOTATIONS;
+    }
+
+    /**
+     * Return the array of {@link Annotation}s on a {@link Method} that are parameterized types.
+     * @param method  {@link Method} to introspect
+     * @param index  index of type generic type. 0 = List/Collection 1 = Map
+     * @return the array of {@link Annotation}s on a {@link Parameter}
+     */
+    protected static Annotation[] getMethodAnnotations(Method method, int index) {
+        if (method.getAnnotatedReturnType() instanceof AnnotatedParameterizedType) {
+            return getAnnotationsFromType((AnnotatedParameterizedType) method.getAnnotatedReturnType(), index);
+        }
+
+        return EMPTY_ANNOTATIONS;
+    }
+
+    /**
+     * Return the array of {@link Annotation}s on a {@link Parameter} that are parameterized types.
+     * @param parameter   {@link Parameter} to introspect
+     * @param index       index of type generic type. 0 = List/Collection 1 = Map
+     * @return the array of {@link Annotation}s on a {@link Parameter}
+     */
+    protected static Annotation[] getParameterAnnotations(Parameter parameter, int index) {
+
+        if (parameter.getAnnotatedType() instanceof AnnotatedParameterizedType) {
+            return getAnnotationsFromType((AnnotatedParameterizedType) parameter.getAnnotatedType(), index);
+        }
+
+        return EMPTY_ANNOTATIONS;
+    }
+
+    /**
+     * Returns the annotations from the given {@link AnnotatedParameterizedType}.
+     * @param apt   {@link AnnotatedParameterizedType}
+     * @param index  index of type generic type. 0 = List/Collection 1 = Map
+     * @return  the annotations from the given {@link AnnotatedParameterizedType}
+     */
+    private static Annotation[] getAnnotationsFromType(AnnotatedParameterizedType apt, int index) {
+        if (apt != null) {
+
+            // loop until we find the root annotated type
+            AnnotatedType annotatedActualTypeArgument = apt.getAnnotatedActualTypeArguments()[index];
+            while (annotatedActualTypeArgument instanceof AnnotatedParameterizedType) {
+                AnnotatedParameterizedType parameterizedType2 = (AnnotatedParameterizedType) annotatedActualTypeArgument;
+                annotatedActualTypeArgument = parameterizedType2.getAnnotatedActualTypeArguments()[index];
+            }
+
+            if (annotatedActualTypeArgument != null) {
+                return annotatedActualTypeArgument.getAnnotations();
+            }
+        }
+        return EMPTY_ANNOTATIONS;
+    }
+
+    /**
+     * Return the annotation that matches the type.
+     * @param annotations array of {@link Annotation}s to search
+     * @param type the {@link Type} to find
+     * @return the annotation that matches the type
+     */
+    protected static Annotation getAnnotationValue(Annotation[] annotations, java.lang.reflect.Type type) {
+        if (annotations != null) {
+            for (Annotation annotation : annotations) {
+                if (annotation.annotationType().equals(type)) {
+                    return annotation;
+                }
+            }
+        }
+        return null;
     }
 
     /**
