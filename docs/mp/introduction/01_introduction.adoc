@@ -178,7 +178,7 @@ A tool-chain to handle authentication, authorization and context propagation.
 //Tracing
 [CARD]
 .Tracing
-[icon=timeline,link=mp/tracing/07_tracing.adoc]
+[icon=timeline,link=mp/tracing/01_tracing.adoc]
 --
 Profile and monitor your applications across multiple services.
 --
