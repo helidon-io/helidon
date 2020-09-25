@@ -32,7 +32,31 @@ to secure your application with OIDC security provider.
 |<<about/03_prerequisites.adoc,Helidon Prerequisites>>
 |===
 
+* <<Keycloak Installation,Keycloak Installation>>
+* <<Set up Keycloak,Set up Keycloak>>
+* <<Set up Helidon,Set up Helidon>>
+
 === Keycloak Installation
+
+==== On Docker
+
+To install Keycloak with Docker, open a terminal and make sure the port 8080 is free.
+
+[source,bash]
+.Enter the following command
+----
+docker run -p 8080:8080 -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=admin quay.io/keycloak/keycloak:11.0.2
+----
+
+This will start Keycloak on local port 8080. It will create the admin user with username `admin` and password `admin`
+Feel free to modify 11.0.2 by any keycloak version of your wish.
+If you are running docker behind a proxy server, make sure it is either configured into docker or
+disable it. Otherwise, you might face a connection timeout because docker cannot download the required data.
+
+To verify that Keycloak is running correctly, go to the admin console : http://localhost:8080/auth/admin
+Log in using the username and password mentioned above: `admin`.
+
+You should be logged in successfully, and it prompts the admin console.
 
 ==== On JDK
 
@@ -83,26 +107,6 @@ To check that the admin user was created correctly, click on Administration user
 to a Login form. Enter the Username and Password created earlier to log in.
 
 After successfully logged in, the admin console is prompted.
-
-==== On Docker
-
-To install Keycloak with Docker, open a terminal and make sure the port 8080 is free.
-
-[source,bash]
-.Enter the following command
-----
-docker run -p 8080:8080 -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=admin quay.io/keycloak/keycloak:11.0.2
-----
-
-This will start Keycloak on local port 8080. It will create the admin user with username `admin` and password `admin`
-Feel free to modify 11.0.2 by any keycloak version of your wish.
-If you are running docker behind a proxy server, make sure it is either configured into docker or
-disable it. Otherwise, you might face a connection timeout because docker cannot download the required data.
-
-To verify that Keycloak is running correctly, go to the admin console : http://localhost:8080/auth/admin
-Log in using the username and password mentioned above: `admin`.
-
-You should be logged in successfully, and it prompts the admin console.
 
 === Set up Keycloak
 
@@ -271,32 +275,6 @@ server:
 
 If the port 7987 is already used, check what port is free on your machine.
 
-- LINUX:
-
-[source,bash]
-.Run one of these command to see what port is currently used
-----
-sudo lsof -i -P -n | grep LISTEN
-sudo netstat -tulpn | grep LISTEN
-----
-
-- WINDOWS:
-
-[source,bash]
-.Run one of these command to see what port is currently used
-----
-netstat -ab
-----
-
-- MAC:
-
-. Open the Network Utility app located in /System/Library/CoreServices/Applications
-. Click on `Port Scan`
-. Enter IP address `localhost`
-. Click on Scan button
-
-These command will prompt the port already in use. Chose any port not in the list instead of 7987.
-
 [source,properties]
 .Replace the old port into microprofile-config.properties
 ----
@@ -351,8 +329,13 @@ java -jar target/helidon-quickstart-se.jar
 The tests must be skipped, otherwise it produces test failure. As the `/greet` endpoint for GET request is
 now protected, its access is limited, and the tests are not built to take oidc security in account.
 
-Open your favourite browser and try to access `http://localhost:7987/greet/Michael`. You should not be redirected and
-receive greeting from the application. Then if a GET HTTP request is sent to this endpoint: `http://localhost:7987/greet`,
-Keycloak redirect you to its login page. Enter the username and associated password. After successful log in, keycloak redirect
-you to the `http://localhost:7987/greet` endpoint and print Hello word.
+. Open your favourite browser and try to access `http://localhost:7987/greet/Michael`.
+. You should not be redirected and receive greeting from the application.
+. Enter the following into URL : `http://localhost:7987/greet`.
+. Keycloak redirect you to its login page.
+. Enter the username and associated password:
+.. `Username` : `myUser`
+.. `Password`: `password`
+. After successful log in, keycloak redirect you to the `http://localhost:7987/greet` endpoint and print Hello word.
+
 From the actual settings, the user needs to log in only once, then Keycloak saves all the connection data.
