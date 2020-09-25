@@ -87,7 +87,7 @@
         <version.lib.ojdbc8>19.3.0.0</version.lib.ojdbc8>
         <version.lib.opentracing>0.32.0</version.lib.opentracing>
         <version.lib.opentracing.grpc>0.2.1</version.lib.opentracing.grpc>
-        <version.lib.opentracing.tracerresolver>0.1.8</version.lib.opentracing.tracerresolver>
+        <version.lib.opentracing.tracerresolver>0.1.6</version.lib.opentracing.tracerresolver>
         <version.lib.persistence-api>2.2</version.lib.persistence-api>
         <version.lib.prometheus>0.6.0</version.lib.prometheus>
         <version.lib.reactivestreams>1.0.2</version.lib.reactivestreams>
