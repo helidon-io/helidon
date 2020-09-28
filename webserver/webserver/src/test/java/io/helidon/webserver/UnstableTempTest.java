@@ -60,12 +60,12 @@ public class UnstableTempTest {
     private static final String JAR_NAME = "test.jar";
     private static final String FILE_NAME = "test.js";
     private static final String FILE_CONTENT = "alert(\"Hello, World!\");";
-    private static Path TEMP_DIR;
+    private static Path tmpDir;
 
     @BeforeAll
     static void beforeAll() throws IOException, URISyntaxException {
-        TEMP_DIR = Paths.get(UnstableTempTest.class.getResource("").toURI()).resolve("tmp");
-        Files.createDirectories(TEMP_DIR);
+        tmpDir = Paths.get(UnstableTempTest.class.getResource("").toURI()).resolve("tmp");
+        Files.createDirectories(tmpDir);
     }
 
     @Test
@@ -79,7 +79,7 @@ public class UnstableTempTest {
                 new ClassPathContentHandler(null,
                         new ContentTypeSelector(null),
                         "/",
-                        TEMP_DIR,
+                        tmpDir,
                         Thread.currentThread().getContextClassLoader());
 
         // Empty headers
@@ -111,8 +111,8 @@ public class UnstableTempTest {
     }
 
     private void deleteTmpFiles() throws IOException {
-        LOGGER.fine(() -> "Cleaning temp dir: " + TEMP_DIR);
-        Files.list(TEMP_DIR)
+        LOGGER.fine(() -> "Cleaning temp dir: " + tmpDir);
+        Files.list(tmpDir)
                 .forEach(path -> {
                     try {
                         Files.deleteIfExists(path);

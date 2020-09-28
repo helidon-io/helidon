@@ -166,7 +166,7 @@ public class StaticContentSupport implements Service {
 
         private final Map<String, MediaType> specificContentTypes = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         private String welcomeFileName;
-        private Path tempFolder;
+        private Path tmpDir;
 
         Builder(Path fsRoot) {
             Objects.requireNonNull(fsRoot, "Attribute fsRoot is null!");
@@ -199,11 +199,11 @@ public class StaticContentSupport implements Service {
         /**
          * Sets custom temporary folder for extracting static content from a jar.
          *
-         * @param tempFolder custom temporary folder
+         * @param tmpDir custom temporary folder
          * @return updated builder
          */
-        public Builder tempFolder(Path tempFolder) {
-            this.tempFolder = tempFolder;
+        public Builder tmpDir(Path tmpDir) {
+            this.tmpDir = tmpDir;
             return this;
         }
 
@@ -242,7 +242,7 @@ public class StaticContentSupport implements Service {
             if (fsRoot != null) {
                 handler = FileSystemContentHandler.create(welcomeFileName, selector, fsRoot);
             } else if (clRoot != null) {
-                handler = ClassPathContentHandler.create(welcomeFileName, selector, clRoot, tempFolder, classLoader);
+                handler = ClassPathContentHandler.create(welcomeFileName, selector, clRoot, tmpDir, classLoader);
             } else {
                 throw new IllegalArgumentException("Builder was created without specified static content root!");
             }
