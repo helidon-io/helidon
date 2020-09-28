@@ -253,7 +253,28 @@ when the queue is already at maximum capacity.
 Method invocations can be guarded by a combination of the handlers
 presented above. For example, an invocation that
 times out can be retried a few times before resorting to a fallback &mdash;assuming
-it never succeeds.
+it never succeeds. Here is how this example would be written using the
+Fault Tolerance API:
+
+[source,java]
+----
+// Create supplier for timeout
+Supplier<? extends CompletionStage<T>> supplierTimeout =
+    () -> Timeout.create(Duration.ofMillis(10)).invoke(this::mayTakeVeryLong);
+
+// Create supplier for retry using timeout's
+Retry retry = Retry.builder()
+                   .retryPolicy(Retry.JitterRetryPolicy.builder()
+                                     .calls(3)
+                                     .delay(Duration.ofMillis(100))
+                                     .build())
+                   .build();
+Supplier<? extends CompletionStage<T>> supplierRetry = () -> retry.invoke(supplierTimeout);
+
+// Finally invoke this::mayTakeVeryLong wrapping supplier for retry using fallback
+Single<T> single = Fallback.create(
+    throwable -> Single.just(lastKnownValue)).invoke(supplierRetry);
+----
 
 The exact manner in which handlers are combined depends on the use case,
 but generally the order starting from innermost to outermost should be: bulkhead,
@@ -263,15 +284,10 @@ handler executed and fallback the last one.
 NOTE: This is the ordering used by the MicroProfile Fault Tolerance implementation
 in Helidon when a method is decorated with multiple annotations.
 
-[source,java]
-----
-
-----
-
 === Revisiting Multi's
 
-All the examples so far have been focusing on invocations returning
-a single value of type `Single<T>`. If the invoation in question can return
+All the examples presented so far have focused on invocations returning
+a single value of type `Single<T>`. If the invocation in question can return
 more than one value (i.e., a `Multi<T>`) then all that is needed is to use
 the method `invokeMulti` instead of `invoke`. The supplier passed to this
 method must return a `Flow.Publisher<T>` instead of a `CompletionStage<T>`.
