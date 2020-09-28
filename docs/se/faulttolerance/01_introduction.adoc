@@ -1,0 +1,284 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2020 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Fault Tolerance in Helidon SE
+:toc:
+:toc-placement: preamble
+:h1Prefix: SE
+:pagename: fault-tolerance
+:description: Fault Tolerance in Helidon SE
+:keywords: helidon, java, fault, tolerance, fault tolerance, se
+:helidon-tag: https://github.com/oracle/helidon/tree/{helidon-version}
+:quickstart-example: {helidon-tag}/examples/quickstarts/helidon-quickshelidon/webserver/cors
+:javadoc-base-url-webserver: {javadoc-base-url}io.helidon.webserver/io/helidon/webserver
+:helidon-variant: SE
+:common-page-prefix-inc: ../../shared/cors/common_shared.adoc
+:mp-microprofile: https://download.eclipse.org/microprofile/microprofile-fault-tolerance-2.1.1/microprofile-fault-tolerance-spec.html
+
+
+== Introduction
+
+Helidon SE Fault Tolerance support is inspired by link:{mp-microprofile}[MicroProfile Fault Tolerance].
+The API defines the notion of a _handler_ that can be combined with other handlers to
+improve application robustness. Handlers are created to manage error conditions (faults)
+that may occur in real-world application environments. Examples include service restarts,
+network delays, temporal infrastructure instabilities, etc.
+
+The interaction of multiple microservices bring some new challenges from distributed systems
+that require careful planning. Faults in distributed systems should be compartmentalized
+to avoid unnecessary service interruptions. For example, if comparable information can
+be obtained from multiples sources, a user request _should not_ be denied when a subset
+of these sources is unreachable or offline. Similarly, if a non-essential source has been
+flagged as unreachable, an application should avoid continuous access to that source
+as that would result in a much higher response time.
+
+In order to combat the most common types of application faults, the Helidon SE Fault Tolerance API
+provides support for circuit breakers, retries, timeouts, bulkheads and fallbacks.
+In addition, the API makes it very easy to create and monitor asynchronous tasks that
+do not require explicit creation and management of threads/executors.
+
+
+=== Single<T> and Multi<T>
+
+In what follows we shall assume the reader is familiar with the two core Helidon types
+`Single<T>` and `Multi<T>` from the `io.helidon.common.reactive` package. Most simply,
+a `Single<T>` is a promise to produce zero or one value of type `T` or signal an error;
+while a `Multi<T>` is a promise to produce zero or more values of type `T` or signal an error.
+More generally, these two types can be regarded as _producers_ of zero or more values of type
+`T`.
+
+NOTE: Note also that `Single<T>`, much like `CompletableFuture<T>` extends `CompletionStage<T>`,
+ so conversion among these types is fairly straightforward.
+
+We shall use all these types in connection with Fault Tolerance handlers in the next few
+sections.
+
+=== Asynchronous
+
+Asynchronous tasks can be created or forked by using an `Async` instance. A supplier of type
+`T` is provided as the argument when invoking this handler. For example:
+
+[source,java]
+----
+Single<Thread> s = Async.create().invoke(() -> Thread.currentThread()));
+s.thenAccept(t -> System.out.println("Async task executed in thread " + t));
+----
+
+The supplier `() -> Thread.currentThread()` is executed in a new thread and
+the value it produces printed by the consumer passed to `thenAccept`.
+
+NOTE: The method reference `Thread::currentThread` is a simplified way of
+providing a supplier in the example above.
+
+Asynchronous tasks are executed in a thread pool managed by the Helidon SE
+Fault Tolerance module. Thread pools are created during the initialization
+phase of class `io.helidon.faulttolerance.FaultTolerance` and can be
+configured for your application.
+
+=== Retries
+
+Temporal networking problems can sometimes be mitigated by simply retrying
+a certain task. A `Retry` handler is created using a `RetryPolicy` that
+indicates the number of retries, delay between retries, etc.
+
+[source,java]
+----
+Retry retry = Retry.builder()
+                   .retryPolicy(Retry.JitterRetryPolicy.builder()
+                                     .calls(3)
+                                     .delay(Duration.ofMillis(100))
+                                     .build())
+                   .build();
+retry.invoke(this::retryOnFailure);
+----
+
+The sample code above will retry calls to the supplier `this::retryOnFailure`
+for up to 3 times with a 100 millisecond delay between them.
+
+NOTE: The return type of method `retryOnFailure` in the example above must
+be `CompletionStage<T>` and the parameter to the retry handler's `invoke`
+method `Supplier<? extends CompletionStage<T>>`.
+
+If the `CompletionStage<T>` returned by the method completes exceptionally,
+the call will be treated as a failure and retried until the maximum number
+of retries is reached; finer control is
+possible by creating a retry policy and using methods such as
+`applyOn(Class<? extends Throwable>... classes)` and
+`skipOn(Class<? extends Throwable>... classes)` to control those exceptions
+on which to act and those that can be ignored.
+
+=== Timeouts
+
+A request to a service that is inaccessible or simply unavailable should be bounded
+to ensure a certain quality of service and response time. Timeouts can be configured
+to avoid excessive waiting times. In addition, a fallback action can be defined
+if a timeout expires as we shall cover in the next section.
+
+The following is an example of using `Timeout`:
+[source,java]
+----
+Single<T> s = Timeout.create(Duration.ofMillis(10)).invoke(this::mayTakeVeryLong);
+s.handle((t, e) -> {
+    if (e instanceof TimeoutException) {
+        // Invocation has timed out!
+    }
+    ...
+});
+----
+
+The example above monitors the call to method `mayTakeVeryLong` and reports a
+`TimeoutException` if the execution takes more than 10 milliseconds to complete.
+
+=== Fallbacks
+
+A fall back to a _known_ result can sometimes be an alternative to
+reporting an error. For example, if we are unable to access a service
+we may fall back to the last result obtained from that service.
+
+A `Fallback` instance is created by providing a function that takes a `Throwable`
+and produces a `CompletionStage<T>` as shown next:
+
+[source,java]
+----
+Single<T> single = Fallback.create(throwable -> Single.just(lastKnownValue)).invoke(this::mayFail);
+single.thenAccept(t -> ...);
+----
+
+In this example, we register a function that can produce a `Single<T>` (which implements
+`CompletionStage<T>`) if the call to `this::mayFail` completes exceptionally.
+
+=== Circuit Breakers
+
+Failing to execute a certain task or call another service repeatedly can have a direct
+impact on the application performance. It is often preferred to avoid calls to non-essential
+services by simply preventing that logic to execute altogether. A circuit breaker can be
+configured to monitor such calls and block attempts that are likely to fail, thus improving
+overall performance.
+
+Circuit breakers start in a _closed_ state, letting calls to proceed normally; after
+detecting a certain number of errors during a pre-defined processing window, they can _open_ to
+prevent additional failures. After a circuit has been opened, it can transition
+first to a _half-open_ state before finally transitioning back to a closed state.
+The use of an intermediate state (half-open)
+makes transitions from open to close more progressive, and prevents a circuit breaker
+from eagerly transition states without considering "sufficient" observations.
+
+NOTE: Any failure while a circuit breaker is in half-open state will immediately
+cause it to transition back to an open state.
+
+Consider the following example in which `this::mayFail` is monitored by a
+circuit breaker:
+[source,java]
+----
+CircuitBreaker breaker = CircuitBreaker.builder()
+                                       .volume(10)
+                                       .errorRatio(30)
+                                       .delay(Duration.ofMillis(200))
+                                       .successThreshold(2)
+                                       .build();
+Single<T> result = breaker.invoke(this::mayFail);
+----
+
+The circuit breaker in this example defines a processing window of size 10, an error
+ratio of 30%, a duration to transition to half-open state of 200 milliseconds, and
+a success threshold to transition from half-open to closed state of 2 observations.
+It follows that,
+
+* After completing the processing window, if at least 3 errors were detected, the
+circuit breaker will transition to the open state, thus blocking the execution
+of any subsequent calls.
+
+* After 200 millis, the circuit breaker will transition back to half-open and
+enable calls to proceed again.
+
+* If the next two calls after transitioning to half-open are successful, the
+circuit breaker will transition to closed state; otherwise, it will
+transition back to open state, waiting for another 200 milliseconds
+before attempting to transition to half-open again.
+
+A circuit breaker will throw a
+`io.helidon.faulttolerance.CircuitBreakerOpenException`
+if an attempt to make an invocation takes place while it is in open state.
+
+=== Bulkheads
+
+Concurrent access to certain components may need to be limited to avoid
+excessive use of resources. For example, if an invocation that opens
+a network connection is allowed to execute concurrently without
+any restriction, and if the service on the other end is slow responding,
+it is possible for the rate at which network connections are opened
+to exceed the maximum number of connections allowed. Faults of this
+type can be prevented by guarding these invocations using a bulkhead.
+
+NOTE: The origin of the name _bulkhead_ comes from the partitions that
+comprise a ship's hull. If some partition is somehow compromised
+(e.g., filled with water) it can be isolated in a manner not to
+affect the rest of the hull.
+
+A waiting queue can be associated with a bulkhead to handle tasks
+that are submitted when the bulkhead is already full capacity.
+
+[source,java]
+----
+Bulkhead bulkhead = Bulkhead.builder()
+                            .limit(3)
+                            .queueLength(5)
+                            .build();
+Single<T> single = bulkhead.invoke(this::usesResources);
+----
+
+This example creates a bulkhead that limits concurrent execution
+to `this:usesResources` to at most 3, and with a queue of size 5. The
+bulkhead will report a `io.helidon.faulttolerance.BulkheadException` if unable to invoke
+the call: either due to the limit being reached or, if defined,
+when the queue is already at maximum capacity.
+
+=== Handler Composition
+
+Method invocations can be guarded by a combination of the handlers
+presented above. For example, an invocation that
+times out can be retried a few times before resorting to a fallback &mdash;assuming
+it never succeeds.
+
+The exact manner in which handlers are combined depends on the use case,
+but generally the order starting from innermost to outermost should be: bulkhead,
+timeout, circuit breaker, retry and fallback. That is, bulkhead is the first
+handler executed and fallback the last one.
+
+NOTE: This is the ordering used by the MicroProfile Fault Tolerance implementation
+in Helidon when a method is decorated with multiple annotations.
+
+[source,java]
+----
+
+----
+
+=== Revisiting Multi's
+
+All the examples so far have been focusing on invocations returning
+a single value of type `Single<T>`. If the invoation in question can return
+more than one value (i.e., a `Multi<T>`) then all that is needed is to use
+the method `invokeMulti` instead of `invoke`. The supplier passed to this
+method must return a `Flow.Publisher<T>` instead of a `CompletionStage<T>`.
+
+A `Flow.Publisher<T>` is a generalization of a `Single<T>` that can
+produce zero or more values instead of just at most one value. Note that
+a `Flow.Publisher<T>`, unlike a `Single<T>`,  can report an error after
+producing one or more values, making it more difficult to use if all
+values must be processed transactionally, that is, in an all or nothing
+manner.
