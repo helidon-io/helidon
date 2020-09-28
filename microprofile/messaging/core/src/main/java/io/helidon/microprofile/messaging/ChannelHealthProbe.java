@@ -30,8 +30,10 @@ class ChannelHealthProbe {
     private ChannelHealthProbe() {
     }
 
-    static AtomicBoolean connect(Publisher<?> pub, Subscriber<? super Object> sub) {
-        AtomicBoolean up = new AtomicBoolean(true);
+    static void connect(Publisher<?> pub,
+                        Subscriber<? super Object> sub,
+                        AtomicBoolean live,
+                        AtomicBoolean ready) {
         pub.subscribe(new Subscriber<Object>() {
             @Override
             public void onSubscribe(final Subscription s) {
@@ -43,10 +45,11 @@ class ChannelHealthProbe {
 
                     @Override
                     public void cancel() {
-                        up.set(false);
+                        live.set(false);
                         s.cancel();
                     }
                 });
+                ready.set(true);
             }
 
             @Override
@@ -56,7 +59,7 @@ class ChannelHealthProbe {
 
             @Override
             public void onError(final Throwable t) {
-                up.set(false);
+                live.set(false);
                 sub.onError(t);
             }
 
@@ -65,6 +68,5 @@ class ChannelHealthProbe {
                 sub.onComplete();
             }
         });
-        return up;
     }
 }

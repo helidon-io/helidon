@@ -41,7 +41,8 @@ class UniversalChannel {
     private final Config config;
     private final ChannelRouter router;
     private UniversalChannel upstreamChannel;
-    private AtomicBoolean up;
+    private final AtomicBoolean live = new AtomicBoolean(true);
+    private final AtomicBoolean ready = new AtomicBoolean(false);
 
     UniversalChannel(ChannelRouter router) {
         this.router = router;
@@ -69,8 +70,12 @@ class UniversalChannel {
         this.outgoingMethod = outgoingMethod;
     }
 
-    AtomicBoolean isUp() {
-        return up;
+    AtomicBoolean isLive() {
+        return live;
+    }
+
+    AtomicBoolean isReady() {
+        return ready;
     }
 
     void connect() {
@@ -103,21 +108,21 @@ class UniversalChannel {
         if (incomingMethod != null) {
             subscriber1 = incomingMethod.getSubscriber();
             connectMessage.append(incomingMethod.getMethod().getName());
-            up = ChannelHealthProbe.connect(publisher, subscriber1);
+            ChannelHealthProbe.connect(publisher, subscriber1, live, ready);
             //Continue connecting processor chain
             optUpstreamChannel.ifPresent(UniversalChannel::connect);
 
         } else if (incomingProcessorMethod != null) {
             subscriber1 = incomingProcessorMethod.getProcessor();
             connectMessage.append(incomingProcessorMethod.getMethod().getName());
-            up = ChannelHealthProbe.connect(publisher, subscriber1);
+            ChannelHealthProbe.connect(publisher, subscriber1, live, ready);
             //Continue connecting processor chain
             optUpstreamChannel.ifPresent(UniversalChannel::connect);
 
         } else if (incomingConnector != null) {
             subscriber1 = incomingConnector.getSubscriber(name);
             connectMessage.append(incomingConnector.getConnectorName());
-            up = ChannelHealthProbe.connect(publisher, subscriber1);
+            ChannelHealthProbe.connect(publisher, subscriber1, live, ready);
             //Continue connecting processor chain
             optUpstreamChannel.ifPresent(UniversalChannel::connect);
 
