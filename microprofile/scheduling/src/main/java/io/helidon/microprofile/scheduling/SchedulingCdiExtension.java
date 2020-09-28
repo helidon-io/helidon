@@ -113,7 +113,7 @@ public class SchedulingCdiExtension implements Extension {
                 //create a parser based on provided definition
                 CronParser parser = new CronParser(cronDefinition);
                 Cron cron = parser.parse(annotation.cron());
-                LOGGER.info(() ->
+                LOGGER.log(Level.FINE,() ->
                         "Method "
                                 + aClass.getSimpleName()
                                 + "#"

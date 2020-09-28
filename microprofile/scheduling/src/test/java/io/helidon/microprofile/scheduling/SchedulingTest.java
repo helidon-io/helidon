@@ -16,24 +16,48 @@
 
 package io.helidon.microprofile.scheduling;
 
-import java.util.Collections;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+
+import javax.inject.Inject;
+
+import io.helidon.microprofile.tests.junit5.AddBean;
+import io.helidon.microprofile.tests.junit5.AddBeans;
+import io.helidon.microprofile.tests.junit5.AddExtension;
+import io.helidon.microprofile.tests.junit5.AddExtensions;
+import io.helidon.microprofile.tests.junit5.DisableDiscovery;
+import io.helidon.microprofile.tests.junit5.HelidonTest;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.lessThan;
 
 import org.junit.jupiter.api.Test;
 
-public class SchedulingTest extends AbstractCDITest {
+@HelidonTest
+@DisableDiscovery
+@AddBeans({
+        @AddBean(ScheduledBean.class)
+})
+@AddExtensions({
+        @AddExtension(SchedulingCdiExtension.class),
+})
+public class SchedulingTest {
 
-    @Override
-    public void setUp() {
-        //manual container startup
-    }
+    static final long TWO_SEC_MILLIS = 2 * 1000L;
+
+    @Inject
+    ScheduledBean scheduledBean;
 
     @Test
     void executedEvery2Sec() throws InterruptedException {
-        CountDownLatch countDownLatch = new CountDownLatch(2);
-        CronedBean.onInvoke = countDownLatch::countDown;
-        cdiContainer = startCdiContainer(Collections.emptyMap(), CronedBean.class);
-        countDownLatch.await(5, TimeUnit.SECONDS);
+        assertThat("Scheduled method expected to be invoked at least twice",
+                scheduledBean.getCountDownLatch().await(5, TimeUnit.SECONDS));
+        assertDuration(scheduledBean.getDuration(), 200);
+    }
+
+    private void assertDuration(long duration, long allowedDiscrepancy) {
+        String durationString = "Expected duration is 2 sec, but was " + ((float) duration / 1000) + "sec";
+        assertThat(durationString, duration, greaterThan(TWO_SEC_MILLIS - allowedDiscrepancy));
+        assertThat(durationString, duration, lessThan(TWO_SEC_MILLIS + allowedDiscrepancy));
     }
 }

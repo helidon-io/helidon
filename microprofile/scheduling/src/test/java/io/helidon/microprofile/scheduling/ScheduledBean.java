@@ -17,18 +17,33 @@
 package io.helidon.microprofile.scheduling;
 
 import java.time.LocalTime;
+import java.util.concurrent.CountDownLatch;
+import java.util.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
-public class CronedBean {
+public class ScheduledBean {
 
-    public static Runnable onInvoke = () -> {
-    };
+    private static final Logger LOGGER = Logger.getLogger(ScheduledBean.class.getName());
+
+    final CountDownLatch countDownLatch = new CountDownLatch(2);
+    volatile long duration = 0;
+    volatile long stamp = 0;
+
+    public CountDownLatch getCountDownLatch() {
+        return countDownLatch;
+    }
+
+    public long getDuration() {
+        return duration;
+    }
 
     @Scheduled(cron = "0/2 * * * * ? *")
     public void test2sec() {
-        onInvoke.run();
-        System.out.println("Executed at " + LocalTime.now().toString());
+        countDownLatch.countDown();
+        duration = System.currentTimeMillis() - stamp;
+        stamp = System.currentTimeMillis();
+        LOGGER.fine(() -> "Executed at " + LocalTime.now().toString());
     }
 }
