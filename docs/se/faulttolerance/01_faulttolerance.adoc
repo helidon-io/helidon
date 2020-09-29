@@ -34,7 +34,7 @@
 == Introduction
 
 Helidon SE Fault Tolerance support is inspired by link:{mp-microprofile}[MicroProfile Fault Tolerance].
-The API defines the notion of a _handler_ that can be combined with other handlers to
+The API defines the notion of a _fault handler_ that can be combined with other handlers to
 improve application robustness. Handlers are created to manage error conditions (faults)
 that may occur in real-world application environments. Examples include service restarts,
 network delays, temporal infrastructure instabilities, etc.
@@ -45,13 +45,27 @@ to avoid unnecessary service interruptions. For example, if comparable informati
 be obtained from multiples sources, a user request _should not_ be denied when a subset
 of these sources is unreachable or offline. Similarly, if a non-essential source has been
 flagged as unreachable, an application should avoid continuous access to that source
-as that would result in a much higher response time.
+as that would result in much higher response times.
 
 In order to combat the most common types of application faults, the Helidon SE Fault Tolerance API
 provides support for circuit breakers, retries, timeouts, bulkheads and fallbacks.
 In addition, the API makes it very easy to create and monitor asynchronous tasks that
 do not require explicit creation and management of threads/executors.
 
+=== Updating your POM
+
+The following POM dependency is necessary to use the Fault Tolerance SE API in a
+Helidon application.
+
+[source,xml]
+.Fault Tolerance SE Dependency in `pom.xml`
+----
+<dependency>
+    <groupId>io.helidon.fault-tolerance</groupId>
+    <artifactId>helidon-fault-tolerance</artifactId>
+    <version>{helidon-version}</version>
+</dependency>
+----
 
 === Single<T> and Multi<T>
 
@@ -62,8 +76,8 @@ while a `Multi<T>` is a promise to produce zero or more values of type `T` or si
 More generally, these two types can be regarded as _producers_ of zero or more values of type
 `T`.
 
-NOTE: Note also that `Single<T>`, much like `CompletableFuture<T>` extends `CompletionStage<T>`,
- so conversion among these types is fairly straightforward.
+NOTE: Note also that `Single<T>`, like `CompletableFuture<T>`, extends `CompletionStage<T>`
+ so conversion among these types is straightforward.
 
 We shall use all these types in connection with Fault Tolerance handlers in the next few
 sections.
@@ -116,7 +130,7 @@ method `Supplier<? extends CompletionStage<T>>`.
 
 If the `CompletionStage<T>` returned by the method completes exceptionally,
 the call will be treated as a failure and retried until the maximum number
-of retries is reached; finer control is
+of attempts is reached; finer control is
 possible by creating a retry policy and using methods such as
 `applyOn(Class<? extends Throwable>... classes)` and
 `skipOn(Class<? extends Throwable>... classes)` to control those exceptions
@@ -155,7 +169,8 @@ and produces a `CompletionStage<T>` as shown next:
 
 [source,java]
 ----
-Single<T> single = Fallback.create(throwable -> Single.just(lastKnownValue)).invoke(this::mayFail);
+Single<T> single = Fallback.create(
+    throwable -> Single.just(lastKnownValue).invoke(this::mayFail);
 single.thenAccept(t -> ...);
 ----
 
@@ -165,7 +180,7 @@ In this example, we register a function that can produce a `Single<T>` (which im
 === Circuit Breakers
 
 Failing to execute a certain task or call another service repeatedly can have a direct
-impact on the application performance. It is often preferred to avoid calls to non-essential
+impact on application performance. It is often preferred to avoid calls to non-essential
 services by simply preventing that logic to execute altogether. A circuit breaker can be
 configured to monitor such calls and block attempts that are likely to fail, thus improving
 overall performance.
@@ -293,8 +308,31 @@ the method `invokeMulti` instead of `invoke`. The supplier passed to this
 method must return a `Flow.Publisher<T>` instead of a `CompletionStage<T>`.
 
 A `Flow.Publisher<T>` is a generalization of a `Single<T>` that can
-produce zero or more values instead of just at most one value. Note that
-a `Flow.Publisher<T>`, unlike a `Single<T>`,  can report an error after
-producing one or more values, making it more difficult to use if all
+produce zero or more values. Note that a `Flow.Publisher<T>`, unlike a
+`Single<T>`, can report an error after
+producing one or more values, introducing additional challenges if all
 values must be processed transactionally, that is, in an all or nothing
 manner.
+
+The following example creates an instance of `Retry` and invokes
+the `invokeMulti` method, it then registers a subscriber to process
+the results:
+
+[source,java]
+----
+Retry retry = Retry.builder()
+                   .retryPolicy(Retry.JitterRetryPolicy.builder()
+                                     .calls(2)
+                                     .build())
+                   .build();
+Multi<Integer> multi = retry.invokeMulti(() -> Multi.just(0, 1, 2));
+
+IntSubscriber ts = new IntSubscriber();
+multi.subscribe(ts);
+ts.request(Integer.MAX_VALUE);
+----
+
+The call to `Multi.just(0, 1, 2)` simply returns a multi that produces
+the integers 0, 1 and 2. If an error was generated during this process,
+the policy will retry the call one more time &mdash;for a total of 2
+calls.
