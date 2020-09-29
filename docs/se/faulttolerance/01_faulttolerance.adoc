@@ -97,7 +97,7 @@ s.thenAccept(t -> System.out.println("Async task executed in thread " + t));
 ----
 
 The supplier `() -> Thread.currentThread()` is executed in a new thread and
-the value it produces printed by the consumer passed to `thenAccept`.
+the value it produces printed by the consumer and passed to `thenAccept`.
 
 NOTE: The method reference `Thread::currentThread` is a simplified way of
 providing a supplier in the example above.
@@ -163,7 +163,7 @@ The example above monitors the call to method `mayTakeVeryLong` and reports a
 
 === Fallbacks
 
-A fall back to a _known_ result can sometimes be an alternative to
+A fallback to a _known_ result can sometimes be an alternative to
 reporting an error. For example, if we are unable to access a service
 we may fall back to the last result obtained from that service.
 
@@ -194,7 +194,7 @@ prevent additional failures. After a circuit has been opened, it can transition
 first to a _half-open_ state before finally transitioning back to a closed state.
 The use of an intermediate state (half-open)
 makes transitions from open to close more progressive, and prevents a circuit breaker
-from eagerly transition states without considering "sufficient" observations.
+from eagerly transitioning to states without considering "sufficient" observations.
 
 NOTE: Any failure while a circuit breaker is in half-open state will immediately
 cause it to transition back to an open state.
