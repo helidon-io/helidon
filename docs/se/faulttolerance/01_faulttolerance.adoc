@@ -24,10 +24,9 @@
 :description: Fault Tolerance in Helidon SE
 :keywords: helidon, java, fault, tolerance, fault tolerance, se
 :helidon-tag: https://github.com/oracle/helidon/tree/{helidon-version}
-:quickstart-example: {helidon-tag}/examples/quickstarts/helidon-quickshelidon/webserver/cors
-:javadoc-base-url-webserver: {javadoc-base-url}io.helidon.webserver/io/helidon/webserver
+:javadoc-base-url-faulttolerance: {javadoc-base-url}io.helidon.faultolerance/io/helidon/faultolerance/package-summary.html
+:javadoc-base-url-reactive: {javadoc-base-url}io.helidon.common.reactive/io/helidon/common/reactive/package-summary.html
 :helidon-variant: SE
-:common-page-prefix-inc: ../../shared/cors/common_shared.adoc
 :mp-microprofile: https://download.eclipse.org/microprofile/microprofile-fault-tolerance-2.1.1/microprofile-fault-tolerance-spec.html
 
 
@@ -52,6 +51,9 @@ provides support for circuit breakers, retries, timeouts, bulkheads and fallback
 In addition, the API makes it very easy to create and monitor asynchronous tasks that
 do not require explicit creation and management of threads/executors.
 
+For more information the reader is referred to the
+link:{javadoc-base-url-faulttolerance}[Fault Toleance SE API Javadocs].
+
 === Updating your POM
 
 The following POM dependency is necessary to use the Fault Tolerance SE API in a
@@ -70,7 +72,8 @@ Helidon application.
 === Single<T> and Multi<T>
 
 In what follows we shall assume the reader is familiar with the two core Helidon types
-`Single<T>` and `Multi<T>` from the `io.helidon.common.reactive` package. Most simply,
+`Single<T>` and `Multi<T>` from the link:{javadoc-base-url-reactive}[io.helidon.common.reactive]
+package. Most simply,
 a `Single<T>` is a promise to produce zero or one value of type `T` or signal an error;
 while a `Multi<T>` is a promise to produce zero or more values of type `T` or signal an error.
 More generally, these two types can be regarded as _producers_ of zero or more values of type
