@@ -23,6 +23,8 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.helidon.microprofile.server.ServerCdiExtension;
+import javax.enterprise.inject.spi.CDI;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
@@ -86,7 +88,9 @@ public abstract class AbstractGraphQLEndpointIT
 
         Main.main(new String[0]);
 
-        graphQLUrl= "http://127.0.0.1:7001/";
+        ServerCdiExtension current = CDI.current().getBeanManager().getExtension(ServerCdiExtension.class);
+
+        graphQLUrl= "http://127.0.0.1:" + current.port() + "/";
         
         System.out.println("GraphQL URL: " + graphQLUrl);
 
