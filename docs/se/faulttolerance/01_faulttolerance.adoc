@@ -268,36 +268,44 @@ when the queue is already at maximum capacity.
 
 === Handler Composition
 
-Method invocations can be guarded by a combination of the handlers
+Method invocations can be guarded by any combination of the handlers
 presented above. For example, an invocation that
-times out can be retried a few times before resorting to a fallback &mdash;assuming
-it never succeeds. Here is how this example would be written using the
-Fault Tolerance API:
+times out can be retried a few times before resorting to a fallback value
+&mdash;assuming it never succeeds.
+
+The easiest way to achieve handler composition is by using a builder form the
+`FaultTolernace` class as shown in the following example:
 
 [source,java]
 ----
-// Create supplier for timeout
-Supplier<? extends CompletionStage<T>> supplierTimeout =
-    () -> Timeout.create(Duration.ofMillis(10)).invoke(this::mayTakeVeryLong);
+FaultTolerance.TypedBuilder<T> builder = FaultTolerance.typedBuilder();
 
-// Create supplier for retry using timeout's
+// Create and add timeout
+Timeout timeout = Timeout.create(Duration.ofMillis(10));
+builder.addTimeout(timeout);
+
+// Create and add retry
 Retry retry = Retry.builder()
                    .retryPolicy(Retry.JitterRetryPolicy.builder()
                                      .calls(3)
                                      .delay(Duration.ofMillis(100))
                                      .build())
                    .build();
-Supplier<? extends CompletionStage<T>> supplierRetry = () -> retry.invoke(supplierTimeout);
+builder.addRetry(retry);
 
-// Finally invoke this::mayTakeVeryLong wrapping supplier for retry using fallback
-Single<T> single = Fallback.create(
-    throwable -> Single.just(lastKnownValue)).invoke(supplierRetry);
+// Create and add fallback
+Fallback fallback = Fallback.create(throwable -> Single.just(lastKnownValue));
+builder.addFallback(fallback);
+
+// Finally call the method
+Single<T> single = builder.build().invoke(this::mayTakeVeryLong);
 ----
 
-The exact manner in which handlers are combined depends on the use case,
+The exact order in which handlers are added to a builder depends on the use case,
 but generally the order starting from innermost to outermost should be: bulkhead,
-timeout, circuit breaker, retry and fallback. That is, bulkhead is the first
-handler executed and fallback the last one.
+timeout, circuit breaker, retry and fallback. That is, fallback is the first
+handler in the chain (the last to executed once a value is returned)
+and bulkhead is the last one (the first to be executed once a value is returned).
 
 NOTE: This is the ordering used by the MicroProfile Fault Tolerance implementation
 in Helidon when a method is decorated with multiple annotations.

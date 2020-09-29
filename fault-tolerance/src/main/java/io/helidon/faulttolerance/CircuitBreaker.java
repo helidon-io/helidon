@@ -26,7 +26,7 @@ import io.helidon.common.LazyValue;
 
 /**
  * CircuitBreaker protects a potentially failing endpoint from overloading and the application
- * from spending resources on such a failing endpoints.
+ * from spending resources on those endpoints.
  * <p>
  * In case too many errors are detected, the circuit opens and all new requests fail with a
  * {@link io.helidon.faulttolerance.CircuitBreakerOpenException} for a period of time.
@@ -64,7 +64,11 @@ public interface CircuitBreaker extends FtHandler {
     void state(State newState);
 
     /**
-     * {@link io.helidon.faulttolerance.CircuitBreaker} states.
+     * A circuit breaker can be in any of 3 possible states as defined by this enum.
+     * The {@link State#CLOSED} state is the normal one; an {@link State#OPEN} state
+     * indicates the circuit breaker is blocking requests and {@link State#HALF_OPEN}
+     * that a circuit breaker is transitioning to a {@link State#CLOSED} state
+     * provided enough successful requests are observed.
      */
     enum State {
         /**
