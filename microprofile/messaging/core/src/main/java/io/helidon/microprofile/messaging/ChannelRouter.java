@@ -69,6 +69,10 @@ class ChannelRouter {
                 .forEach(m -> m.setDeclaringBean(bean));
     }
 
+    Map<String, UniversalChannel> getChannelMap(){
+        return channelMap;
+    }
+
     /**
      * Connect all discovered channel graphs.
      *
