@@ -18,6 +18,7 @@ package io.helidon.microprofile.graphql.server;
 
 import java.beans.IntrospectionException;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -96,6 +97,20 @@ public class MultiLevelArraysIT extends AbstractGraphQLIT {
         assertThat(stringList2.contains("three"), is(true));
         assertThat(stringList2.contains("four"), is(true));
         assertThat(stringList2.contains("five"), is(true));
+
+        mapResults = getAndAssertResult(executionContext.execute("query { echoLinkedListBigDecimals(param: [-25.926804, 28.203392]) }"));
+        assertThat(mapResults.size(), is(1));
+        List<BigDecimal> bigDecimalList = (List<BigDecimal>) mapResults.get("echoLinkedListBigDecimals");
+        assertThat(bigDecimalList, is(notNullValue()));
+        assertThat(bigDecimalList.get(0), is(BigDecimal.valueOf(-25.926804)));
+        assertThat(bigDecimalList.get(1), is(new BigDecimal("28.203392")));
+
+        mapResults = getAndAssertResult(executionContext.execute("query { echoListBigDecimal(param: [-25.926804, 28.203392]) }"));
+        assertThat(mapResults.size(), is(1));
+        bigDecimalList = (List<BigDecimal>) mapResults.get("echoListBigDecimal");
+        assertThat(bigDecimalList, is(notNullValue()));
+        assertThat(bigDecimalList.get(0), is(BigDecimal.valueOf(-25.926804)));
+        assertThat(bigDecimalList.get(1), is(new BigDecimal("28.203392")));
     }
 
 }

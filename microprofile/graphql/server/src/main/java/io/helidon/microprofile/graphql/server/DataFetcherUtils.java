@@ -128,8 +128,8 @@ public class DataFetcherUtils {
      *
      * @param schema    {@link Schema} to introspect if needed
      * @param argumentType the type of the argument
-     * @param originalType the original type of the argument as a class
-     * @param originalArrayType if this is non null this means the array was a Collection and this is the type in the collection
+     * @param originalType if this is non null this means the array was a Collection and this is the type in the collection
+     * @param originalArrayType the original type of the argument as a class
      * @param rawValue  raw value of the argument
      * @param format argument format
      * @return the argument value
@@ -176,14 +176,21 @@ public class DataFetcherUtils {
 
         } else if (rawValue instanceof Collection) {
             SchemaInputType inputType = schema.getInputTypeByName(argumentType);
-            Object colResults;
-            Class<?> castClass;
-            if (List.class.isAssignableFrom(originalType)) {
-                colResults = new ArrayList();
-                castClass = List.class;
-            } else {
-                colResults = new TreeSet();
-                castClass = Set.class;
+
+            Object colResults = null;
+            try {
+                if (originalType.equals(List.class)) {
+                    colResults = new ArrayList<>();
+                } else if (originalType.equals(Set.class)
+                           || originalType.equals(Collection.class)) {
+                    colResults = new TreeSet<>();
+                } else {
+                    Constructor<?> constructor = originalType.getDeclaredConstructor();
+                    colResults = constructor.newInstance();
+                }
+            } catch (Exception e) {
+                ensureRuntimeException(LOGGER, "Unable to construct a List of type " + originalType
+                        + " using Collection constructor", e);
             }
 
             if (inputType != null) {
@@ -202,7 +209,13 @@ public class DataFetcherUtils {
                     ((Collection) colResults).add(parseArgumentValue(originalArrayType, argumentType, value, format));
                 }
 
-                return castClass.cast(colResults);
+                if (originalType.equals(List.class)) {
+                    return (List) colResults;
+                }
+                if (originalType.equals(Collection.class)) {
+                    return (Collection) colResults;
+                }
+                return colResults;
             }
         } else {
             return parseArgumentValue(originalType, argumentType, rawValue, format);

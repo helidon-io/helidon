@@ -16,8 +16,11 @@
 
 package io.helidon.microprofile.graphql.server.test.queries;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -53,5 +56,15 @@ public class ArrayAndListQueries {
         arrayList.add(new String[] { "one", "two"});
         arrayList.add(new String[] { "three", "four", "five"});
         return arrayList;
+    }
+
+    @Query
+    public List<BigDecimal> echoLinkedListBigDecimals(@Name("param") LinkedList<BigDecimal> value) {
+        return value;
+    }
+
+    @Query
+    public List<BigDecimal> echoListBigDecimal(@Name("param") List<BigDecimal> value) {
+        return value;
     }
 }

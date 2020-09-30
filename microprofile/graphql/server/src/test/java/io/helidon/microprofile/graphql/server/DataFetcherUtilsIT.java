@@ -40,10 +40,10 @@ import java.math.BigInteger;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-
 
 /**
  * Tests for {@link DataFetcherUtils} class.
@@ -164,29 +164,29 @@ class DataFetcherUtilsIT
         ExecutionContext executionContext = new ExecutionContext(defaultContext);
         Schema schema = executionContext.getSchema();
 
-        String[] stringArray = new String[] {"A", "B", "C"};
+        String[] stringArray = new String[] { "A", "B", "C" };
         assertArgumentResult(schema, "echoStringArray", "value", stringArray, stringArray);
 
-        int[] intArray = new int[] {1, 2, 3, 4};
+        int[] intArray = new int[] { 1, 2, 3, 4 };
         assertArgumentResult(schema, "echoIntArray", "value", intArray, intArray);
 
-        Boolean[] booleanArray = new Boolean[] {true, false, true, true};
+        Boolean[] booleanArray = new Boolean[] { true, false, true, true };
         assertArgumentResult(schema, "echoBooleanArray", "value", booleanArray, booleanArray);
 
         String[][] stringArray2 = new String[][] {
-                { "A", "B", "C"},
-                { "D", "E", "F"}
+                { "A", "B", "C" },
+                { "D", "E", "F" }
         };
         assertArgumentResult(schema, "echoStringArray2", "value", stringArray2, stringArray2);
 
         SimpleContact[] contactArray = new SimpleContact[] {
-               new SimpleContact("c1", "Contact 1", 50, EnumTestWithEnumName.XL),
+                new SimpleContact("c1", "Contact 1", 50, EnumTestWithEnumName.XL),
                 new SimpleContact("c2", "Contact 2", 52, EnumTestWithEnumName.XL)
         };
         assertArgumentResult(schema, "echoSimpleContactArray", "value", contactArray, contactArray);
 
         // TODO: Test formatting of numbers and dates in arrays
-        
+
     }
 
     @Test
@@ -205,7 +205,7 @@ class DataFetcherUtilsIT
         assertArgumentResult(schema, "echoListOfBigIntegers", "value", colBigInteger, colBigInteger);
 
         // Test formatting for numbers and dates
-        List<String> listFormattedIntegers = List.of("1 years old", "3 years old", "53 years old");
+        List<String> listFormattedIntegers = new ArrayList<>(List.of("1 years old", "3 years old", "53 years old"));
         assertArgumentResult(schema, "echoFormattedListOfIntegers", "value", listFormattedIntegers,
                              List.of(1, 3, 53));
 
@@ -213,7 +213,7 @@ class DataFetcherUtilsIT
         LocalDate localDate2 = LocalDate.of(2020, 9, 22);
         List<String> listLocalDates = List.of("23-09-2020", "22-09-2020");
         assertArgumentResult(schema, "echoFormattedLocalDate", "value", listLocalDates,
-                     List.of(localDate1, localDate2));
+                             List.of(localDate1, localDate2));
     }
 
     @Test
@@ -226,11 +226,13 @@ class DataFetcherUtilsIT
         SimpleContact contact1 = new SimpleContact("c1", "Contact 1", 50, EnumTestWithEnumName.XL);
         SimpleContact contact2 = new SimpleContact("c2", "Contact 2", 52, EnumTestWithEnumName.XXL);
 
-        Collection<SimpleContact> colContacts = List.of(contact1, contact2);
-        Collection<Map<String, Object>> listOfMaps = List.of(convertObjectToMap(contact1), convertObjectToMap(contact2));
+        Collection<SimpleContact> colContacts = new HashSet<>(List.of(contact1, contact2));
+        Collection<Map<String, Object>> colOfMaps = new HashSet<>();
+        colOfMaps.add(convertObjectToMap(contact1));
+        colOfMaps.add(convertObjectToMap(contact2));
 
         assertArgumentResult(schema, "echoCollectionOfSimpleContacts", "value",
-                             listOfMaps, colContacts);
+                             colOfMaps, colContacts);
 
         // test multi-level collections
     }
@@ -276,7 +278,7 @@ class DataFetcherUtilsIT
      * @param expected     the expected output
      * @throws Exception if any errors
      */
-    @SuppressWarnings({ "rawtypes", "unchecked" })
+    @SuppressWarnings( { "rawtypes", "unchecked" })
     protected void assertArgumentResult(Schema schema, String fdName,
                                         String argumentName, Object input, Object expected) throws Exception {
         SchemaArgument argument = getArgument(schema, "Query", fdName, argumentName);
@@ -292,7 +294,7 @@ class DataFetcherUtilsIT
             for (Object value : colExpected) {
                 if (!colResult.contains(value)) {
                     throw new AssertionError("Cannot find expected value [" +
-                                             value + "] in result " + colResult.toString());
+                                                     value + "] in result " + colResult.toString());
                 }
             }
         } else {
