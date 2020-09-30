@@ -15,6 +15,6 @@
  */
 
 /**
- * Fault tolerance for Helidon reactive implementation.
+ * Fault tolerance for Helidon SE reactive implementation.
  */
 package io.helidon.faulttolerance;

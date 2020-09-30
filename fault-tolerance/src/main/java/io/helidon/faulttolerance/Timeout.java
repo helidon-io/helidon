@@ -22,7 +22,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import io.helidon.common.LazyValue;
 
 /**
- * Timeout attempts to terminate execution after the duration time passes.
+ * Timeout attempts to terminate execution after a duration time passes.
  * In such a case, the consumer of this handler receives a {@link io.helidon.common.reactive.Single}
  * or {@link io.helidon.common.reactive.Multi} with a {@link java.util.concurrent.TimeoutException}.
  */

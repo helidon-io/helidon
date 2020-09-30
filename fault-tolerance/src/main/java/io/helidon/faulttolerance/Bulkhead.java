@@ -125,6 +125,10 @@ public interface Bulkhead extends FtHandler {
         }
     }
 
+    /**
+     * Provides statistics during the lifetime of a bulkhead, such as
+     * concurrent executions, accepted/rejected calls and queue size.
+     */
     interface Stats {
 
         /**

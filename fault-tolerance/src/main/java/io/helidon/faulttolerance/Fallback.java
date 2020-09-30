@@ -28,7 +28,7 @@ import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
 
 /**
- * Fallback allows the user to execute an alternative supplier of results in case the usual one fails.
+ * Fallback allows the user to execute an alternative function in case the provided supplier fails.
  * <p>
  * In case you call the {@link #invokeMulti(java.util.function.Supplier)} method, the following restriction applies:
  * <ul>
