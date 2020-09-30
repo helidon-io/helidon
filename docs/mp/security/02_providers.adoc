@@ -17,7 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Security Providers
-:h1Prefix: SE
+:h1Prefix: MP
 :description: Helidon Security providers
 :keywords: helidon, security
 
@@ -55,25 +55,10 @@ Open ID Connect security provider.
 .Maven dependency
 ----
 <dependency>
-    <groupId>io.helidon.security.providers</groupId>
-    <artifactId>helidon-security-providers-oidc</artifactId>
+    <groupId>io.helidon.microprofile</groupId>
+    <artifactId>helidon-microprofile-oidc</artifactId>
 </dependency>
 ----
-
-In Helidon SE, we need to register the redirection support with
-routing (in addition to `WebSecurity` that integrates with `WebServer`).
-This is not required when `redirect` is set to false.
-
-[source,java]
-.Adding support for OIDC redirects
-----
-Routing routing = Routing.builder()
-        .register(WebSecurity.create(config.get("security")))
-        .register(OidcSupport.create(config))
-        ...
-        .build();
-----
-
 include::../../shared/security/providers/oidc.adoc[]
 
 include::../../shared/security/providers/http-basic-auth.adoc[]

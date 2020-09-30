@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.security.providers.header;
 
 import io.helidon.security.SubjectType;
+import io.helidon.security.providers.common.OutboundTarget;
 import io.helidon.security.util.TokenHandler;
 
 /**
@@ -37,6 +38,9 @@ public class HeaderAtnProviderBuilderTest extends HeaderAtnProviderTest {
                                               .tokenHeader("Custom")
                                               .tokenFormat("bearer %1s")
                                               .build())
+                .addOutboundTarget(OutboundTarget.builder("localhost")
+                                           .addHost("localhost")
+                                           .build())
                 .build();
     }
 
@@ -48,6 +52,9 @@ public class HeaderAtnProviderBuilderTest extends HeaderAtnProviderTest {
                                          .tokenHeader("Authorization")
                                          .tokenPrefix("bearer ")
                                          .build())
+                .addOutboundTarget(OutboundTarget.builder("localhost")
+                                           .addHost("localhost")
+                                           .build())
                 .build();
     }
 

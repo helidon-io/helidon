@@ -70,7 +70,9 @@ public final class GrpcClientSecurity
         try {
             MethodDescriptor<?, ?> methodDescriptor = requestInfo.getMethodDescriptor();
             String methodName = methodDescriptor.getFullMethodName();
-            SecurityEnvironment.Builder outboundEnv = context.env().derive();
+            SecurityEnvironment.Builder outboundEnv = context.env()
+                    .derive()
+                    .clearHeaders();
 
             outboundEnv.path(methodName)
                     .method(methodName)
