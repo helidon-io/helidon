@@ -182,6 +182,17 @@
                 <artifactId>helidon-microprofile-cors</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <!-- Micronaut integrations -->
+            <dependency>
+                <groupId>io.helidon.integrations.micronaut</groupId>
+                <artifactId>helidon-integrations-micronaut-cdi</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.micronaut</groupId>
+                <artifactId>helidon-integrations-micronaut-data</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
             <!-- media -->
             <dependency>
                 <groupId>io.helidon.media</groupId>
