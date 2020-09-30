@@ -273,8 +273,8 @@ presented above. For example, an invocation that
 times out can be retried a few times before resorting to a fallback value
 &mdash;assuming it never succeeds.
 
-The easiest way to achieve handler composition is by using a builder form the
-`FaultTolernace` class as shown in the following example:
+The easiest way to achieve handler composition is by using a builder in the
+`FaultTolerance` class as shown in the following example:
 
 [source,java]
 ----
