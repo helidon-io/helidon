@@ -49,6 +49,37 @@
                             <outputDirectory>${project.build.directory}/generated-sources/templates</outputDirectory>
                         </configuration>
                     </execution>
+                    <execution>
+                        <!-- We include extra licensing information since all Helidon apps include common -->
+                        <id>copy-attributions</id>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <phase>process-sources</phase>
+                        <configuration>
+                            <outputDirectory>${project.build.outputDirectory}</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <!--suppress UnresolvedMavenProperty -->
+                                    <directory>${top.parent.basedir}</directory>
+                                    <targetPath>META-INF/</targetPath>
+                                    <filtering>true</filtering>
+                                    <includes>
+                                        <include>THIRD_PARTY_LICENSES.txt</include>
+                                    </includes>
+                                </resource>
+                                <resource>
+                                    <!--suppress UnresolvedMavenProperty -->
+                                    <directory>${top.parent.basedir}/etc</directory>
+                                    <targetPath>META-INF/</targetPath>
+                                    <filtering>true</filtering>
+                                    <includes>
+                                        <include>THIRD_PARTY_LICENSES.xml</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
             <plugin>
