@@ -249,7 +249,7 @@ comprise a ship's hull. If some partition is somehow compromised
 affect the rest of the hull.
 
 A waiting queue can be associated with a bulkhead to handle tasks
-that are submitted when the bulkhead is already full capacity.
+that are submitted when the bulkhead is already at full capacity.
 
 [source,java]
 ----
@@ -262,9 +262,9 @@ Single<T> single = bulkhead.invoke(this::usesResources);
 
 This example creates a bulkhead that limits concurrent execution
 to `this:usesResources` to at most 3, and with a queue of size 5. The
-bulkhead will report a `io.helidon.faulttolerance.BulkheadException` if unable to invoke
-the call: either due to the limit being reached or, if defined,
-when the queue is already at maximum capacity.
+bulkhead will report a `io.helidon.faulttolerance.BulkheadException` if unable to proceed
+with the call: either due to the limit being reached or the queue
+being at maximum capacity.
 
 === Handler Composition
 
