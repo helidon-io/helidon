@@ -98,9 +98,9 @@ public interface Bulkhead extends FtHandler {
         }
 
         /**
-         * Name is useful for debugging and in exception handling.
+         * A name assigned for debugging, error reporting or configuration purposes.
          *
-         * @param name name of this bulkhead
+         * @param name the name
          * @return updated builder instance
          */
         public Builder name(String name) {

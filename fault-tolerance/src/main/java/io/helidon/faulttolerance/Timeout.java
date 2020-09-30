@@ -53,6 +53,7 @@ public interface Timeout extends FtHandler {
         private Duration timeout = Duration.ofSeconds(10);
         private LazyValue<? extends ScheduledExecutorService> executor = FaultTolerance.scheduledExecutor();
         private boolean currentThread = false;
+        private String name = "Timeout-" + System.identityHashCode(this);
 
         private Builder() {
         }
@@ -96,6 +97,17 @@ public interface Timeout extends FtHandler {
             return this;
         }
 
+        /**
+         * A name assigned for debugging, error reporting or configuration purposes.
+         *
+         * @param name the name
+         * @return updated builder instance
+         */
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+
         Duration timeout() {
             return timeout;
         }
@@ -106,6 +118,10 @@ public interface Timeout extends FtHandler {
 
         boolean currentThread() {
             return currentThread;
+        }
+
+        String name() {
+            return name;
         }
     }
 }

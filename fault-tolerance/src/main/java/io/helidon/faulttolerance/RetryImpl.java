@@ -38,12 +38,19 @@ class RetryImpl implements Retry {
     private final long maxTimeNanos;
     private final Retry.RetryPolicy retryPolicy;
     private final AtomicLong retryCounter = new AtomicLong(0L);
+    private final String name;
 
     RetryImpl(Retry.Builder builder) {
         this.scheduledExecutor = builder.scheduledExecutor();
         this.errorChecker = ErrorChecker.create(builder.skipOn(), builder.applyOn());
         this.maxTimeNanos = builder.overallTimeout().toNanos();
         this.retryPolicy = builder.retryPolicy();
+        this.name = builder.name();
+    }
+
+    @Override
+    public String name() {
+        return name;
     }
 
     @Override
