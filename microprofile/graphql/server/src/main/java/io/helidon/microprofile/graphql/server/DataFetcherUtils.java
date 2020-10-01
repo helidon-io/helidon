@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.graphql.server;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -37,6 +38,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.logging.Logger;
 
 import javax.enterprise.inject.spi.CDI;
@@ -54,6 +56,7 @@ import static io.helidon.microprofile.graphql.server.SchemaGenerator.isFormatEmp
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ID;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ensureRuntimeException;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.isDateTimeClass;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.isPrimitiveArray;
 
 /**
  * Utilities for working with {@link DataFetcher}s.
@@ -178,8 +181,9 @@ public class DataFetcherUtils {
             SchemaInputType inputType = schema.getInputTypeByName(argumentType);
 
             Object colResults = null;
+            boolean isArray = originalType.isArray();
             try {
-                if (originalType.equals(List.class)) {
+                if (originalType.equals(List.class) || isArray) {
                     colResults = new ArrayList<>();
                 } else if (originalType.equals(Set.class)
                            || originalType.equals(Collection.class)) {
@@ -201,7 +205,11 @@ public class DataFetcherUtils {
                                                          value, EMPTY_FORMAT));
                 }
 
-                return colResults;
+                if (isArray) {
+                    return ((List) colResults).toArray((Object[]) Array.newInstance(originalType.getComponentType(), 0));
+                } else {
+                    return colResults;
+                }
             } else {
                 // standard type or scalar so ensure we preserve the order and
                 // convert any values with formats
@@ -209,6 +217,15 @@ public class DataFetcherUtils {
                     ((Collection) colResults).add(parseArgumentValue(originalArrayType, argumentType, value, format));
                 }
 
+                if (isArray) {
+                    if (isPrimitiveArray(originalType)) {
+                        // array of primitives
+                        return generatePrimitiveArray((List) colResults, originalType, argumentType, format);
+                    } else {
+                        // array of Objects
+                        return ((List) colResults).toArray((Object[]) Array.newInstance(originalType.getComponentType(), 0));
+                    }
+                }
                 if (originalType.equals(List.class)) {
                     return (List) colResults;
                 }
@@ -220,6 +237,74 @@ public class DataFetcherUtils {
         } else {
             return parseArgumentValue(originalType, argumentType, rawValue, format);
         }
+    }
+
+    /**
+     * Return an array of primitives of the correct type from the given {@link List} of primitives.
+     * @param results       results to process
+     * @param originalType  the original type
+     * @param argumentType  argument type
+     * @param format format
+     * @return an array of primitives of the correct type
+     */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    protected static Object generatePrimitiveArray(List results, Class<?> originalType, String argumentType, String[] format) {
+        Class<?> componentType = originalType.getComponentType();
+        try {
+            int i = 0;
+            if (componentType.equals(byte.class)) {
+                byte[] result = new byte[results.size()];
+                for (Object value : results) {
+                    result[i++] = Byte.parseByte(value.toString());  // this will come in as an Integer
+                }
+                return result;
+            } else if (componentType.equals(char.class)) {
+                char[] result = new char[results.size()];
+                for (Object value : results) {
+                    result[i++] = value.toString().charAt(0);
+                }
+                return result;
+            } else if (componentType.equals(boolean.class)) {
+                boolean[] result = new boolean[results.size()];
+                for (Object value : results) {
+                    result[i++] = Boolean.parseBoolean(value.toString());
+                }
+                return result;
+            } else if (componentType.equals(short.class)) {
+                short[] result = new short[results.size()];
+                for (Object value : results) {
+                    result[i++] = (short) parseArgumentValue(componentType, argumentType, value, format);
+                }
+                return result;
+            } else if (componentType.equals(float.class)) {
+                float[] result = new float[results.size()];
+                for (Object value : results) {
+                    result[i++] = (float) parseArgumentValue(componentType, argumentType, value, format);
+                }
+                return result;
+            } else if (componentType.equals(int.class)) {
+                int[] result = new int[results.size()];
+                for (Object value : results) {
+                    result[i++] = (int) parseArgumentValue(componentType, argumentType, value, format);
+                }
+                return result;
+            } else if (componentType.equals(long.class)) {
+                long[] result = new long[results.size()];
+                for (Object value : results) {
+                    result[i++] = (long) parseArgumentValue(componentType, argumentType, value, format);
+                }
+                return result;
+            } else if (componentType.equals(double.class)) {
+               double[] result = new double[results.size()];
+                for (Object value : results) {
+                    result[i++] = (double) parseArgumentValue(componentType, argumentType, value, format);
+                }
+                return result;
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return null;
     }
 
     /**
@@ -235,6 +320,10 @@ public class DataFetcherUtils {
     protected static Object parseArgumentValue(Class<?> originalType, String argumentType, Object rawValue, String[] format)
             throws Exception {
 
+        if (originalType == null) {
+            // is array type
+            originalType = rawValue.getClass();
+        }
         if (originalType.isEnum()) {
             Class<? extends Enum> enumClass = (Class<? extends Enum>) originalType;
             return Enum.valueOf(enumClass, rawValue.toString());

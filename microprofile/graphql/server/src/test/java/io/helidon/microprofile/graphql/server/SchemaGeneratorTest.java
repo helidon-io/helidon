@@ -580,6 +580,11 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
         assertThat(schema, is(notNullValue()));
     }
 
+    @Test
+    public void testPrimitiveArrays() {
+        ArrayList a;
+    }
+
     private void assertParameterFormat(Method method, int paramNumber, String[] expectedFormat) {
         assertThat(method, is(notNullValue()));
         Parameter parameter = method.getParameters()[paramNumber];

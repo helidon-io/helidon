@@ -338,7 +338,7 @@ public class SchemaGenerator {
         processDefaultDateTimeValues(schema);
 
         // process the @GraphQLApi annotated classes
-        if (rootQueryType.getFieldDefinitions().size() == 0) {
+        if (rootQueryType.getFieldDefinitions().size() == 0 && rootMutationType.getFieldDefinitions().size() == 0) {
             LOGGER.warning("Unable to find any classes with @GraphQLApi annotation."
                                    + "Unable to build schema");
         }

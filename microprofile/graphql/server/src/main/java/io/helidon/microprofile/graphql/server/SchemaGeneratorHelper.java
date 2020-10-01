@@ -386,11 +386,31 @@ public final class SchemaGeneratorHelper {
      * Return true of the class name is a primitive or array of primitives.
      *
      * @param clazz class name to check
-     * @return true of the class name is a primitive or array of primitives.
+     * @return true if the class name is a primitive or array of primitives.
      */
     protected static boolean isPrimitive(String clazz) {
         return JAVA_PRIMITIVE_TYPES.contains(clazz)
                 || PRIMITIVE_ARRAY_MAP.values().stream().anyMatch(v -> v.contains(clazz));
+    }
+
+    /**
+     * Return true of the class name is an array of primitives.
+     *
+     * @param clazz class name to check
+     * @return true true of the class name is an array of primitives.
+     */
+    protected static boolean isPrimitiveArray(String clazz) {
+        return PRIMITIVE_ARRAY_MAP.values().stream().anyMatch(v -> v.contains(clazz));
+    }
+
+    /**
+     * Return true of the class name is an array of primitives.
+     *
+     * @param clazz {@link Class} to check
+     * @return true true of the class name is an array of primitives.
+     */
+    protected static boolean isPrimitiveArray(Class<?> clazz) {
+        return PRIMITIVE_ARRAY_MAP.containsKey(clazz.getName());
     }
 
     /**

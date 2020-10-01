@@ -22,6 +22,7 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
+import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
@@ -29,6 +30,7 @@ import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.types.MultiLevelListsAndArrays;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Name;
+import org.eclipse.microprofile.graphql.NumberFormat;
 import org.eclipse.microprofile.graphql.Query;
 
 /**
@@ -66,5 +68,61 @@ public class ArrayAndListQueries {
     @Query
     public List<BigDecimal> echoListBigDecimal(@Name("param") List<BigDecimal> value) {
         return value;
+    }
+
+    @Query
+    public BigDecimal[] echoBigDecimalArray(@Name("param") BigDecimal[] value) {
+        return value;
+    }
+
+    @Query
+    public int[] echoIntArray(@Name("param") int[] value) {
+        return value;
+    }
+
+    @Query
+    public short[] echoShortArray(@Name("param") short[] value) {
+        return value;
+    }
+
+    @Query
+    public long[] echoLongArray(@Name("param") long[] value) {
+        return value;
+    }
+
+    @Query
+    public double[] echoDoubleArray(@Name("param") double[] value) {
+        return value;
+    }
+
+    @Query
+    public boolean[] echoBooleanArray(@Name("param") boolean[] value) {
+        return value;
+    }
+
+    @Query
+    public char[] echoCharArray(@Name("param") char[] value) {
+        return value;
+    }
+
+    @Query
+    public float[] echoFloatArray(@Name("param") float[] value) {
+        return value;
+    }
+
+    @Query
+    public byte[] echoByteArray(@Name("param") byte[] value) {
+        return value;
+    }
+
+    @Query
+    public SimpleContact[] echoSimpleContactArray(@Name("param") SimpleContact[] value) {
+        return value;
+    }
+
+    @Query
+    public String processListListBigDecimal(@Name("param") List<List<
+            @NumberFormat(value = "00.0000000 longlat", locale = "en-GB") BigDecimal>> value) {
+        return value.toString();
     }
 }

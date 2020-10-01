@@ -30,7 +30,7 @@ import org.eclipse.microprofile.graphql.Interface;
 import org.eclipse.microprofile.graphql.Type;
 
 /**
- * A CDI {@link Extension} to collect the classes that are of interest Microprofile GraphQL.
+ * A CDI {@link Extension} to collect the classes that are of interest to Microprofile GraphQL.
  */
 public class GraphQLCdiExtension implements Extension {
 
