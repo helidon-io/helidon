@@ -1,0 +1,17 @@
+{
+    "annotated":[
+    ],
+    "class-hierarchy": [
+        "org.eclipse.jgit.nls.TranslationBundle"
+    ],
+    "classes": [
+        "org.eclipse.jgit.lib.CoreConfig$HideDotFiles",
+        "org.eclipse.jgit.lib.CoreConfig$AutoCRLF",
+        "org.eclipse.jgit.lib.CoreConfig$EolStreamType",
+        "org.eclipse.jgit.lib.CoreConfig$CheckStat",
+        "org.eclipse.jgit.lib.CoreConfig$SymLinks",
+        "org.eclipse.jgit.lib.CoreConfig$EOL"
+    ],
+    "exclude": [
+    ]
+}

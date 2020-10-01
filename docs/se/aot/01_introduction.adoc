@@ -50,7 +50,7 @@ for native image.
 |✅ |{nbsp} |Object Mapping |{nbsp}
 |✅ |{nbsp} |YAML |{nbsp}
 |❓ |{nbsp} |etcd |Not yet tested.
-|❓ |{nbsp} |git |Not yet tested.
+|✅ |{nbsp} |git |{nbsp}
 |✅ |Db Client |Db Client |{nbsp}
 |✅ |{nbsp} |Health Check |{nbsp}
 |🔶 |{nbsp} |JDBC |Tested with Helidon modules for Oracle and H2 driver (see examples)
