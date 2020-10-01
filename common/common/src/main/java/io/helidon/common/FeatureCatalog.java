@@ -304,11 +304,9 @@ final class FeatureCatalog {
                     .path("Config", "etcd")
                     .nativeSupported(false));
         add("io.helidon.config.git",
-            FeatureDescriptor.builder()
-                    .name("git")
-                    .description("Config source based on a git repository")
-                    .path("Config", "git")
-                    .nativeSupported(false));
+            "git",
+            "Config source based on a git repository",
+            "Config", "git");
         add("io.helidon.config.hocon",
             "HOCON",
             "HOCON media type support for config",
