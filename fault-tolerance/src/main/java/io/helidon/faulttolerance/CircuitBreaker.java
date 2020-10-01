@@ -101,6 +101,7 @@ public interface CircuitBreaker extends FtHandler {
         // rolling window size to
         private int volume = 10;
         private LazyValue<? extends ScheduledExecutorService> executor = FaultTolerance.scheduledExecutor();
+        private String name = "CircuitBreaker-" + System.identityHashCode(this);
 
         private Builder() {
         }
@@ -167,7 +168,8 @@ public interface CircuitBreaker extends FtHandler {
          * @param classes to consider failures to calculate failure ratio
          * @return updated builder instance
          */
-        public Builder applyOn(Class<? extends Throwable>... classes) {
+        @SafeVarargs
+        public final Builder applyOn(Class<? extends Throwable>... classes) {
             applyOn.clear();
             Arrays.stream(classes)
                     .forEach(this::addApplyOn);
@@ -195,7 +197,8 @@ public interface CircuitBreaker extends FtHandler {
          * @param classes to consider successful
          * @return updated builder instance
          */
-        public Builder skipOn(Class<? extends Throwable>... classes) {
+        @SafeVarargs
+        public final Builder skipOn(Class<? extends Throwable>... classes) {
             skipOn.clear();
             Arrays.stream(classes)
                     .forEach(this::addSkipOn);
@@ -228,6 +231,17 @@ public interface CircuitBreaker extends FtHandler {
             return this;
         }
 
+        /**
+         * A name assigned for debugging, error reporting or configuration purposes.
+         *
+         * @param name the name
+         * @return updated builder instance
+         */
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+
         LazyValue<? extends ScheduledExecutorService> executor() {
             return executor;
         }
@@ -254,6 +268,10 @@ public interface CircuitBreaker extends FtHandler {
 
         int volume() {
             return volume;
+        }
+
+        String name() {
+            return name;
         }
     }
 }

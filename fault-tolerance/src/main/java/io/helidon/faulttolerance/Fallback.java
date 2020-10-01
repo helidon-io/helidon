@@ -122,7 +122,8 @@ public interface Fallback<T> extends FtHandlerTyped<T> {
          * @param classes classes to fallback on
          * @return updated builder instance
          */
-        public Builder<T> applyOn(Class<? extends Throwable>... classes) {
+        @SafeVarargs
+        public final Builder<T> applyOn(Class<? extends Throwable>... classes) {
             applyOn.clear();
             Arrays.stream(classes)
                     .forEach(this::addApplyOn);
@@ -148,7 +149,8 @@ public interface Fallback<T> extends FtHandlerTyped<T> {
          * @param classes classes not to fallback on
          * @return updated builder instance
          */
-        public Builder<T> skipOn(Class<? extends Throwable>... classes) {
+        @SafeVarargs
+        public final Builder<T> skipOn(Class<? extends Throwable>... classes) {
             skipOn.clear();
             Arrays.stream(classes)
                     .forEach(this::addSkipOn);

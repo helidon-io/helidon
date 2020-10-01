@@ -33,6 +33,14 @@ import io.helidon.common.reactive.Single;
  * </ul>
  */
 public interface FtHandler {
+
+    /**
+     * A name assigned to a handler for debugging, error reporting or configuration purposes.
+     *
+     * @return a non-null name for this handler
+     */
+    String name();
+
     /**
      * Invoke this fault tolerance handler on a supplier of a {@link java.util.concurrent.CompletionStage}, such as a
      * {@link io.helidon.common.reactive.Single}.
