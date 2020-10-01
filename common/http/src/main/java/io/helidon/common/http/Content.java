@@ -16,7 +16,9 @@
 
 package io.helidon.common.http;
 
+import java.util.concurrent.Executor;
 import java.util.concurrent.Flow;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -128,6 +130,11 @@ public interface Content extends Multi<DataChunk> {
      * The conversion requires an appropriate reader to be already registered
      * (see {@link #registerReader(Predicate, Reader)}). If no such reader is found, the
      * resulting completion stage ends exceptionally.
+     * <p>
+     * Any callback related to the returned value, should not be blocking. Blocking operation could cause deadlock.
+     * If you need to use blocking API such as {@link java.io.InputStream} it is highly recommended to do so out of
+     * the scope of reactive chain, or to use methods like
+     * {@link java.util.concurrent.CompletionStage#thenAcceptAsync(Consumer, Executor)}.
      *
      * @param <T>  the requested type
      * @param type the requested type class
