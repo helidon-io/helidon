@@ -25,7 +25,7 @@ server.static.classpath.welcome=index.html
 
 ## Bootstrap CSS
 
-The binary of minifgied Bootstrap CSS is included at `/src/main/resources/webapp/css`
+The binary of minified Bootstrap CSS is included at `/src/main/resources/webapp/css`
 
 The css is referenced in `index.html` as below
 ```
