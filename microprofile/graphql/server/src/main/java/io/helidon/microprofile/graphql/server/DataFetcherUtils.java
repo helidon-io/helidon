@@ -214,7 +214,12 @@ public class DataFetcherUtils {
                 // standard type or scalar so ensure we preserve the order and
                 // convert any values with formats
                 for (Object value : (Collection) rawValue) {
-                    ((Collection) colResults).add(parseArgumentValue(originalArrayType, argumentType, value, format));
+                    if (value instanceof Collection) {
+                        ((Collection) colResults).add(generateArgumentValue(schema, argumentType,
+                                                                            originalType, originalArrayType, value, format));
+                    } else {
+                       ((Collection) colResults).add(parseArgumentValue(originalArrayType, argumentType, value, format));
+                    }
                 }
 
                 if (isArray) {

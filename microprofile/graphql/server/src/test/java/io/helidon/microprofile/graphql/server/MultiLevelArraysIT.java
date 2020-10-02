@@ -213,8 +213,7 @@ public class MultiLevelArraysIT extends AbstractGraphQLIT {
         assertThat(mapResults.size(), is(1));
         String result =  (String) mapResults.get("processListListBigDecimal");
         assertThat(result, is(notNullValue()));
-
-
+        assertThat(result, is("[[-25.926804, 28.203392], [-26.926804, 27.203392], [-27.926804, 26.203392]]"));
     }
 
     protected String generateInput(SimpleContact contact) {
