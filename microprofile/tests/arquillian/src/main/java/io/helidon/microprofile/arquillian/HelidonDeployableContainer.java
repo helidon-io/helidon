@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,6 @@ import javax.enterprise.inject.spi.DefinitionException;
 
 import io.helidon.config.mp.MpConfigSources;
 import io.helidon.microprofile.server.Server;
-import io.helidon.microprofile.server.ServerCdiExtension;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
@@ -107,24 +106,10 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
 
     @Override
     public void start() {
-        try {
-            if (!CDI.current()
-                    .getBeanManager()
-                    .getExtension(ServerCdiExtension.class)
-                    .started()) {
-                dummyServer = Server.builder().build();
-            }
-        } catch (IllegalStateException e) {
-            // CDI not running
-            dummyServer = Server.builder().build();
-        }
     }
 
     @Override
     public void stop() {
-        if (null != dummyServer) {
-            dummyServer.stop();
-        }
     }
 
     @Override
@@ -186,9 +171,13 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
     void startServer(RunContext context, Path[] classPath)
             throws ReflectiveOperationException {
 
-        Optional.ofNullable((SeContainer) CDI.current())
-                .ifPresent(SeContainer::close);
-        stopAll();
+        try {
+            Optional.of((SeContainer) CDI.current())
+                    .ifPresent(SeContainer::close);
+            stopAll();
+        } catch (IllegalStateException ignored) {
+            // there is no server running
+        }
 
         context.classLoader = new MyClassloader(new URLClassLoader(toUrls(classPath)));
 
@@ -353,7 +342,6 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
             polled.run();
             polled = STOP_RUNNABLES.poll();
         }
-        dummyServer.stop();
     }
 
     @Override

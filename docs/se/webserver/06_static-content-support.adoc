@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Static Content Support
+:h1Prefix: SE
 :description: Helidon Reactive WebServer static content support
 :keywords: helidon, reactive, reactive streams, reactive java, reactive webserver
 
@@ -32,7 +33,7 @@ You can combine dynamic handlers with `StaticContentSupport` objects: if no file
 [source,java]
 ----
 Routing.builder()
-       .register("/pictures", StaticContentSupport.create(Paths.get("/some/WEB/pics")) // <1>
+       .register("/pictures", StaticContentSupport.create(Paths.get("/some/WEB/pics"))) // <1>
        .register("/", StaticContentSupport.builder("/static-content") // <2>
                                    .welcomeFileName("index.html") // <3>
                                    .build());

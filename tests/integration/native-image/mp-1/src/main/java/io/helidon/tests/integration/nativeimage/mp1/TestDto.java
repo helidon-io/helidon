@@ -3,14 +3,13 @@
  */
 package io.helidon.tests.integration.nativeimage.mp1;
 
-import javax.enterprise.context.Dependent;
+import io.helidon.common.Reflected;
 
 /**
  * JSON-B data transfer object.
- * Must be registered for reflection (see src/main/resources/META-INF/native-image/....json)
+ * Registered for reflection using the {@link io.helidon.common.Reflected} annotation.
  */
-// bean defining annotation, just to auto register for reflection
-@Dependent
+@Reflected
 public class TestDto {
     private String message;
 

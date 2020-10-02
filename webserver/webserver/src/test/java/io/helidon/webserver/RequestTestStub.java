@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,10 @@
 
 package io.helidon.webserver;
 
-import io.helidon.common.reactive.Single;
 import java.net.URI;
+import java.util.Optional;
+
+import io.helidon.common.reactive.Single;
 
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
@@ -60,13 +62,8 @@ public class RequestTestStub extends Request {
     }
 
     @Override
-    public Span span() {
-        return span;
-    }
-
-    @Override
-    public SpanContext spanContext() {
-        return span.context();
+    public Optional<SpanContext> spanContext() {
+        return Optional.ofNullable(span.context());
     }
 
     @Override

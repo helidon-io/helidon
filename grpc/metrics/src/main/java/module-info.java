@@ -26,5 +26,4 @@ module io.helidon.grpc.metrics {
     requires transitive io.helidon.metrics;
 
     requires microprofile.metrics.api;
-    requires io.helidon.common.metrics;
 }

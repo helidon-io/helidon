@@ -77,7 +77,7 @@ public class RequestContentTest {
     public void directSubscriptionTest() throws Exception {
         Request request = requestTestStub(Multi.just("first", "second", "third").map(s -> DataChunk.create(s.getBytes())));
         StringBuilder sb = new StringBuilder();
-        Multi.from(request.content()).subscribe(chunk -> sb.append(requestChunkAsString(chunk)).append("-"));
+        Multi.create(request.content()).subscribe(chunk -> sb.append(requestChunkAsString(chunk)).append("-"));
         assertThat(sb.toString(), is("first-second-third-"));
     }
 
@@ -87,7 +87,7 @@ public class RequestContentTest {
         StringBuilder sb = new StringBuilder();
         request.content().registerFilter((Publisher<DataChunk> publisher) -> {
             sb.append("apply_filter-");
-            return Multi.from(publisher)
+            return Multi.create(publisher)
                     .map(TestUtils::requestChunkAsString)
                     .map(String::toUpperCase)
                     .map(s -> DataChunk.create(s.getBytes()));
@@ -95,7 +95,7 @@ public class RequestContentTest {
 
         assertThat("Apply filter is expected to be called after a subscription!", sb.toString(), is(""));
 
-        Multi.from(request.content()).subscribe(chunk -> sb.append(requestChunkAsString(chunk)).append("-"));
+        Multi.create(request.content()).subscribe(chunk -> sb.append(requestChunkAsString(chunk)).append("-"));
         assertThat(sb.toString(), is("apply_filter-FIRST-SECOND-THIRD-"));
     }
 
@@ -119,7 +119,7 @@ public class RequestContentTest {
             publisher.close();
         });
 
-        Request request = requestTestStub(Multi.from(publisher));
+        Request request = requestTestStub(Multi.create(publisher));
 
         request.content().registerFilter(originalPublisher -> subscriberDelegate
                 -> originalPublisher.subscribe(new Subscriber<DataChunk>() {
@@ -276,7 +276,7 @@ public class RequestContentTest {
 
         AtomicReference<Throwable> receivedThrowable = new AtomicReference<>();
 
-        Multi.from(request.content())
+        Multi.create(request.content())
                 .subscribe(byteBuffer -> {
                     fail("Should not have been called!");
                 }, receivedThrowable::set);
@@ -327,7 +327,7 @@ public class RequestContentTest {
             throw new IllegalStateException("unreachable code");
         });
         request.content().registerReader(String.class, (publisher, clazz) -> {
-            return Multi.from(publisher)
+            return Multi.create(publisher)
                     .map(TestUtils::requestChunkAsString)
                     .map(String::toUpperCase)
                     .collectList()

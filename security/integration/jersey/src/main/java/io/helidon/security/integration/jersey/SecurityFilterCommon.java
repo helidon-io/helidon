@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
-import io.helidon.common.HelidonFeatures;
 import io.helidon.config.Config;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.AuthorizationResponse;
@@ -48,10 +47,6 @@ import org.glassfish.jersey.server.ContainerRequest;
  */
 abstract class SecurityFilterCommon {
     static final String PROP_FILTER_CONTEXT = "io.helidon.security.jersey.FilterContext";
-
-    static {
-        HelidonFeatures.register("Security", "Integration", "Jersey");
-    }
 
     @Context
     private Security security;
@@ -81,10 +76,6 @@ abstract class SecurityFilterCommon {
             return;
         }
 
-        // The following two lines are not possible in JAX-RS or Jersey - we would have to touch
-        // underlying web server's request...
-        //.addAttribute("userIp", req.remoteAddress())
-        //.addAttribute("userPort", req.remotePort())
         URI requestUri = request.getUriInfo().getRequestUri();
         String query = requestUri.getQuery();
         String origRequest;
@@ -96,13 +87,25 @@ abstract class SecurityFilterCommon {
         Map<String, List<String>> allHeaders = new HashMap<>(filterContext.getHeaders());
         allHeaders.put(Security.HEADER_ORIG_URI, List.of(origRequest));
 
-        SecurityEnvironment env = SecurityEnvironment.builder(security.serverTime())
+        SecurityEnvironment.Builder envBuilder = SecurityEnvironment.builder(security.serverTime())
                 .path(filterContext.getResourcePath())
                 .targetUri(filterContext.getTargetUri())
                 .method(filterContext.getMethod())
                 .headers(allHeaders)
-                .addAttribute("resourceType", filterContext.getResourceName())
-                .build();
+                .addAttribute("resourceType", filterContext.getResourceName());
+
+        // The following two lines are not possible in JAX-RS or Jersey - we would have to touch
+        // underlying web server's request...
+        String remoteHost = (String) request.getProperty("io.helidon.jaxrs.remote-host");
+        Integer remotePort = (Integer) request.getProperty("io.helidon.jaxrs.remote-port");
+        if (remoteHost != null) {
+            envBuilder.addAttribute("userIp", remoteHost);
+        }
+        if (remotePort != null) {
+            envBuilder.addAttribute("userPort", remotePort);
+        }
+
+        SecurityEnvironment env = envBuilder.build();
 
         EndpointConfig ec = EndpointConfig.builder()
                 .securityLevels(filterContext.getMethodSecurity().getSecurityLevels())
@@ -139,9 +142,7 @@ abstract class SecurityFilterCommon {
                 SecurityClientBuilder<AuthenticationResponse> clientBuilder = securityContext
                         .atnClientBuilder()
                         .optional(methodSecurity.authenticationOptional())
-                        .tracingSpan(atnTracing.findParent().orElse(null))
-                        // backward compatibility - remove in 2.0
-                        .tracingSpan(atnTracing.findParentSpan().orElse(null));
+                        .tracingSpan(atnTracing.findParent().orElse(null));
 
                 clientBuilder.explicitProvider(methodSecurity.getAuthenticator());
                 processAuthentication(context, clientBuilder, methodSecurity, atnTracing);
@@ -254,8 +255,6 @@ abstract class SecurityFilterCommon {
             // access
             if (context.getMethodSecurity().requiresAuthorization()) {
                 SecurityClientBuilder<AuthorizationResponse> clientBuilder = securityContext.atzClientBuilder()
-                        // TODO remove in 2.0 - backward compatibility until then
-                        .tracingSpan(atzTracing.findParentSpan().orElse(null))
                         .tracingSpan(atzTracing.findParent().orElse(null))
                         .explicitProvider(context.getMethodSecurity().getAuthorizer());
 

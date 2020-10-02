@@ -1,0 +1,81 @@
+<!DOCTYPE HTML>
+
+<html>
+<!--
+
+    Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+   <head>
+      <meta charset="UTF-8">
+      <script type = "text/javascript">
+         var ws;
+         function webSocketTest() {
+            if ("WebSocket" in window) {
+               document.getElementById("title").innerHTML = "WebSocket is supported by your Browser!";
+               ws = new WebSocket("ws://localhost:8080/websocket/board");
+               ws.onopen = function() {
+                  document.getElementById("result").innerHTML += "<p>WebSocket openned</p>";
+               };
+               ws.onmessage = function (evt) { 
+                  var received_msg = evt.data;
+                  document.getElementById("result").innerHTML += "<p>Message is received: " + escapeHtml(received_msg) + "</p>";
+               };
+               ws.onclose = function() { 
+                  document.getElementById("result").innerHTML += "<p>WebSocket is closed</p>";
+               };
+            } else {
+               document.getElementById("title").innerHTML = "WebSocket NOT supported by your Browser!";
+            }
+         }
+         function sendMessageWebsocket(message){
+            ws.send(message);
+            document.getElementById("result").innerHTML += "<p>Message sent to WebSocket: " + escapeHtml(message) + "</p>";
+         }
+         function sendMessageRest(message){
+              var xhttp = new XMLHttpRequest();
+              xhttp.open("POST", "/rest/board", true);
+              xhttp.setRequestHeader("Content-type", "text/plain");
+              xhttp.send(message);
+              document.getElementById("result").innerHTML += "<p>Message sent to Rest: " + escapeHtml(message) + "</p>";
+         }
+         function escapeHtml(unsafe) {
+              return unsafe
+                 .replace(/&/g, "&amp;")
+                 .replace(/</g, "&lt;")
+                 .replace(/>/g, "&gt;")
+                 .replace(/"/g, "&quot;")
+                 .replace(/'/g, "&#039;");
+         }
+      </script>
+        
+   </head>
+   
+   <body onload="webSocketTest()">
+      <h1 id="title"></h1>
+      <div>
+         <p>
+             <p>
+                 <input type="text" id="message" value="example"/><button onclick="sendMessageRest(document.getElementById('message').value)">Send to Rest</button>
+             </p>
+             <p>
+                 <button onclick="sendMessageWebsocket('SEND')">Send to Websocket</button>
+             </p>
+         </p>
+         <h2>History</h1>
+         <div id="result"></div>
+      </div>
+   </body>
+</html>

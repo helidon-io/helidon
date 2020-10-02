@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@ import javax.ws.rs.Priorities;
 import javax.ws.rs.RuntimeType;
 import javax.ws.rs.core.FeatureContext;
 
+import io.helidon.security.providers.common.OutboundConfig;
+
 import org.glassfish.jersey.internal.spi.AutoDiscoverable;
 
 /**
@@ -29,6 +31,9 @@ import org.glassfish.jersey.internal.spi.AutoDiscoverable;
 public class ClientSecurityAutoDiscoverable implements AutoDiscoverable {
     @Override
     public void configure(FeatureContext context) {
+        if (Boolean.TRUE.equals(context.getConfiguration().getProperty(OutboundConfig.PROPERTY_DISABLE_OUTBOUND))) {
+            return;
+        }
         if (!context.getConfiguration().isRegistered(ClientSecurityFilter.class)) {
             context.register(ClientSecurityFilter.class, Priorities.AUTHENTICATION);
         }

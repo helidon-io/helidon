@@ -15,11 +15,13 @@
  */
 package io.helidon.examples.dbclient.pokemons;
 
+import io.helidon.common.Reflected;
+
 /**
  * POJO representing Pokemon.
  */
+@Reflected
 public class Pokemon {
-
     private int id;
     private String name;
     private int idType;

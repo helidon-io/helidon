@@ -81,7 +81,7 @@ public class BytesReuseTest {
                 .routing(Routing.builder()
                                  .any((req, res) -> {
                                      req.content().registerFilter(
-                                             (Publisher<DataChunk> publisher) -> Multi.from(publisher).map(chunk -> {
+                                             (Publisher<DataChunk> publisher) -> Multi.create(publisher).map(chunk -> {
                                                  if (req.queryParams().first("keep_chunks").map(Boolean::valueOf).orElse(true)) {
                                                      chunkReference.add(chunk);
                                                  }
@@ -91,7 +91,7 @@ public class BytesReuseTest {
                                      req.next();
                                  })
                                  .post("/subscriber", (req, res) -> {
-                                     Multi.from(req.content()).subscribe((DataChunk chunk) -> {
+                                     Multi.create(req.content()).subscribe((DataChunk chunk) -> {
                                          if (req.queryParams().first("release").map(Boolean::valueOf).orElse(true)) {
                                              chunk.release();
                                          }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,9 +54,6 @@ public class JerseySupportTest {
     public static void startServerAndClient() throws Exception {
         JerseyExampleMain.INSTANCE.webServer(true);
         webTarget = JerseyExampleMain.INSTANCE.target();
-
-        //        JerseyGrizzlyRiMain.main(null);
-        //        webTarget = JerseyExampleMain.client().target("http://localhost:8080");
     }
 
     @Test
@@ -76,7 +73,7 @@ public class JerseySupportTest {
         doAssert(response,
                  "request=io.helidon.webserver.RequestRouting$RoutedRequest\n"
                          + "response=io.helidon.webserver.RequestRouting$RoutedResponse\n"
-                         + "spanContext=io.opentracing.noop.NoopSpanContextImpl");
+                         + "spanContext=null");
     }
 
     @Test
@@ -314,8 +311,8 @@ public class JerseySupportTest {
         try (InputStream is = response.readEntity(InputStream.class)) {
             byte[] buffer = new byte[32];
             int n = is.read(buffer);        // should read only first chunk
-            assertEquals(new String(buffer, 0, n), "{ value: \"first\" }\n");
-            while ((n = is.read(buffer)) > 0) {
+            assertThat(new String(buffer, 0, n), is("{ value: \"first\" }\n"));
+            while (is.read(buffer) > 0) {
                 // consume rest of stream
             }
         }

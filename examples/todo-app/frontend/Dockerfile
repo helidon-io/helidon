@@ -23,7 +23,7 @@ WORKDIR /helidon
 # Incremental docker builds will always resume after that, unless you update
 # the pom
 ADD pom.xml .
-RUN mvn package -DskipTests -Dskip.npm
+RUN mvn package -Dmaven.test.skip -Dskip.npm
 
 # Create a second layer to cache the "NPM World" under node_modules
 # Incremental docker builds will always resume after that, unless you update

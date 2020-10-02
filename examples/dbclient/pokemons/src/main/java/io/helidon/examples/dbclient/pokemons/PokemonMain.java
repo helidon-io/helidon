@@ -24,8 +24,8 @@ import io.helidon.config.ConfigSources;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.health.DbClientHealthCheck;
 import io.helidon.health.HealthSupport;
-import io.helidon.media.jsonb.common.JsonbSupport;
-import io.helidon.media.jsonp.common.JsonpSupport;
+import io.helidon.media.jsonb.JsonbSupport;
+import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.metrics.MetricsSupport;
 import io.helidon.tracing.TracerBuilder;
 import io.helidon.webserver.Routing;
@@ -36,7 +36,7 @@ import io.helidon.webserver.WebServer;
  */
 public final class PokemonMain {
 
-    /** MongoDB configuration. Default configuration file {@code appliaction.yaml} contains MySQL/JDBC configuration. */
+    /** MongoDB configuration. Default configuration file {@code appliaction.yaml} contains JDBC configuration. */
     private static final String MONGO_CFG = "mongo.yaml";
 
     /** Whether MongoDB support is selected. */
@@ -63,7 +63,7 @@ public final class PokemonMain {
             System.out.println("MongoDB database selected");
             mongo = true;
         } else {
-            System.out.println("MySQL/JDBC database selected");
+            System.out.println("JDBC database selected");
             mongo = false;
         }
         startServer();
@@ -113,7 +113,7 @@ public final class PokemonMain {
     private static Routing createRouting(Config config) {
         Config dbConfig = config.get("db");
 
-        // Interceptors are added through a service loader - see mongoDB example for explicit interceptors
+        // Client services are added through a service loader - see mongoDB example for explicit services
         DbClient dbClient = DbClient.builder(dbConfig)
                 .build();
 

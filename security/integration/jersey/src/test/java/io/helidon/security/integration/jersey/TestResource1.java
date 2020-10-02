@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,6 @@ import org.glassfish.jersey.server.Uri;
  */
 @Path("/test1")
 public class TestResource1 {
-    @SecureClient
     @Uri("http://localhost:9998/test2")
     private WebTarget target;
 
@@ -44,7 +43,6 @@ public class TestResource1 {
     @Produces(MediaType.APPLICATION_JSON)
     public TransferObject getIt(@Context SecurityContext context) {
         TransferObject fromTest2 = target.request()
-                .property(ClientSecurityFeature.PROPERTY_CONTEXT, context)
                 .get(TransferObject.class);
 
         // we expect this NOT to be a proxy

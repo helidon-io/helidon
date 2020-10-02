@@ -24,6 +24,9 @@ server:
 client:
   follow-redirects: true
   max-redirects: 5
+  services:
+    tracing:
+    security:
 
 security:
   providers:
@@ -41,6 +44,8 @@ security:
             roles: ["user"]
           - login: "joe"
             password: "password"
+        outbound:
+          - name: "propagate-to-all-targets"
   web-server:
     paths:
       - path: "/greet/secure/basic"

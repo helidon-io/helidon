@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -129,7 +129,7 @@ public class AnnotatedMethodListTest {
     @Test
     public void shouldGetMethodsWithMetaAnnotation() {
         AnnotatedMethodList list = AnnotatedMethodList.create(Stub.class, true);
-        AnnotatedMethodList methods = list.withMetaAnnotation(RpcMethod.class);
+        AnnotatedMethodList methods = list.withMetaAnnotation(GrpcMethod.class);
         List<String> names = methods.stream()
                 .map(am -> am.method().getName())
                 .collect(Collectors.toList());
@@ -140,7 +140,7 @@ public class AnnotatedMethodListTest {
     @Test
     public void shouldGetMethodsWithoutMetaAnnotation() {
         AnnotatedMethodList list = AnnotatedMethodList.create(Stub.class, true);
-        AnnotatedMethodList methods = list.withoutMetaAnnotation(RpcMethod.class);
+        AnnotatedMethodList methods = list.withoutMetaAnnotation(GrpcMethod.class);
         List<String> names = methods.stream()
                 .map(am -> am.method().getName())
                 .collect(Collectors.toList());

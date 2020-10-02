@@ -62,6 +62,8 @@ import org.glassfish.jersey.server.model.Resource;
 import org.glassfish.jersey.server.spi.Container;
 
 import static java.util.Objects.requireNonNull;
+import static org.glassfish.jersey.CommonProperties.PROVIDER_DEFAULT_DISABLE;
+import static org.glassfish.jersey.server.ServerProperties.WADL_FEATURE_DISABLE;
 
 /**
  * The Jersey Support integrates Jersey (JAX-RS RI) into the Web Server.
@@ -84,18 +86,6 @@ import static java.util.Objects.requireNonNull;
 public class JerseySupport implements Service {
 
     private static final String SEC_WEBSOCKET_KEY = "Sec-WebSocket-Key";
-
-    /**
-     * The request scoped span qualifier that can be injected into a Jersey resource.
-     * <pre><code>
-     * {@literal @}Inject{@literal @}Named(JerseySupport.REQUEST_SPAN_QUALIFIER)
-     *  private Span span;
-     * </code></pre>
-     *
-     * @deprecated Use span context ({@link #REQUEST_SPAN_CONTEXT}) instead.
-     */
-    @Deprecated
-    public static final String REQUEST_SPAN_QUALIFIER = "request-parent-span";
 
     /**
      * The request scoped span context qualifier that can be injected into a Jersey resource.
@@ -268,9 +258,17 @@ public class JerseySupport implements Service {
                                                                    requestUri(req),
                                                                    req.method().name(),
                                                                    new WebServerSecurityContext(),
-                                                                   new WebServerPropertiesDelegate(req));
+                                                                   new WebServerPropertiesDelegate(req),
+                                                                   null);
             // set headers
             req.headers().toMap().forEach(requestContext::headers);
+
+            // set remote address
+            String remoteHost = req.remoteAddress();
+            int remotePort = req.remotePort();
+
+            requestContext.setProperty("io.helidon.jaxrs.remote-host", remoteHost);
+            requestContext.setProperty("io.helidon.jaxrs.remote-port", remotePort);
 
             requestContext.setWriter(responseWriter);
 
@@ -286,8 +284,8 @@ public class JerseySupport implements Service {
                                 requestContext.setRequestScopedInitializer(injectionManager -> {
                                     injectionManager.<Ref<ServerRequest>>getInstance(REQUEST_TYPE).set(req);
                                     injectionManager.<Ref<ServerResponse>>getInstance(RESPONSE_TYPE).set(res);
-                                    injectionManager.<Ref<Span>>getInstance(SPAN_TYPE).set(req.span());
-                                    injectionManager.<Ref<SpanContext>>getInstance(SPAN_CONTEXT_TYPE).set(req.spanContext());
+                                    injectionManager.<Ref<SpanContext>>getInstance(SPAN_CONTEXT_TYPE)
+                                            .set(req.spanContext().orElse(null));
                                 });
 
                                 appHandler.handle(requestContext);
@@ -447,7 +445,6 @@ public class JerseySupport implements Service {
      * Builder for convenient way to create {@link JerseySupport}.
      */
     public static final class Builder implements Configurable<Builder>, io.helidon.common.Builder<JerseySupport> {
-
         private ResourceConfig resourceConfig;
         private ExecutorService executorService;
         private Config config = Config.empty();
@@ -462,6 +459,22 @@ public class JerseySupport implements Service {
                 application = new Application();
             }
             this.resourceConfig = ResourceConfig.forApplication(application);
+
+            Object property = resourceConfig.getProperty(PROVIDER_DEFAULT_DISABLE);
+            if (null == property) {
+                LOGGER.fine("Disabling all Jersey default providers (DOM, SAX, Rendered Image, XML Source, and "
+                                    + "XML Stream Source). You can enabled them by setting system property "
+                                    + PROVIDER_DEFAULT_DISABLE + " to NONE");
+                resourceConfig.property(PROVIDER_DEFAULT_DISABLE, "ALL");
+            } else if ("NONE".equals(property)) {
+                resourceConfig.property(PROVIDER_DEFAULT_DISABLE, null);
+            }
+
+            if (null == resourceConfig.getProperty(WADL_FEATURE_DISABLE)) {
+                LOGGER.fine("Disabling Jersey WADL feature, you can enable it by setting system property "
+                                    + WADL_FEATURE_DISABLE + " to false");
+                resourceConfig.property(WADL_FEATURE_DISABLE, "true");
+            }
         }
 
         /**

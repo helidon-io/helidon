@@ -36,7 +36,9 @@ import java.util.logging.Logger;
 
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
+import io.helidon.common.Version;
 import io.helidon.common.context.Context;
+import io.helidon.common.reactive.Single;
 import io.helidon.media.common.MessageBodyReaderContext;
 import io.helidon.media.common.MessageBodyWriterContext;
 
@@ -51,7 +53,6 @@ import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.ApplicationProtocolConfig;
 import io.netty.handler.ssl.ApplicationProtocolNames;
-import io.netty.handler.ssl.ClientAuth;
 import io.netty.handler.ssl.IdentityCipherSuiteFilter;
 import io.netty.handler.ssl.JdkSslContext;
 import io.netty.util.concurrent.Future;
@@ -76,7 +77,7 @@ class NettyWebServer implements WebServer {
     private final CompletableFuture<WebServer> channelsUpFuture = new CompletableFuture<>();
     private final CompletableFuture<WebServer> channelsCloseFuture = new CompletableFuture<>();
     private final CompletableFuture<WebServer> threadGroupsShutdownFuture = new CompletableFuture<>();
-    private final io.helidon.common.http.ContextualRegistry contextualRegistry;
+    private final Context contextualRegistry;
     private final ConcurrentMap<String, Channel> channels = new ConcurrentHashMap<>();
     private final List<HttpInitializer> initializers = new LinkedList<>();
     private final MessageBodyWriterContext writerContext;
@@ -101,17 +102,12 @@ class NettyWebServer implements WebServer {
                    MessageBodyReaderContext readerContext) {
         Set<Map.Entry<String, SocketConfiguration>> sockets = config.sockets().entrySet();
 
-        HelidonFeatures.print(HelidonFlavor.SE, config.printFeatureDetails());
+        HelidonFeatures.print(HelidonFlavor.SE,
+                              Version.VERSION,
+                              config.printFeatureDetails());
         this.bossGroup = new NioEventLoopGroup(sockets.size());
         this.workerGroup = config.workersCount() <= 0 ? new NioEventLoopGroup() : new NioEventLoopGroup(config.workersCount());
-        // the contextual registry needs to be created as a different type is expected. Once we remove ContextualRegistry
-        // we can simply use the one from config
-        Context context = config.context();
-        if (context instanceof io.helidon.common.http.ContextualRegistry) {
-            this.contextualRegistry = (io.helidon.common.http.ContextualRegistry) context;
-        } else {
-            this.contextualRegistry = io.helidon.common.http.ContextualRegistry.create(config.context());
-        }
+        this.contextualRegistry = config.context();
         this.configuration = config;
         this.readerContext = MessageBodyReaderContext.create(readerContext);
         this.writerContext = MessageBodyWriterContext.create(writerContext);
@@ -119,6 +115,12 @@ class NettyWebServer implements WebServer {
         for (Map.Entry<String, SocketConfiguration> entry : sockets) {
             String name = entry.getKey();
             SocketConfiguration soConfig = entry.getValue();
+
+            if (!soConfig.enabled()) {
+                LOGGER.info("Channel '" + name + "' is disabled.");
+                continue;
+            }
+
             ServerBootstrap bootstrap = new ServerBootstrap();
             // Transform java SSLContext into Netty SslContext
             JdkSslContext sslContext = null;
@@ -147,7 +149,7 @@ class NettyWebServer implements WebServer {
                 sslContext = new JdkSslContext(
                         soConfig.ssl(), false, null,
                         IdentityCipherSuiteFilter.INSTANCE, appProtocolConfig,
-                        ClientAuth.NONE, protocols, false);
+                        soConfig.clientAuth().nettyClientAuth(), protocols, false);
             }
 
             if (soConfig.backlog() > 0) {
@@ -160,11 +162,14 @@ class NettyWebServer implements WebServer {
                 bootstrap.option(ChannelOption.SO_RCVBUF, soConfig.receiveBufferSize());
             }
 
-            HttpInitializer childHandler = new HttpInitializer(sslContext, namedRoutings.getOrDefault(name, routing), this);
+            HttpInitializer childHandler = new HttpInitializer(soConfig,
+                                                               sslContext,
+                                                               namedRoutings.getOrDefault(name, routing),
+                                                               this);
             initializers.add(childHandler);
             bootstrap.group(bossGroup, workerGroup)
                      .channel(NioServerSocketChannel.class)
-                     .handler(new LoggingHandler(LogLevel.DEBUG))
+                     .handler(new LoggingHandler(NettyLog.class, LogLevel.DEBUG))
                      .childHandler(childHandler);
 
             bootstraps.put(name, bootstrap);
@@ -187,7 +192,7 @@ class NettyWebServer implements WebServer {
     }
 
     @Override
-    public synchronized CompletionStage<WebServer> start() {
+    public synchronized Single<WebServer> start() {
         if (!started) {
 
             channelsUpFuture.thenAccept(this::started)
@@ -213,7 +218,7 @@ class NettyWebServer implements WebServer {
                     throw new IllegalStateException(
                             "no socket configuration found for name: " + name);
                 }
-                int port = socketConfig.port() <= 0 ? 0 : socketConfig.port();
+                int port = Math.max(socketConfig.port(), 0);
                 if (channelsUpFuture.isCompletedExceptionally()) {
                     // break because one of the previous channels already failed
                     break;
@@ -287,7 +292,7 @@ class NettyWebServer implements WebServer {
             started = true;
             LOGGER.fine(() -> "All channels startup routine initiated: " + bootstrapsSize);
         }
-        return startFuture;
+        return Single.create(startFuture);
     }
 
     private void started(WebServer server) {
@@ -365,7 +370,7 @@ class NettyWebServer implements WebServer {
     }
 
     @Override
-    public CompletionStage<WebServer> shutdown() {
+    public Single<WebServer> shutdown() {
         if (!startFuture.isDone()) {
             startFuture.cancel(true);
         }
@@ -375,12 +380,13 @@ class NettyWebServer implements WebServer {
         for (Channel channel : channels.values()) {
             channel.close();
         }
-        return shutdownFuture;
+        return Single.create(shutdownFuture);
     }
 
     @Override
-    public CompletionStage<WebServer> whenShutdown() {
-        return shutdownFuture;
+    public Single<WebServer> whenShutdown() {
+        // we need to return a new single each time
+        return Single.create(shutdownFuture);
     }
 
     @Override
@@ -389,7 +395,7 @@ class NettyWebServer implements WebServer {
     }
 
     @Override
-    public io.helidon.common.http.ContextualRegistry context() {
+    public Context context() {
         return contextualRegistry;
     }
 
@@ -401,5 +407,9 @@ class NettyWebServer implements WebServer {
         }
         SocketAddress address = channel.localAddress();
         return address instanceof InetSocketAddress ? ((InetSocketAddress) address).getPort() : -1;
+    }
+
+    // this class is only used to create a log handler in NettyLogHandler, to distinguish from webclient
+    private static final class NettyLog {
     }
 }

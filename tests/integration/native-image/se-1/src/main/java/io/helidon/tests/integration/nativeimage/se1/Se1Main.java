@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,21 +17,26 @@ package io.helidon.tests.integration.nativeimage.se1;
 
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.Set;
 import java.util.logging.LogManager;
 
 import io.helidon.config.Config;
 import io.helidon.config.FileSystemWatcher;
 import io.helidon.health.HealthSupport;
 import io.helidon.health.checks.HealthChecks;
-import io.helidon.media.jsonp.common.JsonpSupport;
+import io.helidon.media.jsonb.JsonbSupport;
+import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.metrics.MetricsSupport;
 import io.helidon.security.integration.webserver.WebSecurity;
 import io.helidon.tracing.TracerBuilder;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.StaticContentSupport;
 import io.helidon.webserver.WebServer;
+import io.helidon.webserver.tyrus.TyrusSupport;
 
 import org.eclipse.microprofile.health.HealthCheckResponse;
+
+import javax.websocket.server.ServerEndpointConfig;
 
 import static io.helidon.config.ConfigSources.classpath;
 import static io.helidon.config.ConfigSources.file;
@@ -75,6 +80,8 @@ public final class Se1Main {
                 .config(config.get("server"))
                 .tracer(TracerBuilder.create(config.get("tracing")).build())
                 .addMediaSupport(JsonpSupport.create())
+                .addMediaSupport(JsonbSupport.create())
+                .printFeatureDetails(true)
                 .build();
 
         // Try to start the server. If successful, print some info and arrange to
@@ -118,6 +125,8 @@ public final class Se1Main {
 
         MetricsSupport metrics = MetricsSupport.create();
         GreetService greetService = new GreetService(config);
+        MockZipkinService zipkinService = new MockZipkinService(Set.of("helidon-webclient"));
+        WebClientService webClientService = new WebClientService(config, zipkinService);
         HealthSupport health = HealthSupport.builder()
                 .addLiveness(HealthChecks.healthChecks())   // Adds a convenient set of checks
                 .addLiveness(() -> HealthCheckResponse.named("custom") // a custom health check
@@ -134,6 +143,14 @@ public final class Se1Main {
                 .register(health)                   // Health at "/health"
                 .register(metrics)                  // Metrics at "/metrics"
                 .register("/greet", greetService)
+                .register("/wc", webClientService)
+                .register("/zipkin", zipkinService)
+                .register("/ws",
+                        TyrusSupport.builder().register(
+                                ServerEndpointConfig.Builder.create(
+                                        WebSocketEndpoint.class, "/messages")
+                                        .build())
+                                .build())
                 .build();
     }
 

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2019 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2020 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -37,5 +37,7 @@ security:
           - login: "john"
             password: "${CLEAR=password}"
             roles: []
+        outbound:
+          - name: "propagate-to-all-targets"
     # Security provider - ABAC (for role based authorization)
     - abac:

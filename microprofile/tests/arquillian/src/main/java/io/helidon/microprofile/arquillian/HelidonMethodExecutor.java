@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,8 @@ import org.jboss.arquillian.test.spi.TestMethodExecutor;
 import org.jboss.arquillian.test.spi.TestResult;
 import org.junit.After;
 import org.junit.Before;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
 
 /**
  * Class HelidonMethodExecutor.
@@ -40,9 +42,14 @@ public class HelidonMethodExecutor implements ContainerMethodExecutor {
     private HelidonCDIInjectionEnricher enricher = new HelidonCDIInjectionEnricher();
 
     /**
-     * Invoke method after enrichment. Inexplicably, the {@code @Before}
-     * and {@code @After} methods are not called when running this
-     * executor. Calling them manually for now.
+     * Invoke method after enrichment.
+     *
+     * - JUnit: Inexplicably, the {@code @Before} and {@code @After} methods are
+     * not called when running this executor, so we call them manually.
+     *
+     * - TestNG: Methods decorated with {@code @BeforeMethod} and {@code AfterMethod}
+     * are called too early, before enrichment takes places. Here we call them
+     * again to make sure instances are initialized properly.
      *
      * @param testMethodExecutor Method executor.
      * @return Test result.
@@ -51,13 +58,13 @@ public class HelidonMethodExecutor implements ContainerMethodExecutor {
         RequestContextController controller = enricher.getRequestContextController();
         try {
             controller.activate();
-            Object object = testMethodExecutor.getInstance();
+            Object instance = testMethodExecutor.getInstance();
             Method method = testMethodExecutor.getMethod();
-            LOGGER.info("Invoking '" + method + "' on " + object);
-            enricher.enrich(object);
-            invokeAnnotated(object, Before.class);
+            LOGGER.info("Invoking '" + method + "' on " + instance);
+            enricher.enrich(instance);
+            invokeBefore(instance);
             testMethodExecutor.invoke(enricher.resolve(method));
-            invokeAnnotated(object, After.class);
+            invokeAfter(instance);
         } catch (Throwable t) {
             return TestResult.failed(t);
         } finally {
@@ -67,14 +74,34 @@ public class HelidonMethodExecutor implements ContainerMethodExecutor {
     }
 
     /**
+     * Invoke before methods.
+     *
+     * @param instance Test instance.
+     */
+    private static void invokeBefore(Object instance) {
+        invokeAnnotated(instance, Before.class);          // Junit
+        invokeAnnotated(instance, BeforeMethod.class);    // TestNG
+    }
+
+    /**
+     * Invoke after methods.
+     *
+     * @param instance Test instance.
+     */
+    private static void invokeAfter(Object instance) {
+        invokeAnnotated(instance, After.class);           // JUnit
+        invokeAnnotated(instance, AfterMethod.class);     // TestNG
+    }
+
+    /**
      * Invoke an annotated method.
      *
      * @param object Test instance.
      * @param annotClass Annotation to look for.
      */
-    private void invokeAnnotated(Object object, Class<? extends Annotation> annotClass) {
+    private static void invokeAnnotated(Object object, Class<? extends Annotation> annotClass) {
         Class<?> clazz = object.getClass();
-        Stream.of(clazz.getMethods())
+        Stream.of(clazz.getDeclaredMethods())
                 .filter(m -> m.getAnnotation(annotClass) != null)
                 .forEach(m -> {
                     try {

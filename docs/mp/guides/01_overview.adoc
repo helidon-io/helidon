@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Overview
+:h1Prefix: MP
 :description: Helidon MP Guides
 :keywords: helidon, java, microservices, microprofile, guides
 
@@ -123,7 +124,7 @@ both on your desktop and as part of a Docker image.
 --
 
 [CARD]
-.Custom Runtime Images using `jlink`
+.Custom Runtime Images using jlink
 [link=mp/guides/37_jlink_image.adoc]
 --
 Learn how to build a custom runtime Java image for your Helidon application

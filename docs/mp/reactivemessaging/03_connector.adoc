@@ -17,8 +17,13 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Connector
+:toc:
+:toc-placement: preamble
+:description: Reactive Messaging Connector in Helidon MP
+:keywords: helidon, mp, messaging, connector
+:h1Prefix: MP
 
-== Connector Bean
+== Messaging Connector Bean
 
 Messaging connector is just an application scoped bean which implements
 `IncomingConnectorFactory`, `OutgoingConnectorFactory` or both.
@@ -89,8 +94,7 @@ public class ExampleConnector implements IncomingConnectorFactory {
     @Override
     public PublisherBuilder<? extends Message<?>> getPublisherBuilder(final Config config) {
 
-        // Config context is merged from channel and connector contexts
-        String firstPropValue = config.getValue("first-test-prop", String.class);
+        String firstPropValue = config.getValue("first-test-prop", String.class);<1>
         String secondPropValue = config.getValue("second-test-prop", String.class);
 
         return ReactiveStreams.of(firstPropValue, secondPropValue)
@@ -98,17 +102,18 @@ public class ExampleConnector implements IncomingConnectorFactory {
     }
 }
 ----
+<1> Config context is merged from channel and connector contexts
 
 [source,yaml]
 .Example of channel to connector mapping config with custom properties:
 ----
-# Channel -> Connector mapping
-mp.messaging.incoming.from-connector-channel.connector: example-connector
-# Channel configuration properties
-mp.messaging.incoming.from-connector-channel.first-test-prop: foo
-# Connector configuration properties
-mp.messaging.connector.example-connector.second-test-prop: bar
+mp.messaging.incoming.from-connector-channel.connector: example-connector<1>
+mp.messaging.incoming.from-connector-channel.first-test-prop: foo<2>
+mp.messaging.connector.example-connector.second-test-prop: bar<3>
 ----
+<1> Channel -> Connector mapping
+<2> Channel configuration properties
+<3> Connector configuration properties
 
 [source,java]
 .Example consuming from connector:

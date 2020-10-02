@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Configuring the Server
+:h1Prefix: MP
 :description: Helidon MicroProfile server configuration
 :keywords: helidon, microprofile, micro-profile
 
@@ -44,21 +45,63 @@ server.port=7011
 # Helidon configuration (optional)
 
 # Length of queue for incoming connections. Default is 1024
-server.backlog: 512
+server.backlog=512
 # TCP receive window. Default is 0 to use implementation default
-server.receive-buffer: 256
+server.receive-buffer=256
 # Socket timeout milliseconds - defaults to 0 (infinite)
-server.timeout: 30000
+server.timeout=30000
 # Defaults to Runtime.availableProcessors()
 server.workers=4
-# Default is not to use SSL
-ssl:
- private-key:
-    keystore-resource-path: "certificate.p12"
-    keystore-passphrase: "abcd"
+----
+
+== Configuring TLS
+
+Helidon MP also supports custom TLS configuration.
+
+User is able to set following properties:
+
+* Server truststore
+    - Keystore with trusted certificates
+* Private key and certificate
+    - Server certificate which will be used in TLS handshake
+
+[source,properties]
+.META-INF/microprofile-config.properties - Server configuration
+----
+#Truststore setup
+server.tls.trust.keystore.resource.resource-path=server.p12
+server.tls.trust.keystore.passphrase=password
+server.tls.trust.keystore.trust-store=true
+
+#Keystore with private key and server certificate
+server.tls.private-key.keystore.resource.resource-path=server.p12
+server.tls.private-key.keystore.passphrase=password
+----
+
+Or the same configuration done in application.yaml file.
+
+[source,yaml]
+.application.yaml - Server configuration
+----
+server:
+  tls:
+    #Truststore setup
+    trust:
+      keystore:
+        passphrase: "password"
+        trust-store: true
+        resource:
+          resource-path: "keystore.p12"
+    #Keystore with private key and server certificate
+    private-key:
+      keystore:
+        passphrase: "password"
+        resource:
+          resource-path: "keystore.p12"
 ----
 
 == Configuring additional ports
+
 Helidon MP can expose multiple ports, with the following limitations:
 
 - The default port is the port that serves your application (JAX-RS applications and resources)
@@ -91,6 +134,7 @@ health:
 ----
 
 == Assigning JAX-RS applications to ports
+
 Since 1.4
 
 Helidon has the concept of named routings. These correspond to the named ports
@@ -107,7 +151,8 @@ The annotation has two attributes:
 - `value` that defines the routing name
 - `required` to mark that the routing name MUST be configured in Helidon server
 
-Example:
+[source,yaml]
+.`@RoutingName` example
 ----
 @ApplicationScoped
 @ApplicationPath("/admin")
@@ -121,12 +166,14 @@ The example above will be bound to `admin` routing (and port) and will fail if s
 is not configured.
 
 === Configuration override of routing name
+
 For each application class you can define the routing name and its required flag by specifying a configuration
 option `class-name.routing-name.name` and `class-name.routing-name.required`.
 
 Example (YAML) configuration for a class `io.helidon.examples.AdminApplication` that changes the
 routing name to `management` and its required flag to `false`:
 
+[source,yaml]
 ----
 io.helidon.examples.AdminApplication:
   routing-name:
@@ -135,6 +182,7 @@ io.helidon.examples.AdminApplication:
 ----
 
 == Overriding JAX-RS application path
+
 Since Helidon 1.4
 In JAX-RS we can use `@ApplicationPath` to configure a path the JAX-RS application is available on.
 As this is compiled into the source code, Helidon provides a way to override this using configuration.
@@ -145,6 +193,7 @@ option `class-name.routing-path.path`.
 Example (YAML) configuration for a class `io.helidon.example.AdminApplication` that changes the
 routing path to `/management`:
 
+[source,yaml]
 ----
 io.helidon.examples.AdminApplication:
   routing-path:
@@ -152,8 +201,10 @@ io.helidon.examples.AdminApplication:
 ----
 
 == Example configuration of JAX-RS application
+
 A full configuration example (YAML):
 
+[source,yaml]
 ----
 server:
   port: 8080

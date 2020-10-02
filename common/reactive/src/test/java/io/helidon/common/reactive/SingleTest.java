@@ -16,12 +16,16 @@
 package io.helidon.common.reactive;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.Flow.Subscription;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.Test;
 
@@ -33,12 +37,15 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * {@link Single} test.
  */
 public class SingleTest {
+
+    static final String TEST_PAYLOAD = "test-payload";
 
     @Test
     public void testJust() {
@@ -151,6 +158,22 @@ public class SingleTest {
     }
 
     @Test
+    public void testNeverIsNotSingleton() throws InterruptedException, TimeoutException, ExecutionException {
+        CompletableFuture<Void> cf1 = new CompletableFuture<>();
+        CompletableFuture<Void> cf2 = new CompletableFuture<>();
+        Single<Object> never1 = Single.never();
+        Single<Object> never2 = Single.never();
+
+        never1.onCancel(() -> cf1.complete(null));
+        never2.onCancel(() -> cf2.complete(null));
+        never1.cancel();
+
+        cf1.get(100, TimeUnit.MILLISECONDS);
+        assertThat("First Single.never should be cancelled!", cf1.isDone());
+        assertThat("Other Single.never should NOT be cancelled!", !cf2.isDone());
+    }
+
+    @Test
     public void testMap() {
         SingleTestSubscriber<String> subscriber = new SingleTestSubscriber<>();
         Single.just("foo").map(String::toUpperCase).subscribe(subscriber);
@@ -164,14 +187,14 @@ public class SingleTest {
         try {
             Single.just("foo").map(null);
             fail("NullPointerException should be thrown");
-        } catch(NullPointerException ex) {
+        } catch (NullPointerException ex) {
         }
     }
 
     @Test
     public void testMapBadMapperNullValue() {
         SingleTestSubscriber<String> subscriber = new SingleTestSubscriber<>();
-        Single.just("bar").map((s) -> (String)null).subscribe(subscriber);
+        Single.just("bar").map((s) -> (String) null).subscribe(subscriber);
         assertThat(subscriber.isComplete(), is(equalTo(false)));
         assertThat(subscriber.getLastError(), is(instanceOf(NullPointerException.class)));
         assertThat(subscriber.getItems(), is(empty()));
@@ -207,7 +230,7 @@ public class SingleTest {
     @Test
     public void testFromPublisher() {
         SingleTestSubscriber<String> subscriber = new SingleTestSubscriber<>();
-        Single.from(new TestPublisher<>("foo")).subscribe(subscriber);
+        Single.create(new TestPublisher<>("foo")).subscribe(subscriber);
         assertThat(subscriber.isComplete(), is(equalTo(true)));
         assertThat(subscriber.getLastError(), is(nullValue()));
         assertThat(subscriber.getItems(), hasItems("foo"));
@@ -216,7 +239,7 @@ public class SingleTest {
     @Test
     public void testFromPublisherMoreThanOne() {
         SingleTestSubscriber<String> subscriber = new SingleTestSubscriber<>();
-        Single.from(new TestPublisher<>("foo", "bar")).subscribe(subscriber);
+        Single.create(new TestPublisher<>("foo", "bar")).subscribe(subscriber);
         assertThat(subscriber.isComplete(), is(equalTo(false)));
         assertThat(subscriber.getLastError(), is(instanceOf(IllegalStateException.class)));
         assertThat(subscriber.getItems(), is(empty()));
@@ -225,14 +248,14 @@ public class SingleTest {
     @Test
     public void testFromSingle() {
         Single<String> single = Single.just("foo");
-        assertThat(Single.from(single), is(equalTo(single)));
+        assertThat(Single.create(single), is(equalTo(single)));
     }
 
     @Test
     public void testFlatMap() {
         SingleTestSubscriber<String> subscriber = new SingleTestSubscriber<>();
         Single.just("f.o.o")
-                .flatMap((str) ->  new TestPublisher<>(str.split("\\.")))
+                .flatMap((str) -> new TestPublisher<>(str.split("\\.")))
                 .subscribe(subscriber);
         assertThat(subscriber.isComplete(), is(equalTo(true)));
         assertThat(subscriber.getLastError(), is(nullValue()));
@@ -277,7 +300,7 @@ public class SingleTest {
         try {
             Single.just("bar").flatMap(null);
             fail("NullPointerException should have been thrown");
-        } catch(NullPointerException ex) {
+        } catch (NullPointerException ex) {
         }
     }
 
@@ -298,8 +321,8 @@ public class SingleTest {
         };
         try {
             single.get(1, TimeUnit.SECONDS);
-        } catch(ExecutionException ex) {
-           assertThat(ex.getCause(), is(instanceOf(IllegalStateException.class)));
+        } catch (ExecutionException ex) {
+            assertThat(ex.getCause(), is(instanceOf(IllegalStateException.class)));
         }
     }
 
@@ -307,8 +330,8 @@ public class SingleTest {
     public void testEmptyToFuture() throws InterruptedException, TimeoutException {
         try {
             Single.<Object>empty().get(1, TimeUnit.SECONDS);
-        } catch(ExecutionException ex) {
-           assertThat(ex.getCause(), is(instanceOf(IllegalStateException.class)));
+        } catch (ExecutionException ex) {
+            assertThat(ex.getCause(), is(instanceOf(IllegalStateException.class)));
         }
     }
 
@@ -332,8 +355,8 @@ public class SingleTest {
         };
         try {
             single.get(1, TimeUnit.SECONDS);
-        } catch(ExecutionException ex) {
-           assertThat(ex.getCause(), is(instanceOf(IllegalStateException.class)));
+        } catch (ExecutionException ex) {
+            assertThat(ex.getCause(), is(instanceOf(IllegalStateException.class)));
         }
     }
 
@@ -439,6 +462,174 @@ public class SingleTest {
                 .await(100, TimeUnit.MILLISECONDS);
 
         assertThat(result, is(equalTo(1)));
+    }
+
+    @Test
+    void testSingleOnComplete() throws InterruptedException, ExecutionException, TimeoutException {
+        CompletableFuture<Void> onCompleteFuture = new CompletableFuture<>();
+
+        assertThat(Single.just(TEST_PAYLOAD)
+                .onComplete(() -> onCompleteFuture.complete(null))
+                .await(100, TimeUnit.MILLISECONDS), is(equalTo(TEST_PAYLOAD)));
+        onCompleteFuture.get(100, TimeUnit.MILLISECONDS);
+    }
+
+    @Test
+    void testSingleOnCancel() throws InterruptedException {
+        CountDownLatch onCancelCnt = new CountDownLatch(5);
+        CountDownLatch onCompleteCnt = new CountDownLatch(2);
+        CountDownLatch onErrCnt = new CountDownLatch(1);
+        Single.just(TEST_PAYLOAD)
+                .onComplete(onCompleteCnt::countDown)
+                .map(String::toUpperCase)
+                .onCancel(onCancelCnt::countDown)
+                .onCancel(onCancelCnt::countDown)
+                .map(String::toUpperCase)
+                .onCancel(onCancelCnt::countDown)
+                .map(String::toLowerCase)
+                .onCancel(onCancelCnt::countDown)
+                .onCancel(onCancelCnt::countDown)
+                .onError(throwable -> onErrCnt.countDown())
+                .onComplete(onCompleteCnt::countDown)
+                .cancel();
+
+        onCancelCnt.await(100, TimeUnit.MILLISECONDS);
+        assertThat("At least one test onCancel callback was not called",
+                onCancelCnt.getCount(), is(equalTo(0L)));
+
+        onCompleteCnt.await(5, TimeUnit.MILLISECONDS);
+        assertThat("OnError callback was not expected",
+                onCompleteCnt.getCount(), is(equalTo(2L)));
+
+        onErrCnt.await(5, TimeUnit.MILLISECONDS);
+        assertThat("",
+                onErrCnt.getCount(), is(equalTo(1L)));
+    }
+
+    @Test
+    void testForSingle() {
+        AtomicInteger onCancelCnt = new AtomicInteger(0);
+        AtomicInteger onCompleteCnt = new AtomicInteger(0);
+        AtomicInteger onErrorCnt = new AtomicInteger(0);
+        CompletableFuture<String> result = new CompletableFuture<>();
+
+        Single.just(TEST_PAYLOAD)
+                .onCancel(onCancelCnt::incrementAndGet)
+                .onComplete(onCompleteCnt::incrementAndGet)
+                .onError(t -> onErrorCnt.incrementAndGet())
+                .forSingle(result::complete);
+
+        assertThat(Single.create(result).await(300, TimeUnit.MILLISECONDS), is(TEST_PAYLOAD));
+        assertThat(onCancelCnt.get(), is(0));
+        assertThat(onErrorCnt.get(), is(0));
+        assertThat(onCompleteCnt.get(), is(1));
+    }
+
+    @Test
+    void testForSingleErrorAwait() throws InterruptedException {
+        AtomicInteger onCancelCnt = new AtomicInteger(0);
+        AtomicInteger onCompleteCnt = new AtomicInteger(0);
+        CountDownLatch onErrorCnt = new CountDownLatch(1);
+        CompletableFuture<String> result = new CompletableFuture<>();
+
+        RuntimeException testException = new RuntimeException("BOOM!!!");
+
+        CompletionException actualException = assertThrows(CompletionException.class,
+                () -> Single.<String>error(testException)
+                        .onCancel(onCancelCnt::incrementAndGet)
+                        .onComplete(onCompleteCnt::incrementAndGet)
+                        .onError(t -> onErrorCnt.countDown())
+                        .forSingle(result::complete)
+                        .await(300, TimeUnit.MILLISECONDS));
+
+        assertThat(onErrorCnt.await(300, TimeUnit.MILLISECONDS), is(true));
+        assertThat(actualException.getCause(), is(testException));
+        assertThat(result.isDone(), is(false));
+        assertThat(onCancelCnt.get(), is(0));
+        assertThat(onCompleteCnt.get(), is(0));
+    }
+
+    @Test
+    void testForSingleErrorNoAwait() throws InterruptedException {
+        AtomicInteger onCancelCnt = new AtomicInteger(0);
+        AtomicInteger onCompleteCnt = new AtomicInteger(0);
+        CountDownLatch onErrorCnt = new CountDownLatch(1);
+        CompletableFuture<String> result = new CompletableFuture<>();
+
+        RuntimeException testException = new RuntimeException("BOOM!!!");
+
+        Single.<String>error(testException)
+                .onCancel(onCancelCnt::incrementAndGet)
+                .onComplete(onCompleteCnt::incrementAndGet)
+                .onError(t -> onErrorCnt.countDown())
+                .forSingle(result::complete);
+
+        assertThat(onErrorCnt.await(300, TimeUnit.MILLISECONDS), is(true));
+        assertThat(result.isDone(), is(false));
+        assertThat(onCancelCnt.get(), is(0));
+        assertThat(onCompleteCnt.get(), is(0));
+    }
+
+    @Test
+    void testForSingleException() {
+        AtomicInteger onCancelCnt = new AtomicInteger(0);
+        AtomicInteger onCompleteCnt = new AtomicInteger(0);
+        AtomicInteger onErrorCnt = new AtomicInteger(0);
+        CompletableFuture<Throwable> result = new CompletableFuture<>();
+
+        RuntimeException testException = new RuntimeException("BOOM!!!");
+
+        Single.just(TEST_PAYLOAD)
+                .onCancel(onCancelCnt::incrementAndGet)
+                .onComplete(onCompleteCnt::incrementAndGet)
+                .onError(t -> onErrorCnt.incrementAndGet())
+                .forSingle(s -> {
+                    throw testException;
+                })
+                .exceptionallyAccept(result::complete);
+
+        assertThat(Single.create(result).await(300, TimeUnit.MILLISECONDS).getCause(), is(testException));
+        assertThat(onCancelCnt.get(), is(0));
+        assertThat(onErrorCnt.get(), is(0));
+        assertThat(onCompleteCnt.get(), is(1));
+    }
+
+    @Test
+    void testTraditionalExceptionallyWithFunction() {
+        CompletableFuture<Throwable> exceptionallyFuture = new CompletableFuture<>();
+
+        RuntimeException testException = new RuntimeException("BOOM!!!");
+        Single.error(testException)
+                .exceptionally(value -> {
+                    exceptionallyFuture.complete(value);
+                    return null;
+                })
+                .await(300, TimeUnit.MILLISECONDS);
+
+        assertThat(Single.create(exceptionallyFuture).await(300, TimeUnit.MILLISECONDS), is(testException));
+    }
+
+    @Test
+    void testExceptionallyWithConsumer() {
+        CompletableFuture<Throwable> exceptionallyFuture = new CompletableFuture<>();
+
+        RuntimeException testException = new RuntimeException("BOOM!!!");
+        Single.error(testException)
+                .exceptionallyAccept(exceptionallyFuture::complete)
+                .await(300, TimeUnit.MILLISECONDS);
+
+        assertThat(Single.create(exceptionallyFuture).await(300, TimeUnit.MILLISECONDS), is(testException));
+    }
+
+    @Test
+    void testExceptionallyWithoutException() {
+        CompletableFuture<Throwable> exceptionallyFuture = new CompletableFuture<>();
+
+        String result = Single.just(TEST_PAYLOAD)
+                .exceptionallyAccept(exceptionallyFuture::complete)
+                .await(300, TimeUnit.MILLISECONDS);
+
+        assertThat(result, is(TEST_PAYLOAD));
     }
 
     private static class SingleTestSubscriber<T> extends TestSubscriber<T> {

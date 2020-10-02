@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import io.helidon.grpc.metrics.GrpcMetrics;
 import io.helidon.grpc.server.ServiceDescriptor;
 import io.helidon.microprofile.grpc.core.AnnotatedMethod;
 import io.helidon.microprofile.grpc.core.AnnotatedMethodList;
-import io.helidon.microprofile.grpc.core.RpcMethod;
+import io.helidon.microprofile.grpc.core.GrpcMethod;
 import io.helidon.microprofile.grpc.server.AnnotatedServiceConfigurer;
 import io.helidon.microprofile.grpc.server.GrpcServiceBuilder;
 import io.helidon.microprofile.metrics.MetricUtil;
@@ -101,7 +101,7 @@ public class MetricsConfigurer
                              String name,
                              boolean absolute) {
 
-        RpcMethod rpcMethod = annotatedMethod.firstAnnotationOrMetaAnnotation(RpcMethod.class);
+        GrpcMethod rpcMethod = annotatedMethod.firstAnnotationOrMetaAnnotation(GrpcMethod.class);
         if (rpcMethod != null) {
             Method method = findAnnotatedMethod(annotatedMethod, annotation.annotationType());
             Class<?> annotatedClass = method.getDeclaringClass();

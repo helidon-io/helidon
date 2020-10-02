@@ -16,13 +16,13 @@
 
 package io.helidon.config.mp;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.Iterator;
 
 import io.helidon.config.ConfigSources;
+import io.helidon.config.OverrideSources;
 
 import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.spi.ConfigSource;
 
 /**
  * Utilities for Helidon MicroProfile Config implementation.
@@ -43,36 +43,34 @@ public final class MpConfig {
      * @param mpConfig MP Config instance
      * @return a new Helidon config using only the mpConfig as its config source
      */
-    @SuppressWarnings("unchecked")
     public static io.helidon.config.Config toHelidonConfig(Config mpConfig) {
         if (mpConfig instanceof io.helidon.config.Config) {
             return (io.helidon.config.Config) mpConfig;
         }
 
-        io.helidon.config.Config.Builder builder = io.helidon.config.Config.builder()
-                .disableEnvironmentVariablesSource()
-                .disableSystemPropertiesSource()
-                .disableCaching()
-                .disableParserServices();
-
-        if (mpConfig instanceof MpConfigImpl) {
-            ((MpConfigImpl) mpConfig).converters()
-                    .forEach((clazz, converter) -> {
-                        Class<Object> cl = (Class<Object>) clazz;
-                        builder.addStringMapper(cl, converter::convert);
-                    });
+        // If the mpConfig is based on an SE config (such as when we use meta configuration)
+        // we must reuse that se config instance
+        Iterator<ConfigSource> configSources = mpConfig.getConfigSources().iterator();
+        ConfigSource first = configSources.hasNext() ? configSources.next() : null;
+        if (!configSources.hasNext() && first instanceof MpHelidonConfigSource) {
+            // we only have Helidon SE config as a source - let's just use it
+            return ((MpHelidonConfigSource) first).unwrap();
         }
 
-        Map<String, String> allConfig = new HashMap<>();
-        mpConfig.getPropertyNames()
-                .forEach(it -> {
-                    // covering the condition where a config key disappears between getting the property names and requesting
-                    // the value
-                    Optional<String> optionalValue = mpConfig.getOptionalValue(it, String.class);
-                    optionalValue.ifPresent(value -> allConfig.put(it, value));
-                });
-
-        return builder.addSource(ConfigSources.create(allConfig))
+        // we use Helidon SE config to handle object mapping (and possible other mappers on classpath)
+        io.helidon.config.Config mapper = io.helidon.config.Config.builder()
+                .sources(ConfigSources.empty())
+                .overrides(OverrideSources.empty())
+                .disableEnvironmentVariablesSource()
+                .disableSystemPropertiesSource()
+                .disableParserServices()
+                .disableFilterServices()
+                .disableCaching()
+                .disableValueResolving()
+                .changesExecutor(command -> {
+                })
                 .build();
+
+        return new SeConfig(mapper, mpConfig);
     }
 }

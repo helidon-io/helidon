@@ -15,12 +15,14 @@
  */
 package io.helidon.media.common;
 
-import java.util.concurrent.Flow.Processor;
+import java.util.concurrent.Flow;
+import java.util.function.Function;
 
 import io.helidon.common.http.DataChunk;
 
 /**
- * Reactive contract for processing message body content.
+ * Function to filter or replace message body content publisher.
+ * It can be used for various purposes, for example data coding, logging, filtering, caching, etc.
  */
-public interface MessageBodyFilter extends Processor<DataChunk, DataChunk> {
+public interface MessageBodyFilter extends Function<Flow.Publisher<DataChunk>, Flow.Publisher<DataChunk>> {
 }

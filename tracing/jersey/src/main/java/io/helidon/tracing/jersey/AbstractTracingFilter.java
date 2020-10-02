@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.container.PreMatching;
 
-import io.helidon.common.HelidonFeatures;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.tracing.config.SpanTracingConfig;
@@ -51,10 +50,6 @@ public abstract class AbstractTracingFilter implements ContainerRequestFilter, C
 
     private static final String SPAN_PROPERTY = AbstractTracingFilter.class.getName() + ".span";
     private static final String SPAN_SCOPE_PROPERTY = AbstractTracingFilter.class.getName() + ".spanScope";
-
-    static {
-        HelidonFeatures.register("Tracing", "Integration", "Jersey");
-    }
 
     @Override
     public void filter(ContainerRequestContext requestContext) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,22 +17,23 @@ package io.helidon.tests.integration.dbclient.common.tests.dbresult;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.Flow.Subscription;
 import java.util.logging.Logger;
 
+import io.helidon.common.reactive.Multi;
 import io.helidon.dbclient.DbRow;
-import io.helidon.dbclient.DbRows;
 import io.helidon.tests.integration.dbclient.common.AbstractIT.Type;
 
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.tests.integration.dbclient.common.AbstractIT.DB_CLIENT;
 import static io.helidon.tests.integration.dbclient.common.AbstractIT.TYPES;
-
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -141,16 +142,13 @@ public class FlowControlIT {
     /**
      * Source data verification.
      *
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
-    public void testSourceData() throws ExecutionException, InterruptedException {
-        DbRows<DbRow> rows = DB_CLIENT.execute(exec -> exec
-                .namedQuery("select-types")
-        ).toCompletableFuture().get();
+    public void testSourceData() {
+        Multi<DbRow> rows = DB_CLIENT.execute(exec -> exec
+                .namedQuery("select-types"));
         assertThat(rows, notNullValue());
-        List<DbRow> list = rows.collect().toCompletableFuture().get();
+        List<DbRow> list = rows.collectList().await();
         assertThat(list, not(empty()));
         assertThat(list.size(), equalTo(18));
         for (DbRow row : list) {
@@ -165,17 +163,16 @@ public class FlowControlIT {
     /**
      * Flow control test.
      *
-     * @throws ExecutionException when database query failed
      * @throws InterruptedException if the current thread was interrupted
      */
     @Test
-    public void testFlowControl() throws ExecutionException, InterruptedException {
+    public void testFlowControl() throws InterruptedException {
         CompletableFuture<Long> rowsFuture = new CompletableFuture<>();
         TestSubscriber subscriber = new TestSubscriber();
-        DbRows<DbRow> rows = DB_CLIENT.execute(exec -> exec
-                .namedQuery("select-types")
-        ).toCompletableFuture().get();
-        rows.publisher().subscribe(subscriber);
+        Multi<DbRow> rows = DB_CLIENT.execute(exec -> exec
+                .namedQuery("select-types"));
+
+        rows.subscribe(subscriber);
         while (!subscriber.finished) {
             synchronized (subscriber) {
                 try {

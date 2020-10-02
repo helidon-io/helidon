@@ -1,6 +1,7 @@
 {
     "annotated":[
-        "javax.persistence.Entity"
+        "javax.persistence.Entity",
+        "javax.persistence.MappedSuperclass"
     ],
     "class-hierarchy": [
         "javax.xml.stream.XMLEventFactory",

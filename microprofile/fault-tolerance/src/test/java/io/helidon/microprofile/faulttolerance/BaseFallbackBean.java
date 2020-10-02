@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,11 @@
 package io.helidon.microprofile.faulttolerance;
 
 /**
- * Class BaseFallbackBean.
+ * Provides common methods to handle fallbacks.
  */
-public class BaseFallbackBean {
+class BaseFallbackBean {
 
-    protected String onFailureBase () {
+    protected String onFailureBase() {
         FaultToleranceTest.printStatus("FallbackBean::onFailure()", "success");
         return "fallback";
     }

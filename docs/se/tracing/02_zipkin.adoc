@@ -19,71 +19,7 @@
 = Zipkin Tracing
 :description: Helidon Tracing Support
 :keywords: helidon, tracing, zipkin
+:h1Prefix: SE
+:zipkin-page: ../../shared/tracing/tracer-zipkin.adoc
 
-Helidon is integrated with the Zipkin tracer.
-
-The Zipkin builder is loaded through `ServiceLoader` and configured. You could
-also use the Zipkin builder directly, though this would create a source-code dependency
-on the Zipkin tracer.
-
-
-== Prerequisites
-To use Zipkin as a tracer,
-    add the following dependency to your project:
-
-[source,xml]
-----
-<dependency>
-    <groupId>io.helidon.tracing</groupId>
-    <artifactId>helidon-tracing-zipkin</artifactId>
-</dependency>
-----
-
-== Configuring Zipkin
-
-The Zipkin tracer supports the following configuration options:
-
-|===
-|Key            |Default value      |Builder method     |Description
-
-|service        |N/A                |serviceName        |Name of the service, to distinguish traces crossing service boundaries;
-                                                            Zipkin is using lower-case only, name will be automatically lower-cased
-|protocol       |http               |collectorProtocol  |Protocol of the Zipkin trace collector (http or https)
-|host           |localhost          |collectorHost      |Host of the Zipkin trace collector (IP Address, hostname, or FQDN)
-|port           |9411               |collectorPort      |Port of the Zipkin trace collector
-|path           |defined by version |collectorPath      |Path of the Zipkin trace collector, each version uses a different path
-                                                            by default.
-|api-version    |2                  |version            |Zipkin specific method, set the protocol version to communicate with
-                                                            trace collector
-|enabled        |true               |enabled            |If set to false, tracing would be disabled
-|tags           |N/A                |addTracerTag(String, String) |`String` tags to add to each span
-|boolean-tags   |N/A                |addTracerTag(String, boolean)|`boolean` tags to add to each span
-|int-tags       |N/A                |addTracerTag(String, int)    |`int` tags to add to each span
-|===
-
-The following is an example of a Zipkin configuration, specified in the YAML format.
-[source,yaml]
-----
-tracing:
-  zipkin:
-    service: "helidon-service"
-    protocol: "https"
-    host: "192.168.1.1"
-    port: 9987
-    api-version: 1
-    # this is the default path for API version 2
-    path: "/api/v2/spans"
-    tags:
-      tag1: "tag1-value"
-      tag2: "tag2-value"
-    boolean-tags:
-      tag3: true
-      tag4: false
-    int-tags:
-      tag5: 145
-      tag6: 741
-----
-
-Example of Zipkin trace:
-
-image::webserver/zipkin.png[Zipkin example, align="center"]
+include::{zipkin-page}[]

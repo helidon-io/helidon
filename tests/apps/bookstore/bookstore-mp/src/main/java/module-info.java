@@ -28,7 +28,7 @@ module io.helidon.tests.apps.bookstore.mp {
 
     requires io.helidon.tests.apps.bookstore.common;
 
-    opens io.helidon.tests.apps.bookstore.mp to weld.core.impl;
+    opens io.helidon.tests.apps.bookstore.mp to io.helidon.microprofile.cdi,weld.core.impl;
 
     exports io.helidon.tests.apps.bookstore.mp;
 }

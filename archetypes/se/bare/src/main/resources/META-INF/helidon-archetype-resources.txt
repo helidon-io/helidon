@@ -1,8 +1,0 @@
-pom.xml.mustache
-src/main/java/__pkg__/Main.java.mustache
-src/main/java/__pkg__/GreetService.java.mustache
-src/main/java/__pkg__/package-info.java.mustache
-src/main/resources/application.yaml
-src/main/resources/logging.properties
-src/main/resources/native-image/reflect-config.json
-src/test/java/__pkg__/MainTest.java.mustache

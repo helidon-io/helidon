@@ -64,6 +64,9 @@ build/
 node_modules/
 node/
 
+# Helidon CLI
+.helidon
+
 # Other
 *~
 user.txt

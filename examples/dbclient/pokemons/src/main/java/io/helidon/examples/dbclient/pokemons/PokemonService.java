@@ -25,7 +25,6 @@ import javax.json.JsonObject;
 import io.helidon.common.http.Http;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbRow;
-import io.helidon.dbclient.DbRows;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
@@ -94,11 +93,8 @@ public class PokemonService implements Service {
      * @param response the server response
      */
     private void listTypes(ServerRequest request, ServerResponse response) {
-        dbClient.execute(exec -> exec.namedQuery("select-all-types"))
-                .thenApply(it -> it.map(JsonObject.class))
-                .thenApply(DbRows::publisher)
-                .thenAccept(it -> response.send(it, JsonObject.class))
-                .exceptionally(throwable -> sendError(throwable, response));
+        response.send(dbClient.execute(exec -> exec.namedQuery("select-all-types"))
+                .map(it -> it.as(JsonObject.class)), JsonObject.class);
     }
 
     /**
@@ -110,11 +106,8 @@ public class PokemonService implements Service {
      * @param response the server response
      */
     private void listPokemons(ServerRequest request, ServerResponse response) {
-        dbClient.execute(exec -> exec.namedQuery("select-all-pokemons"))
-                .thenApply(it -> it.map(JsonObject.class))
-                .thenApply(DbRows::publisher)
-                .thenAccept(it -> response.send(it, JsonObject.class))
-                .exceptionally(throwable -> sendError(throwable, response));
+        response.send(dbClient.execute(exec -> exec.namedQuery("select-all-pokemons"))
+                .map(it -> it.as(JsonObject.class)), JsonObject.class);
     }
 
     /**
@@ -149,8 +142,13 @@ public class PokemonService implements Service {
     private void getPokemonByName(ServerRequest request, ServerResponse response) {
         String pokemonName = request.path().param("name");
         dbClient.execute(exec -> exec.namedGet("select-pokemon-by-name", pokemonName))
-                .onEmpty(() -> sendNotFound(response, "Pokemon " + pokemonName + " not found"))
-                .onValue(row -> sendRow(row, response))
+                .thenAccept(it -> {
+                    if (it.isEmpty()) {
+                        sendNotFound(response, "Pokemon " + pokemonName + " not found");
+                    } else {
+                        sendRow(it.get(), response);
+                    }
+                })
                 .exceptionally(throwable -> sendError(throwable, response));
     }
 

@@ -85,6 +85,6 @@ service.submit(() -> {...});
 Using the context (`HelidonDb`):
 ```java
 Executors.context()
-         .ifPresent(context -> interceptors
+         .ifPresent(context -> services
               .forEach(interceptor -> interceptor.statement(context, statementName, statement, statementFuture)));
 ```

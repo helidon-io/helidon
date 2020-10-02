@@ -35,8 +35,8 @@ public class ConcatPublisher2TckTest extends FlowPublisherVerification<Integer> 
     public Flow.Publisher<Integer> createFlowPublisher(long n) {
         int firstHalf = (int)Math.min(n, 1); // trigger the switch to the 2nd source early
         return ConcatPublisher.create(
-                Multi.from(() -> IntStream.range(0, firstHalf).boxed().iterator()),
-                Multi.from(() -> IntStream.range(firstHalf, (int)n).boxed().iterator())
+                Multi.create(() -> IntStream.range(0, firstHalf).boxed().iterator()),
+                Multi.create(() -> IntStream.range(firstHalf, (int)n).boxed().iterator())
         );
     }
 

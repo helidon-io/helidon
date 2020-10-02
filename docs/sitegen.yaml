@@ -46,6 +46,7 @@ pages:
       excludes:
         - "se/grpc/09_marshalling.adoc"
         - "common/**"
+        - "shared/**"
 backend:
     name: "vuetify"
     homePage: "about/01_overview.adoc"
@@ -58,6 +59,7 @@ backend:
         value: "images/helidon_logo_dark.svg"
       items:
         - title: "Introduction"
+          pathprefix: "/about"
           items:
             - title: "About"
               pathprefix: "/about"
@@ -68,6 +70,7 @@ backend:
                 - includes:
                     - "about/*.adoc"
         - title: "Helidon SE"
+          pathprefix: "/se"
           items:
             - title: "Introduction"
               pathprefix: "/se/introduction"
@@ -197,7 +200,24 @@ backend:
               items:
                 - includes:
                     - "se/websocket/*.adoc"
+            - title: "AOT"
+              pathprefix: "/se/aot"
+              glyph:
+                type: "icon"
+                value: "save"
+              items:
+                - includes:
+                    - "se/aot/*.adoc"
+            - title: "Fault Tolerance"
+              pathprefix: "/se/faulttolerance"
+              glyph:
+                type: "icon"
+                value: "warning"
+              items:
+                - includes:
+                    - "se/faulttolerance/*.adoc"
         - title: "Helidon MP"
+          pathprefix: "/mp"
           items:
             - title: "Introduction"
               pathprefix: "/mp/introduction"
@@ -237,8 +257,18 @@ backend:
                 type: "icon"
                 value: "share"
               items:
-                - includes:
+                - excludes:
+                    - "mp/cors/hide*.adoc"
+                  includes:
                     - "mp/cors/*.adoc"
+            - title: "Fault Tolerance"
+              pathprefix: "/mp/faulttolerance"
+              glyph:
+                type: "icon"
+                value: "warning"
+              items:
+                  - includes:
+                    - "mp/faulttolerance/*.adoc"
             - title: "gRPC server"
               pathprefix: "/mp/grpc"
               glyph:
@@ -343,6 +373,22 @@ backend:
               items:
                 - includes:
                     - "mp/websocket/*.adoc"
+            - title: "AOT"
+              pathprefix: "/mp/aot"
+              glyph:
+                type: "icon"
+                value: "save"
+              items:
+                - includes:
+                    - "mp/aot/*.adoc"
+            - title: "Testing"
+              pathprefix: "/mp/testing"
+              glyph:
+                type: "icon"
+                value: "thumbs_up_down"
+              items:
+                - includes:
+                    - "mp/testing/*.adoc"
         - title: "Additional resources"
           items:
             - title: "Javadocs"

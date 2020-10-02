@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ import java.util.function.Supplier;
  *
  * @param <T> type of the provided object
  */
-@FunctionalInterface
 public interface LazyValue<T> extends Supplier<T> {
     /**
      * Create a lazy value from a supplier.
@@ -47,7 +46,13 @@ public interface LazyValue<T> extends Supplier<T> {
      * @return a lazy value that will always return the value provided
      */
     static <T> LazyValue<T> create(T value) {
-        return () -> value;
+        return new LazyValueImpl<>(value);
     }
 
+    /**
+     * Return true if the value is loaded, false if the supplier was not invoked.
+     *
+     * @return {@code true} if the value is loaded
+     */
+    boolean isLoaded();
 }

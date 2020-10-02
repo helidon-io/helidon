@@ -26,53 +26,50 @@ import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.mapper.Mapper;
-import io.helidon.common.reactive.RetrySchema;
 import io.helidon.common.reactive.Single;
-
-import static io.helidon.media.common.ByteChannelBodyWriter.DEFAULT_RETRY_SCHEMA;
 
 /**
  * Message body writer for {@link Path}.
  */
-public final class PathBodyWriter implements MessageBodyWriter<Path> {
+final class PathBodyWriter implements MessageBodyWriter<Path> {
+
+    private static final PathBodyWriter DEFAULT = new PathBodyWriter();
 
     /**
-     * Enforces the use of {@link #get()}.
+     * Enforces the use of {@link #create()}.
      */
     private PathBodyWriter() {
     }
 
     @Override
-    public boolean accept(GenericType<?> type, MessageBodyWriterContext context) {
-        return Path.class.isAssignableFrom(type.rawType());
+    public PredicateResult accept(GenericType<?> type, MessageBodyWriterContext context) {
+        return PredicateResult.supports(Path.class, type);
     }
 
     @Override
     public Publisher<DataChunk> write(Single<? extends Path> content,
                                       GenericType<? extends Path> type,
                                       MessageBodyWriterContext context) {
-        return content.flatMap(new PathToChunks(DEFAULT_RETRY_SCHEMA, context));
+        return content.flatMap(new PathToChunks(context));
     }
 
     /**
      * Create a new of of {@link PathBodyWriter}.
      * @return new {@link Path} message body writer.
      */
-    public static PathBodyWriter create() {
-        return new PathBodyWriter();
+    static PathBodyWriter create() {
+        return DEFAULT;
     }
 
     /**
-     * Implementation of {@link MultiMapper} that converts a {@link Path} to a
+     * Implementation of {@link Mapper} that converts a {@link Path} to a
      * publisher of {@link DataChunk}.
      */
     private static final class PathToChunks implements Mapper<Path, Publisher<DataChunk>> {
 
-        private final RetrySchema schema;
         private final MessageBodyWriterContext context;
 
-        PathToChunks(RetrySchema schema, MessageBodyWriterContext context) {
-            this.schema = schema;
+        PathToChunks(MessageBodyWriterContext context) {
             this.context = context;
         }
 
@@ -82,7 +79,7 @@ public final class PathBodyWriter implements MessageBodyWriter<Path> {
                 context.contentType(MediaType.APPLICATION_OCTET_STREAM);
                 context.contentLength(Files.size(path));
                 FileChannel fc = FileChannel.open(path, StandardOpenOption.READ);
-                return new ReadableByteChannelPublisher(fc, schema);
+                return ContentWriters.byteChannelWriter().apply(fc);
             } catch (IOException ex) {
                 return Single.<DataChunk>error(ex);
             }

@@ -19,15 +19,13 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.time.Duration;
-import java.time.temporal.TemporalUnit;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.ServiceLoader;
-import java.util.stream.Collectors;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 import io.helidon.common.context.Context;
 import io.helidon.common.http.Http;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
@@ -55,6 +53,16 @@ public interface WebClient {
      */
     static WebClient create() {
         return builder().build();
+    }
+
+    /**
+     * Create a new WebClient based on {@link Config}.
+     *
+     * @param config client config
+     * @return client
+     */
+    static WebClient create(Config config) {
+        return builder().config(config).build();
     }
 
     /**
@@ -135,13 +143,10 @@ public interface WebClient {
                                    ParentingMediaContextBuilder<Builder>,
                                    MediaContextBuilder<Builder> {
 
-        static {
-            HelidonFeatures.register(HelidonFlavor.SE, "WebClient");
-        }
-
         private final WebClientConfiguration.Builder<?, ?> configuration = NettyClient.SHARED_CONFIGURATION.get().derive();
         private final HelidonServiceLoader.Builder<WebClientServiceProvider> services = HelidonServiceLoader
                 .builder(ServiceLoader.load(WebClientServiceProvider.class));
+        private final List<WebClientService> webClientServices = new ArrayList<>();
 
         private Config config = Config.empty();
 
@@ -159,30 +164,19 @@ public interface WebClient {
          * @param service client service instance
          * @return updated builder instance
          */
-        public Builder register(WebClientService service) {
-            services.addService(new WebClientServiceProvider() {
-                @Override
-                public String configKey() {
-                    return "ignored";
-                }
-
-                @Override
-                public WebClientService create(Config config) {
-                    return service;
-                }
-            });
+        public Builder addService(WebClientService service) {
+            webClientServices.add(service);
             return this;
         }
 
         /**
-         * Exclude specific {@link WebClientServiceProvider} provider from being loaded.
+         * Register new instance of {@link WebClientService}.
          *
-         * @param providerClass excluded provider
+         * @param serviceSupplier client service instance
          * @return updated builder instance
          */
-        public Builder exclude(Class<? extends WebClientServiceProvider> providerClass) {
-            services.addExcludedClass(providerClass);
-            return this;
+        public Builder addService(Supplier<? extends WebClientService> serviceSupplier) {
+            return addService(serviceSupplier.get());
         }
 
         /**
@@ -262,8 +256,8 @@ public interface WebClient {
          * @param unit   time unit
          * @return updated builder instance
          */
-        public Builder connectTimeout(long amount, TemporalUnit unit) {
-            configuration.connectTimeout(Duration.of(amount, unit));
+        public Builder connectTimeout(long amount, TimeUnit unit) {
+            configuration.connectTimeout(Duration.of(amount, unit.toChronoUnit()));
             return this;
         }
 
@@ -274,19 +268,19 @@ public interface WebClient {
          * @param unit   time unit
          * @return updated builder instance
          */
-        public Builder readTimeout(long amount, TemporalUnit unit) {
-            configuration.readTimeout(Duration.of(amount, unit));
+        public Builder readTimeout(long amount, TimeUnit unit) {
+            configuration.readTimeout(Duration.of(amount, unit.toChronoUnit()));
             return this;
         }
 
         /**
-         * Sets new {@link Ssl} instance which contains ssl configuration.
+         * Sets new {@link WebClientTls} instance which contains ssl configuration.
          *
-         * @param ssl ssl instance
+         * @param webClientTls tls instance
          * @return updated builder instance
          */
-        public Builder ssl(Ssl ssl) {
-            configuration.ssl(ssl);
+        public Builder tls(WebClientTls webClientTls) {
+            configuration.tls(webClientTls);
             return this;
         }
 
@@ -382,6 +376,30 @@ public interface WebClient {
             return this;
         }
 
+        /**
+         * Set whether connection to server should be kept alive after request.
+         * This also sets header {@link io.helidon.common.http.Http.Header#CONNECTION} to {@code keep-alive}.
+         *
+         * @param keepAlive keep connection alive
+         * @return updated builder instance
+         */
+        public Builder keepAlive(boolean keepAlive) {
+            configuration.keepAlive(keepAlive);
+            return this;
+        }
+
+        /**
+         * Whether to validate header names.
+         * Defaults to {@code true}.
+         *
+         * @param validate whether to validate the header name contains only allowed characters
+         * @return updated builder instance
+         */
+        public Builder validateHeaders(boolean validate) {
+            configuration.validateHeaders(validate);
+            return this;
+        }
+
         WebClientConfiguration configuration() {
             configuration.clientServices(services());
             return configuration.build();
@@ -389,16 +407,17 @@ public interface WebClient {
 
         private List<WebClientService> services() {
             Config servicesConfig = config.get("services");
-            servicesConfig.get("excludes").asList(String.class).orElse(Collections.emptyList())
-                    .forEach(services::addExcludedClassName);
 
-            Config serviceConfig = servicesConfig.get("config");
-
-            return services.build()
+            services.build()
                     .asList()
-                    .stream()
-                    .map(it -> it.create(serviceConfig.get(it.configKey())))
-                    .collect(Collectors.toList());
+                    .forEach(provider -> {
+                        Config providerConfig = servicesConfig.get(provider.configKey());
+                        if (providerConfig.exists()) {
+                            addService(provider.create(providerConfig));
+                        }
+                    });
+
+            return webClientServices;
         }
 
     }

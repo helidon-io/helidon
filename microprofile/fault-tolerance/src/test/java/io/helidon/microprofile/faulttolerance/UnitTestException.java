@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,22 +17,22 @@
 package io.helidon.microprofile.faulttolerance;
 
 /**
- * Class UnitTestException.
+ * A subclass of {@code RuntimeException} used for testing.
  */
-public class UnitTestException extends RuntimeException {
+class UnitTestException extends RuntimeException {
 
-    public UnitTestException() {
+    UnitTestException() {
     }
 
-    public UnitTestException(String message) {
+    UnitTestException(String message) {
         super(message);
     }
 
-    public UnitTestException(String message, Throwable throwable) {
+    UnitTestException(String message, Throwable throwable) {
         super(message, throwable);
     }
 
-    public UnitTestException(Throwable throwable) {
+    UnitTestException(Throwable throwable) {
         super(throwable);
     }
 }

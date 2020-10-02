@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.helidon.common.LazyValue;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.reactive.RequestedCounter;
 import io.helidon.common.reactive.RetrySchema;
@@ -38,7 +39,11 @@ import io.helidon.common.reactive.SingleSubscriberHolder;
  * again after some period defined be retry schema.
  * <p>
  * Only first subscriber is accepted.
+ *
+ * @deprecated Will be removed. Please use
+ *  {@link io.helidon.common.reactive.IoMulti#multiFromByteChannel(java.nio.channels.ReadableByteChannel)} instead
  */
+@Deprecated(since = "2.0.0", forRemoval = true)
 public class ReadableByteChannelPublisher implements Flow.Publisher<DataChunk> {
 
     private static final Logger LOGGER = Logger.getLogger(ReadableByteChannelPublisher.class.getName());
@@ -47,27 +52,33 @@ public class ReadableByteChannelPublisher implements Flow.Publisher<DataChunk> {
 
     private final ReadableByteChannel channel;
     private final RetrySchema retrySchema;
+    private final boolean externalExecutor;
+    private final int chunkCapacity;
+    private final LazyValue<ScheduledExecutorService> executor;
 
     private final SingleSubscriberHolder<DataChunk> subscriber = new SingleSubscriberHolder<>();
     private final RequestedCounter requested = new RequestedCounter();
-    private final int chunkCapacity = DEFAULT_CHUNK_CAPACITY;
-
     private final AtomicBoolean publishing = new AtomicBoolean(false);
-    private volatile AtomicInteger retryCounter = new AtomicInteger();
-    private volatile long lastRetryDelay = 0;
+    private final AtomicInteger retryCounter = new AtomicInteger();
 
-    private ScheduledExecutorService scheduledExecutorService;
-    private volatile DataChunk curentChunk;
+    private volatile long lastRetryDelay = 0;
+    private volatile DataChunk currentChunk;
 
     /**
      * Creates new instance.
      *
      * @param channel a channel to read and publish
      * @param retrySchema a retry schema functional interface used in case, that channel read retrieved zero bytes.
+     * @deprecated please use
+     * {@link io.helidon.common.reactive.IoMulti#multiFromByteChannel(java.nio.channels.ReadableByteChannel)}
      */
+    @Deprecated(since = "2.0.0", forRemoval = true)
     public ReadableByteChannelPublisher(ReadableByteChannel channel, RetrySchema retrySchema) {
         this.channel = channel;
         this.retrySchema = retrySchema;
+        this.executor = LazyValue.create(() -> Executors.newScheduledThreadPool(1));
+        this.externalExecutor = false;
+        this.chunkCapacity = DEFAULT_CHUNK_CAPACITY;
     }
 
     @Override
@@ -86,6 +97,7 @@ public class ReadableByteChannelPublisher implements Flow.Publisher<DataChunk> {
                     @Override
                     public void cancel() {
                         subscriber.cancel();
+                        closeExecutor();
                     }
                 });
             } finally {
@@ -94,6 +106,11 @@ public class ReadableByteChannelPublisher implements Flow.Publisher<DataChunk> {
 
             tryPublish(); // give onNext a chance in case request has been invoked in onSubscribe
         }
+    }
+
+    // for tests
+    LazyValue<ScheduledExecutorService> executor() {
+        return executor;
     }
 
     private DataChunk allocateNewChunk() {
@@ -110,14 +127,14 @@ public class ReadableByteChannelPublisher implements Flow.Publisher<DataChunk> {
      */
     private boolean publishSingleOrFinish(Flow.Subscriber<? super DataChunk> subscr) throws Exception {
         DataChunk chunk;
-        if (curentChunk == null) {
+        if (currentChunk == null) {
             chunk = allocateNewChunk();
         } else {
-            chunk = curentChunk;
-            curentChunk = null;
+            chunk = currentChunk;
+            currentChunk = null;
         }
 
-        ByteBuffer bb = chunk.data();
+        ByteBuffer bb = chunk.data()[0];
         int count = 0;
         while (bb.remaining() > 0) {
             count = channel.read(bb);
@@ -130,7 +147,7 @@ public class ReadableByteChannelPublisher implements Flow.Publisher<DataChunk> {
             bb.flip();
             subscr.onNext(chunk);
         } else {
-            curentChunk = chunk;
+            currentChunk = chunk;
         }
         // Last or not
         if (count < 0) {
@@ -140,11 +157,11 @@ public class ReadableByteChannelPublisher implements Flow.Publisher<DataChunk> {
                 LOGGER.log(Level.WARNING, "Cannot close readable byte channel! (Close attempt after fully read channel.)", e);
             }
             tryComplete();
-            if (curentChunk != null) {
-                curentChunk.release();
+            if (currentChunk != null) {
+                currentChunk.release();
             }
             return true;
-        } else  {
+        } else {
             return count > 0;
         }
     }
@@ -191,18 +208,22 @@ public class ReadableByteChannelPublisher implements Flow.Publisher<DataChunk> {
     }
 
     private synchronized void planNextTry(long afterMillis) {
-        if (scheduledExecutorService == null) {
-            scheduledExecutorService = Executors.newScheduledThreadPool(1);
-        }
-        scheduledExecutorService.schedule(this::tryPublish, afterMillis, TimeUnit.MILLISECONDS);
+        executor.get().schedule(this::tryPublish, afterMillis, TimeUnit.MILLISECONDS);
     }
 
     private void tryComplete() {
         subscriber.close(Flow.Subscriber::onComplete);
+        closeExecutor();
     }
 
     private void tryComplete(Throwable t) {
         subscriber.close(sub -> sub.onError(t));
+        closeExecutor();
     }
 
+    private synchronized void closeExecutor() {
+        if (!externalExecutor && executor.isLoaded()) {
+            executor.get().shutdownNow();
+        }
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -275,72 +275,14 @@ public abstract class AbstractDataSourceExtension implements Extension {
      * @see ConfigSource#getPropertyNames()
      */
     protected final Set<String> getPropertyNames() {
-        // The MicroProfile Config specification does not say whether
-        // property names must be cached or must not be cached
-        // (https://github.com/eclipse/microprofile-config/issues/370).
-        // It is implied in the MicroProfile Google group
-        // (https://groups.google.com/d/msg/microprofile/tvjgSR9qL2Q/M2TNUQrOAQAJ),
-        // but not in the specification, that ConfigSources can be
-        // mutable and dynamic.  Consequently one would expect their
-        // property names to come and go.  Because of this we have to
-        // make sure to get all property names from all ConfigSources
-        // "by hand".
-        //
-        // Additionally, the Helidon MicroProfile Config
-        // implementation may add on some Helidon SE Config sources
-        // that are not represented as MicroProfile Config sources.
-        // Consequently we have to source property names from both the
-        // MicroProfile Config ConfigSources and from Helidon itself.
-        // We do this by first iterating over the MicroProfile Config
-        // ConfigSources and then augmenting where necessary with any
-        // other (cached) property names reported by the Helidon
-        // MicroProfile Config implementation.
-        //
-        // (The MicroProfile Config specification also does not say
-        // whether a ConfigSource is thread-safe
-        // (https://github.com/eclipse/microprofile-config/issues/369),
-        // so iteration over its coming-and-going dynamic property
-        // names may be problematic, but there's nothing we can do.)
-        //
-        // As of this writing, the Helidon MicroProfile Config
-        // implementation caches all property names up front, which
-        // may not be correct, but is also not forbidden.
         final Set<String> returnValue;
-
-        // Start by getting all the property names directly from our
-        // MicroProfile Config ConfigSources.  They take precedence.
-        Set<String> propertyNames = getPropertyNames(this.config.getConfigSources());
-        assert propertyNames != null;
-
-        // Add any property names that the Config itself might report
-        // that aren't reflected, for whatever reason, in the
-        // ConfigSources' property names.
-        final Iterable<String> configPropertyNames = this.config.getPropertyNames();
-        if (configPropertyNames != null) {
-            for (final String configPropertyName : configPropertyNames) {
-                propertyNames.add(configPropertyName);
-            }
-        }
-
-        if (propertyNames.isEmpty()) {
+        final Iterable<String> propertyNames = this.config.getPropertyNames();
+        if (propertyNames == null) {
             returnValue = Collections.emptySet();
         } else {
-            returnValue = Collections.unmodifiableSet(propertyNames);
-        }
-        return returnValue;
-    }
-
-    private static Set<String> getPropertyNames(final Iterable<? extends ConfigSource> configSources) {
-        final Set<String> returnValue = new HashSet<>();
-        if (configSources != null) {
-            for (final ConfigSource configSource : configSources) {
-                if (configSource != null) {
-                    final Set<String> configSourcePropertyNames = configSource.getPropertyNames();
-                    if (configSourcePropertyNames != null && !configSourcePropertyNames.isEmpty()) {
-                        returnValue.addAll(configSourcePropertyNames);
-                    }
-                }
-            }
+            final Set<String> set = new HashSet<>();
+            propertyNames.iterator().forEachRemaining(n -> set.add(n));
+            returnValue = Set.copyOf(set);
         }
         return returnValue;
     }

@@ -27,6 +27,7 @@ import javax.ws.rs.client.ClientBuilder;
 
 import io.helidon.config.Config;
 import io.helidon.config.FileSystemWatcher;
+import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.metrics.MetricsSupport;
 import io.helidon.security.Security;
 import io.helidon.security.integration.webserver.WebSecurity;
@@ -93,6 +94,7 @@ public final class Main {
                     config,
                     bsc))
                 .config(config.get("webserver"))
+                .addMediaSupport(JsonpSupport.create())
                 .tracer(registerTracer(config))
                 .build();
 

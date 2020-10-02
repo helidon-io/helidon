@@ -23,20 +23,21 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-project</artifactId>
-        <version>2.0.0-SNAPSHOT</version>
+        <version>2.0.3-SNAPSHOT</version>
     </parent>
     <groupId>io.helidon.archetypes</groupId>
     <artifactId>helidon-archetypes-project</artifactId>
-    <name>Helidon Template Application Types used by CLI</name>
+    <name>Helidon Archetypes</name>
     <packaging>pom</packaging>
 
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
-
     <modules>
-        <module>se</module>
-        <module>mp</module>
+        <module>bare-se</module>
+        <module>bare-mp</module>
+        <module>quickstart-se</module>
+        <module>quickstart-mp</module>
+        <module>database-mp</module>
+        <module>database-se</module>
+        <module>catalog</module>
     </modules>
 
     <build>
@@ -50,3 +51,4 @@
         </plugins>
     </build>
 </project>
+

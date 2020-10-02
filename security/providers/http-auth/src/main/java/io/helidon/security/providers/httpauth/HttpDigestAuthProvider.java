@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,6 @@ import java.util.stream.Collectors;
 
 import javax.crypto.Cipher;
 
-import io.helidon.common.HelidonFeatures;
 import io.helidon.config.Config;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.Principal;
@@ -57,10 +56,6 @@ public final class HttpDigestAuthProvider extends SynchronousProvider implements
     private static final int SALT_LENGTH = 16;
     private static final int AES_NONCE_LENGTH = 12;
     private static final Logger LOGGER = Logger.getLogger(HttpDigestAuthProvider.class.getName());
-
-    static {
-        HelidonFeatures.register("Security", "Authentication", "Digest-Auth");
-    }
 
     private final List<HttpDigest.Qop> digestQopOptions = new LinkedList<>();
     private final SecureUserStore userStore;

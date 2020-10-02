@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-dependencies</artifactId>
-        <version>2.0.0-SNAPSHOT</version>
+        <version>2.0.3-SNAPSHOT</version>
         <relativePath>./dependencies/pom.xml</relativePath>
     </parent>
     <artifactId>helidon-project</artifactId>
@@ -67,7 +67,7 @@
         <!-- 2.x versions used http (not https) to access maven central -->
         <version.lib.shrinkwrap-resolver>3.0.1</version.lib.shrinkwrap-resolver>
         <version.lib.spotbugs-annotations>3.1.12</version.lib.spotbugs-annotations>
-        <version.lib.surefire.testng>3.0.0-M3</version.lib.surefire.testng>
+        <version.lib.surefire.testng>3.0.0-M5</version.lib.surefire.testng>
         <version.lib.testng>6.13.1</version.lib.testng>
         <version.lib.zipkin.junit>2.12.5</version.lib.zipkin.junit>
         <version.lib.bedrock>5.0.11</version.lib.bedrock>
@@ -76,6 +76,9 @@
         <version.lib.awaitility>3.1.6</version.lib.awaitility>
         <version.lib.weld-junit>2.0.0.Final</version.lib.weld-junit>
         <version.lib.jmh>1.23</version.lib.jmh>
+        <version.lib.wiremock>2.26.3</version.lib.wiremock>
+        <version.lib.commons-lang3>3.10</version.lib.commons-lang3>
+        <version.lib.classgraph>4.8.87</version.lib.classgraph>
         <!--
         !Version statement! - end
         -->
@@ -88,12 +91,12 @@
         <version.plugin.compiler>3.8.1</version.plugin.compiler>
         <version.plugin.dependency>3.1.2</version.plugin.dependency>
         <version.plugin.directory>0.1</version.plugin.directory>
-        <version.plugin.eclipselink>2.7.1.1</version.plugin.eclipselink>
+        <version.plugin.eclipselink>2.7.5.1</version.plugin.eclipselink>
         <version.plugin.enforcer>3.0.0-M1</version.plugin.enforcer>
         <version.plugin.exec>1.6.0</version.plugin.exec>
-        <version.plugin.failsafe>2.19.1</version.plugin.failsafe>
+        <version.plugin.failsafe>3.0.0-M5</version.plugin.failsafe>
         <version.plugin.glassfish-copyright>2.3</version.plugin.glassfish-copyright>
-        <version.plugin.helidon-build-tools>2.0.0-M3</version.plugin.helidon-build-tools>
+        <version.plugin.helidon-build-tools>2.1.1</version.plugin.helidon-build-tools>
         <version.plugin.hibernate-enhance>${version.lib.hibernate}</version.plugin.hibernate-enhance>
         <version.plugin.jacoco>0.8.5</version.plugin.jacoco>
         <version.plugin.jandex>1.0.6</version.plugin.jandex>
@@ -109,12 +112,14 @@
         <version.plugin.shade>3.0.0</version.plugin.shade>
         <version.plugin.source>3.0.1</version.plugin.source>
         <version.plugin.spotbugs>3.1.12</version.plugin.spotbugs>
-        <version.plugin.surefire.provider.junit>1.0.3</version.plugin.surefire.provider.junit>
-        <version.plugin.surefire>2.19.1</version.plugin.surefire>
+        <version.plugin.surefire>3.0.0-M5</version.plugin.surefire>
         <version.plugin.toolchains>1.1</version.plugin.toolchains>
         <version.plugin.version-plugin>2.3</version.plugin.version-plugin>
         <version.plugin.buildnumber>1.4</version.plugin.buildnumber>
-        <version.plugin.wiremock>2.7.0</version.plugin.wiremock>
+        <version.plugin.wiremock>2.14.0</version.plugin.wiremock>
+        <version.plugin.echo>0.4.0</version.plugin.echo>
+
+        <version.helidon-cli>2.1.0</version.helidon-cli>
 
         <javadoc.link.jackson-annotations>https://fasterxml.github.io/jackson-annotations/javadoc/2.9/</javadoc.link.jackson-annotations>
         <javadoc.link.jackson-core>https://fasterxml.github.io/jackson-core/javadoc/2.9/</javadoc.link.jackson-core>
@@ -144,6 +149,7 @@
         <javadoc.link.narayana>http://narayana.io/docs/api/</javadoc.link.narayana>
         <javadoc.link.eclipselink>https://www.eclipse.org/eclipselink/api/2.7/</javadoc.link.eclipselink>
 
+        <!--suppress UnresolvedMavenProperty -->
         <javadoc.packagelist.dir>${top.parent.basedir}/etc/javadoc</javadoc.packagelist.dir>
         <site.output.dir>${project.build.directory}/docs</site.output.dir>
     </properties>
@@ -170,6 +176,7 @@
         <module>integrations</module>
         <module>dbclient</module>
         <module>messaging</module>
+        <module>fault-tolerance</module>
     </modules>
 
 
@@ -366,45 +373,23 @@
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${version.plugin.surefire}</version>
                     <configuration>
+                        <useModulePath>false</useModulePath>
                         <trimStackTrace>false</trimStackTrace>
                         <!-- DO NOT override argLine instead use surefire.argLine -->
                         <argLine>${surefire.argLine} ${surefire.coverage.argline}</argLine>
                         <redirectTestOutputToFile>true</redirectTestOutputToFile>
                     </configuration>
-                    <dependencies>
-                        <dependency>
-                            <groupId>org.junit.platform</groupId>
-                            <artifactId>junit-platform-surefire-provider</artifactId>
-                            <version>${version.plugin.surefire.provider.junit}</version>
-                        </dependency>
-                        <dependency>
-                            <groupId>org.junit.jupiter</groupId>
-                            <artifactId>junit-jupiter-engine</artifactId>
-                            <version>${version.lib.junit}</version>
-                        </dependency>
-                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-failsafe-plugin</artifactId>
                     <version>${version.plugin.failsafe}</version>
                     <configuration>
+                        <useModulePath>false</useModulePath>
                         <!-- DO NOT override argLine instead use failsafe.argLine -->
                         <argLine>${failsafe.argLine} ${failsafe.coverage.argline}</argLine>
                         <redirectTestOutputToFile>true</redirectTestOutputToFile>
                     </configuration>
-                    <dependencies>
-                        <dependency>
-                            <groupId>org.junit.platform</groupId>
-                            <artifactId>junit-platform-surefire-provider</artifactId>
-                            <version>${version.plugin.surefire.provider.junit}</version>
-                        </dependency>
-                        <dependency>
-                            <groupId>org.junit.jupiter</groupId>
-                            <artifactId>junit-jupiter-engine</artifactId>
-                            <version>${version.lib.junit}</version>
-                        </dependency>
-                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>org.commonjava.maven.plugins</groupId>
@@ -457,7 +442,9 @@
                     <artifactId>glassfish-copyright-maven-plugin</artifactId>
                     <version>${version.plugin.glassfish-copyright}</version>
                     <configuration>
+                        <!--suppress UnresolvedMavenProperty -->
                         <templateFile>${copyright.template}</templateFile>
+                        <!--suppress UnresolvedMavenProperty -->
                         <excludeFile>${copyright.exclude}</excludeFile>
                         <scm>git</scm>
                         <debug>false</debug>
@@ -498,6 +485,7 @@
                     <configuration>
                         <skip>${spotbugs.skip}</skip>
                         <threshold>${spotbugs.threshold}</threshold>
+                        <!--suppress UnresolvedMavenProperty -->
                         <excludeFilterFile>${spotbugs.exclude}</excludeFilterFile>
                         <xmlOutput>true</xmlOutput>
                     </configuration>
@@ -540,6 +528,9 @@
                     <groupId>com.ethlo.persistence.tools</groupId>
                     <artifactId>eclipselink-maven-plugin</artifactId>
                     <version>${version.plugin.eclipselink}</version>
+                    <configuration>
+                        <updatePersistenceXml>false</updatePersistenceXml>
+                    </configuration>
                 </plugin>
                 <plugin>
                   <groupId>org.hibernate.orm.tooling</groupId>
@@ -590,7 +581,7 @@
                     <version>${version.plugin.archetype}</version>
                 </plugin>
                 <plugin>
-                    <groupId>uk.co.deliverymind</groupId>
+                    <groupId>uk.co.automatictester</groupId>
                     <artifactId>wiremock-maven-plugin</artifactId>
                     <version>${version.plugin.wiremock}</version>
                 </plugin>
@@ -598,6 +589,16 @@
                     <groupId>io.helidon.build-tools</groupId>
                     <artifactId>snakeyaml-codegen-maven-plugin</artifactId>
                     <version>${version.plugin.helidon-build-tools}</version>
+                </plugin>
+                <plugin>
+                    <groupId>io.helidon.build-tools</groupId>
+                    <artifactId>helidon-stager-maven-plugin</artifactId>
+                    <version>${version.plugin.helidon-build-tools}</version>
+                </plugin>
+                <plugin>
+                    <groupId>com.soebes.maven.plugins</groupId>
+                    <artifactId>echo-maven-plugin</artifactId>
+                    <version>${version.plugin.echo}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -651,10 +652,13 @@
                             <outputDirectory>${project.build.outputDirectory}</outputDirectory>
                             <resources>
                                 <resource>
+                                    <!--suppress UnresolvedMavenProperty -->
                                     <directory>${top.parent.basedir}</directory>
                                     <targetPath>META-INF/</targetPath>
+                                    <filtering>true</filtering>
                                     <includes>
                                         <include>LICENSE.txt</include>
+                                        <include>NOTICE.txt</include>
                                     </includes>
                                 </resource>
                             </resources>
@@ -953,6 +957,28 @@
                 <artifactId>jmh-generator-annprocess</artifactId>
                 <version>${version.lib.jmh}</version>
             </dependency>
+            <dependency>
+                <groupId>com.github.tomakehurst</groupId>
+                <artifactId>wiremock</artifactId>
+                <version>${version.lib.wiremock}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.commons</groupId>
+                        <artifactId>commons-lang3</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>${version.lib.commons-lang3}</version>
+            </dependency>
+            <dependency>
+                <!-- used for classpath scanning in native image extension -->
+                <groupId>io.github.classgraph</groupId>
+                <artifactId>classgraph</artifactId>
+                <version>${version.lib.classgraph}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -1134,7 +1160,9 @@ helidon-parent,helidon-dependencies,helidon-bom,helidon-se,helidon-mp,io.grpc,he
                                 </goals>
                                 <phase>validate</phase>
                                 <configuration>
+                                    <!--suppress UnresolvedMavenProperty -->
                                     <configLocation>${top.parent.basedir}/etc/checkstyle.xml</configLocation>
+                                    <!--suppress UnresolvedMavenProperty -->
                                     <suppressionsLocation>${top.parent.basedir}/etc/checkstyle-suppressions.xml</suppressionsLocation>
                                 </configuration>
                             </execution>
@@ -1158,7 +1186,9 @@ helidon-parent,helidon-dependencies,helidon-bom,helidon-se,helidon-mp,io.grpc,he
                                 </goals>
                                 <phase>validate</phase>
                                 <configuration>
+                                    <!--suppress UnresolvedMavenProperty -->
                                     <templateFile>${top.parent.basedir}/etc/copyright.txt</templateFile>
+                                    <!--suppress UnresolvedMavenProperty -->
                                     <excludeFile>${top.parent.basedir}/etc/copyright-exclude.txt</excludeFile>
                                 </configuration>
                             </execution>
@@ -1169,7 +1199,9 @@ helidon-parent,helidon-dependencies,helidon-bom,helidon-se,helidon-mp,io.grpc,he
                                 </goals>
                                 <phase>validate</phase>
                                 <configuration>
+                                    <!--suppress UnresolvedMavenProperty -->
                                     <templateFile>${top.parent.basedir}/etc/copyright.txt</templateFile>
+                                    <!--suppress UnresolvedMavenProperty -->
                                     <excludeFile>${top.parent.basedir}/etc/copyright-exclude.txt</excludeFile>
                                 </configuration>
                             </execution>
@@ -1183,11 +1215,14 @@ helidon-parent,helidon-dependencies,helidon-bom,helidon-se,helidon-mp,io.grpc,he
             <properties>
                 <jacoco.report-missing.force-zere>true</jacoco.report-missing.force-zere>
                 <!-- top.parent.basedir is generated by directory:highest-basedir -->
+                <!--suppress UnresolvedMavenProperty -->
                 <jacoco.outputDir>${top.parent.basedir}/target</jacoco.outputDir>
                 <jacoco.report.path>${jacoco.outputDir}/jacoco.exec</jacoco.report.path>
                 <jacoco.report.it.path>${jacoco.outputDir}/jacoco-it.exec</jacoco.report.it.path>
                 <!-- jacoco.agent.*.arg properties are generated by jacoco:prepare-agent -->
+                <!--suppress UnresolvedMavenProperty -->
                 <surefire.coverage.argline>${jacoco.agent.ut.arg}</surefire.coverage.argline>
+                <!--suppress UnresolvedMavenProperty -->
                 <failsafe.coverage.argline>${jacoco.agent.it.arg}</failsafe.coverage.argline>
                 <maven.test.failure.ignore>true</maven.test.failure.ignore>
             </properties>

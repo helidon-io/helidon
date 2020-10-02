@@ -16,22 +16,33 @@
  */
 package io.helidon.common.reactive;
 
-import org.testng.annotations.Ignore;
-import org.testng.annotations.Test;
-
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Flow;
+import java.util.concurrent.SubmissionPublisher;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
-import static org.testng.Assert.*;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.fail;
+
+import org.testng.annotations.Ignore;
+import org.testng.annotations.Test;
 
 public class MultiFlatMapPublisherTest {
 
     Multi<Integer> items(int count) {
-        return Multi.from(() -> IntStream.range(0, count).boxed().iterator());
+        return Multi.create(() -> IntStream.range(0, count).boxed().iterator());
     }
 
     void crossMap(int count) {
@@ -171,7 +182,7 @@ public class MultiFlatMapPublisherTest {
         SubmissionPublisher<Integer> sp1 = new SubmissionPublisher<>(Runnable::run, 32);
         SubmissionPublisher<Integer> sp2 = new SubmissionPublisher<>(Runnable::run, 32);
 
-        Multi.from(sp1)
+        Multi.create(sp1)
                 .flatMap(v -> sp2)
                 .subscribe(ts);
 
@@ -274,7 +285,7 @@ public class MultiFlatMapPublisherTest {
         TestSubscriber<Integer> ts = new TestSubscriber<>();
 
         Multi.just(CompletableFuture.completedFuture(1), CompletableFuture.completedFuture(2))
-                .flatMap(Multi::from, 1, false, 1)
+                .flatMap(Multi::create, 1, false, 1)
                 .subscribe(ts);
 
         ts.assertEmpty();
@@ -308,7 +319,7 @@ public class MultiFlatMapPublisherTest {
 
     @Test
     public void multi() throws ExecutionException, InterruptedException {
-        assertEquals(EXPECTED_EMISSION_COUNT, Multi.from(TEST_DATA)
+        assertEquals(EXPECTED_EMISSION_COUNT, Multi.create(TEST_DATA)
                 .flatMap(MultiFlatMapPublisherTest::asyncFlowPublisher, MAX_CONCURRENCY, false, PREFETCH)
                 .distinct()
                 .collectList()

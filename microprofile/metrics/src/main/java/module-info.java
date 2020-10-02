@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,6 @@ module io.helidon.microprofile.metrics {
     requires io.helidon.microprofile.server;
     requires io.helidon.microprofile.config;
     requires transitive io.helidon.metrics;
-    requires io.helidon.common.metrics;
 
     requires transitive microprofile.config.api;
     requires microprofile.metrics.api;
@@ -38,7 +37,7 @@ module io.helidon.microprofile.metrics {
     exports io.helidon.microprofile.metrics;
 
     // this is needed for CDI extensions that use non-public observer methods
-    opens io.helidon.microprofile.metrics to weld.core.impl;
+    opens io.helidon.microprofile.metrics to weld.core.impl, io.helidon.microprofile.cdi;
 
     provides javax.enterprise.inject.spi.Extension with io.helidon.microprofile.metrics.MetricsCdiExtension;
 }

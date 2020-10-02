@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Publisher;
@@ -131,7 +130,7 @@ public class ResponseTest {
     private static <T> void marshall(Response rsp, Single<T> entity, Class<T> clazz)
             throws InterruptedException, ExecutionException, TimeoutException {
 
-        Multi.from(rsp.writerContext().marshall(entity, GenericType.create(clazz), null))
+        Multi.create(rsp.writerContext().marshall(entity, GenericType.create(clazz)))
                 .collectList()
                 .get(10, TimeUnit.SECONDS);
     }
@@ -283,13 +282,13 @@ public class ResponseTest {
         }
 
         @Override
-        public CompletionStage<BareResponse> whenCompleted() {
-            return closeFuture;
+        public Single<BareResponse> whenCompleted() {
+            return Single.create(closeFuture);
         }
 
         @Override
-        public CompletionStage<BareResponse> whenHeadersCompleted() {
-            return closeFuture;
+        public Single<BareResponse> whenHeadersCompleted() {
+            return Single.create(closeFuture);
         }
 
         @Override

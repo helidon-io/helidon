@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,29 +53,40 @@ public final class OutboundTarget {
      */
     public static final String CONFIG_PATHS = "paths";
 
+    /**
+     * Configuration key for string array of HTTP methods. If not provided or empty, all methods are supported.
+     * The values must contain exact names of HTTP methods that should propagate, case insensitive (such as {@code GET},
+     * or {@code get} are both valid methods).
+     */
+    public static final String CONFIG_METHODS = "methods";
+
     private final String name;
     private final Set<String> transports = new HashSet<>();
     private final Set<String> hosts = new HashSet<>();
     private final List<Pattern> hostPatterns = new LinkedList<>();
     private final Set<String> paths = new HashSet<>();
     private final List<Pattern> pathPatterns = new LinkedList<>();
+    private final Set<String> methods = new HashSet<>();
     private final Config config;
     private final ClassToInstanceStore<Object> customObjects = new ClassToInstanceStore<>();
     private final boolean matchAllTransports;
     private final boolean matchAllHosts;
     private final boolean matchAllPaths;
+    private final boolean matchAllMethods;
 
     private OutboundTarget(Builder builder) {
         this.name = builder.name;
         this.transports.addAll(builder.transports);
         this.hosts.addAll(builder.hosts);
         this.paths.addAll(builder.paths);
+        this.methods.addAll(builder.methods);
         this.config = builder.config;
         this.customObjects.putAll(builder.customObjects);
 
         matchAllTransports = this.transports.isEmpty() || anyMatch(this.transports);
         matchAllHosts = this.hosts.isEmpty() || anyMatch(this.hosts);
         matchAllPaths = this.paths.isEmpty() || anyMatch(this.paths);
+        matchAllMethods = this.methods.isEmpty();
 
         if (!matchAllHosts) {
             //only create patterns for hosts containing *
@@ -90,17 +101,25 @@ public final class OutboundTarget {
         }
     }
 
-    static OutboundTarget create(Config c) {
+    /**
+     * Create a target from configuration.
+     *
+     * @param config configuration on the node of a single outbound target
+     * @return a new target from config, requires at least {@value CONFIG_NAME}
+     */
+    public static OutboundTarget create(Config config) {
         Builder builder = new Builder();
 
-        builder.config(c);
-        builder.name(c.get(CONFIG_NAME).asString().get());
-        c.get(CONFIG_TRANSPORTS).asList(String.class).orElse(List.of())
+        builder.config(config);
+        builder.name(config.get(CONFIG_NAME).asString().get());
+        config.get(CONFIG_TRANSPORTS).asList(String.class).orElse(List.of())
                 .forEach(builder::addTransport);
-        c.get(CONFIG_HOSTS).asList(String.class).orElse(List.of())
+        config.get(CONFIG_HOSTS).asList(String.class).orElse(List.of())
                 .forEach(builder::addHost);
-        c.get(CONFIG_PATHS).asList(String.class).orElse(List.of())
+        config.get(CONFIG_PATHS).asList(String.class).orElse(List.of())
                 .forEach(builder::addPath);
+        config.get(CONFIG_METHODS).asList(String.class).orElse(List.of())
+                .forEach(builder::addMethod);
 
         return builder.build();
     }
@@ -172,12 +191,16 @@ public final class OutboundTarget {
         return customObjects.getInstance(clazz);
     }
 
-    boolean matches(String transport, String host, String path) {
-        return matchTransport(transport) && matchHost(host) && matchPath(path);
+    boolean matches(String transport, String host, String path, String method) {
+        return matchTransport(transport) && matchHost(host) && matchPath(path) && matchMethod(method);
     }
 
     boolean matchPath(String path) {
         return match(path, matchAllPaths, paths, pathPatterns);
+    }
+
+    boolean matchMethod(String method) {
+        return matchAllMethods || (method != null && methods.contains(method.toUpperCase()));
     }
 
     private boolean match(String toMatch, boolean matchAll, Set<String> values, List<Pattern> patterns) {
@@ -243,9 +266,11 @@ public final class OutboundTarget {
                 + ", transports=" + transports
                 + ", hosts=" + hosts
                 + ", hostPatterns=" + hostPatterns
+                + ", methods=" + methods
                 + ", config=" + config
                 + ", matchAllTransports=" + matchAllTransports
                 + ", matchAllHosts=" + matchAllHosts
+                + ", matchAllMethods=" + matchAllMethods
                 + '}';
     }
 
@@ -256,6 +281,7 @@ public final class OutboundTarget {
         private final Set<String> transports = new HashSet<>();
         private final Set<String> hosts = new HashSet<>();
         private final Set<String> paths = new HashSet<>();
+        private final Set<String> methods = new HashSet<>();
         private final ClassToInstanceStore<Object> customObjects = new ClassToInstanceStore<>();
         private String name;
         private Config config;
@@ -328,6 +354,18 @@ public final class OutboundTarget {
          */
         public Builder addPath(String path) {
             this.paths.add(path);
+            return this;
+        }
+
+        /**
+         * Add supported method for this target. May be called more than once to add more methods.
+         * The method is tested as is ignoring case against the used method.
+         *
+         * @param method supported method (exact match ignoring case)
+         * @return updated builder instance
+         */
+        public Builder addMethod(String method) {
+            this.methods.add(method.toUpperCase());
             return this;
         }
 

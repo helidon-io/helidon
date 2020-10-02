@@ -40,12 +40,14 @@ final class NettyClient implements WebClient {
     private static final Duration DEFAULT_CONNECT_TIMEOUT = Duration.ofMinutes(1);
     private static final Duration DEFAULT_READ_TIMEOUT = Duration.ofMinutes(10);
     private static final boolean DEFAULT_FOLLOW_REDIRECTS = false;
+    private static final boolean DEFAULT_KEEP_ALIVE = false;
+    private static final boolean DEFAULT_VALIDATE_HEADERS = true;
     private static final int DEFAULT_NUMBER_OF_REDIRECTS = 5;
     private static final LazyValue<String> DEFAULT_USER_AGENT = LazyValue
             .create(() -> "Helidon/" + Version.VERSION + " (java " + System.getProperty("java.runtime.version") + ")");
     private static final Proxy DEFAULT_PROXY = Proxy.noProxy();
     private static final MediaContext DEFAULT_MEDIA_SUPPORT = MediaContext.create();
-    private static final Ssl DEFAULT_SSL = Ssl.builder().build();
+    private static final WebClientTls DEFAULT_TLS = WebClientTls.builder().build();
 
     private static final AtomicBoolean DEFAULTS_CONFIGURED = new AtomicBoolean();
 
@@ -60,7 +62,9 @@ final class NettyClient implements WebClient {
                     .readerContextParent(DEFAULT_MEDIA_SUPPORT.readerContext())
                     .writerContextParent(DEFAULT_MEDIA_SUPPORT.writerContext())
                     .proxy(DEFAULT_PROXY)
-                    .ssl(DEFAULT_SSL)
+                    .tls(DEFAULT_TLS)
+                    .keepAlive(DEFAULT_KEEP_ALIVE)
+                    .validateHeaders(DEFAULT_VALIDATE_HEADERS)
                     .build();
 
     // configurable per client instance

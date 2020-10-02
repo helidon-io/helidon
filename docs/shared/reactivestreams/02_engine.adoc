@@ -22,9 +22,6 @@ Helidon has its own set of reactive operators that have no dependencies outside 
 These operators can be used with `java.util.concurrent.Flow` based reactive streams.
 Stream processing operator chain can be easily constructed by `io.helidon.common.reactive.Multi`, or
 `io.helidon.common.reactive.Single` for streams with single value.
-Implementation was contributed to Helidon by the world-renown reactive programming expert,
-project lead of RxJava and co-father of project Reactor,
-https://twitter.com/akarnokd[Dr. David Karnok].
 
 [source,java]
 .Example of Multi usage:

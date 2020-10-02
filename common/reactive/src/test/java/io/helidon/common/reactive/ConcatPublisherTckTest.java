@@ -17,15 +17,12 @@
 
 package io.helidon.common.reactive;
 
-import org.reactivestreams.Publisher;
-import org.reactivestreams.tck.PublisherVerification;
-import org.reactivestreams.tck.TestEnvironment;
-import org.reactivestreams.FlowAdapters;
-import org.reactivestreams.tck.flow.FlowPublisherVerification;
-import org.testng.annotations.Test;
-
 import java.util.concurrent.Flow;
 import java.util.stream.IntStream;
+
+import org.reactivestreams.tck.TestEnvironment;
+import org.reactivestreams.tck.flow.FlowPublisherVerification;
+import org.testng.annotations.Test;
 
 @Test
 public class ConcatPublisherTckTest extends FlowPublisherVerification<Integer> {
@@ -38,8 +35,8 @@ public class ConcatPublisherTckTest extends FlowPublisherVerification<Integer> {
     public Flow.Publisher<Integer> createFlowPublisher(long n) {
         int firstHalf = (int)(n / 2);
         return ConcatPublisher.create(
-                Multi.from(() -> IntStream.range(0, firstHalf).boxed().iterator()),
-                Multi.from(() -> IntStream.range(firstHalf, (int)n).boxed().iterator())
+                Multi.create(() -> IntStream.range(0, firstHalf).boxed().iterator()),
+                Multi.create(() -> IntStream.range(firstHalf, (int)n).boxed().iterator())
         );
     }
 

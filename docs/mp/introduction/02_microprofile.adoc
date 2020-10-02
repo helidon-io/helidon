@@ -16,21 +16,14 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= MicroProfile Introduction
-:description: Helidon MicroProfile introduction
+= Helidon MicroProfile
+:description: getting started with Helidon Microprofile
 :keywords: helidon, microprofile, micro-profile
+:h1Prefix: MP
 
-MicroProfile is a collection of enterprise Java APIs that should feel familiar to
-Java EE developers. MicroProfile includes existing APIs such as JAX-RS, JSON-P and
-CDI, and adds additional APIs in areas such as configuration, metrics, fault
-tolerance and more.
+Complete these tasks to get started with your MicroProfile application.
 
 == Getting Started with Helidon MicroProfile
-
-Helidon MP {helidon-version} supports
-MicroProfile {mp-version}. You can find the exact version of APIs supported on the
-https://github.com/oracle/helidon/wiki/Supported-APIs[Helidon Supported APIs]
-wiki page.
 
 Helidon provides a MicroProfile server implementation (`io.helidon.microprofile.server`) that
 encapsulates the Helidon WebServer. You can either instantiate the server directly
@@ -38,7 +31,6 @@ as is done in the
 <<guides/03_quickstart-mp.adoc, Helidon MP Quickstart example>>
 or use its built-in `main` as shown below.
 
-Complete these tasks to get started with your MicroProfile application.
 
 === Maven Coordinates
 

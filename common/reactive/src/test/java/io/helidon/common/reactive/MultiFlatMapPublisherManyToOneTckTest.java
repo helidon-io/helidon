@@ -31,8 +31,8 @@ public class MultiFlatMapPublisherManyToOneTckTest extends FlowPublisherVerifica
 
     @Override
     public Flow.Publisher<Integer> createFlowPublisher(long l) {
-        return Multi.from(Collections.singletonList(1))
-                .flatMap(v -> Multi.from(() -> IntStream.range(0, (int)l).boxed().iterator()));
+        return Multi.create(Collections.singletonList(1))
+                .flatMap(v -> Multi.create(() -> IntStream.range(0, (int)l).boxed().iterator()));
     }
 
     @Override

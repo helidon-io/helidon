@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,13 @@ package io.helidon.dbclient;
 
 import java.util.Optional;
 
+import io.helidon.common.reactive.Single;
+
 /**
  * Database statement that queries the database and returns a single row if present, or an empty optional.
  * In case the statement returns more than one rows, the future returned by {@link #execute()} will end in
  * {@link java.util.concurrent.CompletionStage#exceptionally(java.util.function.Function)}.
  */
-public interface DbStatementGet extends DbStatement<DbStatementGet, Optional<DbRow>> {
+public interface DbStatementGet extends DbStatement<DbStatementGet, Single<Optional<DbRow>>> {
 
 }

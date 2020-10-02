@@ -94,10 +94,12 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
      * @param completionStage the CompletionStage to
      * @param <T> the element type of the stage and result
      * @return Single
-     * @see #from(CompletionStage, boolean)
+     * @see #create(CompletionStage, boolean)
+     * @deprecated use {@link #create(java.util.concurrent.CompletionStage)} instead
      */
+    @Deprecated
     static <T> Single<T> from(CompletionStage<T> completionStage) {
-        return from(completionStage, false);
+        return create(completionStage, false);
     }
 
     /**
@@ -107,7 +109,9 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
      *                       if false, the resulting sequence fails with {@link NullPointerException}
      * @param <T> the element type of the stage and result
      * @return Single
+     * @deprecated use {@link #create(java.util.concurrent.CompletionStage, boolean)} instead
      */
+    @Deprecated
     static <T> Single<T> from(CompletionStage<T> completionStage, boolean nullMeansEmpty) {
         Objects.requireNonNull(completionStage, "completionStage is null");
         return new SingleFromCompletionStage<>(completionStage, nullMeansEmpty);
@@ -122,7 +126,9 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
      * @param source source publisher
      * @return Single
      * @throws NullPointerException if source is {@code null}
+     * @deprecated use {@link #create(java.util.concurrent.Flow.Publisher)} instead
      */
+    @Deprecated
     static <T> Single<T> from(Publisher<T> source) {
         Objects.requireNonNull(source, "source is null!");
         if (source instanceof Single) {
@@ -138,9 +144,69 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
      * @param single source {@link Single} publisher
      * @return Single
      * @throws NullPointerException if source is {@code null}
+     * @deprecated use {@link #create(io.helidon.common.reactive.Single)} instead
      */
+    @Deprecated
     static <T> Single<T> from(Single<T> single) {
-        return from((Publisher<T>) single);
+        return create((Publisher<T>) single);
+    }
+
+   /**
+     * Wrap a CompletionStage into a Multi and signal its outcome non-blockingly.
+     * <p>
+     *     A null result from the CompletionStage will yield a
+     *     {@link NullPointerException} signal.
+     * </p>
+     * @param completionStage the CompletionStage to
+     * @param <T> the element type of the stage and result
+     * @return Single
+     * @see #create(CompletionStage, boolean)
+     */
+    static <T> Single<T> create(CompletionStage<T> completionStage) {
+        return create(completionStage, false);
+    }
+
+    /**
+     * Wrap a CompletionStage into a Multi and signal its outcome non-blockingly.
+     * @param completionStage the CompletionStage to
+     * @param nullMeansEmpty if true, a null result is interpreted to be an empty sequence
+     *                       if false, the resulting sequence fails with {@link NullPointerException}
+     * @param <T> the element type of the stage and result
+     * @return Single
+     */
+    static <T> Single<T> create(CompletionStage<T> completionStage, boolean nullMeansEmpty) {
+        Objects.requireNonNull(completionStage, "completionStage is null");
+        return new SingleFromCompletionStage<>(completionStage, nullMeansEmpty);
+    }
+
+    /**
+     * Create a {@link Single} instance that publishes the first and only item received from the given publisher. Note that if the
+     * publisher publishes more than one item, the resulting {@link Single} will hold an error. Use {@link Multi#first()} instead
+     * in order to get the first item of a publisher that may publish more than one item.
+     *
+     * @param <T>    item type
+     * @param source source publisher
+     * @return Single
+     * @throws NullPointerException if source is {@code null}
+     */
+    static <T> Single<T> create(Publisher<T> source) {
+        Objects.requireNonNull(source, "source is null!");
+        if (source instanceof Single) {
+            return (Single<T>) source;
+        }
+        return new SingleFromPublisher<>(source);
+    }
+
+    /**
+     * Create a {@link Single} instance that publishes the first and only item received from the given {@link Single}.
+     *
+     * @param <T>    item type
+     * @param single source {@link Single} publisher
+     * @return Single
+     * @throws NullPointerException if source is {@code null}
+     */
+    static <T> Single<T> create(Single<T> single) {
+        return create((Publisher<T>) single);
     }
 
     /**
@@ -162,7 +228,7 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
      * @return Single
      */
     static <T> Single<T> never() {
-        return SingleNever.instance();
+        return new SingleNever<T>();
     }
 
     /**
@@ -325,7 +391,7 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
     }
 
     /**
-     * Executes given {@link java.lang.Runnable} when onError signal is received.
+     * Executes given {@link java.util.function.Consumer} when onError signal is received.
      *
      * @param onErrorConsumer {@link java.util.function.Consumer} to be executed.
      * @return Single
@@ -367,7 +433,7 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
      * @return Single
      */
     default Multi<T> onErrorResumeWith(Function<? super Throwable, ? extends Flow.Publisher<? extends T>> onError) {
-        return new MultiOnErrorResumeWith<>(Multi.from(this), onError);
+        return new MultiOnErrorResumeWith<>(Multi.create(this), onError);
     }
 
     /**
@@ -388,7 +454,7 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
      * @return Multi
      */
     default Multi<T> onCompleteResumeWith(Flow.Publisher<? extends T> publisher) {
-        return new MultiOnCompleteResumeWith<>(Multi.from(this), publisher);
+        return new MultiOnCompleteResumeWith<>(Multi.create(this), publisher);
     }
 
     /**
@@ -557,22 +623,20 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
     }
 
     /**
-     * Exposes this {@link Single} instance as a {@link CompletionStage} with {@code Optional<T>} return type
+     * Exposes this {@link Single} instance as a {@link Single} with {@code Optional<T>} return type
      * of the asynchronous operation.
-     * Note that if this {@link Single} completes without a value, the resulting {@link CompletionStage} will be completed
-     * exceptionally with an {@link IllegalStateException}
+     * If this {@link Single} completes without a value, the resulting {@link Single} completes with an
+     * empty {@link Optional}.
      *
      * @return CompletionStage
      */
-    default CompletionStage<Optional<T>> toOptionalStage() {
+    default Single<Optional<T>> toOptionalSingle() {
         try {
             SingleToOptionalFuture<T> subscriber = new SingleToOptionalFuture<>();
             this.subscribe(subscriber);
-            return subscriber;
+            return Single.create(subscriber);
         } catch (Throwable ex) {
-            CompletableFuture<Optional<T>> future = new CompletableFuture<>();
-            future.completeExceptionally(ex);
-            return future;
+            return Single.error(ex);
         }
     }
 
@@ -584,8 +648,21 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
      * @return CompletionStage
      */
     default CompletionStage<T> toStage() {
+        return toStage(false);
+    }
+
+    /**
+     * Exposes this {@link Single} instance as a {@link CompletionStage}.
+     * Note that if this {@link Single} completes without a value and {@code completeWithoutValue}
+     * is set to {@code false}, the resulting {@link CompletionStage} will be completed
+     * exceptionally with an {@link IllegalStateException}
+     *
+     * @param completeWithoutValue Allow completion without a value.
+     * @return CompletionStage
+     */
+    default CompletionStage<T> toStage(boolean completeWithoutValue) {
         try {
-            SingleToFuture<T> subscriber = new SingleToFuture<>(false);
+            SingleToFuture<T> subscriber = new SingleToFuture<>(this, completeWithoutValue);
             this.subscribe(subscriber);
             return subscriber;
         } catch (Throwable ex) {
@@ -593,6 +670,16 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
             future.completeExceptionally(ex);
             return future;
         }
+    }
+
+    /**
+     * Terminal stage, invokes provided consumer when Single is completed.
+     *
+     * @param consumer consumer to be invoked
+     * @return Single completed when the stream terminates
+     */
+    default CompletionAwaitable<Void> forSingle(Consumer<T> consumer) {
+        return this.thenAccept(consumer);
     }
 
     /**
@@ -608,7 +695,7 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
                 Flow.Subscription::cancel
         );
         this.subscribe(subscriber);
-        return Single.from(future);
+        return Single.create(future);
     }
 
     @Override
@@ -729,4 +816,17 @@ public interface Single<T> extends Subscribable<T>, CompletionStage<T>, Awaitabl
 
     @Override
     CompletionAwaitable<T> exceptionally(Function<Throwable, ? extends T> fn);
+
+    /**
+     * Returns a new CompletionAwaitable that, when this stage completes
+     * exceptionally, is executed with this stage's exception as the
+     * argument to the supplied consumer. Otherwise, if this stage
+     * completes normally, then the returned stage also completes
+     * normally with the same value.
+     *
+     * @param consumer the consumer to invoke if this CompletionAwaitable completed
+     *                 exceptionally
+     * @return the new CompletionAwaitable
+     */
+    CompletionAwaitable<T> exceptionallyAccept(Consumer<Throwable> consumer);
 }

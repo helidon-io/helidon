@@ -1,0 +1,120 @@
+
+package {{package}};
+
+import javax.json.JsonArray;
+import javax.json.JsonObject;
+import javax.json.JsonReader;
+import javax.json.JsonValue;
+import java.util.concurrent.ExecutionException;
+import java.util.logging.Logger;
+
+import io.helidon.common.reactive.Single;
+import io.helidon.dbclient.DbClient;
+import io.helidon.dbclient.DbExecute;
+
+import static javax.json.Json.createReader;
+
+/**
+ * Initialize JDBC database schema and populate it with sample data.
+ *
+ * Pokémon, and Pokémon character names are trademarks of Nintendo.
+ */
+public class InitializeDb {
+
+    private static final Logger LOGGER = Logger.getLogger(InitializeDb.class.getName());
+
+    /**
+     * Pokemon types source file.
+     * */
+    private static final String TYPES = "/Types.json";
+
+    /**
+     * Pokemons source file.
+     * */
+    private static final String POKEMONS = "/Pokemons.json";
+
+    private InitializeDb() {
+        throw new UnsupportedOperationException("Instances of InitializeDb utility class are not allowed");
+    }
+
+    /**
+     * Initialize JDBC database schema and populate it with sample data.
+     *
+     * @param dbClient database client
+     */
+    static void init(DbClient dbClient) {
+        try {
+            initSchema(dbClient);
+            initData(dbClient);
+        } catch (ExecutionException | InterruptedException e) {
+            LOGGER.warning(e.getCause() != null ? e.getCause().getMessage() : e.getMessage());
+        }
+    }
+
+    /**
+     * Initializes database schema.
+     *
+     * @param dbClient database client
+     */
+    private static void initSchema(DbClient dbClient) {
+        try {
+            dbClient.execute(exec -> exec
+                    .namedDml("create-types")
+                    .flatMapSingle(result -> exec.namedDml("create-pokemons")))
+                    .await();
+        } catch (Exception e) {
+            LOGGER.warning(e.getCause() != null ? e.getCause().getMessage() : e.getMessage());
+        }
+    }
+
+    /**
+     * Initialize database content.
+     *
+     * @param dbClient database client
+     * @throws ExecutionException when database query failed
+     * @throws InterruptedException if the current thread was interrupted
+     */
+    private static void initData(DbClient dbClient) throws InterruptedException, ExecutionException {
+        dbClient.execute(exec -> initTypes(exec).flatMapSingle(count -> initPokemons(exec)))
+                .toCompletableFuture()
+                .get();
+    }
+
+    /**
+     * Initialize Pokemon types.
+     *
+     * @param exec database client executor
+     * @return executed statements future
+     */
+    private static Single<Long> initTypes(DbExecute exec) {
+        Single<Long> stage = Single.just(0L);
+        try (JsonReader reader = createReader(InitializeDb.class.getResourceAsStream(TYPES))) {
+            JsonArray types = reader.readArray();
+            for (JsonValue typeValue : types) {
+                JsonObject type = typeValue.asJsonObject();
+                stage = stage.flatMapSingle(it -> exec.namedInsert(
+                            "insert-type", type.getInt("id"), type.getString("name")));
+            }
+        }
+        return stage;
+    }
+
+    /**
+     * Initialize Pokemons.
+     *
+     * @param exec database client executor
+     * @return executed statements future
+     */
+    private static Single<Long> initPokemons(DbExecute exec) {
+        Single<Long> stage = Single.just(0L);
+        try (JsonReader reader = createReader(InitializeDb.class.getResourceAsStream(POKEMONS))) {
+            JsonArray pokemons = reader.readArray();
+            for (JsonValue pokemonValue : pokemons) {
+                JsonObject pokemon = pokemonValue.asJsonObject();
+                stage = stage.flatMapSingle(result -> exec.namedInsert("insert-pokemon",
+                        pokemon.getInt("id"), pokemon.getString("name"), pokemon.getInt("idType")));
+            }
+        }
+        return stage;
+    }
+}

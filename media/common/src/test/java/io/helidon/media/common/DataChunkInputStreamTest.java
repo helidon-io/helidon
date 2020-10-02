@@ -18,6 +18,7 @@ package io.helidon.media.common;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -29,8 +30,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.http.DataChunk;
+import io.helidon.common.reactive.BufferedEmittingPublisher;
 import io.helidon.common.reactive.Multi;
-import io.helidon.common.reactive.OriginThreadPublisher;
+import io.helidon.common.reactive.Single;
 
 import org.junit.jupiter.api.Test;
 
@@ -70,22 +72,41 @@ public class DataChunkInputStreamTest {
     }
 
     @Test
+    public void chunksWithManyBuffers() throws IOException {
+        InputStream is = new DataChunkInputStream(Multi.just(
+                DataChunk.create(ByteBuffer.wrap("foo".getBytes()), ByteBuffer.wrap(",xxx".getBytes()).position(4)),
+                DataChunk.create(ByteBuffer.wrap(",bar".getBytes()), ByteBuffer.wrap(",bob".getBytes()))));
+        int c;
+        StringBuilder sb = new StringBuilder();
+        while ((c = is.read()) != -1) {
+            sb.append((char) c);
+        }
+        assertThat(sb.toString(), is("foo,bar,bob"));
+    }
+
+    @Test
+    public void closeMoreTheOnce() throws IOException {
+        InputStream is = new DataChunkInputStream(Single.just(DataChunk.create("test".getBytes())));
+        is.close();
+        is.close();
+    }
+
+    @Test
     public void differentThreads() throws Exception {
         List<String> test_data = List.of("test0", "test1", "test2", "test3");
         List<String> result = new ArrayList<>();
-        OriginThreadPublisher<String, String> pub = new OriginThreadPublisher<>() {
-        };
+        BufferedEmittingPublisher<String> pub = BufferedEmittingPublisher.create();
 
         ExecutorService executorService = Executors.newFixedThreadPool(2);
         Future<?> submitFuture = executorService.submit(() -> {
             for (int i = 0; i < test_data.size(); i++) {
-                pub.submit(test_data.get(i));
+                pub.emit(test_data.get(i));
                 sleep();
             }
             pub.complete();
         });
         Future<?> receiveFuture = executorService.submit(() -> {
-            DataChunkInputStream chunkInputStream = new DataChunkInputStream(Multi.from(pub)
+            DataChunkInputStream chunkInputStream = new DataChunkInputStream(Multi.create(pub)
                     .map(s -> DataChunk.create(s.getBytes())));
             for (int i = 0; i < test_data.size(); i++) {
                 try {

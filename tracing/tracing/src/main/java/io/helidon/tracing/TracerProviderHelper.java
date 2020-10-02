@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,6 @@ package io.helidon.tracing;
 import java.util.Iterator;
 import java.util.ServiceLoader;
 
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.tracing.spi.TracerProvider;
 
@@ -29,10 +27,6 @@ import io.helidon.tracing.spi.TracerProvider;
 final class TracerProviderHelper {
     private static final ServiceLoader<TracerProvider> SYSTEM_LOADER = ServiceLoader.load(TracerProvider.class);
     private static final HelidonServiceLoader<TracerProvider> SERVICE_LOADER = HelidonServiceLoader.create(SYSTEM_LOADER);
-
-    static {
-        HelidonFeatures.register(HelidonFlavor.SE, "Tracing");
-    }
 
     private TracerProviderHelper() {
     }

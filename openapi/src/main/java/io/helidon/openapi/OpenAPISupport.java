@@ -49,12 +49,12 @@ import javax.json.JsonReaderFactory;
 import javax.json.JsonString;
 import javax.json.JsonValue;
 
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
-import io.helidon.media.jsonp.server.JsonSupport;
+import io.helidon.media.common.MessageBodyReaderContext;
+import io.helidon.media.common.MessageBodyWriterContext;
+import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.openapi.internal.OpenAPIConfigImpl;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
@@ -117,10 +117,6 @@ public class OpenAPISupport implements Service {
     private static final String OPENAPI_DEFAULTED_STATIC_FILE_LOG_MESSAGE_FORMAT = "Using default OpenAPI static file %s";
     private static final String FEATURE_NAME = "OpenAPI";
 
-    static {
-        HelidonFeatures.register(HelidonFlavor.SE, FEATURE_NAME);
-    }
-
     private static final JsonReaderFactory JSON_READER_FACTORY = Json.createReaderFactory(Collections.emptyMap());
 
     /**
@@ -156,9 +152,16 @@ public class OpenAPISupport implements Service {
      */
     public void configureEndpoint(Routing.Rules rules) {
 
-        rules.get(JsonSupport.create())
+        rules.get(this::registerJsonpSupport)
                 .any(webContext, corsEnabledServiceHelper.processor())
                 .get(webContext, this::prepareResponse);
+    }
+
+    private void registerJsonpSupport(ServerRequest req, ServerResponse res) {
+        MessageBodyReaderContext readerContext = req.content().readerContext();
+        MessageBodyWriterContext writerContext = res.writerContext();
+        JsonpSupport.create().register(readerContext, writerContext);
+        req.next();
     }
 
     static synchronized SnakeYAMLParserHelper<ExpandedTypeDescription> helper() {

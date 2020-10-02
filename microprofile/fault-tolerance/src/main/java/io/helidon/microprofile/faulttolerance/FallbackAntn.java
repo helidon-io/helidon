@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,6 @@
 package io.helidon.microprofile.faulttolerance;
 
 import java.lang.reflect.Method;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.Future;
 
 import org.eclipse.microprofile.faulttolerance.ExecutionContext;
 import org.eclipse.microprofile.faulttolerance.Fallback;
@@ -28,7 +26,7 @@ import org.eclipse.microprofile.faulttolerance.exceptions.FaultToleranceDefiniti
 /**
  * Class FallbackAntn.
  */
-public class FallbackAntn extends MethodAntn implements Fallback {
+class FallbackAntn extends MethodAntn implements Fallback {
 
     /**
      * Constructor.
@@ -36,7 +34,7 @@ public class FallbackAntn extends MethodAntn implements Fallback {
      * @param beanClass Bean class.
      * @param method The method.
      */
-    public FallbackAntn(Class<?> beanClass, Method method) {
+    FallbackAntn(Class<?> beanClass, Method method) {
         super(beanClass, method);
     }
 
@@ -58,11 +56,11 @@ public class FallbackAntn extends MethodAntn implements Fallback {
                 final Method fallbackMethod = JavaMethodFinder.findMethod(method.getDeclaringClass(),
                         methodName,
                         method.getGenericParameterTypes());
-                if (!fallbackMethod.getReturnType().isAssignableFrom(method.getReturnType())
-                        && !Future.class.isAssignableFrom(method.getReturnType())
-                        && !CompletionStage.class.isAssignableFrom(method.getReturnType())) {        // async
-                    throw new FaultToleranceDefinitionException("Fallback method return type "
-                            + "is invalid: " + fallbackMethod.getReturnType());
+                if (!method.getReturnType().isAssignableFrom(fallbackMethod.getReturnType())) {
+                    throw new FaultToleranceDefinitionException("Fallback method " + fallbackMethod.getName()
+                            + " in class " + fallbackMethod.getDeclaringClass().getSimpleName()
+                            + " incompatible return type " + fallbackMethod.getReturnType()
+                            + " with " + method.getReturnType());
                 }
             } catch (NoSuchMethodException e) {
                 throw new FaultToleranceDefinitionException(e);
@@ -102,5 +100,19 @@ public class FallbackAntn extends MethodAntn implements Fallback {
         LookupResult<Fallback> lookupResult = lookupAnnotation(Fallback.class);
         final String override = getParamOverride("fallbackMethod", lookupResult.getType());
         return override != null ? override : lookupResult.getAnnotation().fallbackMethod();
+    }
+
+    @Override
+    public Class<? extends Throwable>[] applyOn() {
+        LookupResult<Fallback> lookupResult = lookupAnnotation(Fallback.class);
+        final String override = getParamOverride("applyOn", lookupResult.getType());
+        return override != null ? parseThrowableArray(override) : lookupResult.getAnnotation().applyOn();
+    }
+
+    @Override
+    public Class<? extends Throwable>[] skipOn() {
+        LookupResult<Fallback> lookupResult = lookupAnnotation(Fallback.class);
+        final String override = getParamOverride("skipOn", lookupResult.getType());
+        return override != null ? parseThrowableArray(override) : lookupResult.getAnnotation().skipOn();
     }
 }

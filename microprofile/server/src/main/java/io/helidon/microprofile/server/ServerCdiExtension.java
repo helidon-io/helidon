@@ -28,6 +28,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -43,12 +44,11 @@ import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.DeploymentException;
 import javax.enterprise.inject.spi.Extension;
 
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 import io.helidon.common.Prioritized;
 import io.helidon.common.configurable.ServerThreadPoolSupplier;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
+import io.helidon.microprofile.cdi.BuildTimeStart;
 import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.Service;
@@ -65,11 +65,8 @@ import static javax.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
  * Extension to handle web server configuration and lifecycle.
  */
 public class ServerCdiExtension implements Extension {
-    static {
-        HelidonFeatures.register(HelidonFlavor.MP, "Server");
-    }
-
     private static final Logger LOGGER = Logger.getLogger(ServerCdiExtension.class.getName());
+    private static final AtomicBoolean IN_PROGRESS_OR_RUNNING = new AtomicBoolean();
 
     // build time
     private WebServer.Builder serverBuilder = WebServer.builder()
@@ -91,6 +88,15 @@ public class ServerCdiExtension implements Extension {
     private volatile String listenHost = "0.0.0.0";
     private volatile boolean started;
     private final List<JerseySupport> jerseySupports = new LinkedList<>();
+
+    private void buildTime(@Observes @BuildTimeStart Object event) {
+        // update the status of server, as we may have been started without a builder being used
+        // such as when cdi.Main or SeContainerInitializer are used
+        if (!IN_PROGRESS_OR_RUNNING.compareAndSet(false, true)) {
+            throw new IllegalStateException("There is another builder in progress, or another Server running. "
+                                                    + "You cannot run more than one in parallel");
+        }
+    }
 
     private void prepareRuntime(@Observes @RuntimeStart Config config) {
         serverBuilder.config(config.get("server"));
@@ -206,6 +212,9 @@ public class ServerCdiExtension implements Extension {
         cpBuilder.welcomeFileName(config.get("welcome")
                                           .asString()
                                           .orElse("index.html"));
+        config.get("tmp-dir")
+                .as(Path.class)
+                .ifPresent(cpBuilder::tmpDir);
         StaticContentSupport staticContent = cpBuilder.build();
 
         if (context.exists()) {
@@ -216,18 +225,30 @@ public class ServerCdiExtension implements Extension {
     }
 
     private void stopServer(@Observes @Priority(PLATFORM_BEFORE) @BeforeDestroyed(ApplicationScoped.class) Object event) {
-        if (null == webserver) {
+        try {
+            if (started) {
+                doStop(event);
+            }
+        } finally {
+            // as there only can be a single CDI in a single JVM, once this CDI is shutting down, we
+            // can start another one
+            IN_PROGRESS_OR_RUNNING.set(false);
+        }
+    }
+
+    private void doStop(Object event) {
+        if (null == webserver || !started) {
             // nothing to do
             return;
         }
         long beforeT = System.nanoTime();
 
-        System.out.println("Stopping WebServer for " + event);
         try {
             webserver.shutdown()
                     .toCompletableFuture()
                     .get();
 
+            started = false;
             jerseySupports.forEach(JerseySupport::close);
         } catch (InterruptedException | ExecutionException e) {
             LOGGER.log(Level.SEVERE, "Failed to stop web server", e);

@@ -20,16 +20,14 @@ import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 import io.helidon.common.context.Context;
+import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.media.common.MediaContext;
 import io.helidon.media.common.MediaContextBuilder;
@@ -72,26 +70,26 @@ public interface WebServer {
     /**
      * Starts the server. Has no effect if server is running.
      *
-     * @return a completion stage of starting tryProcess
+     * @return a single to react on startup process
      */
-    CompletionStage<WebServer> start();
+    Single<WebServer> start();
 
     /**
      * Completion stage is completed when server is shut down.
      *
      * @return a completion stage of the server
      */
-    CompletionStage<WebServer> whenShutdown();
+    Single<WebServer> whenShutdown();
 
     /**
-     * Attempt to gracefully shutdown server. It is possible to use returned {@link CompletionStage} to react.
+     * Attempt to gracefully shutdown server. It is possible to use returned {@link io.helidon.common.reactive.Single} to react.
      * <p>
      * RequestMethod can be called periodically.
      *
-     * @return to react on finished shutdown tryProcess
+     * @return a single to react on finished shutdown process
      * @see #start()
      */
-    CompletionStage<WebServer> shutdown();
+    Single<WebServer> shutdown();
 
     /**
      * Returns {@code true} if the server is currently running. Running server in stopping phase returns {@code true} until it
@@ -106,8 +104,7 @@ public interface WebServer {
      *
      * @return a server context
      */
-    @SuppressWarnings("deprecation")
-    io.helidon.common.http.ContextualRegistry context();
+    Context context();
 
     /**
      * Get the parent {@link MessageBodyReaderContext} context.
@@ -326,10 +323,6 @@ public interface WebServer {
 
         private static final Logger LOGGER = Logger.getLogger(Builder.class.getName());
         private static final MediaContext DEFAULT_MEDIA_SUPPORT = MediaContext.create();
-
-        static {
-            HelidonFeatures.register(HelidonFlavor.SE, "WebServer");
-        }
 
         private final Map<String, Routing> routings = new HashMap<>();
         private Routing defaultRouting;
@@ -559,8 +552,26 @@ public interface WebServer {
         }
 
         @Override
-        public Builder tls(TlsConfig tlsConfig) {
-            configurationBuilder.tls(tlsConfig);
+        public Builder tls(WebServerTls webServerTls) {
+            configurationBuilder.tls(webServerTls);
+            return this;
+        }
+
+        @Override
+        public Builder maxHeaderSize(int size) {
+            configurationBuilder.maxHeaderSize(size);
+            return this;
+        }
+
+        @Override
+        public Builder maxInitialLineLength(int length) {
+            configurationBuilder.maxInitialLineLength(length);
+            return this;
+        }
+
+        @Override
+        public Builder enableCompression(boolean value) {
+            configurationBuilder.enableCompression(value);
             return this;
         }
 
@@ -609,9 +620,27 @@ public interface WebServer {
          * @param name                the name of the additional server socket configuration
          * @param socketConfiguration the additional named server socket configuration, never null
          * @return an updated builder
+         * @deprecated since 2.0.0, please use {@link #addSocket(SocketConfiguration)} instead, name
+         * is now part of socket configuration
          */
+        @Deprecated
         public Builder addSocket(String name, SocketConfiguration socketConfiguration) {
             configurationBuilder.addSocket(name, Objects.requireNonNull(socketConfiguration));
+            return this;
+        }
+
+        /**
+         * Adds an additional named server socket configuration. As a result, the server will listen
+         * on multiple ports.
+         * <p>
+         * An additional named server socket may have a dedicated {@link Routing} configured
+         * through {@link io.helidon.webserver.WebServer.Builder#addNamedRouting(String, Routing)}.
+         *
+         * @param config the additional named server socket configuration, never null
+         * @return an updated builder
+         */
+        public Builder addSocket(SocketConfiguration config) {
+            configurationBuilder.addSocket(config.name(), config);
             return this;
         }
 
@@ -626,26 +655,47 @@ public interface WebServer {
          * @param socketConfigurationBuilder the additional named server socket configuration builder; will be built as
          *                                   a first step of this method execution
          * @return an updated builder
+         * @deprecated since 2.0.0, please use {@link #addSocket(Supplier)} instead, name
+         *          is now part of socket configuration
          */
+        @Deprecated
         public Builder addSocket(String name, Supplier<SocketConfiguration> socketConfigurationBuilder) {
             configurationBuilder.addSocket(name, socketConfigurationBuilder);
             return this;
         }
 
         /**
+         * Adds an additional named server socket configuration builder. As a result, the server will listen
+         * on multiple ports.
+         * <p>
+         * An additional named server socket may have a dedicated {@link Routing} configured
+         * through {@link io.helidon.webserver.WebServer.Builder#addNamedRouting(String, Routing)}.
+         *
+         * @param socketConfigurationBuilder the additional named server socket configuration builder; will be built as
+         *                                   a first step of this method execution
+         * @return an updated builder
+         */
+        public Builder addSocket(Supplier<SocketConfiguration> socketConfigurationBuilder) {
+            SocketConfiguration socketConfiguration = socketConfigurationBuilder.get();
+
+            configurationBuilder.addSocket(socketConfiguration.name(), socketConfiguration);
+            return this;
+        }
+
+        /**
          * Add a named socket and routing.
          *
-         * @param name name of the socket
-         * @param socketConfiguration configuration of the socket
+         * @param socketConfiguration named configuration of the socket
          * @param routing routing to use for this socket
          *
          * @return an updated builder
          */
-        public Builder addSocket(String name, SocketConfiguration socketConfiguration, Routing routing) {
-            addSocket(name, socketConfiguration);
-            addNamedRouting(name, routing);
+        public Builder addSocket(SocketConfiguration socketConfiguration, Routing routing) {
+            addSocket(socketConfiguration);
+            addNamedRouting(socketConfiguration.name(), routing);
             return this;
         }
+
 
         /**
          * Sets an <a href="http://opentracing.io">opentracing.io</a>
@@ -694,7 +744,7 @@ public interface WebServer {
         }
 
         /**
-         * Sets a count of threads in pool used to tryProcess HTTP requests.
+         * Sets a count of threads in pool used to process HTTP requests.
          * Default value is {@code CPU_COUNT * 2}.
          * <p>
          * Configuration key: {@code workers}
@@ -718,6 +768,5 @@ public interface WebServer {
             configurationBuilder.printFeatureDetails(shouldPrint);
             return this;
         }
-
     }
 }

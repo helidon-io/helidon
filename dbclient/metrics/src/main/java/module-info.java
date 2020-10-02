@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+import io.helidon.dbclient.metrics.DbClientMetricsProvider;
+import io.helidon.dbclient.spi.DbClientServiceProvider;
+
 /**
  * Helidon DB Client Metrics.
  */
@@ -21,8 +24,9 @@ module io.helidon.dbclient.metrics {
     requires java.logging;
     requires io.helidon.dbclient;
     requires io.helidon.metrics;
+    requires io.helidon.dbclient.common;
 
     exports io.helidon.dbclient.metrics;
-    provides io.helidon.dbclient.spi.DbInterceptorProvider with io.helidon.dbclient.metrics.DbMetricsProvider;
+    provides DbClientServiceProvider with DbClientMetricsProvider;
 }
 

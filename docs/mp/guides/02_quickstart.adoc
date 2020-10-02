@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Helidon MP Quickstart
+:h1Prefix: MP
 :description: Helidon MP Quickstart guide
 :keywords: helidon
 
@@ -40,7 +41,7 @@ Generate the project sources using one (or both) of the Helidon Maven
 [source,bash,subs="attributes+"]
 .Run the Maven archetype
 ----
-mvn archetype:generate -DinteractiveMode=false \
+mvn -U archetype:generate -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
     -DarchetypeArtifactId=helidon-quickstart-mp \
     -DarchetypeVersion={helidon-version} \
@@ -142,7 +143,7 @@ Then you can try the application as you did before.
 == Deploy the application to Kubernetes
 
 If you don't have access to a Kubernetes cluster, you can
-<<getting-started/05_kubernetes.adoc,install one on your desktop>>.
+<<about/05_kubernetes.adoc,install one on your desktop>>.
 Then deploy the example:
 
 [source,bash]
@@ -189,4 +190,10 @@ Runtime Images. For more information see:
 
 * <<mp/guides/36_graalnative.adoc,GraalVM Native Images>>
 * <<mp/guides/37_jlink_image.adoc,Custom Runtime Images using `jlink`>>
+
+== The Helidon CLI
+
+With the Helidon CLI you can create additional types of Helidon applications and
+use the "dev loop" to do fast, iterative development.
+<<about/05_cli.adoc,Try it now>>.
 

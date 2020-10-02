@@ -16,14 +16,9 @@
  */
 package io.helidon.common.reactive;
 
-import org.testng.annotations.Test;
-
 import java.util.concurrent.CompletableFuture;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.nullValue;
-import static org.hamcrest.core.Is.is;
+import org.testng.annotations.Test;
 
 public class MultiFromCompletionStageTest {
 
@@ -31,7 +26,7 @@ public class MultiFromCompletionStageTest {
     public void nullItemDisallowed() {
         TestSubscriber<Object> ts = new TestSubscriber<>();
 
-        Multi.from(CompletableFuture.completedStage(null))
+        Multi.create(CompletableFuture.completedStage(null))
         .subscribe(ts);
 
         ts.assertFailure(NullPointerException.class);
@@ -41,7 +36,7 @@ public class MultiFromCompletionStageTest {
     public void nullItemDisallowed2() {
         TestSubscriber<Object> ts = new TestSubscriber<>();
 
-        Multi.from(CompletableFuture.completedStage(null), false)
+        Multi.create(CompletableFuture.completedStage(null), false)
                 .subscribe(ts);
 
         ts.assertFailure(NullPointerException.class);
@@ -51,7 +46,7 @@ public class MultiFromCompletionStageTest {
     public void nullItemMeansEmpty() {
         TestSubscriber<Object> ts = new TestSubscriber<>();
 
-        Multi.from(CompletableFuture.completedStage(null), true)
+        Multi.create(CompletableFuture.completedStage(null), true)
                 .subscribe(ts);
 
         ts.assertResult();
@@ -63,7 +58,7 @@ public class MultiFromCompletionStageTest {
 
         CompletableFuture<Integer> cf = new CompletableFuture<>();
 
-        Multi.from(cf)
+        Multi.create(cf)
                 .subscribe(ts);
 
         ts.cancel();

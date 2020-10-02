@@ -19,8 +19,10 @@ package io.helidon.tests.integration.webclient;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.context.Context;
+import io.helidon.config.Config;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
 import io.helidon.webserver.WebServer;
@@ -55,14 +57,18 @@ class TracingPropagationTest {
         WebClient client = WebClient.builder()
                 .baseUri(uri)
                 .context(context)
+                .config(Config.create().get("client"))
                 .build();
 
         client.get()
+                .queryParam("some", "value")
+                .fragment("fragment")
                 .request()
                 .thenCompose(WebClientResponse::close)
                 .toCompletableFuture()
                 .get();
 
+        TimeUnit.MILLISECONDS.sleep(1);
         List<MockSpan> mockSpans = mockTracer.finishedSpans();
         assertThat("At least one client and one server span expected", mockSpans.size(), greaterThanOrEqualTo(2));
 
@@ -79,7 +85,7 @@ class TracingPropagationTest {
         assertThat(wsSpan.operationName(), is("HTTP Request"));
         tags = wsSpan.tags();
         assertThat(tags.get(Tags.HTTP_METHOD.getKey()), is("GET"));
-        assertThat(tags.get(Tags.HTTP_URL.getKey()), is(uri));
+        assertThat(tags.get(Tags.HTTP_URL.getKey()), is("/greet?some=value#fragment"));
         assertThat(tags.get(Tags.HTTP_STATUS.getKey()), is(200));
         assertThat(tags.get(Tags.COMPONENT.getKey()), is("helidon-webserver"));
 

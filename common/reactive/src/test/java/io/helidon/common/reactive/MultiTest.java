@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -126,7 +126,7 @@ public class MultiTest {
     @Test
     public void testFromPublisher() {
         MultiTestSubscriber<String> subscriber = new MultiTestSubscriber<>();
-        Multi.from(new TestPublisher<>("foo", "bar")).subscribe(subscriber);
+        Multi.create(new TestPublisher<>("foo", "bar")).subscribe(subscriber);
         assertThat(subscriber.isComplete(), is(equalTo(true)));
         assertThat(subscriber.getLastError(), is(nullValue()));
         assertThat(subscriber.getItems(), hasItems("foo", "bar"));
@@ -135,7 +135,7 @@ public class MultiTest {
     @Test
     public void testFromMulti() {
         MultiTestSubscriber<String> subscriber = new MultiTestSubscriber<>();
-        Multi.from(Multi.<String>just("foo", "bar")).subscribe(subscriber);
+        Multi.create(Multi.<String>just("foo", "bar")).subscribe(subscriber);
         assertThat(subscriber.isComplete(), is(equalTo(true)));
         assertThat(subscriber.getLastError(), is(nullValue()));
         assertThat(subscriber.getItems(), hasItems("foo", "bar"));
@@ -498,7 +498,7 @@ public class MultiTest {
                 .collect(Collectors.toList());
 
         List<Integer> result = Multi
-                .concat(Multi.from(TEST_DATA_1), Multi.just(TEST_DATA_2))
+                .concat(Multi.create(TEST_DATA_1), Multi.just(TEST_DATA_2))
                 .collectList()
                 .get();
 
@@ -519,7 +519,7 @@ public class MultiTest {
                 .collect(Collectors.toList());
 
         assertThat(Multi
-                .concat(Multi.from(TEST_DATA_1),
+                .concat(Multi.create(TEST_DATA_1),
                         Multi.just(TEST_DATA_2)
                 )
                 .collectList()
@@ -530,7 +530,7 @@ public class MultiTest {
 
 
         assertThat(Multi
-                .concatArray(Multi.from(TEST_DATA_1),
+                .concat(Multi.create(TEST_DATA_1),
                         Multi.just(TEST_DATA_2),
                         Multi.just(TEST_DATA_3)
                 )
@@ -542,7 +542,7 @@ public class MultiTest {
         )))));
 
         assertThat(Multi
-                .concatArray(Multi.from(TEST_DATA_1),
+                .concat(Multi.create(TEST_DATA_1),
                         Multi.just(TEST_DATA_2),
                         Multi.just(TEST_DATA_3),
                         Multi.just(TEST_DATA_4)
@@ -557,7 +557,7 @@ public class MultiTest {
 
 
         assertThat(Multi
-                        .concatArray(Multi.from(TEST_DATA_1),
+                        .concat(Multi.create(TEST_DATA_1),
                                 Multi.just(TEST_DATA_2),
                                 Multi.just(TEST_DATA_3),
                                 Multi.just(TEST_DATA_4),
@@ -575,7 +575,7 @@ public class MultiTest {
 
 
         assertThat(Multi
-                        .concatArray(Multi.from(TEST_DATA_1),
+                        .concat(Multi.create(TEST_DATA_1),
                                 Multi.just(TEST_DATA_2),
                                 Multi.just(TEST_DATA_3),
                                 Multi.just(TEST_DATA_4),

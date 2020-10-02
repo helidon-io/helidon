@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-dependencies</artifactId>
-        <version>2.0.0-SNAPSHOT</version>
+        <version>2.0.3-SNAPSHOT</version>
         <relativePath>../dependencies/pom.xml</relativePath>
     </parent>
     <groupId>io.helidon.applications</groupId>
@@ -44,16 +44,16 @@
         <maven.compiler.target>${maven.compiler.source}</maven.compiler.target>
         <maven.compiler.release>${maven.compiler.source}</maven.compiler.release>
         <version.plugin.compiler>3.8.1</version.plugin.compiler>
-        <version.plugin.dependency>3.0.0</version.plugin.dependency>
+        <version.plugin.dependency>3.1.2</version.plugin.dependency>
         <version.plugin.exec>1.6.0</version.plugin.exec>
-        <version.plugin.failsafe>2.19.1</version.plugin.failsafe>
-        <version.plugin.helidon>2.0.0-M2</version.plugin.helidon>
+        <version.plugin.failsafe>3.0.0-M5</version.plugin.failsafe>
+        <version.plugin.helidon>2.1.1</version.plugin.helidon>
+        <version.plugin.helidon-cli>2.1.0</version.plugin.helidon-cli>
         <version.plugin.jar>3.0.2</version.plugin.jar>
         <version.plugin.os>1.5.0.Final</version.plugin.os>
         <version.plugin.protobuf>0.5.1</version.plugin.protobuf>
         <version.plugin.resources>2.7</version.plugin.resources>
-        <version.plugin.surefire.provider.junit>1.0.3</version.plugin.surefire.provider.junit>
-        <version.plugin.surefire>2.19.1</version.plugin.surefire>
+        <version.plugin.surefire>3.0.0-M5</version.plugin.surefire>
     </properties>
 
     <build>
@@ -76,19 +76,8 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${version.plugin.surefire}</version>
-                    <dependencies>
-                        <dependency>
-                            <groupId>org.junit.platform</groupId>
-                            <artifactId>junit-platform-surefire-provider</artifactId>
-                            <version>${version.plugin.surefire.provider.junit}</version>
-                        </dependency>
-                        <dependency>
-                            <groupId>org.junit.jupiter</groupId>
-                            <artifactId>junit-jupiter-engine</artifactId>
-                            <version>${version.lib.junit}</version>
-                        </dependency>
-                    </dependencies>
                     <configuration>
+                        <useModulePath>false</useModulePath>
                         <systemPropertyVariables>
                             <java.util.logging.config.file>${project.build.outputDirectory}/logging.properties</java.util.logging.config.file>
                         </systemPropertyVariables>
@@ -99,20 +88,9 @@
                     <artifactId>maven-failsafe-plugin</artifactId>
                     <version>${version.plugin.failsafe}</version>
                     <configuration>
+                        <useModulePath>false</useModulePath>
                         <redirectTestOutputToFile>true</redirectTestOutputToFile>
                     </configuration>
-                    <dependencies>
-                        <dependency>
-                            <groupId>org.junit.platform</groupId>
-                            <artifactId>junit-platform-surefire-provider</artifactId>
-                            <version>${version.plugin.surefire.provider.junit}</version>
-                        </dependency>
-                        <dependency>
-                            <groupId>org.junit.jupiter</groupId>
-                            <artifactId>junit-jupiter-engine</artifactId>
-                            <version>${version.lib.junit}</version>
-                        </dependency>
-                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -151,6 +129,7 @@
                             <manifest>
                                 <addClasspath>true</addClasspath>
                                 <classpathPrefix>libs</classpathPrefix>
+                                <!--suppress MavenModelInspection -->
                                 <mainClass>${mainClass}</mainClass>
                                 <useUniqueVersions>false</useUniqueVersions>
                             </manifest>
@@ -162,6 +141,7 @@
                     <artifactId>exec-maven-plugin</artifactId>
                     <version>${version.plugin.exec}</version>
                     <configuration>
+                        <!--suppress MavenModelInspection -->
                         <mainClass>${mainClass}</mainClass>
                     </configuration>
                 </plugin>
@@ -169,6 +149,11 @@
                     <groupId>io.helidon.build-tools</groupId>
                     <artifactId>helidon-maven-plugin</artifactId>
                     <version>${version.plugin.helidon}</version>
+                </plugin>
+                <plugin>
+                    <groupId>io.helidon.build-tools</groupId>
+                    <artifactId>helidon-cli-maven-plugin</artifactId>
+                    <version>${version.plugin.helidon-cli}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.xolstice.maven.plugins</groupId>
@@ -183,4 +168,25 @@
             </plugins>
         </pluginManagement>
     </build>
+    <profiles>
+        <profile>
+            <id>helidon-cli</id>
+            <activation>
+                <property>
+                    <name>helidon.cli</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>io.helidon.build-tools</groupId>
+                        <artifactId>helidon-maven-plugin</artifactId>
+                        <version>${version.plugin.helidon}</version>
+                        <extensions>true</extensions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

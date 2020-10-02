@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = OpenAPI in SE
+:h1Prefix: SE
 :toc:
 :toc-placement: preamble
 :description: Helidon SE OpenAPI Support

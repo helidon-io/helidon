@@ -34,7 +34,6 @@ import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 
 import io.helidon.common.Errors;
-import io.helidon.common.HelidonFeatures;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.security.AuthorizationResponse;
@@ -57,10 +56,6 @@ import io.helidon.security.spi.SynchronousProvider;
  * @see #create(Config)
  */
 public final class AbacProvider extends SynchronousProvider implements AuthorizationProvider {
-    static {
-        HelidonFeatures.register("Security", "Authorization", "ABAC");
-    }
-
     private static final String CONFIG_KEY = "abac";
 
     private final List<AbacValidator<? extends AbacValidatorConfig>> validators = new ArrayList<>();
@@ -156,8 +151,10 @@ public final class AbacProvider extends SynchronousProvider implements Authoriza
             if (customObject.isPresent()) {
                 attributes.add(new RuntimeAttribute(validator, customObject.get()));
             } else {
-                abacConfig.map(it -> it.get(configKey)).ifPresentOrElse(
-                        attribConfig -> {
+                // only configure this validator if its config key exists
+                // or it has a supported annotation
+                abacConfig.flatMap(it -> it.get(configKey).asNode().asOptional())
+                        .ifPresentOrElse(attribConfig -> {
                             attributes.add(new RuntimeAttribute(validator, validator.fromConfig(attribConfig)));
                         },
                         () -> {

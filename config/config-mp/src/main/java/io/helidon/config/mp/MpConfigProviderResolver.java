@@ -33,6 +33,7 @@ import java.util.stream.Stream;
 import io.helidon.common.GenericType;
 import io.helidon.config.ConfigValue;
 import io.helidon.config.MetaConfig;
+import io.helidon.config.spi.ConfigMapper;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
@@ -54,9 +55,12 @@ public class MpConfigProviderResolver extends ConfigProviderResolver {
     }
 
     @Override
-    public Config getConfig(ClassLoader loader) {
-        if (null == loader) {
-            loader = ClassLoader.getSystemClassLoader();
+    public Config getConfig(ClassLoader classLoader) {
+        ClassLoader loader;
+        if (classLoader == null) {
+            loader = Thread.currentThread().getContextClassLoader();
+        } else {
+            loader = classLoader;
         }
         Lock lock = RW_LOCK.readLock();
         try {
@@ -102,10 +106,17 @@ public class MpConfigProviderResolver extends ConfigProviderResolver {
 
     @Override
     public void registerConfig(Config config, ClassLoader classLoader) {
+        ClassLoader usedClassloader;
+        if (null == classLoader) {
+            usedClassloader = Thread.currentThread().getContextClassLoader();
+        } else {
+            usedClassloader = classLoader;
+        }
+
         Lock lock = RW_LOCK.writeLock();
         try {
             lock.lock();
-            doRegisterConfig(config, classLoader);
+            doRegisterConfig(config, usedClassloader);
         } finally {
             lock.unlock();
         }
@@ -285,6 +296,11 @@ public class MpConfigProviderResolver extends ConfigProviderResolver {
         @Override
         public ConfigValue<Map<String, String>> asMap() {
             return getCurrent().asMap();
+        }
+
+        @Override
+        public ConfigMapper mapper() {
+            return getCurrent().mapper();
         }
 
         @Override

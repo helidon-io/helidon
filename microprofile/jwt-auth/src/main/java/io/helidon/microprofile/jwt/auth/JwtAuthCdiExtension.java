@@ -56,8 +56,6 @@ import javax.json.JsonObject;
 import javax.json.JsonString;
 import javax.json.JsonValue;
 
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 import io.helidon.config.Config;
 import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.microprofile.security.SecurityCdiExtension;
@@ -80,10 +78,6 @@ import static javax.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
  * JWT Authentication CDI extension class.
  */
 public class JwtAuthCdiExtension implements Extension {
-    static {
-        HelidonFeatures.register(HelidonFlavor.MP, "Security", "MP", "JWT-Auth");
-    }
-
     private final List<ClaimIP> qualifiers = new LinkedList<>();
     private Config config;
 

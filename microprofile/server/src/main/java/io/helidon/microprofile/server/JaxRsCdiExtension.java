@@ -41,9 +41,8 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
+import javax.ws.rs.ext.Provider;
 
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 import io.helidon.webserver.jersey.JerseySupport;
 
 import org.eclipse.microprofile.config.Config;
@@ -58,14 +57,11 @@ import static javax.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
 public class JaxRsCdiExtension implements Extension {
     private static final Logger LOGGER = Logger.getLogger(JaxRsCdiExtension.class.getName());
 
-    static {
-        HelidonFeatures.register(HelidonFlavor.MP, "JAX-RS");
-    }
-
     private final List<JaxRsApplication> applicationMetas = new LinkedList<>();
 
     private final Set<Class<? extends Application>> applications = new LinkedHashSet<>();
     private final Set<Class<?>> resources = new HashSet<>();
+    private final Set<Class<?>> providers = new HashSet<>();
     private final AtomicBoolean setInStone = new AtomicBoolean(false);
 
     private void collectApplications(@Observes ProcessAnnotatedType<? extends Application> applicationType) {
@@ -80,6 +76,18 @@ public class JaxRsCdiExtension implements Extension {
         }
         LOGGER.finest(() -> "Discovered resource class " + resourceClass.getName());
         resources.add(resourceClass);
+    }
+
+    private void collectProviderClasses(@Observes @WithAnnotations(Provider.class) ProcessAnnotatedType<?> providerType) {
+        Class<?> providerClass = providerType.getAnnotatedType().getJavaClass();
+        if (providerClass.isInterface()) {
+            // we are only interested in classes
+            LOGGER.finest(() -> "Discovered @Provider interface " + providerClass
+                    .getName() + ", ignored as we only support classes");
+            return;
+        }
+        LOGGER.finest(() -> "Discovered @Provider class " + providerClass.getName());
+        providers.add(providerClass);
     }
 
     // once application scoped starts, we do not allow modification of applications
@@ -102,10 +110,16 @@ public class JaxRsCdiExtension implements Extension {
             throw new IllegalStateException("Applications are not yet fixed. This method is only available in "
                                                     + "@Initialized(ApplicationScoped.class) event, before server is started");
         }
+
+        // set of resource and provider classes that were discovered
+        Set<Class<?>> allClasses = new HashSet<>();
+        allClasses.addAll(resources);
+        allClasses.addAll(providers);
+
         if (applications.isEmpty() && applicationMetas.isEmpty()) {
             // create a synthetic application from all resource classes
             if (!resources.isEmpty()) {
-                addSyntheticApp(resources);
+                addSyntheticApp(allClasses);
             }
         }
 
@@ -114,7 +128,7 @@ public class JaxRsCdiExtension implements Extension {
                                         .stream()
                                         .map(appClass -> JaxRsApplication.builder()
                                                 .applicationClass(appClass)
-                                                .config(ResourceConfig.forApplicationClass(appClass, resources))
+                                                .config(ResourceConfig.forApplicationClass(appClass, allClasses))
                                                 .build())
                                         .collect(Collectors.toList()));
 
@@ -238,7 +252,7 @@ public class JaxRsCdiExtension implements Extension {
     // set-up synthetic application from resource classes
     private void addSyntheticApp(Collection<Class<?>> resourceClasses) {
         // the classes set must be created before the lambda, as the incoming collection may be mutable
-        Set<Class<?>> classes = new HashSet<>(resourceClasses);
+        Set<Class<?>> classes = Set.copyOf(resourceClasses);
         this.applicationMetas.add(JaxRsApplication.builder()
                                           .synthetic(true)
                                           .applicationClass(Application.class)

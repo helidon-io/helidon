@@ -16,6 +16,8 @@
 
 package io.helidon.microprofile.example.websocket;
 
+import java.util.logging.Logger;
+
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
@@ -26,6 +28,8 @@ import javax.ws.rs.Path;
  */
 @Path("rest")
 public class MessageQueueResource {
+
+    private static final Logger LOGGER = Logger.getLogger(MessageQueueResource.class.getName());
 
     @Inject
     private MessageQueue messageQueue;
@@ -38,6 +42,7 @@ public class MessageQueueResource {
     @POST
     @Consumes("text/plain")
     public void push(String s) {
+        LOGGER.info("push called '" + s + "'");
         messageQueue.push(s);
     }
 }

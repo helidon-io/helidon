@@ -1,0 +1,99 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2020 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= GraalVM native image
+:h1Prefix: MP
+:description: Helidon AOT using GraalVM native-image
+:keywords: helidon, aot, native, native-image, image, executable, mp
+
+Helidon applications can be compiled into a native executable using GraalVM
+native image.
+
+When using applications created using the CLI, or when you configure Helidon
+application pom as a parent of your module, you can use the following steps to
+build a native image from your application:
+
+1. Create an environment variable `GRAALVM_HOME` pointing to your installation of
+    GraalVM with `native-image` installed
+2. Run Maven command `mvn clean package -Pnative-image`
+3. Execute the native executable created in `target` directory of your project
+
+== AOT supported modules
+
+Some Helidon components are not (yet) supported in native image, some have
+restrictions. The following table lists all Helidon features and their support
+for native image.
+
+.Helidon MP features in AOT
+[cols="^1,^2s,<6,<6"]
+|===
+|{nbsp} |Feature ^|Component  ^|AOT note
+
+|✅ |CDI |CDI |{nbsp}
+|✅ |Config |Config |{nbsp}
+|✅ |{nbsp} |Encryption |{nbsp}
+|✅ |{nbsp} |YAML |{nbsp}
+|✅ |Fault Tolerance |Fault Tolerance |{nbsp}
+|✅ |Health |Health |{nbsp}
+|✅ |{nbsp} |Built-ins |{nbsp}
+|✅ |JAX-RS |JAX-RS |{nbsp}
+|✅ |JPA |JPA |{nbsp}
+|❓ |{nbsp} |EclipseLink |Not yet tested.
+|🔶 |{nbsp} |Hibernate |Experimental support, tested on limited use cases with Helidon Oracle and H2 JDBC modules
+|🔶 |JTA |JTA |Experimental support, tested on limited use cases
+|✅ |Messaging |Messaging |{nbsp}
+|✅ |Metrics |Metrics |{nbsp}
+|✅ |Open API |Open API |{nbsp}
+|🔶 |REST Client |REST Client |Does not support execution of default methods on interfaces.
+|✅ |Security |Security |{nbsp}
+|✅ |{nbsp} |Integration: Jersey |{nbsp}
+|✅ |{nbsp} |Integration: WebServer |{nbsp}
+|✅ |{nbsp} |Integration: gRPC |{nbsp}
+|✅ |{nbsp} |JWT Auth |{nbsp}
+|✅ |{nbsp} |OIDC |{nbsp}
+|✅ |{nbsp} |Provider: ABAC |{nbsp}
+|❓ |{nbsp} |Provider/ABAC/Policy: EL |Not yet tested.
+|✅ |{nbsp} |Provider/ABAC: Role |{nbsp}
+|✅ |{nbsp} |Provider/ABAC: Scope |{nbsp}
+|✅ |{nbsp} |Provider/ABAC: Time |{nbsp}
+|❓ |{nbsp} |Provider: Google Login |Not yet tested.
+|✅ |{nbsp} |Provider: Header |{nbsp}
+|✅ |{nbsp} |Provider: HTTP Basic |{nbsp}
+|✅ |{nbsp} |Provider: HTTP Digest |{nbsp}
+|✅ |{nbsp} |Provider: HTTP Signatures |{nbsp}
+|❓ |{nbsp} |Provider: IDCS Role Mapper |Not yet tested.
+|✅ |{nbsp} |Provider: JWT |{nbsp}
+|✅ |Server |Server |{nbsp}
+|✅ |{nbsp} |Access Log |{nbsp}
+|✅ |{nbsp} |CORS |{nbsp}
+|✅ |Tracing |Tracing |{nbsp}
+|✅ |{nbsp} |Integration: Jersey Server |{nbsp}
+|✅ |{nbsp} |Integration: Jersey Client |{nbsp}
+|✅ |{nbsp} |Jaeger |{nbsp}
+|✅ |{nbsp} |Zipkin |{nbsp}
+|✅ |Web Client |Web Client |{nbsp}
+|✅ |{nbsp} |Metrics |{nbsp}
+|✅ |{nbsp} |Security |{nbsp}
+|✅ |{nbsp} |Tracing |{nbsp}
+|❓ |Websocket |Websocket |Not yet tested.
+|❓ |gRPC Server |gRPC Server |Not yet tested.
+|❓ |gRPC Client |gRPC Client |Not yet tested.
+|✅ |{nbsp} |Metrics |{nbsp}
+|✅ |Metrics |Metrics |{nbsp}
+|===
+

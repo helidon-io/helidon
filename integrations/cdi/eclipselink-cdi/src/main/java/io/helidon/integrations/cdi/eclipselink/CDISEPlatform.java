@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,10 +36,10 @@ import javax.transaction.TransactionManager;
 import org.eclipse.persistence.exceptions.ValidationException;
 import org.eclipse.persistence.platform.server.JMXServerPlatformBase;
 import org.eclipse.persistence.platform.server.ServerPlatformBase;
-import org.eclipse.persistence.sessions.Connector;
-import org.eclipse.persistence.sessions.DatabaseLogin;
 import org.eclipse.persistence.sessions.DatabaseSession;
+import org.eclipse.persistence.sessions.DatasourceLogin;
 import org.eclipse.persistence.sessions.JNDIConnector;
+import org.eclipse.persistence.sessions.Session;
 import org.eclipse.persistence.transaction.JTATransactionController;
 
 /**
@@ -199,9 +199,9 @@ public class CDISEPlatform extends JMXServerPlatformBase {
      *
      * @see ServerPlatformBase#initializeExternalTransactionController()
      *
-     * @see DatabaseSession#getLogin()
+     * @see Session#getDatasourceLogin()
      *
-     * @see DatabaseLogin#getConnector()
+     * @see DatasourceLogin#getConnector()
      *
      * @see JNDIConnector
      *
@@ -223,18 +223,18 @@ public class CDISEPlatform extends JMXServerPlatformBase {
         // that is used by EclipseLink to look up a data source during
         // JPA "SE mode" persistence unit acquisition such that it
         // doesn't get overwritten by other EclipseLink internals.
-        final DatabaseSession session = this.getDatabaseSession();
+        final Session session = this.getDatabaseSession();
         if (session != null) {
-            final DatabaseLogin login = session.getLogin();
-            if (login != null) {
-                final Connector connector = login.getConnector();
+            final Object login = session.getDatasourceLogin();
+            if (login instanceof DatasourceLogin) {
+                final Object connector = ((DatasourceLogin) login).getConnector();
                 if (connector instanceof JNDIConnector) {
                     final JNDIConnector jndiConnector = (JNDIConnector) connector;
                     final String dataSourceName = jndiConnector.getName();
                     if (dataSourceName != null) {
                         try {
                             jndiConnector.setDataSource(cdi.select(DataSource.class,
-                                                                   NamedLiteral.of(jndiConnector.getName())).get());
+                                                                   NamedLiteral.of(dataSourceName)).get());
                         } catch (final InjectionException injectionExceptionOfAnyKind) {
                             throw ValidationException.cannotAcquireDataSource(dataSourceName, injectionExceptionOfAnyKind);
                         }

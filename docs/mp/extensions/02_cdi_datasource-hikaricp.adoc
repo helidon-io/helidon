@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = CDI extension for HikariCP
+:h1Prefix: MP
 :description: Helidon CDI extension for HikariCP
 :keywords: helidon, java, microservices, microprofile, extensions, cdi, hikaricp
 :hikaricp-project-url: http://brettwooldridge.github.io/HikariCP/

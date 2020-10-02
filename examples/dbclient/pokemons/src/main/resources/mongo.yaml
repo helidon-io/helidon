@@ -21,19 +21,18 @@ server:
     print-details: true
 
 tracing:
-  service: jdbc-db
+  service: mongo-db
 
 # docker run --rm --name mongo -p 27017:27017 mongo
 db:
   source: "mongoDb"
   connection:
     url: "mongodb://127.0.0.1:27017/pokemon"
-  interceptors:
+  services:
     tracing:
-      global:
+      - enabled: true
     metrics:
-      global:
-        - type: METER
+      - type: METER
   statements:
     ## Ping statement
     ping: '{

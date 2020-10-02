@@ -19,6 +19,7 @@ package io.helidon.media.common;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Flow;
@@ -38,6 +39,7 @@ public class DataChunkInputStream extends InputStream {
     private static final Logger LOGGER = Logger.getLogger(DataChunkInputStream.class.getName());
 
     private final Flow.Publisher<DataChunk> originalPublisher;
+    private int bufferIndex;
     private CompletableFuture<DataChunk> current = new CompletableFuture<>();
     private CompletableFuture<DataChunk> next = current;
     private volatile Flow.Subscription subscription;
@@ -52,11 +54,23 @@ public class DataChunkInputStream extends InputStream {
     private final AtomicBoolean subscribed = new AtomicBoolean(false);
 
     /**
-     * Stores publisher for later subscription.
+     * Stores publisher for later subscription. Disables executing thread validation.
      *
      * @param originalPublisher The original publisher.
      */
     public DataChunkInputStream(Flow.Publisher<DataChunk> originalPublisher) {
+        this(originalPublisher, false);
+    }
+
+    /**
+     * Stores publisher for later subscription and sets if executing thread should be validated.
+     * If validation is enabled, it asserts if the execution thread is the same as the thread which created this instance and
+     * throws an {@link IllegalStateException} if it does.
+     *
+     * @param originalPublisher The original publisher.
+     * @param validate          executing thread validation
+     */
+    public DataChunkInputStream(Flow.Publisher<DataChunk> originalPublisher, boolean validate) {
         this.originalPublisher = originalPublisher;
     }
 
@@ -81,8 +95,9 @@ public class DataChunkInputStream extends InputStream {
     @Override
     public void close() {
         // Assert: if current != next, next cannot ever be resolved with a chunk that needs releasing
-        current.whenComplete(DataChunkInputStream::releaseChunk);
+        Optional.ofNullable(current).ifPresent(it -> current.whenComplete(DataChunkInputStream::releaseChunk));
         current = null;
+        bufferIndex = 0;
     }
 
     @Override
@@ -115,32 +130,43 @@ public class DataChunkInputStream extends InputStream {
                 return -1;
             }
 
-            ByteBuffer currentBuffer = chunk.data();
+            ByteBuffer[] currentBuffers = chunk.data();
+            int count = 0;
+            while (bufferIndex < currentBuffers.length) {
+                if (bufferIndex == 0 && currentBuffers[bufferIndex].position() == 0) {
+                    LOGGER.finest(() -> "Reading chunk ID: " + chunk.id());
+                }
 
-            if (currentBuffer.position() == 0) {
-                LOGGER.finest(() -> "Reading chunk ID: " + chunk.id());
+                int rem = currentBuffers[bufferIndex].remaining();
+                int blen = len;
+                if (blen > rem) {
+                    blen = rem;
+                }
+                currentBuffers[bufferIndex].get(buf, off, blen);
+                off += blen;
+                count += blen;
+                len -= blen;
+
+                if (rem > blen) {
+                    break;
+                }
+
+                // Chunk is consumed entirely - release the chunk, and prefetch a new chunk; do not
+                // wait for it to arrive - the next read may have to wait less.
+                //
+                // Assert: it is safe to request new chunks eagerly - there is no mechanism
+                // to push back unconsumed data, so we can assume we own all the chunks,
+                // consumed and unconsumed.
+                if (bufferIndex == currentBuffers.length - 1) {
+                    releaseChunk(chunk, null);
+                    current = next;
+                    bufferIndex = 0;
+                    subscription.request(1);
+                    break;
+                }
+                bufferIndex++;
             }
-
-            // If there is anything to read, then read as much as fits into buf
-            int rem = currentBuffer.remaining();
-            if (len > rem) {
-                len = rem;
-            }
-            currentBuffer.get(buf, off, len);
-
-            // Chunk is consumed entirely - release the chunk, and prefetch a new chunk; do not
-            // wait for it to arrive - the next read may have to wait less.
-            //
-            // Assert: it is safe to request new chunks eagerly - there is no mechanism
-            // to push back unconsumed data, so we can assume we own all the chunks,
-            // consumed and unconsumed.
-            if (len == rem) {
-                releaseChunk(chunk, null);
-                current = next;
-                subscription.request(1);
-            }
-
-            return len;
+            return count;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IOException(e);
@@ -165,7 +191,7 @@ public class DataChunkInputStream extends InputStream {
         @Override
         public void onNext(DataChunk item) {
             LOGGER.finest(() -> "Processing chunk: " + item.id());
-            if (item.data().remaining() > 0) {
+            if (item.remaining() > 0) {
                 CompletableFuture<DataChunk> prev = next;
                 next = new CompletableFuture<>();
                 prev.complete(item);

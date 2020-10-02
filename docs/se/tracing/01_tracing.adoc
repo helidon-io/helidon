@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Tracing
+:h1Prefix: SE
 :description: Helidon Tracing Support
 = :keywords: helidon, tracing
 
@@ -61,18 +62,15 @@ ServerConfiguration.builder()
 === Configuring Tracing with gRPC Server
 
 [source,java]
-
 .Configuring OpenTracing `Tracer`
 ----
 Tracer tracer = (Tracer) TracerBuilder.create("Server")
         .collectorUri(URI.create("http://10.0.0.18:9411"))   // <1>
         .build();
 ----
-<1> If using zipkin tracing system, the endpoint would be:
-----
-http://10.0.0.18:9411/api/v2/spans
-----
+<1> If using zipkin tracing system, the endpoint would be: `http://10.0.0.18:9411/api/v2/spans`
 
+[source,java]
 .Configuring Tracing Attributes
 ----
 GrpcTracingConfig tracingConfig = new GrpcTracingConfig.Builder()
@@ -84,6 +82,7 @@ GrpcTracingConfig tracingConfig = new GrpcTracingConfig.Builder()
                 .build();
 ----
 
+[source,java]
 .Configuring gRPC Server
 ----
 GrpcServerConfiguration serverConfig = GrpcServerConfiguration.builder().port(0)
@@ -92,30 +91,10 @@ GrpcServerConfiguration serverConfig = GrpcServerConfiguration.builder().port(0)
                 .build();
 ----
 
-=== Configuration using Helidon Config [[Tracing-config]]
-There is a set of common configuration options that this section describes. In addition each tracer implementation
-may have additional configuration options - please see the documentation of each of them.
-
-Each implementation may provide defaults for these options.
-
-All common configuration options:
-|===
-|key |description
-
-|service |Name of the service sending the tracing information. This is usually visible in the trace data to
-                distinguish actors in a conversation (e.g. when multiple microservices are connected together)
-|protocol |Protocol of the tracing collector (e.g. `http`, `https`)
-|host |Host of the tracing collector (e.g. `localhost`)
-|port |Port of the tracing collector (e.g. `9411`)
-|path |Path of the tracing collector service that is used to send spans to
-|enabled |If set to false, tracing would be disabled
-|tags |String tags that are to be added to each span reported (object node of string-string pairs)
-|boolean-tags |Boolean tags that are to be added to each span reported (object node of string-boolean pairs)
-|int-tags |Int tags that are to be added to each span reported (object node of string-int pairs)
-
-|===
+include::../../shared/tracing/common-config.adoc[]
 
 == Creating custom spans
+
 To create a custom span that is a child of the WebServer request:
 
 [source,java]
@@ -128,19 +107,19 @@ Span span = request.tracer()
 
 
 == Trace propagation across services
+
 Automated trace propagation is supported currently only with Jersey client.
 
 [source,java]
 .Tracing propagation with Jersey client
 ----
-//...
-
 Response response = client.target(serviceEndpoint)
     .request()
     .get();
 ----
 
 == Traced spans
+
 The following table lists all spans traced by Helidon components:
 
 |===
@@ -208,6 +187,7 @@ current configuration.
 
 
 ==== Configuration using builder
+
 Builder approach, example that disables a single span log event:
 
 [source,java]
@@ -223,6 +203,7 @@ TracingConfig.builder()
 ----
 
 ==== Configuration using Helidon Config
+
 Tracing configuration can be defined in a config file.
 
 [source, yaml]
@@ -245,6 +226,7 @@ routing.register(WebTracingConfig.create(config.get("tracing")));
 ----
 
 ==== Path based configuration in Helidon Web Server
+
 For Web Server we have a path based support for configuring tracing, in addition
 to the configuration described above.
 
@@ -291,6 +273,7 @@ routingBuilder.register(WebTracingConfig.builder()
 ----
 
 ==== Renaming top level span using request properties
+
 To have a nicer overview in search pane of a tracer, you can customize the top-level span name using configuration.
 
 Example:
@@ -308,6 +291,7 @@ tracing:
 This is supported ONLY for the span named "HTTP Request" on component "web-server".
 
 Parameters provided:
+
 1. Method - HTTP method
 2. Path - path of the request (such as '/greet')
 3. Query - query of the request (may be null)

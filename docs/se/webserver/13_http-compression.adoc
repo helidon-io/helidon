@@ -1,0 +1,75 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2020 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+:h1Prefix: SE
+:description: Helidon WebServer HTTP Compression
+:keywords: helidon, http, compression, http compression, webserver, reactive webserver
+
+= WebServer HTTP Compression
+
+HTTP compression can improve bandwidth utilization and transfer speeds in certain scenarios. It
+requires a few extra CPU cycles for compressing and uncompressing, but these can be offset
+if data is transferred over low-bandwidth network links.
+
+A client advertises the compression encodings it supports at request time, and the
+WebServer responds by selecting an encoding it supports and setting it in a header,
+effectively _negotiating_ the content encoding of the response. If none of the
+advertised encodings is supported by the WebServer, the response is returned
+uncompressed.
+
+== Configuring HTTP Compression
+
+HTTP compression in the Helidon WebServer is _disabled_ by default. It can sometimes interfere
+with certain applications that use streaming, even if a compression encoding has not been
+negotiated with the client.
+
+It can be enabled either programmatically or via configuration,
+and it can also be enabled on a per-socket basis. When configured at the server level, it
+applies only to the _default_ socket.
+
+Programmatically, simply use the `enableCompression` method during server creation:
+
+[source,java]
+----
+    WebServer.builder()
+             .port(8080)
+             .routing(...)
+             .enableCompression(true)        // compression enabled
+             .build()
+----
+
+Or use a config file as follows and make sure the WebServer is created using it:
+
+[source,yaml]
+.WebServer HTTP Compression configuration file `application.yaml`
+----
+server:
+  port: 8080
+  enable-compression: true
+----
+
+== HTTP Compression Negotiation
+
+HTTP compression negotiation is controlled by clients using the `Accept-Encoding` header.
+The value of this header is a comma-separated list of encodings. The WebServer
+will select one of these encodings for compression purposes; it currently supports `gzip`
+and `deflate`.
+
+For example, if the request includes `Accept-Encoding: gzip, deflate`, and HTTP compression
+has been enabled as shown above, the response shall include the header `Content-Encoding: gzip`
+and a compressed payload.

@@ -31,7 +31,7 @@ public class MultiFilterPublisherTest {
     public void predicateCrash() {
         TestSubscriber<Integer> ts = new TestSubscriber<>();
 
-        Multi.from(Collections.singletonList(1))
+        Multi.create(Collections.singletonList(1))
                 .filter(v -> { throw new IllegalArgumentException(); })
                 .subscribe(ts);
 

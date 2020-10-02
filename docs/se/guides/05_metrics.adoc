@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Helidon SE Metrics Guide
+:h1Prefix: SE
 :description: Helidon metrics
 :keywords: helidon, metrics, microprofile, guide
 
@@ -39,7 +40,7 @@ Use the Helidon SE Maven archetype to create a simple project that can be used f
 [source,bash,subs="attributes+"]
 .Run the Maven archetype
 ----
-mvn archetype:generate -DinteractiveMode=false \
+mvn -U archetype:generate -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
     -DarchetypeArtifactId=helidon-quickstart-se \
     -DarchetypeVersion={helidon-version} \
@@ -363,8 +364,8 @@ import java.util.Collections;
 import javax.json.Json;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
-import org.eclipse.microprofile.metrics.Meter;
-import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.Meter; // <1>
+import org.eclipse.microprofile.metrics.MetricRegistry; // <1>
 
 public class GreetingCards implements Service {
 
@@ -427,6 +428,8 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics/application
 
 
 ==== Timer metric
+
+(See also <<#simple_timer_metric,Simple timer metric>>.)
 
 The `Timer` metric aggregates durations, provides timing statistics, and includes throughput statistics
 using an internal `Meter` metric. The `Timer` measures duration in nanoseconds. In the following example,
@@ -542,8 +545,8 @@ import java.util.Random;
 import javax.json.Json;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
-import org.eclipse.microprofile.metrics.Histogram;
-import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.Histogram; // <1>
+import org.eclipse.microprofile.metrics.MetricRegistry; // <1>
 
 public class GreetingCards implements Service {
 
@@ -580,8 +583,8 @@ public class GreetingCards implements Service {
 <1> Import metrics classes.
 <2> Declare a `Histogram` member variable.
 <3> Create and register the `Histogram` metric in the `MetricRegistry`.
-<5> Loop, loading the histogram with numbers.
 <4> Update the `Histogram` metric with a random number.
+<5> Loop, loading the histogram with numbers.
 
 
 [source,bash]
@@ -712,6 +715,84 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics/application
 }
 ----
 <1> The current temperature is returned.  Invoke the `/metrics/application` endpoint again and you should get a different value.
+
+[[simple_timer_metric]]
+==== Simple timer metric
+
+The `SimpleTimer` metric counts invocations and accumulates duration (in seconds). In the following example,
+a `SimpleTimer` metric is used to count and measure the duration of a method's execution. Whenever the REST `/cards`
+endpoint is called, the `SimpleTimer` updates its count and total elapsed time.
+
+[source,java]
+.Update the `GreetingCards` class with the following code:
+----
+package io.helidon.examples.quickstart.se;
+
+import io.helidon.metrics.RegistryFactory;
+import io.helidon.webserver.Routing;
+import io.helidon.webserver.ServerRequest;
+import io.helidon.webserver.ServerResponse;
+import io.helidon.webserver.Service;
+import java.util.Collections;
+import javax.json.Json;
+import javax.json.JsonBuilderFactory;
+import javax.json.JsonObject;
+import org.eclipse.microprofile.metrics.MetricRegistry; // <1>
+import org.eclipse.microprofile.metrics.SimpleTimer;
+
+public class GreetingCards implements Service {
+
+  private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
+  private final SimpleTimer cardTimer; // <2>
+
+  GreetingCards() {
+    RegistryFactory metricsRegistry = RegistryFactory.getInstance();
+    MetricRegistry appRegistry = metricsRegistry.getRegistry(MetricRegistry.Type.APPLICATION);
+    cardTimer = appRegistry.simpleTimer("cardSimpleTimer"); // <3>
+  }
+
+  @Override
+  public void update(Routing.Rules rules) {
+    rules.get("/", this::getDefaultMessageHandler);
+  }
+
+  private void getDefaultMessageHandler(ServerRequest request, ServerResponse response) {
+    cardTimer.time(() -> sendResponse(response, "Here are some cards ...")); // <4>
+  }
+
+  private void sendResponse(ServerResponse response, String msg) {
+    JsonObject returnObject = JSON.createObjectBuilder().add("message", msg).build();
+    response.send(returnObject);
+  }
+}
+----
+<1> Import metrics classes, particularly the `SimpleTimer` interface for this example.
+<2> Declare a `SimpleTimer` member variable.
+<3> Create and register the `SimpleTimer` metric in the `MetricRegistry`.
+<4> Wrap the business logic in the simple timer's `time` method which updates the count and the total elapsed time.
+
+
+[source,bash]
+.Build and run the application, then invoke the endpoints below:
+----
+curl http://localhost:8080/cards
+curl -H "Accept: application/json"  http://localhost:8080/metrics/application
+----
+
+
+[source,json]
+.JSON response:
+----
+{
+  "cardSimpleTimer":
+    {
+      "count":1, <1>
+      "elapsedTime":0.034274025 <2>
+    }
+}
+----
+<1> How many times the `getDefaultMessageHandler` method ran.
+<2> Cumulative time spent in the `getDefaultMessageHandler` method during its executions.
 
 
 === Integration with Kubernetes and Prometheus

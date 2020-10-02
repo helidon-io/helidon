@@ -18,12 +18,9 @@ package io.helidon.microprofile.arquillian;
 
 import java.util.logging.Logger;
 
-import javax.enterprise.inject.se.SeContainer;
-import javax.enterprise.inject.spi.CDI;
 import javax.ws.rs.ApplicationPath;
 
 import io.helidon.microprofile.server.Server;
-import io.helidon.microprofile.server.ServerCdiExtension;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
@@ -83,24 +80,6 @@ public class ServerRunner {
         if (null != server) {
             LOGGER.finest(() -> "Stopping server");
             server.stop();
-        } else {
-            //emergency cleanup see #1446
-            stopCdiContainer();
-        }
-    }
-
-    private static void stopCdiContainer() {
-        try {
-            ServerCdiExtension server = CDI.current()
-                    .getBeanManager()
-                    .getExtension(ServerCdiExtension.class);
-
-            if (server.started()) {
-                SeContainer container = (SeContainer) CDI.current();
-                container.close();
-            }
-        } catch (IllegalStateException e) {
-            //noop container is not running
         }
     }
 }

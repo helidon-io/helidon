@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.webserver;
 import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
@@ -26,6 +27,7 @@ import java.util.logging.Logger;
 import javax.net.ssl.SSLEngine;
 
 import io.helidon.common.http.DataChunk;
+import io.helidon.common.http.Http;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -37,6 +39,7 @@ import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpRequestDecoder;
@@ -44,6 +47,7 @@ import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 
+import static io.helidon.webserver.HttpInitializer.CERTIFICATE_NAME;
 import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
 import static io.netty.handler.codec.http.HttpResponseStatus.CONTINUE;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
@@ -93,7 +97,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
             return;
         }
 
-        if (requestContext.publisher().tryAcquire() > 0) {
+        if (requestContext.publisher().hasRequests()) {
             ctx.channel().read();
         }
     }
@@ -113,6 +117,9 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                 send400BadRequest(ctx, e.getMessage());
                 return;
             }
+            request.headers().remove(Http.Header.X_HELIDON_CN);
+            Optional.ofNullable(ctx.channel().attr(CERTIFICATE_NAME).get())
+                    .ifPresent(name -> request.headers().set(Http.Header.X_HELIDON_CN, name));
             ReferenceHoldingQueue<DataChunk> queue = new ReferenceHoldingQueue<>();
             queues.add(queue);
             requestContext = new RequestContext(new HttpRequestScopedPublisher(ctx, queue), request);
@@ -145,7 +152,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                             if (queue.release()) {
                                 queues.remove(queue);
                             }
-                            publisherRef.drain();
+                            publisherRef.clearBuffer(DataChunk::release);
 
                             // Enable auto-read only after response has been completed
                             // to avoid a race condition with the next response
@@ -200,7 +207,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                     LOGGER.finer(() -> "Closing connection because request payload was not consumed; method: " + method);
                     ctx.close();
                 } else {
-                    requestContext.publisher().submit(content);
+                    requestContext.publisher().emit(content);
                 }
             }
 
@@ -223,7 +230,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
             }
             // Simply forward raw bytebuf to Tyrus for processing
             LOGGER.finest(() -> "Received ByteBuf of WebSockets connection" + msg);
-            requestContext.publisher().submit((ByteBuf) msg);
+            requestContext.publisher().emit((ByteBuf) msg);
         }
     }
 
@@ -276,13 +283,20 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
         FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, BAD_REQUEST, Unpooled.wrappedBuffer(entity));
         response.headers().add(HttpHeaderNames.CONTENT_TYPE, "text/plain");
         response.headers().add(HttpHeaderNames.CONTENT_LENGTH, entity.length);
-        ctx.write(response);
+        response.headers().add(HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE);
+
+        ctx.write(response)
+                .addListener(future -> {
+                    ctx.flush();
+                    ctx.close();
+                });
+
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         if (requestContext != null) {
-            requestContext.publisher().error(cause);
+            requestContext.publisher().fail(cause);
         }
         ctx.close();
     }

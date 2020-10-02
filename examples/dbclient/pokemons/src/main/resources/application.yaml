@@ -23,14 +23,31 @@ server:
 tracing:
   service: jdbc-db
 
-# docker run --rm --name mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=pokemon -e MYSQL_USER=user -e MYSQL_PASSWORD=password  mysql:5.7
+# see README.md for details how to run databases in docker
 db:
   source: jdbc
   connection:
-    url: jdbc:mysql://127.0.0.1:3306/pokemon?useSSL=false
-    username: user
-    password: password
-    poolName: mysql
+    #
+    # Oracle configuration
+    #
+    url: "jdbc:oracle:thin:@localhost:1521/XE"
+    username: "system"
+    password: "oracle"
+    poolName: "oracle"
+    #
+    # MySQL configuration
+    #
+#    url: jdbc:mysql://127.0.0.1:3306/pokemon?useSSL=false
+#    username: user
+#    password: password
+#    poolName: "mysql"
+    #
+    # H2 configuration
+    #
+#    url: "jdbc:h2:tcp://localhost:9092/~test"
+#    username: h2
+#    password: ""
+#    poolName: h2
     initializationFailTimeout: -1
     connectionTimeout: 2000
     helidon:
@@ -38,20 +55,19 @@ db:
         enabled: true
         # name prefix defaults to "db.pool." - if you have more than one client within a JVM, you may want to distinguish between them
         name-prefix: "hikari."
-  interceptors:
+  services:
     tracing:
-      global:
+      - enabled: true
     metrics:
-      global:
-        - type: METER
+      - type: METER
   statements:
     ## Ping statement
     ping: "DO 0"
-    ## Create database schema
-    create-types: "CREATE TABLE Types (id INTEGER NOT NULL PRIMARY KEY, name VARCHAR(64) NOT NULL)"
-    create-pokemons: "CREATE TABLE Pokemons (id INTEGER NOT NULL PRIMARY KEY, name VARCHAR(64) NOT NULL, id_type INTEGER NOT NULL REFERENCES Type(id))"
+    ## Create database schema (table "Types" is system in H2)
+    create-types: "CREATE TABLE PokeTypes (id INTEGER NOT NULL PRIMARY KEY, name VARCHAR(64) NOT NULL)"
+    create-pokemons: "CREATE TABLE Pokemons (id INTEGER NOT NULL PRIMARY KEY, name VARCHAR(64) NOT NULL, id_type INTEGER NOT NULL REFERENCES PokeTypes(id))"
     # Select all types
-    select-all-types: "SELECT id, name FROM Types"
+    select-all-types: "SELECT id, name FROM PokeTypes"
     # Select all pokemons without type information
     select-all-pokemons: "SELECT id, name, id_type FROM Pokemons"
     # Select pokemon by id
@@ -59,13 +75,13 @@ db:
     # Select pokemon by name
     select-pokemon-by-name: "SELECT id, name, id_type FROM Pokemons WHERE name = ?"
     # Insert records into database
-    insert-type: "INSERT INTO Types(id, name) VALUES(?, ?)"
+    insert-type: "INSERT INTO PokeTypes(id, name) VALUES(?, ?)"
     insert-pokemon: "INSERT INTO Pokemons(id, name, id_type) VALUES(?, ?, ?)"
     # Update name of pokemon specified by id
     update-pokemon-by-id: "UPDATE Pokemons SET name = :name, id_type = :idType WHERE id = :id"
     # Delete pokemon by id
     delete-pokemon-by-id: "DELETE FROM Pokemons WHERE id = :id"
     # Delete all types
-    delete-all-types: "DELETE FROM Types"
+    delete-all-types: "DELETE FROM PokeTypes"
     # Delete all pokemons
     delete-all-pokemons: "DELETE FROM Pokemons"

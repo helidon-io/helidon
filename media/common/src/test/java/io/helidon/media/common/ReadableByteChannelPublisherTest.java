@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,23 +23,33 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.Flow.Subscription;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.IntFunction;
 
+import io.helidon.common.LazyValue;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.reactive.RetrySchema;
+import io.helidon.common.reactive.Single;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -50,7 +60,7 @@ public class ReadableByteChannelPublisherTest {
     private static final int TEST_DATA_SIZE = 250 * 1024;
 
     @Test
-    public void allData() throws Exception {
+    void allData() throws Exception {
         PeriodicalChannel pc = new PeriodicalChannel(i -> 256, TEST_DATA_SIZE);
         CountingOnNextDelegatingPublisher publisher = new CountingOnNextDelegatingPublisher(
                 new ReadableByteChannelPublisher(pc, RetrySchema.constant(5)));
@@ -67,7 +77,7 @@ public class ReadableByteChannelPublisherTest {
     }
 
     @Test
-    public void chunky() throws Exception {
+    void chunky() throws Exception {
         PeriodicalChannel pc = createChannelWithNoAvailableData(25, 3);
         ReadableByteChannelPublisher publisher = new ReadableByteChannelPublisher(pc, RetrySchema.constant(2));
         // assert
@@ -76,10 +86,14 @@ public class ReadableByteChannelPublisherTest {
         assertByteSequence(bytes);
         assertThat(pc.threads.size(), is(2));
         assertThat(pc.isOpen(), is(false));
+
+        LazyValue<ScheduledExecutorService> executor = publisher.executor();
+        assertThat("Executor should have been used", executor.isLoaded(), is(true));
+        assertThat("Executor should have been shut down", executor.get().isShutdown(), is(true));
     }
 
     @Test
-    public void chunkyNoDelay() throws Exception {
+    void chunkyNoDelay() throws Exception {
         PeriodicalChannel pc = createChannelWithNoAvailableData(10, 3);
         ReadableByteChannelPublisher publisher = new ReadableByteChannelPublisher(pc, RetrySchema.constant(0));
         // assert
@@ -91,7 +105,7 @@ public class ReadableByteChannelPublisherTest {
     }
 
     @Test
-    public void onClosedChannel() throws Exception {
+    void onClosedChannel() throws Exception {
         PeriodicalChannel pc = new PeriodicalChannel(i -> 1024, TEST_DATA_SIZE);
         pc.close();
         ReadableByteChannelPublisher publisher = new ReadableByteChannelPublisher(pc, RetrySchema.constant(0));
@@ -102,12 +116,88 @@ public class ReadableByteChannelPublisherTest {
         } catch (ExecutionException e) {
             assertThat(e.getCause(), instanceOf(ClosedChannelException.class));
         }
+
+        LazyValue<ScheduledExecutorService> executor = publisher.executor();
+        assertThat("Executor should have not been used", executor.isLoaded(), is(false));
     }
 
     @Test
-    public void negativeDelay() throws Exception {
+    @Disabled("This test uses a sleep, so could cause issues on slow environments")
+    void onClosedInProgress() throws Exception {
+        PeriodicalChannel pc = createChannelWithNoAvailableData(5, 2);
+
+        RetrySchema schema = RetrySchema.constant(TimeUnit.SECONDS.toMillis(2));
+        ReadableByteChannelPublisher publisher = new ReadableByteChannelPublisher(pc, schema);
+
+        // start reading (this will cause 2 second delay)
+        Single<byte[]> data = ContentReaders.readBytes(publisher);
+        // run the stream
+        data.thenRun(() -> {
+        });
+        Thread.sleep(1000);
+        // immediately close the channel, so we fail reading
+        pc.close();
+
+        CompletionException c = assertThrows(CompletionException.class, () -> data.await(5, TimeUnit.SECONDS));
+        assertThat(c.getCause(), instanceOf(ClosedChannelException.class));
+
+        LazyValue<ScheduledExecutorService> executor = publisher.executor();
+        assertThat("Executor should have been used", executor.isLoaded(), is(true));
+        assertThat("Executor should have been shut down", executor.get().isShutdown(), is(true));
+    }
+
+    @Test
+    void testCancelled() throws Exception {
+        PeriodicalChannel pc = createChannelWithNoAvailableData(5, 1);
+
+        ReadableByteChannelPublisher publisher = new ReadableByteChannelPublisher(pc, RetrySchema.constant(100));
+
+        AtomicReference<Subscription> subscriptionRef = new AtomicReference<>();
+        final CountDownLatch onNextCalled = new CountDownLatch(1);
+        AtomicReference<Throwable> failure = new AtomicReference<>();
+        AtomicBoolean completeCalled = new AtomicBoolean();
+
+        publisher.subscribe(new Subscriber<>() {
+            @Override
+            public void onSubscribe(Subscription subscription) {
+                subscriptionRef.set(subscription);
+                subscription.request(1);
+            }
+
+            @Override
+            public void onNext(DataChunk item) {
+                onNextCalled.countDown();
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+                failure.set(throwable);
+            }
+
+            @Override
+            public void onComplete() {
+                completeCalled.set(true);
+            }
+        });
+
+        onNextCalled.await(5, TimeUnit.SECONDS);
+        subscriptionRef.get().cancel();
+
+        assertThat("Should not complete", completeCalled.get(), is(false));
+        assertThat("Exception should be null", failure.get(), is(nullValue()));
+
+        LazyValue<ScheduledExecutorService> executor = publisher.executor();
+        assertThat("Executor should have been used", executor.isLoaded(), is(true));
+        assertThat("Executor should have been shut down", executor.get().isShutdown(), is(true));
+    }
+
+    @Test
+    void negativeDelay() throws Exception {
         PeriodicalChannel pc = createChannelWithNoAvailableData(10, 1);
-        ReadableByteChannelPublisher publisher = new ReadableByteChannelPublisher(pc, (i, delay) -> i >= 3 ? -10 : 0);
+
+        RetrySchema schema = (i, delay) -> i >= 3 ? -10 : 0;
+        ReadableByteChannelPublisher publisher = new ReadableByteChannelPublisher(pc, schema);
+
         // assert
         try {
             ContentReaders.readBytes(publisher).get(5, TimeUnit.SECONDS);

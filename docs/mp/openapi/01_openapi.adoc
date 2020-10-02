@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = OpenAPI
+:h1Prefix: MP
 :toc:
 :toc-placement: preamble
 :description: Helidon MP OpenAPI Support

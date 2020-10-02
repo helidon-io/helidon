@@ -65,7 +65,7 @@ public class BaselineJMH {
 
     @Benchmark
     public void from(Blackhole bh) {
-        Multi.from(collection).subscribe(new SyncUnboundedJmhSubscriber(bh));
+        Multi.create(collection).subscribe(new SyncUnboundedJmhSubscriber(bh));
     }
 
     @Benchmark

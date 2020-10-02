@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import io.helidon.security.ProviderRequest;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.SecurityEnvironment;
+import io.helidon.security.SecurityLevel;
 import io.helidon.security.SecurityResponse;
 import io.helidon.security.Subject;
 
@@ -93,9 +94,13 @@ public class AtnProviderSyncTest {
         when(context.service()).thenReturn(Optional.empty());
 
         SecurityEnvironment se = SecurityEnvironment.create();
+
+        SecurityLevel level = SecurityLevel.create("mock")
+                .withClassAnnotations(Map.of(AtnProviderSync.AtnAnnot.class, List.of(annot)))
+                .build();
+
         EndpointConfig ep = EndpointConfig.builder()
-                .annotations(EndpointConfig.AnnotationScope.CLASS,
-                             Map.of(AtnProviderSync.AtnAnnot.class, List.of(annot)))
+                .securityLevels(List.of(level))
                 .build();
 
         ProviderRequest request = mock(ProviderRequest.class);

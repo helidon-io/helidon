@@ -17,11 +17,15 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = WebSocket Introduction
+:h1Prefix: MP
 :pagename: websocket-introduction
 :description: Helidon WebSocket Introduction
 :keywords: helidon, webserver, websocket, mp
+:websocket-spec-url: https://projects.eclipse.org/projects/ee4j.websocket
+:tyrus-project-url: https://projects.eclipse.org/projects/ee4j.tyrus
+:helidon-websocket-example-url: https://github.com/oracle/helidon/tree/master/examples/webserver/websocket
 
-Helidon integrates with Tyrus [1] to provide support for the Jakarta WebSocket API [2].
+Helidon integrates with {tyrus-project-url}[Tyrus] to provide support for the {websocket-spec-url}[Jakarta WebSocket API].
 The WebSocket API enables Java applications to participate in WebSocket interactions
 as both servers and clients. The server API supports two flavors: annotated and
 programmatic endpoints.
@@ -152,8 +156,4 @@ independently of Netty. Therefore, there is no need to create additional threads
 for blocking or long-running operations as these will not affect Netty's ability
 to process networking data.
 
-For more information about this example, the reader is referred to [3].
-
-- [1] https://projects.eclipse.org/projects/ee4j.tyrus
-- [2] https://projects.eclipse.org/projects/ee4j.websocket
-- [3] https://github.com/oracle/helidon/tree/master/examples/microprofile/websocket
+For more information see the {helidon-websocket-example-url}[example].

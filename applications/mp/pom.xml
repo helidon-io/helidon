@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.applications</groupId>
         <artifactId>helidon-applications-project</artifactId>
-        <version>2.0.0-SNAPSHOT</version>
+        <version>2.0.3-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-mp</artifactId>
     <packaging>pom</packaging>
@@ -32,7 +32,9 @@
 
     <properties>
         <version.plugin.jandex>1.0.6</version.plugin.jandex>
-        <version.plugin.eclipselink>2.7.1.1</version.plugin.eclipselink>
+        <version.plugin.jaxb2>0.14.0</version.plugin.jaxb2>
+        <version.plugin.eclipselink>2.7.5.1</version.plugin.eclipselink>
+        <version.plugin.hibernate.enhance>${version.lib.hibernate}</version.plugin.hibernate.enhance>
         <mainClass>io.helidon.microprofile.cdi.Main</mainClass>
     </properties>
 
@@ -69,8 +71,21 @@
                             <version>${version.lib.jaxb-api}</version>
                         </dependency>
                     </dependencies>
+                    <configuration>
+                        <updatePersistenceXml>false</updatePersistenceXml>
+                    </configuration>
                 </plugin>
-            </plugins>
+                 <plugin>
+                    <groupId>org.jvnet.jaxb2.maven2</groupId>
+                    <artifactId>maven-jaxb2-plugin</artifactId>
+                    <version>${version.plugin.jaxb2}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.hibernate.orm.tooling</groupId>
+                    <artifactId>hibernate-enhance-maven-plugin</artifactId>
+                    <version>${version.plugin.hibernate.enhance}</version>
+                </plugin>
+           </plugins>
         </pluginManagement>
     </build>
 

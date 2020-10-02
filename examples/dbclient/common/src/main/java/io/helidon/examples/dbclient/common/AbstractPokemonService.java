@@ -15,7 +15,6 @@
  */
 package io.helidon.examples.dbclient.common;
 
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -23,9 +22,10 @@ import java.util.logging.Logger;
 import javax.json.JsonObject;
 
 import io.helidon.common.http.Http;
+import io.helidon.common.reactive.Multi;
+import io.helidon.common.reactive.Single;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbRow;
-import io.helidon.dbclient.DbRows;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
@@ -129,8 +129,10 @@ public abstract class AbstractPokemonService implements Service {
         String pokemonName = request.path().param("name");
 
         dbClient.execute(exec -> exec.namedGet("select-one", pokemonName))
-                .onEmpty(() -> sendNotFound(response, "Pokemon " + pokemonName + " not found"))
-                .onValue(row -> sendRow(row, response))
+                .thenAccept(opt -> opt.ifPresentOrElse(it -> sendRow(it, response),
+                                                       () -> sendNotFound(response, "Pokemon "
+                                                               + pokemonName
+                                                               + " not found")))
                 .exceptionally(throwable -> sendError(throwable, response));
     }
 
@@ -141,11 +143,10 @@ public abstract class AbstractPokemonService implements Service {
      * @param response the server response
      */
     private void listPokemons(ServerRequest request, ServerResponse response) {
-        dbClient.execute(exec -> exec.namedQuery("select-all"))
-                .thenApply(it -> it.map(JsonObject.class))
-                .thenApply(DbRows::publisher)
-                .thenAccept(it -> response.send(it, JsonObject.class))
-                .exceptionally(throwable -> sendError(throwable, response));
+        Multi<JsonObject> rows = dbClient.execute(exec -> exec.namedQuery("select-all"))
+                .map(it -> it.as(JsonObject.class));
+
+        response.send(rows, JsonObject.class);
     }
 
     /**
@@ -174,10 +175,9 @@ public abstract class AbstractPokemonService implements Service {
                 .createNamedGet("select-for-update")
                 .namedParam(pokemon)
                 .execute()
-                // TODO use onPresent/onEmpty
-                .thenCompose(maybeRow -> maybeRow.map(dbRow -> tx.createNamedUpdate("update")
+                .flatMapSingle(maybeRow -> maybeRow.map(dbRow -> tx.createNamedUpdate("update")
                         .namedParam(pokemon).execute())
-                        .orElseGet(() -> CompletableFuture.completedFuture(0L)))
+                        .orElseGet(() -> Single.just(0L)))
         ).thenAccept(count -> response.send("Updated " + count + " records"));
 
     }

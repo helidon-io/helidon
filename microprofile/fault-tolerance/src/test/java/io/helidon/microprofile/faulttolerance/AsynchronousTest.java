@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,44 +16,58 @@
 
 package io.helidon.microprofile.faulttolerance;
 
+import javax.inject.Inject;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Future;
 
+import io.helidon.microprofile.tests.junit5.AddBean;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 /**
- * Class AsynchronousTest.
+ * Tests for asynchronous invocations using {@code Asynchronous}.
  */
-public class AsynchronousTest extends FaultToleranceTest {
+@AddBean(AsynchronousBean.class)
+class AsynchronousTest extends FaultToleranceTest {
+
+    @Inject
+    private AsynchronousBean bean;
+
+    @Override
+    void reset() {
+        bean.reset();
+    }
 
     @Test
-    public void testAsync() throws Exception {
-        AsynchronousBean bean = newBean(AsynchronousBean.class);
+    void testAsync() throws Exception {
         assertThat(bean.wasCalled(), is(false));
-        Future<String> future = bean.async();
+        CompletableFuture<String> future = bean.async();
         future.get();
         assertThat(bean.wasCalled(), is(true));
     }
 
     @Test
-    public void testAsyncWithFallback() throws Exception {
-        AsynchronousBean bean = newBean(AsynchronousBean.class);
+    void testAsyncWithFallback() throws Exception {
         assertThat(bean.wasCalled(), is(false));
-        Future<String> future = bean.asyncWithFallback();
+        CompletableFuture<String> future = bean.asyncWithFallback();
         String value = future.get();
         assertThat(bean.wasCalled(), is(true));
         assertThat(value, is("fallback"));
     }
 
     @Test
-    public void testAsyncNoGet() throws Exception {
-        AsynchronousBean bean = newBean(AsynchronousBean.class);
+    void testAsyncWithFallbackFuture() {
+        Future<String> future = bean.asyncWithFallbackFuture();     // fallback ignored with Future
+        assertCompleteExceptionally(future, RuntimeException.class);
+    }
+
+    @Test
+    void testAsyncNoGet() throws Exception {
         assertThat(bean.wasCalled(), is(false));
-        Future<String> future = bean.async();
+        CompletableFuture<String> future = bean.async();
         while (!future.isDone()) {
             Thread.sleep(100);
         }
@@ -61,17 +75,15 @@ public class AsynchronousTest extends FaultToleranceTest {
     }
 
     @Test
-    public void testNotAsync() throws Exception {
-        AsynchronousBean bean = newBean(AsynchronousBean.class);
+    void testNotAsync() throws Exception {
         assertThat(bean.wasCalled(), is(false));
-        Future<String> future = bean.notAsync();
+        CompletableFuture<String> future = bean.notAsync();
         assertThat(bean.wasCalled(), is(true));
         future.get();
     }
 
     @Test
-    public void testAsyncCompletionStage() throws Exception {
-        AsynchronousBean bean = newBean(AsynchronousBean.class);
+    void testAsyncCompletionStage() throws Exception {
         assertThat(bean.wasCalled(), is(false));
         CompletionStage<String> completionStage = bean.asyncCompletionStage();
         completionStage.toCompletableFuture().get();
@@ -79,8 +91,7 @@ public class AsynchronousTest extends FaultToleranceTest {
     }
 
     @Test
-    public void testAsyncCompletionStageWithFallback() throws Exception {
-        AsynchronousBean bean = newBean(AsynchronousBean.class);
+    void testAsyncCompletionStageWithFallback() throws Exception {
         assertThat(bean.wasCalled(), is(false));
         CompletionStage<String> completionStage = bean.asyncCompletionStageWithFallback();
         String value = completionStage.toCompletableFuture().get();
@@ -89,8 +100,7 @@ public class AsynchronousTest extends FaultToleranceTest {
     }
 
     @Test
-    public void testAsyncCompletableFuture() throws Exception {
-        AsynchronousBean bean = newBean(AsynchronousBean.class);
+    void testAsyncCompletableFuture() throws Exception {
         assertThat(bean.wasCalled(), is(false));
         CompletableFuture<String> completableFuture = bean.asyncCompletableFuture();
         completableFuture.get();
@@ -98,8 +108,7 @@ public class AsynchronousTest extends FaultToleranceTest {
     }
 
     @Test
-    public void testAsyncCompletableFutureWithFallback() throws Exception {
-        AsynchronousBean bean = newBean(AsynchronousBean.class);
+    void testAsyncCompletableFutureWithFallback() throws Exception {
         assertThat(bean.wasCalled(), is(false));
         CompletableFuture<String> completableFuture = bean.asyncCompletableFutureWithFallback();
         completableFuture.get();
@@ -107,8 +116,7 @@ public class AsynchronousTest extends FaultToleranceTest {
     }
 
     @Test
-    public void testAsyncCompletableFutureWithFallbackFailure() throws Exception {
-        AsynchronousBean bean = newBean(AsynchronousBean.class);
+    void testAsyncCompletableFutureWithFallbackFailure() throws Exception {
         assertThat(bean.wasCalled(), is(false));
         CompletableFuture<String> completableFuture = bean.asyncCompletableFutureWithFallbackFailure();
         assertThat(completableFuture.get(), is("fallback"));

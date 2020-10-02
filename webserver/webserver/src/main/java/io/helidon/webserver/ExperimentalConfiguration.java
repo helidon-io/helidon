@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,6 @@ public interface ExperimentalConfiguration {
      *
      * @return a new builder instance.
      */
-    @SuppressWarnings("deprecation") // will be changed to private constructor and deprecation removed
     static Builder builder() {
         return new Builder();
     }
@@ -43,14 +42,7 @@ public interface ExperimentalConfiguration {
     final class Builder implements io.helidon.common.Builder<ExperimentalConfiguration> {
         private Http2Configuration http2;
 
-        /**
-         * Do not use this constructor.
-         * Will be changed to {@code private} in next release.
-         *
-         * @deprecated use {@link ExperimentalConfiguration#builder()} instead.
-         */
-        @Deprecated
-        public Builder() {
+        private Builder() {
         }
 
         /**

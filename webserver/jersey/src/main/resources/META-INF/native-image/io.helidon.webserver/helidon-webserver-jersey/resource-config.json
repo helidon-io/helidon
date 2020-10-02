@@ -1,4 +1,9 @@
 {
+    "bundles": [
+        {
+            "name": "javax.xml.bind.Messages"
+        }
+    ],
     "resources": [
         {
             "pattern": "org/glassfish/jersey/internal/build.properties"

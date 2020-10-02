@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import io.helidon.common.context.Context;
@@ -33,6 +34,7 @@ import io.helidon.tracing.config.TracingConfigUtil;
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
+import io.opentracing.noop.NoopScopeManager;
 import io.opentracing.noop.NoopSpanBuilder;
 import io.opentracing.propagation.Format;
 import io.opentracing.propagation.TextMapAdapter;
@@ -224,13 +226,24 @@ public abstract class WebTracingConfig {
 
     static final class RequestSpanHandler implements Handler {
         private static final String TRACING_SPAN_HTTP_REQUEST = "HTTP Request";
+        private final AtomicBoolean checkedIfShouldTrace = new AtomicBoolean();
+        private volatile boolean shouldTrace = true;
 
         RequestSpanHandler() {
         }
 
         @Override
         public void accept(ServerRequest req, ServerResponse res) {
-            doAccept(req, res);
+            if (shouldTrace && checkedIfShouldTrace.compareAndSet(false, true)) {
+                if (req.tracer().scopeManager() instanceof NoopScopeManager) {
+                    shouldTrace = false;
+                }
+            }
+
+            if (shouldTrace) {
+                doAccept(req, res);
+            }
+
             req.next();
         }
 
@@ -257,22 +270,6 @@ public abstract class WebTracingConfig {
             SpanContext inboundSpanContext = tracer.extract(Format.Builtin.HTTP_HEADERS, new TextMapAdapter(headersMap));
 
             if (inboundSpanContext instanceof NoopSpanBuilder) {
-                // this is all a noop stuff, does not matter what I do here - this is to prevent null pointers
-                // when span is used
-                // TODO once we return Optional from ServerRequest.spanContext(), we can also remove the
-                // following codeblock and we do not need to create teh span and register it with context
-                Span span = tracer.buildSpan("helidon-webserver")
-                        .asChildOf(inboundSpanContext)
-                        .start();
-
-                context.register(span);
-                context.register(span.context());
-                context.register(ServerRequest.class, span);
-                context.register(ServerRequest.class, span.context());
-
-                res.whenSent()
-                        .thenRun(span::finish);
-
                 // no tracing
                 return;
             }
@@ -304,9 +301,6 @@ public abstract class WebTracingConfig {
             // cannot use startActive, as it conflicts with the thread model we use
             Span span = spanBuilder.start();
 
-            // TODO remove the next single line for version 2.0 - we should only expose SpanContext
-            context.register(span);
-            context.register(ServerRequest.class, span);
             context.register(span.context());
             context.register(ServerRequest.class, span.context());
 

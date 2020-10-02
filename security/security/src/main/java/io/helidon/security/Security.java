@@ -41,8 +41,6 @@ import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 import io.helidon.common.configurable.ThreadPoolSupplier;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
@@ -96,10 +94,6 @@ public class Security {
 
     private static final Logger LOGGER = Logger.getLogger(Security.class.getName());
 
-    static {
-        HelidonFeatures.register(HelidonFlavor.SE, "Security");
-    }
-
     private final Collection<Class<? extends Annotation>> annotations = new LinkedList<>();
     private final List<Consumer<AuditProvider.TracedAuditEvent>> auditors = new LinkedList<>();
     private final Optional<SubjectMappingProvider> subjectMappingProvider;
@@ -109,9 +103,11 @@ public class Security {
     private final SecurityTime serverTime;
     private final Supplier<ExecutorService> executorService;
     private final Config securityConfig;
+    private final boolean enabled;
 
     @SuppressWarnings("unchecked")
     private Security(Builder builder) {
+        this.enabled = builder.enabled;
         this.instanceUuid = UUID.randomUUID().toString();
         this.serverTime = builder.serverTime;
         this.executorService = builder.executorService;
@@ -119,6 +115,13 @@ public class Security {
         this.securityTracer = SecurityUtil.getTracer(builder.tracingEnabled, builder.tracer);
         this.subjectMappingProvider = Optional.ofNullable(builder.subjectMappingProvider);
         this.securityConfig = builder.config;
+
+        if (!enabled) {
+            //security is disabled
+            audit(instanceUuid, SecurityAuditEvent.info(
+                    AuditEvent.SECURITY_TYPE_PREFIX + ".configure",
+                    "Security is disabled."));
+        }
 
         //providers
         List<NamedProvider<AuthorizationProvider>> atzProviders = new LinkedList<>();
@@ -394,6 +397,17 @@ public class Security {
     }
 
     /**
+     * Whether security is enabled or disabled.
+     * Disabled security does not check authorization and authenticates all users as
+     * {@link io.helidon.security.SecurityContext#ANONYMOUS}.
+     *
+     * @return {@code true} if security is enabled
+     */
+    public boolean enabled() {
+        return enabled;
+    }
+
+    /**
      * Builder pattern class for helping create {@link Security} in a convenient way.
      */
     public static final class Builder implements io.helidon.common.Builder<Security> {
@@ -413,6 +427,7 @@ public class Security {
         private boolean tracingEnabled = true;
         private SecurityTime serverTime = SecurityTime.builder().build();
         private Supplier<ExecutorService> executorService = ThreadPoolSupplier.create();
+        private boolean enabled = true;
 
         private Set<String> providerNames = new HashSet<>();
 
@@ -817,13 +832,27 @@ public class Security {
         }
 
         /**
+         * Security can be disabled using configuration, or explicitly.
+         * By default, security instance is enabled.
+         * Disabled security instance will not perform any checks and allow
+         * all requests.
+         *
+         * @param enabled set to {@code false} to disable security
+         * @return updated builder instance
+         */
+        public Builder enabled(boolean enabled) {
+            this.enabled = enabled;
+            return this;
+        }
+
+        /**
          * Builds configured Security instance.
          *
          * @return built instance.
          */
         @Override
         public Security build() {
-            if (allProviders.isEmpty()) {
+            if (allProviders.isEmpty() && enabled) {
                 LOGGER.warning("Security component is NOT configured with any security providers.");
             }
 
@@ -841,10 +870,21 @@ public class Security {
                 addAuthorizationProvider(new DefaultAtzProvider(), "default");
             }
 
+            if (!enabled) {
+                providerSelectionPolicy(FirstProviderSelectionPolicy::new);
+            }
+
             return new Security(this);
         }
 
         private void fromConfig(Config config) {
+            config.get("enabled").asBoolean().ifPresent(this::enabled);
+
+            if (!enabled) {
+                LOGGER.info("Security is disabled, ignoring provider configuration");
+                return;
+            }
+
             config.get("environment.server-time").as(SecurityTime::create).ifPresent(this::serverTime);
             executorSupplier(ThreadPoolSupplier.create(config.get("environment.executor-service")));
 

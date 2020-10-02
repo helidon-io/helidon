@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Health Checks
+:h1Prefix: SE
 :description: Helidon health checks
 :keywords: helidon, health-checks, health, check
 

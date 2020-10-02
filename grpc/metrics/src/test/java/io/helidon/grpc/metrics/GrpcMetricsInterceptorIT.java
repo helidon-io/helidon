@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package io.helidon.grpc.metrics;
 
 import java.util.Map;
 
-import io.helidon.common.metrics.InternalBridge.MetricID;
 import io.helidon.grpc.server.GrpcService;
 import io.helidon.grpc.server.MethodDescriptor;
 import io.helidon.grpc.server.ServiceDescriptor;
@@ -32,10 +31,13 @@ import io.grpc.ServerCallHandler;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import java.util.HashMap;
+import java.util.stream.Collectors;
+
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.Metric;
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Timer;
@@ -66,34 +68,28 @@ import static org.mockito.Mockito.when;
 @SuppressWarnings("unchecked")
 public class GrpcMetricsInterceptorIT {
 
-    private static io.helidon.common.metrics.InternalBridge.MetricRegistry vendorRegsistry;
+    private static MetricRegistry vendorRegistry;
 
-    private static io.helidon.common.metrics.InternalBridge.MetricRegistry appRegistry;
+    private static MetricRegistry appRegistry;
 
     private static Meter vendorMeter;
 
-    private static Counter vendorCounter;
-
     private long vendorMeterCount;
-
-    private long vendorCount;
 
     @BeforeAll
     static void configureMetrics() {
         Routing.Rules rules = Routing.builder().get("metrics");
         MetricsSupport.create().update(rules);
 
-        vendorRegsistry = io.helidon.common.metrics.InternalBridge.INSTANCE.getRegistryFactory().getBridgeRegistry(MetricRegistry.Type.VENDOR);
-        appRegistry = io.helidon.common.metrics.InternalBridge.INSTANCE.getRegistryFactory().getBridgeRegistry(MetricRegistry.Type.APPLICATION);
-        vendorMeter = vendorRegsistry.meter("grpc.requests.meter");
-        vendorCounter = vendorRegsistry.counter("grpc.requests.count");
+        vendorRegistry = GrpcMetrics.VENDOR_REGISTRY;
+        appRegistry = GrpcMetrics.APP_REGISTRY;
+        vendorMeter = vendorRegistry.meter(GrpcMetrics.GRPC_METER);
     }
 
     @BeforeEach
     public void setup() {
         // obtain the current counts for vendor metrics so that we can assert
         // the count in each test
-        vendorCount = vendorCounter.getCount();
         vendorMeterCount = vendorMeter.getCount();
     }
 
@@ -188,8 +184,9 @@ public class GrpcMetricsInterceptorIT {
         call.close(Status.OK, new Metadata());
 
         Map<MetricID, Metric> matchingMetrics =
-                appRegistry.getBridgeMetrics(
-                        entry -> entry.getKey().getName().equals("Foo.barTags"));
+                appRegistry.getMetrics().entrySet().stream()
+                        .filter(entry -> entry.getKey().getName().equals("Foo.barTags"))
+                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         assertThat(matchingMetrics.size(), not(0));
         Map.Entry<MetricID, Metric> match = matchingMetrics.entrySet().stream()
@@ -319,11 +316,9 @@ public class GrpcMetricsInterceptorIT {
     }
 
     private void assertVendorMetrics() {
-        Meter meter = vendorRegsistry.meter("grpc.requests.meter");
-        Counter counter = vendorRegsistry.counter("grpc.requests.count");
+        Meter meter = vendorRegistry.meter(GrpcMetrics.GRPC_METER);
 
         assertThat(meter.getCount(), is(vendorMeterCount + 1));
-        assertThat(counter.getCount(), is(vendorCount + 1));
     }
 
     private GrpcService createMockService() {

@@ -16,11 +16,19 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= JWT Auth
+= JWT Authentication
 :toc:
 :toc-placement: preamble
 :spec-name: MicroProfile JWT Auth
 :description: {spec-name} support in Helidon MP
 :keywords: helidon, mp, microprofile, security, jwt
+:h1Prefix: MP
 
-== This page is Under Construction and will be available soon
+== Overview
+JSON Web Token (JWT) defines a compact and self-contained way for securely transmitting information between parties as a JSON object. With JWT Auth you can integrate security features such as single sign on into your Helidon MP applications.  
+
+== Next Steps
+
+Learn more about JWT authentication: +
+
+https://download.eclipse.org/microprofile/microprofile-jwt-auth-1.1.1/microprofile-jwt-auth-spec.html#_introduction[Eclipse MicroProfile Interoperable JWT RBAC]

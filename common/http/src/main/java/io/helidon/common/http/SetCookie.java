@@ -38,8 +38,8 @@ public class SetCookie {
     private final Duration maxAge;
     private final String domain;
     private final String path;
-    private final Boolean secure;
-    private final Boolean httpOnly;
+    private final boolean secure;
+    private final boolean httpOnly;
 
     private SetCookie(Builder builder) {
         this.name = builder.name;
@@ -175,11 +175,11 @@ public class SetCookie {
             result.append("Path=");
             result.append(path);
         }
-        if (secure != null) {
+        if (secure) {
             result.append(PARAM_SEPARATOR);
             result.append("Secure");
         }
-        if (httpOnly != null) {
+        if (httpOnly) {
             result.append(PARAM_SEPARATOR);
             result.append("HttpOnly");
         }
@@ -196,8 +196,8 @@ public class SetCookie {
         private Duration maxAge;
         private String domain;
         private String path;
-        private Boolean secure;
-        private Boolean httpOnly;
+        private boolean secure = false;
+        private boolean httpOnly = false;
 
         private Builder(String name, String value) {
             Objects.requireNonNull(name, "Parameter 'name' is null!");

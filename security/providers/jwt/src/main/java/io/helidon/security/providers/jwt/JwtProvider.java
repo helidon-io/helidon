@@ -26,7 +26,6 @@ import java.util.Optional;
 import java.util.logging.Logger;
 
 import io.helidon.common.Errors;
-import io.helidon.common.HelidonFeatures;
 import io.helidon.common.configurable.Resource;
 import io.helidon.config.Config;
 import io.helidon.security.AuthenticationResponse;
@@ -69,10 +68,6 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
      * Configure this for outbound requests to override user to use.
      */
     public static final String EP_PROPERTY_OUTBOUND_USER = "io.helidon.security.outbound.user";
-
-    static {
-        HelidonFeatures.register("Security", "Authentication", "JWT");
-    }
 
     private final boolean optional;
     private final boolean authenticate;
@@ -123,10 +118,6 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
 
         if (!verifySignature) {
             LOGGER.info("JWT Signature validation is disabled. Any JWT will be accepted.");
-        }
-
-        if (propagate) {
-            HelidonFeatures.register("Security", "Outbound", "JWT");
         }
     }
 
@@ -793,12 +784,12 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
          * @return updated builder instance
          */
         public Builder config(Config config) {
-            config.get("optional").as(Boolean.class).ifPresent(this::optional);
-            config.get("authenticate").as(Boolean.class).ifPresent(this::authenticate);
-            config.get("propagate").as(Boolean.class).ifPresent(this::propagate);
+            config.get("optional").asBoolean().ifPresent(this::optional);
+            config.get("authenticate").asBoolean().ifPresent(this::authenticate);
+            config.get("propagate").asBoolean().ifPresent(this::propagate);
             config.get("allow-impersonation").asBoolean().ifPresent(this::allowImpersonation);
-            config.get("principal-type").as(SubjectType.class).ifPresent(this::subjectType);
-            config.get("atn-token.handler").as(TokenHandler.class).ifPresent(this::atnTokenHandler);
+            config.get("principal-type").asString().map(SubjectType::valueOf).ifPresent(this::subjectType);
+            config.get("atn-token.handler").as(TokenHandler::create).ifPresent(this::atnTokenHandler);
             config.get("atn-token").ifExists(this::verifyKeys);
             config.get("atn-token.jwt-audience").asString().ifPresent(this::expectedAudience);
             config.get("atn-token.verify-signature").asBoolean().ifPresent(this::verifySignature);

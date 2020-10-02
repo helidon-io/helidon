@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,15 +25,21 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+
+import javax.enterprise.inject.spi.Annotated;
+import javax.enterprise.inject.spi.AnnotatedMember;
+import javax.enterprise.inject.spi.AnnotatedMethod;
+import javax.enterprise.inject.spi.AnnotatedType;
 
 import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.annotation.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Metered;
+import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
 /**
@@ -46,7 +52,7 @@ public final class MetricUtil {
     }
 
     /**
-     * DO NOT USE THIS METHOD please.
+     * DO NOT USE THIS METHOD please, it will be removed.
      *
      * @param element element
      * @param annotClass annotation class
@@ -54,7 +60,8 @@ public final class MetricUtil {
      * @param <E> element type
      * @param <A> annotation type
      * @return lookup result
-     * @deprecated This method is made public to migrate from metrics1 to metrics2 for gRPC, this should be refactored
+     * @deprecated This method is made public to migrate from metrics1 to metrics2 for gRPC, this should be refactored.
+     *      This method will be removed outside of major version of Helidon.
      */
     @SuppressWarnings("unchecked")
     @Deprecated
@@ -73,10 +80,41 @@ public final class MetricUtil {
         return annotation == null ? null : new LookupResult<>(MatchingType.CLASS, annotation);
     }
 
-    static <E extends Member & AnnotatedElement>
-    MetricID getMetricID(E element, Class<?> clazz, MatchingType matchingType, String explicitName, String[] tags,
-                         boolean absolute) {
-        return new MetricID(getMetricName(element, clazz, matchingType, explicitName, absolute), tags(tags));
+    static <A extends Annotation> LookupResult<A> lookupAnnotation(
+            AnnotatedType<?> annotatedType,
+            AnnotatedMethod<?> annotatedMethod,
+            Class<A> annotClass) {
+        A annotation = annotatedMethod.getAnnotation(annotClass);
+        if (annotation != null) {
+            return new LookupResult<>(matchingType(annotatedMethod), annotation);
+        }
+
+        annotation = annotatedType.getAnnotation(annotClass);
+        if (annotation == null) {
+            annotation = annotatedType.getJavaClass().getAnnotation(annotClass);
+        }
+        return annotation == null ? null : new LookupResult<>(MatchingType.CLASS, annotation);
+    }
+
+    static <A extends Annotation> List<LookupResult<A>> lookupAnnotations(
+            AnnotatedType<?> annotatedType,
+            AnnotatedMethod<?> annotatedMethod,
+            Class<A> annotClass) {
+        List<LookupResult<A>> result = lookupAnnotations(annotatedMethod, annotClass);
+        if (result.isEmpty()) {
+            result = lookupAnnotations(annotatedType, annotClass);
+        }
+        return result;
+    }
+
+    private static <A extends Annotation>  List<LookupResult<A>> lookupAnnotations(Annotated annotated,
+            Class<A> annotClass) {
+        // We have to filter by annotation class ourselves, because annotatedMethod.getAnnotations(Class) delegates
+        // to the Java method. That would bypass any annotations that had been added dynamically to the configurator.
+        return annotated.getAnnotations().stream()
+                .filter(annotClass::isInstance)
+                .map(annotation -> new LookupResult<>(matchingType(annotated), annotClass.cast(annotation)))
+                .collect(Collectors.toList());
     }
 
     /**
@@ -207,6 +245,19 @@ public final class MetricUtil {
                     .reusable(timed.reusable()).build();
             registry.timer(meta);
             LOGGER.fine(() -> "### Registered timer " + metricName);
+        } else if (annotation instanceof SimplyTimed) {
+            SimplyTimed simplyTimed = (SimplyTimed) annotation;
+            String metricName = getMetricName(element, clazz, type, simplyTimed.name().trim(), simplyTimed.absolute());
+            String displayName = simplyTimed.displayName().trim();
+            Metadata meta = Metadata.builder()
+                    .withName(metricName)
+                    .withDisplayName(displayName.isEmpty() ? metricName : displayName)
+                    .withDescription(simplyTimed.description().trim())
+                    .withType(MetricType.SIMPLE_TIMER)
+                    .withUnit(simplyTimed.unit().trim())
+                    .reusable(simplyTimed.reusable()).build();
+            registry.timer(meta);
+            LOGGER.fine(() -> "### Registered simple timer " + metricName);
         }
     }
 
@@ -248,6 +299,13 @@ public final class MetricUtil {
          * Class.
          */
         CLASS
+    }
+
+    private static MatchingType matchingType(Annotated annotated) {
+        return annotated instanceof AnnotatedMember
+                ? (((AnnotatedMember) annotated).getJavaMember() instanceof Method
+                    ? MatchingType.METHOD : MatchingType.CLASS)
+                : MatchingType.CLASS;
     }
 
     /**

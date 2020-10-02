@@ -1,5 +1,17 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package io.helidon.tests.integration.nativeimage.mp1;
 
@@ -14,6 +26,8 @@ import javax.enterprise.inject.spi.BeanManager;
 import javax.inject.Inject;
 
 import io.helidon.microprofile.server.ServerCdiExtension;
+import io.helidon.tests.integration.nativeimage.mp1.other.BeanProcessor;
+import io.helidon.tests.integration.nativeimage.mp1.other.ProducedBean;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
@@ -39,6 +53,9 @@ public class TestBean {
 
     @Inject
     private BeanManager beanManager;
+
+    @Inject
+    private ProducedBean producedBean;
 
     private final AtomicInteger retries = new AtomicInteger();
 
@@ -75,6 +92,16 @@ public class TestBean {
                 .getMessage();
     }
 
+    public String restClientQuery(Long param) {
+        return restClient()
+                .queryParam(param);
+    }
+
+    public String restClientQuery(Boolean param) {
+        return restClient()
+                .queryParam(param);
+    }
+
     @Fallback(fallbackMethod = "fallbackTo")
     public String fallback() {
         throw new RuntimeException("intentional failure");
@@ -108,5 +135,9 @@ public class TestBean {
     @Asynchronous
     public CompletionStage<String> asynchronous() {
         return CompletableFuture.completedFuture("Async response");
+    }
+
+    public String produced() {
+        return BeanProcessor.getProducedName(producedBean);
     }
 }

@@ -21,8 +21,6 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.logging.Logger;
 
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 import io.helidon.common.context.Context;
 import io.helidon.common.reactive.Single;
 import io.helidon.security.EndpointConfig;
@@ -31,6 +29,7 @@ import io.helidon.security.OutboundSecurityResponse;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.SecurityEnvironment;
+import io.helidon.security.providers.common.OutboundConfig;
 import io.helidon.webclient.WebClientRequestHeaders;
 import io.helidon.webclient.WebClientServiceRequest;
 import io.helidon.webclient.spi.WebClientService;
@@ -47,10 +46,6 @@ public class WebClientSecurity implements WebClientService {
     private static final Logger LOGGER = Logger.getLogger(WebClientSecurity.class.getName());
 
     private static final String PROVIDER_NAME = "io.helidon.security.rest.client.security.providerName";
-
-    static {
-        HelidonFeatures.register(HelidonFlavor.SE, "WebClient", "Security");
-    }
 
     private Security security;
 
@@ -80,6 +75,10 @@ public class WebClientSecurity implements WebClientService {
 
     @Override
     public Single<WebClientServiceRequest> request(WebClientServiceRequest request) {
+        if ("true".equalsIgnoreCase(request.properties().get(OutboundConfig.PROPERTY_DISABLE_OUTBOUND))) {
+            return Single.just(request);
+        }
+
         Context requestContext = request.context();
         // context either from request or create a new one
         Optional<SecurityContext> maybeContext = requestContext.get(SecurityContext.class);
@@ -102,7 +101,10 @@ public class WebClientSecurity implements WebClientService {
         OutboundSecurityClientBuilder clientBuilder;
 
         try {
-            SecurityEnvironment.Builder outboundEnv = context.env().derive();
+            SecurityEnvironment.Builder outboundEnv = context.env()
+                    .derive()
+                    .clearHeaders();
+
             outboundEnv.method(request.method().name())
                     .path(request.path().toString())
                     .targetUri(request.uri())
@@ -127,8 +129,8 @@ public class WebClientSecurity implements WebClientService {
             throw e;
         }
 
-        return Single.from(clientBuilder.submit()
-                .thenApply(providerResponse -> processResponse(request, span, providerResponse)));
+        return Single.create(clientBuilder.submit()
+                                     .thenApply(providerResponse -> processResponse(request, span, providerResponse)));
     }
 
     private WebClientServiceRequest processResponse(WebClientServiceRequest request,

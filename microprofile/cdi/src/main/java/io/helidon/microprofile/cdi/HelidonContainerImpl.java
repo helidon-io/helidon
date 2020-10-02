@@ -41,6 +41,8 @@ import javax.enterprise.inject.spi.Extension;
 
 import io.helidon.common.HelidonFeatures;
 import io.helidon.common.HelidonFlavor;
+import io.helidon.common.LogConfig;
+import io.helidon.common.Version;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.config.mp.MpConfig;
@@ -67,6 +69,7 @@ import org.jboss.weld.environment.se.events.ContainerShutdown;
 import org.jboss.weld.environment.se.logging.WeldSELogger;
 import org.jboss.weld.manager.BeanManagerImpl;
 import org.jboss.weld.resources.spi.ResourceLoader;
+import org.jboss.weld.serialization.spi.ProxyServices;
 
 import static org.jboss.weld.config.ConfigurationKey.EXECUTOR_THREAD_POOL_TYPE;
 import static org.jboss.weld.executor.ExecutorServicesFactory.ThreadPoolType.COMMON;
@@ -92,7 +95,6 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
 
     static {
         HelidonFeatures.flavor(HelidonFlavor.MP);
-        HelidonFeatures.register(HelidonFlavor.MP, "CDI");
 
         Context.Builder contextBuilder = Context.builder()
                 .id("helidon-cdi");
@@ -141,7 +143,9 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
     private HelidonContainerImpl init() {
         LOGGER.fine(() -> "Initializing CDI container " + id);
 
-        addHelidonBeanDefiningAnnotations("javax.ws.rs.Path", "javax.websocket.server.ServerEndpoint");
+        addHelidonBeanDefiningAnnotations("javax.ws.rs.Path",
+                                          "javax.ws.rs.ext.Provider",
+                                          "javax.websocket.server.ServerEndpoint");
 
         ResourceLoader resourceLoader = new WeldResourceLoader() {
             @Override
@@ -169,6 +173,9 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
         });
 
         Deployment deployment = createDeployment(resourceLoader, bootstrap);
+        // we need to configure custom proxy services to
+        // load classes in module friendly way
+        deployment.getServices().add(ProxyServices.class, new HelidonProxyServices());
 
         ExternalConfigurationBuilder configurationBuilder = new ExternalConfigurationBuilder()
                 // weld-se uses CommonForkJoinPoolExecutorServices by default
@@ -234,7 +241,18 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
             return cdi;
         }
         LogConfig.configureRuntime();
-        Contexts.runInContext(ROOT_CONTEXT, this::doStart);
+        try {
+            Contexts.runInContext(ROOT_CONTEXT, this::doStart);
+        } catch (Exception e) {
+            try {
+                // we must clean up
+                shutdown();
+            } catch (Exception exception) {
+                e.addSuppressed(exception);
+            }
+            throw e;
+        }
+
         if (EXIT_ON_STARTED) {
             exitOnStarted();
         }
@@ -320,6 +338,7 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
         LOGGER.fine("Container started in " + now + " millis (this excludes the initialization time)");
 
         HelidonFeatures.print(HelidonFlavor.MP,
+                              Version.VERSION,
                               config.getOptionalValue("features.print-details", Boolean.class).orElse(false));
 
         // shutdown hook should be added after all initialization is done, otherwise a race condition may happen

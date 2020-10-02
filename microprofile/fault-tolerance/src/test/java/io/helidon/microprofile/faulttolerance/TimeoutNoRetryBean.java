@@ -17,31 +17,27 @@
 package io.helidon.microprofile.faulttolerance;
 
 import java.time.temporal.ChronoUnit;
-import javax.enterprise.context.Dependent;
 
 import org.eclipse.microprofile.faulttolerance.Timeout;
 import org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException;
 
 /**
- * Class TimeoutNoRetryBean.
+ * A bean with timeout methods.
  */
-@Dependent
-public class TimeoutNoRetryBean {
+class TimeoutNoRetryBean {
 
     @Timeout(value=1000, unit=ChronoUnit.MILLIS)
-    public String forceTimeoutSleep() throws InterruptedException, TimeoutException {
+    void forceTimeoutSleep() throws InterruptedException, TimeoutException {
         FaultToleranceTest.printStatus("TimeoutNoRetryBean::forceTimeout()", "failure");
         Thread.sleep(2000);
-        return "failure";
     }
 
     @Timeout(value=1000, unit=ChronoUnit.MILLIS)
-    public String forceTimeoutLoop() throws TimeoutException {
+    void forceTimeoutLoop() throws TimeoutException {
         FaultToleranceTest.printStatus("TimeoutNoRetryBean::forceTimeoutLoop()", "failure");
         long start = System.currentTimeMillis();
         while (System.currentTimeMillis() - start < 2000) {
             // busy loop
         }
-        return "success";
     }
 }

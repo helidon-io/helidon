@@ -26,6 +26,8 @@ import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.stream.Collectors;
 
+import io.helidon.common.LazyList;
+import io.helidon.common.LazyValue;
 import io.helidon.common.http.HashParameters;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
@@ -113,12 +115,18 @@ class HashRequestHeaders extends ReadOnlyParameters implements RequestHeaders {
         List<MediaType> result = this.acceptedtypesCache;
         if (result == null) {
             List<String> acceptValues = all(Http.Header.ACCEPT);
-            result = acceptValues.size() == 1 && HUC_ACCEPT_DEFAULT.equals(acceptValues.get(0))
-                    ? HUC_ACCEPT_DEFAULT_TYPES : acceptValues.stream()
-                            .flatMap(h -> Utils.tokenize(',', "\"", false, h).stream())
-                            .map(String::trim)
-                            .map(MediaType::parse)
-                            .collect(Collectors.toList());
+
+            if (acceptValues.size() == 1 && HUC_ACCEPT_DEFAULT.equals(acceptValues.get(0))) {
+                result = HUC_ACCEPT_DEFAULT_TYPES;
+
+            } else {
+                result = LazyList.create(acceptValues.stream()
+                        .flatMap(h -> Utils.tokenize(',', "\"", false, h).stream())
+                        .map(String::trim)
+                        .map(s -> LazyValue.create(() -> MediaType.parse(s)))
+                        .collect(Collectors.toList()));
+            }
+
             result = Collections.unmodifiableList(result);
             this.acceptedtypesCache = result;
         }

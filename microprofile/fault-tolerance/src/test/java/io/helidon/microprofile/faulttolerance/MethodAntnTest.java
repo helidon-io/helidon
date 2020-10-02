@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,12 +23,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
- * Class MethodAntnTest.
+ * Tests methods in class {@code MethodAntn}.
  */
-public class MethodAntnTest {
+class MethodAntnTest {
 
     @Test
-    public void testParseArray() {
+    void testParseArray() {
         assertThat(
             MethodAntn.parseThrowableArray("{ java.lang.Throwable, " +
                                            "  java.lang.Exception, " +
@@ -37,7 +37,7 @@ public class MethodAntnTest {
     }
 
     @Test
-    public void testParseArrayClassSuffix() {
+    void testParseArrayClassSuffix() {
         assertThat(
             MethodAntn.parseThrowableArray("{ java.lang.Throwable.class, " +
                                            "  java.lang.Exception.class, " +
@@ -46,14 +46,14 @@ public class MethodAntnTest {
     }
 
     @Test
-    public void testParseArrayEmpty() {
+    void testParseArrayEmpty() {
         assertThat(
             MethodAntn.parseThrowableArray("{ }"),
             is(new Class[]{}));
     }
 
     @Test
-    public void testParseArrayError() {
+    void testParseArrayError() {
         assertThrows(RuntimeException.class,
                      () -> MethodAntn.parseThrowableArray("{ Foo.class }"));
         assertThrows(RuntimeException.class,

@@ -17,9 +17,9 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Overview
+:h1Prefix: SE
 :toc:
 :toc-placement: preamble
-:h1Prefix: Se & Mp
 :helidon: Helidon
 :description: Reactive Streams support in {helidon}
 :keywords: helidon, se, microprofile, reactivestreams

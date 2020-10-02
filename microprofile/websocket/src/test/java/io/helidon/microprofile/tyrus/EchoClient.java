@@ -20,10 +20,13 @@ import javax.websocket.ClientEndpointConfig;
 import javax.websocket.CloseReason;
 import javax.websocket.Endpoint;
 import javax.websocket.EndpointConfig;
+import javax.websocket.Extension;
 import javax.websocket.MessageHandler;
 import javax.websocket.Session;
 import java.io.IOException;
 import java.net.URI;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -46,14 +49,20 @@ class EchoClient {
 
     private final URI uri;
     private final BiFunction<String, String, Boolean> equals;
+    private final List<Extension> extensions;
 
     public EchoClient(URI uri) {
         this(uri, String::equals);
     }
 
-    public EchoClient(URI uri, BiFunction<String, String, Boolean> equals) {
+    public EchoClient(URI uri, Extension... extensions) {
+        this(uri, String::equals, extensions);
+    }
+
+    public EchoClient(URI uri, BiFunction<String, String, Boolean> equals, Extension... extensions) {
         this.uri = uri;
         this.equals = equals;
+        this.extensions = Arrays.asList(extensions);
     }
 
     /**
@@ -66,7 +75,7 @@ class EchoClient {
         CountDownLatch messageLatch = new CountDownLatch(messages.length);
         CompletableFuture<Void> openFuture = new CompletableFuture<>();
         CompletableFuture<Void> closeFuture = new CompletableFuture<>();
-        ClientEndpointConfig config = ClientEndpointConfig.Builder.create().build();
+        ClientEndpointConfig config = ClientEndpointConfig.Builder.create().extensions(extensions).build();
 
         client.connectToServer(new Endpoint() {
             @Override

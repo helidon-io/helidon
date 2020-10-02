@@ -27,10 +27,12 @@ import javax.json.JsonBuilderFactory;
 import javax.json.JsonException;
 import javax.json.JsonObject;
 
+import io.helidon.common.http.FormParams;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.security.SecurityContext;
 import io.helidon.webclient.WebClient;
+import io.helidon.webclient.security.WebClientSecurity;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
@@ -75,15 +77,20 @@ public class GreetService implements Service {
         rules
                 .get("/", this::getDefaultMessageHandler)
                 .get("/redirect", this::redirect)
+                .get("/redirectPath", this::redirectPath)
                 .get("/redirect/infinite", this::redirectInfinite)
+                .post("/form", this::form)
+                .post("/form/content", this::formContent)
                 .get("/secure/basic", this::basicAuth)
                 .get("/secure/basic/outbound", this::basicAuthOutbound)
+                .get("/valuesPropagated", this::valuesPropagated)
                 .put("/greeting", this::updateGreetingHandler);
     }
 
     private void basicAuthOutbound(ServerRequest serverRequest, ServerResponse response) {
         WebClient webClient = WebClient.builder()
                 .baseUri("http://localhost:" + Main.serverPort + "/greet/secure/basic")
+                .addService(WebClientSecurity.create())
                 .build();
 
         webClient.get()
@@ -100,6 +107,13 @@ public class GreetService implements Service {
 
     }
 
+    private void valuesPropagated(ServerRequest serverRequest, ServerResponse serverResponse) {
+        String queryParam = serverRequest.queryParams().first("param").orElse("Query param not present");
+        String fragment = serverRequest.fragment();
+        serverResponse.status(Http.Status.OK_200);
+        serverResponse.send(queryParam + " " + fragment);
+    }
+
     private void basicAuth(ServerRequest serverRequest, ServerResponse response) {
         String name = serverRequest.context()
                 .get(SecurityContext.class)
@@ -111,7 +125,7 @@ public class GreetService implements Service {
     }
 
     /**
-     * Return a wordly greeting message.
+     * Return a worldly greeting message.
      *
      * @param request  the server request
      * @param response the server response
@@ -133,9 +147,26 @@ public class GreetService implements Service {
         response.status(Http.Status.MOVED_PERMANENTLY_301).send();
     }
 
+    private void redirectPath(ServerRequest request,
+                              ServerResponse response) {
+        response.headers().add(Http.Header.LOCATION, "/greet");
+        response.status(Http.Status.MOVED_PERMANENTLY_301).send();
+    }
+
     private void redirectInfinite(ServerRequest serverRequest, ServerResponse response) {
         response.headers().add(Http.Header.LOCATION, "http://localhost:" + Main.serverPort + "/greet/redirect/infinite");
         response.status(Http.Status.MOVED_PERMANENTLY_301).send();
+    }
+
+    private void form(ServerRequest req, ServerResponse res) {
+        req.content().as(FormParams.class)
+                .thenApply(form -> "Hi " + form.first("name").orElse("unknown"))
+                .thenAccept(res::send);
+    }
+
+    private void formContent(ServerRequest req, ServerResponse res) {
+        req.content().as(FormParams.class)
+                .thenAccept(res::send);
     }
 
     /**

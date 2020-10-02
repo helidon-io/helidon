@@ -17,10 +17,10 @@ package io.helidon.webclient;
 
 import java.net.URI;
 import java.net.URL;
-import java.time.temporal.TemporalUnit;
 import java.util.Map;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import io.helidon.common.GenericType;
@@ -192,7 +192,7 @@ public interface WebClientRequestBuilder {
      * @param unit   time unit
      * @return updated builder instance
      */
-    WebClientRequestBuilder connectTimeout(long amount, TemporalUnit unit);
+    WebClientRequestBuilder connectTimeout(long amount, TimeUnit unit);
 
     /**
      * Sets new read timeout for this request.
@@ -201,7 +201,7 @@ public interface WebClientRequestBuilder {
      * @param unit   time unit
      * @return updated builder instance
      */
-    WebClientRequestBuilder readTimeout(long amount, TemporalUnit unit);
+    WebClientRequestBuilder readTimeout(long amount, TimeUnit unit);
 
     /**
      * Fragment of the request.
@@ -248,6 +248,22 @@ public interface WebClientRequestBuilder {
      * @return updated builder instance
      */
     WebClientRequestBuilder accept(MediaType... mediaTypes);
+
+    /**
+     * Whether connection should be kept alive after request.
+     *
+     * @param keepAlive keep alive
+     * @return updated builder instance
+     */
+    WebClientRequestBuilder keepAlive(boolean keepAlive);
+
+    /**
+     * Set new request id. This id is used in logging messages.
+     *
+     * @param requestId new request id
+     * @return updated builder instance
+     */
+    WebClientRequestBuilder requestId(long requestId);
 
     /**
      * Performs prepared request and transforms response to requested type.
@@ -337,6 +353,17 @@ public interface WebClientRequestBuilder {
      * @return request completion stage
      */
     Single<WebClientResponse> submit(Object requestEntity);
+
+    /**
+     * Performs prepared request and submitting request entity using a marshalling function.
+     *
+     * When response is received, it is not converted to any other specific type and returned {@link CompletionStage}
+     * is notified.
+     *
+     * @param function marshalling function
+     * @return request completion stage
+     */
+    Single<WebClientResponse> submit(Function<MessageBodyWriterContext, Flow.Publisher<DataChunk>> function);
 
     /**
      * Request to a server. Contains all information about used request headers, configuration etc.

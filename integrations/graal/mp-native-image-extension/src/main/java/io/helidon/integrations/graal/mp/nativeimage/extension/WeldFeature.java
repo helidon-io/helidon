@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -68,11 +69,10 @@ public class WeldFeature implements Feature {
         return ENABLED;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public void duringSetup(DuringSetupAccess access) {
         Class<?> beanManagerClass = access.findClassByName("org.jboss.weld.manager.BeanManagerImpl");
-        Set<Class<?>> processed = new HashSet<>();
+        Set<BeanId> processed = new HashSet<>();
         Set<Set<Type>> processedExplicitProxy = new HashSet<>();
         Set<Object> processedBeanManagers = Collections.newSetFromMap(new IdentityHashMap<>());
         List<WeldProxyConfig> weldProxyConfigs = weldProxyConfigurations(access);
@@ -168,11 +168,15 @@ public class WeldFeature implements Feature {
 
     private void iterateBeans(BeanManagerImpl bm,
                               ClientProxyProvider cpp,
-                              Set<Class<?>> processed,
+                              Set<BeanId> processed,
                               Collection<Bean<?>> beans) {
         for (Bean<?> bean : beans) {
-            Class<?> clazz = bean.getBeanClass();
-            if (!processed.add(clazz)) {
+            Set<Type> beanTypes = bean.getTypes();
+
+            BeanId id = new BeanId(bean.getBeanClass(), beanTypes);
+
+            // the id is a combination of bean class and bean types, we missed types before (when using bean class only)
+            if (!processed.add(id)) {
                 continue;
             }
 
@@ -181,7 +185,7 @@ public class WeldFeature implements Feature {
                 trace(() -> "Created proxy for bean class: "
                         + bean.getBeanClass().getName()
                         + ", bean type: "
-                        + bean.getTypes()
+                        + beanTypes
                         + ", proxy class: "
                         + proxy.getClass().getName());
             } catch (Exception e) {
@@ -193,8 +197,7 @@ public class WeldFeature implements Feature {
             }
 
             // now we also need to handle all types
-            Set<Type> types = bean.getTypes();
-            types.forEach(type -> iterateBeans(bm, cpp, processed, bm.getBeans(type)));
+            beanTypes.forEach(type -> iterateBeans(bm, cpp, processed, bm.getBeans(type)));
         }
     }
 
@@ -308,6 +311,39 @@ public class WeldFeature implements Feature {
             for (int i = 0; i < size; i++) {
                 types[i] = array.getString(i);
             }
+        }
+    }
+
+    private static final class BeanId {
+        private final Class<?> beanClass;
+        private final Set<Type> types;
+
+        private BeanId(Class<?> beanClass, Set<Type> types) {
+            this.beanClass = beanClass;
+            this.types = types;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            BeanId beanId = (BeanId) o;
+            return beanClass.equals(beanId.beanClass)
+                    && types.equals(beanId.types);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(beanClass, types);
+        }
+
+        @Override
+        public String toString() {
+            return beanClass.getName() + ": " + types;
         }
     }
 }

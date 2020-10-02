@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import io.helidon.common.HelidonFeatures;
 import io.helidon.config.Config;
 import io.helidon.tracing.Tag;
 import io.helidon.tracing.TracerBuilder;
@@ -113,10 +112,6 @@ public class ZipkinTracerBuilder implements TracerBuilder<ZipkinTracerBuilder> {
     static final String DEFAULT_ZIPKIN_HOST = "127.0.0.1";
     static final Version DEFAULT_VERSION = Version.V2;
     static final boolean DEFAULT_ENABLED = true;
-
-    static {
-        HelidonFeatures.register("Tracing", "Zipkin");
-    }
 
     private final List<Tag<?>> tags = new LinkedList<>();
     private String serviceName;
@@ -322,18 +317,6 @@ public class ZipkinTracerBuilder implements TracerBuilder<ZipkinTracerBuilder> {
         if (global) {
             GlobalTracer.registerIfAbsent(result);
         }
-
-        return result;
-    }
-
-    @Override
-    public Tracer buildAndRegister() {
-        if (global) {
-            return build();
-        }
-
-        Tracer result = build();
-        GlobalTracer.register(result);
 
         return result;
     }

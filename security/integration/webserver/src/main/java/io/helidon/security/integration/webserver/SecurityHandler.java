@@ -56,7 +56,6 @@ import io.helidon.webserver.ResponseHeaders;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 
-import io.opentracing.Span;
 import io.opentracing.SpanContext;
 
 import static io.helidon.security.AuditEvent.AuditParam.plain;
@@ -202,12 +201,12 @@ public final class SecurityHandler implements Handler {
                 .ifPresent(builder::authorizer);
         config.get(KEY_AUTHENTICATE).as(Boolean.class).or(() -> defaults.authenticate)
                 .ifPresent(builder::authenticate);
-        config.get(KEY_AUTHENTICATION_OPTIONAL).as(Boolean.class)
+        config.get(KEY_AUTHENTICATION_OPTIONAL).asBoolean()
                 .or(() -> defaults.authenticationOptional)
                 .ifPresent(builder::authenticationOptional);
-        config.get(KEY_AUDIT).as(Boolean.class).or(() -> defaults.audited)
+        config.get(KEY_AUDIT).asBoolean().or(() -> defaults.audited)
                 .ifPresent(builder::audit);
-        config.get(KEY_AUTHORIZE).as(Boolean.class).or(() -> defaults.authorize)
+        config.get(KEY_AUTHORIZE).asBoolean().or(() -> defaults.authorize)
                 .ifPresent(builder::authorize);
         config.get(KEY_AUDIT_EVENT_TYPE).asString().or(() -> defaults.auditEventType)
                 .ifPresent(builder::auditEventType);
@@ -230,7 +229,7 @@ public final class SecurityHandler implements Handler {
         }
 
         // optional atn implies atn
-        config.get(KEY_AUTHENTICATION_OPTIONAL).as(Boolean.class).ifPresent(aBoolean -> {
+        config.get(KEY_AUTHENTICATION_OPTIONAL).asBoolean().ifPresent(aBoolean -> {
             if (aBoolean) {
                 if (!config.get(KEY_AUTHENTICATE).exists()) {
                     builder.authenticate(true);
@@ -442,8 +441,7 @@ public final class SecurityHandler implements Handler {
 
         SecurityClientBuilder<AuthenticationResponse> clientBuilder = securityContext.atnClientBuilder();
         configureSecurityRequest(clientBuilder,
-                                 atnTracing.findParent().orElse(null),
-                                 atnTracing.findParentSpan().orElse(null));
+                                 atnTracing.findParent().orElse(null));
 
         clientBuilder.explicitProvider(explicitAuthenticator.orElse(null)).submit().thenAccept(response -> {
             switch (response.status()) {
@@ -556,12 +554,10 @@ public final class SecurityHandler implements Handler {
     }
 
     private void configureSecurityRequest(SecurityRequestBuilder<? extends SecurityRequestBuilder<?>> request,
-                                          SpanContext parentSpanContext,
-                                          Span parentSpan) {
+                                          SpanContext parentSpanContext) {
 
         request.optional(authenticationOptional.orElse(false))
-                .tracingSpan(parentSpanContext)
-                .tracingSpan(parentSpan);
+                .tracingSpan(parentSpanContext);
     }
 
     @SuppressWarnings("ThrowableNotThrown")
@@ -603,8 +599,7 @@ public final class SecurityHandler implements Handler {
 
         client = context.atzClientBuilder();
         configureSecurityRequest(client,
-                                 atzTracing.findParent().orElse(null),
-                                 atzTracing.findParentSpan().orElse(null));
+                                 atzTracing.findParent().orElse(null));
 
         client.explicitProvider(explicitAuthorizer.orElse(null)).submit().thenAccept(response -> {
             atzTracing.logStatus(response.status());

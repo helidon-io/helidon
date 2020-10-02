@@ -169,15 +169,15 @@ public class ShakespearePlaysScrabbleWithHelidonReactiveOpt extends ShakespeareP
         Function<String, Single<Integer>> score3 =
             word ->
                 Multi.concat(
-                    Multi.from(score2.apply(word)),
-                    Multi.from(bonusForDoubleLetter.apply(word))
+                    Multi.create(score2.apply(word)),
+                    Multi.create(bonusForDoubleLetter.apply(word))
                 )
                 .reduce(Integer::sum)
                 .map(v -> v * 2 + (word.length() == 7 ? 50 : 0))
                 ;
 
         Function<Function<String, Single<Integer>>, Single<TreeMap<Integer, List<String>>>> buildHistoOnScore =
-                score -> Multi.from(shakespeareWords)
+                score -> Multi.create(shakespeareWords)
                                 .filter(scrabbleWords::contains)
                                 .filter(word -> get(checkBlanks.apply(word)))
                                 .collect(

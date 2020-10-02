@@ -28,14 +28,14 @@ import io.helidon.config.Config;
 /**
  * Builder for configuring a new SslContext for creation.
  *
- * @deprecated since 2.0.0, please use {@link TlsConfig#builder()} instead,
- *  then configure it with {@link io.helidon.webserver.WebServer.Builder#tls(TlsConfig)}
- *  or {@link io.helidon.webserver.SocketConfiguration.SocketConfigurationBuilder#tls(TlsConfig)}
+ * @deprecated since 2.0.0, please use {@link WebServerTls#builder()} instead,
+ *  then configure it with {@link io.helidon.webserver.WebServer.Builder#tls(WebServerTls)}
+ *  or {@link io.helidon.webserver.SocketConfiguration.SocketConfigurationBuilder#tls(WebServerTls)}
  */
 @Deprecated
 public final class SSLContextBuilder implements Builder<SSLContext> {
 
-    private final TlsConfig.Builder tlsConfig = TlsConfig.builder();
+    private final WebServerTls.Builder tlsConfig = WebServerTls.builder();
 
     private SSLContextBuilder() {
     }
@@ -46,9 +46,9 @@ public final class SSLContextBuilder implements Builder<SSLContext> {
      * @param privateKeyConfig the required private key configuration parameter
      * @return this builder
      *
-     * @deprecated since 2.0.0, please use {@link TlsConfig#builder()} instead,
-     *  then configure it with {@link io.helidon.webserver.WebServer.Builder#tls(TlsConfig)}
-     *  or {@link io.helidon.webserver.SocketConfiguration.SocketConfigurationBuilder#tls(TlsConfig)}
+     * @deprecated since 2.0.0, please use {@link WebServerTls#builder()} instead,
+     *  then configure it with {@link io.helidon.webserver.WebServer.Builder#tls(WebServerTls)}
+     *  or {@link io.helidon.webserver.SocketConfiguration.SocketConfigurationBuilder#tls(WebServerTls)}
      */
     @Deprecated
     public static SSLContextBuilder create(KeyConfig privateKeyConfig) {
@@ -63,9 +63,9 @@ public final class SSLContextBuilder implements Builder<SSLContext> {
      * @throws IllegalStateException in case of a problem; will wrap either an instance of {@link IOException} or
      *                               a {@link GeneralSecurityException}
      *
-     * @deprecated since 2.0.0, please use {@link TlsConfig#builder()} instead,
-     *  then configure it with {@link io.helidon.webserver.WebServer.Builder#tls(TlsConfig)}
-     *  or {@link io.helidon.webserver.SocketConfiguration.SocketConfigurationBuilder#tls(TlsConfig)}
+     * @deprecated since 2.0.0, please use {@link WebServerTls#builder()} instead,
+     *  then configure it with {@link io.helidon.webserver.WebServer.Builder#tls(WebServerTls)}
+     *  or {@link io.helidon.webserver.SocketConfiguration.SocketConfigurationBuilder#tls(WebServerTls)}
      */
     @Deprecated
     public static SSLContext create(Config sslConfig) {
@@ -87,9 +87,9 @@ public final class SSLContextBuilder implements Builder<SSLContext> {
      * @param trustConfig the trust configuration
      * @return an updated builder
      *
-     * @deprecated since 2.0.0, please use {@link TlsConfig#builder()} instead,
-     *  then configure it with {@link io.helidon.webserver.WebServer.Builder#tls(TlsConfig)}
-     *  or {@link io.helidon.webserver.SocketConfiguration.SocketConfigurationBuilder#tls(TlsConfig)}
+     * @deprecated since 2.0.0, please use {@link WebServerTls#builder()} instead,
+     *  then configure it with {@link io.helidon.webserver.WebServer.Builder#tls(WebServerTls)}
+     *  or {@link io.helidon.webserver.SocketConfiguration.SocketConfigurationBuilder#tls(WebServerTls)}
      */
     @Deprecated
     public SSLContextBuilder trustConfig(KeyConfig trustConfig) {
@@ -104,9 +104,9 @@ public final class SSLContextBuilder implements Builder<SSLContext> {
      * @param sessionCacheSize the session cache size
      * @return an updated builder
      *
-     * @deprecated since 2.0.0, please use {@link TlsConfig#builder()} instead,
-     *  then configure it with {@link io.helidon.webserver.WebServer.Builder#tls(TlsConfig)}
-     *  or {@link io.helidon.webserver.SocketConfiguration.SocketConfigurationBuilder#tls(TlsConfig)}
+     * @deprecated since 2.0.0, please use {@link WebServerTls#builder()} instead,
+     *  then configure it with {@link io.helidon.webserver.WebServer.Builder#tls(WebServerTls)}
+     *  or {@link io.helidon.webserver.SocketConfiguration.SocketConfigurationBuilder#tls(WebServerTls)}
      */
     @Deprecated
     public SSLContextBuilder sessionCacheSize(long sessionCacheSize) {
@@ -121,9 +121,9 @@ public final class SSLContextBuilder implements Builder<SSLContext> {
      * @param sessionTimeout the session timeout
      * @return an updated builder
      *
-     * @deprecated since 2.0.0, please use {@link TlsConfig#builder()} instead,
-     *  then configure it with {@link io.helidon.webserver.WebServer.Builder#tls(TlsConfig)}
-     *  or {@link io.helidon.webserver.SocketConfiguration.SocketConfigurationBuilder#tls(TlsConfig)}
+     * @deprecated since 2.0.0, please use {@link WebServerTls#builder()} instead,
+     *  then configure it with {@link io.helidon.webserver.WebServer.Builder#tls(WebServerTls)}
+     *  or {@link io.helidon.webserver.SocketConfiguration.SocketConfigurationBuilder#tls(WebServerTls)}
      */
     @Deprecated
     public SSLContextBuilder sessionTimeout(long sessionTimeout) {
@@ -138,9 +138,9 @@ public final class SSLContextBuilder implements Builder<SSLContext> {
      * @throws IllegalStateException in case of a problem; will wrap either an instance of {@link IOException} or
      *                               a {@link GeneralSecurityException}
      *
-     * @deprecated since 2.0.0, please use {@link TlsConfig#builder()} instead,
-     *  then configure it with {@link io.helidon.webserver.WebServer.Builder#tls(TlsConfig)}
-     *  or {@link io.helidon.webserver.SocketConfiguration.SocketConfigurationBuilder#tls(TlsConfig)}
+     * @deprecated since 2.0.0, please use {@link WebServerTls#builder()} instead,
+     *  then configure it with {@link io.helidon.webserver.WebServer.Builder#tls(WebServerTls)}
+     *  or {@link io.helidon.webserver.SocketConfiguration.SocketConfigurationBuilder#tls(WebServerTls)}
      */
     @Deprecated
     public SSLContext build() {

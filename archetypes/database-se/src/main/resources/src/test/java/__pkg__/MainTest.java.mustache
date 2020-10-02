@@ -1,0 +1,141 @@
+
+package {{package}};
+
+import java.util.Collections;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+
+import javax.json.Json;
+import javax.json.JsonArray;
+import javax.json.JsonBuilderFactory;
+import javax.json.JsonObject;
+
+import io.helidon.common.http.Http;
+import io.helidon.media.jsonp.JsonpSupport;
+import io.helidon.webclient.WebClient;
+import io.helidon.webserver.WebServer;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+
+public class MainTest {
+    private static final JsonBuilderFactory JSON_BUILDER = Json.createBuilderFactory(Collections.emptyMap());
+
+    private static WebServer webServer;
+    private static WebClient webClient;
+
+    @BeforeAll
+    public static void startTheServer() throws Exception {
+        webServer = Main.startServer();
+
+        long timeout = 2000;
+        long now = System.currentTimeMillis();
+
+        while (!webServer.isRunning()) {
+            Thread.sleep(100);
+            if ((System.currentTimeMillis() - now) > timeout) {
+                Assertions.fail("Failed to start webserver");
+            }
+        }
+
+        webClient = WebClient.builder()
+                .baseUri("http://localhost:" + webServer.port())
+                .addMediaSupport(JsonpSupport.create())
+                .build();
+    }
+
+    @AfterAll
+    public static void stopServer() throws Exception {
+        if (webServer != null) {
+            webServer.shutdown()
+                    .toCompletableFuture()
+                    .get(10, TimeUnit.SECONDS);
+        }
+    }
+
+    @Test
+    public void testPokemonTypes() throws Exception {
+        webClient.get()
+                .path("/type")
+                .request(JsonArray.class)
+                .thenAccept(array -> {
+                    assertThat(array.size(), is(18));
+                    assertThat(array.get(0).asJsonObject().getInt("id"), is(1));
+                    assertThat(array.get(0).asJsonObject().getString("name"), is("Normal"));
+                })
+                .toCompletableFuture()
+                .get();
+    }
+
+    @Test
+    public void testPokemons() throws Exception {
+        assertThat(getPokemonCount(), is(6));
+
+        webClient.get()
+                .path("/pokemon/1")
+                .request(JsonObject.class)
+                .thenAccept(pokemon -> assertThat(pokemon.getString("NAME"), is("Bulbasaur")))
+                .toCompletableFuture()
+                .get();
+
+        webClient.get()
+                .path("/pokemon/name/Charmander")
+                .request(JsonObject.class)
+                .thenAccept(pokemon -> assertThat(pokemon.getJsonNumber("ID_TYPE").intValue(), is(10)))
+                .toCompletableFuture()
+                .get();
+
+        JsonObject json = JSON_BUILDER.createObjectBuilder()
+                .add("id", 100)
+                .add("idType", 1)
+                .add("name", "Test")
+                .build();
+        webClient.post()
+                .path("/pokemon")
+                .submit(json)
+                .thenAccept(r -> assertThat(r.status(), is(Http.Status.OK_200)))
+                .toCompletableFuture()
+                .get();
+        assertThat(getPokemonCount(), is(7));
+
+        webClient.delete()
+                .path("/pokemon/100")
+                .request()
+                .thenAccept(r -> assertThat(r.status(), is(Http.Status.OK_200)))
+                .toCompletableFuture()
+                .get();
+
+        assertThat(getPokemonCount(), is(6));
+    }
+
+    @Test
+    public void testMetricsHealth() throws Exception {
+        webClient.get()
+                .path("/health")
+                .request()
+                .thenAccept(r -> assertThat(r.status(), is(Http.Status.OK_200)))
+                .toCompletableFuture()
+                .get();
+
+        webClient.get()
+                .path("/metrics")
+                .request()
+                .thenAccept(r -> assertThat(r.status(), is(Http.Status.OK_200)))
+                .toCompletableFuture()
+                .get();
+    }
+
+    private int getPokemonCount() throws Exception {
+        CompletableFuture<Integer> result = new CompletableFuture<>();
+        webClient.get()
+                .path("/pokemon")
+                .request(JsonArray.class)
+                .thenAccept(array -> result.complete(array.size()));
+        return result.get();
+    }
+}

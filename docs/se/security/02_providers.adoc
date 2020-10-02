@@ -17,700 +17,78 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Security Providers
+:h1Prefix: SE
 :description: Helidon Security providers
 :keywords: helidon, security
 
 == Implemented Security Providers
 
-The following providers are implemented:
+Helidon provides the following security providers for endpoint protection:
 
-* <<JWT Provider,JWT Provider>>
-* <<HTTP Basic Authentication Provider,HTTP Basic Authentication>>
-* <<HTTP Digest Authentication Provider,HTTP Digest Authentication>>
-* <<Header Authentication Provider,Header Assertion>>
-* <<HTTP Signatures,HTTP Signatures>>
-* <<ABAC (Attribute based access control) Authorization Provider,ABAC Authorization>>
-* Google Login Authentication Provider
-    - please see security example: https://github.com/oracle/helidon/tree/master/examples/security/google-login
-* OIDC (Open ID Connect) Authentication provider - an OAuth extension for authentication
-    - please see security example: https://github.com/oracle/helidon/tree/master/examples/security/idcs-login
-* IDCS Role Mapping Provider - a role mapper that can be used with any authentication provider, retrieves roles from IDCS
-    - please see security example: https://github.com/oracle/helidon/tree/master/examples/security/idcs-login
-
-=== JWT Provider
-
-JSON Web Token (JWT) provider has support for authentication and outbound security.
-
-Authentication is based on validating the token (signature, valid before etc.) and on asserting the subject
-of the JWT subject claim.
-
-For outbound, we support either token propagation (e.g. the token from request is propagated further) or
-support for generating a brand new token based on configuration of this provider.
-
+[cols="3,2,^1,6"]
 |===
-|Property |Value
+^|Provider ^|Type ^|Outbound supported ^|Description
 
-|Maven groupId |io.helidon.security.providers
-|Maven artifactId |helidon-security-providers-jwt
-|Provider package |io.helidon.security.providers.jwt
-|Provider class |JwtProvider
-|Provider key |jwt
+|<<OIDC Provider,OIDC Provider>> |Authentication |✅ |Open ID Connect supporting JWT, Scopes, Groups and OIDC code flow
+|<<HTTP Basic Authentication Provider,HTTP Basic Authentication>> |Authentication |✅ |HTTP Basic Authentication support
+|<<HTTP Digest Authentication Provider,HTTP Digest Authentication>> |Authentication |🚫 |HTTP Digest Authentication support
+|<<Header Authentication Provider,Header Assertion>> |Authentication |✅ |Asserting a user based on a header value
+|<<HTTP Signatures Provider,HTTP Signatures>> |Authentication |✅ |Protecting service to service communication through signatures
+|<<IDCS Role Mapper,IDCS Roles>> |Role Mapping |🚫 |Retrieves roles from IDCS provider for authenticated user
+|<<ABAC Provider,ABAC Authorization>> |Authorization |🚫 |Attribute based access control authorization policies
 |===
 
-This provider is:
+The following providers are no longer evolved:
+[cols="3,2,^1,6"]
+|===
+^|Provider ^|Type ^|Outbound supported ^|Description
 
-* Authentication Provider
-* Outbound Security Provider
+|<<Google Login Provider,Google Login>> |Authentication |✅ |Authenticates a token from request against Google servers
+|<<JWT Provider,JWT Provider>> |Authentication |✅ |JWT tokens passed from frontend
+|===
 
+=== OIDC Provider
+Open ID Connect security provider.
+
+==== Setup
 [source,xml]
-.Maven Dependency
+.Maven dependency
 ----
 <dependency>
     <groupId>io.helidon.security.providers</groupId>
-    <artifactId>helidon-security-providers-jwt</artifactId>
+    <artifactId>helidon-security-providers-oidc</artifactId>
 </dependency>
 ----
 
-==== Configuration Based Approach
-All configuration options:
-
-|===
-|key |default value |description
-
-|optional | false |If set to true, the provider will return "ABSTAIN" rather than "FAILURE" if token is not present in request
-|authenticate |true |Whether to attempt authentication
-|propagate |true |Whether to attempt identity propagation/JWT creation
-|principal-type |USER |Whether we authenticate a user or a service (other option is SERVICE)
-|atn-token | |A group for configuring authentication of the request
-|atn-token.verify-signature |true |Whether to verify signature in incoming JWT. If disabled, _ANY_ JWT will be accepted
-|atn-token.jwt-audience| |Expected audience of the JWT. If not defined, any audience is accepted (and we may accept JWT not inteded for us)
-|atn-token/jwk.resource.* | |Configuration of the JWK to obtain key(s) to validate signatures of inbound token. The JWK should contain public keys. This may be: jwk.resource.path, jwk.resource.resource-path, jwk.resource.url, jwk.resource.content-plain (actual JSON string), jwk.resource.content (base64)
-|atn-token/handler |Authorization bearer |A handler configuration for inbound token - e.g. how to extract it
-|atn-token/handler/header |Authorization |Name of a header the token is expected in
-|atn-token/handler/prefix |bearer  |Prefix before the token value (optional)
-|atn-token/handler/regexp | |Regular expression to obtain the token, first matching group is used (optional)
-|sign-token | |A group for configuring outbound security
-|sign-token/jwk.resource.* | |Configuration of the JWK to use when generating tokens (follows same rules as atn-token/jwk above), this JWK must contain private keys when using asymmetric ciphers
-|sign-token/jwt-issuer | |When we issue a new token, this is the issuer to be placed into it (validated by target service)
-|sign-token/outbound | |A group for configuring outbound rules (based on transport, host and/or path)
-|sign-token/outbound/name | |A short descriptive name for configured target service(s)
-|sign-token/outbound/transports |* |An array of transports this outbound matches (e.g. https)
-|sign-token/outbound/hosts |* |An array of hosts this outbound matches, may use * as a a wild-card (e.g. *.oracle.com)
-|sign-token/outbound/paths |* |An array of paths on the host this outbound matches, may use * as a wild-card (e.g. /some/path/*)
-|sign-token/outbound/outbound-token |Authorization bearer  |Configuration of outbound token handler (same as atn-token/handler)
-|sign-token/outbound/outbound-token/format | |Java text format for generating the value of outbound token header (e.g. "bearer %1$s")
-|sign-token/outbound/jwk-kid | |If this key is defined, we are generating a new token, otherwise we propagate existing. Defines the key id of a key definition in the JWK file to use for signing the outbound token
-|sign-token/outbound/jwt-kid | |A key to use in the generated JWT - this is for the other service to locate the verification key in their JWK
-|sign-token/outbound/jwt-audience | |Audience this key is generated for (e.g. http://www.example.org/api/myService) - validated by the other service
-|sign-token/outbound/jwt-not-before-seconds |5 |Makes this key valid this amount of seconds into the past. Allows a certain time-skew for the generated token to be valid before current time (e.g. when we expect a certain misalignment of clocks)
-|sign-token/outbound/jwt-validity-seconds |1 day |Token validity in seconds
-|===
-
-Example configuration with authentication and outbound security:
-
-[source,yaml]
-----
-- jwt:
-    atn-token:
-        jwk.resource.path: "/config/securiy/verify-jwk.json"
-        jwt-audience: "my.service"
-    sign-token:
-        jwk.resource.path: "/config/security/sign-jwk.json"
-        jwt-issuer: "http://www.example.org/myservice"
-        outbound:
-         - name: "internal-services"
-           # create a new token
-           hosts:
-             - "*.example.org"
-           jwk-kid: "internal-key"
-           jwt-audience: "http://www.example.org/services"
-         - name: "b2b-service-49"
-           # create a new token and send it in a custom header
-           hosts:
-             - "b2b.partner.org"
-           paths:
-             - "/services/49"
-           jwk-kid: "partner-b2b"
-           jwt-audience: "http://b2b.partner.org"
-           outbound-token:
-             header: "X-Partner-Auth"
-         - name: "as-is"
-           # identity propagation (use existing token)
-           hosts:
-             - "*.internal.org"
-----
-
-=== HTTP Basic Authentication Provider
-
-Basic authentication support authentication of request and identity propagation for
-outbound calls.
-Outbound security with basic authentication only works if the request is authenticated
-with basic authentication (e.g. we re-use the username and password from inbound request).
-
-Basic authentication is an HTTP header named `Authorization`
-with value of `basic base64(username:password)`.
-
-This provider also supports "challenging" the client to provide basic
-authentication if missing from request.
-
-See https://tools.ietf.org/html/rfc7617[https://tools.ietf.org/html/rfc7617].
-
-These authentication schemes
-should be _obsolete_, though they provide a very easy way to test a protected resource.
-Note that basic authentication sends username and password unencrypted over the network!
-
-|===
-|Property |Value
-
-|Maven groupId |io.helidon.security.providers
-|Maven artifactId |helidon-security-providers-http-auth
-|Provider package |io.helidon.security.providers.httpauth
-|Provider class |HttpBasicAuthProvider
-|Provider key |http-basic-auth
-|===
-
-This provider is:
-
-* Authentication Provider
-* Outbound Security Provider
-
-[source,xml]
-.Maven Dependency
-----
-<dependency>
-    <groupId>io.helidon.security.providers</groupId>
-    <artifactId>helidon-security-providers-http-auth</artifactId>
-</dependency>
-----
-
-==== Configuration Based Approach
-All configuration options:
-
-|===
-|key |default value |description
-
-|realm | helidon |Authentication realm - may be shown to user by browser
-|principal-type |USER |Type of subject authenticated by this provider - USER or SERVICE
-|users | none |A list of users (login, password and roles). Currently to externalize this you must use builder approach.
-|===
-
-Example configuration with a single user (may have more):
-
-[source,yaml]
-----
-- http-basic-auth:
-    users:
-      - login: "jack"
-        password: "jackIsGreat"
-        roles: ["user", "admin"]
-----
-
-Example configuration with a single user (may have more) using secured config
-filter (to encrypt passwords) - in this example, the password is intentionally in
-clear text to show its value (see <<microprofile/06_configuration.adoc,Configuration Secrets>>)
-
-[source,yaml]
-----
-- http-basic-auth:
-    realm: "helidon"
-    users:
-      - login: "jack"
-        password: "${CLEAR=jackIsGreat}"
-        roles: ["user", "admin"]
-----
-
-==== Builder Based Approach
-Example of builder with a user store (UserStore is an interface that must be implemented).
-There is an existing implementation "ConfigUserStore" that can read configuration of users
-from Helidon config instance (see "users" configuration key above).
-The built instance can then be registered with security to be used for request authentication.
+In Helidon SE, we need to register the redirection support with
+routing (in addition to `WebSecurity` that integrates with `WebServer`).
+This is not required when `redirect` is set to false.
 
 [source,java]
+.Adding support for OIDC redirects
 ----
-HttpBasicAuthProvider.builder()
-  .realm("helidon")
-  .subjectType(SubjectType.SERVICE)
-  .userStore(aUserStore)
-  .build();
-----
-
-=== HTTP Digest Authentication
-Digest authentication provider supports only authentication of inbound requests (no outbound).
-
-This provider also supports "challenging" the client to provide digest
-authentication if missing from request.
-
-See https://tools.ietf.org/html/rfc7616[https://tools.ietf.org/html/rfc7616].
-
-These authentication schemes
-should be _obsolete_, though they provide a very easy way to test a protected resource.
-Note that basic authentication sends username and password unencrypted over the network!
-
-|===
-|Property |Value
-
-|Maven groupId |io.helidon.security.providers
-|Maven artifactId |helidon-security-providers-http-auth
-|Provider package |io.helidon.security.providers.httpauth
-|Provider class |HttpDigestAuthProvider
-|Provider key |http-digest-auth
-|===
-
-This provider is:
-
-* Authentication Provider
-
-[source,xml]
-.Maven Dependency
-----
-<dependency>
-    <groupId>io.helidon.security.providers</groupId>
-    <artifactId>helidon-security-providers-http-auth</artifactId>
-</dependency>
-----
-
-==== Configuration based approach
-
-All configuration options:
-
-|===
-|key |default value |description
-
-|realm |helidon |Authentication realm - may be shown to user by browser
-|principal-type |USER |Type of subject authenticated by this provider - USER or SERVICE
-|users |none |A list of users (login, password and roles). Currently to externalize this you must use builder approach.
-|algorithm |MD5 |Only MD5 supported
-|nonce-timeout-millis |1 day |Number of milliseconds for the nonce timeout
-|server-secret |random |A string to use as a server secret - this is to use digest auth between multiple servers (e.g. when in a cluster). Used to encrypt nonce. This must not be known outside of this app, as others may create digest requests we would trust.
-|qop |NONE |only AUTH supported. If left empty, uses the legacy approach (older RFC version). AUTH-INT is not supported.
-|===
-
-Example configuration with a single user (may have more):
-
-[source,yaml]
-----
-- http-digest-auth:
-    realm: "helidon"
-    users:
-      - login: "jack"
-        password: "${CLEAR=jackIsGreat}"
-        roles: ["user", "admin"]
-----
-
-==== Builder based approach
-
-Example of builder with a user store (UserStore is an interface that must be implemented).
-There is an existing implementation "ConfigUserStore" that can read configuration of users
-from Helidon config instance (see "users" configuration key above).
-The built instance can then be registered with security to be used for request authentication.
-
-[source,java]
-----
-HttpDigestAuthProvider.builder()
-  .realm("helidon")
-  .digestServerSecret("aPassword".toCharArray())
-  .userStore(buildUserStore())
-----
-
-=== Header Authentication Provider
-
-This provider inspects a specified request header and extracts the username/service name from it and
-asserts it as current subject's principal.
-
-This can be used when we use perimether authentication (e.g. there is a gateway that takes
-care of authentication and propagates the user in a header).
-
-|===
-|Property |Value
-
-|Maven groupId |io.helidon.security.providers
-|Maven artifactId |helidon-security-providers-header
-|Provider package |io.helidon.security.providers.header
-|Provider class |HeaderAtnProvider
-|Provider key |header-atn
-|===
-
-This provider is:
-
-* Authentication Provider
-* Outbound Security Provider
-
-[source,xml]
-.Maven Dependency
-----
-<dependency>
-    <groupId>io.helidon.security.providers</groupId>
-    <artifactId>helidon-security-providers-header</artifactId>
-</dependency>
-----
-
-==== Configuration Based Approach
-All configuration options:
-
-|===
-|key |default value |description
-
-|optional | false |If set to true, provider will abstain rather then fail if header not available
-|authenticate| true |If set to false, authentication will not be attempted
-|propagate | true |If set to false, identity propagation will not be done
-|principal-type | USER |Can be USER or SERVICE
-|atn-token | none | Token extraction and propagation, you can define which header to use and how to extract it
-|outbound-token | atn-token | If outbound token should be created differently than inbound
-|===
-
-Example configuration:
-
-[source,yaml]
-----
-- header-atn:
-    optional: true
-    principal-type: SERVICE
-    atn-token:
-      header: "X-AUTH-USER"
-    outbound-token:
-      header: "Authorization"
-      format: "bearer %1$s"
-
-----
-
-==== Builder Based Approach
-Example of a builder that configures the provider the same way as the above configuration approach.
-
-[source,java]
-----
-HeaderAtnProvider.builder()
-    .optional(true)
-    .subjectType(SubjectType.SERVICE)
-    .atnTokenHandler(TokenHandler.builder()
-                             .tokenHeader("X-AUTH-USER")
-                             .build())
-    .outboundTokenHandler(TokenHandler.builder()
-                                  .tokenHeader("Authorization")
-                                  .tokenFormat("bearer %1$s")
-                                  .build())
-    .build();
-----
-
-=== HTTP Signatures
-
-Support for HTTP Signatures (both inbound and outbound).
-[source,xml]
-.Maven Dependency
-----
-<dependency>
-    <groupId>io.helidon.security.providers</groupId>
-    <artifactId>helidon-security-providers-http-sign</artifactId>
-</dependency>
-----
-
-==== Signature basics
-
-* standard: based on https://tools.ietf.org/html/draft-cavage-http-signatures-03
-* key-id: an arbitrary string used to locate signature configuration - when a
- request is received the provider locates validation configuration based on this
- id (e.g. HMAC shared secret or RSA public key). Commonly used meanings are: key
- fingerprint (RSA); API Key
-
-
-==== Inbound signatures
-We act as a server and another party is calling us with a signed HTTP request.
-We validate the signature and assume identity of the caller.
-
-Builder example, starting from inside out:
-[source,java]
-.Inbound signature configuration
-----
-// Configuration of public key certificate to validate inbound requests
-        KeyConfig keyConfig = KeyConfig.keystoreBuilder()
-                .keystore(Resource.create(Paths.get("keystore.p12")))
-                .keystorePassphrase("password".toCharArray())
-                .certAlias("service_cert")
-                .build();
-
-        // Create inbound client definition (e.g. map key-id to a public key and principal name)
-        InboundClientDefinition rsaInbound = InboundClientDefinition.builder("service1-rsa")
-                .principalName("Service1")
-                .publicKeyConfig(keyConfig)
-                .build();
-
-        // Now create a HTTP signature provider with inbound support (with a single supported signature)
-        HttpSignProvider.builder()
-                .addInbound(rsaInbound)
-                .build();
-----
-
-Configuration examples for hmac-sha256 and rsa-sha256 algorithms (as supported by
- this provider):
-
-[source,conf]
-.Inbound signature configuration
-----
-http-signatures {
-    inbound {
-        keys: [
-            {
-                key-id = "service1-hmac"
-                # name of principal of the connecting party
-                principal-name = "Service1"
-                # SERVICE or USER, defaults to SERVICE
-                principal-type = SERVICE
-                # defaults to the one we configure (e.g. if hmac.secret is configured
-                # it is hmac-sha256; if public-key is configured, it is rsa-sha256)
-                algorithm = "hmac-sha256"
-                # shared secret for symmetric signatures
-                hmac.secret = "${CLEAR=encryptMe}"
-            },
-            {
-                key-id = "service1-rsa"
-                principal-name = "Service1"
-                # configuration of public key to validate signature
-                public-key {
-                    # path to keystore
-                    keystore-path = "src/main/resources/keystore.p12"
-                    # defaults to PKCS12
-                    keystore-type = "PKCS12"
-                    # password of the keystore
-                    # the ${CLEAR=} is a feature of
-                    keystore-passphrase = "${CLEAR=password}"
-                    # alias of the certificate to get public key from
-                    cert-alias = "service_cert"
-                }
-            }
-        ]
-    }
-}
-
-----
-
-==== Outbound signatures
-We act as a client and we sign our outgoing requests.
-
-Builder example, starting from inside out (rsa only, as hmac is significantly
- simpler):
-[source,java]
-.Outbound signature configuration
-----
-// Configuration of private key to sign outbound requests
-KeyConfig keyConfig = KeyConfig.keystoreBuilder()
-        .keystore(Resource.create(Paths.get("src/main/resources/keystore.p12")))
-        .keystorePassphrase("password".toCharArray())
-        .keyAlias("myPrivateKey")
-        .build();
-
-OutboundTarget rsaTarget =  OutboundTarget.builder("service2-rsa")
-        .addHost("service2") // considering service registry
-        .addPath("/service2-rsa")
-        .customObject(OutboundTargetDefinition.class,
-                      OutboundTargetDefinition.builder("service1-rsa")
-                              .privateKeyConfig(keyConfig)
-                              .build())
-        .build();
-
-// Now create a HTTP signature provider with outbound support (with a single supported signature)
-HttpSignProvider.builder()
-        .outbound(OutboundConfig.builder()
-                          .addTarget(rsaTarget)
-                          .build())
+Routing routing = Routing.builder()
+        .register(WebSecurity.create(config.get("security")))
+        .register(OidcSupport.create(config))
+        ...
         .build();
 ----
 
-Configuration examples for hmac-sha256 and rsa-sha256 algorithms (as supported by
- this provider):
+include::../../shared/security/providers/oidc.adoc[]
 
-[source,conf]
-.Inbound signature configuration
-----
-http-signatures {
-outbound: [
-    {
-        # Logical name of this outbound configuration
-        name = "service2-trust-circle"
-        # If ommited or one value is "*", all are supported
-        transports = ["http", "https"]
-        # If ommited or one value is "*", all are supported, may contain * as a sequence "any" characters/nubmers
-        hosts = ["service2"]
-        # If ommited, all are supported - regular expression
-        paths = ["/service2"]
+include::../../shared/security/providers/http-basic-auth.adoc[]
 
-        # Configuration of signature (signing the request)
-        signature {
-            key-id = "service2-shared-secret"
-            # HMAC shared secret (algorithm hmac-sha256)
-            hmac.secret = "${CLEAR=somePasswordForHmacShouldBeEncrypted}"
-        }
-    },
-    {
-        name = "service2-rsa"
-        hosts = ["service2"]
-        paths = ["/service2-rsa"]
+include::../../shared/security/providers/http-digest-auth.adoc[]
 
-        signature {
-            key-id = "service1-rsa"
-            # RSA private key (algorithm rsa-sha256)
-            private-key {
-                # path to keystore
-                keystore-path = "src/main/resources/keystore.p12"
-                # Keystore type
-                # PKCS12, JSK or RSA (not really a keystore, but directly the linux style private key unencrypted)
-                # defaults to jdk default
-                keystore-type = "PKCS12"
-                # password of the keystore
-                keystore-passphrase = "password"
-                # alias of the key to sign request
-                key-alias = "myPrivateKey"
-            }
-        }
-    }
-]
-}
-----
+include::../../shared/security/providers/header-assertion.adoc[]
 
-=== ABAC (Attribute based access control) Authorization Provider
+include::../../shared/security/providers/http-signatures.adoc[]
 
-This provider is an authorization provider validating various attributes against
-configured validators.
+include::../../shared/security/providers/idcs-role-mapper.adoc[]
 
-Any attribute of the following objects can be used:
+include::../../shared/security/providers/abac.adoc[]
 
- - environment (such as time of request) - e.g. env.time.year
- - subject (user) - e.g. subject.principal.id
- - subject (service) - e.g. service.principal.id
- - object (must be explicitly invoked by developer in code, as object cannot be automatically added to security context) - e.g. object.owner
+include::../../shared/security/providers/google-login.adoc[]
 
-This provider checks that all defined ABAC validators are validated.
-If there is a definition for a validator (e.g. an annotation) that is not checked,
-the request is denied.
+include::../../shared/security/providers/jwt.adoc[]
 
-[source,xml]
-.Maven Dependency
-----
-<dependency>
-    <groupId>io.helidon.security.providers</groupId>
-    <artifactId>helidon-security-providers-abac</artifactId>
-</dependency>
-----
-
-The following validators are implemented:
-
-* <<Role Validator,Roles>>
-* <<Scope Validator,Scopes>>
-* <<Expression Language Policy Validator,EL Policy>>
-* <<Time Validator,Time>>
-
-
-[source,java]
-.Example of using an object
-----
-@Authenticated
-@Path("/abac")
-public class AbacResource {
-  @GET
-  @Authorized(explicit = true)
-  @PolicyStatement("${env.time.year >= 2017 && object.owner == subject.principal.id}")
-  public Response process(@Context SecurityContext context) {
-      // probably looked up from a database
-      SomeResource res = new SomeResource("user");
-      AuthorizationResponse atzResponse = context.authorize(res);
-
-      if (atzResponse.isPermitted()) {
-          //do the update
-          return Response.ok().entity("fine, sir").build();
-      } else {
-          return Response.status(Response.Status.FORBIDDEN)
-                  .entity(atzResponse.getDescription().orElse("Access not granted"))
-                  .build();
-      }
-  }
-}
-----
-
-==== Role Validator
-Checks whether user/service is in either of the required role(s).
-
-Configuration Key: role-validator
-
-Annotations: @RolesAllowed, @Roles
-
-[source,java]
-.Example
-----
-@Roles("user_role")
-@Roles(value = "service_role", subjectType = SubjectType.SERVICE)
-@Authenticated
-@Path("/abac")
-public class AbacResource {
-}
-----
-
-===== Interaction with sub-resource locators
-When using sub-resource locators in JAX-RS, the roles allowed are collected from each "level" of
- execution:
- - Application class annotations
- - Resource class annotations + resource method annotations
- - Sub-resource class annotations + sub-resource method annotations
- - Sub-resource class annotations + sub-resource method annotations (for every sub-resource on the path)
-
-The `RolesAllowed` or `Roles` annotation to be used is the last one in the path as defined above.
-
-_Example 1:_
-There is a `RolesAllowed("admin")` defined on a sub-resource locator resource class.
-In this case the required role is `admin`.
-
-_Example 2:_
-There is a `RolesAllowed("admin")` defined on a sub-resource locator resource class and
- a `RolesAllowed("user")` defined on the method of the sub-resource that provides the response.
-In this case the required role is `user`.
-
-==== Scope Validator
-Checks whether user has all the required scopes.
-
-Configuration Key: scope-validator
-
-Annotations: @Scope
-
-[source,java]
-.Example
-----
-@Scope("calendar_read")
-@Scope("calendar_edit")
-@Authenticated
-@Path("/abac")
-public class AbacResource {
-}
-----
-
-==== Expression Language Policy Validator
-Policy executor using Java EE policy expression language (EL)
-
-Configuration Key: policy-javax-el
-
-Annotations: @PolicyStatement
-
-[source,java]
-.Example
-----
-@PolicyStatement("${env.time.year >= 2017}")
-@Authenticated
-@Path("/abac")
-public class AbacResource {
-}
-----
-
-==== Time Validator
-Supports time of day and day of week checks
-
-Configuration Key: time-validator
-
-Annotations: @DaysOfWeek, @TimesOfDay
-
-[source,java]
-.Example
-----
-@TimeOfDay(from = "08:15:00", to = "12:00:00")
-@TimeOfDay(from = "12:30:00", to = "17:30:00")
-@DaysOfWeek({DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY})
-@Authenticated
-@Path("/abac")
-public class AbacResource {
-}
-----

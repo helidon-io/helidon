@@ -26,11 +26,11 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
+import java.util.logging.Logger;
 
 import javax.net.ssl.SSLContext;
 
 import io.helidon.common.context.Context;
-import io.helidon.common.http.ContextualRegistry;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.DeprecatedConfig;
@@ -47,7 +47,7 @@ public interface ServerConfiguration extends SocketConfiguration {
      * The default server socket configuration name. All the default server socket
      * configuration (e.g., {@link #port()} or {@link #backlog()}) is accessible through
      * {@link #socket(String)} or {@link #sockets()} with this
-     * {@link #DEFAULT_SOCKET_NAME default socket name}.
+     * {@link io.helidon.webserver.WebServer#DEFAULT_SOCKET_NAME default socket name}.
      *
      * @deprecated since 2.0.0, please use {@link WebServer#DEFAULT_SOCKET_NAME}
      */
@@ -268,7 +268,7 @@ public interface ServerConfiguration extends SocketConfiguration {
         private int workers;
         private Tracer tracer;
         private ExperimentalConfiguration experimental;
-        private ContextualRegistry context;
+        private Context context;
         private boolean printFeatureDetails;
 
         private Builder() {
@@ -362,6 +362,18 @@ public interface ServerConfiguration extends SocketConfiguration {
             return this;
         }
 
+        @Override
+        public Builder maxHeaderSize(int size) {
+            defaultSocketBuilder.maxHeaderSize(size);
+            return this;
+        }
+
+        @Override
+        public Builder maxInitialLineLength(int length) {
+            defaultSocketBuilder.maxInitialLineLength(length);
+            return this;
+        }
+
         /**
          * Adds an additional named server socket configuration. As a result, the server will listen
          * on multiple ports.
@@ -420,7 +432,7 @@ public interface ServerConfiguration extends SocketConfiguration {
         }
 
         /**
-         * Sets a count of threads in pool used to tryProcess HTTP requests.
+         * Sets a count of threads in pool used to process HTTP requests.
          * Default value is {@code CPU_COUNT * 2}.
          * <p>
          * Configuration key: {@code workers}
@@ -504,11 +516,7 @@ public interface ServerConfiguration extends SocketConfiguration {
          * @return an updated builder
          */
         public Builder context(Context context) {
-            // backward compatibility only - in 2.0 we should use the context given to us
-            this.context = ContextualRegistry.builder()
-                    .id(context.id() + ":web-" + WEBSERVER_COUNTER.getAndIncrement())
-                    .parent(context)
-                    .build();
+            this.context = context;
 
             return this;
         }
@@ -536,7 +544,8 @@ public interface ServerConfiguration extends SocketConfiguration {
             if (config == null) {
                 return this;
             }
-            configureSocket(config, defaultSocketBuilder);
+
+            defaultSocketBuilder.config(config);
 
             DeprecatedConfig.get(config, "worker-count", "workers")
                     .asInt()
@@ -547,16 +556,43 @@ public interface ServerConfiguration extends SocketConfiguration {
             // sockets
             Config socketsConfig = config.get("sockets");
             if (socketsConfig.exists()) {
-                for (Config socketConfig : socketsConfig.asNodeList().orElse(List.of())) {
-                    String socketName = socketConfig.name();
-                    sockets.put(socketName, configureSocket(socketConfig, SocketConfiguration.builder()).build());
+                List<Config> socketConfigs = socketsConfig.asNodeList().orElse(List.of());
+                for (Config socketConfig : socketConfigs) {
+                    // the whole section checking the socket name can be removed
+                    // when we remove deprecated methods with socket name on server builder
+                    String socketName;
+
+                    String nodeName = socketConfig.name();
+                    Optional<String> maybeSocketName = socketConfig.get("name").asString().asOptional();
+
+                    socketName = maybeSocketName.orElse(nodeName);
+
+                    // log warning for deprecated config
+                    try {
+                        Integer.parseInt(nodeName);
+                        if (socketName.equals(nodeName) && maybeSocketName.isEmpty()) {
+                            throw new ConfigException("Cannot find \"name\" key for socket configuration " + socketConfig.key());
+                        }
+                    } catch (NumberFormatException e) {
+                        // this is old approach
+                        Logger.getLogger(SocketConfigurationBuilder.class.getName())
+                                .warning("Socket configuration at " + socketConfig.key() + " is deprecated. Please use an array "
+                                                 + "with \"name\" key to define the socket name.");
+                    }
+
+                    SocketConfiguration socket = SocketConfiguration.builder()
+                            .name(socketName)
+                            .config(socketConfig)
+                            .build();
+
+                    sockets.put(socket.name(), socket);
                 }
             }
 
             // experimental
             Config experimentalConfig = config.get("experimental");
             if (experimentalConfig.exists()) {
-                ExperimentalConfiguration.Builder experimentalBuilder = new ExperimentalConfiguration.Builder();
+                ExperimentalConfiguration.Builder experimentalBuilder = ExperimentalConfiguration.builder();
                 Config http2Config = experimentalConfig.get("http2");
                 if (http2Config.exists()) {
                     Http2Configuration.Builder http2Builder = new Http2Configuration.Builder();
@@ -570,42 +606,6 @@ public interface ServerConfiguration extends SocketConfiguration {
             return this;
         }
 
-        private SocketConfiguration.Builder configureSocket(Config config, SocketConfiguration.Builder soConfigBuilder) {
-
-            config.get("port").asInt().ifPresent(soConfigBuilder::port);
-            config.get("bind-address")
-                    .asString()
-                    .map(this::string2InetAddress)
-                    .ifPresent(soConfigBuilder::bindAddress);
-            config.get("backlog").asInt().ifPresent(soConfigBuilder::backlog);
-            DeprecatedConfig.get(config, "timeout-millis", "timeout")
-                    .asInt()
-                    .ifPresent(soConfigBuilder::timeoutMillis);
-            DeprecatedConfig.get(config, "receive-buffer-size", "receive-buffer")
-                    .asInt()
-                    .ifPresent(soConfigBuilder::receiveBufferSize);
-
-            Optional<List<String>> enabledProtocols = DeprecatedConfig.get(config, "ssl.protocols", "ssl-protocols")
-                    .asList(String.class)
-                    .asOptional();
-
-            // ssl
-            Config sslConfig = config.get("ssl");
-            if (sslConfig.exists()) {
-                try {
-                    TlsConfig.Builder builder = TlsConfig.builder();
-                    enabledProtocols.ifPresent(builder::enabledProtocols);
-                    builder.config(sslConfig);
-
-                    soConfigBuilder.tls(builder.build());
-                } catch (IllegalStateException e) {
-                    throw new ConfigException("Cannot load SSL configuration.", e);
-                }
-            }
-
-            return soConfigBuilder;
-        }
-
         /**
          * Builds a new configuration instance.
          *
@@ -617,7 +617,7 @@ public interface ServerConfiguration extends SocketConfiguration {
                 // I do not expect "unlimited" number of webservers
                 // in case somebody spins a huge number up, the counter will cycle to negative numbers once
                 // Integer.MAX_VALUE is reached.
-                context = ContextualRegistry.builder()
+                context = Context.builder()
                         .id("web-" + WEBSERVER_COUNTER.getAndIncrement())
                         .build();
             }
@@ -663,7 +663,7 @@ public interface ServerConfiguration extends SocketConfiguration {
             return experimental;
         }
 
-        ContextualRegistry context() {
+        Context context() {
             return context;
         }
 
@@ -678,8 +678,14 @@ public interface ServerConfiguration extends SocketConfiguration {
         }
 
         @Override
-        public Builder tls(TlsConfig tlsConfig) {
-            this.defaultSocketBuilder.tls(tlsConfig);
+        public Builder tls(WebServerTls webServerTls) {
+            this.defaultSocketBuilder.tls(webServerTls);
+            return this;
+        }
+
+        @Override
+        public Builder enableCompression(boolean value) {
+            this.defaultSocketBuilder.enableCompression(true);
             return this;
         }
     }

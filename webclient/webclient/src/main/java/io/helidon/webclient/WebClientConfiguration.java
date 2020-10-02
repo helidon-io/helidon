@@ -35,6 +35,7 @@ import javax.net.ssl.SSLException;
 import io.helidon.common.LazyValue;
 import io.helidon.common.context.Context;
 import io.helidon.config.Config;
+import io.helidon.config.DeprecatedConfig;
 import io.helidon.media.common.MediaContext;
 import io.helidon.media.common.MediaContextBuilder;
 import io.helidon.media.common.MediaSupport;
@@ -72,11 +73,13 @@ class WebClientConfiguration {
     private final List<WebClientService> clientServices;
     private final Proxy proxy;
     private final boolean followRedirects;
+    private final boolean keepAlive;
     private final int maxRedirects;
     private final MessageBodyReaderContext readerContext;
     private final MessageBodyWriterContext writerContext;
-    private final Ssl ssl;
+    private final WebClientTls webClientTls;
     private final URI uri;
+    private final boolean validateHeaders;
 
     /**
      * Creates a new instance of client configuration.
@@ -89,7 +92,7 @@ class WebClientConfiguration {
         this.followRedirects = builder.followRedirects;
         this.userAgent = builder.userAgent;
         this.proxy = builder.proxy;
-        this.ssl = builder.ssl;
+        this.webClientTls = builder.webClientTls;
         this.maxRedirects = builder.maxRedirects;
         this.clientHeaders = builder.clientHeaders;
         this.cookiePolicy = builder.cookiePolicy;
@@ -104,6 +107,8 @@ class WebClientConfiguration {
         this.writerContext = builder.writerContext;
         this.clientServices = Collections.unmodifiableList(builder.clientServices);
         this.uri = builder.uri;
+        this.keepAlive = builder.keepAlive;
+        this.validateHeaders = builder.validateHeaders;
     }
 
     /**
@@ -127,21 +132,21 @@ class WebClientConfiguration {
     Optional<SslContext> sslContext() {
         SslContext sslContext;
         try {
-            if (ssl.sslContext().isPresent()) {
-                sslContext = nettySslFromJavaNet(ssl.sslContext().get());
+            if (webClientTls.sslContext().isPresent()) {
+                sslContext = nettySslFromJavaNet(webClientTls.sslContext().get());
             } else {
                 SslContextBuilder sslContextBuilder = SslContextBuilder
                         .forClient()
                         .sslProvider(SslProvider.JDK);
-                if (ssl.certificates().size() > 0) {
-                    sslContextBuilder.trustManager(ssl.certificates().toArray(new X509Certificate[0]));
+                if (webClientTls.certificates().size() > 0) {
+                    sslContextBuilder.trustManager(webClientTls.certificates().toArray(new X509Certificate[0]));
                 }
-                if (ssl.clientPrivateKey().isPresent()) {
-                    sslContextBuilder.keyManager(ssl.clientPrivateKey().get(),
-                                                 ssl.clientCertificateChain().toArray(new X509Certificate[0]));
+                if (webClientTls.clientPrivateKey().isPresent()) {
+                    sslContextBuilder.keyManager(webClientTls.clientPrivateKey().get(),
+                                                 webClientTls.clientCertificateChain().toArray(new X509Certificate[0]));
                 }
 
-                if (ssl.trustAll()) {
+                if (webClientTls.trustAll()) {
                     sslContextBuilder.trustManager(InsecureTrustManagerFactory.INSTANCE);
                 }
 
@@ -232,8 +237,8 @@ class WebClientConfiguration {
         return userAgent.get();
     }
 
-    Ssl ssl() {
-        return ssl;
+    WebClientTls tls() {
+        return webClientTls;
     }
 
     Optional<Context> context() {
@@ -260,6 +265,14 @@ class WebClientConfiguration {
         return uri;
     }
 
+    boolean keepAlive() {
+        return keepAlive;
+    }
+
+    boolean validateHeaders() {
+        return validateHeaders;
+    }
+
     /**
      * A fluent API builder for {@link WebClientConfiguration}.
      */
@@ -282,11 +295,13 @@ class WebClientConfiguration {
         private LazyValue<String> userAgent;
         private Proxy proxy;
         private boolean enableAutomaticCookieStore;
-        private Ssl ssl;
+        private boolean keepAlive;
+        private WebClientTls webClientTls;
         private URI uri;
         private MessageBodyReaderContext readerContext;
         private MessageBodyWriterContext writerContext;
         private List<WebClientService> clientServices;
+        private boolean validateHeaders;
         @SuppressWarnings("unchecked")
         private B me = (B) this;
 
@@ -371,13 +386,13 @@ class WebClientConfiguration {
         }
 
         /**
-         * New SSL configuration.
+         * New TLS configuration.
          *
-         * @param ssl ssl configuration
+         * @param webClientTls tls configuration
          * @return updated builder instance
          */
-        public B ssl(Ssl ssl) {
-            this.ssl = ssl;
+        public B tls(WebClientTls webClientTls) {
+            this.webClientTls = webClientTls;
             return me;
         }
 
@@ -478,6 +493,18 @@ class WebClientConfiguration {
             return me;
         }
 
+        /**
+         * Whether to validate header names.
+         * Defaults to {@code true}.
+         *
+         * @param validate whether to validate the header name contains only allowed characters
+         * @return updated builder instance
+         */
+        B validateHeaders(boolean validate) {
+            this.validateHeaders = validate;
+            return me;
+        }
+
         @Override
         public B addReader(MessageBodyReader<?> reader) {
             this.readerContext.registerReader(reader);
@@ -539,8 +566,64 @@ class WebClientConfiguration {
             return me;
         }
 
+        B keepAlive(boolean keepAlive) {
+            this.keepAlive = keepAlive;
+            return me;
+        }
+
         /**
-         * Updates builder instance from the config.
+         * Configures this {@link WebClientConfiguration.Builder} from the supplied {@link Config}.
+         * <table class="config">
+         * <caption>Optional configuration parameters</caption>
+         * <tr>
+         *     <th>key</th>
+         *     <th>description</th>
+         * </tr>
+         * <tr>
+         *     <td>uri</td>
+         *     <td>Basic uri for each client request</td>
+         * </tr>
+         * <tr>
+         *     <td>connect-timeout-millis</td>
+         *     <td>Request connection timeout</td>
+         * </tr>
+         * <tr>
+         *     <td>read-timeout-millis</td>
+         *     <td>Response read timeout</td>
+         * </tr>
+         * <tr>
+         *     <td>follow-redirects</td>
+         *     <td>Whether redirects should be followed or not</td>
+         * </tr>
+         * <tr>
+         *     <td>max-redirects</td>
+         *     <td>Max number of followed redirections</td>
+         * </tr>
+         * <tr>
+         *     <td>user-agent</td>
+         *     <td>Name of the user agent which should be used</td>
+         * </tr>
+         * <tr>
+         *     <td>keep-alive</td>
+         *     <td>Whether connection should be kept alive</td>
+         * </tr>
+         * <tr>
+         *     <td>cookies</td>
+         *     <td>Default cookies which should be used</td>
+         * </tr>
+         * <tr>
+         *     <td>headers</td>
+         *     <td>Default headers which should be used</td>
+         * </tr>
+         * <tr>
+         *     <td>tls</td>
+         *     <td>TLS configuration. See {@link WebClientTls.Builder#config(Config)}</td>
+         * </tr>
+         * <tr>
+         *     <td>proxy</td>
+         *     <td>Proxy configuration. See {@link Proxy.Builder#config(Config)}</td>
+         * </tr>
+         * </table>
          *
          * @param config config
          * @return updated builder instance
@@ -548,21 +631,24 @@ class WebClientConfiguration {
         public B config(Config config) {
             this.config = config;
             // now for other options
+            config.get("uri").asString().ifPresent(baseUri -> uri(URI.create(baseUri)));
             config.get("connect-timeout-millis").asLong().ifPresent(timeout -> connectTimeout(Duration.ofMillis(timeout)));
             config.get("read-timeout-millis").asLong().ifPresent(timeout -> readTimeout(Duration.ofMillis(timeout)));
             config.get("follow-redirects").asBoolean().ifPresent(this::followRedirects);
             config.get("max-redirects").asInt().ifPresent(this::maxRedirects);
             config.get("user-agent").asString().ifPresent(this::userAgent);
+            config.get("keep-alive").asBoolean().ifPresent(this::keepAlive);
             config.get("cookies").asNode().ifPresent(this::cookies);
             config.get("headers").asNode().ifPresent(this::headers);
-            config.get("ssl")
-                    .as(Ssl.builder()::config)
-                    .map(Ssl.Builder::build)
-                    .ifPresent(this::ssl);
+            DeprecatedConfig.get(config, "tls", "ssl")
+                    .as(WebClientTls.builder()::config)
+                    .map(WebClientTls.Builder::build)
+                    .ifPresent(this::tls);
             config.get("proxy")
                     .as(Proxy.builder()::config)
                     .map(Proxy.Builder::build)
                     .ifPresent(this::proxy);
+            config.get("media-support").as(MediaContext::create).ifPresent(this::mediaContext);
             return me;
         }
 
@@ -578,7 +664,7 @@ class WebClientConfiguration {
             followRedirects(configuration.followRedirects);
             userAgent(configuration.userAgent);
             proxy(configuration.proxy);
-            ssl(configuration.ssl);
+            tls(configuration.webClientTls);
             maxRedirects(configuration.maxRedirects);
             clientHeaders(configuration.clientHeaders);
             enableAutomaticCookieStore(configuration.enableAutomaticCookieStore);
@@ -588,6 +674,8 @@ class WebClientConfiguration {
             readerContextParent(configuration.readerContext);
             writerContextParent(configuration.writerContext);
             context(configuration.context);
+            keepAlive(configuration.keepAlive);
+            validateHeaders(configuration.validateHeaders);
             configuration.cookieManager.defaultCookies().forEach(this::defaultCookie);
             config = configuration.config;
 

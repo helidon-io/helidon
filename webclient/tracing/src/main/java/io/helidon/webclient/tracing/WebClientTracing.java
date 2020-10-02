@@ -19,8 +19,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 import io.helidon.common.reactive.Single;
 import io.helidon.webclient.WebClientServiceRequest;
 import io.helidon.webclient.spi.WebClientService;
@@ -40,10 +38,6 @@ public final class WebClientTracing implements WebClientService {
     private static final int HTTP_STATUS_ERROR_THRESHOLD = 400;
     private static final int HTTP_STATUS_SERVER_ERROR_THRESHOLD = 500;
 
-    static {
-        HelidonFeatures.register(HelidonFlavor.SE, "WebClient", "Tracing");
-    }
-
     private WebClientTracing() {
     }
 
@@ -62,9 +56,7 @@ public final class WebClientTracing implements WebClientService {
         Optional<Tracer> optionalTracer = request.context().get(Tracer.class);
         Tracer tracer = optionalTracer.orElseGet(GlobalTracer::get);
 
-        Tracer.SpanBuilder spanBuilder = tracer.buildSpan(method
-                                                                  + "-"
-                                                                  + request.uri());
+        Tracer.SpanBuilder spanBuilder = tracer.buildSpan(composeName(method, request));
 
         request.context().get(SpanContext.class).ifPresent(spanBuilder::asChildOf);
 
@@ -96,5 +88,14 @@ public final class WebClientTracing implements WebClientService {
         });
 
         return Single.just(request);
+    }
+
+    private String composeName(String method, WebClientServiceRequest request) {
+        return method
+                + "-"
+                + request.schema() + "://"
+                + request.host() + ":"
+                + request.port()
+                + request.path().toString();
     }
 }

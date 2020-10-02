@@ -29,7 +29,7 @@ public class MultiMapperPublisherTckTest extends FlowPublisherVerification<Integ
 
     @Override
     public Flow.Publisher<Integer> createFlowPublisher(long n) {
-        return Multi.from(() -> IntStream.range(0, (int) n).boxed().iterator())
+        return Multi.create(() -> IntStream.range(0, (int) n).boxed().iterator())
                 .map(v -> v + 1);
     }
 

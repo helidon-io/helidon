@@ -21,7 +21,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -53,8 +52,6 @@ import io.helidon.security.jwt.jwk.JwkRSA;
 
 import io.opentracing.Tracer;
 import io.opentracing.util.GlobalTracer;
-import org.eclipse.microprofile.config.Config;
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException;
 
 import static io.helidon.common.http.Http.Status.FORBIDDEN_403;
@@ -76,7 +73,6 @@ public final class Mp1Main {
      * @param args command line arguments.
      */
     public static void main(final String[] args) {
-
         String property = System.getProperty("java.class.path");
         if (null == property || property.trim().isEmpty()) {
             System.out.println("** Running on module path");
@@ -111,11 +107,11 @@ public final class Mp1Main {
         long time = System.currentTimeMillis() - now;
         System.out.println("Tests finished in " + time + " millis");
 
-        Config config = ConfigProvider.getConfig();
-        List<String> names = new ArrayList<>();
-        config.getPropertyNames()
-                .forEach(names::add);
-        names.sort(String::compareTo);
+        //        Config config = ConfigProvider.getConfig();
+        //        List<String> names = new ArrayList<>();
+        //        config.getPropertyNames()
+        //                .forEach(names::add);
+        //        names.sort(String::compareTo);
 
         //        System.out.println("All configuration options:");
         //        names.forEach(it -> {
@@ -181,6 +177,9 @@ public final class Mp1Main {
         // CDI - (tested indirectly by other tests)
         // Server - capability to start JAX-RS (tested indirectly by other tests)
 
+        // produce a bean with package local method
+        invoke(collector, "Produced bean", BeanProducer.VALUE, aBean::produced);
+
         // Configuration
         invoke(collector, "Config injection", "Properties message", aBean::config);
 
@@ -191,6 +190,9 @@ public final class Mp1Main {
         invoke(collector, "Rest client JSON-P", "json-p", aBean::restClientJsonP);
         // + JSON-B
         invoke(collector, "Rest client JSON-B", "json-b", aBean::restClientJsonB);
+        // + query params
+        invoke(collector, "Rest client Query param long", "1020", () -> aBean.restClientQuery(1020L));
+        invoke(collector, "Rest client Query param boolean", "true", () -> aBean.restClientQuery(true));
 
         // Message from rest client, originating in BeanClass.BeanType
         invoke(collector, "Rest client bean type", "Properties message", aBean::restClientBeanType);
@@ -243,8 +245,36 @@ public final class Mp1Main {
         // Static content
         validateStaticContent(collector, target);
 
+        // Make sure resource and provider classes are discovered
+        validateNoClassApp(collector, target);
+
         collector.collect()
                 .checkValid();
+    }
+
+    private static void validateNoClassApp(Errors.Collector collector, WebTarget target) {
+        String path = "/noclass";
+        String expected = "Hello World ";
+
+        Response response = target.path(path)
+                .request()
+                .get();
+
+        if (response.getStatus() == OK_200.code()) {
+            String entity = response.readEntity(String.class);
+            if (!expected.equals(entity)) {
+                collector.fatal("Endpoint " + path + "should return \"" + expected + "\", but returned \"" + entity + "\"");
+            }
+        } else {
+            collector.fatal("Endpoint " + path + " should be handled by JaxRsResource.java. Status received: "
+                                    + response.getStatus());
+        }
+
+        int count = AutoFilter.count();
+
+        if (count == 0) {
+            collector.fatal("Filter should have been added to JaxRsApplicationNoClass automatically");
+        }
     }
 
     private static void validateStaticContent(Errors.Collector collector, WebTarget target) {
@@ -262,6 +292,23 @@ public final class Mp1Main {
             }
         } else {
             collector.fatal("Endpoint " + path + " should contain static content from /web/resource.txt. Status received: "
+                                    + response.getStatus());
+        }
+
+        path = "/static";
+        expected = "welcome!";
+        response = target.path(path)
+                .request()
+                .get();
+
+        if (response.getStatus() == OK_200.code()) {
+            String entity = response.readEntity(String.class);
+            if (!expected.equals(entity)) {
+                collector.fatal("Endpoint " + path + "should return welcome file's content \"" + expected
+                                        + "\", but returned \"" + entity + "\"");
+            }
+        } else {
+            collector.fatal("Endpoint " + path + " should contain static content from /web/welcome.txt. Status received: "
                                     + response.getStatus());
         }
     }

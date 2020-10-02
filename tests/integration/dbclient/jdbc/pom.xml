@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2019, 2020 Oracle and/or its affiliates.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.tests.integration.dbclient</groupId>
         <artifactId>helidon-tests-integration-dbclient-project</artifactId>
-        <version>2.0.0-SNAPSHOT</version>
+        <version>2.0.3-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -34,10 +34,10 @@
     <properties>
         <mysql.port>3306</mysql.port>
         <mysql.host>127.0.0.1</mysql.host>
-        <mysql.database>test</mysql.database>
-        <mysql.user>helidon</mysql.user>
-        <mysql.password>h3l1d0n</mysql.password>
-        <mysql.roootpw>I4mGr00t</mysql.roootpw>
+        <mysql.database>pokemon</mysql.database>
+        <mysql.user>user</mysql.user>
+        <mysql.password>password</mysql.password>
+        <mysql.roootpw>root</mysql.roootpw>
     </properties>
 
     <dependencies>

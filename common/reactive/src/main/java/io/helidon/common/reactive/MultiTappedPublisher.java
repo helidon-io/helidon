@@ -17,7 +17,6 @@
 
 package io.helidon.common.reactive;
 
-import java.util.ArrayList;
 import java.util.Objects;
 import java.util.concurrent.Flow;
 import java.util.function.Consumer;
@@ -28,7 +27,7 @@ import java.util.function.LongConsumer;
  * user callbacks.
  * @param <T> the element type of the sequence
  */
-final class MultiTappedPublisher<T> implements Multi<T> {
+public final class MultiTappedPublisher<T> implements Multi<T> {
 
     private final Multi<T> source;
 
@@ -60,13 +59,34 @@ final class MultiTappedPublisher<T> implements Multi<T> {
         this.onCancelCallback = onCancelCallback;
     }
 
+    private MultiTappedPublisher(Builder<T> builder) {
+        this(builder.source,
+             builder.onSubscribeCallback,
+             builder.onNextCallback,
+             builder.onErrorCallback,
+             builder.onCompleteCallback,
+             builder.onRequestCallback,
+             builder.onCancelCallback);
+    }
+
+    /**
+     * A builder to customize a multi tapped publisher instance.
+     *
+     * @param source source to wrap
+     * @param <T> type of the multi
+     * @return a new builder
+     */
+    public static <T> Builder<T> builder(Multi<T> source) {
+        return new Builder<>(source);
+    }
+
     @Override
     public void subscribe(Flow.Subscriber<? super T> subscriber) {
         Objects.requireNonNull(subscriber, "subscriber is null");
         source.subscribe(new MultiTappedSubscriber<>(subscriber,
-                onSubscribeCallback, onNextCallback,
-                onErrorCallback, onCompleteCallback,
-                onRequestCallback, onCancelCallback));
+                                                     onSubscribeCallback, onNextCallback,
+                                                     onErrorCallback, onCompleteCallback,
+                                                     onRequestCallback, onCancelCallback));
     }
 
     @Override
@@ -282,77 +302,104 @@ final class MultiTappedPublisher<T> implements Multi<T> {
         }
     }
 
-
     /**
-     * Holds a list of {@link Consumer}s to flatten out a call chain of them.
-     * @param <T> the element type to accept
+     * Multi tapped publisher builder to register custom callbacks.
+     *
+     * @param <T> type of returned multi
      */
-    static final class ConsumerChain<T> extends ArrayList<Consumer<? super T>> implements Consumer<T> {
+    public static class Builder<T> implements io.helidon.common.Builder<MultiTappedPublisher<T>> {
+        private final Multi<T> source;
+        private Consumer<? super Flow.Subscription> onSubscribeCallback;
+        private Consumer<? super T> onNextCallback;
+        private Runnable onCompleteCallback;
+        private LongConsumer onRequestCallback;
+        private Runnable onCancelCallback;
+        private Consumer<? super Throwable> onErrorCallback;
+
+        private Builder(Multi<T> source) {
+            this.source = source;
+        }
 
         @Override
-        public void accept(T t) {
-            for (Consumer<? super T> inner : this) {
-                inner.accept(t);
-            }
+        public MultiTappedPublisher<T> build() {
+            return new MultiTappedPublisher<>(this);
         }
 
-        public ConsumerChain<T> combineWith(Consumer<? super T> another) {
-            ConsumerChain<T> newChain = new ConsumerChain<>();
-            newChain.addAll(this);
-            newChain.add(another);
-            return newChain;
+        Builder<T> onSubscribeCallback(Consumer<? super Flow.Subscription> onSubscribeCallback) {
+            this.onSubscribeCallback = onSubscribeCallback;
+            return this;
         }
 
-        @SuppressWarnings("unchecked")
-        public static <T> Consumer<? super T> combine(Consumer<? super T> current, Consumer<? super T> another) {
-            if (current == null) {
-                return another;
-            }
-            if (another == null) {
-                return current;
-            }
-            if (current instanceof ConsumerChain) {
-                return ((ConsumerChain<T>) current).combineWith(another);
-            }
-            ConsumerChain<T> newChain = new ConsumerChain<>();
-            newChain.add(current);
-            newChain.add(another);
-            return newChain;
-        }
-    }
-
-    /**
-     * Holds a list of {@link Runnable}s to flatten out a call chain of them.
-     */
-    static final class RunnableChain extends ArrayList<Runnable> implements Runnable {
-        @Override
-        public void run() {
-            for (Runnable inner : this) {
-                inner.run();
-            }
+        /**
+         * Subscription callback.
+         *
+         * @param onSubscribeCallback runnable to run when
+         *  {@link Flow.Subscriber#onSubscribe(java.util.concurrent.Flow.Subscription)} is called
+         * @return updated builder instance
+         */
+        public Builder<T> onSubscribeCallback(Runnable onSubscribeCallback) {
+            this.onSubscribeCallback = subscription -> onSubscribeCallback.run();
+            return this;
         }
 
-        public RunnableChain combineWith(Runnable another) {
-            RunnableChain newChain = new RunnableChain();
-            newChain.addAll(this);
-            newChain.add(another);
-            return newChain;
+        /**
+         * On next callback.
+         *
+         * @param onNextCallback runnable to run when
+         *  {@link Flow.Subscriber#onNext(Object)} is called
+         * @return updated builder instance
+         */
+        public Builder<T> onNextCallback(Consumer<? super T> onNextCallback) {
+            this.onNextCallback = onNextCallback;
+            return this;
         }
 
-        public static Runnable combine(Runnable current, Runnable another) {
-            if (current == null) {
-                return another;
-            }
-            if (another == null) {
-                return current;
-            }
-            if (current instanceof RunnableChain) {
-                return ((RunnableChain) current).combineWith(another);
-            }
-            RunnableChain newChain = new RunnableChain();
-            newChain.add(current);
-            newChain.add(another);
-            return newChain;
+        /**
+         * On complete callback.
+         *
+         * @param onCompleteCallback runnable to run when
+         *  {@link java.util.concurrent.Flow.Subscriber#onComplete()} is called
+         * @return updated builder instance
+         */
+        public Builder<T> onCompleteCallback(Runnable onCompleteCallback) {
+            this.onCompleteCallback = onCompleteCallback;
+            return this;
+        }
+
+        /**
+         * On request callback.
+         *
+         * @param onRequestCallback runnable to run when
+         *  {@link Flow.Subscription#request(long)} is called
+         * @return updated builder instance
+         */
+        public Builder<T> onRequestCallback(LongConsumer onRequestCallback) {
+            this.onRequestCallback = onRequestCallback;
+            return this;
+        }
+
+        /**
+         * On cancel callback.
+         *
+         * @param onCancelCallback runnable to run when
+         *  {@link java.util.concurrent.Flow.Subscription#cancel()} is called
+         * @return updated builder instance
+         */
+        public Builder<T> onCancelCallback(Runnable onCancelCallback) {
+            this.onCancelCallback = onCancelCallback;
+            return this;
+        }
+
+        /**
+         * On error callback.
+         *
+         * @param onErrorCallback runnable to run when
+         *  {@link Flow.Subscriber#onError(Throwable)} is called
+         * @return updated builder instance
+         */
+        public Builder<T> onErrorCallback(Consumer<? super Throwable> onErrorCallback) {
+            this.onErrorCallback = onErrorCallback;
+            return this;
         }
     }
 }

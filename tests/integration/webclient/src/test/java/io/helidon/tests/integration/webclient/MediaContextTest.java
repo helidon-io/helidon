@@ -15,14 +15,17 @@
  */
 package io.helidon.tests.integration.webclient;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collections;
+import java.util.concurrent.ExecutionException;
 
 import javax.json.Json;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 
 import io.helidon.media.common.MediaContext;
-import io.helidon.media.jsonp.common.JsonpSupport;
+import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientRequestBuilder;
 
@@ -161,7 +164,24 @@ public class MediaContextTest extends TestParent {
                 .get();
     }
 
+    @Test
+    public void testInputStreamDifferentThread() throws IOException, ExecutionException, InterruptedException {
+        InputStream is = webClient.get()
+                .request(InputStream.class)
+                .toCompletableFuture()
+                .get();
+        assertThat(new String(is.readAllBytes()), is("{\"message\":\"Hello World!\"}"));
+    }
 
+    @Test
+    public void testInputStreamDifferentThreadContentAs() throws IOException, ExecutionException, InterruptedException {
+        InputStream is = webClient.get()
+                .request()
+                .thenCompose(it -> it.content().as(InputStream.class))
+                .toCompletableFuture()
+                .get();
+        assertThat(new String(is.readAllBytes()), is("{\"message\":\"Hello World!\"}"));
+    }
 
 
 }

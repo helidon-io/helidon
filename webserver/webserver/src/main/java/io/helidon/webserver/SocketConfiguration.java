@@ -27,14 +27,20 @@ import java.util.function.Supplier;
 
 import javax.net.ssl.SSLContext;
 
+import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
+import io.helidon.config.DeprecatedConfig;
 
 /**
  * The SocketConfiguration configures a port to listen on and its associated server socket parameters.
  */
 public interface SocketConfiguration {
 
-    /** The default socket configuration. */
+    /**
+     * The default socket configuration.
+     * @deprecated since 2.0.0 This configuration does not contain a name and will be removed
+     */
+    @Deprecated
     SocketConfiguration DEFAULT = builder().build();
 
     /**
@@ -42,6 +48,17 @@ public interface SocketConfiguration {
      * is provided.
      */
     int DEFAULT_BACKLOG_SIZE = 1024;
+
+    /**
+     * Name of this socket.
+     * Default to {@link io.helidon.webserver.WebServer#DEFAULT_SOCKET_NAME} for the main and
+     * default server socket. All other sockets must be named.
+     *
+     * @return name of this socket
+     */
+    default String name() {
+        return WebServer.DEFAULT_SOCKET_NAME;
+    }
 
     /**
      * Returns a server port to listen on with the server socket. If port is
@@ -102,12 +119,88 @@ public interface SocketConfiguration {
     Set<String> enabledSslProtocols();
 
     /**
+     * Whether to require client authentication or not.
+     *
+     * @return client authentication
+     */
+    ClientAuthentication clientAuth();
+
+    /**
+     * Whether this socket is enabled (and will be opened on server startup), or disabled
+     * (and ignored on server startup).
+     *
+     * @return {@code true} for enabled socket, {@code false} for socket that should not be opened
+     */
+    default boolean enabled() {
+        return true;
+    }
+
+    /**
+     * Maximal size of all headers combined.
+     *
+     * @return size in bytes
+     */
+    int maxHeaderSize();
+
+    /**
+     * Maximal length of the initial HTTP line.
+     *
+     * @return length
+     */
+    int maxInitialLineLength();
+
+    /**
+     * Maximal size of a single chunk of received data.
+     *
+     * @return chunk size
+     */
+    int maxChunkSize();
+
+    /**
+     * Whether to validate HTTP header names.
+     * When set to {@code true}, we make sure the header name is a valid string
+     *
+     * @return {@code true} if headers should be validated
+     */
+    boolean validateHeaders();
+
+    /**
+     * Whether to allow negotiation for a gzip/deflate content encoding. Supporting
+     * HTTP compression may interfere with application that use streaming and other
+     * similar features. Thus, it defaults to {@code false}.
+     *
+     * @return compression flag
+     */
+    default boolean enableCompression() {
+        return false;
+    }
+
+    /**
+     * Initial size of the buffer used to parse HTTP line and headers.
+     *
+     * @return initial size of the buffer
+     */
+    int initialBufferSize();
+
+    /**
      * Creates a builder of {@link SocketConfiguration} class.
      *
      * @return a builder
      */
     static Builder builder() {
         return new Builder();
+    }
+
+    /**
+     * Create a default named configuration.
+     *
+     * @param name name of the socket
+     * @return a new socket configuration with defaults
+     */
+    static SocketConfiguration create(String name) {
+        return builder()
+                .name(name)
+                .build();
     }
 
     interface SocketConfigurationBuilder<B extends SocketConfigurationBuilder<B>> {
@@ -156,6 +249,7 @@ public interface SocketConfiguration {
          * @throws java.lang.NullPointerException in case the bind address is null
          */
         B bindAddress(InetAddress bindAddress);
+
         /**
          * Configures a maximum length of the queue of incoming connections on the server
          * socket.
@@ -195,10 +289,10 @@ public interface SocketConfiguration {
          * <p>
          * If this method is called again, the previous configuration would be ignored.
          *
-         * @param tlsConfig ssl configuration to use with this socket
+         * @param webServerTls ssl configuration to use with this socket
          * @return this builder
          */
-        B tls(TlsConfig tlsConfig);
+        B tls(WebServerTls webServerTls);
 
         /**
          * Configures SSL for this socket. When configured, the server enforces SSL
@@ -207,30 +301,128 @@ public interface SocketConfiguration {
          * @param tlsConfig supplier ssl configuration to use with this socket
          * @return this builder
          */
-        default B tls(Supplier<TlsConfig> tlsConfig) {
+        default B tls(Supplier<WebServerTls> tlsConfig) {
             return tls(tlsConfig.get());
+        }
+
+        /**
+         * Maximal number of bytes of all header values combined. When a bigger value is received, a
+         * {@link io.helidon.common.http.Http.Status#BAD_REQUEST_400}
+         * is returned.
+         * <p>
+         * Default is {@code 8192}
+         *
+         * @param size maximal number of bytes of combined header values
+         * @return this builder
+         */
+        B maxHeaderSize(int size);
+
+        /**
+         * Maximal number of characters in the initial HTTP line.
+         * <p>
+         * Default is {@code 4096}
+         *
+         * @param length maximal number of characters
+         * @return this builder
+         */
+        B maxInitialLineLength(int length);
+
+        /**
+         * Enable negotiation for gzip/deflate content encodings. Clients can
+         * request compression using the "Accept-Encoding" header.
+         * <p>
+         * Default is {@code false}
+         *
+         * @param value compression flag
+         * @return this builder
+         */
+        B enableCompression(boolean value);
+
+        /**
+         * Update this socket configuration from a {@link io.helidon.config.Config}.
+         *
+         * @param config configuration on the node of a socket
+         * @return updated builder instance
+         */
+        @SuppressWarnings("unchecked")
+        default B config(Config config) {
+            config.get("port").asInt().ifPresent(this::port);
+            config.get("bind-address").asString().ifPresent(this::host);
+            config.get("backlog").asInt().ifPresent(this::backlog);
+            config.get("max-header-size").asInt().ifPresent(this::maxHeaderSize);
+            config.get("max-initial-line-length").asInt().ifPresent(this::maxInitialLineLength);
+
+            DeprecatedConfig.get(config, "timeout-millis", "timeout")
+                    .asInt()
+                    .ifPresent(it -> this.timeout(it, TimeUnit.MILLISECONDS));
+            DeprecatedConfig.get(config, "receive-buffer-size", "receive-buffer")
+                    .asInt()
+                    .ifPresent(this::receiveBufferSize);
+
+            Optional<List<String>> enabledProtocols = DeprecatedConfig.get(config, "ssl.protocols", "ssl-protocols")
+                    .asList(String.class)
+                    .asOptional();
+
+            // tls
+            Config sslConfig = DeprecatedConfig.get(config, "tls", "ssl");
+            if (sslConfig.exists()) {
+                try {
+                    WebServerTls.Builder builder = WebServerTls.builder();
+                    enabledProtocols.ifPresent(builder::enabledProtocols);
+                    builder.config(sslConfig);
+
+                    this.tls(builder.build());
+                } catch (IllegalStateException e) {
+                    throw new ConfigException("Cannot load SSL configuration.", e);
+                }
+            }
+
+            // compression
+            config.get("enable-compression").asBoolean().ifPresent(this::enableCompression);
+            return (B) this;
         }
     }
 
-    /** The {@link io.helidon.webserver.SocketConfiguration} builder class. */
+    /**
+     * The {@link io.helidon.webserver.SocketConfiguration} builder class.
+     */
     final class Builder implements SocketConfigurationBuilder<Builder>, io.helidon.common.Builder<SocketConfiguration> {
-
-        private final TlsConfig.Builder tlsConfigBuilder = TlsConfig.builder();
+        /**
+         * @deprecated remove once WebServer.Builder.addSocket(name, socket) methods are removed
+         */
+        @Deprecated
+        static final String UNCONFIGURED_NAME = "io.helidon.webserver.SocketConfiguration.UNCONFIGURED";
+        private final WebServerTls.Builder tlsConfigBuilder = WebServerTls.builder();
 
         private int port = 0;
         private InetAddress bindAddress = null;
         private int backlog = DEFAULT_BACKLOG_SIZE;
         private int timeoutMillis = 0;
         private int receiveBufferSize = 0;
-        private TlsConfig tlsConfig;
+        private WebServerTls webServerTls;
+        // this is for backward compatibility, should be initialized to null once the
+        // methods with `name` are removed from server builder (for adding sockets)
+        private String name = UNCONFIGURED_NAME;
+        private boolean enabled = true;
+        // these values are as defined in Netty implementation
+        private int maxHeaderSize = 8192;
+        private int maxInitialLineLength = 4096;
+        private int maxChunkSize = 8192;
+        private boolean validateHeaders = true;
+        private int initialBufferSize = 128;
+        private boolean enableCompression = false;
 
         private Builder() {
         }
 
         @Override
         public SocketConfiguration build() {
-            if (null == tlsConfig) {
-                tlsConfig = tlsConfigBuilder.build();
+            if (null == webServerTls) {
+                webServerTls = tlsConfigBuilder.build();
+            }
+
+            if (null == name) {
+                throw new ConfigException("Socket name must be configured for each socket");
             }
 
             return new ServerBasicConfig.SocketConfig(this);
@@ -298,7 +490,7 @@ public interface SocketConfiguration {
          * @param sslContext a SSL context to use
          * @return this builder
          *
-         * @deprecated since 2.0.0, please use {@link #tls(TlsConfig)} instead
+         * @deprecated since 2.0.0, please use {@link #tls(WebServerTls)} instead
          */
         @Deprecated
         public Builder ssl(SSLContext sslContext) {
@@ -328,7 +520,7 @@ public interface SocketConfiguration {
          * default protocols
          * @return this builder
          *
-         * @deprecated since 2.0.0, please use {@link io.helidon.webserver.TlsConfig.Builder#enabledProtocols(String...)}
+         * @deprecated since 2.0.0, please use {@link WebServerTls.Builder#enabledProtocols(String...)}
          *              instead
          */
         @Deprecated
@@ -369,12 +561,107 @@ public interface SocketConfiguration {
         }
 
         @Override
-        public Builder tls(TlsConfig tlsConfig) {
-            this.tlsConfig = tlsConfig;
+        public Builder tls(WebServerTls webServerTls) {
+            this.webServerTls = webServerTls;
             return this;
         }
 
-        public int port() {
+        @Override
+        public Builder maxHeaderSize(int size) {
+            this.maxHeaderSize = size;
+            return this;
+        }
+
+        @Override
+        public Builder maxInitialLineLength(int length) {
+            this.maxInitialLineLength = length;
+            return this;
+        }
+
+        /**
+         * Configure a socket name, to bind named routings to.
+         *
+         * @param name name of the socket
+         * @return updated builder instance
+         */
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+
+        /**
+         * Set this socket builder to enabled or disabled.
+         *
+         * @param enabled when set to {@code false}, the socket is not going to be opened by the server
+         * @return updated builder instance
+         */
+        public Builder enabled(boolean enabled) {
+            this.enabled = enabled;
+            return this;
+        }
+
+        /**
+         * Configure maximal size of a chunk to be read from incoming requests.
+         * Defaults to {@code 8192}.
+         *
+         * @param size maximal chunk size
+         * @return updated builder instance
+         */
+        public Builder maxChunkSize(int size) {
+            this.maxChunkSize = size;
+            return this;
+        }
+
+        /**
+         * Configure whether to validate header names.
+         * Defaults to {@code true} to make sure header names are valid strings.
+         *
+         * @param validate set to {@code false} to ignore header validation
+         * @return updated builder instance
+         */
+        public Builder validateHeaders(boolean validate) {
+            this.validateHeaders = validate;
+            return this;
+        }
+
+        /**
+         * Configure initial size of the buffer used to parse HTTP line and headers.
+         * Defaults to {@code 128}.
+         *
+         * @param size initial buffer size
+         * @return updated builder instance
+         */
+        public Builder initialBufferSize(int size) {
+            this.initialBufferSize = size;
+            return this;
+        }
+
+        /**
+         * Configure whether to enable content negotiation for compression.
+         *
+         * @param value compression flag
+         * @return updated builder instance
+         */
+        public Builder enableCompression(boolean value) {
+            this.enableCompression = value;
+            return this;
+        }
+
+        @Override
+        public Builder config(Config config) {
+            SocketConfigurationBuilder.super.config(config);
+
+            config.get("name").asString().ifPresent(this::name);
+            config.get("enabled").asBoolean().ifPresent(this::enabled);
+            config.get("max-chunk-size").asInt().ifPresent(this::maxChunkSize);
+            config.get("validate-headers").asBoolean().ifPresent(this::validateHeaders);
+            config.get("initial-buffer-size").asInt().ifPresent(this::initialBufferSize);
+            config.get("enable-compression").asBoolean().ifPresent(this::enableCompression);
+
+            return this;
+        }
+
+        int port() {
             return port;
         }
 
@@ -394,8 +681,40 @@ public interface SocketConfiguration {
             return receiveBufferSize;
         }
 
-        TlsConfig tlsConfig() {
-            return tlsConfig;
+        WebServerTls tlsConfig() {
+            return webServerTls;
+        }
+
+        String name() {
+            return name;
+        }
+
+        boolean enabled() {
+            return enabled;
+        }
+
+        int maxHeaderSize() {
+            return maxHeaderSize;
+        }
+
+        int maxInitialLineLength() {
+            return maxInitialLineLength;
+        }
+
+        int maxChunkSize() {
+            return maxChunkSize;
+        }
+
+        boolean validateHeaders() {
+            return validateHeaders;
+        }
+
+        int initialBufferSize() {
+            return initialBufferSize;
+        }
+
+        boolean enableCompression() {
+            return enableCompression;
         }
     }
 }

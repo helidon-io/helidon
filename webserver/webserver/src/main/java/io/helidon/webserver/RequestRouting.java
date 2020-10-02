@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,9 +21,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -69,7 +71,10 @@ class RequestRouting implements Routing {
         try {
             WebServer webServer = bareRequest.webServer();
             HashRequestHeaders requestHeaders = new HashRequestHeaders(bareRequest.headers());
-            RoutedResponse response = new RoutedResponse(webServer, bareResponse, requestHeaders.acceptedTypes());
+            RoutedResponse response = new RoutedResponse(
+                    webServer,
+                    bareResponse,
+                    requestHeaders.acceptedTypes());
 
             // Jersey needs the raw path (not decoded) so we get that too
             String path = canonicalize(bareRequest.uri().normalize().getPath());
@@ -77,8 +82,8 @@ class RequestRouting implements Routing {
 
             Crawler crawler = new Crawler(routes, path, rawPath, bareRequest.method());
             RoutedRequest nextRequests = new RoutedRequest(bareRequest, response, webServer, crawler, errorHandlers,
-                    requestHeaders);
-
+                                                           requestHeaders);
+            response.request(nextRequests);
             Contexts.runInContext(nextRequests.context(), (Runnable) nextRequests::next);
         } catch (Error | RuntimeException e) {
             LOGGER.log(Level.SEVERE, "Unexpected error occurred during routing!", e);
@@ -270,15 +275,13 @@ class RequestRouting implements Routing {
             this.errorHandlers = new LinkedList<>(errorHandlers);
         }
 
-        @Override
-        @SuppressWarnings("deprecation")
-        public Span span() {
+        Span span() {
             return context().get(ServerRequest.class, Span.class).orElse(null);
         }
 
         @Override
-        public SpanContext spanContext() {
-            return context().get(ServerRequest.class, SpanContext.class).orElse(null);
+        public Optional<SpanContext> spanContext() {
+            return context().get(ServerRequest.class, SpanContext.class);
         }
 
         /**
@@ -333,6 +336,12 @@ class RequestRouting implements Routing {
 
         @SuppressWarnings("unchecked")
         private void nextNoCheck(Throwable t) {
+            if (t instanceof CompletionException) {
+                // completion exception always has a cause
+                nextNoCheck(t.getCause());
+                return;
+            }
+
             LOGGER.finest(() -> "(reqID: " + requestId() + ") Routing error: " + t.getClass());
 
             for (ErrorHandlerRecord<?> record = errorHandlers.pollFirst(); record != null; record = errorHandlers.pollFirst()) {
@@ -379,7 +388,7 @@ class RequestRouting implements Routing {
                 } else if (t.getCause() instanceof HttpException) {
                     response.status(((HttpException) t.getCause()).status());
                 } else if (t instanceof RejectedExecutionException
-                           || t.getCause() instanceof RejectedExecutionException) {
+                        || t.getCause() instanceof RejectedExecutionException) {
                     response.status(Http.Status.SERVICE_UNAVAILABLE_503);
                 } else {
                     LOGGER.log(t instanceof Error ? Level.SEVERE : Level.WARNING,
@@ -440,18 +449,36 @@ class RequestRouting implements Routing {
 
     private static class RoutedResponse extends Response {
 
+        private final AtomicReference<RoutedRequest> request = new AtomicReference<>();
+
         RoutedResponse(WebServer webServer, BareResponse bareResponse, List<MediaType> acceptedTypes) {
             super(webServer, bareResponse, acceptedTypes);
         }
 
         RoutedResponse(RoutedResponse response) {
             super(response);
+            this.request.set(response.request.get());
         }
 
         @Override
         Optional<SpanContext> spanContext() {
             return Contexts.context()
                     .flatMap(ctx -> ctx.get(SpanContext.class));
+        }
+
+        @Override
+        public Void send(Throwable content) {
+            RoutedRequest routedRequest = request.get();
+            if (routedRequest == null) {
+                return super.send(content);
+            } else {
+                routedRequest.nextNoCheck(content);
+            }
+            return null;
+        }
+
+        void request(RoutedRequest request) {
+            this.request.set(request);
         }
     }
 

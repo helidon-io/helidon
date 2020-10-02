@@ -20,8 +20,6 @@ import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
 
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 import io.helidon.common.http.MediaType;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
@@ -44,9 +42,6 @@ import io.prometheus.client.CollectorRegistry;
  * It is possible to use
  */
 public final class PrometheusSupport implements Service {
-    static {
-        HelidonFeatures.register(HelidonFlavor.SE, "WebServer", "Prometheus");
-    }
 
     /**
      * Standard path of Prometheus client resource: {@code /metrics}.

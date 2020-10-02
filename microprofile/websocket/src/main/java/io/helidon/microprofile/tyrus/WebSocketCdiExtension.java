@@ -35,8 +35,6 @@ import javax.websocket.server.ServerApplicationConfig;
 import javax.websocket.server.ServerEndpoint;
 import javax.websocket.server.ServerEndpointConfig;
 
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
 import io.helidon.config.Config;
 import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.microprofile.server.RoutingName;
@@ -54,10 +52,6 @@ public class WebSocketCdiExtension implements Extension {
     private static final Logger LOGGER = Logger.getLogger(WebSocketCdiExtension.class.getName());
 
     private static final String DEFAULT_WEBSOCKET_PATH = "/";
-
-    static {
-        HelidonFeatures.register(HelidonFlavor.MP, "WebSocket");
-    }
 
     private Config config;
 
@@ -106,13 +100,33 @@ public class WebSocketCdiExtension implements Extension {
     }
 
     /**
-     * Collects programmatic endpoints .
+     * Collects programmatic endpoints.
      *
      * @param endpoint The endpoint.
      */
     private void endpointConfig(@Observes ProcessAnnotatedType<? extends Endpoint> endpoint) {
         LOGGER.finest(() -> "Programmatic endpoint found " + endpoint.getAnnotatedType().getJavaClass());
         appBuilder.programmaticEndpoint(endpoint.getAnnotatedType().getJavaClass());
+    }
+
+    /**
+     * Collects extensions.
+     *
+     * @param extension The extension.
+     */
+    private void extension(@Observes ProcessAnnotatedType<? extends javax.websocket.Extension> extension) {
+        LOGGER.finest(() -> "Extension found " + extension.getAnnotatedType().getJavaClass());
+
+        Class<? extends javax.websocket.Extension> cls = extension.getAnnotatedType().getJavaClass();
+        try {
+            javax.websocket.Extension instance = cls.getConstructor().newInstance();
+            appBuilder.extension(instance);
+        } catch (NoSuchMethodException e) {
+            LOGGER.warning(() -> "Extension does not have no-args constructor for "
+                    + extension.getAnnotatedType().getJavaClass() + "! Skppping.");
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException("Unable to load WebSocket extension", e);
+        }
     }
 
     /**
@@ -171,6 +185,7 @@ public class WebSocketCdiExtension implements Extension {
                 // Direct registration without calling application class
                 app.annotatedEndpoints().forEach(builder::register);
                 app.programmaticEndpoints().forEach(builder::register);
+                app.extensions().forEach(builder::register);
 
                 // Create routing builder
                 routing = serverCdiExtension.serverRoutingBuilder();

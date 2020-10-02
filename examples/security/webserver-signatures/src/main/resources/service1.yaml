@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2018 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2020 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -42,6 +42,8 @@ security:
           - login: "john"
             password: "${CLEAR=password}"
             roles: []
+        outbound:
+          - name: "propagate-all"
     # only configured for outbound security
     - http-signatures:
         outbound:
@@ -57,16 +59,17 @@ security:
             signature:
               key-id: "service1-rsa"
               private-key:
-                # path to keystore
-                keystore-path: "src/main/resources/keystore.p12"
-                # Keystore type
-                # PKCS12, JSK or RSA (not really a keystore, but directly the linux style private key unencrypted)
-                # defaults to jdk default
-                keystore-type: "PKCS12"
-                # password of the keystore
-                keystore-passphrase: "password"
-                # alias of the key to sign request
-                key-alias: "myPrivateKey"
+                keystore:
+                  # path to keystore
+                  resource.path: "src/main/resources/keystore.p12"
+                  # Keystore type
+                  # PKCS12, JSK or RSA (not really a keystore, but directly the linux style private key unencrypted)
+                  # defaults to jdk default
+                  type: "PKCS12"
+                  # password of the keystore
+                  passphrase: "password"
+                  # alias of the key to sign request
+                  key.alias: "myPrivateKey"
   web-server:
     # Configuration of integration with web server
     defaults:

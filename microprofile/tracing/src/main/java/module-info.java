@@ -47,7 +47,7 @@ module io.helidon.microprofile.tracing {
     exports io.helidon.microprofile.tracing;
 
     // this is needed for CDI extensions that use non-public observer methods
-    opens io.helidon.microprofile.tracing to weld.core.impl,hk2.utils;
+    opens io.helidon.microprofile.tracing to weld.core.impl,hk2.utils, io.helidon.microprofile.cdi;
 
     provides Extension with io.helidon.microprofile.tracing.TracingCdiExtension;
     provides org.glassfish.jersey.internal.spi.AutoDiscoverable with io.helidon.microprofile.tracing.MpTracingAutoDiscoverable;

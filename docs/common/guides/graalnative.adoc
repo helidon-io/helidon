@@ -61,11 +61,11 @@ $GRAALVM_HOME/bin/native-image --version
 
 == Generate The Project
 
-Generate the project using the Helidon SE Quickstart Maven archetype.
+Generate the project using the Helidon {helidon-uc-flavor} Quickstart Maven archetype.
 
 [source,bash,subs="attributes+"]
 ----
-mvn archetype:generate -DinteractiveMode=false \
+mvn -U archetype:generate -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
     -DarchetypeArtifactId=helidon-quickstart-{helidon-lc-flavor} \
     -DarchetypeVersion={helidon-version} \

@@ -21,7 +21,7 @@ import java.util.logging.Logger;
 
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.KeyConfig;
-import io.helidon.webclient.Ssl;
+import io.helidon.webclient.WebClientTls;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientRequestBuilder;
 
@@ -55,7 +55,7 @@ public class SslTest {
                         .any((req, res) -> res.send("It works!")))
 
                 .port(port)
-                .tls(TlsConfig.builder()
+                .tls(WebServerTls.builder()
                              .privateKey(KeyConfig.pemBuilder()
                                                  .key(Resource.create("ssl/key.pkcs8.pem"))
                                                  .certChain(Resource.create("ssl/certificate.pem"))
@@ -118,7 +118,7 @@ public class SslTest {
     @BeforeAll
     public static void createClientAcceptingAllCertificates() {
         client = WebClient.builder()
-                .ssl(Ssl.builder()
+                .tls(WebClientTls.builder()
                              .trustAll(true)
                              .build())
                 .build();

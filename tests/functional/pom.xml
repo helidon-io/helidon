@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.tests</groupId>
         <artifactId>helidon-tests-project</artifactId>
-        <version>2.0.0-SNAPSHOT</version>
+        <version>2.0.3-SNAPSHOT</version>
     </parent>
 
     <groupId>io.helidon.tests.functional</groupId>
@@ -39,5 +39,6 @@
         <module>jax-rs-subresource</module>
         <module>context-propagation</module>
         <module>mp-synthetic-app</module>
+        <module>mp-compression</module>
     </modules>
 </project>

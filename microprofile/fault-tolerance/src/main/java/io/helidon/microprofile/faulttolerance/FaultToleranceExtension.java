@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,9 +40,11 @@ import javax.enterprise.inject.spi.ProcessAnnotatedType;
 import javax.enterprise.inject.spi.ProcessManagedBean;
 import javax.enterprise.inject.spi.ProcessSyntheticBean;
 import javax.enterprise.util.AnnotationLiteral;
+import javax.inject.Inject;
 
-import io.helidon.common.HelidonFeatures;
-import io.helidon.common.HelidonFlavor;
+import io.helidon.common.configurable.ScheduledThreadPoolSupplier;
+import io.helidon.common.configurable.ThreadPoolSupplier;
+import io.helidon.faulttolerance.FaultTolerance;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
@@ -52,6 +54,7 @@ import org.eclipse.microprofile.faulttolerance.CircuitBreaker;
 import org.eclipse.microprofile.faulttolerance.Fallback;
 import org.eclipse.microprofile.faulttolerance.Retry;
 import org.eclipse.microprofile.faulttolerance.Timeout;
+import org.glassfish.jersey.process.internal.RequestScope;
 
 /**
  * Class FaultToleranceExtension.
@@ -61,15 +64,15 @@ public class FaultToleranceExtension implements Extension {
     static final String MP_FT_METRICS_ENABLED = "MP_Fault_Tolerance_Metrics_Enabled";
     static final String MP_FT_INTERCEPTOR_PRIORITY = "mp.fault.tolerance.interceptor.priority";
 
-    static {
-        HelidonFeatures.register(HelidonFlavor.MP, "FaultTolerance");
-    }
-
     private static boolean isFaultToleranceEnabled = true;
 
     private static boolean isFaultToleranceMetricsEnabled = true;
 
     private Set<BeanMethod> registeredMethods;
+
+    private ThreadPoolSupplier threadPoolSupplier;
+
+    private ScheduledThreadPoolSupplier scheduledThreadPoolSupplier;
 
     /**
      * A bean method class that pairs a class and a method.
@@ -94,7 +97,7 @@ public class FaultToleranceExtension implements Extension {
     }
 
     /**
-     * Class to mimic a {@link Priority} annotation for the purpuse of changing
+     * Class to mimic a {@link Priority} annotation for the purpose of changing
      * its value dynamically.
      */
     private static class LiteralPriority extends AnnotationLiteral<Priority> implements Priority {
@@ -164,6 +167,21 @@ public class FaultToleranceExtension implements Extension {
 
         discovery.addAnnotatedType(bm.createAnnotatedType(CommandInterceptor.class),
                 CommandInterceptor.class.getName());
+        discovery.addAnnotatedType(bm.createAnnotatedType(JerseyRequestScopeAsCdiBean.class),
+                JerseyRequestScopeAsCdiBean.class.getName());
+    }
+
+    /**
+     * We require access to {@link org.glassfish.jersey.process.internal.RequestScope}
+     * via CDI to propagate request contexts to newly created threads, but Jersey
+     * only registers this type as a bean if it can find an injection point (see
+     * org.glassfish.jersey.ext.cdi1x.internal.CdiComponentProvider#afterDiscoveryObserver).
+     * Here we define a dummy bean with such an injection point for Jersey to
+     * create and register a CDI bean for RequestScope.
+     */
+    private static class JerseyRequestScopeAsCdiBean {
+        @Inject
+        private RequestScope requestScope;
     }
 
     /**
@@ -211,11 +229,11 @@ public class FaultToleranceExtension implements Extension {
     }
 
     /**
-     * Registers metrics for all FT methods.
+     * Registers metrics for all FT methods and init executors.
      *
      * @param validation Event information.
      */
-    void registerFaultToleranceMetrics(@Observes AfterDeploymentValidation validation) {
+    void registerMetricsAndInitExecutors(@Observes AfterDeploymentValidation validation) {
         if (FaultToleranceMetrics.enabled()) {
             getRegisteredMethods().stream().forEach(beanMethod -> {
                 final Method method = beanMethod.method();
@@ -250,6 +268,21 @@ public class FaultToleranceExtension implements Extension {
                 }
             });
         }
+
+        // Initialize executors for MP FT - default size of 16
+        io.helidon.config.Config config = io.helidon.config.Config.create();
+        scheduledThreadPoolSupplier = ScheduledThreadPoolSupplier.builder()
+                .threadNamePrefix("ft-mp-schedule-")
+                .corePoolSize(16)
+                .config(config.get("scheduled-executor"))
+                .build();
+        FaultTolerance.scheduledExecutor(scheduledThreadPoolSupplier);
+        threadPoolSupplier = ThreadPoolSupplier.builder()
+                .threadNamePrefix("ft-mp-")
+                .corePoolSize(16)
+                .config(config.get("executor"))
+                .build();
+        FaultTolerance.executor(threadPoolSupplier);
     }
 
     /**
@@ -293,6 +326,24 @@ public class FaultToleranceExtension implements Extension {
                 || MethodAntn.isAnnotationPresent(beanClass, method, Timeout.class)
                 || MethodAntn.isAnnotationPresent(beanClass, method, Asynchronous.class)
                 || MethodAntn.isAnnotationPresent(beanClass, method, Fallback.class);
+    }
+
+    /**
+     * Access {@code ThreadPoolSupplier} configured by this extension.
+     *
+     * @return a thread pool supplier.
+     */
+    public ThreadPoolSupplier threadPoolSupplier() {
+        return threadPoolSupplier;
+    }
+
+    /**
+     * Access {@code ScheduledThreadPoolSupplier} configured by this extension.
+     *
+     * @return a scheduled thread pool supplier.
+     */
+    public ScheduledThreadPoolSupplier scheduledThreadPoolSupplier() {
+        return scheduledThreadPoolSupplier;
     }
 
     /**

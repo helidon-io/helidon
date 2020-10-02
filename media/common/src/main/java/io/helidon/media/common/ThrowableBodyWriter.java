@@ -16,6 +16,7 @@
 package io.helidon.media.common;
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Flow.Publisher;
 
 import io.helidon.common.GenericType;
@@ -27,21 +28,24 @@ import io.helidon.common.reactive.Single;
 /**
  * Message body writer for {@link Throwable}.
  */
-public class ThrowableBodyWriter implements MessageBodyWriter<Throwable> {
+class ThrowableBodyWriter implements MessageBodyWriter<Throwable> {
 
-    private final boolean writeStackTrace;
+    private static final ThrowableBodyWriter DEFAULT_TRUE = new ThrowableBodyWriter(true);
+    private static final ThrowableBodyWriter DEFAULT_FALSE = new ThrowableBodyWriter(false);
+
+    private final boolean includeStackTraces;
 
     private ThrowableBodyWriter() {
         this(false);
     }
 
-    protected ThrowableBodyWriter(boolean writeStackTrace) {
-        this.writeStackTrace = writeStackTrace;
+    protected ThrowableBodyWriter(boolean includeStackTraces) {
+        this.includeStackTraces = includeStackTraces;
     }
 
     @Override
-    public boolean accept(GenericType<?> type, MessageBodyWriterContext context) {
-        return Throwable.class.isAssignableFrom(type.rawType());
+    public PredicateResult accept(GenericType<?> type, MessageBodyWriterContext context) {
+        return PredicateResult.supports(Throwable.class, type);
     }
 
     @Override
@@ -49,25 +53,21 @@ public class ThrowableBodyWriter implements MessageBodyWriter<Throwable> {
                                       GenericType<? extends Throwable> type,
                                       MessageBodyWriterContext context) {
         context.contentType(MediaType.TEXT_PLAIN);
-        return content.flatMap(new ThrowableToChunks(context.charset()));
+        if (includeStackTraces) {
+            return content.flatMap(new ThrowableToChunks(context.charset()));
+        } else {
+            return ContentWriters.writeCharSequence("Unexpected exception occurred.", StandardCharsets.UTF_8);
+        }
     }
 
     /**
-     * Creates a new {@link ThrowableBodyWriter}.
-     * @return a new {@link ThrowableBodyWriter}; never {@code null}
-     * @see #create(boolean)
-     */
-    public static ThrowableBodyWriter create() {
-        return create(false);
-    }
-
-    /**
-     * Creates a new {@link ThrowableBodyWriter}.
-     * @param writeStackTrace whether stack traces are to be written
+     * Return an instance of {@link ThrowableBodyWriter}.
+     *
+     * @param includeStackTraces whether stack traces are to be written
      * @return a new {@link ThrowableBodyWriter}; never {@code null}
      */
-    public static ThrowableBodyWriter create(boolean writeStackTrace) {
-        return new ThrowableBodyWriter(writeStackTrace);
+    static ThrowableBodyWriter create(boolean includeStackTraces) {
+        return includeStackTraces ? DEFAULT_TRUE : DEFAULT_FALSE;
     }
 
     private static final class ThrowableToChunks implements Mapper<Throwable, Publisher<DataChunk>> {

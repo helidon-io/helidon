@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.metrics</groupId>
         <artifactId>helidon-metrics-project</artifactId>
-        <version>2.0.0-SNAPSHOT</version>
+        <version>2.0.3-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-metrics</artifactId>
     <name>Helidon Metrics</name>
@@ -43,10 +43,6 @@
             <artifactId>helidon-common</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common-metrics</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-mp</artifactId>
         </dependency>
@@ -63,8 +59,8 @@
             <artifactId>helidon-webserver-cors</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.media.jsonp</groupId>
-            <artifactId>helidon-media-jsonp-server</artifactId>
+            <groupId>io.helidon.media</groupId>
+            <artifactId>helidon-media-jsonp</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
@@ -119,7 +115,7 @@
                         <configuration>
                             <systemPropertyVariables>
                                 <helidon.concurrentGauge.minRequiredSeconds>45</helidon.concurrentGauge.minRequiredSeconds>
-                                <helidon.histogram.tolerance>0.01</helidon.histogram.tolerance>
+                                <helidon.histogram.tolerance>0.25</helidon.histogram.tolerance>
                             </systemPropertyVariables>
                         </configuration>
                     </plugin>
