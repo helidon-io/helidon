@@ -51,8 +51,8 @@ import static org.junit.jupiter.api.Assertions.fail;
 class ServerSseTest {
     private static Client client;
 
-    private CompletableFuture<Void> connClosedFuture = new CompletableFuture<>();
-    private CompletableFuture<Void> multiTestFuture = new CompletableFuture<>();
+    private final CompletableFuture<Void> connClosedFuture = new CompletableFuture<>();
+    private final CompletableFuture<Void> multiTestFuture = new CompletableFuture<>();
 
     @BeforeAll
     static void initClass() {
