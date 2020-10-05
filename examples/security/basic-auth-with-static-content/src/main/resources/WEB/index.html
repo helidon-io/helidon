@@ -1,0 +1,43 @@
+<html>
+<!--
+
+    Copyright (c) 2020 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+
+<head></head>
+<body>
+Hello, this is a static resource loaded from classpath.
+<p>
+The following endpoints are available on this server:
+<ul>
+    <li><a href="/public">Public endpoint, no authentication required</a></li>
+    <li><a href="/noRoles">No roles required, just authenticated user</a></li>
+    <li><a href="/user"><code>user</code> role required</a></li>
+    <li><a href="/admin"><code>admin</code> role required</a></li>
+    <li><a href="/deny">This endpoint is always denied</a></li>
+    <li><a href="/noAuthn"><code>admin</code>, authentication optional - will be denied, as it does not return a basic auth
+        challenge</a></li>
+</ul>
+
+The following users are configured:
+<ul>
+    <li><code>jack/password</code> in <code>user</code> and <code>admin</code> roles</li>
+    <li><code>jill/password</code> in <code>user</code> roles</li>
+    <li><code>john/password</code> that has no roles</li>
+</ul>
+</body>
+</html>
+
