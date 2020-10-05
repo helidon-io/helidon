@@ -21,7 +21,10 @@ import java.util.function.Supplier;
 
 import io.helidon.webserver.WebServer;
 
-class BasicExampleUtil {
+final class BasicExampleUtil {
+    private BasicExampleUtil() {
+    }
+
     static void startAndPrintEndpoints(Supplier<WebServer> startMethod) {
         long t = System.nanoTime();
 

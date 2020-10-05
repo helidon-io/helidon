@@ -28,7 +28,17 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.StaticContentSupport;
 import io.helidon.webserver.WebServer;
 
-public class BasicExampleConfigMain {
+/**
+ * Example using configuration based approach.
+ */
+public final class BasicExampleConfigMain {
+    private BasicExampleConfigMain() {
+    }
+
+    /**
+     * Entry point, starts the server.
+     * @param args not used
+     */
     public static void main(String[] args) {
         BasicExampleUtil.startAndPrintEndpoints(BasicExampleConfigMain::startServer);
     }

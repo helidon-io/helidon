@@ -34,7 +34,10 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.StaticContentSupport;
 import io.helidon.webserver.WebServer;
 
-public class BasicExampleBuilderMain {
+/**
+ * Example using {@link io.helidon.common.Builder} approach instead of configuration based approach.
+ */
+public final class BasicExampleBuilderMain {
     // simple approach to user storage - for real world, use data store...
     private static final Map<String, MyUser> USERS = new HashMap<>();
 
@@ -44,6 +47,14 @@ public class BasicExampleBuilderMain {
         USERS.put("john", new MyUser("john", "password".toCharArray(), Set.of()));
     }
 
+    private BasicExampleBuilderMain() {
+    }
+
+    /**
+     * Entry point, starts the server.
+     *
+     * @param args not used
+     */
     public static void main(String[] args) {
         BasicExampleUtil.startAndPrintEndpoints(BasicExampleBuilderMain::startServer);
     }
