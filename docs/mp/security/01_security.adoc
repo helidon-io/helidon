@@ -36,10 +36,7 @@ resource methods with authentication, to a MicroProfile application, add the Hel
 </dependency>
 ----
 
-=== Securing a Web Resource
-
-For web server static content, see 
-<<microprofile/06_configuration.adoc,Configuration Secrets.>>
+=== Securing a JAX-RS Resource
 
 For JAX-RS resources, declare security by adding annotations to a resource class or
  method. 
@@ -59,3 +56,5 @@ public String adminResource(@Context io.helidon.security.SecurityContext securit
 
 Security in Helidon MicroProfile is built on top of Jersey's and can be enabled/disabled
 using the property `security.jersey.enabled=[true|false]`.
+
+include::../../shared/security/helidon-endpoints.adoc[]
