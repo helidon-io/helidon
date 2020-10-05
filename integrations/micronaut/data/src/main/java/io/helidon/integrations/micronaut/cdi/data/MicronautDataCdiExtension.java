@@ -85,7 +85,7 @@ public class MicronautDataCdiExtension implements Extension {
     void afterBeanDiscovery(@Priority(PLATFORM_BEFORE + 10) @Observes AfterBeanDiscovery event,
                             BeanManager bm) {
         MicronautCdiExtension mcdi = bm.getExtension(MicronautCdiExtension.class);
-        List<BeanDefinitionReference> allBeans = mcdi.beanDefinitions();
+        List<BeanDefinitionReference<?>> allBeans = mcdi.beanDefinitions();
 
         allBeans.stream()
                 .filter(this::isRepository)

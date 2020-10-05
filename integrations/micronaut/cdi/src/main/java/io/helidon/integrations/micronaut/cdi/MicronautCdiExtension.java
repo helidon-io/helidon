@@ -20,6 +20,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.EventListener;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -28,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
 import javax.annotation.Priority;
 import javax.enterprise.context.ApplicationScoped;
@@ -42,6 +42,7 @@ import javax.enterprise.inject.spi.ProcessAnnotatedType;
 import javax.enterprise.inject.spi.configurator.AnnotatedMethodConfigurator;
 
 import io.micronaut.aop.Around;
+import io.micronaut.aop.Introduced;
 import io.micronaut.aop.MethodInterceptor;
 import io.micronaut.context.ApplicationContext;
 import io.micronaut.context.annotation.Type;
@@ -60,16 +61,21 @@ public class MicronautCdiExtension implements Extension {
     private final AtomicReference<ApplicationContext> micronautContext = new AtomicReference<>();
     private final Map<Method, MethodInterceptorMetadata> methods = new HashMap<>();
     @SuppressWarnings("rawtypes")
-    private final List<BeanDefinitionReference> beanDefinitions = new LinkedList<>();
-    private final Map<Class<?>, List<BeanDefinitionReference>> micronautBeansMap = new HashMap<>();
+    private final List<BeanDefinitionReference<?>> beanDefinitions = new LinkedList<>();
+    private final Map<Class<?>, List<BeanDefinitionReference<?>>> mBeanToDefRef = new HashMap<>();
+    private final Map<BeanDefinitionReference<?>, Class<?>> defRefToBean = new HashMap<>();
     private final Set<Class<?>> micronautBeans = new HashSet<>();
 
-    public List<BeanDefinitionReference> beanDefinitions() {
+    public List<BeanDefinitionReference<?>> beanDefinitions() {
         return beanDefinitions;
     }
 
     public ApplicationContext context() {
         return micronautContext.get();
+    }
+
+    public Class<?> beanClass(BeanDefinitionReference<?> defRef) {
+        return defRefToBean.get(defRef);
     }
 
     public void addInterceptor(AnnotatedMethodConfigurator<?> method,
@@ -83,6 +89,7 @@ public class MicronautCdiExtension implements Extension {
 
     @SuppressWarnings("unchecked")
     void processTypes(@Priority(PLATFORM_AFTER) @Observes ProcessAnnotatedType<?> event) {
+        // TODO verify that this type does not have micronaut bean. if it does, combine annotations from both
         Set<Class<?>> classInterceptors = new HashSet<>();
         event.getAnnotatedType()
                 .getAnnotations()
@@ -134,7 +141,7 @@ public class MicronautCdiExtension implements Extension {
                 .produceWith(instance -> micronautContext.get());
 
         loadMicronautBeanDefinitions();
-        for (BeanDefinitionReference defRef : beanDefinitions) {
+        for (BeanDefinitionReference<?> defRef : beanDefinitions) {
             Class<?> beanType = defRef.getBeanType();
             if (!event.getAnnotatedTypes(beanType).iterator().hasNext()) {
                 micronautBeans.add(beanType);
@@ -198,19 +205,43 @@ public class MicronautCdiExtension implements Extension {
         SoftServiceLoader.load(BeanDefinitionReference.class)
                 .forEach(list::add);
 
-        List<BeanDefinitionReference> collect = list.parallelStream()
+        list.stream()
                 .filter(ServiceDefinition::isPresent)
                 .map(ServiceDefinition::load)
                 .filter(BeanDefinitionReference::isPresent)
                 // we only care for singletons
                 .filter(BeanDefinitionReference::isSingleton)
-                .collect(Collectors.toList());
+                .forEach(beanDefinitions::add);
 
-        beanDefinitions.addAll(collect);
+        for (BeanDefinitionReference<?> defRef : beanDefinitions) {
+            Class<?> beanType = defRef.getBeanType();
 
-        for (BeanDefinitionReference defRef : beanDefinitions) {
-            micronautBeansMap.computeIfAbsent(defRef.getBeanType(), it -> new LinkedList<>())
+            // if the bean definition is an $Intercepted, we need to find the actual bean class
+            if (defRef.getName().endsWith("$Intercepted")) {
+                // bean is either an interface or an abstract class, we need to find the original class (not a generated one)
+                if (Object.class.equals(beanType.getSuperclass())) {
+                    // we have an interface
+                    Class<?>[] interfaces = beanType.getInterfaces();
+                    // by design, the first interface should be our repo, but let's be nice
+                    for (Class<?> anInterface : interfaces) {
+                        if (Introduced.class.equals(anInterface)) {
+                            continue;
+                        }
+                        if (EventListener.class.isAssignableFrom(anInterface)) {
+                            break;
+                        }
+                        beanType = anInterface;
+                        break;
+                    }
+                } else {
+                    // we have an abstract class
+                    beanType = beanType.getSuperclass();
+                }
+            }
+
+            mBeanToDefRef.computeIfAbsent(beanType, it -> new LinkedList<>())
                     .add(defRef);
+            defRefToBean.put(defRef, beanType);
         }
     }
 
