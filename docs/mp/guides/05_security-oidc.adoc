@@ -35,6 +35,7 @@ to secure an application with OIDC security provider.
 * <<Keycloak Installation,Keycloak Installation>>
 * <<Set up Keycloak,Set up Keycloak>>
 * <<Set up Helidon,Set up Helidon>>
+* <<Restrict access to a specific role,Restrict access to a specific role>>
 
 === Keycloak Installation
 
@@ -326,3 +327,191 @@ now protected, its access is limited, and the tests are not built to take oidc s
 . After successful log in, keycloak redirect you to the `http://localhost:7987/greet` endpoint and print Hello word.
 
 From the actual settings, the user needs to log in only once, then Keycloak saves all the connection data.
+
+==== Update tests to the secure environment
+
+At this stage of the application, tests cannot pass because of OIDC security. The only way to authenticate a user is
+through the front end of that server which can be accessed with the browser for example.
+
+In order to keep security and test the application locally, a new security provider must be provided. By adding specific
+configuration to the test, it is possible to override the application configuration.
+
+The following explains how to set a basic authentication instead of oidc security provider only for the tests. Which means,
+at the end of this guide, the application will be secured by oidc and the tests will use basic authentication.
+
+In the test folder `helidon-quickstart-mp/src/test`:
+
+[source,bash]
+.Create a new directory and another one inside
+----
+mkdir resources
+cd resources
+touch application.yaml
+----
+
+Open the application.yaml file you just created.
+
+[source,yaml]
+.Copy these properties into the new application.yaml
+----
+app:
+  greeting: "Hello"
+
+security:
+  providers:
+    - abac:
+    - http-basic-auth:
+        users:
+          - login: "jack"
+            password: "jackIsGreat"
+  web-server:
+    paths:
+      - path: "/greet"
+        methods: ["get"]
+        authenticate: true
+----
+
+By adding this new application.yaml, it will append the properties to the application.yaml located into `java/resources`.
+The oidc properties are not overridden, and the server cannot decide which security provider to choose.
+
+Excluding oidc dependency during the test leaves only basic authentication security available for the tests.
+
+[source,xml]
+.Add this plugin to the build
+----
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-surefire-plugin</artifactId>
+    <configuration>
+        <classpathDependencyExcludes>
+            <classpathDependencyExclude>io.helidon.microprofile:helidon-microprofile-oidc</classpathDependencyExclude>
+        </classpathDependencyExcludes>
+    </configuration>
+</plugin>
+----
+
+In the `Maintest.java` file, tests need to be modified to check the application security when accessing `/greet` path with a
+`GET` method.
+
+First step is to configure the server with the new application.yaml.
+
+[source,java]
+.Replace the startTheServer method by this one:
+----
+@BeforeAll
+    public static void startTheServer() {
+        Server.Builder serverBuilder = Server.builder();
+        serverBuilder.config(Config.create());
+        server = serverBuilder.build().start();
+    }
+----
+
+The server has now one security provider, basic authentication configured.
+Next step is to modify the test to check that the application is correctly protected.
+
+[source,java]
+.Replace the first webclient call by this one:
+----
+Response response = client
+        .target(getConnectionString("/greet"))
+        .request()
+        .get(Response.class);
+
+Assertions.assertEquals(401, response.getStatus());
+----
+
+This piece of code uses the webclient to access the application on `/greet` path with a `GET` method. The http basic
+authentication security provider protects this path, so the client should receive an HTTP 401 code for unauthorized.
+
+Only `jack` user has access to this part of the application.
+
+[source,java]
+.Add new check to the testHelloWorld method:
+----
+String encoding = Base64.getEncoder().encodeToString("jack:jackIsGreat".getBytes());
+
+JsonObject jsonObject = client
+        .target(getConnectionString("/greet"))
+        .request()
+        .header(Http.Header.AUTHORIZATION, "Basic " + encoding)
+        .get(JsonObject.class);
+
+Assertions.assertEquals("Hello World!", jsonObject.getString("message"),
+                "default message");
+----
+
+The username and password are encoded and placed inside the header in order to authenticate as jack to access the application.
+If the authentication is successful, the application send the `Hello World` back as a `JsonObject`.
+
+Now, the project can be build without skiping test.
+
+[source,bash]
+.Build the project
+----
+mvn build install
+----
+
+==== Restrict access to a specific role
+
+To give less access to a specific endpoint, it is possible to configure user role. So the application will grant access
+only the user with the required role.
+
+Navigate to the GreetResource and find the `getDefaultMessage` with @Authenticate annotation.
+
+[source,java]
+.Add the @RolesAllowed annotation under the @Authenticate annotation:
+----
+@RolesAllowed("admin")
+----
+
+The annotation parameter is the role with access to the method. In this case, only user with admin role can
+have access.
+
+Then, add a user and roles to the `helidon-quickstart-mp/src/test/resources/application.yaml` file.
+
+[source,yaml]
+.Add jack roles and create a new user named john:
+----
+- http-basic-auth:
+        users:
+          - login: "jack"
+            password: "jackIsGreat"
+            roles: ["user"]
+          - login: "john"
+            password: "johnPassword"
+            roles: ["admin", "user"]
+----
+
+Once it is done, go to the test to check the application behavior.
+
+[source,java]
+.Check that jack does not have access
+----
+String encoding = Base64.getEncoder().encodeToString("jack:jackIsGreat".getBytes());
+
+Response response = client
+        .target(getConnectionString("/greet"))
+        .request()
+        .header(Http.Header.AUTHORIZATION, "Basic " + encoding)
+        .get(Response.class);
+
+Assertions.assertEquals(401, response.getStatus());
+----
+
+The user `jack` has only the `user` role so when accessing protected endpoint, a 401 (unauthorized) http code is returned.
+
+[source,java]
+.Check that john has access
+----
+String encoding = Base64.getEncoder().encodeToString("John:johnPassword".getBytes());
+
+        JsonObject jsonObject = client
+                .target(getConnectionString("/greet"))
+                .request()
+                .header(Http.Header.AUTHORIZATION,"Basic " + encoding)
+                .get(JsonObject.class);
+        Assertions.assertEquals("Hello World!", jsonObject.getString("message"),
+                "default message");
+----
+
+The user `john` has `user` and `admin` roles, so he is allowed and receives `"Hello World"` as a `JsonObject`.
