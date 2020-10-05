@@ -95,7 +95,7 @@ public class MicronautDataCdiExtension implements Extension {
                 .addType(Connection.class)
                 .id("micronaut-sql-connection")
                 .scope(Dependent.class)
-                .produceWith(instance -> mcdi.context().createBean(Connection.class));
+                .produceWith(instance -> mcdi.context().findBean(Connection.class));
     }
 
     private boolean isRepository(BeanDefinitionReference<?> ref) {
