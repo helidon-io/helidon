@@ -349,9 +349,15 @@ public final class FaultTolerance {
 
         private static class FtHandlerImpl implements FtHandler {
             private final List<FtHandler> validFts;
+            private final String name = "FtHandler-" + System.identityHashCode(this);
 
             private FtHandlerImpl(List<FtHandler> validFts) {
                 this.validFts = new LinkedList<>(validFts);
+            }
+
+            @Override
+            public String name() {
+                return name;
             }
 
             @Override

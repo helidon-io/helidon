@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.security.providers.header;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 
@@ -91,7 +92,7 @@ public abstract class HeaderAtnProviderTest {
     public void testOutbound() {
         HeaderAtnProvider provider = getFullProvider();
 
-        SecurityEnvironment env = SecurityEnvironment.create();
+        SecurityEnvironment env = outboundEnv();
 
         ProviderRequest request = mock(ProviderRequest.class);
         when(request.env()).thenReturn(env);
@@ -101,7 +102,8 @@ public abstract class HeaderAtnProviderTest {
         when(sc.service()).thenReturn(Optional.empty());
         when(request.securityContext()).thenReturn(sc);
 
-        SecurityEnvironment outboundEnv = SecurityEnvironment.create();
+        SecurityEnvironment outboundEnv = outboundEnv();
+
         EndpointConfig outboundEp = EndpointConfig.create();
 
         assertThat("Outbound should be supported", provider.isOutboundSupported(request, outboundEnv, outboundEp),
@@ -164,7 +166,7 @@ public abstract class HeaderAtnProviderTest {
 
         String username = "service";
 
-        SecurityEnvironment env = SecurityEnvironment.create();
+        SecurityEnvironment env = outboundEnv();
 
         ProviderRequest request = mock(ProviderRequest.class);
         when(request.env()).thenReturn(env);
@@ -174,7 +176,7 @@ public abstract class HeaderAtnProviderTest {
         when(sc.user()).thenReturn(Optional.empty());
         when(request.securityContext()).thenReturn(sc);
 
-        SecurityEnvironment outboundEnv = SecurityEnvironment.create();
+        SecurityEnvironment outboundEnv = outboundEnv();
         EndpointConfig outboundEp = EndpointConfig.create();
 
         assertThat("Outbound should be supported", provider.isOutboundSupported(request, outboundEnv, outboundEp), is(true));
@@ -194,9 +196,7 @@ public abstract class HeaderAtnProviderTest {
 
         HeaderAtnProvider provider = getNoSecurityProvider();
 
-        SecurityEnvironment env = SecurityEnvironment.builder()
-                .header("Authorization", "bearer " + username)
-                .build();
+        SecurityEnvironment env = outboundEnv();
 
         ProviderRequest request = mock(ProviderRequest.class);
         when(request.env()).thenReturn(env);
@@ -228,5 +228,12 @@ public abstract class HeaderAtnProviderTest {
         EndpointConfig outboundEp = EndpointConfig.create();
 
         assertThat("Outbound should not be supported", provider.isOutboundSupported(request, outboundEnv, outboundEp), is(false));
+    }
+
+    private SecurityEnvironment outboundEnv() {
+        return SecurityEnvironment.builder()
+                .targetUri(URI.create("http://localhost:8080/path"))
+                .method("GET")
+                .build();
     }
 }

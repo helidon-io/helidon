@@ -88,7 +88,10 @@ public class ClientSecurityFilter implements ClientRequestFilter {
         Optional<String> explicityProvider = property(requestContext, String.class, ClientSecurity.PROPERTY_PROVIDER);
 
         try {
-            SecurityEnvironment.Builder outboundEnv = securityContext.env().derive();
+            SecurityEnvironment.Builder outboundEnv = securityContext.env()
+                    .derive()
+                    .clearHeaders();
+
             outboundEnv.method(requestContext.getMethod())
                     .path(requestContext.getUri().getPath())
                     .targetUri(requestContext.getUri())

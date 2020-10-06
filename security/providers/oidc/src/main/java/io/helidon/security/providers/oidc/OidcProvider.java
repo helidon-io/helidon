@@ -102,7 +102,7 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
 
     private OidcProvider(Builder builder, OidcOutboundConfig oidcOutboundConfig) {
         this.oidcConfig = builder.oidcConfig;
-        this.propagate = builder.propagate;
+        this.propagate = builder.propagate && (oidcOutboundConfig.hasOutbound());
         this.useJwtGroups = builder.useJwtGroups;
         this.outboundConfig = oidcOutboundConfig;
 
@@ -473,7 +473,12 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
     public boolean isOutboundSupported(ProviderRequest providerRequest,
                                        SecurityEnvironment outboundEnv,
                                        EndpointConfig outboundConfig) {
-        return propagate;
+        if (!propagate) {
+            return false;
+        }
+
+        return this.outboundConfig.findTarget(outboundEnv)
+                .propagate;
     }
 
     @Override
@@ -494,7 +499,7 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
                 boolean enabled = target.propagate;
 
                 if (enabled) {
-                    Map<String, List<String>> headers = new HashMap<>();
+                    Map<String, List<String>> headers = new HashMap<>(outboundEnv.headers());
                     target.tokenHandler.header(headers, tokenContent);
                     return OutboundSecurityResponse.withHeaders(headers);
                 }
@@ -566,7 +571,7 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
         private OidcConfig oidcConfig;
         // identity propagation is disabled by default. In general we should not reuse the same token
         // for outbound calls, unless it is the same audience
-        private boolean propagate;
+        private Boolean propagate;
         private boolean useJwtGroups = true;
         private OutboundConfig outboundConfig;
         private TokenHandler defaultOutboundHandler = TokenHandler.builder()
@@ -579,9 +584,12 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
             if (null == oidcConfig) {
                 throw new IllegalArgumentException("OidcConfig must be configured");
             }
-            if (null == outboundConfig) {
+            if (outboundConfig == null) {
                 outboundConfig = OutboundConfig.builder()
                         .build();
+            }
+            if (propagate == null) {
+                propagate = (outboundConfig.targets().size() > 0);
             }
             return new OidcProvider(this, new OidcOutboundConfig(outboundConfig, defaultOutboundHandler));
         }
@@ -697,6 +705,10 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
             this.defaultTokenHandler = defaultTokenHandler;
 
             this.defaultTarget = new OidcOutboundTarget(true, defaultTokenHandler);
+        }
+
+        private boolean hasOutbound() {
+            return outboundConfig.targets().size() > 0;
         }
 
         private OidcOutboundTarget findTarget(SecurityEnvironment env) {

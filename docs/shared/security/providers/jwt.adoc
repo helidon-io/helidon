@@ -1,0 +1,120 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2020 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+=== JWT Provider
+:description: Helidon Security JWT Provider
+:keywords: helidon, security, jwt
+
+JWT token authentication and outbound security provider.
+
+==== Setup
+
+[source,xml]
+.Maven dependency
+----
+<dependency>
+    <groupId>io.helidon.security.providers</groupId>
+    <artifactId>helidon-security-providers-jwt</artifactId>
+</dependency>
+----
+
+[source,text]
+.Provider class name
+----
+io.helidon.security.providers.jwt.JwtProvider
+----
+
+[source,text]
+.Provider configuration key
+----
+jwt
+----
+
+==== Example code
+https://github.com/oracle/helidon/tree/master/examples/security/outbound-override[]
+
+[source,yaml]
+.Configuration example
+----
+security:
+  providers:
+    - provider:
+        atn-token:
+          jwk.resource.resource-path: "verifying-jwk.json"
+          jwt-audience: "http://my.service"
+        sign-token:
+          jwk.resource.resource-path: "signing-jwk.json"
+          jwt-issuer: "http://my.server/identity"
+          outbound:
+          - name: "propagate-token"
+            hosts: ["*.internal.org"]
+          - name: "generate-token"
+            hosts: ["1.partner-service"]
+            jwk-kid: "partner-1"
+            jwt-kid: "helidon"
+            jwt-audience: "http://1.partner-service"
+----
+
+==== Configuration options
+The following table shows all configuration options of the provider and their default values
+
+[cols="2,2,5"]
+
+|===
+|key |default value |description
+
+|`optional` |`false` |If set to `true`, failure to authenticate will return `ABSTAIN` result instead of `FAILURE`. This is
+        an important distinction when more than one provider is used
+|`authenticate` |`true` |Whether to attempt authentication
+|`propagate` |`true` |Whether to attempt identity propagation/JWT creation
+|`principal-type` |`USER` |Whether we authenticate a user or a service (other option is SERVICE)
+|`atn-token` | |A group for configuring authentication of the request
+|`atn-token.verify-signature` |`true` |Whether to verify signature in incoming JWT. If disabled, _ANY_ JWT will be accepted
+|`atn-token.jwt-audience` |{nbsp} |Expected audience of the JWT. If not defined, any audience is accepted (and we may accept JWT not inteded for us)
+|`atn-token.jwk.resource.*` |{nbsp} |Configuration of the JWK to obtain key(s) to validate signatures of inbound token. The JWK should contain public keys. This may be: jwk.resource.path, jwk.resource.resource-path, jwk.resource.url, jwk.resource.content-plain (actual JSON string), jwk.resource.content (base64)
+|`atn-token.handler` |`Authorization` header with `bearer ` prefix |A handler configuration for inbound token - e.g. how to extract it
+|`atn-token.handler.header` |{nbsp} |Name of a header the token is expected in
+|`atn-token.handler.prefix` |{nbsp}  |Prefix before the token value (optional)
+|`atn-token.handler.regexp` |{nbsp} |Regular expression to obtain the token, first matching group is used (optional)
+|`sign-token` |{nbsp} |A group for configuring outbound security
+|`sign-token.jwk.resource.*` |{nbsp} |Configuration of the JWK to use when generating tokens (follows same rules as atn-token.jwk above), this JWK must contain private keys when using asymmetric ciphers
+|`sign-token.jwt-issuer` |{nbsp} |When we issue a new token, this is the issuer to be placed into it (validated by target service)
+|`sign-token.outbound` |{nbsp} |A group for configuring outbound rules (based on transport, host and.or path)
+|`sign-token.outbound.*.name` |{nbsp} |A short descriptive name for configured target service(s)
+|`sign-token.outbound.*.transports` |any |An array of transports this outbound matches (e.g. https)
+|`sign-token.outbound.*.hosts` |any |An array of hosts this outbound matches, may use * as a wild-card (e.g. *.oracle.com)
+|`sign-token.outbound.*.paths` |any |An array of paths on the host this outbound matches, may use * as a wild-card (e.g. /some/path/*)
+|`sign-token.outbound.*.outbound-token` |`Authorization` header with `bearer ` prefix  |Configuration of outbound token handler (same as atn-token.handler)
+|`sign-token.outbound.*.outbound-token.format` |{nbsp} |Java text format for generating the value of outbound token header (e.g. "bearer %1$s")
+|`sign-token.outbound.*.jwk-kid` |{nbsp} |If this key is defined, we are generating a new token, otherwise we propagate existing. Defines the key id of a key definition in the JWK file to use for signing the outbound token
+|`sign-token.outbound.*.jwt-kid` |{nbsp} |A key to use in the generated JWT - this is for the other service to locate the verification key in their JWK
+|`sign-token.outbound.*.jwt-audience` |{nbsp} |Audience this key is generated for (e.g. http://www.example.org/api/myService) - validated by the other service
+|`sign-token.outbound.*.jwt-not-before-seconds` |`5` |Makes this key valid this amount of seconds into the past. Allows a certain time-skew for the generated token to be valid before current time (e.g. when we expect a certain misalignment of clocks)
+|`sign-token.outbound.*.jwt-validity-seconds` |1 day |Token validity in seconds
+|===
+
+==== How does it work?
+JSON Web Token (JWT) provider has support for authentication and outbound security.
+
+Authentication is based on validating the token (signature, valid before etc.) and on asserting the subject
+of the JWT subject claim.
+
+For outbound, we support either token propagation (e.g. the token from request is propagated further) or
+support for generating a brand new token based on configuration of this provider.
+
+

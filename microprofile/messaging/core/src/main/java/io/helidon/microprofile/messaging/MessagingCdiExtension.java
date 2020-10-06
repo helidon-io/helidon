@@ -16,7 +16,9 @@
 
 package io.helidon.microprofile.messaging;
 
+import java.util.Map;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import javax.annotation.Priority;
 import javax.enterprise.context.ApplicationScoped;
@@ -45,6 +47,30 @@ public class MessagingCdiExtension implements Extension {
     private static final Logger LOGGER = Logger.getLogger(MessagingCdiExtension.class.getName());
 
     private final ChannelRouter channelRouter = new ChannelRouter();
+
+    /**
+     * Get names of all channels accompanied by boolean if cancel or onError signal has been intercepted in it.
+     *
+     * @return map of channels
+     */
+    public Map<String, Boolean> channelsLiveness() {
+        return channelRouter.getChannelMap()
+                .entrySet()
+                .stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().isLive().get()));
+    }
+
+    /**
+     * Get names of all channels accompanied by boolean if onSubscribe signal has been intercepted in it.
+     *
+     * @return map of channels
+     */
+    public Map<String, Boolean> channelsReadiness() {
+        return channelRouter.getChannelMap()
+                .entrySet()
+                .stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().isReady().get()));
+    }
 
     private void registerChannelMethods(
             @Observes

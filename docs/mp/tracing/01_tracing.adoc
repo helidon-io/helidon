@@ -34,55 +34,50 @@ Declare the following dependency in your project:
 </dependency>
 ----
 
-In addition you need to add one of the tracer implementations (Zipkin or Jaeger).
+In addition you need to add one of the tracer implementations:
 
-The minimal required configuration is `tracing.service` that contains
-the service name to be associated with tracing spans sent by this instance.
+- <<tracing/02_zipkin.adoc,Zipkin>>
+- <<tracing/03_jaeger.adoc,Jaeger>>
 
-All tracer specific configuration is expected in config under `tracing`.
+You can configure a custom service name using the `tracing.service` configuration property. If this
+property is undefined, name is created from JAX-RS Application name, or `Helidon MP` is used if no application
+is defined.
+
+All tracer specific configuration is expected in configuration under key `tracing`.
 
 [source,properties]
-.Example `microprofile-config.properties` with minimal tracer configuration
+.Example `microprofile-config.properties` with customized service name.
 ----
-tracing.service=helidon-mp
+tracing.service=event-service
 ----
 
-For additional supported properties, please see <<tracing/01_tracing.adoc#Tracing-config,tracing configuration>>
+include::../../shared/tracing/common-config.adoc[]
 
 == Creating custom spans
 
-MicroProfile OpenTracing implementation will add support to simply
-add custom spans by annotation. Until we implement this support, you
-can configure custom spans as follows (in JAX-RS resources):
+Helidon MP fully supports MicroProfile OpenTracing.
+You can add custom spans using `@Traced` annotation on methods of CDI beans.
 
-[source,java]
-----
-@Context
-io.helidon.webserver.ServerRequest serverRequest;
-
-//...
-
-Span span = GlobalTracer.get()
-        .buildSpan("my-operation")
-        .asChildOf(serverRequest.spanContext())
-        .start();
-----
+*Note for invoking methods on same class:*
+_If you invoke a method on the same class, `@Traced` annotation would be ignored, as it is not
+invoked through a CDI proxy and as such cannot be intercepted.
+To make sure `@Traced` is honored, use it on JAX-RS resource methods and on CDI bean methods used from other beans._
 
 == Trace propagation across services
 Automated trace propagation is supported currently only with Jersey client.
 
-Tracing propagation works automatically as long as you execute
-the client call in the same thread as the Jersey server side.
+Tracing propagation works automatically as long as you run within the scope of
+Helidon MP and use Helidon components to invoke external services.
 
-_Exceptions that require manual handling_:
+=== Manual handling of traces in Jersey Client
 
-- When the resource method is annotated with Fault Tolerance annotations (e.g. `@Fallback`)
-- When you use `async()` on the Jersey client request
+There is an option to provide `SpanContext` programmatically (such as when writing a command line
+application that starts the span manually).
 
-In such cases, you must provide the SpanContext by hand:
+You can either configure the span context as the active span, or explicitly define it as client property.
 
 [source,java]
-.Tracing propagation with Jersey client (on a different thread)
+.Tracing propagation with Jersey client
 ----
 import static io.helidon.tracing.jersey.client.ClientTracingFilter.CURRENT_SPAN_CONTEXT_PROPERTY_NAME;
 import static io.helidon.tracing.jersey.client.ClientTracingFilter.TRACER_PROPERTY_NAME;
@@ -97,16 +92,3 @@ Response response = client.target(serviceEndpoint)
     .get();
 ----
 
-Tracer and SpanContext can be obtained from `ServerRequest` that can be injected into Resource classes:
-
-[source,java]
-----
-@Context
-io.helidon.webserver.ServerRequest serverRequest;
-
-//...
-
-SpanContext spanContext = serverRequest.spanContext();
-// optional, you could also use GlobalTracer.get() if it is configured
-Tracer tracer = req.webServer().configuration().tracer();
-----

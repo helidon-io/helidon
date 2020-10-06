@@ -49,6 +49,8 @@ security:
           outbound-token:
             header: "Authorization"
             format: "bearer %1$s"
+          outbound:
+            - name: "propagate-all"
   web-server:
     defaults:
       authenticate: true

@@ -7,6 +7,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [2.1.0]
+- Security: To remove accidental propagation of identity, all security providers that support outbound
+    security were updated to only do outbound security when configured so. All of these providers
+    now have an `outbound` configuration section that can define outbound targets. Documentation of
+    providers was updated to match this new approach and is available in both MP and SE docs.
+
 ## [2.0.3-SNAPSHOT]
 
 ### Changes

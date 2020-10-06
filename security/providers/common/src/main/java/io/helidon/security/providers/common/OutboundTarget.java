@@ -101,18 +101,24 @@ public final class OutboundTarget {
         }
     }
 
-    static OutboundTarget create(Config c) {
+    /**
+     * Create a target from configuration.
+     *
+     * @param config configuration on the node of a single outbound target
+     * @return a new target from config, requires at least {@value CONFIG_NAME}
+     */
+    public static OutboundTarget create(Config config) {
         Builder builder = new Builder();
 
-        builder.config(c);
-        builder.name(c.get(CONFIG_NAME).asString().get());
-        c.get(CONFIG_TRANSPORTS).asList(String.class).orElse(List.of())
+        builder.config(config);
+        builder.name(config.get(CONFIG_NAME).asString().get());
+        config.get(CONFIG_TRANSPORTS).asList(String.class).orElse(List.of())
                 .forEach(builder::addTransport);
-        c.get(CONFIG_HOSTS).asList(String.class).orElse(List.of())
+        config.get(CONFIG_HOSTS).asList(String.class).orElse(List.of())
                 .forEach(builder::addHost);
-        c.get(CONFIG_PATHS).asList(String.class).orElse(List.of())
+        config.get(CONFIG_PATHS).asList(String.class).orElse(List.of())
                 .forEach(builder::addPath);
-        c.get(CONFIG_METHODS).asList(String.class).orElse(List.of())
+        config.get(CONFIG_METHODS).asList(String.class).orElse(List.of())
                 .forEach(builder::addMethod);
 
         return builder.build();

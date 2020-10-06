@@ -49,14 +49,17 @@ class ClassPathContentHandler extends StaticContentHandler {
     private final Map<String, ExtractedJarEntry> extracted = new ConcurrentHashMap<>();
     private final String root;
     private final String rootWithTrailingSlash;
+    private final Path tempDir;
 
     ClassPathContentHandler(String welcomeFilename,
                             ContentTypeSelector contentTypeSelector,
                             String root,
+                            Path tempDir,
                             ClassLoader classLoader) {
         super(welcomeFilename, contentTypeSelector);
 
         this.classLoader = (classLoader == null) ? this.getClass().getClassLoader() : classLoader;
+        this.tempDir = tempDir;
         this.root = root;
         this.rootWithTrailingSlash = root + '/';
     }
@@ -64,6 +67,7 @@ class ClassPathContentHandler extends StaticContentHandler {
     public static StaticContentHandler create(String welcomeFileName,
                                               ContentTypeSelector selector,
                                               String clRoot,
+                                              Path tempDir,
                                               ClassLoader classLoader) {
         ClassLoader contentClassloader = (classLoader == null)
                 ? ClassPathContentHandler.class.getClassLoader()
@@ -79,7 +83,7 @@ class ClassPathContentHandler extends StaticContentHandler {
             throw new IllegalArgumentException("Cannot serve full classpath, please configure a classpath prefix");
         }
 
-        return new ClassPathContentHandler(welcomeFileName, selector, clRoot, contentClassloader);
+        return new ClassPathContentHandler(welcomeFileName, selector, clRoot, tempDir, contentClassloader);
     }
 
     @SuppressWarnings("checkstyle:RegexpSinglelineJava")
@@ -146,15 +150,16 @@ class ClassPathContentHandler extends StaticContentHandler {
         return true;
     }
 
-    private boolean sendJar(Http.RequestMethod method,
-                            String requestedResource,
-                            URL url,
-                            ServerRequest request,
-                            ServerResponse response) {
+    boolean sendJar(Http.RequestMethod method,
+                    String requestedResource,
+                    URL url,
+                    ServerRequest request,
+                    ServerResponse response) {
 
         LOGGER.fine(() -> "Sending static content from classpath: " + url);
 
-        ExtractedJarEntry extrEntry = extracted.computeIfAbsent(requestedResource, thePath -> extractJarEntry(url));
+        ExtractedJarEntry extrEntry = extracted
+                .compute(requestedResource, (key, entry) -> existOrCreate(url, entry));
         if (extrEntry.tempFile == null) {
             return false;
         }
@@ -177,6 +182,13 @@ class ClassPathContentHandler extends StaticContentHandler {
         }
 
         return true;
+    }
+
+    private ExtractedJarEntry existOrCreate(URL url, ExtractedJarEntry entry) {
+        if (entry == null) return extractJarEntry(url);
+        if (entry.tempFile == null) return entry;
+        if (Files.notExists(entry.tempFile)) return extractJarEntry(url);
+        return entry;
     }
 
     private void sendUrlStream(Http.RequestMethod method, URL url, ServerRequest request, ServerResponse response)
@@ -228,7 +240,7 @@ class ClassPathContentHandler extends StaticContentHandler {
 
             // Extract JAR entry to file
             try (InputStream is = jarFile.getInputStream(jarEntry)) {
-                Path tempFile = Files.createTempFile("ws", ".je");
+                Path tempFile = createTempFile("ws", ".je");
                 Files.copy(is, tempFile, StandardCopyOption.REPLACE_EXISTING);
                 return new ExtractedJarEntry(tempFile, lastModified, jarEntry.getName());
             } finally {
@@ -238,6 +250,22 @@ class ClassPathContentHandler extends StaticContentHandler {
             }
         } catch (IOException ioe) {
             throw new HttpException("Cannot load JAR file!", Http.Status.INTERNAL_SERVER_ERROR_500, ioe);
+        }
+    }
+
+    /**
+     * Create temp file in provided temp folder, or default one.
+     *
+     * @param prefix string to be used in generating the file's name.
+     * @param suffix string to be used in generating the file's name.
+     * @return the path to the newly created file
+     * @throws IOException
+     */
+    private Path createTempFile(String prefix, String suffix) throws IOException {
+        if (tempDir != null) {
+            return Files.createTempFile(tempDir, prefix, suffix);
+        } else {
+            return Files.createTempFile(prefix, suffix);
         }
     }
 

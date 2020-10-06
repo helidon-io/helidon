@@ -261,7 +261,7 @@ public class StaticContentHandlerTest {
         final boolean returnValue;
 
         TestClassPathContentHandler(String welcomeFilename, ContentTypeSelector contentTypeSelector, Path root, boolean returnValue) {
-            super(welcomeFilename, contentTypeSelector, root.toString(), null);
+            super(welcomeFilename, contentTypeSelector, root.toString(), null, null);
             this.returnValue = returnValue;
         }
 

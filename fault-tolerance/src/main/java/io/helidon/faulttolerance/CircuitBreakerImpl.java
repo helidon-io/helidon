@@ -54,6 +54,7 @@ class CircuitBreakerImpl implements CircuitBreaker {
     private final AtomicBoolean halfOpenInProgress = new AtomicBoolean();
     private final AtomicReference<ScheduledFuture<Boolean>> schedule = new AtomicReference<>();
     private final ErrorChecker errorChecker;
+    private final String name;
 
     CircuitBreakerImpl(CircuitBreaker.Builder builder) {
         this.delayMillis = builder.delay().toMillis();
@@ -61,6 +62,12 @@ class CircuitBreakerImpl implements CircuitBreaker {
         this.results = new ResultWindow(builder.volume(), builder.errorRatio());
         this.executor = builder.executor();
         this.errorChecker = ErrorChecker.create(builder.skipOn(), builder.applyOn());
+        this.name = builder.name();
+    }
+
+    @Override
+    public String name() {
+        return name;
     }
 
     @Override

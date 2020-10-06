@@ -18,6 +18,7 @@
 package io.helidon.microprofile.messaging;
 
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
 import io.helidon.config.Config;
@@ -40,6 +41,8 @@ class UniversalChannel {
     private final Config config;
     private final ChannelRouter router;
     private UniversalChannel upstreamChannel;
+    private final AtomicBoolean live = new AtomicBoolean(true);
+    private final AtomicBoolean ready = new AtomicBoolean(false);
 
     UniversalChannel(ChannelRouter router) {
         this.router = router;
@@ -65,6 +68,14 @@ class UniversalChannel {
     void setOutgoing(OutgoingMethod outgoingMethod) {
         this.name = outgoingMethod.getOutgoingChannelName();
         this.outgoingMethod = outgoingMethod;
+    }
+
+    AtomicBoolean isLive() {
+        return live;
+    }
+
+    AtomicBoolean isReady() {
+        return ready;
     }
 
     void connect() {
@@ -97,21 +108,21 @@ class UniversalChannel {
         if (incomingMethod != null) {
             subscriber1 = incomingMethod.getSubscriber();
             connectMessage.append(incomingMethod.getMethod().getName());
-            publisher.subscribe(subscriber1);
+            ChannelHealthProbe.connect(publisher, subscriber1, live, ready);
             //Continue connecting processor chain
             optUpstreamChannel.ifPresent(UniversalChannel::connect);
 
         } else if (incomingProcessorMethod != null) {
             subscriber1 = incomingProcessorMethod.getProcessor();
             connectMessage.append(incomingProcessorMethod.getMethod().getName());
-            publisher.subscribe(subscriber1);
+            ChannelHealthProbe.connect(publisher, subscriber1, live, ready);
             //Continue connecting processor chain
             optUpstreamChannel.ifPresent(UniversalChannel::connect);
 
         } else if (incomingConnector != null) {
             subscriber1 = incomingConnector.getSubscriber(name);
             connectMessage.append(incomingConnector.getConnectorName());
-            publisher.subscribe(subscriber1);
+            ChannelHealthProbe.connect(publisher, subscriber1, live, ready);
             //Continue connecting processor chain
             optUpstreamChannel.ifPresent(UniversalChannel::connect);
 

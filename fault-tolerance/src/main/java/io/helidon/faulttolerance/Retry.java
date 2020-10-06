@@ -60,6 +60,7 @@ public interface Retry extends FtHandler {
 
         private Duration overallTimeout = Duration.ofSeconds(1);
         private LazyValue<? extends ScheduledExecutorService> scheduledExecutor = FaultTolerance.scheduledExecutor();
+        private String name = "Retry-" + System.identityHashCode(this);
 
         private Builder() {
         }
@@ -90,7 +91,8 @@ public interface Retry extends FtHandler {
          * @param classes to consider failures and trigger a retry
          * @return updated builder instance
          */
-        public Builder applyOn(Class<? extends Throwable>... classes) {
+        @SafeVarargs
+        public final Builder applyOn(Class<? extends Throwable>... classes) {
             applyOn.clear();
             Arrays.stream(classes)
                     .forEach(this::addApplyOn);
@@ -118,7 +120,8 @@ public interface Retry extends FtHandler {
          * @param classes to skip retries
          * @return updated builder instance
          */
-        public Builder skipOn(Class<? extends Throwable>... classes) {
+        @SafeVarargs
+        public final Builder skipOn(Class<? extends Throwable>... classes) {
             skipOn.clear();
             Arrays.stream(classes)
                     .forEach(this::addSkipOn);
@@ -164,6 +167,17 @@ public interface Retry extends FtHandler {
             return this;
         }
 
+        /**
+         * A name assigned for debugging, error reporting or configuration purposes.
+         *
+         * @param name the name
+         * @return updated builder instance
+         */
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+
         Set<Class<? extends Throwable>> applyOn() {
             return applyOn;
         }
@@ -182,6 +196,10 @@ public interface Retry extends FtHandler {
 
         LazyValue<? extends ScheduledExecutorService> scheduledExecutor() {
             return scheduledExecutor;
+        }
+
+        String name() {
+            return name;
         }
     }
 

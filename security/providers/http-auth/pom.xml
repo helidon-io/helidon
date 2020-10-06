@@ -39,6 +39,10 @@
             <artifactId>helidon-security-providers-common</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.security</groupId>
+            <artifactId>helidon-security-util</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.security.integration</groupId>
             <artifactId>helidon-security-integration-jersey</artifactId>
             <scope>test</scope>
