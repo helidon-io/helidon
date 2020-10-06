@@ -1404,5 +1404,34 @@ helidon-parent,helidon-dependencies,helidon-bom,helidon-se,helidon-mp,io.grpc,he
                 </plugins>
             </build>
         </profile>
+        <profile>
+            <id>loom</id>
+            <activation>
+                <jdk>16-loom</jdk>
+            </activation>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-compiler-plugin</artifactId>
+                            <configuration>
+                                <source>16</source>
+                                <target>16</target>
+                                <release>16</release>
+                            </configuration>
+                        </plugin>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-javadoc-plugin</artifactId>
+                            <configuration>
+                                <source>16</source>
+                                <release>16</release>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
     </profiles>
 </project>
