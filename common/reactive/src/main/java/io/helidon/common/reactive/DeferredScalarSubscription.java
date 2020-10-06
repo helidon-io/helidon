@@ -86,7 +86,7 @@ class DeferredScalarSubscription<T> extends AtomicInteger implements Flow.Subscr
         value = item; // assert: even if the race occurs, we will deliver one of the items with which complete()
         //         has been invoked - we support only the case with a single invocation of complete()
         int state = getAndUpdate(n -> n | VALUE_ARRIVED);
-        if ((state & REQUEST_ARRIVED) == REQUEST_ARRIVED) {
+        if (state == REQUEST_ARRIVED) {
             value = null;
             downstream.onNext(item);
             downstream.onComplete();
@@ -127,8 +127,7 @@ class DeferredScalarSubscription<T> extends AtomicInteger implements Flow.Subscr
      * @param throwable the error to signal
      */
     public final void error(Throwable throwable) {
-        int state = getAndSet(DONE);
-        if (state != DONE) {
+        if (getAndSet(DONE) != DONE) {
             value = null;
             downstream.onError(throwable);
         }
