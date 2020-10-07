@@ -15,14 +15,14 @@
  */
 package io.helidon.common.reactive;
 
+import org.junit.jupiter.api.Test;
+
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
-import org.junit.jupiter.api.Test;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsInstanceOf.instanceOf;
 
 public class MultiConcatArrayTest {
 
@@ -31,24 +31,9 @@ public class MultiConcatArrayTest {
         TestSubscriber<Object> ts = new TestSubscriber<>(Long.MAX_VALUE);
 
         Multi.concatArray(Multi.singleton(1), Multi.error(new IOException()), Multi.singleton(2))
-                .subscribe(ts);
+        .subscribe(ts);
 
         ts.assertFailure(IOException.class, 1);
-    }
-
-    @Test
-    public void cancelOnNegativeNumberTest() throws InterruptedException, TimeoutException, ExecutionException {
-        TestSubscriber<Integer> ts = new TestSubscriber<>();
-
-        CompletableFuture<Void> cancelled = new CompletableFuture<>();
-
-        Multi.concatArray(Multi.just(1, 2).onCancel(() -> cancelled.complete(null)), Multi.just(3, 4))
-                .subscribe(ts);
-        ts.request(1);
-        ts.getSubcription().request(-1);
-
-        cancelled.get(200, TimeUnit.MILLISECONDS);
-        ts.assertFailure(IllegalArgumentException.class, 1);
     }
 
     @Test

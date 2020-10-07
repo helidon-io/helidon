@@ -39,7 +39,7 @@ final class MultiConcatArray<T> implements Multi<T> {
     }
 
     static final class ConcatArraySubscriber<T> extends SubscriptionArbiter
-            implements Flow.Subscriber<T> {
+    implements Flow.Subscriber<T> {
 
         private final Flow.Subscriber<? super T> downstream;
 
@@ -98,7 +98,6 @@ final class MultiConcatArray<T> implements Multi<T> {
         @Override
         public void request(long n) {
             if (n <= 0) {
-                cancel();
                 downstream.onError(new IllegalArgumentException("Rule §3.9 violated: non-positive requests are forbidden"));
             } else {
                 super.request(n);
