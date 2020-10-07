@@ -89,7 +89,7 @@
         <version.lib.opentracing.grpc>0.2.1</version.lib.opentracing.grpc>
         <version.lib.opentracing.tracerresolver>0.1.6</version.lib.opentracing.tracerresolver>
         <version.lib.persistence-api>2.2</version.lib.persistence-api>
-        <version.lib.prometheus>0.6.0</version.lib.prometheus>
+        <version.lib.prometheus>0.9.0</version.lib.prometheus>
         <version.lib.reactivestreams>1.0.2</version.lib.reactivestreams>
         <version.lib.reactor>3.3.1.RELEASE</version.lib.reactor>
         <version.lib.slf4j>1.7.26</version.lib.slf4j>
