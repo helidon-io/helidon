@@ -18,6 +18,7 @@ package io.helidon.microprofile.graphql.server;
 
 import java.io.IOException;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -83,11 +84,11 @@ public class DateTimeIT extends AbstractGraphQLIT {
         assertThat(fd.getReturnType(), is(FORMATTED_DATE_SCALAR));
 
         // test default values for date and time
-        assertDefaultFormat(type, "offsetTime", "HH:mm:ssZ", true);
+        assertDefaultFormat(type, "offsetTime", "HH[:mm][:ss]Z", true);
         assertDefaultFormat(type, "localTime", "hh:mm:ss", false);
-        assertDefaultFormat(type, "localDateTime", "yyyy-MM-dd'T'HH:mm:ss", true);
-        assertDefaultFormat(type, "offsetDateTime", "yyyy-MM-dd'T'HH:mm:ssZ", true);
-        assertDefaultFormat(type, "zonedDateTime", "yyyy-MM-dd'T'HH:mm:ssZ'['VV']'", true);
+        assertDefaultFormat(type, "localDateTime", "yyyy-MM-dd'T'HH[:mm][:ss]", true);
+        assertDefaultFormat(type, "offsetDateTime", "yyyy-MM-dd'T'HH[:mm][:ss]Z", true);
+        assertDefaultFormat(type, "zonedDateTime", "yyyy-MM-dd'T'HH[:mm][:ss]Z'['VV']'", true);
         assertDefaultFormat(type, "localDateNoFormat", "yyyy-MM-dd", true);
         assertDefaultFormat(type, "significantDates", "yyyy-MM-dd", true);
         assertDefaultFormat(type, "formattedListOfDates", "dd/MM", false);
@@ -171,7 +172,7 @@ public class DateTimeIT extends AbstractGraphQLIT {
         assertThat(argument.isPresent(), is(true));
         SchemaArgument a = argument.get();
         assertThat(a.getFormat()[0], is("MM/dd/yyyy"));
-//        assertThat(a.getArgumentType(), is(FORMATTED_DATE_SCALAR));
+
         mapResults = getAndAssertResult(
         executionContext.execute("mutation { echoFormattedDateWithJsonB(dates: [ \"09/22/2020\", \"09/23/2020\" ]) }"));
         assertThat(mapResults, is(notNullValue()));
@@ -179,6 +180,18 @@ public class DateTimeIT extends AbstractGraphQLIT {
         assertThat(listDates.size(), is(2));
         assertThat(listDates.get(0), is("22/09/2020"));
         assertThat(listDates.get(1), is("23/09/2020"));
+
+        mapResults = getAndAssertResult(executionContext.execute(
+                        "query { echoOffsetDateTime(value: \"29 Jan 2020 at 09:45 in zone +0200\") }"));
+        assertThat(mapResults, is(notNullValue()));
+        assertThat(mapResults.get("echoOffsetDateTime"), is("2020-01-29T09:45:00+0200"));
+
+        mapResults = getAndAssertResult(executionContext.execute(
+                        "query { echoZonedDateTime(value: \"19 February 1900 at 12:00 in Africa/Johannesburg\") }"));
+        assertThat(mapResults, is(notNullValue()));
+        assertThat(mapResults.get("echoZonedDateTime"), is("1900-02-19T12:00:00+0130[Africa/Johannesburg]"));
+
+
     }
 
     @Test
@@ -232,8 +245,7 @@ public class DateTimeIT extends AbstractGraphQLIT {
                 executionContext.execute("mutation { testDefaultFormatLocalDateTime(dateTime: \"2020-01-12T10:00:00\") }"));
         assertThat(mapResults.size(), is(1));
         assertThat(mapResults.get("testDefaultFormatLocalDateTime"), is( "10:00:00 12-01-2020"));
-
-        // TODO: https://github.com/eclipse/microprofile-graphql/issues/306 - 1.0.3 spec most likely
+        
         mapResults = getAndAssertResult(
                 executionContext.execute("query { transformedDate }"));
         assertThat(mapResults, is(notNullValue()));

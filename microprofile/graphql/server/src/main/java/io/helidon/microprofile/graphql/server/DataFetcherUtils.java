@@ -38,7 +38,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
-import java.util.function.Function;
 import java.util.logging.Logger;
 
 import javax.enterprise.inject.spi.CDI;
@@ -416,7 +415,7 @@ public class DataFetcherUtils {
         private DateTimeFormatter dateTimeFormatter;
 
         /**
-         * Construct a new NumberFormattingDataFetcher.
+         * Construct a new DateFormattingDataFetcher.
          *
          * @param propertyName property to extract
          * @param type         GraphQL type of the property
@@ -430,6 +429,8 @@ public class DataFetcherUtils {
 
         @Override
         public Object get(DataFetchingEnvironment environment) {
+            LOGGER.info("Property=" + getPropertyName() + ", Original Value=" + super.get(environment) + ", dateTimeFormatter=" + dateTimeFormatter
+                       + ", formattedResult=" + formatDate(super.get(environment), dateTimeFormatter));
             return formatDate(super.get(environment), dateTimeFormatter);
         }
     }

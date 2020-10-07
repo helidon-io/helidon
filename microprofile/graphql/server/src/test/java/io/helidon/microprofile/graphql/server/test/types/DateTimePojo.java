@@ -160,7 +160,7 @@ public class DateTimePojo {
         return this.significantDates;
     }
 
-    public List<@DateFormat("dd/MM")  LocalDate> getFormattedListOfDates() {
+    public List<@DateFormat("dd/MM") LocalDate> getFormattedListOfDates() {
         return formattedListOfDates;
     }
 

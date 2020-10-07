@@ -196,7 +196,7 @@ public class FormattingHelper {
         if (format != null) {
             formatter = DateTimeFormatter.ofPattern(format, actualLocale);
         } else {
-            // handle defaults if not format specified
+            // handle defaults of not format specified
             if (OFFSET_TIME_CLASS.equals(type)) {
                 formatter = DateTimeFormatter.ISO_OFFSET_TIME.withLocale(actualLocale);
             } else if (LOCAL_TIME_CLASS.equals(type)) {

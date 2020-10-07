@@ -18,8 +18,12 @@ package io.helidon.microprofile.graphql.server;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.OffsetTime;
+import java.time.ZonedDateTime;
 
 import graphql.Scalars;
 import graphql.language.StringValue;
@@ -37,7 +41,9 @@ import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.DATET
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.DATE_SCALAR;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.FORMATTED_DATETIME_SCALAR;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.FORMATTED_DATE_SCALAR;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.FORMATTED_OFFSET_DATETIME_SCALAR;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.FORMATTED_TIME_SCALAR;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.FORMATTED_ZONED_DATETIME_SCALAR;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.TIME_SCALAR;
 
 /**
@@ -92,6 +98,16 @@ public class CustomScalars {
     public static final GraphQLScalarType CUSTOM_DATE_TIME_SCALAR = newDateTimeScalar(DATETIME_SCALAR);
 
     /**
+     * An instance of a custom offset date/time scalar (with default formatting).
+     */
+    public static final GraphQLScalarType CUSTOM_OFFSET_DATE_TIME_SCALAR = newOffsetDateTimeScalar(FORMATTED_OFFSET_DATETIME_SCALAR);
+
+    /**
+     * An instance of a custom offset date/time scalar (with default formatting).
+     */
+    public static final GraphQLScalarType CUSTOM_ZONED_DATE_TIME_SCALAR = newZonedDateTimeScalar(FORMATTED_ZONED_DATETIME_SCALAR);
+
+    /**
      * An instance of a custom time scalar (with default formatting).
      */
     public static final GraphQLScalarType CUSTOM_TIME_SCALAR = newTimeScalar(TIME_SCALAR);
@@ -111,6 +127,50 @@ public class CustomScalars {
     @SuppressWarnings("unchecked")
     public static GraphQLScalarType newDateTimeScalar(String name) {
         GraphQLScalarType originalScalar = ExtendedScalars.DateTime;
+        Coercing<LocalDateTime, String> originalCoercing = originalScalar.getCoercing();
+        return GraphQLScalarType.newScalar().coercing(new Coercing<Object, String>() {
+            public String serialize(Object dataFetcherResult) throws CoercingSerializeException {
+                if (dataFetcherResult instanceof String) {
+                    return (String) dataFetcherResult;
+                } else {
+                    return originalCoercing.serialize(dataFetcherResult);
+                }
+            }
+
+            @Override
+            public Object parseValue(Object input) throws CoercingParseValueException {
+                return input instanceof StringValue ? ((StringValue) input).getValue()
+                        : originalCoercing.parseValue(input);
+            }
+
+            @Override
+            public Object parseLiteral(Object input) throws CoercingParseLiteralException {
+                if (!(input instanceof StringValue)) {
+                    throw new CoercingParseLiteralException("Expected AST type 'StringValue' but was '"
+                              + (input == null ? "null" : input.getClass().getSimpleName()) + "'.");
+                }
+                try {
+                    return LocalDateTime.parse(((StringValue) input).getValue());
+                } catch (Exception e) {
+                    throw new CoercingParseLiteralException(e);
+                }
+            }
+        })
+        .name(name)
+        .description("Custom: " + originalScalar.getDescription())
+        .build();
+    }
+
+    /**
+     * Return a new custom offset date/time scalar.
+     *
+     * @param name the name of the scalar
+     *
+     * @return a new custom date/time scalar
+     */
+    @SuppressWarnings("unchecked")
+    public static GraphQLScalarType newOffsetDateTimeScalar(String name) {
+        GraphQLScalarType originalScalar = ExtendedScalars.DateTime;
         Coercing<OffsetDateTime, String> originalCoercing = originalScalar.getCoercing();
         return GraphQLScalarType.newScalar().coercing(new Coercing<Object, String>() {
             public String serialize(Object dataFetcherResult) throws CoercingSerializeException {
@@ -129,8 +189,58 @@ public class CustomScalars {
 
             @Override
             public Object parseLiteral(Object input) throws CoercingParseLiteralException {
+                if (!(input instanceof StringValue)) {
+                    throw new CoercingParseLiteralException("Expected AST type 'StringValue' but was '"
+                              + (input == null ? "null" : input.getClass().getSimpleName()) + "'.");
+                }
+                try {
+                    return OffsetDateTime.parse(((StringValue) input).getValue());
+                } catch (Exception e) {
+                    throw new CoercingParseLiteralException(e);
+                }
+            }
+        })
+        .name(name)
+        .description("Custom: " + originalScalar.getDescription())
+        .build();
+    }
+    /**
+     * Return a new custom zoned date/time scalar.
+     *
+     * @param name the name of the scalar
+     *
+     * @return a new custom date/time scalar
+     */
+    @SuppressWarnings("unchecked")
+    public static GraphQLScalarType newZonedDateTimeScalar(String name) {
+        GraphQLScalarType originalScalar = ExtendedScalars.DateTime;
+        Coercing<ZonedDateTime, String> originalCoercing = originalScalar.getCoercing();
+        return GraphQLScalarType.newScalar().coercing(new Coercing<Object, String>() {
+            public String serialize(Object dataFetcherResult) throws CoercingSerializeException {
+                if (dataFetcherResult instanceof String) {
+                    return (String) dataFetcherResult;
+                } else {
+                    return originalCoercing.serialize(dataFetcherResult);
+                }
+            }
+
+            @Override
+            public Object parseValue(Object input) throws CoercingParseValueException {
                 return input instanceof StringValue ? ((StringValue) input).getValue()
-                        : originalCoercing.parseLiteral(input);
+                        : originalCoercing.parseValue(input);
+            }
+
+            @Override
+            public Object parseLiteral(Object input) throws CoercingParseLiteralException {
+                if (!(input instanceof StringValue)) {
+                    throw new CoercingParseLiteralException("Expected AST type 'StringValue' but was '"
+                              + (input == null ? "null" : input.getClass().getSimpleName()) + "'.");
+                }
+                try {
+                    return ZonedDateTime.parse(((StringValue) input).getValue());
+                } catch (Exception e) {
+                    throw new CoercingParseLiteralException(e);
+                }
             }
         })
         .name(name)
@@ -164,8 +274,15 @@ public class CustomScalars {
 
             @Override
             public Object parseLiteral(Object input) throws CoercingParseLiteralException {
-                return input instanceof StringValue ? ((StringValue) input).getValue()
-                        : originalCoercing.parseLiteral(input);
+                if (!(input instanceof StringValue)) {
+                    throw new CoercingParseLiteralException("Expected AST type 'StringValue' but was '"
+                              + (input == null ? "null" : input.getClass().getSimpleName()) + "'.");
+                }
+                try {
+                    return LocalTime.parse(((StringValue) input).getValue());
+                } catch (Exception e) {
+                    throw new CoercingParseLiteralException(e);
+                }
             }
         })
         .name(name)
@@ -183,7 +300,7 @@ public class CustomScalars {
     @SuppressWarnings("unchecked")
     public static GraphQLScalarType newDateScalar(String name) {
         GraphQLScalarType originalScalar = ExtendedScalars.Date;
-        Coercing<OffsetDateTime, String> originalCoercing = originalScalar.getCoercing();
+        Coercing<LocalDate, String> originalCoercing = originalScalar.getCoercing();
         return GraphQLScalarType.newScalar().coercing(new Coercing<Object, String>() {
             public String serialize(Object dataFetcherResult) throws CoercingSerializeException {
                 return dataFetcherResult instanceof String
@@ -199,8 +316,7 @@ public class CustomScalars {
 
             @Override
             public Object parseLiteral(Object input) throws CoercingParseLiteralException {
-                return input instanceof StringValue ? ((StringValue) input).getValue()
-                        : originalCoercing.parseLiteral(input);
+                   return originalCoercing.parseLiteral(input);
             }
         })
         .name(name)

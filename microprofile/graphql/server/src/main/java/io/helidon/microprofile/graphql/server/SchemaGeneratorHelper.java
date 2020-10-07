@@ -58,6 +58,8 @@ import static io.helidon.microprofile.graphql.server.CustomScalars.CUSTOM_BIGDEC
 import static io.helidon.microprofile.graphql.server.CustomScalars.CUSTOM_BIGINTEGER_SCALAR;
 import static io.helidon.microprofile.graphql.server.CustomScalars.CUSTOM_FLOAT_SCALAR;
 import static io.helidon.microprofile.graphql.server.CustomScalars.CUSTOM_INT_SCALAR;
+import static io.helidon.microprofile.graphql.server.CustomScalars.CUSTOM_OFFSET_DATE_TIME_SCALAR;
+import static io.helidon.microprofile.graphql.server.CustomScalars.CUSTOM_ZONED_DATE_TIME_SCALAR;
 import static io.helidon.microprofile.graphql.server.CustomScalars.FORMATTED_CUSTOM_DATE_SCALAR;
 import static io.helidon.microprofile.graphql.server.CustomScalars.FORMATTED_CUSTOM_DATE_TIME_SCALAR;
 import static io.helidon.microprofile.graphql.server.CustomScalars.FORMATTED_CUSTOM_TIME_SCALAR;
@@ -183,6 +185,16 @@ public final class SchemaGeneratorHelper {
     public static final String FORMATTED_DATETIME_SCALAR = "FormattedDateTime";
 
     /**
+     * Formatted DateTime scalar.
+     */
+    public static final String FORMATTED_OFFSET_DATETIME_SCALAR = "FormattedOffsetDateTime";
+
+    /**
+     * Formatted DateTime scalar.
+     */
+    public static final String FORMATTED_ZONED_DATETIME_SCALAR = "FormattedZonedDateTime";
+
+    /**
      * Formatted Time Scalar.
      */
     public static final String FORMATTED_TIME_SCALAR = "FormattedTime";
@@ -265,20 +277,20 @@ public final class SchemaGeneratorHelper {
 
         // Time scalars
         put(OffsetTime.class.getName(),
-            new SchemaScalar(FORMATTED_TIME_SCALAR, OFFSET_TIME_CLASS, FORMATTED_CUSTOM_TIME_SCALAR, "HH:mm:ssZ"));
+            new SchemaScalar(FORMATTED_TIME_SCALAR, OFFSET_TIME_CLASS, FORMATTED_CUSTOM_TIME_SCALAR, "HH[:mm][:ss]Z"));
         put(LocalTime.class.getName(),
-            new SchemaScalar(FORMATTED_TIME_SCALAR, LOCAL_TIME_CLASS, FORMATTED_CUSTOM_TIME_SCALAR, "HH:mm:ss"));
+            new SchemaScalar(FORMATTED_TIME_SCALAR, LOCAL_TIME_CLASS, FORMATTED_CUSTOM_TIME_SCALAR, "HH[:mm][:ss]"));
 
         // DateTime scalars
         put(OFFSET_DATE_TIME_CLASS,
-            new SchemaScalar(FORMATTED_DATETIME_SCALAR, OFFSET_DATE_TIME_CLASS, FORMATTED_CUSTOM_DATE_TIME_SCALAR,
-                             "yyyy-MM-dd'T'HH:mm:ssZ"));
+            new SchemaScalar(FORMATTED_OFFSET_DATETIME_SCALAR, OFFSET_DATE_TIME_CLASS, CUSTOM_OFFSET_DATE_TIME_SCALAR,
+                             "yyyy-MM-dd'T'HH[:mm][:ss]Z"));
         put(ZONED_DATE_TIME_CLASS,
-            new SchemaScalar(FORMATTED_DATETIME_SCALAR, ZONED_DATE_TIME_CLASS, FORMATTED_CUSTOM_DATE_TIME_SCALAR,
-                             "yyyy-MM-dd'T'HH:mm:ssZ'['VV']'"));
+            new SchemaScalar(FORMATTED_ZONED_DATETIME_SCALAR, ZONED_DATE_TIME_CLASS, CUSTOM_ZONED_DATE_TIME_SCALAR,
+                             "yyyy-MM-dd'T'HH[:mm][:ss]Z'['VV']'"));
         put(LOCAL_DATE_TIME_CLASS,
             new SchemaScalar(FORMATTED_DATETIME_SCALAR, LOCAL_DATE_TIME_CLASS, FORMATTED_CUSTOM_DATE_TIME_SCALAR,
-                             "yyyy-MM-dd'T'HH:mm:ss"));
+                             "yyyy-MM-dd'T'HH[:mm][:ss]"));
 
         // Date scalar
         put(LOCAL_DATE_CLASS, new SchemaScalar(FORMATTED_DATE_SCALAR, LOCAL_DATE_CLASS, FORMATTED_CUSTOM_DATE_SCALAR,
@@ -476,11 +488,13 @@ public final class SchemaGeneratorHelper {
      * Return true of the name is a Date, DateTime, or Time scalar.
      *
      * @param scalarName scalar name
-     * @return rue of the name is a Date, DateTime, or Time scalar
+     * @return true of the name is a Date, DateTime, or Time scalar
      */
     protected static boolean isDateTimeScalar(String scalarName) {
         return FORMATTED_DATE_SCALAR.equals(scalarName)
                 || FORMATTED_TIME_SCALAR.equals(scalarName)
+                || FORMATTED_OFFSET_DATETIME_SCALAR.equals(scalarName)
+                || FORMATTED_ZONED_DATETIME_SCALAR.equals(scalarName)
                 || FORMATTED_DATETIME_SCALAR.equals(scalarName);
     }
     /**
@@ -576,6 +590,7 @@ public final class SchemaGeneratorHelper {
                         || clazz.equals(LocalTime.class)
                         || clazz.equals(LocalDateTime.class)
                         || clazz.equals(OffsetTime.class)
+                        || clazz.equals(ZonedDateTime.class)
                         || clazz.equals(OffsetDateTime.class));
     }
 

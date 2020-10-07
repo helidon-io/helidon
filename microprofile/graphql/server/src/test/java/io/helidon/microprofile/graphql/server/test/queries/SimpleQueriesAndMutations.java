@@ -21,6 +21,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
+import java.time.OffsetDateTime;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -233,5 +235,19 @@ public class SimpleQueriesAndMutations {
                                                       @JsonbDateFormat("yy dd MM") // should be ignored
                                                       List<@DateFormat("MM/dd/yyyy") LocalDate> localDates) {
         return localDates;
+    }
+
+    @Query
+    public OffsetDateTime echoOffsetDateTime(@Name("value")
+                                             @JsonbDateFormat(value = "dd MMM yyyy 'at' HH:mm 'in zone' Z",locale = "en-ZA")
+                                             OffsetDateTime offsetDateTime) {
+        return offsetDateTime;
+    }
+
+    @Query
+    public ZonedDateTime echoZonedDateTime(@Name("value")
+                                           @JsonbDateFormat(value = "dd MMMM yyyy 'at' HH:mm 'in' VV",locale = "en-ZA")
+                                           ZonedDateTime zonedDateTime) {
+        return zonedDateTime;
     }
 }

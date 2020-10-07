@@ -62,7 +62,9 @@ import org.eclipse.microprofile.graphql.Type;
 
 import static io.helidon.microprofile.graphql.server.CustomScalars.CUSTOM_DATE_SCALAR;
 import static io.helidon.microprofile.graphql.server.CustomScalars.CUSTOM_DATE_TIME_SCALAR;
+import static io.helidon.microprofile.graphql.server.CustomScalars.CUSTOM_OFFSET_DATE_TIME_SCALAR;
 import static io.helidon.microprofile.graphql.server.CustomScalars.CUSTOM_TIME_SCALAR;
+import static io.helidon.microprofile.graphql.server.CustomScalars.CUSTOM_ZONED_DATE_TIME_SCALAR;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.DATE;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.NO_FORMATTING;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.NUMBER;
@@ -78,7 +80,9 @@ import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.DATET
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.DATE_SCALAR;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.FORMATTED_DATETIME_SCALAR;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.FORMATTED_DATE_SCALAR;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.FORMATTED_OFFSET_DATETIME_SCALAR;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.FORMATTED_TIME_SCALAR;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.FORMATTED_ZONED_DATETIME_SCALAR;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ID;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.STRING;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.TIME_SCALAR;
@@ -389,6 +393,12 @@ public class SchemaGenerator {
                         } else if (fd.getReturnType().equals(FORMATTED_DATETIME_SCALAR)) {
                             fd.setReturnType(DATETIME_SCALAR);
                             newScalarType = CUSTOM_DATE_TIME_SCALAR;
+                        } else if (fd.getReturnType().equals(FORMATTED_OFFSET_DATETIME_SCALAR)) {
+                            fd.setReturnType(FORMATTED_OFFSET_DATETIME_SCALAR);
+                            newScalarType = CUSTOM_OFFSET_DATE_TIME_SCALAR;
+                        } else if (fd.getReturnType().equals(FORMATTED_ZONED_DATETIME_SCALAR)) {
+                            fd.setReturnType(FORMATTED_ZONED_DATETIME_SCALAR);
+                            newScalarType = CUSTOM_ZONED_DATE_TIME_SCALAR;
                         }
 
                         // clone the scalar with the new scalar name
