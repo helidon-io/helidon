@@ -32,7 +32,7 @@ public class JmsBytesMessage extends AbstractJmsMessage<byte[]> {
     private final javax.jms.BytesMessage msg;
     private final IncomingProperties properties;
 
-    JmsBytesMessage(final javax.jms.BytesMessage msg, Executor executor, final SessionMetadata sharedSessionEntry) {
+    JmsBytesMessage(javax.jms.BytesMessage msg, Executor executor, SessionMetadata sharedSessionEntry) {
         super(executor, sharedSessionEntry);
         this.msg = msg;
         this.properties = new IncomingProperties(msg);

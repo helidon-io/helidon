@@ -138,8 +138,8 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
         }
         for (SessionMetadata e : sessionRegister.values()) {
             try {
-                e.getSession().close();
-                e.getConnection().close();
+                e.session().close();
+                e.connection().close();
             } catch (JMSException jmsException) {
                 LOGGER.log(Level.SEVERE, jmsException, () -> "Error when stopping JMS sessions.");
             }
@@ -178,13 +178,18 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
     protected Optional<ConnectionFactory> getFactory(io.helidon.config.Config config) {
         if (config.get("jndi").exists()) {
             Properties props = new Properties();
-            config.detach()
+            config.get("jndi")
+                    .get("env-properties")
+                    .detach()
                     .asMap()
                     .orElseGet(Map::of)
-                    .forEach((key, val) -> props.setProperty(key.replaceFirst("jndi", "java.naming"), val));
+                    .forEach(props::setProperty);
             try {
                 InitialContext ctx = new InitialContext(props);
-                return Optional.of((ConnectionFactory) ctx.lookup("ConnectionFactory"));
+                String jmsFactoryJndiName = config.get("jndi").get("jms-factory")
+                        .asString()
+                        .orElse("ConnectionFactory");
+                return Optional.of((ConnectionFactory) ctx.lookup(jmsFactoryJndiName));
             } catch (NamingException e) {
                 throw new RuntimeException(e);
             }
@@ -207,7 +212,7 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
     }
 
     @Override
-    public PublisherBuilder<? extends Message<?>> getPublisherBuilder(final Config mpConfig) {
+    public PublisherBuilder<? extends Message<?>> getPublisherBuilder(Config mpConfig) {
         io.helidon.config.Config config = MpConfig.toHelidonConfig(mpConfig);
         AcknowledgeMode ackMode = config.get(ACK_MODE_PROP).asString()
                 .map(AcknowledgeMode::parse)
@@ -226,9 +231,9 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
         try {
             SessionMetadata sessionEntry = prepareSession(config, factory);
             MessageConsumer consumer = sessionEntry
-                    .getSession()
+                    .session()
                     .createConsumer(
-                            createDestination(sessionEntry.getSession(), config),
+                            createDestination(sessionEntry.session(), config),
                             config.get(MESSAGE_SELECTOR_PROP).asString().orElse(null)
                     );
             BufferedEmittingPublisher<Message<?>> emittingPublisher = BufferedEmittingPublisher.create();
@@ -264,7 +269,7 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
                             .asLong()
                             .orElse(PERIOD_EXECUTIONS_DEFAULT),
                     TimeUnit.MILLISECONDS);
-            sessionEntry.getConnection().start();
+            sessionEntry.connection().start();
             return ReactiveStreams.fromPublisher(FlowAdapters.toPublisher(Multi.create(emittingPublisher)));
         } catch (JMSException e) {
             LOGGER.log(Level.SEVERE, e, () -> "Error during JMS publisher preparation");
@@ -273,7 +278,7 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
     }
 
     @Override
-    public SubscriberBuilder<? extends Message<?>, Void> getSubscriberBuilder(final Config mpConfig) {
+    public SubscriberBuilder<? extends Message<?>, Void> getSubscriberBuilder(Config mpConfig) {
         io.helidon.config.Config config = MpConfig.toHelidonConfig(mpConfig);
         BiConsumer<Message<?>, JMSException> errorHandler = sendingErrorHandler(config);
         ConnectionFactory factory =
@@ -284,7 +289,7 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
                         .orElseThrow();
         try {
             SessionMetadata sessionEntry = prepareSession(config, factory);
-            Session session = sessionEntry.getSession();
+            Session session = sessionEntry.session();
             Destination destination = createDestination(session, config);
             MessageProducer producer = session.createProducer(destination);
             AtomicReference<MessageMappers.MessageMapper> mapper = new AtomicReference<>();
@@ -297,12 +302,16 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
                         return CompletableFuture
                                 .supplyAsync(() -> {
                                     try {
-                                        // create appropriate JMS message
-                                        javax.jms.Message jmsMessage = mapper.get().apply(session, m);
-                                        // apply jms properties
+                                        javax.jms.Message jmsMessage;
+
                                         if (m instanceof OutgoingJmsMessage) {
-                                            ((OutgoingJmsMessage<?>) m).writePropertiesTo(jmsMessage);
+                                            // custom mapping, properties etc.
+                                            jmsMessage = ((OutgoingJmsMessage<?>) m).toJmsMessage(session, mapper.get());
+                                        } else {
+                                            // default mappers
+                                            jmsMessage = mapper.get().apply(session, m);
                                         }
+                                        // actual send
                                         producer.send(jmsMessage);
                                         return m.ack();
                                     } catch (JMSException e) {
@@ -332,7 +341,7 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
         };
     }
 
-    private SessionMetadata prepareSession(final io.helidon.config.Config config,
+    private SessionMetadata prepareSession(io.helidon.config.Config config,
                                            ConnectionFactory factory) throws JMSException {
         Optional<String> sessionGroupId = config.get(SESSION_GROUP_ID_PROP).asString().asOptional();
         if (sessionGroupId.isPresent() && sessionRegister.containsKey(sessionGroupId.get())) {

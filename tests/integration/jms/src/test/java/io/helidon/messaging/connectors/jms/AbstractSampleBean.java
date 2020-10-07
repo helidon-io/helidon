@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.jms.TextMessage;
 
 import io.helidon.common.reactive.Multi;
 
@@ -38,6 +39,7 @@ import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
+import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.eclipse.microprofile.reactive.streams.operators.SubscriberBuilder;
 import org.reactivestreams.FlowAdapters;
@@ -332,4 +334,41 @@ abstract class AbstractSampleBean {
         }
     }
 
+    @ApplicationScoped
+    public static class ChannelCustomMapper extends AbstractSampleBean {
+        private static final List<String> DATA = List.of("Hello1", "Hello2");
+        private final CountDownLatch countDownLatch = new CountDownLatch(DATA.size());
+        private final ArrayList<String> result = new ArrayList<>(DATA.size());
+
+        public void await(long timeout) {
+            try {
+                assertTrue(countDownLatch.await(timeout, TimeUnit.MILLISECONDS));
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        public ArrayList<String> assertResult() {
+            assertThat(result, containsInAnyOrder("Hello1XXXHello1", "Hello2XXXHello2"));
+            return result;
+        }
+
+        @Incoming("test-channel-custom-mapper-fromJms")
+        public CompletionStage<Void> from(JmsMessage<String> m) {
+            result.add(m.getPayload() + m.getJmsProperty("custom-mapped-property"));
+            countDownLatch.countDown();
+            return CompletableFuture.completedFuture(null);
+        }
+
+
+        @Outgoing("test-channel-custom-mapper-toJms")
+        public PublisherBuilder<Message<String>> to() {
+            return ReactiveStreams.fromIterable(DATA)
+                    .map(s -> JmsMessage.of(s, (p, session) -> {
+                        TextMessage textMessage = session.createTextMessage(p);
+                        textMessage.setStringProperty("custom-mapped-property", "XXX" + p);
+                        return textMessage;
+                    }));
+        }
+    }
 }

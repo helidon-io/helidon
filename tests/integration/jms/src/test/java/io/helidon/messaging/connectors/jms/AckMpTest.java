@@ -49,9 +49,9 @@ import org.junit.jupiter.api.TestMethodOrder;
         @AddExtension(MessagingCdiExtension.class),
 })
 @AddConfigs({
-        @AddConfig(key = "mp.messaging.connector.helidon-jms.jndi.provider.url",
+        @AddConfig(key = "mp.messaging.connector.helidon-jms.jndi.env-properties.java.naming.provider.url",
                 value = "vm://localhost?broker.persistent=false"),
-        @AddConfig(key = "mp.messaging.connector.helidon-jms.jndi.factory.initial",
+        @AddConfig(key = "mp.messaging.connector.helidon-jms.jndi.env-properties.java.naming.factory.initial",
                 value = "org.apache.activemq.jndi.ActiveMQInitialContextFactory"),
 
         @AddConfig(key = "mp.messaging.incoming.test-channel-ack-1.connector", value = JmsConnector.CONNECTOR_NAME),

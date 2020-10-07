@@ -41,7 +41,7 @@ public class AqMessageImpl<T> implements AqMessage<T> {
     AqMessageImpl(AQjmsMessage msg, Executor executor, SessionMetadata sessionMetadata) {
         this.jmsMessage = JmsMessage.of(msg, executor, sessionMetadata);
         this.msg = msg;
-        this.session = (AQjmsSession) sessionMetadata.getSession();
+        this.session = (AQjmsSession) sessionMetadata.session();
     }
 
     @Override
@@ -59,47 +59,47 @@ public class AqMessageImpl<T> implements AqMessage<T> {
     }
 
     @Override
-    public void setJmsProperty(final String name, final boolean value) {
+    public void setJmsProperty(String name, boolean value) {
         jmsMessage.setJmsProperty(name, value);
     }
 
     @Override
-    public void setJmsProperty(final String name, final byte value) {
+    public void setJmsProperty(String name, byte value) {
         jmsMessage.setJmsProperty(name, value);
     }
 
     @Override
-    public void setJmsProperty(final String name, final short value) {
+    public void setJmsProperty(String name, short value) {
         jmsMessage.setJmsProperty(name, value);
     }
 
     @Override
-    public void setJmsProperty(final String name, final int value) {
+    public void setJmsProperty(String name, int value) {
         jmsMessage.setJmsProperty(name, value);
     }
 
     @Override
-    public void setJmsProperty(final String name, final long value) {
+    public void setJmsProperty(String name, long value) {
         jmsMessage.setJmsProperty(name, value);
     }
 
     @Override
-    public void setJmsProperty(final String name, final float value) {
+    public void setJmsProperty(String name, float value) {
         jmsMessage.setJmsProperty(name, value);
     }
 
     @Override
-    public void setJmsProperty(final String name, final double value) {
+    public void setJmsProperty(String name, double value) {
         jmsMessage.setJmsProperty(name, value);
     }
 
     @Override
-    public void setJmsProperty(final String name, final String value) {
+    public void setJmsProperty(String name, String value) {
         jmsMessage.setJmsProperty(name, value);
     }
 
     @Override
-    public boolean hasJmsProperty(final String name) {
+    public boolean hasJmsProperty(String name) {
         return jmsMessage.hasJmsProperty(name);
     }
 

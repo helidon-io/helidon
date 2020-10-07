@@ -22,14 +22,18 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
+import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 import javax.jms.BytesMessage;
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
+import javax.jms.JMSException;
 import javax.jms.Session;
 import javax.jms.TextMessage;
+
+import io.helidon.messaging.MessagingException;
 
 import org.eclipse.microprofile.reactive.messaging.Message;
 
@@ -197,16 +201,6 @@ public interface JmsMessage<T> extends Message<T> {
     }
 
     /**
-     * Create a message with the given payload.
-     *
-     * @param msg JMS message to be wrapped
-     * @return A message with the given payload, and an ack function
-     */
-    static JmsMessage<?> of(javax.jms.Message msg) {
-        return of(msg, null, null);
-    }
-
-    /**
      * Create a JmsMessage with the given payload and ack function.
      *
      * @param payload The payload.
@@ -227,6 +221,54 @@ public interface JmsMessage<T> extends Message<T> {
      */
     static <T> JmsMessage<T> of(T payload) {
         return new OutgoingJmsMessage<>(payload, () -> CompletableFuture.completedStage(null));
+    }
+
+    /**
+     * Create a JMSMessage with custom mapper to {@link javax.jms.Message}.
+     *
+     * @param payload The payload.
+     * @param mapper  Custom mapper to {@link javax.jms.Message}
+     * @param ack     The ack function, this will be invoked when the returned messages {@link #ack()} method is invoked.
+     * @param <T>     The type of payload
+     * @return A message with the given payload and ack function.
+     */
+    static <T> JmsMessage<T> of(T payload,
+                                CustomMapper<T> mapper,
+                                Supplier<CompletionStage<Void>> ack) {
+        return new OutgoingJmsMessage<>(payload, mapper, ack);
+    }
+
+    /**
+     * Create a JMSMessage with custom mapper to {@link javax.jms.Message}.
+     *
+     * @param payload The payload.
+     * @param mapper  Custom mapper to {@link javax.jms.Message}
+     * @param <T>     The type of payload
+     * @return A message with the given payload and ack function.
+     */
+    static <T> JmsMessage<T> of(T payload,
+                                CustomMapper<T> mapper) {
+        return new OutgoingJmsMessage<>(payload, mapper, () -> CompletableFuture.completedFuture(null));
+    }
+
+    /**
+     * Mapper for creating {@link javax.jms.Message}.
+     *
+     * @param <P> The payload.
+     */
+    @FunctionalInterface
+    interface CustomMapper<P> extends BiFunction<P, Session, javax.jms.Message> {
+
+        @Override
+        default javax.jms.Message apply(P p, Session session) {
+            try {
+                return applyThrows(p, session);
+            } catch (JMSException e) {
+                throw new MessagingException("Error when invoking custom mapper.", e);
+            }
+        }
+
+        javax.jms.Message applyThrows(P p, Session session) throws JMSException;
     }
 
 }

@@ -52,15 +52,16 @@ import org.junit.jupiter.api.Test;
         @AddBean(AbstractSampleBean.ChannelProcessor.class),
         @AddBean(AbstractSampleBean.ChannelBytes.class),
         @AddBean(AbstractSampleBean.ChannelProperties.class),
+        @AddBean(AbstractSampleBean.ChannelCustomMapper.class),
 })
 @AddExtensions({
         @AddExtension(ConfigCdiExtension.class),
         @AddExtension(MessagingCdiExtension.class),
 })
 @AddConfigs({
-        @AddConfig(key = "mp.messaging.connector.helidon-jms.jndi.provider.url",
+        @AddConfig(key = "mp.messaging.connector.helidon-jms.jndi.env-properties.java.naming.provider.url",
                 value = "vm://localhost?broker.persistent=false"),
-        @AddConfig(key = "mp.messaging.connector.helidon-jms.jndi.factory.initial",
+        @AddConfig(key = "mp.messaging.connector.helidon-jms.jndi.env-properties.java.naming.factory.initial",
                 value = "org.apache.activemq.jndi.ActiveMQInitialContextFactory"),
 
         @AddConfig(key = "mp.messaging.incoming.test-channel-1.connector", value = JmsConnector.CONNECTOR_NAME),
@@ -112,6 +113,14 @@ import org.junit.jupiter.api.Test;
         @AddConfig(key = "mp.messaging.outgoing.test-channel-props-toJms.connector", value = JmsConnector.CONNECTOR_NAME),
         @AddConfig(key = "mp.messaging.outgoing.test-channel-props-toJms.type", value = "queue"),
         @AddConfig(key = "mp.messaging.outgoing.test-channel-props-toJms.destination", value = JmsMpTest.TEST_TOPIC_PROPS),
+
+        @AddConfig(key = "mp.messaging.incoming.test-channel-custom-mapper-fromJms.connector", value = JmsConnector.CONNECTOR_NAME),
+        @AddConfig(key = "mp.messaging.incoming.test-channel-custom-mapper-fromJms.type", value = "queue"),
+        @AddConfig(key = "mp.messaging.incoming.test-channel-custom-mapper-fromJms.destination", value = JmsMpTest.TEST_TOPIC_CUST_MAPPER),
+
+        @AddConfig(key = "mp.messaging.outgoing.test-channel-custom-mapper-toJms.connector", value = JmsConnector.CONNECTOR_NAME),
+        @AddConfig(key = "mp.messaging.outgoing.test-channel-custom-mapper-toJms.type", value = "queue"),
+        @AddConfig(key = "mp.messaging.outgoing.test-channel-custom-mapper-toJms.destination", value = JmsMpTest.TEST_TOPIC_CUST_MAPPER),
 })
 class JmsMpTest extends AbstractMPTest {
 
@@ -123,6 +132,7 @@ class JmsMpTest extends AbstractMPTest {
     static final String TEST_TOPIC_6 = "topic-6";
     static final String TEST_TOPIC_BYTES = "topic-bytes";
     static final String TEST_TOPIC_PROPS = "topic-properties";
+    static final String TEST_TOPIC_CUST_MAPPER = "topic-cust-mapper";
     static final String TEST_TOPIC_ERROR = "topic-error";
 
     @Test
@@ -205,6 +215,13 @@ class JmsMpTest extends AbstractMPTest {
     @Test
     void jmsProperties() {
         AbstractSampleBean.ChannelProperties bean = CDI.current().select(AbstractSampleBean.ChannelProperties.class).get();
+        bean.await(200);
+        bean.assertResult();
+    }
+
+    @Test
+    void customMapper() {
+        AbstractSampleBean.ChannelCustomMapper bean = CDI.current().select(AbstractSampleBean.ChannelCustomMapper.class).get();
         bean.await(200);
         bean.assertResult();
     }

@@ -201,7 +201,7 @@ public CompletionStage<?> consumeAq(AqMessage<String> msg) {
 === Producing
 
 [source,java]
-.Producing to JMS:
+.Producing to AQ:
 ----
 @Outgoing("to-aq")
 public PublisherBuilder<String> produceToAq() {

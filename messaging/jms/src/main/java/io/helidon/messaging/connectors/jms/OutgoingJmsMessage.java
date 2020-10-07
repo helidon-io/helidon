@@ -22,19 +22,28 @@ import java.util.function.Supplier;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
+import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.Session;
 
 class OutgoingJmsMessage<T> extends AbstractJmsMessage<T> {
 
-    private T payload;
-    private Supplier<CompletionStage<Void>> ack;
+    private final T payload;
+    private CustomMapper<T> mapper = null;
+    private final Supplier<CompletionStage<Void>> ack;
     private volatile boolean acked = false;
     private final OutgoingProperties properties = new OutgoingProperties();
 
     OutgoingJmsMessage(T payload, Supplier<CompletionStage<Void>> ack) {
         super();
         this.payload = payload;
+        this.ack = ack;
+    }
+
+    OutgoingJmsMessage(T payload, CustomMapper<T> mapper, Supplier<CompletionStage<Void>> ack) {
+        super();
+        this.payload = payload;
+        this.mapper = mapper;
         this.ack = ack;
     }
 
@@ -78,7 +87,14 @@ class OutgoingJmsMessage<T> extends AbstractJmsMessage<T> {
         return this.ack.get().thenRun(() -> acked = true);
     }
 
-    void writePropertiesTo(Message message) {
-        properties.writeToMessage(message);
+    Message toJmsMessage(Session session, MessageMappers.MessageMapper defaultMapper) throws JMSException {
+        javax.jms.Message jmsMessage;
+        if (mapper != null) {
+            jmsMessage = mapper.apply(getPayload(), session);
+        } else {
+            jmsMessage = defaultMapper.apply(session, this);
+        }
+        properties.writeToMessage(jmsMessage);
+        return jmsMessage;
     }
 }

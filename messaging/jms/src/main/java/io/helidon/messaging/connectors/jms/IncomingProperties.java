@@ -32,7 +32,7 @@ class IncomingProperties implements JmsProperties {
     }
 
     @Override
-    public <T> void property(final String name, final T value) {
+    public <T> void property(String name, T value) {
         throw new MessageNotWriteableRuntimeException("Incoming message is in read-only mode.");
     }
 
@@ -47,7 +47,7 @@ class IncomingProperties implements JmsProperties {
     }
 
     @Override
-    public boolean propertyExists(final String name) {
+    public boolean propertyExists(String name) {
         try {
             return message.propertyExists(name);
         } catch (JMSException e) {

@@ -26,7 +26,7 @@ public class JmsTextMessage extends AbstractJmsMessage<String> {
     private final javax.jms.TextMessage msg;
     private final IncomingProperties properties;
 
-    JmsTextMessage(final javax.jms.TextMessage msg, Executor executor, final SessionMetadata sharedSessionEntry) {
+    JmsTextMessage(javax.jms.TextMessage msg, Executor executor, SessionMetadata sharedSessionEntry) {
         super(executor, sharedSessionEntry);
         this.msg = msg;
         this.properties = new IncomingProperties(msg);

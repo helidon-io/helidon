@@ -42,7 +42,7 @@ class OutgoingProperties implements JmsProperties {
 
     @Override
     @SuppressWarnings("unchecked")
-    public <T> T property(final String name) {
+    public <T> T property(String name) {
         return (T) intermediateMap.get(name);
     }
 
@@ -52,7 +52,7 @@ class OutgoingProperties implements JmsProperties {
         default void accept(Message m) {
             try {
                 acceptThrows(m);
-            } catch (final Exception e) {
+            } catch (Exception e) {
                 throw new MessagingException("Error when applying JMS properties.", e);
             }
         }
@@ -61,7 +61,7 @@ class OutgoingProperties implements JmsProperties {
     }
 
     @Override
-    public boolean propertyExists(final String name) {
+    public boolean propertyExists(String name) {
         return intermediateMap.containsKey(name);
     }
 }

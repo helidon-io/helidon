@@ -45,68 +45,68 @@ abstract class AbstractJmsMessage<T> implements JmsMessage<T> {
     abstract JmsProperties properties();
 
     @Override
-    public <P> P getJmsProperty(final String name) {
+    public <P> P getJmsProperty(String name) {
         return properties().property(name);
     }
 
     @Override
-    public void setJmsProperty(final String name, final boolean value) {
+    public void setJmsProperty(String name, boolean value) {
         properties().property(name, value);
     }
 
     @Override
-    public void setJmsProperty(final String name, final byte value) {
+    public void setJmsProperty(String name, byte value) {
         properties().property(name, value);
     }
 
     @Override
-    public void setJmsProperty(final String name, final short value) {
+    public void setJmsProperty(String name, short value) {
         properties().property(name, value);
     }
 
     @Override
-    public void setJmsProperty(final String name, final int value) {
+    public void setJmsProperty(String name, int value) {
         properties().property(name, value);
     }
 
     @Override
-    public void setJmsProperty(final String name, final long value) {
+    public void setJmsProperty(String name, long value) {
         properties().property(name, value);
     }
 
     @Override
-    public void setJmsProperty(final String name, final float value) {
+    public void setJmsProperty(String name, float value) {
         properties().property(name, value);
     }
 
     @Override
-    public void setJmsProperty(final String name, final double value) {
+    public void setJmsProperty(String name, double value) {
         properties().property(name, value);
     }
 
     @Override
-    public void setJmsProperty(final String name, final String value) {
+    public void setJmsProperty(String name, String value) {
         properties().property(name, value);
     }
 
     @Override
-    public boolean hasJmsProperty(final String name) {
+    public boolean hasJmsProperty(String name) {
         return properties().propertyExists(name);
     }
 
     @Override
     public Optional<Session> getJmsSession() {
-        return Optional.ofNullable(sharedSessionEntry).map(SessionMetadata::getSession);
+        return Optional.ofNullable(sharedSessionEntry).map(SessionMetadata::session);
     }
 
     @Override
     public Optional<Connection> getJmsConnection() {
-        return Optional.ofNullable(sharedSessionEntry).map(SessionMetadata::getConnection);
+        return Optional.ofNullable(sharedSessionEntry).map(SessionMetadata::connection);
     }
 
     @Override
     public Optional<ConnectionFactory> getJmsConnectionFactory() {
-        return Optional.ofNullable(sharedSessionEntry).map(SessionMetadata::getConnectionFactory);
+        return Optional.ofNullable(sharedSessionEntry).map(SessionMetadata::connectionFactory);
     }
 
     @Override

@@ -28,21 +28,36 @@ public class SessionMetadata {
     private final Connection connection;
     private final ConnectionFactory connectionFactory;
 
-    SessionMetadata(final Session session, final Connection connection, final ConnectionFactory connectionFactory) {
+    SessionMetadata(Session session, Connection connection, ConnectionFactory connectionFactory) {
         this.session = session;
         this.connection = connection;
         this.connectionFactory = connectionFactory;
     }
 
-    public Session getSession() {
+    /**
+     * {@link javax.jms.Session} used for receiving the message.
+     *
+     * @return JMS session
+     */
+    public Session session() {
         return session;
     }
 
-    public Connection getConnection() {
+    /**
+     * {@link javax.jms.Connection} used for receiving the message.
+     *
+     * @return JMS connection
+     */
+    public Connection connection() {
         return connection;
     }
 
-    public ConnectionFactory getConnectionFactory() {
+    /**
+     * {@link javax.jms.ConnectionFactory} used for receiving the message.
+     *
+     * @return JMS connection factory
+     */
+    public ConnectionFactory connectionFactory() {
         return connectionFactory;
     }
 }

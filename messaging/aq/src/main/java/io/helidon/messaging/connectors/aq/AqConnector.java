@@ -70,7 +70,7 @@ public class AqConnector extends JmsConnector {
      * @param config root config for thread context
      */
     @Inject
-    AqConnector(final Config config) {
+    AqConnector(Config config) {
         super(config);
     }
 
@@ -142,14 +142,14 @@ public class AqConnector extends JmsConnector {
 
 
     @Override
-    protected JmsMessage<?> createMessage(final javax.jms.Message message,
+    protected JmsMessage<?> createMessage(javax.jms.Message message,
                                           Executor executor,
-                                          final SessionMetadata sessionMetadata) {
+                                          SessionMetadata sessionMetadata) {
         return AqMessage.of((AQjmsMessage) message, executor, sessionMetadata);
     }
 
     @Override
-    protected BiConsumer<Message<?>, JMSException> sendingErrorHandler(final Config config) {
+    protected BiConsumer<Message<?>, JMSException> sendingErrorHandler(Config config) {
         return (m, e) -> {
             throw new MessagingException("Error during sending Oracle AQ JMS message.", e);
         };
