@@ -45,3 +45,4 @@ archetype-resources/pom.xml
 # excluded as it contains both Oracle and original copyright notice
 src/main/java/org/jboss/weld/bean/proxy/ProxyFactory.java
 etc/THIRD_PARTY_LICENSES.xml
+etc/HELIDON_THIRD_PARTY_LICENSES.xml
