@@ -73,7 +73,7 @@ security:
 If you need to use a properties file, such as for `microprofile-config.properties`, you
 can convert the file by using index based numbers for arrays, such as:
 
-[source,yaml]
+[source,properties]
 .microprofile-config.properties
 ----
 security.providers.0.abac=
