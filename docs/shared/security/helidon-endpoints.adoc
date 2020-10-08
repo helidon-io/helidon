@@ -38,7 +38,7 @@ The following section describes configuration of such protection using configura
 The configuration is usually placed under `security.web-server` (this can be
 customized in Helidon SE).
 
-The following example shows an example we will explain in detail:
+The following shows an example we will explain in detail:
 
 [source,yaml]
 .application.yaml
@@ -70,7 +70,7 @@ security:
 <6> Protection of `/openapi` and all nested paths with `openapi` scope required
 <7> Protection of static content configured on `/static` path with either `user` or `monitor` role required
 
-If you need to use a properties file, such as for `microprofile-config.properties`, you
+If you need to use a properties file, such as `microprofile-config.properties`, you
 can convert the file by using index based numbers for arrays, such as:
 
 [source,properties]
