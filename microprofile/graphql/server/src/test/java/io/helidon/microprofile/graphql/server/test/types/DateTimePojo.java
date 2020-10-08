@@ -44,20 +44,28 @@ public class DateTimePojo {
     @DateFormat("MM/dd/yyyy")
     private LocalDate localDate2;
 
-    @JsonbDateFormat("hh:mm:ss")
+    @DateFormat("hh:mm[:ss]")
     private LocalTime localTime;
+    
     private OffsetTime offsetTime;
+
     private LocalDateTime localDateTime;
+
     private OffsetDateTime offsetDateTime;
+    
     private ZonedDateTime zonedDateTime;
     @Description("description")
     private LocalDate localDateNoFormat;
+
     private LocalTime localTimeNoFormat;
 
     private List<LocalDate> significantDates;
 
     private List<LocalDate> formattedListOfDates;
 
+    public DateTimePojo() {
+    }
+    
     public DateTimePojo(LocalDate localDate,
                         LocalDate localDate2,
                         LocalTime localTime,

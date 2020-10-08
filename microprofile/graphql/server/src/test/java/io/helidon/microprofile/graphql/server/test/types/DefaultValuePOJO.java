@@ -17,9 +17,12 @@
 package io.helidon.microprofile.graphql.server.test.types;
 
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 
+import javax.json.bind.annotation.JsonbDateFormat;
 import org.eclipse.microprofile.graphql.DefaultValue;
 import org.eclipse.microprofile.graphql.Description;
+import org.eclipse.microprofile.graphql.NumberFormat;
 import org.eclipse.microprofile.graphql.Type;
 
 /**
@@ -30,14 +33,21 @@ public class DefaultValuePOJO {
 
     @DefaultValue("ID-123")
     private String id;
-    
+
     private int value;
+
+    @DefaultValue("1 value")
+    @NumberFormat("0 'value'")
+    private int formattedIntWithDefault;
 
     @DefaultValue("1978-07-03")
     private LocalDate dateObject;
 
     @DefaultValue("false")
     boolean booleanValue;
+
+    @JsonbDateFormat(value = "dd MMM yyyy 'at' HH:mm 'in zone' Z", locale = "en-ZA")
+    private OffsetDateTime offsetDateTime;
 
     public DefaultValuePOJO() {
     }
@@ -78,5 +88,21 @@ public class DefaultValuePOJO {
 
     public void setBooleanValue(boolean booleanValue) {
         this.booleanValue = booleanValue;
+    }
+
+    public OffsetDateTime getOffsetDateTime() {
+        return offsetDateTime;
+    }
+
+    public void setOffsetDateTime(OffsetDateTime offsetDateTime) {
+        this.offsetDateTime = offsetDateTime;
+    }
+
+    public int getFormattedIntWithDefault() {
+        return formattedIntWithDefault;
+    }
+
+    public void setFormattedIntWithDefault(int formattedIntWithDefault) {
+        this.formattedIntWithDefault = formattedIntWithDefault;
     }
 }

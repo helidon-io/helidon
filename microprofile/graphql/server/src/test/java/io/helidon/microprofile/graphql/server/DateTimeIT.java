@@ -18,7 +18,6 @@ package io.helidon.microprofile.graphql.server;
 
 import java.io.IOException;
 
-import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -71,7 +70,7 @@ public class DateTimeIT extends AbstractGraphQLIT {
 
         fd = getFieldDefinition(type, "localTime");
         assertThat(fd, is(notNullValue()));
-        assertThat(fd.getFormat()[0], is("hh:mm:ss"));
+        assertThat(fd.getFormat()[0], is("hh:mm[:ss]"));
         assertThat(fd.getDescription(), is(nullValue()));
         assertThat(fd.isDefaultFormatApplied(), is(false));
         assertThat(fd.getReturnType(), is(FORMATTED_TIME_SCALAR));
@@ -85,7 +84,7 @@ public class DateTimeIT extends AbstractGraphQLIT {
 
         // test default values for date and time
         assertDefaultFormat(type, "offsetTime", "HH[:mm][:ss]Z", true);
-        assertDefaultFormat(type, "localTime", "hh:mm:ss", false);
+        assertDefaultFormat(type, "localTime", "hh:mm[:ss]", false);
         assertDefaultFormat(type, "localDateTime", "yyyy-MM-dd'T'HH[:mm][:ss]", true);
         assertDefaultFormat(type, "offsetDateTime", "yyyy-MM-dd'T'HH[:mm][:ss]Z", true);
         assertDefaultFormat(type, "zonedDateTime", "yyyy-MM-dd'T'HH[:mm][:ss]Z'['VV']'", true);
@@ -157,7 +156,8 @@ public class DateTimeIT extends AbstractGraphQLIT {
         assertThat(fd.getReturnType(), is(DATE_SCALAR));
 
         mapResults = getAndAssertResult(
-        executionContext.execute("query { echoFormattedLocalDateWithReturnFormat(value: [ \"23-09-2020\", \"22-09-2020\" ]) }"));
+                executionContext
+                        .execute("query { echoFormattedLocalDateWithReturnFormat(value: [ \"23-09-2020\", \"22-09-2020\" ]) }"));
         assertThat(mapResults, is(notNullValue()));
         listDates = (ArrayList<String>) mapResults.get("echoFormattedLocalDateWithReturnFormat");
         assertThat(listDates.size(), is(2));
@@ -174,7 +174,7 @@ public class DateTimeIT extends AbstractGraphQLIT {
         assertThat(a.getFormat()[0], is("MM/dd/yyyy"));
 
         mapResults = getAndAssertResult(
-        executionContext.execute("mutation { echoFormattedDateWithJsonB(dates: [ \"09/22/2020\", \"09/23/2020\" ]) }"));
+                executionContext.execute("mutation { echoFormattedDateWithJsonB(dates: [ \"09/22/2020\", \"09/23/2020\" ]) }"));
         assertThat(mapResults, is(notNullValue()));
         listDates = (ArrayList<String>) mapResults.get("echoFormattedDateWithJsonB");
         assertThat(listDates.size(), is(2));
@@ -182,16 +182,14 @@ public class DateTimeIT extends AbstractGraphQLIT {
         assertThat(listDates.get(1), is("23/09/2020"));
 
         mapResults = getAndAssertResult(executionContext.execute(
-                        "query { echoOffsetDateTime(value: \"29 Jan 2020 at 09:45 in zone +0200\") }"));
+                "query { echoOffsetDateTime(value: \"29 Jan 2020 at 09:45 in zone +0200\") }"));
         assertThat(mapResults, is(notNullValue()));
         assertThat(mapResults.get("echoOffsetDateTime"), is("2020-01-29T09:45:00+0200"));
 
         mapResults = getAndAssertResult(executionContext.execute(
-                        "query { echoZonedDateTime(value: \"19 February 1900 at 12:00 in Africa/Johannesburg\") }"));
+                "query { echoZonedDateTime(value: \"19 February 1900 at 12:00 in Africa/Johannesburg\") }"));
         assertThat(mapResults, is(notNullValue()));
         assertThat(mapResults.get("echoZonedDateTime"), is("1900-02-19T12:00:00+0130[Africa/Johannesburg]"));
-
-
     }
 
     @Test
@@ -244,12 +242,55 @@ public class DateTimeIT extends AbstractGraphQLIT {
         mapResults = getAndAssertResult(
                 executionContext.execute("mutation { testDefaultFormatLocalDateTime(dateTime: \"2020-01-12T10:00:00\") }"));
         assertThat(mapResults.size(), is(1));
-        assertThat(mapResults.get("testDefaultFormatLocalDateTime"), is( "10:00:00 12-01-2020"));
-        
+        assertThat(mapResults.get("testDefaultFormatLocalDateTime"), is("10:00:00 12-01-2020"));
+
         mapResults = getAndAssertResult(
                 executionContext.execute("query { transformedDate }"));
         assertThat(mapResults, is(notNullValue()));
         assertThat(mapResults.get("transformedDate"), is("16 Aug. 2016"));
+    }
+
+    @Test
+    public void testDateInputsAsPojo() throws IOException {
+        setupIndex(indexFileName, DateTimePojo.class, SimpleQueriesAndMutations.class);
+        ExecutionContext executionContext = new ExecutionContext(defaultContext);
+
+        validateResult(executionContext, "query { echoDateTimePojo ( "
+                                                  + " value: { localDate: \"02/17/1968\" "
+                                                 + "}) { localDate } }",
+                       "localDate", "02/17/1968");
+
+        validateResult(executionContext, "query { echoDateTimePojo ( "
+                                                  + " value: { localDate2: \"02/17/1968\" "
+                                                 + "}) { localDate2 } }",
+                       "localDate2", "02/17/1968");
+        
+       validateResult(executionContext, "query { echoDateTimePojo ( "
+                                                  + " value: { offsetDateTime: \"1968-02-17T10:12:23+0200\" "
+                                                 + "}) { offsetDateTime } }",
+                       "offsetDateTime", "1968-02-17T10:12:23+0200");
+
+       validateResult(executionContext, "query { echoDateTimePojo ( "
+                                                  + " value: { zonedDateTime: \"1968-02-17T10:12:23+0200[Africa/Johannesburg]\" "
+                                                 + "}) { zonedDateTime } }",
+                       "zonedDateTime", "1968-02-17T10:12:23+0200[Africa/Johannesburg]");
+
+        // TODO: Fixup LocalTime
+//        validateResult(executionContext, "query { echoDateTimePojo ( "
+//                                                  + " value: { localTime: \"10:00:00\" "
+//                                                 + "}) { localTime } }",
+//                       "localTime", "10:00:00");
+
+    }
+
+    @SuppressWarnings("unchecked")
+    private void validateResult(ExecutionContext executionContext, String query, String field, Object expectedResult) {
+           Map<String, Object> mapResults = getAndAssertResult(
+                executionContext.execute(query));
+        assertThat(mapResults, is(notNullValue()));
+        Map<String, Object> mapResults2 = (Map<String, Object>) mapResults.get("echoDateTimePojo");
+        assertThat(mapResults2, is(notNullValue()));
+        assertThat(mapResults2.get(field), is(expectedResult));
     }
 
 }

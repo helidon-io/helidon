@@ -349,6 +349,7 @@ public class DataFetcherUtils {
                         NumberFormat numberFormat = getCorrectNumberFormat(originalType.getName(),
                                                                            format[1], format[0]);
                         if (numberFormat != null) {
+                             LOGGER.info("Parsing [" + rawValue + "] with " + numberFormat + " " + format[1] + ":" + format[0]);
                              return getOriginalValue(originalType, numberFormat.parse(rawValue.toString()));
                         } else {
                             return rawValue;
@@ -429,8 +430,6 @@ public class DataFetcherUtils {
 
         @Override
         public Object get(DataFetchingEnvironment environment) {
-            LOGGER.info("Property=" + getPropertyName() + ", Original Value=" + super.get(environment) + ", dateTimeFormatter=" + dateTimeFormatter
-                       + ", formattedResult=" + formatDate(super.get(environment), dateTimeFormatter));
             return formatDate(super.get(environment), dateTimeFormatter);
         }
     }

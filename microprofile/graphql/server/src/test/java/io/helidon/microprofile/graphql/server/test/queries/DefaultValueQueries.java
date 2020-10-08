@@ -39,7 +39,9 @@ public class DefaultValueQueries {
             + " \"id\": \"ID-1\","
             + " \"value\": 1000,"
             + " \"booleanValue\": true,"
-            + " \"dateObject\": \"1968-02-17\""
+            + " \"dateObject\": \"1968-02-17\","
+            + " \"formattedIntWithDefault\": \"2 value\","
+            + " \"offsetDateTime\": \"29 Jan 2020 at 09:45 in zone +0200\""
             + "}";
             
     @Inject

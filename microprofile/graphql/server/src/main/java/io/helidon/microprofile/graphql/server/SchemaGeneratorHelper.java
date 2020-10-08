@@ -662,6 +662,10 @@ public final class SchemaGeneratorHelper {
             return null;
         }
 
+        // for the format display replace all [] (optionals) with null so TCK works
+        if (fmt != null) {
+            fmt = fmt.replaceAll("\\[", "").replaceAll("]", "");
+        }
         return description == null
                 ? fmt.trim() : fmt == null
                 ? description : description + " (" + fmt.trim() + ")";

@@ -35,6 +35,7 @@ import static io.helidon.microprofile.graphql.server.ElementGenerator.OPEN_CURLY
 import static io.helidon.microprofile.graphql.server.ElementGenerator.OPEN_SQUARE;
 import static io.helidon.microprofile.graphql.server.ElementGenerator.QUOTE;
 import static io.helidon.microprofile.graphql.server.ElementGenerator.SPACER;
+import static org.eclipse.yasson.YassonConfig.ZERO_TIME_PARSE_DEFAULTING;
 
 /**
  * Various Json utilities.
@@ -45,7 +46,10 @@ public class JsonUtils {
      * JSONB instance.
      */
     private static final Jsonb JSONB = JsonbBuilder.newBuilder()
-            .withConfig(new JsonbConfig().withNullValues(true).withAdapters()).build();
+                                .withConfig(new JsonbConfig()
+                                            .setProperty(ZERO_TIME_PARSE_DEFAULTING, true)
+                                            .withNullValues(true).withAdapters())
+                                .build();
 
     /**
      * Private constructor for utilities class.

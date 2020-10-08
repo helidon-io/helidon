@@ -63,7 +63,6 @@ public class DefaultValuesIT extends AbstractGraphQLIT {
         assertThat(mutation.getFieldDefinitions().stream().filter(fd -> fd.getName().equals("getaway")).count(), is(1L));
     }
 
-
     @Test
     @SuppressWarnings("unchecked")
     public void testDefaultValues() throws IOException {
@@ -103,7 +102,9 @@ public class DefaultValuesIT extends AbstractGraphQLIT {
         assertThat(fd, is(notNullValue()));
         SchemaArgument argument = fd.getArguments().get(0);
         assertThat(argument, is(notNullValue()));
-        assertThat(argument.getDefaultValue(), is("{ \"id\": \"ID-1\", \"value\": 1000, \"booleanValue\": true, \"dateObject\": \"1968-02-17\"}"));
+        assertThat(argument.getDefaultValue(), is(
+                "{ \"id\": \"ID-1\", \"value\": 1000, \"booleanValue\": true, \"dateObject\": \"1968-02-17\","
+                 + " \"formattedIntWithDefault\": \"2 value\", \"offsetDateTime\": \"29 Jan 2020 at 09:45 in zone +0200\"}"));
 
         mapResults = getAndAssertResult(
                 executionContext.execute("query { echoDefaultValuePOJO(input: {id: \"X123\" value: 1}) { id value } }"));

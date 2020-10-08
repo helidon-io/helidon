@@ -145,12 +145,10 @@ public class CustomScalars {
 
             @Override
             public Object parseLiteral(Object input) throws CoercingParseLiteralException {
-                if (!(input instanceof StringValue)) {
-                    throw new CoercingParseLiteralException("Expected AST type 'StringValue' but was '"
-                              + (input == null ? "null" : input.getClass().getSimpleName()) + "'.");
-                }
+                validateLiteral(input);
                 try {
-                    return LocalDateTime.parse(((StringValue) input).getValue());
+                    return ((StringValue) input).getValue();
+//                    return LocalDateTime.parse(((StringValue) input).getValue());
                 } catch (Exception e) {
                     throw new CoercingParseLiteralException(e);
                 }
@@ -194,7 +192,7 @@ public class CustomScalars {
                               + (input == null ? "null" : input.getClass().getSimpleName()) + "'.");
                 }
                 try {
-                    return OffsetDateTime.parse(((StringValue) input).getValue());
+                    return ((StringValue) input).getValue();
                 } catch (Exception e) {
                     throw new CoercingParseLiteralException(e);
                 }
@@ -237,7 +235,8 @@ public class CustomScalars {
                               + (input == null ? "null" : input.getClass().getSimpleName()) + "'.");
                 }
                 try {
-                    return ZonedDateTime.parse(((StringValue) input).getValue());
+                    return (((StringValue) input).getValue());
+//                    return ZonedDateTime.parse(((StringValue) input).getValue());
                 } catch (Exception e) {
                     throw new CoercingParseLiteralException(e);
                 }
@@ -274,10 +273,7 @@ public class CustomScalars {
 
             @Override
             public Object parseLiteral(Object input) throws CoercingParseLiteralException {
-                if (!(input instanceof StringValue)) {
-                    throw new CoercingParseLiteralException("Expected AST type 'StringValue' but was '"
-                              + (input == null ? "null" : input.getClass().getSimpleName()) + "'.");
-                }
+                validateLiteral(input);
                 try {
                     return LocalTime.parse(((StringValue) input).getValue());
                 } catch (Exception e) {
@@ -316,7 +312,7 @@ public class CustomScalars {
 
             @Override
             public Object parseLiteral(Object input) throws CoercingParseLiteralException {
-                   return originalCoercing.parseLiteral(input);
+                   return LocalDate.parse(((StringValue) input).getValue());
             }
         })
         .name(name)
@@ -451,5 +447,18 @@ public class CustomScalars {
         .name(originalScalar.getName())
         .description("Custom: " + originalScalar.getDescription())
         .build();
+    }
+
+    /**
+     * Validate that an input is an instance of {@link StringValue}.
+     *
+     * @param input input to validate
+     * @throws CoercingParseLiteralException if it is not a {@link StringValue}
+     */
+    private static void validateLiteral(Object input) throws CoercingParseLiteralException {
+        if (!(input instanceof StringValue)) {
+            throw new CoercingParseLiteralException("Expected AST type 'StringValue' but was '"
+                                                            + (input == null ? "null" : input.getClass().getSimpleName()) + "'.");
+        }
     }
 }

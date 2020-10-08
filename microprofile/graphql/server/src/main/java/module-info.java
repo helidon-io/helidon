@@ -32,6 +32,7 @@ module helidon.microprofile.graphql.server {
     requires graphql.java;
     requires graphql.java.extended.scalars;
     requires microprofile.graphql.api;
+    requires org.eclipse.yasson;
 
     requires transitive microprofile.config.api;
 

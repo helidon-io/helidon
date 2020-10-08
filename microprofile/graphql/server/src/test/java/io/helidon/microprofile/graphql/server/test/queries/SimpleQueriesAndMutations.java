@@ -172,6 +172,11 @@ public class SimpleQueriesAndMutations {
         return LocalDate.parse(date);
     }
 
+    @Query
+    public DateTimePojo echoDateTimePojo(@Name("value") DateTimePojo dateTimePojo) {
+        return dateTimePojo;
+    }
+
     @Query("localDateNoFormat")
     public LocalDate localDateNoFormat() {
         return LocalDate.of(1968, 02, 17);
