@@ -16,50 +16,40 @@
 
 package io.helidon.tests.apps.bookstore.mp;
 
-import io.helidon.tests.apps.bookstore.common.Book;
-
-import javax.enterprise.inject.se.SeContainer;
-import javax.enterprise.inject.spi.CDI;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
+import javax.inject.Inject;
 import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.stream.Collectors;
 
-import io.helidon.microprofile.server.Server;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+import io.helidon.microprofile.tests.junit5.HelidonTest;
+import io.helidon.tests.apps.bookstore.common.Book;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+@HelidonTest
 class BookResourceTest {
 
-    private static Server server;
-
-    private static Client client = ClientBuilder.newClient();
-
-    @BeforeAll
-    public static void startTheServer() {
-        server = Main.startServer();
-    }
+    @Inject
+    private WebTarget webTarget;
 
     @Test
     void testBooks() {
         assertBookStoreSize(0);
 
-        Response res = client.target(getConnectionString("/books"))
+        Response res = webTarget.path("/books")
                 .request()
                 .post(Entity.json(getBookAsJson()));
         assertEquals(Response.Status.OK.getStatusCode(), res.getStatus());
 
         assertBookStoreSize(1);
 
-        res = client.target(getConnectionString("/books/123456"))
+        res = webTarget.path("/books/123456")
                 .request()
                 .get();
         assertEquals(Response.Status.OK.getStatusCode(), res.getStatus());
@@ -67,29 +57,19 @@ class BookResourceTest {
 
         assertBookStoreSize(1);
 
-        res = client.target(getConnectionString("/books/123456"))
+        res = webTarget.path("/books/123456")
                 .request()
                 .put(Entity.json(getBookAsJson()));
         assertEquals(Response.Status.OK.getStatusCode(), res.getStatus());
 
         assertBookStoreSize(1);
 
-        res = client.target(getConnectionString("/books/123456"))
+        res = webTarget.path("/books/123456")
                 .request()
                 .delete();
         assertEquals(Response.Status.OK.getStatusCode(), res.getStatus());
 
         assertBookStoreSize(0);
-    }
-
-    @AfterAll
-    static void destroyClass() {
-        CDI<Object> current = CDI.current();
-        ((SeContainer) current).close();
-    }
-
-    private String getConnectionString(String path) {
-        return "http://localhost:" + server.port() + path;
     }
 
     private String getBookAsJson() {
@@ -102,8 +82,7 @@ class BookResourceTest {
     }
 
     private void assertBookStoreSize(int size) {
-        Book[] jsonArray = client
-                .target(getConnectionString("/books"))
+        Book[] jsonArray = webTarget.path("/books")
                 .request()
                 .get(Book[].class);
         assertEquals(size, jsonArray.length);
