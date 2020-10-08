@@ -1,0 +1,87 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2020 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+=== Protecting Helidon endpoints
+:description: Helidon Security Endpoints
+:keywords: helidon, security, static, content, health, openapi, metrics
+
+There are several endpoints provided by Helidon services, such as:
+
+- Health endpoint (`/health`)
+- Metrics endpoint (`/metrics`)
+- OpenAPI endpoint (`/openapi`)
+- Configured static content (can use any path configured)
+
+These endpoints are all implemented using Helidon reactive WebServer and as such
+can be protected only through Security integration with WebServer.
+
+The following section describes configuration of such protection using configuration files,
+ in this case using a `yaml` file, as it provides a tree structure.
+
+==== Configuring endpoint protection
+
+The configuration is usually placed under `security.web-server` (this can be
+customized in Helidon SE).
+
+The following example shows an example we will explain in detail:
+
+[source,yaml]
+.application.yaml
+----
+security:
+  providers:
+    - abac: # <1>
+    - provider-key: # <2>
+  web-server:
+    defaults:
+      authenticate: true # <3>
+    paths:
+      - path: "/metrics[/{*}]" # <4>
+        roles-allowed: "admin"
+      - path: "/health[/{*}]" # <5>
+        roles-allowed: "monitor"
+      - path: "/openapi[/{*}]" # <6>
+        abac:
+          scopes: ["openapi"]
+      - path: "/static[/{*}]" # <7>
+        roles-allowed: ["user", "monitor"]
+----
+
+<1> Attribute based access control provider that checks roles and scopes
+<2> The provider(s) used in your application, such as `oidc`
+<3> Default configuration for all configured paths
+<4> Protection of `/metrics` and all nested paths with `admin` role required
+<5> Protection of `/health` and all nested paths with `monitor` role required
+<6> Protection of `/openapi` and all nested paths with `openapi` scope required
+<7> Protection of static content configured on `/static` path with either `user` or `monitor` role required
+
+If you need to use a properties file, such as for `microprofile-config.properties`, you
+can convert the file by using index based numbers for arrays, such as:
+
+[source,properties]
+.microprofile-config.properties
+----
+security.providers.0.abac=
+security.providers.1.provider-key.optional=false
+security.web-server.defaults.authenticate=true
+security.web-server.paths.0.path=/metrics[/{*}]
+security.web-server.paths.0.roles-allowed=admin
+# ....
+security.web-server.paths.3.path=/static[/{*}]
+security.web-server.paths.3.roles-allowed=user,monitor
+----
