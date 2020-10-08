@@ -1,6 +1,6 @@
 # Web Server Integration and Basic Authentication
 
-This example demonstrates Integration of WebServer
+This example demonstrates integration of Web Server
 based application with Security component and Basic authentication (from HttpAuthProvider), including
 protection of a static resource.
 
