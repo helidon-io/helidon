@@ -74,7 +74,7 @@
                                     <targetPath>META-INF/</targetPath>
                                     <filtering>true</filtering>
                                     <includes>
-                                        <include>THIRD_PARTY_LICENSES.xml</include>
+                                        <include>HELIDON_THIRD_PARTY_LICENSES.xml</include>
                                     </includes>
                                 </resource>
                             </resources>
