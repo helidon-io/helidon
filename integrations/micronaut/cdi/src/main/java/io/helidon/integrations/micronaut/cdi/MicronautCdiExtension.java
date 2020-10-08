@@ -20,7 +20,6 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.EventListener;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -42,13 +41,13 @@ import javax.enterprise.inject.spi.ProcessAnnotatedType;
 import javax.enterprise.inject.spi.configurator.AnnotatedMethodConfigurator;
 
 import io.micronaut.aop.Around;
-import io.micronaut.aop.Introduced;
 import io.micronaut.aop.MethodInterceptor;
 import io.micronaut.context.ApplicationContext;
 import io.micronaut.context.annotation.Type;
 import io.micronaut.context.env.PropertySource;
 import io.micronaut.core.io.service.ServiceDefinition;
 import io.micronaut.core.io.service.SoftServiceLoader;
+import io.micronaut.inject.AdvisedBeanType;
 import io.micronaut.inject.BeanDefinition;
 import io.micronaut.inject.BeanDefinitionReference;
 import io.micronaut.inject.ExecutableMethod;
@@ -216,27 +215,8 @@ public class MicronautCdiExtension implements Extension {
         for (BeanDefinitionReference<?> defRef : beanDefinitions) {
             Class<?> beanType = defRef.getBeanType();
 
-            // if the bean definition is an $Intercepted, we need to find the actual bean class
-            if (defRef.getName().endsWith("$Intercepted")) {
-                // bean is either an interface or an abstract class, we need to find the original class (not a generated one)
-                if (Object.class.equals(beanType.getSuperclass())) {
-                    // we have an interface
-                    Class<?>[] interfaces = beanType.getInterfaces();
-                    // by design, the first interface should be our repo, but let's be nice
-                    for (Class<?> anInterface : interfaces) {
-                        if (Introduced.class.equals(anInterface)) {
-                            continue;
-                        }
-                        if (EventListener.class.isAssignableFrom(anInterface)) {
-                            break;
-                        }
-                        beanType = anInterface;
-                        break;
-                    }
-                } else {
-                    // we have an abstract class
-                    beanType = beanType.getSuperclass();
-                }
+            if (defRef instanceof AdvisedBeanType) {
+                beanType = ((AdvisedBeanType) defRef).getInterceptedType();
             }
 
             mBeanToDefRef.computeIfAbsent(beanType, it -> new LinkedList<>())

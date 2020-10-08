@@ -60,7 +60,6 @@ security:
     - atn:
       class: "io.helidon.security.examples.abac.AtnProvider"
   web-server:
-    defaults:
     paths:
       - path: "/query"
         audit: true
