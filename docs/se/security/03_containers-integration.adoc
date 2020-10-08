@@ -72,25 +72,21 @@ Routing.builder()
     .build();
 ----
 
-[source,conf]
-.Example using configuration - configuration (HOCON)
+[source,yaml]
+.Example using configuration (YAML)
 ----
 # This may change in the future - to align with web server configuration, once it is supported
-security.web-server {
-    # Configuration of integration with web server
-    defaults {
-        authenticate = true
-    }
-    paths: [
-        {
-            path = "/service1"
-            methods = ["get"]
-            roles-allowed = ["user"]
-        }
-    ]
-}
+security.web-server:
+  # Configuration of integration with web server
+  defaults:
+    authenticate: true
+  paths:
+    - path: "/service1/[/{*}]"
+      methods: ["get"]
+      roles-allowed: ["user"]
 ----
 
+include::../../shared/security/helidon-endpoints.adoc[]
 
 === Jersey
 
@@ -152,14 +148,23 @@ private SecurityContext securityContext;
 
 
 ==== Outbound security
+Outbound security is automatically registered with Jersey client.
+The provider must have outbound security configured for identity to be propagated.
+
+[source,xml]
+.Maven Dependency
+----
+<dependency>
+    <groupId>io.helidon.security.integration</groupId>
+    <artifactId>helidon-security-integration-jersey-client</artifactId>
+</dependency>
+----
 
 [source,java]
 .Call remote target with outbound security
 ----
 // I expect you have injected the ClientSecurityFeature as shown above
-Client client = ClientBuilder.newClient()
-    // integrate security
-    .register(new ClientSecurityFeature());
+Client client = ClientBuilder.newClient();
 
 try {
     // call the resource, will propagate identity as configured in Security

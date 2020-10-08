@@ -73,7 +73,7 @@
         <version.lib.jboss.transaction-spi>7.6.0.Final</version.lib.jboss.transaction-spi>
         <version.lib.jboss.transaction-api>1.0.0.Final</version.lib.jboss.transaction-api>
         <version.lib.jedis>3.1.0</version.lib.jedis>
-        <version.lib.jersey>2.31</version.lib.jersey>
+        <version.lib.jersey>2.32</version.lib.jersey>
         <version.lib.jsonb-api>1.0.2</version.lib.jsonb-api>
         <version.lib.jsonp-api>1.1.6</version.lib.jsonp-api>
         <version.lib.jsonp-impl>1.1.6</version.lib.jsonp-impl>
@@ -87,7 +87,7 @@
         <version.lib.microprofile-openapi-api>1.1.2</version.lib.microprofile-openapi-api>
         <version.lib.microprofile-fault-tolerance-api>2.1.1</version.lib.microprofile-fault-tolerance-api>
         <version.lib.microprofile-tracing>1.3.3</version.lib.microprofile-tracing>
-        <version.lib.microprofile-rest-client>1.3.3</version.lib.microprofile-rest-client>
+        <version.lib.microprofile-rest-client>1.4.1</version.lib.microprofile-rest-client>
         <version.lib.microprofile-reactive-messaging-api>1.0</version.lib.microprofile-reactive-messaging-api>
         <version.lib.microprofile-reactive-streams-operators-api>1.0.1</version.lib.microprofile-reactive-streams-operators-api>
         <version.lib.microprofile-reactive-streams-operators-core>1.0.1</version.lib.microprofile-reactive-streams-operators-core>
@@ -103,7 +103,7 @@
         <version.lib.opentracing.grpc>0.2.1</version.lib.opentracing.grpc>
         <version.lib.opentracing.tracerresolver>0.1.8</version.lib.opentracing.tracerresolver>
         <version.lib.persistence-api>2.2.3</version.lib.persistence-api>
-        <version.lib.prometheus>0.6.0</version.lib.prometheus>
+        <version.lib.prometheus>0.9.0</version.lib.prometheus>
         <version.lib.reactivestreams>1.0.3</version.lib.reactivestreams>
         <version.lib.slf4j>1.7.26</version.lib.slf4j>
         <version.lib.smallrye-openapi>1.2.0</version.lib.smallrye-openapi>

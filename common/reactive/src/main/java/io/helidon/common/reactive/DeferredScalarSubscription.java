@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Buffers a single item and emits it to the downstream when it requests.
+ *
  * @param <T> the item type buffered
  */
 class DeferredScalarSubscription<T> extends AtomicInteger implements Flow.Subscription {
@@ -31,12 +32,10 @@ class DeferredScalarSubscription<T> extends AtomicInteger implements Flow.Subscr
 
     private T value;
 
-    static final int NO_VALUE_NO_REQUEST = 0;
-    static final int NO_VALUE_HAS_REQUEST = 1;
-    static final int HAS_VALUE_NO_REQUEST = 2;
-    static final int HAS_VALUE_HAS_REQUEST = 3;
-    static final int COMPLETE = 4;
-    static final int CANCELED = 5;
+    static final int REQUEST_ARRIVED = 1;
+    static final int VALUE_ARRIVED = 2;
+    static final int DONE = REQUEST_ARRIVED | VALUE_ARRIVED;
+
 
     DeferredScalarSubscription(Flow.Subscriber<? super T> downstream) {
         this.downstream = downstream;
@@ -44,7 +43,7 @@ class DeferredScalarSubscription<T> extends AtomicInteger implements Flow.Subscr
 
     @Override
     public void cancel() {
-        if (getAndSet(CANCELED) != CANCELED) {
+        if (getAndSet(DONE) != DONE) {
             value = null;
         }
     }
@@ -52,35 +51,25 @@ class DeferredScalarSubscription<T> extends AtomicInteger implements Flow.Subscr
     @Override
     public final void request(long n) {
         if (n <= 0L) {
-            if (getAndSet(CANCELED) != CANCELED) {
+            if (getAndSet(DONE) != DONE) {
+                value = null;
                 downstream.onError(
                         new IllegalArgumentException("Rule §3.9 violated: non-positive requests are forbidden"));
             }
-        } else {
-            for (;;) {
-                int state = get();
-                if (state == HAS_VALUE_NO_REQUEST) {
-                    T v = value;
-                    value = null;
-                    if (compareAndSet(HAS_VALUE_NO_REQUEST, HAS_VALUE_HAS_REQUEST)) {
-                        downstream.onNext(v);
-                        if (compareAndSet(HAS_VALUE_HAS_REQUEST, COMPLETE)) {
-                            downstream.onComplete();
-                        }
-                        break;
-                    }
-                } else if (state == NO_VALUE_NO_REQUEST) {
-                    if (compareAndSet(NO_VALUE_NO_REQUEST, NO_VALUE_HAS_REQUEST)) {
-                        break;
-                    }
-                } else {
-                    // state == COMPLETE
-                    // state == HAS_VALUE_HAS_REQUEST
-                    // state == NO_VALUE_HAS_REQUEST
-                    // state == CANCELED
-                    break;
-                }
-            }
+            return;
+        }
+
+        int state;
+        T v;
+        do {
+            state = get();
+            v = value;
+        } while (!compareAndSet(state, state | REQUEST_ARRIVED));
+
+        if (state == VALUE_ARRIVED) {
+            value = null;
+            downstream.onNext(v);
+            downstream.onComplete();
         }
     }
 
@@ -88,34 +77,21 @@ class DeferredScalarSubscription<T> extends AtomicInteger implements Flow.Subscr
      * Signal the only item if possible or save it for later when there
      * is a request for it.
      * <p>
-     *     This method should be called at most once and from only one thread.
+     * This method should be called at most once and from only one thread.
      * </p>
+     *
      * @param item the item to signal and then complete the downstream
      */
     public final void complete(T item) {
-        for (;;) {
-            int state = get();
-            if (state == NO_VALUE_HAS_REQUEST) {
-                if (compareAndSet(NO_VALUE_HAS_REQUEST, HAS_VALUE_HAS_REQUEST)) {
-                    downstream.onNext(item);
-                    if (compareAndSet(HAS_VALUE_HAS_REQUEST, COMPLETE)) {
-                        downstream.onComplete();
-                    }
-                    break;
-                }
-            } else if (state == NO_VALUE_NO_REQUEST) {
-                value = item;
-                if (compareAndSet(NO_VALUE_NO_REQUEST, HAS_VALUE_NO_REQUEST)) {
-                    break;
-                }
-                value = null;
-            } else {
-                // state == COMPLETE
-                // state == HAS_VALUE_NO_REQUEST
-                // state == HAS_VALUE_HAS_REQUEST
-                // state == CANCELED
-                break;
-            }
+        value = item; // assert: even if the race occurs, we will deliver one of the items with which complete()
+        //         has been invoked - we support only the case with a single invocation of complete()
+        int state = getAndUpdate(n -> n | VALUE_ARRIVED);
+        if (state == REQUEST_ARRIVED) {
+            value = null;
+            downstream.onNext(item);
+            downstream.onComplete();
+        } else if (state == DONE) {
+            value = null;
         }
     }
 
@@ -128,6 +104,7 @@ class DeferredScalarSubscription<T> extends AtomicInteger implements Flow.Subscr
 
     /**
      * Returns the downstream reference.
+     *
      * @return the downstream reference
      */
     protected final Flow.Subscriber<? super T> downstream() {
@@ -138,34 +115,21 @@ class DeferredScalarSubscription<T> extends AtomicInteger implements Flow.Subscr
      * Complete the downstream without emitting any items.
      */
     public final void complete() {
-        for (;;) {
-            int state = get();
-            if (state == NO_VALUE_NO_REQUEST || state == NO_VALUE_HAS_REQUEST) {
-                if (compareAndSet(state, COMPLETE)) {
-                    downstream.onComplete();
-                    return;
-                }
-            } else {
-                break;
-            }
+        int state = get();
+        if (((state & VALUE_ARRIVED) != VALUE_ARRIVED) && compareAndSet(state, DONE)){
+            downstream.onComplete();
         }
     }
 
     /**
      * Signal error to the downstream without emitting any items.
+     *
      * @param throwable the error to signal
      */
     public final void error(Throwable throwable) {
-        for (;;) {
-            int state = get();
-            if (state == NO_VALUE_NO_REQUEST || state == NO_VALUE_HAS_REQUEST) {
-                if (compareAndSet(state, COMPLETE)) {
-                    downstream.onError(throwable);
-                    return;
-                }
-            } else {
-                break;
-            }
+        if (getAndSet(DONE) != DONE) {
+            value = null;
+            downstream.onError(throwable);
         }
     }
 
