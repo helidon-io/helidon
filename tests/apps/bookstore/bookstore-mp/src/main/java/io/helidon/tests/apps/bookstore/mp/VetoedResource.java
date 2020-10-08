@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,24 @@
 
 package io.helidon.tests.apps.bookstore.mp;
 
-import java.util.Set;
+import javax.enterprise.context.RequestScoped;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.ws.rs.ApplicationPath;
-import javax.ws.rs.core.Application;
+/**
+ * This resource class will be dynamically vetoed by {@link VetoCdiExtension} and
+ * should not be part of the application after startup.
+ */
+@Path("/vetoed")
+@RequestScoped
+public class VetoedResource {
 
-@ApplicationScoped
-@ApplicationPath("/")
-public class BookApplication extends Application {
-
-    @Override
-    public Set<Class<?>> getClasses() {
-        return Set.of(BookResource.class);
+    @GET
+    @Produces(MediaType.TEXT_PLAIN)
+    public Response get() {
+        return Response.ok().build();
     }
 }
