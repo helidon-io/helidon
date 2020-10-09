@@ -256,36 +256,43 @@ public class DateTimeIT extends AbstractGraphQLIT {
         ExecutionContext executionContext = new ExecutionContext(defaultContext);
 
         validateResult(executionContext, "query { echoDateTimePojo ( "
-                                                  + " value: { localDate: \"02/17/1968\" "
-                                                 + "}) { localDate } }",
+                               + " value: { localDate: \"02/17/1968\" "
+                               + "}) { localDate } }",
                        "localDate", "02/17/1968");
 
         validateResult(executionContext, "query { echoDateTimePojo ( "
-                                                  + " value: { localDate2: \"02/17/1968\" "
-                                                 + "}) { localDate2 } }",
+                               + " value: { localDate2: \"02/17/1968\" "
+                               + "}) { localDate2 } }",
                        "localDate2", "02/17/1968");
-        
-       validateResult(executionContext, "query { echoDateTimePojo ( "
-                                                  + " value: { offsetDateTime: \"1968-02-17T10:12:23+0200\" "
-                                                 + "}) { offsetDateTime } }",
+
+        validateResult(executionContext, "query { echoDateTimePojo ( "
+                               + " value: { offsetDateTime: \"1968-02-17T10:12:23+0200\" "
+                               + "}) { offsetDateTime } }",
                        "offsetDateTime", "1968-02-17T10:12:23+0200");
 
-       validateResult(executionContext, "query { echoDateTimePojo ( "
-                                                  + " value: { zonedDateTime: \"1968-02-17T10:12:23+0200[Africa/Johannesburg]\" "
-                                                 + "}) { zonedDateTime } }",
+        validateResult(executionContext, "query { echoDateTimePojo ( "
+                               + " value: { zonedDateTime: \"1968-02-17T10:12:23+0200[Africa/Johannesburg]\" "
+                               + "}) { zonedDateTime } }",
                        "zonedDateTime", "1968-02-17T10:12:23+0200[Africa/Johannesburg]");
 
-        // TODO: Fixup LocalTime
+
+        List<String> listResults = List.of("1968-02-17", "1968-02-18");
+        validateResult(executionContext, "query { echoDateTimePojo ( "
+                       + " value: { significantDates: [\"1968-02-17\", \"1968-02-18\" ]"
+                       + "}) { significantDates } }",
+               "significantDates", List.of("1968-02-17", "1968-02-18"));
+
+        // TODO: Fix
 //        validateResult(executionContext, "query { echoDateTimePojo ( "
-//                                                  + " value: { localTime: \"10:00:00\" "
-//                                                 + "}) { localTime } }",
-//                       "localTime", "10:00:00");
+//                               + " value: { localTime: \"10:22:00\" "
+//                               + "}) { localTime } }",
+//                       "localTime", "10:22:00");
 
     }
 
     @SuppressWarnings("unchecked")
     private void validateResult(ExecutionContext executionContext, String query, String field, Object expectedResult) {
-           Map<String, Object> mapResults = getAndAssertResult(
+        Map<String, Object> mapResults = getAndAssertResult(
                 executionContext.execute(query));
         assertThat(mapResults, is(notNullValue()));
         Map<String, Object> mapResults2 = (Map<String, Object>) mapResults.get("echoDateTimePojo");

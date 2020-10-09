@@ -100,7 +100,8 @@ public class CustomScalars {
     /**
      * An instance of a custom offset date/time scalar (with default formatting).
      */
-    public static final GraphQLScalarType CUSTOM_OFFSET_DATE_TIME_SCALAR = newOffsetDateTimeScalar(FORMATTED_OFFSET_DATETIME_SCALAR);
+    public static final GraphQLScalarType CUSTOM_OFFSET_DATE_TIME_SCALAR = newOffsetDateTimeScalar(
+            FORMATTED_OFFSET_DATETIME_SCALAR);
 
     /**
      * An instance of a custom offset date/time scalar (with default formatting).
@@ -121,130 +122,50 @@ public class CustomScalars {
      * Return a new custom date/time scalar.
      *
      * @param name the name of the scalar
-     *
      * @return a new custom date/time scalar
      */
-    @SuppressWarnings("unchecked")
     public static GraphQLScalarType newDateTimeScalar(String name) {
         GraphQLScalarType originalScalar = ExtendedScalars.DateTime;
-        Coercing<LocalDateTime, String> originalCoercing = originalScalar.getCoercing();
-        return GraphQLScalarType.newScalar().coercing(new Coercing<Object, String>() {
-            public String serialize(Object dataFetcherResult) throws CoercingSerializeException {
-                if (dataFetcherResult instanceof String) {
-                    return (String) dataFetcherResult;
-                } else {
-                    return originalCoercing.serialize(dataFetcherResult);
-                }
-            }
 
-            @Override
-            public Object parseValue(Object input) throws CoercingParseValueException {
-                return input instanceof StringValue ? ((StringValue) input).getValue()
-                        : originalCoercing.parseValue(input);
-            }
-
-            @Override
-            public Object parseLiteral(Object input) throws CoercingParseLiteralException {
-                validateLiteral(input);
-                try {
-                    return ((StringValue) input).getValue();
-//                    return LocalDateTime.parse(((StringValue) input).getValue());
-                } catch (Exception e) {
-                    throw new CoercingParseLiteralException(e);
-                }
-            }
-        })
-        .name(name)
-        .description("Custom: " + originalScalar.getDescription())
-        .build();
+        return GraphQLScalarType.newScalar()
+                .coercing(new DateTimeCoercing())
+                .name(name)
+                .description("Custom: " + originalScalar.getDescription())
+                .build();
     }
 
     /**
      * Return a new custom offset date/time scalar.
      *
      * @param name the name of the scalar
-     *
      * @return a new custom date/time scalar
      */
     @SuppressWarnings("unchecked")
     public static GraphQLScalarType newOffsetDateTimeScalar(String name) {
         GraphQLScalarType originalScalar = ExtendedScalars.DateTime;
-        Coercing<OffsetDateTime, String> originalCoercing = originalScalar.getCoercing();
-        return GraphQLScalarType.newScalar().coercing(new Coercing<Object, String>() {
-            public String serialize(Object dataFetcherResult) throws CoercingSerializeException {
-                if (dataFetcherResult instanceof String) {
-                    return (String) dataFetcherResult;
-                } else {
-                    return originalCoercing.serialize(dataFetcherResult);
-                }
-            }
 
-            @Override
-            public Object parseValue(Object input) throws CoercingParseValueException {
-                return input instanceof StringValue ? ((StringValue) input).getValue()
-                        : originalCoercing.parseValue(input);
-            }
-
-            @Override
-            public Object parseLiteral(Object input) throws CoercingParseLiteralException {
-                if (!(input instanceof StringValue)) {
-                    throw new CoercingParseLiteralException("Expected AST type 'StringValue' but was '"
-                              + (input == null ? "null" : input.getClass().getSimpleName()) + "'.");
-                }
-                try {
-                    return ((StringValue) input).getValue();
-                } catch (Exception e) {
-                    throw new CoercingParseLiteralException(e);
-                }
-            }
-        })
-        .name(name)
-        .description("Custom: " + originalScalar.getDescription())
-        .build();
+        return GraphQLScalarType.newScalar()
+                .coercing(new DateTimeCoercing())
+                .name(name)
+                .description("Custom: " + originalScalar.getDescription())
+                .build();
     }
+
     /**
      * Return a new custom zoned date/time scalar.
      *
      * @param name the name of the scalar
-     *
      * @return a new custom date/time scalar
      */
     @SuppressWarnings("unchecked")
     public static GraphQLScalarType newZonedDateTimeScalar(String name) {
         GraphQLScalarType originalScalar = ExtendedScalars.DateTime;
-        Coercing<ZonedDateTime, String> originalCoercing = originalScalar.getCoercing();
-        return GraphQLScalarType.newScalar().coercing(new Coercing<Object, String>() {
-            public String serialize(Object dataFetcherResult) throws CoercingSerializeException {
-                if (dataFetcherResult instanceof String) {
-                    return (String) dataFetcherResult;
-                } else {
-                    return originalCoercing.serialize(dataFetcherResult);
-                }
-            }
 
-            @Override
-            public Object parseValue(Object input) throws CoercingParseValueException {
-                return input instanceof StringValue ? ((StringValue) input).getValue()
-                        : originalCoercing.parseValue(input);
-            }
-
-            @Override
-            public Object parseLiteral(Object input) throws CoercingParseLiteralException {
-                if (!(input instanceof StringValue)) {
-                    throw new CoercingParseLiteralException("Expected AST type 'StringValue' but was '"
-                              + (input == null ? "null" : input.getClass().getSimpleName()) + "'.");
-                }
-                try {
-                    return (((StringValue) input).getValue());
-//                    return ZonedDateTime.parse(((StringValue) input).getValue());
-                } catch (Exception e) {
-                    throw new CoercingParseLiteralException(e);
-                }
-            }
-        })
-        .name(name)
-        .description("Custom: " + originalScalar.getDescription())
-        .build();
+        return GraphQLScalarType.newScalar()
+                .coercing(new DateTimeCoercing())
+                .name(name)
+                .description("Custom: " + originalScalar.getDescription())
+                .build();
     }
 
     /**
@@ -253,71 +174,30 @@ public class CustomScalars {
      * @param name the name of the scalar
      * @return a new custom time scalar
      */
-    @SuppressWarnings("unchecked")
     public static GraphQLScalarType newTimeScalar(String name) {
         GraphQLScalarType originalScalar = ExtendedScalars.Time;
-        Coercing<OffsetTime, String> originalCoercing = originalScalar.getCoercing();
-        return GraphQLScalarType.newScalar().coercing(new Coercing<Object, String>() {
-            public String serialize(Object dataFetcherResult) throws CoercingSerializeException {
-                return dataFetcherResult instanceof String
-                        ? (String) dataFetcherResult
-                        : originalCoercing.serialize(dataFetcherResult);
-            }
 
-            @Override
-            public Object parseValue(Object input) throws CoercingParseValueException {
-                return input instanceof StringValue ? ((StringValue) input).getValue()
-                        : originalCoercing.parseValue(input);
-            }
-
-
-            @Override
-            public Object parseLiteral(Object input) throws CoercingParseLiteralException {
-                validateLiteral(input);
-                try {
-                    return LocalTime.parse(((StringValue) input).getValue());
-                } catch (Exception e) {
-                    throw new CoercingParseLiteralException(e);
-                }
-            }
-        })
-        .name(name)
-        .description("Custom: " + originalScalar.getDescription())
-        .build();
+        return GraphQLScalarType.newScalar()
+                .coercing(new TimeCoercing())
+                .name(name)
+                .description("Custom: " + originalScalar.getDescription())
+                .build();
     }
 
     /**
      * Return a new custom date scalar.
      *
      * @param name the name of the scalar
-     *
      * @return a new custom date scalar
      */
     @SuppressWarnings("unchecked")
     public static GraphQLScalarType newDateScalar(String name) {
         GraphQLScalarType originalScalar = ExtendedScalars.Date;
-        Coercing<LocalDate, String> originalCoercing = originalScalar.getCoercing();
-        return GraphQLScalarType.newScalar().coercing(new Coercing<Object, String>() {
-            public String serialize(Object dataFetcherResult) throws CoercingSerializeException {
-                return dataFetcherResult instanceof String
-                        ? (String) dataFetcherResult
-                        : originalCoercing.serialize(dataFetcherResult);
-            }
-
-            @Override
-            public Object parseValue(Object input) throws CoercingParseValueException {
-                return input instanceof StringValue ? ((StringValue) input).getValue()
-                        : originalCoercing.parseValue(input);
-            }
-
-            @Override
-            public Object parseLiteral(Object input) throws CoercingParseLiteralException {
-                   return LocalDate.parse(((StringValue) input).getValue());
-            }
-        })
-        .name(name)
-        .description("Custom: " + originalScalar.getDescription())
-        .build();
+        return GraphQLScalarType.newScalar()
+                .coercing(new DateTimeCoercing())
+                .name(name)
+                .description("Custom: " + originalScalar.getDescription())
+                .build();
     }
 
     /**
@@ -328,29 +208,12 @@ public class CustomScalars {
     @SuppressWarnings("unchecked")
     private static GraphQLScalarType newCustomBigDecimalScalar() {
         GraphQLScalarType originalScalar = Scalars.GraphQLBigDecimal;
-        Coercing<BigDecimal, BigDecimal> originalCoercing = originalScalar.getCoercing();
 
-        return GraphQLScalarType.newScalar().coercing(new Coercing<>() {
-            @Override
-            public Object serialize(Object dataFetcherResult) throws CoercingSerializeException {
-                return dataFetcherResult instanceof String
-                        ? (String) dataFetcherResult
-                        : originalCoercing.serialize(dataFetcherResult);
-            }
-
-            @Override
-            public BigDecimal parseValue(Object input) throws CoercingParseValueException {
-                return originalCoercing.parseValue(input);
-            }
-
-            @Override
-            public BigDecimal parseLiteral(Object input) throws CoercingParseLiteralException {
-                return originalCoercing.parseLiteral(input);
-            }
-        })
-        .name(originalScalar.getName())
-        .description("Custom: " + originalScalar.getDescription())
-        .build();
+        return GraphQLScalarType.newScalar()
+                .coercing(new NumberCoercing<BigDecimal>(originalScalar.getCoercing()))
+                .name(originalScalar.getName())
+                .description("Custom: " + originalScalar.getDescription())
+                .build();
     }
 
     /**
@@ -361,28 +224,12 @@ public class CustomScalars {
     @SuppressWarnings("unchecked")
     private static GraphQLScalarType newCustomGraphQLInt() {
         GraphQLScalarType originalScalar = GraphQLInt;
-        Coercing<Integer, Integer> originalCoercing = originalScalar.getCoercing();
-        return GraphQLScalarType.newScalar().coercing(new Coercing<>() {
-            @Override
-            public Object serialize(Object dataFetcherResult) throws CoercingSerializeException {
-                return dataFetcherResult instanceof String
-                        ? (String) dataFetcherResult
-                        : originalCoercing.serialize(dataFetcherResult);
-            }
 
-            @Override
-            public Integer parseValue(Object input) throws CoercingParseValueException {
-                return originalCoercing.parseValue(input);
-            }
-
-            @Override
-            public Integer parseLiteral(Object input) throws CoercingParseLiteralException {
-                return originalCoercing.parseLiteral(input);
-            }
-        })
-        .name(originalScalar.getName())
-        .description("Custom: " + originalScalar.getDescription())
-        .build();
+        return GraphQLScalarType.newScalar()
+                .coercing(new NumberCoercing<Integer>(originalScalar.getCoercing()))
+                .name(originalScalar.getName())
+                .description("Custom: " + originalScalar.getDescription())
+                .build();
     }
 
     /**
@@ -393,28 +240,12 @@ public class CustomScalars {
     @SuppressWarnings("unchecked")
     private static GraphQLScalarType newCustomGraphQLFloat() {
         GraphQLScalarType originalScalar = GraphQLFloat;
-        Coercing<Double, Double> originalCoercing = originalScalar.getCoercing();
-        return GraphQLScalarType.newScalar().coercing(new Coercing<>() {
-            @Override
-            public Object serialize(Object dataFetcherResult) throws CoercingSerializeException {
-                return dataFetcherResult instanceof String
-                        ? (String) dataFetcherResult
-                        : originalCoercing.serialize(dataFetcherResult);
-            }
 
-            @Override
-            public Double parseValue(Object input) throws CoercingParseValueException {
-                return originalCoercing.parseValue(input);
-            }
-
-            @Override
-            public Double parseLiteral(Object input) throws CoercingParseLiteralException {
-                return originalCoercing.parseLiteral(input);
-            }
-        })
-        .name(originalScalar.getName())
-        .description("Custom: " + originalScalar.getDescription())
-        .build();
+        return GraphQLScalarType.newScalar()
+                .coercing(new NumberCoercing<Double>(originalScalar.getCoercing()))
+                .name(originalScalar.getName())
+                .description("Custom: " + originalScalar.getDescription())
+                .build();
     }
 
     /**
@@ -425,40 +256,162 @@ public class CustomScalars {
     @SuppressWarnings("unchecked")
     private static GraphQLScalarType newCustomGraphQLBigInteger() {
         GraphQLScalarType originalScalar = GraphQLBigInteger;
-        Coercing<BigInteger, BigInteger> originalCoercing = originalScalar.getCoercing();
-        return GraphQLScalarType.newScalar().coercing(new Coercing<>() {
-            @Override
-            public Object serialize(Object dataFetcherResult) throws CoercingSerializeException {
-                return dataFetcherResult instanceof String
-                        ? (String) dataFetcherResult
-                        : originalCoercing.serialize(dataFetcherResult);
-            }
 
-            @Override
-            public BigInteger parseValue(Object input) throws CoercingParseValueException {
-                return originalCoercing.parseValue(input);
-            }
-
-            @Override
-            public BigInteger parseLiteral(Object input) throws CoercingParseLiteralException {
-                return originalCoercing.parseLiteral(input);
-            }
-        })
-        .name(originalScalar.getName())
-        .description("Custom: " + originalScalar.getDescription())
-        .build();
+        return GraphQLScalarType.newScalar()
+                .coercing(new NumberCoercing<BigInteger>(originalScalar.getCoercing()))
+                .name(originalScalar.getName())
+                .description("Custom: " + originalScalar.getDescription())
+                .build();
     }
 
     /**
-     * Validate that an input is an instance of {@link StringValue}.
-     *
-     * @param input input to validate
-     * @throws CoercingParseLiteralException if it is not a {@link StringValue}
+     * Abstract implementation of {@link Coercing} interface for given classes.
      */
-    private static void validateLiteral(Object input) throws CoercingParseLiteralException {
-        if (!(input instanceof StringValue)) {
-            throw new CoercingParseLiteralException("Expected AST type 'StringValue' but was '"
-                                                            + (input == null ? "null" : input.getClass().getSimpleName()) + "'.");
+    public abstract static class AbstractDateTimeCoercing implements Coercing {
+
+        /**
+         * {@link Class}es that can be coerced.
+         */
+        private final Class<?>[] clazzes;
+
+        /**
+         * Construct a {@link AbstractDateTimeCoercing}.
+         *
+         * @param clazzes {@link Class}es to coerce
+         */
+        public AbstractDateTimeCoercing(Class<?>... clazzes) {
+            this.clazzes = clazzes;
+        }
+
+        @Override
+        public Object serialize(Object dataFetcherResult) throws CoercingSerializeException {
+            return convert(dataFetcherResult);
+        }
+
+        @Override
+        public Object parseValue(Object input) throws CoercingParseValueException {
+            return convert(input);
+        }
+
+        @Override
+        public Object parseLiteral(Object input) throws CoercingParseLiteralException {
+            return parseStringLiteral(input);
+        }
+
+        /**
+         * Convert the given input to the type of if a String then leave it be.
+         *
+         * @param input input to coerce
+         * @return the coerced value
+         * @throws CoercingParseLiteralException if any exceptions converting
+         */
+        private Object convert(Object input) throws CoercingParseLiteralException {
+            if (input instanceof String) {
+                return (String) input;
+            }
+
+            for (Class<?> clazz : clazzes) {
+                if (input.getClass().isInstance(clazz)) {
+                    return clazz.cast(input);
+                }
+            }
+
+            throw new CoercingParseLiteralException("Unable to convert type of " + input.getClass());
+        }
+
+        /**
+         * Parse a String literal and return instance of {@link StringValue} or throw an exception.
+         *
+         * @param input input to parse
+         * @throws CoercingParseLiteralException if it is not a {@link StringValue}
+         */
+        private String parseStringLiteral(Object input) throws CoercingParseLiteralException {
+            if (!(input instanceof StringValue)) {
+                throw new CoercingParseLiteralException("Expected AST type 'StringValue' but was '"
+                                                                + (
+                        input == null
+                                ? "null"
+                                : input.getClass().getSimpleName()) + "'.");
+            }
+            return ((StringValue) input).getValue();
+        }
+    }
+
+    /**
+     * Coercing Implementation for Date/Time.
+     */
+    public static class DateTimeCoercing extends AbstractDateTimeCoercing {
+
+        /**
+         * Construct a {@link DateTimeCoercing}.
+         */
+        public DateTimeCoercing() {
+            super(LocalDateTime.class, OffsetDateTime.class, ZonedDateTime.class);
+        }
+    }
+
+    /**
+     * Coercing implementation for Time.
+     */
+    public static class TimeCoercing extends AbstractDateTimeCoercing {
+
+        /**
+         * Construct a {@link TimeCoercing}.
+         */
+        public TimeCoercing() {
+            super(LocalTime.class, OffsetTime.class);
+        }
+    }
+
+    /**
+     * Coercing implementation for Date.
+     */
+    public static class DateCoercing extends AbstractDateTimeCoercing {
+
+        /**
+         * Construct a {@link DateCoercing}.
+         */
+        public DateCoercing() {
+            super(LocalDate.class);
+        }
+    }
+
+    /**
+     * Coercing implementation for BigDecimal.
+     */
+    public static class BigDecimalCoercing extends AbstractDateTimeCoercing {
+
+        /**
+         * Construct a {@link DateCoercing}.
+         */
+        public BigDecimalCoercing() {
+            super(BigDecimal.class);
+        }
+    }
+
+    public static class NumberCoercing<I> implements Coercing<I, Object> {
+
+        private final Coercing originalCoercing;
+
+        public NumberCoercing(Coercing originalCoercing) {
+            this.originalCoercing = originalCoercing;
+        }
+
+        @Override
+        public Object serialize(Object dataFetcherResult) throws CoercingSerializeException {
+            return dataFetcherResult instanceof String
+                    ? (String) dataFetcherResult
+                    : originalCoercing.serialize(dataFetcherResult);
+        }
+
+        @Override
+        public I parseValue(Object input) throws CoercingParseValueException {
+            return (I) originalCoercing.parseValue(input);
+        }
+
+        @Override
+        public I parseLiteral(Object input) throws CoercingParseLiteralException {
+            return (I) originalCoercing.parseLiteral(input);
         }
     }
 }

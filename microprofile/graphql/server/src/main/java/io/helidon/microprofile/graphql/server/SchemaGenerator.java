@@ -415,7 +415,9 @@ public class SchemaGenerator {
                     String argumentType = a.getArgumentType();
                     if (isDateTimeScalar(argumentType)) {
                         String[] existingArgFormat = a.getFormat();
-                        String[] newArgFormat = ensureFormat(argumentType, a.getOriginalType().getName(), existingArgFormat);
+                        Class<?> clazzOriginalType = a.getOriginalArrayType() != null
+                            ? a.getOriginalArrayType() : a.getOriginalType();
+                        String[] newArgFormat = ensureFormat(argumentType, clazzOriginalType.getName(), existingArgFormat);
                         if (!Arrays.equals(newArgFormat, existingArgFormat) && newArgFormat.length == 2) {
                             a.setFormat(newArgFormat);
                         }
