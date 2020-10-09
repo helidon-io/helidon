@@ -15,6 +15,9 @@
  */
 package io.helidon.tests.integration.jpa.appl;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.json.JsonObject;
@@ -30,12 +33,15 @@ import javax.ws.rs.core.MediaType;
 import io.helidon.tests.integration.jpa.dao.Create;
 
 /**
- * REST Resource for test application.
+ * REST Resource for JPA test application.
  */
 @Path("/test")
 @RequestScoped
 public class JpaTestResource {
     
+    /* Local logger instance. */
+    private static final Logger LOGGER = Logger.getLogger(JpaTestResource.class.getName());
+
     @PersistenceContext(unitName = "test")
     private EntityManager em;
 
@@ -69,6 +75,7 @@ public class JpaTestResource {
             Create.dbInsertTypes(em);
             result.message("Database was initialized");
         } catch (Throwable t) {
+            LOGGER.log(Level.SEVERE, t, () -> String.format("Pokemon types initialization failed: %s", t.getMessage()));
             result.throwed(t);
         }
         return result.build();
@@ -93,6 +100,7 @@ public class JpaTestResource {
             result.assertNotNull(pokemonClass);
             result.assertNotNull(trainerClass);
         } catch (Throwable t) {
+            LOGGER.log(Level.SEVERE, t, () -> String.format("JPA Entity beans check failed: %s", t.getMessage()));
             result.throwed(t);
         }
         return result.build();
@@ -101,6 +109,7 @@ public class JpaTestResource {
     /**
      * Test invocation.
      *
+     * @param name test name
      * @return test result
      */
     @GET

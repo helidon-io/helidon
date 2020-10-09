@@ -30,7 +30,7 @@ public class Dispatcher {
     /**
      * Test invocation handler.
      */
-    private static final class Handle {
+    static final class Handle {
 
         private final Object instance;
         private final Method method;
@@ -43,10 +43,14 @@ public class Dispatcher {
          * @param method method handler to invoke
          * @param result test execution result
          */
-        private Handle(final Object instance, final Method method, final TestResult result) {
+        Handle(final Object instance, final Method method, final TestResult result) {
+            if (result == null) {
+                this.result = new TestResult();
+            } else {
+                this.result = result;
+            }
             this.instance = instance;
             this.method = method;
-            this.result = result;
         }
 
         /**
@@ -54,7 +58,7 @@ public class Dispatcher {
          *
          * @return test execution result
          */
-        private TestResult invoke() {
+        TestResult invoke() {
             try {
                 if (method.getAnnotation(MPTest.class) != null) {
                     try {
@@ -77,7 +81,7 @@ public class Dispatcher {
          *
          * @return result of test execution
          */
-        private TestResult result() {
+        TestResult result() {
             return result;
         }
 
@@ -106,44 +110,48 @@ public class Dispatcher {
         }
         final String className = name.substring(0, serpPos);
         final String methodName = name.substring(serpPos + 1, nameLen);
-        if ("InsertIT".equals(className)) {
-            try {
-                return new Handle(
-                        insertIt,
-                        InsertIT.class.getDeclaredMethod(methodName, TestResult.class),
-                        result);
-            } catch (NoSuchMethodException ex) {
-                result.throwed(ex);
-            }
-        } else if ("UpdateIT".equals(className)) {
-            try {
-                return new Handle(
-                        updateIt,
-                        UpdateIT.class.getDeclaredMethod(methodName, TestResult.class),
-                        result);
-            } catch (NoSuchMethodException ex) {
-                result.throwed(ex);
-            }
-        } else if ("DeleteIT".equals(className)) {
-            try {
-                return new Handle(
-                        deleteIt,
-                        DeleteIT.class.getDeclaredMethod(methodName, TestResult.class),
-                        result);
-            } catch (NoSuchMethodException ex) {
-                result.throwed(ex);
-            }
-        } else if ("QueryIT".equals(className)) {
-            try {
-                return new Handle(
-                        queryIt,
-                        QueryIT.class.getDeclaredMethod(methodName, TestResult.class),
-                        result);
-            } catch (NoSuchMethodException ex) {
-                result.throwed(ex);
-            }
-        } else {
+        if (null == className) {
             result.fail("Unknown test class: " + className);
+        } else switch (className) {
+            case "InsertIT":
+                try {
+                    return new Handle(
+                            insertIt,
+                            InsertIT.class.getDeclaredMethod(methodName, TestResult.class),
+                            result);
+                } catch (NoSuchMethodException ex) {
+                    result.throwed(ex);
+                }
+            case "UpdateIT":
+                try {
+                    return new Handle(
+                            updateIt,
+                            UpdateIT.class.getDeclaredMethod(methodName, TestResult.class),
+                            result);
+                } catch (NoSuchMethodException ex) {
+                    result.throwed(ex);
+                }
+            case "DeleteIT":
+                try {
+                    return new Handle(
+                            deleteIt,
+                            DeleteIT.class.getDeclaredMethod(methodName, TestResult.class),
+                            result);
+                } catch (NoSuchMethodException ex) {
+                    result.throwed(ex);
+                }
+            case "QueryIT":
+                try {
+                    return new Handle(
+                            queryIt,
+                            QueryIT.class.getDeclaredMethod(methodName, TestResult.class),
+                            result);
+                } catch (NoSuchMethodException ex) {
+                    result.throwed(ex);
+                }
+            default:
+                result.fail("Unknown test class: " + className);
+                break;
         }
         return null;
     }

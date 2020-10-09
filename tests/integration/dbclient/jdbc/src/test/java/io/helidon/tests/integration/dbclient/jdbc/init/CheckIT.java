@@ -60,6 +60,7 @@ public class CheckIT {
         }
 
         @Override
+        @SuppressWarnings("SleepWhileInLoop")
         public void accept(Config config) {
             String url = config.get("url").asString().get();
             String username = config.get("username").asString().get();
@@ -74,6 +75,11 @@ public class CheckIT {
                     LOGGER.info(() -> String.format("Connection check: %s", ex.getMessage()));
                     if (System.currentTimeMillis() > endTm) {
                         return;
+                    }
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException ie) {
+                        System.out.println("STATUS: " + ie.getMessage());
                     }
                 }
             }

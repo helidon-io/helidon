@@ -34,6 +34,9 @@
 
     <modules>
         <module>h2</module>
+        <module>mysql</module>
+        <module>mariadb</module>
+        <module>pgsql</module>
         <module>ojdbc</module>
     </modules>
 </project>

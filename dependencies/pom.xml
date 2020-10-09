@@ -84,7 +84,7 @@
         <version.lib.kafka-junit5>3.2.1</version.lib.kafka-junit5>
         <version.lib.kafka>2.5.0</version.lib.kafka>
         <version.lib.log4j>2.13.3</version.lib.log4j>
-        <version.lib.mariadb-java-client>2.6.2</version.lib.mariadb-java-client>
+        <version.lib.mariadb-java-client>2.7.0</version.lib.mariadb-java-client>
         <version.lib.maven-wagon>2.10</version.lib.maven-wagon>
         <version.lib.microprofile-config>1.4</version.lib.microprofile-config>
         <version.lib.microprofile-fault-tolerance-api>2.1.1</version.lib.microprofile-fault-tolerance-api>
@@ -110,7 +110,7 @@
         <version.lib.opentracing>0.33.0</version.lib.opentracing>
         <version.lib.oracle.ojdbc10>19.3.0.0</version.lib.oracle.ojdbc10>
         <version.lib.persistence-api>2.2.3</version.lib.persistence-api>
-        <version.lib.postgresql>42.2.16</version.lib.postgresql>
+        <version.lib.postgresql>42.2.17</version.lib.postgresql>
         <version.lib.prometheus>0.9.0</version.lib.prometheus>
         <version.lib.reactive-streams-tck>1.0.3</version.lib.reactive-streams-tck>
         <version.lib.reactivestreams>1.0.3</version.lib.reactivestreams>

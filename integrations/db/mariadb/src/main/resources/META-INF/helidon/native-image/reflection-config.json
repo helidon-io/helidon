@@ -1,0 +1,11 @@
+{
+    "classes": [
+        "org.mariadb.jdbc.Driver",
+        "org.mariadb.jdbc.util.Options",
+        "org.hibernate.dialect.MariaDB102Dialect",
+        "org.hibernate.dialect.MariaDB103Dialect",
+        "org.hibernate.dialect.MariaDB10Dialect",
+        "org.hibernate.dialect.MariaDB53Dialect",
+        "org.hibernate.dialect.MariaDBDialect"
+    ]
+}
