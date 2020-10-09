@@ -3723,12 +3723,12 @@ Work.
 
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-MicroProfile Rest Client 1.3.3 Eclipse Foundation
+MicroProfile Rest Client 1.4.1 Eclipse Foundation
 Apache 2.0
 Used by: [helidon-microprofile-tracing]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 MicroProfile Rest Client
-  Copyright (c) 2016-2019 Contributors to the Eclipse Foundation
+  Copyright (c) 2016-2020 Contributors to the Eclipse Foundation
 Apache License  Version 2.0
 --------------------------------------------
 License Identifier: Apache-2.0

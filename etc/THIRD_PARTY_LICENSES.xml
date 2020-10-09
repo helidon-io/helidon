@@ -3991,14 +3991,14 @@ Work.
         <dependency>
             <id>70798</id>
             <name>MicroProfile Rest Client</name>
-            <version>1.3.3</version>
+            <version>1.4.1</version>
             <licensor>Eclipse Foundation</licensor>
             <licenseName>Apache 2.0</licenseName>
             <consumers>
                 <consumer>helidon-microprofile-tracing</consumer>
             </consumers>
             <attribution>MicroProfile Rest Client
-  Copyright (c) 2016-2019 Contributors to the Eclipse Foundation
+  Copyright (c) 2016-2020 Contributors to the Eclipse Foundation
 Apache License  Version 2.0
 --------------------------------------------
 License Identifier: Apache-2.0
