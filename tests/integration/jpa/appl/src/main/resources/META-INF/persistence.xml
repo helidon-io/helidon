@@ -30,18 +30,10 @@
         <properties>
             <property name="javax.persistence.schema-generation.database.action" value="drop-and-create"/>
             <property name="javax.persistence.schema-generation.create-source" value="metadata"/>
-            <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect"/>
+            <property name="hibernate.dialect" value="${hibernate.dialect}"/>
             <property name="hibernate.hbm2ddl.auto" value="none"/>
             <property name="hibernate.temp.use_jdbc_metadata_defaults" value="false"/>
             <property name="show_sql" value="true"/>
-            <!--property name="eclipselink.deploy-on-startup" value="true"/>
-            <property name="eclipselink.ddl-generation" value="drop-and-create-tables"/>
-            <property name="eclipselink.jdbc.native-sql" value="true"/>
-            <property name="eclipselink.logging.logger" value="JavaLogger"/>
-            <property name="eclipselink.logging.parameters" value="true"/>
-            <property name="eclipselink.target-database" value="org.eclipse.persistence.platform.database.H2Platform"/>
-            <property name="eclipselink.target-server" value="io.helidon.integrations.cdi.eclipselink.CDISEPlatform"/>
-            <property name="eclipselink.weaving" value="false"/-->
         </properties>
     </persistence-unit>
 </persistence>

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2020 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,10 +14,22 @@
 # limitations under the License.
 #
 
-mp.initializer.allow=true
-mp.initializer.no-warn=true
-features.print-details=true
-javax.sql.DataSource.test.dataSource.url=${db.url}
-javax.sql.DataSource.test.dataSource.user=${db.user}
-javax.sql.DataSource.test.dataSource.password=${db.password}
-javax.sql.DataSource.test.dataSourceClassName=${db.datasource}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mysql
+spec:
+  containers:
+  - name: mysql
+    image: mysql:8
+    ports:
+    - containerPort: 3306
+    env:
+    - name: MYSQL_USER
+      value: "user"
+    - name: MYSQL_PASSWORD
+      value: "password"
+    - name: MYSQL_ROOT_PASSWORD
+      value: "root"
+    - name: MYSQL_DATABASE
+      value: "pokemon"
