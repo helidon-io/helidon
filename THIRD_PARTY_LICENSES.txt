@@ -3723,7 +3723,7 @@ Work.
 
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-MicroProfile Rest Client 1.4.1 Eclipse Foundation
+MicroProfile Rest Client API 1.4.1 Eclipse Foundation
 Apache 2.0
 Used by: [helidon-microprofile-tracing]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=

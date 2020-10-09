@@ -3989,8 +3989,8 @@ Work.
 </attribution>
         </dependency>
         <dependency>
-            <id>70798</id>
-            <name>MicroProfile Rest Client</name>
+            <id>87121</id>
+            <name>MicroProfile Rest Client API</name>
             <version>1.4.1</version>
             <licensor>Eclipse Foundation</licensor>
             <licenseName>Apache 2.0</licenseName>
