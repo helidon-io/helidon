@@ -20,12 +20,12 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Member;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 import javax.enterprise.context.Dependent;
@@ -92,7 +92,7 @@ abstract class InterceptorBase<T extends Metric, A extends Annotation> {
     private final Function<A, String> nameFunction;
     private final Function<A, String[]> tagsFunction;
     private final Function<A, Boolean> isAbsoluteFunction;
-    private final Map<AnnotatedElement, T> elementMetricMap = new HashMap<>();
+    private final Map<AnnotatedElement, T> elementMetricMap = new ConcurrentHashMap<>();
     private final String metricTypeName;
     private final Class<T> metricClass;
     private final Map<String, String> universalTags; // Get global and app tags for later
