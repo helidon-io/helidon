@@ -159,6 +159,7 @@
         <module>dependencies</module>
         <module>bom</module>
         <module>applications</module>
+        <module>licensing</module>
         <module>common</module>
         <module>config</module>
         <module>media</module>

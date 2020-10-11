@@ -151,8 +151,8 @@
                     <version>${version.plugin.helidon}</version>
                     <dependencies>
                         <dependency>
-                            <groupId>io.helidon.common</groupId>
-                            <artifactId>helidon-common</artifactId>
+                            <groupId>io.helidon.licensing</groupId>
+                            <artifactId>helidon-licensing</artifactId>
                             <version>${helidon.version}</version>
                         </dependency>
                     </dependencies>

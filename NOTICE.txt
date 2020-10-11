@@ -26,5 +26,5 @@ find a copy in the Helidon GitHub repository:
 
 https://github.com/oracle/helidon/blob/${project.version}/THIRD_PARTY_LICENSES.txt
 
-Or in the Helidon artifact: io.helidon.common:helidon-common:${project.version}
+Or in the Helidon artifact: io.helidon.licensing:helidon-licensing:${project.version}
 
