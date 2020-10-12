@@ -41,6 +41,7 @@
         <module>webclient</module>
         <module>security</module>
         <module>mp-gh-1538</module>
+        <module>mp-gh-2421</module>
         <module>kafka</module>
     </modules>
 

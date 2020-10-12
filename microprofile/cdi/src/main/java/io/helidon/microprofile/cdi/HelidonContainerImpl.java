@@ -399,10 +399,15 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
 
         @Override
         public BeanManager getBeanManager() {
-            if (isRunning.get()) {
-                return new BeanManagerProxy(beanManager());
+            if (!isRunning.get()) {
+                LOGGER.warning("BeanManager requested during container shutdown. This may be caused by observer methods "
+                                       + "that use CDI.current(). Switch to finest logging to see stack trace.");
+                LOGGER.log(Level.FINEST,
+                           "Invocation of container method during shutdown",
+                           new IllegalStateException("Container not running"));
             }
-            throw new IllegalStateException("Container not running");
+
+            return new BeanManagerProxy(beanManager());
         }
 
         private BeanManagerImpl beanManager() {
