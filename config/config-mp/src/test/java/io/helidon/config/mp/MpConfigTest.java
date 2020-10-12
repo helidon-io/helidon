@@ -26,6 +26,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import io.helidon.common.GenericType;
+import io.helidon.config.ConfigSources;
 import io.helidon.config.spi.ConfigMapper;
 import io.helidon.config.spi.ConfigMapperProvider;
 
@@ -179,6 +180,19 @@ public class MpConfigTest {
         assertThat(TestMapperProvider.getCreationCount(), is(1));
     }
 
+    // Github issue #2206
+    @Test
+    void testFailing() {
+        Config mpConfig = ConfigProviderResolver.instance()
+                .getBuilder()
+                .withSources(MpConfigSources.create(io.helidon.config.Config.builder()
+                                                            .sources(ConfigSources.create(Map.of("foo", "bar")))
+                                                            .build()))
+                .build();
+
+        assertThat(mpConfig.getValue("foo", String.class), is("bar"));
+    }
+
     private static class MutableConfigSource implements ConfigSource {
         private final AtomicReference<String> value = new AtomicReference<>("initial");
 
@@ -249,12 +263,12 @@ public class MpConfigTest {
 
         @Override
         public Map<Class<?>, Function<io.helidon.config.Config, ?>> mappers() {
-            return null;
+            return Map.of();
         }
 
         @Override
         public Map<GenericType<?>, BiFunction<io.helidon.config.Config, ConfigMapper, ?>> genericTypeMappers() {
-            return null;
+            return Map.of();
         }
 
         @Override
