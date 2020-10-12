@@ -167,7 +167,7 @@ to make it `OFF` and prevent it.
 
 To verify that the new user is created correctly:
 
-. Open the Keycloak account console: http://localhost:8080/auth/realms/myrealm/account.
+. Open the Keycloak account console: http://localhost:8080/auth/realms/myRealm/account.
 . Login with `myuser` and password chosen earlier.
 
 You should now be logged-in to the account console where users can manage their accounts.
@@ -180,11 +180,12 @@ To create your first client:
 from the realm.
 . Click on `Create`
 . Fill the following:
-. `Client ID` : `myClientID`.
+.. `Client ID` : `myClientID`.
 .. `Client Protocol` : `openid-connect`
-.. `Access type` : `confidential`
-.. `Valid Redirect URIs` : `http://localhost:7987/*`
 . Press `Save`
+.. Modify `Access type` : `confidential`
+.. Update `Valid Redirect URIs` : `http://localhost:7987/*`
+. Click on `Save`
 
 A new tab named `Credentials` is created. Click on it to access this new tab.
 
@@ -197,7 +198,7 @@ set up Helidon.
 === Set up Helidon
 
 Use the Helidon MP Maven archetype to create a simple project. It will be used as an example
-to show how to set up Helidon.
+to show how to set up Helidon. Replace `{helidon-version}` by the latest helidon version.
 
 [source,bash,subs="attributes+"]
 .Run the Maven archetype
@@ -232,8 +233,9 @@ Update the pom.xml file and add the following Helidon dependency to the `<depend
 
 ==== Add OIDC security properties
 
-The OIDC security provider properties can be joined to helidon property file.
-So it can be easily used to configure the web server without modifying application code.
+The OIDC security provider configuration can be joined to helidon configuration file.
+This file is located here: `src/main/resources/application.yaml`. It can be easily used to configure the web server
+without modifying application code.
 
 [source,yaml]
 .Create application.yaml file and add the following line
@@ -246,13 +248,14 @@ security:
         redirect-uri: "/oidc/redirect/*"
         audience: "account"
         client-id: "myClientID"   // <1>
-        client-secret: "Client secret generated into Keycloak client credential"
-        identity-uri: "http://localhost:8080/auth/realms/myrealm"   // <2>
-        frontend-uri: "http://localhost:7987"   // <3>
+        client-secret: "Client secret generated into Keycloak client credential"  // <2>
+        identity-uri: "http://localhost:8080/auth/realms/myRealm"   // <3>
+        frontend-uri: "http://localhost:7987"   // <4>
 ----
 <1> `client-id` must be the same as the one configure in keycloak.
-<2> `identity-uri` is used to redirect the user to keycloak.
-<3> `frontend-uri` will direct you back to the application.
+<2> The client secret generate by Keycloak during `Create a client` section.
+<3> `identity-uri` is used to redirect the user to keycloak.
+<4> `frontend-uri` will direct you back to the application.
 
 The client secret is the one generate into Keycloak Client Credentials. It must be copy past into `client-id` variable
 from application.yaml.
@@ -272,13 +275,13 @@ If the port 7987 is already used, check what port is free on your machine.
 [source,properties]
 .Replace the old port into microprofile-config.properties
 ----
-server.port="Your new port"
+server.port="{Your-new-port}"
 ----
 
 [source,yaml]
 .Replace the old port into application.yaml
 ----
-frontend-uri: "http://localhost:Your new port"
+frontend-uri: "http://localhost:{Your-new-port}"
 ----
 
 ==== Secure your application
@@ -298,7 +301,7 @@ Modify the `getDefaultMessage` method with the `@Authenticated` to limit its acc
     }
 ----
 
-When a client will send an HTTP GET request at the endpoint `http://localhost/greet`, he will be redirected to keycloak.
+When a client will send an HTTP GET request at the endpoint `http://localhost:7987/greet`, he will be redirected to keycloak.
 Keycloak will check if the client has the required authorisation to access this endpoint. If the client can log in successfully,
 keycloak redirect it to the wished endpoint. If the client cannot log in, or the required access data are incomplete,
 Keycloak refuses the access.
@@ -357,6 +360,10 @@ Open the application.yaml file you just created.
 app:
   greeting: "Hello"
 
+server:
+  port: 7987
+  host: localhost
+
 security:
   providers:
     - abac:
@@ -364,11 +371,6 @@ security:
         users:
           - login: "jack"
             password: "jackIsGreat"
-  web-server:
-    paths:
-      - path: "/greet"
-        methods: ["get"]
-        authenticate: true
 ----
 
 By adding this new application.yaml, it will append the properties to the application.yaml located into `java/resources`.
@@ -390,7 +392,7 @@ Excluding oidc dependency during the test leaves only basic authentication secur
 </plugin>
 ----
 
-In the `Maintest.java` file, tests need to be modified to check the application security when accessing `/greet` path with a
+In the `MainTest.java` file, tests need to be modified to check the application security when accessing `/greet` path with a
 `GET` method.
 
 First step is to configure the server with the new application.yaml.
@@ -400,9 +402,10 @@ First step is to configure the server with the new application.yaml.
 ----
 @BeforeAll
     public static void startTheServer() {
-        Server.Builder serverBuilder = Server.builder();
-        serverBuilder.config(Config.create());
-        server = serverBuilder.build().start();
+        server = Server.builder()
+                .config(Config.create())
+                .build()
+                .start();
     }
 ----
 
