@@ -20,23 +20,85 @@
 :spec-name: MicroProfile Health
 :description: {spec-name} support in Helidon MP
 :keywords: helidon, mp, microprofile, health
-:h1Prefix: MP 
+:h1Prefix: MP
+:health-release: {version.lib.microprofile-health}
 
 == Overview
-Applications implement health checks to expose health status that is collected
- at regular intervals by external tooling, such as orchestrators like
- Kubernetes. The orchestrator may then take action, such as restarting your
- application if the health check fails.
+Microservices expose their health status primarily so external tools (for example, an orchestrator such as Kubernetes)
+can monitor each service and take action, such as restarting a service instance if it has failed
+or temporarily shunting traffic away from the instance if the service is unable to process
+incoming requests normally.
 
-A typical health check combines the statuses of all the dependencies that
- affect availability and the ability to perform correctly:
+== About the MicroProfile Health Specification
+Helidon MP implements the MicroProfile Health
+link:http://download.eclipse.org/microprofile/microprofile-health-{health-release}/microprofile-health-spec.html[spec].
+The spec prescribes how external tools probe a service's health checks and how you
+implement health checks as part of your microservice that are specific to your service's needs.
 
-* network latency
-* storage
-* database
-* other services used by your application
+== Concepts
 
-== Next Steps
+=== Liveness and Readiness Checks
 
-Create a sample MicroProfile (MP) project
-that can be used to run some basic examples using both built-in and custom health-checks with Helidon MP.  <<mp/guides/04_health.adoc, Helidon MP Health Check Guide>>.
+MicroProfile Health support two types of health checks.
+
+_Liveness_ checks report whether the runtime environment in which the service is running
+is sufficient to support the work the service performs.
+The environment is beyond the control of
+the service itself and typically cannot improve without outside intervention.
+If a microservice instance reports a `DOWN`
+liveness check, it should never report `UP` later.
+It will need to be stopped and a replacement instance created.
+
+_Readiness_ checks report whether the service is _currently_ capable of performing its work.
+A service that reports `DOWN` for its readiness cannot _at the moment_ do its job, but at
+some future point it might become able to do so without requiring a restart.
+
+The following table describes more about these two types of health check, including how an orchestrator
+such as Kubernetes might react.
+
+=== Known Health Check Endpoints
+A MicroProfile-compliant service reports its health via known REST endpoints. Helidon MP
+provides these endpoints automatically as part of every MP microservice.
+
+External management tools (or `curl` or browsers) retrieve liveness via `/health/live` and
+readiness via `/health/ready`.
+
+The following table summarizes the two types of health checks in MicroProfile Health.
+
+.Types of Health Checks
+|===
+|Type | Meaning | REST endpoint | Kubernetes response on failure
+
+|liveness
+|whether the runtime environment is suitable
+|`/health/live`
+|Restarts container.
+
+|readiness
+|whether the microservice is currently capable of doing its work
+|`/health/ready`
+|Diverts requests away from the instance; peridically rechecks readiness and resumes traffice once the
+microservice reports itself as ready.
+|===
+
+=== Built-in and Custom Health Checks
+
+==== Built-in Health Checks
+Helidon provides built-in, default checks for each endpoint.
+The built-in liveness checks include various environmental values, such as whether the JVM has detected deadlocks
+or whether there is sufficient heap space. The built-in readiness check always reports `UP`.
+
+You can see all the defaults by accessing any Helidon MP microservice's `/health/live` endpoint
+and viewing the response.
+
+==== Custom Health Checks
+Add your own liveness or readiness checks by adding a Java class for each check.
+Each such check must implement the `HealthCheck` interface and you add either the `@Liveness` or
+the `@Readiness` annotation to the class.
+
+=== Next Steps
+Add custom health checks to your own microservices.
+
+The
+<<mp/guides/04_health.adoc, Helidon MP Health Check Guide>> shows how to create a
+sample project and add custom liveness and readiness health checks.
