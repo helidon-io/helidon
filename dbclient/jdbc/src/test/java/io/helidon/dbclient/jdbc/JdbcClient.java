@@ -18,6 +18,8 @@
 package io.helidon.dbclient.jdbc;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
@@ -28,20 +30,29 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
 import org.hamcrest.CoreMatchers;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 public class JdbcClient {
 
+    private static final ConnectionPool POOL = Mockito.mock(ConnectionPool.class);
+    private static final Connection CONN = Mockito.mock(Connection.class);
+    private static final PreparedStatement PREP_STATEMENT = Mockito.mock(PreparedStatement.class);
+
+    @BeforeAll
+    static void beforeAll() throws SQLException {
+        Mockito.when(CONN.prepareStatement("SELECT NULL FROM DUAL")).thenReturn(PREP_STATEMENT);
+        Mockito.when(POOL.connection()).thenReturn(CONN);
+        Mockito.when(PREP_STATEMENT.executeLargeUpdate()).thenReturn(0L);
+    }
+
     @Test
     void txErrorHandling() {
         String message = "BOOM IN TX!!!";
 
-        ConnectionPool cPool = Mockito.mock(ConnectionPool.class);
-        Mockito.when(cPool.connection()).thenReturn(Mockito.mock(Connection.class));
-
         JdbcDbClient dbClient = (JdbcDbClient) JdbcDbClientProviderBuilder.create()
-                .connectionPool(cPool)
+                .connectionPool(POOL)
                 .build();
         Object result = dbClient.inTransaction(tx -> Single.error(new RuntimeException(message)))
                 .onErrorResume(Function.identity())
@@ -49,5 +60,16 @@ public class JdbcClient {
 
         assertThat(result, CoreMatchers.instanceOf(RuntimeException.class));
         assertThat("Wrong exception propagated.", ((RuntimeException) result).getMessage(), is(equalTo(message)));
+    }
+
+    @Test
+    void txNullHandling() {
+        JdbcDbClient dbClient = (JdbcDbClient) JdbcDbClientProviderBuilder.create()
+                .connectionPool(POOL)
+                .build();
+        Object result = dbClient.inTransaction(tx -> tx.dml("SELECT NULL FROM DUAL"))
+                .await(200, TimeUnit.MILLISECONDS);
+
+        assertThat(result, is(equalTo(null)));
     }
 }
