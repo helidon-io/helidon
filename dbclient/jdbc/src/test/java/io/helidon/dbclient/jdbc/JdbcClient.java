@@ -44,7 +44,7 @@ public class JdbcClient {
     static void beforeAll() throws SQLException {
         Mockito.when(CONN.prepareStatement("SELECT NULL FROM DUAL")).thenReturn(PREP_STATEMENT);
         Mockito.when(POOL.connection()).thenReturn(CONN);
-        Mockito.when(PREP_STATEMENT.executeLargeUpdate()).thenReturn(0L);
+        Mockito.when(PREP_STATEMENT.executeLargeUpdate()).thenReturn(1L);
     }
 
     @Test
@@ -63,13 +63,13 @@ public class JdbcClient {
     }
 
     @Test
-    void txNullHandling() {
+    void txResultHandling() {
         JdbcDbClient dbClient = (JdbcDbClient) JdbcDbClientProviderBuilder.create()
                 .connectionPool(POOL)
                 .build();
         Object result = dbClient.inTransaction(tx -> tx.dml("SELECT NULL FROM DUAL"))
                 .await(200, TimeUnit.MILLISECONDS);
 
-        assertThat(result, is(equalTo(null)));
+        assertThat(result, is(equalTo(1L)));
     }
 }

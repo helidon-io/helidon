@@ -113,8 +113,7 @@ class JdbcDbClient implements DbClient {
         } else if (result instanceof Single) {
             Single<U> single = (Single<U>) result;
             return (T) single
-                    .flatMapSingle(it -> Single.create(execute.doCommit(), true)
-                            .map(conn -> it))
+                    .flatMapSingle(it -> Single.create(execute.doCommit().thenApply(unused -> it)))
                     .onError(RollbackHandler.create(execute, Level.WARNING)::apply);
         } else {
             execute.doRollback();
