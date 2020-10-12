@@ -167,7 +167,7 @@ to make it `OFF` and prevent it.
 
 To verify that the new user is created correctly:
 
-. Open the Keycloak account console: http://localhost:8080/auth/realms/myrealm/account.
+. Open the Keycloak account console: `http://localhost:8080/auth/realms/myRealm/account`.
 . Login with `myuser` and password chosen earlier.
 
 You should now be logged-in to the account console where users can manage their accounts.
@@ -180,11 +180,12 @@ To create your first client:
 from the realm.
 . Click on `Create`
 . Fill the following:
-. `Client ID` : `myClientID`.
+.. `Client ID` : `myClientID`.
 .. `Client Protocol` : `openid-connect`
-.. `Access type` : `confidential`
-.. `Valid Redirect URIs` : http://localhost:7987/*
 . Press `Save`
+.. Modify `Access type` : `confidential`
+.. Update `Valid Redirect URIs` : http://localhost:7987/*
+. Click on `Save`
 
 A new tab named `Credentials` is created. Click on it to access this new tab.
 
@@ -197,7 +198,7 @@ set up Helidon.
 === Set up Helidon
 
 Use the Helidon SE Maven archetype to create a simple project. It will be used as an example
-to show how to set up Helidon.
+to show how to set up Helidon. Replace `{helidon-version}` by the latest helidon version.
 
 [source,bash,subs="attributes+"]
 .Run the Maven archetype
@@ -232,8 +233,9 @@ Update the pom.xml file and add the following Helidon dependency to the `<depend
 
 ==== Add OIDC security properties
 
-The OIDC security provider properties can be joined to helidon property file.
-So it can be easily used to configure the web server without modifying application code.
+The OIDC security provider configuration can be joined to helidon configuration file.
+This file is located here: `src/main/resources/application.yaml`. It can be easily used to configure the web server
+without modifying application code.
 
 [source,yaml]
 .Add the following line to application.yaml
@@ -244,24 +246,25 @@ security:
       # Adds ABAC Provider - it does not require any configuration
   - oidc:
       client-id: "myClientID" // <1>
-      client-secret: "Client secret generated into Keycloak client credential"
-      identity-uri: "http://localhost:8080/auth/realms/myrealm" // <2>
+      client-secret: "Client secret generated into Keycloak client credential" // <2>
+      identity-uri: "http://localhost:8080/auth/realms/myRealm" // <3>
       audience: "account"
       # proxy-host should be defined if you operate behind a proxy, can be removed otherwise
       proxy-host: ""
-      frontend-uri: "http://localhost:7987" // <3>
+      frontend-uri: "http://localhost:7987" // <4>
       server-type: "oidc"
   web-server:
     # protected paths on the web server
-    paths:  // <4>
+    paths:  // <5>
       - path: "/greet"
         methods: ["get"]
         authenticate: true
 ----
 <1> `client-id` must be the same as the one configure in keycloak.
-<2> `identity-uri` is used to redirect the user to keycloak.
-<3> `frontend-uri` will direct you back to the application.
-<4> `paths` section defines the protected application's path.
+<2> The client secret generate by Keycloak during `Create a client` section.
+<3> `identity-uri` is used to redirect the user to keycloak.
+<4> `frontend-uri` will direct you back to the application.
+<5> `paths` section defines the protected application's path.
 
 Make sure keycloak and the application are not running on the same port.
 The application port value can be changed into application.yaml.
@@ -276,16 +279,15 @@ server:
 
 If the port 7987 is already used, check what port is free on your machine.
 
-[source,properties]
-.Replace the old port into microprofile-config.properties
-----
-server.port="Your new port"
-----
-
 [source,yaml]
 .Replace the old port into application.yaml
 ----
-frontend-uri: "http://localhost:Your new port"
+server:
+  port: "{Your-new-port}"
+
+...
+
+frontend-uri: "http://localhost:{Your-new-port}"
 ----
 
 ==== Configure web server
@@ -358,6 +360,7 @@ at the end of this guide, the application will be secured by oidc security provi
 <dependency>
     <groupId>io.helidon.security.providers</groupId>
     <artifactId>helidon-security-providers-http-auth</artifactId>
+    <scope>test</scope>
 </dependency>
 ----
 
@@ -409,7 +412,7 @@ security:
 Add the `http-basic-auth` properties in the security -> providers property section. This configuration will be used
 by the tests instead of the `java/resources/application.yaml`.
 
-In the `Maintest.java` file, tests need to be modified to check the application security when accessing `/greet` path with a
+In the `MainTest.java` file, tests need to be modified to check the application security when accessing `/greet` path with a
 `GET` method.
 
 [source,java]
