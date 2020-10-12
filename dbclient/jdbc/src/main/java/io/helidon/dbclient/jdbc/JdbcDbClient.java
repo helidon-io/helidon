@@ -117,7 +117,7 @@ class JdbcDbClient implements DbClient {
             CompletionAwaitable<U> future = single.thenCompose(it -> execute.doCommit()
                     .thenApply(conn -> it));
 
-            future = future.exceptionally(RollbackHandler.create(execute, Level.WARNING));
+            future.exceptionally(RollbackHandler.create(execute, Level.WARNING));
 
             return (T) Single.create(future);
         } else {
