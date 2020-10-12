@@ -48,6 +48,6 @@ public class JdbcClient {
                 .await(200, TimeUnit.MILLISECONDS);
 
         assertThat(result, CoreMatchers.instanceOf(RuntimeException.class));
-        assertThat("Wrong exception propagated.", ((RuntimeException) result).getCause().getMessage(), is(equalTo(message)));
+        assertThat("Wrong exception propagated.", ((RuntimeException) result).getMessage(), is(equalTo(message)));
     }
 }

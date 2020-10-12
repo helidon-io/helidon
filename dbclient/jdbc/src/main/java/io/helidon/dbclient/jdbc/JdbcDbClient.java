@@ -113,17 +113,14 @@ class JdbcDbClient implements DbClient {
             return (T) multi;
         } else if (result instanceof Single) {
             Single<U> single = (Single<U>) result;
-
-            CompletionAwaitable<U> future = single.thenCompose(it -> execute.doCommit()
-                    .thenApply(conn -> it));
-
-            future.exceptionally(RollbackHandler.create(execute, Level.WARNING));
-
-            return (T) Single.create(future);
+            return (T) single
+                    .flatMapSingle(it -> Single.create(execute.doCommit())
+                            .map(conn -> it))
+                    .onError(RollbackHandler.create(execute, Level.WARNING)::apply);
         } else {
             execute.doRollback();
             throw new IllegalStateException("You must return a Single or Multi instance to inTransaction, yet "
-                                                    + "you provided: " + result.getClass().getName());
+                    + "you provided: " + result.getClass().getName());
         }
     }
 
