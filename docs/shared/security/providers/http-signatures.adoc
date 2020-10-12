@@ -1,0 +1,146 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2020 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+=== HTTP Signatures Provider
+:description: Helidon Security HTTP Signatures Provider
+:keywords: helidon, security
+
+Support for HTTP Signatures.
+
+==== Setup
+
+[source,xml]
+.Maven dependency
+----
+<dependency>
+    <groupId>io.helidon.security.providers</groupId>
+    <artifactId>helidon-security-providers-http-sign</artifactId>
+</dependency>
+----
+
+[source,text]
+.Provider class name
+----
+io.helidon.security.providers.httpsign.HttpSignProvider
+----
+
+[source,text]
+.Provider configuration key
+----
+http-signatures
+----
+
+==== Example code
+https://github.com/oracle/helidon/tree/master/examples/security/webserver-signatures[]
+
+[source,yaml]
+.Configuration example
+----
+security:
+  providers:
+    - http-signatures:
+        inbound:
+          keys:
+            - key-id: "service1-hmac"
+              principal-name: "Service1 - HMAC signature"
+              hmac.secret: "${CLEAR=somePasswordForHmacShouldBeEncrypted}"
+            - key-id: "service1-rsa"
+              principal-name: "Service1 - RSA signature"
+              public-key:
+                keystore:
+                  resource.path: "src/main/resources/keystore.p12"
+                  passphrase: "password"
+                  cert.alias: "service_cert"
+        outbound:
+          - name: "service2-hmac"
+            hosts: ["localhost"]
+            paths: ["/service2"]
+            signature:
+              key-id: "service1-hmac"
+              hmac.secret: "${CLEAR=somePasswordForHmacShouldBeEncrypted}"
+          - name: "service2-rsa"
+            hosts: ["localhost"]
+            paths: ["/service2-rsa.*"]
+            signature:
+              key-id: "service1-rsa"
+              private-key:
+                keystore:
+                  resource.path: "src/main/resources/keystore.p12"
+                  passphrase: "password"
+                  key.alias: "myPrivateKey"
+----
+
+==== Configuration options
+The following table shows all configuration options of the provider and their default values
+
+[cols="2,2,5"]
+
+|===
+|key |default value |description
+
+|`optional` |`false` |If set to `true`, failure to authenticate will return `ABSTAIN` result instead of `FAILURE`. This is
+    an important distinction when more than one provider is used
+|`realm` | `helidon` |Realm used for challenge when request does not have a signature
+|`headers` | `[SIGNATURE,AUTHORIZATION]` |Headers to look for inbound signatures and to store outbound signatures
+|`sign-headers` | `always = ["date"]` |Headers to be signed
+|`sign-headers.*.method` |default for all methods |Method this configuration is valid for
+|`sign-headers.*.always` | {nbsp} |Array of headers to be always required in the request signature
+|`sign-headers.*.if-present` |{nbsp} |Array of headers to be part of the signatures if present in the request
+|`inbound` |{nbsp} |Configuration of inbound traffic for authenticating incoming requests
+|`inbound.keys` |{nbsp} |Configuration of signature keys to verify incoming requests
+|`inbound.keys.*.key-id` |{nbsp} |Key id as used in inbound signature to find the correct certificate/hmac configuration to verify the signature
+|`inbound.keys.*.principal-name` |{nbsp} |The principal name (or user name) asserted when the signature is valid
+|`inbound.keys.*.principal-type` |`SERVICE` |The type of principal to assert (can be `USER`)
+|`inbound.keys.*.algorithm` |according to other configuration |`hmac-sha256` or `rsa-sha256` is assumed if other configuration options for that type are set
+|`inbound.keys.*.hmac.secret` |{nbsp} |Secret shared by the service that signed the request and this service for `hmac-sha256` algorithm
+|`inbound.keys.*.public-key` |{nbsp} |Public key configuration, implies `rsa-sha256` algorithm
+|`inbound.keys.*.public-key.keystore` |{nbsp} |Keystore configuration for public key - full configuration as defined by `KeyStore` class
+|`outbound` |{nbsp} |A list of outbound configurations
+|`outbound.*.name` |{nbsp} |Required name of outbound configuration
+|`outbound.*.username` |{nbsp} |Optional username used for outbound security; if not provided, current identity is propagated
+|`outbound.*.password` |{nbsp} |Optional password used for outbound security
+|`outbound.*.transports` |any transport |An array of transports this outbound configuration should be used for
+|`outbound.*.hosts` |any host |An array of hosts this outbound configuration should be used for, can be a regular expression
+|`outbound.*.paths` |any path |An array of paths this outbound configuration should be used for (such as `/greet`), can be a regular expression
+|`outbound.*.methods` |any method |An array of HTTP methods this outbound configuration should be used for
+|`outbound.*.signature` |{nbsp} |Configuration related to outbound signature configuration
+|`outbound.*.signature.key-id` |{nbsp} |Key id to use in the outbound signature (to map to appropriate public key in target service's configuration)
+|`outbound.*.signature.hmac.secret` |{nbsp} |Shared secret for hmac
+|`outbound.*.signature.private-key` |{nbsp} |Private key configuration for rsa based signatures
+|`outbound.*.signature.private-key.keystore` |{nbsp} |Keystore configuration for private key - full configuration as defined by `KeyStore` class
+|===
+
+==== Signature basics
+
+* standard: based on https://tools.ietf.org/html/draft-cavage-http-signatures-03
+* key-id: an arbitrary string used to locate signature configuration - when a
+request is received the provider locates validation configuration based on this
+id (e.g. HMAC shared secret or RSA public key). Commonly used meanings are: key
+fingerprint (RSA); API Key
+
+==== How does it work?
+
+*Inbound Signatures*
+We act as a server and another party is calling us with a signed HTTP request.
+We validate the signature and assume identity of the caller.
+
+*Outbound Signatures*
+We act as a client and we sign our outgoing requests.
+If there is a matching `outbound` target specified in configuration,
+ its configuration will be applied for signing the outgoing request,
+ otherwise there is no signature added

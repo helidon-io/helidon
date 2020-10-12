@@ -61,7 +61,7 @@ $GRAALVM_HOME/bin/native-image --version
 
 == Generate The Project
 
-Generate the project using the Helidon SE Quickstart Maven archetype.
+Generate the project using the Helidon {helidon-uc-flavor} Quickstart Maven archetype.
 
 [source,bash,subs="attributes+"]
 ----
@@ -172,7 +172,7 @@ Again, it starts fast. You can exercise the application's endpoints as before.
 Native images are ideal for applications with high horizontal scalability requirements where
 the ability to rapidly scale out to numerous instances is important.
 
-That said, native images do have some https://github.com/oracle/graal/blob/master/substratevm/LIMITATIONS.md[limitations],
+That said, native images do have some https://github.com/oracle/graal/blob/master/substratevm/Limitations.md[limitations],
 and for long running applications where startup and footprint are less of a priority, the Java SE
 HotSpot VM might be more appropriate.
 

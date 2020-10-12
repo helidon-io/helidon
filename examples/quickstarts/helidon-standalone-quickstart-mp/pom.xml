@@ -41,7 +41,7 @@
         <version.plugin.eclipselink>2.7.5.1</version.plugin.eclipselink>
         <version.plugin.exec>1.6.0</version.plugin.exec>
         <version.plugin.failsafe>3.0.0-M5</version.plugin.failsafe>
-        <version.plugin.helidon>2.1.0</version.plugin.helidon>
+        <version.plugin.helidon>2.1.1</version.plugin.helidon>
         <version.plugin.helidon-cli>2.1.0</version.plugin.helidon-cli>
         <version.plugin.jandex>1.0.6</version.plugin.jandex>
         <version.plugin.jar>3.0.2</version.plugin.jar>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,7 +70,7 @@ public class SignatureExampleConfigMain {
     }
 
     private static Routing routing2() {
-        Config config = config("service2.conf");
+        Config config = config("service2.yaml");
         // build routing (security is loaded from config)
         return Routing.builder()
                 // helper method to load both security and web server security from configuration

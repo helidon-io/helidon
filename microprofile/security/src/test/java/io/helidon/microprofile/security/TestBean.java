@@ -15,17 +15,13 @@
  */
 package io.helidon.microprofile.security;
 
-import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
 
 import io.helidon.security.Security;
 
 /**
  * Test bean.
  */
-@ApplicationScoped
 public class TestBean {
     @Inject
     private Security security;

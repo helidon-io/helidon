@@ -29,6 +29,7 @@ import javax.ws.rs.ext.ExceptionMapper;
 import io.helidon.security.Security;
 import io.helidon.security.integration.jersey.SecurityFeature;
 import io.helidon.security.providers.abac.AbacProvider;
+import io.helidon.security.providers.common.OutboundTarget;
 import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
 import io.helidon.security.providers.httpauth.SecureUserStore;
 import io.helidon.webserver.Routing;
@@ -84,7 +85,8 @@ public final class JerseyBuilderMain {
                         // add the security provider to use
                         .addProvider(HttpBasicAuthProvider.builder()
                                              .realm("helidon")
-                                             .userStore(users()))
+                                             .userStore(users())
+                                             .addOutboundTarget(OutboundTarget.builder("propagate-all").build()))
                         .addProvider(AbacProvider.create())
                         .build());
     }

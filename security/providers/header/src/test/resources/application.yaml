@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, 2020 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,6 +24,9 @@ security:
           header: "Authorization"
           # or do not specify - then the whole header is considered to be the token value
           prefix: "bearer "
+        outbound:
+          - name: "localhost"
+            hosts: ["localhost"]
 
 full-config:
   # If set to true, provider will abstain rather than fail if header is not available
@@ -54,6 +57,9 @@ full-config:
   outbound-token:
     header: "Custom"
     format: "bearer %1$s"
+  outbound:
+    - name: "localhost"
+      hosts: ["localhost"]
 
 no-atn-outbound-config:
   authenticate: false
@@ -70,3 +76,6 @@ service-config:
     header: "Authorization"
     # or do not specify - then the whole header is considered to be the token value
     prefix: "bearer "
+  outbound:
+    - name: "localhost"
+      hosts: [ "localhost" ]

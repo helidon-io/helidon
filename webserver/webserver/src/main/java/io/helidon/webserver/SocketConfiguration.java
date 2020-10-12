@@ -165,6 +165,17 @@ public interface SocketConfiguration {
     boolean validateHeaders();
 
     /**
+     * Whether to allow negotiation for a gzip/deflate content encoding. Supporting
+     * HTTP compression may interfere with application that use streaming and other
+     * similar features. Thus, it defaults to {@code false}.
+     *
+     * @return compression flag
+     */
+    default boolean enableCompression() {
+        return false;
+    }
+
+    /**
      * Initial size of the buffer used to parse HTTP line and headers.
      *
      * @return initial size of the buffer
@@ -317,6 +328,17 @@ public interface SocketConfiguration {
         B maxInitialLineLength(int length);
 
         /**
+         * Enable negotiation for gzip/deflate content encodings. Clients can
+         * request compression using the "Accept-Encoding" header.
+         * <p>
+         * Default is {@code false}
+         *
+         * @param value compression flag
+         * @return this builder
+         */
+        B enableCompression(boolean value);
+
+        /**
          * Update this socket configuration from a {@link io.helidon.config.Config}.
          *
          * @param config configuration on the node of a socket
@@ -354,6 +376,9 @@ public interface SocketConfiguration {
                     throw new ConfigException("Cannot load SSL configuration.", e);
                 }
             }
+
+            // compression
+            config.get("enable-compression").asBoolean().ifPresent(this::enableCompression);
             return (B) this;
         }
     }
@@ -385,6 +410,7 @@ public interface SocketConfiguration {
         private int maxChunkSize = 8192;
         private boolean validateHeaders = true;
         private int initialBufferSize = 128;
+        private boolean enableCompression = false;
 
         private Builder() {
         }
@@ -610,6 +636,17 @@ public interface SocketConfiguration {
             return this;
         }
 
+        /**
+         * Configure whether to enable content negotiation for compression.
+         *
+         * @param value compression flag
+         * @return updated builder instance
+         */
+        public Builder enableCompression(boolean value) {
+            this.enableCompression = value;
+            return this;
+        }
+
         @Override
         public Builder config(Config config) {
             SocketConfigurationBuilder.super.config(config);
@@ -619,6 +656,7 @@ public interface SocketConfiguration {
             config.get("max-chunk-size").asInt().ifPresent(this::maxChunkSize);
             config.get("validate-headers").asBoolean().ifPresent(this::validateHeaders);
             config.get("initial-buffer-size").asInt().ifPresent(this::initialBufferSize);
+            config.get("enable-compression").asBoolean().ifPresent(this::enableCompression);
 
             return this;
         }
@@ -673,6 +711,10 @@ public interface SocketConfiguration {
 
         int initialBufferSize() {
             return initialBufferSize;
+        }
+
+        boolean enableCompression() {
+            return enableCompression;
         }
     }
 }

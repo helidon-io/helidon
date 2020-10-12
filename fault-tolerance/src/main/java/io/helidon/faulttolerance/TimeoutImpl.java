@@ -36,11 +36,18 @@ class TimeoutImpl implements Timeout {
     private final long timeoutMillis;
     private final LazyValue<? extends ScheduledExecutorService> executor;
     private final boolean currentThread;
+    private final String name;
 
     TimeoutImpl(Timeout.Builder builder) {
         this.timeoutMillis = builder.timeout().toMillis();
         this.executor = builder.executor();
         this.currentThread = builder.currentThread();
+        this.name = builder.name();
+    }
+
+    @Override
+    public String name() {
+        return name;
     }
 
     @Override

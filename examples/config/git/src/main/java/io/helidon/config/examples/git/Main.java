@@ -63,13 +63,15 @@ public class Main {
         // in this example we just set envvar in maven plugin 'exec', but can be set in k8s pod via ConfigMap
         Config env = Config.create(ConfigSources.environmentVariables());
 
-        System.out.println("Loading from branch " + env.get(ENVIRONMENT_NAME_PROPERTY).asString().orElse("null"));
+        String branch = env.get(ENVIRONMENT_NAME_PROPERTY).asString().orElse("master");
+
+        System.out.println("Loading from branch " + branch);
 
         Config config = Config.create(
                 GitConfigSource.builder()
                         .path("application.conf")
                         .uri(URI.create("https://github.com/helidonrobot/test-config.git"))
-                        .branch(env.get(ENVIRONMENT_NAME_PROPERTY).asString().orElse("master"))
+                        .branch(branch)
                         .build());
 
         System.out.println("Greeting is " + config.get("greeting").asString().get());

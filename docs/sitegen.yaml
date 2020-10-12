@@ -208,6 +208,14 @@ backend:
               items:
                 - includes:
                     - "se/aot/*.adoc"
+            - title: "Fault Tolerance"
+              pathprefix: "/se/faulttolerance"
+              glyph:
+                type: "icon"
+                value: "warning"
+              items:
+                - includes:
+                    - "se/faulttolerance/*.adoc"
         - title: "Helidon MP"
           pathprefix: "/mp"
           items:
@@ -373,6 +381,14 @@ backend:
               items:
                 - includes:
                     - "mp/aot/*.adoc"
+            - title: "Testing"
+              pathprefix: "/mp/testing"
+              glyph:
+                type: "icon"
+                value: "thumbs_up_down"
+              items:
+                - includes:
+                    - "mp/testing/*.adoc"
         - title: "Additional resources"
           items:
             - title: "Javadocs"

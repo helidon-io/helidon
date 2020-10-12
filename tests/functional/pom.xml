@@ -39,5 +39,6 @@
         <module>jax-rs-subresource</module>
         <module>context-propagation</module>
         <module>mp-synthetic-app</module>
+        <module>mp-compression</module>
     </modules>
 </project>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,26 @@
 
 package io.helidon.microprofile.faulttolerance;
 
+import javax.inject.Inject;
+
+import io.helidon.microprofile.tests.junit5.AddBean;
+import io.helidon.microprofile.tests.junit5.AddConfig;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
- * This test class should run in its own VM to avoid clashes with system
- * properties. Our Config provider caches system properties so removing a
- * system property does not prevent other tests to be affected by it.
+ * Test overrides using class overrides.
  */
-public class ConfigClassTest extends FaultToleranceTest {
+@AddBean(RetryBean.class)
+@AddConfig(key = "io.helidon.microprofile.faulttolerance.RetryBean/Retry/maxRetries", value = "0")
+class ConfigClassTest extends FaultToleranceTest {
 
-    static {
-        System.setProperty(RetryBean.class.getName() + "/Retry/maxRetries", "0");
-    }
+    @Inject
+    private RetryBean bean;
 
     @Test
-    public void testRetryOverrideClass() {
-        RetryBean bean = newBean(RetryBean.class);
-        assertThrows(RuntimeException.class, () -> bean.retry());       // fails with override
+    void testRetryOverrideClass() {
+        assertThrows(RuntimeException.class, bean::retry);       // fails with override
     }
 }

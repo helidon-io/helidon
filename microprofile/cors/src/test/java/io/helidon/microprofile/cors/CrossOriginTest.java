@@ -16,26 +16,23 @@
 
 package io.helidon.microprofile.cors;
 
-import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.RequestScoped;
+import javax.inject.Inject;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.HttpMethod;
 import javax.ws.rs.OPTIONS;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.Application;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.util.Set;
 
-import io.helidon.microprofile.server.Server;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+import io.helidon.microprofile.tests.junit5.AddBean;
+import io.helidon.microprofile.tests.junit5.AddConfig;
+import io.helidon.microprofile.tests.junit5.HelidonTest;
+
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.http.Http.Header.ORIGIN;
@@ -54,42 +51,22 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Class CrossOriginTest.
  */
-public class CrossOriginTest {
-
-    private static Client client;
-    private static Server server;
-    private static WebTarget target;
+@HelidonTest
+@AddBean(CrossOriginTest.CorsResource0.class)
+@AddBean(CrossOriginTest.CorsResource1.class)
+@AddBean(CrossOriginTest.CorsResource2.class)
+@AddBean(CrossOriginTest.CorsResource3.class)
+@AddConfig(key = "cors.paths.0.path-pattern", value = "/cors3")
+@AddConfig(key = "cors.paths.0.allow-origins", value = "http://foo.bar, http://bar.foo")
+@AddConfig(key = "cors.paths.0.allow-methods", value = "DELETE, PUT")
+class CrossOriginTest {
+    @Inject
+    private WebTarget target;
 
     static {
         System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
     }
 
-    @BeforeAll
-    static void initClass() {
-        server = Server.builder()
-                .addApplication("/app", new CorsApplication())
-                .build();
-        server.start();
-        client = ClientBuilder.newClient();
-        target = client.target("http://localhost:" + server.port());
-    }
-
-    @AfterAll
-    static void destroyClass() {
-        server.stop();
-        client.close();
-    }
-
-    @ApplicationScoped
-    static public class CorsApplication extends Application {
-
-        @Override
-        public Set<Class<?>> getClasses() {
-            return Set.of(CorsResource0.class, CorsResource1.class, CorsResource2.class, CorsResource3.class);
-        }
-    }
-
-    @RequestScoped
     @Path("/cors1")
     static public class CorsResource1 {
 
@@ -134,7 +111,7 @@ public class CrossOriginTest {
     }
 
     @RequestScoped
-    @Path("/cors3")     // Configured in META-INF/microprofile-config.properties
+    @Path("/cors3")
     static public class CorsResource3 {
 
         @DELETE
@@ -178,7 +155,7 @@ public class CrossOriginTest {
 
     @Test
     void test1PreFlightAllowedOrigin() {
-        Response res = target.path("/app/cors1")
+        Response res = target.path("/cors1")
                 .request()
                 .header(ORIGIN, "http://foo.bar")
                 .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
@@ -192,7 +169,7 @@ public class CrossOriginTest {
 
     @Test
     void test1PreFlightAllowedHeaders1() {
-        Response res = target.path("/app/cors1")
+        Response res = target.path("/cors1")
                 .request()
                 .header(ORIGIN, "http://foo.bar")
                 .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
@@ -207,7 +184,7 @@ public class CrossOriginTest {
 
     @Test
     void test1PreFlightAllowedHeaders2() {
-        Response res = target.path("/app/cors1")
+        Response res = target.path("/cors1")
                 .request()
                 .header(ORIGIN, "http://foo.bar")
                 .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
@@ -225,7 +202,7 @@ public class CrossOriginTest {
 
     @Test
     void test2PreFlightForbiddenOrigin() {
-        Response res = target.path("/app/cors2")
+        Response res = target.path("/cors2")
                 .request()
                 .header(ORIGIN, "http://not.allowed")
                 .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
@@ -235,7 +212,7 @@ public class CrossOriginTest {
 
     @Test
     void test2PreFlightAllowedOrigin() {
-        Response res = target.path("/app/cors2")
+        Response res = target.path("/cors2")
                 .request()
                 .header(ORIGIN, "http://foo.bar")
                 .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
@@ -250,7 +227,7 @@ public class CrossOriginTest {
 
     @Test
     void test2PreFlightForbiddenMethod() {
-        Response res = target.path("/app/cors2")
+        Response res = target.path("/cors2")
                 .request()
                 .header(ORIGIN, "http://foo.bar")
                 .header(ACCESS_CONTROL_REQUEST_METHOD, "POST")
@@ -260,7 +237,7 @@ public class CrossOriginTest {
 
     @Test
     void test2PreFlightForbiddenHeader() {
-        Response res = target.path("/app/cors2")
+        Response res = target.path("/cors2")
                 .request()
                 .header(ORIGIN, "http://foo.bar")
                 .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
@@ -271,7 +248,7 @@ public class CrossOriginTest {
 
     @Test
     void test2PreFlightAllowedHeaders1() {
-        Response res = target.path("/app/cors2")
+        Response res = target.path("/cors2")
                 .request()
                 .header(ORIGIN, "http://foo.bar")
                 .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
@@ -288,7 +265,7 @@ public class CrossOriginTest {
 
     @Test
     void test2PreFlightAllowedHeaders2() {
-        Response res = target.path("/app/cors2")
+        Response res = target.path("/cors2")
                 .request()
                 .header(ORIGIN, "http://foo.bar")
                 .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
@@ -307,7 +284,7 @@ public class CrossOriginTest {
 
     @Test
     void test2PreFlightAllowedHeaders3() {
-        Response res = target.path("/app/cors2")
+        Response res = target.path("/cors2")
                 .request()
                 .header(ORIGIN, "http://foo.bar")
                 .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
@@ -327,7 +304,7 @@ public class CrossOriginTest {
 
     @Test
     void test1ActualAllowedOrigin() {
-        Response res = target.path("/app/cors1")
+        Response res = target.path("/cors1")
                 .request()
                 .header(ORIGIN, "http://foo.bar")
                 .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
@@ -338,7 +315,7 @@ public class CrossOriginTest {
 
     @Test
     void test2ActualAllowedOrigin() {
-        Response res = target.path("/app/cors2")
+        Response res = target.path("/cors2")
                 .request()
                 .header(ORIGIN, "http://foo.bar")
                 .put(Entity.entity("", MediaType.TEXT_PLAIN_TYPE));
@@ -349,7 +326,7 @@ public class CrossOriginTest {
 
     @Test
     void test3PreFlightAllowedOrigin() {
-        Response res = target.path("/app/cors3")
+        Response res = target.path("/cors3")
                 .request()
                 .header(ORIGIN, "http://foo.bar")
                 .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
@@ -363,7 +340,7 @@ public class CrossOriginTest {
 
     @Test
     void test3ActualAllowedOrigin() {
-        Response res = target.path("/app/cors3")
+        Response res = target.path("/cors3")
                 .request()
                 .header(ORIGIN, "http://foo.bar")
                 .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
@@ -374,7 +351,7 @@ public class CrossOriginTest {
 
     @Test
     void testErrorResponse() {
-        Response res = target.path("/app/notfound")
+        Response res = target.path("/notfound")
                 .request()
                 .header(ORIGIN, "http://foo.bar")
                 .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
@@ -385,7 +362,7 @@ public class CrossOriginTest {
 
     @Test
     void testMainPathInPresenceOfSubpath() {
-        Response res = target.path("/app/cors0")
+        Response res = target.path("/cors0")
                 .request()
                 .header(ORIGIN, "http://foo.bar")
                 .get();
@@ -396,7 +373,7 @@ public class CrossOriginTest {
 
     @Test
     void testSubPathPreflightAllowed() {
-        Response res = target.path("/app/cors0/subpath")
+        Response res = target.path("/cors0/subpath")
                 .request()
                 .header(ORIGIN, "http://foo.bar")
                 .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
@@ -410,7 +387,7 @@ public class CrossOriginTest {
 
     @Test
     void testSubPathActualAllowed() {
-        Response res = target.path("/app/cors0/subpath")
+        Response res = target.path("/cors0/subpath")
                 .request()
                 .header(ORIGIN, "http://foo.bar")
                 .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")

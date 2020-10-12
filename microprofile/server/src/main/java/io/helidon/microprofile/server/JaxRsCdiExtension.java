@@ -34,8 +34,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.Extension;
-import javax.enterprise.inject.spi.ProcessAnnotatedType;
-import javax.enterprise.inject.spi.WithAnnotations;
+import javax.enterprise.inject.spi.ProcessManagedBean;
 import javax.ws.rs.Path;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Application;
@@ -64,30 +63,34 @@ public class JaxRsCdiExtension implements Extension {
     private final Set<Class<?>> providers = new HashSet<>();
     private final AtomicBoolean setInStone = new AtomicBoolean(false);
 
-    private void collectApplications(@Observes ProcessAnnotatedType<? extends Application> applicationType) {
-        applications.add(applicationType.getAnnotatedType().getJavaClass());
+    private void collectApplications(@Observes ProcessManagedBean<? extends Application> processManagedBean) {
+        applications.add(processManagedBean.getAnnotatedBeanClass().getJavaClass());
     }
 
-    private void collectResourceClasses(@Observes @WithAnnotations(Path.class) ProcessAnnotatedType<?> resourceType) {
-        Class<?> resourceClass = resourceType.getAnnotatedType().getJavaClass();
-        if (resourceClass.isInterface()) {
-            // we are only interested in classes - interface is most likely a REST client API
-            return;
+    private void collectResourceClasses(@Observes ProcessManagedBean<?> processManagedBean) {
+        if (processManagedBean.getAnnotated().isAnnotationPresent(Path.class)) {
+            Class<?> resourceClass = processManagedBean.getAnnotatedBeanClass().getJavaClass();
+            if (resourceClass.isInterface()) {
+                // we are only interested in classes - interface is most likely a REST client API
+                return;
+            }
+            LOGGER.finest(() -> "Discovered resource class " + resourceClass.getName());
+            resources.add(resourceClass);
         }
-        LOGGER.finest(() -> "Discovered resource class " + resourceClass.getName());
-        resources.add(resourceClass);
     }
 
-    private void collectProviderClasses(@Observes @WithAnnotations(Provider.class) ProcessAnnotatedType<?> providerType) {
-        Class<?> providerClass = providerType.getAnnotatedType().getJavaClass();
-        if (providerClass.isInterface()) {
-            // we are only interested in classes
-            LOGGER.finest(() -> "Discovered @Provider interface " + providerClass
-                    .getName() + ", ignored as we only support classes");
-            return;
+    private void collectProviderClasses(@Observes ProcessManagedBean<?> processManagedBean) {
+        if (processManagedBean.getAnnotated().isAnnotationPresent(Provider.class)) {
+            Class<?> providerClass = processManagedBean.getAnnotatedBeanClass().getJavaClass();
+            if (providerClass.isInterface()) {
+                // we are only interested in classes
+                LOGGER.finest(() -> "Discovered @Provider interface " + providerClass
+                        .getName() + ", ignored as we only support classes");
+                return;
+            }
+            LOGGER.finest(() -> "Discovered @Provider class " + providerClass.getName());
+            providers.add(providerClass);
         }
-        LOGGER.finest(() -> "Discovered @Provider class " + providerClass.getName());
-        providers.add(providerClass);
     }
 
     // once application scoped starts, we do not allow modification of applications

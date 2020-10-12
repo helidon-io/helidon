@@ -258,9 +258,17 @@ public class JerseySupport implements Service {
                                                                    requestUri(req),
                                                                    req.method().name(),
                                                                    new WebServerSecurityContext(),
-                                                                   new WebServerPropertiesDelegate(req));
+                                                                   new WebServerPropertiesDelegate(req),
+                                                                   null);
             // set headers
             req.headers().toMap().forEach(requestContext::headers);
+
+            // set remote address
+            String remoteHost = req.remoteAddress();
+            int remotePort = req.remotePort();
+
+            requestContext.setProperty("io.helidon.jaxrs.remote-host", remoteHost);
+            requestContext.setProperty("io.helidon.jaxrs.remote-port", remotePort);
 
             requestContext.setWriter(responseWriter);
 

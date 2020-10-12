@@ -26,8 +26,6 @@ module io.grpc {
     requires java.logging;
     requires java.naming;
 
-    requires static com.google.common;
-
     uses io.grpc.ManagedChannelProvider;
     uses io.grpc.NameResolverProvider;
     uses io.grpc.ServerProvider;

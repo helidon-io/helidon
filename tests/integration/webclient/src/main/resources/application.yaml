@@ -44,6 +44,8 @@ security:
             roles: ["user"]
           - login: "joe"
             password: "password"
+        outbound:
+          - name: "propagate-to-all-targets"
   web-server:
     paths:
       - path: "/greet/secure/basic"

@@ -212,6 +212,9 @@ public class ServerCdiExtension implements Extension {
         cpBuilder.welcomeFileName(config.get("welcome")
                                           .asString()
                                           .orElse("index.html"));
+        config.get("tmp-dir")
+                .as(Path.class)
+                .ifPresent(cpBuilder::tmpDir);
         StaticContentSupport staticContent = cpBuilder.build();
 
         if (context.exists()) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,8 @@
 
 package io.helidon.microprofile.faulttolerance;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import javax.enterprise.context.Dependent;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.eclipse.microprofile.faulttolerance.ExecutionContext;
 import org.eclipse.microprofile.faulttolerance.Fallback;
@@ -29,19 +28,22 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
 /**
- * Class FallbackBean.
+ * A bean with methods that define fallbacks.
  */
-@Dependent
-public class FallbackBean extends BaseFallbackBean {
+class FallbackBean extends BaseFallbackBean {
 
-    private AtomicBoolean called = new AtomicBoolean(false);
+    private final AtomicBoolean called = new AtomicBoolean(false);
 
-    public boolean getCalled() {
+    boolean getCalled() {
         return called.get();
     }
 
+    void reset() {
+        called.set(false);
+    }
+
     @Fallback(fallbackMethod = "onFailure")
-    public String fallback() {
+    String fallback() {
         called.set(true);
         FaultToleranceTest.printStatus("FallbackBean::fallback()", "failure");
         throw new RuntimeException("Oops");
@@ -53,14 +55,14 @@ public class FallbackBean extends BaseFallbackBean {
     }
 
     @Fallback(fallbackMethod = "onFailureBase")
-    public String fallbackBase() {
+    String fallbackBase() {
         called.set(true);
         FaultToleranceTest.printStatus("FallbackBean::fallback()", "failure");
         throw new RuntimeException("Oops");
     }
 
     @Fallback(FallbackBeanHandler.class)
-    public String fallbackHandler(String value) {
+    String fallbackHandler(String value) {
         called.set(true);
         FaultToleranceTest.printStatus("FallbackBean::fallbackHandler()", "failure");
         throw new RuntimeException("Oops");

@@ -56,6 +56,11 @@ class BulkheadImpl implements Bulkhead {
     }
 
     @Override
+    public String name() {
+        return name;
+    }
+
+    @Override
     public <T> Single<T> invoke(Supplier<? extends CompletionStage<T>> supplier) {
         return invokeTask(DelayedTask.createSingle(supplier));
     }
@@ -91,6 +96,7 @@ class BulkheadImpl implements Bulkhead {
     }
 
     // this method must be called while NOT holding a permit
+    @SuppressWarnings("unchecked")
     private <R> R invokeTask(DelayedTask<R> task) {
         if (inProgress.tryAcquire()) {
             LOGGER.finest(() -> name + " invoke immediate: " + task);

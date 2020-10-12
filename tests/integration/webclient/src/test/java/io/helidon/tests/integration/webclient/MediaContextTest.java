@@ -18,7 +18,6 @@ package io.helidon.tests.integration.webclient;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import javax.json.Json;
@@ -34,7 +33,6 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -164,55 +162,6 @@ public class MediaContextTest extends TestParent {
                 })
                 .toCompletableFuture()
                 .get();
-    }
-
-    @Test
-    public void testInputStreamSameThread() {
-        ExecutionException exception = assertThrows(ExecutionException.class, () -> {
-            webClient.get()
-                    .request(InputStream.class)
-                    .thenApply(it -> {
-                        try {
-                            it.readAllBytes();
-                        } catch (IOException ignored) {
-                        }
-                        fail("This should have failed!");
-                        return CompletableFuture.completedFuture(it);
-                    })
-                    .toCompletableFuture()
-                    .get();
-        });
-        if (exception.getCause() instanceof IllegalStateException) {
-            assertThat(exception.getCause().getMessage(),
-                       is("DataChunkInputStream needs to be handled in separate thread to prevent deadlock."));
-        } else {
-            fail(exception);
-        }
-    }
-
-    @Test
-    public void testInputStreamSameThreadTestContentAs() {
-        ExecutionException exception = assertThrows(ExecutionException.class, () -> {
-            webClient.get()
-                    .request()
-                    .thenCompose(it -> it.content().as(InputStream.class))
-                    .thenApply(it -> {
-                        try {
-                            it.readAllBytes();
-                        } catch (IOException ignored) {
-                        }
-                        fail("This should have failed!");
-                        return CompletableFuture.completedFuture(it);
-                    })
-                    .toCompletableFuture()
-                    .get();
-        });
-        if (exception.getCause() instanceof IllegalStateException) {
-            assertThat(exception.getCause().getMessage(),
-                       is("DataChunkInputStream needs to be handled in separate thread to prevent deadlock."));
-        } else {
-            fail(exception);
-        }
     }
 
     @Test

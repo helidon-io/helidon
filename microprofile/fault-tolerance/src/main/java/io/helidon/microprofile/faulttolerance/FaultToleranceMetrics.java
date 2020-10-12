@@ -79,20 +79,40 @@ class FaultToleranceMetrics {
 
     static long getCounter(Object bean, String methodName, String name,
                            Class<?>... params) throws Exception {
-        Method method = getRealClass(bean).getMethod(methodName, params);
+        Method method = findMethod(getRealClass(bean), methodName, params);
         return getCounter(method, name).getCount();
     }
 
     static Histogram getHistogram(Object bean, String methodName, String name,
                                   Class<?>... params) throws Exception {
-        Method method = getRealClass(bean).getMethod(methodName, params);
+        Method method = findMethod(getRealClass(bean), methodName, params);
         return getHistogram(method, name);
     }
 
     static <T> Gauge<T> getGauge(Object bean, String methodName, String name,
                                  Class<?>... params) throws Exception {
-        Method method = getRealClass(bean).getMethod(methodName, params);
+        Method method = findMethod(getRealClass(bean), methodName, params);
         return getGauge(method, name);
+    }
+
+    /**
+     * Attempts to find a method even if not accessible.
+     *
+     * @param beanClass bean class.
+     * @param methodName name of method.
+     * @param params param types.
+     * @return method found.
+     * @throws NoSuchMethodException if not found.
+     */
+    private static Method findMethod(Class<?> beanClass, String methodName,
+                                     Class<?>... params) throws NoSuchMethodException {
+        try {
+            Method method = beanClass.getDeclaredMethod(methodName, params);
+            method.setAccessible(true);
+            return method;
+        } catch (Exception e) {
+            return beanClass.getMethod(methodName, params);
+        }
     }
 
     // -- Global --------------------------------------------------------------

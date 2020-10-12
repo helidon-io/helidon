@@ -154,6 +154,11 @@ class ServerBasicConfig implements ServerConfiguration {
         return printFeatureDetails;
     }
 
+    @Override
+    public boolean enableCompression() {
+        return socketConfig.enableCompression();
+    }
+
     static class SocketConfig implements SocketConfiguration {
 
         private final int port;
@@ -171,6 +176,7 @@ class ServerBasicConfig implements ServerConfiguration {
         private final int maxChunkSize;
         private final boolean validateHeaders;
         private final int initialBufferSize;
+        private final boolean enableCompression;
 
         /**
          * Creates new instance.
@@ -188,6 +194,7 @@ class ServerBasicConfig implements ServerConfiguration {
             this.maxChunkSize = builder.maxChunkSize();
             this.validateHeaders = builder.validateHeaders();
             this.initialBufferSize = builder.initialBufferSize();
+            this.enableCompression = builder.enableCompression();
 
             WebServerTls webServerTls = builder.tlsConfig();
             if (webServerTls.enabled()) {
@@ -274,6 +281,11 @@ class ServerBasicConfig implements ServerConfiguration {
         @Override
         public int initialBufferSize() {
             return initialBufferSize;
+        }
+
+        @Override
+        public boolean enableCompression() {
+            return enableCompression;
         }
     }
 }

@@ -22,7 +22,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import io.helidon.common.LazyValue;
 
 /**
- * Timeout attempts to terminate execution after the duration time passes.
+ * Timeout attempts to terminate execution after a duration time passes.
  * In such a case, the consumer of this handler receives a {@link io.helidon.common.reactive.Single}
  * or {@link io.helidon.common.reactive.Multi} with a {@link java.util.concurrent.TimeoutException}.
  */
@@ -53,6 +53,7 @@ public interface Timeout extends FtHandler {
         private Duration timeout = Duration.ofSeconds(10);
         private LazyValue<? extends ScheduledExecutorService> executor = FaultTolerance.scheduledExecutor();
         private boolean currentThread = false;
+        private String name = "Timeout-" + System.identityHashCode(this);
 
         private Builder() {
         }
@@ -96,6 +97,17 @@ public interface Timeout extends FtHandler {
             return this;
         }
 
+        /**
+         * A name assigned for debugging, error reporting or configuration purposes.
+         *
+         * @param name the name
+         * @return updated builder instance
+         */
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+
         Duration timeout() {
             return timeout;
         }
@@ -106,6 +118,10 @@ public interface Timeout extends FtHandler {
 
         boolean currentThread() {
             return currentThread;
+        }
+
+        String name() {
+            return name;
         }
     }
 }

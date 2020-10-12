@@ -120,33 +120,22 @@ See <<_tools,Secure config>> for details about encrypting passwords in
 Security security = Security.create(config);
 ----
 
-[source,conf]
-.Security from configuration - configuration
+[source,yaml]
+.Security from configuration - application.yaml
 ----
 # Uses config encryption filter to encrypt passwords
-security.providers: [
-    {
-        http-basic-auth {
-            realm = "helidon"
-
-            user-store {
-                users: [
-                    {
-                        login = "aUser"
-                        password = "${CLEAR=somePassword}"
-                        roles = ["theRole"]
-
-                    },
-                    {
-                        login = "noRoles"
-                        password = "${CLEAR=somePassword}"
-                        roles = []
-                    }
-                ]
-            }
-        }
-    }
-]
+security:
+  providers:
+  - abac:
+  - http-basic-auth:
+      realm: "helidon"
+      users:
+      - login: "jack"
+        password: "${CLEAR=password}"
+        roles: ["user", "admin"]
+      - login: "jill"
+        password: "${CLEAR=password}"
+        roles: ["user"]
 ----
 
 === Hybrid pattern (Builder & Configuration)

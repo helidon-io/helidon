@@ -21,6 +21,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Stream;
 
+import io.helidon.microprofile.tests.junit5.AddBean;
+
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -32,6 +34,8 @@ import static org.hamcrest.Matchers.is;
 /**
  * Test cases for @Retry.
  */
+@AddBean(RetryBean.class)
+@AddBean(SyntheticRetryBean.class)
 public class RetryTest extends FaultToleranceTest {
 
     static Stream<Arguments> createBeans() {
@@ -43,6 +47,7 @@ public class RetryTest extends FaultToleranceTest {
     @ParameterizedTest(name = "{1}")
     @MethodSource("createBeans")
     public void testRetryBean(RetryBean bean, String unused) {
+        bean.reset();
         assertThat(bean.getInvocations(), is(0));
         bean.retry();
         assertThat(bean.getInvocations(), is(3));
@@ -51,6 +56,7 @@ public class RetryTest extends FaultToleranceTest {
     @ParameterizedTest(name = "{1}")
     @MethodSource("createBeans")
     public void testRetryBeanFallback(RetryBean bean, String unused) {
+        bean.reset();
         assertThat(bean.getInvocations(), is(0));
         String value = bean.retryWithFallback();
         assertThat(bean.getInvocations(), is(2));
@@ -60,6 +66,7 @@ public class RetryTest extends FaultToleranceTest {
     @ParameterizedTest(name = "{1}")
     @MethodSource("createBeans")
     public void testRetryAsync(RetryBean bean, String unused) throws Exception {
+        bean.reset();
         CompletableFuture<String> future = bean.retryAsync();
         future.get();
         assertThat(bean.getInvocations(), is(3));
@@ -68,6 +75,7 @@ public class RetryTest extends FaultToleranceTest {
     @ParameterizedTest(name = "{1}")
     @MethodSource("createBeans")
     public void testRetryWithDelayAndJitter(RetryBean bean, String unused) throws Exception {
+        bean.reset();
         long millis = System.currentTimeMillis();
         bean.retryWithDelayAndJitter();
         assertThat(System.currentTimeMillis() - millis, greaterThan(200L));
@@ -83,6 +91,7 @@ public class RetryTest extends FaultToleranceTest {
     @ParameterizedTest(name = "{1}")
     @MethodSource("createBeans")
     public void testRetryWithException(RetryBean bean, String unused) throws Exception {
+        bean.reset();
         CompletionStage<String> future = bean.retryWithException();
         assertCompleteExceptionally(future.toCompletableFuture(), IOException.class, "Simulated error");
         assertThat(bean.getInvocations(), is(3));
@@ -91,6 +100,7 @@ public class RetryTest extends FaultToleranceTest {
     @ParameterizedTest(name = "{1}")
     @MethodSource("createBeans")
     public void testRetryCompletionStageWithEventualSuccess(RetryBean bean, String unused) {
+        bean.reset();
         assertCompleteOk(bean.retryWithUltimateSuccess(), "Success");
         assertThat(bean.getInvocations(), is(3));
     }

@@ -682,5 +682,11 @@ public interface ServerConfiguration extends SocketConfiguration {
             this.defaultSocketBuilder.tls(webServerTls);
             return this;
         }
+
+        @Override
+        public Builder enableCompression(boolean value) {
+            this.defaultSocketBuilder.enableCompression(true);
+            return this;
+        }
     }
 }

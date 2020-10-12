@@ -38,8 +38,6 @@ import io.helidon.common.http.DataChunk;
 public class DataChunkInputStream extends InputStream {
     private static final Logger LOGGER = Logger.getLogger(DataChunkInputStream.class.getName());
 
-    private final String originalThreadID;
-    private final boolean validate;
     private final Flow.Publisher<DataChunk> originalPublisher;
     private int bufferIndex;
     private CompletableFuture<DataChunk> current = new CompletableFuture<>();
@@ -74,8 +72,6 @@ public class DataChunkInputStream extends InputStream {
      */
     public DataChunkInputStream(Flow.Publisher<DataChunk> originalPublisher, boolean validate) {
         this.originalPublisher = originalPublisher;
-        this.originalThreadID = getCurrentThreadIdent();
-        this.validate = validate;
     }
 
     /**
@@ -120,7 +116,6 @@ public class DataChunkInputStream extends InputStream {
 
     @Override
     public int read(byte[] buf, int off, int len) throws IOException {
-        validate();
         if (subscribed.compareAndSet(false, true)) {
             originalPublisher.subscribe(new DataChunkSubscriber());       // subscribe for first time
         }
@@ -177,17 +172,6 @@ public class DataChunkInputStream extends InputStream {
             throw new IOException(e);
         } catch (ExecutionException e) {
             throw new IOException(e.getCause());
-        }
-    }
-
-    private String getCurrentThreadIdent() {
-        Thread thread = Thread.currentThread();
-        return thread.getName() + ":" + thread.getId();
-    }
-
-    private void validate() {
-        if (validate && originalThreadID.equals(getCurrentThreadIdent())) {
-            throw new IllegalStateException("DataChunkInputStream needs to be handled in separate thread to prevent deadlock.");
         }
     }
 

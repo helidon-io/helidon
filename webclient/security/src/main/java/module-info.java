@@ -24,6 +24,7 @@ module io.helidon.webclient.security {
     requires java.logging;
 
     requires io.helidon.security;
+    requires io.helidon.security.providers.common;
     requires io.helidon.webclient;
 
     exports io.helidon.webclient.security;

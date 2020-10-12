@@ -40,6 +40,8 @@
 
     <modules>
         <module>arquillian</module>
+        <module>junit5</module>
+        <module>junit5-tests</module>
     </modules>
 
     <profiles>

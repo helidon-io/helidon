@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package io.helidon.security.integration.jersey;
 
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
@@ -53,9 +52,6 @@ class SecurityPreMatchingFilter extends SecurityFilterCommon implements Containe
     private InjectionManager injectionManager;
 
     @Context
-    private ExecutorService executorService;
-
-    @Context
     private UriInfo uriInfo;
 
     @Override
@@ -66,7 +62,6 @@ class SecurityPreMatchingFilter extends SecurityFilterCommon implements Containe
         SecurityContext securityContext = security()
                 .contextBuilder(Integer.toString(CONTEXT_COUNTER.incrementAndGet(), Character.MAX_RADIX))
                 .tracingSpan(tracing.findParent().orElse(null))
-                .executorService(Contexts.wrap(executorService))
                 .build();
 
         Contexts.context().ifPresent(ctx -> ctx.register(securityContext));

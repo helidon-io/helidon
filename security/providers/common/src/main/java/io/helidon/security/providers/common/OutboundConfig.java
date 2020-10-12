@@ -17,11 +17,17 @@
 package io.helidon.security.providers.common;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import io.helidon.config.Config;
 import io.helidon.security.EndpointConfig;
@@ -42,7 +48,14 @@ public final class OutboundConfig {
      * configuration.
      */
     public static final String CONFIG_OUTBOUND = "outbound";
+    /**
+     * Property used for outbound calls with clients to disable registration/running of outbound security.
+     * This may be used from clients that set up outbound security explicitly.
+     * By default this property is assumed to be {@code false}, so outbound is enabled
+     */
+    public static final String PROPERTY_DISABLE_OUTBOUND = "io.helidon.security.client.disable";
 
+    private final Map<Class<?>, Map<OutboundTarget, Object>> configTypeToConfigCache = new ConcurrentHashMap<>();
     private final LinkedList<OutboundTarget> targets = new LinkedList<>();
 
     /**
@@ -121,6 +134,48 @@ public final class OutboundConfig {
         }
 
         return Optional.empty();
+    }
+
+    /**
+     * Find, create and cache a custom object associated with a specific outbound target.
+     *
+     * @param env Security environment to find the outbound target
+     * @param customObjectClass class of the custom object
+     * @param customObjectProducer a producer of the custom object from config associated with the target
+     * @param defaultValue supplier of the custom object if there is no object nor config associated with the target
+     * @param <T> type of the custom object
+     *
+     * @return custom object (cached for further calls) if a target was found, empty otherwise
+     */
+    @SuppressWarnings("unchecked")
+    public <T> Optional<T> findTargetCustomObject(SecurityEnvironment env,
+                                                  Class<T> customObjectClass,
+                                                  Function<Config, ? extends T> customObjectProducer,
+                                                  Supplier<? extends T> defaultValue) {
+        Optional<OutboundTarget> targetOptional = findTarget(env);
+        if (targetOptional.isEmpty()) {
+            return Optional.empty();
+        }
+
+        OutboundTarget target = targetOptional.get();
+
+        // this cast is safe, as we cache for the object class itself
+        Map<OutboundTarget, T> cache = (Map<OutboundTarget, T>) configTypeToConfigCache
+                .computeIfAbsent(customObjectClass, it -> Collections.synchronizedMap(new IdentityHashMap<>()));
+
+        T value = cache.computeIfAbsent(target, it -> {
+            Optional<? extends T> customObject = it.customObject(customObjectClass);
+            if (customObject.isPresent()) {
+                return customObject.get();
+            }
+            customObject = target.getConfig().map(customObjectProducer);
+            if (customObject.isPresent()) {
+                return customObject.get();
+            }
+            return defaultValue.get();
+        });
+
+        return Optional.of(value);
     }
 
     /**

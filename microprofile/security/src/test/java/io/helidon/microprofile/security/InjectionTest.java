@@ -15,9 +15,10 @@
  */
 package io.helidon.microprofile.security;
 
-import javax.enterprise.inject.se.SeContainer;
+import javax.inject.Inject;
 
-import io.helidon.microprofile.cdi.HelidonContainer;
+import io.helidon.microprofile.tests.junit5.AddBean;
+import io.helidon.microprofile.tests.junit5.HelidonTest;
 import io.helidon.security.Security;
 
 import org.junit.jupiter.api.Test;
@@ -25,16 +26,15 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+@HelidonTest
+@AddBean(TestBean.class)
 class InjectionTest {
+    @Inject
+    private TestBean testBean;
+
     @Test
     void testInjection() {
-
-        try (SeContainer container = HelidonContainer.instance()
-                .start()) {
-            TestBean bean = container.select(TestBean.class)
-                    .get();
-            Security security = bean.getSecurity();
-            assertThat(security, notNullValue());
-        }
+        Security security = testBean.getSecurity();
+        assertThat(security, notNullValue());
     }
 }

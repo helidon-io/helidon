@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,15 +26,14 @@ import javax.inject.Inject;
 import javax.json.JsonString;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.SecurityContext;
 
 import io.helidon.config.Config;
-import io.helidon.microprofile.server.Server;
+import io.helidon.microprofile.tests.junit5.AddBean;
+import io.helidon.microprofile.tests.junit5.HelidonTest;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.OutboundSecurityResponse;
 import io.helidon.security.Principal;
@@ -47,8 +46,6 @@ import org.eclipse.microprofile.jwt.Claim;
 import org.eclipse.microprofile.jwt.ClaimValue;
 import org.eclipse.microprofile.jwt.Claims;
 import org.eclipse.microprofile.jwt.JsonWebToken;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -60,27 +57,13 @@ import static org.mockito.Mockito.when;
 /**
  * Unit test for {@link io.helidon.microprofile.jwt.auth.JsonWebTokenProducer}.
  */
+@HelidonTest
+@AddBean(JwtAuthTest.MyApp.class)
+@AddBean(JwtAuthTest.MyResource.class)
+@AddBean(JwtAuthTest.ResourceWithPublicMethod.class)
 class JwtAuthTest {
-    private static Server server;
-    private static Client client;
-
-    @BeforeAll
-    static void startServer() {
-        server = Server.create(MyApp.class);
-        server.start();
-
-        client = ClientBuilder.newClient();
-    }
-
-    @AfterAll
-    static void stopServer() {
-        if (null != server) {
-            server.stop();
-        }
-        if (null != client) {
-            client.close();
-        }
-    }
+    @Inject
+    private WebTarget target;
 
     @Test
     void testRsa() {
@@ -126,8 +109,6 @@ class JwtAuthTest {
 
         String signedToken = response.requestHeaders().get("Authorization").get(0);
 
-        WebTarget target = client.target("http://localhost:" + server.port());
-
         // authenticated
         String httpResponse = target.path("/hello")
                 .request()
@@ -147,8 +128,6 @@ class JwtAuthTest {
 
     @Test
     void testPublicEndpoint() {
-        WebTarget target = client.target("http://localhost:" + server.port());
-
         // public
         String httpResponse = target.path("/public")
                 .request()
