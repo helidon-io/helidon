@@ -69,6 +69,8 @@ public interface WebServer {
 
     /**
      * Starts the server. Has no effect if server is running.
+     * The start will fail on a server that is shut down, or that failed to start.
+     * In such cases, create a new instance of Web Server.
      *
      * @return a single to react on startup process
      */

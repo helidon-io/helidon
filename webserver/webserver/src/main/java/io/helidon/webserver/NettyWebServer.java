@@ -193,6 +193,11 @@ class NettyWebServer implements WebServer {
 
     @Override
     public synchronized Single<WebServer> start() {
+        if (shutdownThreadGroupsInitiated.get() || (startFuture.isDone() && shutdownFuture.isDone())) {
+            // if we are shutting down, or shutdown - restart is not an option
+            throw new IllegalStateException("WebServer cannot be restarted once it has been shutdown, or it failed to start.");
+        }
+
         if (!started) {
 
             channelsUpFuture.thenAccept(this::started)
