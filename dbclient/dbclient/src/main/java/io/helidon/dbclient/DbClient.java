@@ -58,9 +58,16 @@ public interface DbClient {
     <U, T extends Subscribable<U>> T execute(Function<DbExecute, T> executor);
 
     /**
+     * Name of the named statement used in database health checks.
+     */
+    String PING_STATEMENT_NAME = "ping";
+
+    /**
      * Pings the database, completes when DB is up and ready, completes exceptionally if not.
+     * Executes simple SQL query defined as {@code db.statements.ping} configuration property.
      *
      * @return stage that completes when the ping finished
+     * @deprecated Use {@code io.helidon.dbclient.health.DbClientHealthCheck} instead.
      */
     Single<Void> ping();
 

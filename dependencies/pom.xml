@@ -79,6 +79,7 @@
         <version.lib.jsonp-impl>1.1.6</version.lib.jsonp-impl>
         <version.lib.junit>5.6.2</version.lib.junit>
         <version.lib.junit4>4.12</version.lib.junit4>
+        <version.lib.mariadb-java-client>2.6.2</version.lib.mariadb-java-client>
         <version.lib.maven-wagon>2.10</version.lib.maven-wagon>
         <version.lib.microprofile-config>1.4</version.lib.microprofile-config>
         <version.lib.microprofile-health>2.2</version.lib.microprofile-health>
@@ -93,6 +94,7 @@
         <version.lib.microprofile-reactive-streams-operators-core>1.0.1</version.lib.microprofile-reactive-streams-operators-core>
         <version.lib.mockito>2.23.4</version.lib.mockito>
         <version.lib.mongodb.reactivestreams>1.11.0</version.lib.mongodb.reactivestreams>
+        <version.lib.mssql-jdbc>8.4.1.jre8</version.lib.mssql-jdbc>
         <version.lib.oracle.ojdbc10>19.3.0.0</version.lib.oracle.ojdbc10>
         <version.lib.mysql-connector-java>8.0.11</version.lib.mysql-connector-java>
         <version.lib.narayana>5.9.3.Final</version.lib.narayana>
@@ -103,6 +105,7 @@
         <version.lib.opentracing.grpc>0.2.1</version.lib.opentracing.grpc>
         <version.lib.opentracing.tracerresolver>0.1.8</version.lib.opentracing.tracerresolver>
         <version.lib.persistence-api>2.2.3</version.lib.persistence-api>
+        <version.lib.postgresql>42.2.16</version.lib.postgresql>
         <version.lib.prometheus>0.9.0</version.lib.prometheus>
         <version.lib.reactivestreams>1.0.3</version.lib.reactivestreams>
         <version.lib.slf4j>1.7.26</version.lib.slf4j>
@@ -781,6 +784,21 @@
                 <groupId>mysql</groupId>
                 <artifactId>mysql-connector-java</artifactId>
                 <version>${version.lib.mysql-connector-java}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mariadb.jdbc</groupId>
+                <artifactId>mariadb-java-client</artifactId>
+                <version>${version.lib.mariadb-java-client}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.postgresql</groupId>
+                <artifactId>postgresql</artifactId>
+                <version>${version.lib.postgresql}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.microsoft.sqlserver</groupId>
+                <artifactId>mssql-jdbc</artifactId>
+                <version>${version.lib.mssql-jdbc}</version>
             </dependency>
             <dependency>
                 <groupId>com.oracle.oci.sdk</groupId>
