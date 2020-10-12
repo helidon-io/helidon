@@ -17,7 +17,6 @@
 package io.helidon.webserver;
 
 import java.net.InetAddress;
-import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -70,9 +69,6 @@ public class NettyWebServerTest {
                 .port(8080)
                 .bindAddress(InetAddress.getLoopbackAddress())
                 .routing(routing((breq, bres) -> {
-                    long id = new SecureRandom().nextLong();
-                    System.out.println("Received request .. ID: " + id);
-
                     SubmissionPublisher<DataChunk> responsePublisher = new SubmissionPublisher<>(ForkJoinPool.commonPool(), 1024);
                     responsePublisher.subscribe(bres);
 
@@ -95,11 +91,7 @@ public class NettyWebServerTest {
                         LOGGER.log(Level.WARNING,
                                    "An error occurred during the flow consumption!",
                                    ex);
-                    }, () -> {
-                        System.out.println("Final execution");
-                        responsePublisher.close();
-                    }, (Subscription s) -> {
-                        System.out.println("Subscribe");
+                    }, responsePublisher::close, (Subscription s) -> {
                         subscription.set(s);
                         s.request(1);
                         bres.writeStatusAndHeaders(Http.Status.CREATED_201,
@@ -155,7 +147,7 @@ public class NettyWebServerTest {
     }
 
     @Test
-    public void testMultiplePortsSuccessStart() throws Exception {
+    public void testMultiplePortsSuccessStart() {
         WebServer webServer = WebServer.builder()
                 .addSocket(SocketConfiguration.create("1"))
                 .addSocket(SocketConfiguration.create("2"))
@@ -164,8 +156,7 @@ public class NettyWebServerTest {
                 .build();
 
         webServer.start()
-                .toCompletableFuture()
-                .join();
+                .await();
 
         try {
             assertThat(webServer.port(), greaterThan(0));
@@ -216,13 +207,11 @@ public class NettyWebServerTest {
         assertStartFailure(webServer);
     }
 
-    private void assertStartFailure(WebServer webServer)
-            throws InterruptedException {
+    private void assertStartFailure(WebServer webServer) {
 
         try {
             webServer.start()
-                    .toCompletableFuture()
-                    .join();
+                    .await();
 
             fail("Should have failed!");
         } catch (CompletionException e) {
