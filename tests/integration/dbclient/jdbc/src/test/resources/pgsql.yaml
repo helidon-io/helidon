@@ -21,16 +21,18 @@ server:
 db:
   source: jdbc
   connection:
-    url: jdbc:mysql://${mysql.host}:${mysql.port}/${mysql.database}?useSSL=false&allowPublicKeyRetrieval=true
-    username: ${mysql.user}
-    password: ${mysql.password}
+    url: jdbc:postgresql://${db.host}:${db.port}/${db.database}
+    username: ${db.user}
+    password: ${db.password}
   statements:
     # required ping statement
-    ping: "DO 0"
+    ping: "SELECT 0"
+    # custom query ping statement
+    ping-query: "SELECT 0"
     # database schema initialization statements
     create-types: "CREATE TABLE Types (id INTEGER NOT NULL PRIMARY KEY, name VARCHAR(64) NOT NULL)"
     create-pokemons: "CREATE TABLE Pokemons (id INTEGER NOT NULL PRIMARY KEY, name VARCHAR(64) NOT NULL)"
-    create-poketypes: "CREATE TABLE PokemonTypes (id_pokemon INTEGER NOT NULL REFERENCES Pokemon(id), id_type INTEGER NOT NULL REFERENCES Type(id))"
+    create-poketypes: "CREATE TABLE PokemonTypes (id_pokemon INTEGER NOT NULL REFERENCES Pokemons(id), id_type INTEGER NOT NULL REFERENCES Types(id))"
     # database schema cleanup statements
     drop-types: "DROP TABLE Types"
     drop-pokemons: "DROP TABLE Pokemons"
@@ -70,3 +72,8 @@ db:
     select-pokemons-idrng-order-arg: "SELECT id, name FROM Pokemons WHERE id > ? AND id < ?"
     # Test query with both named and ordered parameters (shall cause an exception)
     select-pokemons-error-arg: "SELECT id, name FROM Pokemons WHERE id > :id AND name = ?"
+
+# Tests configuration
+test:
+    # Whether database supports ping statement as DML (default value is true)
+    ping-dml: false
