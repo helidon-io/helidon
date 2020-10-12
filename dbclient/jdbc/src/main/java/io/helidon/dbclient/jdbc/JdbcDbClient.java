@@ -26,7 +26,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.common.mapper.MapperManager;
-import io.helidon.common.reactive.CompletionAwaitable;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
 import io.helidon.common.reactive.Subscribable;
