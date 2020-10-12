@@ -120,4 +120,46 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>test-compile</id>
+                        <goals>
+                            <goal>testCompile</goal>
+                        </goals>
+                        <configuration>
+                            <forceJavacCompilerUse>true</forceJavacCompilerUse>
+                            <annotationProcessorPaths>
+                                <path>
+                                    <groupId>io.micronaut</groupId>
+                                    <artifactId>micronaut-inject-java</artifactId>
+                                    <version>${version.lib.micronaut}</version>
+                                </path>
+                                <path>
+                                    <groupId>io.micronaut</groupId>
+                                    <artifactId>micronaut-validation</artifactId>
+                                    <version>${version.lib.micronaut}</version>
+                                </path>
+                                <path>
+                                    <groupId>io.micronaut.data</groupId>
+                                    <artifactId>micronaut-data-processor</artifactId>
+                                    <version>${version.lib.micronaut.data}</version>
+                                </path>
+                                <path>
+                                    <groupId>io.helidon.integrations.micronaut</groupId>
+                                    <artifactId>helidon-integrations-micronaut-cdi-processor</artifactId>
+                                    <version>${helidon.version}</version>
+                                </path>
+                            </annotationProcessorPaths>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>

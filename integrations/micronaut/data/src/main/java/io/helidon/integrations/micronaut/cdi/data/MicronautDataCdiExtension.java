@@ -18,9 +18,6 @@ package io.helidon.integrations.micronaut.cdi.data;
 
 import java.lang.annotation.Annotation;
 import java.sql.Connection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import javax.annotation.Priority;
 import javax.enterprise.context.Dependent;
@@ -32,27 +29,16 @@ import javax.enterprise.inject.spi.ProcessAnnotatedType;
 import javax.enterprise.inject.spi.WithAnnotations;
 import javax.transaction.Transactional;
 
-import io.helidon.integrations.micronaut.cdi.MicronautCdiExtension;
-
-import io.micronaut.data.annotation.Repository;
-import io.micronaut.data.repository.GenericRepository;
-import io.micronaut.inject.BeanDefinitionReference;
+import io.micronaut.context.ApplicationContext;
 import io.micronaut.transaction.TransactionDefinition;
 import io.micronaut.transaction.annotation.TransactionalAdvice;
-import io.micronaut.transaction.interceptor.TransactionalInterceptor;
 
 import static javax.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
 
 public class MicronautDataCdiExtension implements Extension {
-    private static final Map<CharSequence, Object> DEFAULT_TX_ADVICE = Map.of(
-            "propagation", TransactionDefinition.Propagation.REQUIRED,
-            "isolation", TransactionDefinition.Isolation.DEFAULT,
-            "readOnly", false
-    );
 
-    void processBeans(@Observes @WithAnnotations(Transactional.class) ProcessAnnotatedType<?> event, BeanManager bm) {
-        MicronautCdiExtension mCdi = bm.getExtension(MicronautCdiExtension.class);
-
+    void processBeans(@Observes @WithAnnotations(Transactional.class) @Priority(PLATFORM_BEFORE + 10) ProcessAnnotatedType<?> event,
+                      BeanManager bm) {
         TransactionalAdvice annotation = event.getAnnotatedType()
                 .getAnnotation(TransactionalAdvice.class);
         if (annotation != null) {
@@ -75,82 +61,60 @@ public class MicronautDataCdiExtension implements Extension {
                         return;
                     }
 
-                    Map<Class<? extends Annotation>, Map<CharSequence, Object>> annotationToAdd = Map.of(
-                            TransactionalAdvice.class, DEFAULT_TX_ADVICE);
+                    // this will be processed by MicronautCdiExtension
+                    method.add(new TransactionalAdvice() {
+                        @Override
+                        public String value() {
+                            return "";
+                        }
 
-                    mCdi.addInterceptor(method, Set.of(TransactionalInterceptor.class), annotationToAdd);
-        });
+                        @Override
+                        public String transactionManager() {
+                            return "";
+                        }
+
+                        @Override
+                        public TransactionDefinition.Propagation propagation() {
+                            return TransactionDefinition.Propagation.REQUIRED;
+                        }
+
+                        @Override
+                        public TransactionDefinition.Isolation isolation() {
+                            return TransactionDefinition.Isolation.DEFAULT;
+                        }
+
+                        @Override
+                        public int timeout() {
+                            return -1;
+                        }
+
+                        @Override
+                        public boolean readOnly() {
+                            return false;
+                        }
+
+                        @Override
+                        public Class<? extends Throwable>[] noRollbackFor() {
+                            return new Class[0];
+                        }
+
+                        @Override
+                        public Class<? extends Annotation> annotationType() {
+                            return TransactionalAdvice.class;
+                        }
+                    });
+                });
     }
 
     void afterBeanDiscovery(@Priority(PLATFORM_BEFORE + 10) @Observes AfterBeanDiscovery event,
                             BeanManager bm) {
-        MicronautCdiExtension mcdi = bm.getExtension(MicronautCdiExtension.class);
-        List<BeanDefinitionReference<?>> allBeans = mcdi.beanDefinitions();
-
-        allBeans.stream()
-                .filter(this::isRepository)
-                .forEach(it -> addBean(event, mcdi, it));
-
         event.addBean()
                 .addType(Connection.class)
                 .id("micronaut-sql-connection")
                 .scope(Dependent.class)
-                .produceWith(instance -> mcdi.context().findBean(Connection.class));
+                .produceWith(instance -> instance.select(ApplicationContext.class)
+                        .get()
+                        .getBean(Connection.class));
     }
 
-    private boolean isRepository(BeanDefinitionReference<?> ref) {
-        return ref.getAnnotationMetadata().hasStereotype(Repository.class);
-    }
-
-    @SuppressWarnings("unchecked")
-    private void addBean(AfterBeanDiscovery event,
-                         MicronautCdiExtension mcdi,
-                         BeanDefinitionReference<?> it) {
-
-        Class<?> beanType = it.getBeanType();
-        // repository is either an interface or an abstract class, we need to find the original class (not a generated one)
-        if (Object.class.equals(beanType.getSuperclass())) {
-            // we have an interface
-            Class<?>[] interfaces = beanType.getInterfaces();
-            // by design, the first interface should be our repo, but let's be nice
-
-            for (Class<?> anInterface : interfaces) {
-                if (isRepo(anInterface)) {
-                    beanType = anInterface;
-                    break;
-                }
-            }
-        } else {
-            // we have an abstract class
-            Class<?> superclass = beanType.getSuperclass();
-            if (isRepo(superclass)) {
-                beanType = superclass;
-            }
-        }
-
-        event.addBean()
-                .addType(beanType)
-                .id("micronaut-data-" + it.getBeanType().getName())
-                .scope(Dependent.class)
-                .produceWith(that -> mcdi.context().getBean(it.getBeanType()));
-    }
-
-    private boolean isRepo(Class<?> type) {
-        if (type == null || type.equals(Object.class)) {
-            return false;
-        }
-
-        Class<?>[] interfaces = type.getInterfaces();
-
-        for (Class<?> anInterface : interfaces) {
-            if (anInterface.equals(GenericRepository.class)) {
-                return true;
-            }
-            if (isRepo(anInterface)) {
-                return true;
-            }
-        }
-
-        return isRepo(type.getSuperclass());
-    }
 }

@@ -19,9 +19,11 @@ package io.helidon.integrations.micronaut.cdi.data;
 import java.sql.Connection;
 import java.util.Optional;
 
-import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.transaction.Transactional;
+import javax.validation.ConstraintViolationException;
+import javax.validation.constraints.Pattern;
 
 import io.helidon.integrations.micronaut.cdi.data.app.DbOwnerRepository;
 import io.helidon.integrations.micronaut.cdi.data.app.DbPetRepository;
@@ -36,6 +38,7 @@ import org.junit.jupiter.api.Test;
 import static io.helidon.config.testing.OptionalMatcher.present;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @HelidonTest
 @Configuration(configSources = "in-mem-h2.properties")
@@ -75,7 +78,12 @@ class MicronautDataCdiExtensionTest {
         assertThat(myBean.getOwner("Hoppy"), is("Barney"));
     }
 
-    @ApplicationScoped
+    @Test
+    void testBeanValidation() {
+        assertThrows(ConstraintViolationException.class, () -> myBean.getOwner("wrong name"), "Name should not contain spaces");
+    }
+
+    @Singleton
     public static class MyBean {
         @Inject
         private DbPetRepository petRepository;
@@ -83,7 +91,7 @@ class MicronautDataCdiExtensionTest {
         private Connection connection;
 
         @Transactional
-        public String getOwner(String pet) {
+        public String getOwner(@Pattern(regexp = "\\w+") String pet) {
             return petRepository.findByName(pet)
                     .map(Pet::getOwner)
                     .map(Owner::getName)

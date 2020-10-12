@@ -20,20 +20,24 @@
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon.integrations</groupId>
-        <artifactId>helidon-integrations-project</artifactId>
+        <groupId>io.helidon.integrations.micronaut</groupId>
+        <artifactId>helidon-integrations-micronaut-project</artifactId>
         <version>2.0.3-SNAPSHOT</version>
     </parent>
 
-    <groupId>io.helidon.integrations.micronaut</groupId>
-    <artifactId>helidon-integrations-micronaut-project</artifactId>
-    <name>Helidon Integrations Micronaut Project</name>
+    <artifactId>helidon-integrations-micronaut-cdi-processor</artifactId>
+    <name>Helidon Integrations Micronaut CDI Annotation Processor</name>
 
-    <packaging>pom</packaging>
+    <description>Integration with Micronaut to be used in CDI environment.</description>
 
-    <modules>
-        <module>cdi-processor</module>
-        <module>cdi</module>
-        <module>data</module>
-    </modules>
+    <dependencies>
+        <dependency>
+            <groupId>io.micronaut</groupId>
+            <artifactId>micronaut-inject-java</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micronaut</groupId>
+            <artifactId>micronaut-inject</artifactId>
+        </dependency>
+    </dependencies>
 </project>

@@ -26,12 +26,16 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.annotation.Priority;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.BeforeDestroyed;
+import javax.enterprise.context.Dependent;
 import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.AfterBeanDiscovery;
@@ -39,18 +43,22 @@ import javax.enterprise.inject.spi.BeforeBeanDiscovery;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessAnnotatedType;
 import javax.enterprise.inject.spi.configurator.AnnotatedMethodConfigurator;
+import javax.enterprise.inject.spi.configurator.BeanConfigurator;
+import javax.inject.Qualifier;
 
 import io.micronaut.aop.Around;
 import io.micronaut.aop.MethodInterceptor;
 import io.micronaut.context.ApplicationContext;
 import io.micronaut.context.annotation.Type;
 import io.micronaut.context.env.PropertySource;
+import io.micronaut.core.annotation.AnnotationMetadata;
 import io.micronaut.core.io.service.ServiceDefinition;
 import io.micronaut.core.io.service.SoftServiceLoader;
 import io.micronaut.inject.AdvisedBeanType;
 import io.micronaut.inject.BeanDefinition;
 import io.micronaut.inject.BeanDefinitionReference;
 import io.micronaut.inject.ExecutableMethod;
+import io.micronaut.inject.qualifiers.Qualifiers;
 import org.eclipse.microprofile.config.Config;
 
 import static javax.interceptor.Interceptor.Priority.PLATFORM_AFTER;
@@ -59,22 +67,24 @@ import static javax.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
 public class MicronautCdiExtension implements Extension {
     private final AtomicReference<ApplicationContext> micronautContext = new AtomicReference<>();
     private final Map<Method, MethodInterceptorMetadata> methods = new HashMap<>();
-    @SuppressWarnings("rawtypes")
-    private final List<BeanDefinitionReference<?>> beanDefinitions = new LinkedList<>();
-    private final Map<Class<?>, List<BeanDefinitionReference<?>>> mBeanToDefRef = new HashMap<>();
-    private final Map<BeanDefinitionReference<?>, Class<?>> defRefToBean = new HashMap<>();
-    private final Set<Class<?>> micronautBeans = new HashSet<>();
+    // all bean definitions as seen by Micronaut
+    private final List<MicronautBean> beanDefinitions = new LinkedList<>();
+    // map of an actual class (user's source code) mapping to Micronaut bean definition
+    private final Map<Class<?>, List<MicronautBean>> mBeanToDefRef = new HashMap<>();
+    // Micronaut beans not yet processed by CDI
+    private final Map<Class<?>, List<MicronautBean>> unprocessedBeans = new HashMap<>();
 
-    public List<BeanDefinitionReference<?>> beanDefinitions() {
+    public List<MicronautBean> beanDefinitions() {
         return beanDefinitions;
     }
 
     public ApplicationContext context() {
-        return micronautContext.get();
-    }
-
-    public Class<?> beanClass(BeanDefinitionReference<?> defRef) {
-        return defRefToBean.get(defRef);
+        ApplicationContext ctx = micronautContext.get();
+        if (ctx == null) {
+            throw new IllegalStateException(
+                    "Micronaut application context can only be obtained after the ApplicationScoped is initialized");
+        }
+        return ctx;
     }
 
     public void addInterceptor(AnnotatedMethodConfigurator<?> method,
@@ -88,8 +98,58 @@ public class MicronautCdiExtension implements Extension {
 
     @SuppressWarnings("unchecked")
     void processTypes(@Priority(PLATFORM_AFTER) @Observes ProcessAnnotatedType<?> event) {
-        // TODO verify that this type does not have micronaut bean. if it does, combine annotations from both
         Set<Class<?>> classInterceptors = new HashSet<>();
+        Map<Method, Set<Class<?>>> allMethodInterceptors = new HashMap<>();
+
+        List<MicronautBean> mBeans = unprocessedBeans.remove(event.getAnnotatedType().getJavaClass());
+
+        if (mBeans != null && mBeans.size() > 0) {
+            BeanDefinitionReference<?> found = null;
+
+            for (MicronautBean mBean : mBeans) {
+                BeanDefinitionReference<?> ref = mBean.definitionRef();
+                if (ref instanceof AdvisedBeanType) {
+                    continue;
+                }
+                found = ref;
+                break;
+            }
+            if (found == null) {
+                // just use the first one
+                found = mBeans.get(0).definitionRef();
+            }
+
+            // find all annotations with Around stereotype and find its Type annotation to add interceptors
+            found.getAnnotationMetadata()
+                    .getAnnotationTypesByStereotype(Around.class)
+                    .stream()
+                    .map(it -> it.getAnnotation(Type.class))
+                    .filter(Objects::nonNull)
+                    .map(Type::value)
+                    .flatMap(Stream::of)
+                    .forEach(classInterceptors::add);
+
+            BeanDefinition<?> beanDef = found.load();
+
+            Collection<? extends ExecutableMethod<?, ?>> executableMethods = beanDef.getExecutableMethods();
+            for (ExecutableMethod<?, ?> executableMethod : executableMethods) {
+
+                Set<Class<?>> methodInterceptors = new HashSet<>();
+
+                executableMethod
+                        .getAnnotationTypesByStereotype(Around.class)
+                        .stream()
+                        .map(it -> it.getAnnotation(Type.class))
+                        .filter(Objects::nonNull)
+                        .map(Type::value)
+                        .flatMap(Stream::of)
+                        .forEach(methodInterceptors::add);
+
+                allMethodInterceptors.computeIfAbsent(executableMethod.getTargetMethod(), it -> new HashSet<>())
+                        .addAll(methodInterceptors);
+            }
+        }
+
         event.getAnnotatedType()
                 .getAnnotations()
                 .forEach(annot -> {
@@ -102,7 +162,11 @@ public class MicronautCdiExtension implements Extension {
 
         event.configureAnnotatedType().methods()
                 .forEach(method -> {
-                    Set<Class<?>> methodInterceptors = new HashSet<>(classInterceptors);
+                    Method javaMethod = method.getAnnotated().getJavaMember();
+
+                    Set<Class<?>> methodInterceptors = allMethodInterceptors.computeIfAbsent(javaMethod, it -> new HashSet<>());
+                    methodInterceptors.addAll(classInterceptors);
+
                     method.getAnnotated()
                             .getAnnotations()
                             .forEach(annot -> {
@@ -116,7 +180,6 @@ public class MicronautCdiExtension implements Extension {
                     if (!methodInterceptors.isEmpty()) {
                         // now I have a set of micronaut interceptors that are needed for this method
                         method.add(MicronautIntercepted.Literal.INSTANCE);
-                        Method javaMethod = method.getAnnotated().getJavaMember();
 
                         Set<Class<? extends MethodInterceptor<?, ?>>> interceptors = new HashSet<>();
                         methodInterceptors.forEach(it -> interceptors.add((Class<? extends MethodInterceptor<?, ?>>) it));
@@ -128,6 +191,8 @@ public class MicronautCdiExtension implements Extension {
     }
 
     void beforeBeanDiscovery(@Priority(PLATFORM_BEFORE) @Observes BeforeBeanDiscovery event) {
+        loadMicronautBeanDefinitions();
+
         event.addAnnotatedType(MicronautInterceptor.class, "mcdi-MicronautInterceptor");
         event.addInterceptorBinding(MicronautIntercepted.class);
     }
@@ -139,18 +204,63 @@ public class MicronautCdiExtension implements Extension {
                 .scope(ApplicationScoped.class)
                 .produceWith(instance -> micronautContext.get());
 
-        loadMicronautBeanDefinitions();
-        for (BeanDefinitionReference<?> defRef : beanDefinitions) {
-            Class<?> beanType = defRef.getBeanType();
-            if (!event.getAnnotatedTypes(beanType).iterator().hasNext()) {
-                micronautBeans.add(beanType);
-                event.addBean()
-                        .addType(beanType)
-                        .id("micronaut-" + beanType.getName())
-                        .scope(ApplicationScoped.class)
-                        .produceWith(instance -> micronautContext.get().getBean(beanType));
+        // add the remaining Micronaut beans
+        for (var entry : unprocessedBeans.entrySet()) {
+            Class<?> beanType = entry.getKey();
+            List<MicronautBean> beans = entry.getValue();
+
+            // first make sure these are singletons; if not, ignore
+            List<? extends BeanDefinitionReference<?>> refs = beans.stream()
+                    .map(MicronautBean::definitionRef)
+                    .collect(Collectors.toList());
+
+            if (refs.isEmpty()) {
+                // no beans to add
+                return;
+            }
+
+            // primary
+            event.addBean()
+                    .addType(beanType)
+                    .id("micronaut-" + beanType.getName())
+                    // inject using dependent - manage scope by micronaut context
+                    .scope(Dependent.class)
+                    .produceWith(instance -> micronautContext.get().getBean(beanType));
+
+            if (refs.size() > 1) {
+                // we must care about qualifiers
+                for (var ref : refs) {
+                    AnnotationMetadata annotationMetadata = ref.getAnnotationMetadata();
+                    List<Class<? extends Annotation>> qualifiers = annotationMetadata
+                            .getAnnotationTypesByStereotype(Qualifier.class);
+
+                    Annotation[] synthesized = new Annotation[qualifiers.size()];
+                    for (int i = 0; i < qualifiers.size(); i++) {
+                        synthesized[i] = annotationMetadata.synthesize(qualifiers.get(i));
+                    }
+
+                    io.micronaut.context.Qualifier[] mq = new io.micronaut.context.Qualifier[qualifiers.size()];
+
+                    for (int i = 0; i < qualifiers.size(); i++) {
+                        mq[i] = Qualifiers.byAnnotation(synthesized[i]);
+                    }
+
+                    io.micronaut.context.Qualifier composite = Qualifiers.byQualifiers(mq);
+
+                    BeanConfigurator<Object> newBean = event.addBean()
+                            .addType(beanType)
+                            .id("micronaut-" + ref.getBeanDefinitionName())
+                            .scope(Dependent.class)
+                            .produceWith(instance -> micronautContext.get().getBean(beanType, composite));
+
+                    for (Annotation annotation : synthesized) {
+                        newBean.addQualifier(annotation);
+                    }
+
+                }
             }
         }
+        unprocessedBeans.clear();
     }
 
     void startContext(@Observes @Priority(PLATFORM_BEFORE) @Initialized(ApplicationScoped.class) Object adv) {
@@ -208,26 +318,27 @@ public class MicronautCdiExtension implements Extension {
                 .filter(ServiceDefinition::isPresent)
                 .map(ServiceDefinition::load)
                 .filter(BeanDefinitionReference::isPresent)
-                // we only care for singletons
-                .filter(BeanDefinitionReference::isSingleton)
+                .map(ref -> {
+                    Class<?> beanType = ref.getBeanType();
+
+                    if (ref instanceof AdvisedBeanType) {
+                        beanType = ((AdvisedBeanType) ref).getInterceptedType();
+                    }
+                    return new MicronautBean(beanType, ref);
+                })
                 .forEach(beanDefinitions::add);
 
-        for (BeanDefinitionReference<?> defRef : beanDefinitions) {
-            Class<?> beanType = defRef.getBeanType();
-
-            if (defRef instanceof AdvisedBeanType) {
-                beanType = ((AdvisedBeanType) defRef).getInterceptedType();
-            }
-
-            mBeanToDefRef.computeIfAbsent(beanType, it -> new LinkedList<>())
+        for (MicronautBean defRef : beanDefinitions) {
+            mBeanToDefRef.computeIfAbsent(defRef.beanType(), it -> new LinkedList<>())
                     .add(defRef);
-            defRefToBean.put(defRef, beanType);
         }
+
+        unprocessedBeans.putAll(mBeanToDefRef);
     }
 
     public MethodInterceptorMetadata getInterceptionMetadata(Method javaMethod) {
-        for (BeanDefinitionReference beanDefinition : beanDefinitions) {
-            BeanDefinition beanDef = beanDefinition.load();
+        for (MicronautBean mBean : beanDefinitions) {
+            BeanDefinition beanDef = mBean.definitionRef().load();
             if (beanDef.getBeanType().equals(javaMethod.getDeclaringClass())) {
                 Collection<ExecutableMethod<?, ?>> executableMethods = beanDef.getExecutableMethods();
                 for (ExecutableMethod<?, ?> method : executableMethods) {
