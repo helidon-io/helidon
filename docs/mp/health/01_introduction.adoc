@@ -77,7 +77,7 @@ The following table summarizes the two types of health checks in MicroProfile He
 |readiness
 |whether the microservice is currently capable of doing its work
 |`/health/ready`
-|Diverts requests away from the instance; peridically rechecks readiness and resumes traffice once the
+|Diverts requests away from the instance; periodically rechecks readiness and resumes traffic once the
 microservice reports itself as ready.
 |===
 
@@ -93,7 +93,7 @@ and viewing the response.
 
 ==== Custom Health Checks
 Add your own liveness or readiness checks by adding a Java class for each check.
-Each such check must implement the `HealthCheck` interface and you add either the `@Liveness` or
+Each such check must implement the `HealthCheck` interface, and you add either the `@Liveness` or
 the `@Readiness` annotation to the class.
 
 === Next Steps
