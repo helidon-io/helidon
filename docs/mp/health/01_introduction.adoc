@@ -39,7 +39,7 @@ implement health checks as part of your microservice that are specific to your s
 
 === Liveness and Readiness Checks
 
-MicroProfile Health support two types of health checks.
+MicroProfile Health supports two types of health checks:
 
 _Liveness_ checks report whether the runtime environment in which the service is running
 is sufficient to support the work the service performs.
@@ -53,7 +53,7 @@ _Readiness_ checks report whether the service is _currently_ capable of performi
 A service that reports `DOWN` for its readiness cannot _at the moment_ do its job, but at
 some future point it might become able to do so without requiring a restart.
 
-The following table describes more about these two types of health check, including how an orchestrator
+The following table describes more about these two types of health checks, including how an orchestrator
 such as Kubernetes might react.
 
 === Known Health Check Endpoints
@@ -93,7 +93,7 @@ and viewing the response.
 
 ==== Custom Health Checks
 Add your own liveness or readiness checks by adding a Java class for each check.
-Each such check must implement the `HealthCheck` interface, and you add either the `@Liveness` or
+Each custom check must implement the `HealthCheck` interface, and you add either the `@Liveness` or
 the `@Readiness` annotation to the class.
 
 === Next Steps
