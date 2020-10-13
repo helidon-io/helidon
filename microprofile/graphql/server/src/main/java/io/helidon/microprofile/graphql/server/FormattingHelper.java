@@ -464,7 +464,7 @@ public class FormattingHelper {
         if (originalResult instanceof Collection) {
             Collection formattedResult = new ArrayList();
             Collection originalCollection = (Collection) originalResult;
-            originalCollection.forEach(e -> formattedResult.add(numberFormat.format(originalResult)));
+            originalCollection.forEach(e -> formattedResult.add(numberFormat.format(e)));
             LOGGER.info("Formatted result = " + formattedResult);
             return formattedResult;
         }
