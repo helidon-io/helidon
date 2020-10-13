@@ -96,9 +96,15 @@ public class SchemaFieldDefinition
     private boolean defaultFormatApplied;
 
     /**
-     * Indicates if the format is of type JsonB.
+     * Indicates if the format is of type Jsonb.
      */
     private boolean isJsonbFormat;
+
+    /**
+     * Indicates if the property name is of type Jsonb.
+     */
+    private boolean isJsonbProperty;
+
 
     /**
      * Construct a {@link SchemaFieldDefinition}.
@@ -355,19 +361,35 @@ public class SchemaFieldDefinition
     }
 
     /**
-     * Set if the format is of type JsonB.
-     * @param isJsonbFormat if the format is of type JsonB
+     * Set if the format is of type Jsonb.
+     * @param isJsonbFormat if the format is of type Jsonb
      */
     public void setJsonbFormat(boolean isJsonbFormat) {
         this.isJsonbFormat = isJsonbFormat;
     }
 
     /**
-     * Returns true if the format is of type JsonB.
-     * @return true if the format is of type JsonB
+     * Returns true if the format is of type Jsonb.
+     * @return true if the format is of type Jsonb
      */
     public boolean isJsonbFormat() {
         return isJsonbFormat;
+    }
+
+    /**
+     * Sets if the property has a JsonbProperty annotation.
+     *
+     * @param isJsonbProperty if the property has a JsonbProperty annotation
+     */
+    public void setJsonbProperty(boolean isJsonbProperty) {
+        this.isJsonbProperty = isJsonbProperty;
+    }
+
+    /**
+     * Indicates if the property has a JsonbProperty annotation.
+     */
+    public boolean isJsonbProperty() {
+        return isJsonbProperty;
     }
 
     @Override
@@ -385,6 +407,7 @@ public class SchemaFieldDefinition
                 + ", originalArrayType=" + originalArrayType
                 + ", format=" + Arrays.toString(format)
                 + ", isJsonbFormat=" + isJsonbFormat
+                + ", isJsonbProperty=" + isJsonbProperty
                 + ", description='" + getDescription() + '\'' + '}';
     }
 }

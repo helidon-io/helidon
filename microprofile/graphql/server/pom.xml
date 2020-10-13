@@ -56,10 +56,6 @@
             <groupId>io.helidon.microprofile.config</groupId>
             <artifactId>helidon-microprofile-config</artifactId>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>jakarta.interceptor</groupId>-->
-<!--            <artifactId>jakarta.interceptor-api</artifactId>-->
-<!--        </dependency>-->
         <dependency>
             <artifactId>jakarta.el-api</artifactId>
             <groupId>jakarta.el</groupId>

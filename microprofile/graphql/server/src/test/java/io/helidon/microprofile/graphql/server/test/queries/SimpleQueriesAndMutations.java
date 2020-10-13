@@ -30,6 +30,7 @@ import java.util.List;
 
 import java.util.UUID;
 
+import io.helidon.microprofile.graphql.server.test.types.SimpleDateTime;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.json.bind.annotation.JsonbDateFormat;
@@ -62,6 +63,11 @@ public class SimpleQueriesAndMutations {
     private TestDB testDB;
 
     public SimpleQueriesAndMutations() {
+    }
+
+    @Mutation
+    public SimpleDateTime echoSimpleDateTime(@Name("value") SimpleDateTime simpleDateTime) {
+        return simpleDateTime;
     }
 
     @Query

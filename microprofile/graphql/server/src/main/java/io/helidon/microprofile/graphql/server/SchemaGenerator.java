@@ -43,11 +43,13 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.enterprise.inject.spi.CDI;
+import javax.json.bind.annotation.JsonbProperty;
 
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetcherFactories;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.PropertyDataFetcher;
+
 import org.eclipse.microprofile.graphql.Description;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Id;
@@ -837,8 +839,9 @@ public class SchemaGenerator {
         }
 
         fd.setDescription(discoveredMethod.getDescription());
-        fd.setJsonbFormat(discoveredMethod.isJsonbFormat);
+        fd.setJsonbFormat(discoveredMethod.isJsonbFormat());
         fd.setDefaultValue(discoveredMethod.getDefaultValue());
+        fd.setJsonbProperty(discoveredMethod.isJsonbProperty());
         return fd;
     }
 
@@ -999,6 +1002,7 @@ public class SchemaGenerator {
         boolean isReturnTypeMandatory = false;
         boolean isArrayReturnTypeMandatory = false;
         boolean isJsonbFormat = false;
+        boolean isJsonbProperty;
         String defaultValue = null;
 
         // retrieve the method name
@@ -1016,6 +1020,8 @@ public class SchemaGenerator {
                 varName = annotatedName;
             }
         }
+
+        isJsonbProperty = (isInputType ? pd.getWriteMethod() : method).getAnnotation(JsonbProperty.class) != null;
 
         ensureValidName(LOGGER, varName);
 
@@ -1070,11 +1076,23 @@ public class SchemaGenerator {
                         // if the set method has a format then this should overwrite any formatting
                         // as this is an InputType
                         String[] writeMethodFormat = getFormattingAnnotation(writeMethod);
-                        if (writeMethodFormat[0] != null) {
+
+                        if (!isFormatEmpty(writeMethodFormat)) {
                             format = writeMethodFormat;
                             isJsonbFormat = isJsonbAnnotationPresent(writeMethod);
+                            isJsonbProperty = writeMethod.getAnnotation(JsonbProperty.class) != null;
                         }
-
+                        // also check the parameter 0 which there will be one as this is a write Method
+                        Parameter[] parameters = writeMethod.getParameters();
+                        if (parameters.length == 1) {
+                            // this should always be true
+                            String[] argumentTypeFormat = FormattingHelper.getMethodParameterFormat(parameters[0], 0);
+                            if (!isFormatEmpty(argumentTypeFormat)) {
+                                format = argumentTypeFormat;
+                                isJsonbFormat = isJsonbAnnotationPresent(parameters[0]);
+                                isJsonbProperty = parameters[0].getAnnotation(JsonbProperty.class) != null;
+                            }
+                        }
                     }
                 } else {
                     NonNull methodAnnotation = method.getAnnotation(NonNull.class);
@@ -1100,7 +1118,7 @@ public class SchemaGenerator {
             }
 
             // check for format on the property but only override if it is null
-            if (field != null && (format.length == 0 || format[0] == null)) {
+            if (field != null && isFormatEmpty(format)) {
                 format = getFormattingAnnotation(field);
                 if (isFormatEmpty(format)) {
                     // check to see format of the inner most class. E.g. List<@DateFormat("DD/MM") String>
@@ -1131,6 +1149,7 @@ public class SchemaGenerator {
         discoveredMethod.setFormat(format);
         discoveredMethod.setDefaultValue(defaultValue);
         discoveredMethod.setJsonbFormat(isJsonbFormat);
+        discoveredMethod.setJsonbProperty(isJsonbProperty);
         discoveredMethod.setPropertyName(pd != null ? pd.getName() : null);
 
         if (description == null && !isInputType) {
@@ -1156,7 +1175,8 @@ public class SchemaGenerator {
                }
             }
             discoveredMethod.setReturnType(realReturnType.getReturnClass());
-            if (!isFormatEmpty(realReturnType.getFormat())) {
+            // only override if this is not an input type
+            if (!isInputType && !isFormatEmpty(realReturnType.getFormat())) {
                 discoveredMethod.setFormat(realReturnType.format);
             }
         } else {
@@ -1499,9 +1519,14 @@ public class SchemaGenerator {
         private Class<?> originalArrayType;
 
         /**
-         * Indicates if the format is of type JsonB.
+         * Indicates if the format is of type Jsonb.
          */
         private boolean isJsonbFormat;
+
+        /**
+         * Indicates if the property name is of type Jsonb.
+         */
+        private boolean isJsonbProperty;
 
         /**
          * Default constructor.
@@ -1561,6 +1586,22 @@ public class SchemaGenerator {
          */
         public void setCollectionType(String collectionType) {
             this.collectionType = collectionType;
+        }
+
+        /**
+         * Sets if the property has a JsonbProperty annotation.
+         *
+         * @param isJsonbProperty if the property has a JsonbProperty annotation
+         */
+        public void setJsonbProperty(boolean isJsonbProperty) {
+            this.isJsonbProperty = isJsonbProperty;
+        }
+
+        /**
+         * Indicates if the property has a JsonbProperty annotation.
+         */
+        public boolean isJsonbProperty() {
+            return isJsonbProperty;
         }
 
         /**
@@ -1879,6 +1920,7 @@ public class SchemaGenerator {
                     + ", originalArrayType=" + originalArrayType
                     + ", defaultValue=" + defaultValue
                     + ", isJsonbFormat=" + isJsonbFormat
+                    + ", isJsonbProperty=" + isJsonbProperty
                     + ", method=" + method + '}';
         }
 
@@ -1912,7 +1954,8 @@ public class SchemaGenerator {
         public int hashCode() {
             return Objects.hash(name, returnType, methodType, method, arrayLevels, isQueryAnnotated,
                                 collectionType, isArrayReturnType, isMap, source, description,
-                                isReturnTypeMandatory, defaultValue, isArrayReturnTypeMandatory, isJsonbFormat);
+                                isReturnTypeMandatory, defaultValue, isArrayReturnTypeMandatory, isJsonbFormat,
+                                isJsonbProperty);
         }
     }
 

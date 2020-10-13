@@ -164,10 +164,15 @@ public class DataFetcherUtils {
                                                                    null,
                                                                    value, EMPTY_FORMAT));
                 } else {
-                    if (fd.isJsonbFormat()) {
-                        // don't deserialize using formatting as JsonB will do this for us
+                    if (fd.isJsonbFormat() || fd.isJsonbProperty()) {
+                        // don't deserialize using formatting as Jsonb will do this for us
                         mapConverted.put(fdName, value);
                     } else {
+                          // retrieve the data fetcher and check if the property name is different as this should be used
+                          DataFetcher dataFetcher = fd.getDataFetcher();
+                          if (dataFetcher instanceof PropertyDataFetcher) {
+                              fdName = ((PropertyDataFetcher) dataFetcher).getPropertyName();
+                          }
                           mapConverted.put(fdName, generateArgumentValue(schema, fd.getReturnType(), fd.getOriginalType(),
                                                                          fd.getOriginalArrayType(), value, fd.getFormat()));
                     }

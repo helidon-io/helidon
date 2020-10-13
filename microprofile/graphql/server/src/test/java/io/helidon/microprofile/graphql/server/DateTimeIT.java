@@ -37,6 +37,7 @@ import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesAndMutations;
 import io.helidon.microprofile.graphql.server.test.types.DateTimePojo;
 
+import io.helidon.microprofile.graphql.server.test.types.SimpleDateTime;
 import io.helidon.microprofile.tests.junit5.AddBean;
 
 import io.helidon.microprofile.tests.junit5.AddExtension;
@@ -49,8 +50,27 @@ import org.junit.jupiter.api.Test;
 @AddExtension(GraphQLCdiExtension.class)
 @AddBean(SimpleQueriesAndMutations.class)
 @AddBean(DateTimePojo.class)
+@AddBean(SimpleDateTime.class)
 @AddBean(TestDB.class)
 public class DateTimeIT extends AbstractGraphQLIT {
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testDifferentSetterGetter() throws IOException {
+        setupIndex(indexFileName, SimpleDateTime.class, SimpleQueriesAndMutations.class);
+        ExecutionContext executionContext = new ExecutionContext(defaultContext);
+        Map<String, Object> mapResults = getAndAssertResult(
+                executionContext.execute(
+                        "mutation { echoSimpleDateTime(value: { calendarEntries: [ \"22/09/20\", \"23/09/20\" ] } ) { "
+                                + "importantDates } }"));
+        assertThat(mapResults, is(notNullValue()));
+        Map<String, Object> mapResults2 = (Map<String, Object>) mapResults.get("echoSimpleDateTime");
+        assertThat(mapResults2.size(), is(1));
+        ArrayList<String> listDates = (ArrayList<String>) mapResults2.get("importantDates");
+        assertThat(listDates.size(), is(2));
+        assertThat(listDates.get(0), is("22/09"));
+        assertThat(listDates.get(1), is("23/09"));
+    }
 
     @Test
     @SuppressWarnings("unchecked")
