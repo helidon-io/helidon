@@ -52,6 +52,8 @@ public class SimpleContactWithNumberFormats {
 
     private List<@DateFormat("DD-MM-YYYY") LocalDate> listDates;
 
+    private List<Integer> listOfIntegers;
+
     public Integer getFormatMethod(@NumberFormat("0 'years old'") int age) {
         return age;
     }
@@ -144,6 +146,14 @@ public class SimpleContactWithNumberFormats {
 
     public void setBigDecimal(BigDecimal bigDecimal) {
         this.bigDecimal = bigDecimal;
+    }
+
+    public List<@NumberFormat("0 'number'") Integer> getListOfIntegers() {
+        return listOfIntegers;
+    }
+
+    public void setListOfIntegers(List<@NumberFormat("0 'number'") Integer> listOfIntegers) {
+        this.listOfIntegers = listOfIntegers;
     }
 
     @Override

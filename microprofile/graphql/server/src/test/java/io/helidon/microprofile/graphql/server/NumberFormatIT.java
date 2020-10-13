@@ -122,6 +122,7 @@ public class NumberFormatIT extends AbstractGraphQLIT {
                         + "value: \"9 value\" "
                         + "longValue: \"LongValue-123\""
                         + "bigDecimal: \"BigDecimal-12345\""
+                        + "listOfIntegers: [ \"1 number\", \"2 number\"]"
                         + " } ";
 
         mapResults = getAndAssertResult(

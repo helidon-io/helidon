@@ -1149,6 +1149,11 @@ public class SchemaGenerator {
             if (dateScalar != null && isDateTimeScalar(dateScalar.getName())) {
                 // only set the original array type if it's a date/time
                 discoveredMethod.setOriginalArrayType(Class.forName(realReturnType.returnClass));
+            } else if (discoveredMethod.isArrayReturnType) {
+               Class<?> originalArrayType = getSafeClass(realReturnType.returnClass);
+               if (originalArrayType != null) {
+                   discoveredMethod.setOriginalArrayType(originalArrayType);
+               }
             }
             discoveredMethod.setReturnType(realReturnType.getReturnClass());
             if (!isFormatEmpty(realReturnType.getFormat())) {

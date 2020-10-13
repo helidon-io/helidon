@@ -168,8 +168,8 @@ public class DataFetcherUtils {
                         // don't deserialize using formatting as JsonB will do this for us
                         mapConverted.put(fdName, value);
                     } else {
-                        mapConverted.put(fdName, parseArgumentValue(fd.getOriginalType(), fd.getReturnType(),
-                                                                    value, fd.getFormat()));
+                          mapConverted.put(fdName, generateArgumentValue(schema, fd.getReturnType(), fd.getOriginalType(),
+                                                                         fd.getOriginalArrayType(), value, fd.getFormat()));
                     }
                 }
             }
