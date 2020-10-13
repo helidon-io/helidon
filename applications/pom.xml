@@ -149,6 +149,21 @@
                     <groupId>io.helidon.build-tools</groupId>
                     <artifactId>helidon-maven-plugin</artifactId>
                     <version>${version.plugin.helidon}</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>io.helidon.licensing</groupId>
+                            <artifactId>helidon-licensing</artifactId>
+                            <version>${helidon.version}</version>
+                        </dependency>
+                    </dependencies>
+                    <executions>
+                        <execution>
+                            <id>third-party-license-report</id>
+                            <goals>
+                                <goal>report</goal>
+                            </goals>
+                        </execution>
+                    </executions>
                 </plugin>
                 <plugin>
                     <groupId>io.helidon.build-tools</groupId>

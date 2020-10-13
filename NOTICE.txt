@@ -21,7 +21,10 @@ Third Party Dependencies
 ==========================================================================
 
 This project includes or depends on code from third party projects.
-Attributions are contained in THIRD_PARTY_LICENSES.txt.
+Attributions are contained in THIRD_PARTY_LICENSES.txt. You can 
+find a copy in the Helidon GitHub repository:
 
 https://github.com/oracle/helidon/blob/${project.version}/THIRD_PARTY_LICENSES.txt
+
+Or in the Helidon artifact: io.helidon.licensing:helidon-licensing:${project.version}
 
