@@ -128,7 +128,7 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>test-compile</id>
+                        <id>default-testCompile</id>
                         <goals>
                             <goal>testCompile</goal>
                         </goals>

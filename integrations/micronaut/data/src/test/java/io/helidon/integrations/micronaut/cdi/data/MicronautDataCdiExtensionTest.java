@@ -19,8 +19,8 @@ package io.helidon.integrations.micronaut.cdi.data;
 import java.sql.Connection;
 import java.util.Optional;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import javax.inject.Singleton;
 import javax.transaction.Transactional;
 import javax.validation.ConstraintViolationException;
 import javax.validation.constraints.Pattern;
@@ -83,7 +83,7 @@ class MicronautDataCdiExtensionTest {
         assertThrows(ConstraintViolationException.class, () -> myBean.getOwner("wrong name"), "Name should not contain spaces");
     }
 
-    @Singleton
+    @ApplicationScoped
     public static class MyBean {
         @Inject
         private DbPetRepository petRepository;
