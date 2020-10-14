@@ -109,7 +109,7 @@ class InternalProcessor implements Processor<Object, Object> {
                     subscriber.onNext(postProcess(incomingValue, processedValue));
                 }
             }
-        } catch (IllegalAccessException | InvocationTargetException e) {
+        } catch (Throwable e) {
             subscriber.onError(e);
         }
     }

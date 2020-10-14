@@ -55,7 +55,6 @@ public class ChannelTest extends AbstractCDITest {
 
     @ParameterizedTest
     @MethodSource("testCaseSource")
-    @Disabled("Fails due to backpressure issues in InternalProcessor, reenable once fixed")
     void innerChannelBeanTest(CdiTestCase testCase) {
         Optional<? extends Class<? extends Throwable>> expectedThrowable = testCase.getExpectedThrowable();
         if (expectedThrowable.isPresent()) {
