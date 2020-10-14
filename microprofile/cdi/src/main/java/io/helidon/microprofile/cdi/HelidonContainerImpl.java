@@ -402,9 +402,12 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
             if (!isRunning.get()) {
                 LOGGER.warning("BeanManager requested during container shutdown. This may be caused by observer methods "
                                        + "that use CDI.current(). Switch to finest logging to see stack trace.");
-                LOGGER.log(Level.FINEST,
-                           "Invocation of container method during shutdown",
-                           new IllegalStateException("Container not running"));
+                if (LOGGER.isLoggable(Level.FINEST)) {
+                    // this should not be common, but guarding, so we do not fill stack trace unless necessary
+                    LOGGER.log(Level.FINEST,
+                               "Invocation of container method during shutdown",
+                               new IllegalStateException("Container not running"));
+                }
             }
 
             return new BeanManagerProxy(beanManager());
