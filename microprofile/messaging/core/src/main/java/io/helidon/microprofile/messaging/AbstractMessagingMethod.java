@@ -56,6 +56,10 @@ abstract class AbstractMessagingMethod {
     }
 
     void validate() {
+        if (type == null) {
+            // already failed on unsupported signature
+            return;
+        }
         Optional.ofNullable(method.getAnnotation(Acknowledgment.class))
                 .map(Acknowledgment::value)
                 .filter(s -> !type.getSupportedAckStrategies().contains(s))
