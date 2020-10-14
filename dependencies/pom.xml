@@ -78,7 +78,7 @@
         <version.lib.jsonp-api>1.1.6</version.lib.jsonp-api>
         <version.lib.jsonp-impl>1.1.6</version.lib.jsonp-impl>
         <version.lib.junit>5.6.2</version.lib.junit>
-        <version.lib.junit4>4.12</version.lib.junit4>
+        <version.lib.junit4>4.13.1</version.lib.junit4>
         <version.lib.mariadb-java-client>2.6.2</version.lib.mariadb-java-client>
         <version.lib.maven-wagon>2.10</version.lib.maven-wagon>
         <version.lib.microprofile-config>1.4</version.lib.microprofile-config>
