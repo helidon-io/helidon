@@ -7,15 +7,65 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
-## [2.1.0]
+## [2.1.0-SNAPSHOT]
+
+2.1.0 is a minor release of Helidon. It contains bug fixes and enhancements. Notable changes:
+
+- MicroProfile 3.3 support
+- New Helidon SE Fault Tolerance implementation. This also replaces Hystrix in the MicroProfile
+  Fault Tolerance implementation.
 - Security: To remove accidental propagation of identity, all security providers that support outbound
-    security were updated to only do outbound security when configured so. All of these providers
-    now have an `outbound` configuration section that can define outbound targets. Documentation of
-    providers was updated to match this new approach and is available in both MP and SE docs.
+  security were updated to only do outbound security when configured so. All of these providers
+  now have an `outbound` configuration section that can define outbound targets. Documentation of
+  providers was updated to match this new approach and is available in both MP and SE docs.
+    
+### CHANGES    
 
-## [2.0.3-SNAPSHOT]
-
-### Changes
+- Config: Git config native-image support [2400](https://github.com/oracle/helidon/pull/2400)
+- Config: Injection of web target with correct endpoint. [2380](https://github.com/oracle/helidon/pull/2380)
+- DBClient: integration tests for MySQL, MadiaDB, PostgreSQL and MS SQL [2383](https://github.com/oracle/helidon/pull/2383)
+- DataSource: Use Config.getPropertyNames() instead of retrieving getPropertyNames() from ConfigSources [2322](https://github.com/oracle/helidon/pull/2322)
+- Fault Tolerance: Implementation of MP FT 2.1.1 using FT SE [2348](https://github.com/oracle/helidon/pull/2348)
+- Fault Tolerance: Limit module visibility by making several classes package private [2359](https://github.com/oracle/helidon/pull/2359)
+- Fault Tolerance: Name support for all those operations that implement FtHandler [2404](https://github.com/oracle/helidon/pull/2404)
+- Fault Tolerance: Updated test to verify @CircuitBreaker does not interfere with request scope [2387](https://github.com/oracle/helidon/pull/2387)
+- Fault Tolerance: Updates to FT tests to take advantage of @HelidonTest [2370](https://github.com/oracle/helidon/pull/2370)
+- JAX-RS: Allow user-provided CDI extensions to veto JAX-RS classes  [2429](https://github.com/oracle/helidon/pull/2429)
+- JAX-RS: Jersey update to version 2.32 [2406](https://github.com/oracle/helidon/pull/2406)
+- Media: DataChunkedInputStream deadlock protection removed [2401](https://github.com/oracle/helidon/pull/2401)
+- Media: Update MediaType, lazy non known type, read-only parameters map [2308](https://github.com/oracle/helidon/pull/2308)
+- Media: media-jackson native-image support [2385](https://github.com/oracle/helidon/pull/2385)
+- Messaging: Messaging health check [2352](https://github.com/oracle/helidon/pull/2352)
+- Metrics: Avoid race condition by using ConcurrentHashMap [2435](https://github.com/oracle/helidon/pull/2435)
+- Metrics: Update release of Prometheus Java client (in 2.x) [2419](https://github.com/oracle/helidon/pull/2419)
+- Native Image: When class is annotated with @MappedSuperclass, its private fields can't be accessed from JPA with native image  [2127](https://github.com/oracle/helidon/pull/2127)
+- Native image: Tyrus server support for native-image in SE [2097](https://github.com/oracle/helidon/pull/2097)
+- Native image: Windows native-image fix [2336](https://github.com/oracle/helidon/pull/2336)
+- Native image: Use latest version for helidon plugin to include native image fix. [2374](https://github.com/oracle/helidon/pull/2374)
+- OpenAPI: Use CDI to instantiate Application classes to invoke getClasses [2325](https://github.com/oracle/helidon/pull/2325)
+- Reactive: Multi discrepancies [2413](https://github.com/oracle/helidon/pull/2413)
+- Reactive: Single.never not singleton [2349](https://github.com/oracle/helidon/pull/2349)
+- Security: Added support for remote host and port to jersey and security 2.x [2368](https://github.com/oracle/helidon/pull/2368)
+- Security: Disable automatic propagation from security providers [2357](https://github.com/oracle/helidon/pull/2357)
+- Security: OIDC fixes [2378](https://github.com/oracle/helidon/pull/2378)
+- Security: Support for methods in outbound targets. [2335](https://github.com/oracle/helidon/pull/2335)
+- Testing: Intermittent test failure fix [2347](https://github.com/oracle/helidon/pull/2347)
+- Testing: MP Testing [2353](https://github.com/oracle/helidon/pull/2353)
+- Testing: Update surefire and failsafe to 3.0.0-M5 [2307](https://github.com/oracle/helidon/pull/2307)
+- Tracing: Update to later release of MP OpenTracing [2313](https://github.com/oracle/helidon/pull/2313)
+- WebClient: Changes of the request via WebClientService are now propagated [2321](https://github.com/oracle/helidon/pull/2321)
+- WebClient: Webclient uses relative uri in request instead of full uri [2309](https://github.com/oracle/helidon/pull/2309)
+- WebServer: ClassPathContentHandler can survive tmp folder cleanup [2361](https://github.com/oracle/helidon/pull/2361)
+- WebServer: Enable support for HTTP compression in the webserver [2379](https://github.com/oracle/helidon/pull/2379)
+- WebServer: Secure static content [2411](https://github.com/oracle/helidon/pull/2411)
+- WebServer: WebSocket Extensions [1934](https://github.com/oracle/helidon/pull/1934)
+- gRPC: Fix issue with gRPC clients and services where method signatures have types with nested generics [2283](https://github.com/oracle/helidon/pull/2283)
+- gRPC: Update gRPC Version [2388](https://github.com/oracle/helidon/pull/2388)
+- CDI: Service class fixed. [2317](https://github.com/oracle/helidon/pull/2317)
+- Examples: Fix 2391 Bug in generated Dockerfile.native from quickstart-mp [2393](https://github.com/oracle/helidon/pull/2393)
+- Examples: Update standalone quickstarts. [2360](https://github.com/oracle/helidon/pull/2360)
+- Examples: Updated maven surefire plugin to helidon-standalone-quickstart-mp [1849](https://github.com/oracle/helidon/pull/1849)
+- Documentation improvements: [2428](https://github.com/oracle/helidon/pull/2428) [2399](https://github.com/oracle/helidon/pull/2399) [2410](https://github.com/oracle/helidon/pull/2410) [2390](https://github.com/oracle/helidon/pull/2390) [2329](https://github.com/oracle/helidon/pull/2329) [2397](https://github.com/oracle/helidon/pull/2397) [2367](https://github.com/oracle/helidon/pull/2367) [2363](https://github.com/oracle/helidon/pull/2363) [2351](https://github.com/oracle/helidon/pull/2351) [2328](https://github.com/oracle/helidon/pull/2328)
 
 ## [2.0.2]
 
@@ -1048,7 +1098,7 @@ If there is no authorization provider configured, ABAC provider will be configur
       otherwise they are ignored
 
 
-[2.0.3-SNAPSHOT]: https://github.com/oracle/helidon/compare/2.0.2...HEAD
+[2.1.0-SNAPSHOT]: https://github.com/oracle/helidon/compare/2.0.2...HEAD
 [2.0.2]: https://github.com/oracle/helidon/compare/2.0.1...2.0.2
 [2.0.1]: https://github.com/oracle/helidon/compare/2.0.0...2.0.1
 [2.0.0]: https://github.com/oracle/helidon/compare/2.0.0-RC2...2.0.0
