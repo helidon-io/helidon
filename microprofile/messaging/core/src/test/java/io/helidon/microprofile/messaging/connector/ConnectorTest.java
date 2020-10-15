@@ -20,19 +20,21 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import javax.enterprise.inject.spi.DeploymentException;
+import javax.enterprise.util.AnnotationLiteral;
 
 import io.helidon.microprofile.messaging.AbstractCDITest;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import org.eclipse.microprofile.reactive.messaging.spi.Connector;
 import org.junit.jupiter.api.Test;
 
 public class ConnectorTest extends AbstractCDITest {
 
     @Override
     public void setUp() {
-        //Starting container manually
+        //starting container manually
     }
 
     @Test
@@ -42,6 +44,21 @@ public class ConnectorTest extends AbstractCDITest {
                 IterableConnector.class,
                 ConnectedBean.class);
         assertThat("Not connected in time.", ConnectedBean.LATCH.await(2, TimeUnit.SECONDS));
+    }
+
+    @Test
+    void payloadLeakTest() throws InterruptedException {
+        cdiContainer = startCdiContainer(
+                Map.of(
+                        "mp.messaging.outgoing.to-connector-1.connector", "iterable-connector",
+                        "mp.messaging.outgoing.to-connector-2.connector", "iterable-connector",
+                        "mp.messaging.outgoing.to-connector-3.connector", "iterable-connector",
+                        "mp.messaging.outgoing.to-connector-4.connector", "iterable-connector"
+                        ),
+                IterableConnector.class,
+                LeakingPayloadBean.class);
+        IterableConnector connector = (IterableConnector) cdiContainer.select(ConnectorLiteral.INSTANCE).get();
+        assertThat("Not connected in time.", connector.await());
     }
 
     @Test
@@ -59,7 +76,8 @@ public class ConnectorTest extends AbstractCDITest {
                 "mp.messaging.incoming.iterable-channel-in.connector", "iterable-connector",
                 "mp.messaging.outgoing.iterable-channel-out.connector", "iterable-connector");
         cdiContainer = startCdiContainer(p, IterableConnector.class, ConnectedOnlyProcessorBean.class);
-        assertThat("Not connected in time.", IterableConnector.LATCH.await(2, TimeUnit.SECONDS));
+        IterableConnector connector = (IterableConnector) cdiContainer.select(ConnectorLiteral.INSTANCE).get();
+        assertThat("Not connected in time.", connector.await());
     }
 
     @Test
@@ -68,5 +86,17 @@ public class ConnectorTest extends AbstractCDITest {
                 cdiContainer = startCdiContainer(
                         Map.of("mp.messaging.incoming.iterable-channel-in.connector", "iterable-connector"),
                         ConnectedBean.class));
+    }
+
+    public static final class ConnectorLiteral extends AnnotationLiteral<Connector> implements Connector {
+
+        public static final ConnectorLiteral INSTANCE = new ConnectorLiteral();
+
+        private static final long serialVersionUID = 1L;
+
+        @Override
+        public String value() {
+            return "iterable-connector";
+        }
     }
 }

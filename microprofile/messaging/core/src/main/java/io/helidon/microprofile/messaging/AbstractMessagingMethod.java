@@ -17,11 +17,13 @@
 
 package io.helidon.microprofile.messaging;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Optional;
 
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
+import javax.enterprise.inject.spi.DeploymentException;
 
 import io.helidon.common.Errors;
 import io.helidon.config.Config;
@@ -119,6 +121,15 @@ abstract class AbstractMessagingMethod {
 
     Acknowledgment.Strategy getAckStrategy() {
         return ackStrategy;
+    }
+
+    @SuppressWarnings("unchecked")
+    <T> T invoke(Object... args) {
+        try {
+            return (T) this.getMethod().invoke(this.getBeanInstance(), args);
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            throw new DeploymentException(e);
+        }
     }
 
     private void resolveAckStrategy() {

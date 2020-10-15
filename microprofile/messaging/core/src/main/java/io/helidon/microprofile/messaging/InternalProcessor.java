@@ -17,7 +17,6 @@
 
 package io.helidon.microprofile.messaging;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
