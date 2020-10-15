@@ -96,6 +96,7 @@ public class KafkaSubscriber<K, V> implements Subscriber<Message<V>> {
             kafkaProducer.send(record, (metadata, exception) -> {
                 if (exception != null) {
                     subscription.cancel();
+                    LOGGER.log(Level.WARNING, "Error when sending kafka message to topic: " + topic, exception);
                     completableFuture.completeExceptionally(exception);
                 } else {
                     completableFuture.complete(null);
