@@ -19,6 +19,7 @@ package io.helidon.microprofile.graphql.server;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Set;
 
 import io.helidon.microprofile.graphql.server.AbstractGraphQLTest;
 import org.jboss.jandex.ClassInfo;
@@ -65,16 +66,18 @@ class JandexUtilsTest extends AbstractGraphQLTest {
                               "java/lang/Double.class",
                               "java/lang/Integer.class");
             JandexUtils utils = new JandexUtils();
-            utils.loadIndex();
+            utils.loadIndexes();
 
             assertThat(utils.hasIndex(), is(true));
-            Index index = utils.getIndex();
-            Arrays.stream(new Class<?>[] { String.class, Double.class, Integer.class })
-                    .forEach(c -> {
-                        ClassInfo classByName = index.getClassByName(DotName.createSimple(c.getName()));
-                        assertThat(classByName, is(notNullValue()));
-                        assertThat(classByName.toString(), is(c.getName()));
-                    });
+            Set<Index> setIndexes = utils.getIndexes();
+            
+            for (Index index : setIndexes) {
+                for (Class<?> c : new Class<?>[] { String.class, Double.class, Integer.class }) {
+                    ClassInfo classByName = index.getClassByName(DotName.createSimple(c.getName()));
+                    assertThat(classByName, is(notNullValue()));
+                    assertThat(classByName.toString(), is(c.getName()));
+                }
+            }
         } finally {
             if (indexFile != null) {
                 new File(indexFile).delete();

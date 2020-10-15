@@ -158,9 +158,14 @@ public abstract class AbstractGraphQLTest {
 
         // do a load to check the classes are there
         JandexUtils utils = new JandexUtils();
-        utils.loadIndex();
+        utils.loadIndexes();
         assertThat(utils.hasIndex(), CoreMatchers.is(true));
-        assertThat(utils.getIndex().getKnownClasses().size(), CoreMatchers.is(clazzes.length));
+        int count = 0;
+        for (Index index : utils.getIndexes()) {
+            count += index.getKnownClasses().size();
+        }
+
+        assertThat(count, CoreMatchers.is(clazzes.length));
     }
 
     protected static String getIndexClassName(Class clazz) {

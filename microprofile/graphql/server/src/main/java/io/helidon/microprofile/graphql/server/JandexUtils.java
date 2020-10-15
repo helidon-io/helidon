@@ -17,11 +17,15 @@
 package io.helidon.microprofile.graphql.server;
 
 import java.io.File;
-import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Modifier;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Enumeration;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -48,9 +52,9 @@ public class JandexUtils {
     public static final String PROP_INDEX_FILE = "io.helidon.microprofile.graphql.indexfile";
 
     /**
-     * The loaded index or null if none was found.
+     * The {@link Set} of loaded indexes.
      */
-    private Index index;
+    private Set<Index> setIndexes = new HashSet<>();
 
     /**
      * The file used to load the index.
@@ -65,28 +69,53 @@ public class JandexUtils {
     }
 
     /**
-     * Load the index file.
+     * Load all the index files of the given name.
      */
-    public void loadIndex() {
-        File file = new File(indexFile);
-        String actualFile;
-        if (file.isAbsolute()) {
-            actualFile = indexFile;
-        } else {
-            URL resource = JandexUtils.class.getClassLoader().getResource(indexFile);
-            if (resource == null) {
-                return;
+    public void loadIndexes() {
+        try {
+            List<URL> listUrls = findIndexFiles(indexFile);
+
+            // loop through each URL and load the index
+            for (URL url : listUrls) {
+                try (InputStream input = url.openStream()) {
+                    setIndexes.add(new IndexReader(input).read());
+                } catch (Exception e) {
+                    LOGGER.warning("Unable to load default Jandex index file: " + url
+                                           + " : " + e.getMessage());
+                }
             }
-            actualFile = resource.getFile();
-        }
-        try (FileInputStream input = new FileInputStream(actualFile)) {
-            IndexReader reader = new IndexReader(input);
-            index = reader.read();
-        } catch (Exception e) {
-            LOGGER.warning("Unable to load default Jandex index file: " + indexFile
-                                   + ": " + e.getMessage());
+        } catch (IOException ignore) {
+            // any Exception coming from getResources() or toURL() is ignored and
+            // the Map of indexes remain empty
         }
     }
+
+    /**
+     * Return all the Jandex index files with the given name. If the name is absolute then
+     * return the singl file.
+     *
+     * @param indexFileName  index file name
+     * @return a {@link List} of the index file names
+     *
+     * @throws IOException if any error
+     */
+    private List<URL> findIndexFiles(String indexFileName) throws IOException {
+        List<URL> result = new ArrayList<>();
+        ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+        File file = new File(indexFile);
+        if (file.isAbsolute()) {
+            result.add(file.toPath().toUri().toURL());
+            return result;
+        }
+
+        Enumeration<URL> urls = contextClassLoader.getResources(indexFileName);
+        while (urls.hasMoreElements()) {
+            result.add(urls.nextElement());
+        }
+
+        return result;
+    }
+
 
     /**
      * Return a {@link Collection} of {@link Class}es which are implementors of a given class/interface.
@@ -96,23 +125,26 @@ public class JandexUtils {
      * @return a {@link Collection} of {@link Class}es
      */
     public Collection<Class<?>> getKnownImplementors(String clazz, boolean includeAbstract) {
-        if (index == null) {
+        Set<Class<?>> setResults = new HashSet<>();
+        if (!hasIndex()) {
             return null;
         }
-        Set<ClassInfo> allKnownImplementors = index.getAllKnownImplementors(DotName.createSimple(clazz));
-        Set<Class<?>> setResults = new HashSet<>();
 
-        for (ClassInfo classInfo : allKnownImplementors) {
-            Class<?> clazzName = null;
-            try {
-                clazzName = Class.forName(classInfo.toString());
-            } catch (ClassNotFoundException e) {
-                // ignore as class should exist
-            }
-            if (includeAbstract || !Modifier.isAbstract(clazzName.getModifiers())) {
-                setResults.add(clazzName);
+        for (Index index : setIndexes) {
+            Set<ClassInfo> allKnownImplementors = index.getAllKnownImplementors(DotName.createSimple(clazz));
+            for (ClassInfo classInfo : allKnownImplementors) {
+                Class<?> clazzName = null;
+                try {
+                    clazzName = Class.forName(classInfo.toString());
+                } catch (ClassNotFoundException e) {
+                    // ignore as class should exist
+                }
+                if (includeAbstract || !Modifier.isAbstract(clazzName.getModifiers())) {
+                    setResults.add(clazzName);
+                }
             }
         }
+
         return setResults;
     }
 
@@ -132,16 +164,16 @@ public class JandexUtils {
      * @return true if an index was found
      */
     public boolean hasIndex() {
-        return index != null;
+        return setIndexes != null && setIndexes.size() > 0;
     }
 
     /**
-     * Return the generated {@link Index}.
+     * Return the generated {@link Set} of {@link Index}es.
      *
-     * @return the generated {@link Index}
+     * @return the generated {@link Set} of {@link Index}es
      */
-    public Index getIndex() {
-        return index;
+    public Set<Index> getIndexes() {
+        return setIndexes;
     }
 
     /**

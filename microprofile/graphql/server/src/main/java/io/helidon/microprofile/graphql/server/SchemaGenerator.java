@@ -175,7 +175,7 @@ public class SchemaGenerator {
     public SchemaGenerator(Context context) {
         this.context = context;
         jandexUtils = new JandexUtils();
-        jandexUtils.loadIndex();
+        jandexUtils.loadIndexes();
         if (!jandexUtils.hasIndex()) {
             String message = "Unable to find or load jandex index file: "
                     + jandexUtils.getIndexFile() + ".\nEnsure you are using the "
