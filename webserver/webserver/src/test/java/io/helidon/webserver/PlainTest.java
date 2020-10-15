@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Multi;
+import io.helidon.webclient.WebClient;
 import io.helidon.webserver.utils.SocketHttpClient;
 
 import org.hamcrest.collection.IsIterableWithSize;
@@ -41,6 +42,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -118,6 +120,9 @@ public class PlainTest {
                         })
                         .get("/multi", (req, res) -> {
                             res.send(Multi.just("test1","test2").map(i -> DataChunk.create(String.valueOf(i).getBytes())));
+                        })
+                        .get("/absoluteUri", (req, res) -> {
+                            res.send(req.absoluteUri().toString());
                         })
                        .any(Handler.create(String.class, (req, res, entity) -> {
                             res.send("It works! Payload: " + entity);
@@ -431,6 +436,19 @@ public class PlainTest {
         assertThat(headers, IsMapContaining.hasKey("content-length"));
     }
 
+
+    @Test
+    void testAbsouteUri() throws Exception {
+        String result = WebClient.create()
+                .get()
+                .uri("http://localhost:" + webServer.port() + "/absoluteUri?a=b")
+                .request(String.class)
+                .await(5, TimeUnit.SECONDS);
+
+        assertThat(result, containsString("http://"));
+        assertThat(result, containsString(String.valueOf(webServer.port())));
+        assertThat(result, endsWith("/absoluteUri?a=b"));
+    }
 
     @Test
     public void testMulti() throws Exception {

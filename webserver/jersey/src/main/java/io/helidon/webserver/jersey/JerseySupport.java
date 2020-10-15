@@ -18,10 +18,8 @@ package io.helidon.webserver.jersey;
 
 import java.io.InputStream;
 import java.lang.reflect.Type;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.security.Principal;
 import java.util.Collection;
 import java.util.Map;
@@ -154,30 +152,6 @@ public class JerseySupport implements Service {
         return DEFAULT_THREAD_POOL.get();
     }
 
-    private static URI requestUri(ServerRequest req) {
-        try {
-            // Use raw string representation and URL to avoid re-encoding chars like '%'
-            URI partialUri = new URL(req.isSecure() ? "https" : "http", req.localAddress(),
-                                     req.localPort(), req.path().absolute().toRawString()).toURI();
-            StringBuilder sb = new StringBuilder(partialUri.toString());
-            if (req.uri().toString().endsWith("/") && sb.charAt(sb.length() - 1) != '/') {
-                sb.append('/');
-            }
-
-            // unfortunately, the URI constructor encodes the 'query' and 'fragment' which is totally silly
-            if (req.query() != null && !req.query().isEmpty()) {
-                sb.append("?")
-                        .append(req.query());
-            }
-            if (req.fragment() != null && !req.fragment().isEmpty()) {
-                sb.append("#")
-                        .append(req.fragment());
-            }
-            return new URI(sb.toString());
-        } catch (URISyntaxException | MalformedURLException e) {
-            throw new HttpException("Unable to parse request URL", Http.Status.BAD_REQUEST_400, e);
-        }
-    }
 
     private static URI baseUri(ServerRequest req) {
         try {
@@ -255,7 +229,7 @@ public class JerseySupport implements Service {
             CompletableFuture<Void> whenHandleFinishes = new CompletableFuture<>();
             ResponseWriter responseWriter = new ResponseWriter(res, req, whenHandleFinishes);
             ContainerRequest requestContext = new ContainerRequest(baseUri(req),
-                                                                   requestUri(req),
+                                                                   req.absoluteUri(),
                                                                    req.method().name(),
                                                                    new WebServerSecurityContext(),
                                                                    new WebServerPropertiesDelegate(req),

@@ -16,9 +16,14 @@
 
 package io.helidon.webserver;
 
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.Optional;
 
 import io.helidon.common.context.Context;
+import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpRequest;
 import io.helidon.media.common.MessageBodyReadableContent;
 
@@ -136,4 +141,35 @@ public interface ServerRequest extends HttpRequest {
      * @return the tracer associated, or {@link io.opentracing.util.GlobalTracer#get()}
      */
     Tracer tracer();
+
+    /**
+     * Absolute URI of the incoming request, including query parameters and fragment.
+     * The host and port are obtained from the interface this server listens on ({@code host} header is not used).
+     *
+     * @return the URI of incoming request
+     */
+    default URI absoluteUri() {
+        try {
+            // Use raw string representation and URL to avoid re-encoding chars like '%'
+            URI partialUri = new URL(isSecure() ? "https" : "http", localAddress(),
+                                     localPort(), path().absolute().toRawString()).toURI();
+            StringBuilder sb = new StringBuilder(partialUri.toString());
+            if (uri().toString().endsWith("/") && sb.charAt(sb.length() - 1) != '/') {
+                sb.append('/');
+            }
+
+            // unfortunately, the URI constructor encodes the 'query' and 'fragment' which is totally silly
+            if (query() != null && !query().isEmpty()) {
+                sb.append("?")
+                        .append(query());
+            }
+            if (fragment() != null && !fragment().isEmpty()) {
+                sb.append("#")
+                        .append(fragment());
+            }
+            return new URI(sb.toString());
+        } catch (URISyntaxException | MalformedURLException e) {
+            throw new HttpException("Unable to parse request URL", Http.Status.BAD_REQUEST_400, e);
+        }
+    }
 }

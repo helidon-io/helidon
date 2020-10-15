@@ -16,6 +16,7 @@
 
 package io.helidon.webserver;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -30,6 +31,7 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.helidon.common.LazyValue;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.http.AlreadyCompletedException;
 import io.helidon.common.http.Http;
@@ -233,6 +235,7 @@ class RequestRouting implements Routing {
         private final RoutedResponse response;
 
         private final AtomicBoolean nexted = new AtomicBoolean(false);
+        private final LazyValue<URI> lazyAbsoluteUri = LazyValue.create(super::absoluteUri);
 
         /**
          * Creates new instance.
@@ -425,6 +428,11 @@ class RequestRouting implements Routing {
         @Override
         public Tracer tracer() {
             return WebTracingConfig.tracer(webServer());
+        }
+
+        @Override
+        public URI absoluteUri() {
+            return lazyAbsoluteUri.get();
         }
 
         private class ErrorRoutedRequest extends RoutedRequest {
