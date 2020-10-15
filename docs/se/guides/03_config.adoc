@@ -412,26 +412,22 @@ curl http://localhost:8080/greet
 
 ==== Exceeding three sources
 
-If you have more than three sources, you need to use a `ConfigSources` class to create a
-custom source list as shown below.
+If you have more than three sources, you can use the `addSource` method as shown below.
 
 [source,java]
-.Update the `Main` class; 1) Add new import and 2) Replace the `buildConfig` method:
+.Update the `Main` class and replace the `buildConfig` method:
 ----
-import io.helidon.config.ConfigSources;
-...
-
   private static Config buildConfig() {
-      return Config.builder()
-          .sources(ConfigSources.create(   // <1>
-              directory("conf"),
-              file("config-file.properties"),
-              classpath("config.properties").optional(),
-              classpath("application.yaml")))
-          .build();
+
+    return Config.builder()
+                .addSource(directory("conf"))  // <1>
+                .addSource(file("config-file.properties"))
+                .addSource(classpath("config.properties").optional())
+                .addSource(classpath("application.yaml"))
+                .build();
   }
 ----
-<1> Create a list of four sources using `ConfigSources.create` method.
+<1> Add each config source using the `addSource` method.
 
 [source,bash]
 .Build and run the application, then invoke the endpoint and check the response:
@@ -466,10 +462,10 @@ sources:
 .Update the `Main` class and replace the `buildConfig` method:
 ----
   private static Config buildConfig() {
-      return Config.loadSourcesFrom( file("meta-config.yaml")); // <1>
+      return Config.create(); // <1>
   }
 ----
-<1> Specify the meta-configuration file, which contains a single configuration source.
+<1> Will use `meta-config.yaml` by default
 
 [source,bash]
 .Build and run the application, then invoke the endpoint and check the response:
