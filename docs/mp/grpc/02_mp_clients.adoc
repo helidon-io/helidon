@@ -63,7 +63,7 @@ For example, suppose we have a simple server side service that has a unary metho
 ----
 @ApplicationScoped
 @io.helidon.microprofile.grpc.core.Grpc
-public class StringService {
+public interface StringService {
 
     @io.helidon.microprofile.grpc.core.Unary
     public String upper(String s) {
@@ -83,7 +83,7 @@ To write a client for the StringService all that is required is an interface.
 ----
 @ApplicationScoped
 @io.helidon.microprofile.grpc.core.Grpc
-public class StringService {
+public interface StringService {
 
     @io.helidon.microprofile.grpc.core.Unary
     public String upper(String s);
@@ -102,7 +102,7 @@ unary method signature:
 ----
 @ApplicationScoped
 @io.helidon.microprofile.grpc.core.Grpc
-public class StringService {
+public interface StringService {
 
     @io.helidon.microprofile.grpc.core.Unary
     public void upper(String s, StreamObserver<String> response);
@@ -116,7 +116,7 @@ We could also have made the client asynchronous by using one of the async method
 ----
 @ApplicationScoped
 @io.helidon.microprofile.grpc.core.Grpc
-public class StringService {
+public interface StringService {
 
     @io.helidon.microprofile.grpc.core.Unary
     public CompletableFuture<String> upper(String s);
