@@ -38,9 +38,6 @@ import org.junit.jupiter.api.Test;
 /**
  * Tests for Source annotation.
  */
-@HelidonTest
-@DisableDiscovery
-@AddExtension(GraphQLCdiExtension.class)
 @AddBean(SimpleQueriesWithSource.class)
 @AddBean(SimpleContact.class)
 @AddBean(TestDB.class)

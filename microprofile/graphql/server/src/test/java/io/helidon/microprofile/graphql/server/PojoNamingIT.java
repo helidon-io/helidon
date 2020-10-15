@@ -35,9 +35,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Tests for naming of Pojo's.
  */
-@HelidonTest
-@DisableDiscovery
-@AddExtension(GraphQLCdiExtension.class)
 @AddBean(Person.class)
 public class PojoNamingIT extends AbstractGraphQLIT {
 

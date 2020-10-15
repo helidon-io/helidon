@@ -31,9 +31,6 @@ import io.helidon.microprofile.tests.junit5.DisableDiscovery;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 import org.junit.jupiter.api.Test;
 
-@HelidonTest
-@DisableDiscovery
-@AddExtension(GraphQLCdiExtension.class)
 @AddBean(Vehicle.class)
 @AddBean(Car.class)
 @AddBean(Motorbike.class)

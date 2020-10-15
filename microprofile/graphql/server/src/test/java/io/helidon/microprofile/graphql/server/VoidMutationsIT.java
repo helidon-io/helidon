@@ -16,11 +16,22 @@
 
 package io.helidon.microprofile.graphql.server;
 
+import io.helidon.microprofile.graphql.server.test.mutations.VoidMutations;
+import io.helidon.microprofile.tests.junit5.AddBean;
+import io.helidon.microprofile.tests.junit5.AddExtension;
+import io.helidon.microprofile.tests.junit5.DisableDiscovery;
+import io.helidon.microprofile.tests.junit5.HelidonTest;
 import org.junit.jupiter.api.Test;
+import java.io.IOException;
 
-class GraphQLResourceTest {
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+@AddBean(VoidMutations.class)
+public class VoidMutationsIT extends AbstractGraphQLIT {
+
     @Test
-    public void test() {
-
+    public void testVoidMutations() throws IOException {
+        setupIndex(indexFileName, VoidMutations.class);
+        assertThrows(RuntimeException.class, () -> new ExecutionContext(defaultContext));
     }
 }

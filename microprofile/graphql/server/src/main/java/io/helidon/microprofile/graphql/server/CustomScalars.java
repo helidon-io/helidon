@@ -389,10 +389,23 @@ public class CustomScalars {
         }
     }
 
+    @SuppressWarnings("unchecked")
+
+    /**
+     * Number implementation of {@link Coercing} interface for given classes.
+     */
     public static class NumberCoercing<I> implements Coercing<I, Object> {
 
+        /**
+         * Original {@link Coercing} to fall back on if neeed.
+         */
         private final Coercing originalCoercing;
 
+        /**
+         * Construct a {@Link NumberCoercing} from an original {@link Coercing}.
+         *
+         * @param originalCoercing original {@link Coercing}
+         */
         public NumberCoercing(Coercing originalCoercing) {
             this.originalCoercing = originalCoercing;
         }

@@ -41,6 +41,7 @@ import org.eclipse.microprofile.graphql.ConfigKey;
 
 import static graphql.ExecutionInput.newExecutionInput;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ensureRuntimeException;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getSafeClass;
 
 /**
  * Defines a context in which to execute GraphQL commands.
@@ -346,30 +347,47 @@ public class ExecutionContext {
 
     /**
      * Return the message for an un-checked exception. This will return the default message unless the unchecked exception is on
-     * the whitelist.
+     * the whitelist or is a subclass of an exception on the whitelist.
      *
      * @param throwable {@link Throwable}
      * @return the message for an un-checked exception
      */
     protected String getUncheckedMessage(Throwable throwable) {
-        String exceptionClass = throwable.getClass().getName();
-        return exceptionWhitelist.contains(exceptionClass)
-                ? throwable.toString()
-                : defaultErrorMessage;
+        Class<?> exceptionClazz = throwable.getClass();
+
+        // loop through each exception in the whitelist and check if
+        // the exception on the whitelist or a subclass of an exception on the blacklist
+
+        for (String exception : exceptionWhitelist) {
+            Class<?> clazz = getSafeClass(exception);
+            if (clazz != null && (exceptionClazz.equals(clazz) || clazz.isAssignableFrom(exceptionClazz))) {
+                return throwable.getMessage();
+            }
+        }
+        return defaultErrorMessage;
     }
 
     /**
      * Return the message for a checked exception. This will return the exception message unless the exception is on the
-     * blacklist.
+     * blacklist or is a subclass of an exception on the blacklist.
      *
      * @param throwable {@link Throwable}
      * @return the message for a checked exception
      */
     protected String getCheckedMessage(Throwable throwable) {
-        String exceptionClass = throwable.getClass().getName();
-        return exceptionBlacklist.contains(exceptionClass)
-                ? defaultErrorMessage
-                : throwable.toString();
+        Class<?> exceptionClazz = throwable.getClass();
+
+        // loop through each exception in the blacklist and check if
+        // the exception on the blacklist or a subclass of an exception on the blacklist
+
+        for (String exception : exceptionBlacklist) {
+            Class<?> clazz = getSafeClass(exception);
+            if (clazz != null && (exceptionClazz.equals(clazz) || clazz.isAssignableFrom(exceptionClazz))) {
+                return defaultErrorMessage;
+            }
+        }
+
+        return throwable.getMessage();
     }
 
     /**

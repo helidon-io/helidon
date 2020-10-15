@@ -16,6 +16,9 @@
 
 package io.helidon.microprofile.graphql.server;
 
+import io.helidon.microprofile.tests.junit5.AddExtension;
+import io.helidon.microprofile.tests.junit5.DisableDiscovery;
+import io.helidon.microprofile.tests.junit5.HelidonTest;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,13 +26,19 @@ import org.junit.jupiter.api.BeforeEach;
 import java.beans.IntrospectionException;
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Common functionality for integration tests.
  */
+@HelidonTest
+@DisableDiscovery
+@AddExtension(GraphQLCdiExtension.class)
 public abstract class AbstractGraphQLIT
         extends AbstractGraphQLTest {
 
@@ -51,7 +60,7 @@ public abstract class AbstractGraphQLIT
             indexFile.delete();
         }
     }
-    
+
     protected void assertInterfaceResults() throws IntrospectionException, ClassNotFoundException {
         SchemaGenerator schemaGenerator = new SchemaGenerator(defaultContext);
         Schema schema = schemaGenerator.generateSchema();
@@ -65,5 +74,22 @@ public abstract class AbstractGraphQLIT
         assertThat(schema.getTypeByName("Query"), CoreMatchers.is(notNullValue()));
         assertThat(schema.getTypeByName("Mutation"), CoreMatchers.is(notNullValue()));
         generateGraphQLSchema(schema);
+    }
+
+    @SuppressWarnings("unchecked")
+    protected void assertMessageValue(String query, String expectedMessage, boolean dataExpected) {
+        ExecutionContext executionContext = new ExecutionContext(new DefaultContext());
+        Map<String, Object> mapResults = executionContext.execute(query);
+        if (dataExpected && mapResults.size() != 2) {
+            System.out.println(JsonUtils.convertMapToJson(mapResults));
+        }
+        assertThat(mapResults.size(), is(dataExpected ? 2 : 1));
+        List<Map<String, Object>> listErrors = (List<Map<String, Object>>) mapResults.get(ExecutionContext.ERRORS);
+        assertThat(listErrors, is(notNullValue()));
+        assertThat(listErrors.size(), is(1));
+        Map<String, Object> mapErrors = listErrors.get(0);
+        assertThat(mapErrors.get(ExecutionContext.MESSAGE), is(expectedMessage));
+
+        assertThat(mapResults.containsKey(ExecutionContext.DATA), is(dataExpected));
     }
 }

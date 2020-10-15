@@ -38,9 +38,6 @@ import org.junit.jupiter.api.Test;
 
 import org.opentest4j.AssertionFailedError;
 
-@HelidonTest
-@DisableDiscovery
-@AddExtension(GraphQLCdiExtension.class)
 @AddBean(QueriesWithIgnorable.class)
 @AddBean(ObjectWithIgnorableFieldsAndMethods.class)
 @AddBean(TestDB.class)

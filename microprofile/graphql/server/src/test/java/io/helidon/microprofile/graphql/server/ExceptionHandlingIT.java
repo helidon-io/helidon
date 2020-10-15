@@ -27,6 +27,7 @@ import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.exception.ExceptionQueries;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
 import io.helidon.microprofile.tests.junit5.AddBean;
+import io.helidon.microprofile.tests.junit5.AddConfig;
 import io.helidon.microprofile.tests.junit5.AddExtension;
 import io.helidon.microprofile.tests.junit5.DisableDiscovery;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
@@ -46,55 +47,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Integration tests for testing exception handing in {@link SchemaGeneratorTest}.
  */
-@SuppressWarnings("unchecked")
 
-@HelidonTest
-@DisableDiscovery
-@AddExtension(GraphQLCdiExtension.class)
 @AddBean(ExceptionQueries.class)
 @AddBean(SimpleContact.class)
 @AddBean(TestDB.class)
+@SuppressWarnings("unchecked")
 public class ExceptionHandlingIT extends AbstractGraphQLIT {
-    
-    @Test
-    public void testAllDefaultsForConfig() throws IOException {
-        setupConfig(null);
-
-        setupIndex(indexFileName);
-        ExecutionContext executionContext = new ExecutionContext(defaultContext);
-        assertThat(executionContext, is(notNullValue()));
-        assertThat(executionContext.getDefaultErrorMessage(), is("Server Error"));
-        assertThat(executionContext.getExceptionBlacklist().size(), is(0));
-        assertThat(executionContext.getExceptionWhitelist().size(), is(0));
-    }
-
-    @Test
-    public void testDifferentMessage() throws IOException {
-        Config config = setupConfig("config/config1.properties");
-        assertThat(config.getValue("mp.graphql.defaultErrorMessage", String.class), is("new message"));
-
-        setupIndex(indexFileName);
-
-        ExecutionContext executionContext = new ExecutionContext(defaultContext);
-        assertThat(executionContext.getDefaultErrorMessage(), is("new message"));
-    }
-
-    @Test
-    public void testBlackListAndWhiteList() throws IOException {
-        setupConfig("config/config2.properties");
-
-        setupIndex(indexFileName);
-
-        ExecutionContext executionContext = new ExecutionContext(defaultContext);
-        assertThat(executionContext.getDefaultErrorMessage(), is("Server Error"));
-        assertThat(executionContext.getExceptionBlacklist().size(), is(2));
-        assertThat(executionContext.getExceptionWhitelist().size(), is(1));
-        assertThat(executionContext.getExceptionBlacklist().contains("java.io.IOException"), is(true));
-        assertThat(executionContext.getExceptionBlacklist().contains("java.util.concurrent.TimeoutException"), is(true));
-        assertThat(executionContext.getExceptionWhitelist()
-                           .contains("org.eclipse.microprofile.graphql.tck.apps.superhero.api.WeaknessNotFoundException"),
-                   is(true));
-    }
 
     @Test
     public void testEmptyErrorPayloads() throws IOException {
@@ -202,44 +160,6 @@ public class ExceptionHandlingIT extends AbstractGraphQLIT {
         assertMessageValue("query { defaultContact { invalidField } }",
                            "Validation error of type FieldUndefined: Field 'invalidField' in" +
                                    " type 'SimpleContact' is undefined @ 'defaultContact/invalidField'", true);
-    }
-
-    @Test
-    public void testDefaultCheckedException() throws IOException {
-        setupConfig(null);
-        setupIndex(indexFileName, ExceptionQueries.class);
-        assertMessageValue("query { checkedQuery1(throwException: true) }", "java.io.IOException: exception", true);
-    }
-
-    @Test
-    public void testBlackListOfIOException() throws IOException {
-        setupConfig("config/config3.properties");
-        setupIndex(indexFileName, ExceptionQueries.class);
-        assertMessageValue("query { blackListOfIOException }", "Server Error", true);
-    }
-
-    @Test
-    public void testWhiteListOfCheckedException() throws IOException {
-        setupConfig("config/config4.properties");
-        setupIndex(indexFileName, ExceptionQueries.class);
-        assertMessageValue("query { whiteListOfUncheckedException }",
-                           "java.io.IOError: java.security.AccessControlException: my exception", true);
-    }
-
-    private void assertMessageValue(String query, String expectedMessage, boolean dataExpected) {
-        ExecutionContext executionContext = new ExecutionContext(new DefaultContext());
-        Map<String, Object> mapResults = executionContext.execute(query);
-        if (dataExpected && mapResults.size() != 2) {
-            System.out.println(JsonUtils.convertMapToJson(mapResults));
-        }
-        assertThat(mapResults.size(), is(dataExpected ? 2 : 1));
-        List<Map<String, Object>> listErrors = (List<Map<String, Object>>) mapResults.get(ExecutionContext.ERRORS);
-        assertThat(listErrors, is(notNullValue()));
-        assertThat(listErrors.size(), is(1));
-        Map<String, Object> mapErrors = listErrors.get(0);
-        assertThat(mapErrors.get(ExecutionContext.MESSAGE), is(expectedMessage));
-
-        assertThat(mapResults.containsKey(ExecutionContext.DATA), is(dataExpected));
     }
 
     private void assertPayload(Map<String, Object> errorMap) {

@@ -107,6 +107,15 @@ public class InvalidNamedTypes {
         }
     }
 
+    @GraphQLApi
+    public static class ClassWithInvalidEnum {
+
+        @Query
+        public Size echoSize(@Name("value") Size size) {
+            return size;
+        }
+    }
+
     @Enum("&!@@!")
     public enum Size {
         S,

@@ -39,9 +39,6 @@ import org.junit.jupiter.api.Test;
 /**
  * Tests for Nulls.
  */
-@HelidonTest
-@DisableDiscovery
-@AddExtension(GraphQLCdiExtension.class)
 @AddBean(NullPOJO.class)
 @AddBean(QueriesAndMutationsWithNulls.class)
 @AddBean(TestDB.class)

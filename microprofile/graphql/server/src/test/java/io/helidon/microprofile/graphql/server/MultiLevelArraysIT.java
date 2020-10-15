@@ -45,9 +45,6 @@ import org.junit.jupiter.api.Test;
 /**
  * Tests for Multi-level arrays.
  */
-@HelidonTest
-@DisableDiscovery
-@AddExtension(GraphQLCdiExtension.class)
 @AddBean(MultiLevelListsAndArrays.class)
 @AddBean(ArrayAndListQueries.class)
 @AddBean(TestDB.class)

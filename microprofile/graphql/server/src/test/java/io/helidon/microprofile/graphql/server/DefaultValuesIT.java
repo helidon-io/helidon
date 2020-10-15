@@ -39,9 +39,6 @@ import org.junit.jupiter.api.Test;
 /**
  * Tests for default values.
  */
-@HelidonTest
-@DisableDiscovery
-@AddExtension(GraphQLCdiExtension.class)
 @AddBean(DefaultValuePOJO.class)
 @AddBean(DefaultValueQueries.class)
 @AddBean(OddNamedQueriesAndMutations.class)

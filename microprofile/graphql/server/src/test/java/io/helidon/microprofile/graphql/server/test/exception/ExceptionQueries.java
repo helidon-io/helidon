@@ -47,27 +47,52 @@ public class ExceptionQueries {
         return "hello world";
     }
 
-    @Query("whiteListOfUncheckedException")
+    @Query("uncheckedQuery1")
     public String uncheckedQuery1() {
         throw new IOError(new AccessControlException("my exception"));
     }
 
+    @Query("uncheckedQuery2")
+    public String uncheckedQuery2() {
+        throw new MyIOError(new AccessControlException("my exception"));
+    }
+
     @Query
-    public String checkedQuery1(@Name("throwException") boolean throwException) throws IOException
-    {
+    public String checkedQuery1(@Name("throwException") boolean throwException) throws IOException {
         if (throwException) {
             throw new IOException("exception");
         }
         return String.valueOf(throwException);
     }
 
-    @Query("blackListOfIOException")
+    @Query("checkedException")
     public String checkedException() throws IOException {
         throw new IOException("unable to do this");
+    }
+
+    @Query("checkedException2")
+    public String checkedException2() throws MyIOException {
+        throw new MyIOException("my message");
     }
 
     @Query("defaultContact")
     public SimpleContact getDefaultContact() {
         return testDB.createRandomContact();
+    }
+
+    public static class MyIOException extends IOException {
+        public MyIOException() {
+            super();
+        }
+
+        public MyIOException(String message) {
+            super(message);
+        }
+    }
+
+    public static class MyIOError extends IOError {
+        public MyIOError(Throwable cause) {
+            super(cause);
+        }
     }
 }

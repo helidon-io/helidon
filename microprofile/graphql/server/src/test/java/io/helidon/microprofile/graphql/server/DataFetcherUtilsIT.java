@@ -49,16 +49,12 @@ import java.util.UUID;
  * Tests for {@link DataFetcherUtils} class.
  */
 
-@HelidonTest
-@DisableDiscovery
-@AddExtension(GraphQLCdiExtension.class)
 @AddBean(SimpleQueriesWithArgs.class)
 @AddBean(SimpleContactWithNumberFormats.class)
 @AddBean(ContactRelationship.class)
 @AddBean(SimpleContact.class)
 @AddBean(TestDB.class)
-class DataFetcherUtilsIT
-        extends AbstractGraphQLIT {
+class DataFetcherUtilsIT extends AbstractGraphQLIT {
 
     @Test
     public void testSimpleContact() throws Exception {

@@ -16,35 +16,32 @@
 
 package io.helidon.microprofile.graphql.server;
 
-import java.beans.IntrospectionException;
-import java.io.IOException;
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
-import io.helidon.microprofile.graphql.server.test.types.AbstractVehicle;
-import io.helidon.microprofile.graphql.server.test.types.Car;
-import io.helidon.microprofile.graphql.server.test.types.Motorbike;
-import io.helidon.microprofile.graphql.server.test.types.Vehicle;
-import io.helidon.microprofile.graphql.server.test.types.VehicleIncident;
-
+import io.helidon.microprofile.graphql.server.test.exception.ExceptionQueries;
+import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
 import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.AddExtension;
 import io.helidon.microprofile.tests.junit5.DisableDiscovery;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 import org.junit.jupiter.api.Test;
+import java.io.IOException;
 
-@AddBean(Vehicle.class)
-@AddBean(Car.class)
-@AddBean(Motorbike.class)
-@AddBean(VehicleIncident.class)
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+
+@AddBean(ExceptionQueries.class)
+@AddBean(SimpleContact.class)
 @AddBean(TestDB.class)
-public class InterfaceTypeOnlyAnnotatedIT extends AbstractGraphQLIT {
-    
-    /**
-     * Test discovery of interfaces and subsequent unresolved type which has a Name annotation .
-     */
-    @Test
-    public void testInterfaceDiscoveryWithUnresolvedType() throws IOException, IntrospectionException, ClassNotFoundException {
-        setupIndex(indexFileName, Vehicle.class, Car.class, Motorbike.class, VehicleIncident.class, AbstractVehicle.class);
-        assertInterfaceResults();
-    }
+public class AllDefaultsExceptionIT extends AbstractGraphQLIT {
 
+    @Test
+    public void testAllDefaultsForConfig() throws IOException {
+        setupIndex(indexFileName);
+        ExecutionContext executionContext = new ExecutionContext(defaultContext);
+        assertThat(executionContext, is(notNullValue()));
+        assertThat(executionContext.getDefaultErrorMessage(), is("Server Error"));
+        assertThat(executionContext.getExceptionBlacklist().size(), is(0));
+        assertThat(executionContext.getExceptionWhitelist().size(), is(0));
+    }
 }

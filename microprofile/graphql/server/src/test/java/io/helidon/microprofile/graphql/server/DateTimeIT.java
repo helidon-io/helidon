@@ -45,9 +45,6 @@ import io.helidon.microprofile.tests.junit5.DisableDiscovery;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 import org.junit.jupiter.api.Test;
 
-@HelidonTest
-@DisableDiscovery
-@AddExtension(GraphQLCdiExtension.class)
 @AddBean(SimpleQueriesAndMutations.class)
 @AddBean(DateTimePojo.class)
 @AddBean(SimpleDateTime.class)

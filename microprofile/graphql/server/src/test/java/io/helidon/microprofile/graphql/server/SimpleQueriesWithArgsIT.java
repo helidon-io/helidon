@@ -46,9 +46,6 @@ import org.junit.jupiter.api.Test;
 /**
  * Tests for simple queries with args.
  */
-@HelidonTest
-@DisableDiscovery
-@AddExtension(GraphQLCdiExtension.class)
 @AddBean(SimpleQueriesWithArgs.class)
 @AddBean(Car.class)
 @AddBean(AbstractVehicle.class)

@@ -44,9 +44,6 @@ import org.junit.jupiter.api.Test;
 /**
  * Tests for NUmber formats.
  */
-@HelidonTest
-@DisableDiscovery
-@AddExtension(GraphQLCdiExtension.class)
 @AddBean(SimpleContactWithNumberFormats.class)
 @AddBean(NumberFormatQueriesAndMutations.class)
 @AddBean(SimpleQueriesWithArgs.class)
