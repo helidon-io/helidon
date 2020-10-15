@@ -192,29 +192,28 @@ public class FallbackMergingStrategyTest {
 
     @Test
     public void testMergeListToObjectWithNonNumberKey() {
-        ConfigException ex = assertThrows(ConfigException.class, () -> {
-            mergeLoads(
-                    ObjectNode.builder().addList("top1.prop1", ListNode.builder()
-                            .addValue("1").build())
-                            .build(),
-                    ObjectNode.builder().addValue("top1.prop1.sub1", "2").build());
-        });
-        assertThat(ex.getMessage(),
-                   stringContainsInOrder(List.of("top1", "prop1", "merge", "LIST", "OBJECT")));
+        ObjectNode rootNode = mergeLoads(
+                ObjectNode.builder().addList("top1.prop1", ListNode.builder()
+                        .addValue("1").build())
+                        .build(),
+                ObjectNode.builder().addValue("top1.prop1.sub1", "2").build());
+        ObjectNode listNode = (ObjectNode) ((ObjectNode) rootNode.get("top1")).get("prop1");
+        assertThat(listNode.entrySet(), hasSize(2));
+        assertThat(listNode.get("0"), valueNode("1"));
+        assertThat(listNode.get("sub1"), valueNode("2"));
     }
 
     @Test
     public void testMergeListToObjectWithNumberKey() {
-        ConfigException ex = assertThrows(ConfigException.class, () -> {
-            mergeLoads(
-                    ObjectNode.builder()
-                            .addList("top1.prop1", ListNode.builder()
-                                    .addValue("1").build())
-                            .build(),
-                    ObjectNode.builder().addValue("top1.prop1.0", "2").build());
-        });
-        assertThat(ex.getMessage(),
-                   stringContainsInOrder(List.of("top1", "prop1", "merge", "LIST", "OBJECT")));
+        ObjectNode rootNode = mergeLoads(
+                ObjectNode.builder()
+                        .addList("top1.prop1", ListNode.builder()
+                                .addValue("1").build())
+                        .build(),
+                ObjectNode.builder().addValue("top1.prop1.0", "2").build());
+        ObjectNode listNode = (ObjectNode) ((ObjectNode) rootNode.get("top1")).get("prop1");
+        assertThat(listNode.entrySet(), hasSize(1));
+        assertThat(listNode.get("0"), valueNode("1"));
     }
 
     @Test

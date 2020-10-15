@@ -20,13 +20,12 @@ import java.util.AbstractMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 import io.helidon.config.AbstractNodeBuilderImpl.MergingKey;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
-
-import static io.helidon.config.AbstractNodeBuilderImpl.formatFrom;
 
 /**
  * Implements {@link ObjectNode}.
@@ -98,10 +97,7 @@ public class ObjectNodeImpl extends AbstractMap<String, ConfigNode> implements O
         case OBJECT:
             return mergeWithObjectNode((ObjectNodeImpl) node);
         case LIST:
-            throw new ConfigException(
-                    String.format("Cannot merge a LIST node%s with an OBJECT node%s.",
-                                  formatFrom(((ListNodeImpl) node).description()),
-                                  formatFrom(description)));
+            return mergeWithListNode((ListNodeImpl) node);
         case VALUE:
             return mergeWithValueNode((ValueNodeImpl) node);
         default:
@@ -122,6 +118,24 @@ public class ObjectNodeImpl extends AbstractMap<String, ConfigNode> implements O
         node.forEach((name, member) -> builder.deepMerge(MergingKey.of(name), AbstractNodeBuilderImpl.wrap(member)));
 
         node.value().or(this::value).ifPresent(builder::value);
+
+        return builder.build();
+    }
+
+    private MergeableNode mergeWithListNode(ListNodeImpl node) {
+        final ObjectNodeBuilderImpl builder = ObjectNodeBuilderImpl.create(members, resolveTokenFunction);
+
+        if (node.hasValue()) {
+            builder.value(node.value());
+        } else if (hasValue()) {
+            builder.value(value);
+        }
+
+        AtomicInteger index = new AtomicInteger(0);
+        node.forEach(configNode -> {
+            int i = index.getAndIncrement();
+            builder.merge(String.valueOf(i), (MergeableNode) configNode);
+        });
 
         return builder.build();
     }
