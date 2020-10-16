@@ -7,7 +7,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
-## [2.1.0-SNAPSHOT]
+## [2.1.0]
 
 2.1.0 is a minor release of Helidon. It contains bug fixes and enhancements. Notable changes:
 
@@ -23,7 +23,9 @@ For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.co
 
 - Config: Git config native-image support [2400](https://github.com/oracle/helidon/pull/2400)
 - Config: Injection of web target with correct endpoint. [2380](https://github.com/oracle/helidon/pull/2380)
+- Config: Config now supports merging of objects and lists [2448](https://github.com/oracle/helidon/pull/2448)
 - DBClient: integration tests for MySQL, MadiaDB, PostgreSQL and MS SQL [2383](https://github.com/oracle/helidon/pull/2383)
+- DBClient: Fix NPE on error in tx [2286](https://github.com/oracle/helidon/pull/2437)
 - DataSource: Use Config.getPropertyNames() instead of retrieving getPropertyNames() from ConfigSources [2322](https://github.com/oracle/helidon/pull/2322)
 - Fault Tolerance: Implementation of MP FT 2.1.1 using FT SE [2348](https://github.com/oracle/helidon/pull/2348)
 - Fault Tolerance: Limit module visibility by making several classes package private [2359](https://github.com/oracle/helidon/pull/2359)
@@ -36,6 +38,7 @@ For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.co
 - Media: Update MediaType, lazy non known type, read-only parameters map [2308](https://github.com/oracle/helidon/pull/2308)
 - Media: media-jackson native-image support [2385](https://github.com/oracle/helidon/pull/2385)
 - Messaging: Messaging health check [2352](https://github.com/oracle/helidon/pull/2352)
+- Messaging: Log Kafka sending error which caused channel cancel [2447](https://github.com/oracle/helidon/pull/2447)
 - Metrics: Avoid race condition by using ConcurrentHashMap [2435](https://github.com/oracle/helidon/pull/2435)
 - Metrics: Update release of Prometheus Java client (in 2.x) [2419](https://github.com/oracle/helidon/pull/2419)
 - Native Image: When class is annotated with @MappedSuperclass, its private fields can't be accessed from JPA with native image  [2127](https://github.com/oracle/helidon/pull/2127)
@@ -52,6 +55,7 @@ For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.co
 - Testing: Intermittent test failure fix [2347](https://github.com/oracle/helidon/pull/2347)
 - Testing: MP Testing [2353](https://github.com/oracle/helidon/pull/2353)
 - Testing: Update surefire and failsafe to 3.0.0-M5 [2307](https://github.com/oracle/helidon/pull/2307)
+- Testing: Junit4 upgrade [2450](https://github.com/oracle/helidon/pull/2450)
 - Tracing: Update to later release of MP OpenTracing [2313](https://github.com/oracle/helidon/pull/2313)
 - WebClient: Changes of the request via WebClientService are now propagated [2321](https://github.com/oracle/helidon/pull/2321)
 - WebClient: Webclient uses relative uri in request instead of full uri [2309](https://github.com/oracle/helidon/pull/2309)
@@ -59,13 +63,16 @@ For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.co
 - WebServer: Enable support for HTTP compression in the webserver [2379](https://github.com/oracle/helidon/pull/2379)
 - WebServer: Secure static content [2411](https://github.com/oracle/helidon/pull/2411)
 - WebServer: WebSocket Extensions [1934](https://github.com/oracle/helidon/pull/1934)
+- WebServer: Public API to get absolute URI of the request [2441](https://github.com/oracle/helidon/pull/2441)
+- WebServer: Attempt to start a stopped server will fail with IllegalStateException [2439](https://github.com/oracle/helidon/pull/2439)
 - gRPC: Fix issue with gRPC clients and services where method signatures have types with nested generics [2283](https://github.com/oracle/helidon/pull/2283)
 - gRPC: Update gRPC Version [2388](https://github.com/oracle/helidon/pull/2388)
 - CDI: Service class fixed. [2317](https://github.com/oracle/helidon/pull/2317)
+- CDI: CDI.current().getBeanManager() now available during shutdown [2438](https://github.com/oracle/helidon/pull/2438)
 - Examples: Fix 2391 Bug in generated Dockerfile.native from quickstart-mp [2393](https://github.com/oracle/helidon/pull/2393)
 - Examples: Update standalone quickstarts. [2360](https://github.com/oracle/helidon/pull/2360)
 - Examples: Updated maven surefire plugin to helidon-standalone-quickstart-mp [1849](https://github.com/oracle/helidon/pull/1849)
-- Documentation improvements: [2428](https://github.com/oracle/helidon/pull/2428) [2399](https://github.com/oracle/helidon/pull/2399) [2410](https://github.com/oracle/helidon/pull/2410) [2390](https://github.com/oracle/helidon/pull/2390) [2329](https://github.com/oracle/helidon/pull/2329) [2397](https://github.com/oracle/helidon/pull/2397) [2367](https://github.com/oracle/helidon/pull/2367) [2363](https://github.com/oracle/helidon/pull/2363) [2351](https://github.com/oracle/helidon/pull/2351) [2328](https://github.com/oracle/helidon/pull/2328)
+- Documentation improvements: [2428](https://github.com/oracle/helidon/pull/2428) [2399](https://github.com/oracle/helidon/pull/2399) [2410](https://github.com/oracle/helidon/pull/2410) [2390](https://github.com/oracle/helidon/pull/2390) [2329](https://github.com/oracle/helidon/pull/2329) [2397](https://github.com/oracle/helidon/pull/2397) [2367](https://github.com/oracle/helidon/pull/2367) [2363](https://github.com/oracle/helidon/pull/2363) [2351](https://github.com/oracle/helidon/pull/2351) [2328](https://github.com/oracle/helidon/pull/2328) [2457](https://github.com/oracle/helidon/pull/2457) [2443](https://github.com/oracle/helidon/pull/2443)
 
 ## [2.0.2]
 
@@ -1098,7 +1105,7 @@ If there is no authorization provider configured, ABAC provider will be configur
       otherwise they are ignored
 
 
-[2.1.0-SNAPSHOT]: https://github.com/oracle/helidon/compare/2.0.2...HEAD
+[2.1.0]: https://github.com/oracle/helidon/compare/2.0.2...2.1.0
 [2.0.2]: https://github.com/oracle/helidon/compare/2.0.1...2.0.2
 [2.0.1]: https://github.com/oracle/helidon/compare/2.0.0...2.0.1
 [2.0.0]: https://github.com/oracle/helidon/compare/2.0.0-RC2...2.0.0
