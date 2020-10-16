@@ -40,11 +40,11 @@ import io.helidon.microprofile.graphql.server.test.types.DateTimePojo;
 import io.helidon.microprofile.graphql.server.test.types.SimpleDateTime;
 import io.helidon.microprofile.tests.junit5.AddBean;
 
-import io.helidon.microprofile.tests.junit5.AddExtension;
-import io.helidon.microprofile.tests.junit5.DisableDiscovery;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
 import org.junit.jupiter.api.Test;
 
+/**
+ * Tests for date/times.
+ */
 @AddBean(SimpleQueriesAndMutations.class)
 @AddBean(DateTimePojo.class)
 @AddBean(SimpleDateTime.class)

@@ -19,17 +19,15 @@ package io.helidon.microprofile.graphql.server;
 import io.helidon.microprofile.graphql.server.test.mutations.VoidMutations;
 import io.helidon.microprofile.graphql.server.test.queries.InvalidQueries;
 import io.helidon.microprofile.tests.junit5.AddBean;
-import io.helidon.microprofile.tests.junit5.AddExtension;
-import io.helidon.microprofile.tests.junit5.DisableDiscovery;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
+
 import org.junit.jupiter.api.Test;
 import java.io.IOException;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@HelidonTest
-@DisableDiscovery
-@AddExtension(GraphQLCdiExtension.class)
+/**
+ * Tests for invalid queries.
+ */
 @AddBean(VoidMutations.class)
 public class InvalidQueriesIT extends AbstractGraphQLIT {
 

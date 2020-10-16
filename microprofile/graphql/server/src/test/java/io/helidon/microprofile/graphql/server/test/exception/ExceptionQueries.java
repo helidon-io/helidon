@@ -17,6 +17,7 @@
 package io.helidon.microprofile.graphql.server.test.exception;
 
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
+import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithEnumName;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -28,6 +29,8 @@ import org.eclipse.microprofile.graphql.Query;
 import java.io.IOError;
 import java.io.IOException;
 import java.security.AccessControlException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Class that holds queries that raise various exceptions.
@@ -78,6 +81,26 @@ public class ExceptionQueries {
     @Query("defaultContact")
     public SimpleContact getDefaultContact() {
         return testDB.createRandomContact();
+    }
+
+    @Query
+    public List<Integer> failAfterNResults(@Name("failAfter") int failAfter) throws GraphQLException {
+        List<Integer> listIntegers = new ArrayList<>();
+        int i = 0;
+        while (i++ < failAfter) {
+            listIntegers.add(i);
+        }
+        throw new GraphQLException("Partial results", listIntegers);
+    }
+
+    @Query
+    public List<SimpleContact> failAfterNContacts(@Name("failAfter") int failAfter) throws GraphQLException {
+        List<SimpleContact> listContacts = new ArrayList<>();
+        int i = 0;
+        while (i++ < failAfter) {
+            listContacts.add(new SimpleContact("id-" + i, "Name-" + i, i, EnumTestWithEnumName.XL));
+        }
+        throw new GraphQLException("Partial results", listContacts);
     }
 
     public static class MyIOException extends IOException {

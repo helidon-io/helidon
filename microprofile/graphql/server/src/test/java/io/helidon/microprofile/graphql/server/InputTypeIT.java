@@ -27,11 +27,12 @@ import io.helidon.microprofile.graphql.server.test.types.SimpleContactInputTypeW
 import io.helidon.microprofile.graphql.server.test.types.SimpleContactInputTypeWithNameValue;
 
 import io.helidon.microprofile.tests.junit5.AddBean;
-import io.helidon.microprofile.tests.junit5.AddExtension;
-import io.helidon.microprofile.tests.junit5.DisableDiscovery;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
+
 import org.junit.jupiter.api.Test;
 
+/**
+ * Tests for input types.
+ */
 @AddBean(SimpleContactInputType.class)
 @AddBean(SimpleContactInputTypeWithName.class)
 @AddBean(SimpleContactInputTypeWithNameValue.class)

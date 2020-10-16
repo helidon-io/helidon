@@ -27,17 +27,16 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.queries.QueriesWithIgnorable;
-
 import io.helidon.microprofile.graphql.server.test.types.ObjectWithIgnorableFieldsAndMethods;
-
 import io.helidon.microprofile.tests.junit5.AddBean;
-import io.helidon.microprofile.tests.junit5.AddExtension;
-import io.helidon.microprofile.tests.junit5.DisableDiscovery;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
+
 import org.junit.jupiter.api.Test;
 
 import org.opentest4j.AssertionFailedError;
 
+/**
+ * Tests for ignorable fields.
+ */
 @AddBean(QueriesWithIgnorable.class)
 @AddBean(ObjectWithIgnorableFieldsAndMethods.class)
 @AddBean(TestDB.class)

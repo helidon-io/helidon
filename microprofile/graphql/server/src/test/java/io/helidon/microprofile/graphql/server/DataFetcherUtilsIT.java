@@ -48,7 +48,6 @@ import java.util.UUID;
 /**
  * Tests for {@link DataFetcherUtils} class.
  */
-
 @AddBean(SimpleQueriesWithArgs.class)
 @AddBean(SimpleContactWithNumberFormats.class)
 @AddBean(ContactRelationship.class)

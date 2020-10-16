@@ -27,12 +27,8 @@ import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.queries.DefaultValueQueries;
 import io.helidon.microprofile.graphql.server.test.queries.OddNamedQueriesAndMutations;
 import io.helidon.microprofile.graphql.server.test.types.DefaultValuePOJO;
-
 import io.helidon.microprofile.tests.junit5.AddBean;
 
-import io.helidon.microprofile.tests.junit5.AddExtension;
-import io.helidon.microprofile.tests.junit5.DisableDiscovery;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
 import org.junit.jupiter.api.Test;
 
 

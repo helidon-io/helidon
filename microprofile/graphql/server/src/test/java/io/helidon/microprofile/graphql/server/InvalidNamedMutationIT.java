@@ -18,14 +18,15 @@ package io.helidon.microprofile.graphql.server;
 
 import io.helidon.microprofile.graphql.server.test.types.InvalidNamedTypes;
 import io.helidon.microprofile.tests.junit5.AddBean;
-import io.helidon.microprofile.tests.junit5.AddExtension;
-import io.helidon.microprofile.tests.junit5.DisableDiscovery;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
+
 import org.junit.jupiter.api.Test;
 import java.io.IOException;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+/**
+ * Tests for inalid name mutations.
+ */
 @AddBean(InvalidNamedTypes.ClassWithInvalidMutation.class)
 public class InvalidNamedMutationIT extends AbstractGraphQLIT {
 

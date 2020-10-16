@@ -22,8 +22,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.logging.Logger;
 
+import graphql.execution.DataFetcherResult;
 import io.helidon.config.Config;
 
 import graphql.ExceptionWhileDataFetching;
@@ -38,6 +40,7 @@ import graphql.schema.idl.SchemaPrinter;
 import graphql.validation.ValidationError;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.graphql.ConfigKey;
+import org.eclipse.microprofile.graphql.GraphQLException;
 
 import static graphql.ExecutionInput.newExecutionInput;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ensureRuntimeException;
@@ -280,6 +283,7 @@ public class ExecutionContext {
      * @param mapVariables  the map of variables to pass through
      * @return the {@link Map} containing the execution result
      */
+    @SuppressWarnings({"unchecked", "rawtypes"})
     public Map<String, Object> execute(String query, String operationName, Map<String, Object> mapVariables) {
         try {
             ExecutionInput executionInput = newExecutionInput()
@@ -293,13 +297,43 @@ public class ExecutionContext {
             List<GraphQLError> errors = result.getErrors();
             boolean hasErrors = false;
             Map<String, Object> mapErrors = newErrorPayload(result.getData());
+
+            // process errors
             if (errors != null && errors.size() > 0) {
                 for (GraphQLError error : errors) {
                     if (error instanceof ExceptionWhileDataFetching) {
                         ExceptionWhileDataFetching e = (ExceptionWhileDataFetching) error;
                         Throwable cause = e.getException().getCause();
                         hasErrors = true;
-                        if (cause instanceof Error || cause instanceof RuntimeException) {
+                        if (cause instanceof GraphQLException) {
+                            // process partial results
+                            GraphQLException graphQLE = (GraphQLException) cause;
+                            Object partialResults = graphQLE.getPartialResults();
+
+                            // the current key for data will be the name of the data result
+                            // and there should only be one
+                            Map<String, Object> data = result.getData();
+                            String key = data.keySet().stream().findFirst().orElse(null);
+                            if (key == null) {
+                                ensureRuntimeException(LOGGER, "Partial results should contain 1 single data key");
+                            }
+                            Map<String, Object> dataMap = new HashMap<>();
+                            if (partialResults != null) {
+                                // partial results are native objects and must be converted
+                                if (partialResults instanceof List) {
+                                    ((List) partialResults).removeIf(Objects::isNull);
+                                }
+                                dataMap.put(key, partialResults);
+                            } else {
+                                dataMap = result.getData();
+                                dataMap.values().removeIf(Objects::isNull);
+                            }
+
+                            DataFetcherResult.Builder builder = DataFetcherResult.newResult().data(dataMap);
+                            DataFetcherResult build = builder.build();
+                            mapErrors.put(DATA, dataMap);
+                            addErrorPayload(mapErrors, getCheckedMessage(cause), error);
+                        } else if (cause instanceof Error || cause instanceof RuntimeException) {
                             // unchecked
                             addErrorPayload(mapErrors, getUncheckedMessage(cause), error);
                         } else {
@@ -347,7 +381,7 @@ public class ExecutionContext {
 
     /**
      * Return the message for an un-checked exception. This will return the default message unless the unchecked exception is on
-     * the whitelist or is a subclass of an exception on the whitelist.
+     * the allow list or is a subclass of an exception on the allow list.
      *
      * @param throwable {@link Throwable}
      * @return the message for an un-checked exception
@@ -355,9 +389,8 @@ public class ExecutionContext {
     protected String getUncheckedMessage(Throwable throwable) {
         Class<?> exceptionClazz = throwable.getClass();
 
-        // loop through each exception in the whitelist and check if
+        // loop through each exception in the allow list and check if
         // the exception on the whitelist or a subclass of an exception on the blacklist
-
         for (String exception : exceptionWhitelist) {
             Class<?> clazz = getSafeClass(exception);
             if (clazz != null && (exceptionClazz.equals(clazz) || clazz.isAssignableFrom(exceptionClazz))) {
@@ -369,7 +402,7 @@ public class ExecutionContext {
 
     /**
      * Return the message for a checked exception. This will return the exception message unless the exception is on the
-     * blacklist or is a subclass of an exception on the blacklist.
+     * deny list or is a subclass of an exception on the deny list.
      *
      * @param throwable {@link Throwable}
      * @return the message for a checked exception
@@ -378,8 +411,7 @@ public class ExecutionContext {
         Class<?> exceptionClazz = throwable.getClass();
 
         // loop through each exception in the blacklist and check if
-        // the exception on the blacklist or a subclass of an exception on the blacklist
-
+        // the exception on the deny list or a subclass of an exception on the deny list
         for (String exception : exceptionBlacklist) {
             Class<?> clazz = getSafeClass(exception);
             if (clazz != null && (exceptionClazz.equals(clazz) || clazz.isAssignableFrom(exceptionClazz))) {
@@ -530,7 +562,7 @@ public class ExecutionContext {
      *
      * @param errorMap error {@link Map} to add to
      * @param message  message to add
-     * @param error    {@link GraphQLError} to retireve infornation from
+     * @param error    {@link GraphQLError} to retrieve information from
      */
     protected void addErrorPayload(Map<String, Object> errorMap, String message, GraphQLError error) {
         int line = -1;

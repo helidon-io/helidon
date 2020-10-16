@@ -26,21 +26,19 @@ import io.helidon.microprofile.graphql.server.test.types.Vehicle;
 import io.helidon.microprofile.graphql.server.test.types.VehicleIncident;
 
 import io.helidon.microprofile.tests.junit5.AddBean;
-import io.helidon.microprofile.tests.junit5.AddExtension;
-import io.helidon.microprofile.tests.junit5.DisableDiscovery;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
+
 import org.junit.jupiter.api.Test;
 
+/**
+ * Tests for interfaces and subsequent unresolved type which has a Name annotation .
+ */
 @AddBean(Vehicle.class)
 @AddBean(Car.class)
 @AddBean(Motorbike.class)
 @AddBean(VehicleIncident.class)
 @AddBean(TestDB.class)
 public class InterfaceTypeOnlyAnnotatedIT extends AbstractGraphQLIT {
-    
-    /**
-     * Test discovery of interfaces and subsequent unresolved type which has a Name annotation .
-     */
+
     @Test
     public void testInterfaceDiscoveryWithUnresolvedType() throws IOException, IntrospectionException, ClassNotFoundException {
         setupIndex(indexFileName, Vehicle.class, Car.class, Motorbike.class, VehicleIncident.class, AbstractVehicle.class);

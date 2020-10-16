@@ -30,9 +30,6 @@ import io.helidon.microprofile.graphql.server.test.types.NullPOJO;
 
 import io.helidon.microprofile.tests.junit5.AddBean;
 
-import io.helidon.microprofile.tests.junit5.AddExtension;
-import io.helidon.microprofile.tests.junit5.DisableDiscovery;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
 import org.junit.jupiter.api.Test;
 
 

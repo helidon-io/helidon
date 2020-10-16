@@ -26,21 +26,19 @@ import io.helidon.microprofile.graphql.server.test.types.Motorbike;
 import io.helidon.microprofile.graphql.server.test.types.Vehicle;
 
 import io.helidon.microprofile.tests.junit5.AddBean;
-import io.helidon.microprofile.tests.junit5.AddExtension;
-import io.helidon.microprofile.tests.junit5.DisableDiscovery;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
+
 import org.junit.jupiter.api.Test;
 
+/**
+ * Tests for discovery of interfaces when only the interface annotated.
+ */
 @AddBean(Vehicle.class)
 @AddBean(Car.class)
 @AddBean(Motorbike.class)
 @AddBean(AbstractVehicle.class)
 @AddBean(TestDB.class)
 public class InterfaceOnlyAnnotatedIT extends AbstractGraphQLIT {
-
-    /**
-     * Test discovery of interfaces when only the interface annotated.
-     */
+    
     @Test
     public void testInterfaceDiscoveryWithImplementorsWithNoTypeAnnotation()
             throws IOException, IntrospectionException, ClassNotFoundException {

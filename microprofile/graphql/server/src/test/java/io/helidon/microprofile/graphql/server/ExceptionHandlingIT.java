@@ -27,10 +27,7 @@ import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.exception.ExceptionQueries;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
 import io.helidon.microprofile.tests.junit5.AddBean;
-import io.helidon.microprofile.tests.junit5.AddConfig;
-import io.helidon.microprofile.tests.junit5.AddExtension;
-import io.helidon.microprofile.tests.junit5.DisableDiscovery;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
+
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 
@@ -38,16 +35,14 @@ import org.hamcrest.Matchers;
 
 import org.junit.jupiter.api.Test;
 
-
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
- * Integration tests for testing exception handing in {@link SchemaGeneratorTest}.
+ * Tests for testing exception handing in {@link SchemaGeneratorTest}.
  */
-
 @AddBean(ExceptionQueries.class)
 @AddBean(SimpleContact.class)
 @AddBean(TestDB.class)

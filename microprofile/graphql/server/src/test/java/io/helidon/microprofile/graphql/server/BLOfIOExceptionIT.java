@@ -27,7 +27,9 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
-
+/**
+ * Tests for deny list.
+ */
 @AddBean(ExceptionQueries.class)
 @AddBean(SimpleContact.class)
 @AddBean(TestDB.class)

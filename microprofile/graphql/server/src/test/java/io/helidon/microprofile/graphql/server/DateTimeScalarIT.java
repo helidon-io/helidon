@@ -23,18 +23,18 @@ import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.queries.DateTimeScalarQueries;
 import io.helidon.microprofile.graphql.server.test.types.SimpleDateTimePojo;
 import io.helidon.microprofile.tests.junit5.AddBean;
-import io.helidon.microprofile.tests.junit5.AddExtension;
-import io.helidon.microprofile.tests.junit5.DisableDiscovery;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
+
 import org.junit.jupiter.api.Test;
 
+/**
+ * Tests for date/time scalars.
+ */
 @AddBean(DateTimeScalarQueries.class)
 @AddBean(SimpleDateTimePojo.class)
 @AddBean(TestDB.class)

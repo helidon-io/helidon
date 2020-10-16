@@ -27,6 +27,9 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
+/**
+ * Tests for allow list of checked exceptions.
+ */
 @AddBean(ExceptionQueries.class)
 @AddBean(SimpleContact.class)
 @AddBean(TestDB.class)
