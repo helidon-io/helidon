@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.security.integration</groupId>
         <artifactId>helidon-security-integration-project</artifactId>
-        <version>2.0.3-SNAPSHOT</version>
+        <version>2.1.0-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-security-integration-jersey-client</artifactId>
     <name>Helidon Security Integration Jersey Client</name>
