@@ -19,7 +19,7 @@ package io.helidon.integrations.micronaut.cdi;
 import javax.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
-public class CdiBean implements TestBean {
+public class TestCdiBean implements TestBean {
 
     @Override
     public String name() {

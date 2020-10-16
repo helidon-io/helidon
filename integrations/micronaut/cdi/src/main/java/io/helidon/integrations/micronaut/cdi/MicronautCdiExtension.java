@@ -42,7 +42,6 @@ import javax.enterprise.inject.spi.AfterBeanDiscovery;
 import javax.enterprise.inject.spi.BeforeBeanDiscovery;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessAnnotatedType;
-import javax.enterprise.inject.spi.configurator.AnnotatedMethodConfigurator;
 import javax.enterprise.inject.spi.configurator.BeanConfigurator;
 import javax.inject.Qualifier;
 
@@ -54,7 +53,6 @@ import io.micronaut.context.env.PropertySource;
 import io.micronaut.core.annotation.AnnotationMetadata;
 import io.micronaut.core.io.service.ServiceDefinition;
 import io.micronaut.core.io.service.SoftServiceLoader;
-import io.micronaut.inject.AdvisedBeanType;
 import io.micronaut.inject.BeanDefinition;
 import io.micronaut.inject.BeanDefinitionReference;
 import io.micronaut.inject.ExecutableMethod;
@@ -66,6 +64,7 @@ import static javax.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
 
 public class MicronautCdiExtension implements Extension {
     private final AtomicReference<ApplicationContext> micronautContext = new AtomicReference<>();
+    private final Map<Method, ExecutableMethod<?, ?>> executableMethodCache = new HashMap<>();
     private final Map<Method, MethodInterceptorMetadata> methods = new HashMap<>();
     // all bean definitions as seen by Micronaut
     private final List<MicronautBean> beanDefinitions = new LinkedList<>();
@@ -73,10 +72,6 @@ public class MicronautCdiExtension implements Extension {
     private final Map<Class<?>, List<MicronautBean>> mBeanToDefRef = new HashMap<>();
     // Micronaut beans not yet processed by CDI
     private final Map<Class<?>, List<MicronautBean>> unprocessedBeans = new HashMap<>();
-
-    public List<MicronautBean> beanDefinitions() {
-        return beanDefinitions;
-    }
 
     public ApplicationContext context() {
         ApplicationContext ctx = micronautContext.get();
@@ -87,13 +82,8 @@ public class MicronautCdiExtension implements Extension {
         return ctx;
     }
 
-    public void addInterceptor(AnnotatedMethodConfigurator<?> method,
-                               Set<Class<? extends MethodInterceptor<?, ?>>> interceptors,
-                               Map<Class<? extends Annotation>, Map<CharSequence, Object>> annotationsToAdd) {
-        method.add(MicronautIntercepted.Literal.INSTANCE);
-        Method javaMethod = method.getAnnotated().getJavaMember();
-        methods.computeIfAbsent(javaMethod, it -> MethodInterceptorMetadata.create(javaMethod, annotationsToAdd))
-                .addInterceptors(interceptors);
+    public MethodInterceptorMetadata getInterceptionMetadata(Method javaMethod) {
+        return methods.get(javaMethod);
     }
 
     @SuppressWarnings("unchecked")
@@ -101,81 +91,28 @@ public class MicronautCdiExtension implements Extension {
         Set<Class<?>> classInterceptors = new HashSet<>();
         Map<Method, Set<Class<?>>> allMethodInterceptors = new HashMap<>();
 
-        List<MicronautBean> mBeans = unprocessedBeans.remove(event.getAnnotatedType().getJavaClass());
+        List<MicronautBean> miBeans = unprocessedBeans.remove(event.getAnnotatedType().getJavaClass());
 
-        if (mBeans != null && mBeans.size() > 0) {
-            BeanDefinitionReference<?> found = null;
-
-            for (MicronautBean mBean : mBeans) {
-                BeanDefinitionReference<?> ref = mBean.definitionRef();
-                if (ref instanceof AdvisedBeanType) {
-                    continue;
-                }
-                found = ref;
-                break;
-            }
-            if (found == null) {
-                // just use the first one
-                found = mBeans.get(0).definitionRef();
-            }
-
-            // find all annotations with Around stereotype and find its Type annotation to add interceptors
-            found.getAnnotationMetadata()
-                    .getAnnotationTypesByStereotype(Around.class)
-                    .stream()
-                    .map(it -> it.getAnnotation(Type.class))
-                    .filter(Objects::nonNull)
-                    .map(Type::value)
-                    .flatMap(Stream::of)
-                    .forEach(classInterceptors::add);
-
-            BeanDefinition<?> beanDef = found.load();
-
-            Collection<? extends ExecutableMethod<?, ?>> executableMethods = beanDef.getExecutableMethods();
-            for (ExecutableMethod<?, ?> executableMethod : executableMethods) {
-
-                Set<Class<?>> methodInterceptors = new HashSet<>();
-
-                executableMethod
-                        .getAnnotationTypesByStereotype(Around.class)
-                        .stream()
-                        .map(it -> it.getAnnotation(Type.class))
-                        .filter(Objects::nonNull)
-                        .map(Type::value)
-                        .flatMap(Stream::of)
-                        .forEach(methodInterceptors::add);
-
-                allMethodInterceptors.computeIfAbsent(executableMethod.getTargetMethod(), it -> new HashSet<>())
-                        .addAll(methodInterceptors);
-            }
+        if (miBeans != null && miBeans.size() > 0) {
+            BeanDefinitionReference<?> miBean = findMicronautBeanDefinition(miBeans);
+            // add all interceptors that are seen based on Micronaut
+            findMicronautInterceptors(classInterceptors, allMethodInterceptors, miBean);
         }
 
-        event.getAnnotatedType()
-                .getAnnotations()
-                .forEach(annot -> {
-                    if (annot.annotationType().getAnnotation(Around.class) != null) {
-                        Set.of(annot.annotationType().getAnnotation(Type.class)
-                                       .value())
-                                .forEach(classInterceptors::add);
-                    }
-                });
+        // find all annotations that have meta annotation Around and collect their Type list to add as interceptors
+        addMicronautInterceptors(classInterceptors, event.getAnnotatedType().getAnnotations());
 
-        event.configureAnnotatedType().methods()
+        // for each method, find the same (Around, collect Type), and add the interceptor binding for Micronaut interceptors
+        // CDI interceptors will be automatic
+        event.configureAnnotatedType()
+                .methods()
                 .forEach(method -> {
                     Method javaMethod = method.getAnnotated().getJavaMember();
 
                     Set<Class<?>> methodInterceptors = allMethodInterceptors.computeIfAbsent(javaMethod, it -> new HashSet<>());
                     methodInterceptors.addAll(classInterceptors);
 
-                    method.getAnnotated()
-                            .getAnnotations()
-                            .forEach(annot -> {
-                                if (annot.annotationType().getAnnotation(Around.class) != null) {
-                                    Set.of(annot.annotationType().getAnnotation(Type.class)
-                                                   .value())
-                                            .forEach(methodInterceptors::add);
-                                }
-                            });
+                    addMicronautInterceptors(methodInterceptors, method.getAnnotated().getAnnotations());
 
                     if (!methodInterceptors.isEmpty()) {
                         // now I have a set of micronaut interceptors that are needed for this method
@@ -184,7 +121,10 @@ public class MicronautCdiExtension implements Extension {
                         Set<Class<? extends MethodInterceptor<?, ?>>> interceptors = new HashSet<>();
                         methodInterceptors.forEach(it -> interceptors.add((Class<? extends MethodInterceptor<?, ?>>) it));
 
-                        methods.computeIfAbsent(javaMethod, MethodInterceptorMetadata::create)
+                        methods.computeIfAbsent(javaMethod,
+                                                theMethod -> MethodInterceptorMetadata.create(
+                                                        method.getAnnotated(),
+                                                        executableMethodCache.get(theMethod)))
                                 .addInterceptors(interceptors);
                     }
                 });
@@ -212,6 +152,7 @@ public class MicronautCdiExtension implements Extension {
             // first make sure these are singletons; if not, ignore
             List<? extends BeanDefinitionReference<?>> refs = beans.stream()
                     .map(MicronautBean::definitionRef)
+                    .filter(it -> !it.getBeanType().getName().endsWith("$Intercepted"))
                     .collect(Collectors.toList());
 
             if (refs.isEmpty()) {
@@ -321,9 +262,19 @@ public class MicronautCdiExtension implements Extension {
                 .map(ref -> {
                     Class<?> beanType = ref.getBeanType();
 
-                    if (ref instanceof AdvisedBeanType) {
-                        beanType = ((AdvisedBeanType) ref).getInterceptedType();
+                    String className = ref.getBeanType().getName();
+                    if (className.endsWith("$Intercepted")) {
+                        // either superclass is the one we want, or first implemented interface
+                        if (Object.class.equals(beanType.getSuperclass())) {
+                            Class<?>[] interfaces = beanType.getInterfaces();
+                            if (interfaces.length > 0) {
+                                beanType = interfaces[0];
+                            }
+                        } else {
+                            beanType = beanType.getSuperclass();
+                        }
                     }
+
                     return new MicronautBean(beanType, ref);
                 })
                 .forEach(beanDefinitions::add);
@@ -336,22 +287,64 @@ public class MicronautCdiExtension implements Extension {
         unprocessedBeans.putAll(mBeanToDefRef);
     }
 
-    public MethodInterceptorMetadata getInterceptionMetadata(Method javaMethod) {
-        for (MicronautBean mBean : beanDefinitions) {
-            BeanDefinition beanDef = mBean.definitionRef().load();
-            if (beanDef.getBeanType().equals(javaMethod.getDeclaringClass())) {
-                Collection<ExecutableMethod<?, ?>> executableMethods = beanDef.getExecutableMethods();
-                for (ExecutableMethod<?, ?> method : executableMethods) {
-                    if (method.getMethodName().equals(javaMethod.getName())) {
-                        if (method.getTargetMethod().equals(javaMethod)) {
-                            MethodInterceptorMetadata methodMeta = methods.get(javaMethod);
-                            methodMeta.executableMethod(method);
-                            return methodMeta;
-                        }
-                    }
-                }
-            }
+    private void addMicronautInterceptors(Set<Class<?>> interceptors, Set<Annotation> annotations) {
+        annotations.stream()
+                .map(Annotation::annotationType)
+                .filter(type -> type.getAnnotation(Around.class) != null)
+                .map(type -> type.getAnnotation(Type.class))
+                .map(Type::value)
+                .map(Set::of)
+                .flatMap(Set::stream)
+                .forEach(interceptors::add);
+    }
+
+    private void findMicronautInterceptors(Set<Class<?>> classInterceptors,
+                                           Map<Method, Set<Class<?>>> allMethodInterceptors,
+                                           BeanDefinitionReference<?> miBean) {
+        // find all annotations with Around stereotype and find its Type annotation to add interceptors
+        miBean.getAnnotationMetadata()
+                .getAnnotationTypesByStereotype(Around.class)
+                .stream()
+                .map(it -> it.getAnnotation(Type.class))
+                .filter(Objects::nonNull)
+                .map(Type::value)
+                .flatMap(Stream::of)
+                .forEach(classInterceptors::add);
+
+        BeanDefinition<?> beanDef = miBean.load();
+
+        Collection<? extends ExecutableMethod<?, ?>> executableMethods = beanDef.getExecutableMethods();
+        for (ExecutableMethod<?, ?> executableMethod : executableMethods) {
+            Set<Class<?>> methodInterceptors = new HashSet<>();
+
+            executableMethod
+                    .getAnnotationTypesByStereotype(Around.class)
+                    .stream()
+                    .map(it -> it.getAnnotation(Type.class))
+                    .filter(Objects::nonNull)
+                    .map(Type::value)
+                    .flatMap(Stream::of)
+                    .forEach(methodInterceptors::add);
+
+            this.executableMethodCache.putIfAbsent(executableMethod.getTargetMethod(), executableMethod);
+
+            allMethodInterceptors.computeIfAbsent(executableMethod.getTargetMethod(), it -> new HashSet<>())
+                    .addAll(methodInterceptors);
         }
-        return methods.get(javaMethod);
+    }
+
+    private BeanDefinitionReference<?> findMicronautBeanDefinition(List<MicronautBean> mBeans) {
+        for (MicronautBean mBean : mBeans) {
+            BeanDefinitionReference<?> ref = mBean.definitionRef();
+//            if (ref instanceof AdvisedBeanType) {
+//                continue;
+//            }
+            if (ref.getBeanType().getName().endsWith("$Intercepted")) {
+                continue;
+            }
+            return ref;
+        }
+        // just use the first one
+        return mBeans.get(0).definitionRef();
     }
 }

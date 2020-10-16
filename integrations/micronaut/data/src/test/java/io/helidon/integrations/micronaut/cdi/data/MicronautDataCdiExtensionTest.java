@@ -33,16 +33,19 @@ import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.Configuration;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.config.testing.OptionalMatcher.present;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @HelidonTest
 @Configuration(configSources = "in-mem-h2.properties")
 @AddBean(MicronautDataCdiExtensionTest.MyBean.class)
+@AddBean(MicronautDataCdiExtensionTest.CdiOnly.class)
 class MicronautDataCdiExtensionTest {
     @Inject
     private DbOwnerRepository ownerRepository;
@@ -83,15 +86,32 @@ class MicronautDataCdiExtensionTest {
         assertThrows(ConstraintViolationException.class, () -> myBean.getOwner("wrong name"), "Name should not contain spaces");
     }
 
+    public static class CdiOnly {
+        private final String message;
+
+        @Inject
+        CdiOnly(@ConfigProperty(name = "test.message") String message) {
+            this.message = message;
+        }
+
+        String message() {
+            return message;
+        }
+    }
+
     @ApplicationScoped
     public static class MyBean {
         @Inject
         private DbPetRepository petRepository;
         @Inject
         private Connection connection;
+        @Inject
+        CdiOnly cdiOnly;
 
         @Transactional
         public String getOwner(@Pattern(regexp = "\\w+") String pet) {
+            assertThat(connection, notNullValue());
+            assertThat(cdiOnly.message(), is("Hello"));
             return petRepository.findByName(pet)
                     .map(Pet::getOwner)
                     .map(Owner::getName)

@@ -20,7 +20,7 @@ import javax.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
 @MicronautBeanDef
-public class BothBean implements TestBean {
+public class TestBothBean implements TestBean {
     @Override
     public String name() {
         return "BothBean";

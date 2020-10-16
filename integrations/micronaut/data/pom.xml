@@ -42,20 +42,6 @@
         <dependency>
             <groupId>io.micronaut.data</groupId>
             <artifactId>micronaut-data-model</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>io.micronaut</groupId>
-                    <artifactId>micronaut-aop</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>io.micronaut</groupId>
-                    <artifactId>micronaut-inject</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>io.micronaut</groupId>
-                    <artifactId>micronaut-http</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>jakarta.persistence</groupId>
@@ -84,6 +70,11 @@
         <dependency>
             <groupId>io.micronaut.data</groupId>
             <artifactId>micronaut-data-jdbc</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.micronaut.data</groupId>
+            <artifactId>micronaut-data-tx</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

@@ -17,7 +17,7 @@
 package io.helidon.integrations.micronaut.cdi;
 
 @MicronautBeanDef
-public class MicronautBean implements TestBean {
+public class TestMicronautBean implements TestBean {
     @Override
     @µIntercepted
     public String µAnnotated() {

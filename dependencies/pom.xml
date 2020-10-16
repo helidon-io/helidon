@@ -87,8 +87,8 @@
         <version.lib.logback>1.2.3</version.lib.logback>
         <version.lib.mariadb-java-client>2.6.2</version.lib.mariadb-java-client>
         <version.lib.maven-wagon>2.10</version.lib.maven-wagon>
-        <version.lib.micronaut>2.2.0.BUILD-SNAPSHOT</version.lib.micronaut>
-        <version.lib.micronaut.data>2.0.0</version.lib.micronaut.data>
+        <version.lib.micronaut>2.1.1</version.lib.micronaut>
+        <version.lib.micronaut.data>2.0.1</version.lib.micronaut.data>
         <version.lib.micronaut.sql>3.0.1</version.lib.micronaut.sql>
         <version.lib.microprofile-config>1.4</version.lib.microprofile-config>
         <version.lib.microprofile-fault-tolerance-api>2.1.1</version.lib.microprofile-fault-tolerance-api>

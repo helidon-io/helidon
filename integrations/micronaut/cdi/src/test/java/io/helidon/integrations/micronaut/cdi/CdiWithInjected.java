@@ -21,26 +21,26 @@ import javax.inject.Inject;
 
 @ApplicationScoped
 public class CdiWithInjected {
-    private final CdiBean cdiBean;
-    private final BothBean bothBean;
-    private final MicronautBean micronautBean;
+    private final TestCdiBean cdiBean;
+    private final TestBothBean bothBean;
+    private final TestMicronautBean micronautBean;
 
     @Inject
-    public CdiWithInjected(CdiBean cdiBean, BothBean bothBean, MicronautBean micronautBean) {
+    public CdiWithInjected(TestCdiBean cdiBean, TestBothBean bothBean, TestMicronautBean micronautBean) {
         this.cdiBean = cdiBean;
         this.bothBean = bothBean;
         this.micronautBean = micronautBean;
     }
 
-    CdiBean cdiBean() {
+    TestCdiBean cdiBean() {
         return cdiBean;
     }
 
-    BothBean bothBean() {
+    TestBothBean bothBean() {
         return bothBean;
     }
 
-    MicronautBean micronautBean() {
+    TestMicronautBean micronautBean() {
         return micronautBean;
     }
 }

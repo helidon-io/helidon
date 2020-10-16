@@ -30,11 +30,11 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 @HelidonTest
 class MicronautCdiExtensionTest {
     @Inject
-    private CdiBean cdiBean;
+    private TestCdiBean cdiBean;
     @Inject
-    private BothBean bothBean;
+    private TestBothBean bothBean;
     @Inject
-    private MicronautBean micronautBean;
+    private TestMicronautBean micronautBean;
     @Inject
     private CdiWithInjected injected;
 
