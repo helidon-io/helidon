@@ -168,8 +168,17 @@ full(){
 
     echo "===== Building examples ====="
     cd ${SCRATCH}/helidon/examples
-    mvn ${MAVEN_ARGS} clean install ${STAGED_PROFILE}
+    # XXX we exclude todo-app frontend due to the issues with npm behind firewall
+    mvn ${MAVEN_ARGS} clean install -pl '!todo-app/frontend' ${STAGED_PROFILE}
     cd ${SCRATCH}
+
+    echo "===== Building test support ====="
+    cd ${SCRATCH}/helidon/microprofile/tests/
+    mvn -N ${MAVEN_ARGS} clean install ${STAGED_PROFILE}
+    cd ${SCRATCH}/helidon/microprofile/tests/junit5
+    mvn ${MAVEN_ARGS} clean install ${STAGED_PROFILE}
+    cd ${SCRATCH}/helidon/microprofile/tests/junit5-tests
+    mvn ${MAVEN_ARGS} clean install ${STAGED_PROFILE}
 
     echo "===== Running tests ====="
     cd ${SCRATCH}/helidon/tests
@@ -195,7 +204,7 @@ full(){
 waituntilready() {
     # Give app a chance to start --retry will retry until it is up
     # --retry-connrefused requires curl 7.51.0 or newer
-    sleep 3
+    sleep 6
     curl -s --retry-connrefused --retry 3 -X GET http://localhost:8080/health/live
     echo
 }
@@ -242,7 +251,7 @@ buildAndTestArchetype(){
     mvn ${MAVEN_ARGS} -f helidon-${archetype_name}/pom.xml ${STAGED_PROFILE} -Pjlink-image package -DskipTests
 
     echo "===== Running and pinging ${archetype_name} app using jlink image ====="
-    helidon-${archetype_name}/target/helidon-${archetype_name}/bin/start &
+    helidon-${archetype_name}/target/helidon-${archetype_name}-jri/bin/start &
     PID=$!
     testApp ${archetype_name}
     kill ${PID}
