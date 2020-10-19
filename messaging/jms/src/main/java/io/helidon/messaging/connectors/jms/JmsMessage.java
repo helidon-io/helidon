@@ -24,7 +24,6 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
-import java.util.logging.Logger;
 
 import javax.jms.BytesMessage;
 import javax.jms.Connection;
@@ -43,11 +42,6 @@ import org.eclipse.microprofile.reactive.messaging.Message;
  * @param <T> Type of the payload.
  */
 public interface JmsMessage<T> extends Message<T> {
-
-    /**
-     * The logger.
-     */
-    Logger LOGGER = Logger.getLogger(JmsMessage.class.getName());
 
     /**
      * Get JMS property by name.

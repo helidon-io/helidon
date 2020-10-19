@@ -21,6 +21,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
@@ -29,6 +30,8 @@ import javax.jms.Message;
 import javax.jms.Session;
 
 abstract class AbstractJmsMessage<T> implements JmsMessage<T> {
+
+    private static final Logger LOGGER = Logger.getLogger(AbstractJmsMessage.class.getName());
 
     private Executor executor;
     private SessionMetadata sharedSessionEntry;
