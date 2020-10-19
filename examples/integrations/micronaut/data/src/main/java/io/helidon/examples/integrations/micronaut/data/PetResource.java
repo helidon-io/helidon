@@ -36,6 +36,11 @@ import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
 public class PetResource {
     private final DbPetRepository petRepository;
 
+    /**
+     * Create a new instance with pet repository.
+     *
+     * @param petRepo Pet repository from Micronaut data
+     */
     @Inject
     public PetResource(DbPetRepository petRepo) {
         this.petRepository = petRepo;

@@ -30,8 +30,19 @@ import io.micronaut.data.repository.CrudRepository;
  */
 @JdbcRepository(dialect = Dialect.H2)
 public interface DbOwnerRepository extends CrudRepository<Owner, Long> {
+    /**
+     * Get all owners from the database.
+     *
+     * @return all owners
+     */
     @Override
     List<Owner> findAll();
 
+    /**
+     * Find an owner by name.
+     *
+     * @param name name of owner
+     * @return owner if found
+     */
     Optional<Owner> findByName(String name);
 }

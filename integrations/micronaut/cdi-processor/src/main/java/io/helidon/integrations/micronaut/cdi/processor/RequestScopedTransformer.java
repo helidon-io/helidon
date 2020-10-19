@@ -25,6 +25,9 @@ import io.micronaut.core.annotation.AnnotationValue;
 import io.micronaut.inject.annotation.NamedAnnotationTransformer;
 import io.micronaut.inject.visitor.VisitorContext;
 
+/**
+ * Transforms CDI RequestScoped annotation into Micronaut RequestScope.
+ */
 public class RequestScopedTransformer implements NamedAnnotationTransformer {
     @Override
     public String getName() {

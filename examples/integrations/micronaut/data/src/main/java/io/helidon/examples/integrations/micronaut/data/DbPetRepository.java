@@ -35,8 +35,20 @@ import io.micronaut.data.repository.PageableRepository;
 @JdbcRepository(dialect = Dialect.H2)
 public abstract class DbPetRepository implements PageableRepository<Pet, UUID> {
 
+    /**
+     * Get all pets.
+     *
+     * @param pageable pageable instance
+     * @return list of pets
+     */
     public abstract List<NameDTO> list(Pageable pageable);
 
+    /**
+     * Find a pet by its name.
+     *
+     * @param name pet name
+     * @return pet if it was found
+     */
     @Join("owner")
     public abstract Optional<Pet> findByName(String name);
 }

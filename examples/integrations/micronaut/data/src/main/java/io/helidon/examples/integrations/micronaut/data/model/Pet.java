@@ -40,6 +40,11 @@ public class Pet {
     private Owner owner;
     private PetType type = PetType.DOG;
 
+    /**
+     * Creates a new pet.
+     * @param name name of the pet
+     * @param owner owner of the pet (optional)
+     */
     // NOTE - please use Nullable from this package, javax.annotation.Nullable will fail with JPMS,
     // as it is declared in the same package as is used by annother module (jakarta.annotation-api)
     @Creator
@@ -72,8 +77,17 @@ public class Pet {
         this.id = id;
     }
 
+    /**
+     * Type of pet.
+     */
     public enum PetType {
+        /**
+         * Dog.
+         */
         DOG,
+        /**
+         * Cat.
+         */
         CAT
     }
 }

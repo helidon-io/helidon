@@ -25,6 +25,10 @@ import io.micronaut.core.annotation.AnnotationValue;
 import io.micronaut.inject.annotation.NamedAnnotationTransformer;
 import io.micronaut.inject.visitor.VisitorContext;
 
+/**
+ * Transforms CDI Dependent annotation into Micronaut RequestScope (as the integration module does not
+ * use this bean from Micronaut, the scope is not relevant, we only use it to get ExecutableMethod metadata).
+ */
 public class DependentTransformer implements NamedAnnotationTransformer {
     @Override
     public String getName() {

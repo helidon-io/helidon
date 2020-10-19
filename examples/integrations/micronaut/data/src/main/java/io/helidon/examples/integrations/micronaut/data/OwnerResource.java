@@ -36,6 +36,11 @@ import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
 public class OwnerResource {
     private final DbOwnerRepository ownerRepository;
 
+    /**
+     * Create a new instance with repository.
+     *
+     * @param ownerRepo owner repository from Micronaut data
+     */
     @Inject
     public OwnerResource(DbOwnerRepository ownerRepo) {
         this.ownerRepository = ownerRepo;

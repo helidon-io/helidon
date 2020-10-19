@@ -34,6 +34,11 @@ public class Owner {
     private String name;
     private int age;
 
+    /**
+     * Create a named owner.
+     *
+     * @param name name of the owner
+     */
     @Creator
     public Owner(String name) {
         this.name = name;

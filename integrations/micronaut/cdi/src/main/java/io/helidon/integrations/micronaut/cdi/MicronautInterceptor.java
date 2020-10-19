@@ -55,6 +55,12 @@ public class MicronautInterceptor {
         this.extension = extension;
     }
 
+    /**
+     * Interceptor method that call Micronaut interceptors for a CDI bean.
+     *
+     * @param cdiCtx invocation context
+     * @return response of the method
+     */
     @SuppressWarnings({"rawtypes", "unchecked"})
     @AroundInvoke
     public Object invoke(InvocationContext cdiCtx) {
@@ -67,8 +73,8 @@ public class MicronautInterceptor {
 
         for (Class<? extends MethodInterceptor> aClass : interceptorClasses) {
             interceptors.add(context.findBean(aClass)
-                                     .orElseThrow(() -> new MicronautCdiException("Cannot create bean class for interceptor " + aClass
-                                             .getName())));
+                                     .orElseThrow(() -> new MicronautCdiException("Cannot create bean class for interceptor "
+                                                                                          + aClass.getName())));
         }
 
         ExecutableMethod<?, ?> executableMethod = meta.executableMethod();
