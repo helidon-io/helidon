@@ -20,8 +20,8 @@ module io.helidon.messaging.connectors.aq {
     requires javax.jms.api;
     requires io.helidon.common.configurable;
     requires io.helidon.messaging;
-    requires jakarta.enterprise.cdi.api;
-    requires jakarta.inject.api;
+    requires static jakarta.enterprise.cdi.api;
+    requires static jakarta.inject.api;
     requires aqapi;
     requires java.sql;
 
