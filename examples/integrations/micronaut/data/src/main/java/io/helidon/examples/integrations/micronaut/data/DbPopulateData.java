@@ -13,18 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package io.helidon.integrations.micronaut.cdi.data.app;
+/*
+ This class is almost exactly copied from Micronaut examples.
+ */
+package io.helidon.examples.integrations.micronaut.data;
 
 import java.util.Arrays;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import io.helidon.examples.integrations.micronaut.data.model.Owner;
+import io.helidon.examples.integrations.micronaut.data.model.Pet;
+
 import io.micronaut.context.event.StartupEvent;
 import io.micronaut.core.annotation.TypeHint;
 import io.micronaut.runtime.event.annotation.EventListener;
 
+/**
+ * A Micronaut bean that listens on startup event and populates database with data.
+ */
 @Singleton
 @TypeHint(typeNames = {"org.h2.Driver", "org.h2.mvstore.db.MVTableEngine"})
 public class DbPopulateData {

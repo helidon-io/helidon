@@ -13,7 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.integrations.micronaut.cdi.data.app;
+
+package io.helidon.examples.integrations.micronaut.data.model;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -21,6 +22,9 @@ import javax.persistence.Id;
 
 import io.micronaut.core.annotation.Creator;
 
+/**
+ * Owner database entity.
+ */
 @Entity
 public class Owner {
 

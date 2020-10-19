@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.helidon.integrations.micronaut.cdi;
 
 import java.lang.annotation.Annotation;
@@ -62,6 +61,11 @@ import org.eclipse.microprofile.config.Config;
 import static javax.interceptor.Interceptor.Priority.PLATFORM_AFTER;
 import static javax.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
 
+/**
+ * Extension integrating CDI with Micronaut.
+ * This extensions adds Micronaut beans to be injectable into CDI beans (limited to {@link javax.inject.Singleton}
+ * scope), adn adds support for invoking Micronaut interceptors.
+ */
 public class MicronautCdiExtension implements Extension {
     private final AtomicReference<ApplicationContext> micronautContext = new AtomicReference<>();
     private final Map<Method, ExecutableMethod<?, ?>> executableMethodCache = new HashMap<>();
@@ -73,6 +77,13 @@ public class MicronautCdiExtension implements Extension {
     // Micronaut beans not yet processed by CDI
     private final Map<Class<?>, List<MicronautBean>> unprocessedBeans = new HashMap<>();
 
+    /**
+     * Get the application context of Micronaut.
+     * This method can only be invoked once the server is started.
+     *
+     * @return Micronaut application context
+     * @throws java.lang.IllegalStateException when invoked when server (and hence the context) is not started
+     */
     public ApplicationContext context() {
         ApplicationContext ctx = micronautContext.get();
         if (ctx == null) {
@@ -82,10 +93,31 @@ public class MicronautCdiExtension implements Extension {
         return ctx;
     }
 
-    public MethodInterceptorMetadata getInterceptionMetadata(Method javaMethod) {
+    MethodInterceptorMetadata getInterceptionMetadata(Method javaMethod) {
         return methods.get(javaMethod);
     }
 
+    /**
+     * Load all Micronaut bean definitions and register our interceptor binding, so we can
+     * execute Micronaut interceptors using a CDI interceptor.
+     *
+     * @param event CDI event
+     */
+    void beforeBeanDiscovery(@Priority(PLATFORM_BEFORE) @Observes BeforeBeanDiscovery event) {
+        loadMicronautBeanDefinitions();
+
+        event.addAnnotatedType(MicronautInterceptor.class, "mcdi-MicronautInterceptor");
+        event.addInterceptorBinding(MicronautIntercepted.class);
+    }
+
+    /**
+     * Construct a list of Micronaut interceptors to execute on each CDI method.
+     * In case a Micronaut bean definition is available for the CDI bean (which should be for application, as
+     * the CDI annotation processor should be used, and it adds CDI beans as Micronaut beans), the information
+     * is combined from Micronaut and CDI bean definitions.
+     *
+     * @param event CDI event
+     */
     @SuppressWarnings("unchecked")
     void processTypes(@Priority(PLATFORM_AFTER) @Observes ProcessAnnotatedType<?> event) {
         Set<Class<?>> classInterceptors = new HashSet<>();
@@ -130,13 +162,12 @@ public class MicronautCdiExtension implements Extension {
                 });
     }
 
-    void beforeBeanDiscovery(@Priority(PLATFORM_BEFORE) @Observes BeforeBeanDiscovery event) {
-        loadMicronautBeanDefinitions();
-
-        event.addAnnotatedType(MicronautInterceptor.class, "mcdi-MicronautInterceptor");
-        event.addInterceptorBinding(MicronautIntercepted.class);
-    }
-
+    /**
+     * Add all (not yet added) Micronaut beans for injection as long as they are singletons.
+     *
+     * @param event CDI event
+     */
+    @SuppressWarnings({"rawtypes", "unchecked"})
     void afterBeanDiscovery(@Priority(PLATFORM_BEFORE) @Observes AfterBeanDiscovery event) {
         event.addBean()
                 .addType(ApplicationContext.class)
@@ -149,15 +180,14 @@ public class MicronautCdiExtension implements Extension {
             Class<?> beanType = entry.getKey();
             List<MicronautBean> beans = entry.getValue();
 
-            // first make sure these are singletons; if not, ignore
-            List<? extends BeanDefinitionReference<?>> refs = beans.stream()
-                    .map(MicronautBean::definitionRef)
-                    .filter(it -> !it.getBeanType().getName().endsWith("$Intercepted"))
-                    .collect(Collectors.toList());
-
-            if (refs.isEmpty()) {
-                // no beans to add
-                return;
+            List<? extends BeanDefinitionReference<?>> refs = List.of();
+            if (beans.size() > 1) {
+                // first make sure these are singletons; if not, ignore
+                refs = beans.stream()
+                        .map(MicronautBean::definitionRef)
+                        .filter(it -> !it.getBeanType().getName().endsWith("$Intercepted"))
+                        .filter(BeanDefinitionReference::isSingleton)
+                        .collect(Collectors.toList());
             }
 
             // primary
@@ -183,7 +213,9 @@ public class MicronautCdiExtension implements Extension {
                     io.micronaut.context.Qualifier[] mq = new io.micronaut.context.Qualifier[qualifiers.size()];
 
                     for (int i = 0; i < qualifiers.size(); i++) {
-                        mq[i] = Qualifiers.byAnnotation(synthesized[i]);
+                        if (synthesized[i] != null) {
+                            mq[i] = Qualifiers.byAnnotation(synthesized[i]);
+                        }
                     }
 
                     io.micronaut.context.Qualifier composite = Qualifiers.byQualifiers(mq);
@@ -204,7 +236,12 @@ public class MicronautCdiExtension implements Extension {
         unprocessedBeans.clear();
     }
 
-    void startContext(@Observes @Priority(PLATFORM_BEFORE) @Initialized(ApplicationScoped.class) Object adv) {
+    /**
+     * Start Micronaut application context and make it available for other extensions.
+     *
+     * @param event CDI event
+     */
+    void startContext(@Observes @Priority(PLATFORM_BEFORE) @Initialized(ApplicationScoped.class) Object event) {
         ApplicationContext context = ApplicationContext.builder()
                 .propertySources(createMicronautPropertySource())
                 .build();
@@ -214,7 +251,11 @@ public class MicronautCdiExtension implements Extension {
         micronautContext.set(context);
     }
 
-    void stopContext(@Observes @Priority(PLATFORM_AFTER) @BeforeDestroyed(ApplicationScoped.class) Object adv) {
+    /**
+     * Stop Micronaut application context.
+     * @param event CDI event
+     */
+    void stopContext(@Observes @Priority(PLATFORM_AFTER) @BeforeDestroyed(ApplicationScoped.class) Object event) {
         ApplicationContext context = micronautContext.get();
         // if startup failed, context is null
         if (context != null) {
@@ -222,6 +263,11 @@ public class MicronautCdiExtension implements Extension {
         }
     }
 
+    /**
+     * Use MicroProfile Config as a config source for Micronaut.
+     *
+     * @return Micronaut property source from MP Config
+     */
     private PropertySource createMicronautPropertySource() {
         Config config = org.eclipse.microprofile.config.ConfigProvider.getConfig();
 
@@ -247,6 +293,9 @@ public class MicronautCdiExtension implements Extension {
         };
     }
 
+    /**
+     * Load Micronaut bean definition using service loader, to have full knowledge of the landscape.
+     */
     @SuppressWarnings("rawtypes")
     private void loadMicronautBeanDefinitions() {
         // we now need to load all Micronaut beans so other extensions can inject them
@@ -287,6 +336,12 @@ public class MicronautCdiExtension implements Extension {
         unprocessedBeans.putAll(mBeanToDefRef);
     }
 
+    /**
+     * Find Micronaut interceptor annotations and locate interceptor classes to be used.
+     *
+     * @param interceptors set of interceptors to add new interceptors to
+     * @param annotations set of annotations on the processed element
+     */
     private void addMicronautInterceptors(Set<Class<?>> interceptors, Set<Annotation> annotations) {
         annotations.stream()
                 .map(Annotation::annotationType)
@@ -336,9 +391,9 @@ public class MicronautCdiExtension implements Extension {
     private BeanDefinitionReference<?> findMicronautBeanDefinition(List<MicronautBean> mBeans) {
         for (MicronautBean mBean : mBeans) {
             BeanDefinitionReference<?> ref = mBean.definitionRef();
-//            if (ref instanceof AdvisedBeanType) {
-//                continue;
-//            }
+            //            if (ref instanceof AdvisedBeanType) {
+            //                continue;
+            //            }
             if (ref.getBeanType().getName().endsWith("$Intercepted")) {
                 continue;
             }

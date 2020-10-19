@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2020 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.helidon.integrations.micronaut.cdi;
 
 import java.lang.reflect.Method;
@@ -21,17 +37,20 @@ import io.micronaut.core.type.MutableArgumentValue;
 import io.micronaut.core.type.ReturnType;
 import io.micronaut.inject.ExecutableMethod;
 
+/**
+ * Invocation context for Micronaut interceptors.
+ */
 @SuppressWarnings({"rawtypes", "unchecked"})
-public class MicronautMethodInvocationContext implements MethodInvocationContext {
+class MicronautMethodInvocationContext implements MethodInvocationContext {
     private static final Logger LOGGER = Logger.getLogger(MicronautMethodInvocationContext.class.getName());
 
     private final InvocationContext cdiContext;
     private final ExecutableMethod executableMethod;
     private final Set<MethodInterceptor<?, ?>> allInterceptors;
     private final MutableConvertibleValues attributes;
+    private final Map<String, MutableArgumentValue<?>> mutableArguments;
 
     private Iterator<MethodInterceptor<?, ?>> remaining;
-    private Map<String, MutableArgumentValue<?>> mutableArguments;
 
     private MicronautMethodInvocationContext(InvocationContext cdiContext,
                                              ExecutableMethod executableMethod,
@@ -55,10 +74,10 @@ public class MicronautMethodInvocationContext implements MethodInvocationContext
         }
     }
 
-    public static MethodInvocationContext create(InvocationContext cdiCtx,
-                                                 ExecutableMethod<?, ?> executableMethod,
-                                                 Set<MethodInterceptor<?, ?>> allInterceptors,
-                                                 Iterator<MethodInterceptor<?, ?>> remaining) {
+    static MethodInvocationContext create(InvocationContext cdiCtx,
+                                          ExecutableMethod<?, ?> executableMethod,
+                                          Set<MethodInterceptor<?, ?>> allInterceptors,
+                                          Iterator<MethodInterceptor<?, ?>> remaining) {
         return new MicronautMethodInvocationContext(cdiCtx,
                                                     executableMethod,
                                                     allInterceptors,
@@ -84,7 +103,7 @@ public class MicronautMethodInvocationContext implements MethodInvocationContext
     public Object proceed() throws RuntimeException {
         if (remaining.hasNext()) {
             MethodInterceptor<?, ?> next = remaining.next();
-            LOGGER.info("Micronaut interceptor: " + next.getClass().getName());
+            LOGGER.finest(() -> "Micronaut interceptor: " + next.getClass().getName());
             return next.intercept(this);
         }
         try {
@@ -94,8 +113,10 @@ public class MicronautMethodInvocationContext implements MethodInvocationContext
                     .toArray(Object[]::new);
             cdiContext.setParameters(arguments);
 
-            LOGGER.info("Proceeding with CDI interceptors");
+            LOGGER.finest(() -> "Proceeding with CDI interceptors");
             return cdiContext.proceed();
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
             throw new MicronautCdiException("Failed to invoke intercepted method", e);
         }
@@ -170,8 +191,8 @@ public class MicronautMethodInvocationContext implements MethodInvocationContext
         public void setValue(T value) {
             if (getType().isInstance(value)) {
                 this.value = ConversionService.SHARED.convert(value, getType())
-                        .orElseThrow(() ->  new IllegalArgumentException("Invalid value [" + value + "] for argument: " + this)
-                );
+                        .orElseThrow(() -> new IllegalArgumentException("Invalid value [" + value + "] for argument: " + this)
+                        );
             } else {
                 this.value = value;
             }

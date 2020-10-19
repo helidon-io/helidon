@@ -21,7 +21,7 @@ import io.micronaut.inject.BeanDefinitionReference;
 /**
  * A bean as seen by Micronaut.
  */
-public class MicronautBean {
+class MicronautBean {
     private final Class<?> beanType;
     private final BeanDefinitionReference<?> beanDefinitionReference;
 
@@ -30,11 +30,11 @@ public class MicronautBean {
         this.beanDefinitionReference = beanDefinitionReference;
     }
 
-    public Class<?> beanType() {
+    Class<?> beanType() {
         return beanType;
     }
 
-    public BeanDefinitionReference<?> definitionRef() {
+    BeanDefinitionReference<?> definitionRef() {
         return beanDefinitionReference;
     }
 }

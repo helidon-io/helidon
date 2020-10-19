@@ -23,10 +23,23 @@ import java.lang.annotation.Target;
 
 import javax.enterprise.util.AnnotationLiteral;
 
+import io.micronaut.core.annotation.Internal;
+
+/**
+ * Used to add interceptors to existing CDI beans to be intercepted by Micronaut interceptors.
+ * DO NOT USE DIRECTLY. Usage is computed by this CDI extension.
+ */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD})
+@Internal
 public @interface MicronautIntercepted {
+    /**
+     * Literal used to obtain an instance of the annotation.
+     */
     class Literal extends AnnotationLiteral<MicronautIntercepted> implements MicronautIntercepted {
+        /**
+         * Annotation literal. As this annotation does not have any properties, the same literal can be reused.
+         */
         public static final MicronautIntercepted INSTANCE = new Literal();
     }
 }

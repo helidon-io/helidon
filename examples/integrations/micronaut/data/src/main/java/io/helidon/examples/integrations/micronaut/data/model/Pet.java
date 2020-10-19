@@ -13,7 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.integrations.micronaut.cdi.data.app;
+
+package io.helidon.examples.integrations.micronaut.data.model;
 
 import java.util.UUID;
 
@@ -25,6 +26,9 @@ import edu.umd.cs.findbugs.annotations.Nullable;
 import io.micronaut.core.annotation.Creator;
 import io.micronaut.data.annotation.AutoPopulated;
 
+/**
+ * Pet database entity.
+ */
 @Entity
 public class Pet {
 
@@ -36,6 +40,8 @@ public class Pet {
     private Owner owner;
     private PetType type = PetType.DOG;
 
+    // NOTE - please use Nullable from this package, javax.annotation.Nullable will fail with JPMS,
+    // as it is declared in the same package as is used by annother module (jakarta.annotation-api)
     @Creator
     public Pet(String name, @Nullable Owner owner) {
         this.name = name;

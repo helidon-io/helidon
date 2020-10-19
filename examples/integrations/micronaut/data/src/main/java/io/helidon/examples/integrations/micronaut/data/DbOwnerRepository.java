@@ -14,15 +14,20 @@
  * limitations under the License.
  */
 
-package io.helidon.integrations.micronaut.cdi.data.app;
+package io.helidon.examples.integrations.micronaut.data;
 
 import java.util.List;
 import java.util.Optional;
+
+import io.helidon.examples.integrations.micronaut.data.model.Owner;
 
 import io.micronaut.data.jdbc.annotation.JdbcRepository;
 import io.micronaut.data.model.query.builder.sql.Dialect;
 import io.micronaut.data.repository.CrudRepository;
 
+/**
+ * Micronaut Data repository for pet owners.
+ */
 @JdbcRepository(dialect = Dialect.H2)
 public interface DbOwnerRepository extends CrudRepository<Owner, Long> {
     @Override

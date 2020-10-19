@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2020 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.helidon.integrations.micronaut.cdi;
 
 import java.lang.reflect.Method;
@@ -15,11 +31,18 @@ import javax.interceptor.InvocationContext;
 
 import io.micronaut.aop.MethodInterceptor;
 import io.micronaut.context.ApplicationContext;
+import io.micronaut.core.annotation.Internal;
 import io.micronaut.inject.ExecutableMethod;
 
+/**
+ * A CDI interceptor that invokes all Micronaut interceptors.
+ * DO NOT USE DIRECTLY. Usage is computed by this CDI extension.
+ */
+// interceptor binding is defined in code of extension, not on annotation
 @MicronautIntercepted
 @Interceptor
 @Priority(Interceptor.Priority.LIBRARY_BEFORE)
+@Internal
 public class MicronautInterceptor {
     private static final Logger LOGGER = Logger.getLogger(MicronautInterceptor.class.getName());
 
@@ -54,7 +77,7 @@ public class MicronautInterceptor {
                 .create(cdiCtx, executableMethod, interceptors, remaining);
 
         MethodInterceptor<?, ?> next = remaining.next();
-        LOGGER.info("Micronaut interceptor: " + next.getClass().getName());
+        LOGGER.finest(() -> "Micronaut interceptor: " + next.getClass().getName());
         return next.intercept(context);
     }
 }

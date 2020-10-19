@@ -44,6 +44,8 @@ import io.micronaut.core.type.DefaultArgument;
 import io.micronaut.inject.ExecutableMethod;
 import io.micronaut.inject.annotation.DefaultAnnotationMetadata;
 
+// Executable method used to invoke Micronaut interceptor when we need to merge CDI and Micronaut
+// annotation metadata, or when we do not have Micronaut annotation metadata
 @SuppressWarnings("rawtypes")
 final class CdiExecutableMethod extends AbstractExecutableMethod {
     private final AnnotationMetadata annotationMetadata;
@@ -57,13 +59,27 @@ final class CdiExecutableMethod extends AbstractExecutableMethod {
         this.annotationMetadata = methodAnnotationMetadata;
     }
 
-    public static ExecutableMethod<?, ?> create(AnnotatedMethod<?> cdiMethod, ExecutableMethod<?, ?> micronautMethod) {
+    /**
+     * Create from CDI method and Micronaut executable method.
+     * Merges together annotations from both worlds.
+     *
+     * @param cdiMethod CDI annotated method
+     * @param micronautMethod Micronaut executable method
+     * @return a new combined executable method
+     */
+    static ExecutableMethod<?, ?> create(AnnotatedMethod<?> cdiMethod, ExecutableMethod<?, ?> micronautMethod) {
         return create(cdiMethod,
                       annotationMetadata(cdiMethod, micronautMethod.getAnnotationMetadata()),
                       arguments(cdiMethod.getParameters(), micronautMethod.getArguments()));
     }
 
-    public static ExecutableMethod<?, ?> create(AnnotatedMethod<?> cdiMethod) {
+    /**
+     * Create from CDI method.
+     *
+     * @param cdiMethod CDI annotated method
+     * @return Micronaut executable method
+     */
+    static ExecutableMethod<?, ?> create(AnnotatedMethod<?> cdiMethod) {
         return create(cdiMethod,
                       annotationMetadata(cdiMethod),
                       arguments(cdiMethod.getParameters()));
@@ -130,8 +146,6 @@ final class CdiExecutableMethod extends AbstractExecutableMethod {
                                    annotationMetadata(parameter));
     }
 
-
-
     @SuppressWarnings("unchecked")
     private static AnnotationMetadata annotationMetadata(Annotated annotated, AnnotationMetadata miAnnotated) {
         Map<Class<? extends Annotation>, Annotation> annotations = new HashMap<>();
@@ -152,6 +166,7 @@ final class CdiExecutableMethod extends AbstractExecutableMethod {
 
         return annotationMetadata(annotations);
     }
+
     private static AnnotationMetadata annotationMetadata(Annotated annotated) {
         Map<Class<? extends Annotation>, Annotation> annotations = new HashMap<>();
         annotated.getAnnotations()
@@ -234,6 +249,14 @@ final class CdiExecutableMethod extends AbstractExecutableMethod {
             if (Modifier.isPublic(mod) && !Modifier.isStatic(mod)) {
                 try {
                     Object value = declaredMethod.invoke(annotation);
+
+                    // if the value is default, do not include
+
+                    Object defaultValue = declaredMethod.getDefaultValue();
+                    if (value.equals(defaultValue)) {
+                        continue;
+                    }
+
                     if (value.getClass().isArray() && Annotation.class.isAssignableFrom(value.getClass().getComponentType())) {
                         // this is a repeatable annotation
                         int len = Array.getLength(value);

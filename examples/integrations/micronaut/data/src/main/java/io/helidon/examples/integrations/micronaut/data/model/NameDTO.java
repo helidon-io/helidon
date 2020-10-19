@@ -13,46 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.integrations.micronaut.cdi.data.app;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
+package io.helidon.examples.integrations.micronaut.data.model;
 
-import io.micronaut.core.annotation.Creator;
+import io.micronaut.core.annotation.Introspected;
 
-@Entity
-public class Owner {
-
-    @Id
-    @GeneratedValue
-    private Long id;
+/**
+ * Used in list of names of pets.
+ */
+@Introspected
+public class NameDTO {
     private String name;
-    private int age;
-
-    @Creator
-    public Owner(String name) {
-        this.name = name;
-    }
-
-    public int getAge() {
-        return age;
-    }
-
-    public void setAge(int age) {
-        this.age = age;
-    }
 
     public String getName() {
         return name;
     }
 
-    public Long getId() {
-        return id;
+    public void setName(String name) {
+        this.name = name;
     }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
 }

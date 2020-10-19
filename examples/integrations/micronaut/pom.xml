@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2020 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -16,23 +16,22 @@
     limitations under the License.
 
 -->
-
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
-        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon.examples</groupId>
-        <artifactId>helidon-examples-project</artifactId>
-        <version>2.1.1-SNAPSHOT</version>
+        <groupId>io.helidon.examples.integrations</groupId>
+        <artifactId>helidon-examples-integrations-project</artifactId>
+        <version>2.0.3-SNAPSHOT</version>
     </parent>
-    <groupId>io.helidon.examples.integrations</groupId>
-    <artifactId>helidon-examples-integrations-project</artifactId>
-    <name>Helidon Integrations Examples</name>
+    <groupId>io.helidon.examples.integrations.micronaut</groupId>
+    <artifactId>helidon-examples-integrations-micronaut-project</artifactId>
     <packaging>pom</packaging>
+    <name>Helidon Micronaut Integration Examples</name>
 
     <modules>
-        <module>cdi</module>
-        <module>micronaut</module>
+        <module>data</module>
     </modules>
-
 </project>

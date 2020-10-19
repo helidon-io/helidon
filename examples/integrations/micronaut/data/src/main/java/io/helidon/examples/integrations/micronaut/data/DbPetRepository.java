@@ -14,19 +14,29 @@
  * limitations under the License.
  */
 
-package io.helidon.integrations.micronaut.cdi.data.app;
+package io.helidon.examples.integrations.micronaut.data;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
+import io.helidon.examples.integrations.micronaut.data.model.NameDTO;
+import io.helidon.examples.integrations.micronaut.data.model.Pet;
+
+import io.micronaut.data.annotation.Join;
 import io.micronaut.data.jdbc.annotation.JdbcRepository;
+import io.micronaut.data.model.Pageable;
 import io.micronaut.data.model.query.builder.sql.Dialect;
-import io.micronaut.data.repository.CrudRepository;
+import io.micronaut.data.repository.PageableRepository;
 
+/**
+ * Micronaut data repository for pets.
+ */
 @JdbcRepository(dialect = Dialect.H2)
-public interface DbOwnerRepository extends CrudRepository<Owner, Long> {
-    @Override
-    List<Owner> findAll();
+public abstract class DbPetRepository implements PageableRepository<Pet, UUID> {
 
-    Optional<Owner> findByName(String name);
+    public abstract List<NameDTO> list(Pageable pageable);
+
+    @Join("owner")
+    public abstract Optional<Pet> findByName(String name);
 }
