@@ -74,7 +74,7 @@ public class MsgProcessingBean {
     public CompletionStage<AqMessage<String>> betweenQueues(AqMessage<String> msg) {
         return CompletableFuture.supplyAsync(() -> {
             try {
-                PreparedStatement statement = msg.getDBConnection()
+                PreparedStatement statement = msg.getDbConnection()
                         .prepareStatement("INSERT INTO frank.message_log (message) VALUES (?)");
                 statement.setString(1, msg.getPayload());
                 statement.executeUpdate();

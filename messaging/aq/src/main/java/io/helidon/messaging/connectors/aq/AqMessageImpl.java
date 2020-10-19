@@ -45,7 +45,7 @@ public class AqMessageImpl<T> implements AqMessage<T> {
     }
 
     @Override
-    public Connection getDBConnection() {
+    public Connection getDbConnection() {
         try {
             return session.getDBConnection();
         } catch (JMSException e) {

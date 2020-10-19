@@ -36,7 +36,7 @@ public interface AqMessage<T> extends JmsMessage<T> {
      *
      * @return java.sql.Connection
      */
-    Connection getDBConnection();
+    Connection getDbConnection();
 
     /**
      * Create from AQjmsMessage.
