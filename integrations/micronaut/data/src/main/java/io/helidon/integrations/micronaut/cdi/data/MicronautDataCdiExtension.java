@@ -28,6 +28,10 @@ import io.micronaut.context.ApplicationContext;
 
 import static javax.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
 
+/**
+ * CDI Extension that adds Micronaut data specific features.
+ * Currently adds support for injecting {@link java.sql.Connection}.
+ */
 public class MicronautDataCdiExtension implements Extension {
     void afterBeanDiscovery(@Priority(PLATFORM_BEFORE + 10) @Observes AfterBeanDiscovery event) {
         event.addBean()
