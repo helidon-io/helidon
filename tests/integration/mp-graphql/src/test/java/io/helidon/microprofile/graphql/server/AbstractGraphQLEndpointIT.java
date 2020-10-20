@@ -17,7 +17,6 @@
 package io.helidon.microprofile.graphql.server;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -43,8 +42,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Abstract functionality for integration tests via /graphql endpoint.
  */
-public abstract class AbstractGraphQLEndpointIT
-        extends AbstractGraphQLTest {
+public abstract class AbstractGraphQLEndpointIT extends AbstractGraphQLTest {
 
     private static final Logger LOGGER = Logger.getLogger(AbstractGraphQLEndpointIT.class.getName());
 

@@ -81,7 +81,7 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-         <groupId>io.helidon.microprofile.tests</groupId>
+            <groupId>io.helidon.microprofile.tests</groupId>
             <artifactId>helidon-microprofile-tests-junit5</artifactId>
             <scope>test</scope>
         </dependency>
@@ -121,29 +121,11 @@
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-failsafe-plugin</artifactId>
-                <configuration>
-                    <properties>
-                        <property>
-                            <name>listener</name>
-                            <value>org.sonar.java.jacoco.JUnitListener</value>
-                        </property>
-                    </properties>
-                    <reuseForks>false</reuseForks>
-                    <includes>
-                        <include>**/*IT.java</include>
-                    </includes>
-                    <classpathDependencyExcludes>
-                        <classpathDependencyExclude>org.slf4j:slf4j-log4j12</classpathDependencyExclude>
-                    </classpathDependencyExcludes>
-                </configuration>
+                <artifactId>maven-jar-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>verify</id>
-                        <phase>verify</phase>
                         <goals>
-                            <goal>integration-test</goal>
-                            <goal>verify</goal>
+                            <goal>test-jar</goal>
                         </goals>
                     </execution>
                 </executions>
