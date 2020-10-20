@@ -21,8 +21,7 @@ import java.util.Objects;
 /**
  * An abstract implementation of a {@link DescriptiveElement}.
  */
-public class AbstractDescriptiveElement
-        implements DescriptiveElement {
+public class AbstractDescriptiveElement implements DescriptiveElement {
 
     /**
      * The description for an element.

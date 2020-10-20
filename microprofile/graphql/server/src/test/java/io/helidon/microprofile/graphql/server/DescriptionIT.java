@@ -18,11 +18,6 @@ package io.helidon.microprofile.graphql.server;
 
 import java.io.IOException;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
-
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.queries.DescriptionQueries;
 import io.helidon.microprofile.graphql.server.test.types.DescriptionType;
@@ -30,6 +25,11 @@ import io.helidon.microprofile.graphql.server.test.types.DescriptionType;
 import io.helidon.microprofile.tests.junit5.AddBean;
 
 import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Tests for descriptions.

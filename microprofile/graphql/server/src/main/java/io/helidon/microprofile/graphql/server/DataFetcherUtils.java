@@ -103,7 +103,7 @@ public class DataFetcherUtils {
                     sourceClazz = Class.forName(source);
                     listArgumentValues.add(sourceClazz.cast(environment.getSource()));
                 } catch (ClassNotFoundException e) {
-                    // this should not happen
+                    // this should not happen as class is validated previously
                 }
             }
 
@@ -382,8 +382,8 @@ public class DataFetcherUtils {
     /**
      * An implementation of a {@link PropertyDataFetcher} which returns a formatted number.
      */
-    public static class NumberFormattingDataFetcher
-            extends PropertyDataFetcher {
+    @SuppressWarnings("rawtypes")
+    public static class NumberFormattingDataFetcher extends PropertyDataFetcher {
 
         /**
          * {@link NumberFormat} to format with.
@@ -423,8 +423,7 @@ public class DataFetcherUtils {
      * An implementation of a {@link PropertyDataFetcher} which returns a formatted date.
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public static class DateFormattingDataFetcher
-            extends PropertyDataFetcher {
+    public static class DateFormattingDataFetcher extends PropertyDataFetcher {
 
         /**
          * {@link DateTimeFormatter} to format with.

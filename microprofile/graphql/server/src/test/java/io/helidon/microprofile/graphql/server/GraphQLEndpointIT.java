@@ -20,6 +20,11 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.Map;
 
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
 import io.helidon.microprofile.config.ConfigCdiExtension;
 import io.helidon.microprofile.server.JaxRsCdiExtension;
 import io.helidon.microprofile.server.ServerCdiExtension;
@@ -28,16 +33,11 @@ import io.helidon.microprofile.tests.junit5.AddConfig;
 import io.helidon.microprofile.tests.junit5.AddExtension;
 import io.helidon.microprofile.tests.junit5.DisableDiscovery;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 
 import io.helidon.microprofile.graphql.server.test.types.Person;
 
 import org.glassfish.jersey.ext.cdi1x.internal.CdiComponentProvider;
 import org.hamcrest.CoreMatchers;
-
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -102,7 +102,6 @@ public class GraphQLEndpointIT
 
     @Test
     public void testUIEndpoint() {
-        // test /ui endpoint
         WebTarget webTarget = getGraphQLWebTarget().path(UI).path("index.html");
         Response response = webTarget.request().get();
         assertThat(response, is(notNullValue()));

@@ -17,11 +17,18 @@
 package io.helidon.microprofile.graphql.server;
 
 import java.io.IOException;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
+import io.helidon.microprofile.graphql.server.test.db.TestDB;
+import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesAndMutations;
+import io.helidon.microprofile.graphql.server.test.types.DateTimePojo;
+import io.helidon.microprofile.graphql.server.test.types.SimpleDateTime;
+import io.helidon.microprofile.tests.junit5.AddBean;
+
+import org.junit.jupiter.api.Test;
 
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.DATETIME_SCALAR;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.DATE_SCALAR;
@@ -32,15 +39,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-
-import io.helidon.microprofile.graphql.server.test.db.TestDB;
-import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesAndMutations;
-import io.helidon.microprofile.graphql.server.test.types.DateTimePojo;
-
-import io.helidon.microprofile.graphql.server.test.types.SimpleDateTime;
-import io.helidon.microprofile.tests.junit5.AddBean;
-
-import org.junit.jupiter.api.Test;
 
 /**
  * Tests for date/times.

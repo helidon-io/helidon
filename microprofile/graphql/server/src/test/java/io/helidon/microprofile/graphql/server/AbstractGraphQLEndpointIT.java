@@ -23,7 +23,6 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.microprofile.server.ServerCdiExtension;
 import javax.enterprise.inject.spi.CDI;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -31,10 +30,10 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 
 import io.helidon.microprofile.cdi.Main;
+import io.helidon.microprofile.server.ServerCdiExtension;
 
 import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.logging.LoggingFeature;
-
 import org.junit.jupiter.api.AfterAll;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -115,7 +114,12 @@ public abstract class AbstractGraphQLEndpointIT
         return client.target(graphQLUrl);
     }
 
-    protected String encode(String param) throws UnsupportedEncodingException {
+    /**
+     * Encode the { and }.
+     * @param param {@link String} to encode
+     * @return an encoded @link String}
+     */
+    protected String encode(String param)  {
         return param == null ? null : param.replaceAll("}", "%7D").replaceAll("\\{", "%7B");
     }
 

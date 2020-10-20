@@ -16,11 +16,12 @@
 
 package io.helidon.microprofile.graphql.server;
 
+import java.io.IOException;
+
 import io.helidon.microprofile.graphql.server.test.types.InvalidNamedTypes;
 import io.helidon.microprofile.tests.junit5.AddBean;
 
 import org.junit.jupiter.api.Test;
-import java.io.IOException;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 

@@ -16,28 +16,19 @@
 
 package io.helidon.microprofile.graphql.server.test.queries;
 
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import javax.json.bind.annotation.JsonbProperty;
 
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
-import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithNameAnnotation;
 import io.helidon.microprofile.graphql.server.test.types.Address;
-import io.helidon.microprofile.graphql.server.test.types.ContactRelationship;
-import io.helidon.microprofile.graphql.server.test.types.Person;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
+
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.eclipse.microprofile.graphql.GraphQLApi;
-import org.eclipse.microprofile.graphql.Id;
 import org.eclipse.microprofile.graphql.Name;
 import org.eclipse.microprofile.graphql.Query;
 import org.eclipse.microprofile.graphql.Source;

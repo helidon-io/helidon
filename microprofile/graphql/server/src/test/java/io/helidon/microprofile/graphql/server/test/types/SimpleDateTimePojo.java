@@ -17,15 +17,9 @@
 package io.helidon.microprofile.graphql.server.test.types;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.OffsetDateTime;
-import java.time.OffsetTime;
-import java.time.ZonedDateTime;
 import java.util.List;
-import javax.json.bind.annotation.JsonbDateFormat;
+
 import org.eclipse.microprofile.graphql.DateFormat;
-import org.eclipse.microprofile.graphql.Description;
 import org.eclipse.microprofile.graphql.Type;
 
 /**

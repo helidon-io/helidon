@@ -17,8 +17,10 @@
 package io.helidon.microprofile.graphql.server.test.types;
 
 import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithEnumName;
-import javax.json.bind.annotation.JsonbProperty;
+
 import java.util.Objects;
+
+import javax.json.bind.annotation.JsonbProperty;
 
 /**
  * Defines a simple contact.

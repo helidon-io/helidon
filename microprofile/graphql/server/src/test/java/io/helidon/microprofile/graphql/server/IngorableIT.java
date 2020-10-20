@@ -17,7 +17,6 @@
 package io.helidon.microprofile.graphql.server;
 
 import java.io.IOException;
-
 import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -31,7 +30,6 @@ import io.helidon.microprofile.graphql.server.test.types.ObjectWithIgnorableFiel
 import io.helidon.microprofile.tests.junit5.AddBean;
 
 import org.junit.jupiter.api.Test;
-
 import org.opentest4j.AssertionFailedError;
 
 /**

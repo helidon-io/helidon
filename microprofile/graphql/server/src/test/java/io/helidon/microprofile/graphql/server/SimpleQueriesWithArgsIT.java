@@ -25,10 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
-
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithEnumName;
 import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithNameAnnotation;
@@ -36,10 +32,14 @@ import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesWithArgs
 import io.helidon.microprofile.graphql.server.test.types.AbstractVehicle;
 import io.helidon.microprofile.graphql.server.test.types.Car;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
-
 import io.helidon.microprofile.tests.junit5.AddBean;
 
 import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+
 
 /**
  * Tests for simple queries with args.

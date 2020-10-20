@@ -25,7 +25,6 @@ import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.FLOAT
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.INT;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ensureRuntimeException;
 
-
 /**
  * An interface representing a class which can generate a GraphQL representation of it's state.
  */

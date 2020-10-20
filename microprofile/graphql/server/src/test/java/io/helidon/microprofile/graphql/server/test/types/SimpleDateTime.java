@@ -16,11 +16,12 @@
 
 package io.helidon.microprofile.graphql.server.test.types;
 
+import java.time.LocalDate;
+import java.util.List;
+
 import org.eclipse.microprofile.graphql.DateFormat;
 import org.eclipse.microprofile.graphql.Name;
 import org.eclipse.microprofile.graphql.Type;
-import java.time.LocalDate;
-import java.util.List;
 
 /**
  * Class representing a simple date/time type.

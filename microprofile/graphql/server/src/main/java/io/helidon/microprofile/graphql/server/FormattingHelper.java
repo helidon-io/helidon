@@ -470,5 +470,4 @@ public class FormattingHelper {
         }
         return numberFormat.format(originalResult);
     }
-
 }

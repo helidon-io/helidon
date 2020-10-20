@@ -19,13 +19,10 @@ package io.helidon.microprofile.graphql.server;
 import java.util.ArrayList;
 import java.util.List;
 
-
 /**
  * The representation of a GraphQL Enum.
  */
-public class SchemaEnum
-        extends AbstractDescriptiveElement
-        implements ElementGenerator {
+public class SchemaEnum extends AbstractDescriptiveElement implements ElementGenerator {
 
     /**
      * The name of the enum.

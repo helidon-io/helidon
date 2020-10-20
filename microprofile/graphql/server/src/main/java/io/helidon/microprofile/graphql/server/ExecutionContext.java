@@ -18,15 +18,12 @@ package io.helidon.microprofile.graphql.server;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.logging.Logger;
 
-import graphql.execution.DataFetcherResult;
 import io.helidon.config.Config;
 
 import graphql.ExceptionWhileDataFetching;
@@ -42,6 +39,8 @@ import graphql.validation.ValidationError;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.graphql.ConfigKey;
 import org.eclipse.microprofile.graphql.GraphQLException;
+
+
 
 import static graphql.ExecutionInput.newExecutionInput;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ensureRuntimeException;

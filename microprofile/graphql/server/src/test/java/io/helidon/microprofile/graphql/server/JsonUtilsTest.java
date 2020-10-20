@@ -20,12 +20,8 @@ import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
-import java.util.TreeSet;
 
-import io.helidon.microprofile.graphql.server.AbstractGraphQLTest;
-import org.antlr.v4.runtime.tree.Tree;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.Test;
 

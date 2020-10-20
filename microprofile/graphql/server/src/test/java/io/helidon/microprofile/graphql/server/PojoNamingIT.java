@@ -16,15 +16,14 @@
 
 package io.helidon.microprofile.graphql.server;
 
+import java.beans.IntrospectionException;
+import java.io.IOException;
+
 import io.helidon.microprofile.graphql.server.test.types.Person;
 import io.helidon.microprofile.graphql.server.test.types.PersonWithName;
-
 import io.helidon.microprofile.tests.junit5.AddBean;
 
 import org.junit.jupiter.api.Test;
-
-import java.beans.IntrospectionException;
-import java.io.IOException;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;

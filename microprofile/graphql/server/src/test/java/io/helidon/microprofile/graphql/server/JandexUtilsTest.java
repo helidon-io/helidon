@@ -18,10 +18,8 @@ package io.helidon.microprofile.graphql.server;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Set;
 
-import io.helidon.microprofile.graphql.server.AbstractGraphQLTest;
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
 import org.jboss.jandex.Index;

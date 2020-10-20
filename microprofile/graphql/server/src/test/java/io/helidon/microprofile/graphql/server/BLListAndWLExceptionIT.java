@@ -16,17 +16,16 @@
 
 package io.helidon.microprofile.graphql.server;
 
+import java.io.IOException;
+
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.exception.ExceptionQueries;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
 import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.AddConfig;
-import io.helidon.microprofile.tests.junit5.AddExtension;
-import io.helidon.microprofile.tests.junit5.DisableDiscovery;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
+
 import org.eclipse.microprofile.graphql.ConfigKey;
 import org.junit.jupiter.api.Test;
-import java.io.IOException;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -43,7 +42,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class BLListAndWLExceptionIT extends AbstractGraphQLIT {
 
     @Test
-    public void testBlackListAndWhiteList() throws IOException {
+    public void tesDenyListAndAllowList() throws IOException {
         setupIndex(indexFileName);
 
         ExecutionContext executionContext = new ExecutionContext(defaultContext);

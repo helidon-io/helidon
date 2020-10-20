@@ -16,18 +16,19 @@
 
 package io.helidon.microprofile.graphql.server;
 
-import io.helidon.microprofile.tests.junit5.AddExtension;
-import io.helidon.microprofile.tests.junit5.DisableDiscovery;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
-import org.hamcrest.CoreMatchers;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-
 import java.beans.IntrospectionException;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+
+import io.helidon.microprofile.tests.junit5.AddExtension;
+import io.helidon.microprofile.tests.junit5.DisableDiscovery;
+import io.helidon.microprofile.tests.junit5.HelidonTest;
+
+import org.hamcrest.CoreMatchers;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -39,8 +40,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @HelidonTest
 @DisableDiscovery
 @AddExtension(GraphQLCdiExtension.class)
-public abstract class AbstractGraphQLIT
-        extends AbstractGraphQLTest {
+public abstract class AbstractGraphQLIT extends AbstractGraphQLTest {
 
     protected String indexFileName = null;
     protected File indexFile = null;
@@ -61,21 +61,6 @@ public abstract class AbstractGraphQLIT
         }
     }
 
-    protected void assertInterfaceResults() throws IntrospectionException, ClassNotFoundException {
-        SchemaGenerator schemaGenerator = new SchemaGenerator(defaultContext);
-        Schema schema = schemaGenerator.generateSchema();
-        assertThat(schema, CoreMatchers.is(notNullValue()));
-        schema.getTypes().forEach(t -> System.out.println(t.getName()));
-        assertThat(schema.getTypes().size(), CoreMatchers.is(6));
-        assertThat(schema.getTypeByName("Vehicle"), CoreMatchers.is(notNullValue()));
-        assertThat(schema.getTypeByName("Car"), CoreMatchers.is(notNullValue()));
-        assertThat(schema.getTypeByName("Motorbike"), CoreMatchers.is(notNullValue()));
-        assertThat(schema.getTypeByName("Incident"), CoreMatchers.is(notNullValue()));
-        assertThat(schema.getTypeByName("Query"), CoreMatchers.is(notNullValue()));
-        assertThat(schema.getTypeByName("Mutation"), CoreMatchers.is(notNullValue()));
-        generateGraphQLSchema(schema);
-    }
-
     @SuppressWarnings("unchecked")
     protected void assertMessageValue(String query, String expectedMessage, boolean dataExpected) {
         ExecutionContext executionContext = new ExecutionContext(new DefaultContext());
@@ -91,5 +76,20 @@ public abstract class AbstractGraphQLIT
         assertThat(mapErrors.get(ExecutionContext.MESSAGE), is(expectedMessage));
 
         assertThat(mapResults.containsKey(ExecutionContext.DATA), is(dataExpected));
+    }
+
+    protected void assertInterfaceResults() throws IntrospectionException, ClassNotFoundException {
+        SchemaGenerator schemaGenerator = new SchemaGenerator(defaultContext);
+        Schema schema = schemaGenerator.generateSchema();
+        assertThat(schema, CoreMatchers.is(notNullValue()));
+        schema.getTypes().forEach(t -> System.out.println(t.getName()));
+        assertThat(schema.getTypes().size(), CoreMatchers.is(6));
+        assertThat(schema.getTypeByName("Vehicle"), CoreMatchers.is(notNullValue()));
+        assertThat(schema.getTypeByName("Car"), CoreMatchers.is(notNullValue()));
+        assertThat(schema.getTypeByName("Motorbike"), CoreMatchers.is(notNullValue()));
+        assertThat(schema.getTypeByName("Incident"), CoreMatchers.is(notNullValue()));
+        assertThat(schema.getTypeByName("Query"), CoreMatchers.is(notNullValue()));
+        assertThat(schema.getTypeByName("Mutation"), CoreMatchers.is(notNullValue()));
+        generateGraphQLSchema(schema);
     }
 }

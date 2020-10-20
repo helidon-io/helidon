@@ -16,15 +16,17 @@
 
 package io.helidon.microprofile.graphql.server.test.types;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Objects;
+
 import javax.json.bind.annotation.JsonbNumberFormat;
 
 import org.eclipse.microprofile.graphql.DateFormat;
 import org.eclipse.microprofile.graphql.NumberFormat;
 import org.eclipse.microprofile.graphql.Type;
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Objects;
+
 
 /**
  * Defines a simple contact which contains a number formats.

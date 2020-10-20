@@ -17,17 +17,20 @@
 package io.helidon.microprofile.graphql.server.test.queries;
 
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
-import javax.enterprise.context.ApplicationScoped;
-
 import io.helidon.microprofile.graphql.server.test.types.NullPOJO;
+
+import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+
+import java.time.LocalDate;
+
 import org.eclipse.microprofile.graphql.DefaultValue;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Mutation;
 import org.eclipse.microprofile.graphql.Name;
 import org.eclipse.microprofile.graphql.NonNull;
 import org.eclipse.microprofile.graphql.Query;
-import java.time.LocalDate;
+
 
 /**
  * Class that holds queries that also have Null.

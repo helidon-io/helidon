@@ -16,6 +16,8 @@
 
 package io.helidon.microprofile.graphql.server;
 
+import java.io.IOException;
+
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.exception.ExceptionQueries;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
@@ -23,7 +25,6 @@ import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.AddConfig;
 
 import org.junit.jupiter.api.Test;
-import java.io.IOException;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;

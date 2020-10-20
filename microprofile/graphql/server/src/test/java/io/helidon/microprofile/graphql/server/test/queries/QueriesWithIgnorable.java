@@ -16,31 +16,13 @@
 
 package io.helidon.microprofile.graphql.server.test.queries;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.OffsetDateTime;
-import java.time.OffsetTime;
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import javax.json.bind.annotation.JsonbProperty;
 
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
-import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithEnumName;
-import io.helidon.microprofile.graphql.server.test.types.DateTimePojo;
-import io.helidon.microprofile.graphql.server.test.types.MultiLevelListsAndArrays;
 import io.helidon.microprofile.graphql.server.test.types.ObjectWithIgnorableFieldsAndMethods;
-import io.helidon.microprofile.graphql.server.test.types.Person;
-import io.helidon.microprofile.graphql.server.test.types.SimpleContactWithSelf;
-import io.helidon.microprofile.graphql.server.test.types.TypeWithIDs;
+
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Name;
 import org.eclipse.microprofile.graphql.Query;

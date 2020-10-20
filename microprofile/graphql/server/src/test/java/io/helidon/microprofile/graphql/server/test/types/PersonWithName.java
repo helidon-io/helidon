@@ -18,7 +18,6 @@ package io.helidon.microprofile.graphql.server.test.types;
 
 import org.eclipse.microprofile.graphql.Type;
 
-
 /**
  * Class to test Type annotation with value.
  */

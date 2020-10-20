@@ -21,7 +21,7 @@ import javax.inject.Inject;
 
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.types.DefaultValuePOJO;
-import io.helidon.microprofile.graphql.server.test.types.DescriptionType;
+
 import org.eclipse.microprofile.graphql.DefaultValue;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Mutation;

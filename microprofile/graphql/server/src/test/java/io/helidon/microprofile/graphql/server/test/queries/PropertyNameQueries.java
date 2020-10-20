@@ -17,10 +17,11 @@
 package io.helidon.microprofile.graphql.server.test.queries;
 
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
-import io.helidon.microprofile.graphql.server.test.types.ObjectWithIgnorableFieldsAndMethods;
 import io.helidon.microprofile.graphql.server.test.types.TypeWithNameAndJsonbProperty;
+
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Name;
 import org.eclipse.microprofile.graphql.Query;

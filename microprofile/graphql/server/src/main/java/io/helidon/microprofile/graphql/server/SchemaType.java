@@ -23,9 +23,7 @@ import java.util.Objects;
 /**
  * The representation of a GraphQL Type.
  */
-public class SchemaType
-        extends AbstractDescriptiveElement
-        implements ElementGenerator {
+public class SchemaType extends AbstractDescriptiveElement implements ElementGenerator {
 
     /**
      * Name of the type.

@@ -49,7 +49,6 @@ import graphql.schema.DataFetcher;
 import graphql.schema.DataFetcherFactories;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.PropertyDataFetcher;
-
 import org.eclipse.microprofile.graphql.Description;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Id;
@@ -1073,19 +1072,16 @@ public class SchemaGenerator {
                             isArrayReturnTypeMandatory = true;
                         }
 
-                        // if the set method has a format then this should overwrite any formatting
-                        // as this is an InputType
+                        // if the set method has a format then this should overwrite any formatting as this is an InputType
                         String[] writeMethodFormat = getFormattingAnnotation(writeMethod);
-
                         if (!isFormatEmpty(writeMethodFormat)) {
                             format = writeMethodFormat;
                             isJsonbFormat = isJsonbAnnotationPresent(writeMethod);
                             isJsonbProperty = writeMethod.getAnnotation(JsonbProperty.class) != null;
                         }
-                        // also check the parameter 0 which there will be one as this is a write Method
+
                         Parameter[] parameters = writeMethod.getParameters();
                         if (parameters.length == 1) {
-                            // this should always be true
                             String[] argumentTypeFormat = FormattingHelper.getMethodParameterFormat(parameters[0], 0);
                             if (!isFormatEmpty(argumentTypeFormat)) {
                                 format = argumentTypeFormat;
@@ -1157,9 +1153,31 @@ public class SchemaGenerator {
         }
 
         processMethodParameters(method, discoveredMethod, annotatedName);
-
-        // process the return type for the method
         ReturnType realReturnType = getReturnType(returnClazz, method.getGenericReturnType(), -1, method);
+        processReturnType(discoveredMethod, realReturnType, returnClazzName, isInputType, varName, method);
+
+        discoveredMethod.setReturnTypeMandatory(isReturnTypeMandatory);
+        discoveredMethod.setArrayReturnTypeMandatory(isArrayReturnTypeMandatory
+                                                             || realReturnType.isReturnTypeMandatory && !isInputType);
+        discoveredMethod.setDescription(description);
+
+        return discoveredMethod;
+    }
+
+    /**
+     * Process the {@link ReturnType} and update {@link DiscoveredMethod} as required.
+     * @param discoveredMethod  {@link DiscoveredMethod}
+     * @param realReturnType    {@link ReturnType} with details of the return types
+     * @param returnClazzName   return class name
+     * @param isInputType       indicates if the method is part of an input type
+     * @param varName           name of the variable
+     * @param method            {@link Method} being processed
+     *                                        
+     * @throws ClassNotFoundException if any class not found
+     */
+    private void processReturnType(DiscoveredMethod discoveredMethod, ReturnType realReturnType,
+                                   String returnClazzName, boolean isInputType,
+                                   String varName, Method method) throws ClassNotFoundException {
         if (realReturnType.getReturnClass() != null && !ID.equals(returnClazzName)) {
             discoveredMethod.setArrayReturnType(realReturnType.isArrayType());
             discoveredMethod.setCollectionType(realReturnType.getCollectionType());
@@ -1169,10 +1187,10 @@ public class SchemaGenerator {
                 // only set the original array type if it's a date/time
                 discoveredMethod.setOriginalArrayType(Class.forName(realReturnType.returnClass));
             } else if (discoveredMethod.isArrayReturnType) {
-               Class<?> originalArrayType = getSafeClass(realReturnType.returnClass);
-               if (originalArrayType != null) {
-                   discoveredMethod.setOriginalArrayType(originalArrayType);
-               }
+                Class<?> originalArrayType = getSafeClass(realReturnType.returnClass);
+                if (originalArrayType != null) {
+                    discoveredMethod.setOriginalArrayType(originalArrayType);
+                }
             }
             discoveredMethod.setReturnType(realReturnType.getReturnClass());
             // only override if this is not an input type
@@ -1186,12 +1204,6 @@ public class SchemaGenerator {
         }
 
         discoveredMethod.setArrayLevels(realReturnType.getArrayLevels());
-        discoveredMethod.setReturnTypeMandatory(isReturnTypeMandatory);
-        discoveredMethod.setArrayReturnTypeMandatory(isArrayReturnTypeMandatory
-                                                             || realReturnType.isReturnTypeMandatory && !isInputType);
-        discoveredMethod.setDescription(description);
-
-        return discoveredMethod;
     }
 
     /**
@@ -1599,6 +1611,8 @@ public class SchemaGenerator {
 
         /**
          * Indicates if the property has a JsonbProperty annotation.
+         *
+         * @return true if the property has a JsonbProperty annotation
          */
         public boolean isJsonbProperty() {
             return isJsonbProperty;

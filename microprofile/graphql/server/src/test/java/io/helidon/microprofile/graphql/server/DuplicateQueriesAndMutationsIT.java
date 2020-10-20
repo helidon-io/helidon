@@ -16,12 +16,13 @@
 
 package io.helidon.microprofile.graphql.server;
 
+import java.io.IOException;
+
 import io.helidon.microprofile.graphql.server.test.mutations.VoidMutations;
 import io.helidon.microprofile.graphql.server.test.queries.DuplicateNameQueries;
 import io.helidon.microprofile.tests.junit5.AddBean;
 
 import org.junit.jupiter.api.Test;
-import java.io.IOException;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 

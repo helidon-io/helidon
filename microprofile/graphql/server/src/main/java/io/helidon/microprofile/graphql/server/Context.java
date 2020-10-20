@@ -22,7 +22,7 @@ package io.helidon.microprofile.graphql.server;
 public interface Context {
 
     /**
-     * Add a partial results  {@link Throwable}.
+     * Add a partial results {@link Throwable}.
      *
      * @param throwable {@link Throwable}
      */

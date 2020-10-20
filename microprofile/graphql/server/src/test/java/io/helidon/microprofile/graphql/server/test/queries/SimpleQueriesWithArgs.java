@@ -16,29 +16,28 @@
 
 package io.helidon.microprofile.graphql.server.test.queries;
 
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
+import javax.json.bind.annotation.JsonbNumberFormat;
+import javax.json.bind.annotation.JsonbProperty;
+
+import io.helidon.microprofile.graphql.server.test.types.SimpleContactWithNumberFormats;
+import io.helidon.microprofile.graphql.server.test.db.TestDB;
+import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithNameAnnotation;
+import io.helidon.microprofile.graphql.server.test.types.ContactRelationship;
+import io.helidon.microprofile.graphql.server.test.types.Person;
+import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
+
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.LocalDate;
 import java.util.ArrayList;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import io.helidon.microprofile.graphql.server.test.types.SimpleContactWithNumberFormats;
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-
-import javax.json.bind.annotation.JsonbNumberFormat;
-import javax.json.bind.annotation.JsonbProperty;
-
-import io.helidon.microprofile.graphql.server.test.db.TestDB;
-import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithNameAnnotation;
-import io.helidon.microprofile.graphql.server.test.types.ContactRelationship;
-import io.helidon.microprofile.graphql.server.test.types.Person;
-import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
 import org.eclipse.microprofile.graphql.DateFormat;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Id;

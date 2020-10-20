@@ -16,7 +16,6 @@
 
 package io.helidon.microprofile.graphql.server;
 
-import java.beans.IntrospectionException;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -32,6 +31,7 @@ import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.SchemaPrinter;
 
 import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
+
 import org.hamcrest.CoreMatchers;
 import org.jboss.jandex.Index;
 import org.jboss.jandex.IndexWriter;
@@ -146,7 +146,6 @@ public abstract class AbstractGraphQLTest {
      * Setup an index file for the given {@link Class}es.
      *
      * @param clazzes classes to setup index for
-     * @return a {@link JandexUtils} instance
      * @throws IOException
      */
     protected static void setupIndex(String indexFileName, Class<?>... clazzes) throws IOException {

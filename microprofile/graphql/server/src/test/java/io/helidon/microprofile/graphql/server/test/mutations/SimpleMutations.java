@@ -19,13 +19,15 @@ package io.helidon.microprofile.graphql.server.test.mutations;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
+import java.util.Set;
+
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
-import javax.json.bind.annotation.JsonbNumberFormat;
+
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Mutation;
 import org.eclipse.microprofile.graphql.Name;
-import java.util.Set;
+
 
 /**
  * Class that holds simple mutations definitions with various numbers of arguments.

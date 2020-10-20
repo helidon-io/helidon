@@ -27,7 +27,11 @@ import io.helidon.microprofile.graphql.server.test.types.Vehicle;
 
 import io.helidon.microprofile.tests.junit5.AddBean;
 
+import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Tests for discovery of interfaces when only the interface annotated.
@@ -38,7 +42,7 @@ import org.junit.jupiter.api.Test;
 @AddBean(AbstractVehicle.class)
 @AddBean(TestDB.class)
 public class InterfaceOnlyAnnotatedIT extends AbstractGraphQLIT {
-    
+
     @Test
     public void testInterfaceDiscoveryWithImplementorsWithNoTypeAnnotation()
             throws IOException, IntrospectionException, ClassNotFoundException {

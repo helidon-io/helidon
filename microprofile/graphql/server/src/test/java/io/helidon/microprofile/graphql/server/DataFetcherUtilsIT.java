@@ -16,10 +16,15 @@
 
 package io.helidon.microprofile.graphql.server;
 
-import static io.helidon.microprofile.graphql.server.JsonUtils.convertObjectToMap;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithEnumName;
@@ -30,20 +35,12 @@ import io.helidon.microprofile.graphql.server.test.types.SimpleContactWithNumber
 
 import io.helidon.microprofile.tests.junit5.AddBean;
 
-import io.helidon.microprofile.tests.junit5.AddExtension;
-import io.helidon.microprofile.tests.junit5.DisableDiscovery;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
 import org.junit.jupiter.api.Test;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import static io.helidon.microprofile.graphql.server.JsonUtils.convertObjectToMap;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Tests for {@link DataFetcherUtils} class.
@@ -310,5 +307,4 @@ class DataFetcherUtilsIT extends AbstractGraphQLIT {
         }
         return null;
     }
-
 }

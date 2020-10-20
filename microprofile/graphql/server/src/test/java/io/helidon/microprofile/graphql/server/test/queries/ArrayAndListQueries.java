@@ -16,6 +16,9 @@
 
 package io.helidon.microprofile.graphql.server.test.queries;
 
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
+
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -23,8 +26,6 @@ import java.util.LinkedList;
 import java.util.List;
 
 import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.types.MultiLevelListsAndArrays;

@@ -18,8 +18,7 @@ package io.helidon.microprofile.graphql.server;
 
 import graphql.schema.DataFetcher;
 import graphql.schema.StaticDataFetcher;
-import io.helidon.microprofile.graphql.server.SchemaArgument;
-import io.helidon.microprofile.graphql.server.SchemaFieldDefinition;
+
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;

@@ -22,9 +22,7 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.OffsetTime;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 import javax.json.bind.annotation.JsonbDateFormat;
 

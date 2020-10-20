@@ -32,7 +32,6 @@ import io.helidon.microprofile.tests.junit5.AddBean;
 
 import org.junit.jupiter.api.Test;
 
-
 /**
  * Tests for Nulls.
  */

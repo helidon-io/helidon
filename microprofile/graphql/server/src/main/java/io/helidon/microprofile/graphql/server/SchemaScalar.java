@@ -23,8 +23,7 @@ import graphql.schema.GraphQLScalarType;
 /**
  * The representation of a GraphQL Scalar.
  */
-public class SchemaScalar
-        implements ElementGenerator {
+public class SchemaScalar implements ElementGenerator {
 
     /**
      * Name of the Scalar.
@@ -140,5 +139,4 @@ public class SchemaScalar
                 + ", defaultFormat='" + defaultFormat + '\''
                 + ", graphQLScalarType=" + graphQLScalarType + '}';
     }
-
 }

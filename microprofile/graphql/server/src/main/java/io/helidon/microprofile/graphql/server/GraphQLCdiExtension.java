@@ -70,7 +70,7 @@ public class GraphQLCdiExtension implements Extension {
      *
      * @return the collected API's
      */
-    public Class[] collectedApis() {
+    public Class<?>[] collectedApis() {
         return collectedApis.toArray(new Class[0]);
     }
 
@@ -79,7 +79,7 @@ public class GraphQLCdiExtension implements Extension {
      *
      * @return the collected Schema Processors.
      */
-    public Class[] collectedSchemaProcessors() {
+    public Class<?>[] collectedSchemaProcessors() {
         return collectedProcessors.toArray(new Class[0]);
     }
 }

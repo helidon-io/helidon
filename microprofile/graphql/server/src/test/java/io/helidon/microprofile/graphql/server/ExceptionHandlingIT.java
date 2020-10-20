@@ -17,10 +17,8 @@
 package io.helidon.microprofile.graphql.server;
 
 import java.io.IOException;
-
 import java.util.List;
 import java.util.Map;
-
 
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.exception.ExceptionQueries;
