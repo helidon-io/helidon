@@ -22,4 +22,27 @@ package io.helidon.microprofile.graphql.server;
  */
 public class DefaultContext
         implements Context {
+
+    private ThreadLocal<Throwable> currentThrowable = new ThreadLocal<>();
+
+    /**
+     * Construct a default context.
+     */
+    public DefaultContext() {
+    }
+
+    @Override
+    public void addPartialResultsException(Throwable throwable) {
+        currentThrowable.set(throwable);
+    }
+
+    @Override
+    public Throwable getPartialResultsException() {
+        return currentThrowable.get();
+    }
+
+    @Override
+    public void removePartialResultsException() {
+         currentThrowable.remove();
+    }
 }

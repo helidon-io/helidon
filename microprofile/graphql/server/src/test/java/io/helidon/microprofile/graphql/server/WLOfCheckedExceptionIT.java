@@ -33,7 +33,7 @@ import java.io.IOException;
 @AddBean(ExceptionQueries.class)
 @AddBean(SimpleContact.class)
 @AddBean(TestDB.class)
-@AddConfig(key = ConfigKey.EXCEPTION_WHITE_LIST, value = "java.io.IOError")
+@AddConfig(key = ConfigKey.EXCEPTION_WHITE_LIST, value = "java.lang.IllegalArgumentException")
 public class WLOfCheckedExceptionIT extends AbstractGraphQLIT {
 
     @Test

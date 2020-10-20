@@ -37,7 +37,7 @@ import java.io.IOException;
 public class BLOfIOExceptionIT extends AbstractGraphQLIT {
 
     @Test
-    public void testBlackListOfIOException() throws IOException {
+    public void testDenyListOfIOException() throws IOException {
         setupIndex(indexFileName, ExceptionQueries.class);
         assertMessageValue("query { checkedException }", "Server Error", true);
         assertMessageValue("query { checkedException2 }", "Server Error", true);

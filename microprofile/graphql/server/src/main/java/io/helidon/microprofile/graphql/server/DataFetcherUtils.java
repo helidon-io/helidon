@@ -118,9 +118,20 @@ public class DataFetcherUtils {
             }
 
             try {
+
                 return (V) method.invoke(instance, listArgumentValues.toArray());
             } catch (InvocationTargetException e) {
-                throw new GraphQLException(e.getTargetException());
+                Throwable targetException = e.getTargetException();
+                GraphQLException exception = new GraphQLException(e.getTargetException());
+                if (targetException instanceof org.eclipse.microprofile.graphql.GraphQLException) {
+                    // if we have partial results we need to return those results and they will
+                    // get converted correctly to the format required by GraphQL and the ExecutionContext.execute()
+                    // we ensure this is throw correctly as an error
+                    Context context = environment.getContext();
+                    context.addPartialResultsException(exception);
+                    return (V) ((org.eclipse.microprofile.graphql.GraphQLException) targetException).getPartialResults();
+                }
+                throw exception;
             }
         };
     }

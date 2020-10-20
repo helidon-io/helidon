@@ -52,12 +52,12 @@ public class ExceptionQueries {
 
     @Query("uncheckedQuery1")
     public String uncheckedQuery1() {
-        throw new IOError(new AccessControlException("my exception"));
+        throw new IllegalArgumentException(new AccessControlException("my exception"));
     }
 
     @Query("uncheckedQuery2")
     public String uncheckedQuery2() {
-        throw new MyIOError(new AccessControlException("my exception"));
+        throw new MyIllegalArgumentException(new AccessControlException("my exception"));
     }
 
     @Query
@@ -103,6 +103,11 @@ public class ExceptionQueries {
         throw new GraphQLException("Partial results", listContacts);
     }
 
+    @Query
+    public String throwOOME() {
+        throw new OutOfMemoryError("error");
+    }
+
     public static class MyIOException extends IOException {
         public MyIOException() {
             super();
@@ -113,8 +118,8 @@ public class ExceptionQueries {
         }
     }
 
-    public static class MyIOError extends IOError {
-        public MyIOError(Throwable cause) {
+    public static class MyIllegalArgumentException extends IllegalArgumentException {
+        public MyIllegalArgumentException(Throwable cause) {
             super(cause);
         }
     }

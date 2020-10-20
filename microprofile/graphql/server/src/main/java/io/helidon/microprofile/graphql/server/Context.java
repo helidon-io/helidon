@@ -16,9 +16,27 @@
 
 package io.helidon.microprofile.graphql.server;
 
-
 /**
  * A Default Context to be supplied to {@link ExecutionContext}.
  */
 public interface Context {
+
+    /**
+     * Add a partial results  {@link Throwable}.
+     *
+     * @param throwable {@link Throwable}
+     */
+    void addPartialResultsException(Throwable throwable);
+
+    /**
+     * Retrieve partial results {@link Throwable}.
+     *
+     * @return the {@link Throwable}
+     */
+    Throwable getPartialResultsException();
+
+    /**
+     * Remove partial results {@link Throwable}.
+     */
+    void removePartialResultsException();
 }

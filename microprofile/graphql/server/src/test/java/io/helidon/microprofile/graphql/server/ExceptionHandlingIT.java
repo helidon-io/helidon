@@ -21,18 +21,15 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-import io.helidon.config.mp.MpConfigSources;
 
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.exception.ExceptionQueries;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
 import io.helidon.microprofile.tests.junit5.AddBean;
 
-import org.eclipse.microprofile.config.Config;
-import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
-
 import org.hamcrest.Matchers;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -150,11 +147,17 @@ public class ExceptionHandlingIT extends AbstractGraphQLIT {
 
     @Test
     public void testUnknownField() throws IOException {
-        setupConfig(null);
         setupIndex(indexFileName, ExceptionQueries.class, SimpleContact.class);
         assertMessageValue("query { defaultContact { invalidField } }",
                            "Validation error of type FieldUndefined: Field 'invalidField' in" +
                                    " type 'SimpleContact' is undefined @ 'defaultContact/invalidField'", true);
+    }
+
+    @Test
+    public void testError() throws IOException {
+        setupIndex(indexFileName, ExceptionQueries.class, SimpleContact.class);
+        ExecutionContext executionContext = new ExecutionContext(defaultContext);
+        Assertions.assertThrows(Error.class, () -> executionContext.execute("query { throwOOME }"));
     }
 
     private void assertPayload(Map<String, Object> errorMap) {
@@ -162,20 +165,4 @@ public class ExceptionHandlingIT extends AbstractGraphQLIT {
         assertThat(errorMap.size(), is(2));
         assertThat(errorMap.get(ExecutionContext.DATA), is(nullValue()));
     }
-
-    protected Config setupConfig(String propertiesFile) {
-        Config config = propertiesFile == null
-                ? ConfigProviderResolver.instance().getBuilder().build()
-                : ConfigProviderResolver.instance()
-                        .getBuilder()
-                        .withSources(
-                                MpConfigSources.create(ExceptionHandlingIT.class.getClassLoader().getResource(propertiesFile)))
-                        .build();
-
-        ConfigProviderResolver.instance()
-                .registerConfig(config, Thread.currentThread().getContextClassLoader());
-
-        return config;
-    }
-
 }

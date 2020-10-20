@@ -18,6 +18,7 @@ package io.helidon.microprofile.graphql.server;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -297,51 +298,33 @@ public class ExecutionContext {
             List<GraphQLError> errors = result.getErrors();
             boolean hasErrors = false;
             Map<String, Object> mapErrors = newErrorPayload(result.getData());
+            Throwable partialResultsThrowable = null;
 
-            // process errors
-            if (errors != null && errors.size() > 0) {
+            Context context = this.context;
+
+            // retrieve and remove any partial results for this ThreadLocal and context
+            partialResultsThrowable = context.getPartialResultsException();
+            context.removePartialResultsException();
+
+            if (errors.size() == 0 && partialResultsThrowable != null) {
+                // process partial results errors as we have retrieved the Throwable from ThreadLocal
+                Throwable cause = partialResultsThrowable.getCause();
+                hasErrors = true;
+                processError(mapErrors, cause, result, null, cause.getMessage());
+            } else {
                 for (GraphQLError error : errors) {
                     if (error instanceof ExceptionWhileDataFetching) {
                         ExceptionWhileDataFetching e = (ExceptionWhileDataFetching) error;
                         Throwable cause = e.getException().getCause();
-                        hasErrors = true;
-                        if (cause instanceof GraphQLException) {
-                            // process partial results
-                            GraphQLException graphQLE = (GraphQLException) cause;
-                            Object partialResults = graphQLE.getPartialResults();
-
-                            // the current key for data will be the name of the data result
-                            // and there should only be one
-                            Map<String, Object> data = result.getData();
-                            String key = data.keySet().stream().findFirst().orElse(null);
-                            if (key == null) {
-                                ensureRuntimeException(LOGGER, "Partial results should contain 1 single data key");
-                            }
-                            Map<String, Object> dataMap = new HashMap<>();
-                            if (partialResults != null) {
-                                // partial results are native objects and must be converted
-                                if (partialResults instanceof List) {
-                                    ((List) partialResults).removeIf(Objects::isNull);
-                                }
-                                dataMap.put(key, partialResults);
-                            } else {
-                                dataMap = result.getData();
-                                dataMap.values().removeIf(Objects::isNull);
-                            }
-
-                            DataFetcherResult.Builder builder = DataFetcherResult.newResult().data(dataMap);
-                            DataFetcherResult build = builder.build();
-                            mapErrors.put(DATA, dataMap);
-                            addErrorPayload(mapErrors, getCheckedMessage(cause), error);
-                        } else if (cause instanceof Error || cause instanceof RuntimeException) {
-                            // unchecked
-                            addErrorPayload(mapErrors, getUncheckedMessage(cause), error);
-                        } else {
-                            // checked
-                            addErrorPayload(mapErrors, cause == null ? e.getMessage() : getCheckedMessage(cause), error);
+                        if (cause instanceof Error) {
+                            // re-throw the error as this should result in 500 from graphQL endpoint
+                            throw (Error) cause;
                         }
+                        hasErrors = true;
+                        processError(mapErrors, cause, result, error, e.getMessage());
+
                     } else if (error instanceof ValidationError) {
-                        addErrorPayload(mapErrors, error.getMessage(), error);
+                        addErrorPayload(mapErrors, error.getMessage(), error, null);
                         // the spec tests for empty "data" node on validation errors
                         if (!mapErrors.containsKey(DATA)) {
                             mapErrors.put(DATA, null);
@@ -353,16 +336,37 @@ public class ExecutionContext {
             }
 
             return hasErrors ? mapErrors : result.toSpecification();
-        } catch (RuntimeException | Error e) {
+        } catch (Error er) {
+            throw er;
+        } catch (RuntimeException rte) {
             // unchecked exception
-            Map<String, Object> mapErrors = getErrorPayload(getUncheckedMessage(e), e);
-            LOGGER.warning(e.getMessage());
+            Map<String, Object> mapErrors = getErrorPayload(getUncheckedMessage(rte), rte);
+            LOGGER.warning(rte.getMessage());
             return mapErrors;
-        } catch (Exception e) {
+        } catch (Exception ex) {
             // checked exception
-            Map<String, Object> mapErrors = getErrorPayload(getCheckedMessage(e), e);
-            LOGGER.warning(e.getMessage());
+            Map<String, Object> mapErrors = getErrorPayload(getCheckedMessage(ex), ex);
+            LOGGER.warning(ex.getMessage());
             return mapErrors;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void processError(Map<String, Object> mapErrors, Throwable cause, ExecutionResult result, GraphQLError error,
+                              String originalMessage) {
+        if (cause instanceof GraphQLException) {
+            // at this stage the partial results will be contained in the results.getData()
+            Object data = result.getData();
+            mapErrors.put(DATA, data);
+            Map<String, Object> mapData = (Map<String, Object>) result.getData();
+            String queryName = mapData.keySet().stream().findFirst().orElse(null);
+            addErrorPayload(mapErrors, getCheckedMessage(cause), error, queryName);
+        } else if (cause instanceof Error || cause instanceof RuntimeException) {
+            // unchecked
+            addErrorPayload(mapErrors, getUncheckedMessage(cause), error, null);
+        } else {
+            // checked
+            addErrorPayload(mapErrors, cause == null ? originalMessage : getCheckedMessage(cause), error, null);
         }
     }
 
@@ -563,24 +567,31 @@ public class ExecutionContext {
      * @param errorMap error {@link Map} to add to
      * @param message  message to add
      * @param error    {@link GraphQLError} to retrieve information from
+     * @param queryName query name to use in path - only valid when GraphQLError is null
      */
-    protected void addErrorPayload(Map<String, Object> errorMap, String message, GraphQLError error) {
+    @SuppressWarnings("unchecked")
+    protected void addErrorPayload(Map<String, Object> errorMap, String message, GraphQLError error, String queryName) {
         int line = -1;
         int column = -1;
-        String path = null;
-        List<SourceLocation> locations = error.getLocations();
-        if (locations != null && locations.size() > 0) {
-            SourceLocation sourceLocation = locations.get(0);
-            line = sourceLocation.getLine();
-            column = sourceLocation.getColumn();
+        String path = null; //queryName;
+        if (error != null) {
+            List<SourceLocation> locations = error.getLocations();
+            if (locations != null && locations.size() > 0) {
+                SourceLocation sourceLocation = locations.get(0);
+                line = sourceLocation.getLine();
+                column = sourceLocation.getColumn();
+            }
+
+            List<Object> listPath = error.getPath();
+            if (listPath != null && listPath.size() > 0) {
+                path = listPath.get(0).toString();
+            }
+        } else {
+            // no error so set the path to be the queryName
+            path = queryName;
         }
 
-        List<Object> listPath = error.getPath();
-        if (listPath != null && listPath.size() > 0) {
-            path = listPath.get(0).toString();
-        }
-
-        addErrorPayload(errorMap, message, line, column, error.getExtensions(), path);
+        addErrorPayload(errorMap, message, line, column, error != null ? error.getExtensions() : Collections.EMPTY_MAP, path);
     }
 
 }

@@ -43,13 +43,6 @@ import org.opentest4j.AssertionFailedError;
 public class IngorableIT extends AbstractGraphQLIT {
 
     @Test
-    public void testObjectWithIgnorableFields() throws IOException {
-        setupIndex(indexFileName, ObjectWithIgnorableFieldsAndMethods.class);
-        ExecutionContext executionContext =  new ExecutionContext(defaultContext);
-        executionContext.execute("query { hero }");
-    }
-
-    @Test
     @SuppressWarnings("unchecked")
     public void testIgnorable() throws IOException {
         setupIndex(indexFileName, QueriesWithIgnorable.class);
