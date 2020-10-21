@@ -142,25 +142,25 @@ See https://github.com/oracle/helidon-build-tools/tree/master/helidon-maven-plug
 Start the application:
 
 ```
-./target/helidon-quickstart-mp/bin/start
+./target/helidon-quickstart-mp-jri/bin/start
 ```
 
 ### Multi-stage Docker build
 
-Build the "jlink" Docker Image
+Build the JRI as a Docker Image
 
 ```
-docker build -t helidon-quickstart-mp-jlink -f Dockerfile.jlink .
+docker build -t helidon-quickstart-mp-jri -f Dockerfile.jlink .
 ```
 
 Start the application:
 
 ```
-docker run --rm -p 8080:8080 helidon-quickstart-mp-jlink:latest
+docker run --rm -p 8080:8080 helidon-quickstart-mp-jri:latest
 ```
 
 See the start script help:
 
 ```
-docker run --rm helidon-quickstart-mp-jlink:latest --help
+docker run --rm helidon-quickstart-mp-jri:latest --help
 ```

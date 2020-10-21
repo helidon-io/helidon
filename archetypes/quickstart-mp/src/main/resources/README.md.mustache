@@ -128,12 +128,12 @@ docker run --rm -p 8080:8080 {{artifactId}}-native:latest
 
 ## Build a Java Runtime Image using jlink
 
-You can build a custom Java Runtime Image (JRI) containing the application jars and the JDK modules 
+You can build a custom Java Runtime Image (JRI) containing the application jars and the JDK modules
 on which they depend. This image also:
 
-* Enables Class Data Sharing by default to reduce startup time. 
-* Contains a customized `start` script to simplify CDS usage and support debug and test modes. 
- 
+* Enables Class Data Sharing by default to reduce startup time.
+* Contains a customized `start` script to simplify CDS usage and support debug and test modes.
+
 You can build a custom JRI in two different ways:
 * Local
 * Using Docker
@@ -152,25 +152,25 @@ See https://github.com/oracle/helidon-build-tools/tree/master/helidon-maven-plug
 Start the application:
 
 ```
-./target/{{artifactId}}/bin/start
+./target/{{artifactId}}-jri/bin/start
 ```
 
 ### Multi-stage Docker build
 
-Build the "jlink" Docker Image
+Build the JRI as a Docker Image
 
 ```
-docker build -t {{artifactId}}-jlink -f Dockerfile.jlink .
+docker build -t {{artifactId}}-jri -f Dockerfile.jlink .
 ```
 
 Start the application:
 
 ```
-docker run --rm -p 8080:8080 {{artifactId}}-jlink:latest
+docker run --rm -p 8080:8080 {{artifactId}}-jri:latest
 ```
 
 See the start script help:
 
 ```
-docker run --rm {{artifactId}}-jlink:latest --help
+docker run --rm {{artifactId}}-jri:latest --help
 ```

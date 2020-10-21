@@ -107,7 +107,7 @@ This uses the `helidon-maven-plugin` to perform the custom image generation.
 After the build completes it will report some statistics about the build including
 the reduction in image size.
 
-The `target/helidon-quickstart-{helidon-lc-flavor}` directory is a self contained
+The `target/helidon-quickstart-{helidon-lc-flavor}-jri` directory is a self contained
 custom image of your application. It contains your application, its runtime
 dependencies and the JDK modules it depends on. You can start your application
 using the provide
@@ -115,7 +115,7 @@ using the provide
 
 [source,bash,subs="attributes+"]
 ----
-./target/helidon-quickstart-{helidon-lc-flavor}/bin/start
+./target/helidon-quickstart-{helidon-lc-flavor}-jri/bin/start
 ----
 
 === Class Data Sharing (CDS) Archive
@@ -147,7 +147,7 @@ Dockerfile included with the quickstart.
 
 [source,bash,subs="attributes+"]
 ----
-docker build -t helidon-quickstart-{helidon-lc-flavor}-jlink -f Dockerfile.jlink .
+docker build -t helidon-quickstart-{helidon-lc-flavor}-jri -f Dockerfile.jlink .
 ----
 
 [TIP]
@@ -162,7 +162,7 @@ Start the application:
 
 [source,bash,subs="attributes+"]
 ----
-docker run --rm -p 8080:8080 helidon-quickstart-{helidon-lc-flavor}-jlink:latest
+docker run --rm -p 8080:8080 helidon-quickstart-{helidon-lc-flavor}-jri:latest
 ----
 
 You can exercise the application's endpoints as before.
