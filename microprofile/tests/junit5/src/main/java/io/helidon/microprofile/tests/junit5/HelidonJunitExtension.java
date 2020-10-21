@@ -453,7 +453,7 @@ class HelidonJunitExtension implements BeforeAllCallback,
                             int port = (int) m.invoke(extension);
                             String uri = "http://localhost:" + port;
                             return client.target(uri);
-                        } catch (Exception e) {
+                        } catch (ReflectiveOperationException e) {
                             return client.target("http://localhost:7001");
                         }
                     });
