@@ -511,7 +511,6 @@
                             <exclude>io.helidon.test*</exclude>
                             <exclude>io.helidon.examples*</exclude>
                             <exclude>io.helidon.microprofile.tests*</exclude>
-                            <exclude>org.testng*</exclude>
                         </excludes>
                         <formats>
                             <format>HTML</format>

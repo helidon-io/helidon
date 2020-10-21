@@ -39,16 +39,14 @@ readonly WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
 
 readonly RESULT_FILE=$(mktemp -t XXXdependency-check-result)
 
-echo ${RESULT_FILE}
-
 source ${WS_DIR}/etc/scripts/pipeline-env.sh
 
-die(){ cat ${RESULT_FILE} ; echo "${1}" ; exit 1 ;}
+die(){ cat ${RESULT_FILE} ; echo "Dependency report in ${WS_DIR}/target" ; echo "${1}" ; exit 1 ;}
 
-mvn ${MAVEN_ARGS} -q org.owasp:dependency-check-maven:aggregate \
+mvn ${MAVEN_ARGS} -Dorg.slf4j.simpleLogger.defaultLogLevel=WARN org.owasp:dependency-check-maven:aggregate \
         -f ${WS_DIR}/pom.xml \
         -Dtop.parent.basedir="${WS_DIR}" \
         > ${RESULT_FILE} || die "Error running the Maven command"
 
-grep -i "Vulnerability found" ${RESULT_FILE} \
+grep -i "One or more dependencies were identified with known vulnerabilities" ${RESULT_FILE} \
     && die "CVE SCAN ERROR" || echo "CVE SCAN OK"
