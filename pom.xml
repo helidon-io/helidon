@@ -499,8 +499,6 @@
                     <version>${version.plugin.dependency-check}</version>
                     <configuration>
                         <skip>${dependency-check.skip}</skip>
-                        <skipProvidedScope>true</skipProvidedScope>
-                        <skipRuntimeScope>true</skipRuntimeScope>
                         <skipTestScope>true</skipTestScope>
                         <failBuildOnAnyVulnerability>false</failBuildOnAnyVulnerability>
                         <assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
@@ -511,11 +509,12 @@
                             <exclude>io.helidon.test*</exclude>
                             <exclude>io.helidon.examples*</exclude>
                             <exclude>io.helidon.microprofile.tests*</exclude>
+                            <!-- Was unable to get this excluded otherwise -->
+                            <exclude>org.testng:testng</exclude>
                         </excludes>
                         <formats>
                             <format>HTML</format>
                             <format>CSV</format>
-                            <format>JUNIT</format>
                         </formats>
                         <suppressionFiles>
                             <!--suppress UnresolvedMavenProperty -->

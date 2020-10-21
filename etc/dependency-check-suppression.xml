@@ -18,6 +18,13 @@
    <packageUrl regex="true">^pkg:maven/org\.glassfish/jsonp\-jaxrs@.*$</packageUrl>
    <cpe>cpe:/a:processing:processing</cpe>
 </suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: jakarta.json-api-1.1.6.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/jakarta\.json/jakarta\.json\-api@.*$</packageUrl>
+   <cpe>cpe:/a:processing:processing</cpe>
+</suppress>
 
 <!-- We use snakeyaml for reading local configuration, so this CVE
      does not apply to our use case. For more information:
