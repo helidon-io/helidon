@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+<!-- For information see https://jeremylong.github.io/DependencyCheck/general/suppression.html -->
+<!-- Applies to Oracle HTTP Server -->
+<suppress>
+   <notes><![CDATA[
+   file name: helidon-microprofile-server-2.1.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.helidon\.microprofile\.server/helidon\-microprofile\-server@.*$</packageUrl>
+   <cpe>cpe:/a:oracle:http_server</cpe>
+</suppress>
+
+<!-- Applies to Processing:Processing -->
+<suppress>
+   <notes><![CDATA[
+   file name: jsonp-jaxrs-1.1.6.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.glassfish/jsonp\-jaxrs@.*$</packageUrl>
+   <cpe>cpe:/a:processing:processing</cpe>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: jakarta.json-api-1.1.6.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/jakarta\.json/jakarta\.json\-api@.*$</packageUrl>
+   <cpe>cpe:/a:processing:processing</cpe>
+</suppress>
+
+<!-- We use snakeyaml for reading local configuration, so this CVE
+     does not apply to our use case. For more information:
+     https://bitbucket.org/asomov/snakeyaml/issues/377/allow-configuration-for-preventing-billion
+     https://bitbucket.org/asomov/snakeyaml/wiki/Changes
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: snakeyaml-1.24.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.yaml/snakeyaml@.*$</packageUrl>
+   <cve>CVE-2017-18640</cve>
+</suppress>
+
+<!-- weld-probe-core contains META-INF/client/probe.js which has some javascript
+     CVEs. This javascript appears to be for developement and is never served
+     by Helidon. So we exclude these CVEs
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: weld-probe-core-3.1.4.Final.jar: probe.js
+   ]]></notes>
+   <packageUrl regex="true">^pkg:javascript/bootstrap@.*$</packageUrl>
+   <cve>CVE-2015-9251</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: weld-probe-core-3.1.4.Final.jar: probe.js
+   ]]></notes>
+   <packageUrl regex="true">^pkg:javascript/bootstrap@.*$</packageUrl>
+   <cve>CVE-2018-14040</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: weld-probe-core-3.1.4.Final.jar: probe.js
+   ]]></notes>
+   <packageUrl regex="true">^pkg:javascript/bootstrap@.*$</packageUrl>
+   <cve>CVE-2018-14041</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: weld-probe-core-3.1.4.Final.jar: probe.js
+   ]]></notes>
+   <packageUrl regex="true">^pkg:javascript/bootstrap@.*$</packageUrl>
+   <cve>CVE-2018-14042</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: weld-probe-core-3.1.4.Final.jar: probe.js
+   ]]></notes>
+   <packageUrl regex="true">^pkg:javascript/bootstrap@.*$</packageUrl>
+   <cve>CVE-2019-11358</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: weld-probe-core-3.1.4.Final.jar: probe.js
+   ]]></notes>
+   <packageUrl regex="true">^pkg:javascript/bootstrap@.*$</packageUrl>
+   <cve>CVE-2019-8331</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: weld-probe-core-3.1.4.Final.jar: probe.js
+   ]]></notes>
+   <packageUrl regex="true">^pkg:javascript/bootstrap@.*$</packageUrl>
+   <cve>CVE-2020-11022</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: weld-probe-core-3.1.4.Final.jar: probe.js
+   ]]></notes>
+   <packageUrl regex="true">^pkg:javascript/bootstrap@.*$</packageUrl>
+   <cve>CVE-2020-11023</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: weld-probe-core-3.1.4.Final.jar: probe.js
+   ]]></notes>
+   <packageUrl regex="true">^pkg:javascript/bootstrap@.*$</packageUrl>
+   <vulnerabilityName>reDOS - regular expression denial of service</vulnerabilityName>
+</suppress>
+<!-- End of Weld/javascript related supressions -->
+
+<!-- This CVE is against the etcd server. We ship a Java client -->
+<suppress>
+   <notes><![CDATA[
+   file name: etcd4j-2.17.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.mousio/etcd4j@.*$</packageUrl>
+   <cpe>cpe:/a:etcd:etcd</cpe>
+</suppress>
+
+<!-- This CVE is against the Java Websocket project.  Not the Jakarta WebSocket API.
+     See https://github.com/TooTallNate/Java-WebSocket/security/advisories/GHSA-gw55-jm4h-x339
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: jakarta.websocket-api-1.1.2.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/jakarta\.websocket/jakarta\.websocket\-api@.*$</packageUrl>
+   <cpe>cpe:/a:java-websocket_project:java-websocket</cpe>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: javax.websocket-api-1.1.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/javax\.websocket/javax\.websocket\-api@.*$</packageUrl>
+   <cpe>cpe:/a:java-websocket_project:java-websocket</cpe>
+</suppress>
+
+</suppressions>
