@@ -45,6 +45,7 @@
         <spotbugs.skip>false</spotbugs.skip>
         <spotbugs.threshold>Medium</spotbugs.threshold>
 
+        <dependency-check.skip>false</dependency-check.skip>
         <!--
         !Version statement! - begin
 
@@ -111,6 +112,7 @@
         <version.plugin.spotbugs>3.1.12</version.plugin.spotbugs>
         <version.plugin.surefire.provider.junit>1.0.3</version.plugin.surefire.provider.junit>
         <version.plugin.surefire>2.19.1</version.plugin.surefire>
+        <version.plugin.dependency-check>6.0.2</version.plugin.dependency-check>
         <version.plugin.toolchains>1.1</version.plugin.toolchains>
         <version.plugin.version-plugin>2.3</version.plugin.version-plugin>
         <version.plugin.buildnumber>1.4</version.plugin.buildnumber>
@@ -516,12 +518,43 @@
                     <version>${version.plugin.helidon-build-tools}</version>
                 </plugin>
                 <plugin>
+                    <groupId>org.owasp</groupId>
+                    <artifactId>dependency-check-maven</artifactId>
+                    <version>${version.plugin.dependency-check}</version>
+                    <configuration>
+                        <skip>${dependency-check.skip}</skip>
+                        <skipTestScope>true</skipTestScope>
+                        <failBuildOnAnyVulnerability>false</failBuildOnAnyVulnerability>
+                        <assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
+                        <excludes>
+                            <!-- Exclude stuff we do not deploy -->
+                            <exclude>io.helidon.tracing:helidon-tracing-tests</exclude>
+                            <exclude>io.helidon.config.tests*</exclude>
+                            <exclude>io.helidon.test*</exclude>
+                            <exclude>io.helidon.examples*</exclude>
+                            <exclude>io.helidon.microprofile.tests*</exclude>
+                            <!-- This should be excluded by above, but for some reason it persists -->
+                            <exclude>org.testng:testng</exclude>
+                        </excludes>
+                        <formats>
+                            <format>HTML</format>
+                            <format>CSV</format>
+                        </formats>
+                        <suppressionFiles>
+                            <!--suppress UnresolvedMavenProperty -->
+                            <suppressionFile>${top.parent.basedir}/etc/dependency-check-suppression.xml</suppressionFile>
+                        </suppressionFiles>
+                    </configuration>
+                </plugin>
+                <plugin>
                     <groupId>org.xolstice.maven.plugins</groupId>
                     <artifactId>protobuf-maven-plugin</artifactId>
                     <version>${version.plugin.protobuf}</version>
                     <configuration>
+                        <!--suppress UnresolvedMavenProperty -->
                         <protocArtifact>com.google.protobuf:protoc:3.5.1-1:exe:${os.detected.classifier}</protocArtifact>
                         <pluginId>grpc-java</pluginId>
+                        <!--suppress UnresolvedMavenProperty -->
                         <pluginArtifact>
                             io.grpc:protoc-gen-grpc-java:${version.lib.grpc}:exe:${os.detected.classifier}
                         </pluginArtifact>
@@ -1051,6 +1084,24 @@
                     <plugin>
                         <groupId>com.github.spotbugs</groupId>
                         <artifactId>spotbugs-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>check</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>dependency-check</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.owasp</groupId>
+                        <artifactId>dependency-check-maven</artifactId>
                         <executions>
                             <execution>
                                 <goals>
