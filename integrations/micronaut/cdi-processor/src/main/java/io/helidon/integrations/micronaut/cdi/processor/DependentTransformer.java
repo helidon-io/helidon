@@ -21,6 +21,7 @@ import java.util.List;
 
 import javax.inject.Scope;
 
+import io.micronaut.context.annotation.Prototype;
 import io.micronaut.core.annotation.AnnotationValue;
 import io.micronaut.inject.annotation.NamedAnnotationTransformer;
 import io.micronaut.inject.visitor.VisitorContext;
@@ -39,10 +40,7 @@ public class DependentTransformer implements NamedAnnotationTransformer {
     public List<AnnotationValue<?>> transform(AnnotationValue<Annotation> annotation, VisitorContext visitorContext) {
         return List.of(
                 AnnotationValue.builder(Scope.class).build(),
-                // intentional - we ignore non-Singleton beans from Micronaut,
-                // yet we want Micronaut to create executable methods for any bean
-                // Micronaut does not yet have the concept of Dependent pseudoscope
-                AnnotationValue.builder("io.micronaut.runtime.http.scope.RequestScope").build()
+                AnnotationValue.builder(Prototype.class).build()
         );
     }
 }
