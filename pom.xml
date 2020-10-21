@@ -509,7 +509,7 @@
                             <exclude>io.helidon.test*</exclude>
                             <exclude>io.helidon.examples*</exclude>
                             <exclude>io.helidon.microprofile.tests*</exclude>
-                            <!-- Was unable to get this excluded otherwise -->
+                            <!-- This should be excluded by above, but for some reason it persists -->
                             <exclude>org.testng:testng</exclude>
                         </excludes>
                         <formats>
