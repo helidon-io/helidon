@@ -28,7 +28,7 @@ import java.util.regex.Pattern;
  *
  * @deprecated use io.helidon.logging.jul.HelidonConsoleHandler from helidon-logging-common module instead
  */
-@Deprecated(since = "2.2") //TODO zmenit na spravnou verzi!
+@Deprecated(since = "2.2")
 public class HelidonConsoleHandler extends StreamHandler {
 
     /**
