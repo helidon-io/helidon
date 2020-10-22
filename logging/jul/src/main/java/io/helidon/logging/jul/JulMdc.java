@@ -33,6 +33,12 @@ public class JulMdc {
         MDC_PROPERTIES.get().put(key, value);
     }
 
+    /**
+     * Return value bound to the key from the MDC storage.
+     *
+     * @param key key value
+     * @return value bound to the key
+     */
     public static String get(String key) {
         return MDC_PROPERTIES.get().get(key);
     }

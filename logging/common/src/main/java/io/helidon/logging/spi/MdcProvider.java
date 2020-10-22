@@ -43,6 +43,9 @@ public interface MdcProvider {
 
     /**
      * Return value bound to the specific key.
+     *
+     * @param key entry key
+     * @return value bound to the key
      */
     String get(String key);
 
