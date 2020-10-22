@@ -17,6 +17,8 @@ package io.helidon.tracing.jersey;
 
 import java.net.URI;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Logger;
 
 import javax.ws.rs.ConstrainedTo;
 import javax.ws.rs.RuntimeType;
@@ -47,9 +49,11 @@ import io.opentracing.util.GlobalTracer;
 @ConstrainedTo(RuntimeType.SERVER)
 @PreMatching
 public abstract class AbstractTracingFilter implements ContainerRequestFilter, ContainerResponseFilter {
-
     private static final String SPAN_PROPERTY = AbstractTracingFilter.class.getName() + ".span";
     private static final String SPAN_SCOPE_PROPERTY = AbstractTracingFilter.class.getName() + ".spanScope";
+    private static final String SPAN_FINISHED_PROPERTY = AbstractTracingFilter.class.getName() + ".spanFinished";
+    private static final Logger LOGGER = Logger.getLogger(AbstractTracingFilter.class.getName());
+    private static final AtomicBoolean DOUBLE_FINISH_LOGGED = new AtomicBoolean();
 
     @Override
     public void filter(ContainerRequestContext requestContext) {
@@ -130,6 +134,16 @@ public abstract class AbstractTracingFilter implements ContainerRequestFilter, C
             return; // not tracing
         }
 
+        if (requestContext.getProperty(SPAN_FINISHED_PROPERTY) != null) {
+            if (DOUBLE_FINISH_LOGGED.compareAndSet(false, true)) {
+                LOGGER.warning("Response filter called twice. Most likely a response with streaming output was"
+                                       + " returned, where response had 200 status code, but streaming failed with another "
+                                       + "error. Status: " + responseContext.getStatusInfo());
+            }
+
+            return; // tracing already finished
+        }
+
         switch (responseContext.getStatusInfo().getFamily()) {
         case INFORMATIONAL:
         case SUCCESSFUL:
@@ -148,6 +162,7 @@ public abstract class AbstractTracingFilter implements ContainerRequestFilter, C
 
         Tags.HTTP_STATUS.set(span, responseContext.getStatus());
 
+        requestContext.setProperty(SPAN_FINISHED_PROPERTY, true);
         span.finish();
 
         Scope spanScope = (Scope) requestContext.getProperty(SPAN_SCOPE_PROPERTY);
