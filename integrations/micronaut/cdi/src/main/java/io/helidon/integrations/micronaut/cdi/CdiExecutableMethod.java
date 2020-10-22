@@ -134,7 +134,7 @@ final class CdiExecutableMethod extends AbstractExecutableMethod {
 
     private static Argument<?> toArgument(AnnotatedParameter<?> parameter, Argument argument) {
         Parameter javaParameter = parameter.getJavaParameter();
-        return new DefaultArgument(javaParameter.getType(),
+        return new DefaultArgument(javaParameter.getParameterizedType(),
                                    javaParameter.getName(),
                                    annotationMetadata(parameter, argument.getAnnotationMetadata()));
     }
