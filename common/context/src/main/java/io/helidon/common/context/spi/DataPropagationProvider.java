@@ -18,9 +18,9 @@ package io.helidon.common.context.spi;
 /**
  * This is SPI provider which helps user to propagate values from one thread to another.
  *
- * Every provider has its method {@link DataPropagationProvider#data()} invoked before thread switch, to obtain
+ * Every provider has its method {@link #data()} invoked before thread switch, to obtain
  * value for propagation. After the thread is switched, the new thread executes
- * {@link DataPropagationProvider#propagateData(T data)} to propagate data.
+ * {@link #propagateData(T data)} to propagate data.
  *
  * @param <T> an actual type of the data which will be propagated
  */
