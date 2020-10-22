@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,9 +43,9 @@ public class HelidonConsoleHandler extends StreamHandler {
         setOutputStream(System.out);
         setLevel(Level.ALL); // Handlers should not filter, loggers should
         setFormatter(new ThreadFormatter());
-        System.out.println("You are using deprecated logging handler -> io.helidon.common.HelidonConsoleHandler");
-        System.out.println("Please use helidon-logging-jul module and change your handler to "
-                + "io.helidon.logging.jul.HelidonConsoleHandler");
+        System.out.println("You are using deprecated logging handler -> io.helidon.common.HelidonConsoleHandler "
+                                   + "Please use helidon-logging-jul module and change your handler to "
+                                   + "io.helidon.logging.jul.HelidonConsoleHandler");
     }
 
     @Override
