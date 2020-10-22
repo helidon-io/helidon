@@ -52,7 +52,7 @@ docker run -p 8080:8080 -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=admin quay.i
 This will start Keycloak on local port 8080. It will create the admin user with username `admin` and password `admin`
 Feel free to modify 11.0.2 by any keycloak version of your wish.
 If you are running docker behind a proxy server, make sure it is either configured into docker or
-disable it. Otherwise, you might face a connection timeout because docker cannot download the required data.
+disabled. Otherwise, you might face a connection timeout because docker cannot download the required data.
 
 To verify that Keycloak is running correctly, go to the admin console : http://localhost:8080/auth/admin
 Log in using the username and password mentioned above: `admin`.
@@ -153,7 +153,7 @@ To create a new user:
 . Open the Keycloak admin console: http://localhost:8080/auth/admin
 . Click on `Users` in the left menu
 . Press `Add user`
-. Fill the form (Username is the only mendatory field) with this value Username: `myUser`
+. Fill the form (Username is the only mandatory field) with this value Username: `myUser`
 . Click `Save`
 
 A new user is just created but it needs a password to be able to login. To initialize it, do this:
@@ -168,7 +168,7 @@ to make it `OFF` and prevent it.
 To verify that the new user is created correctly:
 
 . Open the Keycloak account console: http://localhost:8080/auth/realms/myRealm/account.
-. Login with `myuser` and password chosen earlier.
+. Login with `myUser` and password chosen earlier.
 
 You should now be logged-in to the account console where users can manage their accounts.
 
@@ -176,20 +176,23 @@ You should now be logged-in to the account console where users can manage their 
 
 To create your first client:
 
+. Open the Keycloak admin console: http://localhost:8080/auth/admin.
+. Make sure the current realm is `myRealm` and not `Master`.
 . Navigate to the left menu, into configure section, click on `Clients`. This window displays a table with every client
 from the realm.
-. Click on `Create`
+. Click on `Create`.
 . Fill the following:
-.. `Client ID` : `myClientID`.
+.. `Client ID` : `myClientID`
 .. `Client Protocol` : `openid-connect`
 . Press `Save`
 .. Modify `Access type` : `confidential`
-.. Update `Valid Redirect URIs` : `http://localhost:7987/*`
-. Click on `Save`
+.. Update `Valid Redirect URIs` : http://localhost:7987/*
+.. Click on `+` to add the new URI.
+. Click on `Save`.
 
 A new tab named `Credentials` is created. Click on it to access this new tab.
 
-- `Client Authenticator` : `Client ID and Secret`
+- Select `Client Authenticator` : `Client ID and Secret`
 - Click on `generate secret` to generate client secret.
 
 Keycloak is now configured and ready. Keep keycloak running on your terminal and open a new tab to
@@ -199,6 +202,7 @@ set up Helidon.
 
 Use the Helidon MP Maven archetype to create a simple project. It will be used as an example
 to show how to set up Helidon. Replace `{helidon-version}` by the latest helidon version.
+It will download the quickstart project into the current directory.
 
 [source,bash,subs="attributes+"]
 .Run the Maven archetype
@@ -291,6 +295,12 @@ any method or endpoint.
 Modify the `getDefaultMessage` method with the `@Authenticated` to limit its access.
 
 [source,java]
+.Import `Authenticated` annotation:
+----
+import io.helidon.security.annotations.Authenticated;
+----
+
+[source,java]
 .Add `@Authenticated` to secure `getDefaultMessage`
 ----
     @Authenticated
@@ -328,6 +338,7 @@ now protected, its access is limited, and the tests are not built to take oidc s
 .. `Username` : `myUser`
 .. `Password`: `password`
 . After successful log in, keycloak redirect you to the `http://localhost:7987/greet` endpoint and print Hello word.
+. Press `Ctrl+C` to stop the application.
 
 From the actual settings, the user needs to log in only once, then Keycloak saves all the connection data.
 
@@ -398,6 +409,12 @@ In the `MainTest.java` file, tests need to be modified to check the application 
 First step is to configure the server with the new application.yaml.
 
 [source,java]
+.Import the Config class
+----
+import io.helidon.config.Config;
+----
+
+[source,java]
 .Replace the startTheServer method by this one:
 ----
 @BeforeAll
@@ -406,6 +423,7 @@ First step is to configure the server with the new application.yaml.
                 .config(Config.create())
                 .build()
                 .start();
+        serverUrl = "http://localhost:" + server.port();
     }
 ----
 
@@ -413,10 +431,12 @@ The server has now one security provider, basic authentication configured.
 Next step is to modify the test to check that the application is correctly protected.
 
 [source,java]
-.Replace the first webclient call by this one:
+.Replace the JsonObject declaration into testHelloWorld method by this code:
 ----
+JsonObject jsonObject;
 Response response = client
-        .target(getConnectionString("/greet"))
+        .target(serverUrl)
+        .path("/greet")
         .request()
         .get(Response.class);
 
@@ -433,8 +453,9 @@ Only `jack` user has access to this part of the application.
 ----
 String encoding = Base64.getEncoder().encodeToString("jack:jackIsGreat".getBytes());
 
-JsonObject jsonObject = client
-        .target(getConnectionString("/greet"))
+jsonObject = client
+        .target(serverUrl)
+        .path("/greet")
         .request()
         .header(Http.Header.AUTHORIZATION, "Basic " + encoding)
         .get(JsonObject.class);
@@ -451,7 +472,7 @@ Now, the project can be build without skiping test.
 [source,bash]
 .Build the project
 ----
-mvn build install
+mvn clean install
 ----
 
 ==== Restrict access to a specific role
@@ -460,6 +481,12 @@ To give less access to a specific endpoint, it is possible to configure user rol
 only the user with the required role.
 
 Navigate to the GreetResource and find the `getDefaultMessage` with @Authenticate annotation.
+
+[source,java]
+.Import the RolesAllowed annotation
+----
+import javax.annotation.security.RolesAllowed;
+----
 
 [source,java]
 .Add the @RolesAllowed annotation under the @Authenticate annotation:
@@ -479,42 +506,37 @@ Then, add a user and roles to the `helidon-quickstart-mp/src/test/resources/appl
         users:
           - login: "jack"
             password: "jackIsGreat"
-            roles: ["user"]
+            roles: [ "admin", "user" ]
           - login: "john"
             password: "johnPassword"
-            roles: ["admin", "user"]
+            roles: [ "user" ]
 ----
 
-Once it is done, go to the test to check the application behavior.
+Now, only Jack has access to secure endpoint as he has an `admin` role. Jhon, as a simple user, can not access it.
+Once it is done, go to the tests to check the application behavior.
+The test from previous section is still passing because jack has access.
+
+The user `john` has only the `user` role so when accessing protected endpoint, a 403 (Forbidden) http code is returned.
 
 [source,java]
-.Check that jack does not have access
+.Check that jhon does not have access
 ----
-String encoding = Base64.getEncoder().encodeToString("jack:jackIsGreat".getBytes());
+encoding = Base64.getEncoder().encodeToString("john:johnPassword".getBytes());
 
-Response response = client
-        .target(getConnectionString("/greet"))
+response = client
+        .target(serverUrl)
+        .path("/greet")
         .request()
         .header(Http.Header.AUTHORIZATION, "Basic " + encoding)
         .get(Response.class);
 
-Assertions.assertEquals(401, response.getStatus());
+Assertions.assertEquals(403, response.getStatus());
 ----
 
-The user `jack` has only the `user` role so when accessing protected endpoint, a 401 (unauthorized) http code is returned.
-
-[source,java]
-.Check that john has access
+[source,bash]
+.Build the project
 ----
-String encoding = Base64.getEncoder().encodeToString("John:johnPassword".getBytes());
-
-        JsonObject jsonObject = client
-                .target(getConnectionString("/greet"))
-                .request()
-                .header(Http.Header.AUTHORIZATION,"Basic " + encoding)
-                .get(JsonObject.class);
-        Assertions.assertEquals("Hello World!", jsonObject.getString("message"),
-                "default message");
+mvn clean install
 ----
 
-The user `john` has `user` and `admin` roles, so he is allowed and receives `"Hello World"` as a `JsonObject`.
+The tests pass, and your application is secured with specific roles in addition to user IDs.
