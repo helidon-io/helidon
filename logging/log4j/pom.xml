@@ -26,19 +26,26 @@
 
     <artifactId>helidon-logging-log4j</artifactId>
     <name>Helidon Log4J Integration</name>
+
+    <!-- Javadoc should not run here since log4j is multi-release jar and javadoc plugin does not recognize it as module.
+         This module also does not provide any specific user API so it is not required to have javadoc. -->
+    <properties>
+        <maven.javadoc.skip>true</maven.javadoc.skip>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-context</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.logging</groupId>
+            <artifactId>helidon-logging-common</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-api</artifactId>
             <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.logging</groupId>
-            <artifactId>helidon-logging-common</artifactId>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
