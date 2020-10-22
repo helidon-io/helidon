@@ -25,7 +25,10 @@ import java.util.regex.Pattern;
 /**
  * A {@link StreamHandler} that writes to {@link System#out standard out} and uses a {@link ThreadFormatter} for formatting.
  * Sets the level to {@link Level#ALL} so that level filtering is performed solely by the loggers.
+ *
+ * @deprecated use io.helidon.logging.jul.HelidonConsoleHandler from helidon-logging-common module instead
  */
+@Deprecated(since = "2.2") //TODO zmenit na spravnou verzi!
 public class HelidonConsoleHandler extends StreamHandler {
 
     /**
@@ -40,6 +43,9 @@ public class HelidonConsoleHandler extends StreamHandler {
         setOutputStream(System.out);
         setLevel(Level.ALL); // Handlers should not filter, loggers should
         setFormatter(new ThreadFormatter());
+        System.out.println("You are using deprecated logging handler -> io.helidon.common.HelidonConsoleHandler");
+        System.out.println("Please use io.helidon.logging.jul module and change your handler to "
+                + "io.helidon.logging.jul.HelidonConsoleHandler");
     }
 
     @Override

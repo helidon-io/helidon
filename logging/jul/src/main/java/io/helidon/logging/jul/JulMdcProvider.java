@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,17 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.logging.jul;
+
+import io.helidon.logging.spi.MdcProvider;
 
 /**
- * Helidon Common Context library.
+ * Provider for setting MDC values to the Java Util Logging MDC support.
  */
-module io.helidon.common.context {
-    requires java.logging;
-    requires io.helidon.common;
-    requires io.helidon.common.serviceloader;
+public class JulMdcProvider implements MdcProvider {
+    @Override
+    public void put(String key, Object value) {
+        JulMdc.put(key, String.valueOf(value));
+    }
 
-    exports io.helidon.common.context;
-    exports io.helidon.common.context.spi;
+    @Override
+    public void remove(String key) {
+        JulMdc.remove(key);
+    }
 
-    uses io.helidon.common.context.spi.DataPropagationProvider;
+    @Override
+    public void clear() {
+        JulMdc.clear();
+    }
 }

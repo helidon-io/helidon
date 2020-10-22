@@ -180,6 +180,7 @@
         <module>dbclient</module>
         <module>messaging</module>
         <module>fault-tolerance</module>
+        <module>logging</module>
     </modules>
 
 

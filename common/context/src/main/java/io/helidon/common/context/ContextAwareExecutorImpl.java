@@ -16,8 +16,11 @@
 package io.helidon.common.context;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.ServiceLoader;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -26,7 +29,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
+import io.helidon.common.context.spi.DataPropagationProvider;
+import io.helidon.common.serviceloader.HelidonServiceLoader;
+
 class ContextAwareExecutorImpl implements ContextAwareExecutorService {
+
+    private static final HelidonServiceLoader<DataPropagationProvider> SERVICE_LOADER = HelidonServiceLoader
+            .builder(ServiceLoader.load(DataPropagationProvider.class)).build();
+
     private final ExecutorService delegate;
 
     ContextAwareExecutorImpl(ExecutorService toWrap) {
@@ -112,21 +122,31 @@ class ContextAwareExecutorImpl implements ContextAwareExecutorService {
 
     }
 
-    protected  <T> Callable<T> wrap(Callable<T> task) {
+    @SuppressWarnings(value = "unchecked")
+    protected <T> Callable<T> wrap(Callable<T> task) {
         Optional<Context> context = Contexts.context();
-
+        Map<Class<?>, Object> properties = new HashMap<>();
+        SERVICE_LOADER.forEach(provider -> properties.put(provider.getClass(), provider.data()));
         if (context.isPresent()) {
-            return () -> Contexts.runInContext(context.get(), task);
+            return () -> {
+                SERVICE_LOADER.forEach(provider -> provider.propagateData(properties.get(provider.getClass())));
+                return Contexts.runInContext(context.get(), task);
+            };
         } else {
             return task;
         }
     }
 
+    @SuppressWarnings(value = "unchecked")
     protected Runnable wrap(Runnable command) {
         Optional<Context> context = Contexts.context();
-
+        Map<Class<?>, Object> properties = new HashMap<>();
+        SERVICE_LOADER.forEach(provider -> properties.put(provider.getClass(), provider.data()));
         if (context.isPresent()) {
-            return () -> Contexts.runInContext(context.get(), command);
+            return () -> {
+                SERVICE_LOADER.forEach(provider -> provider.propagateData(properties.get(provider.getClass())));
+                Contexts.runInContext(context.get(), command);
+            };
         } else {
             return command;
         }

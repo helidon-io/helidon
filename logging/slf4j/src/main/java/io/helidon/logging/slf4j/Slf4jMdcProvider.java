@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,17 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.logging.slf4j;
+
+
+import io.helidon.logging.spi.MdcProvider;
+
+import org.slf4j.MDC;
 
 /**
- * Helidon Common Context library.
+ * Provider for setting MDC values to the Slf4j MDC support.
  */
-module io.helidon.common.context {
-    requires java.logging;
-    requires io.helidon.common;
-    requires io.helidon.common.serviceloader;
+public class Slf4jMdcProvider implements MdcProvider {
 
-    exports io.helidon.common.context;
-    exports io.helidon.common.context.spi;
+    @Override
+    public void put(String key, Object value) {
+        MDC.put(key, String.valueOf(value));
+    }
 
-    uses io.helidon.common.context.spi.DataPropagationProvider;
+    @Override
+    public void remove(String key) {
+        MDC.remove(key);
+    }
+
+    @Override
+    public void clear() {
+        MDC.clear();
+    }
 }

@@ -841,6 +841,22 @@
                 <artifactId>helidon-microprofile-tests-junit5</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <!-- Testing -->
+            <dependency>
+                <groupId>io.helidon.logging</groupId>
+                <artifactId>helidon-logging-common</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.logging</groupId>
+                <artifactId>helidon-logging-jul</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.logging</groupId>
+                <artifactId>helidon-logging-slf4j</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 </project>
