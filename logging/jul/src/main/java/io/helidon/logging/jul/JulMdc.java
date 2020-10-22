@@ -21,26 +21,25 @@ import java.util.Map;
 /**
  * MDC implementation for Java Util Logging framework.
  */
-class JulMdc {
+public class JulMdc {
 
-    private final static ThreadLocal<Map<String, String>> MDC_PROPERTIES = ThreadLocal.withInitial(HashMap::new);
+    private static final ThreadLocal<Map<String, String>> MDC_PROPERTIES = ThreadLocal.withInitial(HashMap::new);
 
     private JulMdc() {
         throw new IllegalStateException("This class cannot be instantiated");
     }
 
-    public static void put(String key, String value) {
+    static void put(String key, String value) {
         MDC_PROPERTIES.get().put(key, value);
     }
 
-    static String get(String key) {
+    public static String get(String key) {
         return MDC_PROPERTIES.get().get(key);
     }
 
     static void remove(String key) {
         MDC_PROPERTIES.get().remove(key);
     }
-
 
     static void clear() {
         MDC_PROPERTIES.get().clear();

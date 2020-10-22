@@ -16,6 +16,7 @@
 package io.helidon.logging;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.ServiceLoader;
 
 import io.helidon.common.serviceloader.HelidonServiceLoader;
@@ -57,6 +58,20 @@ public class HelidonMdc {
      */
     public static void clear() {
         SERVICE_LOADER.forEach(MdcProvider::clear);
+    }
+
+    /**
+     * Return the first value found to the specific key.
+     *
+     * @param key key
+     * @return found value bound to key
+     */
+    public static String get(String key) {
+        return SERVICE_LOADER.stream()
+                .map(provider -> provider.get(key))
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse("");
     }
 
 }

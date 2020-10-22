@@ -13,31 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.logging.jul;
-
-import io.helidon.logging.spi.MdcProvider;
 
 /**
- * Provider for setting MDC values to the Java Util Logging MDC support.
+ * Helidon Log4j MDC propagation support.
  */
-public class JulMdcProvider implements MdcProvider {
-    @Override
-    public void put(String key, Object value) {
-        JulMdc.put(key, String.valueOf(value));
-    }
-
-    @Override
-    public void remove(String key) {
-        JulMdc.remove(key);
-    }
-
-    @Override
-    public void clear() {
-        JulMdc.clear();
-    }
-
-    @Override
-    public String get(String key) {
-        return JulMdc.get(key);
-    }
-}
+package io.helidon.logging.log4j;

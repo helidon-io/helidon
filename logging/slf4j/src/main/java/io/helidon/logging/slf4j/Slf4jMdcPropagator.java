@@ -28,14 +28,17 @@ public class Slf4jMdcPropagator implements DataPropagationProvider<Map<String, S
 
     @Override
     public Map<String, String> data() {
-        Map<String, String> contextMap = MDC.getCopyOfContextMap();
-        MDC.clear();
-        return contextMap;
+        return MDC.getCopyOfContextMap();
     }
 
     @Override
     public void propagateData(Map<String, String> data) {
         MDC.setContextMap(data);
+    }
+
+    @Override
+    public void clearData() {
+        MDC.clear();
     }
 
 }

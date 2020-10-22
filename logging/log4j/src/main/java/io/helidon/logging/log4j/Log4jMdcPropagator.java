@@ -28,13 +28,16 @@ public class Log4jMdcPropagator implements DataPropagationProvider<Map<String, S
 
     @Override
     public Map<String, String> data() {
-        Map<String, String> context = ThreadContext.getContext();
-        ThreadContext.clearAll();
-        return context;
+        return ThreadContext.getContext();
     }
 
     @Override
     public void propagateData(Map<String, String> data) {
         ThreadContext.putAll(data);
+    }
+
+    @Override
+    public void clearData() {
+        ThreadContext.clearAll();
     }
 }

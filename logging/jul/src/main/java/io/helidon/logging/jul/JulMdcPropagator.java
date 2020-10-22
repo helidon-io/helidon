@@ -26,15 +26,17 @@ public class JulMdcPropagator implements DataPropagationProvider<Map<String, Str
 
     @Override
     public Map<String, String> data() {
-        Map<String, String> properties = JulMdc.properties();
-        JulMdc.clear();
-        return properties;
+        return JulMdc.properties();
     }
 
     @Override
     public void propagateData(Map<String, String> data) {
         JulMdc.properties(data);
-        JulMdc.put("thread", Thread.currentThread().toString());
     }
-    
+
+    @Override
+    public void clearData() {
+        JulMdc.clear();
+    }
+
 }

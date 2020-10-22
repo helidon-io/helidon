@@ -56,13 +56,13 @@ public class JulMdcTest {
     private static final Logger LOGGER = Logger.getLogger(JulMdcTest.class.getName());
     private static final ByteArrayOutputStream OUTPUT_STREAM = new ByteArrayOutputStream();
     private static final PrintStream TEST_STREAM = new PrintStream(OUTPUT_STREAM);
-    private static final PrintStream ORIGINAL = System.out;
 
     private static final String TEST_KEY = "test";
     private static final String TEST_VALUE = "value";
 
     @Test
     public void testMdc() {
+        PrintStream original = System.out;
         try {
             System.setOut(TEST_STREAM);
             LogConfig.initClass();
@@ -75,14 +75,14 @@ public class JulMdcTest {
 
             HelidonMdc.remove(TEST_KEY);
             logMessage = logMessage(message);
-            assertThat(logMessage, endsWith(thread + ": " + message + System.lineSeparator()));
+            assertThat(logMessage, endsWith(thread + ": " + message + " " + System.lineSeparator()));
 
             HelidonMdc.set(TEST_KEY, TEST_VALUE);
             HelidonMdc.clear();
             logMessage = logMessage(message);
-            assertThat(logMessage, endsWith(thread + ": " + message + System.lineSeparator()));
+            assertThat(logMessage, endsWith(thread + ": " + message + " " + System.lineSeparator()));
         } finally {
-            System.setOut(ORIGINAL);
+            System.setOut(original);
         }
     }
 

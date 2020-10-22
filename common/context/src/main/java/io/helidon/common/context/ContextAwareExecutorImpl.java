@@ -34,8 +34,9 @@ import io.helidon.common.serviceloader.HelidonServiceLoader;
 
 class ContextAwareExecutorImpl implements ContextAwareExecutorService {
 
-    private static final HelidonServiceLoader<DataPropagationProvider> SERVICE_LOADER = HelidonServiceLoader
-            .builder(ServiceLoader.load(DataPropagationProvider.class)).build();
+    @SuppressWarnings("rawtypes")
+    private static final List<DataPropagationProvider> PROVIDERS = HelidonServiceLoader
+            .builder(ServiceLoader.load(DataPropagationProvider.class)).build().asList();
 
     private final ExecutorService delegate;
 
@@ -125,12 +126,16 @@ class ContextAwareExecutorImpl implements ContextAwareExecutorService {
     @SuppressWarnings(value = "unchecked")
     protected <T> Callable<T> wrap(Callable<T> task) {
         Optional<Context> context = Contexts.context();
-        Map<Class<?>, Object> properties = new HashMap<>();
-        SERVICE_LOADER.forEach(provider -> properties.put(provider.getClass(), provider.data()));
         if (context.isPresent()) {
+            Map<Class<?>, Object> properties = new HashMap<>();
+            PROVIDERS.forEach(provider -> properties.put(provider.getClass(), provider.data()));
             return () -> {
-                SERVICE_LOADER.forEach(provider -> provider.propagateData(properties.get(provider.getClass())));
-                return Contexts.runInContext(context.get(), task);
+                try {
+                    PROVIDERS.forEach(provider -> provider.propagateData(properties.get(provider.getClass())));
+                    return Contexts.runInContext(context.get(), task);
+                } finally {
+                    PROVIDERS.forEach(DataPropagationProvider::clearData);
+                }
             };
         } else {
             return task;
@@ -140,12 +145,16 @@ class ContextAwareExecutorImpl implements ContextAwareExecutorService {
     @SuppressWarnings(value = "unchecked")
     protected Runnable wrap(Runnable command) {
         Optional<Context> context = Contexts.context();
-        Map<Class<?>, Object> properties = new HashMap<>();
-        SERVICE_LOADER.forEach(provider -> properties.put(provider.getClass(), provider.data()));
         if (context.isPresent()) {
+            Map<Class<?>, Object> properties = new HashMap<>();
+            PROVIDERS.forEach(provider -> properties.put(provider.getClass(), provider.data()));
             return () -> {
-                SERVICE_LOADER.forEach(provider -> provider.propagateData(properties.get(provider.getClass())));
-                Contexts.runInContext(context.get(), command);
+                try {
+                    PROVIDERS.forEach(provider -> provider.propagateData(properties.get(provider.getClass())));
+                    Contexts.runInContext(context.get(), command);
+                } finally {
+                    PROVIDERS.forEach(DataPropagationProvider::clearData);
+                }
             };
         } else {
             return command;

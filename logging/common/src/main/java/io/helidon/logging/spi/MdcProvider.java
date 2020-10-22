@@ -41,4 +41,9 @@ public interface MdcProvider {
      */
     void clear();
 
+    /**
+     * Return value bound to the specific key.
+     */
+    String get(String key);
+
 }

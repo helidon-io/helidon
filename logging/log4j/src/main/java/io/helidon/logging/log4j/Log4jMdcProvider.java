@@ -37,4 +37,9 @@ public class Log4jMdcProvider implements MdcProvider {
     public void clear() {
         ThreadContext.clearAll();
     }
+
+    @Override
+    public String get(String key) {
+        return ThreadContext.get(key);
+    }
 }

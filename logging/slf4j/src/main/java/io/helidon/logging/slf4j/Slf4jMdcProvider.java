@@ -39,4 +39,9 @@ public class Slf4jMdcProvider implements MdcProvider {
     public void clear() {
         MDC.clear();
     }
+
+    @Override
+    public String get(String key) {
+        return MDC.get(key);
+    }
 }
