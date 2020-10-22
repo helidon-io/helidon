@@ -32,6 +32,14 @@
         Integration with Junit5 to support tests with CDI injection
     </description>
 
+    <!-- Override properties from parent pom to include in release -->
+    <properties>
+        <maven.deploy.skip>false</maven.deploy.skip>
+        <maven.sources.skip>false</maven.sources.skip>
+        <maven.javadoc.skip>false</maven.javadoc.skip>
+        <spotbugs.skip>false</spotbugs.skip>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.microprofile.cdi</groupId>
