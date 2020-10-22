@@ -20,7 +20,7 @@ import java.util.Optional;
 
 /**
  * A very abstract notion of a <em>transport</em> for a particular
- * implementation of the {@link Webserver} interface.
+ * implementation of the {@link WebServer} interface.
  *
  * <p>A {@link Transport} encompasses certain parts of the inner
  * workings of a given {@link WebServer} implementation that
@@ -35,7 +35,7 @@ import java.util.Optional;
  * <p>It is not expected or required that implementations of this
  * interface be safe for concurrent use by multiple threads.</p>
  *
- * @see #isAvailable()
+ * @see #isAvailableFor(WebServer)
  *
  * @see #createTransportArtifact(Class, String, ServerConfiguration)
  *
