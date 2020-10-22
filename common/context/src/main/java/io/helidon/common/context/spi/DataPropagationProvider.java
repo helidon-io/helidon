@@ -20,7 +20,7 @@ package io.helidon.common.context.spi;
  *
  * Every provider has its method {@link #data()} invoked before thread switch, to obtain
  * value for propagation. After the thread is switched, the new thread executes
- * {@link #propagateData(T data)} to propagate data.
+ * {@link #propagateData(Object)} to propagate data.
  *
  * @param <T> an actual type of the data which will be propagated
  */
