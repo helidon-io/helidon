@@ -20,9 +20,9 @@ package io.helidon.messaging.connectors.jms;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
@@ -45,13 +45,12 @@ import javax.jms.JMSException;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
 
 import io.helidon.common.configurable.ScheduledThreadPoolSupplier;
 import io.helidon.common.configurable.ThreadPoolSupplier;
 import io.helidon.common.reactive.BufferedEmittingPublisher;
 import io.helidon.common.reactive.Multi;
+import io.helidon.config.ConfigValue;
 import io.helidon.config.mp.MpConfig;
 import io.helidon.messaging.MessagingException;
 import io.helidon.messaging.Stoppable;
@@ -79,29 +78,41 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
      */
     public static final String CONNECTOR_NAME = "helidon-jms";
 
-    private static final String ACK_MODE_PROP = "acknowledge-mode";
-    private static final String TRANSACTED_PROP = "transacted";
-    private static final String AWAIT_ACK_PROP = "await-ack";
-    private static final String NAMED_FACTORY_PROP = "named-factory";
-    private static final String MESSAGE_SELECTOR_PROP = "message-selector";
-    private static final String POLL_TIMEOUT_PROP = "poll-timeout";
-    private static final String PERIOD_EXECUTIONS_PROP = "period-executions";
-    private static final String TYPE_PROP = "type";
-    private static final String DESTINATION_PROP = "destination";
-    private static final String SESSION_GROUP_ID_PROP = "session-group-id";
-    private static final String USERNAME_PROP = "username";
-    private static final String PASSWORD_PROP = "password";
+    static final String ACK_MODE_ATTRIBUTE = "acknowledge-mode";
+    static final String TRANSACTED_ATTRIBUTE = "transacted";
+    static final String AWAIT_ACK_ATTRIBUTE = "await-ack";
+    static final String MESSAGE_SELECTOR_ATTRIBUTE = "message-selector";
+    static final String POLL_TIMEOUT_ATTRIBUTE = "poll-timeout";
+    static final String PERIOD_EXECUTIONS_ATTRIBUTE = "period-executions";
+    static final String TYPE_ATTRIBUTE = "type";
+    static final String DESTINATION_ATTRIBUTE = "destination";
+    static final String SESSION_GROUP_ID_ATTRIBUTE = "session-group-id";
+    static final String JNDI_ATTRIBUTE = "jndi";
+    static final String JNDI_PROPS_ATTRIBUTE = "env-properties";
+    static final String JNDI_JMS_FACTORY_ATTRIBUTE = "jms-factory";
+    static final String JNDI_DESTINATION_ATTRIBUTE = "destination";
+    /**
+     * Select in case factory is injected as a named bean or configured with name.
+     */
+    protected static final String NAMED_FACTORY_ATTRIBUTE = "named-factory";
+    /**
+     * User name used with ConnectionFactory.
+     */
+    protected static final String USERNAME_ATTRIBUTE = "username";
+    /**
+     * Password used with ConnectionFactory.
+     */
+    protected static final String PASSWORD_ATTRIBUTE = "password";
 
-    private static final AcknowledgeMode ACK_MODE_DEFAULT = AcknowledgeMode.AUTO_ACKNOWLEDGE;
-    private static final boolean TRANSACTED_DEFAULT = false;
-    private static final boolean AWAIT_ACK_DEFAULT = false;
-    private static final long POLL_TIMEOUT_DEFAULT = 50L;
-    private static final long PERIOD_EXECUTIONS_DEFAULT = 100L;
-    private static final String TYPE_PROP_DEFAULT = "queue";
+    static final AcknowledgeMode ACK_MODE_DEFAULT = AcknowledgeMode.AUTO_ACKNOWLEDGE;
+    static final boolean TRANSACTED_DEFAULT = false;
+    static final boolean AWAIT_ACK_DEFAULT = false;
+    static final long POLL_TIMEOUT_DEFAULT = 50L;
+    static final long PERIOD_EXECUTIONS_DEFAULT = 100L;
+    static final String TYPE_PROP_DEFAULT = "queue";
+    static final String JNDI_JMS_FACTORY_DEFAULT = "ConnectionFactory";
 
-
-    @Inject
-    private Instance<ConnectionFactory> connectionFactories;
+    private final Instance<ConnectionFactory> connectionFactories;
 
     private final ScheduledExecutorService scheduler;
     private final ExecutorService executor;
@@ -110,10 +121,12 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
     /**
      * Create new JmsConnector.
      *
-     * @param config root config for thread context
+     * @param connectionFactories connection factory beans
+     * @param config              root config for thread context
      */
     @Inject
-    protected JmsConnector(io.helidon.config.Config config) {
+    protected JmsConnector(io.helidon.config.Config config, Instance<ConnectionFactory> connectionFactories) {
+        this.connectionFactories = connectionFactories;
         scheduler = ScheduledThreadPoolSupplier.builder()
                 .threadNamePrefix("jms-poll-")
                 .config(config)
@@ -172,105 +185,67 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
     /**
      * Find correct ConnectionFactory for channel.
      *
-     * @param config Channel's config
+     * @param ctx Channel's context
      * @return appropriate connection factory
      */
-    protected Optional<ConnectionFactory> getFactory(io.helidon.config.Config config) {
-        if (config.get("jndi").exists()) {
-            Properties props = new Properties();
-            config.get("jndi")
-                    .get("env-properties")
-                    .detach()
-                    .asMap()
-                    .orElseGet(Map::of)
-                    .forEach(props::setProperty);
-            try {
-                InitialContext ctx = new InitialContext(props);
-                String jmsFactoryJndiName = config.get("jndi").get("jms-factory")
-                        .asString()
-                        .orElse("ConnectionFactory");
-                return Optional.of((ConnectionFactory) ctx.lookup(jmsFactoryJndiName));
-            } catch (NamingException e) {
-                throw new RuntimeException(e);
-            }
+    protected Optional<? extends ConnectionFactory> getFactory(ConnectionContext ctx) {
+        if (ctx.isJndi()) {
+            return ctx.lookupFactory();
+        }
+        ConfigValue<String> factoryName = ctx.config().get(NAMED_FACTORY_ATTRIBUTE).asString();
+        if (factoryName.isPresent()) {
+            return Optional.ofNullable(connectionFactories)
+                    .flatMap(s -> s.select(NamedLiteral.of(factoryName.get())).stream().findFirst());
         }
 
         return Optional.ofNullable(connectionFactories)
                 .flatMap(s -> s.stream().findFirst());
     }
 
-    /**
-     * Find correct ConnectionFactory for channel.
-     *
-     * @param name   name of the named factory
-     * @param config Channel's config
-     * @return appropriate connection factory
-     */
-    protected Optional<ConnectionFactory> getFactory(String name, io.helidon.config.Config config) {
-        return Optional.ofNullable(connectionFactories)
-                .flatMap(s -> s.select(NamedLiteral.of(name)).stream().findFirst());
-    }
-
     @Override
     public PublisherBuilder<? extends Message<?>> getPublisherBuilder(Config mpConfig) {
         io.helidon.config.Config config = MpConfig.toHelidonConfig(mpConfig);
-        AcknowledgeMode ackMode = config.get(ACK_MODE_PROP).asString()
+
+        AcknowledgeMode ackMode = config.get(ACK_MODE_ATTRIBUTE)
+                .asString()
                 .map(AcknowledgeMode::parse)
                 .orElse(ACK_MODE_DEFAULT);
-        Boolean awaitAck = config.get(AWAIT_ACK_PROP)
+
+        Boolean awaitAck = config.get(AWAIT_ACK_ATTRIBUTE)
                 .asBoolean()
                 .orElse(AWAIT_ACK_DEFAULT);
 
-        ConnectionFactory factory =
-                config.get(NAMED_FACTORY_PROP)
-                        .asString()
-                        .map(s -> getFactory(s, config))
-                        .orElseGet(() -> getFactory(config))
-                        .orElseThrow(() -> new MessagingException("No JMS factory found!"));
+        ConnectionContext ctx = new ConnectionContext(config);
+        ConnectionFactory factory = getFactory(ctx)
+                .orElseThrow(() -> new MessagingException("No ConnectionFactory found."));
 
         try {
             SessionMetadata sessionEntry = prepareSession(config, factory);
+
             MessageConsumer consumer = sessionEntry
                     .session()
                     .createConsumer(
-                            createDestination(sessionEntry.session(), config),
-                            config.get(MESSAGE_SELECTOR_PROP).asString().orElse(null)
+                            createDestination(sessionEntry.session(), ctx),
+                            config.get(MESSAGE_SELECTOR_ATTRIBUTE).asString().orElse(null)
                     );
-            BufferedEmittingPublisher<Message<?>> emittingPublisher = BufferedEmittingPublisher.create();
-            Long pollTimeout = config.get(POLL_TIMEOUT_PROP)
+
+            BufferedEmittingPublisher<Message<?>> emitter = BufferedEmittingPublisher.create();
+
+            Long pollTimeout = config.get(POLL_TIMEOUT_ATTRIBUTE)
                     .asLong()
                     .orElse(POLL_TIMEOUT_DEFAULT);
+
             AtomicReference<JmsMessage<?>> lastMessage = new AtomicReference<>();
-            scheduler.scheduleAtFixedRate(() -> {
-                        if (!emittingPublisher.hasRequests()) {
-                            return;
-                        }
-                        // When await-ack is true, no message is received until previous one is acked
-                        if (ackMode != AcknowledgeMode.AUTO_ACKNOWLEDGE
-                                && awaitAck
-                                && lastMessage.get() != null
-                                && !lastMessage.get().isAck()) {
-                            return;
-                        }
-                        try {
-                            javax.jms.Message message = consumer.receive(pollTimeout);
-                            if (message == null) {
-                                return;
-                            }
-                            LOGGER.fine(() -> "Received message: " + message.toString());
-                            JmsMessage<?> preparedMessage = createMessage(message, executor, sessionEntry);
-                            lastMessage.set(preparedMessage);
-                            emittingPublisher.emit(preparedMessage);
-                        } catch (Throwable e) {
-                            emittingPublisher.fail(e);
-                        }
-                    }, 0,
-                    config.get(PERIOD_EXECUTIONS_PROP)
+
+            scheduler.scheduleAtFixedRate(
+                    () -> produce(emitter, sessionEntry, consumer, ackMode, awaitAck, pollTimeout, lastMessage),
+                    0,
+                    config.get(PERIOD_EXECUTIONS_ATTRIBUTE)
                             .asLong()
                             .orElse(PERIOD_EXECUTIONS_DEFAULT),
                     TimeUnit.MILLISECONDS);
             sessionEntry.connection().start();
-            return ReactiveStreams.fromPublisher(FlowAdapters.toPublisher(Multi.create(emittingPublisher)));
+            return ReactiveStreams.fromPublisher(FlowAdapters.toPublisher(Multi.create(emitter)));
         } catch (JMSException e) {
             LOGGER.log(Level.SEVERE, e, () -> "Error during JMS publisher preparation");
             return ReactiveStreams.failed(e);
@@ -280,53 +255,93 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
     @Override
     public SubscriberBuilder<? extends Message<?>, Void> getSubscriberBuilder(Config mpConfig) {
         io.helidon.config.Config config = MpConfig.toHelidonConfig(mpConfig);
-        BiConsumer<Message<?>, JMSException> errorHandler = sendingErrorHandler(config);
-        ConnectionFactory factory =
-                config.get(NAMED_FACTORY_PROP)
-                        .asString()
-                        .map(s -> getFactory(s, config))
-                        .orElseGet(() -> getFactory(config))
-                        .orElseThrow();
+
+        ConnectionContext ctx = new ConnectionContext(config);
+        ConnectionFactory factory = getFactory(ctx)
+                .orElseThrow(() -> new MessagingException("No ConnectionFactory found."));
+
         try {
             SessionMetadata sessionEntry = prepareSession(config, factory);
             Session session = sessionEntry.session();
-            Destination destination = createDestination(session, config);
+            Destination destination = createDestination(session, ctx);
             MessageProducer producer = session.createProducer(destination);
             AtomicReference<MessageMappers.MessageMapper> mapper = new AtomicReference<>();
             return ReactiveStreams.<Message<?>>builder()
-                    .flatMapCompletionStage(m -> {
-                        //lookup mapper only the first time
-                        if (mapper.get() == null) {
-                            mapper.set(MessageMappers.getJmsMessageMapper(m));
-                        }
-                        return CompletableFuture
-                                .supplyAsync(() -> {
-                                    try {
-                                        javax.jms.Message jmsMessage;
-
-                                        if (m instanceof OutgoingJmsMessage) {
-                                            // custom mapping, properties etc.
-                                            jmsMessage = ((OutgoingJmsMessage<?>) m).toJmsMessage(session, mapper.get());
-                                        } else {
-                                            // default mappers
-                                            jmsMessage = mapper.get().apply(session, m);
-                                        }
-                                        // actual send
-                                        producer.send(jmsMessage);
-                                        return m.ack();
-                                    } catch (JMSException e) {
-                                        errorHandler.accept(m, e);
-                                    }
-                                    return CompletableFuture.completedFuture(null);
-                                }, executor)
-                                .thenApply(aVoid -> m);
-                    })
+                    .flatMapCompletionStage(m -> consume(m, session, mapper, producer, config))
                     .onError(t -> LOGGER.log(Level.SEVERE, t, () -> "Error intercepted from channel "
                             + config.get(CHANNEL_NAME_ATTRIBUTE).asString().orElse("unknown")))
                     .ignore();
         } catch (JMSException e) {
-            throw new RuntimeException(e);
+            throw new MessagingException("Error when creating JMS producer.", e);
         }
+    }
+
+    private void produce(
+            BufferedEmittingPublisher<Message<?>> emitter,
+            SessionMetadata sessionEntry,
+            MessageConsumer consumer,
+            AcknowledgeMode ackMode,
+            Boolean awaitAck,
+            Long pollTimeout,
+            AtomicReference<JmsMessage<?>> lastMessage) {
+
+        if (!emitter.hasRequests()) {
+            return;
+        }
+        // When await-ack is true, no message is received until previous one is acked
+        if (ackMode != AcknowledgeMode.AUTO_ACKNOWLEDGE
+                && awaitAck
+                && lastMessage.get() != null
+                && !lastMessage.get().isAck()) {
+            return;
+        }
+        try {
+            javax.jms.Message message = consumer.receive(pollTimeout);
+            if (message == null) {
+                return;
+            }
+            LOGGER.fine(() -> "Received message: " + message.toString());
+            JmsMessage<?> preparedMessage = createMessage(message, executor, sessionEntry);
+            lastMessage.set(preparedMessage);
+            emitter.emit(preparedMessage);
+        } catch (Throwable e) {
+            emitter.fail(e);
+        }
+    }
+
+    private CompletionStage<?> consume(
+            Message<?> m,
+            Session session,
+            AtomicReference<MessageMappers.MessageMapper> mapper,
+            MessageProducer producer,
+            io.helidon.config.Config config) {
+
+        //lookup mapper only the first time
+        if (mapper.get() == null) {
+            mapper.set(MessageMappers.getJmsMessageMapper(m));
+        }
+
+        return CompletableFuture
+                .supplyAsync(() -> {
+                    try {
+                        javax.jms.Message jmsMessage;
+
+                        if (m instanceof OutgoingJmsMessage) {
+                            // custom mapping, properties etc.
+                            jmsMessage = ((OutgoingJmsMessage<?>) m).toJmsMessage(session, mapper.get());
+                        } else {
+                            // default mappers
+                            jmsMessage = mapper.get().apply(session, m);
+                        }
+                        // actual send
+                        producer.send(jmsMessage);
+                        return m.ack();
+                    } catch (JMSException e) {
+                        sendingErrorHandler(config).accept(m, e);
+                    }
+                    return CompletableFuture.completedFuture(null);
+                }, executor)
+                .thenApply(aVoid -> m);
     }
 
     /**
@@ -343,25 +358,29 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
 
     private SessionMetadata prepareSession(io.helidon.config.Config config,
                                            ConnectionFactory factory) throws JMSException {
-        Optional<String> sessionGroupId = config.get(SESSION_GROUP_ID_PROP).asString().asOptional();
+        Optional<String> sessionGroupId = config.get(SESSION_GROUP_ID_ATTRIBUTE).asString().asOptional();
         if (sessionGroupId.isPresent() && sessionRegister.containsKey(sessionGroupId.get())) {
             return sessionRegister.get(sessionGroupId.get());
         } else {
-            Optional<String> user = config.get(USERNAME_PROP).asString().asOptional();
-            Optional<String> password = config.get(PASSWORD_PROP).asString().asOptional();
+            Optional<String> user = config.get(USERNAME_ATTRIBUTE).asString().asOptional();
+            Optional<String> password = config.get(PASSWORD_ATTRIBUTE).asString().asOptional();
+
             Connection connection;
             if (user.isPresent() && password.isPresent()) {
                 connection = factory.createConnection(user.get(), password.get());
             } else {
                 connection = factory.createConnection();
             }
-            boolean transacted = config.get(TRANSACTED_PROP)
+
+            boolean transacted = config.get(TRANSACTED_ATTRIBUTE)
                     .asBoolean()
                     .orElse(TRANSACTED_DEFAULT);
-            int acknowledgeMode = config.get(ACK_MODE_PROP).asString()
+
+            int acknowledgeMode = config.get(ACK_MODE_ATTRIBUTE).asString()
                     .map(AcknowledgeMode::parse)
                     .orElse(ACK_MODE_DEFAULT)
                     .getAckMode();
+
             Session session = connection.createSession(transacted, acknowledgeMode);
             SessionMetadata sharedSessionEntry = new SessionMetadata(session, connection, factory);
             sessionRegister.put(sessionGroupId.orElseGet(() -> UUID.randomUUID().toString()), sharedSessionEntry);
@@ -369,17 +388,29 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
         }
     }
 
-    Destination createDestination(Session session, io.helidon.config.Config config) {
-        String type = config.get(TYPE_PROP)
+    Destination createDestination(Session session, ConnectionContext ctx) {
+        io.helidon.config.Config config = ctx.config();
+
+        if (ctx.isJndi()) {
+            Optional<? extends Destination> jndiDestination = ctx.lookupDestination();
+            // JNDI can be used for looking up ConnectorFactory only
+            if (jndiDestination.isPresent()) {
+                return jndiDestination.get();
+            }
+        }
+
+        String type = config.get(TYPE_ATTRIBUTE)
                 .asString()
                 .map(String::toLowerCase)
                 .orElse(TYPE_PROP_DEFAULT)
                 .toLowerCase();
-        String destination = config.get(DESTINATION_PROP)
+
+        String destination = config.get(DESTINATION_ATTRIBUTE)
                 .asString()
                 .orElseThrow(() -> new MessagingException("Destination for channel "
                         + config.get(CHANNEL_NAME_ATTRIBUTE).asString().get()
-                        + "not specified!"));
+                        + " not specified!"));
+
         try {
             if ("queue".equals(type)) {
                 return session.createQueue(destination);
@@ -389,8 +420,9 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
                 throw new MessagingException("Unknown type");
             }
         } catch (JMSException jmsException) {
-            throw new RuntimeException(jmsException);
+            throw new MessagingException("Error when creating destination.", jmsException);
         }
+
     }
 }
 

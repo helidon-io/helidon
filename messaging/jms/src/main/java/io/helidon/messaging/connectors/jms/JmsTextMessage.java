@@ -21,6 +21,8 @@ import java.util.concurrent.Executor;
 
 import javax.jms.JMSException;
 
+import io.helidon.messaging.MessagingException;
+
 public class JmsTextMessage extends AbstractJmsMessage<String> {
 
     private final javax.jms.TextMessage msg;
@@ -47,7 +49,7 @@ public class JmsTextMessage extends AbstractJmsMessage<String> {
         try {
             return msg.getText();
         } catch (JMSException e) {
-            throw new RuntimeException(e);
+            throw new MessagingException("Error when retrieving payload of JMS text message", e);
         }
     }
 }
