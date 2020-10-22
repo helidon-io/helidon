@@ -334,6 +334,7 @@ public interface WebServer {
         // for backward compatibility
         @SuppressWarnings("deprecation")
         private ServerConfiguration explicitConfig;
+        private Transport transport;
         private MessageBodyReaderContext readerContext;
         private MessageBodyWriterContext writerContext;
 
@@ -378,6 +379,11 @@ public interface WebServer {
                 ((RequestRouting) defaultRouting).fireNewWebServer(result);
             }
             return result;
+        }
+
+        public Builder transport(Transport transport) {
+            configurationBuilder.transport(transport);
+            return this;
         }
 
         /**

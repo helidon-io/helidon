@@ -343,6 +343,24 @@
             </dependency>
             <dependency>
                 <groupId>io.netty</groupId>
+                <artifactId>netty-transport-native-epoll</artifactId>
+                <version>${version.lib.netty}</version>
+                <classifier>linux-x86_64</classifier>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport-native-epoll</artifactId>
+                <version>${version.lib.netty}</version>
+                <classifier>linux-aarch64</classifier>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport-native-kqueue</artifactId>
+                <version>${version.lib.netty}</version>
+                <classifier>osx-x86_64</classifier>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
                 <artifactId>netty-common</artifactId>
                 <version>${version.lib.netty}</version>
             </dependency>
