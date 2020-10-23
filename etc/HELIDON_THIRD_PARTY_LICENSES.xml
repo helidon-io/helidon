@@ -300,9 +300,9 @@ Fourth Party Dependencies
 </attribution>
         </dependency>
         <dependency>
-            <id>71336</id>
+            <id>87991</id>
             <name>Google APIs Client Library for Java</name>
-            <version>1.30.5</version>
+            <version>1.30.11</version>
             <licensor>Google Inc</licensor>
             <licenseName>Apache 2.0</licenseName>
             <consumers>
@@ -311,18 +311,19 @@ Fourth Party Dependencies
             <attribution>Google APIs Client Library for Java (com.google.api-client:google-api-client)
   Copyright 2010,2015 Google Inc.
   Copyright 2015, Google Inc. All rights reserved.
+  Copyright 2020 Google LLC
 --------------------------------------------
 License Identifier: Apache-2.0
+
 --------------------------------------------
 Fourth Party Dependencies
 --------------------------------------------
-"Animal Sniffer Annotations" 1.17 (org.codehaus.mojo:animal-sniffer-annotations)
-  Copyright (c) 2009 codehaus.org.
-  Copyright (c) 2008 Kohsuke Kawaguchi and codehaus.org.
+"Checker Qual" (org.checkerframework:checker-compat-qual)
+Copyright 2004-present by the Checker Framework developers
 
 The MIT License SPDX short identifier: MIT
 
-Further resources on the MIT License Copyright &lt;YEAR&gt; &lt;COPYRIGHT HOLDER&gt;
+Further resources on the MIT License Copyright 
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
@@ -340,65 +341,86 @@ FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
 COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
 --------------------------------------------
-"io.grpc:grpc-context" 1.22.1 (io.grpc:grpc-context)
+"io.grpc:grpc-context" (io.grpc:grpc-context)
   Copyright 2015,2017 The gRPC Authors
-  Apache License Version 2
+  Apache License Version 2.0
 --------------------------------------------
-"Google OAuth Client Library for Java" 1.30.4 (com.google.oauth-client:google-oauth-client)
+"Google OAuth Client Library for Java" (com.google.oauth-client:google-oauth-client)
   Copyright (c) 2010,2013 Google Inc.
-  Apache License Version 2
+  Apache License Version 2.0
 --------------------------------------------
-"Google HTTP Client Library for Java" 1.32.1 (com.google.http-client:google-http-client)
+"Google HTTP Client Library for Java" (com.google.http-client:google-http-client)
   Copyright (c) 2010,2018 Google Inc.
+  Copyright 2012,2020 Google LLC
   Copyright (c) 2010 Google Inc.J
-  Copyright 2012 Google LLC
   Copyright 2012 Google LLC.
-  Apache License Version 2
+  Apache License Version 2.0
 --------------------------------------------
-"FindBugs-jsr305" 3.0.2 (com.google.code.findbugs:jsr305)
-Copyright (c) JSR305 expert group
-  Apache License Version 2
+"Apache HttpCore" (org.apache.httpcomponents:httpcore)
+  Copyright 2005-2020 The Apache Software Foundation
+  This product includes software developed at
+  The Apache Software Foundation (http://www.apache.org/).
+  Apache License Version 2.0
 --------------------------------------------
-"Apache HttpCore" 4.4.12 (org.apache.httpcomponents:httpcore)
-  Copyright 2005-2019 The Apache Software Foundation
-  Apache License Version 2
---------------------------------------------
-"OpenCensus" 0.24.0 (io.opencensus:opencensus-api)
+"OpenCensus" (io.opencensus:opencensus-api)
   Copyright 2017,2019 OpenCensus Authors
   Copyright 2016- 17, OpenCensus Authors
-  Apache License Version 2
+  Apache License Version 2.0
 --------------------------------------------
-"OpenCensus" 0.24.0 (io.opencensus:opencensus-contrib-http-util)
+"OpenCensus" (io.opencensus:opencensus-contrib-http-util)
   Copyright 2017,2018 OpenCensus Authors
-  Apache License Version 2
+  Apache License Version 2.0
 --------------------------------------------
-"Jackson 2 extensions to the Google HTTP Client Library for Java." 1.32.1 (com.google.http-client:google-http-client-jackson2)
+"Jackson 2 extensions to the Google HTTP Client Library for Java." (com.google.http-client:google-http-client-jackson2)
   Copyright (c) 2012 Google Inc.
-  Apache License Version 2
+  Apache License Version 2.0
 --------------------------------------------
-"Jackson-core" 2.9.9 (com.fasterxml.jackson.core:jackson-core)
-Copyright (c) Tatu Saloranta, tatu.saloranta@iki.fi
+"Guava: Google Core Libraries for Java" (com.google.guava:guava)
+  Copyright (C) 2005,2020 The Guava Authors
+  Apache License Version 2.0
 --------------------------------------------
-"Guava: Google Core Libraries for Java" 28.0-android (com.google.guava:guava)
-  Copyright (C) 2005,2018 The Guava Authors
-  Apache License Version 2
---------------------------------------------
-"Guava InternalFutureFailureAccess and InternalFutures" 1.0.1 (com.google.guava:failureaccess)
+"Guava InternalFutureFailureAccess and InternalFutures" (com.google.guava:failureaccess)
   Copyright (C) 2018 The Guava Authors
-  Apache License Version 2
+  Apache License Version 2.0
 --------------------------------------------
-"Guava ListenableFuture only" 9999.0-empty-to-avoid-conflict-with-guava (com.google.guava:listenablefuture)
-  Copyright (C) 2018 The Guava Authors
-  Apache License Version 2
+"Guava ListenableFuture only" (com.google.guava:listenablefuture)
+  Copyright (C) 2020 The Guava Authors
+  Copyright (C) 2007 The Guava Authors
+  Apache License Version 2.0
 --------------------------------------------
-"error-prone annotations" 2.3.2 (com.google.errorprone:error_prone_annotations)
+"error-prone annotations" (com.google.errorprone:error_prone_annotations)
   Copyright 2014,2017 The Error Prone Authors.
+  Apache License Version 2.0
+--------------------------------------------
+"J2ObjC Annotations" (com.google.j2objc:j2objc-annotations)
+  Copyright 2012 Google Inc. All Rights Reserved.
+  Apache License Version 2.0
+--------------------------------------------
+org.apache.httpcomponents:httpclient
+  Copyright 1999-2020 The Apache Software Foundation
+  This product includes software developed at
+  The Apache Software Foundation (http://www.apache.org/).
+  Apache License Version 2.0
+--------------------------------------------
+commons-logging:commons-logging
+  Copyright 2003-2014 The Apache Software Foundation
+  This product includes software developed at
+  The Apache Software Foundation (http://www.apache.org/).
+  Apache License 2
+--------------------------------------------
+commons-codec:commons-codec
+  Copyright 2002-2020 The Apache Software Foundation
+  This product includes software developed at
+  The Apache Software Foundation (https://www.apache.org/).
+  Apache License 2
+--------------------------------------------
+"FindBugs-jsr305" (com.google.code.findbugs:jsr305)
+  Copyright (c) JSR305 expert group
   Apache License Version 2
 --------------------------------------------
-"J2ObjC Annotations" 1.3 (com.google.j2objc:j2objc-annotations)
-  Copyright 2012 Google Inc. All Rights Reserved.
+"Jackson-core" (com.fasterxml.jackson.core:jackson-core)
+  Copyright (c) Tatu Saloranta, tatu.saloranta@iki.fi
   Apache License Version 2
 --------------------------------------------
 
@@ -876,148 +898,80 @@ SLF4j 1.7.28 - CopyRight
   </attribution>
         </dependency>
         <dependency>
-            <id>71771</id>
+            <id>87960</id>
             <name>HttpComponents HttpClient</name>
-            <version>4.5.10</version>
+            <version>4.5.13</version>
             <licensor>Apache</licensor>
             <licenseName>Apache 2.0</licenseName>
             <consumers>
                 <consumer>helidon-security-providers-google-login</consumer>
             </consumers>
-            <attribution>Apache HttpComponents HttpClient 4.5.8
-Copyright: Copyright 1999-2019 The Apache Software Foundation
-LICENSE: Apache 2.0
+            <attribution>Apache HttpComponents HttpClient
+Notice file:
+Apache HttpComponents Client
+Copyright 1999-2020 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+http://www.apache.org/licenses/LICENSE-2.0
 License Identifier: Apache-2.0
-*******************************
-Modules:
-*******************************
-httpclient
-httpmime
-fluent-hc
-httpclient-cache
-httpclient-win
-httpclient-osgi
 
-
-*******************************
-4P Dependencies:
-*******************************
-
-commons-codec » commons-codec 1.11, commons-codec-1.12.jar
-COPYRIGHT: Copyright 2002-2017 The Apache Software Foundation
-LICENSE: Apache 2.0 https://github.com/apache/commons-codec/blob/commons-codec-1.11/LICENSE.txt
-
-
----
-commons-logging » commons-logging 1.2
-COPYRIGHT: Copyright 2003-2014 The Apache Software Foundation
-LICENSE: Apache 2.0 https://github.com/apache/commons-logging/blob/LOGGING_1_2/LICENSE.txt
-
-
----
-org.apache.httpcomponents » httpcore 4.4.11
-COPYRIGHT: Copyright 2005-2019 The Apache Software Foundation
-LICENSE: Apache 2.0 https://github.com/apache/httpcomponents-core/blob/4.4.11/LICENSE.txt
-
-commons-lang3-3.9.jar
-Copyright © 2019 The Apache Software Foundation, Licensed under the Apache License, Version 2.0.
-LICENSE: Apache 2.0 https://github.com/apache/commons-logging/blob/LOGGING_1_2/LICENSE.txt
-
----
 =========================================================================
 
 This project includes Public Suffix List copied from
-&lt;https://publicsuffix.org/list/effective_tld_names.dat&gt;
+https://publicsuffix.org/list/effective_tld_names.dat
 licensed under the terms of the Mozilla Public License, v. 2.0
 
-Full license text: &lt;http://mozilla.org/MPL/2.0/&gt;
+Full license text: http://mozilla.org/MPL/2.0/
+
 License Identifier: MPL-2.0
-==============================================================================
-Fourth Party Dependency  Name : ehcache-core
-Fourth Party Dependency  License : Apache 2.0
-Fourth Party Dependency  Copyright : Copyright   
-   
-   Ehcache V3
-Copyright 2014-2016 Terracotta, Inc.
 
-The product includes software from the Apache Commons Lang project,
-under the Apache License 2.0 (see: org.ehcache.impl.internal.classes.commonslang)
+--------------------4th party dependencies-----------------------------------
 
-==============================================================================
-Fourth Party Dependency Name : slf4j-jcl
-Fourth Party Dependency License : MIT
-Fourth Party Dependency Copyright : Copyright   
-   
-Copyright (c) 2004-2017 QOS.ch
- All rights reserved.
+Apache HttpComponents Core
+From the Notice File:
+    Apache HttpComponents Core
+    Copyright 2005-2020 The Apache Software Foundation
 
- Permission is hereby granted, free  of charge, to any person obtaining
- a  copy  of this  software  and  associated  documentation files  (the
- "Software"), to  deal in  the Software without  restriction, including
- without limitation  the rights to  use, copy, modify,  merge, publish,
- distribute,  sublicense, and/or sell  copies of  the Software,  and to
- permit persons to whom the Software  is furnished to do so, subject to
- the following conditions:
- 
- The  above  copyright  notice  and  this permission  notice  shall  be
- included in all copies or substantial portions of the Software.
- 
- THE  SOFTWARE IS  PROVIDED  "AS  IS", WITHOUT  WARRANTY  OF ANY  KIND,
- EXPRESS OR  IMPLIED, INCLUDING  BUT NOT LIMITED  TO THE  WARRANTIES OF
- MERCHANTABILITY,    FITNESS    FOR    A   PARTICULAR    PURPOSE    AND
- NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
- LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
- OF CONTRACT, TORT OR OTHERWISE,  ARISING FROM, OUT OF OR IN CONNECTION
- WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- 
-==============================================================================
-Fourth Party Dependency Name : spymemcached
-Fourth Party Dependency License : MIT
-Fourth Party Dependency Copyright : Copyright   
-   
-Copyright (c) 2006-2009  Dustin Sallings
-Copyright (c) 2009-2011  Couchbase, Inc.
+    This product includes software developed at
+    The Apache Software Foundation (http://www.apache.org/).
+License File: 
+    Apache License Version 2.0
 
-==============================================================================
-Fourth Party Dependency Name : jna
-Fourth Party Dependency License : Apache 2.0
-Fourth Party Dependency Copyright : Copyright 
 
- Copyright (C) 1991, 1999 Free Software Foundation, Inc.
-     59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-	 
-	 Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
+Apache Commons Logging
+From the Notice File:
+    Apache Commons Logging
+    Copyright 2003-2014 The Apache Software Foundation
 
-       http://www.apache.org/licenses/LICENSE-2.0
+    This product includes software developed at
+    The Apache Software Foundation (http://www.apache.org/).
+License File: 
+    Apache License Version 2.0
 
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-   
-   
-==============================================================================
-Fourth Party Dependency Name : docbook-xml
-Fourth Party Dependency License : Apache 2.0
-Fourth Party Dependency Copyright : Copyright    
 
-# Copyright 2015 the original author or authors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#      https://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
+Apache Commons Codec
+From the Notice File:
+    Apache Commons Codec
+    Copyright 2002-2017 The Apache Software Foundation
+
+    This product includes software developed at
+    The Apache Software Foundation (http://www.apache.org/).
+
+    src/test/org/apache/commons/codec/language/DoubleMetaphoneTest.java
+    contains test data from http://aspell.net/test/orig/batch0.tab.
+    Copyright (C) 2002 Kevin Atkinson (kevina@gnu.org)
+
+    ===============================================================================
+
+    The content of package org.apache.commons.codec.language.bm has been translated
+    from the original php source code available at http://stevemorse.org/phoneticinfo.htm
+    with permission from the original authors.
+    Original source copyright:
+    Copyright (c) 2008 Alexander Beider and Stephen P. Morse.
+License File: 
+    Apache License Version 2.0
 </attribution>
         </dependency>
         <dependency>
@@ -4527,19 +4481,16 @@ Fourth Party Runtime Dependencies
 </attribution>
         </dependency>
         <dependency>
-            <id>63165</id>
+            <id>87965</id>
             <name>SnakeYAML</name>
-            <version>1.24</version>
+            <version>1.27</version>
             <licensor>SnakeYAML.org</licensor>
             <licenseName>Apache 2.0</licenseName>
             <consumers>
                 <consumer>helidon-config-yaml</consumer>
                 <consumer>helidon-openapi</consumer>
             </consumers>
-            <attribution>SnakeYaml 1.24
-
-No notice only copyright info at  url : https://bitbucket.org/asomov/snakeyaml/src/2ab6273059255189c1594c1995903ba2f5818531/src/etc/header.txt?at=default&amp;fileviewer=file-view-default
-
+            <attribution>SnakeYaml 1.27
 Copyright (c) 2008, http://www.snakeyaml.org
 
 Licensed under the Apache License, Version 2.0 (the "License");
