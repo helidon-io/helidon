@@ -53,7 +53,6 @@
    <cpe>cpe:/a:java-websocket_project:java-websocket</cpe>
 </suppress>
 
-
 <!-- GraalVM -->
 <!-- JDK CVE for remote code execution in Java Web Start and applets running untrusted code.
      Does not apply to our use of GraalVM -->
@@ -123,4 +122,15 @@
    <vulnerabilityName>CVE-2020-15250</vulnerabilityName>
 </suppress>
 
+<!-- Both of these CVEs are against the database server, not the client -->
+<suppress>
+   <notes>file name: mariadb-java-client-2.7.0.jar</notes>
+   <packageUrl regex="true">^pkg:maven/org\.mariadb\.jdbc/mariadb-java-client@.*$</packageUrl>
+   <cve>CVE-2017-15365</cve>
+</suppress>
+<suppress>
+   <notes>file name: mariadb-java-client-2.7.0.jar</notes>
+   <packageUrl regex="true">^pkg:maven/org\.mariadb\.jdbc/mariadb-java-client@.*$</packageUrl>
+   <cve>CVE-2017-15945</cve>
+</suppress>
 </suppressions>
