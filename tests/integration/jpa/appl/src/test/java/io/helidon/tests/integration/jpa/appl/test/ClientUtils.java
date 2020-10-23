@@ -15,6 +15,7 @@
  */
 package io.helidon.tests.integration.jpa.appl.test;
 
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.json.stream.JsonParsingException;
@@ -36,8 +37,9 @@ public class ClientUtils {
     }
 
     private static final Client CLIENT = ClientBuilder.newClient();
+    // FIXME: Use random port.
     private static final WebTarget TARGET = CLIENT.target("http://localhost:7001/test");
-     private static final WebTarget TARGET_JDBC = CLIENT.target("http://localhost:7001/testJdbc");
+    private static final WebTarget TARGET_JDBC = CLIENT.target("http://localhost:7001/testJdbc");
 
     /**
      * Call remote test on MP server using REST interface.
@@ -51,8 +53,7 @@ public class ClientUtils {
         try {
             Validate.check(responseStr);
         } catch (JsonParsingException t) {
-            LOGGER.severe(() -> String.format("Response is not JSON: %s", t.getMessage()));
-            LOGGER.info(() -> String.format("Message: %s", responseStr));
+            LOGGER.log(Level.SEVERE, t, () -> String.format("Response is not JSON: %s, message: %s", t.getMessage(), responseStr));
         }
     }
 
@@ -68,8 +69,7 @@ public class ClientUtils {
         try {
             Validate.check(responseStr);
         } catch (JsonParsingException t) {
-            LOGGER.severe(() -> String.format("Response is not JSON: %s", t.getMessage()));
-            LOGGER.info(() -> String.format("Message: %s", responseStr));
+            LOGGER.log(Level.SEVERE, t, () -> String.format("Response is not JSON: %s, message: %s", t.getMessage(), responseStr));
         }
     }
 

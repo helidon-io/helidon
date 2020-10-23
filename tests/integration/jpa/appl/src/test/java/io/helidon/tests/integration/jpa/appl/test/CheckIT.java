@@ -18,6 +18,7 @@ package io.helidon.tests.integration.jpa.appl.test;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.json.stream.JsonParsingException;
@@ -44,7 +45,11 @@ public class CheckIT {
     /* Startup timeout in seconds. */
     private static final int TIMEOUT = 60;
 
+    /* Thread sleep time in miliseconds while waiting for database or appserver to come up. */
+    private static final int SLEEP_MILIS = 250;
+
     private static final Client CLIENT = ClientBuilder.newClient();
+    // FIXME: Use random port.
     private static final WebTarget TARGET = CLIENT.target("http://localhost:7001/test");
 
     @SuppressWarnings("SleepWhileInLoop")
@@ -70,14 +75,14 @@ public class CheckIT {
                 Utils.closeConnection(conn);
                 return;
             } catch (SQLException ex) {
-                LOGGER.info(() -> String.format("Connection check: %s", ex.getMessage()));
+                LOGGER.fine(() -> String.format("Connection check: %s", ex.getMessage()));
                 if (System.currentTimeMillis() > endTm) {
                     throw new IllegalStateException(String.format("Database is not ready within %d seconds", TIMEOUT));
                 }
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(SLEEP_MILIS);
                 } catch (InterruptedException ie) {
-                    System.out.println("STATUS: " + ie.getMessage());
+                    LOGGER.log(Level.WARNING, ie, () -> String.format("Thread was interrupted: %s", ie.getMessage()));
                 }
             }
         }
@@ -92,18 +97,16 @@ public class CheckIT {
         while (retry) {
             try {
                 Response response = status.request().get();
-                System.out.println("STATUS: " + response.readEntity(String.class));
                 retry = false;
             } catch (Exception ex) {
-                System.out.println("STATUS: " + ex.getMessage());
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException ie) {
-                    System.out.println("STATUS: " + ie.getMessage());
-                }
+                LOGGER.fine(() -> String.format("Connection check: %s", ex.getMessage()));
                 if (System.currentTimeMillis() > tmEnd) {
-                    System.out.println("STATUS: Startup timeout");
-                    retry = false;
+                    throw new IllegalStateException(String.format("Appserver is not ready within %d seconds", TIMEOUT));
+                }
+                try {
+                    Thread.sleep(SLEEP_MILIS);
+                } catch (InterruptedException ie) {
+                    LOGGER.log(Level.WARNING, ie, () -> String.format("Thread was interrupted: %s", ie.getMessage()));
                 }
             }
         }
@@ -136,8 +139,7 @@ public class CheckIT {
         try {
             Validate.check(responseStr);
         } catch (JsonParsingException t) {
-            LOGGER.severe(() -> String.format("Response is not JSON: %s", t.getMessage()));
-            LOGGER.info(() -> String.format("Message: %s", responseStr));
+            LOGGER.log(Level.SEVERE, t, () -> String.format("Response is not JSON: %s, message: %s", t.getMessage(), responseStr));
         }
     }
 
@@ -150,8 +152,7 @@ public class CheckIT {
         try {
             Validate.check(responseStr);
         } catch (JsonParsingException t) {
-            LOGGER.severe(() -> String.format("Response is not JSON: %s", t.getMessage()));
-            LOGGER.info(() -> String.format("Message: %s", responseStr));
+            LOGGER.log(Level.SEVERE, t, () -> String.format("Response is not JSON: %s, message: %s", t.getMessage(), responseStr));
         }
     }
 

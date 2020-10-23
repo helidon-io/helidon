@@ -16,6 +16,7 @@
 package io.helidon.tests.integration.jpa.appl.test;
 
 import java.io.StringReader;
+import java.util.logging.Logger;
 
 import javax.json.Json;
 import javax.json.JsonArray;
@@ -28,6 +29,9 @@ import static org.junit.jupiter.api.Assertions.fail;
  * Utility class.
  */
 public class Validate {
+
+    /* Local logger instance. */
+    private static final Logger LOGGER = Logger.getLogger(Validate.class.getName());
 
     private Validate() {
         throw new UnsupportedOperationException("Instances of Validate class are not allowed");
@@ -62,39 +66,40 @@ public class Validate {
         }
     }
 
+    private static String dots(int count) {
+        StringBuilder sb = new StringBuilder(count);
+        for (int i = 0; i < count; i++) {
+            sb.append('.');
+        }
+        return sb.toString();
+    }
+
     private static void printTestHeader(final String name, final String status) {
         final String printName = name != null ? name : "UNKNOWN TEST";
         final String printStatus = status != null ? status : "N?A";
         final int dotsCount = 60 - printName.length();
-        System.out.print("*** ");
-        System.out.print(printName);
-        System.out.print(' ');
-        for (int i = 0; i < dotsCount; i++) {
-            System.out.print('.');
-        }
-        System.out.print(' ');
-        System.out.println(printStatus);
+        LOGGER.fine(() -> String.format("*** %s %s", printName, dots(dotsCount)));
+        LOGGER.fine(printStatus);
     }
 
     private static void printMessages(final JsonArray messages) {
         if (messages != null && messages.size() > 0) {
-            System.out.println("Messages:");
+            LOGGER.fine("Messages:");
             for (int i = 0; i < messages.size(); i++) {
-                System.out.print("  ");
-                System.out.println(messages.getString(i));
+                final int idx = i;
+                LOGGER.fine(() -> String.format(" - %s", messages.getString(idx)));
             }
         }
     }
 
     private static void printException(final JsonObject exception) {
         final String message = exception.getString("message");
-        System.out.print("Exception: ");
-        System.out.println(message != null ? message : "");
+        LOGGER.fine(() -> String.format("Exception: %s", message != null ? message : ""));
         if (exception.containsKey("trace")) {
             final JsonArray trace = exception.getJsonArray("trace");
             for (int i = 0; i < trace.size(); i++) {
-                System.out.print("  ");
-                System.out.println(trace.getString(i));
+                final int idx = i;
+                LOGGER.fine(() -> String.format(" - %s", trace.getString(idx)));
             }
         }
     }

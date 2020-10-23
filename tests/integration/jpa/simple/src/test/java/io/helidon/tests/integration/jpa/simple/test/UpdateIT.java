@@ -180,7 +180,6 @@ public class UpdateIT {
             }
             em.persist(stadium);
             Pokemon alkazam = DbUtils.findPokemonByName(pokemons, "Alakazam");
-            System.out.println("TRAINER: "+alkazam.getTrainer().getName());
             // Update pokemon by query
             em.createQuery(
                     "UPDATE Pokemon p SET p.name = :newName, p.cp = :newCp WHERE p.id = :id")

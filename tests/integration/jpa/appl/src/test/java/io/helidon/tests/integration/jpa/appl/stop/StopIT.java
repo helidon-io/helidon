@@ -15,10 +15,13 @@
  */
 package io.helidon.tests.integration.jpa.appl.stop;
 
+import java.util.logging.Logger;
+
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
+
 import org.junit.jupiter.api.Test;
 
 /**
@@ -26,14 +29,19 @@ import org.junit.jupiter.api.Test;
  */
 public class StopIT {
 
+    /* Local logger instance. */
+    private static final Logger LOGGER = Logger.getLogger(StopIT.class.getName());
+
+    // FIXME: Use random port.
+    private static final String TARGET = "http://localhost:7001";
      
     @Test
     public void testServer() {
         Client client = ClientBuilder.newClient();
-        WebTarget target = client.target("http://localhost:7001");
+        WebTarget target = client.target(TARGET);
         WebTarget exit = target.path("/test/exit");
         Response response = exit.request().get();
-        System.out.println("STATUS: " + response.readEntity(String.class));
+        LOGGER.info(() -> String.format("Status: %s", response.readEntity(String.class)));
     }
 
 }
