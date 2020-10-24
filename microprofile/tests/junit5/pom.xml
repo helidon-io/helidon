@@ -20,25 +20,19 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon.microprofile.tests</groupId>
-        <artifactId>tests-project</artifactId>
+        <groupId>io.helidon.microprofile</groupId>
+        <artifactId>helidon-microprofile-project</artifactId>
         <version>2.1.1-SNAPSHOT</version>
+        <relativePath>../../pom.xml</relativePath>
     </parent>
 
+    <groupId>io.helidon.microprofile.tests</groupId>
     <artifactId>helidon-microprofile-tests-junit5</artifactId>
     <name>Helidon Microprofile Tests JUnit5</name>
 
     <description>
         Integration with Junit5 to support tests with CDI injection
     </description>
-
-    <!-- Override properties from parent pom to include in release -->
-    <properties>
-        <maven.deploy.skip>false</maven.deploy.skip>
-        <maven.sources.skip>false</maven.sources.skip>
-        <maven.javadoc.skip>false</maven.javadoc.skip>
-        <spotbugs.skip>false</spotbugs.skip>
-    </properties>
 
     <dependencies>
         <dependency>
