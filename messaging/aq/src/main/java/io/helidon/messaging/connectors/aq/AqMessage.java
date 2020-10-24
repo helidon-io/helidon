@@ -17,12 +17,8 @@
 package io.helidon.messaging.connectors.aq;
 
 import java.sql.Connection;
-import java.util.concurrent.Executor;
 
 import io.helidon.messaging.connectors.jms.JmsMessage;
-import io.helidon.messaging.connectors.jms.SessionMetadata;
-
-import oracle.jms.AQjmsMessage;
 
 /**
  * Message representing AQ JMS message together with all the metadata.
@@ -37,17 +33,4 @@ public interface AqMessage<T> extends JmsMessage<T> {
      * @return java.sql.Connection
      */
     Connection getDbConnection();
-
-    /**
-     * Create from AQjmsMessage.
-     *
-     * @param msg             Oracle AQ JMS message to be wrapped
-     * @param executor        Executor used for invoking ack
-     * @param sessionMetadata metadata about the JMS session
-     * @param <T>             payload type
-     * @return A message with the given payload, and an ack function
-     */
-    static <T> AqMessage<T> of(AQjmsMessage msg, Executor executor, SessionMetadata sessionMetadata) {
-        return new AqMessageImpl<>(msg, executor, sessionMetadata);
-    }
 }

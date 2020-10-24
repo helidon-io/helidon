@@ -313,21 +313,19 @@ abstract class AbstractSampleBean {
         public Publisher<Message<byte[]>> generate() {
             return FlowAdapters.toPublisher(Multi.just(DATA)
                     .map(String::getBytes)
-                    .map(b -> {
-                        JmsMessage<byte[]> m = JmsMessage.of(b);
-                        m.setJmsProperty("stringProp", new String(b));
-                        m.setJmsProperty("byteProp", (byte) new String(b).length());
-                        m.setJmsProperty("intProp", (int) new String(b).length());
-                        return m;
-                    }));
+                    .map(b -> JmsMessage.builder(b)
+                            .property("stringProp", new String(b))
+                            .property("byteProp", (byte) new String(b).length())
+                            .property("intProp", (int) new String(b).length())
+                            .build()));
         }
 
         @Incoming("test-channel-props-fromJms")
-        public CompletionStage<Void> channelBytes(JmsMessage<byte[]> msg) {
+        public CompletionStage<Void> channelProps(JmsMessage<byte[]> msg) {
             result.add(new String(msg.getPayload()));
-            stringProps.add(msg.getJmsProperty("stringProp"));
-            byteProps.add((byte) msg.getJmsProperty("byteProp"));
-            intProps.add((int) msg.getJmsProperty("intProp"));
+            stringProps.add(msg.getProperty("stringProp"));
+            byteProps.add((byte) msg.getProperty("byteProp"));
+            intProps.add((int) msg.getProperty("intProp"));
 
             countDownLatch.countDown();
             return CompletableFuture.completedFuture(null);
@@ -355,7 +353,7 @@ abstract class AbstractSampleBean {
 
         @Incoming("test-channel-custom-mapper-fromJms")
         public CompletionStage<Void> from(JmsMessage<String> m) {
-            result.add(m.getPayload() + m.getJmsProperty("custom-mapped-property"));
+            result.add(m.getPayload() + m.getProperty("custom-mapped-property"));
             countDownLatch.countDown();
             return CompletableFuture.completedFuture(null);
         }
@@ -364,11 +362,14 @@ abstract class AbstractSampleBean {
         @Outgoing("test-channel-custom-mapper-toJms")
         public PublisherBuilder<Message<String>> to() {
             return ReactiveStreams.fromIterable(DATA)
-                    .map(s -> JmsMessage.of(s, (p, session) -> {
-                        TextMessage textMessage = session.createTextMessage(p);
-                        textMessage.setStringProperty("custom-mapped-property", "XXX" + p);
-                        return textMessage;
-                    }));
+                    .map(s -> JmsMessage.builder(s)
+                            .customMapper((p, session) -> {
+                                TextMessage textMessage = session.createTextMessage(p);
+                                textMessage.setStringProperty("custom-mapped-property", "XXX" + p);
+                                return textMessage;
+                            })
+                            .build()
+                    );
         }
     }
 }

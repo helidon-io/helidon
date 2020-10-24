@@ -17,8 +17,7 @@
 package io.helidon.messaging.connectors.aq;
 
 import java.sql.Connection;
-import java.util.Optional;
-import java.util.concurrent.Executor;
+import java.util.Set;
 
 import javax.jms.ConnectionFactory;
 import javax.jms.JMSException;
@@ -29,18 +28,15 @@ import io.helidon.messaging.MessagingException;
 import io.helidon.messaging.connectors.jms.JmsMessage;
 import io.helidon.messaging.connectors.jms.SessionMetadata;
 
-import oracle.jms.AQjmsMessage;
 import oracle.jms.AQjmsSession;
 
-public class AqMessageImpl<T> implements AqMessage<T> {
+class AqMessageImpl<T> implements AqMessage<T> {
 
     private final JmsMessage<?> jmsMessage;
-    private final AQjmsMessage msg;
     private final AQjmsSession session;
 
-    AqMessageImpl(AQjmsMessage msg, Executor executor, SessionMetadata sessionMetadata) {
-        this.jmsMessage = JmsMessage.of(msg, executor, sessionMetadata);
-        this.msg = msg;
+    AqMessageImpl(JmsMessage<?> msg, SessionMetadata sessionMetadata) {
+        this.jmsMessage = msg;
         this.session = (AQjmsSession) sessionMetadata.session();
     }
 
@@ -54,72 +50,37 @@ public class AqMessageImpl<T> implements AqMessage<T> {
     }
 
     @Override
-    public <P> P getJmsProperty(String name) {
-        return jmsMessage.getJmsProperty(name);
+    public <P> P getProperty(String name) {
+        return jmsMessage.getProperty(name);
     }
 
     @Override
-    public void setJmsProperty(String name, boolean value) {
-        jmsMessage.setJmsProperty(name, value);
+    public boolean hasProperty(final String name) {
+        return jmsMessage.hasProperty(name);
     }
 
     @Override
-    public void setJmsProperty(String name, byte value) {
-        jmsMessage.setJmsProperty(name, value);
+    public Set<String> getPropertyNames() {
+        return jmsMessage.getPropertyNames();
     }
 
     @Override
-    public void setJmsProperty(String name, short value) {
-        jmsMessage.setJmsProperty(name, value);
+    public Message getJmsMessage() {
+        return this.jmsMessage.getJmsMessage();
     }
 
     @Override
-    public void setJmsProperty(String name, int value) {
-        jmsMessage.setJmsProperty(name, value);
-    }
-
-    @Override
-    public void setJmsProperty(String name, long value) {
-        jmsMessage.setJmsProperty(name, value);
-    }
-
-    @Override
-    public void setJmsProperty(String name, float value) {
-        jmsMessage.setJmsProperty(name, value);
-    }
-
-    @Override
-    public void setJmsProperty(String name, double value) {
-        jmsMessage.setJmsProperty(name, value);
-    }
-
-    @Override
-    public void setJmsProperty(String name, String value) {
-        jmsMessage.setJmsProperty(name, value);
-    }
-
-    @Override
-    public boolean hasJmsProperty(String name) {
-        return jmsMessage.hasJmsProperty(name);
-    }
-
-    @Override
-    public Optional<Message> getJmsMessage() {
-        return Optional.of(msg);
-    }
-
-    @Override
-    public Optional<Session> getJmsSession() {
+    public Session getJmsSession() {
         return jmsMessage.getJmsSession();
     }
 
     @Override
-    public Optional<javax.jms.Connection> getJmsConnection() {
+    public javax.jms.Connection getJmsConnection() {
         return jmsMessage.getJmsConnection();
     }
 
     @Override
-    public Optional<ConnectionFactory> getJmsConnectionFactory() {
+    public ConnectionFactory getJmsConnectionFactory() {
         return jmsMessage.getJmsConnectionFactory();
     }
 

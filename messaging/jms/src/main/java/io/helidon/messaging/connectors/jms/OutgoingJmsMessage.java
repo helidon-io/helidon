@@ -16,68 +16,41 @@
 
 package io.helidon.messaging.connectors.jms;
 
-import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
 
-import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
 import javax.jms.JMSException;
-import javax.jms.Message;
 import javax.jms.Session;
 
-class OutgoingJmsMessage<T> extends AbstractJmsMessage<T> {
+import org.eclipse.microprofile.reactive.messaging.Message;
 
-    private final T payload;
-    private CustomMapper<T> mapper = null;
-    private final Supplier<CompletionStage<Void>> ack;
+class OutgoingJmsMessage<PAYLOAD> implements Message<PAYLOAD> {
+
+    private final PAYLOAD payload;
+    private JmsMessage.CustomMapper<PAYLOAD> mapper = null;
+    private Supplier<CompletionStage<Void>> ack = () -> CompletableFuture.completedFuture(null);
     private volatile boolean acked = false;
-    private final OutgoingProperties properties = new OutgoingProperties();
+    private PostProcessor postProcessor;
 
-    OutgoingJmsMessage(T payload, Supplier<CompletionStage<Void>> ack) {
+    OutgoingJmsMessage(PAYLOAD payload) {
         super();
         this.payload = payload;
+    }
+
+    void onAck(final Supplier<CompletionStage<Void>> ack) {
         this.ack = ack;
     }
 
-    OutgoingJmsMessage(T payload, CustomMapper<T> mapper, Supplier<CompletionStage<Void>> ack) {
-        super();
-        this.payload = payload;
+    public void mapper(JmsMessage.CustomMapper<PAYLOAD> mapper) {
         this.mapper = mapper;
-        this.ack = ack;
     }
 
     @Override
-    JmsProperties properties() {
-        return properties;
-    }
-
-    @Override
-    public Optional<Message> getJmsMessage() {
-        return Optional.empty();
-    }
-
-    @Override
-    public Optional<Session> getJmsSession() {
-        return Optional.empty();
-    }
-
-    @Override
-    public Optional<Connection> getJmsConnection() {
-        return Optional.empty();
-    }
-
-    @Override
-    public Optional<ConnectionFactory> getJmsConnectionFactory() {
-        return Optional.empty();
-    }
-
-    @Override
-    public T getPayload() {
+    public PAYLOAD getPayload() {
         return this.payload;
     }
 
-    @Override
     public boolean isAck() {
         return acked;
     }
@@ -87,14 +60,23 @@ class OutgoingJmsMessage<T> extends AbstractJmsMessage<T> {
         return this.ack.get().thenRun(() -> acked = true);
     }
 
-    Message toJmsMessage(Session session, MessageMappers.MessageMapper defaultMapper) throws JMSException {
+    void postProcess(PostProcessor processor) {
+        this.postProcessor = processor;
+    }
+
+    javax.jms.Message toJmsMessage(Session session, MessageMappers.MessageMapper defaultMapper) throws JMSException {
         javax.jms.Message jmsMessage;
         if (mapper != null) {
             jmsMessage = mapper.apply(getPayload(), session);
         } else {
             jmsMessage = defaultMapper.apply(session, this);
         }
-        properties.writeToMessage(jmsMessage);
+        postProcessor.accept(jmsMessage);
         return jmsMessage;
+    }
+
+    @FunctionalInterface
+    interface PostProcessor {
+        void accept(javax.jms.Message m) throws JMSException;
     }
 }

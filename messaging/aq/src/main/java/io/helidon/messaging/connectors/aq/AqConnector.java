@@ -39,7 +39,6 @@ import io.helidon.messaging.connectors.jms.JmsMessage;
 import io.helidon.messaging.connectors.jms.SessionMetadata;
 
 import oracle.jms.AQjmsConnectionFactory;
-import oracle.jms.AQjmsMessage;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.eclipse.microprofile.reactive.messaging.spi.Connector;
 
@@ -147,7 +146,7 @@ public class AqConnector extends JmsConnector {
     protected JmsMessage<?> createMessage(javax.jms.Message message,
                                           Executor executor,
                                           SessionMetadata sessionMetadata) {
-        return AqMessage.of((AQjmsMessage) message, executor, sessionMetadata);
+        return new AqMessageImpl<>(super.createMessage(message, executor, sessionMetadata), sessionMetadata);
     }
 
     @Override

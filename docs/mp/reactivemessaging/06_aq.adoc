@@ -191,7 +191,7 @@ public void consumeAq(String msg) {
 @Acknowledgment(Acknowledgment.Strategy.MANUAL)
 public CompletionStage<?> consumeAq(AqMessage<String> msg) {
     // direct commit
-    //msg.getDBConnection().commit();
+    //msg.getDbConnection().commit();
     System.out.println("Oracle AQ says: " + msg.getPayload());
     // ack commits only in non-transacted mode
     return msg.ack();

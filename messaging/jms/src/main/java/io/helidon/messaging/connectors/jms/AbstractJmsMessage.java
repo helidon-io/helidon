@@ -16,7 +16,10 @@
 
 package io.helidon.messaging.connectors.jms;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
@@ -26,8 +29,9 @@ import java.util.logging.Logger;
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.JMSException;
-import javax.jms.Message;
 import javax.jms.Session;
+
+import io.helidon.messaging.MessagingException;
 
 abstract class AbstractJmsMessage<T> implements JmsMessage<T> {
 
@@ -45,71 +49,48 @@ abstract class AbstractJmsMessage<T> implements JmsMessage<T> {
         this.executor = executor;
     }
 
-    abstract JmsProperties properties();
-
     @Override
-    public <P> P getJmsProperty(String name) {
-        return properties().property(name);
+    @SuppressWarnings("unchecked")
+    public <P> P getProperty(String name) {
+        try {
+            return (P) getJmsMessage().getObjectProperty(name);
+        } catch (JMSException | ClassCastException e) {
+            throw new MessagingException("Error when getting property " + name);
+        }
     }
 
     @Override
-    public void setJmsProperty(String name, boolean value) {
-        properties().property(name, value);
+    public boolean hasProperty(String name) {
+        try {
+            return getJmsMessage().propertyExists(name);
+        } catch (JMSException e) {
+            throw new MessagingException("Error when checking existence of property " + name);
+        }
     }
 
     @Override
-    public void setJmsProperty(String name, byte value) {
-        properties().property(name, value);
+    @SuppressWarnings("unchecked")
+    public Set<String> getPropertyNames() {
+        try {
+            return new HashSet<String>(Collections.list(getJmsMessage().getPropertyNames()));
+        } catch (JMSException e) {
+            throw new MessagingException("Error when getting property names ");
+        }
     }
 
     @Override
-    public void setJmsProperty(String name, short value) {
-        properties().property(name, value);
+    public Session getJmsSession() {
+        return sharedSessionEntry.session();
     }
 
     @Override
-    public void setJmsProperty(String name, int value) {
-        properties().property(name, value);
+    public Connection getJmsConnection() {
+        return sharedSessionEntry.connection();
     }
 
     @Override
-    public void setJmsProperty(String name, long value) {
-        properties().property(name, value);
-    }
-
-    @Override
-    public void setJmsProperty(String name, float value) {
-        properties().property(name, value);
-    }
-
-    @Override
-    public void setJmsProperty(String name, double value) {
-        properties().property(name, value);
-    }
-
-    @Override
-    public void setJmsProperty(String name, String value) {
-        properties().property(name, value);
-    }
-
-    @Override
-    public boolean hasJmsProperty(String name) {
-        return properties().propertyExists(name);
-    }
-
-    @Override
-    public Optional<Session> getJmsSession() {
-        return Optional.ofNullable(sharedSessionEntry).map(SessionMetadata::session);
-    }
-
-    @Override
-    public Optional<Connection> getJmsConnection() {
-        return Optional.ofNullable(sharedSessionEntry).map(SessionMetadata::connection);
-    }
-
-    @Override
-    public Optional<ConnectionFactory> getJmsConnectionFactory() {
-        return Optional.ofNullable(sharedSessionEntry).map(SessionMetadata::connectionFactory);
+    public ConnectionFactory getJmsConnectionFactory() {
+        return sharedSessionEntry.connectionFactory();
     }
 
     @Override
@@ -121,10 +102,7 @@ abstract class AbstractJmsMessage<T> implements JmsMessage<T> {
     public CompletionStage<Void> ack() {
         Runnable ackRunnable = () -> {
             try {
-                Optional<Message> jmsMessage = this.getJmsMessage();
-                if (jmsMessage.isPresent()) {
-                    jmsMessage.get().acknowledge();
-                }
+                getJmsMessage().acknowledge();
                 acked = true;
             } catch (JMSException e) {
                 LOGGER.log(Level.SEVERE, e, () -> "Error during acknowledgement of JMS message");

@@ -38,6 +38,7 @@ import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.literal.NamedLiteral;
 import javax.inject.Inject;
+import javax.jms.BytesMessage;
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.Destination;
@@ -45,6 +46,7 @@ import javax.jms.JMSException;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
+import javax.jms.TextMessage;
 
 import io.helidon.common.configurable.ScheduledThreadPoolSupplier;
 import io.helidon.common.configurable.ThreadPoolSupplier;
@@ -179,7 +181,24 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
      * @return reactive messaging message extended with custom JMS features
      */
     protected JmsMessage<?> createMessage(javax.jms.Message message, Executor executor, SessionMetadata sessionMetadata) {
-        return JmsMessage.of(message, executor, sessionMetadata);
+        if (message instanceof TextMessage) {
+            return new JmsTextMessage((TextMessage) message, executor, sessionMetadata);
+        } else if (message instanceof BytesMessage) {
+            return new JmsBytesMessage((BytesMessage) message, executor, sessionMetadata);
+        } else {
+            return new AbstractJmsMessage<javax.jms.Message>(executor, sessionMetadata) {
+
+                @Override
+                public javax.jms.Message getJmsMessage() {
+                    return message;
+                }
+
+                @Override
+                public javax.jms.Message getPayload() {
+                    return message;
+                }
+            };
+        }
     }
 
     /**

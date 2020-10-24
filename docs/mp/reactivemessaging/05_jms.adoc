@@ -168,3 +168,35 @@ public PublisherBuilder<String> produceToJms() {
     return ReactiveStreams.of("test1", "test2");
 }
 ----
+
+[source,java]
+.Example of more advanced producing to JMS:
+----
+@Outgoing("to-jms")
+public PublisherBuilder<String> produceToJms() {
+    return ReactiveStreams.of("test1", "test2")
+                .map(s -> JmsMessage.builder(s)
+                              .correlationId(UUID.randomUUID().toString())
+                              .property("stringProp", "cool property")
+                              .property("byteProp", 4)
+                              .property("intProp", 5)
+                              .onAcknowledgement(() -> System.out.println("Acked!"))
+                              .build());
+}
+----
+[source,java]
+.Example of even more advanced producing to JMS with custom mapper:
+----
+@Outgoing("to-jms")
+public PublisherBuilder<String> produceToJms() {
+    return ReactiveStreams.of("test1", "test2")
+                .map(s -> JmsMessage.builder(s)
+                            .customMapper((p, session) -> {
+                                TextMessage textMessage = session.createTextMessage(p);
+                                textMessage.setStringProperty("custom-mapped-property", "XXX" + p);
+                                return textMessage;
+                            })
+                            .build()
+                    );
+}
+----

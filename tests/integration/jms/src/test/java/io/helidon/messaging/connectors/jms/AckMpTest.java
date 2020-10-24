@@ -33,6 +33,7 @@ import io.helidon.microprofile.tests.junit5.AddExtensions;
 import io.helidon.microprofile.tests.junit5.DisableDiscovery;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
+import org.eclipse.microprofile.reactive.messaging.Message;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -67,7 +68,9 @@ public class AckMpTest extends AbstractMPTest {
     @PostConstruct
     void cleanupBefore() {
         //cleanup not acked messages
-        consumeAllCurrent(TEST_QUEUE_ACK).map(JmsMessage::of).forEach(JmsMessage::ack);
+        consumeAllCurrent(TEST_QUEUE_ACK)
+                .map(JmsMessage::of)
+                .forEach(Message::ack);
     }
 
     @Test
@@ -89,7 +92,9 @@ public class AckMpTest extends AbstractMPTest {
             produceAndCheck(bean, List.of(), TEST_QUEUE_ACK, List.of("NO_ACK-1", "NO_ACK-2", "NO_ACK-3"));
         } finally {
             //cleanup not acked messages
-            consumeAllCurrent(TEST_QUEUE_ACK).map(JmsMessage::of).forEach(JmsMessage::ack);
+            consumeAllCurrent(TEST_QUEUE_ACK)
+                    .map(JmsMessage::of)
+                    .forEach(Message::ack);
         }
     }
 }

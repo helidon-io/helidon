@@ -16,7 +16,6 @@
 
 package io.helidon.messaging.connectors.jms;
 
-import java.util.Optional;
 import java.util.concurrent.Executor;
 
 import javax.jms.JMSException;
@@ -26,22 +25,15 @@ import io.helidon.messaging.MessagingException;
 public class JmsTextMessage extends AbstractJmsMessage<String> {
 
     private final javax.jms.TextMessage msg;
-    private final IncomingProperties properties;
 
     JmsTextMessage(javax.jms.TextMessage msg, Executor executor, SessionMetadata sharedSessionEntry) {
         super(executor, sharedSessionEntry);
         this.msg = msg;
-        this.properties = new IncomingProperties(msg);
     }
 
     @Override
-    JmsProperties properties() {
-        return properties;
-    }
-
-    @Override
-    public Optional<javax.jms.Message> getJmsMessage() {
-        return Optional.of(msg);
+    public javax.jms.Message getJmsMessage() {
+        return msg;
     }
 
     @Override
