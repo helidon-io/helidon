@@ -20,6 +20,7 @@ package io.helidon.messaging.connectors.jms;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletionStage;
 import java.util.function.BiFunction;
@@ -72,6 +73,45 @@ public interface JmsMessage<PAYLOAD> extends Message<PAYLOAD> {
     javax.jms.Message getJmsMessage();
 
     /**
+     * Return type identifier set by sending JMS client.
+     *
+     * @return JMS type or null
+     */
+    default String getType() {
+        try {
+            return getJmsMessage().getJMSType();
+        } catch (JMSException e) {
+            throw new MessagingException("Error when retrieving JMS type.", e);
+        }
+    }
+
+    /**
+     * Return correlation id of the message.
+     *
+     * @return correlation id or null
+     */
+    default String getCorrelationId() {
+        try {
+            return getJmsMessage().getJMSCorrelationID();
+        } catch (JMSException e) {
+            throw new MessagingException("Error when retrieving JMS correlation id.", e);
+        }
+    }
+
+    /**
+     * Return reply to destination of the message.
+     *
+     * @return destination or null
+     */
+    default Destination getReplyTo() {
+        try {
+            return getJmsMessage().getJMSReplyTo();
+        } catch (JMSException e) {
+            throw new MessagingException("Error when retrieving JMS reply to destination.", e);
+        }
+    }
+
+    /**
      * Check if message has been acknowledged yet.
      *
      * @return true if message has been acknowledged
@@ -112,7 +152,7 @@ public interface JmsMessage<PAYLOAD> extends Message<PAYLOAD> {
      * @return A message with the given payload and ack function.
      */
     static <PAYLOAD> Message<PAYLOAD> of(PAYLOAD payload, Supplier<CompletionStage<Void>> ack) {
-        return builder(payload).onAcknowledgement(ack).build();
+        return builder(payload).onAck(ack).build();
     }
 
     /**
@@ -132,10 +172,28 @@ public interface JmsMessage<PAYLOAD> extends Message<PAYLOAD> {
      *
      * @param payload   JMS message payload
      * @param <PAYLOAD> JMS message payload type
-     * @return builder
+     * @return Message builder
      */
     static <PAYLOAD> OutgoingJmsMessageBuilder<PAYLOAD> builder(PAYLOAD payload) {
         return new OutgoingJmsMessageBuilder<PAYLOAD>(payload);
+    }
+
+    /**
+     * Outgoing JMS message builder.
+     * Makes possible to create JMS message from {@link javax.jms.Message} and customize result.
+     * Does NOT copy payload, only headers and properties.
+     *
+     * @param msg       {@link javax.jms.Message} to derive metadata
+     * @param <PAYLOAD> payload type
+     * @return Message builder
+     * @throws MessagingException       when JMS provider can't retrieve message body, properties or metadata
+     */
+    static <PAYLOAD> OutgoingJmsMessageBuilder<PAYLOAD> builder(javax.jms.Message msg) {
+        try {
+            return new OutgoingJmsMessageBuilder<>(msg);
+        } catch (JMSException e) {
+            throw new MessagingException("Error when retrieving contents of javax.jms.Message");
+        }
     }
 
     /**
@@ -151,6 +209,21 @@ public interface JmsMessage<PAYLOAD> extends Message<PAYLOAD> {
 
         private OutgoingJmsMessageBuilder(final PAYLOAD payload) {
             message = new OutgoingJmsMessage<PAYLOAD>(payload);
+        }
+
+        private OutgoingJmsMessageBuilder(javax.jms.Message msg) throws JMSException {
+            message = OutgoingJmsMessage.fromJmsMessage(msg);
+        }
+
+        /**
+         * Set or replace JMS payload.
+         *
+         * @param name  the name of the JMS property
+         * @param value boolean value to stored as JMS property
+         */
+        OutgoingJmsMessageBuilder<PAYLOAD> payload(PAYLOAD payload) {
+            message.setPayload(payload);
+            return this;
         }
 
         /**
@@ -247,7 +320,7 @@ public interface JmsMessage<PAYLOAD> extends Message<PAYLOAD> {
          * @param ack callback
          * @return this builder
          */
-        OutgoingJmsMessageBuilder<PAYLOAD> onAcknowledgement(Supplier<CompletionStage<Void>> ack) {
+        OutgoingJmsMessageBuilder<PAYLOAD> onAck(Supplier<CompletionStage<Void>> ack) {
             this.message.onAck(ack);
             return this;
         }
@@ -307,6 +380,9 @@ public interface JmsMessage<PAYLOAD> extends Message<PAYLOAD> {
                 if (null != this.replyTo) m.setJMSReplyTo(this.replyTo);
                 if (null != this.type) m.setJMSType(this.type);
             });
+            if (Objects.isNull(message.getPayload())) {
+                throw new IllegalStateException("Message is missing payload.");
+            }
             return message;
         }
     }

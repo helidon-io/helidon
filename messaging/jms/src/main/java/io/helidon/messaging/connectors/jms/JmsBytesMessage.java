@@ -20,8 +20,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.Executor;
 
+import javax.jms.BytesMessage;
 import javax.jms.JMSException;
-import javax.jms.Message;
 import javax.jms.MessageEOFException;
 
 import io.helidon.messaging.MessagingException;
@@ -36,7 +36,7 @@ public class JmsBytesMessage extends AbstractJmsMessage<byte[]> {
     }
 
     @Override
-    public Message getJmsMessage() {
+    public BytesMessage getJmsMessage() {
         return msg;
     }
 

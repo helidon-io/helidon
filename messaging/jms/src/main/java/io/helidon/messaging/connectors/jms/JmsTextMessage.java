@@ -32,7 +32,7 @@ public class JmsTextMessage extends AbstractJmsMessage<String> {
     }
 
     @Override
-    public javax.jms.Message getJmsMessage() {
+    public javax.jms.TextMessage getJmsMessage() {
         return msg;
     }
 

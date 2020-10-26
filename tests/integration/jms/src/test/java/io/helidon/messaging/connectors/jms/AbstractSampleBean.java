@@ -19,10 +19,7 @@ package io.helidon.messaging.connectors.jms;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
@@ -32,7 +29,7 @@ import javax.jms.TextMessage;
 import io.helidon.common.reactive.Multi;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
@@ -371,5 +368,67 @@ abstract class AbstractSampleBean {
                             .build()
                     );
         }
+    }
+
+    @ApplicationScoped
+    public static class ChannelDerivedMessage extends AbstractSampleBean {
+        private final CountDownLatch countDownLatch = new CountDownLatch(1);
+        private final ArrayList<String> result = new ArrayList<>(1);
+        private final CompletableFuture<String> typeFuture = new CompletableFuture<>();
+        private final CompletableFuture<String> oldAttrFuture = new CompletableFuture<>();
+        private final CompletableFuture<String> overrideAttrFuture = new CompletableFuture<>();
+        private final CompletableFuture<String> extraAttrFuture = new CompletableFuture<>();
+
+        public void await(long timeout) {
+            try {
+                assertTrue(countDownLatch.await(timeout, TimeUnit.MILLISECONDS));
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        public ArrayList<String> assertResult() throws InterruptedException, ExecutionException, TimeoutException {
+            assertThat(result, containsInAnyOrder("value1"));
+            assertThat(typeFuture.get(500, TimeUnit.MILLISECONDS), is(equalTo("newType")));
+            assertThat(oldAttrFuture.get(500, TimeUnit.MILLISECONDS), is(equalTo("oldValue")));
+            assertThat(overrideAttrFuture.get(500, TimeUnit.MILLISECONDS), is(equalTo("overriddenValue")));
+            assertThat(extraAttrFuture.get(500, TimeUnit.MILLISECONDS), is(equalTo("extraValue")));
+            return result;
+        }
+
+        @Outgoing("test-channel-derived-msg-toJms")
+        @SuppressWarnings("unchecked")
+        public PublisherBuilder<Message<String>> to() {
+            return ReactiveStreams.of(
+                    JmsMessage.builder("value1")
+                            .type("oldType")
+                            .property("oldAttr", "oldValue")
+                            .property("overrideAttr", "oldValue")
+                            .build()
+            );
+        }
+
+        @Incoming("test-channel-derived-msg-process-fromJms")
+        @Outgoing("test-channel-derived-msg-process-toJms")
+        public Message<String> process(JmsTextMessage m) {
+            return JmsMessage.<String>builder(m.getJmsMessage())
+                    .payload(m.getPayload())
+                    .property("extraAttr", "extraValue")
+                    .property("overrideAttr", "overriddenValue")
+                    .type("newType")
+                    .build();
+        }
+
+        @Incoming("test-channel-derived-msg-fromJms")
+        public CompletionStage<Void> from(JmsTextMessage m) {
+            typeFuture.complete(m.getType());
+            oldAttrFuture.complete(m.getProperty("oldAttr"));
+            overrideAttrFuture.complete(m.getProperty("overrideAttr"));
+            extraAttrFuture.complete(m.getProperty("extraAttr"));
+            result.add(m.getPayload());
+            countDownLatch.countDown();
+            return CompletableFuture.completedFuture(null);
+        }
+
     }
 }

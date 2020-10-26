@@ -20,6 +20,8 @@ package io.helidon.messaging.connectors.jms;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -53,6 +55,7 @@ import org.junit.jupiter.api.Test;
         @AddBean(AbstractSampleBean.ChannelBytes.class),
         @AddBean(AbstractSampleBean.ChannelProperties.class),
         @AddBean(AbstractSampleBean.ChannelCustomMapper.class),
+        @AddBean(AbstractSampleBean.ChannelDerivedMessage.class),
 })
 @AddExtensions({
         @AddExtension(ConfigCdiExtension.class),
@@ -121,6 +124,22 @@ import org.junit.jupiter.api.Test;
         @AddConfig(key = "mp.messaging.outgoing.test-channel-custom-mapper-toJms.connector", value = JmsConnector.CONNECTOR_NAME),
         @AddConfig(key = "mp.messaging.outgoing.test-channel-custom-mapper-toJms.type", value = "queue"),
         @AddConfig(key = "mp.messaging.outgoing.test-channel-custom-mapper-toJms.destination", value = JmsMpTest.TEST_TOPIC_CUST_MAPPER),
+
+        @AddConfig(key = "mp.messaging.incoming.test-channel-derived-msg-fromJms.connector", value = JmsConnector.CONNECTOR_NAME),
+        @AddConfig(key = "mp.messaging.incoming.test-channel-derived-msg-fromJms.type", value = "queue"),
+        @AddConfig(key = "mp.messaging.incoming.test-channel-derived-msg-fromJms.destination", value = JmsMpTest.TEST_TOPIC_DERIVED_1),
+
+        @AddConfig(key = "mp.messaging.outgoing.test-channel-derived-msg-process-toJms.connector", value = JmsConnector.CONNECTOR_NAME),
+        @AddConfig(key = "mp.messaging.outgoing.test-channel-derived-msg-process-toJms.type", value = "queue"),
+        @AddConfig(key = "mp.messaging.outgoing.test-channel-derived-msg-process-toJms.destination", value = JmsMpTest.TEST_TOPIC_DERIVED_1),
+
+        @AddConfig(key = "mp.messaging.incoming.test-channel-derived-msg-process-fromJms.connector", value = JmsConnector.CONNECTOR_NAME),
+        @AddConfig(key = "mp.messaging.incoming.test-channel-derived-msg-process-fromJms.type", value = "queue"),
+        @AddConfig(key = "mp.messaging.incoming.test-channel-derived-msg-process-fromJms.destination", value = JmsMpTest.TEST_TOPIC_DERIVED_2),
+
+        @AddConfig(key = "mp.messaging.outgoing.test-channel-derived-msg-toJms.connector", value = JmsConnector.CONNECTOR_NAME),
+        @AddConfig(key = "mp.messaging.outgoing.test-channel-derived-msg-toJms.type", value = "queue"),
+        @AddConfig(key = "mp.messaging.outgoing.test-channel-derived-msg-toJms.destination", value = JmsMpTest.TEST_TOPIC_DERIVED_2),
 })
 class JmsMpTest extends AbstractMPTest {
 
@@ -133,6 +152,8 @@ class JmsMpTest extends AbstractMPTest {
     static final String TEST_TOPIC_BYTES = "topic-bytes";
     static final String TEST_TOPIC_PROPS = "topic-properties";
     static final String TEST_TOPIC_CUST_MAPPER = "topic-cust-mapper";
+    static final String TEST_TOPIC_DERIVED_1 = "topic-derived-1";
+    static final String TEST_TOPIC_DERIVED_2 = "topic-derived-2";
     static final String TEST_TOPIC_ERROR = "topic-error";
 
     @Test
@@ -223,6 +244,13 @@ class JmsMpTest extends AbstractMPTest {
     void customMapper() {
         AbstractSampleBean.ChannelCustomMapper bean = CDI.current().select(AbstractSampleBean.ChannelCustomMapper.class).get();
         bean.await(200);
+        bean.assertResult();
+    }
+
+    @Test
+    void derivedJmsMessage() throws InterruptedException, ExecutionException, TimeoutException {
+        AbstractSampleBean.ChannelDerivedMessage bean = CDI.current().select(AbstractSampleBean.ChannelDerivedMessage.class).get();
+        bean.await(50000);
         bean.assertResult();
     }
 }

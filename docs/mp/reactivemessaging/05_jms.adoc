@@ -180,7 +180,7 @@ public PublisherBuilder<String> produceToJms() {
                               .property("stringProp", "cool property")
                               .property("byteProp", 4)
                               .property("intProp", 5)
-                              .onAcknowledgement(() -> System.out.println("Acked!"))
+                              .onAck(() -> System.out.println("Acked!"))
                               .build());
 }
 ----
