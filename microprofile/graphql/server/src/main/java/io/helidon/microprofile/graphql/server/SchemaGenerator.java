@@ -797,8 +797,12 @@ public class SchemaGenerator {
 
         if (isArrayReturnType) {
             if (discoveredMethod.isMap) {
-                // add DataFetcher that will just retrieve the values() from the map
-                // dataFetcher = DataFetcherUtils.newMapValuesDataFetcher(fieldName);
+                // add DataFetcher that will just retrieve the values() from the Map.
+                // The microprofile-graphql spec does not specify how Maps are treated
+                // and leaves this up to the individual implementation. This implementation
+                // supports returning the values of the map only and does not support using
+                // Maps or types with Maps as return values from a query or mutation
+                dataFetcher = DataFetcherUtils.newMapValuesDataFetcher(propertyName);
             }
         }
 
@@ -809,7 +813,7 @@ public class SchemaGenerator {
             if (!isGraphQLType(valueClassName)) {
                 dataFetcher = retrieveFormattingDataFetcher(format, propertyName, graphQLType);
 
-                // if the format is a number format then set teh return type to String
+                // if the format is a number format then set the return type to String
                 if (NUMBER.equals(format[0])) {
                     graphQLType = STRING;
                 }

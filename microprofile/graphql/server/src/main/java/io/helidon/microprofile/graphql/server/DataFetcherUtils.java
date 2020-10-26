@@ -40,6 +40,7 @@ import java.util.TreeSet;
 import java.util.UUID;
 import java.util.logging.Logger;
 
+import graphql.schema.PropertyDataFetcherHelper;
 import javax.enterprise.inject.spi.CDI;
 
 import graphql.GraphQLException;
@@ -109,6 +110,11 @@ public class DataFetcherUtils {
 
             if (args.length > 0) {
                 for (SchemaArgument argument : args) {
+                    // ensure a Map is not used as an input type
+                    Class<?> originalType = argument.getOriginalType();
+                    if (originalType != null && originalType.isAssignableFrom(Map.class)) {
+                        ensureRuntimeException(LOGGER, "A Map may not be used as input to a query or mutation");
+                    }
                     listArgumentValues.add(generateArgumentValue(schema, argument.getArgumentType(),
                                                                  argument.getOriginalType(),
                                                                  argument.getOriginalArrayType(),
@@ -135,6 +141,32 @@ public class DataFetcherUtils {
             }
         };
     }
+
+    /**
+     * Return a {@link DataFetcher} which converts a {@link Map} to a {@link Collection} of V.
+     * <p>
+     * This assumes that the key for the {@link Map} is contained within the V
+     *
+     * @param propertyName name of the property to apply to
+     * @param <S>          Source of the property
+     * @param <V>          type of the value
+     * @return  a {@link DataFetcher}
+     */
+    @SuppressWarnings("unchecked")
+    public static <S, V> DataFetcher<Collection<V>> newMapValuesDataFetcher(String propertyName) {
+        return environment -> {
+            S source = environment.getSource();
+            if (source == null) {
+                return null;
+            }
+
+            // retrieve the map and return the collection of V
+            Map<?, V> map = (Map<?, V>) PropertyDataFetcherHelper
+                    .getPropertyValue(propertyName, source, environment.getFieldType(), environment);
+            return map.values();
+        };
+    }
+
 
     /**
      * Generate an argument value with the given information. This may be called recursively.
@@ -359,13 +391,11 @@ public class DataFetcherUtils {
                     if (isDateTimeClass(originalType)) {
                         DateTimeFormatter dateFormatter = getCorrectDateFormatter(originalType.getName(),
                                                                                   format[1], format[0]);
-                        LOGGER.info("Parsing [" + rawValue + "] with " + dateFormatter + " " + format[1] + ":" + format[0]);
                         return getOriginalDateTimeValue(originalType, dateFormatter.parse(rawValue.toString()));
                     } else {
                         NumberFormat numberFormat = getCorrectNumberFormat(originalType.getName(),
                                                                            format[1], format[0]);
                         if (numberFormat != null) {
-                             LOGGER.info("Parsing [" + rawValue + "] with " + numberFormat + " " + format[1] + ":" + format[0]);
                              return getOriginalValue(originalType, numberFormat.parse(rawValue.toString()));
                         } else {
                             return rawValue;
