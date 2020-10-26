@@ -40,5 +40,6 @@
         <module>context-propagation</module>
         <module>mp-synthetic-app</module>
         <module>mp-compression</module>
+        <module>request-scope</module>
     </modules>
 </project>
