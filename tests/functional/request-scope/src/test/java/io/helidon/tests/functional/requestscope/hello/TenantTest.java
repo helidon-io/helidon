@@ -16,41 +16,22 @@
 
 package io.helidon.tests.functional.requestscope.hello;
 
-import java.io.IOException;
-import java.util.logging.LogManager;
-
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
+import javax.inject.Inject;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 
-import io.helidon.microprofile.server.Server;
-
+import io.helidon.microprofile.tests.junit5.HelidonTest;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+@HelidonTest
 class TenantTest {
-    private static Server server;
-    private static WebTarget baseTarget;
 
-    @BeforeAll
-    static void initClass() throws IOException {
-        LogManager.getLogManager().readConfiguration(TenantTest.class.getResourceAsStream("/logging.properties"));
-        Main.main(new String[0]);
-        server = Main.server();
-        Client client = ClientBuilder.newClient();
-        baseTarget = client.target("http://localhost:" + server.port());
-    }
-
-    @AfterAll
-    static void destroyClass() {
-        server.stop();
-    }
+    @Inject
+    private WebTarget baseTarget;
 
     @Test
     public void test() {
