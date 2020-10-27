@@ -18,6 +18,7 @@ package io.helidon.microprofile.graphql.server;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * The representation of a GraphQL Enum.
@@ -35,12 +36,23 @@ public class SchemaEnum extends AbstractDescriptiveElement implements ElementGen
     private List<String> values;
 
     /**
-     * Construct an Enum.
-     * @param name name for the enum
+     * Construct a {@link SchemaEnum}.
+     *
+     * @param builder the {@link SchemaDirective.Builder} to construct from
      */
-    public SchemaEnum(String name) {
-        this.name   = name;
-        this.values = new ArrayList<>();
+    private SchemaEnum(Builder builder) {
+        this.name = builder.name;
+        this.values = builder.values;
+        description(builder.description);
+    }
+
+    /**
+     * Fluent API builder to create {@link SchemaEnum}.
+     *
+     * @return new builder instance
+     */
+    public static Builder builder() {
+        return new Builder();
     }
 
     /**
@@ -97,4 +109,53 @@ public class SchemaEnum extends AbstractDescriptiveElement implements ElementGen
                 + ", values=" + values
                 + ", description='" + description() + '\'' + '}';
     }
+
+    /**
+     * A fluent API {@link io.helidon.common.Builder} to build instances of {@link SchemaDirective}.
+     */
+    public static class Builder implements io.helidon.common.Builder<SchemaEnum> {
+
+        private String name;
+        private List<String> values = new ArrayList<>();
+        private String description;
+
+        /**
+         * Set the name.
+         *
+         * @param name the name of the {@link SchemaEnum}
+         * @return updated builder instance
+         */
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+
+        /**
+         * Add a value to the {@link SchemaEnum}.
+         *
+         * @param value value to add
+         * @return updated builder instance
+         */
+        public Builder addValue(String value) {
+            this.values.add(value);
+            return this;
+        }
+
+        /**
+         * Set the description.
+         * @param description the description of the {@link SchemaEnum}
+         * @return updated builder instance
+         */
+        public Builder description(String description) {
+            this.description = description;
+            return this;
+        }
+
+        @Override
+        public SchemaEnum build() {
+            Objects.requireNonNull(name, "Name must be specified");
+            return new SchemaEnum(this);
+        }
+    }
+
 }

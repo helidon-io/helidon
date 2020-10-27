@@ -19,6 +19,7 @@ package io.helidon.microprofile.graphql.server;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import graphql.schema.DataFetcher;
@@ -103,28 +104,37 @@ public class SchemaFieldDefinition extends AbstractDescriptiveElement implements
      */
     private boolean isJsonbProperty;
 
-
     /**
      * Construct a {@link SchemaFieldDefinition}.
      *
-     * @param name                  field definition name
-     * @param returnType            return type
-     * @param isArrayReturnType     indicates if the return type is an array type such as a native array([]) or a List,
-     *                              Collection, etc
-     * @param isReturnTypeMandatory indicates if the return type is mandatory.
-     * @param arrayLevels           the number of array levels if return type is an array.
+     * @param builder the {@link Builder} to construct from
      */
-    public SchemaFieldDefinition(String name,
-                                 String returnType,
-                                 boolean isArrayReturnType,
-                                 boolean isReturnTypeMandatory,
-                                 int arrayLevels) {
-        this.name = name;
-        this.returnType = returnType;
-        this.listSchemaArguments = new ArrayList<>();
-        this.isArrayReturnType = isArrayReturnType;
-        this.isReturnTypeMandatory = isReturnTypeMandatory;
-        this.arrayLevels = arrayLevels;
+    private SchemaFieldDefinition(Builder builder) {
+        this.name = builder.name;
+        this.returnType = builder.returnType;
+        this.isArrayReturnType = builder.isArrayReturnType;
+        this.arrayLevels = builder.arrayLevels;
+        this.isReturnTypeMandatory = builder.isReturnTypeMandatory;
+        this.listSchemaArguments = builder.listSchemaArguments;
+        this.isArrayReturnTypeMandatory = builder.isArrayReturnTypeMandatory;
+        this.dataFetcher = builder.dataFetcher;
+        this.originalType = builder.originalType;
+        this.originalArrayType = builder.originalArrayType;
+        this.format = builder.format;
+        this.defaultValue = builder.defaultValue;
+        this.defaultFormatApplied = builder.defaultFormatApplied;
+        this.isJsonbFormat = builder.isJsonbFormat;
+        this.isJsonbProperty = builder.isJsonbProperty;
+        description(builder.description);
+    }
+
+    /**
+     * Fluent API builder to create {@link SchemaFieldDefinition}.
+     *
+     * @return new builder instance
+     */
+    public static Builder builder() {
+        return new Builder();
     }
 
     @Override
@@ -419,5 +429,207 @@ public class SchemaFieldDefinition extends AbstractDescriptiveElement implements
                 + ", isJsonbFormat=" + isJsonbFormat
                 + ", isJsonbProperty=" + isJsonbProperty
                 + ", description='" + description() + '\'' + '}';
+    }
+
+
+    /**
+     * A fluent API {@link io.helidon.common.Builder} to build instances of {@link SchemaFieldDefinition}.
+     */
+    public static class Builder implements io.helidon.common.Builder<SchemaFieldDefinition> {
+        private String name;
+        private String returnType;
+        private boolean isArrayReturnType;
+        private int arrayLevels;
+        private boolean isReturnTypeMandatory;
+        private List<SchemaArgument> listSchemaArguments = new ArrayList<>();
+        private boolean isArrayReturnTypeMandatory;
+        private DataFetcher dataFetcher;
+        private Class<?> originalType;
+        private Class<?> originalArrayType;
+        private String[] format;
+        private Object defaultValue;
+        private boolean defaultFormatApplied;
+        private boolean isJsonbFormat;
+        private boolean isJsonbProperty;
+        private String description;
+
+        /**
+         * Set the name of the {@link SchemaFieldDefinition}.
+         *
+         * @param name the name of the {@link SchemaFieldDefinition}
+         * @return updated builder instance
+         */
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+
+        /**
+         * Set the returnType..
+         *
+         * @param returnType the returnType
+         * @return updated builder instance
+         */
+        public Builder returnType(String returnType) {
+            this.returnType = returnType;
+            return this;
+        }
+
+        /**
+         * Set if the return type is an array type such as a native array([]) or a List, Collection.
+         *
+         * @param isArrayReturnType true if the return type is an array type
+         * @return updated builder instance
+         */
+        public Builder arrayReturnType(boolean isArrayReturnType) {
+            this.isArrayReturnType = isArrayReturnType;
+            return this;
+        }
+
+        /**
+         * Set if the return type is mandatory.
+         *
+         * @param isReturnTypeMandatory true if the return type is mandatory.
+         * @return updated builder instance
+         */
+        public Builder returnTypeMandatory(boolean isReturnTypeMandatory) {
+            this.isReturnTypeMandatory = isReturnTypeMandatory;
+            return this;
+        }
+
+        /**
+         * Set the number of array levels if return type is an array.
+         *
+         * @param arrayLevels the number of array levels if return type is an array
+         * @return updated builder instance
+         */
+        public Builder arrayLevels(int arrayLevels) {
+            this.arrayLevels = arrayLevels;
+            return this;
+        }
+
+        /**
+         * Add an argument to the {@link SchemaFieldDefinition}.
+         *
+         * @param argument the argument to add to the {@link SchemaFieldDefinition}
+         * @return updated builder instance
+         */
+        public Builder addArgument(SchemaArgument argument) {
+            listSchemaArguments.add(argument);
+            return this;
+        }
+
+        /**
+         * Set if the value of the array is mandatory.
+         *
+         * @param isArrayReturnTypeMandatory If the return type is an array then indicates if the value in the
+         *                                   array is mandatory
+         * @return updated builder instance
+         */
+        public Builder arrayReturnTypeMandatory(boolean isArrayReturnTypeMandatory) {
+            this.isArrayReturnTypeMandatory = isArrayReturnTypeMandatory;
+            return this;
+        }
+
+        /**
+         * Set the {@link DataFetcher} to override default behaviour of field.
+         * @param dataFetcher {@link DataFetcher} to override default behaviour of field
+         * @return updated builder instance
+         */
+        public Builder dataFetcher(DataFetcher dataFetcher) {
+            this.dataFetcher = dataFetcher;
+            return this;
+        }
+
+        /**
+         * Set the original return type.
+         * @param originalType  the original return type
+         * @return updated builder instance
+         */
+        public Builder originalType(Class<?> originalType) {
+            this.originalType = originalType;
+            return this;
+        }
+
+        /**
+         * Set the original array inner type if it is array type.
+         * @param originalArrayType  the  original array inner type if it is array type
+         * @return updated builder instance
+         */
+        public Builder originalArrayType(Class<?> originalArrayType) {
+            this.originalArrayType = originalArrayType;
+            return this;
+        }
+
+        /**
+         * Set the format for a number or date.
+         * @param format the format for a number or date
+         * @return updated builder instance
+         */
+        public Builder format(String[] format) {
+            if (format == null) {
+                this.format = null;
+            } else {
+                this.format = new String[format.length];
+                System.arraycopy(format, 0, this.format, 0, this.format.length);
+            }
+
+            return this;
+        }
+
+        /**
+         * Set the default value for this field definition. Only valid for field definitions of an input type.
+         * @param defaultValue the default value for this field definition
+         * @return updated builder instance
+         */
+        public Builder defaultValue(Object defaultValue) {
+            this.defaultValue = defaultValue;
+            return this;
+        }
+
+        /**
+         * Set if the field has a default format applied.
+         * @param defaultFormatApplied true if the field has a default format applied
+         * @return updated builder instance
+         */
+        public Builder defaultFormatApplied(boolean defaultFormatApplied) {
+            this.defaultFormatApplied = defaultFormatApplied;
+            return this;
+        }
+
+        /**
+         * Set if the format is of type Jsonb.
+         * @param isJsonbFormat if the format is of type Jsonb.
+         * @return updated builder instance
+         */
+        public Builder jsonbFormat(boolean isJsonbFormat) {
+            this.isJsonbFormat = isJsonbFormat;
+            return this;
+        }
+        /**
+         * Set if the property name is of type Jsonb.
+         * @param isJsonbProperty if the property name is of type Jsonb.
+         * @return updated builder instance
+         */
+        public Builder jsonbProperty(boolean isJsonbProperty) {
+            this.isJsonbProperty = isJsonbProperty;
+            return this;
+        }
+
+        /**
+         * Set the description.
+         * @param description the description of the {@link SchemaFieldDefinition}
+         * @return updated builder instance
+         */
+        public Builder description(String description) {
+            this.description = description;
+            return this;
+        }
+
+        @Override
+        public SchemaFieldDefinition build() {
+            Objects.requireNonNull(name, "Name must be specified");
+            return new SchemaFieldDefinition(this);
+        }
     }
 }

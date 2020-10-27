@@ -47,12 +47,21 @@ public class SchemaDirective implements ElementGenerator {
     /**
      * Construct a {@link SchemaDirective}.
      *
-     * @param name name of the directive
+     * @param builder the {@link Builder} to construct from
      */
-    public SchemaDirective(String name) {
-        this.name = name;
-        this.listSchemaArguments = new ArrayList<>();
-        this.setLocations = new LinkedHashSet<>();
+    private SchemaDirective(Builder builder) {
+        this.name = builder.name;
+        this.listSchemaArguments = builder.listSchemaArguments;
+        this.setLocations = builder.setLocations;
+    }
+
+    /**
+     * Fluent API builder to create {@link SchemaDirective}.
+     *
+     * @return new builder instance
+     */
+    public static Builder builder() {
+        return new Builder();
     }
 
     /**
@@ -157,5 +166,54 @@ public class SchemaDirective implements ElementGenerator {
                 + ", listArguments=" + listSchemaArguments
                 + ", setLocations=" + setLocations
                 + '}';
+    }
+
+    /**
+     * A fluent API {@link io.helidon.common.Builder} to build instances of {@link SchemaDirective}.
+     */
+    public static class Builder implements io.helidon.common.Builder<SchemaDirective> {
+
+        private String name;
+        private List<SchemaArgument> listSchemaArguments = new ArrayList<>();
+        private Set<String> setLocations = new LinkedHashSet<>();
+
+        /**
+         * Set the name.
+         *
+         * @param name the name
+         * @return updated builder instance
+         */
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+
+        /**
+         * Add an argument to the {@link SchemaDirective}.
+         *
+         * @param argument the argument to add to the {@link SchemaDirective}
+         * @return updated builder instance
+         */
+        public Builder addArgument(SchemaArgument argument) {
+            listSchemaArguments.add(argument);
+            return this;
+        }
+
+        /**
+         * Add a location to the {@link SchemaDirective}.
+         *
+         * @param location the location to add to the {@link SchemaDirective}
+         * @return updated builder instance
+         */
+        public Builder addLocation(String location) {
+            this.setLocations.add(location);
+            return this;
+        }
+
+        @Override
+        public SchemaDirective build() {
+            Objects.requireNonNull(name, "Name must be specified");
+            return new SchemaDirective(this);
+        }
     }
 }

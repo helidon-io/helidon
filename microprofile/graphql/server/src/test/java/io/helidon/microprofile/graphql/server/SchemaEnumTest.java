@@ -29,14 +29,17 @@ class SchemaEnumTest extends AbstractGraphQLTest {
 
     @Test
     public void testConstructor() {
-        SchemaEnum schemaEnum1 = new SchemaEnum("ShirtSize");
-        schemaEnum1.description("This is the description of the Enum");
-        schemaEnum1.addValue("S");
-        schemaEnum1.addValue("M");
-        schemaEnum1.addValue("L");
-        schemaEnum1.addValue("XL");
-        schemaEnum1.addValue("XXL");
-        schemaEnum1.addValue("3XL");
+
+        SchemaEnum schemaEnum1 = SchemaEnum.builder()
+                .name("ShirtSize")
+                .description("This is the description of the Enum")
+                .addValue("S")
+                .addValue("M")
+                .addValue("L")
+                .addValue("XL")
+                .addValue("XXL")
+                .addValue("3XL")
+                .build();
 
         assertThat(schemaEnum1.description(), is("This is the description of the Enum"));
         assertThat(schemaEnum1.values(), is(notNullValue()));
@@ -45,35 +48,41 @@ class SchemaEnumTest extends AbstractGraphQLTest {
 
     @Test
     public void testSchemaGenerationWithDescription() {
-        SchemaEnum schemaEnum1 = new SchemaEnum("ShirtSize");
-        schemaEnum1.description("T Shirt Size");
-        schemaEnum1.addValue("Small");
-        schemaEnum1.addValue("Medium");
-        schemaEnum1.addValue("Large");
-        schemaEnum1.addValue("XLarge");
+        SchemaEnum schemaEnum1 = SchemaEnum.builder()
+                .name("ShirtSize")
+                .description("T Shirt Size")
+                .addValue("Small")
+                .addValue("Medium")
+                .addValue("Large")
+                .addValue("XLarge")
+                .build();
 
         assertResultsMatch(schemaEnum1.getSchemaAsString(), "test-results/enum-test-01.txt");
     }
 
     @Test
     public void testSchemaGenerationWithoutDescription() {
-        SchemaEnum schemaEnum1 = new SchemaEnum("ShirtSize");
-        schemaEnum1.addValue("Small");
-        schemaEnum1.addValue("Medium");
-        schemaEnum1.addValue("Large");
-        schemaEnum1.addValue("XLarge");
+        SchemaEnum schemaEnum1 = SchemaEnum.builder()
+                .name("ShirtSize")
+                .addValue("Small")
+                .addValue("Medium")
+                .addValue("Large")
+                .addValue("XLarge")
+                .build();
 
         assertResultsMatch(schemaEnum1.getSchemaAsString(), "test-results/enum-test-02.txt");
     }
 
     @Test
     public void testSchemaGenerationWithDescriptionAndQuote() {
-        SchemaEnum schemaEnum1 = new SchemaEnum("ShirtSize");
-        schemaEnum1.addValue("Small");
-        schemaEnum1.addValue("Medium");
-        schemaEnum1.addValue("Large");
-        schemaEnum1.addValue("XLarge");
-        schemaEnum1.description("Description\"");
+        SchemaEnum schemaEnum1 = SchemaEnum.builder()
+                .name("ShirtSize")
+                .addValue("Small")
+                .addValue("Medium")
+                .addValue("Large")
+                .addValue("XLarge")
+                .description("Description\"")
+                .build();
 
         assertResultsMatch(schemaEnum1.getSchemaAsString(), "test-results/enum-test-03.txt");
     }

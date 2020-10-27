@@ -57,9 +57,13 @@ class SchemaTest extends AbstractGraphQLTest {
         schema.addType(new SchemaType("Subscription", ""));
         assertResultsMatch(schema.getSchemaAsString(), "test-results/schema-test-03.txt");
 
-        SchemaDirective schemaDirective = new SchemaDirective("format");
-        schemaDirective.addLocation(FIELD_DEFINITION.name());
-        schemaDirective.addArgument(new SchemaArgument("dateFormat", "String", true, null, STRING));
+        SchemaArgument argument = new SchemaArgument("dateFormat", "String", true, null, STRING);
+
+        SchemaDirective schemaDirective = SchemaDirective.builder()
+                .name("format")
+                .addLocation(FIELD_DEFINITION.name())
+                .addArgument(argument).build();
+        
         schema.addDirective(schemaDirective);
 
         assertResultsMatch(schema.getSchemaAsString(), "test-results/schema-test-04.txt");
@@ -86,8 +90,8 @@ class SchemaTest extends AbstractGraphQLTest {
         Schema schema = new Schema();
         assertThat(schema.getDirectives().size(), is(0));
 
-        SchemaDirective schemaDirective1 = new SchemaDirective("directive1");
-        SchemaDirective schemaDirective2 = new SchemaDirective("directive2");
+        SchemaDirective schemaDirective1 = SchemaDirective.builder().name("directive1").build();
+        SchemaDirective schemaDirective2 = SchemaDirective.builder().name("directive2").build();
         schema.addDirective(schemaDirective1);
         schema.addDirective(schemaDirective2);
         assertThat(schema.getDirectives().contains(schemaDirective1), is(true));
@@ -130,7 +134,7 @@ class SchemaTest extends AbstractGraphQLTest {
         listString.add("NEWHOPE");
         listString.add("JEDI");
         listString.add("EMPIRE");
-        SchemaEnum schemaEnum1 = new SchemaEnum("Episode");
+        SchemaEnum schemaEnum1 = SchemaEnum.builder().name("Episode").build();
         schemaEnum1.values().addAll(listString);
 
         schema.addEnum(schemaEnum1);

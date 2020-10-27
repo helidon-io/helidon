@@ -767,7 +767,7 @@ public class SchemaGenerator {
      */
     private SchemaEnum generateEnum(Class<?> clazz) {
         if (clazz.isEnum()) {
-            SchemaEnum newSchemaEnum = new SchemaEnum(getTypeName(clazz));
+            SchemaEnum newSchemaEnum = SchemaEnum.builder().name(getTypeName(clazz)).build();
 
             Arrays.stream(clazz.getEnumConstants())
                     .map(Object::toString)
@@ -825,17 +825,19 @@ public class SchemaGenerator {
             }
         }
 
-        SchemaFieldDefinition fd = new SchemaFieldDefinition(optionalName != null
-                                                                     ? optionalName
-                                                                     : discoveredMethod.name,
-                                                             graphQLType,
-                                                             isArrayReturnType,
-                                                             discoveredMethod.isReturnTypeMandatory(),
-                                                             discoveredMethod.arrayLevels());
-        fd.dataFetcher(dataFetcher);
-        fd.originalType(discoveredMethod.method().getReturnType());
-        fd.arrayReturnTypeMandatory(discoveredMethod.isArrayReturnTypeMandatory());
-        fd.originalArrayType(isArrayReturnType ? discoveredMethod.originalArrayType() : null);
+        SchemaFieldDefinition fd = SchemaFieldDefinition.builder()
+                .name(optionalName != null
+                              ? optionalName
+                              : discoveredMethod.name)
+                .returnType(graphQLType)
+                .arrayReturnType(isArrayReturnType)
+                .returnTypeMandatory(discoveredMethod.isReturnTypeMandatory())
+                .arrayLevels(discoveredMethod.arrayLevels())
+                .dataFetcher(dataFetcher)
+                .originalType(discoveredMethod.method().getReturnType())
+                .arrayReturnTypeMandatory(discoveredMethod.isArrayReturnTypeMandatory())
+                .originalArrayType(isArrayReturnType ? discoveredMethod.originalArrayType() : null)
+                .build();
 
         if (format != null && format.length == 3) {
             fd.format(new String[] {format[1], format[2] });

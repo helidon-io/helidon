@@ -35,7 +35,7 @@ class SchemaDirectiveTest {
     
     @Test
     public void testConstructors() {
-        SchemaDirective schemaDirective = new SchemaDirective("auth");
+        SchemaDirective schemaDirective = SchemaDirective.builder().name("auth").build();
         assertThat(schemaDirective.name(), is("auth"));
         assertThat(schemaDirective.arguments().size(), is(0));
         assertThat(schemaDirective.locations().size(), is(0));
@@ -52,17 +52,20 @@ class SchemaDirectiveTest {
 
     @Test
     public void testDirectiveWith0Argument1Location() {
-        SchemaDirective schemaDirective = new SchemaDirective("directiveName");
-        schemaDirective.addLocation(FIELD_DEFINITION.name());
+        SchemaDirective schemaDirective = SchemaDirective.builder()
+                .name("directiveName")
+                .addLocation(FIELD_DEFINITION.name()).build();
         assertThat(schemaDirective.getSchemaAsString(), is("directive @directiveName on " + FIELD_DEFINITION.name()));
     }
 
     @Test
     public void testDirectiveWith1Argument1Location() {
         SchemaArgument arg = new SchemaArgument("name", "String", true, null, STRING);
-        SchemaDirective schemaDirective = new SchemaDirective("directiveName");
-        schemaDirective.addArgument(arg);
-        schemaDirective.addLocation(FIELD_DEFINITION.name());
+        SchemaDirective schemaDirective = SchemaDirective.builder()
+                .name("directiveName")
+                .addArgument(arg)
+                .addLocation(FIELD_DEFINITION.name())
+                .build();
         assertThat(schemaDirective.getSchemaAsString(), is("directive @directiveName(name: String!) on " + FIELD_DEFINITION.name()));
     }
 
@@ -70,10 +73,12 @@ class SchemaDirectiveTest {
     public void testDirectiveWith2Argument1Location() {
         SchemaArgument arg1 = new SchemaArgument("name", "String", true, null, STRING);
         SchemaArgument arg2 = new SchemaArgument("name1", "Int", false, null, INTEGER);
-        SchemaDirective schemaDirective = new SchemaDirective("directiveName");
-        schemaDirective.addArgument(arg1);
-        schemaDirective.addArgument(arg2);
-        schemaDirective.addLocation(FIELD_DEFINITION.name());
+        SchemaDirective schemaDirective = SchemaDirective.builder()
+                .name("directiveName")
+                .addArgument(arg1)
+                .addArgument(arg2)
+                .addLocation(FIELD_DEFINITION.name())
+                .build();
         assertThat(schemaDirective.getSchemaAsString(),
                    is("directive @directiveName(name: String!, name1: Int) on " + FIELD_DEFINITION.name()));
     }
@@ -82,31 +87,38 @@ class SchemaDirectiveTest {
     public void testDirectiveWith2Argument2Location() {
         SchemaArgument arg1 = new SchemaArgument("name", "String", true, null, STRING);
         SchemaArgument arg2 = new SchemaArgument("name1", "Int", false, null,INTEGER);
-        SchemaDirective schemaDirective = new SchemaDirective("directiveName");
-        schemaDirective.addArgument(arg1);
-        schemaDirective.addArgument(arg2);
-        schemaDirective.addLocation(FIELD_DEFINITION.name());
-        schemaDirective.addLocation(FIELD.name());
+        SchemaDirective schemaDirective = SchemaDirective.builder()
+                .name("directiveName")
+                .addArgument(arg1)
+                .addArgument(arg2)
+                .addLocation(FIELD_DEFINITION.name())
+                .addLocation(FIELD.name())
+                .build();
+
         assertThat(schemaDirective.getSchemaAsString(),
                    is("directive @directiveName(name: String!, name1: Int) on " + FIELD_DEFINITION.name() + "|" + FIELD.name()));
     }
 
     @Test
     public void testDirectiveWith0Argument2Location() {
-        SchemaDirective schemaDirective = new SchemaDirective("directiveName");
-        schemaDirective.addLocation(FIELD_DEFINITION.name());
-        schemaDirective.addLocation(FIELD.name());
+        SchemaDirective schemaDirective = SchemaDirective.builder()
+                .name("directiveName")
+                .addLocation(FIELD_DEFINITION.name())
+                .addLocation(FIELD.name())
+                .build();
+        
         assertThat(schemaDirective.getSchemaAsString(),
                    is("directive @directiveName on " + FIELD_DEFINITION.name() + "|" + FIELD.name()));
     }
 
     @Test
-
     public void testDirectiveWith0Argument3Location() {
-        SchemaDirective schemaDirective = new SchemaDirective("directiveName");
-        schemaDirective.addLocation(FIELD_DEFINITION.name());
-        schemaDirective.addLocation(FIELD.name());
-        schemaDirective.addLocation(QUERY.name());
+        SchemaDirective schemaDirective = SchemaDirective.builder()
+                .name("directiveName")
+                .addLocation(FIELD_DEFINITION.name())
+                .addLocation(FIELD.name())
+                .addLocation(QUERY.name())
+                .build();
         assertThat(schemaDirective.getSchemaAsString(),
                    is("directive @directiveName on " + FIELD_DEFINITION.name() + "|" + FIELD.name() + "|" + QUERY.name()));
     }
