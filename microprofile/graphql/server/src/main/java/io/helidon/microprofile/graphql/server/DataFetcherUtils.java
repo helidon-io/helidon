@@ -364,6 +364,7 @@ public class DataFetcherUtils {
                 return result;
             }
         } catch (Exception e) {
+            // this exception will get caught by GraphQL and packaged up
             throw new RuntimeException(e);
         }
         return null;

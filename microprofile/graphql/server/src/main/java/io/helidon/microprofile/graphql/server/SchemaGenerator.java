@@ -88,8 +88,8 @@ import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ID;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.STRING;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.TIME_SCALAR;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.checkScalars;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ensureConfigurationException;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ensureFormat;
-import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ensureRuntimeException;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ensureValidName;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getAnnotationValue;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getArrayLevels;
@@ -251,13 +251,13 @@ public class SchemaGenerator {
                 Input inputAnnotation = clazz.getAnnotation(Input.class);
 
                 if (typeAnnotation != null && inputAnnotation != null) {
-                    ensureRuntimeException(LOGGER, "Class " + clazz.getName() + " has been annotated with"
+                    ensureConfigurationException(LOGGER, "Class " + clazz.getName() + " has been annotated with"
                             + " both Type and Input");
                 }
 
                 if (typeAnnotation != null || interfaceAnnotation != null) {
                     if (interfaceAnnotation != null && !clazz.isInterface()) {
-                        ensureRuntimeException(LOGGER, "Class " + clazz.getName() + " has been annotated with"
+                        ensureConfigurationException(LOGGER, "Class " + clazz.getName() + " has been annotated with"
                                 + " @Interface but is not one");
                     }
 
@@ -476,7 +476,7 @@ public class SchemaGenerator {
                     updateLongTypes(schema, returnType, simpleName);
                 }
             } catch (Exception e) {
-                ensureRuntimeException(LOGGER, "Cannot get GraphQL type for " + returnType, e);
+                ensureConfigurationException(LOGGER, "Cannot get GraphQL type for " + returnType, e);
             }
         }
     }
@@ -922,7 +922,7 @@ public class SchemaGenerator {
             boolean isMutation = m.getAnnotation(Mutation.class) != null;
             boolean hasSourceAnnotation = Arrays.stream(m.getParameters()).anyMatch(p -> p.getAnnotation(Source.class) != null);
             if (isMutation && isQuery) {
-                ensureRuntimeException(LOGGER, "The class " + clazz.getName()
+                ensureConfigurationException(LOGGER, "The class " + clazz.getName()
                         + " may not have both a Query and Mutation annotation");
             }
             if (isQuery || isMutation || hasSourceAnnotation) {
@@ -930,7 +930,7 @@ public class SchemaGenerator {
                 discoveredMethod.setMethodType(isQuery || hasSourceAnnotation ? QUERY_TYPE : MUTATION_TYPE);
                 String name = discoveredMethod.getName();
                 if (mapDiscoveredMethods.containsKey(name)) {
-                    ensureRuntimeException(LOGGER, "A method named " + name + " already exists on "
+                    ensureConfigurationException(LOGGER, "A method named " + name + " already exists on "
                             + "the " + (isMutation ? "mutation" : "query")
                             + " " + discoveredMethod.getMethod().getName());
                 }
@@ -1181,7 +1181,7 @@ public class SchemaGenerator {
      */
     private void ensureNonVoidQueryOrMutation(String returnClazzName, Method method, Class<?> clazz) {
         if ("void".equals(returnClazzName)) {
-            ensureRuntimeException(LOGGER, "void is not a valid return type for a Query or Mutation method "
+            ensureConfigurationException(LOGGER, "void is not a valid return type for a Query or Mutation method "
                     + method.getName() + " on class " + clazz.getName());
         }
     }
@@ -1319,7 +1319,7 @@ public class SchemaGenerator {
      */
     private static void validateIDClass(Class<?> returnClazz) {
         if (!isValidIDType(returnClazz)) {
-            ensureRuntimeException(LOGGER, "A class of type " + returnClazz + " is not allowed to be an @Id");
+            ensureConfigurationException(LOGGER, "A class of type " + returnClazz + " is not allowed to be an @Id");
         }
     }
 

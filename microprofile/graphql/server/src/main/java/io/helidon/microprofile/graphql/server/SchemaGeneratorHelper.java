@@ -16,6 +16,8 @@
 
 package io.helidon.microprofile.graphql.server;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.AnnotatedParameterizedType;
@@ -218,7 +220,7 @@ public final class SchemaGeneratorHelper {
      */
     public static final String TIME_SCALAR = "Time";
 
-     /**
+    /**
      * Defines a {@link BigDecimal} type.
      */
     static final String BIG_DECIMAL = "BigDecimal";
@@ -326,7 +328,6 @@ public final class SchemaGeneratorHelper {
         add("boolean");
         add("java.lang.Boolean");
     }};
-
 
     /**
      * List of types that should map to a GraphQL String.
@@ -497,6 +498,7 @@ public final class SchemaGeneratorHelper {
                 || FORMATTED_ZONED_DATETIME_SCALAR.equals(scalarName)
                 || FORMATTED_DATETIME_SCALAR.equals(scalarName);
     }
+
     /**
      * Return true if the type type is a native GraphQLType.
      *
@@ -741,8 +743,9 @@ public final class SchemaGeneratorHelper {
 
     /**
      * Return the array of {@link Annotation}s on a {@link Parameter} that are parameterized types.
-     * @param field  {@link Field} to introspect
-     * @param index  index of type generic type. 0 = List/Collection 1 = Map
+     *
+     * @param field {@link Field} to introspect
+     * @param index index of type generic type. 0 = List/Collection 1 = Map
      * @return the array of {@link Annotation}s on a {@link Parameter}
      */
     protected static Annotation[] getFieldAnnotations(Field field, int index) {
@@ -755,7 +758,8 @@ public final class SchemaGeneratorHelper {
 
     /**
      * Return the array of {@link Annotation}s on a {@link Method} that are parameterized types.
-     * @param method  {@link Method} to introspect
+     *
+     * @param method {@link Method} to introspect
      * @param index  index of type generic type. 0 = List/Collection 1 = Map
      * @return the array of {@link Annotation}s on a {@link Parameter}
      */
@@ -769,8 +773,9 @@ public final class SchemaGeneratorHelper {
 
     /**
      * Return the array of {@link Annotation}s on a {@link Parameter} that are parameterized types.
-     * @param parameter   {@link Parameter} to introspect
-     * @param index       index of type generic type. 0 = List/Collection 1 = Map
+     *
+     * @param parameter {@link Parameter} to introspect
+     * @param index     index of type generic type. 0 = List/Collection 1 = Map
      * @return the array of {@link Annotation}s on a {@link Parameter}
      */
     protected static Annotation[] getParameterAnnotations(Parameter parameter, int index) {
@@ -784,9 +789,10 @@ public final class SchemaGeneratorHelper {
 
     /**
      * Returns the annotations from the given {@link AnnotatedParameterizedType}.
+     *
      * @param apt   {@link AnnotatedParameterizedType}
-     * @param index  index of type generic type. 0 = List/Collection 1 = Map
-     * @return  the annotations from the given {@link AnnotatedParameterizedType}
+     * @param index index of type generic type. 0 = List/Collection 1 = Map
+     * @return the annotations from the given {@link AnnotatedParameterizedType}
      */
     private static Annotation[] getAnnotationsFromType(AnnotatedParameterizedType apt, int index) {
         if (apt != null) {
@@ -807,8 +813,9 @@ public final class SchemaGeneratorHelper {
 
     /**
      * Return the annotation that matches the type.
+     *
      * @param annotations array of {@link Annotation}s to search
-     * @param type the {@link Type} to find
+     * @param type        the {@link Type} to find
      * @return the annotation that matches the type
      */
     protected static Annotation getAnnotationValue(Annotation[] annotations, java.lang.reflect.Type type) {
@@ -864,13 +871,14 @@ public final class SchemaGeneratorHelper {
 
     /**
      * Ensure the provided name is a valid GraphQL name.
+     *
      * @param logger {@link Logger} to log to
-     * @param name to validate
+     * @param name   to validate
      */
     protected static void ensureValidName(Logger logger, String name) {
         if (name != null && !isValidGraphQLName(name)) {
-            ensureRuntimeException(LOGGER, "The name '" + name + "' is not a valid "
-                                   + "GraphQL name and cannot be used.");
+            ensureConfigurationException(LOGGER, "The name '" + name + "' is not a valid "
+                    + "GraphQL name and cannot be used.");
         }
     }
 
@@ -1019,8 +1027,7 @@ public final class SchemaGeneratorHelper {
     }
 
     /**
-     * Validates that a name is valid according to the graphql spec at.
-     * Ref: http://spec.graphql.org/June2018/#sec-Names
+     * Validates that a name is valid according to the graphql spec at. Ref: http://spec.graphql.org/June2018/#sec-Names
      *
      * @param name name to validate
      * @return true if the name is valid
@@ -1030,27 +1037,63 @@ public final class SchemaGeneratorHelper {
     }
 
     /**
-     * Ensures a {@link RuntimeException} with the message suppleid is thrown and logged.
+     * Ensures a {@link RuntimeException} with the message supplied is thrown and logged.
      *
      * @param message message to throw
      * @param logger  the {@link Logger} to use
      */
     protected static void ensureRuntimeException(Logger logger, String message) {
-         ensureRuntimeException(logger, message, null);
+        ensureRuntimeException(logger, message, null);
     }
 
     /**
-     * Ensures a {@link RuntimeException} with the message suppleid is thrown and logged.
+     * Ensures a {@link RuntimeException} with the message supplied is thrown and logged.
      *
      * @param message message to throw
      * @param cause   cause of the erro
      * @param logger  the {@link Logger} to use
      */
     protected static void ensureRuntimeException(Logger logger, String message, Throwable cause) {
-         logger.warning(message);
-         if (cause != null) {
-             cause.printStackTrace();
-         }
-         throw new RuntimeException(message, cause);
+        logger.warning(message);
+        if (cause != null) {
+            logger.warning(getStackTrace(cause));
+        }
+        throw new RuntimeException(message, cause);
+    }
+
+    /**
+     * Ensures a {@link GraphQLConfigurationException} with the message suppleid is thrown and logged.
+     *
+     * @param message message to throw
+     * @param logger  the {@link Logger} to use
+     */
+    protected static void ensureConfigurationException(Logger logger, String message) {
+        ensureConfigurationException(logger, message, null);
+    }
+
+    /**
+     * Ensures a {@link GraphQLConfigurationException} with the message supplied is thrown and logged.
+     *
+     * @param message message to throw
+     * @param cause   cause of the erro
+     * @param logger  the {@link Logger} to use
+     */
+    protected static void ensureConfigurationException(Logger logger, String message, Throwable cause) {
+        logger.warning(message);
+        if (cause != null) {
+            logger.warning(getStackTrace(cause));
+        }
+        throw new GraphQLConfigurationException(message, cause);
+    }
+
+    /**
+     * Returns the stacktrace of the given {@link Throwable}.
+     * @param throwable {@link Throwable} to get stack tracek for
+     * @return the stacktrace of the given {@link Throwable}
+     */
+    protected static String getStackTrace(Throwable throwable) {
+        StringWriter stack = new StringWriter();
+        throwable.printStackTrace(new PrintWriter(stack));
+        return stack.toString();
     }
 }
