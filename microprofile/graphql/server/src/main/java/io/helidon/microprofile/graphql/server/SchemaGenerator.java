@@ -222,7 +222,7 @@ public class SchemaGenerator {
      *
      * @param clazzes array of classes to check
      * @return a {@link Schema}
-     * 
+     *
      * @throws IntrospectionException if any errors with introspection
      * @throws ClassNotFoundException if any classes are not found
      */
@@ -910,7 +910,7 @@ public class SchemaGenerator {
      *
      * @param clazz Class to introspect
      * @return a {@link Map} of the methods and return types
-     * 
+     *
      * @throws IntrospectionException if any errors with introspection
      * @throws ClassNotFoundException if any classes are not found
      */
@@ -984,7 +984,7 @@ public class SchemaGenerator {
      *
      * @param clazz the {@link Class} to introspect
      * @return all {@link Method}s for a given {@link Class}
-     * 
+     *
      * @throws IntrospectionException if any errors with introspection
      */
     protected List<Method> getAllMethods(Class<?> clazz) throws IntrospectionException {
@@ -1038,10 +1038,7 @@ public class SchemaGenerator {
 
         Class<?> returnClazz = method.getReturnType();
         String returnClazzName = returnClazz.getName();
-        if ("void".equals(returnClazzName)) {
-            ensureRuntimeException(LOGGER, "void is not a valid return type for a Query or Mutation method "
-                    + method.getName() + " on class " + clazz.getName());
-        }
+        ensureNonVoidQueryOrMutation(returnClazzName, method, clazz);
 
         if (pd != null) {
             boolean fieldHasIdAnnotation = false;
@@ -1177,6 +1174,19 @@ public class SchemaGenerator {
     }
 
     /**
+     * Ensure that the query or mutation does not return void.
+     * @param returnClazzName  return class name
+     * @param method  {@link Method} being processed
+     * @param clazz   {@link Class} being processed
+     */
+    private void ensureNonVoidQueryOrMutation(String returnClazzName, Method method, Class<?> clazz) {
+        if ("void".equals(returnClazzName)) {
+            ensureRuntimeException(LOGGER, "void is not a valid return type for a Query or Mutation method "
+                    + method.getName() + " on class " + clazz.getName());
+        }
+    }
+
+    /**
      * Process the {@link ReturnType} and update {@link DiscoveredMethod} as required.
      * @param discoveredMethod  {@link DiscoveredMethod}
      * @param realReturnType    {@link ReturnType} with details of the return types
@@ -1184,7 +1194,7 @@ public class SchemaGenerator {
      * @param isInputType       indicates if the method is part of an input type
      * @param varName           name of the variable
      * @param method            {@link Method} being processed
-     *                                        
+     *
      * @throws ClassNotFoundException if any class not found
      */
     private void processReturnType(DiscoveredMethod discoveredMethod, ReturnType realReturnType,
