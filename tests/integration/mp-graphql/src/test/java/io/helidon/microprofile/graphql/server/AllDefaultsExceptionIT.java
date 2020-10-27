@@ -43,7 +43,7 @@ public class AllDefaultsExceptionIT extends AbstractGraphQLIT {
         ExecutionContext executionContext = new ExecutionContext(defaultContext);
         assertThat(executionContext, is(notNullValue()));
         assertThat(executionContext.getDefaultErrorMessage(), is("Server Error"));
-        assertThat(executionContext.getExceptionBlacklist().size(), is(0));
-        assertThat(executionContext.getExceptionWhitelist().size(), is(0));
+        assertThat(executionContext.getExceptionDenyList().size(), is(0));
+        assertThat(executionContext.getExceptionAllowList().size(), is(0));
     }
 }

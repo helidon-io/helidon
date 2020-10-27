@@ -47,11 +47,11 @@ public class BLListAndWLExceptionIT extends AbstractGraphQLIT {
 
         ExecutionContext executionContext = new ExecutionContext(defaultContext);
         assertThat(executionContext.getDefaultErrorMessage(), is("Server Error"));
-        assertThat(executionContext.getExceptionBlacklist().size(), is(2));
-        assertThat(executionContext.getExceptionWhitelist().size(), is(1));
-        assertThat(executionContext.getExceptionBlacklist().contains("java.io.IOException"), is(true));
-        assertThat(executionContext.getExceptionBlacklist().contains("java.util.concurrent.TimeoutException"), is(true));
-        assertThat(executionContext.getExceptionWhitelist()
+        assertThat(executionContext.getExceptionDenyList().size(), is(2));
+        assertThat(executionContext.getExceptionAllowList().size(), is(1));
+        assertThat(executionContext.getExceptionDenyList().contains("java.io.IOException"), is(true));
+        assertThat(executionContext.getExceptionDenyList().contains("java.util.concurrent.TimeoutException"), is(true));
+        assertThat(executionContext.getExceptionAllowList()
                            .contains("org.eclipse.microprofile.graphql.tck.apps.superhero.api.WeaknessNotFoundException"),
                    is(true));
     }

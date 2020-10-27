@@ -40,13 +40,13 @@ import java.util.TreeSet;
 import java.util.UUID;
 import java.util.logging.Logger;
 
-import graphql.schema.PropertyDataFetcherHelper;
 import javax.enterprise.inject.spi.CDI;
 
 import graphql.GraphQLException;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.PropertyDataFetcher;
+import graphql.schema.PropertyDataFetcherHelper;
 
 import static io.helidon.microprofile.graphql.server.FormattingHelper.formatDate;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.formatNumber;
@@ -173,7 +173,6 @@ public class DataFetcherUtils {
         };
     }
 
-
     /**
      * Generate an argument value with the given information. This may be called recursively.
      *
@@ -184,7 +183,7 @@ public class DataFetcherUtils {
      * @param rawValue  raw value of the argument
      * @param format argument format
      * @return the argument value
-     * @throws Exception
+     * @throws Exception if any errors
      */
     @SuppressWarnings({"unchecked", "rawtypes" })
     protected static Object generateArgumentValue(Schema schema, String argumentType, Class<?> originalType,
@@ -378,6 +377,7 @@ public class DataFetcherUtils {
      * @param rawValue the raw value
      * @param format format
      * @return the parsed value or the original value if no change
+     * @throws Exception if any errors
      */
     @SuppressWarnings({ "rawtypes", "unchecked" })
     protected static Object parseArgumentValue(Class<?> originalType, String argumentType, Object rawValue, String[] format)
@@ -463,7 +463,7 @@ public class DataFetcherUtils {
     /**
      * An implementation of a {@link PropertyDataFetcher} which returns a formatted date.
      */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings({ "rawtypes" })
     public static class DateFormattingDataFetcher extends PropertyDataFetcher {
 
         /**
@@ -519,7 +519,7 @@ public class DataFetcherUtils {
     private static Object getOriginalValue(Class<?> originalType, Object key) {
         Number numberKey = null;
         if (key instanceof Number) {
-            // is a number that has be un-formatted
+            // is a number that has been un-formatted
             numberKey = (Number) key;
         } else if (key instanceof String && originalType.isAssignableFrom(Number.class)) {
             // Is a number that has had no format
@@ -550,8 +550,7 @@ public class DataFetcherUtils {
                   : key;
         }
         if (originalType.equals(Float.class) || originalType.equals(float.class)) {
-            // key could be a float or double
-            return key instanceof Double ? Float.valueOf(key.toString()) : (Float) key;
+            return (Float) key;
         } else if (originalType.equals(Long.class) || originalType.equals(long.class)) {
             // key could be BigInteger or long
             return Long.valueOf(key.toString());

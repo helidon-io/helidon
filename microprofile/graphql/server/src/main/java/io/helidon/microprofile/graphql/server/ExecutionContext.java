@@ -100,17 +100,17 @@ public class ExecutionContext {
     /**
      * Config parts for default error message.
      */
-    protected static final String[] MESSAGE_PARTS = ConfigKey.DEFAULT_ERROR_MESSAGE.split("\\.");
+    static final String[] MESSAGE_PARTS = ConfigKey.DEFAULT_ERROR_MESSAGE.split("\\.");
 
     /**
-     * Config parts for whitelist.
+     * Config parts for allow parts.
      */
-    protected static final String[] WHITELIST_PARTS = ConfigKey.EXCEPTION_WHITE_LIST.split("\\.");
+    static final String[] ALLOW_PARTS = ConfigKey.EXCEPTION_WHITE_LIST.split("\\.");
 
     /**
-     * Config parts for blacklist.
+     * Config parts for deny list.
      */
-    protected static final String[] BLACKLIST_PARTS = ConfigKey.EXCEPTION_BLACK_LIST.split("\\.");
+    static final String[] DENY_PARTS = ConfigKey.EXCEPTION_BLACK_LIST.split("\\.");
 
     /**
      * Logger.
@@ -148,14 +148,14 @@ public class ExecutionContext {
     private String defaultErrorMessage;
 
     /**
-     * List of blacklisted exceptions to hide.
+     * List of deny list of exceptions to hide.
      */
-    private final List<String> exceptionBlacklist = new ArrayList<>();
+    private final List<String> exceptionDenyList = new ArrayList<>();
 
     /**
-     * List of whitelisted exceptions to allow through.
+     * List of allow list exceptions to allow through.
      */
-    private final List<String> exceptionWhitelist = new ArrayList<>();
+    private final List<String> exceptionAllowList = new ArrayList<>();
 
     /**
      * Configuration.
@@ -227,28 +227,28 @@ public class ExecutionContext {
                 .get(MESSAGE_PARTS[2])
                 .asString().orElse("Server Error");
 
-        String whitelist = config.get(WHITELIST_PARTS[0])
-                .get(WHITELIST_PARTS[1])
-                .get(WHITELIST_PARTS[2])
+        String allowList = config.get(ALLOW_PARTS[0])
+                .get(ALLOW_PARTS[1])
+                .get(ALLOW_PARTS[2])
                 .asString().orElse(EMPTY);
-        String blacklist = config.get(BLACKLIST_PARTS[0])
-                .get(BLACKLIST_PARTS[1])
-                .get(BLACKLIST_PARTS[2])
+        String denyList = config.get(DENY_PARTS[0])
+                .get(DENY_PARTS[1])
+                .get(DENY_PARTS[2])
                 .asString().orElse(EMPTY);
 
-        if (!EMPTY.equals(whitelist)) {
-            exceptionWhitelist.addAll(Arrays.asList(whitelist.split(",")));
+        if (!EMPTY.equals(allowList)) {
+            exceptionAllowList.addAll(Arrays.asList(allowList.split(",")));
         }
 
-        if (!EMPTY.equals(blacklist)) {
-            exceptionBlacklist.addAll(Arrays.asList(blacklist.split(",")));
+        if (!EMPTY.equals(denyList)) {
+            exceptionDenyList.addAll(Arrays.asList(denyList.split(",")));
         }
     }
 
     /**
      * Return a new {@link DefaultContext}.
      *
-     * @return a new {@link DefaultContext
+     * @return a new {@link DefaultContext}
      */
     public static Context getDefaultContext() {
         return new DefaultContext();
@@ -283,7 +283,6 @@ public class ExecutionContext {
      * @param mapVariables  the map of variables to pass through
      * @return the {@link Map} containing the execution result
      */
-    @SuppressWarnings({"unchecked", "rawtypes"})
     public Map<String, Object> execute(String query, String operationName, Map<String, Object> mapVariables) {
         try {
             ExecutionInput executionInput = newExecutionInput()
@@ -350,6 +349,14 @@ public class ExecutionContext {
         }
     }
 
+    /**
+     * Process a given error.
+     * @param mapErrors  the {@link Map} of errors to update
+     * @param cause      cause of the error
+     * @param result     {@link ExecutionResult}
+     * @param error      {@link GraphQLError} - may be null
+     * @param originalMessage original message
+     */
     @SuppressWarnings("unchecked")
     private void processError(Map<String, Object> mapErrors, Throwable cause, ExecutionResult result, GraphQLError error,
                               String originalMessage) {
@@ -393,8 +400,8 @@ public class ExecutionContext {
         Class<?> exceptionClazz = throwable.getClass();
 
         // loop through each exception in the allow list and check if
-        // the exception on the whitelist or a subclass of an exception on the blacklist
-        for (String exception : exceptionWhitelist) {
+        // the exception on the whitelist or a subclass of an exception on the deny list
+        for (String exception : exceptionAllowList) {
             Class<?> clazz = getSafeClass(exception);
             if (clazz != null && (exceptionClazz.equals(clazz) || clazz.isAssignableFrom(exceptionClazz))) {
                 return throwable.getMessage();
@@ -413,9 +420,9 @@ public class ExecutionContext {
     protected String getCheckedMessage(Throwable throwable) {
         Class<?> exceptionClazz = throwable.getClass();
 
-        // loop through each exception in the blacklist and check if
+        // loop through each exception in the deny list and check if
         // the exception on the deny list or a subclass of an exception on the deny list
-        for (String exception : exceptionBlacklist) {
+        for (String exception : exceptionDenyList) {
             Class<?> clazz = getSafeClass(exception);
             if (clazz != null && (exceptionClazz.equals(clazz) || clazz.isAssignableFrom(exceptionClazz))) {
                 return defaultErrorMessage;
@@ -435,21 +442,21 @@ public class ExecutionContext {
     }
 
     /**
-     * Return the list blacklisted exceptions to hide.
+     * Return the list deny list of exceptions to hide.
      *
-     * @return the list blacklisted exceptions to hide
+     * @return the list deny list exceptions to hide
      */
-    public List<String> getExceptionBlacklist() {
-        return exceptionBlacklist;
+    public List<String> getExceptionDenyList() {
+        return exceptionDenyList;
     }
 
     /**
-     * Return the list of whitelisted exceptions to allow through.
+     * Return the list of allow list exceptions to allow through.
      *
-     * @return the list of whitelisted exceptions to allow through
+     * @return the list of allow list exceptions to allow through
      */
-    public List<String> getExceptionWhitelist() {
-        return exceptionWhitelist;
+    public List<String> getExceptionAllowList() {
+        return exceptionAllowList;
     }
 
     /**

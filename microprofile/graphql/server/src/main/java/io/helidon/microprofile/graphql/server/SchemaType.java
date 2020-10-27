@@ -81,7 +81,6 @@ public class SchemaType extends AbstractDescriptiveElement implements ElementGen
 
         listSchemaFieldDefinitions.forEach(fd -> sb.append(fd.getSchemaAsString()).append(NEWLINE));
 
-        // for each
         sb.append(CLOSE_CURLY).append(NEWLINE);
 
         return sb.toString();

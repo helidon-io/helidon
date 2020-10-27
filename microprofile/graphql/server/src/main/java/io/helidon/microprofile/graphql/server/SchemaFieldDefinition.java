@@ -260,7 +260,12 @@ public class SchemaFieldDefinition extends AbstractDescriptiveElement implements
      * @return the format for a number or date
      */
     public String[] getFormat() {
-        return format;
+        if (format == null) {
+            return null;
+        }
+        String[] copy = new String[format.length];
+        System.arraycopy(format, 0, copy, 0, copy.length);
+        return copy;
     }
 
     /**
@@ -269,7 +274,12 @@ public class SchemaFieldDefinition extends AbstractDescriptiveElement implements
      * @param format the format for a number or date
      */
     public void setFormat(String[] format) {
-        this.format = format;
+        if (format == null) {
+            this.format = null;
+        } else {
+            this.format = new String[format.length];
+            System.arraycopy(format, 0, this.format, 0, this.format.length);
+        }
     }
 
     /**

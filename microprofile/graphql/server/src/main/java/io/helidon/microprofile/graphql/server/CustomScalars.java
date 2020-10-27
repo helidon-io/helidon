@@ -402,7 +402,7 @@ public class CustomScalars {
         private final Coercing originalCoercing;
 
         /**
-         * Construct a {@Link NumberCoercing} from an original {@link Coercing}.
+         * Construct a {@link NumberCoercing} from an original {@link Coercing}.
          *
          * @param originalCoercing original {@link Coercing}
          */

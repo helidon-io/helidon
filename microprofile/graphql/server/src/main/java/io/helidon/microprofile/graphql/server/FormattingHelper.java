@@ -93,7 +93,7 @@ public class FormattingHelper {
     /**
      * Indicates no formatting applied.
      */
-    protected static final String[] NO_FORMATTING = new String[] {null, null, null };
+    static final String[] NO_FORMATTING = new String[] {null, null, null };
 
     /**
      * JsonbDateFormat class name.

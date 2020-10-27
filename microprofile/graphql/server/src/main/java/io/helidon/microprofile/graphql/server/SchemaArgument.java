@@ -215,7 +215,12 @@ public class SchemaArgument extends AbstractDescriptiveElement implements Elemen
      * @return the format for a number or date
      */
     public String[] getFormat() {
-        return format;
+        if (format == null) {
+            return null;
+        }
+        String[] copy = new String[format.length];
+        System.arraycopy(format, 0, copy, 0, copy.length);
+        return copy;
     }
 
     /**
@@ -224,7 +229,12 @@ public class SchemaArgument extends AbstractDescriptiveElement implements Elemen
      * @param format the format for a number or date
      */
     public void setFormat(String[] format) {
-        this.format = format;
+        if (format == null) {
+            this.format = null;
+        } else {
+            this.format = new String[format.length];
+            System.arraycopy(format, 0, this.format, 0, this.format.length);
+        }
     }
 
     /**
@@ -330,7 +340,7 @@ public class SchemaArgument extends AbstractDescriptiveElement implements Elemen
                 && Objects.equals(argumentName, schemaArgument.argumentName)
                 && Objects.equals(argumentType, schemaArgument.argumentType)
                 && Objects.equals(originalType, schemaArgument.originalType)
-                && Objects.equals(format, schemaArgument.format)
+                && Arrays.equals(format, schemaArgument.format)
                 && Objects.equals(sourceArgument, schemaArgument.sourceArgument)
                 && Objects.equals(originalArrayType, schemaArgument.originalArrayType)
                 && Objects.equals(getDescription(), schemaArgument.getDescription())

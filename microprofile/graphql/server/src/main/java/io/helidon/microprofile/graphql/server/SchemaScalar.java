@@ -106,9 +106,7 @@ public class SchemaScalar implements ElementGenerator {
 
     @Override
     public String getSchemaAsString() {
-        return new StringBuilder("scalar ")
-                .append(getName())
-                .toString();
+        return "scalar " + getName();
     }
 
     @Override

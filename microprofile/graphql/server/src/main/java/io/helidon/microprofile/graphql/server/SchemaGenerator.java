@@ -187,6 +187,8 @@ public class SchemaGenerator {
      * Generate a {@link Schema} by scanning all discovered classes using the {@link GraphQLCdiExtension}.
      *
      * @return a {@link Schema}
+     * @throws IntrospectionException if any errors with introspection
+     * @throws ClassNotFoundException if any classes are not found
      */
     @SuppressWarnings("rawtypes")
     public Schema generateSchema() throws IntrospectionException, ClassNotFoundException {
@@ -220,6 +222,9 @@ public class SchemaGenerator {
      *
      * @param clazzes array of classes to check
      * @return a {@link Schema}
+     * 
+     * @throws IntrospectionException if any errors with introspection
+     * @throws ClassNotFoundException if any classes are not found
      */
     protected Schema generateSchemaFromClasses(Class<?>... clazzes)
             throws IntrospectionException, ClassNotFoundException {
@@ -905,7 +910,9 @@ public class SchemaGenerator {
      *
      * @param clazz Class to introspect
      * @return a {@link Map} of the methods and return types
-     * @throws IntrospectionException if there were errors introspecting classes
+     * 
+     * @throws IntrospectionException if any errors with introspection
+     * @throws ClassNotFoundException if any classes are not found
      */
     protected Map<String, DiscoveredMethod> retrieveAllAnnotatedBeanMethods(Class<?> clazz)
             throws IntrospectionException, ClassNotFoundException {
@@ -977,7 +984,8 @@ public class SchemaGenerator {
      *
      * @param clazz the {@link Class} to introspect
      * @return all {@link Method}s for a given {@link Class}
-     * @throws IntrospectionException
+     * 
+     * @throws IntrospectionException if any errors with introspection
      */
     protected List<Method> getAllMethods(Class<?> clazz) throws IntrospectionException {
         return Arrays.asList(Introspector.getBeanInfo(clazz).getMethodDescriptors())
@@ -1278,7 +1286,7 @@ public class SchemaGenerator {
                     SchemaScalar dateScalar = getScalar(returnType.getReturnClass());
                     if (dateScalar != null && isDateTimeScalar(dateScalar.getName())) {
                         // only set the original array type if it's a date/time
-                        //   discoveredMethod.setOriginalArrayType(Class.forName(returnType.returnClass));
+                        discoveredMethod.setOriginalArrayType(getSafeClass(returnType.returnClass));
                     }
                     argument.setArrayReturnTypeMandatory(returnType.isReturnTypeMandatory);
                     argument.setArrayReturnType(returnType.isArrayType);
@@ -1760,7 +1768,7 @@ public class SchemaGenerator {
         /**
          * Indicates if the method containing the {@link Source} annotation was also annotated with the {@link Query} annotation.
          *
-         * @return true if the {@Link Query} annotation was present
+         * @return true if the {@link Query} annotation was present
          */
         public boolean isQueryAnnotated() {
             return isQueryAnnotated;
@@ -1769,7 +1777,7 @@ public class SchemaGenerator {
         /**
          * Set if the method containing the {@link Source} annotation was * also annotated with the {@link Query} annotation.
          *
-         * @param queryAnnotated true if the {@Link Query} annotation was present
+         * @param queryAnnotated true if the {@link Query} annotation was present
          */
         public void setQueryAnnotated(boolean queryAnnotated) {
             isQueryAnnotated = queryAnnotated;
@@ -1781,7 +1789,12 @@ public class SchemaGenerator {
          * @return the format for a number or date
          */
         public String[] getFormat() {
-            return format;
+            if (format == null) {
+                return null;
+            }
+            String[] copy = new String[format.length];
+            System.arraycopy(format, 0, copy, 0, copy.length);
+            return copy;
         }
 
         /**
@@ -1790,7 +1803,12 @@ public class SchemaGenerator {
          * @param format the format for a number or date
          */
         public void setFormat(String[] format) {
-            this.format = format;
+            if (format == null) {
+                this.format = null;
+            } else {
+                this.format = new String[format.length];
+                System.arraycopy(format, 0, this.format, 0, this.format.length);
+            }
         }
 
         /**
@@ -2137,7 +2155,12 @@ public class SchemaGenerator {
          * @return the format of the result class
          */
         public String[] getFormat() {
-            return format;
+            if (format == null) {
+                return null;
+            }
+            String[] copy = new String[format.length];
+            System.arraycopy(format, 0, copy, 0, copy.length);
+            return copy;
         }
 
         /**
@@ -2146,7 +2169,12 @@ public class SchemaGenerator {
          * @param format the format of the result class
          */
         public void setFormat(String[] format) {
-            this.format = format;
+            if (format == null) {
+                this.format = null;
+            } else {
+                this.format = new String[format.length];
+                System.arraycopy(format, 0, this.format, 0, this.format.length);
+            }
         }
     }
 
@@ -2187,7 +2215,12 @@ public class SchemaGenerator {
             this.rootTypeName = rootTypeName;
             this.levels = levels;
             this.isArrayReturnTypeMandatory = isArrayReturnTypeMandatory;
-            this.format = format;
+            if (format == null) {
+                this.format = null;
+            } else {
+                this.format = new String[format.length];
+                System.arraycopy(format, 0, this.format, 0, this.format.length);
+            }
         }
 
         /**
@@ -2232,7 +2265,12 @@ public class SchemaGenerator {
          * @return the format of the result class
          */
         public String[] getFormat() {
-            return format;
+            if (format == null) {
+                return null;
+            }
+            String[] copy = new String[format.length];
+            System.arraycopy(format, 0, copy, 0, copy.length);
+            return copy;
         }
     }
 }

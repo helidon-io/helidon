@@ -34,7 +34,7 @@ public class SchemaInputType extends SchemaType {
     @Override
     public void addFieldDefinition(SchemaFieldDefinition schemaFieldDefinition) {
         if (schemaFieldDefinition.getArguments().size() > 0) {
-            throw new IllegalArgumentException("input types cannot have fields with arguments");
+            throw new IllegalArgumentException("Input types cannot have fields with arguments");
         }
         super.addFieldDefinition(schemaFieldDefinition);
     }
