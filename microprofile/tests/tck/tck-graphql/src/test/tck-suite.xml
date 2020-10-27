@@ -20,9 +20,6 @@
         <packages>
             <package name="org.eclipse.microprofile.graphql.tck.*"/>
         </packages>
-<!--        <classes>-->
-<!--            <class name="org.eclipse.microprofile.graphql.tck.dynamic.SchemaDynamicValidityTest"/>-->
-<!--        </classes>-->
     </test>
 
 </suite>

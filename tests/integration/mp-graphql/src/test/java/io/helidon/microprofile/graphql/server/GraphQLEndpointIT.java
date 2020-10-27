@@ -70,8 +70,7 @@ public class GraphQLEndpointIT
     }
 
     @Test
-    public void basicEndpointTests()
-            throws UnsupportedEncodingException {
+    public void basicEndpointTests() {
         // test /graphql endpoint
         WebTarget webTarget = getGraphQLWebTarget().path(GRAPHQL);
         Map<String, Object> mapRequest = generateJsonRequest(QUERY_INTROSPECT, null, null);

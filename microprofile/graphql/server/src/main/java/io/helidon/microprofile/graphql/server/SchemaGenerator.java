@@ -121,29 +121,12 @@ import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.strip
  */
 public class SchemaGenerator {
 
-    /**
-     * Constant "is".
-     */
     protected static final String IS = "is";
 
-    /**
-     * Constant "get".
-     */
     protected static final String GET = "get";
 
-    /**
-     * Constant "set".
-     */
     protected static final String SET = "set";
-
-    /**
-     * Class name for {@link NonNull}.
-     */
-    protected static final String NON_NULL_CLASS = NonNull.class.getName();
-
-    /**
-     * Logger.
-     */
+    
     private static final Logger LOGGER = Logger.getLogger(SchemaGenerator.class.getName());
 
     /**
@@ -1181,8 +1164,8 @@ public class SchemaGenerator {
      */
     private void ensureNonVoidQueryOrMutation(String returnClazzName, Method method, Class<?> clazz) {
         if ("void".equals(returnClazzName)) {
-            ensureConfigurationException(LOGGER, "void is not a valid return type for a Query or Mutation method "
-                    + method.getName() + " on class " + clazz.getName());
+            ensureConfigurationException(LOGGER, "void is not a valid return type for a Query or Mutation method '"
+                    + method.getName() + "' on class " + clazz.getName());
         }
     }
 
