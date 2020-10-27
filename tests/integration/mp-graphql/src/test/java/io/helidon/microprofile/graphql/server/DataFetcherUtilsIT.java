@@ -275,9 +275,9 @@ class DataFetcherUtilsIT extends AbstractGraphQLIT {
                                         String argumentName, Object input, Object expected) throws Exception {
         SchemaArgument argument = getArgument(schema, "Query", fdName, argumentName);
         assertThat(argument, is(notNullValue()));
-        Object result = DataFetcherUtils.generateArgumentValue(schema, argument.getArgumentType(),
-                                                               argument.getOriginalType(), argument.getOriginalArrayType(),
-                                                               input, argument.getFormat());
+        Object result = DataFetcherUtils.generateArgumentValue(schema, argument.argumentType(),
+                                                               argument.originalType(), argument.originalArrayType(),
+                                                               input, argument.format());
 
         if (input instanceof Collection) {
             // compare each value
@@ -299,8 +299,8 @@ class DataFetcherUtilsIT extends AbstractGraphQLIT {
         if (type != null) {
             SchemaFieldDefinition fd = getFieldDefinition(type, fdName);
             if (fd != null) {
-                return fd.getArguments().stream()
-                        .filter(a -> a.getArgumentName().equals(argumentName))
+                return fd.arguments().stream()
+                        .filter(a -> a.argumentName().equals(argumentName))
                         .findFirst()
                         .orElse(null);
             }

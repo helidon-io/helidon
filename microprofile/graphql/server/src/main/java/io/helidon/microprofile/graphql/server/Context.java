@@ -33,7 +33,7 @@ public interface Context {
      *
      * @return the {@link Throwable}
      */
-    Throwable getPartialResultsException();
+    Throwable partialResultsException();
 
     /**
      * Remove partial results {@link Throwable}.

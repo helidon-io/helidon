@@ -48,29 +48,29 @@ public class DescriptionIT extends AbstractGraphQLIT {
         assertThat(schema, is(notNullValue()));
         SchemaType type = schema.getTypeByName("DescriptionType");
         assertThat(type, is(notNullValue()));
-        type.getFieldDefinitions().forEach(fd -> {
-            if (fd.getName().equals("id")) {
-                assertThat(fd.getDescription(), is("this is the description"));
+        type.fieldDefinitions().forEach(fd -> {
+            if (fd.name().equals("id")) {
+                assertThat(fd.description(), is("this is the description"));
             }
-            if (fd.getName().equals("value")) {
-                assertThat(fd.getDescription(), is("description of value"));
+            if (fd.name().equals("value")) {
+                assertThat(fd.description(), is("description of value"));
             }
-            if (fd.getName().equals("longValue1")) {
+            if (fd.name().equals("longValue1")) {
                 // no description so include the format
-                assertThat(fd.getDescription(), is(nullValue()));
-                assertThat(fd.getFormat()[0], is("L-########"));
+                assertThat(fd.description(), is(nullValue()));
+                assertThat(fd.format()[0], is("L-########"));
             }
-            if (fd.getName().equals("longValue2")) {
+            if (fd.name().equals("longValue2")) {
                 // both description and formatting
-                assertThat(fd.getDescription(), is("Description"));
+                assertThat(fd.description(), is("Description"));
             }
         });
 
         SchemaInputType inputType = schema.getInputTypeByName("DescriptionTypeInput");
         assertThat(inputType, is(notNullValue()));
-        inputType.getFieldDefinitions().forEach(fd -> {
-            if (fd.getName().equals("value")) {
-                assertThat(fd.getDescription(), is("description on set for input"));
+        inputType.fieldDefinitions().forEach(fd -> {
+            if (fd.name().equals("value")) {
+                assertThat(fd.description(), is("description on set for input"));
             }
         });
 
@@ -79,9 +79,9 @@ public class DescriptionIT extends AbstractGraphQLIT {
         SchemaFieldDefinition fd = getFieldDefinition(query, "descriptionOnParam");
         assertThat(fd, (is(notNullValue())));
 
-        fd.getArguments().forEach(a -> {
-            if (a.getArgumentName().equals("param1")) {
-                assertThat(a.getDescription(), is("Description for param1"));
+        fd.arguments().forEach(a -> {
+            if (a.argumentName().equals("param1")) {
+                assertThat(a.description(), is("Description for param1"));
             }
         });
     }

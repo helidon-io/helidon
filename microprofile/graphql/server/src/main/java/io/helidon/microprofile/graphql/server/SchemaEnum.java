@@ -47,7 +47,7 @@ public class SchemaEnum extends AbstractDescriptiveElement implements ElementGen
      * Return the name of the {@link SchemaEnum}.
      * @return the name of the {@link SchemaEnum}
      */
-    public String getName() {
+    public String name() {
         return name;
     }
 
@@ -55,7 +55,7 @@ public class SchemaEnum extends AbstractDescriptiveElement implements ElementGen
      * Set the name of the {@link SchemaEnum}.
      * @param name the name of the {@link SchemaEnum}
      */
-    public void setName(String name) {
+    public void name(String name) {
         this.name = name;
     }
 
@@ -63,7 +63,7 @@ public class SchemaEnum extends AbstractDescriptiveElement implements ElementGen
      * Return the values for the {@link SchemaEnum}.
      * @return the values for the {@link SchemaEnum}
      */
-    public List<String> getValues() {
+    public List<String> values() {
         return values;
     }
 
@@ -80,7 +80,7 @@ public class SchemaEnum extends AbstractDescriptiveElement implements ElementGen
         StringBuilder sb = new StringBuilder(getSchemaElementDescription(null))
            .append("enum")
            .append(SPACER)
-           .append(getName())
+           .append(name())
            .append(SPACER)
            .append(OPEN_CURLY)
            .append(NEWLINE);
@@ -95,6 +95,6 @@ public class SchemaEnum extends AbstractDescriptiveElement implements ElementGen
         return "Enum{"
                 + "name='" + name + '\''
                 + ", values=" + values
-                + ", description='" + getDescription() + '\'' + '}';
+                + ", description='" + description() + '\'' + '}';
     }
 }

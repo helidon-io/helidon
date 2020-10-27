@@ -228,15 +228,15 @@ public abstract class AbstractGraphQLTest {
         SchemaFieldDefinition fd = getFieldDefinition(type, fdName);
         assertThat(fd, CoreMatchers.is(notNullValue()));
         assertThat(fd.isDefaultFormatApplied(), is(isDefaultFormatApplied));
-        String[] format = fd.getFormat();
+        String[] format = fd.format();
         assertThat(format, CoreMatchers.is(notNullValue()));
         assertThat(format.length == 2, CoreMatchers.is(notNullValue()));
         assertThat(format[0], CoreMatchers.is(defaultFormat));
     }
 
     protected SchemaFieldDefinition getFieldDefinition(SchemaType type, String name) {
-        for (SchemaFieldDefinition fd : type.getFieldDefinitions()) {
-            if (fd.getName().equals(name)) {
+        for (SchemaFieldDefinition fd : type.fieldDefinitions()) {
+            if (fd.name().equals(name)) {
                 return fd;
             }
         }
@@ -245,8 +245,8 @@ public abstract class AbstractGraphQLTest {
 
     protected SchemaArgument getArgument(SchemaFieldDefinition fd, String name) {
         assertThat(fd, CoreMatchers.is(notNullValue()));
-        for (SchemaArgument argument : fd.getArguments()) {
-            if (argument.getArgumentName().equals(name)) {
+        for (SchemaArgument argument : fd.arguments()) {
+            if (argument.argumentName().equals(name)) {
                 return argument;
             }
         }
@@ -258,7 +258,7 @@ public abstract class AbstractGraphQLTest {
         SchemaFieldDefinition fd = getFieldDefinition(type, fdName);
         assertThat(fd, CoreMatchers.is(notNullValue()));
         assertThat("Default value for " + fdName + " should be " + defaultValue +
-                           " but is " + fd.getDefaultValue(), fd.getDefaultValue(), CoreMatchers.is(defaultValue));
+                           " but is " + fd.defaultValue(), fd.defaultValue(), CoreMatchers.is(defaultValue));
     }
 
     protected void assertReturnTypeMandatory(SchemaType type, String fdName, boolean mandatory) {
@@ -285,7 +285,7 @@ public abstract class AbstractGraphQLTest {
         SchemaArgument argument = getArgument(fd, argumentName);
         assertThat(argument, CoreMatchers.is(notNullValue()));
         assertThat("Return type for argument " + argumentName + " should be mandatory="
-                           + mandatory + " but is " + argument.isMandatory(), argument.isMandatory(), CoreMatchers.is(mandatory));
+                           + mandatory + " but is " + argument.mandatory(), argument.mandatory(), CoreMatchers.is(mandatory));
     }
     
 }

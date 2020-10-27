@@ -464,7 +464,7 @@ public final class SchemaGeneratorHelper {
      * @return true if the give name is a scalar with that name
      */
     protected static boolean isScalar(String scalarName) {
-        return SUPPORTED_SCALARS.values().stream().anyMatch((s -> s.getName().equals(scalarName)));
+        return SUPPORTED_SCALARS.values().stream().anyMatch((s -> s.name().equals(scalarName)));
     }
 
     /**
@@ -890,11 +890,11 @@ public final class SchemaGeneratorHelper {
      * @param type   {@link SchemaType} to check
      */
     protected static void checkScalars(Schema schema, SchemaType type) {
-        type.getFieldDefinitions().forEach(fd -> {
-            SchemaScalar scalar = getScalar(fd.getReturnType());
+        type.fieldDefinitions().forEach(fd -> {
+            SchemaScalar scalar = getScalar(fd.returnType());
             if (scalar != null) {
-                fd.setReturnType(scalar.getName());
-                if (!schema.containsScalarWithName(scalar.getName())) {
+                fd.returnType(scalar.name());
+                if (!schema.containsScalarWithName(scalar.name())) {
                     schema.addScalar(scalar);
                 }
             }

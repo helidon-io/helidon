@@ -130,8 +130,8 @@ public class FormattingHelper {
      */
     protected static String[] getDefaultDateTimeFormat(String scalarName, String clazzName) {
         for (SchemaScalar scalar : SUPPORTED_SCALARS.values()) {
-            if (scalarName.equals(scalar.getName()) && scalar.getActualClass().equals(clazzName)) {
-                return new String[] {scalar.getDefaultFormat(), DEFAULT_LOCALE };
+            if (scalarName.equals(scalar.name()) && scalar.actualClass().equals(clazzName)) {
+                return new String[] {scalar.defaultFormat(), DEFAULT_LOCALE };
             }
         }
         return NO_DEFAULT_FORMAT;

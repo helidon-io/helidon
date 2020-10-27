@@ -72,7 +72,7 @@ public class SchemaType extends AbstractDescriptiveElement implements ElementGen
         StringBuilder sb = new StringBuilder(getSchemaElementDescription(null))
                 .append(getGraphQLName())
                 .append(SPACER)
-                .append(getName());
+                .append(name());
 
         if (implementingInterface != null) {
             sb.append(" implements " + implementingInterface);
@@ -93,9 +93,9 @@ public class SchemaType extends AbstractDescriptiveElement implements ElementGen
      * @return an new {@link SchemaInputType}
      */
     public SchemaInputType createInputType(String sSuffix) {
-        SchemaInputType inputType = new SchemaInputType(getName() + sSuffix, getValueClassName());
-        getFieldDefinitions().forEach(fd -> {
-            fd.getArguments().clear();
+        SchemaInputType inputType = new SchemaInputType(name() + sSuffix, valueClassName());
+        fieldDefinitions().forEach(fd -> {
+            fd.arguments().clear();
             inputType.addFieldDefinition(fd);
         });
         return inputType;
@@ -106,7 +106,7 @@ public class SchemaType extends AbstractDescriptiveElement implements ElementGen
      *
      * @param isInterface indicates if the {@link SchemaType} is an interface;
      */
-    public void setIsInterface(boolean isInterface) {
+    public void isInterface(boolean isInterface) {
         this.isInterface = isInterface;
     }
 
@@ -115,7 +115,7 @@ public class SchemaType extends AbstractDescriptiveElement implements ElementGen
      *
      * @return the name of the {@link SchemaType}
      */
-    public String getName() {
+    public String name() {
         return name;
     }
 
@@ -123,7 +123,7 @@ public class SchemaType extends AbstractDescriptiveElement implements ElementGen
      * Set the name of the {@link SchemaType}.
      * @param name the name of the {@link SchemaType}
      */
-    public void setName(String name) {
+    public void name(String name) {
         this.name = name;
     }
 
@@ -132,7 +132,7 @@ public class SchemaType extends AbstractDescriptiveElement implements ElementGen
      *
      * @return the value class name for the @{link Type}.
      */
-    public String getValueClassName() {
+    public String valueClassName() {
         return valueClassName;
     }
 
@@ -141,7 +141,7 @@ public class SchemaType extends AbstractDescriptiveElement implements ElementGen
      *
      * @return the {@link List} of {@link SchemaFieldDefinition}s
      */
-    public List<SchemaFieldDefinition> getFieldDefinitions() {
+    public List<SchemaFieldDefinition> fieldDefinitions() {
         return listSchemaFieldDefinitions;
     }
 
@@ -159,7 +159,7 @@ public class SchemaType extends AbstractDescriptiveElement implements ElementGen
      *
      * @return the interface that this {@link SchemaType} implements
      */
-    public String getImplementingInterface() {
+    public String implementingInterface() {
         return implementingInterface;
     }
 
@@ -168,7 +168,7 @@ public class SchemaType extends AbstractDescriptiveElement implements ElementGen
      *
      * @param implementingInterface the interface that this {@link SchemaType} implements
      */
-    public void setImplementingInterface(String implementingInterface) {
+    public void implementingInterface(String implementingInterface) {
         this.implementingInterface = implementingInterface;
     }
 
@@ -189,7 +189,7 @@ public class SchemaType extends AbstractDescriptiveElement implements ElementGen
      */
     public SchemaFieldDefinition getFieldDefinitionByName(String fdName) {
         for (SchemaFieldDefinition fieldDefinition : listSchemaFieldDefinitions) {
-            if (fieldDefinition.getName().equals(fdName)) {
+            if (fieldDefinition.name().equals(fdName)) {
                 return fieldDefinition;
             }
         }
@@ -210,7 +210,7 @@ public class SchemaType extends AbstractDescriptiveElement implements ElementGen
                 && Objects.equals(valueClassName, schemaType.valueClassName)
                 && Objects.equals(implementingInterface, schemaType.implementingInterface)
                 && Objects.equals(listSchemaFieldDefinitions, schemaType.listSchemaFieldDefinitions)
-                && Objects.equals(getDescription(), schemaType.getDescription());
+                && Objects.equals(description(), schemaType.description());
     }
 
     @Override
@@ -219,7 +219,7 @@ public class SchemaType extends AbstractDescriptiveElement implements ElementGen
                                   valueClassName,
                                   isInterface,
                                   implementingInterface,
-                                  getDescription(),
+                                  description(),
                                   listSchemaFieldDefinitions);
         return result;
     }
@@ -239,7 +239,7 @@ public class SchemaType extends AbstractDescriptiveElement implements ElementGen
                 + "name='" + name + '\''
                 + ", valueClassName='" + valueClassName + '\''
                 + ", isInterface='" + isInterface + '\''
-                + ", description='" + getDescription() + '\''
+                + ", description='" + description() + '\''
                 + ", implementingInterface='" + implementingInterface + '\''
                 + ", listFieldDefinitions=" + listSchemaFieldDefinitions + '}';
     }

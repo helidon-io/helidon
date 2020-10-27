@@ -65,7 +65,7 @@ public class SchemaScalar implements ElementGenerator {
      *
      * @return the name of the {@link SchemaScalar}
      */
-    public String getName() {
+    public String name() {
         return name;
     }
 
@@ -74,7 +74,7 @@ public class SchemaScalar implements ElementGenerator {
      *
      * @return the actual class name of the {@link SchemaScalar}
      */
-    public String getActualClass() {
+    public String actualClass() {
         return actualClass;
     }
 
@@ -83,7 +83,7 @@ public class SchemaScalar implements ElementGenerator {
      *
      * @return the {@link GraphQLScalarType} instance.
      */
-    public GraphQLScalarType getGraphQLScalarType() {
+    public GraphQLScalarType graphQLScalarType() {
         return graphQLScalarType;
     }
 
@@ -92,7 +92,7 @@ public class SchemaScalar implements ElementGenerator {
      *
      * @return default format if none is specified
      */
-    public String getDefaultFormat() {
+    public String defaultFormat() {
         return defaultFormat;
     }
 
@@ -100,13 +100,13 @@ public class SchemaScalar implements ElementGenerator {
      * Set the default format if none is specified.
      * @param defaultFormat  default format if none is specified
      */
-    public void setDefaultFormat(String defaultFormat) {
+    public void defaultFormat(String defaultFormat) {
         this.defaultFormat = defaultFormat;
     }
 
     @Override
     public String getSchemaAsString() {
-        return "scalar " + getName();
+        return "scalar " + name();
     }
 
     @Override

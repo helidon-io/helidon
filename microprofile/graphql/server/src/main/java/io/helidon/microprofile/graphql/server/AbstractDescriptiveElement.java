@@ -29,12 +29,12 @@ public class AbstractDescriptiveElement implements DescriptiveElement {
     private String description;
 
     @Override
-    public void setDescription(String description) {
+    public void description(String description) {
         this.description = description;
     }
 
     @Override
-    public String getDescription() {
+    public String description() {
         return this.description;
     }
 

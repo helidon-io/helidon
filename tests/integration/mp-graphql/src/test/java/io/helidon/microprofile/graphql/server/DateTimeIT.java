@@ -78,24 +78,24 @@ public class DateTimeIT extends AbstractGraphQLIT {
 
         SchemaFieldDefinition fd = getFieldDefinition(type, "localDate");
         assertThat(fd, is(notNullValue()));
-        assertThat(fd.getFormat()[0], is("MM/dd/yyyy"));
-        assertThat(fd.getDescription(), is(nullValue()));
+        assertThat(fd.format()[0], is("MM/dd/yyyy"));
+        assertThat(fd.description(), is(nullValue()));
         assertThat(fd.isDefaultFormatApplied(), is(false));
-        assertThat(fd.getReturnType(), is(FORMATTED_DATE_SCALAR));
+        assertThat(fd.returnType(), is(FORMATTED_DATE_SCALAR));
 
         fd = getFieldDefinition(type, "localTime");
         assertThat(fd, is(notNullValue()));
-        assertThat(fd.getFormat()[0], is("hh:mm[:ss]"));
-        assertThat(fd.getDescription(), is(nullValue()));
+        assertThat(fd.format()[0], is("hh:mm[:ss]"));
+        assertThat(fd.description(), is(nullValue()));
         assertThat(fd.isDefaultFormatApplied(), is(false));
-        assertThat(fd.getReturnType(), is(FORMATTED_TIME_SCALAR));
+        assertThat(fd.returnType(), is(FORMATTED_TIME_SCALAR));
 
         fd = getFieldDefinition(type, "localDate2");
         assertThat(fd, is(notNullValue()));
-        assertThat(fd.getFormat()[0], is("MM/dd/yyyy"));
-        assertThat(fd.getDescription(), is(nullValue()));
+        assertThat(fd.format()[0], is("MM/dd/yyyy"));
+        assertThat(fd.description(), is(nullValue()));
         assertThat(fd.isDefaultFormatApplied(), is(false));
-        assertThat(fd.getReturnType(), is(FORMATTED_DATE_SCALAR));
+        assertThat(fd.returnType(), is(FORMATTED_DATE_SCALAR));
 
         // test default values for date and time
         assertDefaultFormat(type, "offsetTime", "HH[:mm][:ss]Z", true);
@@ -115,17 +115,17 @@ public class DateTimeIT extends AbstractGraphQLIT {
         fd = getFieldDefinition(type, "localDateTime");
         assertThat(fd, is(notNullValue()));
         assertThat(fd.isDefaultFormatApplied(), is(true));
-        assertThat(fd.getReturnType(), is(DATETIME_SCALAR));
+        assertThat(fd.returnType(), is(DATETIME_SCALAR));
 
         fd = getFieldDefinition(type, "localDateNoFormat");
         assertThat(fd, is(notNullValue()));
         assertThat(fd.isDefaultFormatApplied(), is(true));
-        assertThat(fd.getReturnType(), is(DATE_SCALAR));
+        assertThat(fd.returnType(), is(DATE_SCALAR));
 
         fd = getFieldDefinition(type, "localTimeNoFormat");
         assertThat(fd, is(notNullValue()));
         assertThat(fd.isDefaultFormatApplied(), is(true));
-        assertThat(fd.getReturnType(), is(TIME_SCALAR));
+        assertThat(fd.returnType(), is(TIME_SCALAR));
 
         Map<String, Object> mapResults = getAndAssertResult(
                 executionContext.execute("query { dateAndTimePOJOQuery { offsetDateTime offsetTime zonedDateTime "
@@ -165,10 +165,10 @@ public class DateTimeIT extends AbstractGraphQLIT {
         SchemaType typeQuery = schema.getTypeByName("Query");
         fd = getFieldDefinition(typeQuery, "localDateNoFormat");
         assertThat(fd, is(notNullValue()));
-        assertThat(fd.getFormat()[0], is("yyyy-MM-dd"));
-        assertThat(fd.getDescription(), is(nullValue()));
+        assertThat(fd.format()[0], is("yyyy-MM-dd"));
+        assertThat(fd.description(), is(nullValue()));
         assertThat(fd.isDefaultFormatApplied(), is(true));
-        assertThat(fd.getReturnType(), is(DATE_SCALAR));
+        assertThat(fd.returnType(), is(DATE_SCALAR));
 
         mapResults = getAndAssertResult(
                 executionContext
@@ -182,11 +182,11 @@ public class DateTimeIT extends AbstractGraphQLIT {
         SchemaType typeMutation = schema.getTypeByName("Mutation");
         fd = getFieldDefinition(typeMutation, "echoFormattedDateWithJsonB");
         assertThat(fd, is(notNullValue()));
-        Optional<SchemaArgument> argument = fd.getArguments()
-                .stream().filter(a -> a.getArgumentName().equals("dates")).findFirst();
+        Optional<SchemaArgument> argument = fd.arguments()
+                .stream().filter(a -> a.argumentName().equals("dates")).findFirst();
         assertThat(argument.isPresent(), is(true));
         SchemaArgument a = argument.get();
-        assertThat(a.getFormat()[0], is("MM/dd/yyyy"));
+        assertThat(a.format()[0], is("MM/dd/yyyy"));
 
         mapResults = getAndAssertResult(
                 executionContext.execute("mutation { echoFormattedDateWithJsonB(dates: [ \"09/22/2020\", \"09/23/2020\" ]) }"));

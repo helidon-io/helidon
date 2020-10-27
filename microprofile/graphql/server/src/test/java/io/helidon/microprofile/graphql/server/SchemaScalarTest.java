@@ -34,12 +34,12 @@ class SchemaScalarTest {
     @Test
     public void testConstructors() {
         SchemaScalar schemaScalar = new SchemaScalar("myName", Integer.class.getName(), ExtendedScalars.DateTime, null);
-        assertThat(schemaScalar.getName(), is("myName"));
-        assertThat(schemaScalar.getActualClass(), is(Integer.class.getName()));
-        assertThat(schemaScalar.getGraphQLScalarType().equals(ExtendedScalars.DateTime), is(true));
-        assertThat(schemaScalar.getDefaultFormat(), is(nullValue()));
-        schemaScalar.setDefaultFormat("ABC");
-        assertThat(schemaScalar.getDefaultFormat(), is("ABC"));
+        assertThat(schemaScalar.name(), is("myName"));
+        assertThat(schemaScalar.actualClass(), is(Integer.class.getName()));
+        assertThat(schemaScalar.graphQLScalarType().equals(ExtendedScalars.DateTime), is(true));
+        assertThat(schemaScalar.defaultFormat(), is(nullValue()));
+        schemaScalar.defaultFormat("ABC");
+        assertThat(schemaScalar.defaultFormat(), is("ABC"));
     }
 
     @Test

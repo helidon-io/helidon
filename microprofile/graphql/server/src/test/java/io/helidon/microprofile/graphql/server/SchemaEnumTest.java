@@ -30,7 +30,7 @@ class SchemaEnumTest extends AbstractGraphQLTest {
     @Test
     public void testConstructor() {
         SchemaEnum schemaEnum1 = new SchemaEnum("ShirtSize");
-        schemaEnum1.setDescription("This is the description of the Enum");
+        schemaEnum1.description("This is the description of the Enum");
         schemaEnum1.addValue("S");
         schemaEnum1.addValue("M");
         schemaEnum1.addValue("L");
@@ -38,15 +38,15 @@ class SchemaEnumTest extends AbstractGraphQLTest {
         schemaEnum1.addValue("XXL");
         schemaEnum1.addValue("3XL");
 
-        assertThat(schemaEnum1.getDescription(), is("This is the description of the Enum"));
-        assertThat(schemaEnum1.getValues(), is(notNullValue()));
-        assertThat(schemaEnum1.getValues().size(), is(6));
+        assertThat(schemaEnum1.description(), is("This is the description of the Enum"));
+        assertThat(schemaEnum1.values(), is(notNullValue()));
+        assertThat(schemaEnum1.values().size(), is(6));
     }
 
     @Test
     public void testSchemaGenerationWithDescription() {
         SchemaEnum schemaEnum1 = new SchemaEnum("ShirtSize");
-        schemaEnum1.setDescription("T Shirt Size");
+        schemaEnum1.description("T Shirt Size");
         schemaEnum1.addValue("Small");
         schemaEnum1.addValue("Medium");
         schemaEnum1.addValue("Large");
@@ -73,7 +73,7 @@ class SchemaEnumTest extends AbstractGraphQLTest {
         schemaEnum1.addValue("Medium");
         schemaEnum1.addValue("Large");
         schemaEnum1.addValue("XLarge");
-        schemaEnum1.setDescription("Description\"");
+        schemaEnum1.description("Description\"");
 
         assertResultsMatch(schemaEnum1.getSchemaAsString(), "test-results/enum-test-03.txt");
     }

@@ -64,12 +64,12 @@ public class IngorableIT extends AbstractGraphQLIT {
         Schema schema = executionContext.getSchema();
         SchemaType type = schema.getTypeByName("ObjectWithIgnorableFieldsAndMethods");
         assertThat(type, is(notNullValue()));
-        assertThat(type.getFieldDefinitions().stream().filter(fd -> fd.getName().equals("ignoreGetMethod")).count(), is(0L));
+        assertThat(type.fieldDefinitions().stream().filter(fd -> fd.name().equals("ignoreGetMethod")).count(), is(0L));
 
         SchemaInputType inputType = schema.getInputTypeByName("ObjectWithIgnorableFieldsAndMethodsInput");
         assertThat(inputType, is(notNullValue()));
-        assertThat(inputType.getFieldDefinitions().stream().filter(fd -> fd.getName().equals("ignoreBecauseOfMethod")).count(),
+        assertThat(inputType.fieldDefinitions().stream().filter(fd -> fd.name().equals("ignoreBecauseOfMethod")).count(),
                    is(0L));
-        assertThat(inputType.getFieldDefinitions().stream().filter(fd -> fd.getName().equals("valueSetter")).count(), is(1L));
+        assertThat(inputType.fieldDefinitions().stream().filter(fd -> fd.name().equals("valueSetter")).count(), is(1L));
     }
 }

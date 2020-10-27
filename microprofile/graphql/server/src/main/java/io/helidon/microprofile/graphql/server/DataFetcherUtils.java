@@ -117,15 +117,15 @@ public class DataFetcherUtils {
             if (args.length > 0) {
                 for (SchemaArgument argument : args) {
                     // ensure a Map is not used as an input type
-                    Class<?> originalType = argument.getOriginalType();
+                    Class<?> originalType = argument.originalType();
                     if (originalType != null && originalType.isAssignableFrom(Map.class)) {
                         ensureRuntimeException(LOGGER, MAP_MESSAGE);
                     }
-                    listArgumentValues.add(generateArgumentValue(schema, argument.getArgumentType(),
-                                                                 argument.getOriginalType(),
-                                                                 argument.getOriginalArrayType(),
-                                                                 environment.getArgument(argument.getArgumentName()),
-                                                                 argument.getFormat()));
+                    listArgumentValues.add(generateArgumentValue(schema, argument.argumentType(),
+                                                                 argument.originalType(),
+                                                                 argument.originalArrayType(),
+                                                                 environment.getArgument(argument.argumentName()),
+                                                                 argument.format()));
                 }
             }
 
@@ -205,10 +205,10 @@ public class DataFetcherUtils {
                 SchemaFieldDefinition fd = inputType.getFieldDefinitionByName(fdName);
 
                 // check to see if the Field Definition return type is an input type
-                SchemaInputType inputFdInputType = schema.getInputTypeByName(fd.getReturnType());
+                SchemaInputType inputFdInputType = schema.getInputTypeByName(fd.returnType());
                 if (inputFdInputType != null && value instanceof Map) {
-                    mapConverted.put(fdName, generateArgumentValue(schema, inputFdInputType.getName(),
-                                                                   Class.forName(inputFdInputType.getValueClassName()),
+                    mapConverted.put(fdName, generateArgumentValue(schema, inputFdInputType.name(),
+                                                                   Class.forName(inputFdInputType.valueClassName()),
                                                                    null,
                                                                    value, EMPTY_FORMAT));
                 } else {
@@ -217,17 +217,17 @@ public class DataFetcherUtils {
                         mapConverted.put(fdName, value);
                     } else {
                         // check it is not a Map
-                        Class<?> originalFdlType = fd.getOriginalType();
+                        Class<?> originalFdlType = fd.originalType();
                         if (originalFdlType != null && originalFdlType.isAssignableFrom(Map.class)) {
                             ensureRuntimeException(LOGGER, MAP_MESSAGE);
                         }
                         // retrieve the data fetcher and check if the property name is different as this should be used
-                        DataFetcher dataFetcher = fd.getDataFetcher();
+                        DataFetcher dataFetcher = fd.dataFetcher();
                         if (dataFetcher instanceof PropertyDataFetcher) {
                             fdName = ((PropertyDataFetcher) dataFetcher).getPropertyName();
                         }
-                        mapConverted.put(fdName, generateArgumentValue(schema, fd.getReturnType(), fd.getOriginalType(),
-                                                                       fd.getOriginalArrayType(), value, fd.getFormat()));
+                        mapConverted.put(fdName, generateArgumentValue(schema, fd.returnType(), fd.originalType(),
+                                                                       fd.originalArrayType(), value, fd.format()));
                     }
                 }
             }
@@ -257,7 +257,7 @@ public class DataFetcherUtils {
             if (inputType != null) {
                 // handle complex types
                 for (Object value : (Collection) rawValue) {
-                    ((Collection) colResults).add(generateArgumentValue(schema, inputType.getName(),
+                    ((Collection) colResults).add(generateArgumentValue(schema, inputType.name(),
                                                          originalArrayType, null,
                                                          value, EMPTY_FORMAT));
                 }

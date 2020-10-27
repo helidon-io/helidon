@@ -34,9 +34,9 @@ class SchemaTypeTest {
     @Test
     public void testConstructors() {
         SchemaType schemaType = new SchemaType("Name", "com.oracle.test.Value");
-        assertThat(schemaType.getName(), is("Name"));
-        assertThat(schemaType.getValueClassName(), is("com.oracle.test.Value"));
-        assertThat(schemaType.getFieldDefinitions(), is(notNullValue()));
+        assertThat(schemaType.name(), is("Name"));
+        assertThat(schemaType.valueClassName(), is("com.oracle.test.Value"));
+        assertThat(schemaType.fieldDefinitions(), is(notNullValue()));
 
         schemaType.addFieldDefinition(new SchemaFieldDefinition("orderId", "Integer", false, true, 0));
         schemaType.addFieldDefinition(new SchemaFieldDefinition("personId", "Integer", false, true, 0));
@@ -45,15 +45,15 @@ class SchemaTypeTest {
         schemaFieldDefinition.addArgument(new SchemaArgument("filter", "String", false, null, STRING));
         schemaType.addFieldDefinition(schemaFieldDefinition);
 
-        assertThat(schemaType.getFieldDefinitions().size(), is(4));
-        assertThat(schemaType.getFieldDefinitions().contains(schemaFieldDefinition), is(true));
+        assertThat(schemaType.fieldDefinitions().size(), is(4));
+        assertThat(schemaType.fieldDefinitions().contains(schemaFieldDefinition), is(true));
 
-        assertThat(schemaType.getImplementingInterface(), is(nullValue()));
-        schemaType.setImplementingInterface("Contact");
-        assertThat(schemaType.getImplementingInterface(), is("Contact"));
+        assertThat(schemaType.implementingInterface(), is(nullValue()));
+        schemaType.implementingInterface("Contact");
+        assertThat(schemaType.implementingInterface(), is("Contact"));
 
-        schemaType.setName("Name");
-        assertThat(schemaType.getName(), is("Name"));
+        schemaType.name("Name");
+        assertThat(schemaType.name(), is("Name"));
     }
 
     @Test
@@ -63,7 +63,7 @@ class SchemaTypeTest {
         schemaFieldDefinition.addArgument(new SchemaArgument("filter", "String", false, null, STRING));
         schemaFieldDefinition.addArgument(new SchemaArgument("age", "Int", true, null, INTEGER));
         schemaType.addFieldDefinition(schemaFieldDefinition);
-        schemaType.setImplementingInterface("Contact");
+        schemaType.implementingInterface("Contact");
 
         assertThat(schemaType.getSchemaAsString(), is("type Person implements Contact {\n" +
                                                               "person(\nfilter: String, \nage: Int!\n): Person!\n" +
@@ -77,7 +77,7 @@ class SchemaTypeTest {
         schemaFieldDefinition.addArgument(new SchemaArgument("filter", "String", false, null, STRING));
         schemaType.addFieldDefinition(schemaFieldDefinition);
 
-        assertThat(schemaType.getFieldDefinitions().get(0).equals(schemaFieldDefinition), is(true));
+        assertThat(schemaType.fieldDefinitions().get(0).equals(schemaFieldDefinition), is(true));
 
         assertThat(schemaType.getSchemaAsString(), is("type Person {\n" +
                                                               "person(\nfilter: String\n): Person!\n" +
@@ -91,9 +91,9 @@ class SchemaTypeTest {
         SchemaFieldDefinition schemaFieldDefinition = new SchemaFieldDefinition("person", "Person", false, true, 0);
         schemaFieldDefinition.addArgument(new SchemaArgument("filter", "String", false, null, STRING));
         schemaType.addFieldDefinition(schemaFieldDefinition);
-        schemaType.setDescription("Type Description");
+        schemaType.description("Type Description");
 
-        assertThat(schemaType.getFieldDefinitions().get(0).equals(schemaFieldDefinition), is(true));
+        assertThat(schemaType.fieldDefinitions().get(0).equals(schemaFieldDefinition), is(true));
 
         assertThat(schemaType.getSchemaAsString(), is("\"Type Description\"\ntype Person {\n" +
                                                               "person(\nfilter: String\n): Person!\n" +
@@ -119,11 +119,11 @@ class SchemaTypeTest {
         SchemaType schemaType = new SchemaType("Person", "com.oracle.Person");
         SchemaFieldDefinition schemaFieldDefinition = new SchemaFieldDefinition("person", "Person", false, true, 0);
         SchemaArgument schemaArgument1 = new SchemaArgument("filter", "String", false, null, STRING);
-        schemaArgument1.setDescription("Argument1 Description");
+        schemaArgument1.description("Argument1 Description");
         schemaFieldDefinition.addArgument(schemaArgument1);
 
         SchemaArgument schemaArgument2 = new SchemaArgument("age", "Int", true, null, INTEGER);
-        schemaArgument2.setDescription("Argument 2 Description");
+        schemaArgument2.description("Argument 2 Description");
         schemaFieldDefinition.addArgument(schemaArgument2);
         schemaType.addFieldDefinition(schemaFieldDefinition);
 
@@ -140,7 +140,7 @@ class SchemaTypeTest {
         schemaFieldDefinition.addArgument(new SchemaArgument("filter", "String", false, null, STRING));
         schemaFieldDefinition.addArgument(new SchemaArgument("age", "Int", true, 30, INTEGER));
         schemaType.addFieldDefinition(schemaFieldDefinition);
-        schemaType.setIsInterface(true);
+        schemaType.isInterface(true);
         assertThat(schemaType.getGraphQLName(), is("interface"));
 
         assertThat(schemaType.getSchemaAsString(), is("interface Person {\n" +
@@ -155,7 +155,7 @@ class SchemaTypeTest {
         schemaFieldDefinition.addArgument(new SchemaArgument("filter", "String", false, "hello", STRING));
         schemaFieldDefinition.addArgument(new SchemaArgument("age", "Int", true, 30, INTEGER));
         schemaType.addFieldDefinition(schemaFieldDefinition);
-        schemaType.setIsInterface(true);
+        schemaType.isInterface(true);
         assertThat(schemaType.getGraphQLName(), is("interface"));
 
         assertThat(schemaType.getSchemaAsString(), is("interface Person {\n" +
@@ -192,8 +192,8 @@ class SchemaTypeTest {
 
         SchemaInputType inputType = schemaType.createInputType("Input");
         assertThat(inputType, is(notNullValue()));
-        assertThat(inputType.getFieldDefinitions().size(), is(1));
-        assertThat(inputType.getFieldDefinitions().get(0).getArguments().size(), is(0));
+        assertThat(inputType.fieldDefinitions().size(), is(1));
+        assertThat(inputType.fieldDefinitions().get(0).arguments().size(), is(0));
         assertThat(inputType.getSchemaAsString(), is("input PersonInput {\n" +
                                                              "person: Person!\n" +
                                                              "}\n"));

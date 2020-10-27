@@ -40,11 +40,8 @@ import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.graphql.ConfigKey;
 import org.eclipse.microprofile.graphql.GraphQLException;
 
-
-
 import static graphql.ExecutionInput.newExecutionInput;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ensureConfigurationException;
-import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ensureRuntimeException;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getSafeClass;
 
 /**
@@ -302,7 +299,7 @@ public class ExecutionContext {
             Context context = this.context;
 
             // retrieve and remove any partial results for this ThreadLocal and context
-            partialResultsThrowable = context.getPartialResultsException();
+            partialResultsThrowable = context.partialResultsException();
             context.removePartialResultsException();
 
             if (errors.size() == 0 && partialResultsThrowable != null) {

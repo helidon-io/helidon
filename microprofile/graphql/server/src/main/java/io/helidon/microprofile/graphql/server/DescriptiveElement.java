@@ -32,14 +32,14 @@ public interface DescriptiveElement {
      *
      * @param description the description for this element
      */
-    void setDescription(String description);
+    void description(String description);
 
     /**
      * Return the description for this element.
      *
      * @return the description for this element
      */
-    String getDescription();
+    String description();
 
     /**
      * Return the description of the schema element. Only valid for Type, Field, Method, Parameter
@@ -48,7 +48,7 @@ public interface DescriptiveElement {
      * @return the description of the schema element.
      */
     default String getSchemaElementDescription(String[] format) {
-        String description = getDefaultDescription(format, getDescription());
+        String description = getDefaultDescription(format, description());
 
         if (description != null) {
             // if the description contains a quote or newline then use the triple quote option

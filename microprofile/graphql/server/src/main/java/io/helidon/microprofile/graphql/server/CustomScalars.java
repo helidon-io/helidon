@@ -253,7 +253,6 @@ public class CustomScalars {
      *
      * @return a new custom BigInteger scalar
      */
-    @SuppressWarnings("unchecked")
     private static GraphQLScalarType newCustomGraphQLBigInteger() {
         GraphQLScalarType originalScalar = GraphQLBigInteger;
 
@@ -389,10 +388,9 @@ public class CustomScalars {
         }
     }
 
-    @SuppressWarnings("unchecked")
-
     /**
      * Number implementation of {@link Coercing} interface for given classes.
+     * @param <I> defines input type
      */
     public static class NumberCoercing<I> implements Coercing<I, Object> {
 

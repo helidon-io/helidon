@@ -62,7 +62,7 @@ public class SchemaDirective implements ElementGenerator {
      */
     @Override
     public String getSchemaAsString() {
-        StringBuilder sb = new StringBuilder("directive @" + getName());
+        StringBuilder sb = new StringBuilder("directive @" + name());
 
         if (listSchemaArguments.size() > 0) {
             sb.append("(");
@@ -71,8 +71,8 @@ public class SchemaDirective implements ElementGenerator {
                 String delim = isFirst.get() ? "" : ", ";
                 isFirst.set(false);
 
-                sb.append(delim).append(a.getArgumentName()).append(": ").append(a.getArgumentType());
-                if (a.isMandatory()) {
+                sb.append(delim).append(a.argumentName()).append(": ").append(a.argumentType());
+                if (a.mandatory()) {
                     sb.append('!');
                 }
             });
@@ -109,7 +109,7 @@ public class SchemaDirective implements ElementGenerator {
      *
      * @return the name of the {@link SchemaDirective}
      */
-    public String getName() {
+    public String name() {
         return name;
     }
 
@@ -118,7 +118,7 @@ public class SchemaDirective implements ElementGenerator {
      *
      * @return the {@link List} of {@link SchemaArgument}s
      */
-    public List<SchemaArgument> getArguments() {
+    public List<SchemaArgument> arguments() {
         return listSchemaArguments;
     }
 
@@ -127,7 +127,7 @@ public class SchemaDirective implements ElementGenerator {
      *
      * @return the {@link Set} of locations
      */
-    public Set<String> getLocations() {
+    public Set<String> locations() {
         return setLocations;
     }
 

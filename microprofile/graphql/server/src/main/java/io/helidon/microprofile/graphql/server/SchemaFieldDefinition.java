@@ -129,8 +129,8 @@ public class SchemaFieldDefinition extends AbstractDescriptiveElement implements
 
     @Override
     public String getSchemaAsString() {
-        StringBuilder sb = new StringBuilder(getSchemaElementDescription(getFormat()))
-                .append(getName());
+        StringBuilder sb = new StringBuilder(getSchemaElementDescription(format()))
+                .append(name());
 
         if (listSchemaArguments.size() > 0) {
             sb.append(OPEN_PARENTHESES)
@@ -144,13 +144,13 @@ public class SchemaFieldDefinition extends AbstractDescriptiveElement implements
         sb.append(COLON);
 
         if (isArrayReturnType()) {
-            int count = getArrayLevels();
+            int count = arrayLevels();
             sb.append(SPACER).append(repeat(count, OPEN_SQUARE))
-                    .append(getReturnType())
+                    .append(returnType())
                     .append(isArrayReturnTypeMandatory() ? MANDATORY : NOTHING)
                     .append(repeat(count, CLOSE_SQUARE));
         } else {
-            sb.append(SPACER).append(getReturnType());
+            sb.append(SPACER).append(returnType());
         }
 
         if (isReturnTypeMandatory()) {
@@ -158,7 +158,7 @@ public class SchemaFieldDefinition extends AbstractDescriptiveElement implements
         }
 
         if (defaultValue != null) {
-            sb.append(generateDefaultValue(defaultValue, getReturnType()));
+            sb.append(generateDefaultValue(defaultValue, returnType()));
         }
 
         return sb.toString();
@@ -169,7 +169,7 @@ public class SchemaFieldDefinition extends AbstractDescriptiveElement implements
      *
      * @return the name for the field definition
      */
-    public String getName() {
+    public String name() {
         return name;
     }
 
@@ -178,7 +178,7 @@ public class SchemaFieldDefinition extends AbstractDescriptiveElement implements
      *
      * @return the {@link List} of {@link SchemaArgument}s
      */
-    public List<SchemaArgument> getArguments() {
+    public List<SchemaArgument> arguments() {
         return listSchemaArguments;
     }
 
@@ -187,7 +187,7 @@ public class SchemaFieldDefinition extends AbstractDescriptiveElement implements
      *
      * @return the return type
      */
-    public String getReturnType() {
+    public String returnType() {
         return returnType;
     }
 
@@ -214,7 +214,7 @@ public class SchemaFieldDefinition extends AbstractDescriptiveElement implements
      *
      * @return he {@link DataFetcher} for this {@link SchemaFieldDefinition}
      */
-    public DataFetcher getDataFetcher() {
+    public DataFetcher dataFetcher() {
         return dataFetcher;
     }
 
@@ -223,7 +223,7 @@ public class SchemaFieldDefinition extends AbstractDescriptiveElement implements
      *
      * @param sReturnType the return type
      */
-    public void setReturnType(String sReturnType) {
+    public void returnType(String sReturnType) {
         returnType = sReturnType;
     }
 
@@ -232,7 +232,7 @@ public class SchemaFieldDefinition extends AbstractDescriptiveElement implements
      *
      * @param dataFetcher the {@link DataFetcher}
      */
-    public void setDataFetcher(DataFetcher dataFetcher) {
+    public void dataFetcher(DataFetcher dataFetcher) {
         this.dataFetcher = dataFetcher;
     }
 
@@ -250,7 +250,7 @@ public class SchemaFieldDefinition extends AbstractDescriptiveElement implements
      *
      * @return the number of array levels if return type is an array
      */
-    public int getArrayLevels() {
+    public int arrayLevels() {
         return arrayLevels;
     }
 
@@ -259,7 +259,7 @@ public class SchemaFieldDefinition extends AbstractDescriptiveElement implements
      *
      * @return the format for a number or date
      */
-    public String[] getFormat() {
+    public String[] format() {
         if (format == null) {
             return null;
         }
@@ -273,7 +273,7 @@ public class SchemaFieldDefinition extends AbstractDescriptiveElement implements
      *
      * @param format the format for a number or date
      */
-    public void setFormat(String[] format) {
+    public void format(String[] format) {
         if (format == null) {
             this.format = null;
         } else {
@@ -287,7 +287,7 @@ public class SchemaFieldDefinition extends AbstractDescriptiveElement implements
      *
      * @return the default value for this field definition
      */
-    public Object getDefaultValue() {
+    public Object defaultValue() {
         return defaultValue;
     }
 
@@ -296,7 +296,7 @@ public class SchemaFieldDefinition extends AbstractDescriptiveElement implements
      *
      * @param defaultValue the default value for this field definition
      */
-    public void setDefaultValue(Object defaultValue) {
+    public void defaultValue(Object defaultValue) {
         this.defaultValue = defaultValue;
     }
 
@@ -305,7 +305,7 @@ public class SchemaFieldDefinition extends AbstractDescriptiveElement implements
      *
      * @param originalType the original return type
      */
-    public void setOriginalType(Class<?> originalType) {
+    public void originalType(Class<?> originalType) {
         this.originalType = originalType;
     }
 
@@ -314,7 +314,7 @@ public class SchemaFieldDefinition extends AbstractDescriptiveElement implements
      *
      * @return the original return type
      */
-    public Class<?> getOriginalType() {
+    public Class<?> originalType() {
         return originalType;
     }
 
@@ -323,7 +323,7 @@ public class SchemaFieldDefinition extends AbstractDescriptiveElement implements
      *
      * @param originalArrayType the original array type
      */
-    public void setOriginalArrayType(Class<?> originalArrayType) {
+    public void originalArrayType(Class<?> originalArrayType) {
         this.originalArrayType = originalArrayType;
     }
 
@@ -332,7 +332,7 @@ public class SchemaFieldDefinition extends AbstractDescriptiveElement implements
      *
      * @return the original array type
      */
-    public Class<?> getOriginalArrayType() {
+    public Class<?> originalArrayType() {
         return originalArrayType;
     }
 
@@ -348,7 +348,7 @@ public class SchemaFieldDefinition extends AbstractDescriptiveElement implements
      * Sets if the array return type is mandatory.
      * @param arrayReturnTypeMandatory if the array return type is mandatory
      */
-    public void setArrayReturnTypeMandatory(boolean arrayReturnTypeMandatory) {
+    public void arrayReturnTypeMandatory(boolean arrayReturnTypeMandatory) {
         isArrayReturnTypeMandatory = arrayReturnTypeMandatory;
     }
 
@@ -356,7 +356,7 @@ public class SchemaFieldDefinition extends AbstractDescriptiveElement implements
      * Set if the field has a default format applied.
      * @param defaultFormatApplied if the field has a default format applied
      */
-    public void setDefaultFormatApplied(boolean defaultFormatApplied) {
+    public void defaultFormatApplied(boolean defaultFormatApplied) {
         this.defaultFormatApplied = defaultFormatApplied;
     }
 
@@ -372,7 +372,7 @@ public class SchemaFieldDefinition extends AbstractDescriptiveElement implements
      * Set if the format is of type Jsonb.
      * @param isJsonbFormat if the format is of type Jsonb
      */
-    public void setJsonbFormat(boolean isJsonbFormat) {
+    public void jsonbFormat(boolean isJsonbFormat) {
         this.isJsonbFormat = isJsonbFormat;
     }
 
@@ -389,7 +389,7 @@ public class SchemaFieldDefinition extends AbstractDescriptiveElement implements
      *
      * @param isJsonbProperty if the property has a JsonbProperty annotation
      */
-    public void setJsonbProperty(boolean isJsonbProperty) {
+    public void jsonbProperty(boolean isJsonbProperty) {
         this.isJsonbProperty = isJsonbProperty;
     }
 
@@ -418,6 +418,6 @@ public class SchemaFieldDefinition extends AbstractDescriptiveElement implements
                 + ", format=" + Arrays.toString(format)
                 + ", isJsonbFormat=" + isJsonbFormat
                 + ", isJsonbProperty=" + isJsonbProperty
-                + ", description='" + getDescription() + '\'' + '}';
+                + ", description='" + description() + '\'' + '}';
     }
 }

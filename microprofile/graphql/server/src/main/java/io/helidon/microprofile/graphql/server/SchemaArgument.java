@@ -103,18 +103,18 @@ public class SchemaArgument extends AbstractDescriptiveElement implements Elemen
      */
     @Override
     public String getSchemaAsString() {
-        StringBuilder sb = new StringBuilder(getSchemaElementDescription(getFormat()))
-                .append(getArgumentName())
+        StringBuilder sb = new StringBuilder(getSchemaElementDescription(format()))
+                .append(argumentName())
                 .append(COLON);
 
          if (isArrayReturnType()) {
-            int count = getArrayLevels();
+            int count = arrayLevels();
             sb.append(SPACER).append(repeat(count, OPEN_SQUARE))
-                    .append(getArgumentType())
+                    .append(argumentType())
                     .append(isArrayReturnTypeMandatory() ? MANDATORY : NOTHING)
                     .append(repeat(count, CLOSE_SQUARE));
         } else {
-            sb.append(SPACER).append(getArgumentType());
+            sb.append(SPACER).append(argumentType());
         }
 
         if (isMandatory) {
@@ -122,7 +122,7 @@ public class SchemaArgument extends AbstractDescriptiveElement implements Elemen
         }
 
         if (defaultValue != null) {
-            sb.append(generateDefaultValue(defaultValue, getArgumentType()));
+            sb.append(generateDefaultValue(defaultValue, argumentType()));
         }
 
         return sb.toString();
@@ -133,7 +133,7 @@ public class SchemaArgument extends AbstractDescriptiveElement implements Elemen
      *
      * @return the argument name
      */
-    public String getArgumentName() {
+    public String argumentName() {
         return argumentName;
     }
 
@@ -142,7 +142,7 @@ public class SchemaArgument extends AbstractDescriptiveElement implements Elemen
      *
      * @return the argument type
      */
-    public String getArgumentType() {
+    public String argumentType() {
         return argumentType;
     }
 
@@ -151,7 +151,7 @@ public class SchemaArgument extends AbstractDescriptiveElement implements Elemen
      *
      * @return indicates if the argument is mandatory
      */
-    public boolean isMandatory() {
+    public boolean mandatory() {
         return isMandatory;
     }
 
@@ -160,7 +160,7 @@ public class SchemaArgument extends AbstractDescriptiveElement implements Elemen
      *
      * @param argumentType the type of the argument
      */
-    public void setArgumentType(String argumentType) {
+    public void argumentType(String argumentType) {
         this.argumentType = argumentType;
     }
 
@@ -169,7 +169,7 @@ public class SchemaArgument extends AbstractDescriptiveElement implements Elemen
      *
      * @return the default value for this argument
      */
-    public Object getDefaultValue() {
+    public Object defaultValue() {
         return defaultValue;
     }
 
@@ -178,7 +178,7 @@ public class SchemaArgument extends AbstractDescriptiveElement implements Elemen
      *
      * @param defaultValue the default value for this argument
      */
-    public void setDefaultValue(Object defaultValue) {
+    public void defaultValue(Object defaultValue) {
         this.defaultValue = defaultValue;
     }
 
@@ -187,7 +187,7 @@ public class SchemaArgument extends AbstractDescriptiveElement implements Elemen
      *
      * @return the original argument type
      */
-    public Class<?> getOriginalType() {
+    public Class<?> originalType() {
         return originalType;
     }
 
@@ -205,7 +205,7 @@ public class SchemaArgument extends AbstractDescriptiveElement implements Elemen
      *
      * @param sourceArgument if the argument is a source argument.
      */
-    public void setSourceArgument(boolean sourceArgument) {
+    public void sourceArgument(boolean sourceArgument) {
         this.sourceArgument = sourceArgument;
     }
 
@@ -214,7 +214,7 @@ public class SchemaArgument extends AbstractDescriptiveElement implements Elemen
      *
      * @return the format for a number or date
      */
-    public String[] getFormat() {
+    public String[] format() {
         if (format == null) {
             return null;
         }
@@ -228,7 +228,7 @@ public class SchemaArgument extends AbstractDescriptiveElement implements Elemen
      *
      * @param format the format for a number or date
      */
-    public void setFormat(String[] format) {
+    public void format(String[] format) {
         if (format == null) {
             this.format = null;
         } else {
@@ -242,7 +242,7 @@ public class SchemaArgument extends AbstractDescriptiveElement implements Elemen
      *
      * @param arrayLevels the number of array levels if return type is an array
      */
-    public void setArrayLevels(int arrayLevels) {
+    public void arrayLevels(int arrayLevels) {
        this.arrayLevels = arrayLevels;
     }
 
@@ -251,7 +251,7 @@ public class SchemaArgument extends AbstractDescriptiveElement implements Elemen
      *
      * @return the number of array levels if return type is an array
      */
-    public int getArrayLevels() {
+    public int arrayLevels() {
         return arrayLevels;
     }
 
@@ -259,7 +259,7 @@ public class SchemaArgument extends AbstractDescriptiveElement implements Elemen
      * Set if the return type is an array type.
      * @param isArrayReturnType if the return type is an array type
      */
-    public void setArrayReturnType(boolean isArrayReturnType) {
+    public void arrayReturnType(boolean isArrayReturnType) {
         this.isArrayReturnType = isArrayReturnType;
     }
 
@@ -284,7 +284,7 @@ public class SchemaArgument extends AbstractDescriptiveElement implements Elemen
      * Sets if the array return type is mandatory.
      * @param arrayReturnTypeMandatory if the array return type is mandatory
      */
-    public void setArrayReturnTypeMandatory(boolean arrayReturnTypeMandatory) {
+    public void arrayReturnTypeMandatory(boolean arrayReturnTypeMandatory) {
         isArrayReturnTypeMandatory = arrayReturnTypeMandatory;
     }
 
@@ -293,7 +293,7 @@ public class SchemaArgument extends AbstractDescriptiveElement implements Elemen
      *
      * @param originalArrayType the original array type
      */
-    public void setOriginalArrayType(Class<?> originalArrayType) {
+    public void originalArrayType(Class<?> originalArrayType) {
         this.originalArrayType = originalArrayType;
     }
 
@@ -302,7 +302,7 @@ public class SchemaArgument extends AbstractDescriptiveElement implements Elemen
      *
      * @return the original array type
      */
-    public Class<?> getOriginalArrayType() {
+    public Class<?> originalArrayType() {
         return originalArrayType;
     }
 
@@ -321,7 +321,7 @@ public class SchemaArgument extends AbstractDescriptiveElement implements Elemen
                 + ", originalArrayType=" + originalArrayType
                 + ", arrayLevels=" + arrayLevels
                 + ", format=" + Arrays.toString(format)
-                + ", description='" + getDescription() + '\'' + '}';
+                + ", description='" + description() + '\'' + '}';
     }
 
     @Override
@@ -343,13 +343,13 @@ public class SchemaArgument extends AbstractDescriptiveElement implements Elemen
                 && Arrays.equals(format, schemaArgument.format)
                 && Objects.equals(sourceArgument, schemaArgument.sourceArgument)
                 && Objects.equals(originalArrayType, schemaArgument.originalArrayType)
-                && Objects.equals(getDescription(), schemaArgument.getDescription())
+                && Objects.equals(description(), schemaArgument.description())
                 && Objects.equals(defaultValue, schemaArgument.defaultValue);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), argumentName, argumentType, sourceArgument,
-                            isMandatory, defaultValue, getDescription(), originalType, format, originalArrayType);
+                            isMandatory, defaultValue, description(), originalType, format, originalArrayType);
     }
 }

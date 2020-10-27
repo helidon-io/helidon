@@ -206,7 +206,7 @@ public class Schema implements ElementGenerator {
         if (setInterfaces.size() > 0) {
             final Map<String, String> mapTypes = new HashMap<>();
 
-            getTypes().stream().filter(t -> !t.isInterface()).forEach(t -> mapTypes.put(t.getName(), t.getValueClassName()));
+            getTypes().stream().filter(t -> !t.isInterface()).forEach(t -> mapTypes.put(t.name(), t.valueClassName()));
 
             // generate a TypeResolver for all types that are not interfaces
             TypeResolver typeResolver = env -> {
@@ -224,14 +224,14 @@ public class Schema implements ElementGenerator {
             };
 
             // add the type resolver to all interfaces and the Query object
-            setInterfaces.forEach(t -> builder.type(t.getName(), tr -> tr.typeResolver(typeResolver)));
+            setInterfaces.forEach(t -> builder.type(t.name(), tr -> tr.typeResolver(typeResolver)));
             builder.type(getQueryName(), tr -> tr.typeResolver(typeResolver));
         }
 
         // register the scalars
         getScalars().forEach(s -> {
             LOGGER.finest("Register Scalar: " + s);
-            builder.scalar(s.getGraphQLScalarType());
+            builder.scalar(s.graphQLScalarType());
         });
 
 
@@ -240,12 +240,12 @@ public class Schema implements ElementGenerator {
 
         // search for any types that have field definitions with DataFetchers
         getTypes().forEach(t -> {
-            boolean hasDataFetchers = t.getFieldDefinitions().stream().anyMatch(fd -> fd.getDataFetcher() != null);
+            boolean hasDataFetchers = t.fieldDefinitions().stream().anyMatch(fd -> fd.dataFetcher() != null);
             if (hasDataFetchers) {
-                final TypeRuntimeWiring.Builder runtimeBuilder = newTypeWiring(t.getName());
-                t.getFieldDefinitions().stream()
-                        .filter(fd -> fd.getDataFetcher() != null)
-                        .forEach(fd -> runtimeBuilder.dataFetcher(fd.getName(), fd.getDataFetcher()));
+                final TypeRuntimeWiring.Builder runtimeBuilder = newTypeWiring(t.name());
+                t.fieldDefinitions().stream()
+                        .filter(fd -> fd.dataFetcher() != null)
+                        .forEach(fd -> runtimeBuilder.dataFetcher(fd.name(), fd.dataFetcher()));
                 builder.type(runtimeBuilder);
             }
         });
@@ -261,7 +261,7 @@ public class Schema implements ElementGenerator {
      */
     public SchemaType getTypeByName(String typeName) {
         for (SchemaType schemaType : listSchemaTypes) {
-            if (schemaType.getName().equals(typeName)) {
+            if (schemaType.name().equals(typeName)) {
                 return schemaType;
             }
         }
@@ -276,7 +276,7 @@ public class Schema implements ElementGenerator {
      */
     public SchemaInputType getInputTypeByName(String inputTypeName) {
         for (SchemaInputType schemaInputType : listInputTypes) {
-            if (schemaInputType.getName().equals(inputTypeName)) {
+            if (schemaInputType.name().equals(inputTypeName)) {
                 return schemaInputType;
             }
         }
@@ -291,7 +291,7 @@ public class Schema implements ElementGenerator {
      */
     public SchemaType getTypeByClass(String clazz) {
         for (SchemaType schemaType : listSchemaTypes) {
-            if (clazz.equals(schemaType.getValueClassName())) {
+            if (clazz.equals(schemaType.valueClassName())) {
                 return schemaType;
             }
         }
@@ -306,7 +306,7 @@ public class Schema implements ElementGenerator {
      */
     public SchemaEnum getEnumByName(String enumName) {
         for (SchemaEnum schemaEnum1 : listSchemaEnums) {
-            if (schemaEnum1.getName().equals(enumName)) {
+            if (schemaEnum1.name().equals(enumName)) {
                 return schemaEnum1;
             }
         }
@@ -321,7 +321,7 @@ public class Schema implements ElementGenerator {
      */
     public SchemaScalar getScalarByActualClass(String actualClazz) {
         for (SchemaScalar schemaScalar : getScalars()) {
-            if (schemaScalar.getActualClass().equals(actualClazz)) {
+            if (schemaScalar.actualClass().equals(actualClazz)) {
                 return schemaScalar;
             }
         }
@@ -336,7 +336,7 @@ public class Schema implements ElementGenerator {
      */
     public SchemaScalar getScalarByName(String scalarName) {
         for (SchemaScalar schemaScalar : getScalars()) {
-            if (schemaScalar.getName().equals(scalarName)) {
+            if (schemaScalar.name().equals(scalarName)) {
                 return schemaScalar;
             }
         }
@@ -350,7 +350,7 @@ public class Schema implements ElementGenerator {
      * @return true if the type name is contained within the type list
      */
     public boolean containsTypeWithName(String type) {
-        return listSchemaTypes.stream().filter(t -> t.getName().equals(type)).count() == 1;
+        return listSchemaTypes.stream().filter(t -> t.name().equals(type)).count() == 1;
     }
 
     /**
@@ -360,7 +360,7 @@ public class Schema implements ElementGenerator {
      * @return true if the type name is contained within the input type list
      */
     public boolean containsInputTypeWithName(String type) {
-        return listInputTypes.stream().filter(t -> t.getName().equals(type)).count() == 1;
+        return listInputTypes.stream().filter(t -> t.name().equals(type)).count() == 1;
     }
 
     /**
@@ -370,7 +370,7 @@ public class Schema implements ElementGenerator {
      * @return true if the scalar name is contained within the scalar list
      */
     public boolean containsScalarWithName(String scalar) {
-        return listSchemaScalars.stream().filter(s -> s.getName().equals(scalar)).count() == 1;
+        return listSchemaScalars.stream().filter(s -> s.name().equals(scalar)).count() == 1;
     }
 
     /**
@@ -380,7 +380,7 @@ public class Schema implements ElementGenerator {
      * @return true if the enum name is contained within the enum list
      */
     public boolean containsEnumWithName(String enumName) {
-        return listSchemaEnums.stream().filter(e -> e.getName().equals(enumName)).count() == 1;
+        return listSchemaEnums.stream().filter(e -> e.name().equals(enumName)).count() == 1;
     }
 
     /**

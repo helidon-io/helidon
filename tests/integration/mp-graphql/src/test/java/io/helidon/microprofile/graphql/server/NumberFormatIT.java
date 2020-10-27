@@ -150,36 +150,36 @@ public class NumberFormatIT extends AbstractGraphQLIT {
 
         SchemaFieldDefinition fd = getFieldDefinition(type, "id");
         assertThat(fd, is(notNullValue()));
-        assertThat(fd.getFormat()[0], is("0 'id'"));
-        assertThat(fd.getReturnType(), is(STRING));
+        assertThat(fd.format()[0], is("0 'id'"));
+        assertThat(fd.returnType(), is(STRING));
 
         fd = getFieldDefinition(type, "age");
         assertThat(fd, is(notNullValue()));
-        assertThat(fd.getFormat()[0], is("0 'years old'"));
-        assertThat(fd.getReturnType(), is(STRING));
+        assertThat(fd.format()[0], is("0 'years old'"));
+        assertThat(fd.returnType(), is(STRING));
 
         // validate the formats on the Input Type
         SchemaType inputType = schema.getInputTypeByName("SimpleContactWithNumberFormatsInput");
         assertThat(inputType, is(notNullValue()));
         fd = getFieldDefinition(inputType, "id");
         assertThat(fd, is(notNullValue()));
-        assertThat(fd.getFormat()[0], is(nullValue()));
-        assertThat(fd.getReturnType(), is(INT));
+        assertThat(fd.format()[0], is(nullValue()));
+        assertThat(fd.returnType(), is(INT));
 
         fd = getFieldDefinition(inputType, "longValue");
         assertThat(fd, is(notNullValue()));
-        assertThat(fd.getFormat()[0], is("LongValue-##########"));
-        assertThat(fd.getReturnType(), is(STRING));
+        assertThat(fd.format()[0], is("LongValue-##########"));
+        assertThat(fd.returnType(), is(STRING));
 
         fd = getFieldDefinition(inputType, "age");
         assertThat(fd, is(notNullValue()));
-        assertThat(fd.getFormat()[0], is("0 'years old'"));
-        assertThat(fd.getReturnType(), is(STRING));
+        assertThat(fd.format()[0], is("0 'years old'"));
+        assertThat(fd.returnType(), is(STRING));
 
         fd = getFieldDefinition(inputType, "listDates");
         assertThat(fd, is(notNullValue()));
-        assertThat(fd.getFormat()[0], is("DD-MM-YYYY"));
-        assertThat(fd.getReturnType(), is(FORMATTED_DATE_SCALAR));
+        assertThat(fd.format()[0], is("DD-MM-YYYY"));
+        assertThat(fd.returnType(), is(FORMATTED_DATE_SCALAR));
     }
 
 }

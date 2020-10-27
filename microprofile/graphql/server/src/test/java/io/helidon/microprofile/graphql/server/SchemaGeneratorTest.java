@@ -461,9 +461,9 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
         assertThat(discoveredMethod.isCollectionType(), is(isCollectionType));
         assertThat(discoveredMethod.isArrayReturnType(), is(isArrayReturnType));
         assertThat(discoveredMethod.isMap(), is(isMap));
-        assertThat(discoveredMethod.getName(), is(name));
-        assertThat(discoveredMethod.getReturnType(), is(returnType));
-        assertThat(discoveredMethod.getCollectionType(), is(collectionType));
+        assertThat(discoveredMethod.name(), is(name));
+        assertThat(discoveredMethod.returnType(), is(returnType));
+        assertThat(discoveredMethod.collectionType(), is(collectionType));
     }
 
     @Test
@@ -509,22 +509,22 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
                 schemaGenerator.getRootTypeName(stringArrayListType.getActualTypeArguments()[0], 0,
                                                 -1,
                                                 SchemaGeneratorTest.class.getMethod("getListStringArray"));
-        assertThat(rootTypeName.getRootTypeName(), is(String[].class.getName()));
-        assertThat(rootTypeName.getLevels(), is(1));
+        assertThat(rootTypeName.rootTypeName(), is(String[].class.getName()));
+        assertThat(rootTypeName.levels(), is(1));
 
         ParameterizedType stringListType = getParameterizedType("listString");
         rootTypeName = schemaGenerator.getRootTypeName(stringListType.getActualTypeArguments()[0], 0,
                                                        -1,
                                                        SchemaGeneratorTest.class.getMethod("getListStringArray"));
-        assertThat(rootTypeName.getRootTypeName(), is(STRING));
-        assertThat(rootTypeName.getLevels(), is(1));
+        assertThat(rootTypeName.rootTypeName(), is(STRING));
+        assertThat(rootTypeName.levels(), is(1));
 
         ParameterizedType listListStringType = getParameterizedType("listListString");
         rootTypeName = schemaGenerator.getRootTypeName(listListStringType.getActualTypeArguments()[0], 0,
                                                        -1,
                                                        SchemaGeneratorTest.class.getMethod("getListListString"));
-        assertThat(rootTypeName.getRootTypeName(), is(STRING));
-        assertThat(rootTypeName.getLevels(), is(2));
+        assertThat(rootTypeName.rootTypeName(), is(STRING));
+        assertThat(rootTypeName.levels(), is(2));
     }
 
     @Test
@@ -693,10 +693,10 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
         SchemaEnum schemaEnumResult = schema.getEnumByName(expectedName);
 
         assertThat(schemaEnumResult, is(notNullValue()));
-        assertThat(schemaEnumResult.getValues().size(), is(6));
+        assertThat(schemaEnumResult.values().size(), is(6));
 
         Arrays.stream(new String[] { "S", "M", "L", "XL", "XXL", "XXXL" })
-                .forEach(v -> assertThat(schemaEnumResult.getValues().contains(v), is(true)));
+                .forEach(v -> assertThat(schemaEnumResult.values().contains(v), is(true)));
     }
 
 }

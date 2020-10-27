@@ -82,7 +82,7 @@ public abstract class AbstractGraphQLIT extends AbstractGraphQLTest {
         SchemaGenerator schemaGenerator = new SchemaGenerator(defaultContext);
         Schema schema = schemaGenerator.generateSchema();
         assertThat(schema, CoreMatchers.is(notNullValue()));
-        schema.getTypes().forEach(t -> System.out.println(t.getName()));
+        schema.getTypes().forEach(t -> System.out.println(t.name()));
         assertThat(schema.getTypes().size(), CoreMatchers.is(6));
         assertThat(schema.getTypeByName("Vehicle"), CoreMatchers.is(notNullValue()));
         assertThat(schema.getTypeByName("Car"), CoreMatchers.is(notNullValue()));

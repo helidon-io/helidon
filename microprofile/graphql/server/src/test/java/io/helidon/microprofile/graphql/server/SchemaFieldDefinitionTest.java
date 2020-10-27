@@ -37,50 +37,50 @@ class SchemaFieldDefinitionTest {
     @Test
     public void testConstructors() {
         SchemaFieldDefinition schemaFieldDefinition = new SchemaFieldDefinition("name", "Integer", true, true, 1);
-        assertThat(schemaFieldDefinition.getName(), is("name"));
-        assertThat(schemaFieldDefinition.getReturnType(), is("Integer"));
-        assertThat(schemaFieldDefinition.getArguments(), is(notNullValue()));
+        assertThat(schemaFieldDefinition.name(), is("name"));
+        assertThat(schemaFieldDefinition.returnType(), is("Integer"));
+        assertThat(schemaFieldDefinition.arguments(), is(notNullValue()));
         assertThat(schemaFieldDefinition.isArrayReturnType(), is(true));
-        assertThat(schemaFieldDefinition.getArrayLevels(), is(1));
+        assertThat(schemaFieldDefinition.arrayLevels(), is(1));
 
         SchemaArgument schemaArgument = new SchemaArgument("filter", "String", false, null, STRING);
         schemaFieldDefinition.addArgument(schemaArgument);
-        assertThat(schemaFieldDefinition.getArguments().size(), is(1));
-        assertThat(schemaFieldDefinition.getArguments().get(0), is(schemaArgument));
+        assertThat(schemaFieldDefinition.arguments().size(), is(1));
+        assertThat(schemaFieldDefinition.arguments().get(0), is(schemaArgument));
 
         SchemaArgument schemaArgument2 = new SchemaArgument("filter2", "Integer", true, null, INTEGER);
         schemaFieldDefinition.addArgument(schemaArgument2);
-        assertThat(schemaFieldDefinition.getArguments().size(), is(2));
-        assertThat(schemaFieldDefinition.getArguments().contains(schemaArgument2), is(true));
+        assertThat(schemaFieldDefinition.arguments().size(), is(2));
+        assertThat(schemaFieldDefinition.arguments().contains(schemaArgument2), is(true));
 
         schemaFieldDefinition = new SchemaFieldDefinition("name2", "String", false, false, 0);
-        assertThat(schemaFieldDefinition.getName(), is("name2"));
-        assertThat(schemaFieldDefinition.getReturnType(), is("String"));
+        assertThat(schemaFieldDefinition.name(), is("name2"));
+        assertThat(schemaFieldDefinition.returnType(), is("String"));
         assertThat(schemaFieldDefinition.isArrayReturnType(), is(false));
         assertThat(schemaFieldDefinition.isReturnTypeMandatory(), is(false));
-        assertThat(schemaFieldDefinition.getArrayLevels(), is(0));
+        assertThat(schemaFieldDefinition.arrayLevels(), is(0));
 
-        schemaFieldDefinition.setReturnType("BLAH");
-        assertThat(schemaFieldDefinition.getReturnType(), is("BLAH"));
+        schemaFieldDefinition.returnType("BLAH");
+        assertThat(schemaFieldDefinition.returnType(), is("BLAH"));
 
-        assertThat(schemaFieldDefinition.getFormat(), is(nullValue()));
-        schemaFieldDefinition.setFormat(new String[] {"a", "b"});
-        String[] format = schemaFieldDefinition.getFormat();
+        assertThat(schemaFieldDefinition.format(), is(nullValue()));
+        schemaFieldDefinition.format(new String[] {"a", "b"});
+        String[] format = schemaFieldDefinition.format();
         assertThat(format, is(notNullValue()));
         assertThat(format.length, is(2));
         assertThat(format[0], is("a"));
         assertThat(format[1], is("b"));
 
         assertThat(schemaFieldDefinition.isArrayReturnTypeMandatory(), is(false));
-        schemaFieldDefinition.setArrayReturnTypeMandatory(true);
+        schemaFieldDefinition.arrayReturnTypeMandatory(true);
         assertThat(schemaFieldDefinition.isArrayReturnTypeMandatory(), is(true));
 
         assertThat(schemaFieldDefinition.isDefaultFormatApplied(), is(false));
-        schemaFieldDefinition.setDefaultFormatApplied(true);
+        schemaFieldDefinition.defaultFormatApplied(true);
         assertThat(schemaFieldDefinition.isDefaultFormatApplied(), is(true));
 
         assertThat(schemaFieldDefinition.isJsonbFormat(), is(false));
-        schemaFieldDefinition.setJsonbFormat(true);
+        schemaFieldDefinition.jsonbFormat(true);
         assertThat(schemaFieldDefinition.isJsonbFormat(), is(true));
     }
 
@@ -93,7 +93,7 @@ class SchemaFieldDefinitionTest {
     @Test
     public void testFieldDefinitionWithNoArgumentsAndDescription() {
         SchemaFieldDefinition schemaFieldDefinition = new SchemaFieldDefinition("person", "Person", false, true, 0);
-        schemaFieldDefinition.setDescription("Description");
+        schemaFieldDefinition.description("Description");
         assertThat(schemaFieldDefinition.getSchemaAsString(), is("\"Description\"\nperson: Person!"));
     }
 
@@ -126,7 +126,7 @@ class SchemaFieldDefinitionTest {
     public void testFieldDefinitionWith1ArgumentAndDescription() {
         SchemaFieldDefinition schemaFieldDefinition = new SchemaFieldDefinition("person", "Person", false, true, 0);
         SchemaArgument schemaArgument = new SchemaArgument("filter", "String", false, null, STRING);
-        schemaArgument.setDescription("Optional Filter");
+        schemaArgument.description("Optional Filter");
         schemaFieldDefinition.addArgument(schemaArgument);
         assertThat(schemaFieldDefinition.getSchemaAsString(), is("person(\n\"Optional Filter\"\nfilter: String\n): Person!"));
     }
@@ -141,7 +141,7 @@ class SchemaFieldDefinitionTest {
     @Test
     public void testFieldDefinitionWithNoArgumentsAndMandatoryArrayType() {
         SchemaFieldDefinition schemaFieldDefinition = new SchemaFieldDefinition("superPowers", "String", true, false, 1);
-        schemaFieldDefinition.setArrayReturnTypeMandatory(true);
+        schemaFieldDefinition.arrayReturnTypeMandatory(true);
         assertThat(schemaFieldDefinition.getSchemaAsString(), is("superPowers: [String!]"));
     }
 
@@ -171,9 +171,9 @@ class SchemaFieldDefinitionTest {
     public void testFieldDefinitionWithMultipleArgumentsAndDescription() {
         SchemaFieldDefinition schemaFieldDefinition = new SchemaFieldDefinition("person", "Person", false, true, 0);
         SchemaArgument schemaArgument1 = new SchemaArgument("filter", "String", false, null, STRING);
-        schemaArgument1.setDescription("Optional filter");
+        schemaArgument1.description("Optional filter");
         SchemaArgument schemaArgument2 = new SchemaArgument("age", "Int", true, null, INTEGER);
-        schemaArgument2.setDescription("Mandatory age");
+        schemaArgument2.description("Mandatory age");
         schemaFieldDefinition.addArgument(schemaArgument1);
         schemaFieldDefinition.addArgument(schemaArgument2);
         assertThat(schemaFieldDefinition.getSchemaAsString(),
@@ -183,11 +183,11 @@ class SchemaFieldDefinitionTest {
     @Test
     public void testFieldDefinitionWithMultipleArgumentsAndBothDescriptions() {
         SchemaFieldDefinition schemaFieldDefinition = new SchemaFieldDefinition("person", "Person", false, true, 0);
-        schemaFieldDefinition.setDescription("Description of field definition");
+        schemaFieldDefinition.description("Description of field definition");
         SchemaArgument schemaArgument1 = new SchemaArgument("filter", "String", false, null, STRING);
-        schemaArgument1.setDescription("Optional filter");
+        schemaArgument1.description("Optional filter");
         SchemaArgument schemaArgument2 = new SchemaArgument("age", "Int", true, null, INTEGER);
-        schemaArgument2.setDescription("Mandatory age");
+        schemaArgument2.description("Mandatory age");
         schemaFieldDefinition.addArgument(schemaArgument1);
         schemaFieldDefinition.addArgument(schemaArgument2);
         assertThat(schemaFieldDefinition.getSchemaAsString(),
@@ -208,9 +208,9 @@ class SchemaFieldDefinitionTest {
     @SuppressWarnings("unchecked")
     public void testDataFetchers() {
         SchemaFieldDefinition schemaFieldDefinition = new SchemaFieldDefinition("person", "Person", true, false, 0);
-        assertThat(schemaFieldDefinition.getDataFetcher(), is(nullValue()));
-        schemaFieldDefinition.setDataFetcher(new StaticDataFetcher("Value"));
-        DataFetcher dataFetcher = schemaFieldDefinition.getDataFetcher();
+        assertThat(schemaFieldDefinition.dataFetcher(), is(nullValue()));
+        schemaFieldDefinition.dataFetcher(new StaticDataFetcher("Value"));
+        DataFetcher dataFetcher = schemaFieldDefinition.dataFetcher();
         assertThat(dataFetcher, is(notNullValue()));
         assertThat(dataFetcher instanceof StaticDataFetcher, is(true));
     }

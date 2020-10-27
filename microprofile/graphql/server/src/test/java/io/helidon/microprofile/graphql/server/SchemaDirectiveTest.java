@@ -36,16 +36,16 @@ class SchemaDirectiveTest {
     @Test
     public void testConstructors() {
         SchemaDirective schemaDirective = new SchemaDirective("auth");
-        assertThat(schemaDirective.getName(), is("auth"));
-        assertThat(schemaDirective.getArguments().size(), is(0));
-        assertThat(schemaDirective.getLocations().size(), is(0));
+        assertThat(schemaDirective.name(), is("auth"));
+        assertThat(schemaDirective.arguments().size(), is(0));
+        assertThat(schemaDirective.locations().size(), is(0));
 
         SchemaArgument arg = new SchemaArgument("name", "String", true, null, STRING);
         schemaDirective.addArgument(arg);
-        assertThat(schemaDirective.getArguments().contains(arg), is(true));
+        assertThat(schemaDirective.arguments().contains(arg), is(true));
 
         schemaDirective.addLocation(FIELD_DEFINITION.name());
-        assertThat(schemaDirective.getLocations().contains(FIELD_DEFINITION.name()), is(true));
+        assertThat(schemaDirective.locations().contains(FIELD_DEFINITION.name()), is(true));
 
         assertThat(schemaDirective.getSchemaAsString(), is(notNullValue()));
     }

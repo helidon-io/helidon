@@ -51,8 +51,8 @@ public class DefaultValuesIT extends AbstractGraphQLIT {
         SchemaType query = schema.getTypeByName("Query");
         SchemaType mutation = schema.getTypeByName("Mutation");
         assertThat(query, is(notNullValue()));
-        assertThat(query.getFieldDefinitions().stream().filter(fd -> fd.getName().equals("settlement")).count(), is(1L));
-        assertThat(mutation.getFieldDefinitions().stream().filter(fd -> fd.getName().equals("getaway")).count(), is(1L));
+        assertThat(query.fieldDefinitions().stream().filter(fd -> fd.name().equals("settlement")).count(), is(1L));
+        assertThat(mutation.fieldDefinitions().stream().filter(fd -> fd.name().equals("getaway")).count(), is(1L));
     }
 
     @Test
@@ -92,9 +92,9 @@ public class DefaultValuesIT extends AbstractGraphQLIT {
         assertThat(query, is(notNullValue()));
         SchemaFieldDefinition fd = query.getFieldDefinitionByName("echoDefaultValuePOJO");
         assertThat(fd, is(notNullValue()));
-        SchemaArgument argument = fd.getArguments().get(0);
+        SchemaArgument argument = fd.arguments().get(0);
         assertThat(argument, is(notNullValue()));
-        assertThat(argument.getDefaultValue(), is(
+        assertThat(argument.defaultValue(), is(
                 "{ \"id\": \"ID-1\", \"value\": 1000, \"booleanValue\": true, \"dateObject\": \"1968-02-17\","
                  + " \"formattedIntWithDefault\": \"2 value\", \"offsetDateTime\": \"29 Jan 2020 at 09:45 in zone +0200\"}"));
 
@@ -122,6 +122,6 @@ public class DefaultValuesIT extends AbstractGraphQLIT {
 
         fd = getFieldDefinition(type, "value");
         assertThat(fd, is(notNullValue()));
-        assertThat(fd.getDefaultValue(), is("111222"));
+        assertThat(fd.defaultValue(), is("111222"));
     }
 }

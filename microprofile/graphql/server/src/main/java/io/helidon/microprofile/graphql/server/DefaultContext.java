@@ -37,7 +37,7 @@ public class DefaultContext
     }
 
     @Override
-    public Throwable getPartialResultsException() {
+    public Throwable partialResultsException() {
         return currentThrowable.get();
     }
 

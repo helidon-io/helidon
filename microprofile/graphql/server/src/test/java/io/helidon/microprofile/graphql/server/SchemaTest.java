@@ -131,7 +131,7 @@ class SchemaTest extends AbstractGraphQLTest {
         listString.add("JEDI");
         listString.add("EMPIRE");
         SchemaEnum schemaEnum1 = new SchemaEnum("Episode");
-        schemaEnum1.getValues().addAll(listString);
+        schemaEnum1.values().addAll(listString);
 
         schema.addEnum(schemaEnum1);
         assertThat(schema.getEnums().size(), is(1));
