@@ -58,7 +58,23 @@ public class MapIT extends AbstractGraphQLIT {
     public void testMapAsInput() throws IOException {
         setupIndex(indexFileName, TypeWithMap.class, MapQueries.class, SimpleContact.class);
         ExecutionContext executionContext = new ExecutionContext(defaultContext);
-        Map<String, Object> mapResults = executionContext.execute("query { query3(value: [ \"a\" \"b\" ]) }");
+        String input = "{"
+                + "id: \"id-1\" "
+                + "mapValues: [ \"a\" \"b\" ] "
+                + "mapContacts: [{ id: \"c1\" age: 10 name: \"Tim\" tShirtSize: XL } "
+                + "              { id: \"c3\" age: 10 name: \"Tim\" tShirtSize: XL } ] "
+                + "}";
+        Map<String, Object> mapResults = executionContext.execute(
+                "query { query2(value: " + input + ") { id mapValues mapContacts { id } } }");
+        assertThat(mapResults.size(), is(2));
+        assertThat(mapResults.get("errors"), is(notNullValue()));
+    }
+
+    @Test
+    public void testMapAsInput2() throws IOException {
+        setupIndex(indexFileName, TypeWithMap.class, MapQueries.class, SimpleContact.class);
+        ExecutionContext executionContext = new ExecutionContext(defaultContext);
+        Map<String, Object> mapResults = executionContext.execute("query { query3 (value: [ \"a\" \"b\" ]) }");
         assertThat(mapResults.size(), is(2));
         assertThat(mapResults.get("errors"), is(notNullValue()));
     }

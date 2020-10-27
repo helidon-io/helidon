@@ -74,6 +74,12 @@ public class DataFetcherUtils {
     private static final String[] EMPTY_FORMAT = new String[] {null, null };
 
     /**
+     * Map message.
+     */
+    private static final String MAP_MESSAGE = "This implementation does not support using a Map "
+            + "as input to a query or mutation";
+
+    /**
      * Private constructor for utilities class.
      */
     private DataFetcherUtils() {
@@ -113,7 +119,7 @@ public class DataFetcherUtils {
                     // ensure a Map is not used as an input type
                     Class<?> originalType = argument.getOriginalType();
                     if (originalType != null && originalType.isAssignableFrom(Map.class)) {
-                        ensureRuntimeException(LOGGER, "A Map may not be used as input to a query or mutation");
+                        ensureRuntimeException(LOGGER, MAP_MESSAGE);
                     }
                     listArgumentValues.add(generateArgumentValue(schema, argument.getArgumentType(),
                                                                  argument.getOriginalType(),
@@ -211,13 +217,18 @@ public class DataFetcherUtils {
                         // don't deserialize using formatting as Jsonb will do this for us
                         mapConverted.put(fdName, value);
                     } else {
-                          // retrieve the data fetcher and check if the property name is different as this should be used
-                          DataFetcher dataFetcher = fd.getDataFetcher();
-                          if (dataFetcher instanceof PropertyDataFetcher) {
-                              fdName = ((PropertyDataFetcher) dataFetcher).getPropertyName();
-                          }
-                          mapConverted.put(fdName, generateArgumentValue(schema, fd.getReturnType(), fd.getOriginalType(),
-                                                                         fd.getOriginalArrayType(), value, fd.getFormat()));
+                        // check it is not a Map
+                        Class<?> originalFdlType = fd.getOriginalType();
+                        if (originalFdlType != null && originalFdlType.isAssignableFrom(Map.class)) {
+                            ensureRuntimeException(LOGGER, MAP_MESSAGE);
+                        }
+                        // retrieve the data fetcher and check if the property name is different as this should be used
+                        DataFetcher dataFetcher = fd.getDataFetcher();
+                        if (dataFetcher instanceof PropertyDataFetcher) {
+                            fdName = ((PropertyDataFetcher) dataFetcher).getPropertyName();
+                        }
+                        mapConverted.put(fdName, generateArgumentValue(schema, fd.getReturnType(), fd.getOriginalType(),
+                                                                       fd.getOriginalArrayType(), value, fd.getFormat()));
                     }
                 }
             }
