@@ -39,7 +39,7 @@
         <version.lib.activation-api>1.2.2</version.lib.activation-api>
         <version.lib.animal-sniffer>1.18</version.lib.animal-sniffer>
         <version.lib.annotation-api>1.3.5</version.lib.annotation-api>
-        <version.lib.apache-httpclient>4.5.10</version.lib.apache-httpclient>
+        <version.lib.apache-httpclient>4.5.13</version.lib.apache-httpclient>
         <version.lib.brave-opentracing>0.35.0</version.lib.brave-opentracing>
         <version.lib.cdi-api>2.0.2</version.lib.cdi-api>
         <version.lib.commons-logging>1.2</version.lib.commons-logging>
@@ -49,7 +49,7 @@
         <version.lib.el-impl>3.0.2</version.lib.el-impl>
         <version.lib.etcd4j>2.17.0</version.lib.etcd4j>
         <version.lib.failsafe>2.3.1</version.lib.failsafe>
-        <version.lib.google-api-client>1.30.5</version.lib.google-api-client>
+        <version.lib.google-api-client>1.30.11</version.lib.google-api-client>
         <version.lib.google-error-prone>2.3.3</version.lib.google-error-prone>
         <version.lib.graalvm>20.1.0</version.lib.graalvm>
         <version.lib.grpc>1.32.1</version.lib.grpc>
@@ -110,7 +110,7 @@
         <version.lib.reactivestreams>1.0.3</version.lib.reactivestreams>
         <version.lib.slf4j>1.7.26</version.lib.slf4j>
         <version.lib.smallrye-openapi>1.2.0</version.lib.smallrye-openapi>
-        <version.lib.snakeyaml>1.24</version.lib.snakeyaml>
+        <version.lib.snakeyaml>1.27</version.lib.snakeyaml>
         <version.lib.transaction-api>1.3.3</version.lib.transaction-api>
         <version.lib.typesafe-config>1.4.0</version.lib.typesafe-config>
         <version.lib.tyrus>1.17</version.lib.tyrus>

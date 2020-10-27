@@ -26,19 +26,6 @@
    <cpe>cpe:/a:processing:processing</cpe>
 </suppress>
 
-<!-- We use snakeyaml for reading local configuration, so this CVE
-     does not apply to our use case. For more information:
-     https://bitbucket.org/asomov/snakeyaml/issues/377/allow-configuration-for-preventing-billion
-     https://bitbucket.org/asomov/snakeyaml/wiki/Changes
--->
-<suppress>
-   <notes><![CDATA[
-   file name: snakeyaml-1.24.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.yaml/snakeyaml@.*$</packageUrl>
-   <cve>CVE-2017-18640</cve>
-</suppress>
-
 <!-- weld-probe-core contains META-INF/client/probe.js which has some javascript
      CVEs. This javascript appears to be for developement and is never served
      by Helidon. So we exclude these CVEs
