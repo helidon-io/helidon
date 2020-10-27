@@ -25,7 +25,7 @@ engine:
       helidon-version: "${project.version}"
       microprofile-openapi-version: "${version.lib.microprofile-openapi-api}"
       jandex-plugin-version: ${version.plugin.jandex}
-      mp-version: "3.2"
+      mp-version: "3.3"
       guides-dir: "${project.basedir}/../examples/guides"
 assets:
   - target: "/"
