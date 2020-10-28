@@ -28,14 +28,12 @@ import java.lang.reflect.Parameter;
 import java.lang.reflect.ParameterizedType;
 import java.text.NumberFormat;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -66,6 +64,8 @@ import static io.helidon.microprofile.graphql.server.CustomScalars.CUSTOM_DATE_T
 import static io.helidon.microprofile.graphql.server.CustomScalars.CUSTOM_OFFSET_DATE_TIME_SCALAR;
 import static io.helidon.microprofile.graphql.server.CustomScalars.CUSTOM_TIME_SCALAR;
 import static io.helidon.microprofile.graphql.server.CustomScalars.CUSTOM_ZONED_DATE_TIME_SCALAR;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.DiscoveredMethod.MUTATION_TYPE;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.DiscoveredMethod.QUERY_TYPE;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.DATE;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.NO_FORMATTING;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.NUMBER;
@@ -75,8 +75,6 @@ import static io.helidon.microprofile.graphql.server.FormattingHelper.getCorrect
 import static io.helidon.microprofile.graphql.server.FormattingHelper.getCorrectNumberFormat;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.getFormattingAnnotation;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.isJsonbAnnotationPresent;
-import static io.helidon.microprofile.graphql.server.SchemaGenerator.DiscoveredMethod.MUTATION_TYPE;
-import static io.helidon.microprofile.graphql.server.SchemaGenerator.DiscoveredMethod.QUERY_TYPE;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.DATETIME_SCALAR;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.DATE_SCALAR;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.FORMATTED_DATETIME_SCALAR;
@@ -111,10 +109,10 @@ import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.isDat
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.isEnumClass;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.isGraphQLType;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.isPrimitive;
-import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.isValidIDType;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.shouldIgnoreField;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.shouldIgnoreMethod;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.stripMethodName;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.validateIDClass;
 
 /**
  * Various utilities for generating {@link Schema}s from classes.
@@ -154,7 +152,7 @@ public class SchemaGenerator {
     /**
      * Holds the {@link Set} of additional methods that need to be added to types.
      */
-    private Set<DiscoveredMethod> setAdditionalMethods = new HashSet<>();
+    private Set<SchemaGeneratorHelper.DiscoveredMethod> setAdditionalMethods = new HashSet<>();
 
     /**
      * A {@link Context} to be passed to execution.
@@ -168,7 +166,7 @@ public class SchemaGenerator {
      */
     public SchemaGenerator(Context context) {
         this.context = context;
-        jandexUtils = new JandexUtils();
+        jandexUtils = JandexUtils.create();
         jandexUtils.loadIndexes();
         if (!jandexUtils.hasIndex()) {
             String message = "Unable to find or load jandex index file: "
@@ -223,12 +221,13 @@ public class SchemaGenerator {
      */
     protected Schema generateSchemaFromClasses(Class<?>... clazzes)
             throws IntrospectionException, ClassNotFoundException {
-        Schema schema = new Schema();
+        Schema schema = Schema.create();
         setUnresolvedTypes.clear();
         setAdditionalMethods.clear();
 
-        SchemaType rootQueryType = new SchemaType(schema.getQueryName(), null);
-        SchemaType rootMutationType = new SchemaType(schema.getMutationName(), null);
+
+        SchemaType rootQueryType = SchemaType.builder().name(schema.getQueryName()).build();
+        SchemaType rootMutationType =  SchemaType.builder().name(schema.getMutationName()).build();
 
         // process any specific classes with the Input, Type or Interface annotations
         for (Class<?> clazz : clazzes) {
@@ -258,7 +257,9 @@ public class SchemaGenerator {
 
                     // assuming value for annotation overrides @Name
                     String typeName = getTypeName(clazz, true);
-                    SchemaType type = new SchemaType(typeName.isBlank() ? clazz.getSimpleName() : typeName, clazz.getName());
+                    SchemaType type =  SchemaType.builder()
+                            .name(typeName.isBlank() ? clazz.getSimpleName() : typeName)
+                            .valueClassName(clazz.getName()).build();
                     type.isInterface(clazz.isInterface());
                     type.description(getDescription(clazz.getAnnotation(Description.class)));
 
@@ -313,9 +314,9 @@ public class SchemaGenerator {
         });
 
         // process any additional methods require via the @Source annotation
-        for (DiscoveredMethod dm : setAdditionalMethods) {
+        for (SchemaGeneratorHelper.DiscoveredMethod dm : setAdditionalMethods) {
             // add the discovered method to the type
-            SchemaType type = schema.getTypeByClass(dm.source);
+            SchemaType type = schema.getTypeByClass(dm.source());
             if (type != null) {
                 SchemaFieldDefinition fd = newFieldDefinition(dm, null);
                 // add all arguments which are not source arguments
@@ -326,7 +327,7 @@ public class SchemaGenerator {
 
                 // check for existing DataFetcher
                 fd.dataFetcher(DataFetcherUtils.newMethodDataFetcher(
-                        schema, dm.method.getDeclaringClass(), dm.method,
+                        schema, dm.method().getDeclaringClass(), dm.method(),
                         dm.source(), fd.arguments().toArray(new SchemaArgument[0])));
                 type.addFieldDefinition(fd);
 
@@ -482,8 +483,8 @@ public class SchemaGenerator {
      * @param realReturnType the class to generate type from
      * @param isInputType    indicates if the type is an input type and if not the Input annotation will be ignored
      * @return a {@link SchemaType}
-     * @throws IntrospectionException
-     * @throws ClassNotFoundException
+     * @throws IntrospectionException if any errors with introspection
+     * @throws ClassNotFoundException if any classes are not found
      */
     private SchemaType generateType(String realReturnType, boolean isInputType)
             throws IntrospectionException, ClassNotFoundException {
@@ -491,12 +492,12 @@ public class SchemaGenerator {
         // if isInputType=false then we ignore the name annotation in case
         // an annotated input type was also used as a return type
         String simpleName = getSimpleName(realReturnType, !isInputType);
-        SchemaType type = new SchemaType(simpleName, realReturnType);
+        SchemaType type = SchemaType.builder().name(simpleName).valueClassName(realReturnType).build();
         type.description(getDescription(Class.forName(realReturnType).getAnnotation(Description.class)));
 
-        for (Map.Entry<String, DiscoveredMethod> entry : retrieveGetterBeanMethods(Class.forName(realReturnType), isInputType)
+        for (Map.Entry<String, SchemaGeneratorHelper.DiscoveredMethod> entry : retrieveGetterBeanMethods(Class.forName(realReturnType), isInputType)
                 .entrySet()) {
-            DiscoveredMethod discoveredMethod = entry.getValue();
+            SchemaGeneratorHelper.DiscoveredMethod discoveredMethod = entry.getValue();
             String valueTypeName = discoveredMethod.returnType();
             SchemaFieldDefinition fd = newFieldDefinition(discoveredMethod, null);
             type.addFieldDefinition(fd);
@@ -524,8 +525,8 @@ public class SchemaGenerator {
                                               Class<?> clazz)
             throws IntrospectionException, ClassNotFoundException {
 
-        for (Map.Entry<String, DiscoveredMethod> entry : retrieveAllAnnotatedBeanMethods(clazz).entrySet()) {
-            DiscoveredMethod discoveredMethod = entry.getValue();
+        for (Map.Entry<String, SchemaGeneratorHelper.DiscoveredMethod> entry : retrieveAllAnnotatedBeanMethods(clazz).entrySet()) {
+            SchemaGeneratorHelper.DiscoveredMethod discoveredMethod = entry.getValue();
             Method method = discoveredMethod.method();
 
             SchemaFieldDefinition fd = null;
@@ -547,7 +548,7 @@ public class SchemaGenerator {
                 }
             }
 
-            SchemaType schemaType = discoveredMethod.methodType == QUERY_TYPE
+            SchemaType schemaType = discoveredMethod.methodType() == QUERY_TYPE
                     ? rootQueryType
                     : rootMutationType;
 
@@ -780,23 +781,23 @@ public class SchemaGenerator {
     /**
      * Return a new {@link SchemaFieldDefinition} with the given field and class.
      *
-     * @param discoveredMethod the {@link DiscoveredMethod}
+     * @param discoveredMethod the {@link SchemaGeneratorHelper.DiscoveredMethod}
      * @param optionalName     optional name for the field definition
      * @return a {@link SchemaFieldDefinition}
      */
     @SuppressWarnings("rawtypes")
-    private SchemaFieldDefinition newFieldDefinition(DiscoveredMethod discoveredMethod, String optionalName) {
+    private SchemaFieldDefinition newFieldDefinition(SchemaGeneratorHelper.DiscoveredMethod discoveredMethod, String optionalName) {
         String valueClassName = discoveredMethod.returnType();
         String graphQLType = getGraphQLType(valueClassName);
         DataFetcher dataFetcher = null;
         String propertyName = discoveredMethod.propertyName();
         String name = discoveredMethod.name();
 
-        boolean isArrayReturnType = discoveredMethod.isArrayReturnType || discoveredMethod.isCollectionType() || discoveredMethod
-                .isMap();
+        boolean isArrayReturnType = discoveredMethod.isArrayReturnType() || discoveredMethod.isCollectionType()
+                || discoveredMethod.isMap();
 
         if (isArrayReturnType) {
-            if (discoveredMethod.isMap) {
+            if (discoveredMethod.isMap()) {
                 // add DataFetcher that will just retrieve the values() from the Map.
                 // The microprofile-graphql spec does not specify how Maps are treated
                 // and leaves this up to the individual implementation. This implementation
@@ -828,7 +829,7 @@ public class SchemaGenerator {
         SchemaFieldDefinition fd = SchemaFieldDefinition.builder()
                 .name(optionalName != null
                               ? optionalName
-                              : discoveredMethod.name)
+                              : discoveredMethod.name())
                 .returnType(graphQLType)
                 .arrayReturnType(isArrayReturnType)
                 .returnTypeMandatory(discoveredMethod.isReturnTypeMandatory())
@@ -911,9 +912,9 @@ public class SchemaGenerator {
      * @throws IntrospectionException if any errors with introspection
      * @throws ClassNotFoundException if any classes are not found
      */
-    protected Map<String, DiscoveredMethod> retrieveAllAnnotatedBeanMethods(Class<?> clazz)
+    protected Map<String, SchemaGeneratorHelper.DiscoveredMethod> retrieveAllAnnotatedBeanMethods(Class<?> clazz)
             throws IntrospectionException, ClassNotFoundException {
-        Map<String, DiscoveredMethod> mapDiscoveredMethods = new HashMap<>();
+        Map<String, SchemaGeneratorHelper.DiscoveredMethod> mapDiscoveredMethods = new HashMap<>();
         for (Method m : getAllMethods(clazz)) {
             boolean isQuery = m.getAnnotation(Query.class) != null;
             boolean isMutation = m.getAnnotation(Mutation.class) != null;
@@ -923,7 +924,7 @@ public class SchemaGenerator {
                         + " may not have both a Query and Mutation annotation");
             }
             if (isQuery || isMutation || hasSourceAnnotation) {
-                DiscoveredMethod discoveredMethod = generateDiscoveredMethod(m, clazz, null, false, true);
+                SchemaGeneratorHelper.DiscoveredMethod discoveredMethod = generateDiscoveredMethod(m, clazz, null, false, true);
                 discoveredMethod.methodType(isQuery || hasSourceAnnotation ? QUERY_TYPE : MUTATION_TYPE);
                 String name = discoveredMethod.name();
                 if (mapDiscoveredMethods.containsKey(name)) {
@@ -945,10 +946,10 @@ public class SchemaGenerator {
      * @return a {@link Map} of the methods and return types
      * @throws IntrospectionException if there were errors introspecting classes
      */
-    protected Map<String, DiscoveredMethod> retrieveGetterBeanMethods(Class<?> clazz,
-                                                                      boolean isInputType)
+    protected Map<String, SchemaGeneratorHelper.DiscoveredMethod> retrieveGetterBeanMethods(Class<?> clazz,
+                                                                                            boolean isInputType)
             throws IntrospectionException, ClassNotFoundException {
-        Map<String, DiscoveredMethod> mapDiscoveredMethods = new HashMap<>();
+        Map<String, SchemaGeneratorHelper.DiscoveredMethod> mapDiscoveredMethods = new HashMap<>();
 
         for (Method m : getAllMethods(clazz)) {
             if (m.getName().equals("getClass") || shouldIgnoreMethod(m, isInputType)) {
@@ -967,8 +968,8 @@ public class SchemaGenerator {
                 // only include if the field should not be ignored
                 if (!shouldIgnoreField(clazz, propertyDescriptor.getName()) && !ignoreWriteMethod) {
                     // this is a getter method, include it here
-                    DiscoveredMethod discoveredMethod = generateDiscoveredMethod(m, clazz, propertyDescriptor, isInputType,
-                                                                                 false);
+                    SchemaGeneratorHelper.DiscoveredMethod discoveredMethod = generateDiscoveredMethod(m, clazz, propertyDescriptor, isInputType,
+                                                                                                       false);
                     mapDiscoveredMethods.put(discoveredMethod.name(), discoveredMethod);
                 }
             }
@@ -992,7 +993,7 @@ public class SchemaGenerator {
     }
 
     /**
-     * Generate a {@link DiscoveredMethod} from the given arguments.
+     * Generate a {@link SchemaGeneratorHelper.DiscoveredMethod} from the given arguments.
      *
      * @param method            {@link Method} being introspected
      * @param clazz             {@link Class} being introspected
@@ -1000,11 +1001,11 @@ public class SchemaGenerator {
      *                          methods as in the case for a {@link Query} annotation)
      * @param isInputType       indicates if the method is part of an input type
      * @param isQueryOrMutation indicates if this is for a query or mutation
-     * @return a {@link DiscoveredMethod}
+     * @return a {@link SchemaGeneratorHelper.DiscoveredMethod}
      */
-    private DiscoveredMethod generateDiscoveredMethod(Method method, Class<?> clazz,
-                                                      PropertyDescriptor pd, boolean isInputType,
-                                                      boolean isQueryOrMutation) throws ClassNotFoundException {
+    private SchemaGeneratorHelper.DiscoveredMethod generateDiscoveredMethod(Method method, Class<?> clazz,
+                                                                            PropertyDescriptor pd, boolean isInputType,
+                                                                            boolean isQueryOrMutation) throws ClassNotFoundException {
         String[] format = new String[0];
         String description = null;
         boolean isReturnTypeMandatory = false;
@@ -1145,7 +1146,7 @@ public class SchemaGenerator {
             format = methodFormat;
         }
 
-        DiscoveredMethod discoveredMethod = new DiscoveredMethod();
+        SchemaGeneratorHelper.DiscoveredMethod discoveredMethod = new SchemaGeneratorHelper.DiscoveredMethod();
         discoveredMethod.name(varName);
         discoveredMethod.method(method);
         discoveredMethod.format(format);
@@ -1184,8 +1185,8 @@ public class SchemaGenerator {
     }
 
     /**
-     * Process the {@link ReturnType} and update {@link DiscoveredMethod} as required.
-     * @param discoveredMethod  {@link DiscoveredMethod}
+     * Process the {@link ReturnType} and update {@link SchemaGeneratorHelper.DiscoveredMethod} as required.
+     * @param discoveredMethod  {@link SchemaGeneratorHelper.DiscoveredMethod}
      * @param realReturnType    {@link ReturnType} with details of the return types
      * @param returnClazzName   return class name
      * @param isInputType       indicates if the method is part of an input type
@@ -1194,7 +1195,7 @@ public class SchemaGenerator {
      *
      * @throws ClassNotFoundException if any class not found
      */
-    private void processReturnType(DiscoveredMethod discoveredMethod, ReturnType realReturnType,
+    private void processReturnType(SchemaGeneratorHelper.DiscoveredMethod discoveredMethod, ReturnType realReturnType,
                                    String returnClazzName, boolean isInputType,
                                    String varName, Method method) throws ClassNotFoundException {
         if (realReturnType.returnClass() != null && !ID.equals(returnClazzName)) {
@@ -1205,7 +1206,7 @@ public class SchemaGenerator {
             if (dateScalar != null && isDateTimeScalar(dateScalar.name())) {
                 // only set the original array type if it's a date/time
                 discoveredMethod.originalArrayType(Class.forName(realReturnType.returnClass));
-            } else if (discoveredMethod.isArrayReturnType) {
+            } else if (discoveredMethod.isArrayReturnType()) {
                 Class<?> originalArrayType = getSafeClass(realReturnType.returnClass);
                 if (originalArrayType != null) {
                     discoveredMethod.originalArrayType(originalArrayType);
@@ -1229,10 +1230,10 @@ public class SchemaGenerator {
      * Process parameters for the given method.
      *
      * @param method           {@link Method} to process
-     * @param discoveredMethod {@link DiscoveredMethod} to update
+     * @param discoveredMethod {@link SchemaGeneratorHelper.DiscoveredMethod} to update
      * @param annotatedName    annotated name or null
      */
-    private void processMethodParameters(Method method, DiscoveredMethod discoveredMethod, String annotatedName) {
+    private void processMethodParameters(Method method, SchemaGeneratorHelper.DiscoveredMethod discoveredMethod, String annotatedName) {
         Parameter[] parameters = method.getParameters();
         if (parameters != null && parameters.length > 0) {
             java.lang.reflect.Type[] genericParameterTypes = method.getGenericParameterTypes();
@@ -1260,11 +1261,14 @@ public class SchemaGenerator {
                 boolean isMandatory =
                         (isPrimitive(paramType) && argumentDefaultValue == null)
                                 || (parameter.getAnnotation(NonNull.class) != null && argumentDefaultValue == null);
-                SchemaArgument argument =
-                        new SchemaArgument(parameterName, returnType.returnClass(),
-                                           isMandatory, argumentDefaultValue, paramType);
-                String argumentDescription = getDescription(parameter.getAnnotation(Description.class));
-                argument.description(argumentDescription);
+                SchemaArgument argument = SchemaArgument.builder()
+                        .argumentName(parameterName)
+                        .argumentType(returnType.returnClass())
+                        .mandatory(isMandatory)
+                        .defaultValue(argumentDefaultValue)
+                        .originalType(paramType)
+                        .description(getDescription(parameter.getAnnotation(Description.class)))
+                        .build();
 
                 String[] argumentFormat = getFormattingAnnotation(parameter);
                 String[] argumentTypeFormat = FormattingHelper.getMethodParameterFormat(parameter, 0);
@@ -1306,30 +1310,6 @@ public class SchemaGenerator {
                 discoveredMethod.addArgument(argument);
                 i++;
             }
-        }
-    }
-
-    /**
-     * Validate that a {@link Class} annotated with ID is a valid type.
-     *
-     * @param returnClazz {@link Class} to check
-     */
-    private static void validateIDClass(Class<?> returnClazz) {
-        if (!isValidIDType(returnClazz)) {
-            ensureConfigurationException(LOGGER, "A class of type " + returnClazz + " is not allowed to be an @Id");
-        }
-    }
-
-    /**
-     * Validate that a class annotated with ID is a valid type.
-     *
-     * @param returnClazz class to check
-     */
-    private static void validateIDClass(String returnClazz) {
-        try {
-            validateIDClass(Class.forName(returnClazz));
-        } catch (ClassNotFoundException e) {
-            // ignore
         }
     }
 
@@ -1439,567 +1419,6 @@ public class SchemaGenerator {
      */
     protected JandexUtils getJandexUtils() {
         return jandexUtils;
-    }
-
-    /**
-     * Defines discovered methods for a class.
-     */
-    public static class DiscoveredMethod {
-
-        /**
-         * Indicates query Type.
-         */
-        public static final int QUERY_TYPE = 0;
-
-        /**
-         * Indicates write method.
-         */
-        public static final int MUTATION_TYPE = 1;
-
-        /**
-         * Name of the discovered method.
-         */
-        private String name;
-
-        /**
-         * Return type of the method.
-         */
-        private String returnType;
-
-        /**
-         * type of method.
-         */
-        private int methodType;
-
-        /**
-         * If the return type is a {@link Collection} then this is the type of {@link Collection} and the returnType will be
-         * return type for the collection.
-         */
-        private String collectionType;
-
-        /**
-         * Indicates if the return type is an array.
-         */
-        private boolean isArrayReturnType;
-
-        /**
-         * Indicates if the return type is a {@link Map}. Note: In the 1.0.1 microprofile spec the behaviour of {@link Map} is
-         * undefined.
-         */
-        private boolean isMap;
-
-        /**
-         * The {@link List} of {@link SchemaArgument}s for this method.
-         */
-        private List<SchemaArgument> listArguments = new ArrayList<>();
-
-        /**
-         * The actual method.
-         */
-        private Method method;
-
-        /**
-         * Number of levels in the Array.
-         */
-        private int arrayLevels = 0;
-
-        /**
-         * The source on which the method should be added.
-         */
-        private String source;
-
-        /**
-         * The property name if the method is a getter.
-         */
-        private String propertyName;
-
-        /**
-         * Indicates if the method containing the {@link Source} annotation was also annotated with the {@link Query} annotation.
-         * If true, then this indicates that a top level query should also be created as well as the field in the type.
-         */
-        private boolean isQueryAnnotated = false;
-
-        /**
-         * Defines the format for a number or date.
-         */
-        private String[] format = new String[0];
-
-        /**
-         * A description for a method.
-         */
-        private String description;
-
-        /**
-         * Indicates id the return type is mandatory.
-         */
-        private boolean isReturnTypeMandatory;
-
-        /**
-         * The default value for this discovered method.
-         */
-        private Object defaultValue;
-
-        /**
-         * If the return type is an array then indicates if the value in the array is mandatory.
-         */
-        private boolean isArrayReturnTypeMandatory;
-
-        /**
-         * Original array inner type if it is array type.
-         */
-        private Class<?> originalArrayType;
-
-        /**
-         * Indicates if the format is of type Jsonb.
-         */
-        private boolean isJsonbFormat;
-
-        /**
-         * Indicates if the property name is of type Jsonb.
-         */
-        private boolean isJsonbProperty;
-
-        /**
-         * Default constructor.
-         */
-        public DiscoveredMethod() {
-        }
-
-        /**
-         * Return the name.
-         *
-         * @return the name
-         */
-        public String name() {
-            return name;
-        }
-
-        /**
-         * Set the name.
-         *
-         * @param name the name
-         */
-        public void name(String name) {
-            this.name = name;
-        }
-
-        /**
-         * Return the return type.
-         *
-         * @return the return type
-         */
-        public String returnType() {
-            return returnType;
-        }
-
-        /**
-         * Set the return type.
-         *
-         * @param returnType the return type
-         */
-        public void returnType(String returnType) {
-            this.returnType = returnType;
-        }
-
-        /**
-         * Return the collection type.
-         *
-         * @return the collection
-         */
-        public String collectionType() {
-            return collectionType;
-        }
-
-        /**
-         * Set the collection type.
-         *
-         * @param collectionType the collection type
-         */
-        public void collectionType(String collectionType) {
-            this.collectionType = collectionType;
-        }
-
-        /**
-         * Sets if the property has a JsonbProperty annotation.
-         *
-         * @param isJsonbProperty if the property has a JsonbProperty annotation
-         */
-        public void jsonbProperty(boolean isJsonbProperty) {
-            this.isJsonbProperty = isJsonbProperty;
-        }
-
-        /**
-         * Indicates if the property has a JsonbProperty annotation.
-         *
-         * @return true if the property has a JsonbProperty annotation
-         */
-        public boolean isJsonbProperty() {
-            return isJsonbProperty;
-        }
-
-        /**
-         * Indicates if the method is a map return type.
-         *
-         * @return if the method is a map return type
-         */
-        public boolean isMap() {
-            return isMap;
-        }
-
-        /**
-         * Set if the method is a map return type.
-         *
-         * @param map if the method is a map return type
-         */
-        public void map(boolean map) {
-            isMap = map;
-        }
-
-        /**
-         * Return the method type.
-         *
-         * @return the method type
-         */
-        public int methodType() {
-            return methodType;
-        }
-
-        /**
-         * Set the method type either READ or WRITE.
-         *
-         * @param methodType the method type
-         */
-        public void methodType(int methodType) {
-            this.methodType = methodType;
-        }
-
-        /**
-         * Indicates if the method returns an array.
-         *
-         * @return if the method returns an array.
-         */
-        public boolean isArrayReturnType() {
-            return isArrayReturnType;
-        }
-
-        /**
-         * Indicates if the method returns an array.
-         *
-         * @param arrayReturnType if the method returns an array
-         */
-        public void arrayReturnType(boolean arrayReturnType) {
-            isArrayReturnType = arrayReturnType;
-        }
-
-        /**
-         * Indicates if the method is a collection type.
-         *
-         * @return if the method is a collection type
-         */
-        public boolean isCollectionType() {
-            return collectionType != null;
-        }
-
-        /**
-         * Returns the {@link Method}.
-         *
-         * @return the {@link Method}
-         */
-        public Method method() {
-            return method;
-        }
-
-        /**
-         * Sets the {@link Method}.
-         *
-         * @param method the {@link Method}
-         */
-        public void method(Method method) {
-            this.method = method;
-        }
-
-        /**
-         * Return the {@link List} of {@link SchemaArgument}s.
-         *
-         * @return the {@link List} of {@link SchemaArgument}
-         */
-        public List<SchemaArgument> arguments() {
-            return this.listArguments;
-        }
-
-        /**
-         * Return the number of levels in the Array.
-         *
-         * @return Return the number of levels in the Array
-         */
-        public int arrayLevels() {
-            return arrayLevels;
-        }
-
-        /**
-         * Sets the number of levels in the Array.
-         *
-         * @param arrayLevels the number of levels in the Array
-         */
-        public void arrayLevels(int arrayLevels) {
-            this.arrayLevels = arrayLevels;
-        }
-
-        /**
-         * Add a {@link SchemaArgument}.
-         *
-         * @param argument a {@link SchemaArgument}
-         */
-        public void addArgument(SchemaArgument argument) {
-            listArguments.add(argument);
-        }
-
-        /**
-         * Return the source on which the method should be added.
-         *
-         * @return source on which the method should be added
-         */
-        public String source() {
-            return source;
-        }
-
-        /**
-         * Set the source on which the method should be added.
-         *
-         * @param source source on which the method should be added
-         */
-        public void source(String source) {
-            this.source = source;
-        }
-
-        /**
-         * Indicates if the method containing the {@link Source} annotation was also annotated with the {@link Query} annotation.
-         *
-         * @return true if the {@link Query} annotation was present
-         */
-        public boolean isQueryAnnotated() {
-            return isQueryAnnotated;
-        }
-
-        /**
-         * Set if the method containing the {@link Source} annotation was * also annotated with the {@link Query} annotation.
-         *
-         * @param queryAnnotated true if the {@link Query} annotation was present
-         */
-        public void queryAnnotated(boolean queryAnnotated) {
-            isQueryAnnotated = queryAnnotated;
-        }
-
-        /**
-         * Return the format for a number or date.
-         *
-         * @return the format for a number or date
-         */
-        public String[] format() {
-            if (format == null) {
-                return null;
-            }
-            String[] copy = new String[format.length];
-            System.arraycopy(format, 0, copy, 0, copy.length);
-            return copy;
-        }
-
-        /**
-         * Set the format for a number or date.
-         *
-         * @param format the format for a number or date
-         */
-        public void format(String[] format) {
-            if (format == null) {
-                this.format = null;
-            } else {
-                this.format = new String[format.length];
-                System.arraycopy(format, 0, this.format, 0, this.format.length);
-            }
-        }
-
-        /**
-         * Return the property name if the method is a getter.
-         *
-         * @return property name if the method is a getter
-         */
-        public String propertyName() {
-            return propertyName;
-        }
-
-        /**
-         * Set the property name if the method is a getter.
-         *
-         * @param propertyName property name
-         */
-        public void propertyName(String propertyName) {
-            this.propertyName = propertyName;
-        }
-
-        /**
-         * Return the description for a method.
-         *
-         * @return the description for a method
-         */
-        public String description() {
-            return description;
-        }
-
-        /**
-         * Set the description for a method.
-         *
-         * @param description the description for a method
-         */
-        public void description(String description) {
-            this.description = description;
-        }
-
-        /**
-         * Indicates if the return type is mandatory.
-         *
-         * @return if the return type is mandatory
-         */
-        public boolean isReturnTypeMandatory() {
-            return isReturnTypeMandatory;
-        }
-
-        /**
-         * Set if the return type is mandatory.
-         *
-         * @param returnTypeMandatory if the return type is mandatory
-         */
-        public void returnTypeMandatory(boolean returnTypeMandatory) {
-            isReturnTypeMandatory = returnTypeMandatory;
-        }
-
-        /**
-         * Return the default value for this method.
-         *
-         * @return the default value for this method
-         */
-        public Object defaultValue() {
-            return defaultValue;
-        }
-
-        /**
-         * Set the default value for this method.
-         *
-         * @param defaultValue the default value for this method
-         */
-        public void defaultValue(Object defaultValue) {
-            this.defaultValue = defaultValue;
-        }
-
-        /**
-         * Return if the array return type is mandatory.
-         *
-         * @return if the array return type is mandatory
-         */
-        public boolean isArrayReturnTypeMandatory() {
-            return isArrayReturnTypeMandatory;
-        }
-
-        /**
-         * Sets if the array return type is mandatory.
-         *
-         * @param arrayReturnTypeMandatory if the array return type is mandatory
-         */
-        public void arrayReturnTypeMandatory(boolean arrayReturnTypeMandatory) {
-            isArrayReturnTypeMandatory = arrayReturnTypeMandatory;
-        }
-
-        /**
-         * Sets the original array type.
-         *
-         * @param originalArrayType the original array type
-         */
-        public void originalArrayType(Class<?> originalArrayType) {
-            this.originalArrayType = originalArrayType;
-        }
-
-        /**
-         * Returns the original array type.
-         *
-         * @return the original array type
-         */
-        public Class<?> originalArrayType() {
-            return originalArrayType;
-        }
-
-        /**
-         * Set if the format is of type JsonB.
-         *
-         * @param isJsonbFormat if the format is of type JsonB
-         */
-        public void jsonbFormat(boolean isJsonbFormat) {
-            this.isJsonbFormat = isJsonbFormat;
-        }
-
-        /**
-         * Returns true if the format is of type JsonB.
-         *
-         * @return true if the format is of type JsonB
-         */
-        public boolean isJsonbFormat() {
-            return isJsonbFormat;
-        }
-
-        @Override
-        public String toString() {
-            return "DiscoveredMethod{"
-                    + "name='" + name + '\''
-                    + ", returnType='" + returnType + '\''
-                    + ", methodType=" + methodType
-                    + ", collectionType='" + collectionType + '\''
-                    + ", isArrayReturnType=" + isArrayReturnType
-                    + ", isMap=" + isMap
-                    + ", listArguments=" + listArguments
-                    + ", arrayLevels=" + arrayLevels
-                    + ", source=" + source
-                    + ", isQueryAnnotated=" + isQueryAnnotated
-                    + ", isReturnTypeMandatory=" + isReturnTypeMandatory
-                    + ", isArrayReturnTypeMandatory=" + isArrayReturnTypeMandatory
-                    + ", description=" + description
-                    + ", originalArrayType=" + originalArrayType
-                    + ", defaultValue=" + defaultValue
-                    + ", isJsonbFormat=" + isJsonbFormat
-                    + ", isJsonbProperty=" + isJsonbProperty
-                    + ", method=" + method + '}';
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            DiscoveredMethod that = (DiscoveredMethod) o;
-            return methodType == that.methodType
-                    && isArrayReturnType == that.isArrayReturnType
-                    && isMap == that.isMap
-                    && arrayLevels == that.arrayLevels
-                    && Objects.equals(name, that.name)
-                    && Objects.equals(returnType, that.returnType)
-                    && Objects.equals(source, that.source)
-                    && Objects.equals(isQueryAnnotated, that.isQueryAnnotated)
-                    && Objects.equals(method, that.method)
-                    && Objects.equals(description, that.description)
-                    && Objects.equals(isReturnTypeMandatory, that.isReturnTypeMandatory)
-                    && Objects.equals(isArrayReturnTypeMandatory, that.isArrayReturnTypeMandatory)
-                    && Objects.equals(defaultValue, that.defaultValue)
-                    && Objects.equals(isJsonbFormat, that.isJsonbFormat)
-                    && Objects.equals(collectionType, that.collectionType);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(name, returnType, methodType, method, arrayLevels, isQueryAnnotated,
-                                collectionType, isArrayReturnType, isMap, source, description,
-                                isReturnTypeMandatory, defaultValue, isArrayReturnTypeMandatory, isJsonbFormat,
-                                isJsonbProperty);
-        }
     }
 
     /**

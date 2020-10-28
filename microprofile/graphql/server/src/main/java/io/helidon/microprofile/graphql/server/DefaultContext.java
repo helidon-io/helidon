@@ -26,9 +26,17 @@ public class DefaultContext
     private ThreadLocal<Throwable> currentThrowable = new ThreadLocal<>();
 
     /**
-     * Construct a default context.
+     * Private no-args constructor.
      */
-    public DefaultContext() {
+    private DefaultContext() {
+    }
+
+    /**
+     * Create a new {@link DefaultContext}.
+     * @return  a new {@link DefaultContext}
+     */
+    public static DefaultContext create() {
+        return new DefaultContext();
     }
 
     @Override

@@ -22,12 +22,11 @@ package io.helidon.microprofile.graphql.server;
 public class SchemaInputType extends SchemaType {
 
     /**
-     * Construct an {@link SchemaInputType}.
-     *
-     * @param name           name for the input type
-     * @param valueClassName fully qualified value name
+     * Private no-args constructor.
+     * @param name  name of the type
+     * @param valueClassName  value class name
      */
-    public SchemaInputType(String name, String valueClassName) {
+    protected SchemaInputType(String name, String valueClassName) {
         super(name, valueClassName);
     }
 

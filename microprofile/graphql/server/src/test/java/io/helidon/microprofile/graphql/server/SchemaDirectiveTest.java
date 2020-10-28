@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import static graphql.introspection.Introspection.DirectiveLocation.FIELD;
 import static graphql.introspection.Introspection.DirectiveLocation.FIELD_DEFINITION;
 import static graphql.introspection.Introspection.DirectiveLocation.QUERY;
+import static io.helidon.microprofile.graphql.server.TestHelper.createArgument;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -40,7 +41,7 @@ class SchemaDirectiveTest {
         assertThat(schemaDirective.arguments().size(), is(0));
         assertThat(schemaDirective.locations().size(), is(0));
 
-        SchemaArgument arg = new SchemaArgument("name", "String", true, null, STRING);
+        SchemaArgument arg = createArgument("name", "String", true, null, STRING);
         schemaDirective.addArgument(arg);
         assertThat(schemaDirective.arguments().contains(arg), is(true));
 
@@ -60,7 +61,7 @@ class SchemaDirectiveTest {
 
     @Test
     public void testDirectiveWith1Argument1Location() {
-        SchemaArgument arg = new SchemaArgument("name", "String", true, null, STRING);
+        SchemaArgument arg = createArgument("name", "String", true, null, STRING);
         SchemaDirective schemaDirective = SchemaDirective.builder()
                 .name("directiveName")
                 .addArgument(arg)
@@ -71,8 +72,8 @@ class SchemaDirectiveTest {
 
     @Test
     public void testDirectiveWith2Argument1Location() {
-        SchemaArgument arg1 = new SchemaArgument("name", "String", true, null, STRING);
-        SchemaArgument arg2 = new SchemaArgument("name1", "Int", false, null, INTEGER);
+        SchemaArgument arg1 = createArgument("name", "String", true, null, STRING);
+        SchemaArgument arg2 = createArgument("name1", "Int", false, null, INTEGER);
         SchemaDirective schemaDirective = SchemaDirective.builder()
                 .name("directiveName")
                 .addArgument(arg1)
@@ -85,8 +86,8 @@ class SchemaDirectiveTest {
 
     @Test
     public void testDirectiveWith2Argument2Location() {
-        SchemaArgument arg1 = new SchemaArgument("name", "String", true, null, STRING);
-        SchemaArgument arg2 = new SchemaArgument("name1", "Int", false, null,INTEGER);
+        SchemaArgument arg1 = createArgument("name", "String", true, null, STRING);
+        SchemaArgument arg2 = createArgument("name1", "Int", false, null,INTEGER);
         SchemaDirective schemaDirective = SchemaDirective.builder()
                 .name("directiveName")
                 .addArgument(arg1)

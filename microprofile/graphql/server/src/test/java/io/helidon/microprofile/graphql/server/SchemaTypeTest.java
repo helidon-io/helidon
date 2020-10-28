@@ -18,6 +18,7 @@ package io.helidon.microprofile.graphql.server;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.microprofile.graphql.server.TestHelper.createArgument;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.notNullValue;
@@ -33,7 +34,11 @@ class SchemaTypeTest {
 
     @Test
     public void testBuilders() {
-        SchemaType schemaType = new SchemaType("Name", "com.oracle.test.Value");
+        SchemaType schemaType = SchemaType.builder()
+                .name("Name")
+                .valueClassName("com.oracle.test.Value")
+                .build();
+
         assertThat(schemaType.name(), is("Name"));
         assertThat(schemaType.valueClassName(), is("com.oracle.test.Value"));
         assertThat(schemaType.fieldDefinitions(), is(notNullValue()));
@@ -66,7 +71,7 @@ class SchemaTypeTest {
                 .arrayReturnType(true)
                 .returnTypeMandatory(true)
                 .arrayLevels(0)
-                .addArgument(new SchemaArgument("filter", "String", false, null, STRING))
+                .addArgument(createArgument("filter", "String", false, null, STRING))
                 .build();
 
         schemaType.addFieldDefinition(schemaFieldDefinition);
@@ -84,8 +89,6 @@ class SchemaTypeTest {
 
     @Test
     public void testImplementingInterface() {
-        SchemaType schemaType = new SchemaType("Person", "com.oracle.Person");
-
         SchemaFieldDefinition schemaFieldDefinition = SchemaFieldDefinition.builder()
                 .name("person")
                 .returnType("Person")
@@ -94,10 +97,15 @@ class SchemaTypeTest {
                 .arrayLevels(0)
                 .build();
 
-        schemaFieldDefinition.addArgument(new SchemaArgument("filter", "String", false, null, STRING));
-        schemaFieldDefinition.addArgument(new SchemaArgument("age", "Int", true, null, INTEGER));
-        schemaType.addFieldDefinition(schemaFieldDefinition);
-        schemaType.implementingInterface("Contact");
+        schemaFieldDefinition.addArgument(createArgument("filter", "String", false, null, STRING));
+        schemaFieldDefinition.addArgument(createArgument("age", "Int", true, null, INTEGER));
+
+        SchemaType schemaType = SchemaType.builder()
+                .name("Person")
+                .valueClassName("com.oracle.Person")
+                .addFieldDefinition(schemaFieldDefinition)
+                .implementingInterface("Contact")
+                .build();
 
         assertThat(schemaType.getSchemaAsString(), is("type Person implements Contact {\n" +
                                                               "person(\nfilter: String, \nage: Int!\n): Person!\n" +
@@ -106,7 +114,10 @@ class SchemaTypeTest {
 
     @Test
     public void testTypeSchemaOutput() {
-        SchemaType schemaType = new SchemaType("Person", "com.oracle.Person");
+        SchemaType schemaType = SchemaType.builder()
+                .name("Person")
+                .valueClassName("com.oracle.Person")
+                .build();
 
         SchemaFieldDefinition schemaFieldDefinition = SchemaFieldDefinition.builder()
                 .name("person")
@@ -116,7 +127,7 @@ class SchemaTypeTest {
                 .arrayLevels(0)
                 .build();
 
-        schemaFieldDefinition.addArgument(new SchemaArgument("filter", "String", false, null, STRING));
+        schemaFieldDefinition.addArgument(createArgument("filter", "String", false, null, STRING));
         schemaType.addFieldDefinition(schemaFieldDefinition);
 
         assertThat(schemaType.fieldDefinitions().get(0).equals(schemaFieldDefinition), is(true));
@@ -129,7 +140,10 @@ class SchemaTypeTest {
 
     @Test
     public void testTypeSchemaOutputWithDescription() {
-        SchemaType schemaType = new SchemaType("Person", "com.oracle.Person");
+        SchemaType schemaType = SchemaType.builder()
+                .name("Person")
+                .valueClassName("com.oracle.Person")
+                .build();
 
         SchemaFieldDefinition schemaFieldDefinition = SchemaFieldDefinition.builder()
                 .name("person")
@@ -139,7 +153,7 @@ class SchemaTypeTest {
                 .arrayLevels(0)
                 .build();
 
-        schemaFieldDefinition.addArgument(new SchemaArgument("filter", "String", false, null, STRING));
+        schemaFieldDefinition.addArgument(createArgument("filter", "String", false, null, STRING));
         schemaType.addFieldDefinition(schemaFieldDefinition);
         schemaType.description("Type Description");
 
@@ -153,7 +167,10 @@ class SchemaTypeTest {
 
     @Test
     public void testTypeStringOutputWith2Arguments() {
-        SchemaType schemaType = new SchemaType("Person", "com.oracle.Person");
+        SchemaType schemaType = SchemaType.builder()
+                .name("Person")
+                .valueClassName("com.oracle.Person")
+                .build();
 
         SchemaFieldDefinition schemaFieldDefinition = SchemaFieldDefinition.builder()
                 .name("person")
@@ -163,8 +180,8 @@ class SchemaTypeTest {
                 .arrayLevels(0)
                 .build();
 
-        schemaFieldDefinition.addArgument(new SchemaArgument("filter", "String", false, null, STRING));
-        schemaFieldDefinition.addArgument(new SchemaArgument("age", "Int", true, null, INTEGER));
+        schemaFieldDefinition.addArgument(createArgument("filter", "String", false, null, STRING));
+        schemaFieldDefinition.addArgument(createArgument("age", "Int", true, null, INTEGER));
         schemaType.addFieldDefinition(schemaFieldDefinition);
 
         assertThat(schemaType.getSchemaAsString(), is("type Person {\n" +
@@ -174,7 +191,10 @@ class SchemaTypeTest {
 
     @Test
     public void testTypeStringOutputWith2ArgumentsWithArgumentDescriptions() {
-        SchemaType schemaType = new SchemaType("Person", "com.oracle.Person");
+        SchemaType schemaType = SchemaType.builder()
+                .name("Person")
+                .valueClassName("com.oracle.Person")
+                .build();
 
         SchemaFieldDefinition schemaFieldDefinition = SchemaFieldDefinition.builder()
                 .name("person")
@@ -184,11 +204,11 @@ class SchemaTypeTest {
                 .arrayLevels(0)
                 .build();
 
-        SchemaArgument schemaArgument1 = new SchemaArgument("filter", "String", false, null, STRING);
+        SchemaArgument schemaArgument1 = createArgument("filter", "String", false, null, STRING);
         schemaArgument1.description("Argument1 Description");
         schemaFieldDefinition.addArgument(schemaArgument1);
 
-        SchemaArgument schemaArgument2 = new SchemaArgument("age", "Int", true, null, INTEGER);
+        SchemaArgument schemaArgument2 = createArgument("age", "Int", true, null, INTEGER);
         schemaArgument2.description("Argument 2 Description");
         schemaFieldDefinition.addArgument(schemaArgument2);
         schemaType.addFieldDefinition(schemaFieldDefinition);
@@ -201,7 +221,10 @@ class SchemaTypeTest {
 
     @Test
     public void testTypeInterfaceStringOutputWith2Arguments() {
-        SchemaType schemaType = new SchemaType("Person", "com.oracle.Person");
+        SchemaType schemaType = SchemaType.builder()
+                .name("Person")
+                .valueClassName("com.oracle.Person")
+                .build();
 
         SchemaFieldDefinition schemaFieldDefinition = SchemaFieldDefinition.builder()
                 .name("person")
@@ -211,8 +234,8 @@ class SchemaTypeTest {
                 .arrayLevels(0)
                 .build();
 
-        schemaFieldDefinition.addArgument(new SchemaArgument("filter", "String", false, null, STRING));
-        schemaFieldDefinition.addArgument(new SchemaArgument("age", "Int", true, 30, INTEGER));
+        schemaFieldDefinition.addArgument(createArgument("filter", "String", false, null, STRING));
+        schemaFieldDefinition.addArgument(createArgument("age", "Int", true, 30, INTEGER));
         schemaType.addFieldDefinition(schemaFieldDefinition);
         schemaType.isInterface(true);
         assertThat(schemaType.getGraphQLName(), is("interface"));
@@ -224,7 +247,10 @@ class SchemaTypeTest {
 
     @Test
     public void testTypeInterfaceStringOutputWith2ArgumentsAndStringDefault() {
-        SchemaType schemaType = new SchemaType("Person", "com.oracle.Person");
+        SchemaType schemaType = SchemaType.builder()
+                .name("Person")
+                .valueClassName("com.oracle.Person")
+                .build();
 
         SchemaFieldDefinition schemaFieldDefinition = SchemaFieldDefinition.builder()
                 .name("person")
@@ -234,8 +260,8 @@ class SchemaTypeTest {
                 .arrayLevels(0)
                 .build();
 
-        schemaFieldDefinition.addArgument(new SchemaArgument("filter", "String", false, "hello", STRING));
-        schemaFieldDefinition.addArgument(new SchemaArgument("age", "Int", true, 30, INTEGER));
+        schemaFieldDefinition.addArgument(createArgument("filter", "String", false, "hello", STRING));
+        schemaFieldDefinition.addArgument(createArgument("age", "Int", true, 30, INTEGER));
         schemaType.addFieldDefinition(schemaFieldDefinition);
         schemaType.isInterface(true);
         assertThat(schemaType.getGraphQLName(), is("interface"));
@@ -248,7 +274,10 @@ class SchemaTypeTest {
 
     @Test
     public void testTypeStringOutputWith2Fields() {
-        SchemaType schemaType = new SchemaType("Person", "com.oracle.Person");
+        SchemaType schemaType = SchemaType.builder()
+                .name("Person")
+                .valueClassName("com.oracle.Person")
+                .build();
 
         SchemaFieldDefinition schemaFieldDefinition = SchemaFieldDefinition.builder()
                 .name("person")
@@ -258,7 +287,7 @@ class SchemaTypeTest {
                 .arrayLevels(0)
                 .build();
 
-        schemaFieldDefinition.addArgument(new SchemaArgument("personId", "String", true, null, STRING));
+        schemaFieldDefinition.addArgument(createArgument("personId", "String", true, null, STRING));
         schemaType.addFieldDefinition(schemaFieldDefinition);
 
         SchemaFieldDefinition schemaFieldDefinition2 = SchemaFieldDefinition.builder()
@@ -269,8 +298,8 @@ class SchemaTypeTest {
                 .arrayLevels(1)
                 .build();
 
-        schemaFieldDefinition2.addArgument(new SchemaArgument("filter", "String", false, null, STRING));
-        schemaFieldDefinition2.addArgument(new SchemaArgument("age", "Int", true, null, INTEGER));
+        schemaFieldDefinition2.addArgument(createArgument("filter", "String", false, null, STRING));
+        schemaFieldDefinition2.addArgument(createArgument("age", "Int", true, null, INTEGER));
         schemaType.addFieldDefinition(schemaFieldDefinition2);
 
         assertThat(schemaType.getSchemaAsString(), is("type Person {\n" +
@@ -281,7 +310,10 @@ class SchemaTypeTest {
 
     @Test
     public void testCreatingInputTypeFromType() {
-        SchemaType schemaType = new SchemaType("Person", "com.oracle.Person");
+        SchemaType schemaType = SchemaType.builder()
+                .name("Person")
+                .valueClassName("com.oracle.Person")
+                .build();
 
         SchemaFieldDefinition schemaFieldDefinition = SchemaFieldDefinition.builder()
                 .name("person")
@@ -290,8 +322,8 @@ class SchemaTypeTest {
                 .returnTypeMandatory(true)
                 .arrayLevels(0)
                 .build();
-        
-        schemaFieldDefinition.addArgument(new SchemaArgument("personId", "String", true, null, STRING));
+
+        schemaFieldDefinition.addArgument(createArgument("personId", "String", true, null, STRING));
         schemaType.addFieldDefinition(schemaFieldDefinition);
 
         SchemaInputType inputType = schemaType.createInputType("Input");
@@ -305,9 +337,12 @@ class SchemaTypeTest {
 
     @Test
     public void testToStringInternal() {
-        SchemaType schemaType = new SchemaType("Person", "com.oracle.Person");
+        SchemaType schemaType = SchemaType.builder()
+                .name("Person")
+                .valueClassName("com.oracle.Person")
+                .build();
+
         assertThat(schemaType.toStringInternal(), is(notNullValue()));
         assertThat(schemaType.toString(), is(notNullValue()));
     }
-
 }

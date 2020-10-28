@@ -100,28 +100,37 @@ public class Schema implements ElementGenerator {
     private final List<SchemaEnum> listSchemaEnums;
 
     /**
-     * Construct the DiscoveredSchema using the defaults.
-     */
-    public Schema() {
-        this(QUERY, MUTATION, SUBSCRIPTION);
-    }
-
-    /**
-     * Construct the DiscoveredSchema using the the provided values.
+     * Construct a {@link Schema}.
      *
-     * @param queryName        name for the query type
-     * @param mutationName     name for the mutation type
-     * @param subscriptionName name for the subscription type
+     * @param builder the {@link Builder} to construct from
      */
-    public Schema(String queryName, String mutationName, String subscriptionName) {
-        this.queryName = queryName;
-        this.mutationName = mutationName;
-        this.subscriptionName = subscriptionName;
+    private Schema(Builder builder) {
         this.listSchemaTypes = new ArrayList<>();
         this.listSchemaScalars = new ArrayList<>();
         this.listSchemaDirectives = new ArrayList<>();
         this.listInputTypes = new ArrayList<>();
         this.listSchemaEnums = new ArrayList<>();
+        this.queryName = builder.queryName;
+        this.subscriptionName = builder.subscriptionName;
+        this.mutationName = builder.mutationName;
+    }
+
+    /**
+     * Fluent API builder to create {@link Schema}.
+     *
+     * @return new builder instance
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    /**
+     * Build a new {@link Schema}.
+     *
+     * @return a new {@link Schema}
+     */
+    public static Schema create() {
+        return builder().build();
     }
 
     /**
@@ -233,7 +242,6 @@ public class Schema implements ElementGenerator {
             LOGGER.finest("Register Scalar: " + s);
             builder.scalar(s.graphQLScalarType());
         });
-
 
         // we should now have the query runtime binding
         builder.type(typeRuntimeBuilder);
@@ -490,4 +498,62 @@ public class Schema implements ElementGenerator {
     public String getMutationName() {
         return mutationName;
     }
+
+    /**
+     * A fluent API {@link io.helidon.common.Builder} to build instances of {@link Schema}.
+     */
+    public static class Builder implements io.helidon.common.Builder<Schema> {
+
+        private String queryName;
+        private String mutationName;
+        private String subscriptionName;
+
+        /**
+         * Set the name for the query type.
+         *
+         * @param queryName name for the query type
+         * @return updated builder instance
+         */
+        public Builder queryName(String queryName) {
+            this.queryName = queryName;
+            return this;
+        }
+
+        /**
+         * Set the name for the mutation type.
+         *
+         * @param mutationName name for the query type
+         * @return updated builder instance
+         */
+        public Builder mutationName(String mutationName) {
+            this.mutationName = mutationName;
+            return this;
+        }
+
+        /**
+         * Set the name for the subscription type.
+         *
+         * @param subscriptionName name for the query type
+         * @return updated builder instance
+         */
+        public Builder subscriptionName(String subscriptionName) {
+            this.subscriptionName = subscriptionName;
+            return this;
+        }
+
+        @Override
+        public Schema build() {
+            if (this.queryName == null) {
+                this.queryName = QUERY;
+            }
+            if (this.mutationName == null) {
+                this.mutationName = MUTATION;
+            }
+            if (this.subscriptionName == null) {
+                this.subscriptionName = SUBSCRIPTION;
+            }
+            return new Schema(this);
+        }
+    }
+
 }

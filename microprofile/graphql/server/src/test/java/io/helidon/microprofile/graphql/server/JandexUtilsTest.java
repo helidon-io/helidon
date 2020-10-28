@@ -42,7 +42,7 @@ class JandexUtilsTest extends AbstractGraphQLTest {
 
     @Test
     public void testDefaultIndexFile() {
-        JandexUtils utils = new JandexUtils();
+        JandexUtils utils = JandexUtils.create();
         assertThat(utils.getIndexFile(), is(JandexUtils.DEFAULT_INDEX_FILE));
         assertThat(utils.hasIndex(), is(false));
     }
@@ -50,7 +50,7 @@ class JandexUtilsTest extends AbstractGraphQLTest {
     @Test
     public void testCustomIndexFile() {
         System.setProperty(JandexUtils.PROP_INDEX_FILE, "my-index-file");
-        JandexUtils utils = new JandexUtils();
+        JandexUtils utils = JandexUtils.create();
         assertThat(utils.getIndexFile(), is("my-index-file"));
     }
 
@@ -63,7 +63,7 @@ class JandexUtilsTest extends AbstractGraphQLTest {
                               "java/lang/String.class",
                               "java/lang/Double.class",
                               "java/lang/Integer.class");
-            JandexUtils utils = new JandexUtils();
+            JandexUtils utils = JandexUtils.create();
             utils.loadIndexes();
 
             assertThat(utils.hasIndex(), is(true));

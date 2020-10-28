@@ -235,7 +235,7 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
 
     @Test
     public void testGettersPerson() throws IntrospectionException, ClassNotFoundException {
-        Map<String, SchemaGenerator.DiscoveredMethod> mapMethods = schemaGenerator.retrieveGetterBeanMethods(Person.class, false);
+        Map<String, SchemaGeneratorHelper.DiscoveredMethod> mapMethods = schemaGenerator.retrieveGetterBeanMethods(Person.class, false);
         assertThat(mapMethods, is(notNullValue()));
         assertThat(mapMethods.size(), is(13));
 
@@ -257,7 +257,7 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
 
     @Test
     public void testMultipleLevels() throws IntrospectionException, ClassNotFoundException {
-        Map<String, SchemaGenerator.DiscoveredMethod> mapMethods = schemaGenerator.retrieveGetterBeanMethods(Level0.class, false);
+        Map<String, SchemaGeneratorHelper.DiscoveredMethod> mapMethods = schemaGenerator.retrieveGetterBeanMethods(Level0.class, false);
         assertThat(mapMethods, is(notNullValue()));
         assertThat(mapMethods.size(), is(2));
         assertDiscoveredMethod(mapMethods.get("id"), "id", STRING, null, false, false, false);
@@ -266,7 +266,7 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
 
     @Test
     public void testTypeWithIdOnMethod() throws IntrospectionException, ClassNotFoundException {
-        Map<String, SchemaGenerator.DiscoveredMethod> mapMethods = schemaGenerator
+        Map<String, SchemaGeneratorHelper.DiscoveredMethod> mapMethods = schemaGenerator
                 .retrieveGetterBeanMethods(TypeWithIdOnMethod.class, false);
         assertThat(mapMethods, is(notNullValue()));
         assertThat(mapMethods.size(), is(2));
@@ -276,7 +276,7 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
 
     @Test
     public void testTypeWithIdOnField() throws IntrospectionException, ClassNotFoundException {
-        Map<String, SchemaGenerator.DiscoveredMethod> mapMethods = schemaGenerator
+        Map<String, SchemaGeneratorHelper.DiscoveredMethod> mapMethods = schemaGenerator
                 .retrieveGetterBeanMethods(TypeWithIdOnField.class, false);
         assertThat(mapMethods, is(notNullValue()));
         assertThat(mapMethods.size(), is(2));
@@ -286,7 +286,7 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
 
     @Test
     public void testTypeWithNameAndJsonbProperty() throws IntrospectionException, ClassNotFoundException {
-        Map<String, SchemaGenerator.DiscoveredMethod> mapMethods = schemaGenerator
+        Map<String, SchemaGeneratorHelper.DiscoveredMethod> mapMethods = schemaGenerator
                 .retrieveGetterBeanMethods(TypeWithNameAndJsonbProperty.class, false);
         assertThat(mapMethods, is(notNullValue()));
         assertThat(mapMethods.size(), is(6));
@@ -300,7 +300,7 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
 
     @Test
     public void testInterfaceDiscovery() throws IntrospectionException, ClassNotFoundException {
-        Map<String, SchemaGenerator.DiscoveredMethod> mapMethods = schemaGenerator
+        Map<String, SchemaGeneratorHelper.DiscoveredMethod> mapMethods = schemaGenerator
                 .retrieveGetterBeanMethods(Vehicle.class, false);
         assertThat(mapMethods, is(notNullValue()));
         assertThat(mapMethods.size(), is(6));
@@ -315,7 +315,7 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
 
     @Test
     public void testInterfaceImplementorDiscovery1() throws IntrospectionException, ClassNotFoundException {
-        Map<String, SchemaGenerator.DiscoveredMethod> mapMethods = schemaGenerator.retrieveGetterBeanMethods(Car.class, false);
+        Map<String, SchemaGeneratorHelper.DiscoveredMethod> mapMethods = schemaGenerator.retrieveGetterBeanMethods(Car.class, false);
         assertThat(mapMethods, is(notNullValue()));
         assertThat(mapMethods.size(), is(7));
         assertDiscoveredMethod(mapMethods.get("plate"), "plate", STRING, null, false, false, false);
@@ -330,7 +330,7 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
 
     @Test
     public void testInterfaceImplementorDiscovery2() throws IntrospectionException, ClassNotFoundException {
-        Map<String, SchemaGenerator.DiscoveredMethod> mapMethods = schemaGenerator
+        Map<String, SchemaGeneratorHelper.DiscoveredMethod> mapMethods = schemaGenerator
                 .retrieveGetterBeanMethods(Motorbike.class, false);
         assertThat(mapMethods, is(notNullValue()));
         assertThat(mapMethods.size(), is(7));
@@ -346,7 +346,7 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
 
     @Test
     public void testObjectWithIgnorableFields() throws IntrospectionException, ClassNotFoundException {
-        Map<String, SchemaGenerator.DiscoveredMethod> mapMethods = schemaGenerator.retrieveGetterBeanMethods(
+        Map<String, SchemaGeneratorHelper.DiscoveredMethod> mapMethods = schemaGenerator.retrieveGetterBeanMethods(
                 ObjectWithIgnorableFieldsAndMethods.class, false);
         assertThat(mapMethods, is(notNullValue()));
         assertThat(mapMethods.size(), is(3));
@@ -395,7 +395,7 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
 
     @Test
     public void testAllMethods() throws IntrospectionException, ClassNotFoundException {
-        Map<String, SchemaGenerator.DiscoveredMethod> mapMethods = schemaGenerator
+        Map<String, SchemaGeneratorHelper.DiscoveredMethod> mapMethods = schemaGenerator
                 .retrieveAllAnnotatedBeanMethods(SimpleQueriesAndMutations.class);
         assertThat(mapMethods, is(notNullValue()));
 
@@ -443,14 +443,14 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
 
     @Test
     public void testArrayDiscoveredMethods() throws IntrospectionException, ClassNotFoundException {
-        Map<String, SchemaGenerator.DiscoveredMethod> mapMethods = schemaGenerator
+        Map<String, SchemaGeneratorHelper.DiscoveredMethod> mapMethods = schemaGenerator
                 .retrieveGetterBeanMethods(MultiLevelListsAndArrays.class, false);
         assertThat(mapMethods, is(notNullValue()));
         assertThat(mapMethods.size(), is(8));
         assertDiscoveredMethod(mapMethods.get("multiStringArray"), "multiStringArray", STRING, null, true, false, false);
     }
 
-    private void assertDiscoveredMethod(SchemaGenerator.DiscoveredMethod discoveredMethod,
+    private void assertDiscoveredMethod(SchemaGeneratorHelper.DiscoveredMethod discoveredMethod,
                                         String name,
                                         String returnType,
                                         String collectionType,
@@ -468,7 +468,7 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
 
     @Test
     public void testMultipleLevelsOfGenerics() throws IntrospectionException, ClassNotFoundException {
-        Map<String, SchemaGenerator.DiscoveredMethod> mapMethods = schemaGenerator
+        Map<String, SchemaGeneratorHelper.DiscoveredMethod> mapMethods = schemaGenerator
                 .retrieveGetterBeanMethods(MultiLevelListsAndArrays.class, false);
         assertThat(mapMethods, is(notNullValue()));
         assertThat(mapMethods.size(), is(8));

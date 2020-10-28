@@ -33,7 +33,7 @@ public class SchemaType extends AbstractDescriptiveElement implements ElementGen
     /**
      * Value class name.
      */
-    private final String valueClassName;
+    private String valueClassName;
 
     /**
      * Indicates if the {@link SchemaType} is an interface.
@@ -48,18 +48,40 @@ public class SchemaType extends AbstractDescriptiveElement implements ElementGen
     /**
      * {@link List} of {@link SchemaFieldDefinition}.
      */
-    private final List<SchemaFieldDefinition> listSchemaFieldDefinitions;
+    private List<SchemaFieldDefinition> listSchemaFieldDefinitions;
 
     /**
-     * Construct a @{link Type} with the given arguments.
-     *
-     * @param name           name of the Type
-     * @param valueClassName value class name
+     * Private no-args constructor only use by subclass {@link SchemaInputType}.
+     * @param name  name of the type
+     * @param valueClassName  value class name
      */
-    public SchemaType(String name, String valueClassName) {
+    protected SchemaType(String name, String valueClassName) {
         this.name = name;
         this.valueClassName = valueClassName;
         this.listSchemaFieldDefinitions = new ArrayList<>();
+    }
+
+    /**
+     * Construct a {@link SchemaType}.
+     *
+     * @param builder the {@link Builder} to construct from
+     */
+    private SchemaType(Builder builder) {
+        this.name = builder.name;
+        this.valueClassName = builder.valueClassName;
+        this.isInterface = builder.isInterface;
+        this.implementingInterface = builder.implementingInterface;
+        this.listSchemaFieldDefinitions = builder.listSchemaFieldDefinitions;
+        description(builder.description);
+    }
+
+    /**
+     * Fluent API builder to create {@link SchemaType}.
+     *
+     * @return new builder instance
+     */
+    public static Builder builder() {
+        return new Builder();
     }
 
     /**
@@ -75,7 +97,7 @@ public class SchemaType extends AbstractDescriptiveElement implements ElementGen
                 .append(name());
 
         if (implementingInterface != null) {
-            sb.append(" implements " + implementingInterface);
+            sb.append(" implements ").append(implementingInterface);
         }
         sb.append(SPACER).append(OPEN_CURLY).append(NEWLINE);
 
@@ -121,6 +143,7 @@ public class SchemaType extends AbstractDescriptiveElement implements ElementGen
 
     /**
      * Set the name of the {@link SchemaType}.
+     *
      * @param name the name of the {@link SchemaType}
      */
     public void name(String name) {
@@ -215,13 +238,13 @@ public class SchemaType extends AbstractDescriptiveElement implements ElementGen
 
     @Override
     public int hashCode() {
-        int result = Objects.hash(name,
-                                  valueClassName,
-                                  isInterface,
-                                  implementingInterface,
-                                  description(),
-                                  listSchemaFieldDefinitions);
-        return result;
+        return Objects.hash(name,
+                            valueClassName,
+                            isInterface,
+                            implementingInterface,
+                            description(),
+                            listSchemaFieldDefinitions);
+
     }
 
     @Override
@@ -253,4 +276,83 @@ public class SchemaType extends AbstractDescriptiveElement implements ElementGen
         return isInterface() ? "interface" : "type";
     }
 
+    /**
+     * A fluent API {@link io.helidon.common.Builder} to build instances of {@link SchemaType}.
+     */
+    public static class Builder implements io.helidon.common.Builder<SchemaType> {
+
+        private String name;
+        private String valueClassName;
+        private String description;
+        private boolean isInterface;
+        private String implementingInterface;
+        private List<SchemaFieldDefinition> listSchemaFieldDefinitions = new ArrayList<>();
+
+        /**
+         * Set the name of the {@link SchemaType}.
+         *
+         * @param name the name of the {@link SchemaType}
+         * @return updated builder instance
+         */
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+
+        /**
+         * Set the the value class name.
+         * @param valueClassName the value class name
+         * @return updated builder instance
+         */
+        public Builder valueClassName(String valueClassName) {
+            this.valueClassName = valueClassName;
+            return this;
+        }
+
+        /**
+         * Set the description of the {@link SchemaType}.
+         * @param description the description of the {@link SchemaType}
+         * @return updated builder instance
+         */
+        public Builder description(String description) {
+            this.description = description;
+            return this;
+        }
+
+        /**
+         * Set if the {@link SchemaType} is an interface.
+         * @param isInterface true if the {@link SchemaType} is an interface
+         * @return updated builder instance
+         */
+        public Builder isInterface(boolean isInterface) {
+            this.isInterface = isInterface;
+            return this;
+        }
+
+        /**
+         * Set the interface that this {@link SchemaType} implements.
+         * @param implementingInterface the interface that this {@link SchemaType} implements
+         * @return updated builder instance
+         */
+        public Builder implementingInterface(String implementingInterface) {
+            this.implementingInterface = implementingInterface;
+            return this;
+        }
+
+        /**
+         * Add a {@link SchemaFieldDefinition} to the {@link SchemaType}.
+         * @param fieldDefinition {@link SchemaFieldDefinition} to add
+         * @return updated builder instance
+         */
+        public Builder addFieldDefinition(SchemaFieldDefinition fieldDefinition) {
+            this.listSchemaFieldDefinitions.add(fieldDefinition);
+            return this;
+        }
+
+        @Override
+        public SchemaType build() {
+            Objects.requireNonNull(name, "Name must be specified");
+            return new SchemaType(this);
+        }
+    }
 }

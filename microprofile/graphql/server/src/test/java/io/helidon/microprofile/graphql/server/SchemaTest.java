@@ -26,6 +26,8 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static graphql.introspection.Introspection.DirectiveLocation.FIELD_DEFINITION;
+import static io.helidon.microprofile.graphql.server.TestHelper.createArgument;
+import static io.helidon.microprofile.graphql.server.TestHelper.createSchemaType;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -41,23 +43,23 @@ class SchemaTest extends AbstractGraphQLTest {
     
     @Test
     public void testEmptySchemaAsString() {
-        Schema schema = new Schema();
+        Schema schema = Schema.create();
         assertThat(schema.getSchemaAsString(), is("schema {\n}\n\n"));
     }
 
     @Test
     public void testTopLevelSchemaAsString() {
-        Schema schema = new Schema();
-        schema.addType(new SchemaType("Query", null));
+        Schema schema = Schema.create();
+        schema.addType(createSchemaType("Query", null));
         assertResultsMatch(schema.getSchemaAsString(), "test-results/schema-test-01.txt");
 
-        schema.addType(new SchemaType("Mutation", null));
+        schema.addType(createSchemaType("Mutation", null));
         assertResultsMatch(schema.getSchemaAsString(), "test-results/schema-test-02.txt");
 
-        schema.addType(new SchemaType("Subscription", ""));
+        schema.addType(createSchemaType("Subscription", ""));
         assertResultsMatch(schema.getSchemaAsString(), "test-results/schema-test-03.txt");
 
-        SchemaArgument argument = new SchemaArgument("dateFormat", "String", true, null, STRING);
+        SchemaArgument argument = createArgument("dateFormat", "String", true, null, STRING);
 
         SchemaDirective schemaDirective = SchemaDirective.builder()
                 .name("format")
@@ -71,7 +73,7 @@ class SchemaTest extends AbstractGraphQLTest {
 
     @Test
     public void testScalars() {
-        Schema schema = new Schema();
+        Schema schema = Schema.create();
         assertThat(schema.getScalars().size(), is(0));
 
         SchemaScalar schemaScalar1 = new SchemaScalar("Test", Date.class.getName(), ExtendedScalars.Date, null);
@@ -87,7 +89,7 @@ class SchemaTest extends AbstractGraphQLTest {
 
     @Test
     public void testDirectives() {
-        Schema schema = new Schema();
+        Schema schema = Schema.create();
         assertThat(schema.getDirectives().size(), is(0));
 
         SchemaDirective schemaDirective1 = SchemaDirective.builder().name("directive1").build();
@@ -99,24 +101,11 @@ class SchemaTest extends AbstractGraphQLTest {
     }
 
     @Test
-    public void testInputTypes() {
-        Schema schema = new Schema();
-        assertThat(schema.getInputTypes().size(), is(0));
-        SchemaInputType type1 = new SchemaInputType("name", "valueClass" );
-        SchemaInputType type2 = new SchemaInputType("name2", "valueClass2");
-        schema.addInputType(type1);
-        schema.addInputType(type2);
-        assertThat(schema.getInputTypes().size(), is(2));
-        assertThat(schema.getInputTypes().contains(type1), is(true));
-        assertThat(schema.getInputTypes().contains(type2), is(true));
-    }
-
-    @Test
     public void tesTypes() {
-        Schema schema = new Schema();
+        Schema schema = Schema.create();
         assertThat(schema.getInputTypes().size(), is(0));
-        SchemaType schemaType1 = new SchemaType("name", "valueClass");
-        SchemaType schemaType2 = new SchemaType("name2", "valueClass2");
+        SchemaType schemaType1 = createSchemaType("name", "valueClass");
+        SchemaType schemaType2 = createSchemaType("name2", "valueClass2");
         schema.addType(schemaType1);
         schema.addType(schemaType2);
         assertThat(schema.getTypes().size(), is(2));
@@ -128,7 +117,7 @@ class SchemaTest extends AbstractGraphQLTest {
 
     @Test
     public void testEnums() {
-        Schema schema = new Schema();
+        Schema schema = Schema.create();
         assertThat(schema.getEnums().size(), is(0));
         List<String> listString = new ArrayList<>();
         listString.add("NEWHOPE");
@@ -149,7 +138,7 @@ class SchemaTest extends AbstractGraphQLTest {
     @Test
     @Disabled
     public void testInvalidRuntimeWiring() {
-        Schema schema = new Schema();
+        Schema schema = Schema.create();
         assertThrows(IllegalStateException.class, schema::getRuntimeWiring);
     }
 }

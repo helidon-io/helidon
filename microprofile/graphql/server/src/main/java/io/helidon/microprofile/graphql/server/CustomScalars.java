@@ -392,6 +392,7 @@ public class CustomScalars {
      * Number implementation of {@link Coercing} interface for given classes.
      * @param <I> defines input type
      */
+    @SuppressWarnings("unchecked")
     public static class NumberCoercing<I> implements Coercing<I, Object> {
 
         /**

@@ -21,6 +21,7 @@ import graphql.schema.StaticDataFetcher;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.microprofile.graphql.server.TestHelper.createArgument;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.notNullValue;
@@ -50,12 +51,12 @@ class SchemaFieldDefinitionTest {
         assertThat(schemaFieldDefinition.isArrayReturnType(), is(true));
         assertThat(schemaFieldDefinition.arrayLevels(), is(1));
 
-        SchemaArgument schemaArgument = new SchemaArgument("filter", "String", false, null, STRING);
+        SchemaArgument schemaArgument = createArgument("filter", "String", false, null, STRING);
         schemaFieldDefinition.addArgument(schemaArgument);
         assertThat(schemaFieldDefinition.arguments().size(), is(1));
         assertThat(schemaFieldDefinition.arguments().get(0), is(schemaArgument));
 
-        SchemaArgument schemaArgument2 = new SchemaArgument("filter2", "Integer", true, null, INTEGER);
+        SchemaArgument schemaArgument2 = createArgument("filter2", "Integer", true, null, INTEGER);
         schemaFieldDefinition.addArgument(schemaArgument2);
         assertThat(schemaFieldDefinition.arguments().size(), is(2));
         assertThat(schemaFieldDefinition.arguments().contains(schemaArgument2), is(true));
@@ -171,7 +172,7 @@ class SchemaFieldDefinitionTest {
                 .arrayReturnType(false)
                 .returnTypeMandatory(true)
                 .arrayLevels(0)
-                .addArgument(new SchemaArgument("filter", "String", false, null, STRING))
+                .addArgument(createArgument("filter", "String", false, null, STRING))
                 .build();
 
         assertThat(schemaFieldDefinition.getSchemaAsString(), is("person(\nfilter: String\n): Person!"));
@@ -179,7 +180,7 @@ class SchemaFieldDefinitionTest {
 
     @Test
     public void testFieldDefinitionWith1ArgumentAndDescription() {
-        SchemaArgument schemaArgument = new SchemaArgument("filter", "String", false, null, STRING);
+        SchemaArgument schemaArgument = createArgument("filter", "String", false, null, STRING);
         schemaArgument.description("Optional Filter");
         SchemaFieldDefinition schemaFieldDefinition = SchemaFieldDefinition.builder()
                 .name("person")
@@ -201,7 +202,7 @@ class SchemaFieldDefinitionTest {
                 .arrayReturnType(true)
                 .returnTypeMandatory(true)
                 .arrayLevels(1)
-                .addArgument(new SchemaArgument("filter", "String", false, null, STRING))
+                .addArgument(createArgument("filter", "String", false, null, STRING))
                 .build();
 
         assertThat(schemaFieldDefinition.getSchemaAsString(), is("person(\nfilter: String\n): [Person]!"));
@@ -229,7 +230,7 @@ class SchemaFieldDefinitionTest {
                 .arrayReturnType(false)
                 .returnTypeMandatory(true)
                 .arrayLevels(0)
-                .addArgument(new SchemaArgument("filter", "String", true, null, STRING))
+                .addArgument(createArgument("filter", "String", true, null, STRING))
                 .build();
 
         assertThat(schemaFieldDefinition.getSchemaAsString(), is("person(\nfilter: String!\n): Person!"));
@@ -243,7 +244,7 @@ class SchemaFieldDefinitionTest {
                 .arrayReturnType(true)
                 .returnTypeMandatory(true)
                 .arrayLevels(1)
-                .addArgument(new SchemaArgument("filter", "String", false, null, STRING))
+                .addArgument(createArgument("filter", "String", false, null, STRING))
                 .build();
 
         assertThat(schemaFieldDefinition.getSchemaAsString(), is("person(\nfilter: String\n): [Person]!"));
@@ -257,8 +258,8 @@ class SchemaFieldDefinitionTest {
                 .arrayReturnType(false)
                 .returnTypeMandatory(true)
                 .arrayLevels(0)
-                .addArgument(new SchemaArgument("filter", "String", false, null, STRING))
-                .addArgument(new SchemaArgument("age", "Int", true, null, INTEGER))
+                .addArgument(createArgument("filter", "String", false, null, STRING))
+                .addArgument(createArgument("age", "Int", true, null, INTEGER))
                 .build();
 
         assertThat(schemaFieldDefinition.getSchemaAsString(), is("person(\nfilter: String, \nage: Int!\n): Person!"));
@@ -274,9 +275,9 @@ class SchemaFieldDefinitionTest {
                 .arrayLevels(0)
                 .build();
 
-        SchemaArgument schemaArgument1 = new SchemaArgument("filter", "String", false, null, STRING);
+        SchemaArgument schemaArgument1 = createArgument("filter", "String", false, null, STRING);
         schemaArgument1.description("Optional filter");
-        SchemaArgument schemaArgument2 = new SchemaArgument("age", "Int", true, null, INTEGER);
+        SchemaArgument schemaArgument2 = createArgument("age", "Int", true, null, INTEGER);
         schemaArgument2.description("Mandatory age");
         schemaFieldDefinition.addArgument(schemaArgument1);
         schemaFieldDefinition.addArgument(schemaArgument2);
@@ -295,9 +296,9 @@ class SchemaFieldDefinitionTest {
                 .description("Description of field definition")
                 .build();
 
-        SchemaArgument schemaArgument1 = new SchemaArgument("filter", "String", false, null, STRING);
+        SchemaArgument schemaArgument1 = createArgument("filter", "String", false, null, STRING);
         schemaArgument1.description("Optional filter");
-        SchemaArgument schemaArgument2 = new SchemaArgument("age", "Int", true, null, INTEGER);
+        SchemaArgument schemaArgument2 = createArgument("age", "Int", true, null, INTEGER);
         schemaArgument2.description("Mandatory age");
         schemaFieldDefinition.addArgument(schemaArgument1);
         schemaFieldDefinition.addArgument(schemaArgument2);
@@ -315,9 +316,9 @@ class SchemaFieldDefinitionTest {
                 .arrayReturnType(true)
                 .returnTypeMandatory(false)
                 .arrayLevels(1)
-                .addArgument(new SchemaArgument("filter", "String", false, null, STRING))
-                .addArgument(new SchemaArgument("age", "Int", true, null, INTEGER))
-                .addArgument(new SchemaArgument("job", "String", false, null, STRING))
+                .addArgument(createArgument("filter", "String", false, null, STRING))
+                .addArgument(createArgument("age", "Int", true, null, INTEGER))
+                .addArgument(createArgument("job", "String", false, null, STRING))
                 .build();
 
         assertThat(schemaFieldDefinition.getSchemaAsString(),

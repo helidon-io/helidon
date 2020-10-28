@@ -32,15 +32,29 @@ class SchemaArgumentTest {
     private static final Class<?> INTEGER = Integer.class;
 
     @Test
-    public void testConstructors() {
-        SchemaArgument schemaArgument = new SchemaArgument("name", "Int", true, null, INTEGER);
+    public void testBuilders() {
+        SchemaArgument schemaArgument = SchemaArgument.builder()
+                .argumentName("name")
+                .argumentType("Int")
+                .mandatory(true)
+                .defaultValue(null)
+                .originalType(INTEGER)
+                .build();
+
         assertThat(schemaArgument.argumentName(), is("name"));
         assertThat(schemaArgument.argumentType(), is("Int"));
         assertThat(schemaArgument.mandatory(), is(true));
         assertThat(schemaArgument.defaultValue(), is(nullValue()));
         assertThat(schemaArgument.originalType().getName(), is(Integer.class.getName()));
 
-        schemaArgument = new SchemaArgument("name2", "String", false, "Default", STRING);
+        schemaArgument = SchemaArgument.builder()
+                .argumentName("name2")
+                .argumentType("String")
+                .mandatory(false)
+                .defaultValue("Default")
+                .originalType(STRING)
+                .build();
+
         assertThat(schemaArgument.argumentName(), is("name2"));
         assertThat(schemaArgument.argumentType(), is("String"));
         assertThat(schemaArgument.mandatory(), is(false));
@@ -59,7 +73,7 @@ class SchemaArgumentTest {
         assertThat(schemaArgument.isSourceArgument(), is(true));
 
         assertThat(schemaArgument.format(), is(nullValue()));
-        schemaArgument.format(new String[] { "value-1", "value-2"});
+        schemaArgument.format(new String[] { "value-1", "value-2" });
         String[] format = schemaArgument.format();
         assertThat(format, is(notNullValue()));
         assertThat(format.length, is(2));
@@ -79,7 +93,13 @@ class SchemaArgumentTest {
 
     @Test
     public void testSchemaArgumentArrayTypes() {
-        SchemaArgument schemaArgument = new SchemaArgument("name", "Int", true, null, INTEGER);
+        SchemaArgument schemaArgument = SchemaArgument.builder()
+                .argumentName("name")
+                .argumentType("Int")
+                .mandatory(true)
+                .originalType(INTEGER)
+                .build();
+
         assertThat(schemaArgument.isArrayReturnType(), is(false));
         assertThat(schemaArgument.isArrayReturnTypeMandatory(), is(false));
         assertThat(schemaArgument.arrayLevels(), is(0));
@@ -87,57 +107,122 @@ class SchemaArgumentTest {
 
     @Test
     public void testSchemaGenerationWithArrays() {
-       SchemaArgument schemaArgument = new SchemaArgument("name", "String", false, null, STRING);
-       schemaArgument.arrayLevels(1);
-       schemaArgument.arrayReturnTypeMandatory(true);
-       schemaArgument.arrayReturnType(true);
-       assertThat(schemaArgument.getSchemaAsString(), is("name: [String!]"));
+        SchemaArgument schemaArgument = SchemaArgument.builder()
+                .argumentName("name")
+                .argumentType("String")
+                .mandatory(false)
+                .originalType(STRING)
+                .arrayLevels(1)
+                .arrayReturnTypeMandatory(true)
+                .arrayReturnType(true)
+                .build();
+
+        assertThat(schemaArgument.getSchemaAsString(), is("name: [String!]"));
     }
 
     @Test
     public void testSchemaGeneration() {
-        SchemaArgument schemaArgument = new SchemaArgument("name", "Int", true, null, INTEGER);
+        SchemaArgument schemaArgument = SchemaArgument.builder()
+                .argumentName("name")
+                .argumentType("Int")
+                .mandatory(true)
+                .defaultValue(null)
+                .originalType(INTEGER)
+                .build();
         assertThat(schemaArgument.getSchemaAsString(), is("name: Int!"));
 
-        schemaArgument = new SchemaArgument("name", "Int", true, 10, INTEGER);
+        schemaArgument = SchemaArgument.builder()
+                .argumentName("name")
+                .argumentType("Int")
+                .mandatory(true)
+                .defaultValue(10)
+                .originalType(INTEGER)
+                .build();
         assertThat(schemaArgument.getSchemaAsString(), is("name: Int! = 10"));
 
-        schemaArgument = new SchemaArgument("name", "Int", false, null, INTEGER);
+        schemaArgument = SchemaArgument.builder()
+                .argumentName("name")
+                .argumentType("Int")
+                .mandatory(false)
+                .defaultValue(null)
+                .originalType(INTEGER)
+                .build();
         assertThat(schemaArgument.getSchemaAsString(), is("name: Int"));
 
-        schemaArgument = new SchemaArgument("name", "Int", false, 10, INTEGER);
+        schemaArgument = SchemaArgument.builder()
+                .argumentName("name")
+                .argumentType("Int")
+                .mandatory(false)
+                .defaultValue(10)
+                .originalType(INTEGER)
+                .build();
         assertThat(schemaArgument.getSchemaAsString(), is("name: Int = 10"));
 
-        schemaArgument = new SchemaArgument("name", "String", false, "The Default Value", STRING);
+        schemaArgument = SchemaArgument.builder()
+                .argumentName("name")
+                .argumentType("String")
+                .mandatory(false)
+                .defaultValue("The Default Value")
+                .originalType(STRING)
+                .build();
         assertThat(schemaArgument.getSchemaAsString(), is("name: String = \"The Default Value\""));
 
-        schemaArgument = new SchemaArgument("name", "String", true, "The Default Value", STRING);
+        schemaArgument = SchemaArgument.builder()
+                .argumentName("name")
+                .argumentType("String")
+                .mandatory(true)
+                .defaultValue("The Default Value")
+                .originalType(STRING)
+                .build();
         assertThat(schemaArgument.getSchemaAsString(), is("name: String! = \"The Default Value\""));
 
-        schemaArgument = new SchemaArgument("name", "Int", false, 10, INTEGER);
-        schemaArgument.description("Description");
+        schemaArgument = SchemaArgument.builder()
+                .argumentName("name")
+                .argumentType("Int")
+                .mandatory(false)
+                .defaultValue(10)
+                .originalType(INTEGER)
+                .description("Description")
+                .build();
         assertThat(schemaArgument.getSchemaAsString(), is("\"Description\"\nname: Int = 10"));
 
         // test array return types
-        schemaArgument = new SchemaArgument("name", "Int", false, null, INTEGER);
-        schemaArgument.arrayReturnType(true);
-        schemaArgument.arrayLevels(1);
+        schemaArgument = SchemaArgument.builder()
+                .argumentName("name")
+                .argumentType("Int")
+                .mandatory(false)
+                .defaultValue(null)
+                .originalType(STRING)
+                .arrayReturnType(true)
+                .arrayLevels(1)
+                .build();
         assertThat(schemaArgument.getSchemaAsString(), is("name: [Int]"));
 
         schemaArgument.arrayReturnTypeMandatory(true);
         assertThat(schemaArgument.getSchemaAsString(), is("name: [Int!]"));
 
-        schemaArgument = new SchemaArgument("name", "Int", true, null, INTEGER);
-        schemaArgument.arrayReturnType(true);
-        schemaArgument.arrayLevels(1);
-        schemaArgument.arrayReturnTypeMandatory(true);
+        schemaArgument = SchemaArgument.builder()
+                .argumentName("name")
+                .argumentType("Int")
+                .mandatory(true)
+                .defaultValue(null)
+                .arrayReturnType(true)
+                .originalType(INTEGER)
+                .arrayLevels(1)
+                .arrayReturnTypeMandatory(true)
+                .build();
         assertThat(schemaArgument.getSchemaAsString(), is("name: [Int!]!"));
 
-        schemaArgument = new SchemaArgument("name", "String", true, "Hello", STRING);
-        schemaArgument.arrayReturnType(true);
-        schemaArgument.arrayLevels(3);
-        schemaArgument.arrayReturnTypeMandatory(true);
+        schemaArgument = SchemaArgument.builder()
+                .argumentName("name")
+                .argumentType("String")
+                .mandatory(true)
+                .defaultValue("Hello")
+                .arrayReturnType(true)
+                .originalType(STRING)
+                .arrayLevels(3)
+                .arrayReturnTypeMandatory(true)
+                .build();
         assertThat(schemaArgument.getSchemaAsString(), is("name: [[[String!]]]! = \"Hello\""));
-
     }
 }

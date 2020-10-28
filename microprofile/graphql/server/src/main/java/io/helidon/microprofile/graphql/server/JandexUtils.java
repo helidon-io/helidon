@@ -64,8 +64,16 @@ public class JandexUtils {
     /**
      * Construct an instance of the utilities class..
      */
-    public JandexUtils() {
+    private JandexUtils() {
         indexFile = System.getProperty(PROP_INDEX_FILE, DEFAULT_INDEX_FILE);
+    }
+
+    /**
+     * Create a new {@link JandexUtils}.
+     * @return a new {@link JandexUtils}
+     */
+    public static JandexUtils create() {
+         return new JandexUtils();
     }
 
     /**

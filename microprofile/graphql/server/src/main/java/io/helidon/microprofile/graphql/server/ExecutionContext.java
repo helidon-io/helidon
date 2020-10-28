@@ -249,7 +249,7 @@ public class ExecutionContext {
      * @return a new {@link DefaultContext}
      */
     public static Context getDefaultContext() {
-        return new DefaultContext();
+        return DefaultContext.create();
     }
 
     /**

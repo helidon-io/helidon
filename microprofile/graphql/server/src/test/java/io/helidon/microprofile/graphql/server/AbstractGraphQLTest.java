@@ -156,7 +156,7 @@ public abstract class AbstractGraphQLTest {
         assertThat(indexFile.exists(), CoreMatchers.is(true));
 
         // do a load to check the classes are there
-        JandexUtils utils = new JandexUtils();
+        JandexUtils utils = JandexUtils.create();
         utils.loadIndexes();
         assertThat(utils.hasIndex(), CoreMatchers.is(true));
         int count = 0;

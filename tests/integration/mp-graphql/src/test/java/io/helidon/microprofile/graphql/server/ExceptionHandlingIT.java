@@ -47,7 +47,7 @@ public class ExceptionHandlingIT extends AbstractGraphQLIT {
     @Test
     public void testEmptyErrorPayloads() throws IOException {
         setupIndex(indexFileName, ExceptionQueries.class);
-        ExecutionContext executionContext = new ExecutionContext(new DefaultContext());
+        ExecutionContext executionContext = new ExecutionContext(DefaultContext.create());
 
         Map<String, Object> errorMap = executionContext.newErrorPayload();
         assertPayload(errorMap);
@@ -60,7 +60,7 @@ public class ExceptionHandlingIT extends AbstractGraphQLIT {
     @Test
     public void testErrorPayLoadWithMessages() throws IOException {
         setupIndex(indexFileName, ExceptionQueries.class);
-        ExecutionContext executionContext = new ExecutionContext(new DefaultContext());
+        ExecutionContext executionContext = new ExecutionContext(DefaultContext.create());
 
         Map<String, Object> errorMap = executionContext.newErrorPayload();
         assertPayload(errorMap);
@@ -81,7 +81,7 @@ public class ExceptionHandlingIT extends AbstractGraphQLIT {
     @Test
     public void testErrorPayLoadWithMessagesAndLocations() throws IOException {
         setupIndex(indexFileName, ExceptionQueries.class);
-        ExecutionContext executionContext = new ExecutionContext(new DefaultContext());
+        ExecutionContext executionContext = new ExecutionContext(DefaultContext.create());
 
         Map<String, Object> errorMap = executionContext.newErrorPayload();
         assertPayload(errorMap);
@@ -113,7 +113,7 @@ public class ExceptionHandlingIT extends AbstractGraphQLIT {
     @Test
     public void testErrorPayLoadWithMessagesLocationsAndExtensions() throws IOException {
         setupIndex(indexFileName, ExceptionQueries.class);
-        ExecutionContext executionContext = new ExecutionContext(new DefaultContext());
+        ExecutionContext executionContext = new ExecutionContext(DefaultContext.create());
 
         Map<String, Object> errorMap = executionContext.newErrorPayload();
         assertPayload(errorMap);

@@ -35,9 +35,11 @@ import java.time.OffsetDateTime;
 import java.time.OffsetTime;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.logging.Logger;
 
 import javax.json.bind.annotation.JsonbProperty;
@@ -54,6 +56,7 @@ import org.eclipse.microprofile.graphql.Interface;
 import org.eclipse.microprofile.graphql.Mutation;
 import org.eclipse.microprofile.graphql.Name;
 import org.eclipse.microprofile.graphql.Query;
+import org.eclipse.microprofile.graphql.Source;
 import org.eclipse.microprofile.graphql.Type;
 
 import static io.helidon.microprofile.graphql.server.CustomScalars.CUSTOM_BIGDECIMAL_SCALAR;
@@ -1088,6 +1091,7 @@ public final class SchemaGeneratorHelper {
 
     /**
      * Returns the stacktrace of the given {@link Throwable}.
+     *
      * @param throwable {@link Throwable} to get stack tracek for
      * @return the stacktrace of the given {@link Throwable}
      */
@@ -1095,5 +1099,590 @@ public final class SchemaGeneratorHelper {
         StringWriter stack = new StringWriter();
         throwable.printStackTrace(new PrintWriter(stack));
         return stack.toString();
+    }
+
+    /**
+     * Validate that a {@link Class} annotated with ID is a valid type.
+     *
+     * @param returnClazz {@link Class} to check
+     */
+    protected static void validateIDClass(Class<?> returnClazz) {
+        if (!isValidIDType(returnClazz)) {
+            ensureConfigurationException(LOGGER, "A class of type " + returnClazz + " is not allowed to be an @Id");
+        }
+    }
+
+    /**
+     * Validate that a class annotated with ID is a valid type.
+     *
+     * @param returnClazz class to check
+     */
+    protected static void validateIDClass(String returnClazz) {
+        try {
+            validateIDClass(Class.forName(returnClazz));
+        } catch (ClassNotFoundException e) {
+            // ignore
+        }
+    }
+
+    /**
+     * Defines discovered methods for a class.
+     */
+    public static class DiscoveredMethod {
+
+        /**
+         * Indicates query Type.
+         */
+        public static final int QUERY_TYPE = 0;
+
+        /**
+         * Indicates write method.
+         */
+        public static final int MUTATION_TYPE = 1;
+
+        /**
+         * Name of the discovered method.
+         */
+        private String name;
+
+        /**
+         * Return type of the method.
+         */
+        private String returnType;
+
+        /**
+         * type of method.
+         */
+        private int methodType;
+
+        /**
+         * If the return type is a {@link Collection} then this is the type of {@link Collection} and the returnType will be
+         * return type for the collection.
+         */
+        private String collectionType;
+
+        /**
+         * Indicates if the return type is an array.
+         */
+        private boolean isArrayReturnType;
+
+        /**
+         * Indicates if the return type is a {@link Map}. Note: In the 1.0.1 microprofile spec the behaviour of {@link Map} is
+         * undefined.
+         */
+        private boolean isMap;
+
+        /**
+         * The {@link List} of {@link SchemaArgument}s for this method.
+         */
+        private List<SchemaArgument> listArguments = new ArrayList<>();
+
+        /**
+         * The actual method.
+         */
+        private Method method;
+
+        /**
+         * Number of levels in the Array.
+         */
+        private int arrayLevels = 0;
+
+        /**
+         * The source on which the method should be added.
+         */
+        private String source;
+
+        /**
+         * The property name if the method is a getter.
+         */
+        private String propertyName;
+
+        /**
+         * Indicates if the method containing the {@link Source} annotation was also annotated with the {@link Query} annotation.
+         * If true, then this indicates that a top level query should also be created as well as the field in the type.
+         */
+        private boolean isQueryAnnotated = false;
+
+        /**
+         * Defines the format for a number or date.
+         */
+        private String[] format = new String[0];
+
+        /**
+         * A description for a method.
+         */
+        private String description;
+
+        /**
+         * Indicates id the return type is mandatory.
+         */
+        private boolean isReturnTypeMandatory;
+
+        /**
+         * The default value for this discovered method.
+         */
+        private Object defaultValue;
+
+        /**
+         * If the return type is an array then indicates if the value in the array is mandatory.
+         */
+        private boolean isArrayReturnTypeMandatory;
+
+        /**
+         * Original array inner type if it is array type.
+         */
+        private Class<?> originalArrayType;
+
+        /**
+         * Indicates if the format is of type Jsonb.
+         */
+        private boolean isJsonbFormat;
+
+        /**
+         * Indicates if the property name is of type Jsonb.
+         */
+        private boolean isJsonbProperty;
+
+        /**
+         * Default constructor.
+         */
+        public DiscoveredMethod() {
+        }
+
+        /**
+         * Return the name.
+         *
+         * @return the name
+         */
+        public String name() {
+            return name;
+        }
+
+        /**
+         * Set the name.
+         *
+         * @param name the name
+         */
+        public void name(String name) {
+            this.name = name;
+        }
+
+        /**
+         * Return the return type.
+         *
+         * @return the return type
+         */
+        public String returnType() {
+            return returnType;
+        }
+
+        /**
+         * Set the return type.
+         *
+         * @param returnType the return type
+         */
+        public void returnType(String returnType) {
+            this.returnType = returnType;
+        }
+
+        /**
+         * Return the collection type.
+         *
+         * @return the collection
+         */
+        public String collectionType() {
+            return collectionType;
+        }
+
+        /**
+         * Set the collection type.
+         *
+         * @param collectionType the collection type
+         */
+        public void collectionType(String collectionType) {
+            this.collectionType = collectionType;
+        }
+
+        /**
+         * Sets if the property has a JsonbProperty annotation.
+         *
+         * @param isJsonbProperty if the property has a JsonbProperty annotation
+         */
+        public void jsonbProperty(boolean isJsonbProperty) {
+            this.isJsonbProperty = isJsonbProperty;
+        }
+
+        /**
+         * Indicates if the property has a JsonbProperty annotation.
+         *
+         * @return true if the property has a JsonbProperty annotation
+         */
+        public boolean isJsonbProperty() {
+            return isJsonbProperty;
+        }
+
+        /**
+         * Indicates if the method is a map return type.
+         *
+         * @return if the method is a map return type
+         */
+        public boolean isMap() {
+            return isMap;
+        }
+
+        /**
+         * Set if the method is a map return type.
+         *
+         * @param map if the method is a map return type
+         */
+        public void map(boolean map) {
+            isMap = map;
+        }
+
+        /**
+         * Return the method type.
+         *
+         * @return the method type
+         */
+        public int methodType() {
+            return methodType;
+        }
+
+        /**
+         * Set the method type either READ or WRITE.
+         *
+         * @param methodType the method type
+         */
+        public void methodType(int methodType) {
+            this.methodType = methodType;
+        }
+
+        /**
+         * Indicates if the method returns an array.
+         *
+         * @return if the method returns an array.
+         */
+        public boolean isArrayReturnType() {
+            return isArrayReturnType;
+        }
+
+        /**
+         * Indicates if the method returns an array.
+         *
+         * @param arrayReturnType if the method returns an array
+         */
+        public void arrayReturnType(boolean arrayReturnType) {
+            isArrayReturnType = arrayReturnType;
+        }
+
+        /**
+         * Indicates if the method is a collection type.
+         *
+         * @return if the method is a collection type
+         */
+        public boolean isCollectionType() {
+            return collectionType != null;
+        }
+
+        /**
+         * Returns the {@link Method}.
+         *
+         * @return the {@link Method}
+         */
+        public Method method() {
+            return method;
+        }
+
+        /**
+         * Sets the {@link Method}.
+         *
+         * @param method the {@link Method}
+         */
+        public void method(Method method) {
+            this.method = method;
+        }
+
+        /**
+         * Return the {@link List} of {@link SchemaArgument}s.
+         *
+         * @return the {@link List} of {@link SchemaArgument}
+         */
+        public List<SchemaArgument> arguments() {
+            return this.listArguments;
+        }
+
+        /**
+         * Return the number of levels in the Array.
+         *
+         * @return Return the number of levels in the Array
+         */
+        public int arrayLevels() {
+            return arrayLevels;
+        }
+
+        /**
+         * Sets the number of levels in the Array.
+         *
+         * @param arrayLevels the number of levels in the Array
+         */
+        public void arrayLevels(int arrayLevels) {
+            this.arrayLevels = arrayLevels;
+        }
+
+        /**
+         * Add a {@link SchemaArgument}.
+         *
+         * @param argument a {@link SchemaArgument}
+         */
+        public void addArgument(SchemaArgument argument) {
+            listArguments.add(argument);
+        }
+
+        /**
+         * Return the source on which the method should be added.
+         *
+         * @return source on which the method should be added
+         */
+        public String source() {
+            return source;
+        }
+
+        /**
+         * Set the source on which the method should be added.
+         *
+         * @param source source on which the method should be added
+         */
+        public void source(String source) {
+            this.source = source;
+        }
+
+        /**
+         * Indicates if the method containing the {@link Source} annotation was also annotated with the {@link Query} annotation.
+         *
+         * @return true if the {@link Query} annotation was present
+         */
+        public boolean isQueryAnnotated() {
+            return isQueryAnnotated;
+        }
+
+        /**
+         * Set if the method containing the {@link Source} annotation was * also annotated with the {@link Query} annotation.
+         *
+         * @param queryAnnotated true if the {@link Query} annotation was present
+         */
+        public void queryAnnotated(boolean queryAnnotated) {
+            isQueryAnnotated = queryAnnotated;
+        }
+
+        /**
+         * Return the format for a number or date.
+         *
+         * @return the format for a number or date
+         */
+        public String[] format() {
+            if (format == null) {
+                return null;
+            }
+            String[] copy = new String[format.length];
+            System.arraycopy(format, 0, copy, 0, copy.length);
+            return copy;
+        }
+
+        /**
+         * Set the format for a number or date.
+         *
+         * @param format the format for a number or date
+         */
+        public void format(String[] format) {
+            if (format == null) {
+                this.format = null;
+            } else {
+                this.format = new String[format.length];
+                System.arraycopy(format, 0, this.format, 0, this.format.length);
+            }
+        }
+
+        /**
+         * Return the property name if the method is a getter.
+         *
+         * @return property name if the method is a getter
+         */
+        public String propertyName() {
+            return propertyName;
+        }
+
+        /**
+         * Set the property name if the method is a getter.
+         *
+         * @param propertyName property name
+         */
+        public void propertyName(String propertyName) {
+            this.propertyName = propertyName;
+        }
+
+        /**
+         * Return the description for a method.
+         *
+         * @return the description for a method
+         */
+        public String description() {
+            return description;
+        }
+
+        /**
+         * Set the description for a method.
+         *
+         * @param description the description for a method
+         */
+        public void description(String description) {
+            this.description = description;
+        }
+
+        /**
+         * Indicates if the return type is mandatory.
+         *
+         * @return if the return type is mandatory
+         */
+        public boolean isReturnTypeMandatory() {
+            return isReturnTypeMandatory;
+        }
+
+        /**
+         * Set if the return type is mandatory.
+         *
+         * @param returnTypeMandatory if the return type is mandatory
+         */
+        public void returnTypeMandatory(boolean returnTypeMandatory) {
+            isReturnTypeMandatory = returnTypeMandatory;
+        }
+
+        /**
+         * Return the default value for this method.
+         *
+         * @return the default value for this method
+         */
+        public Object defaultValue() {
+            return defaultValue;
+        }
+
+        /**
+         * Set the default value for this method.
+         *
+         * @param defaultValue the default value for this method
+         */
+        public void defaultValue(Object defaultValue) {
+            this.defaultValue = defaultValue;
+        }
+
+        /**
+         * Return if the array return type is mandatory.
+         *
+         * @return if the array return type is mandatory
+         */
+        public boolean isArrayReturnTypeMandatory() {
+            return isArrayReturnTypeMandatory;
+        }
+
+        /**
+         * Sets if the array return type is mandatory.
+         *
+         * @param arrayReturnTypeMandatory if the array return type is mandatory
+         */
+        public void arrayReturnTypeMandatory(boolean arrayReturnTypeMandatory) {
+            isArrayReturnTypeMandatory = arrayReturnTypeMandatory;
+        }
+
+        /**
+         * Sets the original array type.
+         *
+         * @param originalArrayType the original array type
+         */
+        public void originalArrayType(Class<?> originalArrayType) {
+            this.originalArrayType = originalArrayType;
+        }
+
+        /**
+         * Returns the original array type.
+         *
+         * @return the original array type
+         */
+        public Class<?> originalArrayType() {
+            return originalArrayType;
+        }
+
+        /**
+         * Set if the format is of type JsonB.
+         *
+         * @param isJsonbFormat if the format is of type JsonB
+         */
+        public void jsonbFormat(boolean isJsonbFormat) {
+            this.isJsonbFormat = isJsonbFormat;
+        }
+
+        /**
+         * Returns true if the format is of type JsonB.
+         *
+         * @return true if the format is of type JsonB
+         */
+        public boolean isJsonbFormat() {
+            return isJsonbFormat;
+        }
+
+        @Override
+        public String toString() {
+            return "DiscoveredMethod{"
+                    + "name='" + name + '\''
+                    + ", returnType='" + returnType + '\''
+                    + ", methodType=" + methodType
+                    + ", collectionType='" + collectionType + '\''
+                    + ", isArrayReturnType=" + isArrayReturnType
+                    + ", isMap=" + isMap
+                    + ", listArguments=" + listArguments
+                    + ", arrayLevels=" + arrayLevels
+                    + ", source=" + source
+                    + ", isQueryAnnotated=" + isQueryAnnotated
+                    + ", isReturnTypeMandatory=" + isReturnTypeMandatory
+                    + ", isArrayReturnTypeMandatory=" + isArrayReturnTypeMandatory
+                    + ", description=" + description
+                    + ", originalArrayType=" + originalArrayType
+                    + ", defaultValue=" + defaultValue
+                    + ", isJsonbFormat=" + isJsonbFormat
+                    + ", isJsonbProperty=" + isJsonbProperty
+                    + ", method=" + method + '}';
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            DiscoveredMethod that = (DiscoveredMethod) o;
+            return methodType == that.methodType
+                    && isArrayReturnType == that.isArrayReturnType
+                    && isMap == that.isMap
+                    && arrayLevels == that.arrayLevels
+                    && Objects.equals(name, that.name)
+                    && Objects.equals(returnType, that.returnType)
+                    && Objects.equals(source, that.source)
+                    && Objects.equals(isQueryAnnotated, that.isQueryAnnotated)
+                    && Objects.equals(method, that.method)
+                    && Objects.equals(description, that.description)
+                    && Objects.equals(isReturnTypeMandatory, that.isReturnTypeMandatory)
+                    && Objects.equals(isArrayReturnTypeMandatory, that.isArrayReturnTypeMandatory)
+                    && Objects.equals(defaultValue, that.defaultValue)
+                    && Objects.equals(isJsonbFormat, that.isJsonbFormat)
+                    && Objects.equals(collectionType, that.collectionType);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(name, returnType, methodType, method, arrayLevels, isQueryAnnotated,
+                                collectionType, isArrayReturnType, isMap, source, description,
+                                isReturnTypeMandatory, defaultValue, isArrayReturnTypeMandatory, isJsonbFormat,
+                                isJsonbProperty);
+        }
     }
 }

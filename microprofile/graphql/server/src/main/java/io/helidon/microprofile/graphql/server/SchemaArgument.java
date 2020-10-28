@@ -79,21 +79,32 @@ public class SchemaArgument extends AbstractDescriptiveElement implements Elemen
     private Class<?> originalArrayType;
 
     /**
-     * Construct a {@link SchemaArgument} instance.
+     * Construct a {@link SchemaArgument}.
      *
-     * @param argumentName name of the argument
-     * @param argumentType type of the argument
-     * @param isMandatory  indicates if the argument is mandatory
-     * @param defaultValue default value for the argument
-     * @param originalType original argument type before it was converted to a GraphQL representation.
+     * @param builder the {@link Builder} to construct from
      */
-    public SchemaArgument(String argumentName, String argumentType,
-                          boolean isMandatory, Object defaultValue, Class<?> originalType) {
-        this.argumentName = argumentName;
-        this.argumentType = argumentType;
-        this.isMandatory = isMandatory;
-        this.defaultValue = defaultValue;
-        this.originalType = originalType;
+    private SchemaArgument(Builder builder) {
+        this.argumentName = builder.argumentName;
+        this.argumentType = builder.argumentType;
+        this.isMandatory = builder.isMandatory;
+        this.defaultValue = builder.defaultValue;
+        this.originalType = builder.originalType;
+        this.sourceArgument = builder.sourceArgument;
+        this.format = builder.format;
+        this.isArrayReturnType = builder.isArrayReturnType;
+        this.arrayLevels = builder.arrayLevels;
+        this.isArrayReturnTypeMandatory = builder.isArrayReturnTypeMandatory;
+        this.originalArrayType = builder.originalArrayType;
+        description(builder.description);
+    }
+
+    /**
+     * Fluent API builder to create {@link SchemaArgument}.
+     *
+     * @return new builder instance
+     */
+    public static Builder builder() {
+        return new Builder();
     }
 
     /**
@@ -306,7 +317,6 @@ public class SchemaArgument extends AbstractDescriptiveElement implements Elemen
         return originalArrayType;
     }
 
-
     @Override
     public String toString() {
         return "Argument{"
@@ -352,4 +362,169 @@ public class SchemaArgument extends AbstractDescriptiveElement implements Elemen
         return Objects.hash(super.hashCode(), argumentName, argumentType, sourceArgument,
                             isMandatory, defaultValue, description(), originalType, format, originalArrayType);
     }
+
+    /**
+     * A fluent API {@link io.helidon.common.Builder} to build instances of {@link SchemaArgument}.
+     */
+    public static class Builder implements io.helidon.common.Builder<SchemaArgument> {
+
+        private String argumentName;
+        private String argumentType;
+        private String description;
+        private boolean isMandatory;
+        private Object defaultValue;
+        private Class<?> originalType;
+        private boolean sourceArgument;
+        private String[] format;
+        private boolean isArrayReturnType;
+        private int arrayLevels;
+        private boolean isArrayReturnTypeMandatory;
+        private Class<?> originalArrayType;
+
+        /**
+         * Set the argument name.
+         * @param argumentName the argument name
+         * @return updated builder instance
+         */
+        public Builder argumentName(String argumentName) {
+            this.argumentName = argumentName;
+            return this;
+        }
+
+        /**
+         * Set the argument type.
+         *
+         * @param argumentType the argument type
+         * @return updated builder instance
+         */
+        public Builder argumentType(String argumentType) {
+            this.argumentType = argumentType;
+            return this;
+        }
+
+        /**
+         * Set if the argument is mandatory.
+         *
+         * @param isMandatory true if the argument is mandatory
+         * @return updated builder instance
+         */
+        public Builder mandatory(boolean isMandatory) {
+            this.isMandatory = isMandatory;
+            return this;
+        }
+
+        /**
+         * Set the default value for this argument.
+         * @param defaultValue the default value for this argument
+         * @return updated builder instance
+         */
+        public Builder defaultValue(Object defaultValue) {
+            this.defaultValue = defaultValue;
+            return this;
+        }
+
+        /**
+         * Set the description of the {@link SchemaArgument}.
+         * @param description the description of the {@link SchemaArgument}
+         * @return updated builder instance
+         */
+        public Builder description(String description) {
+            this.description = description;
+            return this;
+        }
+
+        /**
+         * Set the original return type.
+         *
+         * @param originalType the original return type
+         * @return updated builder instance
+         */
+        public Builder originalType(Class<?> originalType) {
+            this.originalType = originalType;
+            return this;
+        }
+
+        /**
+         * Set if the argument is a source argument.
+         * @param sourceArgument true if the argument is a source argument
+         * @return updated builder instance
+         */
+        public Builder sourceArgument(boolean sourceArgument) {
+            this.sourceArgument = sourceArgument;
+            return this;
+        }
+
+        /**
+         * Set the format for a number or date.
+         * @param format the format for a number or date
+         * @return updated builder instance
+         */
+        public Builder format(String[] format) {
+            if (format == null) {
+                this.format = null;
+            } else {
+                this.format = new String[format.length];
+                System.arraycopy(format, 0, this.format, 0, this.format.length);
+            }
+
+            return this;
+        }
+
+        /**
+         * Set if the return type is an array type such as a native array([]) or a List, Collection.
+         *
+         * @param isArrayReturnType true if the return type is an array type
+         * @return updated builder instance
+         */
+        public Builder arrayReturnType(boolean isArrayReturnType) {
+            this.isArrayReturnType = isArrayReturnType;
+            return this;
+        }
+
+        /**
+         * Set the number of array levels if return type is an array.
+         *
+         * @param arrayLevels the number of array levels if return type is an array
+         * @return updated builder instance
+         */
+        public Builder arrayLevels(int arrayLevels) {
+            this.arrayLevels = arrayLevels;
+            return this;
+        }
+
+        /**
+         * Set if the value of the array is mandatory.
+         *
+         * @param isArrayReturnTypeMandatory If the return type is an array then indicates if the value in the
+         *                                   array is mandatory
+         * @return updated builder instance
+         */
+        public Builder arrayReturnTypeMandatory(boolean isArrayReturnTypeMandatory) {
+            this.isArrayReturnTypeMandatory = isArrayReturnTypeMandatory;
+            return this;
+        }
+
+        /**
+         * Set the original array inner type if it is array type.
+         * @param originalArrayType  the  original array inner type if it is array type
+         * @return updated builder instance
+         */
+        public Builder originalArrayType(Class<?> originalArrayType) {
+            this.originalArrayType = originalArrayType;
+            return this;
+        }
+
+        /**
+         * Build the instance from this builder.
+         *
+         * @return instance of the built type
+         */
+        @Override
+        public SchemaArgument build() {
+            Objects.requireNonNull(argumentName, "Argument name must be specified");
+            Objects.requireNonNull(argumentType, "Argument type must be specified");
+            return new SchemaArgument(this);
+        }
+    }
+
 }
