@@ -20,8 +20,7 @@ package io.helidon.microprofile.graphql.server;
  * A default implementation of {@link Context} to be supplied to {@link ExecutionContext}.
  * Any other implementations should extend this.
  */
-public class DefaultContext
-        implements Context {
+public class DefaultContext implements Context {
 
     private ThreadLocal<Throwable> currentThrowable = new ThreadLocal<>();
 

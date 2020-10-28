@@ -219,15 +219,14 @@ public class SchemaGenerator {
      * @throws IntrospectionException if any errors with introspection
      * @throws ClassNotFoundException if any classes are not found
      */
-    protected Schema generateSchemaFromClasses(Class<?>... clazzes)
-            throws IntrospectionException, ClassNotFoundException {
+    protected Schema generateSchemaFromClasses(Class<?>... clazzes) throws IntrospectionException, ClassNotFoundException {
         Schema schema = Schema.create();
         setUnresolvedTypes.clear();
         setAdditionalMethods.clear();
 
 
         SchemaType rootQueryType = SchemaType.builder().name(schema.getQueryName()).build();
-        SchemaType rootMutationType =  SchemaType.builder().name(schema.getMutationName()).build();
+        SchemaType rootMutationType = SchemaType.builder().name(schema.getMutationName()).build();
 
         // process any specific classes with the Input, Type or Interface annotations
         for (Class<?> clazz : clazzes) {
