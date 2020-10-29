@@ -36,7 +36,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * Tests for date/time scalars.
  */
 @AddBean(DateTimeScalarQueries.class)
-@AddBean(SimpleDateTimePojo.class)
 @AddBean(TestDB.class)
 public class DateTimeScalarIT extends AbstractGraphQLIT {
 

@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.graphql.server.test.queries;
 
+import io.helidon.microprofile.graphql.server.test.types.Task;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.json.bind.annotation.JsonbNumberFormat;
@@ -41,6 +42,7 @@ import java.util.stream.Collectors;
 import org.eclipse.microprofile.graphql.DateFormat;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Id;
+import org.eclipse.microprofile.graphql.Mutation;
 import org.eclipse.microprofile.graphql.Name;
 import org.eclipse.microprofile.graphql.NumberFormat;
 import org.eclipse.microprofile.graphql.Query;
@@ -379,5 +381,12 @@ public class SimpleQueriesWithArgs {
     @Query
     public List<LocalDate> echoFormattedLocalDate(@Name("value") List<@DateFormat("dd-MM-yyyy") LocalDate> value) {
         return value;
+    }
+
+    @Mutation
+    public Task createTask(@Name("task") Task task) {
+        task = new Task(task.getDescription());
+        System.out.println(task);
+        return task;
     }
 }

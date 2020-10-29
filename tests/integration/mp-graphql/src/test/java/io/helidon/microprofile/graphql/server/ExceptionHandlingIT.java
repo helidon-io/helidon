@@ -39,7 +39,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * Tests for testing exception handing in {@link SchemaGeneratorTest}.
  */
 @AddBean(ExceptionQueries.class)
-@AddBean(SimpleContact.class)
 @AddBean(TestDB.class)
 @SuppressWarnings("unchecked")
 public class ExceptionHandlingIT extends AbstractGraphQLIT {

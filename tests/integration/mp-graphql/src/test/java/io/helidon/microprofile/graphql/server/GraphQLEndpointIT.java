@@ -17,7 +17,6 @@
 package io.helidon.microprofile.graphql.server;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.Map;
 
 import javax.ws.rs.client.Entity;
@@ -56,7 +55,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @AddExtension(JaxRsCdiExtension.class)
 @AddExtension(ConfigCdiExtension.class)
 @AddExtension(CdiComponentProvider.class)
-@AddBean(Person.class)
 @AddBean(GraphQLResource.class)
 @AddBean(GraphQLApplication.class)
 @AddConfig(key = "server.static.classpath.context", value = "/ui")

@@ -34,7 +34,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Tests for default values.
  */
-@AddBean(DefaultValuePOJO.class)
 @AddBean(DefaultValueQueries.class)
 @AddBean(OddNamedQueriesAndMutations.class)
 @AddBean(TestDB.class)

@@ -36,7 +36,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * Tests for Source annotation.
  */
 @AddBean(SimpleQueriesWithSource.class)
-@AddBean(SimpleContact.class)
 @AddBean(TestDB.class)
 public class SourceIT extends AbstractGraphQLIT {
 

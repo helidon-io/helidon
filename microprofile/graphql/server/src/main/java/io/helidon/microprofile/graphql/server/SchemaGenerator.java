@@ -20,7 +20,6 @@ import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.MethodDescriptor;
 import java.beans.PropertyDescriptor;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -43,6 +42,8 @@ import java.util.stream.Stream;
 import javax.enterprise.inject.spi.CDI;
 import javax.json.bind.annotation.JsonbProperty;
 
+import io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.DiscoveredMethod;
+
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetcherFactories;
 import graphql.schema.GraphQLScalarType;
@@ -64,8 +65,6 @@ import static io.helidon.microprofile.graphql.server.CustomScalars.CUSTOM_DATE_T
 import static io.helidon.microprofile.graphql.server.CustomScalars.CUSTOM_OFFSET_DATE_TIME_SCALAR;
 import static io.helidon.microprofile.graphql.server.CustomScalars.CUSTOM_TIME_SCALAR;
 import static io.helidon.microprofile.graphql.server.CustomScalars.CUSTOM_ZONED_DATE_TIME_SCALAR;
-import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.DiscoveredMethod.MUTATION_TYPE;
-import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.DiscoveredMethod.QUERY_TYPE;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.DATE;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.NO_FORMATTING;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.NUMBER;
@@ -77,6 +76,8 @@ import static io.helidon.microprofile.graphql.server.FormattingHelper.getFormatt
 import static io.helidon.microprofile.graphql.server.FormattingHelper.isJsonbAnnotationPresent;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.DATETIME_SCALAR;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.DATE_SCALAR;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.DiscoveredMethod.MUTATION_TYPE;
+import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.DiscoveredMethod.QUERY_TYPE;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.FORMATTED_DATETIME_SCALAR;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.FORMATTED_DATE_SCALAR;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.FORMATTED_OFFSET_DATETIME_SCALAR;
@@ -113,6 +114,8 @@ import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.shoul
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.shouldIgnoreMethod;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.stripMethodName;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.validateIDClass;
+
+
 
 /**
  * Various utilities for generating {@link Schema}s from classes.
@@ -152,7 +155,7 @@ public class SchemaGenerator {
     /**
      * Holds the {@link Set} of additional methods that need to be added to types.
      */
-    private Set<SchemaGeneratorHelper.DiscoveredMethod> setAdditionalMethods = new HashSet<>();
+    private Set<DiscoveredMethod> setAdditionalMethods = new HashSet<>();
 
     /**
      * A {@link Context} to be passed to execution.
@@ -189,24 +192,8 @@ public class SchemaGenerator {
                 .getBeanManager()
                 .getExtension(GraphQLCdiExtension.class);
         Class[] classes = extension.collectedApis();
-        Class[] schemaProcessors = extension.collectedSchemaProcessors();
 
-        Schema schema = generateSchemaFromClasses(classes);
-
-        for (Class<?> schemaProcessor : schemaProcessors) {
-            if (SchemaPreProcessor.class.isAssignableFrom(schemaProcessor)) {
-                try {
-                    Constructor<?> constructor = schemaProcessor.getDeclaredConstructor();
-                    SchemaPreProcessor processor = (SchemaPreProcessor) constructor.newInstance();
-                    LOGGER.info("Calling SchemaPreProcessor " + processor);
-                    processor.processSchema(schema);
-                } catch (Exception e) {
-                    LOGGER.warning("Unable to constructor or call SchemaPreProcessor "
-                                           + schemaProcessor + ": " + e.getMessage());
-                }
-            }
-        }
-        return schema;
+        return generateSchemaFromClasses(classes);
     }
 
     /**
@@ -313,7 +300,7 @@ public class SchemaGenerator {
         });
 
         // process any additional methods require via the @Source annotation
-        for (SchemaGeneratorHelper.DiscoveredMethod dm : setAdditionalMethods) {
+        for (DiscoveredMethod dm : setAdditionalMethods) {
             // add the discovered method to the type
             SchemaType type = schema.getTypeByClass(dm.source());
             if (type != null) {
@@ -494,9 +481,9 @@ public class SchemaGenerator {
         SchemaType type = SchemaType.builder().name(simpleName).valueClassName(realReturnType).build();
         type.description(getDescription(Class.forName(realReturnType).getAnnotation(Description.class)));
 
-        for (Map.Entry<String, SchemaGeneratorHelper.DiscoveredMethod> entry : retrieveGetterBeanMethods(Class.forName(realReturnType), isInputType)
-                .entrySet()) {
-            SchemaGeneratorHelper.DiscoveredMethod discoveredMethod = entry.getValue();
+        for (Map.Entry<String, DiscoveredMethod> entry
+                : retrieveGetterBeanMethods(Class.forName(realReturnType), isInputType).entrySet()) {
+            DiscoveredMethod discoveredMethod = entry.getValue();
             String valueTypeName = discoveredMethod.returnType();
             SchemaFieldDefinition fd = newFieldDefinition(discoveredMethod, null);
             type.addFieldDefinition(fd);
@@ -524,8 +511,9 @@ public class SchemaGenerator {
                                               Class<?> clazz)
             throws IntrospectionException, ClassNotFoundException {
 
-        for (Map.Entry<String, SchemaGeneratorHelper.DiscoveredMethod> entry : retrieveAllAnnotatedBeanMethods(clazz).entrySet()) {
-            SchemaGeneratorHelper.DiscoveredMethod discoveredMethod = entry.getValue();
+        for (Map.Entry<String, DiscoveredMethod> entry
+                : retrieveAllAnnotatedBeanMethods(clazz).entrySet()) {
+            DiscoveredMethod discoveredMethod = entry.getValue();
             Method method = discoveredMethod.method();
 
             SchemaFieldDefinition fd = null;
@@ -780,12 +768,13 @@ public class SchemaGenerator {
     /**
      * Return a new {@link SchemaFieldDefinition} with the given field and class.
      *
-     * @param discoveredMethod the {@link SchemaGeneratorHelper.DiscoveredMethod}
+     * @param discoveredMethod the {@link DiscoveredMethod}
      * @param optionalName     optional name for the field definition
      * @return a {@link SchemaFieldDefinition}
      */
     @SuppressWarnings("rawtypes")
-    private SchemaFieldDefinition newFieldDefinition(SchemaGeneratorHelper.DiscoveredMethod discoveredMethod, String optionalName) {
+    private SchemaFieldDefinition newFieldDefinition(DiscoveredMethod discoveredMethod,
+                                                     String optionalName) {
         String valueClassName = discoveredMethod.returnType();
         String graphQLType = getGraphQLType(valueClassName);
         DataFetcher dataFetcher = null;
@@ -911,9 +900,9 @@ public class SchemaGenerator {
      * @throws IntrospectionException if any errors with introspection
      * @throws ClassNotFoundException if any classes are not found
      */
-    protected Map<String, SchemaGeneratorHelper.DiscoveredMethod> retrieveAllAnnotatedBeanMethods(Class<?> clazz)
+    protected Map<String, DiscoveredMethod> retrieveAllAnnotatedBeanMethods(Class<?> clazz)
             throws IntrospectionException, ClassNotFoundException {
-        Map<String, SchemaGeneratorHelper.DiscoveredMethod> mapDiscoveredMethods = new HashMap<>();
+        Map<String, DiscoveredMethod> mapDiscoveredMethods = new HashMap<>();
         for (Method m : getAllMethods(clazz)) {
             boolean isQuery = m.getAnnotation(Query.class) != null;
             boolean isMutation = m.getAnnotation(Mutation.class) != null;
@@ -923,7 +912,7 @@ public class SchemaGenerator {
                         + " may not have both a Query and Mutation annotation");
             }
             if (isQuery || isMutation || hasSourceAnnotation) {
-                SchemaGeneratorHelper.DiscoveredMethod discoveredMethod = generateDiscoveredMethod(m, clazz, null, false, true);
+                DiscoveredMethod discoveredMethod = generateDiscoveredMethod(m, clazz, null, false, true);
                 discoveredMethod.methodType(isQuery || hasSourceAnnotation ? QUERY_TYPE : MUTATION_TYPE);
                 String name = discoveredMethod.name();
                 if (mapDiscoveredMethods.containsKey(name)) {
@@ -945,10 +934,10 @@ public class SchemaGenerator {
      * @return a {@link Map} of the methods and return types
      * @throws IntrospectionException if there were errors introspecting classes
      */
-    protected Map<String, SchemaGeneratorHelper.DiscoveredMethod> retrieveGetterBeanMethods(Class<?> clazz,
+    protected Map<String, DiscoveredMethod> retrieveGetterBeanMethods(Class<?> clazz,
                                                                                             boolean isInputType)
             throws IntrospectionException, ClassNotFoundException {
-        Map<String, SchemaGeneratorHelper.DiscoveredMethod> mapDiscoveredMethods = new HashMap<>();
+        Map<String, DiscoveredMethod> mapDiscoveredMethods = new HashMap<>();
 
         for (Method m : getAllMethods(clazz)) {
             if (m.getName().equals("getClass") || shouldIgnoreMethod(m, isInputType)) {
@@ -967,8 +956,8 @@ public class SchemaGenerator {
                 // only include if the field should not be ignored
                 if (!shouldIgnoreField(clazz, propertyDescriptor.getName()) && !ignoreWriteMethod) {
                     // this is a getter method, include it here
-                    SchemaGeneratorHelper.DiscoveredMethod discoveredMethod = generateDiscoveredMethod(m, clazz, propertyDescriptor, isInputType,
-                                                                                                       false);
+                    DiscoveredMethod discoveredMethod =
+                            generateDiscoveredMethod(m, clazz, propertyDescriptor, isInputType, false);
                     mapDiscoveredMethods.put(discoveredMethod.name(), discoveredMethod);
                 }
             }
@@ -992,7 +981,7 @@ public class SchemaGenerator {
     }
 
     /**
-     * Generate a {@link SchemaGeneratorHelper.DiscoveredMethod} from the given arguments.
+     * Generate a {@link DiscoveredMethod} from the given arguments.
      *
      * @param method            {@link Method} being introspected
      * @param clazz             {@link Class} being introspected
@@ -1000,11 +989,12 @@ public class SchemaGenerator {
      *                          methods as in the case for a {@link Query} annotation)
      * @param isInputType       indicates if the method is part of an input type
      * @param isQueryOrMutation indicates if this is for a query or mutation
-     * @return a {@link SchemaGeneratorHelper.DiscoveredMethod}
+     * @return a {@link DiscoveredMethod}
      */
-    private SchemaGeneratorHelper.DiscoveredMethod generateDiscoveredMethod(Method method, Class<?> clazz,
-                                                                            PropertyDescriptor pd, boolean isInputType,
-                                                                            boolean isQueryOrMutation) throws ClassNotFoundException {
+    private DiscoveredMethod generateDiscoveredMethod(Method method, Class<?> clazz,
+                                                      PropertyDescriptor pd, boolean isInputType,
+                                                      boolean isQueryOrMutation)
+            throws ClassNotFoundException {
         String[] format = new String[0];
         String description = null;
         boolean isReturnTypeMandatory = false;
@@ -1029,7 +1019,8 @@ public class SchemaGenerator {
             }
         }
 
-        isJsonbProperty = (isInputType ? pd.getWriteMethod() : method).getAnnotation(JsonbProperty.class) != null;
+        Method methodToCheck = isInputType ? pd.getWriteMethod() : method;
+        isJsonbProperty = methodToCheck != null && methodToCheck.getAnnotation(JsonbProperty.class) != null;
 
         ensureValidName(LOGGER, varName);
 
@@ -1145,7 +1136,7 @@ public class SchemaGenerator {
             format = methodFormat;
         }
 
-        SchemaGeneratorHelper.DiscoveredMethod discoveredMethod = new SchemaGeneratorHelper.DiscoveredMethod();
+        DiscoveredMethod discoveredMethod = new DiscoveredMethod();
         discoveredMethod.name(varName);
         discoveredMethod.method(method);
         discoveredMethod.format(format);
@@ -1184,8 +1175,8 @@ public class SchemaGenerator {
     }
 
     /**
-     * Process the {@link ReturnType} and update {@link SchemaGeneratorHelper.DiscoveredMethod} as required.
-     * @param discoveredMethod  {@link SchemaGeneratorHelper.DiscoveredMethod}
+     * Process the {@link ReturnType} and update {@link DiscoveredMethod} as required.
+     * @param discoveredMethod  {@link DiscoveredMethod}
      * @param realReturnType    {@link ReturnType} with details of the return types
      * @param returnClazzName   return class name
      * @param isInputType       indicates if the method is part of an input type
@@ -1194,7 +1185,7 @@ public class SchemaGenerator {
      *
      * @throws ClassNotFoundException if any class not found
      */
-    private void processReturnType(SchemaGeneratorHelper.DiscoveredMethod discoveredMethod, ReturnType realReturnType,
+    private void processReturnType(DiscoveredMethod discoveredMethod, ReturnType realReturnType,
                                    String returnClazzName, boolean isInputType,
                                    String varName, Method method) throws ClassNotFoundException {
         if (realReturnType.returnClass() != null && !ID.equals(returnClazzName)) {
@@ -1229,10 +1220,10 @@ public class SchemaGenerator {
      * Process parameters for the given method.
      *
      * @param method           {@link Method} to process
-     * @param discoveredMethod {@link SchemaGeneratorHelper.DiscoveredMethod} to update
+     * @param discoveredMethod {@link DiscoveredMethod} to update
      * @param annotatedName    annotated name or null
      */
-    private void processMethodParameters(Method method, SchemaGeneratorHelper.DiscoveredMethod discoveredMethod, String annotatedName) {
+    private void processMethodParameters(Method method, DiscoveredMethod discoveredMethod, String annotatedName) {
         Parameter[] parameters = method.getParameters();
         if (parameters != null && parameters.length > 0) {
             java.lang.reflect.Type[] genericParameterTypes = method.getGenericParameterTypes();

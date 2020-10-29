@@ -34,7 +34,6 @@ import static org.hamcrest.CoreMatchers.is;
  * Tests for partial results with exception.
  */
 @AddBean(ExceptionQueries.class)
-@AddBean(SimpleContact.class)
 @AddBean(TestDB.class)
 public class PartialResultsExceptionIT extends AbstractGraphQLIT {
 

@@ -46,9 +46,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * Tests for {@link DataFetcherUtils} class.
  */
 @AddBean(SimpleQueriesWithArgs.class)
-@AddBean(SimpleContactWithNumberFormats.class)
-@AddBean(ContactRelationship.class)
-@AddBean(SimpleContact.class)
 @AddBean(TestDB.class)
 class DataFetcherUtilsIT extends AbstractGraphQLIT {
 

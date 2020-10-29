@@ -44,8 +44,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * Tests for date/times.
  */
 @AddBean(SimpleQueriesAndMutations.class)
-@AddBean(DateTimePojo.class)
-@AddBean(SimpleDateTime.class)
 @AddBean(TestDB.class)
 public class DateTimeIT extends AbstractGraphQLIT {
 

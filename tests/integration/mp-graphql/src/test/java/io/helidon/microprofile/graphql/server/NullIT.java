@@ -35,7 +35,6 @@ import org.junit.jupiter.api.Test;
 /**
  * Tests for Nulls.
  */
-@AddBean(NullPOJO.class)
 @AddBean(QueriesAndMutationsWithNulls.class)
 @AddBean(TestDB.class)
 public class NullIT extends AbstractGraphQLIT {

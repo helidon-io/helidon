@@ -31,7 +31,7 @@ import org.junit.jupiter.api.Test;
  * Tests for deny list.
  */
 @AddBean(ExceptionQueries.class)
-@AddBean(SimpleContact.class)
+//@AddBean(SimpleContact.class)
 @AddBean(TestDB.class)
 @AddConfig(key = ConfigKey.EXCEPTION_BLACK_LIST, value = "java.io.IOException,java.util.concurrent.TimeoutException")
 public class BLOfIOExceptionIT extends AbstractGraphQLIT {

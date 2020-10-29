@@ -40,11 +40,6 @@ public class GraphQLCdiExtension implements Extension {
     private final List<Class<?>> collectedApis = new ArrayList<>();
 
     /**
-     * The {@link List} of collected Schema processors.
-     */
-    private final List<Class<?>> collectedProcessors = new ArrayList<>();
-
-    /**
      * Collect the classes that have the following Microprofile GraphQL annotations.
      *
      * @param processAnnotatedType annotation types to process
@@ -57,29 +52,11 @@ public class GraphQLCdiExtension implements Extension {
     }
 
     /**
-     * Collect the classes that have the {@link SchemaProcessor} annotation.
-     *
-     * @param processAnnotatedType annotation types to process
-     */
-    void collectProcessors(@Observes @WithAnnotations(SchemaProcessor.class) ProcessAnnotatedType<?> processAnnotatedType) {
-        this.collectedProcessors.add(processAnnotatedType.getAnnotatedType().getJavaClass());
-    }
-
-    /**
      * Returns the collected API's.
      *
      * @return the collected API's
      */
     public Class<?>[] collectedApis() {
         return collectedApis.toArray(new Class[0]);
-    }
-
-    /**
-     * Returns the collected Schema Processors.
-     *
-     * @return the collected Schema Processors.
-     */
-    public Class<?>[] collectedSchemaProcessors() {
-        return collectedProcessors.toArray(new Class[0]);
     }
 }

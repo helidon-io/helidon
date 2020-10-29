@@ -45,8 +45,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * Tests for simple queries with args.
  */
 @AddBean(SimpleQueriesWithArgs.class)
-@AddBean(Car.class)
-@AddBean(AbstractVehicle.class)
 @AddBean(TestDB.class)
 public class SimpleQueriesWithArgsIT extends AbstractGraphQLIT {
 

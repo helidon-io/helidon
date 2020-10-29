@@ -34,7 +34,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * Tests for deny list and allow list.
  */
 @AddBean(ExceptionQueries.class)
-@AddBean(SimpleContact.class)
 @AddBean(TestDB.class)
 @AddConfig(key = ConfigKey.EXCEPTION_WHITE_LIST,
            value = "org.eclipse.microprofile.graphql.tck.apps.superhero.api.WeaknessNotFoundException")

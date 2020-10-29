@@ -34,7 +34,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * Tests for property naming.
  */
 @AddBean(PropertyNameQueries.class)
-@AddBean(TypeWithNameAndJsonbProperty.class)
 @AddBean(TestDB.class)
 public class PropertyNameIT extends AbstractGraphQLIT {
 

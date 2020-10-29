@@ -34,7 +34,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Tests for descriptions.
  */
-@AddBean(DescriptionType.class)
 @AddBean(DescriptionQueries.class)
 @AddBean(TestDB.class)
 public class DescriptionIT extends AbstractGraphQLIT {

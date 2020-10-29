@@ -33,7 +33,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * Tests for different exception messages.
  */
 @AddBean(ExceptionQueries.class)
-@AddBean(SimpleContact.class)
 @AddBean(TestDB.class)
 @AddConfig(key = "mp.graphql.defaultErrorMessage", value = "new message")
 public class DifferentMessageExceptionIT extends AbstractGraphQLIT {

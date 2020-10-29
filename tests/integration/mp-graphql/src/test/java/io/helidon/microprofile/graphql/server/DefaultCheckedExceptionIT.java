@@ -29,7 +29,6 @@ import org.junit.jupiter.api.Test;
  * Tests for default exceptions.
  */
 @AddBean(ExceptionQueries.class)
-@AddBean(SimpleContact.class)
 @AddBean(TestDB.class)
 public class DefaultCheckedExceptionIT extends AbstractGraphQLIT {
 

@@ -36,7 +36,6 @@ import org.opentest4j.AssertionFailedError;
  * Tests for ignorable fields.
  */
 @AddBean(QueriesWithIgnorable.class)
-@AddBean(ObjectWithIgnorableFieldsAndMethods.class)
 @AddBean(TestDB.class)
 public class IngorableIT extends AbstractGraphQLIT {
 

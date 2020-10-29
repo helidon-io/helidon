@@ -33,7 +33,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * Tests for exception handling with all defaults.
  */
 @AddBean(ExceptionQueries.class)
-@AddBean(SimpleContact.class)
 @AddBean(TestDB.class)
 public class AllDefaultsExceptionIT extends AbstractGraphQLIT {
 
