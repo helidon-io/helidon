@@ -75,9 +75,9 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
     // concurrency aware
     private RequestContext requestContext;
 
-    private boolean isWebSocketUpgrade = false;
+    private boolean isWebSocketUpgrade;
     private long actualPayloadSize;
-    private boolean ignorePayload = false;
+    private boolean ignorePayload;
 
     ForwardingHandler(Routing routing,
                       NettyWebServer webServer,
@@ -91,6 +91,12 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
         this.queues = queues;
         this.httpRequestDecoder = httpRequestDecoder;
         this.maxPayloadSize = maxPayloadSize;
+    }
+
+    private void reset() {
+        isWebSocketUpgrade = false;
+        actualPayloadSize = 0L;
+        ignorePayload = false;
     }
 
     @Override
@@ -109,6 +115,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
     }
 
     @Override
+    @SuppressWarnings("checkstyle:methodlength")
     protected void channelRead0(ChannelHandlerContext ctx, Object msg) {
         LOGGER.fine(() -> String.format("[Handler: %s, Channel: %s] Received object: %s",
                 System.identityHashCode(this), System.identityHashCode(ctx.channel()), msg.getClass()));
@@ -116,6 +123,9 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
         if (msg instanceof HttpRequest) {
             // Turns off auto read
             ctx.channel().config().setAutoRead(false);
+
+            // Reset internal state on new request
+            reset();
 
             // Check that HTTP decoding was successful or return 400
             HttpRequest request = (HttpRequest) msg;
@@ -156,9 +166,10 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                     try {
                         long value = Long.parseLong(contentLength);
                         if (value > maxPayloadSize) {
-                            LOGGER.fine(() -> String.format("[Handler: %s, Channel: %s] Payload length greater than max %d > %d",
+                            LOGGER.fine(() -> String.format("[Handler: %s, Channel: %s] Payload length over max %d > %d",
                                     System.identityHashCode(this), System.identityHashCode(ctx.channel()),
                                     value, maxPayloadSize));
+                            ignorePayload = true;
                             send413PayloadTooLarge(ctx);
                             return;
                         }
@@ -245,15 +256,16 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                     if (maxPayloadSize >= 0) {
                         actualPayloadSize += content.readableBytes();
                         if (actualPayloadSize > maxPayloadSize) {
-                            LOGGER.fine(() -> String.format("[Handler: %s, Channel: %s] Chunked Payload length greater than max %d > %d",
+                            LOGGER.fine(() -> String.format("[Handler: %s, Channel: %s] Chunked Payload over max %d > %d",
                                     System.identityHashCode(this), System.identityHashCode(ctx.channel()),
                                     actualPayloadSize, maxPayloadSize));
                             ignorePayload = true;
                             send413PayloadTooLarge(ctx);
                         } else {
-                            // Forward content to publisher
                             requestContext.publisher().emit(content);
                         }
+                    } else {
+                        requestContext.publisher().emit(content);
                     }
                 }
             }
