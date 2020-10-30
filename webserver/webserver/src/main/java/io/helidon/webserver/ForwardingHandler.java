@@ -227,7 +227,6 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
 
         if (msg instanceof HttpContent) {
             if (requestContext == null) {
-                LOGGER.fine(() -> "Request context is null");
                 throw new IllegalStateException("There is no request context associated with this http content. "
                                                 + "This is never expected to happen!");
             }
