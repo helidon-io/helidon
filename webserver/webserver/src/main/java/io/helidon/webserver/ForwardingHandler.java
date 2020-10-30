@@ -363,8 +363,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
      */
     private void send413PayloadTooLarge(ChannelHandlerContext ctx) {
         FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, REQUEST_ENTITY_TOO_LARGE);
-        ctx.write(response)
-                .addListener(future -> ctx.close());
+        ctx.write(response);
     }
 
     @Override
