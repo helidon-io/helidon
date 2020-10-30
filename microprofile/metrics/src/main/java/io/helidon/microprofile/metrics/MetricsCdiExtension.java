@@ -18,6 +18,7 @@ package io.helidon.microprofile.metrics;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -41,7 +42,9 @@ import javax.enterprise.context.RequestScoped;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Default;
 import javax.enterprise.inject.spi.AfterDeploymentValidation;
+import javax.enterprise.inject.spi.AnnotatedConstructor;
 import javax.enterprise.inject.spi.AnnotatedMember;
+import javax.enterprise.inject.spi.AnnotatedMethod;
 import javax.enterprise.inject.spi.AnnotatedType;
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
@@ -50,10 +53,10 @@ import javax.enterprise.inject.spi.DeploymentException;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessAnnotatedType;
 import javax.enterprise.inject.spi.ProcessInjectionPoint;
+import javax.enterprise.inject.spi.ProcessManagedBean;
 import javax.enterprise.inject.spi.ProcessProducerField;
 import javax.enterprise.inject.spi.ProcessProducerMethod;
 import javax.enterprise.inject.spi.WithAnnotations;
-import javax.enterprise.inject.spi.configurator.AnnotatedMethodConfigurator;
 import javax.enterprise.inject.spi.configurator.AnnotatedTypeConfigurator;
 import javax.inject.Qualifier;
 import javax.inject.Singleton;
@@ -108,6 +111,9 @@ public class MetricsCdiExtension implements Extension {
             = Arrays.asList(Counted.class, Metered.class, Timed.class, Gauge.class, ConcurrentGauge.class,
                             SimplyTimed.class);
 
+    private static final Set<Class<? extends Annotation>> METRIC_ANNOTATIONS_FOR_OBSERVATION
+            = Set.of(Counted.class, Metered.class, Timed.class, ConcurrentGauge.class, SimplyTimed.class);
+
     private static final List<Class<? extends Annotation>> JAX_RS_ANNOTATIONS
             = Arrays.asList(GET.class, PUT.class, POST.class, HEAD.class, OPTIONS.class, DELETE.class, PATCH.class);
 
@@ -128,7 +134,7 @@ public class MetricsCdiExtension implements Extension {
 
     private final Map<Bean<?>, AnnotatedMember<?>> producers = new HashMap<>();
 
-    private final Map<MetricID, AnnotatedMethodConfigurator<?>> annotatedGaugeSites = new HashMap<>();
+    private final Map<MetricID, AnnotatedMethod<?>> annotatedGaugeSites = new HashMap<>();
 
     private Errors.Collector errors = Errors.collector();
 
@@ -300,23 +306,17 @@ public class MetricsCdiExtension implements Extension {
     /**
      * Observes sites annotated with the metrics annotations.
      *
-     * @param pat annotated type instance being processed
+     * @param pmb managed bean being processed
      */
-    private void registerMetrics(@Observes @WithAnnotations({Counted.class, Metered.class, Timed.class,
-                                                                    ConcurrentGauge.class, SimplyTimed.class})
-                                         ProcessAnnotatedType<?> pat) {
-        // Filter out interceptors
-        AnnotatedType<?> type = pat.getAnnotatedType();
+    private void registerMetrics(@Observes ProcessManagedBean<?> pmb) {
+        AnnotatedType<?> type =  pmb.getAnnotatedBeanClass();
+
         Interceptor annot = type.getAnnotation(Interceptor.class);
         if (annot != null) {
             return;
         }
-
-        LOGGER.log(Level.FINE, () -> "Processing annotations for " + pat.getAnnotatedType().getJavaClass().getName());
-
-        // Register metrics based on annotations
-        AnnotatedTypeConfigurator<?> configurator = pat.configureAnnotatedType();
-        Class<?> clazz = configurator.getAnnotated().getJavaClass();
+        Class<?> clazz = type.getJavaClass();
+        LOGGER.log(Level.FINE, () -> "Processing annotations for " + clazz.getName());
 
         // If abstract class, then handled by concrete subclasses
         if (Modifier.isAbstract(clazz.getModifiers())) {
@@ -324,34 +324,39 @@ public class MetricsCdiExtension implements Extension {
         }
 
         // Process methods keeping non-private declared on this class
-        configurator.filterMethods(method -> !Modifier.isPrivate(method.getJavaMember().getModifiers()))
-                .forEach(method -> {
-                    METRIC_ANNOTATIONS.forEach(annotation -> {
-                        Method m = method.getAnnotated().getJavaMember();
-                        for (LookupResult<? extends Annotation> lookupResult : MetricUtil.lookupAnnotations(
-                                configurator.getAnnotated(), method.getAnnotated(), annotation)) {
-                            // For methods, register the metric only on the declaring
-                            // class, not subclasses per the MP Metrics 2.0 TCK
-                            // VisibilityTimedMethodBeanTest.
-                            if (lookupResult.getType() != MetricUtil.MatchingType.METHOD
-                                    || clazz.equals(m.getDeclaringClass())) {
-                                registerMetric(m, clazz, lookupResult);
-                            }
-                        }
-                    });
-                });
+        for (AnnotatedMethod annotatedMethod : type.getMethods()) {
+            if (Modifier.isPrivate(annotatedMethod.getJavaMember().getModifiers())) {
+                continue;
+            }
+            METRIC_ANNOTATIONS_FOR_OBSERVATION.forEach(annotation -> {
+                for (LookupResult<? extends Annotation> lookupResult : MetricUtil.lookupAnnotations(
+                        type, annotatedMethod, annotation)) {
+                    // For methods, register the metric only on the declaring
+                    // class, not subclasses per the MP Metrics 2.0 TCK
+                    // VisibilityTimedMethodBeanTest.
+                    if (lookupResult.getType() != MetricUtil.MatchingType.METHOD
+                            || clazz.equals(annotatedMethod.getJavaMember()
+                            .getDeclaringClass())) {
+                        registerMetric(annotatedMethod.getJavaMember(), clazz, lookupResult);
+                    }
+                }
+            });
+        }
 
         // Process constructors
-        configurator.filterConstructors(constructor -> !Modifier.isPrivate(constructor.getJavaMember().getModifiers()))
-                .forEach(constructor -> {
-                    METRIC_ANNOTATIONS.forEach(annotation -> {
-                        LookupResult<? extends Annotation> lookupResult
-                                = lookupAnnotation(constructor.getAnnotated().getJavaMember(), annotation, clazz);
-                        if (lookupResult != null) {
-                            registerMetric(constructor.getAnnotated().getJavaMember(), clazz, lookupResult);
-                        }
-                    });
-                });
+        for (AnnotatedConstructor annotatedConstructor : type.getConstructors()) {
+            Constructor c = annotatedConstructor.getJavaMember();
+            if (Modifier.isPrivate(c.getModifiers())) {
+                continue;
+            }
+            METRIC_ANNOTATIONS_FOR_OBSERVATION.forEach(annotation -> {
+                LookupResult<? extends Annotation> lookupResult
+                        = lookupAnnotation(c, annotation, clazz);
+                if (lookupResult != null) {
+                    registerMetric(c, clazz, lookupResult);
+                }
+            });
+        }
     }
 
     private void processInjectionPoints(@Observes ProcessInjectionPoint<?, ?> pip) {
@@ -643,53 +648,52 @@ public class MetricsCdiExtension implements Extension {
         return MetricType.from(clazz == null ? metric.getClass() : clazz);
     }
 
-    private void recordAnnotatedGaugeSite(@Observes @WithAnnotations(Gauge.class) ProcessAnnotatedType<?> pat) {
-        LOGGER.log(Level.FINE, () -> "recordAnnoatedGaugeSite for class " + pat.getAnnotatedType().getJavaClass());
-        AnnotatedType<?> type = pat.getAnnotatedType();
+    private void recordAnnotatedGaugeSite(@Observes ProcessManagedBean<?> pmb) {
+        AnnotatedType<?> type = pmb.getAnnotatedBeanClass();
+        Class<?> clazz = type.getJavaClass();
 
-        LOGGER.log(Level.FINE, () -> "Processing annotations for " + type.getJavaClass().getName());
+        LOGGER.log(Level.FINE, () -> "recordAnnoatedGaugeSite for class " + clazz);
+        LOGGER.log(Level.FINE, () -> "Processing annotations for " + clazz.getName());
 
         // Register metrics based on annotations
-        AnnotatedTypeConfigurator<?> configurator = pat.configureAnnotatedType();
-        Class<?> clazz = configurator.getAnnotated().getJavaClass();
-
         // If abstract class, then handled by concrete subclasses
         if (Modifier.isAbstract(clazz.getModifiers())) {
             return;
         }
 
-        Annotation annotation = type.getAnnotation(RequestScoped.class);
-        if (annotation != null) {
-            errors.fatal(clazz, "Cannot configure @Gauge on a request scoped bean");
-            return;
-        }
-
-        if (type.getAnnotation(ApplicationScoped.class) == null && type.getAnnotation(Singleton.class) == null) {
-            if (ConfigProvider.getConfig().getOptionalValue("metrics.warn-dependent", Boolean.class).orElse(true)) {
-                LOGGER.warning("@Gauge is configured on a bean " + clazz.getName()
-                                       + " that is neither ApplicationScoped nor Singleton. This is most likely a bug."
-                                       + " You may set 'metrics.warn-dependent' configuration option to 'false' to remove "
-                                       + "this warning.");
-            }
-        }
-
         // Process @Gauge methods keeping non-private declared on this class
-        configurator.filterMethods(method -> method.getJavaMember().getDeclaringClass().equals(clazz)
-                && !Modifier.isPrivate(method.getJavaMember().getModifiers())
-                && method.isAnnotationPresent(Gauge.class))
-                .forEach(method -> {
-                    Method javaMethod = method.getAnnotated().getJavaMember();
-                    Gauge gaugeAnnotation = method.getAnnotated().getAnnotation(Gauge.class);
-                    String explicitGaugeName = gaugeAnnotation.name();
-                    String gaugeNameSuffix = (
-                            explicitGaugeName.length() > 0 ? explicitGaugeName
-                                    : javaMethod.getName());
-                    String gaugeName = (
-                            gaugeAnnotation.absolute() ? gaugeNameSuffix
-                                    : String.format("%s.%s", clazz.getName(), gaugeNameSuffix));
-                    annotatedGaugeSites.put(new MetricID(gaugeName, tags(gaugeAnnotation.tags())), method);
-                    LOGGER.log(Level.FINE, () -> String.format("Recorded annotated gauge with name %s", gaugeName));
-                });
+        for (AnnotatedMethod method : type.getMethods()) {
+            Method javaMethod = method.getJavaMember();
+            if (!javaMethod.getDeclaringClass().equals(clazz)
+                    || Modifier.isPrivate(javaMethod.getModifiers())
+                    || !method.isAnnotationPresent(Gauge.class)) {
+                continue;
+            }
+            Annotation requestScopedAnnotation = type.getAnnotation(RequestScoped.class);
+            if (requestScopedAnnotation != null) {
+                errors.fatal(clazz, "Cannot configure @Gauge on a request scoped bean");
+                return;
+            }
+
+            if (type.getAnnotation(ApplicationScoped.class) == null && type.getAnnotation(Singleton.class) == null) {
+                if (ConfigProvider.getConfig().getOptionalValue("metrics.warn-dependent", Boolean.class).orElse(true)) {
+                    LOGGER.warning("@Gauge is configured on a bean " + clazz.getName()
+                            + " that is neither ApplicationScoped nor Singleton. This is most likely a bug."
+                            + " You may set 'metrics.warn-dependent' configuration option to 'false' to remove "
+                            + "this warning.");
+                }
+            }
+            Gauge gaugeAnnotation = method.getAnnotation(Gauge.class);
+            String explicitGaugeName = gaugeAnnotation.name();
+            String gaugeNameSuffix = (
+                    explicitGaugeName.length() > 0 ? explicitGaugeName
+                            : javaMethod.getName());
+            String gaugeName = (
+                    gaugeAnnotation.absolute() ? gaugeNameSuffix
+                            : String.format("%s.%s", clazz.getName(), gaugeNameSuffix));
+            annotatedGaugeSites.put(new MetricID(gaugeName, tags(gaugeAnnotation.tags())), method);
+            LOGGER.log(Level.FINE, () -> String.format("Recorded annotated gauge with name %s", gaugeName));
+        }
     }
 
     private void registerAnnotatedGauges(@Observes AfterDeploymentValidation adv, BeanManager bm) {
@@ -700,13 +704,13 @@ public class MetricsCdiExtension implements Extension {
             LOGGER.log(Level.FINE, () -> "gaugeSite " + gaugeSite.toString());
             MetricID gaugeID = gaugeSite.getKey();
 
-            AnnotatedMethodConfigurator<?> site = gaugeSite.getValue();
+            AnnotatedMethod<?> site = gaugeSite.getValue();
             // TODO uncomment following clause once MP metrics enforces restriction
             DelegatingGauge<? /* extends Number */> dg;
             try {
                 dg = buildDelegatingGauge(gaugeID.getName(), site,
                                           bm);
-                Gauge gaugeAnnotation = site.getAnnotated().getAnnotation(Gauge.class);
+                Gauge gaugeAnnotation = site.getAnnotation(Gauge.class);
                 Metadata md = Metadata.builder()
                         .withName(gaugeID.getName())
                         .withDisplayName(gaugeAnnotation.displayName())
@@ -719,9 +723,9 @@ public class MetricsCdiExtension implements Extension {
                 registry.register(md, dg, gaugeID.getTagsAsList().toArray(new Tag[0]));
             } catch (Throwable t) {
                 adv.addDeploymentProblem(new IllegalArgumentException("Error processing @Gauge "
-                                                                              + "annotation on " + site.getAnnotated()
+                                                                              + "annotation on " + site
                         .getJavaMember().getDeclaringClass().getName()
-                                                                              + ":" + site.getAnnotated().getJavaMember()
+                                                                              + ":" + site.getJavaMember()
                         .getName(), t));
             }
         });
@@ -730,19 +734,19 @@ public class MetricsCdiExtension implements Extension {
     }
 
     private DelegatingGauge<? /* extends Number */> buildDelegatingGauge(String gaugeName,
-                                                                         AnnotatedMethodConfigurator<?> site, BeanManager bm) {
+                                                                         AnnotatedMethod<?> site, BeanManager bm) {
         // TODO uncomment preceding clause once MP metrics enforces restriction
-        Bean<?> bean = bm.getBeans(site.getAnnotated().getJavaMember().getDeclaringClass())
+        Bean<?> bean = bm.getBeans(site.getJavaMember().getDeclaringClass())
                 .stream()
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Cannot find bean for annotated gauge " + gaugeName));
 
-        Class<?> returnType = site.getAnnotated().getJavaMember().getReturnType();
+        Class<?> returnType = site.getJavaMember().getReturnType();
         // TODO uncomment following line once MP metrics enforces restriction
         //        Class<? extends Number> narrowedReturnType = typeToNumber(returnType);
 
         return DelegatingGauge.newInstance(
-                site.getAnnotated().getJavaMember(),
+                site.getJavaMember(),
                 getReference(bm, bean.getBeanClass(), bean),
                 // TODO use narrowedReturnType instead of returnType below once MP metrics enforces restriction
                 returnType);
