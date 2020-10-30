@@ -27,7 +27,7 @@ import javax.ws.rs.Path;
  */
 public class VetoCdiExtension implements Extension {
 
-    private void vetoResourceClass(@Observes @WithAnnotations(Path.class)ProcessAnnotatedType<?> resourceType) {
+    private void vetoResourceClass(@Observes @WithAnnotations(Path.class) ProcessAnnotatedType<?> resourceType) {
         Class<?> resourceClass = resourceType.getAnnotatedType().getJavaClass();
         if (resourceClass == VetoedResource.class) {
             resourceType.veto();

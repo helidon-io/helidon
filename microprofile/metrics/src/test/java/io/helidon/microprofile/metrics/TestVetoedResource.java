@@ -26,6 +26,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.junit.jupiter.api.Test;
 
@@ -50,7 +51,8 @@ class TestVetoedResource {
         assertThat(res.getStatus(), is(Response.Status.NOT_FOUND.getStatusCode()));
 
         // The metrics CDI extension should ignore the vetoed resource's metrics.
+        MetricID vetoedID = new MetricID(VetoedResource.COUNTER_NAME);
         assertThat("Metrics CDI extension incorrectly registered a metric on a vetoed resource",
-                registry.counter(VetoedResource.COUNTER_NAME), nullValue());
+                registry.getCounters().containsKey(vetoedID), is(false));
     }
 }
