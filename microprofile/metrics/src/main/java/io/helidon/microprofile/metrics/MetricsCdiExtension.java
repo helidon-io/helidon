@@ -108,11 +108,7 @@ public class MetricsCdiExtension implements Extension {
     private static final Logger LOGGER = Logger.getLogger(MetricsCdiExtension.class.getName());
 
     private static final List<Class<? extends Annotation>> METRIC_ANNOTATIONS
-            = Arrays.asList(Counted.class, Metered.class, Timed.class, Gauge.class, ConcurrentGauge.class,
-                            SimplyTimed.class);
-
-    private static final Set<Class<? extends Annotation>> METRIC_ANNOTATIONS_FOR_OBSERVATION
-            = Set.of(Counted.class, Metered.class, Timed.class, ConcurrentGauge.class, SimplyTimed.class);
+            = Arrays.asList(Counted.class, Metered.class, Timed.class, ConcurrentGauge.class, SimplyTimed.class);
 
     private static final List<Class<? extends Annotation>> JAX_RS_ANNOTATIONS
             = Arrays.asList(GET.class, PUT.class, POST.class, HEAD.class, OPTIONS.class, DELETE.class, PATCH.class);
@@ -139,6 +135,8 @@ public class MetricsCdiExtension implements Extension {
     private Errors.Collector errors = Errors.collector();
 
     private final List<Method> methodsForSyntheticSimplyTimed = new ArrayList<>();
+
+    private final Set<Class<?>> metricsAnnotatedClasses = new HashSet<>();
 
     @SuppressWarnings("unchecked")
     private static <T> T getReference(BeanManager bm, Type type, Bean<?> bean) {
@@ -303,19 +301,46 @@ public class MetricsCdiExtension implements Extension {
         discovery.addAnnotatedType(RestEndpointMetricsInfo.class, RestEndpointMetricsInfo.class.getSimpleName());
     }
 
+    private void after(@Observes AfterDeploymentValidation adv) {
+        metricsAnnotatedClasses.clear();
+    }
+
     /**
-     * Observes sites annotated with the metrics annotations.
+     * Records Java classes with a metrics annotation somewhere.
      *
-     * @param pmb managed bean being processed
+     * By recording the classes here, we let CDI optimize its invocations of this observer method. Later, when we
+     * observe managed beans (which CDI invokes for all managed beans) where we also have to examine each method and
+     * constructor, we can quickly eliminate from consideration any classes we have not recorded here.
+     *
+     * @param pat ProcessAnnotatedType event
+     */
+    private void recordMetricAnnotatedClass(@Observes
+                                           @WithAnnotations({Counted.class, Metered.class, Timed.class, ConcurrentGauge.class,
+                                                 SimplyTimed.class}) ProcessAnnotatedType<?> pat) {
+        AnnotatedType<?> annotatedType = pat.getAnnotatedType();
+        Class<?> clazz = annotatedType.getJavaClass();
+
+        // If abstract class, then handled by concrete subclasses
+        if (annotatedType.isAnnotationPresent(Interceptor.class)
+           || Modifier.isAbstract(clazz.getModifiers())) {
+            return;
+        }
+        LOGGER.log(Level.FINE, () -> "Accepting " + clazz.getName() + " for later bean processing");
+        metricsAnnotatedClasses.add(clazz);
+    }
+    /**
+     * Observes all beans but immediately dismisses ones for which the Java class was not previously noted
+     * during {@code ProcessAnnotatedType} (which recorded only classes with metrics annotations).
+     *
+     * @param pmb event describing the managed bean being processed
      */
     private void registerMetrics(@Observes ProcessManagedBean<?> pmb) {
         AnnotatedType<?> type =  pmb.getAnnotatedBeanClass();
-
-        Interceptor annot = type.getAnnotation(Interceptor.class);
-        if (annot != null) {
+        Class<?> clazz = type.getJavaClass();
+        if (!metricsAnnotatedClasses.contains(clazz)) {
             return;
         }
-        Class<?> clazz = type.getJavaClass();
+
         LOGGER.log(Level.FINE, () -> "Processing annotations for " + clazz.getName());
 
         // If abstract class, then handled by concrete subclasses
@@ -328,7 +353,7 @@ public class MetricsCdiExtension implements Extension {
             if (Modifier.isPrivate(annotatedMethod.getJavaMember().getModifiers())) {
                 continue;
             }
-            METRIC_ANNOTATIONS_FOR_OBSERVATION.forEach(annotation -> {
+            METRIC_ANNOTATIONS.forEach(annotation -> {
                 for (LookupResult<? extends Annotation> lookupResult : MetricUtil.lookupAnnotations(
                         type, annotatedMethod, annotation)) {
                     // For methods, register the metric only on the declaring
@@ -349,7 +374,7 @@ public class MetricsCdiExtension implements Extension {
             if (Modifier.isPrivate(c.getModifiers())) {
                 continue;
             }
-            METRIC_ANNOTATIONS_FOR_OBSERVATION.forEach(annotation -> {
+            METRIC_ANNOTATIONS.forEach(annotation -> {
                 LookupResult<? extends Annotation> lookupResult
                         = lookupAnnotation(c, annotation, clazz);
                 if (lookupResult != null) {
