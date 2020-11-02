@@ -16,22 +16,15 @@
 
 package io.helidon.microprofile.metrics;
 
-import io.helidon.config.Config;
-import io.helidon.config.ConfigSources;
-import io.helidon.microprofile.server.Server;
+import org.eclipse.microprofile.metrics.Metric;
+import org.eclipse.microprofile.metrics.MetricFilter;
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.SimpleTimer;
-import org.eclipse.microprofile.metrics.Tag;
-import org.hamcrest.core.Is;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import javax.json.JsonObject;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.core.MediaType;
+import java.util.Map;
 import java.util.Properties;
-import java.util.stream.IntStream;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -39,6 +32,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Makes sure that no synthetic SimpleTimer metrics are created for JAX-RS endpoints when
  * the config disables that feature.
+ *
+ * Currently, by default, Helidon does not enable the feature to generate a MP REST.request SimpleTimer for each
+ * JAX-RS endpoint. So without setting configuration to enable that feature explicitly, we should not find any
+ * metrics named REST.request in the BASE registry (where these synthetic metrics reside, according to the MP metrics spec).
  */
 public class HelloWorldRestEndpointSimpleTimerDisabledTest extends HelloWorldTest {
 
@@ -49,9 +46,16 @@ public class HelloWorldRestEndpointSimpleTimerDisabledTest extends HelloWorldTes
 
     @Test
     public void testSyntheticSimpleTimer() {
-        // Expect 0, because the config should have suppressed the synthetic SimpleTimer
-        // metrics for JAX-RS endpoints, and the we will have just created the metric (by
-        // looking for it) with an initialized count of 0.
-        testSyntheticSimpleTimer(0L);
+        Map<MetricID,SimpleTimer> restEndpointSimplyTimedMetrics = MetricsCdiExtension.getRegistryForSyntheticSimpleTimers()
+                .getSimpleTimers(new MetricFilter() {
+
+                    @Override
+                    public boolean matches(MetricID metricID, Metric metric) {
+                        return metricID.getName().equals(MetricsCdiExtension.SYNTHETIC_SIMPLE_TIMER_METRIC_NAME);
+                    }
+                });
+
+        assertThat("Automatic REST endpoint simple timers were disabled by config but were created anyway",
+                restEndpointSimplyTimedMetrics.isEmpty(), is(true));
     }
 }

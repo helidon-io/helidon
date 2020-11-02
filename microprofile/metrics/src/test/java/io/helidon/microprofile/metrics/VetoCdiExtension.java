@@ -21,15 +21,20 @@ import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessAnnotatedType;
 import javax.enterprise.inject.spi.WithAnnotations;
 import javax.ws.rs.Path;
+import java.util.Set;
 
 /**
- * Vetoes a single resource which should suppress the registration of its annotation-defined metrics.
+ * Vetoes selected resources which should suppress the registration of their annotation-defined metrics and
+ * implicitly-created synthetic simply timed metrics.
  */
 public class VetoCdiExtension implements Extension {
 
+    private static final Set<Class<?>> VETOED_RESOURCE_CLASSES = Set.of(VetoedResource.class,
+            VetoedJaxRsButOtherwiseUnmeasuredResource.class);
+
     private void vetoResourceClass(@Observes @WithAnnotations(Path.class) ProcessAnnotatedType<?> resourceType) {
         Class<?> resourceClass = resourceType.getAnnotatedType().getJavaClass();
-        if (resourceClass == VetoedResource.class) {
+        if (VETOED_RESOURCE_CLASSES.contains(resourceClass)) {
             resourceType.veto();
         }
     }

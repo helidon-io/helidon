@@ -16,8 +16,6 @@
  */
 package io.helidon.microprofile.metrics;
 
-import org.eclipse.microprofile.metrics.annotation.Counted;
-
 import javax.enterprise.context.RequestScoped;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -26,15 +24,12 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 /**
- * JAX-RS resource, vetoed by a test CDI extension, with an explicit metrics annotation.
+ * JAX-RS resource, vetoed by a test CDI extension, with no explicit metrics annotation.
  */
-@Path("/vetoed")
+@Path("/vetoedOtherwiseUnmeasured")
 @RequestScoped
-public class VetoedResource {
+public class VetoedJaxRsButOtherwiseUnmeasuredResource {
 
-    static final String COUNTER_NAME = "vetoedCounter";
-
-    @Counted(name = COUNTER_NAME, absolute = true)
     @GET
     @Produces(MediaType.TEXT_PLAIN)
     public Response get() {
