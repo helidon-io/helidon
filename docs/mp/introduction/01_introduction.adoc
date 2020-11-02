@@ -85,6 +85,14 @@ Add support for CORS to your application using a Helidon module.
 Defines annotations that improve applications by providing support to handle error conditions (faults). 
 --
 
+//GraphQL
+[CARD]
+.GraphQL
+[icon=graphic_eq,link=mp/graphql/01_mp_graphql.adoc]
+--
+Expose GraphQL API using Microprofile GraphQL.
+--
+
 //gRPC
 [CARD]
 .gRPC
@@ -92,10 +100,11 @@ Defines annotations that improve applications by providing support to handle err
 --
 Build gRPC servers and clients.
 --
+
 //Health Checks
 [CARD]
 .Health Checks
-[icon=favorite_outline,link=mp/health/01_introduction.adoc]
+[icon=graphic_eq,link=mp/health/01_introduction.adoc]
 --
 Expose health statuses of your applications.
 --

@@ -36,6 +36,7 @@ import graphql.language.SourceLocation;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.SchemaPrinter;
 import graphql.validation.ValidationError;
+import io.helidon.config.ConfigValue;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.graphql.ConfigKey;
 import org.eclipse.microprofile.graphql.GraphQLException;
@@ -49,6 +50,11 @@ import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getSa
  *
  */
 public class ExecutionContext {
+
+    /**
+     * Config to suppress schema display.
+     */
+    public static final String SUPPRESS_SCHEMA_DISPLAY = "io.helidon.graphql.suppress-schema-display";
 
     /**
      * Key for errors.
@@ -161,6 +167,11 @@ public class ExecutionContext {
     private Config config;
 
     /**
+     * Indicates if the schema display should be suppressed.
+     */
+    private boolean suppressSchemaDisplay;
+
+    /**
      * Schema printer.
      */
     private SchemaPrinter schemaPrinter;
@@ -190,6 +201,7 @@ public class ExecutionContext {
      */
     public ExecutionContext(Context context) {
         try {
+            processConfiguration();
             configureExceptionHandling();
             SchemaGenerator schemaGenerator = new SchemaGenerator(context);
             schema = schemaGenerator.generateSchema();
@@ -206,8 +218,9 @@ public class ExecutionContext {
                     .subscriptionExecutionStrategy(new SubscriptionExecutionStrategy());
 
             graphQL = builder.build();
-
-            LOGGER.info("Generated schema:\n" + schemaPrinter.print(graphQLSchema));
+            if (!suppressSchemaDisplay) {
+                LOGGER.info("Generated schema:\n" + schemaPrinter.print(graphQLSchema));
+            }
         } catch (Throwable t) {
             // since we cannot generate the schema, just log the message and throw it
             ensureConfigurationException(LOGGER, "Unable to build GraphQL Schema: ", t);
@@ -218,8 +231,6 @@ public class ExecutionContext {
      * Configure microprofile exception handling.
      */
     private void configureExceptionHandling() {
-        config = (Config) ConfigProviderResolver.instance().getConfig();
-
         defaultErrorMessage = config.get(MESSAGE_PARTS[0])
                 .get(MESSAGE_PARTS[1])
                 .get(MESSAGE_PARTS[2])
@@ -241,6 +252,16 @@ public class ExecutionContext {
         if (!EMPTY.equals(denyList)) {
             exceptionDenyList.addAll(Arrays.asList(denyList.split(",")));
         }
+    }
+
+    /**
+     * Process any configuration.
+     */
+    private void processConfiguration() {
+        config = (Config) ConfigProviderResolver.instance().getConfig();
+
+        suppressSchemaDisplay = "true".equals(
+                this.config.get(SUPPRESS_SCHEMA_DISPLAY).asString().orElse("false"));
     }
 
     /**

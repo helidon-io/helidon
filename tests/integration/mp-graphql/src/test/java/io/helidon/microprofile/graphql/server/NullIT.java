@@ -19,6 +19,7 @@ package io.helidon.microprofile.graphql.server;
 import java.io.IOException;
 import java.util.Map;
 
+import static io.helidon.microprofile.graphql.server.ExecutionContext.SUPPRESS_SCHEMA_DISPLAY;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -30,6 +31,7 @@ import io.helidon.microprofile.graphql.server.test.types.NullPOJO;
 
 import io.helidon.microprofile.tests.junit5.AddBean;
 
+import io.helidon.microprofile.tests.junit5.AddConfig;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -37,6 +39,7 @@ import org.junit.jupiter.api.Test;
  */
 @AddBean(QueriesAndMutationsWithNulls.class)
 @AddBean(TestDB.class)
+@AddConfig(key = SUPPRESS_SCHEMA_DISPLAY, value="true")
 public class NullIT extends AbstractGraphQLIT {
 
     @Test
