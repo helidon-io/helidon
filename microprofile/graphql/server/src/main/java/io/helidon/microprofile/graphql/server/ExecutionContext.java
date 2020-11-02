@@ -36,14 +36,15 @@ import graphql.language.SourceLocation;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.SchemaPrinter;
 import graphql.validation.ValidationError;
-import io.helidon.config.ConfigValue;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
-import org.eclipse.microprofile.graphql.ConfigKey;
 import org.eclipse.microprofile.graphql.GraphQLException;
 
 import static graphql.ExecutionInput.newExecutionInput;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ensureConfigurationException;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getSafeClass;
+import static org.eclipse.microprofile.graphql.ConfigKey.DEFAULT_ERROR_MESSAGE;
+import static org.eclipse.microprofile.graphql.ConfigKey.EXCEPTION_BLACK_LIST;
+import static org.eclipse.microprofile.graphql.ConfigKey.EXCEPTION_WHITE_LIST;
 
 /**
  * Defines a context in which to execute GraphQL commands.
@@ -100,21 +101,6 @@ public class ExecutionContext {
      * Empty String.
      */
     private static final String EMPTY = "";
-
-    /**
-     * Config parts for default error message.
-     */
-    static final String[] MESSAGE_PARTS = ConfigKey.DEFAULT_ERROR_MESSAGE.split("\\.");
-
-    /**
-     * Config parts for allow parts.
-     */
-    static final String[] ALLOW_PARTS = ConfigKey.EXCEPTION_WHITE_LIST.split("\\.");
-
-    /**
-     * Config parts for deny list.
-     */
-    static final String[] DENY_PARTS = ConfigKey.EXCEPTION_BLACK_LIST.split("\\.");
 
     /**
      * Logger.
@@ -231,19 +217,9 @@ public class ExecutionContext {
      * Configure microprofile exception handling.
      */
     private void configureExceptionHandling() {
-        defaultErrorMessage = config.get(MESSAGE_PARTS[0])
-                .get(MESSAGE_PARTS[1])
-                .get(MESSAGE_PARTS[2])
-                .asString().orElse("Server Error");
-
-        String allowList = config.get(ALLOW_PARTS[0])
-                .get(ALLOW_PARTS[1])
-                .get(ALLOW_PARTS[2])
-                .asString().orElse(EMPTY);
-        String denyList = config.get(DENY_PARTS[0])
-                .get(DENY_PARTS[1])
-                .get(DENY_PARTS[2])
-                .asString().orElse(EMPTY);
+        defaultErrorMessage = config.get(DEFAULT_ERROR_MESSAGE).asString().orElse("Server Error");
+        String allowList = config.get(EXCEPTION_WHITE_LIST).asString().orElse(EMPTY);
+        String denyList = config.get(EXCEPTION_BLACK_LIST).asString().orElse(EMPTY);
 
         if (!EMPTY.equals(allowList)) {
             exceptionAllowList.addAll(Arrays.asList(allowList.split(",")));
