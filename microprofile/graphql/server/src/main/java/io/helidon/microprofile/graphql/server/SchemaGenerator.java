@@ -933,9 +933,10 @@ public class SchemaGenerator {
      * @param isInputType indicates if this type is an input type
      * @return a {@link Map} of the methods and return types
      * @throws IntrospectionException if there were errors introspecting classes
+     * @throws ClassNotFoundException if any class is not found
      */
     protected Map<String, DiscoveredMethod> retrieveGetterBeanMethods(Class<?> clazz,
-                                                                                            boolean isInputType)
+                                                                      boolean isInputType)
             throws IntrospectionException, ClassNotFoundException {
         Map<String, DiscoveredMethod> mapDiscoveredMethods = new HashMap<>();
 
@@ -990,6 +991,7 @@ public class SchemaGenerator {
      * @param isInputType       indicates if the method is part of an input type
      * @param isQueryOrMutation indicates if this is for a query or mutation
      * @return a {@link DiscoveredMethod}
+     * @throws ClassNotFoundException if any class is not found
      */
     private DiscoveredMethod generateDiscoveredMethod(Method method, Class<?> clazz,
                                                       PropertyDescriptor pd, boolean isInputType,
@@ -1093,7 +1095,7 @@ public class SchemaGenerator {
                 isReturnTypeMandatory = (isPrimitive(returnClazzName) && defaultValue == null)
                         || nonNullAnnotation != null && defaultValue == null;
 
-            } catch (NoSuchFieldException e) { }
+            } catch (NoSuchFieldException ignored) { }
 
             if (fieldHasIdAnnotation || method.getAnnotation(Id.class) != null) {
                 validateIDClass(returnClazz);
@@ -1166,7 +1168,7 @@ public class SchemaGenerator {
      * @param varName           name of the variable
      * @param method            {@link Method} being processed
      *
-     * @throws ClassNotFoundException if any class not found
+     * @throws ClassNotFoundException if any class is not found
      */
     private void processReturnType(DiscoveredMethod discoveredMethod, ReturnType realReturnType,
                                    String returnClazzName, boolean isInputType,

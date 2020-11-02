@@ -541,7 +541,7 @@ public final class SchemaGeneratorHelper {
 
     /**
      * Return the field name after checking both the {@link Name} and {@link JsonbProperty} annotations are present on the {@link
-     * Method}.<p> Name will take precedence if both are specified.
+     * Method}. Name will take precedence if both are specified.
      *
      * @param method {@link Method} to check
      * @return the field name or null if non exist

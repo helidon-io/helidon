@@ -553,7 +553,6 @@ public class DataFetcherUtils {
         if (originalType.equals(Float.class) || originalType.equals(float.class)) {
             return (Float) key;
         } else if (originalType.equals(Long.class) || originalType.equals(long.class)) {
-            // key could be BigInteger or long
             return Long.valueOf(key.toString());
         }
 

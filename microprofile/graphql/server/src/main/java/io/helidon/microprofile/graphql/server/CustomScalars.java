@@ -190,7 +190,6 @@ public class CustomScalars {
      * @param name the name of the scalar
      * @return a new custom date scalar
      */
-    @SuppressWarnings("unchecked")
     public static GraphQLScalarType newDateScalar(String name) {
         GraphQLScalarType originalScalar = ExtendedScalars.Date;
         return GraphQLScalarType.newScalar()
@@ -205,7 +204,6 @@ public class CustomScalars {
      *
      * @return a new custom BigDecimal scalar
      */
-    @SuppressWarnings("unchecked")
     private static GraphQLScalarType newCustomBigDecimalScalar() {
         GraphQLScalarType originalScalar = Scalars.GraphQLBigDecimal;
 
@@ -221,7 +219,6 @@ public class CustomScalars {
      *
      * @return a new custom Int scalar
      */
-    @SuppressWarnings("unchecked")
     private static GraphQLScalarType newCustomGraphQLInt() {
         GraphQLScalarType originalScalar = GraphQLInt;
 
@@ -237,7 +234,6 @@ public class CustomScalars {
      *
      * @return a new custom Float scalar
      */
-    @SuppressWarnings("unchecked")
     private static GraphQLScalarType newCustomGraphQLFloat() {
         GraphQLScalarType originalScalar = GraphQLFloat;
 

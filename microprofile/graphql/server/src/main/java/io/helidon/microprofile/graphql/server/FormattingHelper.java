@@ -96,26 +96,6 @@ public class FormattingHelper {
     static final String[] NO_FORMATTING = new String[] {null, null, null };
 
     /**
-     * JsonbDateFormat class name.
-     */
-    private static final String JSONB_DATE_FORMAT = JsonbDateFormat.class.getName();
-
-    /**
-     * DateFormat class name.
-     */
-    private static final String DATE_FORMAT = org.eclipse.microprofile.graphql.DateFormat.class.getName();
-
-    /**
-     * JsonBNumberFormat class name.
-     */
-    private static final String JSONB_NUMBER_FORMAT = JsonbNumberFormat.class.getName();
-
-    /**
-     * NumberFormat class name.
-     */
-    private static final String NUMBER_FORMAT = org.eclipse.microprofile.graphql.NumberFormat.class.getName();
-
-    /**
      * No-args constructor.
      */
     private FormattingHelper() {
