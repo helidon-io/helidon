@@ -465,7 +465,7 @@ public class SchemaFieldDefinition extends AbstractDescriptiveElement implements
         }
 
         /**
-         * Set the returnType..
+         * Set the returnType.
          *
          * @param returnType the returnType
          * @return updated builder instance

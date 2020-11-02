@@ -114,7 +114,6 @@ public class GraphQLResource {
     @PostConstruct
     public void init() {
         try {
-            // TODO: Need to make this injectable
             context = new ExecutionContext(DefaultContext.create());
             schemaPrinter = context.getSchemaPrinter();
         } catch (Exception e) {

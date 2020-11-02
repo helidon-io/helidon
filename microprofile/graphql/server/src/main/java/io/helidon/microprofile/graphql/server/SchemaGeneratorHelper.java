@@ -1244,9 +1244,39 @@ public final class SchemaGeneratorHelper {
         private boolean isJsonbProperty;
 
         /**
-         * Default constructor.
+         * Construct a {@link DiscoveredMethod}.
+         *
+         * @param builder the {@link Builder} to construct from
          */
-        public DiscoveredMethod() {
+        private DiscoveredMethod(Builder builder) {
+            this.name = builder.name;
+            this.returnType = builder.returnType;
+            this.methodType = builder.methodType;
+            this.collectionType = builder.collectionType;
+            this.isArrayReturnType = builder.isArrayReturnType;
+            this.isMap = builder.isMap;
+            this.listArguments = builder.listArguments;
+            this.method = builder.method;
+            this.arrayLevels = builder.arrayLevels;
+            this.source = builder.source;
+            this.propertyName = builder.propertyName;
+            this.isQueryAnnotated = builder.isQueryAnnotated;
+            this.format = builder.format;
+            this.description = builder.description;
+            this.isArrayReturnTypeMandatory = builder.isReturnTypeMandatory;
+            this.defaultValue = builder.defaultValue;
+            this.originalArrayType = builder.originalArrayType;
+            this.isJsonbFormat = builder.isJsonbFormat;
+            this.isJsonbProperty = builder.isJsonbProperty;
+        }
+
+        /**
+         * Fluent API builder to create {@link DiscoveredMethod}.
+         *
+         * @return new builder instance
+         */
+        public static Builder builder() {
+            return new Builder();
         }
 
         /**
@@ -1683,6 +1713,248 @@ public final class SchemaGeneratorHelper {
                                 collectionType, isArrayReturnType, isMap, source, description,
                                 isReturnTypeMandatory, defaultValue, isArrayReturnTypeMandatory, isJsonbFormat,
                                 isJsonbProperty);
+        }
+
+        /**
+         * A fluent API {@link io.helidon.common.Builder} to build instances of {@link DiscoveredMethod}.
+         */
+        public static class Builder implements io.helidon.common.Builder<DiscoveredMethod> {
+            private String name;
+            private String returnType;
+            private int methodType;
+            private String collectionType;
+            private boolean isArrayReturnType;
+            private boolean isMap;
+            private List<SchemaArgument> listArguments = new ArrayList<>();
+            private Method method;
+            private int arrayLevels = 0;
+            private String source;
+            private String propertyName;
+            private boolean isQueryAnnotated = false;
+            private String[] format = new String[0];
+            private String description;
+            private boolean isReturnTypeMandatory;
+            private Object defaultValue;
+            private Class<?> originalArrayType;
+            private boolean isJsonbFormat;
+            private boolean isJsonbProperty;
+
+            /**
+             * Set the name of the {@link DiscoveredMethod}.
+             *
+             * @param name the name of the {@link DiscoveredMethod}
+             * @return updated builder instance
+             */
+            public Builder name(String name) {
+                this.name = name;
+                return this;
+            }
+
+            /**
+             * Set the returnType.
+             *
+             * @param returnType the returnType
+             * @return updated builder instance
+             */
+            public Builder returnType(String returnType) {
+                this.returnType = returnType;
+                return this;
+            }
+
+            /**
+             * Set the method type.
+             *
+             * @param methodType the method type
+             * @return updated builder instance
+             */
+            public Builder methodType(int methodType) {
+                this.methodType = methodType;
+                return this;
+            }
+
+            /**
+             * Set the collection type.
+             *
+             * @param collectionType the collection type
+             * @return updated builder instance
+             */
+            public Builder collectionType(String collectionType) {
+                this.collectionType = collectionType;
+                return this;
+            }
+
+            /**
+             * Set if the return type is an array type such as a native array([]) or a List, Collection.
+             *
+             * @param isArrayReturnType true if the return type is an array type
+             * @return updated builder instance
+             */
+            public Builder arrayReturnType(boolean isArrayReturnType) {
+                this.isArrayReturnType = isArrayReturnType;
+                return this;
+            }
+
+            /**
+             * Indicates if the return type is a {@link Map}.
+             * @param isMap  if the return type is a {@link Map}
+             * @return updated builder instance
+             */
+            public Builder map(boolean isMap) {
+                this.isMap = isMap;
+                return this;
+            }
+
+            /**
+             * Add an argument to the {@link DiscoveredMethod}.
+             *
+             * @param argument the argument to add to the {@link DiscoveredMethod}
+             * @return updated builder instance
+             */
+            public Builder addArgument(SchemaArgument argument) {
+                listArguments.add(argument);
+                return this;
+            }
+
+            /**
+             * Set the actual method.
+             * @param method the actual method
+             * @return updated builder instance
+             */
+            public Builder method(Method method) {
+                this.method = method;
+                return this;
+            }
+
+            /**
+             * Set the number of array levels if return type is an array.
+             *
+             * @param arrayLevels the number of array levels if return type is an array
+             * @return updated builder instance
+             */
+            public Builder arrayLevels(int arrayLevels) {
+                this.arrayLevels = arrayLevels;
+                return this;
+            }
+
+            /**
+             * Set the source on which the method should be added.
+             * @param source the source on which the method should be added
+             * @return updated builder instance
+             */
+            public Builder source(String source) {
+                this.source = source;
+                return this;
+            }
+
+            /**
+             * The property name if this property is a getter.
+             * @param propertyName property name if this property is a getter
+             * @return updated builder instance
+             */
+            public Builder propertyName(String propertyName) {
+                this.propertyName = propertyName;
+                return this;
+            }
+
+            /**
+             * Indicates if the method containing the {@link Source} annotation was also annotated with the {@link Query}
+             * annotation.
+             *
+             * @param isQueryAnnotated if the method containing the {@link Source} annotation was also annotated
+             * @return updated builder instance
+             */
+            public Builder queryAnnotated(boolean isQueryAnnotated) {
+                this.isQueryAnnotated = isQueryAnnotated;
+                return this;
+            }
+
+            /**
+             * Set the format for a number or date.
+             *
+             * @param format the format for a number or date
+             * @return updated builder instance
+             */
+            public Builder format(String[] format) {
+                if (format == null) {
+                    this.format = null;
+                } else {
+                    this.format = new String[format.length];
+                    System.arraycopy(format, 0, this.format, 0, this.format.length);
+                }
+
+                return this;
+            }
+
+            /**
+             * Set the description.
+             *
+             * @param description the description of the {@link DiscoveredMethod}
+             * @return updated builder instance
+             */
+            public Builder description(String description) {
+                this.description = description;
+                return this;
+            }
+
+            /**
+             * Set if the return type is mandatory.
+             *
+             * @param isReturnTypeMandatory true if the return type is mandatory.
+             * @return updated builder instance
+             */
+            public Builder returnTypeMandatory(boolean isReturnTypeMandatory) {
+                this.isReturnTypeMandatory = isReturnTypeMandatory;
+                return this;
+            }
+
+            /**
+             * Set the default value for this {@link DiscoveredMethod}.
+             *
+             * @param defaultValue the default value for this field definition
+             * @return updated builder instance
+             */
+            public Builder defaultValue(Object defaultValue) {
+                this.defaultValue = defaultValue;
+                return this;
+            }
+
+            /**
+             * Set the original array inner type if it is array type.
+             *
+             * @param originalArrayType the  original array inner type if it is array type
+             * @return updated builder instance
+             */
+            public Builder originalArrayType(Class<?> originalArrayType) {
+                this.originalArrayType = originalArrayType;
+                return this;
+            }
+
+            /**
+             * Set if the format is of type Jsonb.
+             *
+             * @param isJsonbFormat if the format is of type Jsonb.
+             * @return updated builder instance
+             */
+            public Builder jsonbFormat(boolean isJsonbFormat) {
+                this.isJsonbFormat = isJsonbFormat;
+                return this;
+            }
+
+            /**
+             * Set if the property name is of type Jsonb.
+             *
+             * @param isJsonbProperty if the property name is of type Jsonb.
+             * @return updated builder instance
+             */
+            public Builder jsonbProperty(boolean isJsonbProperty) {
+                this.isJsonbProperty = isJsonbProperty;
+                return this;
+            }
+
+            @Override
+            public DiscoveredMethod build() {
+                return new DiscoveredMethod(this);
+            }
         }
     }
 }

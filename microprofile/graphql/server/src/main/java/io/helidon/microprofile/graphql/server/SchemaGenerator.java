@@ -993,8 +993,7 @@ public class SchemaGenerator {
      */
     private DiscoveredMethod generateDiscoveredMethod(Method method, Class<?> clazz,
                                                       PropertyDescriptor pd, boolean isInputType,
-                                                      boolean isQueryOrMutation)
-            throws ClassNotFoundException {
+                                                      boolean isQueryOrMutation) throws ClassNotFoundException {
         String[] format = new String[0];
         String description = null;
         boolean isReturnTypeMandatory = false;
@@ -1002,8 +1001,6 @@ public class SchemaGenerator {
         boolean isJsonbFormat = false;
         boolean isJsonbProperty;
         String defaultValue = null;
-
-        // retrieve the method name
         String varName = stripMethodName(method, !isQueryOrMutation);
 
         // check for either Name or JsonbProperty annotations on method or field
@@ -1011,8 +1008,7 @@ public class SchemaGenerator {
         String annotatedName = getMethodName(isInputType ? pd.getWriteMethod() : method);
         if (annotatedName != null) {
             varName = annotatedName;
-        } else if (pd != null) {
-            // check the field only if this is a getter
+        } else if (pd != null) {   // check the field only if this is a getter
             annotatedName = getFieldName(clazz, pd.getName());
             if (annotatedName != null) {
                 varName = annotatedName;
@@ -1036,16 +1032,13 @@ public class SchemaGenerator {
                 field = clazz.getDeclaredField(pd.getName());
                 fieldHasIdAnnotation = field != null && field.getAnnotation(Id.class) != null;
                 description = getDescription(field.getAnnotation(Description.class));
-
-                // default values only make sense for input types
-                defaultValue = isInputType ? getDefaultValueAnnotationValue(field) : null;
+                defaultValue = isInputType ? getDefaultValueAnnotationValue(field) : null; // only make sense for input types
                 NonNull nonNullAnnotation = field.getAnnotation(NonNull.class);
                 isArrayReturnTypeMandatory = getAnnotationValue(getFieldAnnotations(field, 0), NonNull.class) != null;
 
                 if (isInputType) {
                     Method writeMethod = pd.getWriteMethod();
-                    if (writeMethod != null) {
-                        // retrieve the setter method and check the description
+                    if (writeMethod != null) { // retrieve the setter method and check the description
                         String methodDescription = getDescription(writeMethod.getAnnotation(Description.class));
                         if (methodDescription != null) {
                             description = methodDescription;
@@ -1055,9 +1048,8 @@ public class SchemaGenerator {
                             defaultValue = writeMethodDefaultValue;
                         }
 
-                        // for an input type the method annotation will override
-                        NonNull methodAnnotation = writeMethod.getAnnotation(NonNull.class);
-                        if (methodAnnotation != null) {
+                        NonNull methodAnnotation = writeMethod.getAnnotation(NonNull.class); // for an input type the
+                        if (methodAnnotation != null) {                                      // method annotation will override
                             nonNullAnnotation = methodAnnotation;
                         }
 
@@ -1098,29 +1090,25 @@ public class SchemaGenerator {
                     }
                 }
 
-                // if the return type is annotated as NonNull or it is a primitive then it is mandatory
                 isReturnTypeMandatory = (isPrimitive(returnClazzName) && defaultValue == null)
                         || nonNullAnnotation != null && defaultValue == null;
 
-            } catch (NoSuchFieldException e) {
-            }
+            } catch (NoSuchFieldException e) { }
 
             if (fieldHasIdAnnotation || method.getAnnotation(Id.class) != null) {
                 validateIDClass(returnClazz);
                 returnClazzName = ID;
             }
 
-            // check for format on the property but only override if it is null
-            if (field != null && isFormatEmpty(format)) {
-                format = getFormattingAnnotation(field);
+            if (field != null && isFormatEmpty(format)) {   // check for format on the property
+                format = getFormattingAnnotation(field);    // but only override if it is null
                 if (isFormatEmpty(format)) {
                     // check to see format of the inner most class. E.g. List<@DateFormat("DD/MM") String>
                     format = FormattingHelper.getFieldFormat(field, 0);
                 }
                 isJsonbFormat = isJsonbAnnotationPresent(field);
             }
-        } else {
-            // pd is null which means this is for query or mutation
+        } else {  // pd is null which means this is for query or mutation
             defaultValue = getDefaultValueAnnotationValue(method);
             isReturnTypeMandatory = isPrimitive(returnClazzName) && defaultValue == null
                     || method.getAnnotation(NonNull.class) != null && defaultValue == null;
@@ -1136,14 +1124,9 @@ public class SchemaGenerator {
             format = methodFormat;
         }
 
-        DiscoveredMethod discoveredMethod = new DiscoveredMethod();
-        discoveredMethod.name(varName);
-        discoveredMethod.method(method);
-        discoveredMethod.format(format);
-        discoveredMethod.defaultValue(defaultValue);
-        discoveredMethod.jsonbFormat(isJsonbFormat);
-        discoveredMethod.jsonbProperty(isJsonbProperty);
-        discoveredMethod.propertyName(pd != null ? pd.getName() : null);
+        DiscoveredMethod discoveredMethod = DiscoveredMethod.builder().name(varName).method(method).format(format)
+                                        .defaultValue(defaultValue).jsonbFormat(isJsonbFormat).jsonbProperty(isJsonbProperty)
+                                        .propertyName(pd != null ? pd.getName() : null).build();
 
         if (description == null && !isInputType) {
             description = getDescription(method.getAnnotation(Description.class));
@@ -1314,7 +1297,7 @@ public class SchemaGenerator {
      */
     protected ReturnType getReturnType(Class<?> returnClazz, java.lang.reflect.Type genericReturnType,
                                        int parameterNumber, Method method) {
-        ReturnType actualReturnType = new ReturnType();
+        ReturnType actualReturnType = ReturnType.create();
         RootTypeResult rootTypeResult;
         String returnClazzName = returnClazz.getName();
         boolean isCollection = Collection.class.isAssignableFrom(returnClazz);
@@ -1370,6 +1353,7 @@ public class SchemaGenerator {
         int level = 1;
         boolean isParameter = parameterNumber != -1;
         String[] format = NO_FORMATTING;
+        RootTypeResult.Builder builder = RootTypeResult.builder();
 
         boolean isReturnTypeMandatory;
         if (genericReturnType instanceof ParameterizedType) {
@@ -1393,12 +1377,20 @@ public class SchemaGenerator {
             }
 
             isReturnTypeMandatory = hasAnnotation || isPrimitive(clazz.getName());
-            return new RootTypeResult(((Class<?>) actualTypeArgument).getName(), level, isReturnTypeMandatory, format);
+            return builder.rootTypeName(((Class<?>) actualTypeArgument).getName())
+                    .levels(level)
+                    .arrayReturnTypeMandatory(isReturnTypeMandatory)
+                    .format(format)
+                    .build();
         } else {
             Class<?> clazz = genericReturnType.getClass();
             isReturnTypeMandatory = clazz.getAnnotation(NonNull.class) != null
                     || isPrimitive(clazz.getName());
-            return new RootTypeResult(((Class<?>) genericReturnType).getName(), level, isReturnTypeMandatory, format);
+            return builder.rootTypeName(((Class<?>) genericReturnType).getName())
+                    .levels(level)
+                    .arrayReturnTypeMandatory(isReturnTypeMandatory)
+                    .format(format)
+                    .build();
         }
     }
 
@@ -1454,7 +1446,15 @@ public class SchemaGenerator {
         /**
          * Default constructor.
          */
-        public ReturnType() {
+        private ReturnType() {
+        }
+
+        /**
+         * Create a new {@link ReturnType}.
+         * @return a new {@link ReturnType}
+         */
+        public static ReturnType create() {
+            return new ReturnType();
         }
 
         /**
@@ -1620,23 +1620,24 @@ public class SchemaGenerator {
         private final String[] format;
 
         /**
-         * Construct a root type result.
+         * Construct a {@link RootTypeResult}.
          *
-         * @param rootTypeName               root type of the {@link Collection} or {@link Map}
-         * @param isArrayReturnTypeMandatory indicates if the return type is mandatory
-         * @param levels                     number of levels in total
-         * @param format                     format of the result class
+         * @param builder the {@link Builder} to construct from
          */
-        public RootTypeResult(String rootTypeName, int levels, boolean isArrayReturnTypeMandatory, String[] format) {
-            this.rootTypeName = rootTypeName;
-            this.levels = levels;
-            this.isArrayReturnTypeMandatory = isArrayReturnTypeMandatory;
-            if (format == null) {
-                this.format = null;
-            } else {
-                this.format = new String[format.length];
-                System.arraycopy(format, 0, this.format, 0, this.format.length);
-            }
+        private RootTypeResult(Builder builder) {
+            this.rootTypeName = builder.rootTypeName;
+            this.levels = builder.levels;
+            this.isArrayReturnTypeMandatory = builder.isArrayReturnTypeMandatory;
+            this.format = builder.format;
+        }
+
+        /**
+         * Fluent API builder to create {@link RootTypeResult}.
+         *
+         * @return new builder instance
+         */
+        public static Builder builder() {
+            return new Builder();
         }
 
         /**
@@ -1678,6 +1679,79 @@ public class SchemaGenerator {
             String[] copy = new String[format.length];
             System.arraycopy(format, 0, copy, 0, copy.length);
             return copy;
+        }
+
+
+        /**
+         * A fluent API {@link io.helidon.common.Builder} to build instances of {@link DiscoveredMethod}.
+         */
+        public static class Builder implements io.helidon.common.Builder<RootTypeResult> {
+
+            private String rootTypeName;
+            private int levels;
+            private boolean isArrayReturnTypeMandatory;
+            private String[] format;
+
+            /**
+             * Set the root type of the {@link Collection} or {@link Map}.
+             *
+             * @param rootTypeName root type of the {@link Collection} or {@link Map}
+             * @return updated builder instance
+             */
+            public Builder rootTypeName(String rootTypeName) {
+                this.rootTypeName = rootTypeName;
+                return this;
+            }
+
+            /**
+             * Set the number of array levels if return type is an array.
+             *
+             * @param levels the number of array levels if return type is an array
+             * @return updated builder instance
+             */
+            public Builder levels(int levels) {
+                this.levels = levels;
+                return this;
+            }
+
+            /**
+             * Set if the value of the array is mandatory.
+             *
+             * @param isArrayReturnTypeMandatory If the return type is an array then indicates if the value in the array is
+             *                                   mandatory
+             * @return updated builder instance
+             */
+            public Builder arrayReturnTypeMandatory(boolean isArrayReturnTypeMandatory) {
+                this.isArrayReturnTypeMandatory = isArrayReturnTypeMandatory;
+                return this;
+            }
+
+            /**
+             * Set the format for a number or date.
+             *
+             * @param format the format for a number or date
+             * @return updated builder instance
+             */
+            public Builder format(String[] format) {
+                if (format == null) {
+                    this.format = null;
+                } else {
+                    this.format = new String[format.length];
+                    System.arraycopy(format, 0, this.format, 0, this.format.length);
+                }
+
+                return this;
+            }
+
+            /**
+             * Build the instance from this builder.
+             *
+             * @return instance of the built type
+             */
+            @Override
+            public RootTypeResult build() {
+                return new RootTypeResult(this);
+            }
         }
     }
 }
