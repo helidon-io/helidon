@@ -117,6 +117,11 @@ public class ArrayAndListQueries {
     }
 
     @Query
+    public int[][] echo2LevelIntArray(@Name("param") int [][] value) {
+        return value;
+    }
+
+    @Query
     public SimpleContact[] echoSimpleContactArray(@Name("param") SimpleContact[] value) {
         return value;
     }

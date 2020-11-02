@@ -60,6 +60,15 @@ public class MultiLevelArraysIT extends AbstractGraphQLIT {
     }
 
     @Test
+    public void testMultiLevelPrimitiveArrayAsArgument() throws IOException {
+        setupIndex(indexFileName, ArrayAndListQueries.class, MultiLevelListsAndArrays.class);
+        ExecutionContext executionContext = new ExecutionContext(defaultContext);
+        Map<String, Object> mapResults = executionContext.execute("query { echo2LevelIntArray(param: [[1, 2], [3, 4]]) }");
+        assertThat(mapResults.size(), is(2));
+        assertThat(mapResults.get("errors"), is(notNullValue()));
+    }
+
+    @Test
     @SuppressWarnings("unchecked")
     public void testMultiLevelListsAndArraysQueries() throws IOException {
         setupIndex(indexFileName, ArrayAndListQueries.class, MultiLevelListsAndArrays.class);

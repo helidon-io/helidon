@@ -526,5 +526,4 @@ public class SchemaArgument extends AbstractDescriptiveElement implements Elemen
             return new SchemaArgument(this);
         }
     }
-
 }

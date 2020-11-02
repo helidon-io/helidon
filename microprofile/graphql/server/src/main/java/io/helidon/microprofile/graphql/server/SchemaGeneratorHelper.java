@@ -426,7 +426,13 @@ public final class SchemaGeneratorHelper {
      * @return true true of the class name is an array of primitives.
      */
     protected static boolean isPrimitiveArray(Class<?> clazz) {
-        return PRIMITIVE_ARRAY_MAP.containsKey(clazz.getName());
+        String className = clazz.getName();
+        for (String key : PRIMITIVE_ARRAY_MAP.keySet()) {
+            if (className.contains(key)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

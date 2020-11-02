@@ -121,6 +121,16 @@ public class DataFetcherUtils {
                     if (originalType != null && originalType.isAssignableFrom(Map.class)) {
                         ensureRuntimeException(LOGGER, MAP_MESSAGE);
                     }
+
+                    if (argument.isArrayReturnType() && argument.arrayLevels() > 1
+                            && SchemaGeneratorHelper.isPrimitiveArray(argument.originalType())) {
+                        throw new GraphQLConfigurationException("This implementation does not currently support "
+                                                              + "multi-level primitive arrays as arguments. Please use "
+                                                              + "List or Collection of Object equivalent. E.g. "
+                                                              + "In place of method(int [][] value) use "
+                                                              + " method(List<List<Integer>> value)");
+                    }
+
                     listArgumentValues.add(generateArgumentValue(schema, argument.argumentType(),
                                                                  argument.originalType(),
                                                                  argument.originalArrayType(),
