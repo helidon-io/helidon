@@ -24,9 +24,9 @@ import io.helidon.webserver.ServerRequest;
 public class TenantContext {
 
     @Context
-    private ServerRequest mRequest;
+    private ServerRequest request;
 
     public String getTenantId() {
-        return mRequest.headers().value("x-tenant-id").orElse(null);
+        return request.headers().value("x-tenant-id").orElse(null);
     }
 }
