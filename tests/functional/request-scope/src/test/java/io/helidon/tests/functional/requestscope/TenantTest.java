@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.tests.functional.requestscope.hello;
+package io.helidon.tests.functional.requestscope;
 
 import javax.inject.Inject;
 import javax.ws.rs.client.WebTarget;
@@ -37,7 +37,6 @@ class TenantTest {
     public void test() {
         Response r = baseTarget.path("test")
                 .request()
-                .header("x-tenant-id", "some-tenant-id")
                 .get();
         assertThat(r.getStatus(), is(HttpResponseStatus.OK.code()));
     }

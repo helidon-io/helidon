@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.tests.functional.requestscope.hello;
+package io.helidon.tests.functional.requestscope;
 
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
@@ -33,9 +33,11 @@ public class MultiTenantService {
     public String getTenantResource() {
         try {
             return someService.test();
+        } catch (IllegalTenantException e) {
+            return "Expected";
         } catch (Exception e) {
-            System.out.println(e.getMessage());
-            e.printStackTrace();
+            // This path implies a CDI exception related to request scope
+            // See https://github.com/oracle/helidon/issues/2480
             throw new WebApplicationException(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
     }

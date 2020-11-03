@@ -13,20 +13,5 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.tests.functional.requestscope.hello;
 
-import javax.enterprise.context.RequestScoped;
-import javax.ws.rs.core.Context;
-
-import io.helidon.webserver.ServerRequest;
-
-@RequestScoped
-public class TenantContext {
-
-    @Context
-    private ServerRequest mRequest;
-
-    public String getTenantId() {
-        return mRequest.headers().value("x-tenant-id").orElse(null);
-    }
-}
+package io.helidon.tests.functional.requestscope;

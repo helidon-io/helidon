@@ -13,20 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.tests.functional.requestscope.hello;
+package io.helidon.tests.functional.requestscope;
 
-import javax.inject.Qualifier;
-import java.lang.annotation.Retention;
-import java.lang.annotation.Target;
+import javax.enterprise.context.RequestScoped;
+import javax.inject.Inject;
 
-import static java.lang.annotation.ElementType.FIELD;
-import static java.lang.annotation.ElementType.METHOD;
-import static java.lang.annotation.ElementType.PARAMETER;
-import static java.lang.annotation.ElementType.TYPE;
-import static java.lang.annotation.RetentionPolicy.RUNTIME;
+@RequestScoped
+@TestQualifier
+public class RequestTestQualifier {
 
-@Qualifier
-@Retention(RUNTIME)
-@Target({TYPE, METHOD, FIELD, PARAMETER})
-public @interface TestQualifier {
+    @Inject
+    TenantContext tenantContext;
+
+    public String test() throws Exception {
+        String tenantId = tenantContext.getTenantId();
+        System.out.println("Tenant Context: " + tenantId);
+        if (tenantId == null) {
+            throw new IllegalTenantException("No tenant context");
+        }
+        return tenantId;
+    }
 }

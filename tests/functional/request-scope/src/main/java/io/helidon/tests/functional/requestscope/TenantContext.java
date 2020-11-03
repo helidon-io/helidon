@@ -13,24 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.tests.functional.requestscope.hello;
+package io.helidon.tests.functional.requestscope;
 
 import javax.enterprise.context.RequestScoped;
-import javax.inject.Inject;
+import javax.ws.rs.core.Context;
+
+import io.helidon.webserver.ServerRequest;
 
 @RequestScoped
-@TestQualifier
-public class RequestTestQualifier {
+public class TenantContext {
 
-    @Inject
-    TenantContext tenantContext;
+    @Context
+    private ServerRequest mRequest;
 
-    public String test() throws Exception {
-        String tenantId = tenantContext.getTenantId();
-        System.out.println("Tenant Context: " + tenantId);
-        if (tenantId == null) {
-            throw new Exception("No tenant context.");
-        }
-        return tenantId;
+    public String getTenantId() {
+        return mRequest.headers().value("x-tenant-id").orElse(null);
     }
 }

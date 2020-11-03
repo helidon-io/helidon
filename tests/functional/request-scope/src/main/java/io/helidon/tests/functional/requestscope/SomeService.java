@@ -13,30 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.tests.functional.requestscope.hello;
+package io.helidon.tests.functional.requestscope;
 
-import io.helidon.microprofile.server.Server;
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 
-/**
- * Class Main.
- */
-public final class Main {
+import org.eclipse.microprofile.faulttolerance.Retry;
 
-    private static Server server;
+@ApplicationScoped
+public class SomeService {
 
-    private Main() {
-    }
+    @Inject
+    @TestQualifier
+    RequestTestQualifier requestTestQualifier;
 
-    /**
-     * Entry point.
-     *
-     * @param args Arguments.
-     */
-    public static void main(String[] args) {
-        server = Server.create().start();
-    }
-
-    static Server server() {
-        return server;
+    @Retry
+    public String test() throws Exception {
+        return requestTestQualifier.test();
     }
 }
