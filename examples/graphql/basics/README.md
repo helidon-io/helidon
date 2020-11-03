@@ -15,9 +15,7 @@ mvn clean install
 
 ```bash
 mvn exec:java
-```                
-
-A Message will be displayed indicating the GraphiQL UI URL.
+```
 
 ## Issuing GraphQL Requests 
 

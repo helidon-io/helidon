@@ -17,12 +17,9 @@
 package io.helidon.examples.graphql.basics;
 
 import java.util.Collection;
-import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 
 import org.eclipse.microprofile.graphql.Description;
 import org.eclipse.microprofile.graphql.GraphQLApi;
@@ -38,7 +35,8 @@ import org.eclipse.microprofile.graphql.Query;
 @ApplicationScoped
 public class TaskApi {
 
-    private Map<String, Task> tasks = new ConcurrentHashMap<>();
+    @Inject
+    private TaskDB taskDB;
 
     /**
      * Create a {@link Task}.
@@ -49,9 +47,7 @@ public class TaskApi {
     @Mutation
     @Description("Create a task with the given description")
     public Task createTask(@Name("description") String description) {
-        Task task = new Task(description);
-        tasks.put(task.getId(), task);
-        return task;
+        return taskDB.createTask(description);
     }
 
     /**
@@ -63,10 +59,7 @@ public class TaskApi {
     @Query
     @Description("Query tasks and optionally specified only completed")
     public Collection<Task> getTasks(@Name("completed") Boolean completed) {
-
-        return tasks.values().stream()
-                .filter(task -> completed == null || task.isCompleted() == completed)
-                .collect(Collectors.toList());
+        return taskDB.getTasks(completed);
     }
 
     /**
@@ -79,11 +72,7 @@ public class TaskApi {
     @Mutation
     @Description("Delete a task and return the deleted task details")
     public Task deleteTask(@Name("id") String id) throws TaskNotFoundException {
-        Task task = tasks.remove(id);
-        if (task == null) {
-            throw new TaskNotFoundException("Unable to find task with id " + id);
-        }
-        return task;
+        return taskDB.deleteTask(id);
     }
 
     /**
@@ -94,15 +83,15 @@ public class TaskApi {
     @Mutation
     @Description("Remove all completed tasks and return the tasks left")
     public Collection<Task> deleteCompletedTasks() {
-        tasks.values().removeIf(Task::isCompleted);
-        return tasks.values();
+        return taskDB.deleteCompletedTasks();
     }
 
     /**
      * Update a {@link Task}.
-     * @param id           task to update
-     * @param description  optional description
-     * @param completed    optional completed
+     *
+     * @param id          task to update
+     * @param description optional description
+     * @param completed   optional completed
      * @return the updated {@link Task}
      * @throws TaskNotFoundException if the task was not found
      */
@@ -111,22 +100,6 @@ public class TaskApi {
     public Task updateTask(@Name("id") @NonNull String id,
                            @Name("description") String description,
                            @Name("completed") Boolean completed) throws TaskNotFoundException {
-
-        try {
-            return tasks.compute(id, (k, v) -> {
-                Objects.requireNonNull(v);
-
-                if (description != null) {
-                    v.setDescription(description);
-                }
-                if (completed != null) {
-                    v.setCompleted(completed);
-                }
-                return v;
-            });
-        } catch (Exception e) {
-            throw new TaskNotFoundException("Unable to find task with id " + id);
-        }
+        return taskDB.updateTask(id, description, completed);
     }
-
 }
