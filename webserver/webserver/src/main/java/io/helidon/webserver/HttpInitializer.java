@@ -132,7 +132,8 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
         }
 
         // Helidon's forwarding handler
-        p.addLast(new ForwardingHandler(routing, webServer, sslEngine, queues, requestDecoder));
+        p.addLast(new ForwardingHandler(routing, webServer, sslEngine, queues,
+                                        requestDecoder, soConfig.maxPayloadSize()));
 
         // Cleanup queues as part of event loop
         ch.eventLoop().execute(this::clearQueues);

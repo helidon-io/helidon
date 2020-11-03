@@ -84,6 +84,7 @@ Available socket configuration options:
 |`name` |`@default` for default socket |String |Name used for named sockets, to support additional server sockets (and their named routing)
 |`enabled` |`true` |boolean |A socket can be disabled through configuration, in which case it is never opened
 |`max-chunk-size` | `8192` |int |Maximal size of a chunk to read from incoming requests
+|`max-payload-size` | `-1` |long |Maximal size of a request payload in bytes. If exceeded a 413 error is returned. Negative value means no limit.
 |`validate-headers` |`true` |boolean |Whether to validate header names, if they contain illegal characters.
 |`initial-buffer-size` |`128` |int |Initial size of buffer used to parse HTTP line and headers
 |`tls` |{nbsp} |Object |Configuration of TLS, please see our TLS example in repository

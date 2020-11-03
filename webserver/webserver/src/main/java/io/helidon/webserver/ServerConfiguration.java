@@ -489,6 +489,17 @@ public interface ServerConfiguration extends SocketConfiguration {
         }
 
         /**
+         * Configure maximum client payload size.
+         * @param size maximum payload size
+         * @return an updated builder
+         */
+        @Override
+        public Builder maxPayloadSize(long size) {
+            this.defaultSocketBuilder.maxPayloadSize(size);
+            return this;
+        }
+
+        /**
          * Configure experimental features.
          * @param experimental experimental configuration
          * @return an updated builder

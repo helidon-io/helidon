@@ -50,6 +50,7 @@ import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import static io.helidon.webserver.HttpInitializer.CERTIFICATE_NAME;
 import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
 import static io.netty.handler.codec.http.HttpResponseStatus.CONTINUE;
+import static io.netty.handler.codec.http.HttpResponseStatus.REQUEST_ENTITY_TOO_LARGE;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
 /**
@@ -68,23 +69,34 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
     private final SSLEngine sslEngine;
     private final Queue<ReferenceHoldingQueue<DataChunk>> queues;
     private final HttpRequestDecoder httpRequestDecoder;
+    private final long maxPayloadSize;
 
     // this field is always accessed by the very same thread; as such, it doesn't need to be
     // concurrency aware
     private RequestContext requestContext;
 
-    private boolean isWebSocketUpgrade = false;
+    private boolean isWebSocketUpgrade;
+    private long actualPayloadSize;
+    private boolean ignorePayload;
 
     ForwardingHandler(Routing routing,
                       NettyWebServer webServer,
                       SSLEngine sslEngine,
                       Queue<ReferenceHoldingQueue<DataChunk>> queues,
-                      HttpRequestDecoder httpRequestDecoder) {
+                      HttpRequestDecoder httpRequestDecoder,
+                      long maxPayloadSize) {
         this.routing = routing;
         this.webServer = webServer;
         this.sslEngine = sslEngine;
         this.queues = queues;
         this.httpRequestDecoder = httpRequestDecoder;
+        this.maxPayloadSize = maxPayloadSize;
+    }
+
+    private void reset() {
+        isWebSocketUpgrade = false;
+        actualPayloadSize = 0L;
+        ignorePayload = false;
     }
 
     @Override
@@ -103,13 +115,19 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
     }
 
     @Override
+    @SuppressWarnings("checkstyle:methodlength")
     protected void channelRead0(ChannelHandlerContext ctx, Object msg) {
-        LOGGER.fine(() -> String.format("[Handler: %s] Received object: %s", System.identityHashCode(this), msg.getClass()));
+        LOGGER.fine(() -> String.format("[Handler: %s, Channel: %s] Received object: %s",
+                System.identityHashCode(this), System.identityHashCode(ctx.channel()), msg.getClass()));
 
         if (msg instanceof HttpRequest) {
-
+            // Turns off auto read
             ctx.channel().config().setAutoRead(false);
 
+            // Reset internal state on new request
+            reset();
+
+            // Check that HTTP decoding was successful or return 400
             HttpRequest request = (HttpRequest) msg;
             try {
                 checkDecoderResult(request);
@@ -117,9 +135,13 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                 send400BadRequest(ctx, e.getMessage());
                 return;
             }
+
+            // Certificate management
             request.headers().remove(Http.Header.X_HELIDON_CN);
             Optional.ofNullable(ctx.channel().attr(CERTIFICATE_NAME).get())
                     .ifPresent(name -> request.headers().set(Http.Header.X_HELIDON_CN, name));
+
+            // Queue, context and publisher creation
             ReferenceHoldingQueue<DataChunk> queue = new ReferenceHoldingQueue<>();
             queues.add(queue);
             requestContext = new RequestContext(new HttpRequestScopedPublisher(ctx, queue), request);
@@ -137,6 +159,28 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                 return;
             }
 
+            // If context length is greater than maximum allowed, return 413 response
+            if (maxPayloadSize >= 0) {
+                String contentLength = request.headers().get(Http.Header.CONTENT_LENGTH);
+                if (contentLength != null) {
+                    try {
+                        long value = Long.parseLong(contentLength);
+                        if (value > maxPayloadSize) {
+                            LOGGER.fine(() -> String.format("[Handler: %s, Channel: %s] Payload length over max %d > %d",
+                                    System.identityHashCode(this), System.identityHashCode(ctx.channel()),
+                                    value, maxPayloadSize));
+                            ignorePayload = true;
+                            send413PayloadTooLarge(ctx);
+                            return;
+                        }
+                    } catch (NumberFormatException e) {
+                        send400BadRequest(ctx, Http.Header.CONTENT_LENGTH + " header is invalid");
+                        return;
+                    }
+                }
+            }
+
+            // Create response and handler for its completion
             BareResponseImpl bareResponse =
                     new BareResponseImpl(ctx, request, publisherRef::isCompleted, Thread.currentThread(), requestId);
             bareResponse.whenCompleted()
@@ -206,8 +250,22 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                     // payload is not consumed and the response is already sent; we must close the connection
                     LOGGER.finer(() -> "Closing connection because request payload was not consumed; method: " + method);
                     ctx.close();
-                } else {
-                    requestContext.publisher().emit(content);
+                } else if (!ignorePayload) {
+                    // Check payload size if a maximum has been set
+                    if (maxPayloadSize >= 0) {
+                        actualPayloadSize += content.readableBytes();
+                        if (actualPayloadSize > maxPayloadSize) {
+                            LOGGER.fine(() -> String.format("[Handler: %s, Channel: %s] Chunked Payload over max %d > %d",
+                                    System.identityHashCode(this), System.identityHashCode(ctx.channel()),
+                                    actualPayloadSize, maxPayloadSize));
+                            ignorePayload = true;
+                            send413PayloadTooLarge(ctx);
+                        } else {
+                            requestContext.publisher().emit(content);
+                        }
+                    } else {
+                        requestContext.publisher().emit(content);
+                    }
                 }
             }
 
@@ -234,6 +292,11 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
         }
     }
 
+    /**
+     * Check that an HTTP message has been successfully decoded.
+     *
+     * @param request The HTTP request.
+     */
     private static void checkDecoderResult(HttpRequest request) {
         DecoderResult decoderResult = request.decoderResult();
         if (decoderResult.isFailure()) {
@@ -291,6 +354,16 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                     ctx.close();
                 });
 
+    }
+
+    /**
+     * Returns a 413 (Payload Too Large) response.
+     *
+     * @param ctx Channel context.
+     */
+    private void send413PayloadTooLarge(ChannelHandlerContext ctx) {
+        FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, REQUEST_ENTITY_TOO_LARGE);
+        ctx.write(response);
     }
 
     @Override

@@ -577,6 +577,12 @@ public interface WebServer {
             return this;
         }
 
+        @Override
+        public Builder maxPayloadSize(long size) {
+            configurationBuilder.maxPayloadSize(size);
+            return this;
+        }
+
         /**
          * Configure experimental features.
          * @param experimental experimental configuration

@@ -177,6 +177,7 @@ class ServerBasicConfig implements ServerConfiguration {
         private final boolean validateHeaders;
         private final int initialBufferSize;
         private final boolean enableCompression;
+        private final long maxPayloadSize;
 
         /**
          * Creates new instance.
@@ -195,6 +196,7 @@ class ServerBasicConfig implements ServerConfiguration {
             this.validateHeaders = builder.validateHeaders();
             this.initialBufferSize = builder.initialBufferSize();
             this.enableCompression = builder.enableCompression();
+            this.maxPayloadSize = builder.maxPayloadSize();
 
             WebServerTls webServerTls = builder.tlsConfig();
             if (webServerTls.enabled()) {
@@ -286,6 +288,11 @@ class ServerBasicConfig implements ServerConfiguration {
         @Override
         public boolean enableCompression() {
             return enableCompression;
+        }
+
+        @Override
+        public long maxPayloadSize() {
+            return maxPayloadSize;
         }
     }
 }

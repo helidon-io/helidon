@@ -176,6 +176,16 @@ public interface SocketConfiguration {
     }
 
     /**
+     * Maximum size allowed for an HTTP payload in a client request. A negative
+     * value indicates that there is no maximum set.
+     *
+     * @return maximum payload size
+     */
+    default long maxPayloadSize() {
+        return -1L;
+    }
+
+    /**
      * Initial size of the buffer used to parse HTTP line and headers.
      *
      * @return initial size of the buffer
@@ -339,6 +349,15 @@ public interface SocketConfiguration {
         B enableCompression(boolean value);
 
         /**
+         * Set a maximum payload size for a client request. Can prevent DoS
+         * attacks.
+         *
+         * @param size maximum payload size
+         * @return this builder
+         */
+        B maxPayloadSize(long size);
+
+        /**
          * Update this socket configuration from a {@link io.helidon.config.Config}.
          *
          * @param config configuration on the node of a socket
@@ -351,6 +370,7 @@ public interface SocketConfiguration {
             config.get("backlog").asInt().ifPresent(this::backlog);
             config.get("max-header-size").asInt().ifPresent(this::maxHeaderSize);
             config.get("max-initial-line-length").asInt().ifPresent(this::maxInitialLineLength);
+            config.get("max-payload-size").asInt().ifPresent(this::maxPayloadSize);
 
             DeprecatedConfig.get(config, "timeout-millis", "timeout")
                     .asInt()
@@ -411,6 +431,7 @@ public interface SocketConfiguration {
         private boolean validateHeaders = true;
         private int initialBufferSize = 128;
         private boolean enableCompression = false;
+        private long maxPayloadSize = -1;
 
         private Builder() {
         }
@@ -578,6 +599,12 @@ public interface SocketConfiguration {
             return this;
         }
 
+        @Override
+        public Builder maxPayloadSize(long size) {
+            this.maxPayloadSize = size;
+            return this;
+        }
+
         /**
          * Configure a socket name, to bind named routings to.
          *
@@ -715,6 +742,10 @@ public interface SocketConfiguration {
 
         boolean enableCompression() {
             return enableCompression;
+        }
+
+        long maxPayloadSize() {
+            return maxPayloadSize;
         }
     }
 }
