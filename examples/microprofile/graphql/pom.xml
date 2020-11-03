@@ -23,18 +23,22 @@
         <version>2.1.1-SNAPSHOT</version>
         <relativePath>../../../applications/mp/pom.xml</relativePath>
     </parent>
-    <groupId>io.helidon.examples.graphql</groupId>
-    <artifactId>helidon-examples-graphql-basics</artifactId>
-    <name>Helidon GraphQL Examples Basics</name>
+    <groupId>io.helidon.examples.microprofile</groupId>
+    <artifactId>helidon-examples-microprofile-graphql</artifactId>
+    <name>Helidon Microprofile Examples GraphQL</name>
 
     <description>
-        Basic usage of GraphQL in Helidon MP
+        Usage of GraphQL in Helidon MP
     </description>
 
     <dependencies>
         <dependency>
             <groupId>io.helidon.microprofile.graphql</groupId>
             <artifactId>helidon-microprofile-graphql-server</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.bundles</groupId>
+            <artifactId>helidon-microprofile</artifactId>
         </dependency>
     </dependencies>
 

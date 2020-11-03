@@ -1,11 +1,13 @@
-# Basic Microprofile GraphQL Example
+# Microprofile GraphQL Example
 
-This example creates a simple Task APU using the Microprofile GraphQL API.
+This example creates a simple Task APU using Helidon's implementation of the Microprofile GraphQL API Specification.
+
+Refer: https://github.com/eclipse/microprofile-graphql
 
 
 ## Running the example
 
-1. Build the example
+1. Build and Run
 
 ```bash
 mvn clean install
@@ -17,7 +19,7 @@ mvn clean install
 mvn exec:java
 ```
 
-## Issuing GraphQL Requests 
+## Issuing GraphQL requests 
 
 1. Access the GraphiQL UI via the following URL: http://127.0.0.1:7001/ui.
 

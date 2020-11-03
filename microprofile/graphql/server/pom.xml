@@ -26,7 +26,7 @@
 
     <artifactId>helidon-microprofile-graphql-server</artifactId>
     <name>Helidon Microprofile GraphQL Server</name>
-    <description>The microprofile GraphQL Server implementation</description>
+    <description>The Microprofile GraphQL Server implementation</description>
 
     <dependencies>
         <dependency>
