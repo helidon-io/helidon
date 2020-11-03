@@ -70,8 +70,6 @@ import io.helidon.common.Errors;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
 import io.helidon.metrics.MetricsSupport;
-import io.helidon.metrics.Registry;
-import io.helidon.metrics.RegistryFactory;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.webserver.Routing;
 
@@ -92,7 +90,6 @@ import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Gauge;
 import org.eclipse.microprofile.metrics.annotation.Metered;
 import org.eclipse.microprofile.metrics.annotation.Metric;
-import org.eclipse.microprofile.metrics.annotation.RegistryType;
 import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
