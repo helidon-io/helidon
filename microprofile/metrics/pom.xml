@@ -71,7 +71,7 @@
         <dependency>
             <groupId>io.helidon.microprofile.tests</groupId>
             <artifactId>helidon-microprofile-tests-junit5</artifactId>
-            <version>${project.version}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
