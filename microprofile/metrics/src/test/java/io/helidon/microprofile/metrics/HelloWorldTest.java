@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.metrics;
 
+import java.util.Map;
 import java.util.Properties;
 import java.util.stream.IntStream;
 
@@ -23,14 +24,20 @@ import javax.json.JsonObject;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.MediaType;
 
-import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.config.mp.MpConfigSources;
 import io.helidon.metrics.RegistryFactory;
 import io.helidon.microprofile.server.Server;
+import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
+import org.eclipse.microprofile.metrics.Metric;
+import org.eclipse.microprofile.metrics.MetricFilter;
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.SimpleTimer;
 import org.eclipse.microprofile.metrics.Tag;
 import org.hamcrest.core.Is;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -56,11 +63,10 @@ public class HelloWorldTest extends MetricsMpServiceTest {
     }
 
     static void initializeServer(Properties configProperties) {
+        Config config = initializeConfig(configProperties);
         syntheticSimpleTimerRegistry = initSyntheticSimpleTimerRegistry();
-        Server.Builder builder = MetricsMpServiceTest.prepareServerBuilder();
-        Config config = Config.create(ConfigSources.create(configProperties));
-        builder.config(config);
-        MetricsMpServiceTest.finishServerInitialization(builder);
+
+        MetricsMpServiceTest.initializeServer(config);
     }
 
     private static MetricRegistry initSyntheticSimpleTimerRegistry() {
@@ -101,6 +107,15 @@ public class HelloWorldTest extends MetricsMpServiceTest {
     static SimpleTimer getSyntheticSimpleTimer() {
         Tag[] tags = new Tag[] {new Tag("class", HelloWorldResource.class.getName()),
                 new Tag("method", "messageWithArg_java.lang.String")};
+        assertThat("Synthetic simple timer "
+                        + MetricsCdiExtension.SYNTHETIC_SIMPLE_TIMER_METRIC_NAME
+                        + " should appear in registry but does not",
+                syntheticSimpleTimerRegistry.getSimpleTimers(new MetricFilter() {
+                    @Override
+                    public boolean matches(MetricID metricID, Metric metric) {
+                        return metricID.getName().equals(MetricsCdiExtension.SYNTHETIC_SIMPLE_TIMER_METRIC_NAME);
+                    }
+                }).isEmpty(), is(false));
         SimpleTimer syntheticSimpleTimer = syntheticSimpleTimerRegistry.simpleTimer(
                 MetricsCdiExtension.SYNTHETIC_SIMPLE_TIMER_METADATA, tags);
         return syntheticSimpleTimer;

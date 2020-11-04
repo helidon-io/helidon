@@ -16,22 +16,23 @@
  */
 package io.helidon.microprofile.metrics;
 
-import javax.inject.Inject;
-import javax.ws.rs.client.WebTarget;
+import javax.enterprise.inject.se.SeContainer;
+import javax.enterprise.inject.se.SeContainerInitializer;
 import javax.ws.rs.core.Response;
-
-import io.helidon.microprofile.tests.junit5.AddConfig;
-import io.helidon.microprofile.tests.junit5.AddExtension;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
+import io.helidon.microprofile.server.JaxRsCdiExtension;
+import io.helidon.microprofile.server.Server;
+import io.helidon.microprofile.server.ServerCdiExtension;
+import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.metrics.MetricID;
-import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
+import java.util.Properties;
 
 /**
  * Makes sure that the vetoed resources' metrics are not registered.
@@ -39,21 +40,30 @@ import java.lang.reflect.Method;
  * For these tests we explicitly enable the REST.request synthetic metrics so we can make sure one is not created for an
  * endpoint method on a vetoed bean.
  */
-@HelidonTest
-@AddConfig(key = "metrics." + MetricsCdiExtension.REST_ENDPOINTS_METRIC_ENABLED_PROPERTY_NAME, value = "true")
-@AddExtension(io.helidon.microprofile.metrics.VetoCdiExtension.class)
-class TestVetoedResource {
+public class TestVetoedResource extends MetricsMpServiceTest {
 
-    @Inject
-    private WebTarget webTarget;
+    private static SeContainer seContainer;
 
-    @Inject
-    private MetricRegistry registry;
+    @BeforeAll
+    public static void init() throws Exception {
+        /*
+           We need to add the test CDI extension, which means we'll need to initialize the SE CDI container, which in turn
+           means that CDI will automatially start the web server, rather than using the typical Server.builder() sequence.
+         */
+        Properties configProperties = new Properties();
+        configProperties.setProperty("mp.initializer.allow", "true");
+        Config config = MetricsMpServiceTest.initializeConfig(configProperties);
+        seContainer = SeContainerInitializer.newInstance()
+                .addExtensions(VetoCdiExtension.class)
+                .initialize();
+        MetricsMpServiceTest.initializeServer(config);
+    }
 
     @Test
     void testVetoedResourceDoesNotRespond() throws NoSuchMethodException {
         // This really checks web server behavior, not metrics behavior per se.
-        Response res = webTarget.path("/vetoed")
+        Response res = client.target(baseUri())
+                .path("/vetoed")
                 .request()
                 .get();
         // JAX-RS should not handle an endpoint on a vetoed bean.

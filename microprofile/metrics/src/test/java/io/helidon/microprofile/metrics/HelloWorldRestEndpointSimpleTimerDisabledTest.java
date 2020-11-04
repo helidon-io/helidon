@@ -37,12 +37,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * JAX-RS endpoint. So without setting configuration to enable that feature explicitly, we should not find any
  * metrics named REST.request in the BASE registry (where these synthetic metrics reside, according to the MP metrics spec).
  */
-public class HelloWorldRestEndpointSimpleTimerDisabledTest extends HelloWorldTest {
-
-    @BeforeAll
-    public static void initializeServer() {
-        HelloWorldTest.initializeServer(new Properties());
-    }
+public class HelloWorldRestEndpointSimpleTimerDisabledTest {
 
     @Test
     public void testSyntheticSimpleTimer() {
