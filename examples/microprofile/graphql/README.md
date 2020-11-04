@@ -16,7 +16,7 @@ mvn clean install
 2. Run the example
 
 ```bash
-mvn exec:java
+java -jar target/helidon-examples-microprofile-graphql.jar
 ```
 
 ## Issuing GraphQL requests 

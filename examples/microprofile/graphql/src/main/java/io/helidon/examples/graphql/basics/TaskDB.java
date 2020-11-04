@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 import javax.enterprise.context.ApplicationScoped;
 
 /**
- * CDI Bean to work with {@link Task}s.
+ * Simple {@link Map} based implementation to store {@link Task}s.
  */
 @ApplicationScoped
 public class TaskDB {

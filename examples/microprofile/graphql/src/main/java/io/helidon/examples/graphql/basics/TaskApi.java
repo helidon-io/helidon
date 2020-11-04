@@ -29,7 +29,7 @@ import org.eclipse.microprofile.graphql.NonNull;
 import org.eclipse.microprofile.graphql.Query;
 
 /**
- * CDI Bean to work with {@link Task}s.
+ * A CDI Bean that exposes a GraphQL API to query and mutate {@link Task}s.
  */
 @GraphQLApi
 @ApplicationScoped
