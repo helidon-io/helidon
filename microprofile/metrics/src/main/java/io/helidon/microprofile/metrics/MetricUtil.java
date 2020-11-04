@@ -107,7 +107,7 @@ public final class MetricUtil {
         return result;
     }
 
-    private static <A extends Annotation>  List<LookupResult<A>> lookupAnnotations(Annotated annotated,
+    static <A extends Annotation>  List<LookupResult<A>> lookupAnnotations(Annotated annotated,
             Class<A> annotClass) {
         // We have to filter by annotation class ourselves, because annotatedMethod.getAnnotations(Class) delegates
         // to the Java method. That would bypass any annotations that had been added dynamically to the configurator.

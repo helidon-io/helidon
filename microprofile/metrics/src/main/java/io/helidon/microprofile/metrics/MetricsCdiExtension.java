@@ -18,6 +18,7 @@ package io.helidon.microprofile.metrics;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -41,7 +42,9 @@ import javax.enterprise.context.RequestScoped;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Default;
 import javax.enterprise.inject.spi.AfterDeploymentValidation;
+import javax.enterprise.inject.spi.AnnotatedConstructor;
 import javax.enterprise.inject.spi.AnnotatedMember;
+import javax.enterprise.inject.spi.AnnotatedMethod;
 import javax.enterprise.inject.spi.AnnotatedType;
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
@@ -50,10 +53,10 @@ import javax.enterprise.inject.spi.DeploymentException;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessAnnotatedType;
 import javax.enterprise.inject.spi.ProcessInjectionPoint;
+import javax.enterprise.inject.spi.ProcessManagedBean;
 import javax.enterprise.inject.spi.ProcessProducerField;
 import javax.enterprise.inject.spi.ProcessProducerMethod;
 import javax.enterprise.inject.spi.WithAnnotations;
-import javax.enterprise.inject.spi.configurator.AnnotatedMethodConfigurator;
 import javax.enterprise.inject.spi.configurator.AnnotatedTypeConfigurator;
 import javax.inject.Qualifier;
 import javax.inject.Singleton;
@@ -61,6 +64,7 @@ import javax.interceptor.Interceptor;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.HEAD;
+import javax.ws.rs.HttpMethod;
 import javax.ws.rs.OPTIONS;
 import javax.ws.rs.PATCH;
 import javax.ws.rs.POST;
@@ -105,8 +109,7 @@ public class MetricsCdiExtension implements Extension {
     private static final Logger LOGGER = Logger.getLogger(MetricsCdiExtension.class.getName());
 
     private static final List<Class<? extends Annotation>> METRIC_ANNOTATIONS
-            = Arrays.asList(Counted.class, Metered.class, Timed.class, Gauge.class, ConcurrentGauge.class,
-                            SimplyTimed.class);
+            = Arrays.asList(Counted.class, Metered.class, Timed.class, ConcurrentGauge.class, SimplyTimed.class);
 
     private static final List<Class<? extends Annotation>> JAX_RS_ANNOTATIONS
             = Arrays.asList(GET.class, PUT.class, POST.class, HEAD.class, OPTIONS.class, DELETE.class, PATCH.class);
@@ -128,11 +131,12 @@ public class MetricsCdiExtension implements Extension {
 
     private final Map<Bean<?>, AnnotatedMember<?>> producers = new HashMap<>();
 
-    private final Map<MetricID, AnnotatedMethodConfigurator<?>> annotatedGaugeSites = new HashMap<>();
+    private final Map<MetricID, AnnotatedMethod<?>> annotatedGaugeSites = new HashMap<>();
 
     private Errors.Collector errors = Errors.collector();
 
-    private final List<Method> methodsForSyntheticSimplyTimed = new ArrayList<>();
+    private final Set<Class<?>> metricsAnnotatedClasses = new HashSet<>();
+    private final Map<Class<?>, Set<Method>> methodsWithSyntheticSimplyTimer = new HashMap<>();
 
     @SuppressWarnings("unchecked")
     private static <T> T getReference(BeanManager bm, Type type, Bean<?> bean) {
@@ -245,6 +249,14 @@ public class MetricsCdiExtension implements Extension {
         return result.toArray(new Tag[result.size()]);
     }
 
+    static String[] tags(Tag[] tags) {
+        final List<String> result = new ArrayList<>();
+        for (int i = 0; i < tags.length; i++) {
+            result.add(tags[i].getTagName() + "=" + tags[i].getTagValue());
+        }
+        return result.toArray(new String[0]);
+    }
+
     /**
      * Returns the real class of this object, skipping proxies.
      *
@@ -297,61 +309,113 @@ public class MetricsCdiExtension implements Extension {
         discovery.addAnnotatedType(RestEndpointMetricsInfo.class, RestEndpointMetricsInfo.class.getSimpleName());
     }
 
+    private void clearAnnotationInfo(@Observes AfterDeploymentValidation adv) {
+        metricsAnnotatedClasses.clear();
+        methodsWithSyntheticSimplyTimer.clear();
+    }
+
     /**
-     * Observes sites annotated with the metrics annotations.
+     * Records Java classes with a metrics annotation somewhere.
      *
-     * @param pat annotated type instance being processed
+     * By recording the classes here, we let CDI optimize its invocations of this observer method. Later, when we
+     * observe managed beans (which CDI invokes for all managed beans) where we also have to examine each method and
+     * constructor, we can quickly eliminate from consideration any classes we have not recorded here.
+     *
+     * @param pat ProcessAnnotatedType event
      */
-    private void registerMetrics(@Observes @WithAnnotations({Counted.class, Metered.class, Timed.class,
-                                                                    ConcurrentGauge.class, SimplyTimed.class})
-                                         ProcessAnnotatedType<?> pat) {
-        // Filter out interceptors
-        AnnotatedType<?> type = pat.getAnnotatedType();
-        Interceptor annot = type.getAnnotation(Interceptor.class);
-        if (annot != null) {
-            return;
-        }
+    private void recordMetricAnnotatedClass(@Observes
+    @WithAnnotations({Counted.class, Metered.class, Timed.class, ConcurrentGauge.class,
+            SimplyTimed.class}) ProcessAnnotatedType<?> pat) {
+        checkAndRecordCandidateMetricClass(pat);
+    }
 
-        LOGGER.log(Level.FINE, () -> "Processing annotations for " + pat.getAnnotatedType().getJavaClass().getName());
-
-        // Register metrics based on annotations
-        AnnotatedTypeConfigurator<?> configurator = pat.configureAnnotatedType();
-        Class<?> clazz = configurator.getAnnotated().getJavaClass();
+    /**
+     * Checks to make sure the annotated type is not abstract and is not an interceptor.
+     *
+     * @param pat {@code ProcessAnnotatedType} event
+     * @return true if the annotated type should be kept for potential processing later; false otherwise
+     */
+    private boolean checkCandidateMetricClass(ProcessAnnotatedType<?> pat) {
+        AnnotatedType<?> annotatedType = pat.getAnnotatedType();
+        Class<?> clazz = annotatedType.getJavaClass();
 
         // If abstract class, then handled by concrete subclasses
-        if (Modifier.isAbstract(clazz.getModifiers())) {
+        if (annotatedType.isAnnotationPresent(Interceptor.class)
+                || Modifier.isAbstract(clazz.getModifiers())) {
+            LOGGER.log(Level.FINER, () -> "Ignoring " + clazz.getName()
+                    + " with annotations " + annotatedType.getAnnotations()
+                    + " for later processing: "
+                    + (Modifier.isAbstract(clazz.getModifiers()) ? "abstract " : "")
+                    + (annotatedType.isAnnotationPresent(Interceptor.class) ? "interceptor " : ""));
+            return false;
+        }
+        LOGGER.log(Level.FINE, () -> "Accepting " + clazz.getName() + " for later bean processing");
+        return true;
+    }
+
+    /**
+     * Make sure the annotated type is neither abstract nor an interceptor and stores the Java class.
+     *
+     * @param pat {@code ProcessAnnotatedType} event
+     * @return true if the annotated type should be kept for potential processing later; false otherwise
+     */
+    private boolean checkAndRecordCandidateMetricClass(ProcessAnnotatedType<?> pat) {
+        boolean result = checkCandidateMetricClass(pat);
+        if (result) {
+            metricsAnnotatedClasses.add(pat.getAnnotatedType().getJavaClass());
+        }
+        return result;
+    }
+
+    /**
+     * Observes all beans but immediately dismisses ones for which the Java class was not previously noted
+     * during {@code ProcessAnnotatedType} (which recorded only classes with metrics annotations).
+     *
+     * @param pmb event describing the managed bean being processed
+     */
+    private void registerMetrics(@Observes ProcessManagedBean<?> pmb) {
+        AnnotatedType<?> type =  pmb.getAnnotatedBeanClass();
+        Class<?> clazz = type.getJavaClass();
+        if (!metricsAnnotatedClasses.contains(clazz)) {
             return;
         }
 
+        LOGGER.log(Level.FINE, () -> "Processing annotations for " + clazz.getName());
+
         // Process methods keeping non-private declared on this class
-        configurator.filterMethods(method -> !Modifier.isPrivate(method.getJavaMember().getModifiers()))
-                .forEach(method -> {
-                    METRIC_ANNOTATIONS.forEach(annotation -> {
-                        Method m = method.getAnnotated().getJavaMember();
-                        for (LookupResult<? extends Annotation> lookupResult : MetricUtil.lookupAnnotations(
-                                configurator.getAnnotated(), method.getAnnotated(), annotation)) {
-                            // For methods, register the metric only on the declaring
-                            // class, not subclasses per the MP Metrics 2.0 TCK
-                            // VisibilityTimedMethodBeanTest.
-                            if (lookupResult.getType() != MetricUtil.MatchingType.METHOD
-                                    || clazz.equals(m.getDeclaringClass())) {
-                                registerMetric(m, clazz, lookupResult);
-                            }
-                        }
-                    });
-                });
+        for (AnnotatedMethod<?> annotatedMethod : type.getMethods()) {
+            if (Modifier.isPrivate(annotatedMethod.getJavaMember().getModifiers())) {
+                continue;
+            }
+            METRIC_ANNOTATIONS.forEach(annotation -> {
+                for (LookupResult<? extends Annotation> lookupResult : MetricUtil.lookupAnnotations(
+                        type, annotatedMethod, annotation)) {
+                    // For methods, register the metric only on the declaring
+                    // class, not subclasses per the MP Metrics 2.0 TCK
+                    // VisibilityTimedMethodBeanTest.
+                    if (lookupResult.getType() != MetricUtil.MatchingType.METHOD
+                            || clazz.equals(annotatedMethod.getJavaMember()
+                            .getDeclaringClass())) {
+                        registerMetric(annotatedMethod.getJavaMember(), clazz, lookupResult);
+                    }
+                }
+            });
+        }
 
         // Process constructors
-        configurator.filterConstructors(constructor -> !Modifier.isPrivate(constructor.getJavaMember().getModifiers()))
-                .forEach(constructor -> {
-                    METRIC_ANNOTATIONS.forEach(annotation -> {
-                        LookupResult<? extends Annotation> lookupResult
-                                = lookupAnnotation(constructor.getAnnotated().getJavaMember(), annotation, clazz);
-                        if (lookupResult != null) {
-                            registerMetric(constructor.getAnnotated().getJavaMember(), clazz, lookupResult);
-                        }
-                    });
-                });
+        for (AnnotatedConstructor<?> annotatedConstructor : type.getConstructors()) {
+            Constructor c = annotatedConstructor.getJavaMember();
+            if (Modifier.isPrivate(c.getModifiers())) {
+                continue;
+            }
+            METRIC_ANNOTATIONS.forEach(annotation -> {
+                LookupResult<? extends Annotation> lookupResult
+                        = lookupAnnotation(c, annotation, clazz);
+                if (lookupResult != null) {
+                    registerMetric(c, clazz, lookupResult);
+                }
+            });
+        }
     }
 
     private void processInjectionPoints(@Observes ProcessInjectionPoint<?, ?> pip) {
@@ -364,65 +428,55 @@ public class MetricsCdiExtension implements Extension {
     }
 
     /**
-     * Records the need to add a {@code SyntheticSimplyTimed} annotation to each JAX-RS endpoint method.
+     * Adds a {@code SyntheticSimplyTimed} annotation to each JAX-RS endpoint method.
      *
      * @param pat the {@code ProcessAnnotatedType} for the type containing the JAX-RS annotated methods
      */
     private void recordSimplyTimedForRestResources(@Observes
-                                                   @WithAnnotations({GET.class, PUT.class, POST.class, HEAD.class, OPTIONS.class,
-                                                                            DELETE.class, PATCH.class})
+                                                   @WithAnnotations({HttpMethod.class})
                                                            ProcessAnnotatedType<?> pat) {
 
-        // Filter out interceptors
-        AnnotatedType<?> type = pat.getAnnotatedType();
-        Interceptor annot = type.getAnnotation(Interceptor.class);
-        if (annot != null) {
+        /// Ignore abstract classes or interceptors. Make sure synthetic SimpleTimer creation is enabled, and if so record the
+        // class and JAX-RS methods to use in later bean processing.
+        if (!checkCandidateMetricClass(pat)
+                || !restEndpointsMetricEnabledFromConfig()) {
             return;
         }
 
         LOGGER.log(Level.FINE,
-                   () -> "Processing SyntheticSimplyTimed annotation for " + pat.getAnnotatedType()
-                           .getJavaClass()
-                           .getName());
+                () -> "Processing SyntheticSimplyTimed annotation for " + pat.getAnnotatedType()
+                        .getJavaClass()
+                        .getName());
 
-        // Register metrics based on annotations
         AnnotatedTypeConfigurator<?> configurator = pat.configureAnnotatedType();
-        Class<?> clazz = configurator.getAnnotated().getJavaClass();
+        Class<?> clazz = configurator.getAnnotated()
+                .getJavaClass();
 
-        // If abstract class, then handled by concrete subclasses
-        if (Modifier.isAbstract(clazz.getModifiers())) {
-            return;
-        }
+        Set<Method> methodsToRecord = new HashSet<>();
 
         // Process methods keeping non-private declared on this class
         configurator.filterMethods(method -> !Modifier.isPrivate(method.getJavaMember()
                                                                          .getModifiers()))
-                .forEach(method -> {
-                    JAX_RS_ANNOTATIONS.forEach(annotation -> {
-                        Method m = method.getAnnotated()
-                                .getJavaMember();
-                        LookupResult<? extends Annotation> lookupResult
-                                = lookupAnnotation(m, annotation, clazz);
-                        // For methods, add the SyntheticSimplyTimed annotation only on the declaring
-                        // class, not subclasses.
-                        if (lookupResult != null
-                                && (
-                                lookupResult.getType() != MetricUtil.MatchingType.METHOD
-                                        || clazz.equals(m.getDeclaringClass()))) {
-                            LOGGER.log(Level.FINE, () -> String.format("Adding @SyntheticSimplyTimed to %s#%s", clazz.getName(),
-                                                                       m.getName()));
+                .forEach(method ->
+                        JAX_RS_ANNOTATIONS.forEach(jaxRsAnnotation -> {
+                            AnnotatedMethod<?> annotatedMethod = method.getAnnotated();
+                            if (annotatedMethod.isAnnotationPresent(jaxRsAnnotation)) {
+                                Method m = annotatedMethod.getJavaMember();
+                                // For methods, add the SyntheticSimplyTimed annotation only on the declaring
+                                // class, not subclasses.
+                                if (clazz.equals(m.getDeclaringClass())) {
+                                    LOGGER.log(Level.FINE, () -> String.format("Adding @SyntheticSimplyTimed to %s#%s", clazz.getName(),
+                                            m.getName()));
 
-                            // Add the synthetic annotation to this method's configurator.
-                            method.add(LiteralSyntheticSimplyTimed.getInstance());
-
-                            // Record the need to register the synthetic REST.request metric for this class/method. These
-                            // dynamically-added annotations will not trigger the @ProcessAnnotatedType invocation that would
-                            // normally do the metric registration because CDI has already decided which classes have annotations
-                            // that trigger those invocations.
-                            methodsForSyntheticSimplyTimed.add(m);
-                        }
-                    });
-                });
+                                    // Add the synthetic annotation to this method's configurator and record this Java method.
+                                    method.add(LiteralSyntheticSimplyTimed.getInstance());
+                                    methodsToRecord.add(m);
+                                }
+                            }
+                        }));
+        if (!methodsToRecord.isEmpty()) {
+            methodsWithSyntheticSimplyTimer.put(clazz, methodsToRecord);
+        }
     }
 
     /**
@@ -432,16 +486,30 @@ public class MetricsCdiExtension implements Extension {
      * @return the located or created {@code SimpleTimer}
      */
     static SimpleTimer syntheticSimpleTimer(Method method) {
-        String classTagValue = method.getDeclaringClass().getName();
         // By spec, the synthetic SimpleTimers are always in the base registry.
-        return syntheticSimpleTimer(getRegistryForSyntheticSimpleTimers(),
-                                    classTagValue,
-                                    methodTagValueForSyntheticSimpleTimer(method));
+        return getRegistryForSyntheticSimpleTimers()
+                .simpleTimer(SYNTHETIC_SIMPLE_TIMER_METADATA, syntheticSimpleTimerMetricTags(method));
     }
 
-    private static SimpleTimer syntheticSimpleTimer(MetricRegistry registry, String classTagValue, String methodTagValue) {
-        return registry.simpleTimer(SYNTHETIC_SIMPLE_TIMER_METADATA,
-                                    new Tag[] {new Tag("class", classTagValue), new Tag("method", methodTagValue)});
+    /**
+     * Creates the {@link MetricID} for the synthetic {@link SimplyTimed} annotation we add to each JAX-RS method.
+     *
+     * @param method Java method of interest
+     * @return {@code MetricID} for the Java method
+     */
+    static MetricID syntheticSimpleTimerMetricID(Method method) {
+        return new MetricID(SYNTHETIC_SIMPLE_TIMER_METRIC_NAME, syntheticSimpleTimerMetricTags(method));
+    }
+
+    /**
+     * Returns the {@code Tag} array for a synthetic {@code SimplyTimed} annotation.
+     *
+     * @param method the Java method of interest
+     * @return the {@code Tag}s indicating the class and method
+     */
+    static Tag[] syntheticSimpleTimerMetricTags(Method method) {
+        return new Tag[] {new Tag("class", method.getDeclaringClass().getName()),
+                new Tag("method", methodTagValueForSyntheticSimpleTimer(method))};
     }
 
     private static String methodTagValueForSyntheticSimpleTimer(Method method) {
@@ -548,13 +616,16 @@ public class MetricsCdiExtension implements Extension {
         producers.clear();
     }
 
-    private void registerSyntheticSimplyTimedMetrics(@Observes AfterDeploymentValidation adv) {
-        if (restEndpointsMetricEnabledFromConfig()) {
-            LOGGER.log(Level.FINE, () -> "Registering synthetic REST SimpleTimer metrics for JAX-RS endpoints");
-            methodsForSyntheticSimplyTimed.forEach(MetricsCdiExtension::syntheticSimpleTimer);
-        } else {
-            LOGGER.log(Level.FINE, "Skipping registration of synthetic REST SimpleTimer metrics due to configuration");
+    private void registerSyntheticSimpleTimerMetric(@Observes ProcessManagedBean<?> pmb) {
+        AnnotatedType<?> type = pmb.getAnnotatedBeanClass();
+        Class<?> clazz = type.getJavaClass();
+        if (!methodsWithSyntheticSimplyTimer.containsKey(clazz)) {
+            return;
         }
+
+        LOGGER.log(Level.FINE, () -> "Processing synthetic SimplyTimed annotations for " + clazz.getName());
+
+        methodsWithSyntheticSimplyTimer.get(clazz).forEach(MetricsCdiExtension::syntheticSimpleTimer);
     }
 
     static boolean restEndpointsMetricEnabledFromConfig() {
@@ -643,53 +714,51 @@ public class MetricsCdiExtension implements Extension {
         return MetricType.from(clazz == null ? metric.getClass() : clazz);
     }
 
-    private void recordAnnotatedGaugeSite(@Observes @WithAnnotations(Gauge.class) ProcessAnnotatedType<?> pat) {
-        LOGGER.log(Level.FINE, () -> "recordAnnoatedGaugeSite for class " + pat.getAnnotatedType().getJavaClass());
-        AnnotatedType<?> type = pat.getAnnotatedType();
+    private void recordAnnotatedGaugeSite(@Observes ProcessManagedBean<?> pmb) {
+        AnnotatedType<?> type = pmb.getAnnotatedBeanClass();
+        Class<?> clazz = type.getJavaClass();
 
-        LOGGER.log(Level.FINE, () -> "Processing annotations for " + type.getJavaClass().getName());
+        LOGGER.log(Level.FINE, () -> "recordAnnoatedGaugeSite for class " + clazz);
+        LOGGER.log(Level.FINE, () -> "Processing annotations for " + clazz.getName());
 
         // Register metrics based on annotations
-        AnnotatedTypeConfigurator<?> configurator = pat.configureAnnotatedType();
-        Class<?> clazz = configurator.getAnnotated().getJavaClass();
-
         // If abstract class, then handled by concrete subclasses
         if (Modifier.isAbstract(clazz.getModifiers())) {
             return;
         }
 
-        Annotation annotation = type.getAnnotation(RequestScoped.class);
-        if (annotation != null) {
-            errors.fatal(clazz, "Cannot configure @Gauge on a request scoped bean");
-            return;
-        }
-
-        if (type.getAnnotation(ApplicationScoped.class) == null && type.getAnnotation(Singleton.class) == null) {
-            if (ConfigProvider.getConfig().getOptionalValue("metrics.warn-dependent", Boolean.class).orElse(true)) {
-                LOGGER.warning("@Gauge is configured on a bean " + clazz.getName()
-                                       + " that is neither ApplicationScoped nor Singleton. This is most likely a bug."
-                                       + " You may set 'metrics.warn-dependent' configuration option to 'false' to remove "
-                                       + "this warning.");
-            }
-        }
-
         // Process @Gauge methods keeping non-private declared on this class
-        configurator.filterMethods(method -> method.getJavaMember().getDeclaringClass().equals(clazz)
-                && !Modifier.isPrivate(method.getJavaMember().getModifiers())
-                && method.isAnnotationPresent(Gauge.class))
-                .forEach(method -> {
-                    Method javaMethod = method.getAnnotated().getJavaMember();
-                    Gauge gaugeAnnotation = method.getAnnotated().getAnnotation(Gauge.class);
-                    String explicitGaugeName = gaugeAnnotation.name();
-                    String gaugeNameSuffix = (
-                            explicitGaugeName.length() > 0 ? explicitGaugeName
-                                    : javaMethod.getName());
-                    String gaugeName = (
-                            gaugeAnnotation.absolute() ? gaugeNameSuffix
-                                    : String.format("%s.%s", clazz.getName(), gaugeNameSuffix));
-                    annotatedGaugeSites.put(new MetricID(gaugeName, tags(gaugeAnnotation.tags())), method);
-                    LOGGER.log(Level.FINE, () -> String.format("Recorded annotated gauge with name %s", gaugeName));
-                });
+        for (AnnotatedMethod method : type.getMethods()) {
+            Method javaMethod = method.getJavaMember();
+            if (!javaMethod.getDeclaringClass().equals(clazz)
+                    || Modifier.isPrivate(javaMethod.getModifiers())
+                    || !method.isAnnotationPresent(Gauge.class)) {
+                continue;
+            }
+            Annotation requestScopedAnnotation = type.getAnnotation(RequestScoped.class);
+            if (requestScopedAnnotation != null) {
+                errors.fatal(clazz, "Cannot configure @Gauge on a request scoped bean");
+                return;
+            }
+            if (type.getAnnotation(ApplicationScoped.class) == null && type.getAnnotation(Singleton.class) == null) {
+                if (ConfigProvider.getConfig().getOptionalValue("metrics.warn-dependent", Boolean.class).orElse(true)) {
+                    LOGGER.warning("@Gauge is configured on a bean " + clazz.getName()
+                            + " that is neither ApplicationScoped nor Singleton. This is most likely a bug."
+                            + " You may set 'metrics.warn-dependent' configuration option to 'false' to remove "
+                            + "this warning.");
+                }
+            }
+            Gauge gaugeAnnotation = method.getAnnotation(Gauge.class);
+            String explicitGaugeName = gaugeAnnotation.name();
+            String gaugeNameSuffix = (
+                    explicitGaugeName.length() > 0 ? explicitGaugeName
+                            : javaMethod.getName());
+            String gaugeName = (
+                    gaugeAnnotation.absolute() ? gaugeNameSuffix
+                            : String.format("%s.%s", clazz.getName(), gaugeNameSuffix));
+            annotatedGaugeSites.put(new MetricID(gaugeName, tags(gaugeAnnotation.tags())), method);
+            LOGGER.log(Level.FINE, () -> String.format("Recorded annotated gauge with name %s", gaugeName));
+        }
     }
 
     private void registerAnnotatedGauges(@Observes AfterDeploymentValidation adv, BeanManager bm) {
@@ -700,13 +769,13 @@ public class MetricsCdiExtension implements Extension {
             LOGGER.log(Level.FINE, () -> "gaugeSite " + gaugeSite.toString());
             MetricID gaugeID = gaugeSite.getKey();
 
-            AnnotatedMethodConfigurator<?> site = gaugeSite.getValue();
+            AnnotatedMethod<?> site = gaugeSite.getValue();
             // TODO uncomment following clause once MP metrics enforces restriction
             DelegatingGauge<? /* extends Number */> dg;
             try {
                 dg = buildDelegatingGauge(gaugeID.getName(), site,
                                           bm);
-                Gauge gaugeAnnotation = site.getAnnotated().getAnnotation(Gauge.class);
+                Gauge gaugeAnnotation = site.getAnnotation(Gauge.class);
                 Metadata md = Metadata.builder()
                         .withName(gaugeID.getName())
                         .withDisplayName(gaugeAnnotation.displayName())
@@ -719,9 +788,9 @@ public class MetricsCdiExtension implements Extension {
                 registry.register(md, dg, gaugeID.getTagsAsList().toArray(new Tag[0]));
             } catch (Throwable t) {
                 adv.addDeploymentProblem(new IllegalArgumentException("Error processing @Gauge "
-                                                                              + "annotation on " + site.getAnnotated()
+                                                                              + "annotation on " + site
                         .getJavaMember().getDeclaringClass().getName()
-                                                                              + ":" + site.getAnnotated().getJavaMember()
+                                                                              + ":" + site.getJavaMember()
                         .getName(), t));
             }
         });
@@ -730,19 +799,19 @@ public class MetricsCdiExtension implements Extension {
     }
 
     private DelegatingGauge<? /* extends Number */> buildDelegatingGauge(String gaugeName,
-                                                                         AnnotatedMethodConfigurator<?> site, BeanManager bm) {
+                                                                         AnnotatedMethod<?> site, BeanManager bm) {
         // TODO uncomment preceding clause once MP metrics enforces restriction
-        Bean<?> bean = bm.getBeans(site.getAnnotated().getJavaMember().getDeclaringClass())
+        Bean<?> bean = bm.getBeans(site.getJavaMember().getDeclaringClass())
                 .stream()
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Cannot find bean for annotated gauge " + gaugeName));
 
-        Class<?> returnType = site.getAnnotated().getJavaMember().getReturnType();
+        Class<?> returnType = site.getJavaMember().getReturnType();
         // TODO uncomment following line once MP metrics enforces restriction
         //        Class<? extends Number> narrowedReturnType = typeToNumber(returnType);
 
         return DelegatingGauge.newInstance(
-                site.getAnnotated().getJavaMember(),
+                site.getJavaMember(),
                 getReference(bm, bean.getBeanClass(), bean),
                 // TODO use narrowedReturnType instead of returnType below once MP metrics enforces restriction
                 returnType);
