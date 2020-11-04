@@ -7,7 +7,7 @@ Refer: https://github.com/eclipse/microprofile-graphql
 
 ## Running the example
 
-1. Build and Run
+1. Build
 
 ```bash
 mvn clean install
