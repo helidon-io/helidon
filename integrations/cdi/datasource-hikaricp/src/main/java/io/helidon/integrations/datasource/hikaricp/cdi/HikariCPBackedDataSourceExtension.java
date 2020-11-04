@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.annotation.sql.DataSourceDefinition;
+import javax.annotation.sql.DataSourceDefinitions;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.CreationException;
@@ -118,7 +119,7 @@ public class HikariCPBackedDataSourceExtension extends AbstractDataSourceExtensi
     }
 
     private void processAnnotatedType(@Observes
-                                      @WithAnnotations(DataSourceDefinition.class)
+                                      @WithAnnotations({ DataSourceDefinition.class, DataSourceDefinitions.class })
                                       final ProcessAnnotatedType<?> event) {
         if (event != null) {
             final Annotated annotated = event.getAnnotatedType();

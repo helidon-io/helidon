@@ -37,6 +37,21 @@
         </properties>
     </persistence-unit>
 
+    <persistence-unit name="test2" transaction-type="JTA">
+        <description>A persistence unit for use by unit tests that is notable only for being distinguished from the test persistence unit above.</description>
+        <jta-data-source>test2</jta-data-source>
+        <properties>
+            <property name="eclipselink.deploy-on-startup" value="true"/>
+            <property name="eclipselink.jdbc.native-sql" value="true"/>
+            <property name="eclipselink.logging.logger" value="JavaLogger"/>
+            <property name="eclipselink.logging.parameters" value="true"/>
+            <property name="eclipselink.target-database" value="org.eclipse.persistence.platform.database.H2Platform"/>
+            <property name="eclipselink.target-server" value="io.helidon.integrations.cdi.eclipselink.CDISEPlatform"/>
+            <property name="eclipselink.weaving" value="false"/>
+            <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect"/>
+        </properties>
+    </persistence-unit>
+
     <persistence-unit name="test-resource-local" transaction-type="RESOURCE_LOCAL">
         <description>A resource local persistence unit for use by unit tests.</description>
         <properties>
