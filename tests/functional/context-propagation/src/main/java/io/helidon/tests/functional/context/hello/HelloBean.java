@@ -52,7 +52,7 @@ public class HelloBean {
     }
 
     /**
-     * Runs in Hystrix thread.
+     * Runs in FT thread.
      *
      * @return Hello string.
      */
@@ -68,7 +68,7 @@ public class HelloBean {
     }
 
     /**
-     * Runs in Hystrix thread via FT async thread.
+     * Runs via FT async thread.
      *
      * @return Hello string.
      */

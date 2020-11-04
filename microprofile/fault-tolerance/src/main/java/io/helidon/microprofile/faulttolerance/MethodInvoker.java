@@ -577,11 +577,11 @@ class MethodInvoker implements FtSupplier<Object> {
         return () -> {
             invocationStartNanos = System.nanoTime();
 
+            // Wrap supplier with request context setup
+            FtSupplier wrappedSupplier = requestContextSupplier(supplier);
+
             CompletableFuture<Object> resultFuture = new CompletableFuture<>();
             if (introspector.isAsynchronous()) {
-                // Wrap supplier with request context setup
-                FtSupplier wrappedSupplier = requestContextSupplier(supplier);
-
                 // Invoke supplier in new thread and propagate ccl for config
                 ClassLoader ccl = Thread.currentThread().getContextClassLoader();
                 Single<Object> single = Async.create().invoke(() -> {
@@ -634,7 +634,7 @@ class MethodInvoker implements FtSupplier<Object> {
                 });
             } else {
                 try {
-                    resultFuture.complete(supplier.get());
+                    resultFuture.complete(wrappedSupplier.get());
                     return resultFuture;
                 } catch (Throwable t) {
                     resultFuture.completeExceptionally(t);
