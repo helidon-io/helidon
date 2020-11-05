@@ -41,7 +41,7 @@ public class PropertyNameIT extends AbstractGraphQLIT {
     @SuppressWarnings("unchecked")
     public void testDifferentPropertyNames() throws IOException {
         setupIndex(indexFileName, PropertyNameQueries.class, TypeWithNameAndJsonbProperty.class);
-        ExecutionContext executionContext =  new ExecutionContext(defaultContext);
+        ExecutionContext executionContext =  createContext(defaultContext);
 
         Map<String, Object> mapResults = getAndAssertResult(
                 executionContext.execute("query { query1 { newFieldName1 newFieldName2 "

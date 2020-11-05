@@ -35,6 +35,6 @@ public class VoidQueriesIT extends AbstractGraphQLIT {
     @Test
     public void testVoidQueries() throws IOException {
         setupIndex(indexFileName, VoidQueries.class);
-        assertThrows(RuntimeException.class, () -> new ExecutionContext(defaultContext));
+        assertThrows(RuntimeException.class, () -> createContext(defaultContext));
     }
 }

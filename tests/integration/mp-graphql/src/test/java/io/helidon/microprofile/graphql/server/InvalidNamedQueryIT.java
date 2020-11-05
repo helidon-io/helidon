@@ -34,6 +34,6 @@ public class InvalidNamedQueryIT extends AbstractGraphQLIT {
     @Test
     public void testInvalidNamedQuery() throws IOException {
         setupIndex(indexFileName, InvalidNamedTypes.ClassWithInvalidQuery.class);
-        assertThrows(RuntimeException.class, () -> new ExecutionContext(defaultContext));
+        assertThrows(RuntimeException.class, () -> createContext(defaultContext));
     }
 }

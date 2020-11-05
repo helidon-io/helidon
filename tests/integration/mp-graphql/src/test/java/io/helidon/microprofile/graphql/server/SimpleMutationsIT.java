@@ -40,7 +40,7 @@ public class SimpleMutationsIT extends AbstractGraphQLIT {
     @SuppressWarnings("unchecked")
     public void testSimpleMutations() throws IOException {
         setupIndex(indexFileName, SimpleMutations.class);
-        ExecutionContext executionContext = new ExecutionContext(defaultContext);
+        ExecutionContext executionContext = createContext(defaultContext);
 
         Map<String, Object> mapResults = getAndAssertResult(
                 executionContext.execute("mutation { createNewContact { id name age } }"));

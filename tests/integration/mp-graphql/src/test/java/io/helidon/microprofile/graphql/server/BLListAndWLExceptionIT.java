@@ -44,7 +44,7 @@ public class BLListAndWLExceptionIT extends AbstractGraphQLIT {
     public void tesDenyListAndAllowList() throws IOException {
         setupIndex(indexFileName);
 
-        ExecutionContext executionContext = new ExecutionContext(defaultContext);
+        ExecutionContext executionContext = createContext(defaultContext);
         assertThat(executionContext.getDefaultErrorMessage(), is("Server Error"));
         assertThat(executionContext.getExceptionDenyList().size(), is(2));
         assertThat(executionContext.getExceptionAllowList().size(), is(1));

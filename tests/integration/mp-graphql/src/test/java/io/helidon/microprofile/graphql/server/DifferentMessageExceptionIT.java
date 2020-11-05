@@ -41,7 +41,7 @@ public class DifferentMessageExceptionIT extends AbstractGraphQLIT {
     public void testDifferentMessage() throws IOException {
         setupIndex(indexFileName);
 
-        ExecutionContext executionContext = new ExecutionContext(defaultContext);
+        ExecutionContext executionContext = createContext(defaultContext);
         assertThat(executionContext.getDefaultErrorMessage(), is("new message"));
     }
 }

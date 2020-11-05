@@ -114,7 +114,7 @@ public class GraphQLResource {
     @PostConstruct
     public void init() {
         try {
-            context = new ExecutionContext(DefaultContext.create());
+            context = ExecutionContext.builder().context(DefaultContext.create()).build();
             schemaPrinter = context.getSchemaPrinter();
         } catch (Exception e) {
             ensureRuntimeException(LOGGER, "Unable to build GraphQL Schema: ", e);

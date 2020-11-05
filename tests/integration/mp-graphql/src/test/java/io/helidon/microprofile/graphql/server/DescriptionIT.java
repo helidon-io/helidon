@@ -41,7 +41,7 @@ public class DescriptionIT extends AbstractGraphQLIT {
     @Test
     public void testDescriptions() throws IOException {
         setupIndex(indexFileName, DescriptionType.class, DescriptionQueries.class);
-        ExecutionContext executionContext =  new ExecutionContext(defaultContext);
+        ExecutionContext executionContext =  createContext(defaultContext);
 
         Schema schema = executionContext.getSchema();
         assertThat(schema, is(notNullValue()));

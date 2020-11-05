@@ -52,7 +52,7 @@ class DataFetcherUtilsIT extends AbstractGraphQLIT {
     @Test
     public void testSimpleContact() throws Exception {
         setupIndex(indexFileName, SimpleQueriesWithArgs.class, SimpleContact.class);
-        ExecutionContext executionContext = new ExecutionContext(defaultContext);
+        ExecutionContext executionContext = createContext(defaultContext);
         Schema schema = executionContext.getSchema();
 
         Map<String, Object> mapContact = Map.of("id", "1", "name", "Tim", "age", 52, "tShirtSize", "L");
@@ -63,7 +63,7 @@ class DataFetcherUtilsIT extends AbstractGraphQLIT {
     @Test
     public void testSimpleContactWithNumberFormats() throws Exception {
         setupIndex(indexFileName, SimpleQueriesWithArgs.class, SimpleContactWithNumberFormats.class);
-        ExecutionContext executionContext = new ExecutionContext(defaultContext);
+        ExecutionContext executionContext = createContext(defaultContext);
         Schema schema = executionContext.getSchema();
 
         Map<String, Object> mapContact = Map.of("age", "52 years old", "bankBalance", "$ 100.00",
@@ -77,7 +77,7 @@ class DataFetcherUtilsIT extends AbstractGraphQLIT {
     @Test
     public void testSimpleTypes() throws Exception {
         setupIndex(indexFileName, SimpleQueriesWithArgs.class, SimpleContact.class);
-        ExecutionContext executionContext = new ExecutionContext(defaultContext);
+        ExecutionContext executionContext = createContext(defaultContext);
         Schema schema = executionContext.getSchema();
 
         // ID types
@@ -122,7 +122,7 @@ class DataFetcherUtilsIT extends AbstractGraphQLIT {
     @Test
     public void testSimpleTypesWithFormats() throws Exception {
         setupIndex(indexFileName, SimpleQueriesWithArgs.class, SimpleContact.class);
-        ExecutionContext executionContext = new ExecutionContext(defaultContext);
+        ExecutionContext executionContext = createContext(defaultContext);
         Schema schema = executionContext.getSchema();
 
         // primitives
@@ -150,7 +150,7 @@ class DataFetcherUtilsIT extends AbstractGraphQLIT {
     @Test
     public void testArrays() throws Exception {
         setupIndex(indexFileName, SimpleQueriesWithArgs.class, SimpleContact.class);
-        ExecutionContext executionContext = new ExecutionContext(defaultContext);
+        ExecutionContext executionContext = createContext(defaultContext);
         Schema schema = executionContext.getSchema();
 
         String[] stringArray = new String[] { "A", "B", "C" };
@@ -182,7 +182,7 @@ class DataFetcherUtilsIT extends AbstractGraphQLIT {
     @SuppressWarnings("unchecked")
     public void testSimpleCollections() throws Exception {
         setupIndex(indexFileName, SimpleQueriesWithArgs.class, SimpleContact.class);
-        ExecutionContext executionContext = new ExecutionContext(defaultContext);
+        ExecutionContext executionContext = createContext(defaultContext);
         Schema schema = executionContext.getSchema();
 
         List<Integer> listInteger = getList(1, 2, 3);
@@ -209,7 +209,7 @@ class DataFetcherUtilsIT extends AbstractGraphQLIT {
     @SuppressWarnings("unchecked")
     public void testCollectionsAndObjects() throws Exception {
         setupIndex(indexFileName, SimpleQueriesWithArgs.class, SimpleContact.class);
-        ExecutionContext executionContext = new ExecutionContext(defaultContext);
+        ExecutionContext executionContext = createContext(defaultContext);
         Schema schema = executionContext.getSchema();
 
         SimpleContact contact1 = new SimpleContact("c1", "Contact 1", 50, EnumTestWithEnumName.XL);
@@ -230,7 +230,7 @@ class DataFetcherUtilsIT extends AbstractGraphQLIT {
     @SuppressWarnings("unchecked")
     public void testObjectGraphs() throws Exception {
         setupIndex(indexFileName, SimpleQueriesWithArgs.class, SimpleContact.class, ContactRelationship.class);
-        ExecutionContext executionContext = new ExecutionContext(defaultContext);
+        ExecutionContext executionContext = createContext(defaultContext);
         Schema schema = executionContext.getSchema();
 
         SimpleContact contact1 = new SimpleContact("c1", "Contact 1", 50, EnumTestWithEnumName.M);

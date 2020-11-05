@@ -46,7 +46,7 @@ public class ExceptionHandlingIT extends AbstractGraphQLIT {
     @Test
     public void testEmptyErrorPayloads() throws IOException {
         setupIndex(indexFileName, ExceptionQueries.class);
-        ExecutionContext executionContext = new ExecutionContext(DefaultContext.create());
+        ExecutionContext executionContext = createContext(DefaultContext.create());
 
         Map<String, Object> errorMap = executionContext.newErrorPayload();
         assertPayload(errorMap);
@@ -59,7 +59,7 @@ public class ExceptionHandlingIT extends AbstractGraphQLIT {
     @Test
     public void testErrorPayLoadWithMessages() throws IOException {
         setupIndex(indexFileName, ExceptionQueries.class);
-        ExecutionContext executionContext = new ExecutionContext(DefaultContext.create());
+        ExecutionContext executionContext = createContext(DefaultContext.create());
 
         Map<String, Object> errorMap = executionContext.newErrorPayload();
         assertPayload(errorMap);
@@ -80,7 +80,7 @@ public class ExceptionHandlingIT extends AbstractGraphQLIT {
     @Test
     public void testErrorPayLoadWithMessagesAndLocations() throws IOException {
         setupIndex(indexFileName, ExceptionQueries.class);
-        ExecutionContext executionContext = new ExecutionContext(DefaultContext.create());
+        ExecutionContext executionContext = createContext(DefaultContext.create());
 
         Map<String, Object> errorMap = executionContext.newErrorPayload();
         assertPayload(errorMap);
@@ -112,7 +112,7 @@ public class ExceptionHandlingIT extends AbstractGraphQLIT {
     @Test
     public void testErrorPayLoadWithMessagesLocationsAndExtensions() throws IOException {
         setupIndex(indexFileName, ExceptionQueries.class);
-        ExecutionContext executionContext = new ExecutionContext(DefaultContext.create());
+        ExecutionContext executionContext = createContext(DefaultContext.create());
 
         Map<String, Object> errorMap = executionContext.newErrorPayload();
         assertPayload(errorMap);
@@ -153,7 +153,7 @@ public class ExceptionHandlingIT extends AbstractGraphQLIT {
     @Test
     public void testError() throws IOException {
         setupIndex(indexFileName, ExceptionQueries.class, SimpleContact.class);
-        ExecutionContext executionContext = new ExecutionContext(defaultContext);
+        ExecutionContext executionContext = createContext(defaultContext);
         Assertions.assertThrows(Error.class, () -> executionContext.execute("query { throwOOME }"));
     }
 

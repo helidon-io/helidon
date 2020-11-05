@@ -63,7 +63,7 @@ public abstract class AbstractGraphQLIT extends AbstractGraphQLTest {
 
     @SuppressWarnings("unchecked")
     protected void assertMessageValue(String query, String expectedMessage, boolean dataExpected) {
-        ExecutionContext executionContext = new ExecutionContext(DefaultContext.create());
+        ExecutionContext executionContext = createContext(DefaultContext.create());
         Map<String, Object> mapResults = executionContext.execute(query);
         if (dataExpected && mapResults.size() != 2) {
             System.out.println(JsonUtils.convertMapToJson(mapResults));
@@ -91,5 +91,9 @@ public abstract class AbstractGraphQLIT extends AbstractGraphQLTest {
         assertThat(schema.getTypeByName("Query"), CoreMatchers.is(notNullValue()));
         assertThat(schema.getTypeByName("Mutation"), CoreMatchers.is(notNullValue()));
         generateGraphQLSchema(schema);
+    }
+
+    protected ExecutionContext createContext(Context context) {
+        return ExecutionContext.builder().context(context).build();
     }
 }

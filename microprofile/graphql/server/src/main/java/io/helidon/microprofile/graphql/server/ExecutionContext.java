@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.logging.Logger;
 
 import io.helidon.config.Config;
@@ -153,14 +154,51 @@ public class ExecutionContext {
     private Config config;
 
     /**
-     * Indicates if the schema display should be suppressed.
-     */
-    private boolean suppressSchemaDisplay;
-
-    /**
      * Schema printer.
      */
     private SchemaPrinter schemaPrinter;
+
+    /**
+     * Construct a {@link ExecutionContext}.
+     *
+     * @param builder the {@link Builder} to construct from
+     */
+    private ExecutionContext(Builder builder) {
+        this.context = builder.context;
+          try {
+            configureExceptionHandling();
+            SchemaGenerator schemaGenerator = new SchemaGenerator(context);
+            schema = schemaGenerator.generateSchema();
+            graphQLSchema = schema.generateGraphQLSchema();
+
+            SchemaPrinter.Options options = SchemaPrinter.Options
+                    .defaultOptions()
+                    .includeDirectives(false)
+                    .useAstDefinitions(false)
+                    .includeScalarTypes(true);
+            schemaPrinter = new SchemaPrinter(options);
+
+            graphQL = GraphQL.newGraphQL(this.graphQLSchema)
+                    .subscriptionExecutionStrategy(new SubscriptionExecutionStrategy())
+                    .build();
+
+            LOGGER.fine("Generated schema:\n" + schemaPrinter.print(graphQLSchema));
+        } catch (Throwable t) {
+            // since we cannot generate the schema, just log the message and throw it
+            ensureConfigurationException(LOGGER, "Unable to build GraphQL Schema: ", t);
+        }
+    }
+
+    /**
+     * Fluent API builder to create {@link ExecutionContext}.
+     *
+     * @return new builder instance
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    /**
 
     /**
      * Return the {@link GraphQLSchema} instance created.
@@ -181,42 +219,10 @@ public class ExecutionContext {
     }
 
     /**
-     * Construct an execution context in which to execute GraphQL queries.
-     *
-     * @param context context
-     */
-    public ExecutionContext(Context context) {
-        try {
-            processConfiguration();
-            configureExceptionHandling();
-            SchemaGenerator schemaGenerator = new SchemaGenerator(context);
-            schema = schemaGenerator.generateSchema();
-            graphQLSchema = schema.generateGraphQLSchema();
-            this.context = context;
-            SchemaPrinter.Options options = SchemaPrinter.Options
-                    .defaultOptions()
-                    .includeDirectives(false)
-                    .useAstDefinitions(false)
-                    .includeScalarTypes(true);
-            schemaPrinter = new SchemaPrinter(options);
-
-            GraphQL.Builder builder = GraphQL.newGraphQL(this.graphQLSchema)
-                    .subscriptionExecutionStrategy(new SubscriptionExecutionStrategy());
-
-            graphQL = builder.build();
-            if (!suppressSchemaDisplay) {
-                LOGGER.info("Generated schema:\n" + schemaPrinter.print(graphQLSchema));
-            }
-        } catch (Throwable t) {
-            // since we cannot generate the schema, just log the message and throw it
-            ensureConfigurationException(LOGGER, "Unable to build GraphQL Schema: ", t);
-        }
-    }
-
-    /**
      * Configure microprofile exception handling.
      */
     private void configureExceptionHandling() {
+        config = (Config) ConfigProviderResolver.instance().getConfig();
         defaultErrorMessage = config.get(DEFAULT_ERROR_MESSAGE).asString().orElse("Server Error");
         String allowList = config.get(EXCEPTION_WHITE_LIST).asString().orElse(EMPTY);
         String denyList = config.get(EXCEPTION_BLACK_LIST).asString().orElse(EMPTY);
@@ -228,16 +234,6 @@ public class ExecutionContext {
         if (!EMPTY.equals(denyList)) {
             exceptionDenyList.addAll(Arrays.asList(denyList.split(",")));
         }
-    }
-
-    /**
-     * Process any configuration.
-     */
-    private void processConfiguration() {
-        config = (Config) ConfigProviderResolver.instance().getConfig();
-
-        suppressSchemaDisplay = "true".equals(
-                this.config.get(SUPPRESS_SCHEMA_DISPLAY).asString().orElse("false"));
     }
 
     /**
@@ -595,4 +591,33 @@ public class ExecutionContext {
         addErrorPayload(errorMap, message, line, column, error != null ? error.getExtensions() : Collections.EMPTY_MAP, path);
     }
 
+    /**
+     * A fluent API {@link io.helidon.common.Builder} to build instances of {@link Schema}.
+     */
+    public static class Builder implements io.helidon.common.Builder<ExecutionContext> {
+
+        private Context context;
+
+        /**
+         * Set the {@link Context}.
+         *
+         * @param context the {@link Context}
+         * @return updated builder instance
+         */
+        public Builder context(Context context) {
+            this.context = context;
+            return this;
+        }
+
+        /**
+         * Build the instance from this builder.
+         *
+         * @return instance of the built type
+         */
+        @Override
+        public ExecutionContext build() {
+            Objects.requireNonNull(context, "A Context must be supplied");
+            return new ExecutionContext(this);
+        }
+    }
 }

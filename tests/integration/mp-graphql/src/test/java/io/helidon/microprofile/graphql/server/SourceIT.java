@@ -43,7 +43,7 @@ public class SourceIT extends AbstractGraphQLIT {
     @SuppressWarnings("unchecked")
     public void testSimpleQueriesWithSource() throws IOException {
         setupIndex(indexFileName, SimpleQueriesWithSource.class, SimpleContact.class);
-        ExecutionContext executionContext =  new ExecutionContext(defaultContext);
+        ExecutionContext executionContext =  createContext(defaultContext);
 
         // since there is a @Source annotation in SimpleQueriesWithSource, then this should add a field
         // idAndName to the SimpleContact type

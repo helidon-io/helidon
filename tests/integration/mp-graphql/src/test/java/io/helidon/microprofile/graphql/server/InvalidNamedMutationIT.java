@@ -34,6 +34,6 @@ public class InvalidNamedMutationIT extends AbstractGraphQLIT {
     @Test
     public void testInvalidNamedMutation() throws IOException {
         setupIndex(indexFileName, InvalidNamedTypes.ClassWithInvalidMutation.class);
-        assertThrows(RuntimeException.class, () -> new ExecutionContext(defaultContext));
+        assertThrows(RuntimeException.class, () -> createContext(defaultContext));
     }
 }

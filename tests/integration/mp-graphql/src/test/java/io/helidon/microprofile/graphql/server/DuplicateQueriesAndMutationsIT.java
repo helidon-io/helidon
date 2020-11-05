@@ -35,6 +35,6 @@ public class DuplicateQueriesAndMutationsIT extends AbstractGraphQLIT {
     @Test
     public void testDuplicateQueryOrMutationNames() throws IOException {
         setupIndex(indexFileName, DuplicateNameQueries.class);
-        assertThrows(RuntimeException.class, () -> new ExecutionContext(defaultContext));
+        assertThrows(RuntimeException.class, () -> createContext(defaultContext));
     }
 }

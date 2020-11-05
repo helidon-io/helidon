@@ -34,6 +34,6 @@ public class InvalidNamedInputTypeIT extends AbstractGraphQLIT {
     @Test
     public void testInvalidNamedInputType() throws IOException {
         setupIndex(indexFileName, InvalidNamedTypes.InvalidInputType.class);
-        assertThrows(RuntimeException.class, () -> new ExecutionContext(defaultContext));
+        assertThrows(RuntimeException.class, () -> createContext(defaultContext));
     }
 }

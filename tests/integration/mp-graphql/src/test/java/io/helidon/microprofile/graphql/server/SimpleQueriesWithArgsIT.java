@@ -52,7 +52,7 @@ public class SimpleQueriesWithArgsIT extends AbstractGraphQLIT {
     @SuppressWarnings("unchecked")
     public void testSimpleQueryGenerationWithArgs() throws IOException {
         setupIndex(indexFileName, SimpleQueriesWithArgs.class, Car.class, AbstractVehicle.class);
-        ExecutionContext executionContext = new ExecutionContext(defaultContext);
+        ExecutionContext executionContext = createContext(defaultContext);
 
         Map<String, Object> mapResults = getAndAssertResult(executionContext.execute("query { hero(heroType: \"human\") }"));
         assertThat(mapResults.size(), is(1));
@@ -160,7 +160,7 @@ public class SimpleQueriesWithArgsIT extends AbstractGraphQLIT {
     @Test
     public void testQueriesWithVariables() throws IOException {
         setupIndex(indexFileName, SimpleQueriesWithArgs.class);
-        ExecutionContext executionContext = new ExecutionContext(defaultContext);
+        ExecutionContext executionContext = createContext(defaultContext);
         Map<String, Object> mapVariables = Map.of("first", 10, "second", 20);
         Map<String, Object> mapResults = getAndAssertResult(executionContext.execute(
                 "query additionQuery($first: Int!, $second: Int!) {"

@@ -17,7 +17,7 @@
 package io.helidon.microprofile.graphql.server;
 
 /**
- * A Default Context to be supplied to {@link ExecutionContext}.
+ * A Context to be supplied to {@link ExecutionContext}.
  */
 public interface Context {
 

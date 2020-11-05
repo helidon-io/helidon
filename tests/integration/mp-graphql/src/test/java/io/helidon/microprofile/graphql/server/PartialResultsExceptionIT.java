@@ -42,7 +42,7 @@ public class PartialResultsExceptionIT extends AbstractGraphQLIT {
     public void testSimplePartialResults() throws IOException {
         setupIndex(indexFileName, ExceptionQueries.class);
 
-        ExecutionContext executionContext = new ExecutionContext(defaultContext);
+        ExecutionContext executionContext = createContext(defaultContext);
 
         Map<String, Object> results = executionContext.execute("query { failAfterNResults(failAfter: 4) }");
         assertThat(results.size(), is(2));
@@ -63,7 +63,7 @@ public class PartialResultsExceptionIT extends AbstractGraphQLIT {
     public void testComplexPartialResults() throws IOException {
         setupIndex(indexFileName, ExceptionQueries.class, SimpleContact.class);
 
-        ExecutionContext executionContext = new ExecutionContext(defaultContext);
+        ExecutionContext executionContext = createContext(defaultContext);
 
         Map<String, Object> results = executionContext.execute(
                 "query { failAfterNContacts(failAfter: 4) { id name age } }");

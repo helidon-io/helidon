@@ -53,7 +53,7 @@ public class NumberFormatIT extends AbstractGraphQLIT {
     public void testNumberFormats() throws IOException {
         setupIndex(indexFileName, SimpleContactWithNumberFormats.class,
                    NumberFormatQueriesAndMutations.class, SimpleQueriesWithArgs.class);
-        ExecutionContext executionContext = new ExecutionContext(defaultContext);
+        ExecutionContext executionContext = createContext(defaultContext);
 
         Map<String, Object> mapResults = getAndAssertResult(executionContext
                                                                     .execute("query { simpleFormattingQuery { id name age "
@@ -141,7 +141,7 @@ public class NumberFormatIT extends AbstractGraphQLIT {
     @Test
     public void testCorrectNumberScalarTypesAndFormats() throws IOException {
         setupIndex(indexFileName, SimpleContactWithNumberFormats.class, NumberFormatQueriesAndMutations.class);
-        ExecutionContext executionContext = new ExecutionContext(defaultContext);
+        ExecutionContext executionContext = createContext(defaultContext);
         Schema schema = executionContext.getSchema();
 
         // validate the formats on the type

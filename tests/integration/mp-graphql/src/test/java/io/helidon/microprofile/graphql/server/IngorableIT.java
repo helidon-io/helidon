@@ -43,7 +43,7 @@ public class IngorableIT extends AbstractGraphQLIT {
     @SuppressWarnings("unchecked")
     public void testIgnorable() throws IOException {
         setupIndex(indexFileName, QueriesWithIgnorable.class);
-        ExecutionContext executionContext =  new ExecutionContext(defaultContext);
+        ExecutionContext executionContext =  createContext(defaultContext);
         Map<String, Object> mapResults = getAndAssertResult(
                 executionContext.execute("query { testIgnorableFields { id dontIgnore } }"));
         assertThat(mapResults.size(), is(1));

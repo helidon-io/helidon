@@ -51,7 +51,7 @@ public class DateTimeIT extends AbstractGraphQLIT {
     @SuppressWarnings("unchecked")
     public void testDifferentSetterGetter() throws IOException {
         setupIndex(indexFileName, SimpleDateTime.class, SimpleQueriesAndMutations.class);
-        ExecutionContext executionContext = new ExecutionContext(defaultContext);
+        ExecutionContext executionContext = createContext(defaultContext);
         Map<String, Object> mapResults = getAndAssertResult(
                 executionContext.execute(
                         "mutation { echoSimpleDateTime(value: { calendarEntries: [ \"22/09/20\", \"23/09/20\" ] } ) { "
@@ -69,7 +69,7 @@ public class DateTimeIT extends AbstractGraphQLIT {
     @SuppressWarnings("unchecked")
     public void testDateAndTime() throws IOException {
         setupIndex(indexFileName, DateTimePojo.class, SimpleQueriesAndMutations.class);
-        ExecutionContext executionContext = new ExecutionContext(defaultContext);
+        ExecutionContext executionContext = createContext(defaultContext);
 
         Schema schema = executionContext.getSchema();
         SchemaType type = schema.getTypeByName("DateTimePojo");
@@ -209,7 +209,7 @@ public class DateTimeIT extends AbstractGraphQLIT {
     @SuppressWarnings("unchecked")
     public void testDatesAndMutations() throws IOException {
         setupIndex(indexFileName, DateTimePojo.class, SimpleQueriesAndMutations.class);
-        ExecutionContext executionContext = new ExecutionContext(defaultContext);
+        ExecutionContext executionContext = createContext(defaultContext);
 
         Map<String, Object> mapResults = getAndAssertResult(
                 executionContext.execute("mutation { dateTimePojoMutation { formattedListOfDates localDateTime } }"));
@@ -266,7 +266,7 @@ public class DateTimeIT extends AbstractGraphQLIT {
     @Test
     public void testDateInputsAsPojo() throws IOException {
         setupIndex(indexFileName, DateTimePojo.class, SimpleQueriesAndMutations.class);
-        ExecutionContext executionContext = new ExecutionContext(defaultContext);
+        ExecutionContext executionContext = createContext(defaultContext);
 
         validateResult(executionContext, "query { echoDateTimePojo ( "
                                + " value: { localDate: \"02/17/1968\" "

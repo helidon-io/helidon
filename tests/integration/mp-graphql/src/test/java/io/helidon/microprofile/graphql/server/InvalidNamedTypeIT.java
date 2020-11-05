@@ -34,6 +34,6 @@ public class InvalidNamedTypeIT extends AbstractGraphQLIT {
     @Test
     public void testInvalidNamedType() throws IOException {
         setupIndex(indexFileName, InvalidNamedTypes.InvalidNamedPerson.class);
-        assertThrows(RuntimeException.class, () -> new ExecutionContext(defaultContext));
+        assertThrows(RuntimeException.class, () -> createContext(defaultContext));
     }
 }

@@ -203,6 +203,13 @@ final class FeatureCatalog {
               "Fault Tolerance",
               "MicroProfile Fault Tolerance spec implementation",
               "FT");
+        add("io.helidon.microprofile.graphql.server",
+            FeatureDescriptor.builder()
+                    .name("GraphQL")
+                    .description("MicroProfile GraphQL spec implementation")
+                    .path("GraphQL")
+                    .flavor(HelidonFlavor.MP)
+                    .experimental(true));
         add("io.helidon.microprofile.grpc.server",
             FeatureDescriptor.builder()
                     .name("gRPC Server")

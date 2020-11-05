@@ -192,6 +192,9 @@ public class SchemaGenerator {
                 .getBeanManager()
                 .getExtension(GraphQLCdiExtension.class);
         Class[] classes = extension.collectedApis();
+        int count = classes.length;
+
+        LOGGER.info("Discovered " + count + " annotated GraphQL API class" + (count != 1 ? "es" : ""));
 
         return generateSchemaFromClasses(classes);
     }
@@ -1005,8 +1008,6 @@ public class SchemaGenerator {
         String defaultValue = null;
         String varName = stripMethodName(method, !isQueryOrMutation);
 
-        // check for either Name or JsonbProperty annotations on method or field
-        // ensure if this is an input type that the write method is checked
         String annotatedName = getMethodName(isInputType ? pd.getWriteMethod() : method);
         if (annotatedName != null) {
             varName = annotatedName;
@@ -1095,7 +1096,9 @@ public class SchemaGenerator {
                 isReturnTypeMandatory = (isPrimitive(returnClazzName) && defaultValue == null)
                         || nonNullAnnotation != null && defaultValue == null;
 
-            } catch (NoSuchFieldException ignored) { }
+            } catch (NoSuchFieldException ignored) {
+                LOGGER.warning("No such field " + pd.getName());
+            }
 
             if (fieldHasIdAnnotation || method.getAnnotation(Id.class) != null) {
                 validateIDClass(returnClazz);
@@ -1104,8 +1107,7 @@ public class SchemaGenerator {
 
             if (field != null && isFormatEmpty(format)) {   // check for format on the property
                 format = getFormattingAnnotation(field);    // but only override if it is null
-                if (isFormatEmpty(format)) {
-                    // check to see format of the inner most class. E.g. List<@DateFormat("DD/MM") String>
+                if (isFormatEmpty(format)) { // check format of the inner most class. E.g. List<@DateFormat("DD/MM") String>
                     format = FormattingHelper.getFieldFormat(field, 0);
                 }
                 isJsonbFormat = isJsonbAnnotationPresent(field);

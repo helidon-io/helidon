@@ -100,13 +100,14 @@ public class CustomScalars {
     /**
      * An instance of a custom offset date/time scalar (with default formatting).
      */
-    public static final GraphQLScalarType CUSTOM_OFFSET_DATE_TIME_SCALAR = newOffsetDateTimeScalar(
-            FORMATTED_OFFSET_DATETIME_SCALAR);
+    public static final GraphQLScalarType CUSTOM_OFFSET_DATE_TIME_SCALAR =
+            newOffsetDateTimeScalar(FORMATTED_OFFSET_DATETIME_SCALAR);
 
     /**
      * An instance of a custom offset date/time scalar (with default formatting).
      */
-    public static final GraphQLScalarType CUSTOM_ZONED_DATE_TIME_SCALAR = newZonedDateTimeScalar(FORMATTED_ZONED_DATETIME_SCALAR);
+    public static final GraphQLScalarType CUSTOM_ZONED_DATE_TIME_SCALAR =
+            newZonedDateTimeScalar(FORMATTED_ZONED_DATETIME_SCALAR);
 
     /**
      * An instance of a custom time scalar (with default formatting).

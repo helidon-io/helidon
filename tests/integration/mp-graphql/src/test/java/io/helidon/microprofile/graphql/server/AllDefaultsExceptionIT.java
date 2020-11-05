@@ -39,7 +39,7 @@ public class AllDefaultsExceptionIT extends AbstractGraphQLIT {
     @Test
     public void testAllDefaultsForConfig() throws IOException {
         setupIndex(indexFileName);
-        ExecutionContext executionContext = new ExecutionContext(defaultContext);
+        ExecutionContext executionContext = createContext(defaultContext);
         assertThat(executionContext, is(notNullValue()));
         assertThat(executionContext.getDefaultErrorMessage(), is("Server Error"));
         assertThat(executionContext.getExceptionDenyList().size(), is(0));

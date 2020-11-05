@@ -99,7 +99,6 @@ public class DataFetcherUtils {
     @SuppressWarnings("unchecked")
     public static <V> DataFetcher<V> newMethodDataFetcher(Schema schema, Class<?> clazz, Method method,
                                                           String source, SchemaArgument... args) {
-        Object instance = CDI.current().select(clazz).get();
 
         return environment -> {
             ArrayList<Object> listArgumentValues = new ArrayList<>();
@@ -110,7 +109,7 @@ public class DataFetcherUtils {
                     sourceClazz = Class.forName(source);
                     listArgumentValues.add(sourceClazz.cast(environment.getSource()));
                 } catch (ClassNotFoundException e) {
-                    // this should not happen as class is validated previously
+                    LOGGER.warning("Unable to find source class " + source);
                 }
             }
 
@@ -140,7 +139,8 @@ public class DataFetcherUtils {
             }
 
             try {
-
+                // this is the right place to validate security
+                Object instance = CDI.current().select(clazz).get();
                 return (V) method.invoke(instance, listArgumentValues.toArray());
             } catch (InvocationTargetException e) {
                 Throwable targetException = e.getTargetException();
@@ -160,7 +160,6 @@ public class DataFetcherUtils {
 
     /**
      * Return a {@link DataFetcher} which converts a {@link Map} to a {@link Collection} of V.
-     * <p>
      * This assumes that the key for the {@link Map} is contained within the V
      *
      * @param propertyName name of the property to apply to
@@ -539,7 +538,7 @@ public class DataFetcherUtils {
                 numberKey = (Number) constructor.newInstance(key);
             } catch (NoSuchMethodException | InstantiationException | IllegalAccessException
                      | InvocationTargetException eIgnore) {
-                // cannot find a constructor with String arg
+                LOGGER.warning("Cannot find constructor with String arg for class " + originalType.getName());
             }
         }
 

@@ -34,6 +34,6 @@ public class VoidMutationsIT extends AbstractGraphQLIT {
     @Test
     public void testVoidMutations() throws IOException {
         setupIndex(indexFileName, VoidMutations.class);
-        assertThrows(RuntimeException.class, () -> new ExecutionContext(defaultContext));
+        assertThrows(RuntimeException.class, () -> createContext(defaultContext));
     }
 }

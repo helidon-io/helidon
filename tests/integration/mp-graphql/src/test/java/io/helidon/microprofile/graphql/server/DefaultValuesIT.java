@@ -43,7 +43,7 @@ public class DefaultValuesIT extends AbstractGraphQLIT {
     @SuppressWarnings("unchecked")
     public void setOddNamedQueriesAndMutations() throws IOException {
         setupIndex(indexFileName, DefaultValuePOJO.class, OddNamedQueriesAndMutations.class);
-        ExecutionContext executionContext =  new ExecutionContext(defaultContext);
+        ExecutionContext executionContext =  createContext(defaultContext);
 
         Schema schema = executionContext.getSchema();
         assertThat(schema, is(notNullValue()));
@@ -58,7 +58,7 @@ public class DefaultValuesIT extends AbstractGraphQLIT {
     @SuppressWarnings("unchecked")
     public void testDefaultValues() throws IOException {
         setupIndex(indexFileName, DefaultValuePOJO.class, DefaultValueQueries.class);
-        ExecutionContext executionContext =  new ExecutionContext(defaultContext);
+        ExecutionContext executionContext =  createContext(defaultContext);
 
         // test with both fields as default
         Map<String, Object> mapResults = getAndAssertResult(

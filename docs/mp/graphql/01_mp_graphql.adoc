@@ -187,20 +187,20 @@ indicating the GraphQL application has be started:
 
 Once you access the built-in GraphiQL endpoint at `http://host:port/ui` or
 using your GraphQL client via the `http://host:port/graphql` end-point a message indicating the
-GraphQL Schema has been generated will be displayed as shown:
+GraphQL Schema has been generated will be displayed as shown if your log level is set to `FINE`:
 
 [source,bash]
 .Sample Schema Message
 ----
-[Mon. Nov. 02 14:54:16 AWST 2020] INFO: io.helidon.microprofile.graphql.server.ExecutionContext <init> - Generated schema:
+[Mon. Nov. 02 14:54:16 AWST 2020] FINE: io.helidon.microprofile.graphql.server.ExecutionContext <init> - Generated schema:
 ... Schema displayed here
 ----
-
-If you wish to suppress this message then set the following configuration value `io.helidon.graphql.suppress-schema-display` to true.
 
 .GraphQL UI
 image::mp/graphql_01_introduction_graphiql.png[GraphiQL]
 
+== Configuration Options
 
+TBC.
 
 

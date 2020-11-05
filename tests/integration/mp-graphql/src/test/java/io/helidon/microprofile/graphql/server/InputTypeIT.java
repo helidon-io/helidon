@@ -42,7 +42,7 @@ public class InputTypeIT extends AbstractGraphQLIT {
     public void testInputType() throws IOException {
         setupIndex(indexFileName, SimpleContactInputType.class, SimpleContactInputTypeWithName.class,
                    SimpleContactInputTypeWithNameValue.class, SimpleContactInputTypeWithAddress.class);
-        ExecutionContext executionContext =  new ExecutionContext(defaultContext);
+        ExecutionContext executionContext =  createContext(defaultContext);
         Schema schema = executionContext.getSchema();
         assertThat(schema.getInputTypes().size(), is(5));
         assertThat(schema.containsInputTypeWithName("MyInputType"), is(true));

@@ -35,6 +35,6 @@ public class InvalidNamedEnumIT extends AbstractGraphQLIT {
     @Test
     public void testInvalidNameEnum() throws IOException {
         setupIndex(indexFileName, InvalidNamedTypes.Size.class);
-        assertThrows(RuntimeException.class, () -> new ExecutionContext(defaultContext));
+        assertThrows(RuntimeException.class, () -> createContext(defaultContext));
     }
 }

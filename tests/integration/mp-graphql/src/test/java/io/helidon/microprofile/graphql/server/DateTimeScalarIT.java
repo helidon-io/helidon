@@ -43,7 +43,7 @@ public class DateTimeScalarIT extends AbstractGraphQLIT {
     @SuppressWarnings("unchecked")
     public void testDateAndTime() throws IOException {
         setupIndex(indexFileName, SimpleDateTimePojo.class, DateTimeScalarQueries.class);
-        ExecutionContext executionContext = new ExecutionContext(defaultContext);
+        ExecutionContext executionContext = createContext(defaultContext);
 
         Map<String, Object> mapResults = getAndAssertResult(
                 executionContext.execute("query { echoSimpleDateTimePojo (dates:[\"2020-01-13\","

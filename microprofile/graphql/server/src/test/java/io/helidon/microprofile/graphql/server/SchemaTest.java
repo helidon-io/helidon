@@ -134,11 +134,4 @@ class SchemaTest extends AbstractGraphQLTest {
         assertThat(schema.containsEnumWithName("nothing"), is(false));
         assertThat(schema.containsEnumWithName("Episode"), is(true));
     }
-
-    @Test
-    @Disabled
-    public void testInvalidRuntimeWiring() {
-        Schema schema = Schema.create();
-        assertThrows(IllegalStateException.class, schema::getRuntimeWiring);
-    }
 }
