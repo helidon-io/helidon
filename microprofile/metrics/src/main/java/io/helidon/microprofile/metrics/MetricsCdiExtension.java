@@ -136,6 +136,7 @@ public class MetricsCdiExtension implements Extension {
     private Errors.Collector errors = Errors.collector();
 
     private final Set<Class<?>> metricsAnnotatedClasses = new HashSet<>();
+    private final Set<Class<?>> metricsAnnotatedClassesProcessed = new HashSet<>();
     private final Map<Class<?>, Set<Method>> methodsWithSyntheticSimplyTimer = new HashMap<>();
 
     @SuppressWarnings("unchecked")
@@ -310,7 +311,17 @@ public class MetricsCdiExtension implements Extension {
     }
 
     private void clearAnnotationInfo(@Observes AfterDeploymentValidation adv) {
+        if (LOGGER.isLoggable(Level.FINE)) {
+            Set<Class<?>> metricsAnnotatedClassesIgnored = new HashSet<>(metricsAnnotatedClasses);
+            metricsAnnotatedClassesIgnored.removeAll(metricsAnnotatedClassesProcessed);
+            if (!metricsAnnotatedClassesIgnored.isEmpty()) {
+                LOGGER.log(Level.FINE, () ->
+                        "Classes originally found with metrics annotations that were not processed (probably "
+                                + "because they were vetoed:" + metricsAnnotatedClassesIgnored.toString());
+            }
+        }
         metricsAnnotatedClasses.clear();
+        metricsAnnotatedClassesProcessed.clear();
         methodsWithSyntheticSimplyTimer.clear();
     }
 
@@ -379,6 +390,7 @@ public class MetricsCdiExtension implements Extension {
         if (!metricsAnnotatedClasses.contains(clazz)) {
             return;
         }
+        metricsAnnotatedClassesProcessed.add(clazz);
 
         LOGGER.log(Level.FINE, () -> "Processing annotations for " + clazz.getName());
 
