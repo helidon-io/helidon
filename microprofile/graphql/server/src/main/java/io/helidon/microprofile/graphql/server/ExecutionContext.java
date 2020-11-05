@@ -165,9 +165,9 @@ public class ExecutionContext {
      */
     private ExecutionContext(Builder builder) {
         this.context = builder.context;
-          try {
+        try {
             configureExceptionHandling();
-            SchemaGenerator schemaGenerator = new SchemaGenerator(context);
+            SchemaGenerator schemaGenerator = SchemaGenerator.builder().context(context).build();
             schema = schemaGenerator.generateSchema();
             graphQLSchema = schema.generateGraphQLSchema();
 

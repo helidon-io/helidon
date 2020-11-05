@@ -309,7 +309,7 @@ public class SchemaArgument extends AbstractDescriptiveElement implements Elemen
     }
 
     /**
-     * Returns the original array type.
+     * Return the original array type.
      *
      * @return the original array type
      */

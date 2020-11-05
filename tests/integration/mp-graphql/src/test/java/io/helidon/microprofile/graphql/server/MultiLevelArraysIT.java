@@ -51,7 +51,7 @@ public class MultiLevelArraysIT extends AbstractGraphQLIT {
     @Test
     public void testMultipleLevelsOfGenerics() throws IntrospectionException, ClassNotFoundException, IOException {
         setupIndex(indexFileName, MultiLevelListsAndArrays.class);
-        SchemaGenerator schemaGenerator = new SchemaGenerator(defaultContext);
+        SchemaGenerator schemaGenerator = createSchemaGenerator(defaultContext);
         Schema schema = schemaGenerator.generateSchema();
         assertThat(schema.containsTypeWithName("MultiLevelListsAndArrays"), is(true));
         assertThat(schema.containsTypeWithName("Person"), is(true));

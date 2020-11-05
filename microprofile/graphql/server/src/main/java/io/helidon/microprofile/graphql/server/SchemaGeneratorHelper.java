@@ -457,7 +457,7 @@ public final class SchemaGeneratorHelper {
     }
 
     /**
-     * Returns a {@link SchemaScalar} if one matches the known list of scalars available from the {@link ExtendedScalars} helper.
+     * Return a {@link SchemaScalar} if one matches the known list of scalars available from the {@link ExtendedScalars} helper.
      *
      * @param clazzName class name to check for
      * @return a {@link SchemaScalar} if one matches the known list of scalars or null if none found
@@ -467,7 +467,7 @@ public final class SchemaGeneratorHelper {
     }
 
     /**
-     * Returns true if the give name is a scalar with that name.
+     * Return true if the give name is a scalar with that name.
      *
      * @param scalarName the scalae name to check
      * @return true if the give name is a scalar with that name
@@ -797,7 +797,7 @@ public final class SchemaGeneratorHelper {
     }
 
     /**
-     * Returns the annotations from the given {@link AnnotatedParameterizedType}.
+     * Return the annotations from the given {@link AnnotatedParameterizedType}.
      *
      * @param apt   {@link AnnotatedParameterizedType}
      * @param index index of type generic type. 0 = List/Collection 1 = Map
@@ -911,7 +911,7 @@ public final class SchemaGeneratorHelper {
     }
 
     /**
-     * Returns current format or if none exists, then the default if it exists for the scalar.
+     * Return current format or if none exists, then the default if it exists for the scalar.
      *
      * @param scalarName     scalar name to check
      * @param clazzName      class name to check
@@ -1096,7 +1096,7 @@ public final class SchemaGeneratorHelper {
     }
 
     /**
-     * Returns the stacktrace of the given {@link Throwable}.
+     * Return the stacktrace of the given {@link Throwable}.
      *
      * @param throwable {@link Throwable} to get stack tracek for
      * @return the stacktrace of the given {@link Throwable}
@@ -1421,7 +1421,7 @@ public final class SchemaGeneratorHelper {
         }
 
         /**
-         * Returns the {@link Method}.
+         * Return the {@link Method}.
          *
          * @return the {@link Method}
          */
@@ -1638,7 +1638,7 @@ public final class SchemaGeneratorHelper {
         }
 
         /**
-         * Returns the original array type.
+         * Return the original array type.
          *
          * @return the original array type
          */
@@ -1656,7 +1656,7 @@ public final class SchemaGeneratorHelper {
         }
 
         /**
-         * Returns true if the format is of type JsonB.
+         * Return true if the format is of type JsonB.
          *
          * @return true if the format is of type JsonB
          */

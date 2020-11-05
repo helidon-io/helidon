@@ -287,5 +287,9 @@ public abstract class AbstractGraphQLTest {
         assertThat("Return type for argument " + argumentName + " should be mandatory="
                            + mandatory + " but is " + argument.mandatory(), argument.mandatory(), CoreMatchers.is(mandatory));
     }
+
+    protected SchemaGenerator createSchemaGenerator(Context context) {
+        return SchemaGenerator.builder().context(context).build();
+    }
     
 }

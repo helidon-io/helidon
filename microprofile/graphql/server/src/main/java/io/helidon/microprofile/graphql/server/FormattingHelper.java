@@ -118,7 +118,7 @@ public class FormattingHelper {
     }
 
     /**
-     * Returns a {@link NumberFormat} for the given type, locale and format.
+     * Return a {@link NumberFormat} for the given type, locale and format.
      *
      * @param type   the GraphQL type or scalar
      * @param locale the locale, either "" or the correct locale
@@ -136,8 +136,7 @@ public class FormattingHelper {
                 || FLOAT_CLASS.equals(type)
                 || FLOAT_PRIMITIVE_CLASS.equals(type)
                 || DOUBLE_CLASS.equals(type)
-                || DOUBLE_PRIMITIVE_CLASS.equals(type)
-        ) {
+                || DOUBLE_PRIMITIVE_CLASS.equals(type)) {
             numberFormat = NumberFormat.getNumberInstance(actualLocale);
         } else if (INT.equals(type)
                 || INTEGER_CLASS.equals(type)
@@ -176,7 +175,7 @@ public class FormattingHelper {
         if (format != null) {
             formatter = DateTimeFormatter.ofPattern(format, actualLocale);
         } else {
-            // handle defaults of not format specified
+            // handle defaults if no format specified
             if (OFFSET_TIME_CLASS.equals(type)) {
                 formatter = DateTimeFormatter.ISO_OFFSET_TIME.withLocale(actualLocale);
             } else if (LOCAL_TIME_CLASS.equals(type)) {
@@ -445,7 +444,6 @@ public class FormattingHelper {
             Collection formattedResult = new ArrayList();
             Collection originalCollection = (Collection) originalResult;
             originalCollection.forEach(e -> formattedResult.add(numberFormat.format(e)));
-            LOGGER.info("Formatted result = " + formattedResult);
             return formattedResult;
         }
         return numberFormat.format(originalResult);

@@ -52,7 +52,7 @@ public class GraphQLCdiExtension implements Extension {
     }
 
     /**
-     * Returns the collected API's.
+     * Return the collected API's.
      *
      * @return the collected API's
      */

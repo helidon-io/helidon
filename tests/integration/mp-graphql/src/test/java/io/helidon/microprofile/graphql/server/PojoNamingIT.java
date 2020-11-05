@@ -41,7 +41,7 @@ public class PojoNamingIT extends AbstractGraphQLIT {
     @Test
     public void testTypeGenerationWithNoName() throws IntrospectionException, ClassNotFoundException, IOException {
         setupIndex(indexFileName, Person.class);
-        SchemaGenerator schemaGenerator = new SchemaGenerator(defaultContext);
+        SchemaGenerator schemaGenerator = createSchemaGenerator(defaultContext);
         Schema schema = schemaGenerator.generateSchema();
         assertThat(schema.getTypeByName("Person"), is(notNullValue()));
         assertThat(schema.getTypeByName("Address"), is(notNullValue()));
@@ -56,7 +56,7 @@ public class PojoNamingIT extends AbstractGraphQLIT {
     @Test
     public void testPersonWithName() throws IOException, IntrospectionException, ClassNotFoundException {
         setupIndex(indexFileName, PersonWithName.class);
-        SchemaGenerator schemaGenerator = new SchemaGenerator(defaultContext);
+        SchemaGenerator schemaGenerator = createSchemaGenerator(defaultContext);
         Schema schema = schemaGenerator.generateSchema();
 
         assertThat(schema, is(notNullValue()));

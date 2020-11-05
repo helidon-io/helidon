@@ -21,7 +21,7 @@ public class Level0IT extends AbstractGraphQLIT {
     @Test
     public void testLevel0() throws IOException, IntrospectionException, ClassNotFoundException {
         setupIndex(indexFileName, Level0.class);
-        SchemaGenerator schemaGenerator = new SchemaGenerator(defaultContext);
+        SchemaGenerator schemaGenerator = createSchemaGenerator(defaultContext);
         Schema schema = schemaGenerator.generateSchema();
         assertThat(schema.containsTypeWithName("Level0"), is(true));
         assertThat(schema.containsTypeWithName("Level1"), is(true));
@@ -32,7 +32,7 @@ public class Level0IT extends AbstractGraphQLIT {
     @Test
     public void testMultipleLevels() throws IOException, IntrospectionException, ClassNotFoundException {
         setupIndex(indexFileName, Level0.class);
-        SchemaGenerator schemaGenerator = new SchemaGenerator(defaultContext);
+        SchemaGenerator schemaGenerator = createSchemaGenerator(defaultContext);
         Schema schema = schemaGenerator.generateSchema();
 
         assertThat(schema, is(notNullValue()));

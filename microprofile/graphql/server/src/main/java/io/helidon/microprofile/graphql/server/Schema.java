@@ -193,7 +193,7 @@ public class Schema implements ElementGenerator {
     }
 
     /**
-     * Returns the {@link RuntimeWiring} for the given auto-generated schema.
+     * Return the {@link RuntimeWiring} for the given auto-generated schema.
      *
      * @return the {@link RuntimeWiring}
      */
@@ -322,7 +322,7 @@ public class Schema implements ElementGenerator {
     }
 
     /**
-     * Returns a {@link SchemaScalar} which matches the provided class name.
+     * Return a {@link SchemaScalar} which matches the provided class name.
      *
      * @param actualClazz the class name to match
      * @return {@link SchemaScalar} or null if none found
@@ -337,7 +337,7 @@ public class Schema implements ElementGenerator {
     }
 
     /**
-     * Returns a {@link SchemaScalar} which matches the provided scalar name.
+     * Return a {@link SchemaScalar} which matches the provided scalar name.
      *
      * @param scalarName the scalar name to match
      * @return {@link SchemaScalar} or null if none found
@@ -352,7 +352,7 @@ public class Schema implements ElementGenerator {
     }
 
     /**
-     * Returns true of the {@link SchemaType} with the the given name is present for this {@link Schema}.
+     * Return true of the {@link SchemaType} with the the given name is present for this {@link Schema}.
      *
      * @param type type name to search for
      * @return true if the type name is contained within the type list
@@ -362,7 +362,7 @@ public class Schema implements ElementGenerator {
     }
 
     /**
-     * Returns true of the {@link SchemaInputType} with the the given name is present for this {@link Schema}.
+     * Return true of the {@link SchemaInputType} with the the given name is present for this {@link Schema}.
      *
      * @param type type name to search for
      * @return true if the type name is contained within the input type list
@@ -372,7 +372,7 @@ public class Schema implements ElementGenerator {
     }
 
     /**
-     * Returns true of the {@link SchemaScalar} with the the given name is present for this {@link Schema}.
+     * Return true of the {@link SchemaScalar} with the the given name is present for this {@link Schema}.
      *
      * @param scalar the scalar name to search for
      * @return true if the scalar name is contained within the scalar list
@@ -382,7 +382,7 @@ public class Schema implements ElementGenerator {
     }
 
     /**
-     * Returns true of the {@link SchemaEnum} with the the given name is present for this {@link Schema}.
+     * Return true of the {@link SchemaEnum} with the the given name is present for this {@link Schema}.
      *
      * @param enumName the enum name to search for
      * @return true if the enum name is contained within the enum list

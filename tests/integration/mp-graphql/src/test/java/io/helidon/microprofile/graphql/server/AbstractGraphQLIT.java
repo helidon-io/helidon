@@ -79,7 +79,7 @@ public abstract class AbstractGraphQLIT extends AbstractGraphQLTest {
     }
 
     protected void assertInterfaceResults() throws IntrospectionException, ClassNotFoundException {
-        SchemaGenerator schemaGenerator = new SchemaGenerator(defaultContext);
+        SchemaGenerator schemaGenerator = createSchemaGenerator(defaultContext);
         Schema schema = schemaGenerator.generateSchema();
         assertThat(schema, CoreMatchers.is(notNullValue()));
         schema.getTypes().forEach(t -> System.out.println(t.name()));

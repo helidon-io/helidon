@@ -338,7 +338,7 @@ public class SchemaFieldDefinition extends AbstractDescriptiveElement implements
     }
 
     /**
-     * Returns the original array type.
+     * Return the original array type.
      *
      * @return the original array type
      */
@@ -387,7 +387,7 @@ public class SchemaFieldDefinition extends AbstractDescriptiveElement implements
     }
 
     /**
-     * Returns true if the format is of type Jsonb.
+     * Return true if the format is of type Jsonb.
      * @return true if the format is of type Jsonb
      */
     public boolean isJsonbFormat() {

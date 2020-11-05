@@ -163,20 +163,29 @@ public class SchemaGenerator {
     private Context context;
 
     /**
-     * Construct a {@link SchemaGenerator} instance.
+     * Construct a {@link SchemaGenerator}.
      *
-     * @param context the {@link Context} to use
+     * @param builder the {@link ExecutionContext.Builder} to construct from
      */
-    public SchemaGenerator(Context context) {
-        this.context = context;
+    private SchemaGenerator(Builder builder) {
+        this.context = builder.context;
         jandexUtils = JandexUtils.create();
         jandexUtils.loadIndexes();
         if (!jandexUtils.hasIndex()) {
-            String message = "Unable to find or load jandex index file: "
+            String message = "Unable to find or load jandex index files: "
                     + jandexUtils.getIndexFile() + ".\nEnsure you are using the "
                     + "jandex-maven-plugin when you are building your application";
             LOGGER.warning(message);
         }
+    }
+
+    /**
+     * Fluent API builder to create {@link SchemaGenerator}.
+     *
+     * @return new builder instance
+     */
+    public static Builder builder() {
+        return new SchemaGenerator.Builder();
     }
 
     /**
@@ -302,7 +311,7 @@ public class SchemaGenerator {
             });
         });
 
-        // process any additional methods require via the @Source annotation
+        // process any additional methods required via the @Source annotation
         for (DiscoveredMethod dm : setAdditionalMethods) {
             // add the discovered method to the type
             SchemaType type = schema.getTypeByClass(dm.source());
@@ -571,9 +580,6 @@ public class SchemaGenerator {
                         }
                         a.argumentType(inputType.name());
                     }
-
-                    // in either case, get the argument format
-
                 }
                 if (fd != null) {
                     fd.addArgument(a);
@@ -633,7 +639,6 @@ public class SchemaGenerator {
 
                 schemaType.addFieldDefinition(fd);
 
-                // check for scalar return type
                 checkScalars(schema, schemaType);
 
                 String returnType = discoveredMethod.returnType();
@@ -648,7 +653,7 @@ public class SchemaGenerator {
     }
 
     /**
-     * Returns true if the format is empty or undefined.
+     * Return true if the format is empty or undefined.
      *
      * @param format format to check
      * @return true if the format is empty or undefined
@@ -850,7 +855,7 @@ public class SchemaGenerator {
      * @param type         the type of the data - from Class.getName()
      * @return the correct {@link DataFetcher}
      */
-    private DataFetcher retrieveFormattingDataFetcher(String[] rawFormat, String propertyName, String type) {
+    private DataFetcher<?> retrieveFormattingDataFetcher(String[] rawFormat, String propertyName, String type) {
         return NUMBER.equals(rawFormat[0])
                 ? new DataFetcherUtils.NumberFormattingDataFetcher(propertyName, type, rawFormat[1], rawFormat[2])
                 : new DataFetcherUtils.DateFormattingDataFetcher(propertyName, type, rawFormat[1], rawFormat[2]);
@@ -1405,6 +1410,35 @@ public class SchemaGenerator {
      */
     protected JandexUtils getJandexUtils() {
         return jandexUtils;
+    }
+
+    /**
+     * A fluent API {@link io.helidon.common.Builder} to build instances of {@link SchemaGenerator}.
+     */
+    public static class Builder implements io.helidon.common.Builder<SchemaGenerator> {
+
+        private Context context;
+
+        /**
+         * Set the {@link Context}.
+         *
+         * @param context the {@link Context}
+         * @return updated builder instance
+         */
+        public Builder context(Context context) {
+            this.context = context;
+            return this;
+        }
+
+        /**
+         * Build the instance from this builder.
+         *
+         * @return instance of the built type
+         */
+        @Override
+        public SchemaGenerator build() {
+            return new SchemaGenerator(this);
+        }
     }
 
     /**
