@@ -16,12 +16,14 @@
 
 package io.helidon.microprofile.graphql.server.test.types;
 
+import org.eclipse.microprofile.graphql.Type;
 import java.io.Serializable;
 import java.util.UUID;
 
 /**
  * A data class representing a single To Do List task.
  */
+@Type
 public class Task implements Serializable {
 
     /**
