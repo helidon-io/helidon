@@ -64,7 +64,6 @@ import javax.interceptor.Interceptor;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.HEAD;
-import javax.ws.rs.HttpMethod;
 import javax.ws.rs.OPTIONS;
 import javax.ws.rs.PATCH;
 import javax.ws.rs.POST;
@@ -350,7 +349,7 @@ public class MetricsCdiExtension implements Extension {
         AnnotatedType<?> annotatedType = pat.getAnnotatedType();
         Class<?> clazz = annotatedType.getJavaClass();
 
-        // If abstract class, then handled by concrete subclasses
+        // Abstract classes are handled when we deal with a concrete subclass. Also, ignore if @Interceptor is present.
         if (annotatedType.isAnnotationPresent(Interceptor.class)
                 || Modifier.isAbstract(clazz.getModifiers())) {
             LOGGER.log(Level.FINER, () -> "Ignoring " + clazz.getName()
@@ -388,6 +387,12 @@ public class MetricsCdiExtension implements Extension {
         AnnotatedType<?> type =  pmb.getAnnotatedBeanClass();
         Class<?> clazz = type.getJavaClass();
         if (!metricsAnnotatedClasses.contains(clazz)) {
+            return;
+        }
+        // Recheck for Interceptor.
+        if (type.isAnnotationPresent(Interceptor.class)) {
+            LOGGER.log(Level.FINE, "Ignoring metrics defined on type " + clazz.getName()
+                    + " because a CDI portable extension added @Interceptor to it dynamically");
             return;
         }
         metricsAnnotatedClassesProcessed.add(clazz);
@@ -445,7 +450,8 @@ public class MetricsCdiExtension implements Extension {
      * @param pat the {@code ProcessAnnotatedType} for the type containing the JAX-RS annotated methods
      */
     private void recordSimplyTimedForRestResources(@Observes
-                                                   @WithAnnotations({HttpMethod.class})
+                                                   @WithAnnotations({GET.class, PUT.class, POST.class, HEAD.class, OPTIONS.class,
+                                                           DELETE.class, PATCH.class})
                                                            ProcessAnnotatedType<?> pat) {
 
         /// Ignore abstract classes or interceptors. Make sure synthetic SimpleTimer creation is enabled, and if so record the
@@ -747,12 +753,12 @@ public class MetricsCdiExtension implements Extension {
                     || !method.isAnnotationPresent(Gauge.class)) {
                 continue;
             }
-            Annotation requestScopedAnnotation = type.getAnnotation(RequestScoped.class);
-            if (requestScopedAnnotation != null) {
+            Class<? extends Annotation> scopeAnnotation = pmb.getBean().getScope();
+            if (scopeAnnotation == RequestScoped.class) {
                 errors.fatal(clazz, "Cannot configure @Gauge on a request scoped bean");
                 return;
             }
-            if (type.getAnnotation(ApplicationScoped.class) == null && type.getAnnotation(Singleton.class) == null) {
+            if (scopeAnnotation != ApplicationScoped.class && type.getAnnotation(Singleton.class) == null) {
                 if (ConfigProvider.getConfig().getOptionalValue("metrics.warn-dependent", Boolean.class).orElse(true)) {
                     LOGGER.warning("@Gauge is configured on a bean " + clazz.getName()
                             + " that is neither ApplicationScoped nor Singleton. This is most likely a bug."
