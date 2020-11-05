@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,49 +16,31 @@
 
 package io.helidon.microprofile.metrics;
 
-import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.spi.CDI;
+import javax.inject.Inject;
 
-import io.helidon.microprofile.cdi.HelidonContainer;
-
+import io.helidon.microprofile.tests.junit5.HelidonTest;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 
 /**
  * Class MetricsBaseTest.
  */
+@HelidonTest
 public class MetricsBaseTest {
 
     private static final String METRIC_NAME_TEMPLATE = "%s.%s";
 
-    private static SeContainer cdiContainer;
+    @Inject
+    private MetricRegistry metricRegistry;
 
-    private static MetricRegistry metricRegistry;
-
-    @BeforeAll
-    public synchronized static void startCdiContainer() {
-        cdiContainer = HelidonContainer.instance().start();
-    }
-
-    @AfterAll
-    public synchronized static void shutDownCdiContainer() {
-        if (cdiContainer != null) {
-            cdiContainer.close();
-        }
-    }
-
-    static synchronized MetricRegistry getMetricRegistry() {
-        if (metricRegistry == null) {
-            metricRegistry = CDI.current().select(MetricRegistry.class).get();
-        }
+    MetricRegistry getMetricRegistry() {
         return metricRegistry;
     }
 
     @SuppressWarnings("unchecked")
-    static <T extends Metric> T getMetric(Object bean, String name) {
+    <T extends Metric> T getMetric(Object bean, String name) {
         MetricID metricName = new MetricID(String.format(METRIC_NAME_TEMPLATE,
                 MetricsCdiExtension.getRealClass(bean).getName(),        // CDI proxies
                 name));
