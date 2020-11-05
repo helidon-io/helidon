@@ -251,8 +251,7 @@ public class DataFetcherUtils {
             try {
                 if (originalType.equals(List.class) || isArray) {
                     colResults = new ArrayList<>();
-                } else if (originalType.equals(Set.class)
-                           || originalType.equals(Collection.class)) {
+                } else if (originalType.equals(Set.class) || originalType.equals(Collection.class)) {
                     colResults = new TreeSet<>();
                 } else {
                     Constructor<?> constructor = originalType.getDeclaredConstructor();
