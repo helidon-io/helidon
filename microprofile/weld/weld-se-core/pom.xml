@@ -37,6 +37,12 @@
             <groupId>org.jboss.weld.se</groupId>
             <artifactId>weld-se-core</artifactId>
             <optional>true</optional>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.jboss.weld.probe</groupId>
+                    <artifactId>weld-probe-core</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <!--
             Hard-coding reduced dependencies below.
@@ -63,17 +69,6 @@
             <groupId>org.jboss.weld</groupId>
             <artifactId>weld-api</artifactId>
             <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.weld.probe</groupId>
-            <artifactId>weld-probe-core</artifactId>
-            <scope>compile</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.jboss.weld</groupId>
-                    <artifactId>weld-core-impl</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.jboss.weld</groupId>

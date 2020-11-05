@@ -919,11 +919,6 @@
                 <version>${version.lib.weld}</version>
             </dependency>
             <dependency>
-                <groupId>org.jboss.weld.probe</groupId>
-                <artifactId>weld-probe-core</artifactId>
-                <version>${version.lib.weld}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.jboss.classfilewriter</groupId>
                 <artifactId>jboss-classfilewriter</artifactId>
                 <version>${version.lib.jboss.classfilewriter}</version>
