@@ -123,7 +123,7 @@ public class JerseySupport implements Service {
         this.service = Contexts.wrap(executorService);
 
         // Prevents reads/writes after Netty event loops are shutdown
-        serviceShutdownHook = new Thread(service::shutdown);
+        serviceShutdownHook = new Thread(service::shutdownNow);
         Runtime.getRuntime().addShutdownHook(serviceShutdownHook);
 
         // make sure we have a wrapped async executor as well
