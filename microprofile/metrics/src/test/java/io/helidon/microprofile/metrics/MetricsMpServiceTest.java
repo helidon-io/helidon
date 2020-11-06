@@ -46,6 +46,10 @@ public class MetricsMpServiceTest {
         return baseRegistry;
     }
 
+    MetricRegistry registry() {
+        return registry;
+    }
+
     boolean isSyntheticSimpleTimerPresent() {
         return !syntheticSimpleTimerRegistry().getSimpleTimers((metricID, metric) ->
                         metricID.equals(MetricsCdiExtension.SYNTHETIC_SIMPLE_TIMER_METRIC_NAME))

@@ -27,6 +27,9 @@ import javax.ws.rs.core.MediaType;
 import io.helidon.metrics.RegistryFactory;
 import io.helidon.microprofile.tests.junit5.AddConfig;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
+import org.eclipse.microprofile.metrics.Metric;
+import org.eclipse.microprofile.metrics.MetricFilter;
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.SimpleTimer;
 import org.eclipse.microprofile.metrics.Tag;
@@ -97,6 +100,12 @@ public class HelloWorldTest extends MetricsMpServiceTest {
     SimpleTimer getSyntheticSimpleTimer() {
         Tag[] tags = new Tag[] {new Tag("class", HelloWorldResource.class.getName()),
                 new Tag("method", "messageWithArg_java.lang.String")};
+        assertThat("Synthetic simple timer "
+                        + MetricsCdiExtension.SYNTHETIC_SIMPLE_TIMER_METRIC_NAME
+                        + " should appear in registry but does not",
+                syntheticSimpleTimerRegistry().getSimpleTimers((metricID, metric) ->
+                        metricID.getName().equals(MetricsCdiExtension.SYNTHETIC_SIMPLE_TIMER_METRIC_NAME)).isEmpty(),
+                is(false));
         SimpleTimer syntheticSimpleTimer = syntheticSimpleTimerRegistry().simpleTimer(
                 MetricsCdiExtension.SYNTHETIC_SIMPLE_TIMER_METADATA, tags);
         return syntheticSimpleTimer;
