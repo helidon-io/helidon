@@ -140,8 +140,8 @@ public class DataFetcherUtils {
 
             try {
                 // this is the right place to validate security
-                Object instance = CDI.current().select(clazz).get();
-                return (V) method.invoke(instance, listArgumentValues.toArray());
+                GraphQlBean bean = CDI.current().select(GraphQlBean.class).get();
+                return (V)  bean.runGraphQl(clazz, method, listArgumentValues.toArray());
             } catch (InvocationTargetException e) {
                 Throwable targetException = e.getTargetException();
                 GraphQLException exception = new GraphQLException(e.getTargetException());

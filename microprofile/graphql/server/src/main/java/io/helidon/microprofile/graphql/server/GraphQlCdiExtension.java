@@ -16,18 +16,23 @@
 
 package io.helidon.microprofile.graphql.server;
 
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Predicate;
 
 import javax.annotation.Priority;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
+import javax.enterprise.inject.spi.AfterBeanDiscovery;
+import javax.enterprise.inject.spi.AnnotatedType;
 import javax.enterprise.inject.spi.BeanManager;
+import javax.enterprise.inject.spi.BeforeBeanDiscovery;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessAnnotatedType;
+import javax.enterprise.inject.spi.ProcessManagedBean;
 import javax.enterprise.inject.spi.WithAnnotations;
 
 import io.helidon.microprofile.server.ServerCdiExtension;
@@ -50,18 +55,37 @@ public class GraphQlCdiExtension implements Extension {
     /**
      * The {@link List} of collected API's.
      */
-    private final List<Class<?>> collectedApis = new ArrayList<>();
+    private final Set<Class<?>> candidateApis = new HashSet<>();
+    private final Set<Class<?>> collectedApis = new HashSet<>();
 
     /**
      * Collect the classes that have the following Microprofile GraphQL annotations.
      *
      * @param processAnnotatedType annotation types to process
      */
-    void collectApis(@Observes @WithAnnotations({GraphQLApi.class,
+    void collectCandidateApis(@Observes @WithAnnotations({GraphQLApi.class,
                                                         Type.class,
                                                         Input.class,
                                                         Interface.class}) ProcessAnnotatedType<?> processAnnotatedType) {
-        this.collectedApis.add(processAnnotatedType.getAnnotatedType().getJavaClass());
+        this.candidateApis.add(processAnnotatedType.getAnnotatedType().getJavaClass());
+    }
+
+    void collectNonVetoed(@Observes ProcessManagedBean<?> event) {
+        AnnotatedType<?> type =  event.getAnnotatedBeanClass();
+        Class<?> clazz = type.getJavaClass();
+
+        if (candidateApis.remove(clazz)) {
+            collectedApis.add(clazz);
+        }
+    }
+
+    void addGraphQlBeans(@Observes BeforeBeanDiscovery event) {
+        event.addAnnotatedType(GraphQlBean.class, GraphQlBean.class.getName())
+                .add(ApplicationScoped.Literal.INSTANCE);
+    }
+
+    void clearCandidates(@Observes AfterBeanDiscovery event) {
+        candidateApis.clear();
     }
 
     void registerWithWebServer(@Observes @Priority(LIBRARY_BEFORE + 9) @Initialized(ApplicationScoped.class) Object event,

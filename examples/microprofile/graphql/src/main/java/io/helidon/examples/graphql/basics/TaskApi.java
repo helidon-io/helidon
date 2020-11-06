@@ -23,7 +23,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.RequestScoped;
 
 import org.eclipse.microprofile.graphql.Description;
 import org.eclipse.microprofile.graphql.GraphQLApi;
@@ -36,7 +36,7 @@ import org.eclipse.microprofile.graphql.Query;
  * A CDI Bean that exposes a GraphQL API to query and mutate {@link Task}s.
  */
 @GraphQLApi
-@ApplicationScoped
+@RequestScoped
 public class TaskApi {
 
     private static final String MESSAGE = "Unable to find task with id ";
