@@ -20,28 +20,28 @@ package io.helidon.microprofile.graphql.server;
  * Defines an exception that is critical enough that
  * will cause the GraphQL application to not start.
  */
-public class GraphQLConfigurationException extends RuntimeException {
+public class GraphQlConfigurationException extends RuntimeException {
     /**
-     * Construct a {@link GraphQLConfigurationException}.
+     * Construct a {@link GraphQlConfigurationException}.
      */
-    public GraphQLConfigurationException() {
+    public GraphQlConfigurationException() {
         super();
     }
 
     /**
-     * Construct a {@link GraphQLConfigurationException} with a given message.
+     * Construct a {@link GraphQlConfigurationException} with a given message.
      * @param message exception message
      */
-    public GraphQLConfigurationException(String message) {
+    public GraphQlConfigurationException(String message) {
         super(message);
     }
 
     /**
-     * Construct a {@link GraphQLConfigurationException} with a given message and {@link Throwable}.
+     * Construct a {@link GraphQlConfigurationException} with a given message and {@link Throwable}.
      * @param message exception message
      * @param throwable {@link Throwable}
      */
-    public GraphQLConfigurationException(String message, Throwable throwable) {
+    public GraphQlConfigurationException(String message, Throwable throwable) {
         super(message, throwable);
     }
 }

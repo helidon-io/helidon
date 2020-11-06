@@ -123,7 +123,7 @@ public class DataFetcherUtils {
 
                     if (argument.isArrayReturnType() && argument.arrayLevels() > 1
                             && SchemaGeneratorHelper.isPrimitiveArray(argument.originalType())) {
-                        throw new GraphQLConfigurationException("This implementation does not currently support "
+                        throw new GraphQlConfigurationException("This implementation does not currently support "
                                                               + "multi-level primitive arrays as arguments. Please use "
                                                               + "List or Collection of Object equivalent. E.g. "
                                                               + "In place of method(int [][] value) use "

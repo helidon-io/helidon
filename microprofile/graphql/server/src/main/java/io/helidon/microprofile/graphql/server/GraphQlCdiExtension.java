@@ -18,21 +18,34 @@ package io.helidon.microprofile.graphql.server;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Predicate;
 
+import javax.annotation.Priority;
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
+import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessAnnotatedType;
 import javax.enterprise.inject.spi.WithAnnotations;
 
+import io.helidon.microprofile.server.ServerCdiExtension;
+import io.helidon.webserver.Routing;
+
+import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Input;
 import org.eclipse.microprofile.graphql.Interface;
 import org.eclipse.microprofile.graphql.Type;
 
+import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
+
 /**
  * A CDI {@link Extension} to collect the classes that are of interest to Microprofile GraphQL.
  */
-public class GraphQLCdiExtension implements Extension {
+public class GraphQlCdiExtension implements Extension {
 
     /**
      * The {@link List} of collected API's.
@@ -47,8 +60,28 @@ public class GraphQLCdiExtension implements Extension {
     void collectApis(@Observes @WithAnnotations({GraphQLApi.class,
                                                         Type.class,
                                                         Input.class,
-                                                        Interface.class }) ProcessAnnotatedType<?> processAnnotatedType) {
+                                                        Interface.class}) ProcessAnnotatedType<?> processAnnotatedType) {
         this.collectedApis.add(processAnnotatedType.getAnnotatedType().getJavaClass());
+    }
+
+    void registerWithWebServer(@Observes @Priority(LIBRARY_BEFORE + 9) @Initialized(ApplicationScoped.class) Object event,
+                               BeanManager bm) {
+
+        Config config = ConfigProvider.getConfig();
+        GraphQlSupport graphQlSupport = GraphQlSupport.builder()
+                .config((io.helidon.config.Config) config)
+                .build();
+
+        ServerCdiExtension server = bm.getExtension(ServerCdiExtension.class);
+        Optional<String> routingNameConfig = config.getOptionalValue("graphql.routing", String.class);
+
+        Routing.Builder routing = routingNameConfig.stream()
+                .filter(Predicate.not("@default"::equals))
+                .map(server::serverNamedRoutingBuilder)
+                .findFirst()
+                .orElseGet(server::serverRoutingBuilder);
+
+        graphQlSupport.update(routing);
     }
 
     /**
@@ -56,7 +89,7 @@ public class GraphQLCdiExtension implements Extension {
      *
      * @return the collected API's
      */
-    public Class<?>[] collectedApis() {
+    Class<?>[] collectedApis() {
         return collectedApis.toArray(new Class[0]);
     }
 }

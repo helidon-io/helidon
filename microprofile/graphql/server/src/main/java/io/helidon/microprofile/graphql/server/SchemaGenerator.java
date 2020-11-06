@@ -189,7 +189,7 @@ public class SchemaGenerator {
     }
 
     /**
-     * Generate a {@link Schema} by scanning all discovered classes using the {@link GraphQLCdiExtension}.
+     * Generate a {@link Schema} by scanning all discovered classes using the {@link GraphQlCdiExtension}.
      *
      * @return a {@link Schema}
      * @throws IntrospectionException if any errors with introspection
@@ -197,9 +197,9 @@ public class SchemaGenerator {
      */
     @SuppressWarnings("rawtypes")
     public Schema generateSchema() throws IntrospectionException, ClassNotFoundException {
-        GraphQLCdiExtension extension = CDI.current()
+        GraphQlCdiExtension extension = CDI.current()
                 .getBeanManager()
-                .getExtension(GraphQLCdiExtension.class);
+                .getExtension(GraphQlCdiExtension.class);
         Class[] classes = extension.collectedApis();
         int count = classes.length;
 

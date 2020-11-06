@@ -1071,7 +1071,7 @@ public final class SchemaGeneratorHelper {
     }
 
     /**
-     * Ensures a {@link GraphQLConfigurationException} with the message suppleid is thrown and logged.
+     * Ensures a {@link GraphQlConfigurationException} with the message suppleid is thrown and logged.
      *
      * @param message message to throw
      * @param logger  the {@link Logger} to use
@@ -1081,7 +1081,7 @@ public final class SchemaGeneratorHelper {
     }
 
     /**
-     * Ensures a {@link GraphQLConfigurationException} with the message supplied is thrown and logged.
+     * Ensures a {@link GraphQlConfigurationException} with the message supplied is thrown and logged.
      *
      * @param message message to throw
      * @param cause   cause of the erro
@@ -1092,7 +1092,7 @@ public final class SchemaGeneratorHelper {
         if (cause != null) {
             logger.warning(getStackTrace(cause));
         }
-        throw new GraphQLConfigurationException(message, cause);
+        throw new GraphQlConfigurationException(message, cause);
     }
 
     /**

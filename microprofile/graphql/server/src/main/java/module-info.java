@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import io.helidon.microprofile.graphql.server.GraphQlCdiExtension;
+
 /**
  * GraphQL microprofile server module.
  */
@@ -22,10 +24,16 @@ module helidon.microprofile.graphql.server {
 
     requires com.fasterxml.jackson.databind;
     requires io.helidon.microprofile.cdi;
+    requires io.helidon.webserver;
+    requires io.helidon.media.jsonb;
+    requires io.helidon.media.jsonp;
+    requires io.helidon.microprofile.server;
+    requires io.helidon.webserver.cors;
 
     requires jandex;
     requires java.ws.rs;
     requires java.desktop;
+    requires java.json;
     requires java.json.bind;
     requires java.annotation;
     requires java.logging;
@@ -40,7 +48,7 @@ module helidon.microprofile.graphql.server {
     requires io.helidon.config;
 
     provides javax.enterprise.inject.spi.Extension with
-            io.helidon.microprofile.graphql.server.GraphQLCdiExtension;
+            GraphQlCdiExtension;
 
     opens io.helidon.microprofile.graphql.server to weld.core.impl;
 }

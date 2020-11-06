@@ -39,7 +39,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 @HelidonTest
 @DisableDiscovery
-@AddExtension(GraphQLCdiExtension.class)
+@AddExtension(GraphQlCdiExtension.class)
 public abstract class AbstractGraphQLIT extends AbstractGraphQLTest {
 
     protected String indexFileName = null;
