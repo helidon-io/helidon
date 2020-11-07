@@ -151,18 +151,18 @@ public interface InvocationHandler {
          *     <td>{@value io.helidon.graphql.server.GraphQlConstants#DEFAULT_ERROR_MESSAGE}</td>
          *     <td>Error message used for internal errors that are not whitelisted.</td>
          * </tr>
-         * <td>
+         * <tr>
          *     <td>exception-white-list</td>
          *     <td>&nbsp;</td>
          *     <td>Array of exceptions classes. If an {@link java.lang.Error} or a {@link java.lang.RuntimeException}
          *     of this type is caught, its message will be propagated to the caller.</td>
-         * </td>
-         * <td>
+         * </tr>
+         * <tr>
          *     <td>exception-black-list</td>
          *     <td>&nbsp;</td>
          *     <td>Array of exception classes. If a checked {@link java.lang.Exception} is called, its message
          *     is propagated to the caller, unless it is in the blacklist.</td>
-         * </td>
+         * </tr>
          * </table>
          *
          * @param config configuration to use
