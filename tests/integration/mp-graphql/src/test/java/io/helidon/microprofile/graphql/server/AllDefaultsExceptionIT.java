@@ -18,9 +18,11 @@ package io.helidon.microprofile.graphql.server;
 
 import java.io.IOException;
 
+import javax.inject.Inject;
+
+import io.helidon.graphql.server.InvocationHandler;
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.exception.ExceptionQueries;
-import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
 import io.helidon.microprofile.tests.junit5.AddBean;
 
 import org.junit.jupiter.api.Test;
@@ -34,15 +36,20 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 @AddBean(ExceptionQueries.class)
 @AddBean(TestDB.class)
-public class AllDefaultsExceptionIT extends AbstractGraphQLIT {
+class AllDefaultsExceptionIT extends AbstractGraphQlCdiIT {
+
+    @Inject
+    AllDefaultsExceptionIT(GraphQlCdiExtension graphQlCdiExtension) {
+        super(graphQlCdiExtension);
+    }
 
     @Test
     public void testAllDefaultsForConfig() throws IOException {
         setupIndex(indexFileName);
-        ExecutionContext executionContext = createContext(defaultContext);
+        InvocationHandler executionContext = createInvocationHandler();
         assertThat(executionContext, is(notNullValue()));
-        assertThat(executionContext.getDefaultErrorMessage(), is("Server Error"));
-        assertThat(executionContext.getExceptionDenyList().size(), is(0));
-        assertThat(executionContext.getExceptionAllowList().size(), is(0));
+        assertThat(executionContext.defaultErrorMessage(), is("Server Error"));
+        assertThat(executionContext.blacklistedExceptions().size(), is(0));
+        assertThat(executionContext.whitelistedExceptions().size(), is(0));
     }
 }

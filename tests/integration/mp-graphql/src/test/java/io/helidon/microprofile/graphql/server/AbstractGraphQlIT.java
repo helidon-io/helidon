@@ -16,42 +16,44 @@
 
 package io.helidon.microprofile.graphql.server;
 
-import java.beans.IntrospectionException;
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
-import io.helidon.microprofile.tests.junit5.AddExtension;
-import io.helidon.microprofile.tests.junit5.DisableDiscovery;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
+import io.helidon.graphql.server.InvocationHandler;
 
+import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.ConfigProvider;
+import org.eclipse.microprofile.graphql.ConfigKey;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
+import static io.helidon.graphql.server.GraphQlConstants.DATA;
+import static io.helidon.graphql.server.GraphQlConstants.ERRORS;
+import static io.helidon.graphql.server.GraphQlConstants.MESSAGE;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-/**
- * Common functionality for integration tests.
- */
-@HelidonTest
-@DisableDiscovery
-@AddExtension(GraphQlCdiExtension.class)
-public abstract class AbstractGraphQLIT extends AbstractGraphQLTest {
+class AbstractGraphQlIT extends AbstractGraphQLTest {
+    private final Set<Class<?>> classes;
 
     protected String indexFileName = null;
     protected File indexFile = null;
-    protected Context defaultContext;
+
+    protected AbstractGraphQlIT(Set<Class<?>> classes) {
+        this.classes = classes;
+    }
 
     @BeforeEach
     public void setupTest() throws IOException {
         System.clearProperty(JandexUtils.PROP_INDEX_FILE);
         indexFileName = getTempIndexFile();
         indexFile = null;
-        defaultContext = ExecutionContext.getDefaultContext();
     }
 
     @AfterEach
@@ -63,24 +65,23 @@ public abstract class AbstractGraphQLIT extends AbstractGraphQLTest {
 
     @SuppressWarnings("unchecked")
     protected void assertMessageValue(String query, String expectedMessage, boolean dataExpected) {
-        ExecutionContext executionContext = createContext(DefaultContext.create());
+        InvocationHandler executionContext = createInvocationHandler();
         Map<String, Object> mapResults = executionContext.execute(query);
         if (dataExpected && mapResults.size() != 2) {
             System.out.println(JsonUtils.convertMapToJson(mapResults));
         }
         assertThat(mapResults.size(), is(dataExpected ? 2 : 1));
-        List<Map<String, Object>> listErrors = (List<Map<String, Object>>) mapResults.get(ExecutionContext.ERRORS);
+        List<Map<String, Object>> listErrors = (List<Map<String, Object>>) mapResults.get(ERRORS);
         assertThat(listErrors, is(notNullValue()));
         assertThat(listErrors.size(), is(1));
         Map<String, Object> mapErrors = listErrors.get(0);
-        assertThat(mapErrors.get(ExecutionContext.MESSAGE), is(expectedMessage));
+        assertThat(mapErrors.get(MESSAGE), is(expectedMessage));
 
-        assertThat(mapResults.containsKey(ExecutionContext.DATA), is(dataExpected));
+        assertThat(mapResults.containsKey(DATA), is(dataExpected));
     }
 
-    protected void assertInterfaceResults() throws IntrospectionException, ClassNotFoundException {
-        SchemaGenerator schemaGenerator = createSchemaGenerator(defaultContext);
-        Schema schema = schemaGenerator.generateSchema();
+    protected void assertInterfaceResults() {
+        Schema schema = createSchema();
         assertThat(schema, CoreMatchers.is(notNullValue()));
         schema.getTypes().forEach(t -> System.out.println(t.name()));
         assertThat(schema.getTypes().size(), CoreMatchers.is(6));
@@ -93,7 +94,32 @@ public abstract class AbstractGraphQLIT extends AbstractGraphQLTest {
         generateGraphQLSchema(schema);
     }
 
-    protected ExecutionContext createContext(Context context) {
-        return ExecutionContext.builder().context(context).build();
+    protected Schema createSchema() {
+        return SchemaGenerator.builder()
+                .classes(classes)
+                .build()
+                .generateSchema();
+    }
+
+    protected InvocationHandler createInvocationHandler() {
+        InvocationHandler.Builder builder = InvocationHandler.builder();
+        Config config = ConfigProvider.getConfig();
+
+        config.getOptionalValue(ConfigKey.DEFAULT_ERROR_MESSAGE, String.class)
+                .ifPresent(builder::defaultErrorMessage);
+
+        config.getOptionalValue(ConfigKey.EXCEPTION_WHITE_LIST, String[].class)
+                .stream()
+                .flatMap(Arrays::stream)
+                .forEach(builder::addWhitelistedException);
+
+        config.getOptionalValue(ConfigKey.EXCEPTION_BLACK_LIST, String[].class)
+                .stream()
+                .flatMap(Arrays::stream)
+                .forEach(builder::addBlacklistedException);
+
+        return builder
+                .schema(createSchema().generateGraphQLSchema())
+                .build();
     }
 }

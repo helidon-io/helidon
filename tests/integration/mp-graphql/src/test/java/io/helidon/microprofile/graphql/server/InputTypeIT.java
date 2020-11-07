@@ -18,8 +18,7 @@ package io.helidon.microprofile.graphql.server;
 
 import java.io.IOException;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
+import javax.inject.Inject;
 
 import io.helidon.microprofile.graphql.server.test.types.SimpleContactInputType;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContactInputTypeWithAddress;
@@ -29,6 +28,10 @@ import io.helidon.microprofile.tests.junit5.AddBean;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
+
 /**
  * Tests for input types.
  */
@@ -36,19 +39,31 @@ import org.junit.jupiter.api.Test;
 @AddBean(SimpleContactInputTypeWithName.class)
 @AddBean(SimpleContactInputTypeWithNameValue.class)
 @AddBean(SimpleContactInputTypeWithAddress.class)
-public class InputTypeIT extends AbstractGraphQLIT {
-    
+class InputTypeIT extends AbstractGraphQlCdiIT {
+
+    @Inject
+    InputTypeIT(GraphQlCdiExtension graphQlCdiExtension) {
+        super(graphQlCdiExtension);
+    }
+
     @Test
-    public void testInputType() throws IOException {
+    void testInputType() throws IOException {
         setupIndex(indexFileName, SimpleContactInputType.class, SimpleContactInputTypeWithName.class,
                    SimpleContactInputTypeWithNameValue.class, SimpleContactInputTypeWithAddress.class);
-        ExecutionContext executionContext =  createContext(defaultContext);
-        Schema schema = executionContext.getSchema();
-        assertThat(schema.getInputTypes().size(), is(5));
-        assertThat(schema.containsInputTypeWithName("MyInputType"), is(true));
-        assertThat(schema.containsInputTypeWithName("SimpleContactInputTypeInput"), is(true));
-        assertThat(schema.containsInputTypeWithName("NameInput"), is(true));
-        assertThat(schema.containsInputTypeWithName("SimpleContactInputTypeWithAddressInput"), is(true));
-        assertThat(schema.containsInputTypeWithName("AddressInput"), is(true));
+        Schema schema = createSchema();
+
+        assertAll(
+                () -> assertThat(schema.getInputTypes().size(), is(5)),
+                () -> assertThat("MyInputType", schema.containsInputTypeWithName("MyInputType"), is(true)),
+                () -> assertThat("SimpleContactInputTypeInput",
+                                 schema.containsInputTypeWithName("SimpleContactInputTypeInput"),
+                                 is(true)),
+                () -> assertThat("NameInput", schema.containsInputTypeWithName("NameInput"), is(true)),
+                () -> assertThat("SimpleContactInputTypeWithAddressInput",
+                                 schema.containsInputTypeWithName("SimpleContactInputTypeWithAddressInput"),
+                                 is(true)),
+                () -> assertThat("AddressInput", schema.containsInputTypeWithName("AddressInput"), is(true))
+        );
+
     }
 }

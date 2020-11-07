@@ -77,7 +77,7 @@ import static io.helidon.microprofile.graphql.server.SchemaGenerator.SET;
 /**
  * Helper class for {@link SchemaGenerator}.
  */
-public final class SchemaGeneratorHelper {
+final class SchemaGeneratorHelper {
 
     /**
      * {@link OffsetTime} class name.

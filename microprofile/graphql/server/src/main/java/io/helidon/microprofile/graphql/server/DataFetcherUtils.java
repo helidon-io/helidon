@@ -42,6 +42,8 @@ import java.util.logging.Logger;
 
 import javax.enterprise.inject.spi.CDI;
 
+import io.helidon.graphql.server.ExecutionContext;
+
 import graphql.GraphQLException;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
@@ -61,7 +63,7 @@ import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.isPri
 /**
  * Utilities for working with {@link DataFetcher}s.
  */
-public class DataFetcherUtils {
+class DataFetcherUtils {
 
     /**
      * Logger.
@@ -97,8 +99,11 @@ public class DataFetcherUtils {
      * @return a new {@link DataFetcher}
      */
     @SuppressWarnings("unchecked")
-    public static <V> DataFetcher<V> newMethodDataFetcher(Schema schema, Class<?> clazz, Method method,
+    static <V> DataFetcher<V> newMethodDataFetcher(Schema schema, Class<?> clazz, Method method,
                                                           String source, SchemaArgument... args) {
+
+        // this is an application scoped bean
+        GraphQlBean bean = CDI.current().select(GraphQlBean.class).get();
 
         return environment -> {
             ArrayList<Object> listArgumentValues = new ArrayList<>();
@@ -140,7 +145,6 @@ public class DataFetcherUtils {
 
             try {
                 // this is the right place to validate security
-                GraphQlBean bean = CDI.current().select(GraphQlBean.class).get();
                 return (V)  bean.runGraphQl(clazz, method, listArgumentValues.toArray());
             } catch (InvocationTargetException e) {
                 Throwable targetException = e.getTargetException();
@@ -149,8 +153,8 @@ public class DataFetcherUtils {
                     // if we have partial results we need to return those results and they will
                     // get converted correctly to the format required by GraphQL and the ExecutionContext.execute()
                     // we ensure this is throw correctly as an error
-                    Context context = environment.getContext();
-                    context.addPartialResultsException(exception);
+                    ExecutionContext context = environment.getContext();
+                    context.partialResultsException(exception);
                     return (V) ((org.eclipse.microprofile.graphql.GraphQLException) targetException).getPartialResults();
                 }
                 throw exception;
@@ -168,7 +172,7 @@ public class DataFetcherUtils {
      * @return  a {@link DataFetcher}
      */
     @SuppressWarnings("unchecked")
-    public static <S, V> DataFetcher<Collection<V>> newMapValuesDataFetcher(String propertyName) {
+    static <S, V> DataFetcher<Collection<V>> newMapValuesDataFetcher(String propertyName) {
         return environment -> {
             S source = environment.getSource();
             if (source == null) {
@@ -433,7 +437,7 @@ public class DataFetcherUtils {
      * An implementation of a {@link PropertyDataFetcher} which returns a formatted number.
      */
     @SuppressWarnings("rawtypes")
-    public static class NumberFormattingDataFetcher extends PropertyDataFetcher {
+    static class NumberFormattingDataFetcher extends PropertyDataFetcher {
 
         /**
          * {@link NumberFormat} to format with.
@@ -453,7 +457,7 @@ public class DataFetcherUtils {
          * @param valueFormat  formatting value
          * @param locale       formatting locale
          */
-        public NumberFormattingDataFetcher(String propertyName, String type, String valueFormat, String locale) {
+        NumberFormattingDataFetcher(String propertyName, String type, String valueFormat, String locale) {
             super(propertyName);
             numberFormat = getCorrectNumberFormat(type, locale, valueFormat);
             if (numberFormat == null) {
@@ -473,7 +477,7 @@ public class DataFetcherUtils {
      * An implementation of a {@link PropertyDataFetcher} which returns a formatted date.
      */
     @SuppressWarnings({ "rawtypes" })
-    public static class DateFormattingDataFetcher extends PropertyDataFetcher {
+    static class DateFormattingDataFetcher extends PropertyDataFetcher {
 
         /**
          * {@link DateTimeFormatter} to format with.
@@ -488,7 +492,7 @@ public class DataFetcherUtils {
          * @param valueFormat  formatting value
          * @param locale       formatting locale
          */
-        public DateFormattingDataFetcher(String propertyName, String type, String valueFormat, String locale) {
+        DateFormattingDataFetcher(String propertyName, String type, String valueFormat, String locale) {
             super(propertyName);
             dateTimeFormatter = getCorrectDateFormatter(type, locale, valueFormat);
         }

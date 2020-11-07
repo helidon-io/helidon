@@ -22,11 +22,13 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
+import javax.inject.Inject;
+
+import io.helidon.graphql.server.InvocationHandler;
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.queries.NumberFormatQueriesAndMutations;
 import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesWithArgs;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContactWithNumberFormats;
-
 import io.helidon.microprofile.tests.junit5.AddBean;
 
 import org.junit.jupiter.api.Test;
@@ -46,14 +48,19 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @AddBean(NumberFormatQueriesAndMutations.class)
 @AddBean(SimpleQueriesWithArgs.class)
 @AddBean(TestDB.class)
-public class NumberFormatIT extends AbstractGraphQLIT {
+class NumberFormatIT extends AbstractGraphQlCdiIT {
+
+    @Inject
+    NumberFormatIT(GraphQlCdiExtension graphQlCdiExtension) {
+        super(graphQlCdiExtension);
+    }
 
     @Test
     @SuppressWarnings("unchecked")
     public void testNumberFormats() throws IOException {
         setupIndex(indexFileName, SimpleContactWithNumberFormats.class,
                    NumberFormatQueriesAndMutations.class, SimpleQueriesWithArgs.class);
-        ExecutionContext executionContext = createContext(defaultContext);
+        InvocationHandler executionContext = createInvocationHandler();
 
         Map<String, Object> mapResults = getAndAssertResult(executionContext
                                                                     .execute("query { simpleFormattingQuery { id name age "
@@ -141,8 +148,7 @@ public class NumberFormatIT extends AbstractGraphQLIT {
     @Test
     public void testCorrectNumberScalarTypesAndFormats() throws IOException {
         setupIndex(indexFileName, SimpleContactWithNumberFormats.class, NumberFormatQueriesAndMutations.class);
-        ExecutionContext executionContext = createContext(defaultContext);
-        Schema schema = executionContext.getSchema();
+        Schema schema = createSchema();
 
         // validate the formats on the type
         SchemaType type = schema.getTypeByName("SimpleContactWithNumberFormats");

@@ -19,31 +19,38 @@ package io.helidon.microprofile.graphql.server;
 import java.io.IOException;
 import java.util.Map;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import javax.inject.Inject;
 
+import io.helidon.graphql.server.InvocationHandler;
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.queries.QueriesWithIgnorable;
-import io.helidon.microprofile.graphql.server.test.types.ObjectWithIgnorableFieldsAndMethods;
 import io.helidon.microprofile.tests.junit5.AddBean;
 
 import org.junit.jupiter.api.Test;
 import org.opentest4j.AssertionFailedError;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests for ignorable fields.
  */
 @AddBean(QueriesWithIgnorable.class)
 @AddBean(TestDB.class)
-public class IngorableIT extends AbstractGraphQLIT {
+class IngorableIT extends AbstractGraphQlCdiIT {
+
+    @Inject
+    IngorableIT(GraphQlCdiExtension graphQlCdiExtension) {
+        super(graphQlCdiExtension);
+    }
 
     @Test
     @SuppressWarnings("unchecked")
     public void testIgnorable() throws IOException {
         setupIndex(indexFileName, QueriesWithIgnorable.class);
-        ExecutionContext executionContext =  createContext(defaultContext);
+        InvocationHandler executionContext =  createInvocationHandler();
         Map<String, Object> mapResults = getAndAssertResult(
                 executionContext.execute("query { testIgnorableFields { id dontIgnore } }"));
         assertThat(mapResults.size(), is(1));
@@ -60,7 +67,7 @@ public class IngorableIT extends AbstractGraphQLIT {
                                                                                                   + "dontIgnore pleaseIgnore "
                                                                                                   + "ignoreThisAsWell } }")));
 
-        Schema schema = executionContext.getSchema();
+        Schema schema = createSchema();
         SchemaType type = schema.getTypeByName("ObjectWithIgnorableFieldsAndMethods");
         assertThat(type, is(notNullValue()));
         assertThat(type.fieldDefinitions().stream().filter(fd -> fd.name().equals("ignoreGetMethod")).count(), is(0L));

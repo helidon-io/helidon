@@ -17,10 +17,10 @@
 package io.helidon.microprofile.graphql.server;
 
 import java.io.IOException;
+import java.util.Set;
 
 import io.helidon.microprofile.graphql.server.test.mutations.VoidMutations;
 import io.helidon.microprofile.graphql.server.test.queries.InvalidQueries;
-import io.helidon.microprofile.tests.junit5.AddBean;
 
 import org.junit.jupiter.api.Test;
 
@@ -29,12 +29,15 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 /**
  * Tests for invalid queries.
  */
-@AddBean(VoidMutations.class)
-public class InvalidQueriesIT extends AbstractGraphQLIT {
+class InvalidQueriesIT extends AbstractGraphQlIT {
+
+    InvalidQueriesIT() {
+        super(Set.of(VoidMutations.class));
+    }
 
     @Test
-    public void testInvalidQueries() throws IOException {
+    void testInvalidQueries() throws IOException {
         setupIndex(indexFileName, InvalidQueries.class);
-        assertThrows(RuntimeException.class, () -> createContext(defaultContext));
+        assertThrows(RuntimeException.class, this::createInvocationHandler);
     }
 }

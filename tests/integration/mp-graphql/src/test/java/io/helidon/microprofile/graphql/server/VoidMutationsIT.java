@@ -17,9 +17,9 @@
 package io.helidon.microprofile.graphql.server;
 
 import java.io.IOException;
+import java.util.Set;
 
 import io.helidon.microprofile.graphql.server.test.mutations.VoidMutations;
-import io.helidon.microprofile.tests.junit5.AddBean;
 
 import org.junit.jupiter.api.Test;
 
@@ -28,12 +28,15 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 /**
  * Tests for void mutations.
  */
-@AddBean(VoidMutations.class)
-public class VoidMutationsIT extends AbstractGraphQLIT {
+class VoidMutationsIT extends AbstractGraphQlIT {
+
+    VoidMutationsIT() {
+        super(Set.of(VoidMutations.class));
+    }
 
     @Test
-    public void testVoidMutations() throws IOException {
+    void testVoidMutations() throws IOException {
         setupIndex(indexFileName, VoidMutations.class);
-        assertThrows(RuntimeException.class, () -> createContext(defaultContext));
+        assertThrows(RuntimeException.class, () -> createInvocationHandler());
     }
 }

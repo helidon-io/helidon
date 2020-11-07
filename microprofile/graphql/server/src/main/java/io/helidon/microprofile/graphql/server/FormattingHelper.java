@@ -68,7 +68,7 @@ import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getPa
 /**
  * Helper class for number formatting.
  */
-public class FormattingHelper {
+class FormattingHelper {
 
     /**
      * Logger.

@@ -25,7 +25,7 @@ import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getDe
 /**
  * Describes an element that has a description.
  */
-public interface DescriptiveElement {
+interface DescriptiveElement {
 
     /**
      * Set the description for this element.

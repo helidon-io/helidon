@@ -21,6 +21,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import javax.inject.Inject;
+
+import io.helidon.graphql.server.InvocationHandler;
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.queries.DateTimeScalarQueries;
 import io.helidon.microprofile.graphql.server.test.types.SimpleDateTimePojo;
@@ -37,13 +40,18 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 @AddBean(DateTimeScalarQueries.class)
 @AddBean(TestDB.class)
-public class DateTimeScalarIT extends AbstractGraphQLIT {
+class DateTimeScalarIT extends AbstractGraphQlCdiIT {
+
+    @Inject
+    DateTimeScalarIT(GraphQlCdiExtension graphQlCdiExtension) {
+        super(graphQlCdiExtension);
+    }
 
     @Test
     @SuppressWarnings("unchecked")
     public void testDateAndTime() throws IOException {
         setupIndex(indexFileName, SimpleDateTimePojo.class, DateTimeScalarQueries.class);
-        ExecutionContext executionContext = createContext(defaultContext);
+        InvocationHandler executionContext = createInvocationHandler();
 
         Map<String, Object> mapResults = getAndAssertResult(
                 executionContext.execute("query { echoSimpleDateTimePojo (dates:[\"2020-01-13\","

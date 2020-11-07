@@ -17,9 +17,9 @@
 package io.helidon.microprofile.graphql.server;
 
 import java.io.IOException;
+import java.util.Set;
 
 import io.helidon.microprofile.graphql.server.test.types.InvalidNamedTypes;
-import io.helidon.microprofile.tests.junit5.AddBean;
 
 import org.junit.jupiter.api.Test;
 
@@ -28,13 +28,15 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 /**
  * Tests for invalid named enums.
  */
-@AddBean(InvalidNamedTypes.Size.class)
-@AddBean(InvalidNamedTypes.ClassWithInvalidEnum.class)
-public class InvalidNamedEnumIT extends AbstractGraphQLIT {
+class InvalidNamedEnumIT extends AbstractGraphQlIT {
+
+    protected InvalidNamedEnumIT() {
+        super(Set.of(InvalidNamedTypes.Size.class, InvalidNamedTypes.ClassWithInvalidEnum.class));
+    }
 
     @Test
     public void testInvalidNameEnum() throws IOException {
         setupIndex(indexFileName, InvalidNamedTypes.Size.class);
-        assertThrows(RuntimeException.class, () -> createContext(defaultContext));
+        assertThrows(RuntimeException.class, this::createInvocationHandler);
     }
 }

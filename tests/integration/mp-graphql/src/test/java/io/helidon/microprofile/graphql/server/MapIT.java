@@ -20,10 +20,14 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+import javax.inject.Inject;
+
+import io.helidon.graphql.server.InvocationHandler;
 import io.helidon.microprofile.graphql.server.test.queries.MapQueries;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
 import io.helidon.microprofile.graphql.server.test.types.TypeWithMap;
 import io.helidon.microprofile.tests.junit5.AddBean;
+
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -36,13 +40,18 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @AddBean(TypeWithMap.class)
 @AddBean(MapQueries.class)
 @AddBean(SimpleContact.class)
-public class MapIT extends AbstractGraphQLIT {
+class MapIT extends AbstractGraphQlCdiIT {
+
+    @Inject
+    MapIT(GraphQlCdiExtension graphQlCdiExtension) {
+        super(graphQlCdiExtension);
+    }
 
     @Test
     @SuppressWarnings("unchecked")
     public void testMap() throws IOException {
         setupIndex(indexFileName, TypeWithMap.class, MapQueries.class, SimpleContact.class);
-        ExecutionContext executionContext = createContext(defaultContext);
+        InvocationHandler executionContext = createInvocationHandler();
 
         Map<String, Object> mapResults = getAndAssertResult(
                 executionContext.execute("query { query1 { id mapValues mapContacts { id name } } }"));
@@ -73,7 +82,7 @@ public class MapIT extends AbstractGraphQLIT {
     @Test
     public void testMapAsInput() throws IOException {
         setupIndex(indexFileName, TypeWithMap.class, MapQueries.class, SimpleContact.class);
-        ExecutionContext executionContext = createContext(defaultContext);
+        InvocationHandler executionContext = createInvocationHandler();
         String input = "{"
                 + "id: \"id-1\" "
                 + "mapValues: [ \"a\" \"b\" ] "
@@ -89,7 +98,7 @@ public class MapIT extends AbstractGraphQLIT {
     @Test
     public void testMapAsInput2() throws IOException {
         setupIndex(indexFileName, TypeWithMap.class, MapQueries.class, SimpleContact.class);
-        ExecutionContext executionContext = createContext(defaultContext);
+        InvocationHandler executionContext = createInvocationHandler();
         Map<String, Object> mapResults = executionContext.execute("query { query3 (value: [ \"a\" \"b\" ]) }");
         assertThat(mapResults.size(), is(2));
         assertThat(mapResults.get("errors"), is(notNullValue()));

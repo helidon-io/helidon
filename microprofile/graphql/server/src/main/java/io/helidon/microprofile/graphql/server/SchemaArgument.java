@@ -22,7 +22,7 @@ import java.util.Objects;
 /**
  * The representation of a GraphQL Argument or Parameter.
  */
-public class SchemaArgument extends AbstractDescriptiveElement implements ElementGenerator {
+class SchemaArgument extends AbstractDescriptiveElement implements ElementGenerator {
     /**
      * Argument name.
      */

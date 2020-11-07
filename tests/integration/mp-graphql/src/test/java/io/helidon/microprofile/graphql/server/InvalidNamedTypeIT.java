@@ -17,9 +17,9 @@
 package io.helidon.microprofile.graphql.server;
 
 import java.io.IOException;
+import java.util.Set;
 
 import io.helidon.microprofile.graphql.server.test.types.InvalidNamedTypes;
-import io.helidon.microprofile.tests.junit5.AddBean;
 
 import org.junit.jupiter.api.Test;
 
@@ -28,12 +28,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 /**
  * Tests for invalid named types.
  */
-@AddBean(InvalidNamedTypes.InvalidNamedPerson.class)
-public class InvalidNamedTypeIT extends AbstractGraphQLIT {
-
+class InvalidNamedTypeIT extends AbstractGraphQlIT {
+    InvalidNamedTypeIT() {
+        super(Set.of(InvalidNamedTypes.InvalidNamedPerson.class));
+    }
     @Test
     public void testInvalidNamedType() throws IOException {
         setupIndex(indexFileName, InvalidNamedTypes.InvalidNamedPerson.class);
-        assertThrows(RuntimeException.class, () -> createContext(defaultContext));
+        assertThrows(RuntimeException.class, this::createInvocationHandler);
     }
 }

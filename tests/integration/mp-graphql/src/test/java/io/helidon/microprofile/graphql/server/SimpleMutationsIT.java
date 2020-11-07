@@ -19,6 +19,9 @@ package io.helidon.microprofile.graphql.server;
 import java.io.IOException;
 import java.util.Map;
 
+import javax.inject.Inject;
+
+import io.helidon.graphql.server.InvocationHandler;
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.mutations.SimpleMutations;
 import io.helidon.microprofile.tests.junit5.AddBean;
@@ -34,13 +37,18 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 @AddBean(SimpleMutations.class)
 @AddBean(TestDB.class)
-public class SimpleMutationsIT extends AbstractGraphQLIT {
+class SimpleMutationsIT extends AbstractGraphQlCdiIT {
+
+    @Inject
+    SimpleMutationsIT(GraphQlCdiExtension graphQlCdiExtension) {
+        super(graphQlCdiExtension);
+    }
 
     @Test
     @SuppressWarnings("unchecked")
     public void testSimpleMutations() throws IOException {
         setupIndex(indexFileName, SimpleMutations.class);
-        ExecutionContext executionContext = createContext(defaultContext);
+        InvocationHandler executionContext = createInvocationHandler();
 
         Map<String, Object> mapResults = getAndAssertResult(
                 executionContext.execute("mutation { createNewContact { id name age } }"));

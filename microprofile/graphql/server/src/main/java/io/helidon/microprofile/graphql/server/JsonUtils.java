@@ -40,7 +40,7 @@ import static org.eclipse.yasson.YassonConfig.ZERO_TIME_PARSE_DEFAULTING;
 /**
  * Various Json utilities.
  */
-public class JsonUtils {
+class JsonUtils {
 
     /**
      * JSONB instance.

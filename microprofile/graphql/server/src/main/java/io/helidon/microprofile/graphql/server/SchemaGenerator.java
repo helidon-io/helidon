@@ -39,7 +39,6 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.enterprise.inject.spi.CDI;
 import javax.json.bind.annotation.JsonbProperty;
 
 import io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.DiscoveredMethod;
@@ -115,12 +114,10 @@ import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.shoul
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.stripMethodName;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.validateIDClass;
 
-
-
 /**
  * Various utilities for generating {@link Schema}s from classes.
  */
-public class SchemaGenerator {
+class SchemaGenerator {
 
     /**
      * "is" prefix.
@@ -157,18 +154,15 @@ public class SchemaGenerator {
      */
     private Set<DiscoveredMethod> setAdditionalMethods = new HashSet<>();
 
-    /**
-     * A {@link Context} to be passed to execution.
-     */
-    private Context context;
+    private final Set<Class<?>> collectedApis = new HashSet<>();
 
     /**
      * Construct a {@link SchemaGenerator}.
      *
-     * @param builder the {@link ExecutionContext.Builder} to construct from
+     * @param builder the {@link io.helidon.microprofile.graphql.server.SchemaGenerator.Builder} to construct from
      */
     private SchemaGenerator(Builder builder) {
-        this.context = builder.context;
+        this.collectedApis.addAll(builder.collectedApis);
         jandexUtils = JandexUtils.create();
         jandexUtils.loadIndexes();
         if (!jandexUtils.hasIndex()) {
@@ -192,20 +186,19 @@ public class SchemaGenerator {
      * Generate a {@link Schema} by scanning all discovered classes using the {@link GraphQlCdiExtension}.
      *
      * @return a {@link Schema}
-     * @throws IntrospectionException if any errors with introspection
-     * @throws ClassNotFoundException if any classes are not found
+     * @throws java.lang.IllegalStateException in case the schema cannot be generated
      */
     @SuppressWarnings("rawtypes")
-    public Schema generateSchema() throws IntrospectionException, ClassNotFoundException {
-        GraphQlCdiExtension extension = CDI.current()
-                .getBeanManager()
-                .getExtension(GraphQlCdiExtension.class);
-        Class[] classes = extension.collectedApis();
-        int count = classes.length;
+    public Schema generateSchema() {
+        int count = collectedApis.size();
 
         LOGGER.info("Discovered " + count + " annotated GraphQL API class" + (count != 1 ? "es" : ""));
 
-        return generateSchemaFromClasses(classes);
+        try {
+            return generateSchemaFromClasses(collectedApis);
+        } catch (IntrospectionException | ClassNotFoundException e) {
+            throw new IllegalStateException("Cannot generate schema", e);
+        }
     }
 
     /**
@@ -218,11 +211,10 @@ public class SchemaGenerator {
      * @throws IntrospectionException if any errors with introspection
      * @throws ClassNotFoundException if any classes are not found
      */
-    protected Schema generateSchemaFromClasses(Class<?>... clazzes) throws IntrospectionException, ClassNotFoundException {
+    protected Schema generateSchemaFromClasses(Set<Class<?>> clazzes) throws IntrospectionException, ClassNotFoundException {
         Schema schema = Schema.create();
         setUnresolvedTypes.clear();
         setAdditionalMethods.clear();
-
 
         SchemaType rootQueryType = SchemaType.builder().name(schema.getQueryName()).build();
         SchemaType rootMutationType = SchemaType.builder().name(schema.getMutationName()).build();
@@ -255,7 +247,7 @@ public class SchemaGenerator {
 
                     // assuming value for annotation overrides @Name
                     String typeName = getTypeName(clazz, true);
-                    SchemaType type =  SchemaType.builder()
+                    SchemaType type = SchemaType.builder()
                             .name(typeName.isBlank() ? clazz.getSimpleName() : typeName)
                             .valueClassName(clazz.getName()).build();
                     type.isInterface(clazz.isInterface());
@@ -355,7 +347,7 @@ public class SchemaGenerator {
      *
      * @param schema {@link Schema} to update
      */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings({"unchecked", "rawtypes"})
     private void processDefaultDateTimeValues(Schema schema) {
         // concatenate both the SchemaType and SchemaInputType
         Stream streamInputTypes = schema.getInputTypes().stream().map(it -> (SchemaType) it);
@@ -377,7 +369,7 @@ public class SchemaGenerator {
                         if (fd.dataFetcher() == null) {
                             // create the raw array to pass to the retrieveFormattingDataFetcher method
                             DataFetcher dataFetcher = retrieveFormattingDataFetcher(
-                                    new String[] {DATE, newFormat[0], newFormat[1] },
+                                    new String[] {DATE, newFormat[0], newFormat[1]},
                                     fd.name(), clazzOriginalType.getName());
                             fd.dataFetcher(dataFetcher);
                         }
@@ -416,7 +408,7 @@ public class SchemaGenerator {
                     if (isDateTimeScalar(argumentType)) {
                         String[] existingArgFormat = a.format();
                         Class<?> clazzOriginalType = a.originalArrayType() != null
-                            ? a.originalArrayType() : a.originalType();
+                                ? a.originalArrayType() : a.originalType();
                         String[] newArgFormat = ensureFormat(argumentType, clazzOriginalType.getName(), existingArgFormat);
                         if (!Arrays.equals(newArgFormat, existingArgFormat) && newArgFormat.length == 2) {
                             a.format(newArgFormat);
@@ -598,7 +590,7 @@ public class SchemaGenerator {
                     String[] newFormat = ensureFormat(dateScalar.name(),
                                                       originalType.getName(), new String[2]);
                     if (newFormat.length == 2) {
-                        format = new String[] {DATE, newFormat[0], newFormat[1] };
+                        format = new String[] {DATE, newFormat[0], newFormat[1]};
                     }
                 }
                 if (!isFormatEmpty(format)) {
@@ -607,7 +599,7 @@ public class SchemaGenerator {
                     final DataFetcher methodDataFetcher = DataFetcherUtils.newMethodDataFetcher(schema, clazz, method, null,
                                                                                                 fd.arguments().toArray(
                                                                                                         new SchemaArgument[0]));
-                    final String[] newFormat = new String[] {format[0], format[1], format[2] };
+                    final String[] newFormat = new String[] {format[0], format[1], format[2]};
 
                     if (dateScalar != null && isDateTimeScalar(dateScalar.name())) {
                         dataFetcher = DataFetcherFactories.wrapDataFetcher(methodDataFetcher,
@@ -837,7 +829,7 @@ public class SchemaGenerator {
                 .build();
 
         if (format != null && format.length == 3) {
-            fd.format(new String[] {format[1], format[2] });
+            fd.format(new String[] {format[1], format[2]});
         }
 
         fd.description(discoveredMethod.description());
@@ -1134,8 +1126,8 @@ public class SchemaGenerator {
         }
 
         DiscoveredMethod discoveredMethod = DiscoveredMethod.builder().name(varName).method(method).format(format)
-                                        .defaultValue(defaultValue).jsonbFormat(isJsonbFormat).jsonbProperty(isJsonbProperty)
-                                        .propertyName(pd != null ? pd.getName() : null).build();
+                .defaultValue(defaultValue).jsonbFormat(isJsonbFormat).jsonbProperty(isJsonbProperty)
+                .propertyName(pd != null ? pd.getName() : null).build();
 
         if (description == null && !isInputType) {
             description = getDescription(method.getAnnotation(Description.class));
@@ -1147,7 +1139,7 @@ public class SchemaGenerator {
 
         discoveredMethod.returnTypeMandatory(isReturnTypeMandatory);
         discoveredMethod.arrayReturnTypeMandatory(isArrayReturnTypeMandatory
-                                                             || realReturnType.isReturnTypeMandatory && !isInputType);
+                                                          || realReturnType.isReturnTypeMandatory && !isInputType);
         discoveredMethod.description(description);
 
         return discoveredMethod;
@@ -1262,7 +1254,7 @@ public class SchemaGenerator {
                 argumentFormat = !isFormatEmpty(argumentTypeFormat) ? argumentTypeFormat : argumentFormat;
 
                 if (argumentFormat[0] != null) {
-                    argument.format(new String[] {argumentFormat[1], argumentFormat[2] });
+                    argument.format(new String[] {argumentFormat[1], argumentFormat[2]});
                     argument.argumentType(String.class.getName());
                 }
 
@@ -1417,18 +1409,7 @@ public class SchemaGenerator {
      */
     public static class Builder implements io.helidon.common.Builder<SchemaGenerator> {
 
-        private Context context;
-
-        /**
-         * Set the {@link Context}.
-         *
-         * @param context the {@link Context}
-         * @return updated builder instance
-         */
-        public Builder context(Context context) {
-            this.context = context;
-            return this;
-        }
+        private final Set<Class<?>> collectedApis = new HashSet<>();
 
         /**
          * Build the instance from this builder.
@@ -1438,6 +1419,11 @@ public class SchemaGenerator {
         @Override
         public SchemaGenerator build() {
             return new SchemaGenerator(this);
+        }
+
+        public Builder classes(Set<Class<?>> collectedApis) {
+            this.collectedApis.addAll(collectedApis);
+            return this;
         }
     }
 
@@ -1718,7 +1704,6 @@ public class SchemaGenerator {
             System.arraycopy(format, 0, copy, 0, copy.length);
             return copy;
         }
-
 
         /**
          * A fluent API {@link io.helidon.common.Builder} to build instances of {@link DiscoveredMethod}.

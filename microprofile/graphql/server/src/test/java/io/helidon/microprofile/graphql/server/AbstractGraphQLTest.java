@@ -26,18 +26,24 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
+
 import graphql.ExecutionResult;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.SchemaPrinter;
-
-import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
-
 import org.hamcrest.CoreMatchers;
 import org.jboss.jandex.Index;
 import org.jboss.jandex.IndexWriter;
 import org.jboss.jandex.Indexer;
 import org.junit.jupiter.api.Assertions;
 
+import static io.helidon.graphql.server.GraphQlConstants.COLUMN;
+import static io.helidon.graphql.server.GraphQlConstants.DATA;
+import static io.helidon.graphql.server.GraphQlConstants.ERRORS;
+import static io.helidon.graphql.server.GraphQlConstants.EXTENSIONS;
+import static io.helidon.graphql.server.GraphQlConstants.LINE;
+import static io.helidon.graphql.server.GraphQlConstants.LOCATIONS;
+import static io.helidon.graphql.server.GraphQlConstants.MESSAGE;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -49,7 +55,6 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @author Tim Middleton 2020.02.28
  */
 public abstract class AbstractGraphQLTest {
-
     private SchemaPrinter schemaPrinter;
 
     /**
@@ -179,16 +184,16 @@ public abstract class AbstractGraphQLTest {
         assertThat(result, CoreMatchers.is(notNullValue()));
         StringBuilder sb = new StringBuilder("Errors: ");
         for (Map<String, Object> mapError : result) {
-            sb.append(mapError.get(ExecutionContext.MESSAGE)).append('\n');
-            List<Map<String, Object>> listLocations = (List<Map<String, Object>>) mapError.get(ExecutionContext.LOCATIONS);
-            Map<String, Object> mapExtensions = (Map<String, Object>) mapError.get(ExecutionContext.EXTENSIONS);
+            sb.append(mapError.get(MESSAGE)).append('\n');
+            List<Map<String, Object>> listLocations = (List<Map<String, Object>>) mapError.get(LOCATIONS);
+            Map<String, Object> mapExtensions = (Map<String, Object>) mapError.get(EXTENSIONS);
 
             if (listLocations != null) {
                 for (Map<String, Object> mapLocations : listLocations) {
-                    sb.append(ExecutionContext.LINE).append(':')
-                            .append(mapLocations.get(ExecutionContext.LINE))
-                            .append(ExecutionContext.COLUMN).append(':')
-                            .append(mapLocations.get(ExecutionContext.COLUMN));
+                    sb.append(LINE).append(':')
+                            .append(mapLocations.get(LINE))
+                            .append(COLUMN).append(':')
+                            .append(mapLocations.get(COLUMN));
                 }
             }
 
@@ -206,13 +211,13 @@ public abstract class AbstractGraphQLTest {
      */
     @SuppressWarnings("unchecked")
     protected Map<String, Object> getAndAssertResult(Map<String, Object> result) {
-        List<Map<String, Object>> listErrors = (List<Map<String, Object>>) result.get(ExecutionContext.ERRORS);
+        List<Map<String, Object>> listErrors = (List<Map<String, Object>>) result.get(ERRORS);
         boolean failed = listErrors != null && listErrors.size() > 0;
         if (failed) {
             String sError = getError(listErrors);
             fail(sError);
         }
-        return (Map<String, Object>) result.get(ExecutionContext.DATA);
+        return (Map<String, Object>) result.get(DATA);
     }
 
     protected String getContactAsQueryInput(SimpleContact contact) {
@@ -288,8 +293,9 @@ public abstract class AbstractGraphQLTest {
                            + mandatory + " but is " + argument.mandatory(), argument.mandatory(), CoreMatchers.is(mandatory));
     }
 
-    protected SchemaGenerator createSchemaGenerator(Context context) {
-        return SchemaGenerator.builder().context(context).build();
+    protected SchemaGenerator createSchemaGenerator() {
+        return SchemaGenerator.builder()
+                .build();
     }
     
 }

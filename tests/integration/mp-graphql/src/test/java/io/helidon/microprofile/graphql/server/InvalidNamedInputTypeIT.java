@@ -17,9 +17,11 @@
 package io.helidon.microprofile.graphql.server;
 
 import java.io.IOException;
+import java.util.Set;
+
+import javax.inject.Inject;
 
 import io.helidon.microprofile.graphql.server.test.types.InvalidNamedTypes;
-import io.helidon.microprofile.tests.junit5.AddBean;
 
 import org.junit.jupiter.api.Test;
 
@@ -28,12 +30,15 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 /**
  * Tests for invalid named input types.
  */
-@AddBean(InvalidNamedTypes.InvalidNamedPerson.class)
-public class InvalidNamedInputTypeIT extends AbstractGraphQLIT {
+class InvalidNamedInputTypeIT extends AbstractGraphQlIT {
+    @Inject
+    public InvalidNamedInputTypeIT() {
+        super(Set.of(InvalidNamedTypes.InvalidNamedPerson.class));
+    }
 
     @Test
-    public void testInvalidNamedInputType() throws IOException {
+    void testInvalidNamedInputType() throws IOException {
         setupIndex(indexFileName, InvalidNamedTypes.InvalidInputType.class);
-        assertThrows(RuntimeException.class, () -> createContext(defaultContext));
+        assertThrows(RuntimeException.class, this::createInvocationHandler);
     }
 }

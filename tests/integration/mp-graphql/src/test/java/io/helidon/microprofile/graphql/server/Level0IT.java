@@ -19,26 +19,32 @@ package io.helidon.microprofile.graphql.server;
 import java.beans.IntrospectionException;
 import java.io.IOException;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
+import javax.inject.Inject;
 
 import io.helidon.microprofile.graphql.server.test.types.Level0;
 import io.helidon.microprofile.tests.junit5.AddBean;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+
 /**
  * Tests for multi-level object graphs - Level0.
  */
 @AddBean(Level0.class)
-public class Level0IT extends AbstractGraphQLIT {
-    
+class Level0IT extends AbstractGraphQlCdiIT {
+
+    @Inject
+    Level0IT(GraphQlCdiExtension graphQlCdiExtension) {
+        super(graphQlCdiExtension);
+    }
+
     @Test
     public void testLevel0() throws IOException, IntrospectionException, ClassNotFoundException {
         setupIndex(indexFileName, Level0.class);
-        SchemaGenerator schemaGenerator = createSchemaGenerator(defaultContext);
-        Schema schema = schemaGenerator.generateSchema();
+        Schema schema = createSchema();
         assertThat(schema.containsTypeWithName("Level0"), is(true));
         assertThat(schema.containsTypeWithName("Level1"), is(true));
         assertThat(schema.containsTypeWithName("Level2"), is(true));
@@ -48,8 +54,8 @@ public class Level0IT extends AbstractGraphQLIT {
     @Test
     public void testMultipleLevels() throws IOException, IntrospectionException, ClassNotFoundException {
         setupIndex(indexFileName, Level0.class);
-        SchemaGenerator schemaGenerator = createSchemaGenerator(defaultContext);
-        Schema schema = schemaGenerator.generateSchema();
+
+        Schema schema = createSchema();
 
         assertThat(schema, is(notNullValue()));
         assertThat(schema.getTypes().size(), is(6));

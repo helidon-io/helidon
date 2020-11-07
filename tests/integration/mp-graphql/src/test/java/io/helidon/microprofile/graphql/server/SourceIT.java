@@ -19,11 +19,13 @@ package io.helidon.microprofile.graphql.server;
 import java.io.IOException;
 import java.util.Map;
 
+import javax.inject.Inject;
+
+import io.helidon.graphql.server.InvocationHandler;
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithEnumName;
 import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesWithSource;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
-
 import io.helidon.microprofile.tests.junit5.AddBean;
 
 import org.junit.jupiter.api.Test;
@@ -37,13 +39,18 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 @AddBean(SimpleQueriesWithSource.class)
 @AddBean(TestDB.class)
-public class SourceIT extends AbstractGraphQLIT {
+class SourceIT extends AbstractGraphQlCdiIT {
+
+    @Inject
+    SourceIT(GraphQlCdiExtension graphQlCdiExtension) {
+        super(graphQlCdiExtension);
+    }
 
     @Test
     @SuppressWarnings("unchecked")
     public void testSimpleQueriesWithSource() throws IOException {
         setupIndex(indexFileName, SimpleQueriesWithSource.class, SimpleContact.class);
-        ExecutionContext executionContext =  createContext(defaultContext);
+        InvocationHandler executionContext =  createInvocationHandler();
 
         // since there is a @Source annotation in SimpleQueriesWithSource, then this should add a field
         // idAndName to the SimpleContact type

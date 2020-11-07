@@ -19,6 +19,9 @@ package io.helidon.microprofile.graphql.server;
 import java.io.IOException;
 import java.util.Map;
 
+import javax.inject.Inject;
+
+import io.helidon.graphql.server.InvocationHandler;
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.queries.DefaultValueQueries;
 import io.helidon.microprofile.graphql.server.test.queries.OddNamedQueriesAndMutations;
@@ -37,15 +40,19 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @AddBean(DefaultValueQueries.class)
 @AddBean(OddNamedQueriesAndMutations.class)
 @AddBean(TestDB.class)
-public class DefaultValuesIT extends AbstractGraphQLIT {
-    
+class DefaultValuesIT extends AbstractGraphQlCdiIT {
+    @Inject
+    DefaultValuesIT(GraphQlCdiExtension graphQlCdiExtension) {
+        super(graphQlCdiExtension);
+    }
+
     @Test
     @SuppressWarnings("unchecked")
     public void setOddNamedQueriesAndMutations() throws IOException {
         setupIndex(indexFileName, DefaultValuePOJO.class, OddNamedQueriesAndMutations.class);
-        ExecutionContext executionContext =  createContext(defaultContext);
 
-        Schema schema = executionContext.getSchema();
+        Schema schema = createSchema();
+
         assertThat(schema, is(notNullValue()));
         SchemaType query = schema.getTypeByName("Query");
         SchemaType mutation = schema.getTypeByName("Mutation");
@@ -58,7 +65,7 @@ public class DefaultValuesIT extends AbstractGraphQLIT {
     @SuppressWarnings("unchecked")
     public void testDefaultValues() throws IOException {
         setupIndex(indexFileName, DefaultValuePOJO.class, DefaultValueQueries.class);
-        ExecutionContext executionContext =  createContext(defaultContext);
+        InvocationHandler executionContext = createInvocationHandler();
 
         // test with both fields as default
         Map<String, Object> mapResults = getAndAssertResult(
@@ -86,7 +93,7 @@ public class DefaultValuesIT extends AbstractGraphQLIT {
         assertThat(results.get("value"), is(1000));
 
         // check that the generated default value has the fields in correct order
-        Schema schema = executionContext.getSchema();
+        Schema schema = createSchema();
         SchemaType query = schema.getTypeByName(Schema.QUERY);
         assertThat(query, is(notNullValue()));
         SchemaFieldDefinition fd = query.getFieldDefinitionByName("echoDefaultValuePOJO");
@@ -95,7 +102,8 @@ public class DefaultValuesIT extends AbstractGraphQLIT {
         assertThat(argument, is(notNullValue()));
         assertThat(argument.defaultValue(), is(
                 "{ \"id\": \"ID-1\", \"value\": 1000, \"booleanValue\": true, \"dateObject\": \"1968-02-17\","
-                 + " \"formattedIntWithDefault\": \"2 value\", \"offsetDateTime\": \"29 Jan 2020 at 09:45 in zone +0200\"}"));
+                        + " \"formattedIntWithDefault\": \"2 value\", \"offsetDateTime\": \"29 Jan 2020 at 09:45 in zone "
+                        + "+0200\"}"));
 
         mapResults = getAndAssertResult(
                 executionContext.execute("query { echoDefaultValuePOJO(input: {id: \"X123\" value: 1}) { id value } }"));
@@ -113,7 +121,7 @@ public class DefaultValuesIT extends AbstractGraphQLIT {
         assertThat(results.get("id"), is("ID-123"));
         assertThat(results.get("value"), is(1));
 
-        schema = executionContext.getSchema();
+        schema = createSchema();
         SchemaType type = schema.getInputTypeByName("DefaultValuePOJOInput");
         assertReturnTypeDefaultValue(type, "id", "ID-123");
         assertReturnTypeDefaultValue(type, "booleanValue", "false");

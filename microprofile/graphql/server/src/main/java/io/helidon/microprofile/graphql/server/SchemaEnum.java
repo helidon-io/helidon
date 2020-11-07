@@ -23,7 +23,7 @@ import java.util.Objects;
 /**
  * The representation of a GraphQL Enum.
  */
-public class SchemaEnum extends AbstractDescriptiveElement implements ElementGenerator {
+class SchemaEnum extends AbstractDescriptiveElement implements ElementGenerator {
 
     /**
      * The name of the enum.

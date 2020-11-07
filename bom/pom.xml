@@ -184,6 +184,11 @@
             </dependency>
             <!-- graphQL -->
             <dependency>
+                <groupId>io.helidon.graphql</groupId>
+                <artifactId>helidon-graphql-server</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.microprofile.graphql</groupId>
                 <artifactId>helidon-microprofile-graphql-server</artifactId>
                 <version>${helidon.version}</version>

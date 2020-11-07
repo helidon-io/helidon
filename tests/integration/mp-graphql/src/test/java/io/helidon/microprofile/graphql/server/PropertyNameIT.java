@@ -19,10 +19,12 @@ package io.helidon.microprofile.graphql.server;
 import java.io.IOException;
 import java.util.Map;
 
+import javax.inject.Inject;
+
+import io.helidon.graphql.server.InvocationHandler;
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.queries.PropertyNameQueries;
 import io.helidon.microprofile.graphql.server.test.types.TypeWithNameAndJsonbProperty;
-
 import io.helidon.microprofile.tests.junit5.AddBean;
 
 import org.junit.jupiter.api.Test;
@@ -35,13 +37,16 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 @AddBean(PropertyNameQueries.class)
 @AddBean(TestDB.class)
-public class PropertyNameIT extends AbstractGraphQLIT {
-
+public class PropertyNameIT extends AbstractGraphQlCdiIT {
+    @Inject
+    public PropertyNameIT(GraphQlCdiExtension graphQlCdiExtension) {
+        super(graphQlCdiExtension);
+    }
     @Test
     @SuppressWarnings("unchecked")
     public void testDifferentPropertyNames() throws IOException {
         setupIndex(indexFileName, PropertyNameQueries.class, TypeWithNameAndJsonbProperty.class);
-        ExecutionContext executionContext =  createContext(defaultContext);
+        InvocationHandler executionContext =  createInvocationHandler();
 
         Map<String, Object> mapResults = getAndAssertResult(
                 executionContext.execute("query { query1 { newFieldName1 newFieldName2 "

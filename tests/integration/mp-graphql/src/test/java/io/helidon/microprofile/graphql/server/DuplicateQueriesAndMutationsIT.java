@@ -17,10 +17,10 @@
 package io.helidon.microprofile.graphql.server;
 
 import java.io.IOException;
+import java.util.Set;
 
 import io.helidon.microprofile.graphql.server.test.mutations.VoidMutations;
 import io.helidon.microprofile.graphql.server.test.queries.DuplicateNameQueries;
-import io.helidon.microprofile.tests.junit5.AddBean;
 
 import org.junit.jupiter.api.Test;
 
@@ -29,12 +29,14 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 /**
  * Tests for duplicate queries and mutations.
  */
-@AddBean(VoidMutations.class)
-public class DuplicateQueriesAndMutationsIT extends AbstractGraphQLIT {
+class DuplicateQueriesAndMutationsIT extends AbstractGraphQlIT {
+    public DuplicateQueriesAndMutationsIT() {
+        super(Set.of(VoidMutations.class));
+    }
 
     @Test
     public void testDuplicateQueryOrMutationNames() throws IOException {
         setupIndex(indexFileName, DuplicateNameQueries.class);
-        assertThrows(RuntimeException.class, () -> createContext(defaultContext));
+        assertThrows(RuntimeException.class, this::createInvocationHandler);
     }
 }

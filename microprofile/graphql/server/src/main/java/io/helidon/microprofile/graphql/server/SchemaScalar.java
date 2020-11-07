@@ -23,7 +23,7 @@ import graphql.schema.GraphQLScalarType;
 /**
  * The representation of a GraphQL Scalar.
  */
-public class SchemaScalar implements ElementGenerator {
+class SchemaScalar implements ElementGenerator {
 
     /**
      * Name of the Scalar.
@@ -53,7 +53,7 @@ public class SchemaScalar implements ElementGenerator {
      * @param graphQLScalarType {@link GraphQLScalarType} to convert this {@link SchemaScalar}.
      * @param defaultFormat default format or null if none
      */
-    public SchemaScalar(String name, String actualClass, GraphQLScalarType graphQLScalarType, String defaultFormat) {
+    SchemaScalar(String name, String actualClass, GraphQLScalarType graphQLScalarType, String defaultFormat) {
         this.name = name;
         this.actualClass = actualClass;
         this.graphQLScalarType = graphQLScalarType;
@@ -65,7 +65,7 @@ public class SchemaScalar implements ElementGenerator {
      *
      * @return the name of the {@link SchemaScalar}
      */
-    public String name() {
+    String name() {
         return name;
     }
 
@@ -74,7 +74,7 @@ public class SchemaScalar implements ElementGenerator {
      *
      * @return the actual class name of the {@link SchemaScalar}
      */
-    public String actualClass() {
+    String actualClass() {
         return actualClass;
     }
 
@@ -83,7 +83,7 @@ public class SchemaScalar implements ElementGenerator {
      *
      * @return the {@link GraphQLScalarType} instance.
      */
-    public GraphQLScalarType graphQLScalarType() {
+    GraphQLScalarType graphQLScalarType() {
         return graphQLScalarType;
     }
 
@@ -92,7 +92,7 @@ public class SchemaScalar implements ElementGenerator {
      *
      * @return default format if none is specified
      */
-    public String defaultFormat() {
+    String defaultFormat() {
         return defaultFormat;
     }
 
@@ -100,7 +100,7 @@ public class SchemaScalar implements ElementGenerator {
      * Set the default format if none is specified.
      * @param defaultFormat  default format if none is specified
      */
-    public void defaultFormat(String defaultFormat) {
+    void defaultFormat(String defaultFormat) {
         this.defaultFormat = defaultFormat;
     }
 

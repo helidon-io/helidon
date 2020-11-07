@@ -180,6 +180,7 @@
         <module>dbclient</module>
         <module>messaging</module>
         <module>fault-tolerance</module>
+        <module>graphql</module>
     </modules>
 
 

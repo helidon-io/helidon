@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 /**
  * The representation of a GraphQL directive.
  */
-public class SchemaDirective implements ElementGenerator {
+class SchemaDirective implements ElementGenerator {
 
     /**
      * The name of the directive.

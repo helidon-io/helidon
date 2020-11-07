@@ -16,22 +16,18 @@
 
 package io.helidon.microprofile.graphql.server;
 
-import java.beans.IntrospectionException;
 import java.io.IOException;
+
+import javax.inject.Inject;
 
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.types.AbstractVehicle;
 import io.helidon.microprofile.graphql.server.test.types.Car;
 import io.helidon.microprofile.graphql.server.test.types.Motorbike;
 import io.helidon.microprofile.graphql.server.test.types.Vehicle;
-
 import io.helidon.microprofile.tests.junit5.AddBean;
 
-import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.Test;
-
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Tests for discovery of interfaces when only the interface annotated.
@@ -41,11 +37,15 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @AddBean(Motorbike.class)
 @AddBean(AbstractVehicle.class)
 @AddBean(TestDB.class)
-public class InterfaceOnlyAnnotatedIT extends AbstractGraphQLIT {
+class InterfaceOnlyAnnotatedIT extends AbstractGraphQlCdiIT {
+
+    @Inject
+    InterfaceOnlyAnnotatedIT(GraphQlCdiExtension graphQlCdiExtension) {
+        super(graphQlCdiExtension);
+    }
 
     @Test
-    public void testInterfaceDiscoveryWithImplementorsWithNoTypeAnnotation()
-            throws IOException, IntrospectionException, ClassNotFoundException {
+    void testInterfaceDiscoveryWithImplementorsWithNoTypeAnnotation() throws IOException {
         setupIndex(indexFileName, Vehicle.class, Car.class, Motorbike.class, AbstractVehicle.class);
         assertInterfaceResults();
     }

@@ -40,7 +40,7 @@ import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getSa
 /**
  * The representation of a GraphQL Schema.
  */
-public class Schema implements ElementGenerator {
+class Schema implements ElementGenerator {
 
     private static final Logger LOGGER = Logger.getLogger(Schema.class.getName());
 
@@ -507,6 +507,9 @@ public class Schema implements ElementGenerator {
         private String queryName;
         private String mutationName;
         private String subscriptionName;
+
+        private Builder() {
+        }
 
         /**
          * Set the name for the query type.

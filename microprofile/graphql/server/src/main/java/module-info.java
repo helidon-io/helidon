@@ -20,32 +20,28 @@ import io.helidon.microprofile.graphql.server.GraphQlCdiExtension;
  * GraphQL microprofile server module.
  */
 module helidon.microprofile.graphql.server {
-    requires jakarta.enterprise.cdi.api;
-
-    requires com.fasterxml.jackson.databind;
-    requires io.helidon.microprofile.cdi;
-    requires io.helidon.webserver;
-    requires io.helidon.media.jsonb;
-    requires io.helidon.media.jsonp;
-    requires io.helidon.microprofile.server;
-    requires io.helidon.webserver.cors;
-
-    requires jandex;
-    requires java.ws.rs;
+    requires java.logging;
     requires java.desktop;
-    requires java.json;
+
     requires java.json.bind;
     requires java.annotation;
-    requires java.logging;
+    requires jakarta.enterprise.cdi.api;
+    requires org.eclipse.yasson;
+
+    requires jandex;
+
+    requires io.helidon.config;
+    requires io.helidon.webserver;
+    requires io.helidon.graphql.server;
+    requires io.helidon.microprofile.cdi;
+    requires io.helidon.microprofile.server;
+
     requires graphql.java;
     requires graphql.java.extended.scalars;
     requires microprofile.graphql.api;
-    requires org.eclipse.yasson;
-
-    requires transitive microprofile.config.api;
+    requires microprofile.config.api;
 
     exports io.helidon.microprofile.graphql.server;
-    requires io.helidon.config;
 
     provides javax.enterprise.inject.spi.Extension with
             GraphQlCdiExtension;

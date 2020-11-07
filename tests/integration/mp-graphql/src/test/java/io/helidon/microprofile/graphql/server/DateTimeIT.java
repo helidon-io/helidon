@@ -22,6 +22,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import javax.inject.Inject;
+
+import io.helidon.graphql.server.InvocationHandler;
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesAndMutations;
 import io.helidon.microprofile.graphql.server.test.types.DateTimePojo;
@@ -30,6 +33,7 @@ import io.helidon.microprofile.tests.junit5.AddBean;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.graphql.server.GraphQlConstants.ERRORS;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.DATETIME_SCALAR;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.DATE_SCALAR;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.FORMATTED_DATE_SCALAR;
@@ -45,13 +49,18 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 @AddBean(SimpleQueriesAndMutations.class)
 @AddBean(TestDB.class)
-public class DateTimeIT extends AbstractGraphQLIT {
+class DateTimeIT extends AbstractGraphQlCdiIT {
+
+    @Inject
+    DateTimeIT(GraphQlCdiExtension graphQlCdiExtension) {
+        super(graphQlCdiExtension);
+    }
 
     @Test
     @SuppressWarnings("unchecked")
     public void testDifferentSetterGetter() throws IOException {
         setupIndex(indexFileName, SimpleDateTime.class, SimpleQueriesAndMutations.class);
-        ExecutionContext executionContext = createContext(defaultContext);
+        InvocationHandler executionContext = createInvocationHandler();
         Map<String, Object> mapResults = getAndAssertResult(
                 executionContext.execute(
                         "mutation { echoSimpleDateTime(value: { calendarEntries: [ \"22/09/20\", \"23/09/20\" ] } ) { "
@@ -69,9 +78,9 @@ public class DateTimeIT extends AbstractGraphQLIT {
     @SuppressWarnings("unchecked")
     public void testDateAndTime() throws IOException {
         setupIndex(indexFileName, DateTimePojo.class, SimpleQueriesAndMutations.class);
-        ExecutionContext executionContext = createContext(defaultContext);
+        InvocationHandler executionContext = createInvocationHandler();
 
-        Schema schema = executionContext.getSchema();
+        Schema schema = createSchema();
         SchemaType type = schema.getTypeByName("DateTimePojo");
 
         SchemaFieldDefinition fd = getFieldDefinition(type, "localDate");
@@ -209,7 +218,7 @@ public class DateTimeIT extends AbstractGraphQLIT {
     @SuppressWarnings("unchecked")
     public void testDatesAndMutations() throws IOException {
         setupIndex(indexFileName, DateTimePojo.class, SimpleQueriesAndMutations.class);
-        ExecutionContext executionContext = createContext(defaultContext);
+        InvocationHandler executionContext = createInvocationHandler();
 
         Map<String, Object> mapResults = getAndAssertResult(
                 executionContext.execute("mutation { dateTimePojoMutation { formattedListOfDates localDateTime } }"));
@@ -244,7 +253,7 @@ public class DateTimeIT extends AbstractGraphQLIT {
         assertThat(mapResults.get("queryLocalDateAU"), is("17 Feb. 1968"));
 
         Map<String, Object> results = executionContext.execute("mutation { echoLocalDate(dateArgument: \"Today\") }");
-        List<Map<String, Object>> listErrors = (List<Map<String, Object>>) results.get(ExecutionContext.ERRORS);
+        List<Map<String, Object>> listErrors = (List<Map<String, Object>>) results.get(ERRORS);
         assertThat(listErrors, is(notNullValue()));
         assertThat(listErrors.size(), is(1));
 
@@ -266,7 +275,7 @@ public class DateTimeIT extends AbstractGraphQLIT {
     @Test
     public void testDateInputsAsPojo() throws IOException {
         setupIndex(indexFileName, DateTimePojo.class, SimpleQueriesAndMutations.class);
-        ExecutionContext executionContext = createContext(defaultContext);
+        InvocationHandler executionContext = createInvocationHandler();
 
         validateResult(executionContext, "query { echoDateTimePojo ( "
                                + " value: { localDate: \"02/17/1968\" "
@@ -304,7 +313,7 @@ public class DateTimeIT extends AbstractGraphQLIT {
     }
 
     @SuppressWarnings("unchecked")
-    private void validateResult(ExecutionContext executionContext, String query, String field, Object expectedResult) {
+    private void validateResult(InvocationHandler executionContext, String query, String field, Object expectedResult) {
         Map<String, Object> mapResults = getAndAssertResult(
                 executionContext.execute(query));
         assertThat(mapResults, is(notNullValue()));

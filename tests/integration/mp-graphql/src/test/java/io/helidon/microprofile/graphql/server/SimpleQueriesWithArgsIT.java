@@ -25,6 +25,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import javax.inject.Inject;
+
+import io.helidon.graphql.server.InvocationHandler;
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithEnumName;
 import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithNameAnnotation;
@@ -46,13 +49,18 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 @AddBean(SimpleQueriesWithArgs.class)
 @AddBean(TestDB.class)
-public class SimpleQueriesWithArgsIT extends AbstractGraphQLIT {
+public class SimpleQueriesWithArgsIT extends AbstractGraphQlCdiIT {
+
+    @Inject
+    SimpleQueriesWithArgsIT(GraphQlCdiExtension graphQlCdiExtension) {
+        super(graphQlCdiExtension);
+    }
 
     @Test
     @SuppressWarnings("unchecked")
     public void testSimpleQueryGenerationWithArgs() throws IOException {
         setupIndex(indexFileName, SimpleQueriesWithArgs.class, Car.class, AbstractVehicle.class);
-        ExecutionContext executionContext = createContext(defaultContext);
+        InvocationHandler executionContext = createInvocationHandler();
 
         Map<String, Object> mapResults = getAndAssertResult(executionContext.execute("query { hero(heroType: \"human\") }"));
         assertThat(mapResults.size(), is(1));
@@ -151,7 +159,7 @@ public class SimpleQueriesWithArgsIT extends AbstractGraphQLIT {
         assertThat(mapResults.get("canFindContactRelationship"), is(false));
 
         // validate that the name for the enum for SimpleContact is correct
-        Schema schema = executionContext.getSchema();
+        Schema schema = createSchema();
         SchemaType type = schema.getTypeByName("SimpleContact");
         assertThat(type, is(notNullValue()));
         assertThat(type.getFieldDefinitionByName("tShirtSize"), is(notNullValue()));
@@ -160,7 +168,7 @@ public class SimpleQueriesWithArgsIT extends AbstractGraphQLIT {
     @Test
     public void testQueriesWithVariables() throws IOException {
         setupIndex(indexFileName, SimpleQueriesWithArgs.class);
-        ExecutionContext executionContext = createContext(defaultContext);
+        InvocationHandler executionContext = createInvocationHandler();
         Map<String, Object> mapVariables = Map.of("first", 10, "second", 20);
         Map<String, Object> mapResults = getAndAssertResult(executionContext.execute(
                 "query additionQuery($first: Int!, $second: Int!) {"

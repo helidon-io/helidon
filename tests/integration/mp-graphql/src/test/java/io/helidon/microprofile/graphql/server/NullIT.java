@@ -19,32 +19,38 @@ package io.helidon.microprofile.graphql.server;
 import java.io.IOException;
 import java.util.Map;
 
+import javax.inject.Inject;
+
+import io.helidon.graphql.server.InvocationHandler;
+import io.helidon.microprofile.graphql.server.test.db.TestDB;
+import io.helidon.microprofile.graphql.server.test.queries.QueriesAndMutationsWithNulls;
+import io.helidon.microprofile.graphql.server.test.types.NullPOJO;
+import io.helidon.microprofile.tests.junit5.AddBean;
+
+import org.junit.jupiter.api.Test;
+
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-
-import io.helidon.microprofile.graphql.server.test.db.TestDB;
-import io.helidon.microprofile.graphql.server.test.queries.QueriesAndMutationsWithNulls;
-import io.helidon.microprofile.graphql.server.test.types.NullPOJO;
-
-import io.helidon.microprofile.tests.junit5.AddBean;
-
-import org.junit.jupiter.api.Test;
 
 /**
  * Tests for Nulls.
  */
 @AddBean(QueriesAndMutationsWithNulls.class)
 @AddBean(TestDB.class)
-public class NullIT extends AbstractGraphQLIT {
+public class NullIT extends AbstractGraphQlCdiIT {
+    @Inject
+    public NullIT(GraphQlCdiExtension graphQlCdiExtension) {
+        super(graphQlCdiExtension);
+    }
 
     @Test
     @SuppressWarnings("unchecked")
     public void testNulls() throws IOException {
         setupIndex(indexFileName, NullPOJO.class, QueriesAndMutationsWithNulls.class);
-        ExecutionContext executionContext =  createContext(defaultContext);
-        Schema schema = executionContext.getSchema();
+        InvocationHandler executionContext =  createInvocationHandler();
+        Schema schema = createSchema();
         assertThat(schema, is(notNullValue()));
 
         // test primitives should be not null be default

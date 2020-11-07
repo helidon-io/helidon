@@ -18,9 +18,10 @@ package io.helidon.microprofile.graphql.server;
 
 import java.io.IOException;
 
+import javax.inject.Inject;
+
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.exception.ExceptionQueries;
-import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
 import io.helidon.microprofile.tests.junit5.AddBean;
 
 import org.junit.jupiter.api.Test;
@@ -30,10 +31,15 @@ import org.junit.jupiter.api.Test;
  */
 @AddBean(ExceptionQueries.class)
 @AddBean(TestDB.class)
-public class DefaultCheckedExceptionIT extends AbstractGraphQLIT {
+class DefaultCheckedExceptionIT extends AbstractGraphQlCdiIT {
+
+    @Inject
+    DefaultCheckedExceptionIT(GraphQlCdiExtension graphQlCdiExtension) {
+        super(graphQlCdiExtension);
+    }
 
     @Test
-    public void testBlackListAndWhiteList() throws IOException {
+    void testBlackListAndWhiteList() throws IOException {
         setupIndex(indexFileName, ExceptionQueries.class);
         assertMessageValue("query { checkedQuery1(throwException: true) }", "exception", true);
     }

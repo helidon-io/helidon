@@ -26,13 +26,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import javax.inject.Inject;
+
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithEnumName;
 import io.helidon.microprofile.graphql.server.test.queries.SimpleQueriesWithArgs;
 import io.helidon.microprofile.graphql.server.test.types.ContactRelationship;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContactWithNumberFormats;
-
 import io.helidon.microprofile.tests.junit5.AddBean;
 
 import org.junit.jupiter.api.Test;
@@ -47,13 +48,17 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 @AddBean(SimpleQueriesWithArgs.class)
 @AddBean(TestDB.class)
-class DataFetcherUtilsIT extends AbstractGraphQLIT {
+class DataFetcherUtilsIT extends AbstractGraphQlCdiIT {
+
+    @Inject
+    DataFetcherUtilsIT(GraphQlCdiExtension graphQlCdiExtension) {
+        super(graphQlCdiExtension);
+    }
 
     @Test
-    public void testSimpleContact() throws Exception {
+    void testSimpleContact() throws Exception {
         setupIndex(indexFileName, SimpleQueriesWithArgs.class, SimpleContact.class);
-        ExecutionContext executionContext = createContext(defaultContext);
-        Schema schema = executionContext.getSchema();
+        Schema schema = createSchema();
 
         Map<String, Object> mapContact = Map.of("id", "1", "name", "Tim", "age", 52, "tShirtSize", "L");
         SimpleContact simpleContact = new SimpleContact("1", "Tim", 52, EnumTestWithEnumName.L);
@@ -61,10 +66,9 @@ class DataFetcherUtilsIT extends AbstractGraphQLIT {
     }
 
     @Test
-    public void testSimpleContactWithNumberFormats() throws Exception {
+    void testSimpleContactWithNumberFormats() throws Exception {
         setupIndex(indexFileName, SimpleQueriesWithArgs.class, SimpleContactWithNumberFormats.class);
-        ExecutionContext executionContext = createContext(defaultContext);
-        Schema schema = executionContext.getSchema();
+        Schema schema = createSchema();
 
         Map<String, Object> mapContact = Map.of("age", "52 years old", "bankBalance", "$ 100.00",
                                                 "bigDecimal", "BigDecimal-123", "longValue", "LongValue-321",
@@ -75,10 +79,10 @@ class DataFetcherUtilsIT extends AbstractGraphQLIT {
     }
 
     @Test
-    public void testSimpleTypes() throws Exception {
+    void testSimpleTypes() throws Exception {
         setupIndex(indexFileName, SimpleQueriesWithArgs.class, SimpleContact.class);
-        ExecutionContext executionContext = createContext(defaultContext);
-        Schema schema = executionContext.getSchema();
+
+        Schema schema = createSchema();
 
         // ID types
         assertArgumentResult(schema, "returnIntegerAsId", "param1", 1, 1);
@@ -120,10 +124,9 @@ class DataFetcherUtilsIT extends AbstractGraphQLIT {
     }
 
     @Test
-    public void testSimpleTypesWithFormats() throws Exception {
+    void testSimpleTypesWithFormats() throws Exception {
         setupIndex(indexFileName, SimpleQueriesWithArgs.class, SimpleContact.class);
-        ExecutionContext executionContext = createContext(defaultContext);
-        Schema schema = executionContext.getSchema();
+        Schema schema = createSchema();
 
         // primitives
         assertArgumentResult(schema, "echoIntWithFormat", "value", "100 value", 100);
@@ -148,10 +151,9 @@ class DataFetcherUtilsIT extends AbstractGraphQLIT {
     }
 
     @Test
-    public void testArrays() throws Exception {
+    void testArrays() throws Exception {
         setupIndex(indexFileName, SimpleQueriesWithArgs.class, SimpleContact.class);
-        ExecutionContext executionContext = createContext(defaultContext);
-        Schema schema = executionContext.getSchema();
+        Schema schema = createSchema();
 
         String[] stringArray = new String[] { "A", "B", "C" };
         assertArgumentResult(schema, "echoStringArray", "value", stringArray, stringArray);
@@ -179,15 +181,13 @@ class DataFetcherUtilsIT extends AbstractGraphQLIT {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
-    public void testSimpleCollections() throws Exception {
+    void testSimpleCollections() throws Exception {
         setupIndex(indexFileName, SimpleQueriesWithArgs.class, SimpleContact.class);
-        ExecutionContext executionContext = createContext(defaultContext);
-        Schema schema = executionContext.getSchema();
+        Schema schema = createSchema();
 
-        List<Integer> listInteger = getList(1, 2, 3);
-        List<String> listString = getList("A", "B", "C");
-        Collection<BigInteger> colBigInteger = getList(BigInteger.valueOf(1), BigInteger.valueOf(222), BigInteger.valueOf(333));
+        List<Integer> listInteger = List.of(1, 2, 3);
+        List<String> listString = List.of("A", "B", "C");
+        Collection<BigInteger> colBigInteger = List.of(BigInteger.valueOf(1), BigInteger.valueOf(222), BigInteger.valueOf(333));
 
         assertArgumentResult(schema, "echoListOfIntegers", "value", listInteger, listInteger);
         assertArgumentResult(schema, "echoListOfStrings", "value", listString, listString);
@@ -207,10 +207,10 @@ class DataFetcherUtilsIT extends AbstractGraphQLIT {
 
     @Test
     @SuppressWarnings("unchecked")
-    public void testCollectionsAndObjects() throws Exception {
+    void testCollectionsAndObjects() throws Exception {
         setupIndex(indexFileName, SimpleQueriesWithArgs.class, SimpleContact.class);
-        ExecutionContext executionContext = createContext(defaultContext);
-        Schema schema = executionContext.getSchema();
+
+        Schema schema = createSchema();
 
         SimpleContact contact1 = new SimpleContact("c1", "Contact 1", 50, EnumTestWithEnumName.XL);
         SimpleContact contact2 = new SimpleContact("c2", "Contact 2", 52, EnumTestWithEnumName.XXL);
@@ -228,10 +228,10 @@ class DataFetcherUtilsIT extends AbstractGraphQLIT {
 
     @Test
     @SuppressWarnings("unchecked")
-    public void testObjectGraphs() throws Exception {
+    void testObjectGraphs() throws Exception {
         setupIndex(indexFileName, SimpleQueriesWithArgs.class, SimpleContact.class, ContactRelationship.class);
-        ExecutionContext executionContext = createContext(defaultContext);
-        Schema schema = executionContext.getSchema();
+
+        Schema schema = createSchema();
 
         SimpleContact contact1 = new SimpleContact("c1", "Contact 1", 50, EnumTestWithEnumName.M);
         SimpleContact contact2 = new SimpleContact("c2", "Contact 2", 53, EnumTestWithEnumName.L);
@@ -248,15 +248,6 @@ class DataFetcherUtilsIT extends AbstractGraphQLIT {
         assertArgumentResult(schema, "canFindContactRelationship", "relationship", mapContactRel, relationship);
     }
 
-    @SuppressWarnings( { "rawtypes", "unchecked" })
-    protected List getList(Object... values) {
-        ArrayList list = new ArrayList();
-        for (Object value : values) {
-            list.add(value);
-        }
-        return list;
-    }
-
     /**
      * Validate that the given argument results in the correct value.
      *
@@ -267,7 +258,7 @@ class DataFetcherUtilsIT extends AbstractGraphQLIT {
      * @param expected     the expected output
      * @throws Exception if any errors
      */
-    @SuppressWarnings( { "rawtypes", "unchecked" })
+    @SuppressWarnings( { "rawtypes" })
     protected void assertArgumentResult(Schema schema, String fdName,
                                         String argumentName, Object input, Object expected) throws Exception {
         SchemaArgument argument = getArgument(schema, "Query", fdName, argumentName);

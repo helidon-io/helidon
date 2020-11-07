@@ -18,9 +18,10 @@ package io.helidon.microprofile.graphql.server;
 
 import java.io.IOException;
 
+import javax.inject.Inject;
+
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.exception.ExceptionQueries;
-import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
 import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.AddConfig;
 
@@ -31,10 +32,14 @@ import org.junit.jupiter.api.Test;
  * Tests for deny list.
  */
 @AddBean(ExceptionQueries.class)
-//@AddBean(SimpleContact.class)
 @AddBean(TestDB.class)
 @AddConfig(key = ConfigKey.EXCEPTION_BLACK_LIST, value = "java.io.IOException,java.util.concurrent.TimeoutException")
-public class BLOfIOExceptionIT extends AbstractGraphQLIT {
+class BLOfIOExceptionIT extends AbstractGraphQlCdiIT {
+
+    @Inject
+    BLOfIOExceptionIT(GraphQlCdiExtension graphQlCdiExtension) {
+        super(graphQlCdiExtension);
+    }
 
     @Test
     public void testDenyListOfIOException() throws IOException {

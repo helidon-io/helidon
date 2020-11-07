@@ -18,10 +18,11 @@ package io.helidon.microprofile.graphql.server;
 
 import java.io.IOException;
 
+import javax.inject.Inject;
+
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.queries.DescriptionQueries;
 import io.helidon.microprofile.graphql.server.test.types.DescriptionType;
-
 import io.helidon.microprofile.tests.junit5.AddBean;
 
 import org.junit.jupiter.api.Test;
@@ -36,14 +37,18 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 @AddBean(DescriptionQueries.class)
 @AddBean(TestDB.class)
-public class DescriptionIT extends AbstractGraphQLIT {
-    
+class DescriptionIT extends AbstractGraphQlCdiIT {
+
+    @Inject
+    DescriptionIT(GraphQlCdiExtension graphQlCdiExtension) {
+        super(graphQlCdiExtension);
+    }
+
     @Test
     public void testDescriptions() throws IOException {
         setupIndex(indexFileName, DescriptionType.class, DescriptionQueries.class);
-        ExecutionContext executionContext =  createContext(defaultContext);
+        Schema schema = createSchema();
 
-        Schema schema = executionContext.getSchema();
         assertThat(schema, is(notNullValue()));
         SchemaType type = schema.getTypeByName("DescriptionType");
         assertThat(type, is(notNullValue()));

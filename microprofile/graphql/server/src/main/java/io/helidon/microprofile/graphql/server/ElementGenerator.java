@@ -28,7 +28,7 @@ import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.ensur
 /**
  * An interface representing a class which can generate a GraphQL representation of it's state.
  */
-public interface ElementGenerator {
+interface ElementGenerator {
 
     /**
      * Logger.

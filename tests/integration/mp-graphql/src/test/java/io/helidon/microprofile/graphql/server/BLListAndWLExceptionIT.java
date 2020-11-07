@@ -18,9 +18,11 @@ package io.helidon.microprofile.graphql.server;
 
 import java.io.IOException;
 
+import javax.inject.Inject;
+
+import io.helidon.graphql.server.InvocationHandler;
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.exception.ExceptionQueries;
-import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
 import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.AddConfig;
 
@@ -38,19 +40,24 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @AddConfig(key = ConfigKey.EXCEPTION_WHITE_LIST,
            value = "org.eclipse.microprofile.graphql.tck.apps.superhero.api.WeaknessNotFoundException")
 @AddConfig(key = ConfigKey.EXCEPTION_BLACK_LIST, value = "java.io.IOException,java.util.concurrent.TimeoutException")
-public class BLListAndWLExceptionIT extends AbstractGraphQLIT {
+class BLListAndWLExceptionIT extends AbstractGraphQlCdiIT {
+
+    @Inject
+    BLListAndWLExceptionIT(GraphQlCdiExtension graphQlCdiExtension) {
+        super(graphQlCdiExtension);
+    }
 
     @Test
     public void tesDenyListAndAllowList() throws IOException {
         setupIndex(indexFileName);
 
-        ExecutionContext executionContext = createContext(defaultContext);
-        assertThat(executionContext.getDefaultErrorMessage(), is("Server Error"));
-        assertThat(executionContext.getExceptionDenyList().size(), is(2));
-        assertThat(executionContext.getExceptionAllowList().size(), is(1));
-        assertThat(executionContext.getExceptionDenyList().contains("java.io.IOException"), is(true));
-        assertThat(executionContext.getExceptionDenyList().contains("java.util.concurrent.TimeoutException"), is(true));
-        assertThat(executionContext.getExceptionAllowList()
+        InvocationHandler executionContext = createInvocationHandler();
+        assertThat(executionContext.defaultErrorMessage(), is("Server Error"));
+        assertThat(executionContext.blacklistedExceptions().size(), is(2));
+        assertThat(executionContext.whitelistedExceptions().size(), is(1));
+        assertThat(executionContext.blacklistedExceptions().contains("java.io.IOException"), is(true));
+        assertThat(executionContext.blacklistedExceptions().contains("java.util.concurrent.TimeoutException"), is(true));
+        assertThat(executionContext.whitelistedExceptions()
                            .contains("org.eclipse.microprofile.graphql.tck.apps.superhero.api.WeaknessNotFoundException"),
                    is(true));
     }

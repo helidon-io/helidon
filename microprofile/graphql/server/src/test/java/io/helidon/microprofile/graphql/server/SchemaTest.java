@@ -21,18 +21,15 @@ import java.util.Date;
 import java.util.List;
 
 import graphql.scalars.ExtendedScalars;
-
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static graphql.introspection.Introspection.DirectiveLocation.FIELD_DEFINITION;
 import static io.helidon.microprofile.graphql.server.TestHelper.createArgument;
 import static io.helidon.microprofile.graphql.server.TestHelper.createSchemaType;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests for {@link Schema} class.
@@ -40,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class SchemaTest extends AbstractGraphQLTest {
 
     private static final Class<?> STRING = String.class;
-    
+
     @Test
     public void testEmptySchemaAsString() {
         Schema schema = Schema.create();

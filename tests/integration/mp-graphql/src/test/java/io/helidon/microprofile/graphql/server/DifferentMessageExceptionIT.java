@@ -18,9 +18,11 @@ package io.helidon.microprofile.graphql.server;
 
 import java.io.IOException;
 
+import javax.inject.Inject;
+
+import io.helidon.graphql.server.InvocationHandler;
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.exception.ExceptionQueries;
-import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
 import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.AddConfig;
 
@@ -35,13 +37,18 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @AddBean(ExceptionQueries.class)
 @AddBean(TestDB.class)
 @AddConfig(key = "mp.graphql.defaultErrorMessage", value = "new message")
-public class DifferentMessageExceptionIT extends AbstractGraphQLIT {
+class DifferentMessageExceptionIT extends AbstractGraphQlCdiIT {
+
+    @Inject
+    DifferentMessageExceptionIT(GraphQlCdiExtension graphQlCdiExtension) {
+        super(graphQlCdiExtension);
+    }
 
     @Test
     public void testDifferentMessage() throws IOException {
         setupIndex(indexFileName);
 
-        ExecutionContext executionContext = createContext(defaultContext);
-        assertThat(executionContext.getDefaultErrorMessage(), is("new message"));
+        InvocationHandler executionContext = createInvocationHandler();
+        assertThat(executionContext.defaultErrorMessage(), is("new message"));
     }
 }

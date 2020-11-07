@@ -19,7 +19,7 @@ package io.helidon.microprofile.graphql.server;
 /**
  * The representation of a GraphQL Input Type.
  */
-public class SchemaInputType extends SchemaType {
+class SchemaInputType extends SchemaType {
 
     /**
      * Private no-args constructor.

@@ -19,6 +19,8 @@ package io.helidon.microprofile.graphql.server;
 import java.beans.IntrospectionException;
 import java.io.IOException;
 
+import javax.inject.Inject;
+
 import io.helidon.microprofile.graphql.server.test.types.Person;
 import io.helidon.microprofile.graphql.server.test.types.PersonWithName;
 import io.helidon.microprofile.tests.junit5.AddBean;
@@ -33,7 +35,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * Tests for naming of Pojo's.
  */
 @AddBean(Person.class)
-public class PojoNamingIT extends AbstractGraphQLIT {
+class PojoNamingIT extends AbstractGraphQlCdiIT {
+
+    @Inject
+    PojoNamingIT(GraphQlCdiExtension graphQlCdiExtension) {
+        super(graphQlCdiExtension);
+    }
 
     /**
      * Test generation of Type with no-name.
@@ -41,8 +48,7 @@ public class PojoNamingIT extends AbstractGraphQLIT {
     @Test
     public void testTypeGenerationWithNoName() throws IntrospectionException, ClassNotFoundException, IOException {
         setupIndex(indexFileName, Person.class);
-        SchemaGenerator schemaGenerator = createSchemaGenerator(defaultContext);
-        Schema schema = schemaGenerator.generateSchema();
+        Schema schema = createSchema();
         assertThat(schema.getTypeByName("Person"), is(notNullValue()));
         assertThat(schema.getTypeByName("Address"), is(notNullValue()));
         assertThat(schema.containsScalarWithName("Date"), is(notNullValue()));
@@ -56,8 +62,7 @@ public class PojoNamingIT extends AbstractGraphQLIT {
     @Test
     public void testPersonWithName() throws IOException, IntrospectionException, ClassNotFoundException {
         setupIndex(indexFileName, PersonWithName.class);
-        SchemaGenerator schemaGenerator = createSchemaGenerator(defaultContext);
-        Schema schema = schemaGenerator.generateSchema();
+        Schema schema = createSchema();
 
         assertThat(schema, is(notNullValue()));
         assertThat(schema.getTypeByName("Person"), is(notNullValue()));

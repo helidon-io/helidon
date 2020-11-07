@@ -21,6 +21,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.annotation.Priority;
 import javax.enterprise.context.ApplicationScoped;
@@ -30,16 +32,21 @@ import javax.enterprise.inject.spi.AfterBeanDiscovery;
 import javax.enterprise.inject.spi.AnnotatedType;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.BeforeBeanDiscovery;
+import javax.enterprise.inject.spi.DeploymentException;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessAnnotatedType;
 import javax.enterprise.inject.spi.ProcessManagedBean;
 import javax.enterprise.inject.spi.WithAnnotations;
 
+import io.helidon.graphql.server.GraphQlSupport;
+import io.helidon.graphql.server.InvocationHandler;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.webserver.Routing;
 
+import graphql.schema.GraphQLSchema;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
+import org.eclipse.microprofile.graphql.ConfigKey;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Input;
 import org.eclipse.microprofile.graphql.Interface;
@@ -51,6 +58,7 @@ import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
  * A CDI {@link Extension} to collect the classes that are of interest to Microprofile GraphQL.
  */
 public class GraphQlCdiExtension implements Extension {
+    private static final Logger LOGGER = Logger.getLogger(GraphQlCdiExtension.class.getName());
 
     /**
      * The {@link List} of collected API's.
@@ -63,15 +71,22 @@ public class GraphQlCdiExtension implements Extension {
      *
      * @param processAnnotatedType annotation types to process
      */
-    void collectCandidateApis(@Observes @WithAnnotations({GraphQLApi.class,
-                                                        Type.class,
-                                                        Input.class,
+    void collectCandidateApis(@Observes @WithAnnotations(GraphQLApi.class) ProcessAnnotatedType<?> processAnnotatedType) {
+        Class<?> javaClass = processAnnotatedType.getAnnotatedType().getJavaClass();
+        this.candidateApis.add(javaClass);
+        if (javaClass.isInterface()) {
+            collectedApis.add(javaClass);
+        }
+    }
+
+    void collectApis(@Observes @WithAnnotations({Type.class, Input.class,
                                                         Interface.class}) ProcessAnnotatedType<?> processAnnotatedType) {
-        this.candidateApis.add(processAnnotatedType.getAnnotatedType().getJavaClass());
+        // these are directly added
+        this.collectedApis.add(processAnnotatedType.getAnnotatedType().getJavaClass());
     }
 
     void collectNonVetoed(@Observes ProcessManagedBean<?> event) {
-        AnnotatedType<?> type =  event.getAnnotatedBeanClass();
+        AnnotatedType<?> type = event.getAnnotatedBeanClass();
         Class<?> clazz = type.getJavaClass();
 
         if (candidateApis.remove(clazz)) {
@@ -92,28 +107,55 @@ public class GraphQlCdiExtension implements Extension {
                                BeanManager bm) {
 
         Config config = ConfigProvider.getConfig();
+        // this works for Helidon MP config
+        io.helidon.config.Config graphQlConfig = ((io.helidon.config.Config) config).get("graphql");
+
+        InvocationHandler.Builder handlerBuilder = InvocationHandler.builder()
+                .config(graphQlConfig)
+                .schema(createSchema());
+
+        config.getOptionalValue(ConfigKey.DEFAULT_ERROR_MESSAGE, String.class)
+                .ifPresent(handlerBuilder::defaultErrorMessage);
+
+        config.getOptionalValue(ConfigKey.EXCEPTION_WHITE_LIST, String[].class)
+                .ifPresent(handlerBuilder::exceptionWhitelist);
+
+        config.getOptionalValue(ConfigKey.EXCEPTION_BLACK_LIST, String[].class)
+                .ifPresent(handlerBuilder::exceptionBlacklist);
+
         GraphQlSupport graphQlSupport = GraphQlSupport.builder()
-                .config((io.helidon.config.Config) config)
+                .config(graphQlConfig)
+                .invocationHandler(handlerBuilder)
                 .build();
+        try {
+            ServerCdiExtension server = bm.getExtension(ServerCdiExtension.class);
+            Optional<String> routingNameConfig = config.getOptionalValue("graphql.routing", String.class);
 
-        ServerCdiExtension server = bm.getExtension(ServerCdiExtension.class);
-        Optional<String> routingNameConfig = config.getOptionalValue("graphql.routing", String.class);
+            Routing.Builder routing = routingNameConfig.stream()
+                    .filter(Predicate.not("@default"::equals))
+                    .map(server::serverNamedRoutingBuilder)
+                    .findFirst()
+                    .orElseGet(server::serverRoutingBuilder);
 
-        Routing.Builder routing = routingNameConfig.stream()
-                .filter(Predicate.not("@default"::equals))
-                .map(server::serverNamedRoutingBuilder)
-                .findFirst()
-                .orElseGet(server::serverRoutingBuilder);
-
-        graphQlSupport.update(routing);
+            graphQlSupport.update(routing);
+        } catch (Throwable e) {
+            LOGGER.log(Level.WARNING, "Failed to set up routing with web server, maybe server extension missing?", e);
+        }
     }
 
-    /**
-     * Return the collected API's.
-     *
-     * @return the collected API's
-     */
-    Class<?>[] collectedApis() {
-        return collectedApis.toArray(new Class[0]);
+    Set<Class<?>> collectedApis() {
+        return collectedApis;
+    }
+
+    private GraphQLSchema createSchema() {
+        try {
+            return SchemaGenerator.builder()
+                    .classes(collectedApis)
+                    .build()
+                    .generateSchema()
+                    .generateGraphQLSchema();
+        } catch (Exception e) {
+            throw new DeploymentException("Failed to set up graphQL", e);
+        }
     }
 }

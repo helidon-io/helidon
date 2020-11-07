@@ -37,7 +37,7 @@ import org.jboss.jandex.IndexReader;
 /**
  * Utilities for working with Jandex indexes.
  */
-public class JandexUtils {
+class JandexUtils {
 
     private static final Logger LOGGER = Logger.getLogger(JandexUtils.class.getName());
 

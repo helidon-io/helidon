@@ -18,9 +18,10 @@ package io.helidon.microprofile.graphql.server;
 
 import java.io.IOException;
 
+import javax.inject.Inject;
+
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.exception.ExceptionQueries;
-import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
 import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.AddConfig;
 
@@ -34,10 +35,15 @@ import org.junit.jupiter.api.Test;
 @AddBean(ExceptionQueries.class)
 @AddBean(TestDB.class)
 @AddConfig(key = ConfigKey.EXCEPTION_WHITE_LIST, value = "java.lang.IllegalArgumentException")
-public class WLOfCheckedExceptionIT extends AbstractGraphQLIT {
+class WLOfCheckedExceptionIT extends AbstractGraphQlCdiIT {
+
+    @Inject
+    protected WLOfCheckedExceptionIT(GraphQlCdiExtension graphQlCdiExtension) {
+        super(graphQlCdiExtension);
+    }
 
     @Test
-    public void testWhiteListOfCheckedException() throws IOException {
+    void testWhiteListOfCheckedException() throws IOException {
         setupIndex(indexFileName, ExceptionQueries.class);
         assertMessageValue("query { uncheckedQuery1 }",
                            "java.security.AccessControlException: my exception", true);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,27 +16,19 @@
 
 package io.helidon.microprofile.graphql.server;
 
+import io.helidon.microprofile.tests.junit5.AddExtension;
+import io.helidon.microprofile.tests.junit5.DisableDiscovery;
+import io.helidon.microprofile.tests.junit5.HelidonTest;
+
 /**
- * A Context to be supplied to {@link ExecutionContext}.
+ * Common functionality for integration tests.
  */
-public interface Context {
+@HelidonTest
+@DisableDiscovery
+@AddExtension(GraphQlCdiExtension.class)
+abstract class AbstractGraphQlCdiIT extends AbstractGraphQlIT {
 
-    /**
-     * Add a partial results {@link Throwable}.
-     *
-     * @param throwable {@link Throwable}
-     */
-    void addPartialResultsException(Throwable throwable);
-
-    /**
-     * Retrieve partial results {@link Throwable}.
-     *
-     * @return the {@link Throwable}
-     */
-    Throwable partialResultsException();
-
-    /**
-     * Remove partial results {@link Throwable}.
-     */
-    void removePartialResultsException();
+    AbstractGraphQlCdiIT(GraphQlCdiExtension graphQlCdiExtension) {
+        super(graphQlCdiExtension.collectedApis());
+    }
 }

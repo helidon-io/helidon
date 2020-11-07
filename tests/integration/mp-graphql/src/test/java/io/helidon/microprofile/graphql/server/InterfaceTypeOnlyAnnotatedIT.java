@@ -19,6 +19,8 @@ package io.helidon.microprofile.graphql.server;
 import java.beans.IntrospectionException;
 import java.io.IOException;
 
+import javax.inject.Inject;
+
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.types.AbstractVehicle;
 import io.helidon.microprofile.graphql.server.test.types.Car;
@@ -37,7 +39,12 @@ import org.junit.jupiter.api.Test;
 @AddBean(Motorbike.class)
 @AddBean(VehicleIncident.class)
 @AddBean(TestDB.class)
-public class InterfaceTypeOnlyAnnotatedIT extends AbstractGraphQLIT {
+public class InterfaceTypeOnlyAnnotatedIT extends AbstractGraphQlCdiIT {
+
+    @Inject
+    InterfaceTypeOnlyAnnotatedIT(GraphQlCdiExtension graphQlCdiExtension) {
+        super(graphQlCdiExtension);
+    }
 
     @Test
     public void testInterfaceDiscoveryWithUnresolvedType() throws IOException, IntrospectionException, ClassNotFoundException {

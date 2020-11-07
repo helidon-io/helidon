@@ -152,6 +152,13 @@ final class FeatureCatalog {
                     .path("WebServer", "Websocket")
                     .nativeSupported(true)
                     .nativeDescription("Server only"));
+        add("io.helidon.graphql.server",
+            FeatureDescriptor.builder()
+                    .name("GraphQL")
+                    .description("GraphQL support")
+                    .path("GraphQL")
+                    .flavor(HelidonFlavor.SE)
+                    .experimental(true));
 
         /*
          * MP Modules

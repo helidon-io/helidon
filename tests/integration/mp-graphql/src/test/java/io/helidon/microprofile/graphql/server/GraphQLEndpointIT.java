@@ -28,7 +28,6 @@ import io.helidon.microprofile.config.ConfigCdiExtension;
 import io.helidon.microprofile.graphql.server.test.types.Person;
 import io.helidon.microprofile.server.JaxRsCdiExtension;
 import io.helidon.microprofile.server.ServerCdiExtension;
-import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.AddConfig;
 import io.helidon.microprofile.tests.junit5.AddExtension;
 import io.helidon.microprofile.tests.junit5.DisableDiscovery;
@@ -39,7 +38,8 @@ import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.microprofile.graphql.server.GraphQLResource.SCHEMA_URL;
+import static io.helidon.graphql.server.GraphQlConstants.GRAPHQL_SCHEMA_URI;
+import static io.helidon.graphql.server.GraphQlConstants.GRAPHQL_WEB_CONTEXT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -54,8 +54,6 @@ import static org.hamcrest.Matchers.notNullValue;
 @AddExtension(JaxRsCdiExtension.class)
 @AddExtension(ConfigCdiExtension.class)
 @AddExtension(CdiComponentProvider.class)
-@AddBean(GraphQLResource.class)
-@AddBean(GraphQLApplication.class)
 @AddConfig(key = "server.static.classpath.context", value = "/ui")
 @AddConfig(key = "server.static.classpath.location", value = "/web")
 public class GraphQLEndpointIT
@@ -106,7 +104,7 @@ public class GraphQLEndpointIT
 
     @Test
     public void testGetSchema() {
-        WebTarget webTarget = getGraphQLWebTarget().path(GRAPHQL).path(SCHEMA_URL);
+        WebTarget webTarget = getGraphQLWebTarget().path(GRAPHQL_WEB_CONTEXT).path(GRAPHQL_SCHEMA_URI);
         Response response = webTarget.request(MediaType.TEXT_PLAIN).get();
         assertThat(response, is(notNullValue()));
         assertThat(response.getStatus(), is(Response.Status.OK.getStatusCode()));

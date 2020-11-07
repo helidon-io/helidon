@@ -49,7 +49,7 @@ import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.TIME_
 /**
  * Custom scalars.
  */
-public class CustomScalars {
+class CustomScalars {
 
     /**
      * Private no-args constructor.
@@ -60,64 +60,64 @@ public class CustomScalars {
     /**
      * An instance of a custome BigDecimal Scalar.
      */
-    public static final GraphQLScalarType CUSTOM_BIGDECIMAL_SCALAR = newCustomBigDecimalScalar();
+    static final GraphQLScalarType CUSTOM_BIGDECIMAL_SCALAR = newCustomBigDecimalScalar();
 
     /**
      * An instance of a custom Int scalar.
      */
-    public static final GraphQLScalarType CUSTOM_INT_SCALAR = newCustomGraphQLInt();
+    static final GraphQLScalarType CUSTOM_INT_SCALAR = newCustomGraphQLInt();
 
     /**
      * An instance of a custom Float scalar.
      */
-    public static final GraphQLScalarType CUSTOM_FLOAT_SCALAR = newCustomGraphQLFloat();
+    static final GraphQLScalarType CUSTOM_FLOAT_SCALAR = newCustomGraphQLFloat();
 
     /**
      * An instance of a custom BigInteger scalar.
      */
-    public static final GraphQLScalarType CUSTOM_BIGINTEGER_SCALAR = newCustomGraphQLBigInteger();
+    static final GraphQLScalarType CUSTOM_BIGINTEGER_SCALAR = newCustomGraphQLBigInteger();
 
     /**
      * An instance of a custom formatted date/time scalar.
      */
-    public static final GraphQLScalarType FORMATTED_CUSTOM_DATE_TIME_SCALAR = newDateTimeScalar(FORMATTED_DATETIME_SCALAR);
+    static final GraphQLScalarType FORMATTED_CUSTOM_DATE_TIME_SCALAR = newDateTimeScalar(FORMATTED_DATETIME_SCALAR);
 
     /**
      * An instance of a custom formatted time scalar.
      */
-    public static final GraphQLScalarType FORMATTED_CUSTOM_TIME_SCALAR = newTimeScalar(FORMATTED_TIME_SCALAR);
+     static final GraphQLScalarType FORMATTED_CUSTOM_TIME_SCALAR = newTimeScalar(FORMATTED_TIME_SCALAR);
 
     /**
      * An instance of a custom formatted date scalar.
      */
-    public static final GraphQLScalarType FORMATTED_CUSTOM_DATE_SCALAR = newDateScalar(FORMATTED_DATE_SCALAR);
+    static final GraphQLScalarType FORMATTED_CUSTOM_DATE_SCALAR = newDateScalar(FORMATTED_DATE_SCALAR);
 
     /**
      * An instance of a custom date/time scalar (with default formatting).
      */
-    public static final GraphQLScalarType CUSTOM_DATE_TIME_SCALAR = newDateTimeScalar(DATETIME_SCALAR);
+    static final GraphQLScalarType CUSTOM_DATE_TIME_SCALAR = newDateTimeScalar(DATETIME_SCALAR);
 
     /**
      * An instance of a custom offset date/time scalar (with default formatting).
      */
-    public static final GraphQLScalarType CUSTOM_OFFSET_DATE_TIME_SCALAR =
+     static final GraphQLScalarType CUSTOM_OFFSET_DATE_TIME_SCALAR =
             newOffsetDateTimeScalar(FORMATTED_OFFSET_DATETIME_SCALAR);
 
     /**
      * An instance of a custom offset date/time scalar (with default formatting).
      */
-    public static final GraphQLScalarType CUSTOM_ZONED_DATE_TIME_SCALAR =
+     static final GraphQLScalarType CUSTOM_ZONED_DATE_TIME_SCALAR =
             newZonedDateTimeScalar(FORMATTED_ZONED_DATETIME_SCALAR);
 
     /**
      * An instance of a custom time scalar (with default formatting).
      */
-    public static final GraphQLScalarType CUSTOM_TIME_SCALAR = newTimeScalar(TIME_SCALAR);
+     static final GraphQLScalarType CUSTOM_TIME_SCALAR = newTimeScalar(TIME_SCALAR);
 
     /**
      * An instance of a custom date scalar (with default formatting).
      */
-    public static final GraphQLScalarType CUSTOM_DATE_SCALAR = newDateScalar(DATE_SCALAR);
+     static final GraphQLScalarType CUSTOM_DATE_SCALAR = newDateScalar(DATE_SCALAR);
 
     /**
      * Return a new custom date/time scalar.
@@ -125,7 +125,7 @@ public class CustomScalars {
      * @param name the name of the scalar
      * @return a new custom date/time scalar
      */
-    public static GraphQLScalarType newDateTimeScalar(String name) {
+     static GraphQLScalarType newDateTimeScalar(String name) {
         GraphQLScalarType originalScalar = ExtendedScalars.DateTime;
 
         return GraphQLScalarType.newScalar()
@@ -142,7 +142,7 @@ public class CustomScalars {
      * @return a new custom date/time scalar
      */
     @SuppressWarnings("unchecked")
-    public static GraphQLScalarType newOffsetDateTimeScalar(String name) {
+     static GraphQLScalarType newOffsetDateTimeScalar(String name) {
         GraphQLScalarType originalScalar = ExtendedScalars.DateTime;
 
         return GraphQLScalarType.newScalar()
@@ -159,7 +159,7 @@ public class CustomScalars {
      * @return a new custom date/time scalar
      */
     @SuppressWarnings("unchecked")
-    public static GraphQLScalarType newZonedDateTimeScalar(String name) {
+     static GraphQLScalarType newZonedDateTimeScalar(String name) {
         GraphQLScalarType originalScalar = ExtendedScalars.DateTime;
 
         return GraphQLScalarType.newScalar()
@@ -175,7 +175,7 @@ public class CustomScalars {
      * @param name the name of the scalar
      * @return a new custom time scalar
      */
-    public static GraphQLScalarType newTimeScalar(String name) {
+     static GraphQLScalarType newTimeScalar(String name) {
         GraphQLScalarType originalScalar = ExtendedScalars.Time;
 
         return GraphQLScalarType.newScalar()
@@ -191,7 +191,7 @@ public class CustomScalars {
      * @param name the name of the scalar
      * @return a new custom date scalar
      */
-    public static GraphQLScalarType newDateScalar(String name) {
+     static GraphQLScalarType newDateScalar(String name) {
         GraphQLScalarType originalScalar = ExtendedScalars.Date;
         return GraphQLScalarType.newScalar()
                 .coercing(new DateTimeCoercing())
@@ -263,7 +263,7 @@ public class CustomScalars {
     /**
      * Abstract implementation of {@link Coercing} interface for given classes.
      */
-    public abstract static class AbstractDateTimeCoercing implements Coercing {
+     abstract static class AbstractDateTimeCoercing implements Coercing {
 
         /**
          * {@link Class}es that can be coerced.
@@ -275,7 +275,7 @@ public class CustomScalars {
          *
          * @param clazzes {@link Class}es to coerce
          */
-        public AbstractDateTimeCoercing(Class<?>... clazzes) {
+         AbstractDateTimeCoercing(Class<?>... clazzes) {
             this.clazzes = clazzes;
         }
 
@@ -336,12 +336,12 @@ public class CustomScalars {
     /**
      * Coercing Implementation for Date/Time.
      */
-    public static class DateTimeCoercing extends AbstractDateTimeCoercing {
+     static class DateTimeCoercing extends AbstractDateTimeCoercing {
 
         /**
          * Construct a {@link DateTimeCoercing}.
          */
-        public DateTimeCoercing() {
+         DateTimeCoercing() {
             super(LocalDateTime.class, OffsetDateTime.class, ZonedDateTime.class);
         }
     }
@@ -349,12 +349,12 @@ public class CustomScalars {
     /**
      * Coercing implementation for Time.
      */
-    public static class TimeCoercing extends AbstractDateTimeCoercing {
+     static class TimeCoercing extends AbstractDateTimeCoercing {
 
         /**
          * Construct a {@link TimeCoercing}.
          */
-        public TimeCoercing() {
+         TimeCoercing() {
             super(LocalTime.class, OffsetTime.class);
         }
     }
@@ -362,12 +362,12 @@ public class CustomScalars {
     /**
      * Coercing implementation for Date.
      */
-    public static class DateCoercing extends AbstractDateTimeCoercing {
+     static class DateCoercing extends AbstractDateTimeCoercing {
 
         /**
          * Construct a {@link DateCoercing}.
          */
-        public DateCoercing() {
+         DateCoercing() {
             super(LocalDate.class);
         }
     }
@@ -375,12 +375,12 @@ public class CustomScalars {
     /**
      * Coercing implementation for BigDecimal.
      */
-    public static class BigDecimalCoercing extends AbstractDateTimeCoercing {
+     static class BigDecimalCoercing extends AbstractDateTimeCoercing {
 
         /**
          * Construct a {@link DateCoercing}.
          */
-        public BigDecimalCoercing() {
+         BigDecimalCoercing() {
             super(BigDecimal.class);
         }
     }
@@ -390,7 +390,7 @@ public class CustomScalars {
      * @param <I> defines input type
      */
     @SuppressWarnings("unchecked")
-    public static class NumberCoercing<I> implements Coercing<I, Object> {
+     static class NumberCoercing<I> implements Coercing<I, Object> {
 
         /**
          * Original {@link Coercing} to fall back on if neeed.
@@ -402,7 +402,7 @@ public class CustomScalars {
          *
          * @param originalCoercing original {@link Coercing}
          */
-        public NumberCoercing(Coercing originalCoercing) {
+         NumberCoercing(Coercing originalCoercing) {
             this.originalCoercing = originalCoercing;
         }
 

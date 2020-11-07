@@ -24,21 +24,23 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import javax.inject.Inject;
+
+import io.helidon.graphql.server.InvocationHandler;
+import io.helidon.microprofile.graphql.server.test.db.TestDB;
+import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithEnumName;
+import io.helidon.microprofile.graphql.server.test.queries.ArrayAndListQueries;
+import io.helidon.microprofile.graphql.server.test.types.MultiLevelListsAndArrays;
+import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
+import io.helidon.microprofile.tests.junit5.AddBean;
+
+import org.junit.jupiter.api.Test;
+
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-
-import io.helidon.microprofile.graphql.server.test.db.TestDB;
-import io.helidon.microprofile.graphql.server.test.enums.EnumTestWithEnumName;
-import io.helidon.microprofile.graphql.server.test.queries.ArrayAndListQueries;
-import io.helidon.microprofile.graphql.server.test.types.MultiLevelListsAndArrays;
-
-import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
-import io.helidon.microprofile.tests.junit5.AddBean;
-
-import org.junit.jupiter.api.Test;
 
 /**
  * Tests for Multi-level arrays.
@@ -46,13 +48,17 @@ import org.junit.jupiter.api.Test;
 @AddBean(MultiLevelListsAndArrays.class)
 @AddBean(ArrayAndListQueries.class)
 @AddBean(TestDB.class)
-public class MultiLevelArraysIT extends AbstractGraphQLIT {
+class MultiLevelArraysIT extends AbstractGraphQlCdiIT {
+
+    @Inject
+    MultiLevelArraysIT(GraphQlCdiExtension graphQlCdiExtension) {
+        super(graphQlCdiExtension);
+    }
 
     @Test
     public void testMultipleLevelsOfGenerics() throws IntrospectionException, ClassNotFoundException, IOException {
         setupIndex(indexFileName, MultiLevelListsAndArrays.class);
-        SchemaGenerator schemaGenerator = createSchemaGenerator(defaultContext);
-        Schema schema = schemaGenerator.generateSchema();
+        Schema schema = createSchema();
         assertThat(schema.containsTypeWithName("MultiLevelListsAndArrays"), is(true));
         assertThat(schema.containsTypeWithName("Person"), is(true));
         assertThat(schema.containsScalarWithName("BigDecimal"), is(true));
@@ -62,7 +68,7 @@ public class MultiLevelArraysIT extends AbstractGraphQLIT {
     @Test
     public void testMultiLevelPrimitiveArrayAsArgument() throws IOException {
         setupIndex(indexFileName, ArrayAndListQueries.class, MultiLevelListsAndArrays.class);
-        ExecutionContext executionContext = createContext(defaultContext);
+        InvocationHandler executionContext = createInvocationHandler();
         Map<String, Object> mapResults = executionContext.execute("query { echo2LevelIntArray(param: [[1, 2], [3, 4]]) }");
         assertThat(mapResults.size(), is(2));
         assertThat(mapResults.get("errors"), is(notNullValue()));
@@ -72,7 +78,7 @@ public class MultiLevelArraysIT extends AbstractGraphQLIT {
     @SuppressWarnings("unchecked")
     public void testMultiLevelListsAndArraysQueries() throws IOException {
         setupIndex(indexFileName, ArrayAndListQueries.class, MultiLevelListsAndArrays.class);
-        ExecutionContext executionContext =  createContext(defaultContext);
+        InvocationHandler executionContext =  createInvocationHandler();
 
         Map<String, Object> mapResults = getAndAssertResult(
                 executionContext.execute("query { getMultiLevelList { intMultiLevelArray } }"));

@@ -30,6 +30,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.json.bind.annotation.JsonbNumberFormat;
 
@@ -59,7 +60,6 @@ import io.helidon.microprofile.graphql.server.test.types.TypeWithIDs;
 import io.helidon.microprofile.graphql.server.test.types.TypeWithIdOnField;
 import io.helidon.microprofile.graphql.server.test.types.TypeWithIdOnMethod;
 import io.helidon.microprofile.graphql.server.test.types.TypeWithNameAndJsonbProperty;
-
 import io.helidon.microprofile.graphql.server.test.types.Vehicle;
 import io.helidon.microprofile.graphql.server.test.types.VehicleIncident;
 
@@ -72,13 +72,12 @@ import org.junit.jupiter.api.Test;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.DATE;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.NUMBER;
 import static io.helidon.microprofile.graphql.server.FormattingHelper.getFieldFormat;
-
+import static io.helidon.microprofile.graphql.server.FormattingHelper.getNumberFormatAnnotation;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.BIG_DECIMAL;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.BIG_INTEGER;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.DEFAULT_LOCALE;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.FLOAT;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.INT;
-import static io.helidon.microprofile.graphql.server.FormattingHelper.getNumberFormatAnnotation;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getAnnotationValue;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getDefaultDescription;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.getFieldAnnotations;
@@ -92,7 +91,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Tests for {@link SchemaGenerator}.
  */
-public class SchemaGeneratorTest extends AbstractGraphQLTest {
+class SchemaGeneratorTest extends AbstractGraphQLTest {
 
     private static final String ADDRESS = Address.class.getName();
     private static final String STRING = String.class.getName();
@@ -164,12 +163,10 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
     }
 
     private SchemaGenerator schemaGenerator;
-    private Context defaultContext;
 
     @BeforeEach
     public void beforeEach() {
-        defaultContext = ExecutionContext.getDefaultContext();
-        schemaGenerator = createSchemaGenerator(defaultContext);
+        schemaGenerator = createSchemaGenerator();
     }
 
     @Test
@@ -472,7 +469,7 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
                 .retrieveGetterBeanMethods(MultiLevelListsAndArrays.class, false);
         assertThat(mapMethods, is(notNullValue()));
         assertThat(mapMethods.size(), is(8));
-        Schema schema = schemaGenerator.generateSchemaFromClasses(MultiLevelListsAndArrays.class);
+        Schema schema = schemaGenerator.generateSchemaFromClasses(Set.of(MultiLevelListsAndArrays.class));
         generateGraphQLSchema(schema);
     }
 
@@ -502,7 +499,7 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
 
     @Test
     public void testGetRootType() throws NoSuchFieldException, NoSuchMethodException {
-        SchemaGenerator schemaGenerator = createSchemaGenerator(ExecutionContext.getDefaultContext());
+        SchemaGenerator schemaGenerator = createSchemaGenerator();
 
         ParameterizedType stringArrayListType = getParameterizedType("listStringArray");
         SchemaGenerator.RootTypeResult rootTypeName =
@@ -575,8 +572,8 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
 
     @Test
     public void testFormatAnnotationFromSchema() throws IntrospectionException, ClassNotFoundException {
-        SchemaGenerator schemaGenerator = createSchemaGenerator(ExecutionContext.getDefaultContext());
-        Schema schema = schemaGenerator.generateSchemaFromClasses(SimpleContactWithNumberFormats.class);
+        SchemaGenerator schemaGenerator = createSchemaGenerator();
+        Schema schema = schemaGenerator.generateSchemaFromClasses(Set.of(SimpleContactWithNumberFormats.class));
         assertThat(schema, is(notNullValue()));
     }
 
@@ -685,8 +682,8 @@ public class SchemaGeneratorTest extends AbstractGraphQLTest {
     }
 
     private void testEnum(Class<?> clazz, String expectedName) throws IntrospectionException, ClassNotFoundException {
-        SchemaGenerator schemaGenerator = createSchemaGenerator(ExecutionContext.getDefaultContext());
-        Schema schema = schemaGenerator.generateSchemaFromClasses(clazz);
+        SchemaGenerator schemaGenerator = createSchemaGenerator();
+        Schema schema = schemaGenerator.generateSchemaFromClasses(Set.of(clazz));
         assertThat(schema, is(notNullValue()));
 
         assertThat(schema.getEnums().size(), is(1));

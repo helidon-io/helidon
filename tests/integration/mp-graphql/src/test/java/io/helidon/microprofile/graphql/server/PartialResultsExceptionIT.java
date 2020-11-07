@@ -20,6 +20,9 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+import javax.inject.Inject;
+
+import io.helidon.graphql.server.InvocationHandler;
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.exception.ExceptionQueries;
 import io.helidon.microprofile.graphql.server.test.types.SimpleContact;
@@ -27,33 +30,40 @@ import io.helidon.microprofile.tests.junit5.AddBean;
 
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.MatcherAssert.assertThat;
+import static io.helidon.graphql.server.GraphQlConstants.DATA;
+import static io.helidon.graphql.server.GraphQlConstants.ERRORS;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Tests for partial results with exception.
  */
 @AddBean(ExceptionQueries.class)
 @AddBean(TestDB.class)
-public class PartialResultsExceptionIT extends AbstractGraphQLIT {
+class PartialResultsExceptionIT extends AbstractGraphQlCdiIT {
+
+    @Inject
+    protected PartialResultsExceptionIT(GraphQlCdiExtension graphQlCdiExtension) {
+        super(graphQlCdiExtension);
+    }
 
     @Test
     @SuppressWarnings("unchecked")
     public void testSimplePartialResults() throws IOException {
         setupIndex(indexFileName, ExceptionQueries.class);
 
-        ExecutionContext executionContext = createContext(defaultContext);
+        InvocationHandler executionContext = createInvocationHandler();
 
         Map<String, Object> results = executionContext.execute("query { failAfterNResults(failAfter: 4) }");
         assertThat(results.size(), is(2));
 
-        List<Map<String, Object>> listErrors = (List<Map<String, Object>>) results.get(ExecutionContext.ERRORS);
+        List<Map<String, Object>> listErrors = (List<Map<String, Object>>) results.get(ERRORS);
         assertThat(listErrors.size(), is(1));
         Map<String, Object> mapErrors = (Map<String, Object>) listErrors.get(0);
 
         // since this is a checked exception we should see message
         assertThat(mapErrors.get("message"), is("Partial results"));
-        Map<String, Object> mapData = (Map<String, Object>) results.get(ExecutionContext.DATA);
+        Map<String, Object> mapData = (Map<String, Object>) results.get(DATA);
         assertThat(mapData.size(), is(1));
         List<Integer> listIntegers = (List<Integer>) mapData.get("failAfterNResults");
         assertThat(listIntegers.size(), is(4));
@@ -63,7 +73,7 @@ public class PartialResultsExceptionIT extends AbstractGraphQLIT {
     public void testComplexPartialResults() throws IOException {
         setupIndex(indexFileName, ExceptionQueries.class, SimpleContact.class);
 
-        ExecutionContext executionContext = createContext(defaultContext);
+        InvocationHandler executionContext = createInvocationHandler();
 
         Map<String, Object> results = executionContext.execute(
                 "query { failAfterNContacts(failAfter: 4) { id name age } }");
