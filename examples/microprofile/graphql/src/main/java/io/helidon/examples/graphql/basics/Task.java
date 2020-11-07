@@ -18,9 +18,12 @@ package io.helidon.examples.graphql.basics;
 
 import java.util.UUID;
 
+import io.helidon.common.Reflected;
+
 /**
  * A data class representing a single To Do List task.
  */
+@Reflected
 public class Task {
 
     /**

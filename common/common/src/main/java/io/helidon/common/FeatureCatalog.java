@@ -157,6 +157,7 @@ final class FeatureCatalog {
                     .name("GraphQL")
                     .description("GraphQL support")
                     .path("GraphQL")
+                    .nativeDescription("Experimental support, tested on limited use cases")
                     .flavor(HelidonFlavor.SE)
                     .experimental(true));
 
@@ -215,6 +216,7 @@ final class FeatureCatalog {
                     .name("GraphQL")
                     .description("MicroProfile GraphQL spec implementation")
                     .path("GraphQL")
+                    .nativeDescription("Experimental support, tested on limited use cases")
                     .flavor(HelidonFlavor.MP)
                     .experimental(true));
         add("io.helidon.microprofile.grpc.server",
