@@ -71,7 +71,7 @@ public class MicronautCdiExtension implements Extension {
     private final Map<Method, ExecutableMethod<?, ?>> executableMethodCache = new HashMap<>();
     private final Map<Method, MethodInterceptorMetadata> methods = new HashMap<>();
     // all bean definitions as seen by Micronaut
-    private final List<MicronautBean> beanDefinitions = new LinkedList<>();
+    private List<MicronautBean> beanDefinitions = new LinkedList<>();
     // map of an actual class (user's source code) mapping to Micronaut bean definition
     private final Map<Class<?>, List<MicronautBean>> mBeanToDefRef = new HashMap<>();
     // Micronaut beans not yet processed by CDI
@@ -206,15 +206,13 @@ public class MicronautCdiExtension implements Extension {
                             .getAnnotationTypesByStereotype(Qualifier.class);
 
                     Annotation[] synthesized = new Annotation[qualifiers.size()];
-                    for (int i = 0; i < qualifiers.size(); i++) {
-                        synthesized[i] = annotationMetadata.synthesize(qualifiers.get(i));
-                    }
-
                     io.micronaut.context.Qualifier[] mq = new io.micronaut.context.Qualifier[qualifiers.size()];
 
                     for (int i = 0; i < qualifiers.size(); i++) {
-                        if (synthesized[i] != null) {
-                            mq[i] = Qualifiers.byAnnotation(synthesized[i]);
+                        Annotation annotation = annotationMetadata.synthesize(qualifiers.get(i));
+                        synthesized[i] = annotation;
+                        if (annotation != null) {
+                            mq[i] = Qualifiers.byAnnotation(annotation);
                         }
                     }
 
@@ -304,7 +302,7 @@ public class MicronautCdiExtension implements Extension {
         SoftServiceLoader.load(BeanDefinitionReference.class)
                 .forEach(list::add);
 
-        list.stream()
+        List<MicronautBean> beans = list.parallelStream()
                 .filter(ServiceDefinition::isPresent)
                 .map(ServiceDefinition::load)
                 .filter(BeanDefinitionReference::isPresent)
@@ -326,7 +324,10 @@ public class MicronautCdiExtension implements Extension {
 
                     return new MicronautBean(beanType, ref);
                 })
-                .forEach(beanDefinitions::add);
+                .collect(Collectors.toList());
+
+        // using my own collection, so the field is final
+        beanDefinitions.addAll(beans);
 
         for (MicronautBean defRef : beanDefinitions) {
             mBeanToDefRef.computeIfAbsent(defRef.beanType(), it -> new LinkedList<>())

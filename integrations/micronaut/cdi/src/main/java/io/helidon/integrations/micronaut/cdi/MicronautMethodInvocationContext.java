@@ -25,6 +25,8 @@ import java.util.logging.Logger;
 
 import javax.interceptor.InvocationContext;
 
+import io.helidon.common.LazyValue;
+
 import io.micronaut.aop.Interceptor;
 import io.micronaut.aop.MethodInterceptor;
 import io.micronaut.aop.MethodInvocationContext;
@@ -47,8 +49,8 @@ class MicronautMethodInvocationContext implements MethodInvocationContext {
     private final InvocationContext cdiContext;
     private final ExecutableMethod executableMethod;
     private final Set<MethodInterceptor<?, ?>> allInterceptors;
-    private final MutableConvertibleValues attributes;
-    private final Map<String, MutableArgumentValue<?>> mutableArguments;
+    private final LazyValue<MutableConvertibleMultiValuesMap> attributes;
+    private final LazyValue<Map<String, MutableArgumentValue<?>>> mutableArguments;
 
     private Iterator<MethodInterceptor<?, ?>> remaining;
 
@@ -61,17 +63,20 @@ class MicronautMethodInvocationContext implements MethodInvocationContext {
         this.allInterceptors = allInterceptors;
         this.remaining = remaining;
 
-        this.attributes = new MutableConvertibleMultiValuesMap();
-        this.mutableArguments = new LinkedHashMap<>();
-        Object[] parameters = cdiContext.getParameters();
-        Argument[] argumentNames = executableMethod.getArguments();
+        this.attributes = LazyValue.create(MutableConvertibleMultiValuesMap::new);
+        this.mutableArguments = LazyValue.create(() -> {
+            Map<String, MutableArgumentValue<?>> args = new LinkedHashMap<>();
+            Object[] parameters = cdiContext.getParameters();
+            Argument[] argumentNames = executableMethod.getArguments();
 
-        for (int i = 0; i < argumentNames.length; i++) {
-            Argument argument = argumentNames[i];
-            Object parameterValue = parameters[i];
-            mutableArguments.put(argument.getName(),
-                                 new MutableArgument<Object>(argument, parameterValue));
-        }
+            for (int i = 0; i < argumentNames.length; i++) {
+                Argument argument = argumentNames[i];
+                Object parameterValue = parameters[i];
+                args.put(argument.getName(),
+                         new MutableArgument<Object>(argument, parameterValue));
+            }
+            return args;
+        });
     }
 
     static MethodInvocationContext create(InvocationContext cdiCtx,
@@ -91,7 +96,7 @@ class MicronautMethodInvocationContext implements MethodInvocationContext {
 
     @Override
     public Map<String, MutableArgumentValue<?>> getParameters() {
-        return mutableArguments;
+        return mutableArguments.get();
     }
 
     @Override
@@ -107,11 +112,14 @@ class MicronautMethodInvocationContext implements MethodInvocationContext {
             return next.intercept(this);
         }
         try {
-            Object[] arguments = mutableArguments.values()
-                    .stream()
-                    .map(ArgumentValue::getValue)
-                    .toArray(Object[]::new);
-            cdiContext.setParameters(arguments);
+            if (mutableArguments.isLoaded()) {
+                Object[] arguments = mutableArguments.get()
+                        .values()
+                        .stream()
+                        .map(ArgumentValue::getValue)
+                        .toArray(Object[]::new);
+                cdiContext.setParameters(arguments);
+            }
 
             LOGGER.finest(() -> "Proceeding with CDI interceptors");
             return cdiContext.proceed();
@@ -156,7 +164,7 @@ class MicronautMethodInvocationContext implements MethodInvocationContext {
 
     @Override
     public MutableConvertibleValues<Object> getAttributes() {
-        return attributes;
+        return attributes.get();
     }
 
     @Override

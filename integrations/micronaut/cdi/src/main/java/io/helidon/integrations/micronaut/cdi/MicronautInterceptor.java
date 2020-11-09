@@ -72,6 +72,7 @@ public class MicronautInterceptor {
         Set<MethodInterceptor<?, ?>> interceptors = new TreeSet<>(Comparator.comparingInt(MethodInterceptor::getOrder));
 
         for (Class<? extends MethodInterceptor> aClass : interceptorClasses) {
+            // we need to find the bean for each invocation, as this may be a prototype bean
             interceptors.add(context.findBean(aClass)
                                      .orElseThrow(() -> new MicronautCdiException("Cannot create bean class for interceptor "
                                                                                           + aClass.getName())));

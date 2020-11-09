@@ -31,6 +31,8 @@ module io.helidon.integrations.micronaut.cdi {
 
     requires microprofile.config.api;
 
+    requires io.helidon.common;
+
     provides javax.enterprise.inject.spi.Extension with io.helidon.integrations.micronaut.cdi.MicronautCdiExtension;
 
     uses io.micronaut.inject.BeanDefinitionReference;
