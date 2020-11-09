@@ -137,8 +137,8 @@ public class MetricsCdiExtension implements Extension {
 
     private final Set<Class<?>> metricsAnnotatedClasses = new HashSet<>();
     private final Set<Class<?>> metricsAnnotatedClassesProcessed = new HashSet<>();
-    private final Map<Class<?>, Set<Method>> methodsWithSyntheticSimplyTimer = new HashMap<>();
-    private final Set<Method> syntheticSimplyTimersToRegister = new HashSet<>();
+    private final Map<Class<?>, Set<Method>> methodsWithSyntheticSimpleTimer = new HashMap<>();
+    private final Set<Method> syntheticSimpleTimersToRegister = new HashSet<>();
 
     @SuppressWarnings("unchecked")
     private static <T> T getReference(BeanManager bm, Type type, Bean<?> bean) {
@@ -323,7 +323,7 @@ public class MetricsCdiExtension implements Extension {
         }
         metricsAnnotatedClasses.clear();
         metricsAnnotatedClassesProcessed.clear();
-        methodsWithSyntheticSimplyTimer.clear();
+        methodsWithSyntheticSimpleTimer.clear();
     }
 
     /**
@@ -495,7 +495,7 @@ public class MetricsCdiExtension implements Extension {
                             }
                         }));
         if (!methodsToRecord.isEmpty()) {
-            methodsWithSyntheticSimplyTimer.put(clazz, methodsToRecord);
+            methodsWithSyntheticSimpleTimer.put(clazz, methodsToRecord);
         }
     }
 
@@ -639,18 +639,18 @@ public class MetricsCdiExtension implements Extension {
     private void collectSyntheticSimpleTimerMetric(@Observes ProcessManagedBean<?> pmb) {
         AnnotatedType<?> type = pmb.getAnnotatedBeanClass();
         Class<?> clazz = type.getJavaClass();
-        if (!methodsWithSyntheticSimplyTimer.containsKey(clazz)) {
+        if (!methodsWithSyntheticSimpleTimer.containsKey(clazz)) {
             return;
         }
 
         LOGGER.log(Level.FINE, () -> "Processing synthetic SimplyTimed annotations for " + clazz.getName());
 
-        syntheticSimplyTimersToRegister.addAll(methodsWithSyntheticSimplyTimer.get(clazz));
+        syntheticSimpleTimersToRegister.addAll(methodsWithSyntheticSimpleTimer.get(clazz));
     }
 
     private void registerSyntheticSimpleTimerMetrics(@Observes @RuntimeStart Object event) {
-        syntheticSimplyTimersToRegister.forEach(MetricsCdiExtension::syntheticSimpleTimer);
-        syntheticSimplyTimersToRegister.clear();
+        syntheticSimpleTimersToRegister.forEach(MetricsCdiExtension::syntheticSimpleTimer);
+        syntheticSimpleTimersToRegister.clear();
     }
 
     static boolean restEndpointsMetricEnabledFromConfig() {
