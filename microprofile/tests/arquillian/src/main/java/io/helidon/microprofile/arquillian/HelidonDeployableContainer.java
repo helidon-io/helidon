@@ -192,7 +192,7 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
         URLClassLoader urlClassloader;
         ClassLoader parent;
 
-        if (containerConfig.useParentClassloader()) {
+        if (containerConfig.getUserParentClassloader()) {
             urlClassloader = new URLClassLoader(toUrls(classPath));
             parent = urlClassloader;
         } else {
@@ -203,7 +203,7 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
         context.classLoader = new HelidonContainerClassloader(parent,
                                                               urlClassloader,
                                                               excludedLibrariesPattern,
-                                                              containerConfig.useParentClassloader());
+                                                              containerConfig.getUserParentClassloader());
 
         context.oldClassLoader = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(context.classLoader);

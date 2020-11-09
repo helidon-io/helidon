@@ -81,7 +81,7 @@ public class HelidonContainerConfiguration implements ContainerConfiguration {
         this.excludeArchivePattern = excludeArchivePattern;
     }
 
-    public boolean useParentClassloader() {
+    public boolean getUserParentClassloader() {
         return useParentClassloader;
     }
 
