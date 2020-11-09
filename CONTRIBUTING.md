@@ -30,7 +30,7 @@ The process:
 0. Sign the [OCA](https://www.oracle.com/technetwork/community/oca-486395.html)
 1. Fork the repo
 2. Fix an issue or create an issue and fix it
-3. Create a Pull Request that fixes the issue
+3. Create a Pull Request that fixes the issue. Follow [DEV-GUIDELINES](DEV-GUIDELINES.md) for a list of rules and best practices followed by project Helidon.
 4. Watch your PR for pipeline results. If there are failures then fix them.
 5. We will review your PR and merge as appropriate.
 
