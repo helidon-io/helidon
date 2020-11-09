@@ -139,16 +139,18 @@ and POJO's and you will be able to access these via the URL's described below.
 === Creating your entry-point
 
 As per the instructions <<mp/introduction/02_microprofile.adoc, here>> ensure you have added a
-`src/main/resources/META-INF/beans.xml` file  so the CDI implementation can pick up your classes.
+`src/main/resources/META-INF/beans.xml` file, so the CDI implementation can pick up your classes.
 
-Add a main method or dedicated Main class to start everything up.
+A `Main` class is not needed, you can configure `io.helidon.microprofile.cdi.Main` as the entry point.
+
+Optionally, you can configure a custom entry point (such as when you need custom configuration setup).
 
 [source,java]
 .Sample Entry-point
 ----
 public class MyMain {
     public static void main(String[] args) {
-        io.helidon.microprofile.server.Main.main(args);
+        io.helidon.microprofile.cdi.Main.main(args);
     }
 }
 ----
@@ -201,6 +203,21 @@ image::mp/graphql_01_introduction_graphiql.png[GraphiQL]
 
 == Configuration Options
 
-TBC.
+=== MicroProfile GraphQL
+The specification defines the following configuration options:
 
+[cols="2,2,5"]
 
+|===
+|key |default value |description
+
+|`mp.graphql.defaultErrorMessage` |`Server Error` |Error message to send to caller in case of error
+|`mp.graphql.exceptionsBlackList` |{nbsp} |Array of checked exception classes that should return default error message
+|`mp.graphql.exceptionsWhiteList` |{nbsp} |Array of unchecked exception classes that should return message to caller (instead of default error message)
+
+|===
+
+These configuration options are more significant that the configuration options
+ that can be used to configure GraphQL invocation (see below).
+
+include::../../shared/graphql/configuration.adoc[]
