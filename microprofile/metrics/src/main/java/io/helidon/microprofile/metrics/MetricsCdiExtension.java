@@ -73,6 +73,7 @@ import io.helidon.common.Errors;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
 import io.helidon.metrics.MetricsSupport;
+import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.webserver.Routing;
 
@@ -137,6 +138,7 @@ public class MetricsCdiExtension implements Extension {
     private final Set<Class<?>> metricsAnnotatedClasses = new HashSet<>();
     private final Set<Class<?>> metricsAnnotatedClassesProcessed = new HashSet<>();
     private final Map<Class<?>, Set<Method>> methodsWithSyntheticSimplyTimer = new HashMap<>();
+    private final Set<Method> syntheticSimplyTimersToRegister = new HashSet<>();
 
     @SuppressWarnings("unchecked")
     private static <T> T getReference(BeanManager bm, Type type, Bean<?> bean) {
@@ -634,7 +636,7 @@ public class MetricsCdiExtension implements Extension {
         producers.clear();
     }
 
-    private void registerSyntheticSimpleTimerMetric(@Observes ProcessManagedBean<?> pmb) {
+    private void collectSyntheticSimpleTimerMetric(@Observes ProcessManagedBean<?> pmb) {
         AnnotatedType<?> type = pmb.getAnnotatedBeanClass();
         Class<?> clazz = type.getJavaClass();
         if (!methodsWithSyntheticSimplyTimer.containsKey(clazz)) {
@@ -643,7 +645,12 @@ public class MetricsCdiExtension implements Extension {
 
         LOGGER.log(Level.FINE, () -> "Processing synthetic SimplyTimed annotations for " + clazz.getName());
 
-        methodsWithSyntheticSimplyTimer.get(clazz).forEach(MetricsCdiExtension::syntheticSimpleTimer);
+        syntheticSimplyTimersToRegister.addAll(methodsWithSyntheticSimplyTimer.get(clazz));
+    }
+
+    private void registerSyntheticSimpleTimerMetrics(@Observes @RuntimeStart Object event) {
+        syntheticSimplyTimersToRegister.forEach(MetricsCdiExtension::syntheticSimpleTimer);
+        syntheticSimplyTimersToRegister.clear();
     }
 
     static boolean restEndpointsMetricEnabledFromConfig() {
