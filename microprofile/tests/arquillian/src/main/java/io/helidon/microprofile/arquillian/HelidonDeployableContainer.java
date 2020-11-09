@@ -192,7 +192,9 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
             // there is no server running
         }
 
-        context.classLoader = new MyClassloader(excludedLibrariesPattern, new URLClassLoader(toUrls(classPath), null));
+        context.classLoader = new HelidonContainerClassloader(excludedLibrariesPattern,
+                                                              new URLClassLoader(toUrls(classPath), null),
+                                                              containerConfig.useParentClassloader());
 
         context.oldClassLoader = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(context.classLoader);
@@ -411,7 +413,7 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
          */
         private Path deployDir;
         // class loader of this server instance
-        private MyClassloader classLoader;
+        private HelidonContainerClassloader classLoader;
         // class of the runner - loaded once per each run
         private Class<?> runnerClass;
         // runner used to run this server instance
@@ -420,15 +422,18 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
         private ClassLoader oldClassLoader;
     }
 
-    static class MyClassloader extends ClassLoader implements Closeable {
+    static class HelidonContainerClassloader extends ClassLoader implements Closeable {
         private final Pattern excludedLibrariesPattern;
         private final URLClassLoader wrapped;
+        private final boolean useParentClassloader;
 
-        MyClassloader(Pattern excludedLibrariesPattern, URLClassLoader wrapped) {
-            super(Thread.currentThread().getContextClassLoader());
+        HelidonContainerClassloader(Pattern excludedLibrariesPattern, URLClassLoader wrapped, boolean useParentClassloader) {
+            //super(Thread.currentThread().getContextClassLoader());
+            super(wrapped);
 
             this.excludedLibrariesPattern = excludedLibrariesPattern;
             this.wrapped = wrapped;
+            this.useParentClassloader = useParentClassloader;
         }
 
         @Override
@@ -465,8 +470,16 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
         @Override
         public InputStream getResourceAsStream(String name) {
             InputStream stream = wrapped.getResourceAsStream(name);
-            if ((null == stream) && name.startsWith("/")) {
+            if ((stream == null) && name.startsWith("/")) {
                 stream = wrapped.getResourceAsStream(name.substring(1));
+            }
+
+            if ((stream == null) && useParentClassloader) {
+                stream = super.getResourceAsStream(name);
+            }
+
+            if ((stream == null) && useParentClassloader && name.startsWith("/")) {
+                stream = super.getResourceAsStream(name.substring(1));
             }
 
             return stream;

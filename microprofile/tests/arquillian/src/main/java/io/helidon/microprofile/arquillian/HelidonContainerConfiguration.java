@@ -39,6 +39,7 @@ public class HelidonContainerConfiguration implements ContainerConfiguration {
     private int port = 8080;
     private boolean deleteTmp = true;
     private boolean useRelativePath = false;
+    private boolean useParentClassloader = true;
 
     public String getApp() {
         return appClassName;
@@ -79,6 +80,15 @@ public class HelidonContainerConfiguration implements ContainerConfiguration {
     public void setExcludeArchivePattern(String excludeArchivePattern) {
         this.excludeArchivePattern = excludeArchivePattern;
     }
+
+    public boolean useParentClassloader() {
+        return useParentClassloader;
+    }
+
+    public void setUseParentClassloader(boolean useParentClassloader) {
+        this.useParentClassloader = useParentClassloader;
+    }
+
     @Override
     public void validate() throws ConfigurationException {
         if ((port <= 0) || (port > Short.MAX_VALUE)) {

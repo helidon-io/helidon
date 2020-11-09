@@ -30,6 +30,7 @@
             <!-- to debug - uses target directory to store extracted war -->
             <property name="useRelativePath">true</property>
             <property name="excludeArchivePattern">.*/microprofile-graphql-tck-\d+\.\d+.*?\.jar.*</property>
+            <property name="useParentClassloader">false</property>
         </configuration>
     </container>
 </arquillian>
