@@ -327,19 +327,13 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
                             Tracer tracer,
                             Optional<SpanContext> parentSpan,
                             String spanName) {
-
-        Tracer.SpanBuilder spanBuilder = tracer.buildSpan(spanName);
-
+        Tracer.SpanBuilder spanBuilder = tracer.buildSpan(spanName)
+                      .withTag(Tags.SPAN_KIND.getKey(), Tags.SPAN_KIND_CLIENT)
+                      .withTag(Tags.HTTP_METHOD.getKey(), requestContext.getMethod())
+                      .withTag(Tags.HTTP_URL.getKey(), url(requestContext.getUri()))
+                      .withTag(Tags.COMPONENT.getKey(), "jaxrs");
         parentSpan.ifPresent(spanBuilder::asChildOf);
-
-        Span span = spanBuilder.start();
-
-        Tags.COMPONENT.set(span, "jaxrs");
-        Tags.HTTP_METHOD.set(span, requestContext.getMethod());
-        Tags.HTTP_URL.set(span, url(requestContext.getUri()));
-        Tags.SPAN_KIND.set(span, Tags.SPAN_KIND_CLIENT);
-
-        return span;
+        return spanBuilder.start();
     }
 
     private String url(URI uri) {
