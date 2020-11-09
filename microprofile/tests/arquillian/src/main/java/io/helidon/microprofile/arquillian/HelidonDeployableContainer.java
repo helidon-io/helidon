@@ -50,7 +50,6 @@ import javax.enterprise.inject.spi.CDI;
 import javax.enterprise.inject.spi.DefinitionException;
 
 import io.helidon.config.mp.MpConfigSources;
-import io.helidon.microprofile.server.Server;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
@@ -98,8 +97,6 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
      * Run contexts - kept for each deployment.
      */
     private final Map<String, RunContext> contexts = new HashMap<>();
-
-    private Server dummyServer = null;
 
     @Override
     public Class<HelidonContainerConfiguration> getConfigurationClass() {
@@ -192,8 +189,20 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
             // there is no server running
         }
 
-        context.classLoader = new HelidonContainerClassloader(excludedLibrariesPattern,
-                                                              new URLClassLoader(toUrls(classPath), null),
+        URLClassLoader urlClassloader;
+        ClassLoader parent;
+
+        if (containerConfig.useParentClassloader()) {
+            urlClassloader = new URLClassLoader(toUrls(classPath));
+            parent = urlClassloader;
+        } else {
+            urlClassloader = new URLClassLoader(toUrls(classPath), null);
+            parent = Thread.currentThread().getContextClassLoader();
+        }
+
+        context.classLoader = new HelidonContainerClassloader(parent,
+                                                              urlClassloader,
+                                                              excludedLibrariesPattern,
                                                               containerConfig.useParentClassloader());
 
         context.oldClassLoader = Thread.currentThread().getContextClassLoader();
@@ -427,9 +436,11 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
         private final URLClassLoader wrapped;
         private final boolean useParentClassloader;
 
-        HelidonContainerClassloader(Pattern excludedLibrariesPattern, URLClassLoader wrapped, boolean useParentClassloader) {
-            //super(Thread.currentThread().getContextClassLoader());
-            super(wrapped);
+        HelidonContainerClassloader(ClassLoader parent,
+                                    URLClassLoader wrapped,
+                                    Pattern excludedLibrariesPattern,
+                                    boolean useParentClassloader) {
+            super(parent);
 
             this.excludedLibrariesPattern = excludedLibrariesPattern;
             this.wrapped = wrapped;
