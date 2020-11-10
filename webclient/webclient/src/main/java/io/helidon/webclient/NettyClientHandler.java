@@ -203,7 +203,7 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
     }
 
     private boolean notChunked(WebClientResponseHeaders headers) {
-        return headers.transferEncoding().isEmpty();
+        return !headers.transferEncoding().contains("chunked");
     }
 
     @Override
