@@ -17,7 +17,4 @@
 /**
  * Helidon MDC support for delegation of the MDC values to all of the logging frameworks.
  */
-/**
- * Helidon MDC logging common classes.
- */
-package io.helidon.logging;
+package io.helidon.logging.common;

@@ -19,11 +19,11 @@
  */
 module io.helidon.logging.log4j {
     requires io.helidon.common.context;
-    requires io.helidon.logging;
     requires org.apache.logging.log4j;
+    requires io.helidon.logging.common;
 
     exports io.helidon.logging.log4j;
 
-    provides io.helidon.logging.spi.MdcProvider with io.helidon.logging.log4j.Log4jMdcProvider;
+    provides io.helidon.logging.common.spi.MdcProvider with io.helidon.logging.log4j.Log4jMdcProvider;
     provides io.helidon.common.context.spi.DataPropagationProvider with io.helidon.logging.log4j.Log4jMdcPropagator;
 }

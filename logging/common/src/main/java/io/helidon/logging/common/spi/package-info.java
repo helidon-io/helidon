@@ -17,4 +17,4 @@
 /**
  * This package provides interface for an actual MDC support implementation.
  */
-package io.helidon.logging.spi;
+package io.helidon.logging.common.spi;

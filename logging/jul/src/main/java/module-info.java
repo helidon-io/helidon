@@ -21,11 +21,11 @@ module io.helidon.logging.jul {
     requires java.logging;
 
     requires io.helidon.common;
-    requires io.helidon.logging;
     requires io.helidon.common.context;
+    requires io.helidon.logging.common;
 
     exports  io.helidon.logging.jul;
 
     provides io.helidon.common.context.spi.DataPropagationProvider with io.helidon.logging.jul.JulMdcPropagator;
-    provides io.helidon.logging.spi.MdcProvider with io.helidon.logging.jul.JulMdcProvider;
+    provides io.helidon.logging.common.spi.MdcProvider with io.helidon.logging.jul.JulMdcProvider;
 }

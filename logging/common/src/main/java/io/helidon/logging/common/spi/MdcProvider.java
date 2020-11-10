@@ -13,21 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.logging.spi;
+package io.helidon.logging.common.spi;
+
+import io.helidon.logging.common.HelidonMdc;
 
 /**
- * Provider which is used to propagate values passed from {@link io.helidon.logging.HelidonMdc} to the
+ * Provider which is used to propagate values passed from {@link HelidonMdc} to the
  * corresponding logging framework MDC storage.
  */
 public interface MdcProvider {
 
     /**
      * Set value to the specific logging framework MDC storage.
-     *
-     * @param key entry key
+     *  @param key entry key
      * @param value entry value
      */
-    void put(String key, Object value);
+    void put(String key, String value);
 
     /**
      * Remove value bound to the key from the specific logging framework MDC storage.

@@ -23,6 +23,7 @@ import org.apache.logging.log4j.ThreadContext;
 
 /**
  * This is propagator of Log4j MDC values between different threads.
+ * This class is loaded and used via SPI.
  */
 public class Log4jMdcPropagator implements DataPropagationProvider<Map<String, String>> {
 

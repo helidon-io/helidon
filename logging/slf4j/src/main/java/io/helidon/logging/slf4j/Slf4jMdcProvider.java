@@ -16,18 +16,19 @@
 package io.helidon.logging.slf4j;
 
 
-import io.helidon.logging.spi.MdcProvider;
+import io.helidon.logging.common.spi.MdcProvider;
 
 import org.slf4j.MDC;
 
 /**
  * Provider for setting MDC values to the Slf4j MDC support.
+ * This class is loaded and used via SPI.
  */
 public class Slf4jMdcProvider implements MdcProvider {
 
     @Override
-    public void put(String key, Object value) {
-        MDC.put(key, String.valueOf(value));
+    public void put(String key, String value) {
+        MDC.put(key, value);
     }
 
     @Override

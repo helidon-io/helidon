@@ -19,12 +19,12 @@
  */
 module io.helidon.logging.slf4j {
     requires io.helidon.common.context;
-    requires io.helidon.logging;
+    requires io.helidon.logging.common;
 
     requires slf4j.api;
 
     exports io.helidon.logging.slf4j;
 
     provides io.helidon.common.context.spi.DataPropagationProvider with io.helidon.logging.slf4j.Slf4jMdcPropagator;
-    provides io.helidon.logging.spi.MdcProvider with io.helidon.logging.slf4j.Slf4jMdcProvider;
+    provides io.helidon.logging.common.spi.MdcProvider with io.helidon.logging.slf4j.Slf4jMdcProvider;
 }

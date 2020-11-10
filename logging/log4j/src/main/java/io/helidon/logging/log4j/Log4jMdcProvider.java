@@ -15,17 +15,18 @@
  */
 package io.helidon.logging.log4j;
 
-import io.helidon.logging.spi.MdcProvider;
+import io.helidon.logging.common.spi.MdcProvider;
 
 import org.apache.logging.log4j.ThreadContext;
 
 /**
  * Provider for setting MDC values to the Log4j MDC support.
+ * This class is loaded and used via SPI.
  */
 public class Log4jMdcProvider implements MdcProvider {
     @Override
-    public void put(String key, Object value) {
-        ThreadContext.put(key, String.valueOf(value));
+    public void put(String key, String value) {
+        ThreadContext.put(key, value);
     }
 
     @Override

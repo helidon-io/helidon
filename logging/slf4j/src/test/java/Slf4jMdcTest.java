@@ -21,7 +21,7 @@ import java.util.concurrent.Executors;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.context.ExecutorException;
-import io.helidon.logging.HelidonMdc;
+import io.helidon.logging.common.HelidonMdc;
 
 import org.junit.jupiter.api.Test;
 import org.slf4j.MDC;

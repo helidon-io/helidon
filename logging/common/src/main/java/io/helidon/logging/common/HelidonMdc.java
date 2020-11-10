@@ -13,21 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.logging;
+package io.helidon.logging.common;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.ServiceLoader;
 
 import io.helidon.common.serviceloader.HelidonServiceLoader;
-import io.helidon.logging.spi.MdcProvider;
+import io.helidon.logging.common.spi.MdcProvider;
 
 /**
  * Helidon MDC delegates values across all of the supported logging frameworks on the classpath.
  */
 public class HelidonMdc {
 
-    private static final List<MdcProvider> SERVICE_LOADER = HelidonServiceLoader
+    private static final List<MdcProvider> MDC_PROVIDERS = HelidonServiceLoader
             .builder(ServiceLoader.load(MdcProvider.class)).build().asList();
 
     private HelidonMdc() {
@@ -40,8 +41,8 @@ public class HelidonMdc {
      * @param key entry key
      * @param value entry value
      */
-    public static void set(String key, Object value) {
-        SERVICE_LOADER.forEach(provider -> provider.put(key, value));
+    public static void set(String key, String value) {
+        MDC_PROVIDERS.forEach(provider -> provider.put(key, value));
     }
 
     /**
@@ -50,14 +51,14 @@ public class HelidonMdc {
      * @param key key
      */
     public static void remove(String key) {
-        SERVICE_LOADER.forEach(provider -> provider.remove(key));
+        MDC_PROVIDERS.forEach(provider -> provider.remove(key));
     }
 
     /**
      * Remove all of the entries bound to the current thread from the instances of {@link MdcProvider}.
      */
     public static void clear() {
-        SERVICE_LOADER.forEach(MdcProvider::clear);
+        MDC_PROVIDERS.forEach(MdcProvider::clear);
     }
 
     /**
@@ -66,12 +67,11 @@ public class HelidonMdc {
      * @param key key
      * @return found value bound to key
      */
-    public static String get(String key) {
-        return SERVICE_LOADER.stream()
+    public static Optional<String> get(String key) {
+        return MDC_PROVIDERS.stream()
                 .map(provider -> provider.get(key))
                 .filter(Objects::nonNull)
-                .findFirst()
-                .orElse("");
+                .findFirst();
     }
 
 }

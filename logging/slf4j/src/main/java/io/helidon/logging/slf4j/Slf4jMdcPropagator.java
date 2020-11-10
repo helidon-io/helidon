@@ -23,6 +23,7 @@ import org.slf4j.MDC;
 
 /**
  * This is propagator of Slf4j MDC values between different threads.
+ * This class is loaded and used via SPI.
  */
 public class Slf4jMdcPropagator implements DataPropagationProvider<Map<String, String>> {
 

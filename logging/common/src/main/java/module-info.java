@@ -17,12 +17,12 @@
 /**
  * Helidon logging.
  */
-module io.helidon.logging {
+module io.helidon.logging.common {
     requires io.helidon.common.serviceloader;
 
-    exports io.helidon.logging;
-    exports io.helidon.logging.spi;
+    exports io.helidon.logging.common;
+    exports io.helidon.logging.common.spi;
 
-    uses io.helidon.logging.spi.MdcProvider;
+    uses io.helidon.logging.common.spi.MdcProvider;
 
 }

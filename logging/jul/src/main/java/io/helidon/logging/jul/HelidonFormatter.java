@@ -29,7 +29,7 @@ import java.util.logging.SimpleFormatter;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import io.helidon.logging.HelidonMdc;
+import io.helidon.logging.common.HelidonMdc;
 
 /**
  * A {@link SimpleFormatter} that replaces all occurrences of MDC tags like {@code %X{value}} with specific values.
@@ -58,7 +58,7 @@ public class HelidonFormatter extends SimpleFormatter {
     public String format(LogRecord record) {
         String message = thread ? thread() : format;
         for (String parsedKey : parsedProps) {
-            String value = HelidonMdc.get(parsedKey);
+            String value = HelidonMdc.get(parsedKey).orElse("");
             message = PATTERN_CACHE.computeIfAbsent(parsedKey, key -> Pattern.compile("%X\\{" + key + "}"))
                     .matcher(message).replaceAll(value);
         }

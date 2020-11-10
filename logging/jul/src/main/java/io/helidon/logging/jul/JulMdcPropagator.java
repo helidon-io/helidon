@@ -21,6 +21,7 @@ import io.helidon.common.context.spi.DataPropagationProvider;
 
 /**
  * This is propagator of JUL MDC values between different threads.
+ * This class is loaded and used via SPI.
  */
 public class JulMdcPropagator implements DataPropagationProvider<Map<String, String>> {
 
