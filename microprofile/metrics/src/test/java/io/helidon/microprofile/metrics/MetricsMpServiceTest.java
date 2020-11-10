@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.metrics;
 
+import io.helidon.metrics.RegistryFactory;
 import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 import org.eclipse.microprofile.metrics.Counter;
@@ -25,6 +26,8 @@ import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.annotation.RegistryType;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeAll;
 
 import javax.inject.Inject;
 
@@ -34,6 +37,18 @@ import javax.inject.Inject;
 @HelidonTest
 @AddBean(HelloWorldResource.class)
 public class MetricsMpServiceTest {
+
+    @BeforeAll
+    public static void initTest() {
+        initSyntheticSimpleTimerRegistry();
+    }
+
+    static MetricRegistry initSyntheticSimpleTimerRegistry() {
+        MetricRegistry result = RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.BASE);
+        result.remove(MetricsCdiExtension.SYNTHETIC_SIMPLE_TIMER_METRIC_NAME);
+        return result;
+    }
+
 
     @Inject
     private MetricRegistry registry;
