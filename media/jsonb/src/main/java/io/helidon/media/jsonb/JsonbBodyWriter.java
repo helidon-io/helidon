@@ -47,7 +47,6 @@ class JsonbBodyWriter implements MessageBodyWriter<Object> {
     @Override
     public PredicateResult accept(GenericType<?> type,
                                   MessageBodyWriterContext context) {
-
         return !CharSequence.class.isAssignableFrom(type.rawType())
                 ? PredicateResult.COMPATIBLE
                 : PredicateResult.NOT_SUPPORTED;
@@ -73,9 +72,9 @@ class JsonbBodyWriter implements MessageBodyWriter<Object> {
     }
 
     /**
-     * Implementation of {@link MultiMapper} that converts objects into chunks.
+     * Implementation of {@link Mapper} that converts objects into chunks.
      */
-    private static final class ObjectToChunks implements Mapper<Object, Publisher<DataChunk>> {
+    static final class ObjectToChunks implements Mapper<Object, Publisher<DataChunk>> {
 
         private final Jsonb jsonb;
         private final Charset charset;
