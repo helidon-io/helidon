@@ -35,6 +35,7 @@
         <version.plugin.jaxb2>0.14.0</version.plugin.jaxb2>
         <version.plugin.eclipselink>2.7.5.1</version.plugin.eclipselink>
         <version.plugin.hibernate.enhance>${version.lib.hibernate}</version.plugin.hibernate.enhance>
+        <version.plugin.docker-maven-plugin>0.34.1</version.plugin.docker-maven-plugin>
         <mainClass>io.helidon.microprofile.cdi.Main</mainClass>
     </properties>
 
@@ -85,7 +86,12 @@
                     <artifactId>hibernate-enhance-maven-plugin</artifactId>
                     <version>${version.plugin.hibernate.enhance}</version>
                 </plugin>
-           </plugins>
+                <plugin>
+                    <groupId>io.fabric8</groupId>
+                    <artifactId>docker-maven-plugin</artifactId>
+                    <version>${version.plugin.docker-maven-plugin}</version>
+                </plugin>
+            </plugins>
         </pluginManagement>
     </build>
 

@@ -25,7 +25,7 @@
         <version>2.1.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>pgsql</artifactId>
+    <artifactId>helidon-integrations-db-pgsql</artifactId>
     <name>Helidon Integrations DB PostgreSQL JDBC</name>
     <description>JDBC driver for PostgreSQL database with native-image support</description>
 

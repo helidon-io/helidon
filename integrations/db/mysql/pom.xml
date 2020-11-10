@@ -25,7 +25,7 @@
         <version>2.1.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>mysql</artifactId>
+    <artifactId>helidon-integrations-db-mysql</artifactId>
     <name>Helidon Integrations DB Mysql JDBC</name>
     <description>JDBC driver for Mysql database with native-image support</description>
 

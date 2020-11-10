@@ -143,15 +143,6 @@ limitations under the License.
                 <filtering>true</filtering>
             </resource>
         </resources>
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <groupId>io.fabric8</groupId>
-                    <artifactId>docker-maven-plugin</artifactId>
-                    <version>0.33.0</version>
-                </plugin>
-            </plugins>
-        </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -465,7 +456,7 @@ limitations under the License.
             <dependencies>
                 <dependency>
                     <groupId>io.helidon.integrations.db</groupId>
-                    <artifactId>mysql</artifactId>
+                    <artifactId>helidon-integrations-db-mysql</artifactId>
                     <version>${project.version}</version>
                 </dependency>
                 <dependency>
@@ -548,7 +539,7 @@ limitations under the License.
             <dependencies>
                 <dependency>
                     <groupId>io.helidon.integrations.db</groupId>
-                    <artifactId>mariadb</artifactId>
+                    <artifactId>helidon-integrations-db-mariadb</artifactId>
                     <version>${project.version}</version>
                 </dependency>
                 <dependency>
@@ -629,7 +620,7 @@ limitations under the License.
             <dependencies>
                 <dependency>
                     <groupId>io.helidon.integrations.db</groupId>
-                    <artifactId>pgsql</artifactId>
+                    <artifactId>helidon-integrations-db-pgsql</artifactId>
                     <version>${project.version}</version>
                 </dependency>
                 <dependency>
