@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,15 +15,15 @@
  */
 
 /**
- * Helidon Common Context library.
+ * Helidon Log4j MDC module.
  */
-module io.helidon.common.context {
-    requires java.logging;
-    requires io.helidon.common;
-    requires io.helidon.common.serviceloader;
+module io.helidon.logging.log4j {
+    requires io.helidon.common.context;
+    requires org.apache.logging.log4j;
+    requires io.helidon.logging.common;
 
-    exports io.helidon.common.context;
-    exports io.helidon.common.context.spi;
+    exports io.helidon.logging.log4j;
 
-    uses io.helidon.common.context.spi.DataPropagationProvider;
+    provides io.helidon.logging.common.spi.MdcProvider with io.helidon.logging.log4j.Log4jMdcProvider;
+    provides io.helidon.common.context.spi.DataPropagationProvider with io.helidon.logging.log4j.Log4jMdcPropagator;
 }

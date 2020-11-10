@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,38 +14,30 @@
  * limitations under the License.
  */
 
-package io.helidon.common;
+package io.helidon.logging.jul;
 
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
-import java.util.logging.SimpleFormatter;
 import java.util.logging.StreamHandler;
-import java.util.regex.Pattern;
 
 /**
- * A {@link StreamHandler} that writes to {@link System#out standard out} and uses a {@link ThreadFormatter} for formatting.
+ * A {@link StreamHandler} that writes to {@link System#out standard out} and uses a {@link HelidonFormatter} for formatting.
  * Sets the level to {@link Level#ALL} so that level filtering is performed solely by the loggers.
- *
- * @deprecated use io.helidon.logging.jul.HelidonConsoleHandler from helidon-logging-jul module instead
  */
-@Deprecated(since = "2.1.1")
 public class HelidonConsoleHandler extends StreamHandler {
 
     /**
      * Creates a new {@link HelidonConsoleHandler} configured with:
      * <ul>
      *     <li>the output stream set to {@link System#out}</li>
-     *     <li>the formatter set to a {@link ThreadFormatter}</li>
+     *     <li>the formatter set to a {@link HelidonFormatter}</li>
      *     <li>the level set to {@link Level#ALL}</li>
      * </ul>.
      */
     public HelidonConsoleHandler() {
         setOutputStream(System.out);
         setLevel(Level.ALL); // Handlers should not filter, loggers should
-        setFormatter(new ThreadFormatter());
-        System.out.println("You are using deprecated logging handler -> io.helidon.common.HelidonConsoleHandler "
-                                   + "Please use helidon-logging-jul module and change your handler to "
-                                   + "io.helidon.logging.jul.HelidonConsoleHandler");
+        setFormatter(new HelidonFormatter());
     }
 
     @Override
@@ -59,16 +51,4 @@ public class HelidonConsoleHandler extends StreamHandler {
         flush();
     }
 
-    /**
-     * A {@link SimpleFormatter} that replaces all occurrences of {@code "!thread!"} with the current thread.
-     */
-    public static class ThreadFormatter extends SimpleFormatter {
-        private static final Pattern THREAD_PATTERN = Pattern.compile("!thread!");
-
-        @Override
-        public String format(LogRecord record) {
-            final String message = super.format(record);
-            return THREAD_PATTERN.matcher(message).replaceAll(Thread.currentThread().toString());
-        }
-    }
 }
