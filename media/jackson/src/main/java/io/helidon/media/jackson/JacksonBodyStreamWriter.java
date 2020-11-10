@@ -29,12 +29,10 @@ import io.helidon.media.common.MessageBodyWriterContext;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import static io.helidon.media.jsonb.JsonbBodyWriter.*;
-
 /**
  * TODO javadoc
  */
-public class JacksonBodyStreamWriter implements MessageBodyStreamWriter<Object> {
+class JacksonBodyStreamWriter implements MessageBodyStreamWriter<Object> {
 
     private static final byte[] ARRAY_JSON_END_BYTES = "]".getBytes(StandardCharsets.UTF_8);
     private static final byte[] ARRAY_JSON_BEGIN_BYTES = "[".getBytes(StandardCharsets.UTF_8);
@@ -42,8 +40,12 @@ public class JacksonBodyStreamWriter implements MessageBodyStreamWriter<Object> 
 
     private final ObjectMapper objectMapper;
 
-    public JacksonBodyStreamWriter(ObjectMapper objectMapper) {
+    private JacksonBodyStreamWriter(ObjectMapper objectMapper) {
         this.objectMapper = Objects.requireNonNull(objectMapper);
+    }
+
+    static JacksonBodyStreamWriter create(ObjectMapper objectMapper) {
+        return new JacksonBodyStreamWriter(objectMapper);
     }
 
     @Override
@@ -60,9 +62,10 @@ public class JacksonBodyStreamWriter implements MessageBodyStreamWriter<Object> 
         context.contentType(contentType);
 
         AtomicBoolean first = new AtomicBoolean(true);
+        JacksonBodyWriter.ObjectToChunks objectToChunks = new JacksonBodyWriter.ObjectToChunks(objectMapper, context.charset());
 
         return Multi.create(publisher)
-                .flatMap(it -> DataChunk.)
+                .flatMap(objectToChunks)
                 .flatMap(it -> {
                     if (first.getAndSet(false)) {
                         // first record, do not prepend a comma

@@ -17,7 +17,6 @@ package io.helidon.media.jackson;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.Flow;
 
 import io.helidon.common.GenericType;
@@ -41,27 +40,32 @@ class JacksonEsBodyStreamWriter implements MessageBodyStreamWriter<Object> {
 
     private final ObjectMapper objectMapper;
 
-    public JacksonEsBodyStreamWriter(ObjectMapper objectMapper) {
+    private JacksonEsBodyStreamWriter(ObjectMapper objectMapper) {
         this.objectMapper = Objects.requireNonNull(objectMapper);
+    }
+
+    static JacksonEsBodyStreamWriter create(ObjectMapper objectMapper) {
+        return new JacksonEsBodyStreamWriter(objectMapper);
     }
 
     @Override
     public PredicateResult accept(GenericType<?> type, MessageBodyWriterContext context) {
         return context.contentType()
-                .or(() -> Optional.of(TEXT_EVENT_STREAM_JSON))
+//                .or(() -> Optional.ofNullable(context.findAccepted(TEXT_EVENT_STREAM_JSON)))
                 .filter(mediaType -> mediaType == TEXT_EVENT_STREAM_JSON)
-//                .filter(it -> !CharSequence.class.isAssignableFrom(type.rawType()))
-                .map(it -> PredicateResult.COMPATIBLE)
+                .map(it -> PredicateResult.SUPPORTED)
                 .orElse(PredicateResult.NOT_SUPPORTED);
     }
 
     @Override
     public Multi<DataChunk> write(Flow.Publisher<?> publisher, GenericType<?> type, MessageBodyWriterContext context) {
         context.contentType(TEXT_EVENT_STREAM_JSON);
+        JacksonBodyWriter.ObjectToChunks objectToChunks = new JacksonBodyWriter.ObjectToChunks(objectMapper, context.charset());
         return Multi.defer(() -> publisher)
-                .flatMap(m -> Multi.just(
+                .flatMap(objectToChunks)
+                .flatMap(chunk -> Multi.just(
                         DataChunk.create(DATA),
-                        DataChunk.create(jsonb.toJson(m).getBytes(StandardCharsets.UTF_8)),
+                        chunk,
                         DataChunk.create(NL))
                 );
     }

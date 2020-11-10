@@ -22,6 +22,7 @@ import java.util.Objects;
 import io.helidon.common.LazyValue;
 import io.helidon.media.common.MediaSupport;
 import io.helidon.media.common.MessageBodyReader;
+import io.helidon.media.common.MessageBodyStreamWriter;
 import io.helidon.media.common.MessageBodyWriter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -44,10 +45,14 @@ public final class JacksonSupport implements MediaSupport {
 
     private final JacksonBodyReader reader;
     private final JacksonBodyWriter writer;
+    private final JacksonBodyStreamWriter streamWriter;
+    private final JacksonEsBodyStreamWriter esStreamWriter;
 
     private JacksonSupport(final ObjectMapper objectMapper) {
         this.reader = JacksonBodyReader.create(objectMapper);
         this.writer = JacksonBodyWriter.create(objectMapper);
+        this.streamWriter = JacksonBodyStreamWriter.create(objectMapper);
+        this.esStreamWriter = JacksonEsBodyStreamWriter.create(objectMapper);
     }
 
     /**
@@ -128,6 +133,12 @@ public final class JacksonSupport implements MediaSupport {
         return writer;
     }
 
+    public MessageBodyStreamWriter<Object> streamWriterInstance() {
+        return streamWriter;
+    }
+
+    public MessageBodyStreamWriter<Object> eventStreamWriter
+
     @Override
     public Collection<MessageBodyReader<?>> readers() {
         return List.of(reader);
@@ -138,4 +149,8 @@ public final class JacksonSupport implements MediaSupport {
         return List.of(writer);
     }
 
+    @Override
+    public Collection<MessageBodyStreamWriter<?>> streamWriters() {
+        return List.of(streamWriter, esStreamWriter);
+    }
 }
