@@ -44,11 +44,13 @@ public final class JsonpSupport implements MediaSupport {
     private final JsonpBodyReader reader;
     private final JsonpBodyWriter writer;
     private final JsonpBodyStreamWriter streamWriter;
+    private final JsonpEsBodyStreamWriter esStreamWriter;
 
     private JsonpSupport(JsonReaderFactory readerFactory, JsonWriterFactory writerFactory) {
         reader = new JsonpBodyReader(readerFactory);
         writer = new JsonpBodyWriter(writerFactory);
         streamWriter = new JsonpBodyStreamWriter(writerFactory);
+        esStreamWriter = new JsonpEsBodyStreamWriter(writerFactory);
     }
 
     /**
@@ -137,6 +139,27 @@ public final class JsonpSupport implements MediaSupport {
     }
 
     /**
+     * Return a default JSON-P entity event stream writer.
+     * This writer is for {@code text/event-stream} content type.
+     *
+     * @return new JSON-P body stream writer instance
+     */
+    public static MessageBodyStreamWriter<JsonStructure> eventStreamWriter() {
+        return DEFAULT.get().esStreamWriter;
+    }
+
+    /**
+     * Create a new JSON-P entity stream writer based on {@link JsonWriterFactory} instance.
+     * This writer is for {@code text/event-stream} content type.
+     *
+     * @param writerFactory json writer factory
+     * @return new JSON-P body stream writer instance
+     */
+    public static MessageBodyStreamWriter<JsonStructure> eventStreamWriter(JsonWriterFactory writerFactory) {
+        return new JsonpEsBodyStreamWriter(writerFactory);
+    }
+
+    /**
      * Return JSON-P reader instance.
      *
      * @return JSON-P reader instance
@@ -167,6 +190,27 @@ public final class JsonpSupport implements MediaSupport {
         return streamWriter;
     }
 
+    /**
+     * Return JSON-P stream writer.
+     * <p>
+     * This stream writer supports {@link java.util.concurrent.Flow.Publisher publishers}
+     * of {@link javax.json.JsonStructure} (such as {@link javax.json.JsonObject}),
+     * writing them as separate entries in the following format:
+     * <pre><code>
+     * data: {"json":"data"}\n
+     * \n
+     * data: {"json2":"data2"}\n
+     * \n
+     * </code></pre>
+     *
+     * This writer is for {@code text/event-stream} content type.
+     *
+     * @return JSON processing stream writer.
+     */
+    public MessageBodyStreamWriter<JsonStructure> eventStreamWriterInstance() {
+        return esStreamWriter;
+    }
+
     @Override
     public Collection<MessageBodyReader<?>> readers() {
         return List.of(reader);
@@ -179,7 +223,7 @@ public final class JsonpSupport implements MediaSupport {
 
     @Override
     public Collection<MessageBodyStreamWriter<?>> streamWriters() {
-        return List.of(streamWriter);
+        return List.of(streamWriter, esStreamWriter);
     }
 
     /**

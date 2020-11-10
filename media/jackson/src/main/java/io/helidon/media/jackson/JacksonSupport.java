@@ -116,6 +116,48 @@ public final class JacksonSupport implements MediaSupport {
     }
 
     /**
+     * Return a default Jackson entity stream writer.
+     *
+     * @return default Jackson body writer stream instance
+     */
+    public static MessageBodyStreamWriter<Object> streamWriter() {
+        return DEFAULT.get().streamWriter;
+    }
+
+    /**
+     * Create a new Jackson entity stream writer based on {@link ObjectMapper} instance.
+     *
+     * @param objectMapper object mapper instance
+     * @return new Jackson body stream writer instance
+     */
+    public static MessageBodyStreamWriter<Object> streamWriter(ObjectMapper objectMapper) {
+        Objects.requireNonNull(objectMapper);
+        return JacksonEsBodyStreamWriter.create(objectMapper);
+    }
+
+    /**
+     * Return a default Jackson entity event stream writer.
+     * This writer is for {@code text/event-stream} content type.
+     *
+     * @return new Jackson body stream writer instance
+     */
+    public static MessageBodyStreamWriter<Object> eventStreamWriter() {
+        return DEFAULT.get().esStreamWriter;
+    }
+
+    /**
+     * Create a new Jackson entity stream writer based on {@link ObjectMapper} instance.
+     * This writer is for {@code text/event-stream} content type.
+     *
+     * @param objectMapper object mapper instance
+     * @return new Jackson body stream writer instance
+     */
+    public static MessageBodyStreamWriter<Object> eventStreamWriter(ObjectMapper objectMapper) {
+        Objects.requireNonNull(objectMapper);
+        return JacksonEsBodyStreamWriter.create(objectMapper);
+    }
+
+    /**
      * Return Jackson reader instance.
      *
      * @return Jackson reader instance
@@ -133,11 +175,23 @@ public final class JacksonSupport implements MediaSupport {
         return writer;
     }
 
+    /**
+     * Return Jackson stream writer instance.
+     *
+     * @return Jackson stream writer instance
+     */
     public MessageBodyStreamWriter<Object> streamWriterInstance() {
         return streamWriter;
     }
 
-    public MessageBodyStreamWriter<Object> eventStreamWriter
+    /**
+     * Return Jackson stream writer instance for {@code text/event-stream} content type.
+     *
+     * @return Jackson event stream writer instance
+     */
+    public MessageBodyStreamWriter<Object> eventStreamWriterInstance() {
+        return esStreamWriter;
+    }
 
     @Override
     public Collection<MessageBodyReader<?>> readers() {

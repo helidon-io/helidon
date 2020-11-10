@@ -35,7 +35,7 @@ import io.helidon.media.common.MessageBodyWriterContext;
 /**
  * TODO javadoc
  */
-public class JsonpEsBodyStreamWriter implements MessageBodyStreamWriter<JsonStructure> {
+class JsonpEsBodyStreamWriter implements MessageBodyStreamWriter<JsonStructure> {
 
     private static final MediaType TEXT_EVENT_STREAM_JSON = MediaType
             .parse("text/event-stream;element-type=\"application/json\"");

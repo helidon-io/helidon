@@ -34,7 +34,7 @@ import static io.helidon.media.jsonb.JsonbBodyWriter.ObjectToChunks;
 /**
  * TODO javadoc
  */
-public class JsonbBodyStreamWriter implements MessageBodyStreamWriter<Object> {
+class JsonbBodyStreamWriter implements MessageBodyStreamWriter<Object> {
 
     private static final byte[] ARRAY_JSON_END_BYTES = "]".getBytes(StandardCharsets.UTF_8);
     private static final byte[] ARRAY_JSON_BEGIN_BYTES = "[".getBytes(StandardCharsets.UTF_8);
@@ -44,6 +44,10 @@ public class JsonbBodyStreamWriter implements MessageBodyStreamWriter<Object> {
 
     public JsonbBodyStreamWriter(Jsonb jsonb) {
         this.jsonb = Objects.requireNonNull(jsonb);
+    }
+
+    static JsonbBodyStreamWriter create(Jsonb jsonb) {
+        return new JsonbBodyStreamWriter(jsonb);
     }
 
     @Override

@@ -32,7 +32,7 @@ import io.helidon.media.common.MessageBodyWriterContext;
 /**
  * TODO javadoc
  */
-public class JsonbEsBodyStreamWriter implements MessageBodyStreamWriter<Object> {
+class JsonbEsBodyStreamWriter implements MessageBodyStreamWriter<Object> {
 
     private static final MediaType TEXT_EVENT_STREAM_JSON = MediaType
             .parse("text/event-stream;element-type=\"application/json\"");
@@ -43,6 +43,10 @@ public class JsonbEsBodyStreamWriter implements MessageBodyStreamWriter<Object> 
 
     public JsonbEsBodyStreamWriter(Jsonb jsonb) {
         this.jsonb = Objects.requireNonNull(jsonb);
+    }
+
+    static JsonbEsBodyStreamWriter create(Jsonb jsonb) {
+        return new JsonbEsBodyStreamWriter(jsonb);
     }
 
     @Override
