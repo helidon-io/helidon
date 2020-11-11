@@ -138,6 +138,7 @@ public class MetricsCdiExtension implements Extension {
     private final Set<Class<?>> metricsAnnotatedClasses = new HashSet<>();
     private final Set<Class<?>> metricsAnnotatedClassesProcessed = new HashSet<>();
     private final Map<Class<?>, Set<Method>> methodsWithSyntheticSimpleTimer = new HashMap<>();
+    private final Set<Class<?>> syntheticSimpleTimerClassesProcessed = new HashSet<>();
     private final Set<Method> syntheticSimpleTimersToRegister = new HashSet<>();
 
     @SuppressWarnings("unchecked")
@@ -317,7 +318,7 @@ public class MetricsCdiExtension implements Extension {
             metricsAnnotatedClassesIgnored.removeAll(metricsAnnotatedClassesProcessed);
             if (!metricsAnnotatedClassesIgnored.isEmpty()) {
                 LOGGER.log(Level.FINE, () ->
-                        "Classes originally found with metrics annotations that were not processed (probably "
+                        "Classes originally found with metrics annotations that were not processed, probably "
                                 + "because they were vetoed:" + metricsAnnotatedClassesIgnored.toString());
             }
         }
@@ -507,6 +508,9 @@ public class MetricsCdiExtension implements Extension {
      */
     static SimpleTimer syntheticSimpleTimer(Method method) {
         // By spec, the synthetic SimpleTimers are always in the base registry.
+        LOGGER.log(Level.FINE,
+                () -> String.format("Registering synthetic SimpleTimer for %s#%s", method.getDeclaringClass().getName(),
+                        method.getName()));
         return getRegistryForSyntheticSimpleTimers()
                 .simpleTimer(SYNTHETIC_SIMPLE_TIMER_METADATA, syntheticSimpleTimerMetricTags(method));
     }
@@ -645,11 +649,22 @@ public class MetricsCdiExtension implements Extension {
 
         LOGGER.log(Level.FINE, () -> "Processing synthetic SimplyTimed annotations for " + clazz.getName());
 
+        syntheticSimpleTimerClassesProcessed.add(clazz);
         syntheticSimpleTimersToRegister.addAll(methodsWithSyntheticSimpleTimer.get(clazz));
     }
 
     private void registerSyntheticSimpleTimerMetrics(@Observes @RuntimeStart Object event) {
         syntheticSimpleTimersToRegister.forEach(MetricsCdiExtension::syntheticSimpleTimer);
+        if (LOGGER.isLoggable(Level.FINE)) {
+            Set<Class<?>> syntheticSimpleTimerAnnotatedClassesIgnored = new HashSet<>(methodsWithSyntheticSimpleTimer.keySet());
+            syntheticSimpleTimerAnnotatedClassesIgnored.removeAll(syntheticSimpleTimerClassesProcessed);
+            if (!syntheticSimpleTimerAnnotatedClassesIgnored.isEmpty()) {
+                LOGGER.log(Level.FINE, () ->
+                        "Classes with synthetic SimplyTimer annotations added that were not processed, probably "
+                                + "because they were vetoed:" + syntheticSimpleTimerAnnotatedClassesIgnored.toString());
+            }
+        }
+        syntheticSimpleTimerClassesProcessed.clear();
         syntheticSimpleTimersToRegister.clear();
     }
 

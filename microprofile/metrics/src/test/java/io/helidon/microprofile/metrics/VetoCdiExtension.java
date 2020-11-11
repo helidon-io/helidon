@@ -22,6 +22,8 @@ import javax.enterprise.inject.spi.ProcessAnnotatedType;
 import javax.enterprise.inject.spi.WithAnnotations;
 import javax.ws.rs.Path;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Vetoes selected resources which should suppress the registration of their annotation-defined metrics and
@@ -29,12 +31,15 @@ import java.util.Set;
  */
 public class VetoCdiExtension implements Extension {
 
+    private static final Logger LOGGER = Logger.getLogger(VetoCdiExtension.class.getName());
+
     private static final Set<Class<?>> VETOED_RESOURCE_CLASSES = Set.of(VetoedResource.class,
             VetoedJaxRsButOtherwiseUnmeasuredResource.class);
 
     private void vetoResourceClass(@Observes @WithAnnotations(Path.class) ProcessAnnotatedType<?> resourceType) {
         Class<?> resourceClass = resourceType.getAnnotatedType().getJavaClass();
         if (VETOED_RESOURCE_CLASSES.contains(resourceClass)) {
+            LOGGER.log(Level.FINE, () -> "Unit test is vetoing " + resourceClass.getName());
             resourceType.veto();
         }
     }
