@@ -142,6 +142,11 @@ public final class MediaType implements AcceptPredicate<MediaType> {
      */
     public static final MediaType APPLICATION_JAVASCRIPT;
 
+    /**
+     * A {@link MediaType} constant representing {@code text/event-stream} media type.
+     */
+    public static final MediaType TEXT_EVENT_STREAM;
+
     static {
         Map<String, MediaType> knownTypes = new HashMap<>();
 
@@ -205,6 +210,9 @@ public final class MediaType implements AcceptPredicate<MediaType> {
         APPLICATION_JAVASCRIPT = new MediaType("application", "javascript");
         knownTypes.put("application/javascript", APPLICATION_JAVASCRIPT);
 
+        TEXT_EVENT_STREAM = new MediaType("text", "event-stream");
+        knownTypes.put("text/event-stream", TEXT_EVENT_STREAM);
+
         KNOWN_TYPES = Collections.unmodifiableMap(knownTypes);
     }
 
@@ -219,6 +227,14 @@ public final class MediaType implements AcceptPredicate<MediaType> {
      */
     public static final Predicate<MediaType> JSON_PREDICATE = APPLICATION_JSON
             .or(mt -> mt.hasSuffix("json"));
+
+    /**
+     * Predicate to test if {@link MediaType} is {@code text/event-stream} without any parameter or with parameter "element-type".
+     * This "element-type" has to be equal to "application/json".
+     */
+    public static final Predicate<MediaType> JSON_EVENT_STREAM_PREDICATE = TEXT_EVENT_STREAM
+            .and(mt -> !mt.parameters().containsKey("element-type")
+                    || "application/json".equals(mt.parameters().get("element-type")));
 
     /**
      * Matcher for type, subtype and attributes.

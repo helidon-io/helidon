@@ -17,6 +17,7 @@ package io.helidon.media.jackson;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.Flow;
 
 import io.helidon.common.GenericType;
@@ -29,7 +30,8 @@ import io.helidon.media.common.MessageBodyWriterContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
- * TODO javadoc
+ * Message body stream writer supporting object binding with Jackson.
+ * This writer is for {@link MediaType#TEXT_EVENT_STREAM} with no element-type parameter or element-type="application/json".
  */
 class JacksonEsBodyStreamWriter implements MessageBodyStreamWriter<Object> {
 
@@ -51,9 +53,10 @@ class JacksonEsBodyStreamWriter implements MessageBodyStreamWriter<Object> {
     @Override
     public PredicateResult accept(GenericType<?> type, MessageBodyWriterContext context) {
         return context.contentType()
-//                .or(() -> Optional.ofNullable(context.findAccepted(TEXT_EVENT_STREAM_JSON)))
-                .filter(mediaType -> mediaType == TEXT_EVENT_STREAM_JSON)
-                .map(it -> PredicateResult.SUPPORTED)
+                .or(() -> findMediaType(context))
+                .filter(mediaType -> mediaType.equals(TEXT_EVENT_STREAM_JSON))
+                .filter(it -> !CharSequence.class.isAssignableFrom(type.rawType()))
+                .map(it -> PredicateResult.COMPATIBLE)
                 .orElse(PredicateResult.NOT_SUPPORTED);
     }
 
@@ -68,5 +71,14 @@ class JacksonEsBodyStreamWriter implements MessageBodyStreamWriter<Object> {
                         chunk,
                         DataChunk.create(NL))
                 );
+    }
+
+    private Optional<MediaType> findMediaType(MessageBodyWriterContext context) {
+        try {
+            return Optional.of(context.findAccepted(MediaType.JSON_EVENT_STREAM_PREDICATE, TEXT_EVENT_STREAM_JSON));
+        } catch (IllegalStateException ignore) {
+            //Not supported. Ignore exception.
+            return Optional.empty();
+        }
     }
 }

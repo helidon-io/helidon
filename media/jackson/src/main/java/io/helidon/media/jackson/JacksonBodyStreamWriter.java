@@ -30,7 +30,7 @@ import io.helidon.media.common.MessageBodyWriterContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
- * TODO javadoc
+ * Message body stream writer supporting object binding with Jackson.
  */
 class JacksonBodyStreamWriter implements MessageBodyStreamWriter<Object> {
 

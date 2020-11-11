@@ -32,7 +32,7 @@ import io.helidon.media.common.MessageBodyWriterContext;
 import static io.helidon.media.jsonb.JsonbBodyWriter.ObjectToChunks;
 
 /**
- * TODO javadoc
+ * Message body stream writer supporting object binding with JSON-B.
  */
 class JsonbBodyStreamWriter implements MessageBodyStreamWriter<Object> {
 

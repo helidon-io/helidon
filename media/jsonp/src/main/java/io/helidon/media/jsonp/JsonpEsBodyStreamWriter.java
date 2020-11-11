@@ -33,7 +33,8 @@ import io.helidon.media.common.MessageBodyStreamWriter;
 import io.helidon.media.common.MessageBodyWriterContext;
 
 /**
- * TODO javadoc
+ * Message body writer for {@link javax.json.JsonStructure} sub-classes (JSON-P).
+ * This writer is for {@link MediaType#TEXT_EVENT_STREAM} with no element-type parameter or element-type="application/json".
  */
 class JsonpEsBodyStreamWriter implements MessageBodyStreamWriter<JsonStructure> {
 
@@ -51,9 +52,8 @@ class JsonpEsBodyStreamWriter implements MessageBodyStreamWriter<JsonStructure> 
     @Override
     public PredicateResult accept(GenericType<?> type, MessageBodyWriterContext context) {
         return context.contentType()
-                .or(() -> Optional.of(TEXT_EVENT_STREAM_JSON))
-                .filter(mediaType -> mediaType == TEXT_EVENT_STREAM_JSON)
-                .map(it -> context.acceptedTypes().contains(TEXT_EVENT_STREAM_JSON))
+                .or(() -> findMediaType(context))
+                .filter(mediaType -> mediaType.equals(TEXT_EVENT_STREAM_JSON))
                 .map(it -> PredicateResult.supports(JsonStructure.class, type))
                 .orElse(PredicateResult.NOT_SUPPORTED);
     }
@@ -63,7 +63,9 @@ class JsonpEsBodyStreamWriter implements MessageBodyStreamWriter<JsonStructure> 
                                   GenericType<? extends JsonStructure> type,
                                   MessageBodyWriterContext context) {
 
-        context.contentType(TEXT_EVENT_STREAM_JSON);
+        MediaType contentType = context.findAccepted(MediaType.JSON_EVENT_STREAM_PREDICATE, TEXT_EVENT_STREAM_JSON);
+
+        context.contentType(contentType);
 
         return Multi.defer(() -> publisher)
                 .flatMap(m -> {
@@ -78,4 +80,14 @@ class JsonpEsBodyStreamWriter implements MessageBodyStreamWriter<JsonStructure> 
                     }
                 });
     }
+
+    private Optional<MediaType> findMediaType(MessageBodyWriterContext context) {
+        try {
+            return Optional.of(context.findAccepted(MediaType.JSON_EVENT_STREAM_PREDICATE, TEXT_EVENT_STREAM_JSON));
+        } catch (IllegalStateException ignore) {
+            //Not supported. Ignore exception.
+            return Optional.empty();
+        }
+    }
+
 }
