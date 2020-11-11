@@ -42,7 +42,6 @@ public class TestVetoedResource extends MetricsMpServiceTest {
                         .containsKey(vetoedID), is(false));
     }
 
-    @Disabled
     @Test
     void testNoSyntheticSimplyTimedMetricForVetoedResource() throws NoSuchMethodException {
         // Makes sure that a vetoed JAX-RS resource with an explicit metric annotation was not registered with a synthetic
@@ -57,7 +56,6 @@ public class TestVetoedResource extends MetricsMpServiceTest {
                 is(false));
     }
 
-    @Disabled
     @Test
     void testNoSyntheticSimplyTimedMetricForVetoedResourceWithJaxRsEndpointButOtherwiseUnmeasured() throws NoSuchMethodException {
         // Makes sure that a vetoed JAX-RS resource with no explicit metric annotation was not registered with a synthetic
