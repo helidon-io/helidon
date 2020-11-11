@@ -24,9 +24,7 @@ import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
-import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.annotation.RegistryType;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeAll;
 
 import javax.inject.Inject;
