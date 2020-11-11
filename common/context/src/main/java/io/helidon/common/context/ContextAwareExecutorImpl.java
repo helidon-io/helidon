@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,11 @@
 package io.helidon.common.context;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.ServiceLoader;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -26,7 +29,15 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
+import io.helidon.common.context.spi.DataPropagationProvider;
+import io.helidon.common.serviceloader.HelidonServiceLoader;
+
 class ContextAwareExecutorImpl implements ContextAwareExecutorService {
+
+    @SuppressWarnings("rawtypes")
+    private static final List<DataPropagationProvider> PROVIDERS = HelidonServiceLoader
+            .builder(ServiceLoader.load(DataPropagationProvider.class)).build().asList();
+
     private final ExecutorService delegate;
 
     ContextAwareExecutorImpl(ExecutorService toWrap) {
@@ -112,21 +123,39 @@ class ContextAwareExecutorImpl implements ContextAwareExecutorService {
 
     }
 
-    protected  <T> Callable<T> wrap(Callable<T> task) {
+    @SuppressWarnings(value = "unchecked")
+    protected <T> Callable<T> wrap(Callable<T> task) {
         Optional<Context> context = Contexts.context();
-
         if (context.isPresent()) {
-            return () -> Contexts.runInContext(context.get(), task);
+            Map<Class<?>, Object> properties = new HashMap<>();
+            PROVIDERS.forEach(provider -> properties.put(provider.getClass(), provider.data()));
+            return () -> {
+                try {
+                    PROVIDERS.forEach(provider -> provider.propagateData(properties.get(provider.getClass())));
+                    return Contexts.runInContext(context.get(), task);
+                } finally {
+                    PROVIDERS.forEach(DataPropagationProvider::clearData);
+                }
+            };
         } else {
             return task;
         }
     }
 
+    @SuppressWarnings(value = "unchecked")
     protected Runnable wrap(Runnable command) {
         Optional<Context> context = Contexts.context();
-
         if (context.isPresent()) {
-            return () -> Contexts.runInContext(context.get(), command);
+            Map<Class<?>, Object> properties = new HashMap<>();
+            PROVIDERS.forEach(provider -> properties.put(provider.getClass(), provider.data()));
+            return () -> {
+                try {
+                    PROVIDERS.forEach(provider -> provider.propagateData(properties.get(provider.getClass())));
+                    Contexts.runInContext(context.get(), command);
+                } finally {
+                    PROVIDERS.forEach(DataPropagationProvider::clearData);
+                }
+            };
         } else {
             return command;
         }
