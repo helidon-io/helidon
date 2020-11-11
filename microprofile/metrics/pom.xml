@@ -86,7 +86,6 @@
                         <configuration>
                             <systemPropertyVariables>
                                 <helidon.microprofile.metrics.perfTest.enabled>false</helidon.microprofile.metrics.perfTest.enabled>
-                                <java.util.logging.config.file>${project.basedir}/src/test/logging.properties</java.util.logging.config.file>
                             </systemPropertyVariables>
                         </configuration>
                     </plugin>
