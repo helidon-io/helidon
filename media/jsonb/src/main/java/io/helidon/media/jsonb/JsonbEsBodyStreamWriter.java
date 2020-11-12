@@ -54,7 +54,7 @@ class JsonbEsBodyStreamWriter implements MessageBodyStreamWriter<Object> {
     public PredicateResult accept(GenericType<?> type, MessageBodyWriterContext context) {
         return context.contentType()
                 .or(() -> findMediaType(context))
-                .filter(mediaType -> mediaType.equals(TEXT_EVENT_STREAM_JSON))
+                .filter(mediaType -> mediaType.equals(TEXT_EVENT_STREAM_JSON) || mediaType.equals(MediaType.TEXT_EVENT_STREAM))
                 .filter(it -> !CharSequence.class.isAssignableFrom(type.rawType()))
                 .map(it -> PredicateResult.COMPATIBLE)
                 .orElse(PredicateResult.NOT_SUPPORTED);
