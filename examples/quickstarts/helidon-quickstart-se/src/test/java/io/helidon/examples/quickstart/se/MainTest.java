@@ -75,16 +75,6 @@ public class MainTest {
     }
 
     @Test
-    public void testQuery() {
-        JsonObject response = webClient
-                .get()
-                .uri("http://localhost:" + webServer.port() + "/greet")
-                .queryParam("query", "{hello}")
-                .request(JsonObject.class)
-                .await(10, TimeUnit.SECONDS);
-    }
-
-    @Test
     public void testHelloWorld() throws Exception {
         webClient.get()
                 .path("/greet")

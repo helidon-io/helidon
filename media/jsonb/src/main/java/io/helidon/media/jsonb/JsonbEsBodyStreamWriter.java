@@ -52,10 +52,12 @@ class JsonbEsBodyStreamWriter implements MessageBodyStreamWriter<Object> {
 
     @Override
     public PredicateResult accept(GenericType<?> type, MessageBodyWriterContext context) {
+        if (CharSequence.class.isAssignableFrom(type.rawType())) {
+            return PredicateResult.NOT_SUPPORTED;
+        }
         return context.contentType()
                 .or(() -> findMediaType(context))
                 .filter(mediaType -> mediaType.equals(TEXT_EVENT_STREAM_JSON) || mediaType.equals(MediaType.TEXT_EVENT_STREAM))
-                .filter(it -> !CharSequence.class.isAssignableFrom(type.rawType()))
                 .map(it -> PredicateResult.COMPATIBLE)
                 .orElse(PredicateResult.NOT_SUPPORTED);
     }
@@ -66,7 +68,7 @@ class JsonbEsBodyStreamWriter implements MessageBodyStreamWriter<Object> {
                 .or(() -> findMediaType(context))
                 .orElse(TEXT_EVENT_STREAM_JSON);
         context.contentType(contentType);
-        return Multi.defer(() -> publisher)
+        return Multi.create(publisher)
                 .flatMap(m -> Multi.just(
                         DataChunk.create(DATA),
                         DataChunk.create(jsonb.toJson(m).getBytes(StandardCharsets.UTF_8)),
