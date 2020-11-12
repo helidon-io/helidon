@@ -86,7 +86,7 @@ public class ContactGraphQLApi {
 
     @org.eclipse.microprofile.graphql.Query
     public Collection<Customer> findCustomersByName(@Name("name") String name) {  <3>
-        return customerService.getAllCustomers(names);
+        return customerService.getAllCustomers(name);
     }
 
     @org.eclipse.microprofile.graphql.Mutation
