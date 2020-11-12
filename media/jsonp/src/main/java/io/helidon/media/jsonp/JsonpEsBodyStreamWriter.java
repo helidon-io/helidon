@@ -50,10 +50,13 @@ class JsonpEsBodyStreamWriter implements MessageBodyStreamWriter<JsonStructure> 
 
     @Override
     public PredicateResult accept(GenericType<?> type, MessageBodyWriterContext context) {
+        if (!JsonStructure.class.isAssignableFrom(type.rawType())) {
+            return PredicateResult.NOT_SUPPORTED;
+        }
         return context.contentType()
                 .or(() -> findMediaType(context))
                 .filter(mediaType -> mediaType.equals(TEXT_EVENT_STREAM_JSON) || mediaType.equals(MediaType.TEXT_EVENT_STREAM))
-                .map(it -> PredicateResult.supports(JsonStructure.class, type))
+                .map(it -> PredicateResult.COMPATIBLE)
                 .orElse(PredicateResult.NOT_SUPPORTED);
     }
 
