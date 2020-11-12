@@ -21,16 +21,15 @@ import java.util.Optional;
 import java.util.concurrent.Flow;
 
 import javax.json.JsonStructure;
-import javax.json.JsonWriter;
 import javax.json.JsonWriterFactory;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.reactive.Multi;
-import io.helidon.media.common.CharBuffer;
 import io.helidon.media.common.MessageBodyStreamWriter;
 import io.helidon.media.common.MessageBodyWriterContext;
+import io.helidon.media.jsonp.JsonpBodyWriter.JsonStructureToChunks;
 
 /**
  * Message body writer for {@link javax.json.JsonStructure} sub-classes (JSON-P).
@@ -69,18 +68,16 @@ class JsonpEsBodyStreamWriter implements MessageBodyStreamWriter<JsonStructure> 
 
         context.contentType(contentType);
 
-        return Multi.defer(() -> publisher)
-                .flatMap(m -> {
-                    CharBuffer buffer = new CharBuffer();
-                    try (JsonWriter writer = jsonWriterFactory.createWriter(buffer)) {
-                        writer.write(m);
-                        DataChunk dataChunk = DataChunk.create(true, buffer.encode(context.charset()));
-                        return Multi.just(
-                                DataChunk.create(DATA),
-                                dataChunk,
-                                DataChunk.create(NL));
-                    }
-                });
+        JsonStructureToChunks jsonToChunks = new JsonStructureToChunks(true,
+                                                                       jsonWriterFactory,
+                                                                       context.charset());
+
+        return Multi.create(publisher)
+                .map(jsonToChunks)
+                .flatMap(dataChunk -> Multi.just(
+                        DataChunk.create(DATA),
+                        dataChunk,
+                        DataChunk.create(NL)));
     }
 
     private Optional<MediaType> findMediaType(MessageBodyWriterContext context) {
