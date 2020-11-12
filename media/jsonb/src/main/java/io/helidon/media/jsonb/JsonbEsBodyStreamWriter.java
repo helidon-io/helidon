@@ -42,7 +42,7 @@ class JsonbEsBodyStreamWriter implements MessageBodyStreamWriter<Object> {
 
     private final Jsonb jsonb;
 
-    public JsonbEsBodyStreamWriter(Jsonb jsonb) {
+    private JsonbEsBodyStreamWriter(Jsonb jsonb) {
         this.jsonb = Objects.requireNonNull(jsonb);
     }
 

@@ -42,7 +42,7 @@ class JsonbBodyStreamWriter implements MessageBodyStreamWriter<Object> {
 
     private final Jsonb jsonb;
 
-    public JsonbBodyStreamWriter(Jsonb jsonb) {
+    private JsonbBodyStreamWriter(Jsonb jsonb) {
         this.jsonb = Objects.requireNonNull(jsonb);
     }
 
@@ -58,7 +58,7 @@ class JsonbBodyStreamWriter implements MessageBodyStreamWriter<Object> {
     }
 
     @Override
-    public Multi<DataChunk> write(Flow.Publisher<? extends Object> publisher, GenericType<?> type, MessageBodyWriterContext context) {
+    public Multi<DataChunk> write(Flow.Publisher<?> publisher, GenericType<?> type, MessageBodyWriterContext context) {
 
         MediaType contentType = context.findAccepted(MediaType.JSON_PREDICATE, MediaType.APPLICATION_JSON);
         context.contentType(contentType);
