@@ -223,7 +223,7 @@ public final class JsonpSupport implements MediaSupport {
 
     @Override
     public Collection<MessageBodyStreamWriter<?>> streamWriters() {
-        return List.of(esStreamWriter, streamWriter);
+        return List.of(streamWriter, esStreamWriter);
     }
 
     /**

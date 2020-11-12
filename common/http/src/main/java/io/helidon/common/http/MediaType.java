@@ -233,6 +233,7 @@ public final class MediaType implements AcceptPredicate<MediaType> {
      * This "element-type" has to be equal to "application/json".
      */
     public static final Predicate<MediaType> JSON_EVENT_STREAM_PREDICATE = TEXT_EVENT_STREAM
+            .and(mt -> mt.hasSuffix("event-stream"))
             .and(mt -> !mt.parameters().containsKey("element-type")
                     || "application/json".equals(mt.parameters().get("element-type")));
 

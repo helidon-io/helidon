@@ -62,7 +62,10 @@ class JacksonEsBodyStreamWriter implements MessageBodyStreamWriter<Object> {
 
     @Override
     public Multi<DataChunk> write(Flow.Publisher<?> publisher, GenericType<?> type, MessageBodyWriterContext context) {
-        context.contentType(TEXT_EVENT_STREAM_JSON);
+        MediaType contentType = context.contentType()
+                .or(() -> findMediaType(context))
+                .orElse(TEXT_EVENT_STREAM_JSON);
+        context.contentType(contentType);
         JacksonBodyWriter.ObjectToChunks objectToChunks = new JacksonBodyWriter.ObjectToChunks(objectMapper, context.charset());
         return Multi.defer(() -> publisher)
                 .flatMap(objectToChunks)

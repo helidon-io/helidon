@@ -53,7 +53,7 @@ class JsonpEsBodyStreamWriter implements MessageBodyStreamWriter<JsonStructure> 
     public PredicateResult accept(GenericType<?> type, MessageBodyWriterContext context) {
         return context.contentType()
                 .or(() -> findMediaType(context))
-                .filter(mediaType -> mediaType.equals(TEXT_EVENT_STREAM_JSON))
+                .filter(mediaType -> mediaType.equals(TEXT_EVENT_STREAM_JSON) || mediaType.equals(MediaType.TEXT_EVENT_STREAM))
                 .map(it -> PredicateResult.supports(JsonStructure.class, type))
                 .orElse(PredicateResult.NOT_SUPPORTED);
     }
@@ -63,7 +63,9 @@ class JsonpEsBodyStreamWriter implements MessageBodyStreamWriter<JsonStructure> 
                                   GenericType<? extends JsonStructure> type,
                                   MessageBodyWriterContext context) {
 
-        MediaType contentType = context.findAccepted(MediaType.JSON_EVENT_STREAM_PREDICATE, TEXT_EVENT_STREAM_JSON);
+        MediaType contentType = context.contentType()
+                .or(() -> findMediaType(context))
+                .orElse(TEXT_EVENT_STREAM_JSON);
 
         context.contentType(contentType);
 

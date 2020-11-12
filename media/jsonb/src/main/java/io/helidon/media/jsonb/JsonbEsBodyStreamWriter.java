@@ -62,7 +62,9 @@ class JsonbEsBodyStreamWriter implements MessageBodyStreamWriter<Object> {
 
     @Override
     public Multi<DataChunk> write(Flow.Publisher<?> publisher, GenericType<?> type, MessageBodyWriterContext context) {
-        MediaType contentType = context.findAccepted(MediaType.JSON_EVENT_STREAM_PREDICATE, TEXT_EVENT_STREAM_JSON);
+        MediaType contentType = context.contentType()
+                .or(() -> findMediaType(context))
+                .orElse(TEXT_EVENT_STREAM_JSON);
         context.contentType(contentType);
         return Multi.defer(() -> publisher)
                 .flatMap(m -> Multi.just(
