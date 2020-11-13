@@ -17,7 +17,7 @@
 
 if [[ "$(docker images -q helidon-test-kafka 2>/dev/null)" == "" ]]; then
   # helidon:test-kafka not found, build it
-  docker build ./docker -t helidon-test-kafka -f ./docker/Dockerfile.kafka
+  docker build ./docker/kafka -t helidon-test-kafka -f ./docker/kafka/Dockerfile.kafka
 fi
 
 if [ ! "$(docker ps -q -f name=helidon_kafka)" ]; then
